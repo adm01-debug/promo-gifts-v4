@@ -80,11 +80,57 @@ jobs:
         if: github.ref != 'refs/heads/main'
         run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
 
+      # Captura o deploy de produção atual ANTES de subir o novo, para rollback
+      - name: Snapshot current production deploy
+        id: prev
+        if: github.ref == 'refs/heads/main'
+        run: |
+          PREV=$(vercel ls --prod --token=${{ secrets.VERCEL_TOKEN }} 2>/dev/null \
+            | awk '/https:\/\// {print $2; exit}')
+          echo "url=${PREV:-}" >> "$GITHUB_OUTPUT"
+          echo "Previous prod: ${PREV:-<none>}"
+
       - name: Deploy to Vercel (production)
+        id: deploy_prod
         if: github.ref == 'refs/heads/main'
         run: |
           URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "🚀 Production: $URL" >> "$GITHUB_STEP_SUMMARY"
+
+      # Smoke check: HTTP 200 + HTML contém o root do React
+      - name: Smoke test new production deploy
+        id: smoke
+        if: github.ref == 'refs/heads/main' && steps.deploy_prod.outputs.url != ''
+        run: |
+          URL="${{ steps.deploy_prod.outputs.url }}"
+          echo "Probing $URL ..."
+          for i in 1 2 3 4 5; do
+            CODE=$(curl -s -o /tmp/body.html -w "%{http_code}" "$URL" || echo "000")
+            if [ "$CODE" = "200" ] && grep -qi '<div id="root"' /tmp/body.html; then
+              echo "✅ Smoke OK (HTTP $CODE)"
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $CODE — retrying in 5s"
+            sleep 5
+          done
+          echo "❌ Smoke check failed after 5 attempts"
+          exit 1
+
+      # Rollback automático: promove o deploy anterior se algo acima falhar
+      - name: Rollback to previous production
+        if: failure() && github.ref == 'refs/heads/main' && steps.prev.outputs.url != ''
+        run: |
+          PREV="${{ steps.prev.outputs.url }}"
+          echo "↩️  Rolling back to: $PREV"
+          vercel rollback "$PREV" --yes --token=${{ secrets.VERCEL_TOKEN }}
+          {
+            echo "## ⚠️ Rollback executado"
+            echo ""
+            echo "O deploy/smoke check falhou. Produção revertida para:"
+            echo ""
+            echo "\`$PREV\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Deploy to Vercel (preview)
         if: github.ref != 'refs/heads/main'
