@@ -28,7 +28,9 @@ on:
       - '!supabase/functions/README.md'
 
 env:
-  SUPABASE_PROJECT_REF: doufsxqlfjyuvxuezpln
+  # Defina em Settings → Secrets and variables → Actions → Variables
+  # como SUPABASE_PROJECT_REF (ex.: pqpdolkaeqlyzpdpbizo).
+  SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || 'doufsxqlfjyuvxuezpln' }}
 
 permissions:
   contents: read
