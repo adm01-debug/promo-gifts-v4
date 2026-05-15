@@ -84,35 +84,116 @@
 
 ### Pré-requisitos
 
-- Node.js 20+ (testado em 22.x)
-- npm 10+ (gerenciador de pacote oficial deste projeto)
+- **Node.js 20+** (testado em 22.x)
+- **npm 10+** (gerenciador oficial deste projeto)
+- Conta no **Supabase** (3 projetos: principal, externo de catálogo e CRM)
+- Acesso ao repositório e às chaves dos serviços externos (CNPJá, etc.)
 
-### Instalação
+### 1. Clonar e instalar
 
 ```bash
-# Clone o repositório
 git clone <repo-url>
 cd promo-brindes
-
-# Instale dependências
 npm install
-
-# Configure variáveis de ambiente
-# O .env é gerado automaticamente pelo Lovable Cloud
-
-# Rode o servidor de desenvolvimento
-npm run dev
 ```
 
-### Comandos Disponíveis
+### 2. Configurar Supabase
+
+Esta aplicação consome **3 instâncias Supabase** distintas:
+
+| Instância | Para quê |
+|---|---|
+| **Principal** (`SUPABASE_*`) | Auth, RLS, edge functions, tabelas de orçamento/usuários |
+| **Externa** (`EXTERNAL_SUPABASE_*`) | Catálogo de produtos (SSOT — somente leitura no app) |
+| **CRM** (`CRM_SUPABASE_*`) | Bridge com base de clientes (Bitrix/SalesPro) |
+
+Para cada projeto Supabase você precisa de:
+
+1. Criar/abrir o projeto em [supabase.com](https://supabase.com).
+2. Em **Project Settings → API**, copiar:
+   - **Project URL** → vira `*_SUPABASE_URL`
+   - **anon public key** → vira `*_SUPABASE_ANON_KEY`
+   - **service_role key** → vira `*_SUPABASE_SERVICE_ROLE_KEY` / `*_SUPABASE_SERVICE_KEY`
+3. Aplicar as migrações em `supabase/migrations/` no projeto principal:
+   ```bash
+   npx supabase link --project-ref <seu-project-ref>
+   npx supabase db push
+   ```
+4. Deployar as edge functions (opcional em dev — feito via CI):
+   ```bash
+   npx supabase functions deploy --project-ref <seu-project-ref>
+   ```
+
+> ⚠️ Nunca commite a `service_role key`. Ela só vive em segredos do servidor (Lovable / GitHub Actions / Vercel).
+
+### 3. Variáveis de ambiente
+
+Crie um arquivo **`.env.local`** na raiz (ele já está no `.gitignore`):
+
+```bash
+# --- Supabase principal (frontend) ---
+VITE_SUPABASE_URL="https://<ref>.supabase.co"
+VITE_SUPABASE_PUBLISHABLE_KEY="<anon-key>"
+VITE_SUPABASE_PROJECT_ID="<project-ref>"
+
+# --- Supabase externo (catálogo) — frontend ---
+VITE_EXTERNAL_SUPABASE_URL="https://<ref-externo>.supabase.co"
+VITE_EXTERNAL_SUPABASE_ANON_KEY="<anon-key-externo>"
+
+# --- CRM (frontend, opcional para dev) ---
+VITE_CRM_SUPABASE_URL="https://<ref-crm>.supabase.co"
+VITE_CRM_SUPABASE_ANON_KEY="<anon-key-crm>"
+```
+
+**Segredos server-side** (edge functions) — configure no painel **Supabase → Edge Functions → Secrets** do projeto principal, **não** no `.env.local`:
+
+| Secret | Origem |
+|---|---|
+| `SUPABASE_URL` | URL do Supabase principal |
+| `SUPABASE_ANON_KEY` | anon key principal |
+| `SUPABASE_SERVICE_ROLE_KEY` | service_role principal (injetado automaticamente) |
+| `EXTERNAL_SUPABASE_URL` | URL do projeto de catálogo |
+| `EXTERNAL_SUPABASE_ANON_KEY` | anon key catálogo |
+| `EXTERNAL_SUPABASE_SERVICE_ROLE_KEY` | service_role catálogo |
+| `EXTERNAL_SUPABASE_SERVICE_KEY` | alias da service key (compatibilidade) |
+| `CRM_SUPABASE_URL` | URL do CRM |
+| `CRM_SUPABASE_ANON_KEY` | anon key CRM |
+| `CRM_SUPABASE_SERVICE_KEY` | service_role do CRM |
+| `CNPJA_API_KEY` | painel [cnpja.com](https://cnpja.com) → API Keys |
+| `LOVABLE_API_KEY` | gerada pelo Lovable AI Gateway (rotacionável) |
+
+Para definir via CLI:
+
+```bash
+npx supabase secrets set EXTERNAL_SUPABASE_URL="https://..." \
+  CNPJA_API_KEY="..." --project-ref <ref>
+```
+
+### 4. Rodar em desenvolvimento
+
+```bash
+npm run dev          # http://localhost:8080
+npm run test         # Vitest
+npm run build        # build de produção
+```
+
+### Comandos disponíveis
 
 | Comando | Descrição |
 |---|---|
 | `npm run dev` | Servidor de desenvolvimento (porta 8080) |
 | `npm run build` | Build de produção |
 | `npm run preview` | Preview do build |
-| `npm run test` | Executar testes com Vitest |
-| `npm run test:coverage` | Testes com relatório de cobertura |
+| `npm run test` | Executa testes Vitest |
+| `npm run test:coverage` | Testes com cobertura |
+| `npm run lint:check` | ESLint |
+| `npm run test:e2e` | Suíte E2E Playwright |
+
+### Solução de problemas
+
+- **`Failed to fetch` em edge function** → verifique se o secret `*_SUPABASE_URL` correspondente está setado no projeto certo.
+- **`401 Unauthorized` no catálogo** → confirme `VITE_EXTERNAL_SUPABASE_ANON_KEY` no `.env.local`.
+- **Login não funciona** → no painel Supabase principal, em **Authentication → URL Configuration**, adicione `http://localhost:8080` em *Site URL* e *Redirect URLs*.
 
 ---
 
