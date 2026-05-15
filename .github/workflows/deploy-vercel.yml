@@ -107,28 +107,36 @@ jobs:
         run: |
           BASE="${{ steps.deploy_prod.outputs.url }}"
           EXPECTED_SHA="${{ github.sha }}"
+          # correlationId compartilhado entre as duas probes — eco no x-request-id
+          # e ecoado de volta no payload (.requestId), tornando o log da Vercel
+          # rastreável a partir da run do GH Actions.
+          REQ_ID="gh-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${GITHUB_SHA:0:7}"
+          echo "🔖 correlationId: $REQ_ID"
 
           echo "▶ /api/health (build identity)"
           HEALTH_OK=0
           for i in 1 2 3 4 5; do
-            CODE=$(curl -s -o /tmp/health.json -w "%{http_code}" "$BASE/api/health" || echo "000")
+            CODE=$(curl -s -o /tmp/health.json -D /tmp/health.h \
+              -H "x-request-id: $REQ_ID" \
+              -w "%{http_code}" "$BASE/api/health" || echo "000")
             if [ "$CODE" = "200" ]; then
               STATUS=$(jq -r '.status // empty' /tmp/health.json 2>/dev/null)
               COMMIT=$(jq -r '.commit // empty' /tmp/health.json 2>/dev/null)
               VERSION=$(jq -r '.version // empty' /tmp/health.json 2>/dev/null)
+              ECHO_ID=$(jq -r '.requestId // empty' /tmp/health.json 2>/dev/null)
               if [ "$STATUS" = "ok" ] && [ "$COMMIT" = "$EXPECTED_SHA" ]; then
-                echo "✅ Health OK — v$VERSION @ ${COMMIT:0:7}"
+                echo "✅ Health OK — v$VERSION @ ${COMMIT:0:7} (requestId=$ECHO_ID)"
                 HEALTH_OK=1
                 break
               fi
-              echo "Health payload mismatch — status=$STATUS commit=$COMMIT (expected $EXPECTED_SHA)"
+              echo "Health payload mismatch — status=$STATUS commit=$COMMIT (expected $EXPECTED_SHA) requestId=$ECHO_ID"
             else
               echo "Attempt $i: HTTP $CODE"
             fi
             sleep 5
           done
           if [ "$HEALTH_OK" != "1" ]; then
-            echo "❌ /api/health falhou"
+            echo "❌ /api/health falhou (correlationId=$REQ_ID)"
             cat /tmp/health.json 2>/dev/null || true
             exit 1
           fi
@@ -136,7 +144,9 @@ jobs:
           echo "▶ /api/ready (dependency probe)"
           READY_OK=0
           for i in 1 2 3 4 5; do
-            CODE=$(curl -s -o /tmp/ready.json -w "%{http_code}" "$BASE/api/ready" || echo "000")
+            CODE=$(curl -s -o /tmp/ready.json \
+              -H "x-request-id: $REQ_ID" \
+              -w "%{http_code}" "$BASE/api/ready" || echo "000")
             STATUS=$(jq -r '.status // empty' /tmp/ready.json 2>/dev/null)
             if [ "$CODE" = "200" ] && { [ "$STATUS" = "ready" ] || [ "$STATUS" = "degraded" ]; }; then
               echo "✅ Ready ($STATUS)"
@@ -146,6 +156,7 @@ jobs:
                 echo "- version: \`$VERSION\`"
                 echo "- commit: \`${COMMIT:0:7}\`"
                 echo "- ready: \`$STATUS\`"
+                echo "- correlationId: \`$REQ_ID\`"
               } >> "$GITHUB_STEP_SUMMARY"
               READY_OK=1
               [ "$STATUS" = "degraded" ] && echo "⚠️  Dependências em estado *degraded* — aceitando, mas vale investigar." >> "$GITHUB_STEP_SUMMARY"
@@ -155,7 +166,7 @@ jobs:
             sleep 5
           done
           if [ "$READY_OK" != "1" ]; then
-            echo "❌ /api/ready falhou"
+            echo "❌ /api/ready falhou (correlationId=$REQ_ID)"
             cat /tmp/ready.json 2>/dev/null || true
             exit 1
           fi
@@ -165,7 +176,8 @@ jobs:
         if: failure() && github.ref == 'refs/heads/main' && steps.prev.outputs.url != ''
         run: |
           PREV="${{ steps.prev.outputs.url }}"
-          echo "↩️  Rolling back to: $PREV"
+          REQ_ID="gh-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${GITHUB_SHA:0:7}"
+          echo "↩️  Rolling back to: $PREV (correlationId=$REQ_ID)"
           vercel rollback "$PREV" --yes --token=${{ secrets.VERCEL_TOKEN }}
           {
             echo "## ⚠️ Rollback executado"
@@ -173,6 +185,8 @@ jobs:
             echo "O deploy/smoke check falhou. Produção revertida para:"
             echo ""
             echo "\`$PREV\`"
+            echo ""
+            echo "**correlationId:** \`$REQ_ID\` — busque por este ID nos logs da Vercel para encontrar a request exata que falhou."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Deploy to Vercel (preview)
