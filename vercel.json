@@ -1,7 +1,4 @@
 {
-  "rewrites": [
-    { "source": "/api/health", "destination": "/api/health.json" }
-  ],
   "headers": [
     {
       "source": "/api/health(.json)?",
@@ -9,6 +6,15 @@
         { "key": "Content-Type", "value": "application/json; charset=utf-8" },
         { "key": "Cache-Control", "value": "no-store, max-age=0" }
       ]
+    },
+    {
+      "source": "/api/ready",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, max-age=0" }
+      ]
     }
+  ],
+  "rewrites": [
+    { "source": "/api/health", "destination": "/api/health.json" }
   ]
 }
