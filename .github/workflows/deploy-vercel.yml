@@ -98,28 +98,28 @@ jobs:
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "🚀 Production: $URL" >> "$GITHUB_STEP_SUMMARY"
 
-      # Smoke check: /api/health → 200 + JSON {status:"ok", commit==GITHUB_SHA}
+      # Smoke check em 2 etapas:
+      #   1) /api/health  → confirma que o BUILD CORRETO está servido (commit==SHA)
+      #   2) /api/ready   → confirma que as DEPENDÊNCIAS (Supabase) respondem
       - name: Smoke test new production deploy
         id: smoke
         if: github.ref == 'refs/heads/main' && steps.deploy_prod.outputs.url != ''
         run: |
-          URL="${{ steps.deploy_prod.outputs.url }}/api/health"
+          BASE="${{ steps.deploy_prod.outputs.url }}"
           EXPECTED_SHA="${{ github.sha }}"
-          echo "Probing $URL ..."
+
+          echo "▶ /api/health (build identity)"
+          HEALTH_OK=0
           for i in 1 2 3 4 5; do
-            CODE=$(curl -s -o /tmp/health.json -w "%{http_code}" "$URL" || echo "000")
+            CODE=$(curl -s -o /tmp/health.json -w "%{http_code}" "$BASE/api/health" || echo "000")
             if [ "$CODE" = "200" ]; then
               STATUS=$(jq -r '.status // empty' /tmp/health.json 2>/dev/null)
               COMMIT=$(jq -r '.commit // empty' /tmp/health.json 2>/dev/null)
               VERSION=$(jq -r '.version // empty' /tmp/health.json 2>/dev/null)
               if [ "$STATUS" = "ok" ] && [ "$COMMIT" = "$EXPECTED_SHA" ]; then
                 echo "✅ Health OK — v$VERSION @ ${COMMIT:0:7}"
-                {
-                  echo "## ✅ Health check"
-                  echo "- version: \`$VERSION\`"
-                  echo "- commit: \`${COMMIT:0:7}\`"
-                } >> "$GITHUB_STEP_SUMMARY"
-                exit 0
+                HEALTH_OK=1
+                break
               fi
               echo "Health payload mismatch — status=$STATUS commit=$COMMIT (expected $EXPECTED_SHA)"
             else
@@ -127,9 +127,38 @@ jobs:
             fi
             sleep 5
           done
-          echo "❌ Smoke check failed after 5 attempts"
-          cat /tmp/health.json 2>/dev/null || true
-          exit 1
+          if [ "$HEALTH_OK" != "1" ]; then
+            echo "❌ /api/health falhou"
+            cat /tmp/health.json 2>/dev/null || true
+            exit 1
+          fi
+
+          echo "▶ /api/ready (dependency probe)"
+          READY_OK=0
+          for i in 1 2 3 4 5; do
+            CODE=$(curl -s -o /tmp/ready.json -w "%{http_code}" "$BASE/api/ready" || echo "000")
+            STATUS=$(jq -r '.status // empty' /tmp/ready.json 2>/dev/null)
+            if [ "$CODE" = "200" ] && { [ "$STATUS" = "ready" ] || [ "$STATUS" = "degraded" ]; }; then
+              echo "✅ Ready ($STATUS)"
+              jq -r '.checks | to_entries[] | "  - \(.key): \(.value.status)\(if .value.latency_ms then " (\(.value.latency_ms)ms)" else "" end)"' /tmp/ready.json 2>/dev/null || true
+              {
+                echo "## ✅ Smoke check"
+                echo "- version: \`$VERSION\`"
+                echo "- commit: \`${COMMIT:0:7}\`"
+                echo "- ready: \`$STATUS\`"
+              } >> "$GITHUB_STEP_SUMMARY"
+              READY_OK=1
+              [ "$STATUS" = "degraded" ] && echo "⚠️  Dependências em estado *degraded* — aceitando, mas vale investigar." >> "$GITHUB_STEP_SUMMARY"
+              break
+            fi
+            echo "Attempt $i: HTTP $CODE status=$STATUS"
+            sleep 5
+          done
+          if [ "$READY_OK" != "1" ]; then
+            echo "❌ /api/ready falhou"
+            cat /tmp/ready.json 2>/dev/null || true
+            exit 1
+          fi
 
       # Rollback automático: promove o deploy anterior se algo acima falhar
       - name: Rollback to previous production
