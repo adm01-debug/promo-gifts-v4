@@ -98,23 +98,37 @@ jobs:
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "🚀 Production: $URL" >> "$GITHUB_STEP_SUMMARY"
 
-      # Smoke check: HTTP 200 + HTML contém o root do React
+      # Smoke check: /api/health → 200 + JSON {status:"ok", commit==GITHUB_SHA}
       - name: Smoke test new production deploy
         id: smoke
         if: github.ref == 'refs/heads/main' && steps.deploy_prod.outputs.url != ''
         run: |
-          URL="${{ steps.deploy_prod.outputs.url }}"
+          URL="${{ steps.deploy_prod.outputs.url }}/api/health"
+          EXPECTED_SHA="${{ github.sha }}"
           echo "Probing $URL ..."
           for i in 1 2 3 4 5; do
-            CODE=$(curl -s -o /tmp/body.html -w "%{http_code}" "$URL" || echo "000")
-            if [ "$CODE" = "200" ] && grep -qi '<div id="root"' /tmp/body.html; then
-              echo "✅ Smoke OK (HTTP $CODE)"
-              exit 0
+            CODE=$(curl -s -o /tmp/health.json -w "%{http_code}" "$URL" || echo "000")
+            if [ "$CODE" = "200" ]; then
+              STATUS=$(jq -r '.status // empty' /tmp/health.json 2>/dev/null)
+              COMMIT=$(jq -r '.commit // empty' /tmp/health.json 2>/dev/null)
+              VERSION=$(jq -r '.version // empty' /tmp/health.json 2>/dev/null)
+              if [ "$STATUS" = "ok" ] && [ "$COMMIT" = "$EXPECTED_SHA" ]; then
+                echo "✅ Health OK — v$VERSION @ ${COMMIT:0:7}"
+                {
+                  echo "## ✅ Health check"
+                  echo "- version: \`$VERSION\`"
+                  echo "- commit: \`${COMMIT:0:7}\`"
+                } >> "$GITHUB_STEP_SUMMARY"
+                exit 0
+              fi
+              echo "Health payload mismatch — status=$STATUS commit=$COMMIT (expected $EXPECTED_SHA)"
+            else
+              echo "Attempt $i: HTTP $CODE"
             fi
-            echo "Attempt $i: HTTP $CODE — retrying in 5s"
             sleep 5
           done
           echo "❌ Smoke check failed after 5 attempts"
+          cat /tmp/health.json 2>/dev/null || true
           exit 1
 
       # Rollback automático: promove o deploy anterior se algo acima falhar
