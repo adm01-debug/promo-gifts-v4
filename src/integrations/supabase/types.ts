@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -1801,6 +1801,54 @@ export type Database = {
         }
         Relationships: []
       }
+      favorite_item_reactions: {
+        Row: {
+          anon_id: string
+          created_at: string
+          emoji: string
+          id: string
+          ip_hash: string | null
+          item_id: string
+          list_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          anon_id: string
+          created_at?: string
+          emoji: string
+          id?: string
+          ip_hash?: string | null
+          item_id: string
+          list_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          anon_id?: string
+          created_at?: string
+          emoji?: string
+          id?: string
+          ip_hash?: string | null
+          item_id?: string
+          list_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorite_item_reactions_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "favorite_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favorite_item_reactions_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "favorite_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       favorite_items: {
         Row: {
           added_at: string
@@ -2437,6 +2485,56 @@ export type Database = {
           },
         ]
       }
+      kit_share_tokens: {
+        Row: {
+          client_email: string | null
+          client_name: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          kit_id: string
+          seller_id: string
+          status: string
+          token: string
+          updated_at: string
+          viewed_at: string | null
+        }
+        Insert: {
+          client_email?: string | null
+          client_name?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          kit_id: string
+          seller_id: string
+          status?: string
+          token?: string
+          updated_at?: string
+          viewed_at?: string | null
+        }
+        Update: {
+          client_email?: string | null
+          client_name?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          kit_id?: string
+          seller_id?: string
+          status?: string
+          token?: string
+          updated_at?: string
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kit_share_tokens_kit_id_fkey"
+            columns: ["kit_id"]
+            isOneToOne: false
+            referencedRelation: "custom_kits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kit_templates: {
         Row: {
           box_data: Json | null
@@ -3066,6 +3164,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      mcp_keys: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_revoked: boolean
+          key_hash: string
+          key_name: string
+          last_used_at: string | null
+          scopes: string[] | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_revoked?: boolean
+          key_hash: string
+          key_name: string
+          last_used_at?: string | null
+          scopes?: string[] | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_revoked?: boolean
+          key_hash?: string
+          key_name?: string
+          last_used_at?: string | null
+          scopes?: string[] | null
+          user_id?: string
+        }
+        Relationships: []
       }
       mockup_drafts: {
         Row: {
@@ -4247,6 +4381,75 @@ export type Database = {
           severity?: string
           table_name?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      quote_approval_tokens: {
+        Row: {
+          client_email: string | null
+          client_name: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          quote_id: string
+          responded_at: string | null
+          response: string | null
+          response_notes: string | null
+          seller_id: string
+          signature_hash: string | null
+          signed_at: string | null
+          signer_document: string | null
+          signer_ip: string | null
+          signer_name: string | null
+          signer_user_agent: string | null
+          status: string
+          token: string
+          updated_at: string
+          viewed_at: string | null
+        }
+        Insert: {
+          client_email?: string | null
+          client_name?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          quote_id: string
+          responded_at?: string | null
+          response?: string | null
+          response_notes?: string | null
+          seller_id: string
+          signature_hash?: string | null
+          signed_at?: string | null
+          signer_document?: string | null
+          signer_ip?: string | null
+          signer_name?: string | null
+          signer_user_agent?: string | null
+          status?: string
+          token?: string
+          updated_at?: string
+          viewed_at?: string | null
+        }
+        Update: {
+          client_email?: string | null
+          client_name?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          quote_id?: string
+          responded_at?: string | null
+          response?: string | null
+          response_notes?: string | null
+          seller_id?: string
+          signature_hash?: string | null
+          signed_at?: string | null
+          signer_document?: string | null
+          signer_ip?: string | null
+          signer_name?: string | null
+          signer_user_agent?: string | null
+          status?: string
+          token?: string
+          updated_at?: string
+          viewed_at?: string | null
         }
         Relationships: []
       }
@@ -5479,6 +5682,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_known_devices: {
+        Row: {
+          created_at: string
+          device_name: string | null
+          fingerprint: string
+          id: string
+          last_seen_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_name?: string | null
+          fingerprint: string
+          id?: string
+          last_seen_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_name?: string | null
+          fingerprint?: string
+          id?: string
+          last_seen_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_onboarding: {
         Row: {
           completed_at: string | null
@@ -6090,14 +6320,19 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      consume_step_up_token: {
-        Args: {
-          _expected_action: Database["public"]["Enums"]["step_up_action"]
-          _expected_target?: string
-          _token: string
-        }
-        Returns: boolean
-      }
+      consume_step_up_token:
+        | {
+            Args: { _challenge_id: string; _token_hash: string }
+            Returns: boolean
+          }
+        | {
+            Args: {
+              _expected_action: Database["public"]["Enums"]["step_up_action"]
+              _expected_target?: string
+              _token: string
+            }
+            Returns: boolean
+          }
       convert_quote_to_order: {
         Args: {
           p_organization_id?: string
@@ -6109,6 +6344,14 @@ export type Database = {
       create_organization_with_owner: {
         Args: { _name: string; _slug: string }
         Returns: string
+      }
+      cron_invoke_edge: {
+        Args: {
+          p_body?: Json
+          p_timeout_ms?: number
+          p_url_secret_name: string
+        }
+        Returns: number
       }
       e2e_cleanup_check_rate_limit: {
         Args: { p_key: string; p_max: number; p_window_seconds: number }
@@ -6250,6 +6493,37 @@ export type Database = {
       get_platform_failure_metrics: {
         Args: { window_minutes?: number }
         Returns: Json
+      }
+      get_quote_token_by_value: {
+        Args: { _token: string }
+        Returns: {
+          client_email: string | null
+          client_name: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          quote_id: string
+          responded_at: string | null
+          response: string | null
+          response_notes: string | null
+          seller_id: string
+          signature_hash: string | null
+          signed_at: string | null
+          signer_document: string | null
+          signer_ip: string | null
+          signer_name: string | null
+          signer_user_agent: string | null
+          status: string
+          token: string
+          updated_at: string
+          viewed_at: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "quote_approval_tokens"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_top_collected_products: {
         Args: { _days?: number; _limit?: number }
@@ -6397,6 +6671,17 @@ export type Database = {
       }
       mcp_audit_actor: { Args: { _fallback: string }; Returns: string }
       notify_hardening_regression: { Args: never; Returns: Json }
+      purge_expired_security_data: { Args: never; Returns: undefined }
+      purge_expired_step_up_artifacts: {
+        Args: {
+          _challenge_grace_minutes?: number
+          _token_grace_minutes?: number
+        }
+        Returns: {
+          challenges_deleted: number
+          tokens_deleted: number
+        }[]
+      }
       purge_old_audit_logs: { Args: never; Returns: undefined }
       record_app_vital:
         | {
@@ -6469,6 +6754,17 @@ export type Database = {
         }
         Returns: string
       }
+      record_public_token_failure: {
+        Args: {
+          _attempted_token: string
+          _ip: string
+          _reason: string
+          _resource_id: string
+          _resource_type: string
+          _ua: string
+        }
+        Returns: undefined
+      }
       repair_ownership_orphans: {
         Args: {
           _dry_run?: boolean
@@ -6522,6 +6818,14 @@ export type Database = {
         Returns: number
       }
       snapshot_hardening_status: { Args: never; Returns: Json }
+      start_step_up_challenge: {
+        Args: { _action: string; _target_ref?: string }
+        Returns: string
+      }
+      submit_quote_response: {
+        Args: { _response: string; _response_notes?: string; _token: string }
+        Returns: boolean
+      }
       sync_external_connections_from_credentials:
         | { Args: never; Returns: Json }
         | {
@@ -6542,11 +6846,12 @@ export type Database = {
         }[]
       }
       verify_step_up_otp: {
-        Args: { _challenge_id: string; _otp: string }
-        Returns: {
-          expires_at: string
-          token: string
-        }[]
+        Args: { _challenge_id: string; _otp_attempt: string }
+        Returns: boolean
+      }
+      verify_step_up_password: {
+        Args: { _challenge_id: string; _password_attempt: string }
+        Returns: boolean
       }
     }
     Enums: {
