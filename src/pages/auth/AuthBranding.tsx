@@ -9,7 +9,7 @@ interface RocketData { id: number; left: number; size: number; duration: number;
 interface PlanetData { id: number; left: number; top: number; size: number; duration: number; type: number; delay: number; }
 interface AstronautData { id: number; left: number; top: number; size: number; duration: number; delay: number; rotation: number; }
 
-export const SpaceScene = React.memo(() => {
+export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) => {
   const [rockets, setRockets] = useState<RocketData[]>([]);
   const [planets, setPlanets] = useState<PlanetData[]>([]);
   const [astronauts, setAstronauts] = useState<AstronautData[]>([]);
@@ -65,7 +65,7 @@ export const SpaceScene = React.memo(() => {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden z-0" aria-hidden="true">
       {/* Dynamic Stars with breathing effect */}
-      {[...Array(60)].map((_, i) => {
+      {[...Array(isFull ? 60 : 30)].map((_, i) => {
         const size = 1 + (i % 3);
         const top = Math.random() * 100;
         const left = Math.random() * 100;
@@ -172,7 +172,7 @@ export const SpaceScene = React.memo(() => {
 });
 
 // Mantemos o Starfield por compatibilidade se necessário, mas o SpaceScene é o principal agora
-export const Starfield = React.memo(() => <SpaceScene />);
+export const Starfield = React.memo(() => <SpaceScene isFull={false} />);
 
 
 function FeatureCard({ item, index }: { item: typeof FEATURE_ITEMS[0]; index: number }) {
