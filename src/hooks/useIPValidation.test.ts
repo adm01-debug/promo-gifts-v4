@@ -24,6 +24,13 @@ global.fetch = mockFetch;
 describe('useIPValidation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default mock for get-visitor-info which is called by fetchCurrentIP internally
+    vi.mocked(supabase.functions.invoke).mockImplementation(async (fnName) => {
+      if (fnName === 'get-visitor-info') {
+        return { data: { ip: '1.2.3.4' }, error: null };
+      }
+      return { data: null, error: null };
+    });
   });
 
   describe('fetchCurrentIP', () => {
