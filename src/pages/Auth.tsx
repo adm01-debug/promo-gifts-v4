@@ -151,11 +151,11 @@ export default function Auth() {
         description: 'Login realizado com sucesso',
       });
 
-      navigate('/', { replace: true });
+      navigate(resolveRedirectTarget(), { replace: true });
       return true;
     } catch (error) {
       console.error('Validation error:', error);
-      navigate('/', { replace: true }); // Fail-open
+      navigate(resolveRedirectTarget(), { replace: true }); // Fail-open
       return true;
     }
   };
