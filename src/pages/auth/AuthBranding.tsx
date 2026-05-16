@@ -385,11 +385,12 @@ export function AuthBrandingPanel() {
           <div className="space-y-4 max-w-md flex flex-col items-center">
             <h2 className="text-4xl xl:text-5xl font-display font-bold text-white leading-[1.1] tracking-tight relative group text-center">
               Um Universo de Produtos, para o{" "}
-              <span className="text-orange">
+              <span className="text-orange drop-shadow-[0_0_15px_rgba(251,146,60,0.3)]">
                 Melhor Time das{" "}
                 <span className="relative inline-block">
                   Galáxias!
-                  <span className="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r from-orange/0 via-orange/60 to-orange/0 scale-x-0 group-hover:scale-x-100 transition-transform duration-700 shadow-[0_0_15px_rgba(251,146,60,0.5)]" />
+                  <span className="absolute -bottom-2 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-orange to-transparent opacity-40 group-hover:opacity-100 transition-all duration-700 shadow-[0_0_12px_rgba(251,146,60,0.4)]" />
+                  <span className="absolute -bottom-2 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-orange/60 to-transparent scale-x-75 group-hover:scale-x-110 transition-transform duration-700" />
                 </span>
               </span>
             </h2>
