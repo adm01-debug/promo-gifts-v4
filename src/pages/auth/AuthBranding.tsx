@@ -10,11 +10,13 @@ interface RocketData { id: number; left: number; size: number; duration: number;
 interface PlanetData { id: number; left: number; top: number; size: number; duration: number; type: number; delay: number; }
 interface AstronautData { id: number; left: number; top: number; size: number; rotation: number; zIndex: number; depth: number; initialAngle: number; individualScale?: number; individualOpacity?: number; }
 interface StarData { id: number; size: number; top: number; left: number; breathingDur: number; breathingDelay: number; driftDur: number; }
+interface MeteorData { id: number; top: number; left: number; duration: number; delay: number; }
 
 export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) => {
   const [rockets, setRockets] = useState<RocketData[]>([]);
   const [planets, setPlanets] = useState<PlanetData[]>([]);
   const [astronauts, setAstronauts] = useState<AstronautData[]>([]);
+  const [meteors, setMeteors] = useState<MeteorData[]>([]);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [scrollY, setScrollY] = useState(0);
   
@@ -98,6 +100,22 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
   useEffect(() => {
     const rocketInterval = setInterval(() => spawnRocket(), 4000);
     
+    // Meteor shower interval
+    const meteorInterval = setInterval(() => {
+      const id = Date.now();
+      const newMeteor: MeteorData = {
+        id,
+        top: Math.random() * 60,
+        left: Math.random() * 60,
+        duration: 1.5 + Math.random() * 1,
+        delay: 0
+      };
+      setMeteors(prev => [...prev, newMeteor]);
+      setTimeout(() => {
+        setMeteors(prev => prev.filter(m => m.id !== id));
+      }, 3000);
+    }, 8000);
+
     setPlanets([...Array(5)].map((_, i) => ({
       id: i,
       left: 10 + (i * 18),
@@ -130,13 +148,33 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
       };
     }));
 
-    return () => clearInterval(rocketInterval);
+    return () => {
+      clearInterval(rocketInterval);
+      clearInterval(meteorInterval);
+    };
   }, [spawnRocket, config.astroCount, config.spacing, config.individualAstronauts]);
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden z-0" aria-hidden="true">
-      {/* Background Deep Space Glow */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(15,23,42,0)_0%,rgba(2,6,23,0.5)_100%)]" />
+      {/* Background Deep Space Glow & Nebula */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(15,23,42,0)_0%,rgba(2,6,23,0.6)_100%)]" />
+      
+      {/* Atmospheric Nebula Layers (10/10 Depth) */}
+      <div 
+        className="absolute inset-0 opacity-10 blur-[80px]"
+        style={{
+          background: 'radial-gradient(ellipse at 30% 20%, #1e40af 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, #1e3a8a 0%, transparent 50%)',
+          animation: 'nebulaDrift 30s ease-in-out infinite alternate'
+        }}
+      />
+      
+      <div 
+        className="absolute inset-0 opacity-[0.05] blur-[120px]"
+        style={{
+          background: 'radial-gradient(circle at 60% 40%, #fb923c 0%, transparent 40%)',
+          animation: 'nebulaDrift 45s ease-in-out infinite alternate-reverse'
+        }}
+      />
 
       {/* Space Dust Layer - Profundidade Extra */}
       <div className="absolute inset-0 opacity-30">
@@ -218,7 +256,6 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
         const translateY = (mousePos.y + scrollY) * a.depth;
 
         // Órbita circular suave (circularOrbit) — Sincronizada via delay negativo
-        // 18s é o ciclo padrão. Sincronizamos todos os astronautas no mesmo ciclo.
         const orbitDuration = 18 / config.speed;
         
         return (
@@ -235,29 +272,43 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
             }}
           >
             <div
+              className="relative"
               style={{
-                // circularOrbit rotaciona e move. Sincronizamos o delay para que todos comecem no mesmo ponto do ciclo.
+                // circularOrbit rotaciona e move
                 animation: `circularOrbit ${orbitDuration}s linear infinite`,
-                // Mesma fase de respiração e flutuação para todos (sincronia absoluta)
                 animationDelay: `0s`, 
-                filter: `brightness(0.55) drop-shadow(0 0 ${size / 10}px rgba(6, 135, 255, 0.15))`,
+                // Rim lighting and glassmorphism effect (10/10)
+                filter: `brightness(0.65) drop-shadow(0 0 ${size / 8}px rgba(6, 135, 255, 0.2)) drop-shadow(0 0 2px rgba(255, 255, 255, 0.3))`,
               }}
             >
               <img
                 src={astronautSvg}
                 alt=""
-                className="animate-pulse" // Adiciona um efeito de "respiração" sutil e suave
+                className="animate-pulse"
                 style={{
                   width: size,
                   height: size,
                   transform: `rotate(${a.rotation}deg)`,
-                  animationDuration: `${orbitDuration / 2}s`, // Sincroniza pulso com metade do ciclo da órbita
+                  animationDuration: `${orbitDuration / 2}s`,
                 }}
               />
             </div>
           </div>
         );
       })}
+
+      {/* Shooting Stars (Meteors) 10/10 */}
+      {meteors.map(m => (
+        <div
+          key={`meteor-${m.id}`}
+          className="absolute w-[150px] h-[1px] bg-gradient-to-r from-transparent via-white to-transparent opacity-0"
+          style={{
+            top: `${m.top}%`,
+            left: `${m.left}%`,
+            animation: `shootingStar ${m.duration}s ease-out forwards`,
+          }}
+        />
+      ))}
 
       {/* Rockets rising from bottom to top */}
       {rockets.map((r) => (
@@ -382,4 +433,3 @@ export function AuthBrandingPanel() {
     </div>
   );
 }
-
