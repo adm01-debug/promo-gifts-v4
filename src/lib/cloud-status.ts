@@ -1,5 +1,5 @@
 /**
- * Sondador unificado de status da plataforma Lovable Cloud.
+ * Sondador unificado de status do backend Supabase.
  *
  * Combina 3 sinais para inferir um estado normalizado:
  *   1. `auth.getSession()`     → API de auth respondendo
@@ -46,7 +46,7 @@ export interface StatusHistoryEntry {
   consecutiveFailures: number;
 }
 
-const HISTORY_KEY = 'lovable_cloud_status_history';
+const HISTORY_KEY = 'supabase_health_history';
 const MAX_HISTORY_AGE_MS = 24 * 60 * 60 * 1000; // 24h
 
 function getStatusHistory(): StatusHistoryEntry[] {
@@ -84,7 +84,7 @@ export class CloudNotReadyError extends Error {
   readonly code = 'CLOUD_NOT_READY' as const;
   readonly status: CloudStatus;
   constructor(status: CloudStatus, message?: string) {
-    super(message ?? `Lovable Cloud not ready (status=${status})`);
+    super(message ?? `Backend not ready (status=${status})`);
     this.name = 'CloudNotReadyError';
     this.status = status;
   }
@@ -223,7 +223,7 @@ export function invalidateCloudStatus(): void {
 }
 
 /**
- * Gate: aguarda o Cloud ficar `healthy` (ou `warming`) antes de prosseguir.
+ * Gate: aguarda o backend ficar `healthy` (ou `warming`) antes de prosseguir.
  * Rejeita com `CloudNotReadyError` se persistir `degraded`/`down` após o orçamento.
  *
  * @param totalTimeoutMs orçamento total (default 8s)

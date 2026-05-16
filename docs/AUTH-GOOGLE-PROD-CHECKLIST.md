@@ -10,26 +10,23 @@
 - [ ] App **publicado** (botão "Publish" → status `Active`).
 - [ ] URL pública anotada: `https://_______________________________` (chamada de `APP_URL` abaixo).
 - [ ] Domínio custom (se houver) em status **Active** em Project Settings → Domains.
-- [ ] Lovable Cloud em `ACTIVE_HEALTHY` (Connectors → Lovable Cloud).
+- [ ] Projeto Supabase ativo (Dashboard → Project Settings → Status = Active).
 
 ---
 
-## 1. Configuração do Provider (Lovable Cloud)
+## 1. Configuração do Provider (Supabase Dashboard)
 
-Cloud → **Users** → **Authentication Settings** → **Sign In Methods** → **Google**.
+Supabase Dashboard → **Authentication** → **Providers** → **Google**.
 
-- [ ] Provider **Google** está **Enabled**.
-- [ ] Modo escolhido:
-  - [ ] **Managed** (credenciais geridas pela Lovable) — recomendado, nada mais a fazer aqui.
-  - [ ] **BYOK** (Client ID/Secret próprios) — confira os 2 itens abaixo:
-    - [ ] Campo `Client ID` preenchido (formato `XXXX-XXXX.apps.googleusercontent.com`).
-    - [ ] Campo `Client Secret` preenchido (não vazio, não placeholder).
+- [ ] Provider **Google** está **Enabled** (toggle ligado).
+- [ ] Campo `Client ID` preenchido (formato `XXXX-XXXX.apps.googleusercontent.com`).
+- [ ] Campo `Client Secret (for OAuth)` preenchido (não vazio, não placeholder).
 - [ ] Anote a **Callback URL** mostrada pelo painel:
       `https://_______________.supabase.co/auth/v1/callback` → chame de `CALLBACK_URL`.
 
 ---
 
-## 2. Configuração no Google Cloud Console (só se BYOK)
+## 2. Configuração no Google Cloud Console
 
 Em https://console.cloud.google.com → projeto correto.
 
@@ -154,7 +151,7 @@ Se qualquer item falhar, **NÃO publique** — registre em `docs/INCIDENTS/` com
 | `?error=` na URL | Causa raiz provável | Onde corrigir |
 |---|---|---|
 | `redirect_uri_mismatch` | Redirect URI fora do Google Cloud | Google Cloud → Credentials |
-| `invalid_client` | Client ID/Secret errados ou trocados | Lovable Cloud → Auth Settings |
+| `invalid_client` | Client ID/Secret errados ou trocados | Supabase Dashboard → Authentication → Providers → Google |
 | `access_denied` | Usuário cancelou | Nada — fluxo esperado |
 | `admin_policy_enforced` | Workspace do user bloqueia o app | Admin do Google Workspace dele |
 | `org_internal` | App restrito a uma org no Consent Screen | Google Cloud → OAuth Consent |
