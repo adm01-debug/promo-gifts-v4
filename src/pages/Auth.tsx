@@ -134,9 +134,9 @@ export default function Auth() {
   // Redirect if already logged in (only on initial load)
   useEffect(() => {
     if (user && !authLoading && !isSubmitting) {
-      navigate(resolveRedirectTarget(), { replace: true });
+      navigate(resolveRedirectTargetCb(), { replace: true });
     }
-  }, [user, authLoading, navigate, isSubmitting, resolveRedirectTarget]);
+  }, [user, authLoading, navigate, isSubmitting, resolveRedirectTargetCb]);
 
   const loginForm = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -172,11 +172,11 @@ export default function Auth() {
         description: 'Login realizado com sucesso',
       });
 
-      navigate(resolveRedirectTarget(), { replace: true });
+      navigate(resolveRedirectTargetCb(), { replace: true });
       return true;
     } catch (error) {
       console.error('Validation error:', error);
-      navigate(resolveRedirectTarget(), { replace: true }); // Fail-open
+      navigate(resolveRedirectTargetCb(), { replace: true }); // Fail-open
       return true;
     }
   };
@@ -209,7 +209,7 @@ export default function Auth() {
       if (userId) {
         await validateAndRedirect(userId, data.email);
       } else {
-        navigate(resolveRedirectTarget());
+        navigate(resolveRedirectTargetCb());
       }
     } catch {
       toast({
