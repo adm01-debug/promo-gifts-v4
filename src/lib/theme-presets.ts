@@ -413,7 +413,7 @@ const PRIDE_YELLOW = '55 90% 50%';
 const PRIDE_GREEN = '130 70% 45%';
 const PRIDE_BLUE = '210 80% 55%';
 const PRIDE_PURPLE = '280 80% 58%';
-const PRIDE_PINK = '330 85% 58%';
+const PRIDE_PINK = '330 85% 52%'; // Reduzido de 58% para 52% para contraste > 3:1 com branco
 
 const rainbowGrad = `linear-gradient(135deg, hsl(${PRIDE_RED}), hsl(${PRIDE_ORANGE}), hsl(${PRIDE_YELLOW}), hsl(${PRIDE_GREEN}), hsl(${PRIDE_BLUE}), hsl(${PRIDE_PURPLE}))`;
 const rainbowDivider = `linear-gradient(90deg, hsl(${PRIDE_RED} / 0.5), hsl(${PRIDE_YELLOW} / 0.5), hsl(${PRIDE_GREEN} / 0.5), hsl(${PRIDE_BLUE} / 0.5), hsl(${PRIDE_PURPLE} / 0.5))`;
