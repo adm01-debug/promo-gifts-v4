@@ -58,14 +58,11 @@ describe('useIPValidation', () => {
 
   describe('validateIPForAuthenticatedUser', () => {
     it('returns isAllowed true when IP is whitelisted', async () => {
-      mockFetch.mockResolvedValueOnce({
-        json: async () => ({ ip: '1.2.3.4' }),
+      vi.mocked(supabase.functions.invoke).mockImplementation(async (fnName) => {
+        if (fnName === 'get-visitor-info') return { data: { ip: '1.2.3.4' }, error: null };
+        if (fnName === 'validate-access') return { data: { allowed: true, reason: 'whitelisted' }, error: null };
+        return { data: null, error: null };
       });
-
-      vi.mocked(supabase.functions.invoke).mockResolvedValueOnce({
-        data: { allowed: true, reason: 'whitelisted' },
-        error: null,
-      } as Awaited<ReturnType<typeof supabase.functions.invoke>>);
 
       const { result } = renderHook(() => useIPValidation());
 
@@ -82,14 +79,11 @@ describe('useIPValidation', () => {
     });
 
     it('returns isAllowed false when IP is blocked', async () => {
-      mockFetch.mockResolvedValueOnce({
-        json: async () => ({ ip: '1.2.3.4' }),
+      vi.mocked(supabase.functions.invoke).mockImplementation(async (fnName) => {
+        if (fnName === 'get-visitor-info') return { data: { ip: '1.2.3.4' }, error: null };
+        if (fnName === 'validate-access') return { data: { allowed: false, reason: 'ip_not_whitelisted' }, error: null };
+        return { data: null, error: null };
       });
-
-      vi.mocked(supabase.functions.invoke).mockResolvedValueOnce({
-        data: { allowed: false, reason: 'ip_not_whitelisted' },
-        error: null,
-      } as Awaited<ReturnType<typeof supabase.functions.invoke>>);
 
       const { result } = renderHook(() => useIPValidation());
 
@@ -107,14 +101,11 @@ describe('useIPValidation', () => {
     });
 
     it('fails open when edge function errors', async () => {
-      mockFetch.mockResolvedValueOnce({
-        json: async () => ({ ip: '1.2.3.4' }),
+      vi.mocked(supabase.functions.invoke).mockImplementation(async (fnName) => {
+        if (fnName === 'get-visitor-info') return { data: { ip: '1.2.3.4' }, error: null };
+        if (fnName === 'validate-access') return { data: null, error: { message: 'Function error' } };
+        return { data: null, error: null };
       });
-
-      vi.mocked(supabase.functions.invoke).mockResolvedValueOnce({
-        data: null,
-        error: { message: 'Function error' },
-      } as Awaited<ReturnType<typeof supabase.functions.invoke>>);
 
       const { result } = renderHook(() => useIPValidation());
 
