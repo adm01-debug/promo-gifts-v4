@@ -146,7 +146,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
       <div 
         className="absolute w-[600px] h-[600px] rounded-full opacity-[0.07] blur-[100px] pointer-events-none"
         style={{
-          background: 'radial-gradient(circle, #3b82f6 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%)',
           left: `calc(50% + ${mousePos.x * 2}px)`,
           top: `calc(50% + ${mousePos.y * 2}px)`,
           transform: 'translate(-50%, -50%)',
@@ -158,7 +158,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
       <div 
         className="absolute inset-0 opacity-15 blur-[80px]"
         style={{
-          background: 'radial-gradient(ellipse at 30% 20%, #1e40af 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, #1e3a8a 0%, transparent 50%)',
+          background: 'radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.05) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(255,255,255,0.05) 0%, transparent 50%)',
           animation: 'nebulaDrift 30s ease-in-out infinite alternate'
         }}
       />
@@ -183,8 +183,8 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
               top: `${(i * 17) % 100}%`,
               left: `${(i * 23) % 100}%`,
               animation: `starDrift ${60 + (i % 20)}s linear infinite alternate`,
-              backgroundColor: i % 5 === 0 ? '#000000' : i % 7 === 0 ? '#60A5FA' : 'rgba(255,255,255,0.4)',
-              boxShadow: i % 5 === 0 ? '0 0 4px rgba(0,0,0,0.8)' : i % 7 === 0 ? '0 0 4px #60A5FA' : 'none',
+              backgroundColor: i % 5 === 0 ? '#404040' : i % 7 === 0 ? '#525252' : 'rgba(255,255,255,0.4)',
+              boxShadow: i % 5 === 0 ? '0 0 4px rgba(64,64,64,0.8)' : i % 7 === 0 ? '0 0 4px #525252' : 'none',
               opacity: i % 3 === 0 ? 0.4 : 0.2,
             }}
           />
@@ -230,10 +230,10 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
             animation: `zigzagMovement ${p.duration}s ease-in-out ${p.delay}s infinite alternate`,
             willChange: "transform",
             background: p.type === 0
-              ? 'radial-gradient(circle at 30% 30%, #0B1E47, #000000)'
+              ? 'radial-gradient(circle at 30% 30%, #262626, #000000)'
               : p.type === 1
-                ? 'radial-gradient(circle at 30% 30%, #0A1F4D, #000000)'
-                : 'radial-gradient(circle at 30% 30%, #0C2456, #000000)',
+                ? 'radial-gradient(circle at 30% 30%, #404040, #000000)'
+                : 'radial-gradient(circle at 30% 30%, #171717, #000000)',
             borderRadius: '50%',
             boxShadow: 'inset -12px -12px 24px rgba(0,0,0,0.75), 0 0 24px rgba(15, 23, 60, 0.15)'
           }}
@@ -274,7 +274,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
                 transformOrigin: "center center",
                 ['--orbit-radius' as string]: `${orbitRadius}px`,
                 // Rim lighting and glassmorphism effect (10/10)
-                filter: `brightness(1.05) drop-shadow(0 0 ${size / 5}px rgba(6, 135, 255, 0.45)) drop-shadow(0 0 6px rgba(255, 255, 255, 0.35)) ${a.depth < 0.9 ? 'blur(0.8px)' : 'blur(0px)'}`,
+                filter: `brightness(1.05) drop-shadow(0 0 ${size / 5}px rgba(255, 255, 255, 0.2)) drop-shadow(0 0 6px rgba(255, 255, 255, 0.35)) ${a.depth < 0.9 ? 'blur(0.8px)' : 'blur(0px)'}`,
               }}
             >
               <img
@@ -335,7 +335,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
                 top: `${r.size * 0.8}px`,
                 width: `${r.size * 0.4}px`,
                 height: `${r.size * 1.5}px`,
-                background: "linear-gradient(to bottom, #1e293b, #0f172a, transparent)",
+                background: "linear-gradient(to bottom, #404040, #171717, transparent)",
                 filter: "blur(4px)",
                 zIndex: -1,
               }}
