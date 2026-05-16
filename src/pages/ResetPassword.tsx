@@ -281,6 +281,7 @@ export default function ResetPassword() {
             </form>
           </CardContent>
         </Card>
+        <LegalFooter withDivider={false} className="mt-6" />
       </div>
     </div>
   );
