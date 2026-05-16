@@ -1,5 +1,5 @@
 import { type ReactNode, useState, useEffect } from "react";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { EnhancedErrorBoundary } from "@/components/errors/EnhancedErrorBoundary";
@@ -22,6 +22,7 @@ interface AdminRouteProps {
  */
 export function AdminRoute({ children }: AdminRouteProps) {
   const { user, canManage, isLoading, currentAAL, hasMFA, mfaRequired } = useAuth();
+  const location = useLocation();
   const [enrollOpen, setEnrollOpen] = useState(false);
 
   useEffect(() => {
