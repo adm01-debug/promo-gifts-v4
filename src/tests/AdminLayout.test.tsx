@@ -15,6 +15,7 @@ vi.mock("@/hooks/useSecretsManager", () => ({
     secrets: [],
     list: vi.fn(),
     refreshCache: vi.fn(),
+    getRotationHistory: vi.fn().mockResolvedValue([]),
     isLoading: false,
   }),
 }));
