@@ -8,6 +8,7 @@ import { AppLogo } from "@/components/layout/AppLogo";
 interface RocketData { id: number; left: number; size: number; duration: number; rotation: number; scale: number; }
 interface PlanetData { id: number; left: number; top: number; size: number; duration: number; type: number; delay: number; }
 interface AstronautData { id: number; left: number; top: number; size: number; duration: number; delay: number; rotation: number; }
+interface StarData { id: number; size: number; top: number; left: number; breathingDur: number; breathingDelay: number; driftDur: number; }
 
 export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) => {
   const [rockets, setRockets] = useState<RocketData[]>([]);
