@@ -188,7 +188,7 @@ export default function Auth() {
       if (userId) {
         await validateAndRedirect(userId, data.email);
       } else {
-        navigate('/');
+        navigate(resolveRedirectTarget());
       }
     } catch {
       toast({
