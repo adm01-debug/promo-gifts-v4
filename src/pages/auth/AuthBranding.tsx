@@ -160,7 +160,7 @@ function FeatureCard({ item, index }: { item: typeof FEATURE_ITEMS[0]; index: nu
   const IconComponent = item.icon;
   return (
     <div
-      className="flex h-[104px] items-center justify-between gap-3 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl hover:bg-white/10 hover:border-orange/30 hover:scale-[1.02] transition-all duration-500 group opacity-0 px-5 w-full"
+      className="flex h-[104px] items-center justify-between gap-3 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl hover:bg-white/10 hover:border-orange/30 hover:scale-[1.02] transition-all duration-500 group opacity-0 px-5"
       style={{ animation: `scale-fade-in 0.5s ease-out ${300 + index * 150}ms forwards` }}
     >
       <div className="min-w-0 flex-1 text-left">
@@ -195,21 +195,21 @@ export function AuthBrandingPanel() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col justify-center items-center px-12 xl:px-20 w-full h-full">
-        <div className="space-y-6 w-full max-w-xl">
+      <div className="relative z-10 flex flex-col justify-center items-center px-12 xl:px-20 w-full">
+        <div className="space-y-6 w-full max-w-xl flex flex-col items-center text-center">
           <div className="flex items-center gap-4">
             <AppLogo variant="light" iconClassName="h-14 w-14 rounded-xl shadow-orange/30" textClassName="text-4xl" />
           </div>
 
-          <div className="space-y-4 max-w-md">
-            <h2 className="text-4xl xl:text-5xl font-display font-bold text-white leading-[1.1] tracking-tight relative group">
+          <div className="space-y-4 max-w-md flex flex-col items-center">
+            <h2 className="text-4xl xl:text-5xl font-display font-bold text-white leading-[1.1] tracking-tight relative group text-center">
               Um Universo de Produtos, para o{" "}
               <span className="text-orange relative">
                 Melhor Time das Galáxias!
                 <div className="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r from-orange/0 via-orange/60 to-orange/0 scale-x-0 group-hover:scale-x-100 transition-transform duration-700" />
               </span>
             </h2>
-            <p className="text-base text-white/70 leading-relaxed font-light">
+            <p className="text-base text-white/70 leading-relaxed font-light text-center">
               Tenha acesso ao maior mix de produtos personalizados, consulte estoque em tempo real, visualize locais e técnicas de personalização. Feito especialmente para você decolar!!!
             </p>
           </div>
