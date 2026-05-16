@@ -745,6 +745,17 @@ html[data-scroll-locked] body {
   }
 }
 
+/* Reduced motion support for visual consistency in testing and accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .animate-rocket-shake,
+  [data-testid="rocket-item"] {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition: none !important;
+  }
+}
+
 @keyframes rocketShake {
   0%,
   100% {
