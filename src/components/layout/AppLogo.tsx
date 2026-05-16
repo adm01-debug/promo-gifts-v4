@@ -45,7 +45,7 @@ export function AppLogo({
             Promo Gifts
           </span>
           <span className={cn("text-[10px] font-semibold uppercase tracking-widest opacity-70", variant === 'light' ? 'text-white/80' : 'text-muted-foreground')}>
-            Plataforma de Vendas
+            Plataforma de Produtos
           </span>
         </div>
       )}
