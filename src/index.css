@@ -2199,19 +2199,19 @@ body.compare-focus-mode [role='main'] {
 
 /* Animations for Unified Space Scene — ritmo lento, contemplativo */
 
-/* Respiração humana: inspira (30%) → pausa (15%) → expira (55%) 
-   Aumentamos para ~12s-16s para ser ainda mais calmo */
+/* Respiração humana hiper-realista: inspira suave → pausa curta → expira longa e profunda 
+   Ciclo total de 14s para máxima tranquilidade, sem variações bruscas. */
 @keyframes breathingStar {
-  0%   { opacity: 0.15; transform: scale(0.7); }
-  35%  { opacity: 0.85; transform: scale(1.1); }
-  45%  { opacity: 0.85; transform: scale(1.1); }
-  100% { opacity: 0.15; transform: scale(0.7); }
+  0%   { opacity: 0.12; transform: scale(0.65); filter: blur(0.5px); }
+  30%  { opacity: 0.90; transform: scale(1.15); filter: blur(0px); }
+  42%  { opacity: 0.90; transform: scale(1.15); filter: blur(0px); }
+  100% { opacity: 0.12; transform: scale(0.65); filter: blur(0.5px); }
 }
 
-/* Movimento de deriva estelar — extremamente lento e contínuo */
+/* Movimento de deriva estelar — transformado em sub-movimento contínuo para evitar saltos no resize */
 @keyframes starDrift {
-  0%   { transform: translate(0, 0); }
-  100% { transform: translate(12px, 8px); }
+  0%   { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(15px, 10px, 0); }
 }
 
 /* Planetas — zigue-zague suave e lento, deslocamento mínimo */
