@@ -2199,11 +2199,11 @@ body.compare-focus-mode [role='main'] {
 
 /* Animations for Unified Space Scene — ritmo lento, contemplativo */
 
-/* Respiração humana: inspira (40%) → segura (10%) → expira (50%) */
+/* Respiração humana: inspira (30%) → pausa (15%) → expira (55%) */
 @keyframes breathingStar {
   0%   { opacity: 0.15; transform: scale(0.7); }
-  40%  { opacity: 0.95; transform: scale(1.25); }
-  50%  { opacity: 0.95; transform: scale(1.25); }
+  30%  { opacity: 0.95; transform: scale(1.25); }
+  45%  { opacity: 0.95; transform: scale(1.25); }
   100% { opacity: 0.15; transform: scale(0.7); }
 }
 
