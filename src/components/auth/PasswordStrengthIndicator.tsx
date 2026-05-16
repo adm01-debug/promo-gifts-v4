@@ -94,7 +94,7 @@ export function PasswordStrengthIndicator({
   };
 
   return (
-    <div className={cn('space-y-3', className)}>
+    <div className={cn('space-y-3', className)} data-testid="password-strength-indicator">
       {/* Progress bar */}
       <div className="space-y-1.5">
         <div className="flex justify-between items-center">
@@ -127,6 +127,7 @@ export function PasswordStrengthIndicator({
         {analysis.criteria.map((criterion) => (
           <div
             key={criterion.label}
+            data-testid={`password-criterion-${criterion.label.toLowerCase().replace(/\s+/g, '-')}`}
             className={cn(
               'flex items-center gap-1.5 text-xs transition-colors',
               criterion.met ? 'text-success' : 'text-muted-foreground'
