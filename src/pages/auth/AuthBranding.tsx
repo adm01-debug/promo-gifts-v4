@@ -108,7 +108,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
       {planets.map(p => (
         <div
           key={`planet-${p.id}`}
-          className="absolute opacity-35 blur-[0.5px]"
+          className="absolute opacity-25 blur-[0.5px]"
           style={{
             width: `${p.size}px`,
             height: `${p.size}px`,
@@ -116,13 +116,13 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
             top: `${p.top}%`,
             animation: `zigzagMovement ${p.duration}s ease-in-out ${p.delay}s infinite alternate`,
             willChange: "transform",
-            background: p.type === 0 
-              ? 'radial-gradient(circle at 30% 30%, #1E3A8A, #030712)' 
-              : p.type === 1 
-                ? 'radial-gradient(circle at 30% 30%, #1E40AF, #111827)'
-                : 'radial-gradient(circle at 30% 30%, #1D4ED8, #0F172A)',
+            background: p.type === 0
+              ? 'radial-gradient(circle at 30% 30%, #0B1E47, #000000)'
+              : p.type === 1
+                ? 'radial-gradient(circle at 30% 30%, #0A1F4D, #000000)'
+                : 'radial-gradient(circle at 30% 30%, #0C2456, #000000)',
             borderRadius: '50%',
-            boxShadow: 'inset -10px -10px 20px rgba(0,0,0,0.5), 0 0 30px rgba(79, 70, 229, 0.1)'
+            boxShadow: 'inset -12px -12px 24px rgba(0,0,0,0.75), 0 0 24px rgba(15, 23, 60, 0.15)'
           }}
         />
       ))}
