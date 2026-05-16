@@ -183,8 +183,8 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
               top: `${(i * 17) % 100}%`,
               left: `${(i * 23) % 100}%`,
               animation: `starDrift ${60 + (i % 20)}s linear infinite alternate`,
-              backgroundColor: i % 5 === 0 ? '#334155' : i % 7 === 0 ? '#64748b' : 'rgba(255,255,255,0.4)',
-              boxShadow: i % 5 === 0 ? '0 0 4px rgba(51,65,85,0.8)' : i % 7 === 0 ? '0 0 4px #64748b' : 'none',
+              backgroundColor: i % 5 === 0 ? '#404040' : i % 7 === 0 ? '#525252' : 'rgba(255,255,255,0.4)',
+              boxShadow: i % 5 === 0 ? '0 0 4px rgba(64,64,64,0.8)' : i % 7 === 0 ? '0 0 4px #525252' : 'none',
               opacity: i % 3 === 0 ? 0.4 : 0.2,
             }}
           />
@@ -230,10 +230,10 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
             animation: `zigzagMovement ${p.duration}s ease-in-out ${p.delay}s infinite alternate`,
             willChange: "transform",
             background: p.type === 0
-              ? 'radial-gradient(circle at 30% 30%, #1e293b, #000000)'
+              ? 'radial-gradient(circle at 30% 30%, #262626, #000000)'
               : p.type === 1
-                ? 'radial-gradient(circle at 30% 30%, #334155, #000000)'
-                : 'radial-gradient(circle at 30% 30%, #0f172a, #000000)',
+                ? 'radial-gradient(circle at 30% 30%, #404040, #000000)'
+                : 'radial-gradient(circle at 30% 30%, #171717, #000000)',
             borderRadius: '50%',
             boxShadow: 'inset -12px -12px 24px rgba(0,0,0,0.75), 0 0 24px rgba(15, 23, 60, 0.15)'
           }}
@@ -335,7 +335,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
                 top: `${r.size * 0.8}px`,
                 width: `${r.size * 0.4}px`,
                 height: `${r.size * 1.5}px`,
-                background: "linear-gradient(to bottom, #334155, #1e293b, transparent)",
+                background: "linear-gradient(to bottom, #404040, #171717, transparent)",
                 filter: "blur(4px)",
                 zIndex: -1,
               }}
