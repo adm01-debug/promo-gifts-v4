@@ -20,7 +20,9 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
         <ThemeProvider>
           <AuthProvider>
             <TooltipProvider>
-              {children}
+              <AriaLiveProvider>
+                {children}
+              </AriaLiveProvider>
             </TooltipProvider>
           </AuthProvider>
         </ThemeProvider>
