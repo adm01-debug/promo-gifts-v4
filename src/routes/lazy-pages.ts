@@ -17,6 +17,8 @@ export const Unauthorized = lazyWithRetry(() =>
 );
 export const ResetPassword = lazyWithRetry(() => import("@/pages/ResetPassword"));
 export const SSOCallbackPage = lazyWithRetry(() => import("@/pages/SSOCallbackPage"));
+export const TermsPage = lazyWithRetry(() => import("@/pages/TermsPage"));
+export const PrivacyPage = lazyWithRetry(() => import("@/pages/PrivacyPage"));
 
 // ─────────────────────────────────────────────────────────────────
 // Home / Dashboard / Misc
