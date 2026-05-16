@@ -38,9 +38,29 @@ type LoginForm = LoginFormData;
 export default function Auth() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const { toast } = useToast();
   const { user, isLoading: authLoading, signIn, signOut } = useAuth();
   const { validateIPForAuthenticatedUser, logLoginAttempt } = useIPValidation();
+
+  /**
+   * Destino pós-login. Precedência:
+   *  1. `location.state.from` (vindo do ProtectedRoute na mesma aba)
+   *  2. `?redirect=/path` na URL (deep-link manual)
+   *  3. `sessionStorage` (sobrevive ao round-trip OAuth)
+   *  4. fallback `/`
+   * Consumido aqui para que login por e-mail/senha também respeite o destino.
+   */
+  const resolveRedirectTarget = useCallback((): string => {
+    const fromState = (location.state as { from?: { pathname?: string; search?: string; hash?: string } } | null)
+      ?.from;
+    if (fromState?.pathname) {
+      const path = `${fromState.pathname}${fromState.search ?? ''}${fromState.hash ?? ''}`;
+      return consumePostLoginRedirect(path);
+    }
+    const queryRedirect = searchParams.get('redirect');
+    return consumePostLoginRedirect(queryRedirect ?? '/');
+  }, [location.state, searchParams]);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
