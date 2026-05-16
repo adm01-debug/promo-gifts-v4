@@ -74,10 +74,11 @@ describe('AuthBrandingPanel Visual Classes', () => {
     );
     
     const mainDiv = container.firstChild as HTMLElement;
-    expect(mainDiv.className).toContain('flex');
-    expect(mainDiv.className).not.toContain('hidden');
-    expect(mainDiv.className).toContain('w-full');
-    expect(mainDiv.className).toContain('lg:w-1/2');
+    const classes = mainDiv.className.split(' ');
+    expect(classes).toContain('flex');
+    expect(classes).not.toContain('hidden');
+    expect(classes).toContain('w-full');
+    expect(classes).toContain('lg:w-1/2');
   });
 
 });
