@@ -26,10 +26,40 @@
 
 @keyframes orbitSmooth {
   0% { transform: translate(0, 0) rotate(0deg); }
-  25% { transform: translate(12px, -8px) rotate(1.5deg); }
-  50% { transform: translate(25px, 0) rotate(0deg); }
-  75% { transform: translate(12px, 8px) rotate(-1.5deg); }
+  25% { transform: translate(15px, -15px) rotate(1.5deg); }
+  50% { transform: translate(30px, 0) rotate(0deg); }
+  75% { transform: translate(15px, 15px) rotate(-1.5deg); }
   100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+/* Nova animação de órbita circular perfeita */
+@keyframes circularOrbit {
+  from { transform: rotate(0deg) translateX(15px) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(15px) rotate(-360deg); }
+}
+
+@keyframes breathingStar {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes starDrift {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(20px, 20px, 0); }
+}
+
+@keyframes rocketRising {
+  0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(-120vh) rotate(-10deg); opacity: 0; }
+}
+
+@keyframes zigzagMovement {
+  0% { transform: translate(0, 0); }
+  33% { transform: translate(10px, -5px); }
+  66% { transform: translate(-5px, 10px); }
+  100% { transform: translate(0, 0); }
 }
 
 /* ═══ NUCLEAR SCROLL LOCK PREVENTION ═══
