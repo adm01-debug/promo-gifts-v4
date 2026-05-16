@@ -228,29 +228,25 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
         />
       ))}
 
-      {/* Floating Astronauts — Sincronizados e Persistentes */}
-      {astronauts.map((a, idx) => {
-        // Tamanhos reduzidos e escala baseada na profundidade, perfil global e ajuste individual
-        const baseSize = 35; 
-        const size = baseSize * a.depth * config.depthProfile * (a.individualScale ?? 1.0);
-        
-        // Opacidade baseada no perfil global, profundidade e ajuste individual
-        const opacity = (0.12 + (a.depth * 0.2)) * config.depthProfile * (a.individualOpacity ?? 1.0);
-        
-        // Parallax Mouse + Scroll baseado na profundidade (com suavização adicional)
+      {/* Floating Astronauts — sempre renderizados desde o primeiro frame */}
+      {ASTRONAUT_LAYOUT.slice(0, config.astroCount).map((a) => {
+        const individual = config.individualAstronauts.find(idx => idx.id === a.id);
+        const size = a.size * config.depthProfile * (individual?.scale ?? 1.0);
+        const opacity = 0.5 * config.depthProfile * (individual?.opacity ?? 1.0);
+        const orbitRadius = 14 + a.depth * 14;
         const translateX = mousePos.x * a.depth;
         const translateY = (mousePos.y + scrollY) * a.depth;
-
-        // Órbita circular balanceada
-        const orbitDuration = 30 / config.speed;
+        const orbitDuration = 32 / config.speed;
+        const left = 50 + (a.left - 50) * config.spacing;
+        const top = 50 + (a.top - 50) * config.spacing;
 
         return (
           <div
             key={`astro-${a.id}`}
             className="absolute transition-transform duration-1000 ease-out"
             style={{
-              left: `${a.left}%`,
-              top: `${a.top}%`,
+              left: `${left}%`,
+              top: `${top}%`,
               opacity,
               zIndex: a.zIndex,
               transform: `translate3d(${translateX}px, ${translateY}px, 0)`,
@@ -263,19 +259,23 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
                 // circularOrbit rotaciona e move
                 animation: `circularOrbit ${orbitDuration}s linear infinite`,
                 animationDelay: `-${(a.initialAngle / 360) * orbitDuration}s`, 
+                transformOrigin: "center center",
+                ['--orbit-radius' as string]: `${orbitRadius}px`,
                 // Rim lighting and glassmorphism effect (10/10)
-                filter: `brightness(0.65) drop-shadow(0 0 ${size / 8}px rgba(6, 135, 255, 0.2)) drop-shadow(0 0 2px rgba(255, 255, 255, 0.3))`,
+                filter: `brightness(1.05) drop-shadow(0 0 ${size / 5}px rgba(6, 135, 255, 0.45)) drop-shadow(0 0 6px rgba(255, 255, 255, 0.35))`,
               }}
             >
               <img
                 src={astronautSvg}
                 alt=""
-                className="animate-pulse"
+                className="select-none animate-pulse"
                 style={{
                   width: size,
                   height: size,
                   transform: `rotate(${a.rotation}deg)`,
                   animationDuration: `${orbitDuration / 2}s`,
+                  minWidth: 44,
+                  minHeight: 44,
                 }}
               />
             </div>
