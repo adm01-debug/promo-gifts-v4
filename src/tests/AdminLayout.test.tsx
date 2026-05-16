@@ -80,11 +80,7 @@ const renderWithProviders = (ui: React.ReactElement) => {
 };
 
 
-// TODO(test-debt): 2 testes falham — supabase.removeChannel nao mockada.
-// Skipado em fix(test): eliminate 88 test failures. Origem: revert 06-07/mai/2026.
-// Fixar em PR separado quando ownership for retomada.
-
-describe.skip("Admin Layout Standardization", () => {
+describe("Admin Layout Standardization", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
