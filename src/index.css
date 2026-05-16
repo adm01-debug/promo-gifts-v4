@@ -2254,11 +2254,18 @@ body.compare-focus-mode [role='main'] {
 
 /* Respiração humana hiper-realista: inspira suave → pausa curta → expira longa e profunda 
    Ciclo total de 14s para máxima tranquilidade, sem variações bruscas. */
+/* Efeito de respiração estelar: brilho suave que pulsa lentamente */
 @keyframes breathingStar {
-  0%   { opacity: 0.12; transform: scale(0.65); filter: blur(0.5px); }
-  30%  { opacity: 0.90; transform: scale(1.15); filter: blur(0px); }
-  42%  { opacity: 0.90; transform: scale(1.15); filter: blur(0px); }
-  100% { opacity: 0.12; transform: scale(0.65); filter: blur(0.5px); }
+  0%, 100% { 
+    opacity: 0.2; 
+    transform: scale(0.8); 
+    filter: blur(0.3px) brightness(0.8);
+  }
+  50% { 
+    opacity: 1; 
+    transform: scale(1.2); 
+    filter: blur(0px) brightness(1.5) drop-shadow(0 0 5px rgba(255, 255, 255, 0.8));
+  }
 }
 
 /* Movimento de deriva estelar — transformado em sub-movimento contínuo para evitar saltos no resize */
