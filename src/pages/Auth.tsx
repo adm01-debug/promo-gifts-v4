@@ -346,7 +346,7 @@ export default function Auth() {
         <div className="w-full max-w-md animate-fade-in space-y-8">
           {/* Mobile Logo */}
           <div className="flex justify-center lg:hidden">
-            <AppLogo />
+            <AppLogo variant="light" />
           </div>
 
           {/* IP Blocked Alert */}
@@ -562,7 +562,7 @@ export default function Auth() {
                       type="submit"
                       data-testid="login-submit"
                       variant="orange"
-                      className="h-12 w-full text-base font-semibold shadow-lg shadow-orange/25 transition-all duration-300 hover:shadow-xl hover:shadow-orange/30"
+                      className="h-12 w-full text-base font-semibold shadow-lg shadow-white/10 transition-all duration-300 hover:shadow-xl hover:shadow-white/20"
                         disabled={isSubmitting || loginStatus === 'success'}
                       >
                         {isSubmitting ? (
@@ -607,7 +607,7 @@ export default function Auth() {
               style={{ animation: 'scale-fade-in 0.5s ease-out 600ms forwards' }}
             >
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Globe className="h-3.5 w-3.5 text-orange" />
+                <Globe className="h-3.5 w-3.5 text-white" />
                 <span className="font-mono">{currentIP}</span>
               </div>
               {geoLocation && (
@@ -629,7 +629,7 @@ export default function Auth() {
               style={{ animation: 'scale-fade-in 0.5s ease-out 800ms forwards' }}
             >
               <div className="flex items-center gap-2 mb-1">
-                <Server className="h-4 w-4 text-orange" />
+                <Server className="h-4 w-4 text-white" />
                 <span className="text-xs font-bold uppercase tracking-wider text-white/60">Status da Infraestrutura</span>
               </div>
               
