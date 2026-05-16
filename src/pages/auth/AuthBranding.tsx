@@ -160,17 +160,15 @@ function FeatureCard({ item, index }: { item: typeof FEATURE_ITEMS[0]; index: nu
   const IconComponent = item.icon;
   return (
     <div 
-      className="p-6 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl hover:bg-white/10 hover:border-orange/30 hover:scale-[1.02] transition-all duration-500 group opacity-0"
+      className="flex h-[104px] flex-col items-center justify-center gap-2 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl hover:bg-white/10 hover:border-orange/30 hover:scale-[1.02] transition-all duration-500 group opacity-0 text-center"
       style={{ animation: `scale-fade-in 0.5s ease-out ${300 + index * 150}ms forwards` }}
     >
-      <div className="flex flex-col items-center justify-center text-center gap-3">
-        <div className="w-11 h-11 rounded-xl bg-orange/15 flex items-center justify-center group-hover:bg-orange/25 transition-colors">
-          <IconComponent className="h-5 w-5 text-orange" />
-        </div>
-        <div className="min-w-0 w-full text-center">
-          <p className="text-2xl font-bold text-orange text-center truncate">{item.label}</p>
-          <p className="text-sm font-medium text-white/50 text-center truncate">{item.desc}</p>
-        </div>
+      <div className="w-11 h-11 shrink-0 rounded-xl bg-orange/15 flex items-center justify-center group-hover:bg-orange/25 transition-colors">
+        <IconComponent className="h-5 w-5 text-orange" />
+      </div>
+      <div className="w-full min-w-0 px-4 text-center">
+        <p className="w-full text-center text-2xl font-bold text-orange leading-tight">{item.label}</p>
+        <p className="w-full text-center text-sm font-medium text-white/50 leading-tight">{item.desc}</p>
       </div>
     </div>
   );
