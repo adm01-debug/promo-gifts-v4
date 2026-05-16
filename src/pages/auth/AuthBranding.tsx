@@ -326,11 +326,11 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
         >
           <div style={{ transform: `scale(${r.scale}) rotate(${r.rotation}deg)` }}>
             <Rocket
-              className="-rotate-45 text-orange"
+              className="-rotate-45 text-blue-400"
               style={{
                 width: r.size,
                 height: r.size,
-                filter: "drop-shadow(0 0 15px rgba(251, 146, 60, 0.7))",
+                filter: "drop-shadow(0 0 15px rgba(59, 130, 246, 0.7))",
               }}
             />
             {/* Flame Trail */}
@@ -340,7 +340,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
                 top: `${r.size * 0.8}px`,
                 width: `${r.size * 0.4}px`,
                 height: `${r.size * 1.5}px`,
-                background: "linear-gradient(to bottom, #FB923C, #FBBF24, transparent)",
+                background: "linear-gradient(to bottom, #3b82f6, #60a5fa, transparent)",
                 filter: "blur(4px)",
                 zIndex: -1,
               }}
