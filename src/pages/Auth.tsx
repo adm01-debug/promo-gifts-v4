@@ -318,14 +318,12 @@ export default function Auth() {
 
   return (
     <main
-      className="relative flex flex-col lg:flex-row min-h-screen overflow-hidden bg-[#0A0D14]"
+      className="relative flex flex-col lg:flex-row min-h-screen overflow-hidden bg-[#0A0E1A]"
       role="main"
       aria-label="Autenticação"
     >
-      {/* Fundo unificado azul-escuro com estrelas cobrindo TODA a tela */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-        <Starfield />
-      </div>
+      {/* Fundo unificado azul-noite saturado com cena espacial coordenada */}
+      <SpaceScene />
 
       <PageSEO
         title="Login"
