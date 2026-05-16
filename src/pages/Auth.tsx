@@ -73,6 +73,12 @@ export default function Auth() {
   // Fallback social → email/senha: mensagem amigável quando OAuth falha.
   const [socialError, setSocialError] = useState<OAuthErrorCopy | null>(null);
   const emailInputRef = useRef<HTMLInputElement | null>(null);
+  // Função `retry` publicada pelo SocialLoginButtons para reexecutar o Google login.
+  const googleRetryRef = useRef<(() => void) | null>(null);
+  const handleRetryGoogle = useCallback(() => {
+    setSocialError(null);
+    googleRetryRef.current?.();
+  }, []);
 
   // Captura `?error=` vindo do SSOCallbackPage (Google falhou) e exibe o
   // banner de fallback com mensagem descritiva. Limpa o param da URL.
