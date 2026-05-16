@@ -132,9 +132,10 @@ export default function Auth() {
     [toast, focusEmailFallback],
   );
 
-  // Fetch IP and geolocation via edge function (works in preview + production)
+  // Fetch IP, geolocation and backend status
   useEffect(() => {
-    const loadIPInfo = async () => {
+    const loadInfo = async () => {
+      // 1. IP Info
       try {
         const { data, error } = await supabase.functions.invoke('get-visitor-info');
         if (!error && data) {
@@ -144,14 +145,8 @@ export default function Auth() {
       } catch {
         // silent fail
       }
-    };
-    loadIPInfo();
-  }, []);
 
-  // Real-time External Supabase Check
-  useEffect(() => {
-    const checkBackends = async () => {
-      // 1. Principal (Directly from env)
+      // 2. Principal Backend (Directly from env)
       const principalUrl = import.meta.env.VITE_SUPABASE_URL;
       const isExternalPrincipal = principalUrl && !principalUrl.includes('lovable.app') && !principalUrl.includes('supabase.co/auth/v1');
       
@@ -165,43 +160,31 @@ export default function Auth() {
         }
       }));
 
-      // 2. External (Gestão de Produtos) & CRM via bridge creds_health op
+      // 3. External (Gestão de Produtos) via bridge ping op
       try {
-        // We use a dummy bridge call with a specific operation if it existed, 
-        // but here we'll just check if we can reach the bridge and get health
         const { data, error } = await supabase.functions.invoke('external-db-bridge', {
           body: { operation: 'ping' }
         });
 
-        if (!error && data?.success) {
-          // Success means the bridge is up and credentials for external DB are working
+        if (!error && data?.ok) {
           setDbStatus(prev => ({
             ...prev,
             external: { 
-              ok: true, 
+              ok: data.config?.has_url && data.config?.has_key, 
               url: data.config?.url || 'Configurado', 
-              source: 'Externo (Bridge)', 
+              source: data.config?.is_external ? 'Externo' : 'Cloud', 
               loading: false 
             }
           }));
         } else {
-          setDbStatus(prev => ({
-            ...prev,
-            external: { ok: false, loading: false }
-          }));
+          setDbStatus(prev => ({ ...prev, external: { ok: false, loading: false } }));
         }
       } catch (err) {
-        setDbStatus(prev => ({
-          ...prev,
-          external: { ok: false, loading: false }
-        }));
+        setDbStatus(prev => ({ ...prev, external: { ok: false, loading: false } }));
       }
-
-      // Check CRM separately if needed, but for now let's focus on showing the status
-      // We'll set it to configured if we know the secrets exist in the bridge context
     };
-
-    checkBackends();
+    
+    loadInfo();
   }, []);
 
   // Redirect if already logged in (only on initial load)
