@@ -8,7 +8,7 @@ import astronautSvg from "@/assets/astronaut.svg";
 
 interface RocketData { id: number; left: number; size: number; duration: number; rotation: number; scale: number; }
 interface PlanetData { id: number; left: number; top: number; size: number; duration: number; type: number; delay: number; }
-interface AstronautData { id: number; left: number; top: number; size: number; rotation: number; zIndex: number; depth: number; }
+interface AstronautData { id: number; left: number; top: number; size: number; rotation: number; zIndex: number; depth: number; initialAngle: number; }
 interface StarData { id: number; size: number; top: number; left: number; breathingDur: number; breathingDelay: number; driftDur: number; }
 
 export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) => {
@@ -16,29 +16,39 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
   const [planets, setPlanets] = useState<PlanetData[]>([]);
   const [astronauts, setAstronauts] = useState<AstronautData[]>([]);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [scrollY, setScrollY] = useState(0);
   
-  // Parâmetros controláveis
+  // Parâmetros controláveis expandidos
   const [config, setConfig] = useState({
     astroCount: 4,
-    speed: 0.2, // 0.1 a 1.0
-    spacing: 1.0, // Multiplicador de distância
+    speed: 0.2, 
+    spacing: 1.0,
+    parallaxIntensity: 1.0,
+    depthProfile: 1.0, // Multiplicador de escala/opacidade
     showControls: false
   });
 
   const nextIdRef = useRef(0);
   const starsRef = useRef<StarData[]>([]);
 
-  // Mouse parallax tracker
+  // Mouse e Scroll parallax tracker
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       setMousePos({
-        x: (e.clientX / window.innerWidth - 0.5) * 20,
-        y: (e.clientY / window.innerHeight - 0.5) * 20
+        x: (e.clientX / window.innerWidth - 0.5) * 20 * config.parallaxIntensity,
+        y: (e.clientY / window.innerHeight - 0.5) * 20 * config.parallaxIntensity
       });
     };
+    const handleScroll = () => {
+      setScrollY(window.scrollY * 0.1 * config.parallaxIntensity);
+    };
     window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, []);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [config.parallaxIntensity]);
   
   if (starsRef.current.length === 0) {
     starsRef.current = [...Array(100)].map((_, i) => ({
@@ -83,20 +93,19 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
       delay: Math.random() * 5,
     })));
     
-    // Layout base para astronautas escalável
+    // Layout base para astronautas com ângulos iniciais diferentes para órbita
     const baseLayout = [
-      { left: 15, top: 20, depth: 0.3, rotation: -8, zIndex: 5 },  // Fundo
-      { left: 75, top: 30, depth: 0.5, rotation: 12, zIndex: 10 }, // Meio
-      { left: 25, top: 65, depth: 0.8, rotation: -15, zIndex: 15 },// Frente
-      { left: 65, top: 70, depth: 1.2, rotation: 20, zIndex: 20 }, // Bem frente
-      { left: 45, top: 45, depth: 0.6, rotation: 45, zIndex: 12 }, // Extra 1
-      { left: 10, top: 85, depth: 0.4, rotation: -30, zIndex: 8 },  // Extra 2
+      { left: 15, top: 20, depth: 0.3, rotation: -8, zIndex: 5, initialAngle: 0 },
+      { left: 75, top: 30, depth: 0.5, rotation: 12, zIndex: 10, initialAngle: 90 },
+      { left: 25, top: 65, depth: 0.8, rotation: -15, zIndex: 15, initialAngle: 180 },
+      { left: 65, top: 70, depth: 1.2, rotation: 20, zIndex: 20, initialAngle: 270 },
+      { left: 45, top: 45, depth: 0.6, rotation: 45, zIndex: 12, initialAngle: 45 },
+      { left: 10, top: 85, depth: 0.4, rotation: -30, zIndex: 8, initialAngle: 135 },
     ];
 
     setAstronauts(baseLayout.slice(0, config.astroCount).map((a, i) => ({
       id: i,
       ...a,
-      // Aplicar multiplicador de espaçamento
       left: 50 + (a.left - 50) * config.spacing,
       top: 50 + (a.top - 50) * config.spacing,
     })));
@@ -155,22 +164,21 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
         />
       ))}
 
-      {/* Floating Astronauts — Sincronizados, Menores e com Parallax */}
+      {/* Floating Astronauts — Sincronizados, Menores e com Parallax Mouse + Scroll */}
       {astronauts.map((a, i) => {
-        // Tamanhos reduzidos e escala baseada na profundidade (0.3 a 1.2)
-        const baseSize = 40; 
-        const size = baseSize * a.depth;
+        // Tamanhos reduzidos e escala baseada na profundidade e perfil de controle
+        const baseSize = 35; 
+        const size = baseSize * a.depth * config.depthProfile;
         
-        // Opacidade reduzida para "escurecer" e destacar menos
-        const opacity = 0.15 + (a.depth * 0.25);
+        // Opacidade baseada no perfil e profundidade
+        const opacity = (0.12 + (a.depth * 0.2)) * config.depthProfile;
         
-        // Cálculo do Parallax baseado no mouse e profundidade
+        // Parallax Mouse + Scroll baseado na profundidade
         const translateX = mousePos.x * a.depth;
-        const translateY = mousePos.y * a.depth;
+        const translateY = (mousePos.y + scrollY) * a.depth;
 
-        // Movimento circular unificado (mesma fase de respiração/flutuação)
-        // 14 segundos para sincronizar com as estrelas, ajustado pelo multiplicador de velocidade
-        const cycleDuration = 14 / config.speed;
+        // Movimento circular (órbita suave) — Duração fixa p/ sincronia
+        const orbitDuration = 18 / config.speed;
 
         return (
           <div
@@ -181,15 +189,15 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
               top: `${a.top}%`,
               opacity,
               zIndex: a.zIndex,
-              // Parallax + Movimento Circular Sincronizado
               transform: `translate3d(${translateX}px, ${translateY}px, 0)`,
               willChange: "transform, opacity",
             }}
           >
             <div
               style={{
-                animation: `synchronizedCircle ${cycleDuration}s linear infinite`,
-                filter: `brightness(0.6) drop-shadow(0 0 ${size / 10}px rgba(6, 135, 255, 0.15))`,
+                // Usamos animação CSS para órbita suave e constante
+                animation: `orbitSmooth ${orbitDuration}s linear infinite`,
+                filter: `brightness(0.55) drop-shadow(0 0 ${size / 12}px rgba(6, 135, 255, 0.12))`,
               }}
             >
               <img
@@ -206,22 +214,23 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
         );
       })}
 
-      {/* Interface de Controles em Tempo Real (Apenas para Dev/Preview) */}
+      {/* Interface de Controles em Tempo Real */}
       <div className="absolute top-4 left-4 z-50 pointer-events-auto">
         <button 
           onClick={() => setConfig(prev => ({ ...prev, showControls: !prev.showControls }))}
-          className="p-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-lg border border-white/20 text-white/40 hover:text-white transition-all group"
+          className="p-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-lg border border-white/20 text-white/40 hover:text-white transition-all group shadow-xl"
         >
           <SlidersHorizontal className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
         </button>
 
         {config.showControls && (
-          <div className="mt-3 p-5 bg-black/80 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl w-64 animate-motion-pop">
+          <div className="mt-3 p-5 bg-black/85 backdrop-blur-xl rounded-2xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] w-72 animate-motion-pop overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-orange" />
             <h4 className="text-white font-bold mb-4 flex items-center gap-2">
-              <Rocket className="w-4 h-4 text-orange" /> Parâmetros de Cena
+              <Rocket className="w-4 h-4 text-orange" /> Parâmetros do Cosmos
             </h4>
             
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
               <div>
                 <div className="flex justify-between text-[10px] text-white/50 mb-1 uppercase tracking-wider">
                   <span>Astronautas</span>
@@ -231,20 +240,20 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
                   type="range" min="1" max="6" step="1"
                   value={config.astroCount}
                   onChange={(e) => setConfig(prev => ({ ...prev, astroCount: parseInt(e.target.value) }))}
-                  className="w-full accent-orange"
+                  className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-orange"
                 />
               </div>
 
               <div>
                 <div className="flex justify-between text-[10px] text-white/50 mb-1 uppercase tracking-wider">
-                  <span>Velocidade</span>
+                  <span>Órbita (Velocidade)</span>
                   <span>{config.speed.toFixed(1)}x</span>
                 </div>
                 <input 
                   type="range" min="0.1" max="2.0" step="0.1"
                   value={config.speed}
                   onChange={(e) => setConfig(prev => ({ ...prev, speed: parseFloat(e.target.value) }))}
-                  className="w-full accent-orange"
+                  className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-orange"
                 />
               </div>
 
@@ -257,10 +266,40 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
                   type="range" min="0.5" max="1.5" step="0.1"
                   value={config.spacing}
                   onChange={(e) => setConfig(prev => ({ ...prev, spacing: parseFloat(e.target.value) }))}
-                  className="w-full accent-orange"
+                  className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-orange"
+                />
+              </div>
+
+              <div className="pt-2 border-t border-white/5">
+                <div className="flex justify-between text-[10px] text-white/50 mb-1 uppercase tracking-wider">
+                  <span>Parallax (Mouse+Scroll)</span>
+                  <span>{config.parallaxIntensity.toFixed(1)}x</span>
+                </div>
+                <input 
+                  type="range" min="0" max="3.0" step="0.1"
+                  value={config.parallaxIntensity}
+                  onChange={(e) => setConfig(prev => ({ ...prev, parallaxIntensity: parseFloat(e.target.value) }))}
+                  className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-orange"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between text-[10px] text-white/50 mb-1 uppercase tracking-wider">
+                  <span>Profundidade (Scale/Opacity)</span>
+                  <span>{config.depthProfile.toFixed(1)}x</span>
+                </div>
+                <input 
+                  type="range" min="0.2" max="2.0" step="0.1"
+                  value={config.depthProfile}
+                  onChange={(e) => setConfig(prev => ({ ...prev, depthProfile: parseFloat(e.target.value) }))}
+                  className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-orange"
                 />
               </div>
             </div>
+            
+            <p className="mt-4 text-[9px] text-white/30 italic text-center">
+              As configurações são aplicadas em tempo real à cena.
+            </p>
           </div>
         )}
       </div>
