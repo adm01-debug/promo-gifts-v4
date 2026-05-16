@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { PageSEO } from '@/components/seo/PageSEO';
+import { LegalFooter } from '@/components/auth/LegalFooter';
 
 const resetPasswordSchema = z
   .object({
