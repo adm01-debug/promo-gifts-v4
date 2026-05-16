@@ -7,7 +7,7 @@ interface AppLogoProps {
   iconClassName?: string;
   textClassName?: string;
   showText?: boolean;
-  variant?: 'light' | 'dark' | 'orange';
+  variant?: 'light' | 'dark' | 'brand';
 }
 
 export function AppLogo({ 
@@ -17,8 +17,8 @@ export function AppLogo({
   showText = true,
   variant = 'orange'
 }: AppLogoProps) {
-  const iconBg = variant === 'orange' ? 'bg-primary' : variant === 'light' ? 'bg-white' : 'bg-foreground';
-  const iconColor = variant === 'orange' ? 'text-primary-foreground' : variant === 'light' ? 'text-foreground' : 'text-background';
+  const iconBg = variant === 'brand' ? 'bg-primary' : variant === 'light' ? 'bg-white' : 'bg-foreground';
+  const iconColor = variant === 'brand' ? 'text-white' : variant === 'light' ? 'text-foreground' : 'text-background';
   const textColor = variant === 'light' ? 'text-white' : 'text-foreground';
 
   return (
@@ -35,7 +35,7 @@ export function AppLogo({
           <span className={cn("font-display text-xl font-bold leading-none tracking-tight", textColor, textClassName)}>
             Promo Gifts
           </span>
-          <span className={cn("text-[10px] font-semibold uppercase tracking-widest opacity-70", variant === 'light' ? 'text-orange' : 'text-muted-foreground')}>
+          <span className={cn("text-[10px] font-semibold uppercase tracking-widest opacity-70", variant === 'light' ? 'text-white/80' : 'text-muted-foreground')}>
             Plataforma de Vendas
           </span>
         </div>
