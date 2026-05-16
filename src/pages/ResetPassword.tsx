@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { PageSEO } from '@/components/seo/PageSEO';
+import { LegalFooter } from '@/components/auth/LegalFooter';
 
 const resetPasswordSchema = z
   .object({
@@ -280,6 +281,7 @@ export default function ResetPassword() {
             </form>
           </CardContent>
         </Card>
+        <LegalFooter withDivider={false} className="mt-6" />
       </div>
     </div>
   );
