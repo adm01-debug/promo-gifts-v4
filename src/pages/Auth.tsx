@@ -168,12 +168,16 @@ export default function Auth() {
 
       await logLoginAttempt(email, userId, true);
 
+      setLoginStatus('success');
       toast({
         title: 'Bem-vindo!',
         description: 'Login realizado com sucesso',
       });
 
-      navigate(resolveRedirectTargetCb(), { replace: true });
+      // Aguarda o feedback visual de sucesso antes de navegar
+      setTimeout(() => {
+        navigate(resolveRedirectTargetCb(), { replace: true });
+      }, 600);
       return true;
     } catch (error) {
       console.error('Validation error:', error);
