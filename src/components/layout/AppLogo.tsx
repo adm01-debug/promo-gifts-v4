@@ -15,7 +15,7 @@ export function AppLogo({
   iconClassName, 
   textClassName, 
   showText = true,
-  variant = 'orange'
+  variant = 'brand'
 }: AppLogoProps) {
   const iconBg = variant === 'brand' ? 'bg-primary' : variant === 'light' ? 'bg-white' : 'bg-foreground';
   const iconColor = variant === 'brand' ? 'text-white' : variant === 'light' ? 'text-foreground' : 'text-background';
