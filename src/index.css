@@ -38,14 +38,19 @@
   to { transform: rotate(360deg) translateX(var(--orbit-radius, 28px)) rotate(-360deg); }
 }
 
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
 @keyframes breathingStar {
-  0%, 100% { opacity: 0.3; transform: scale(0.8); }
-  50% { opacity: 1; transform: scale(1.2); }
+  0%, 100% { opacity: 0.3; transform: scale(0.85); filter: blur(0.5px); }
+  50% { opacity: 1; transform: scale(1.15); filter: blur(0px); }
 }
 
 @keyframes starDrift {
-  from { transform: translate3d(0, 0, 0); }
-  to { transform: translate3d(20px, 20px, 0); }
+  from { transform: translate3d(-10px, -10px, 0); }
+  to { transform: translate3d(10px, 10px, 0); }
 }
 
 @keyframes rocketRising {
