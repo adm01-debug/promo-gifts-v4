@@ -309,7 +309,7 @@ const MockupGridCard = memo(({ mockup, isCompareSelected, onToggleCompare, onOpe
         <Tooltip><TooltipTrigger asChild><Button size="icon" aria-label="Regenerar" variant="secondary" className="h-8 w-8 shadow-md" onClick={() => onLoadFromHistory(mockup)}><RotateCcw className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Regenerar</TooltipContent></Tooltip>
         <ShareMenu mockupUrl={mockup.mockup_url} productName={mockup.product_name} techniqueName={mockup.technique_name} className="h-8 w-8 p-0 shadow-md [&>svg]:h-4 [&>svg]:w-4" />
         <Tooltip><TooltipTrigger asChild><Button size="icon" aria-label="Download" variant="secondary" className="h-8 w-8 shadow-md" onClick={() => onDownload(mockup.layout_url || mockup.mockup_url)}><Download className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Baixar</TooltipContent></Tooltip>
-        <Tooltip><TooltipTrigger asChild><Button size="icon" aria-label="Excluir" variant="destructive" className="h-8 w-8 shadow-md" onClick={() => onDelete(mockup.id)}><Trash2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Excluir</TooltipContent></Tooltip>
+        <Tooltip><TooltipTrigger asChild><Button size="icon" aria-label="Excluir" data-testid="delete-mockup-button" variant="destructive" className="h-8 w-8 shadow-md" onClick={() => onDelete(mockup.id)}><Trash2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Excluir</TooltipContent></Tooltip>
       </div>
     </div>
   );
