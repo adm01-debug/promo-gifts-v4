@@ -69,8 +69,9 @@ test.describe("Auth UI Baseline", () => {
     await page.fill('[data-testid="login-password-input"]', 'password123');
     await page.click('[data-testid="login-submit"]');
     
-    // Aguarda o estado de loading no botão
-    await expect(page.locator('[data-testid="login-submit"]')).toHaveAttribute('data-loading', 'true');
+    // Aguarda o estado de loading no botão (fica desabilitado e com texto de loading)
+    await expect(page.locator('[data-testid="login-submit"]')).toBeDisabled();
+    await expect(page.locator('[data-testid="login-submit"]')).toContainText('Entrando...');
     
     await expect(page).toHaveScreenshot("auth-login-loading-state.png", {
       maxDiffPixelRatio: 0.01
