@@ -4,6 +4,11 @@ import { useState, useEffect, useRef, forwardRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { authDebug, authDebugError } from '@/lib/auth/auth-debug';
+import {
+  markOAuthPending,
+  clearOAuthPending,
+  readOAuthPending,
+} from '@/lib/auth/oauth-pending';
 
 /** Mapeia erros conhecidos do Supabase OAuth para mensagens PT-BR amigáveis. */
 function mapOAuthError(raw: string): string {
