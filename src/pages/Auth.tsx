@@ -17,6 +17,7 @@ import {
   Globe,
   Wifi,
   AlertTriangle,
+  RotateCw,
 } from 'lucide-react';
 import { AuthBrandingPanel, Starfield } from './auth/AuthBranding';
 import { Button } from '@/components/ui/button';
