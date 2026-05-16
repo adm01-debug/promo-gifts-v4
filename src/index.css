@@ -230,11 +230,11 @@ html[data-scroll-locked] body {
     --popover-foreground: 24 10% 98%;
 
     /* Brand — sobe luminância para "neon" sobre fundos escuros */
-    --primary: 24 100% 58%;
-    --primary-hover: 24 100% 64%;
-    --primary-active: 24 100% 70%;
-    --primary-glow: 24 100% 72%;
-    --primary-foreground: 24 100% 6%;
+    --primary: 217 91% 60%;
+    --primary-hover: 217 91% 66%;
+    --primary-active: 217 91% 72%;
+    --primary-glow: 217 91% 74%;
+    --primary-foreground: 217 91% 6%;
 
     --orange: 24 100% 58%;
     --orange-hover: 24 100% 64%;
