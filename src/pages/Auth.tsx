@@ -561,8 +561,7 @@ export default function Auth() {
                     <Button
                       type="submit"
                       data-testid="login-submit"
-                      variant="orange"
-                      className="h-12 w-full text-base font-semibold shadow-lg shadow-orange/25 transition-all duration-300 hover:shadow-xl hover:shadow-orange/30"
+                      className="h-12 w-full text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/30 border border-white/20"
                         disabled={isSubmitting || loginStatus === 'success'}
                       >
                         {isSubmitting ? (
