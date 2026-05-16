@@ -6,6 +6,7 @@ import { PageSEO } from '@/components/seo/PageSEO';
 import { logger } from '@/lib/logger';
 import { useAuth } from '@/contexts/AuthContext';
 import { authDebug, authDebugError, authDebugUrl, summarizeSession } from '@/lib/auth/auth-debug';
+import { consumePostLoginRedirect } from '@/lib/auth/post-login-redirect';
 
 /**
  * Callback do login social via Supabase Auth.
@@ -65,7 +66,7 @@ export default function SSOCallbackPage() {
       authDebug('sso-callback', 'goHome — calling refreshSession()');
       try {
         await refreshSession();
-        authDebug('sso-callback', 'refreshSession ok, navigating to /');
+        authDebug('sso-callback', 'refreshSession ok');
       } catch (e) {
         authDebugError('sso-callback', 'refreshSession failed', e);
         logger.warn('[sso-callback] refreshSession failed', {
@@ -73,7 +74,9 @@ export default function SSOCallbackPage() {
         });
       }
       if (cancelled) return;
-      navigate('/', { replace: true });
+      const target = consumePostLoginRedirect('/');
+      authDebug('sso-callback', 'navigating to post-login target', { target });
+      navigate(target, { replace: true });
     };
 
     const goLogin = (reason: string) => {

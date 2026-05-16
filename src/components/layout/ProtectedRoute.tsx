@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { EnhancedErrorBoundary } from '@/components/errors/EnhancedErrorBoundary';
 import { EmptyState } from '@/components/common/EmptyState';
 import { checkAccess, type AccessPolicy } from '@/lib/access/access-policy';
+import { savePostLoginRedirect } from '@/lib/auth/post-login-redirect';
 
 interface ProtectedRouteProps extends AccessPolicy {
   children?: ReactNode;
@@ -31,6 +32,8 @@ export function ProtectedRoute({
   }
 
   if (!user) {
+    // Salva destino pós-login (sobrevive ao round-trip OAuth)
+    savePostLoginRedirect(`${location.pathname}${location.search}${location.hash}`);
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

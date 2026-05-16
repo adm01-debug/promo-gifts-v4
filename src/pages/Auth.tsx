@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { PageSEO } from '@/components/seo/PageSEO';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { consumePostLoginRedirect } from '@/lib/auth/post-login-redirect';
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -37,9 +38,29 @@ type LoginForm = LoginFormData;
 export default function Auth() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const { toast } = useToast();
   const { user, isLoading: authLoading, signIn, signOut } = useAuth();
   const { validateIPForAuthenticatedUser, logLoginAttempt } = useIPValidation();
+
+  /**
+   * Destino pós-login. Precedência:
+   *  1. `location.state.from` (vindo do ProtectedRoute na mesma aba)
+   *  2. `?redirect=/path` na URL (deep-link manual)
+   *  3. `sessionStorage` (sobrevive ao round-trip OAuth)
+   *  4. fallback `/`
+   * Consumido aqui para que login por e-mail/senha também respeite o destino.
+   */
+  const resolveRedirectTarget = useCallback((): string => {
+    const fromState = (location.state as { from?: { pathname?: string; search?: string; hash?: string } } | null)
+      ?.from;
+    if (fromState?.pathname) {
+      const path = `${fromState.pathname}${fromState.search ?? ''}${fromState.hash ?? ''}`;
+      return consumePostLoginRedirect(path);
+    }
+    const queryRedirect = searchParams.get('redirect');
+    return consumePostLoginRedirect(queryRedirect ?? '/');
+  }, [location.state, searchParams]);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -92,9 +113,9 @@ export default function Auth() {
   // Redirect if already logged in (only on initial load)
   useEffect(() => {
     if (user && !authLoading && !isSubmitting) {
-      navigate('/', { replace: true });
+      navigate(resolveRedirectTarget(), { replace: true });
     }
-  }, [user, authLoading, navigate, isSubmitting]);
+  }, [user, authLoading, navigate, isSubmitting, resolveRedirectTarget]);
 
   const loginForm = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -130,11 +151,11 @@ export default function Auth() {
         description: 'Login realizado com sucesso',
       });
 
-      navigate('/', { replace: true });
+      navigate(resolveRedirectTarget(), { replace: true });
       return true;
     } catch (error) {
       console.error('Validation error:', error);
-      navigate('/', { replace: true }); // Fail-open
+      navigate(resolveRedirectTarget(), { replace: true }); // Fail-open
       return true;
     }
   };
@@ -167,7 +188,7 @@ export default function Auth() {
       if (userId) {
         await validateAndRedirect(userId, data.email);
       } else {
-        navigate('/');
+        navigate(resolveRedirectTarget());
       }
     } catch {
       toast({
