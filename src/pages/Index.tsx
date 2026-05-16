@@ -21,7 +21,7 @@ export default function Index() {
   const structuredData = useMemo(() => ({
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    "name": catalog.searchQuery ? `Resultados para "${catalog.searchQuery}" - Catálogo` : "Catálogo de Brindes Promocionais",
+    "name": catalog.searchQuery ? `Resultados para "${catalog.searchQuery}" - Catálogo` : "Catálogo de Produtos",
     "description": catalog.searchQuery 
       ? `Encontramos ${catalog.filteredProducts.length} brindes promocionais para sua busca "${catalog.searchQuery}".`
       : "Explore nosso catálogo com mais de 15.000 brindes personalizáveis. Filtre por categoria, material, cor e preço.",
@@ -43,8 +43,8 @@ export default function Index() {
       <PageSEO
         title={catalog.searchQuery ? `Busca: ${catalog.searchQuery}` : "Catálogo de Produtos"}
         description={catalog.searchQuery 
-          ? `Resultados de busca para ${catalog.searchQuery} em Brindes Promocionais. Melhores preços e variedades.`
-          : "Explore nosso catálogo com mais de 15.000 brindes promocionais. Filtre por categoria, cor e preço."
+          ? `Resultados de busca para ${catalog.searchQuery} em Produtos. Melhores preços e variedades.`
+          : "Explore nosso catálogo com mais de 15.000 produtos. Filtre por categoria, cor e preço."
         }
         path="/"
         jsonLd={structuredData}

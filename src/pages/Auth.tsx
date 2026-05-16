@@ -328,13 +328,13 @@ export default function Auth() {
 
       <PageSEO
         title="Login"
-        description="Acesse a plataforma Promo Gifts. Faça login para gerenciar seus orçamentos e catálogo."
+        description="Acesse a Plataforma de Produtos. Faça login para gerenciar seus orçamentos e catálogo."
         path="/login"
         jsonLd={{
           '@context': 'https://schema.org',
           '@type': 'WebPage',
-          name: 'Login — Promo Gifts',
-          description: 'Página de autenticação da plataforma Promo Gifts.',
+          name: 'Login — Plataforma de Produtos',
+          description: 'Página de autenticação da Plataforma de Produtos.',
           url: 'https://criar-together-now.lovable.app/login',
         }}
       />

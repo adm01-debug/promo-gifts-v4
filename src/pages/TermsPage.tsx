@@ -23,7 +23,7 @@ export default function TermsPage() {
           <div className="space-y-4">
             <h2 className="text-2xl font-semibold">1. Aceitação dos Termos</h2>
             <p>
-              Ao acessar e utilizar a <strong>Plataforma de Produtos Promo Gifts</strong>, você concorda em cumprir e estar vinculado aos seguintes Termos de Uso. Este sistema é propriedade intelectual exclusiva da Brasil Marcas.
+              Ao acessar e utilizar a <strong>Plataforma de Produtos</strong>, você concorda em cumprir e estar vinculado aos seguintes Termos de Uso. Este sistema é propriedade intelectual exclusiva da Brasil Marcas.
             </p>
           </div>
 
@@ -44,13 +44,13 @@ export default function TermsPage() {
           <div className="space-y-4">
             <h2 className="text-2xl font-semibold">4. Limitação de Responsabilidade</h2>
             <p>
-              A Promo Gifts envida esforços para manter a precisão das informações, porém não se responsabiliza por variações súbitas de estoque ou preços fornecidos por terceiros que ainda não tenham sido sincronizados no sistema.
+              A Plataforma de Produtos envida esforços para manter a precisão das informações, porém não se responsabiliza por variações súbitas de estoque ou preços fornecidos por terceiros que ainda não tenham sido sincronizados no sistema.
             </p>
           </div>
         </section>
 
         <footer className="border-t pt-8 text-center text-sm text-muted-foreground">
-          <p>© 2026 Promo Gifts — Todos os direitos reservados.</p>
+          <p>© 2026 Plataforma de Produtos — Todos os direitos reservados.</p>
         </footer>
       </div>
     </div>

@@ -42,7 +42,7 @@ export function AppLogo({
       {showText && (
         <div className="flex flex-col">
           <span className={cn("font-display text-xl font-bold leading-none tracking-tight", textColor, textClassName)}>
-            Promo Gifts
+            Plataforma de Produtos
           </span>
           <span className={cn("text-[10px] font-semibold uppercase tracking-widest opacity-70", variant === 'light' ? 'text-white/80' : 'text-muted-foreground')}>
             Plataforma de Produtos
