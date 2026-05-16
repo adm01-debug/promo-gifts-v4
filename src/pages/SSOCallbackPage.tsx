@@ -6,6 +6,7 @@ import { PageSEO } from '@/components/seo/PageSEO';
 import { logger } from '@/lib/logger';
 import { useAuth } from '@/contexts/AuthContext';
 import { authDebug, authDebugError, authDebugUrl, summarizeSession } from '@/lib/auth/auth-debug';
+import { consumePostLoginRedirect } from '@/lib/auth/post-login-redirect';
 
 /**
  * Callback do login social via Supabase Auth.
