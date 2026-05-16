@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { Building2, CalendarClock, GitCompare } from "lucide-react";
+import { Building2, CalendarClock, GitCompare, Copy, Check } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -24,6 +25,18 @@ export function ProductInfoBar({
   hasFutureStock = true,
 }: ProductInfoBarProps) {
   const navigate = useNavigate();
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast(); // Need to import this or just use navigator
+
+  const handleCopySKU = async () => {
+    try {
+      await navigator.clipboard.writeText(sku);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // silent fail
+    }
+  };
 
   const handleSupplierClick = () => {
     if (supplierId) {
@@ -33,12 +46,27 @@ export function ProductInfoBar({
   return (
     <div className="flex items-center gap-3 flex-wrap">
       {/* SKU */}
-      <Badge 
-        variant="secondary" 
-        className="font-mono text-xs px-3 py-1.5 rounded-full bg-muted hover:bg-muted"
-      >
-        SKU: {sku}
-      </Badge>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Badge 
+            variant="secondary" 
+            className="font-mono text-xs px-3 py-1.5 rounded-full bg-muted hover:bg-muted/80 cursor-pointer transition-colors group/sku"
+            onClick={handleCopySKU}
+          >
+            SKU: {sku}
+            <div className="ml-2 inline-flex items-center">
+              {copied ? (
+                <Check className="h-3 w-3 text-success animate-in zoom-in duration-300" />
+              ) : (
+                <Copy className="h-3 w-3 text-muted-foreground opacity-0 group-hover/sku:opacity-100 transition-opacity" />
+              )}
+            </div>
+          </Badge>
+        </TooltipTrigger>
+        <TooltipContent>
+          {copied ? 'Copiado!' : 'Clique para copiar o SKU'}
+        </TooltipContent>
+      </Tooltip>
 
       {/* Fornecedor - Clicável, abre Super Filtro com esse fornecedor */}
       <Tooltip>
