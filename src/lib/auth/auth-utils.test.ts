@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { getGreeting, getHighestRole, isSupervisorOrAbove, getRandomGreeting } from './auth-utils';
+import { getGreeting, getHighestRole, isSupervisorOrAbove, getRandomGreeting, FLOW_GREETINGS } from './auth-utils';
 import { type AppRole } from '@/contexts/AuthContext';
 
 describe('auth-utils', () => {
