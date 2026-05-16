@@ -17,7 +17,7 @@ vi.mock('lucide-react', () => ({
 // Skipado em fix(test): eliminate 88 test failures. Origem: revert 06-07/mai/2026.
 // Fixar em PR separado quando ownership for retomada.
 
-describe.skip('ContinuousRockets Component', () => {
+describe('ContinuousRockets Component', () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
