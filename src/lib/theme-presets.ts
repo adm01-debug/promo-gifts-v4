@@ -865,7 +865,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     description: 'Azul-petróleo do fundo do mar',
     h: 182,
     s: 90,
-    l: 42,
+    l: 35, // Reduzido de 42 para 35 para contraste WCAG com texto branco
     gh: 190,
     sh: 200,
     ss: 75,
