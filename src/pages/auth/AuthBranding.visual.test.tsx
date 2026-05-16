@@ -36,14 +36,14 @@ describe('AuthBrandingPanel Visual Classes', () => {
       </BrowserRouter>
     );
     
-    // Find the feature cards container (grid)
     const grid = container.querySelector('.grid-cols-2');
     expect(grid).toBeInTheDocument();
     
-    // Check for responsive width and margin classes
     const classes = grid?.className || '';
+    expect(classes).toContain('w-[95%]');
     expect(classes).toContain('lg:w-[105%]');
     expect(classes).toContain('xl:w-[110%]');
+    expect(classes).toContain('-mx-[2.5%]');
     expect(classes).toContain('lg:-mx-[2.5%]');
     expect(classes).toContain('xl:-mx-[5%]');
   });
@@ -56,7 +56,8 @@ describe('AuthBrandingPanel Visual Classes', () => {
     );
     
     const grid = container.querySelector('.grid-cols-2');
-    expect(grid?.className).toContain('gap-5');
+    expect(grid?.className).toContain('gap-4');
+    expect(grid?.className).toContain('sm:gap-5');
     
     const cards = container.querySelectorAll('.rounded-2xl');
     cards.forEach(card => {
@@ -65,7 +66,7 @@ describe('AuthBrandingPanel Visual Classes', () => {
     });
   });
 
-  it('is hidden on small screens by default', () => {
+  it('is visible on all screens with responsive width', () => {
     const { container } = render(
       <BrowserRouter>
         <AuthBrandingPanel />
@@ -73,7 +74,10 @@ describe('AuthBrandingPanel Visual Classes', () => {
     );
     
     const mainDiv = container.firstChild as HTMLElement;
-    expect(mainDiv.className).toContain('hidden');
-    expect(mainDiv.className).toContain('lg:flex');
+    expect(mainDiv.className).toContain('flex');
+    expect(mainDiv.className).not.toContain('hidden');
+    expect(mainDiv.className).toContain('w-full');
+    expect(mainDiv.className).toContain('lg:w-1/2');
   });
+
 });
