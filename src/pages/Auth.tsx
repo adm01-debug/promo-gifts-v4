@@ -606,7 +606,7 @@ export default function Auth() {
               style={{ animation: 'scale-fade-in 0.5s ease-out 600ms forwards' }}
             >
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Globe className="h-3.5 w-3.5 text-orange" />
+                <Globe className="h-3.5 w-3.5 text-blue-500" />
                 <span className="font-mono">{currentIP}</span>
               </div>
               {geoLocation && (
