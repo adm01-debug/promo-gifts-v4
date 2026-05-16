@@ -291,7 +291,7 @@ export default function Auth() {
         role="main"
         aria-label="Carregando autenticação"
       >
-        <Loader2 className="h-8 w-8 animate-spin text-orange" />
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
       </main>
     );
   }
@@ -302,7 +302,7 @@ export default function Auth() {
         <SpaceScene />
         <div className="z-10 flex flex-col items-center gap-6 animate-in fade-in zoom-in duration-500">
           <div className="relative">
-            <AppLogo showText={false} iconClassName="h-20 w-20 rounded-2xl shadow-orange/40 animate-pulse" />
+            <AppLogo showText={false} iconClassName="h-20 w-20 rounded-2xl shadow-blue-500/40 animate-pulse" />
             <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-success flex items-center justify-center ring-4 ring-[#030508]">
               <RotateCw className="h-3 w-3 text-white animate-spin-slow" />
             </div>
@@ -446,7 +446,7 @@ export default function Auth() {
                           <Button
                             type="button"
                             size="sm"
-                            variant="orange"
+                            variant="default"
                             className="h-8 gap-1.5 text-xs font-medium shadow-sm hover:shadow-md transition-all active:scale-95"
                             onClick={handleRetryGoogle}
                             data-testid="social-fallback-retry-google"
@@ -458,7 +458,7 @@ export default function Auth() {
                         <Button
                           type="button"
                           size="sm"
-                          variant={socialError.isConfig ? 'orange' : 'outline'}
+                          variant={socialError.isConfig ? 'default' : 'outline'}
                           className={`h-8 text-xs font-medium transition-all active:scale-95 ${!socialError.isConfig ? 'border-amber-500/30 hover:bg-amber-500/10 hover:text-amber-900' : 'shadow-sm'}`}
                           onClick={focusEmailFallback}
                           data-testid="social-fallback-use-email"
@@ -495,7 +495,7 @@ export default function Auth() {
                           type="email"
                           placeholder="seu@email.com"
                           autoComplete="email"
-                          className="border-border bg-input pl-10 focus:border-orange focus:ring-orange"
+                          className="border-border bg-input pl-10 focus:border-blue-500 focus:ring-blue-500"
                           {...loginForm.register('email')}
                           ref={(el) => {
                             loginForm.register('email').ref(el);
@@ -522,14 +522,14 @@ export default function Auth() {
                           type={showPassword ? 'text' : 'password'}
                           placeholder="••••••••"
                           autoComplete="current-password"
-                          className="border-border bg-input pl-10 pr-10 focus:border-orange focus:ring-orange"
+                          className="border-border bg-input pl-10 pr-10 focus:border-blue-500 focus:ring-blue-500"
                           {...loginForm.register('password')}
                         />
                         <button
                           type="button"
                           data-testid="login-password-toggle"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -mr-2 flex min-h-[44px] min-w-[44px] -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors hover:text-orange"
+                          className="absolute right-3 top-1/2 -mr-2 flex min-h-[44px] min-w-[44px] -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors hover:text-blue-500"
                           aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                         >
                           {showPassword ? (
@@ -561,8 +561,7 @@ export default function Auth() {
                     <Button
                       type="submit"
                       data-testid="login-submit"
-                      variant="orange"
-                      className="h-12 w-full text-base font-semibold shadow-lg shadow-orange/25 transition-all duration-300 hover:shadow-xl hover:shadow-orange/30"
+                      className="h-12 w-full text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/30 border border-white/20"
                         disabled={isSubmitting || loginStatus === 'success'}
                       >
                         {isSubmitting ? (
@@ -607,7 +606,7 @@ export default function Auth() {
               style={{ animation: 'scale-fade-in 0.5s ease-out 600ms forwards' }}
             >
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Globe className="h-3.5 w-3.5 text-orange" />
+                <Globe className="h-3.5 w-3.5 text-blue-500" />
                 <span className="font-mono">{currentIP}</span>
               </div>
               {geoLocation && (
@@ -629,7 +628,7 @@ export default function Auth() {
               style={{ animation: 'scale-fade-in 0.5s ease-out 800ms forwards' }}
             >
               <div className="flex items-center gap-2 mb-1">
-                <Server className="h-4 w-4 text-orange" />
+                <Server className="h-4 w-4 text-blue-500" />
                 <span className="text-xs font-bold uppercase tracking-wider text-white/60">Status da Infraestrutura</span>
               </div>
               

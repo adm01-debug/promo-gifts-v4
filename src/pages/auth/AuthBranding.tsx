@@ -169,9 +169,9 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
       />
       
       <div 
-        className="absolute inset-0 opacity-[0.05] blur-[120px]"
+        className="absolute inset-0 opacity-[0.03] blur-[120px]"
         style={{
-          background: 'radial-gradient(circle at 60% 40%, #fb923c 0%, transparent 40%)',
+          background: 'radial-gradient(circle at 60% 40%, #1e40af 0%, transparent 40%)',
           animation: 'nebulaDrift 45s ease-in-out infinite alternate-reverse'
         }}
       />
@@ -188,8 +188,8 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
               top: `${(i * 17) % 100}%`,
               left: `${(i * 23) % 100}%`,
               animation: `starDrift ${60 + (i % 20)}s linear infinite alternate`,
-              backgroundColor: i % 5 === 0 ? '#FB923C' : i % 7 === 0 ? '#60A5FA' : 'rgba(255,255,255,0.4)',
-              boxShadow: i % 5 === 0 ? '0 0 4px #FB923C' : i % 7 === 0 ? '0 0 4px #60A5FA' : 'none',
+              backgroundColor: i % 5 === 0 ? '#3b82f6' : i % 7 === 0 ? '#60A5FA' : 'rgba(255,255,255,0.4)',
+              boxShadow: i % 5 === 0 ? '0 0 4px #3b82f6' : i % 7 === 0 ? '0 0 4px #60A5FA' : 'none',
               opacity: i % 3 === 0 ? 0.4 : 0.2,
             }}
           />
@@ -326,11 +326,11 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
         >
           <div style={{ transform: `scale(${r.scale}) rotate(${r.rotation}deg)` }}>
             <Rocket
-              className="-rotate-45 text-orange"
+              className="-rotate-45 text-blue-400"
               style={{
                 width: r.size,
                 height: r.size,
-                filter: "drop-shadow(0 0 15px rgba(251, 146, 60, 0.7))",
+                filter: "drop-shadow(0 0 15px rgba(59, 130, 246, 0.7))",
               }}
             />
             {/* Flame Trail */}
@@ -340,7 +340,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
                 top: `${r.size * 0.8}px`,
                 width: `${r.size * 0.4}px`,
                 height: `${r.size * 1.5}px`,
-                background: "linear-gradient(to bottom, #FB923C, #FBBF24, transparent)",
+                background: "linear-gradient(to bottom, #3b82f6, #60a5fa, transparent)",
                 filter: "blur(4px)",
                 zIndex: -1,
               }}
@@ -361,20 +361,12 @@ function FeatureCard({ item, index }: { item: typeof FEATURE_ITEMS[0]; index: nu
   const IconComponent = item.icon;
   return (
     <div
-      className="flex h-[99px] items-center justify-between gap-2 sm:gap-4 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] shadow-2xl hover:bg-white/[0.07] hover:border-orange/40 hover:scale-[1.02] transition-all duration-500 group opacity-0 px-4 sm:px-6 relative overflow-hidden"
+      className="flex h-[99px] items-center justify-between gap-2 sm:gap-4 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] shadow-2xl hover:bg-white/[0.07] hover:border-blue-500/40 hover:scale-[1.02] transition-all duration-500 group opacity-0 px-4 sm:px-6 relative overflow-hidden"
       style={{ animation: `scale-fade-in 0.5s ease-out ${300 + index * 150}ms forwards` }}
     >
-      {/* Glossy Scanning Effect (10/10) */}
-      <div className="absolute inset-0 w-full h-full pointer-events-none">
-        <div className="absolute top-0 -left-[100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/[0.05] to-transparent group-hover:animate-[shimmerTranslate_2s_infinite]" />
-      </div>
-
-      <div className="min-w-0 flex-1 text-left relative z-10">
-        <p className="text-[14px] sm:text-2xl font-bold text-white leading-tight truncate tracking-tight">{item.label}</p>
-        <p className="text-[9px] sm:text-sm font-medium text-white/40 leading-tight truncate uppercase tracking-widest mt-0.5">{item.desc}</p>
-      </div>
-      <div className="w-11 h-11 shrink-0 rounded-xl bg-orange/10 flex items-center justify-center group-hover:bg-orange/20 transition-all duration-500 group-hover:rotate-[10deg] relative z-10 border border-white/[0.05]">
-        <IconComponent className="h-5 w-5 text-orange drop-shadow-[0_0_8px_rgba(251,146,60,0.4)]" />
+...
+      <div className="w-11 h-11 shrink-0 rounded-xl bg-blue-500/10 flex items-center justify-center group-hover:bg-blue-500/20 transition-all duration-500 group-hover:rotate-[10deg] relative z-10 border border-white/[0.05]">
+        <IconComponent className="h-5 w-5 text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.4)]" />
       </div>
     </div>
   );
@@ -396,17 +388,17 @@ export function AuthBrandingPanel() {
       <div className="relative z-10 flex flex-col justify-center items-center px-12 xl:px-20 w-full min-h-screen">
         <div className="space-y-6 w-full max-w-xl flex flex-col items-center text-center">
           <div className="flex items-center gap-4">
-            <AppLogo variant="light" iconClassName="h-14 w-14 rounded-xl shadow-orange/30" textClassName="text-4xl" />
+            <AppLogo variant="light" iconClassName="h-14 w-14 rounded-xl shadow-blue-500/30" textClassName="text-4xl" />
           </div>
 
           <div className="space-y-4 max-w-md flex flex-col items-center">
             <h2 className="text-4xl xl:text-5xl font-display font-bold text-white leading-[1.1] tracking-tight relative group text-center">
               Um Universo de Produtos, para o{" "}
-              <span className="text-orange">
+              <span className="text-blue-400">
                 Melhor Time das{" "}
                 <span className="relative inline-block">
                   Galáxias!
-                  <span className="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r from-orange/0 via-orange/60 to-orange/0 scale-x-0 group-hover:scale-x-100 transition-transform duration-700 shadow-[0_0_15px_rgba(251,146,60,0.5)]" />
+                  <span className="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r from-blue-400/0 via-blue-400/60 to-blue-400/0 scale-x-0 group-hover:scale-x-100 transition-transform duration-700 shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
                 </span>
               </span>
             </h2>
