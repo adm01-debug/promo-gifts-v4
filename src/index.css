@@ -2257,14 +2257,14 @@ body.compare-focus-mode [role='main'] {
 /* Efeito de respiração estelar: brilho suave que pulsa lentamente */
 @keyframes breathingStar {
   0%, 100% { 
-    opacity: 0.15; 
-    transform: scale(0.6); 
-    filter: blur(0.8px) brightness(0.3);
+    opacity: 0.1; 
+    transform: scale(0.5); 
+    filter: blur(1px) brightness(0.2);
   }
   50% { 
     opacity: 1; 
-    transform: scale(1.8); 
-    filter: blur(0px) brightness(2.5) drop-shadow(0 0 15px rgba(255, 255, 255, 1));
+    transform: scale(2.2); 
+    filter: blur(0px) brightness(3) drop-shadow(0 0 20px rgba(255, 255, 255, 1)) drop-shadow(0 0 40px rgba(59, 130, 246, 0.6));
   }
 }
 
