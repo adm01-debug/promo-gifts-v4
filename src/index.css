@@ -209,7 +209,7 @@ html[data-scroll-locked] body {
     --gradient-subtle: linear-gradient(180deg, hsl(var(--surface)) 0%, hsl(var(--background)) 100%);
     --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(var(--muted)) 100%);
     --gradient-success: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(142 100% 45%) 100%);
-    --gradient-highlight: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(38 100% 55%) 100%);
+    --gradient-highlight: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(210 100% 70%) 100%);
     --gradient-card: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--surface)) 100%);
   }
 
