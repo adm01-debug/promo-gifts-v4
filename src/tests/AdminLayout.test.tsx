@@ -89,14 +89,14 @@ describe("Admin Layout Standardization", () => {
   it("AdminConexoesPage deve renderizar dentro do MainLayout (com sidebar)", async () => {
     renderWithProviders(<AdminConexoesPage />);
     // O MainLayout renderiza o sidebar. Verificamos se o mock do sidebar apareceu.
-    expect(screen.getByTestId("sidebar")).toBeInTheDocument();
+    expect(await screen.findByTestId("sidebar")).toBeInTheDocument();
     // Verifica título da página para garantir que o conteúdo está lá
     expect(screen.getAllByText(/Conexões/i).length).toBeGreaterThan(0);
   });
 
   it("AdminConexoesStatusPage deve renderizar dentro do MainLayout (com sidebar)", async () => {
     renderWithProviders(<AdminConexoesStatusPage />);
-    expect(screen.getByTestId("sidebar")).toBeInTheDocument();
+    expect(await screen.findByTestId("sidebar")).toBeInTheDocument();
     expect(screen.getByText(/Status da sincronização/i)).toBeInTheDocument();
   });
 });
