@@ -628,7 +628,7 @@ export default function Auth() {
               style={{ animation: 'scale-fade-in 0.5s ease-out 800ms forwards' }}
             >
               <div className="flex items-center gap-2 mb-1">
-                <Server className="h-4 w-4 text-orange" />
+                <Server className="h-4 w-4 text-blue-500" />
                 <span className="text-xs font-bold uppercase tracking-wider text-white/60">Status da Infraestrutura</span>
               </div>
               
