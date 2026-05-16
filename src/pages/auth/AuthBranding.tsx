@@ -172,7 +172,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
 });
 
 // Mantemos o Starfield por compatibilidade se necessário, mas o SpaceScene é o principal agora
-export const Starfield = React.memo(() => <SpaceScene />);
+export const Starfield = React.memo(() => <SpaceScene isFull={false} />);
 
 
 function FeatureCard({ item, index }: { item: typeof FEATURE_ITEMS[0]; index: number }) {
