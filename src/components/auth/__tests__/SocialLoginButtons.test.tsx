@@ -209,4 +209,42 @@ describe('SocialLoginButtons (Google)', () => {
     });
     expect(signInWithOAuthMock).toHaveBeenCalledTimes(2);
   });
+
+  it('8) pending em sessionStorage no mount → spinner reidrata sem clique', () => {
+    sessionStorage.setItem(
+      '__oauth_pending',
+      JSON.stringify({ provider: 'google', startedAt: Date.now() }),
+    );
+    render(<SocialLoginButtons />);
+    const btn = getGoogleButton();
+    expect(btn).toBeDisabled();
+    expect(btn).toHaveAttribute('aria-busy', 'true');
+    expect(btn).toHaveTextContent('Conectando ao Google…');
+  });
+
+  it('9) click marca __oauth_pending em sessionStorage', async () => {
+    signInWithOAuthMock.mockImplementation(() => new Promise(() => {}));
+    render(<SocialLoginButtons />);
+    expect(sessionStorage.getItem('__oauth_pending')).toBeNull();
+    await act(async () => {
+      getGoogleButton().click();
+    });
+    const stored = sessionStorage.getItem('__oauth_pending');
+    expect(stored).not.toBeNull();
+    expect(JSON.parse(stored!).provider).toBe('google');
+  });
+
+  it('10) erro do provider limpa __oauth_pending', async () => {
+    signInWithOAuthMock.mockResolvedValue({
+      error: { message: 'Unsupported provider: provider is not enabled' },
+    });
+    render(<SocialLoginButtons />);
+    await act(async () => {
+      getGoogleButton().click();
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(sessionStorage.getItem('__oauth_pending')).toBeNull();
+  });
 });
