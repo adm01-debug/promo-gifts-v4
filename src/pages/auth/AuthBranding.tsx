@@ -131,35 +131,11 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
       type: i % 3,
       delay: Math.random() * 5,
     })));
-    
-    // Layout base para astronautas com ângulos iniciais diferentes para órbita
-    // Distribuídos para evitar sobreposição e preencher o espaço
-    const baseLayout = [
-      { left: 20, top: 25, depth: 0.3, rotation: -8, zIndex: 5, initialAngle: 0 },
-      { left: 70, top: 35, depth: 0.5, rotation: 12, zIndex: 10, initialAngle: 120 },
-      { left: 30, top: 70, depth: 0.8, rotation: -15, zIndex: 15, initialAngle: 240 },
-      { left: 60, top: 65, depth: 1.2, rotation: 20, zIndex: 20, initialAngle: 60 },
-      { left: 45, top: 45, depth: 0.6, rotation: 45, zIndex: 12, initialAngle: 180 },
-      { left: 15, top: 80, depth: 0.4, rotation: -30, zIndex: 8, initialAngle: 300 },
-    ];
-
-    setAstronauts(baseLayout.slice(0, config.astroCount).map((a, i) => {
-      const individual = config.individualAstronauts.find(idx => idx.id === i);
-      return {
-        id: i,
-        ...a,
-        left: 50 + (a.left - 50) * config.spacing,
-        top: 50 + (a.top - 50) * config.spacing,
-        individualScale: individual?.scale ?? 1.0,
-        individualOpacity: individual?.opacity ?? 1.0,
-      };
-    }));
-
     return () => {
       clearInterval(rocketInterval);
       clearInterval(meteorInterval);
     };
-  }, [spawnRocket, config.astroCount, config.spacing, config.individualAstronauts]);
+  }, [spawnRocket]);
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden z-0" aria-hidden="true">
