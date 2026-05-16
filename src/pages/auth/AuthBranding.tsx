@@ -6,119 +6,161 @@ import { Gift, Package, Factory, SlidersHorizontal, Brain, Rocket } from "lucide
 import { AppLogo } from "@/components/layout/AppLogo";
 
 interface RocketData { id: number; left: number; size: number; duration: number; rotation: number; scale: number; }
+interface PlanetData { id: number; left: number; top: number; size: number; duration: number; type: number; delay: number; }
+interface AstronautData { id: number; left: number; top: number; size: number; duration: number; delay: number; rotation: number; }
 
-export const ContinuousRockets = React.memo(() => {
+export const SpaceScene = React.memo(() => {
   const [rockets, setRockets] = useState<RocketData[]>([]);
+  const [planets, setPlanets] = useState<PlanetData[]>([]);
+  const [astronauts, setAstronauts] = useState<AstronautData[]>([]);
   const nextIdRef = useRef(0);
 
   const spawnRocket = useCallback((isInitial = false) => {
     const id = nextIdRef.current++;
-    
     const left = 5 + Math.random() * 90;
-    const size = 20 + Math.random() * 35;
-    const duration = isInitial 
-      ? (1.5 + Math.random() * 1.5) 
-      : (2.2 + Math.random() * 2.8);
-    
-    const rotationOffset = -6 + Math.random() * 12;
-    const scale = 0.8 + Math.random() * 0.4;
+    const size = 24 + Math.random() * 40;
+    const duration = isInitial ? (2 + Math.random() * 2) : (3 + Math.random() * 4);
+    const rotationOffset = -5 + Math.random() * 10;
+    const scale = 0.9 + Math.random() * 0.5;
 
-    const rocket: RocketData = { 
-      id, left, size, duration, rotation: rotationOffset, scale 
-    };
-    
+    const rocket: RocketData = { id, left, size, duration, rotation: rotationOffset, scale };
     setRockets((prev) => [...prev, rocket]);
-    
-    const timer = setTimeout(() => {
-      setRockets((prev) => prev.filter((r) => r.id !== id));
-    }, (duration + 0.5) * 1000);
-
-    return timer;
+    setTimeout(() => setRockets((prev) => prev.filter((r) => r.id !== id)), (duration + 1) * 1000);
   }, []);
 
   useEffect(() => {
-    // Initial burst
-    const delays = [0, 200, 500, 900, 1400, 2000, 2800];
-    const spawnTimers: NodeJS.Timeout[] = [];
-    const cleanupTimers: NodeJS.Timeout[] = [];
+    // Planets setup
+    const initialPlanets = [...Array(5)].map((_, i) => ({
+      id: i,
+      left: 10 + Math.random() * 80,
+      top: 10 + Math.random() * 80,
+      size: 40 + Math.random() * 80,
+      duration: 15 + Math.random() * 15,
+      type: i % 3,
+      delay: Math.random() * 10
+    }));
+    setPlanets(initialPlanets);
 
-    delays.forEach(d => {
-      const t = setTimeout(() => {
-        const cleanupTimer = spawnRocket(true);
-        cleanupTimers.push(cleanupTimer);
-      }, d);
-      spawnTimers.push(t);
-    });
+    // Astronauts setup
+    const initialAstronauts = [...Array(3)].map((_, i) => ({
+      id: i,
+      left: 20 + Math.random() * 60,
+      top: 20 + Math.random() * 60,
+      size: 50 + Math.random() * 30,
+      duration: 20 + Math.random() * 20,
+      delay: Math.random() * 5,
+      rotation: Math.random() * 360
+    }));
+    setAstronauts(initialAstronauts);
 
-    // Sustained cycle
-    const interval = setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        const cleanupTimer = spawnRocket();
-        cleanupTimers.push(cleanupTimer);
-      }
-    }, 2800);
+    // Initial rockets
+    [0, 800, 2000, 4000].forEach(d => setTimeout(() => spawnRocket(true), d));
+    const rocketInterval = setInterval(() => {
+      if (document.visibilityState === 'visible') spawnRocket();
+    }, 4500);
 
-    return () => {
-      spawnTimers.forEach(clearTimeout);
-      cleanupTimers.forEach(clearTimeout);
-      clearInterval(interval);
-    };
+    return () => clearInterval(rocketInterval);
   }, [spawnRocket]);
 
   return (
-    <div 
-      className="pointer-events-none absolute inset-0 overflow-hidden z-[1]" 
-      aria-hidden="true"
-      data-testid="rocket-container"
-    >
+    <div className="pointer-events-none absolute inset-0 overflow-hidden z-0" aria-hidden="true">
+      {/* Dynamic Stars with breathing effect */}
+      {[...Array(60)].map((_, i) => {
+        const size = 1 + (i % 3);
+        const top = Math.random() * 100;
+        const left = Math.random() * 100;
+        const dur = 3 + Math.random() * 4;
+        const delay = Math.random() * 5;
+        return (
+          <div
+            key={`star-${i}`}
+            className="absolute rounded-full bg-white/40 shadow-[0_0_10px_rgba(255,255,255,0.4)]"
+            style={{
+              width: `${size}px`,
+              height: `${size}px`,
+              top: `${top}%`,
+              left: `${left}%`,
+              animation: `breathingStar ${dur}s ease-in-out ${delay}s infinite`
+            }}
+          />
+        );
+      })}
+
+      {/* Planets with zigzag trajectory */}
+      {planets.map(p => (
+        <div
+          key={`planet-${p.id}`}
+          className="absolute opacity-20 blur-[1px]"
+          style={{
+            width: `${p.size}px`,
+            height: `${p.size}px`,
+            left: `${p.left}%`,
+            top: `${p.top}%`,
+            animation: `zigzagMovement ${p.duration}s ease-in-out ${p.delay}s infinite alternate`,
+            background: p.type === 0 
+              ? 'radial-gradient(circle at 30% 30%, #4F46E5, #1E1B4B)' 
+              : p.type === 1 
+                ? 'radial-gradient(circle at 30% 30%, #FB923C, #7C2D12)'
+                : 'radial-gradient(circle at 30% 30%, #06B6D4, #164E63)',
+            borderRadius: '50%',
+            boxShadow: 'inset -10px -10px 20px rgba(0,0,0,0.5), 0 0 30px rgba(79, 70, 229, 0.1)'
+          }}
+        />
+      ))}
+
+      {/* Floating Astronauts */}
+      {astronauts.map(a => (
+        <div
+          key={`astro-${a.id}`}
+          className="absolute opacity-30"
+          style={{
+            left: `${a.left}%`,
+            top: `${a.top}%`,
+            animation: `floatMovement ${a.duration}s ease-in-out ${a.delay}s infinite alternate`,
+          }}
+        >
+          <svg 
+            viewBox="0 0 24 24" 
+            style={{ width: a.size, height: a.size, transform: `rotate(${a.rotation}deg)` }}
+            fill="none" 
+            stroke="currentColor" 
+            className="text-white/40"
+            strokeWidth="1"
+          >
+            <path d="M12 2a5 5 0 0 1 5 5v2a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V7a5 5 0 0 1 5-5zM7 10h10v6a3 3 0 0 1-3 3h-4a3 3 0 0 1-3-3v-6zM9 19v3M15 19v3M6 13h2M16 13h2" strokeLinecap="round" />
+          </svg>
+        </div>
+      ))}
+
+      {/* Rockets rising from bottom to top */}
       {rockets.map((r) => (
         <div
           key={r.id}
-          className="absolute bottom-0"
-          data-testid="rocket-item"
+          className="absolute bottom-[-100px]"
           style={{
             left: `${r.left}%`,
-            animation: `rocketLaunch ${r.duration}s ease-out forwards`,
+            animation: `rocketRising ${r.duration}s linear forwards`,
             willChange: "transform, opacity",
           }}
         >
           <div style={{ transform: `scale(${r.scale}) rotate(${r.rotation}deg)` }}>
-            <div 
-              className="relative animate-rocket-shake"
-              style={{ 
-                animation: "rocketShake 0.15s ease-in-out infinite",
-              }}
-            >
-              <Rocket
-                className="-rotate-45 text-orange"
-                data-testid={`rocket-icon-${r.id}`}
-                style={{
-                  width: r.size,
-                  height: r.size,
-                  filter: "drop-shadow(0 0 12px rgba(251, 146, 60, 0.6))",
-                }}
-              />
-            </div>
-            {/* Rastro de chamas */}
-            <div
-              className="absolute left-1/2 -translate-x-1/2 rounded-full opacity-70"
+            <Rocket
+              className="-rotate-45 text-orange"
               style={{
-                top: `${r.size * 0.7}px`,
-                width: `${r.size * 0.3}px`,
-                height: `${r.size * 1.2}px`,
-                animation: "flameTrail 0.3s ease-in-out infinite alternate",
-                background: "linear-gradient(to bottom, #FB923C, #FBBF24, transparent)",
-                zIndex: -1,
+                width: r.size,
+                height: r.size,
+                filter: "drop-shadow(0 0 15px rgba(251, 146, 60, 0.7))",
               }}
             />
+            {/* Flame Trail */}
             <div
-              className="absolute left-1/2 -translate-x-1/2 rounded-full opacity-40"
+              className="absolute left-1/2 -translate-x-1/2 rounded-full opacity-80"
               style={{
                 top: `${r.size * 0.8}px`,
-                width: `${r.size * 0.15}px`,
-                height: `${r.size * 1.8}px`,
-                animation: "flameTrail 0.2s ease-in-out infinite alternate-reverse",
-                background: "linear-gradient(to bottom, #FB923C, transparent)",
+                width: `${r.size * 0.4}px`,
+                height: `${r.size * 1.5}px`,
+                background: "linear-gradient(to bottom, #FB923C, #FBBF24, transparent)",
+                filter: "blur(4px)",
                 zIndex: -1,
               }}
             />
@@ -129,32 +171,9 @@ export const ContinuousRockets = React.memo(() => {
   );
 });
 
-export const Starfield = React.memo(() => {
-  return (
-    <>
-      {[...Array(32)].map((_, i) => {
-        const size = 1 + (i % 3);
-        const top = (i * 37 + 11) % 100;
-        const left = (i * 53 + 7) % 100;
-        const dur = 2 + (i % 5);
-        const delay = (i * 0.4) % 3;
-        return (
-          <div
-            key={`star-${i}`}
-            className="absolute rounded-full bg-white/30 shadow-[0_0_8px_rgba(255,255,255,0.3)]"
-            style={{
-              width: `${size}px`,
-              height: `${size}px`,
-              top: `${top}%`,
-              left: `${left}%`,
-              animation: `twinkle ${dur}s ease-in-out ${delay}s infinite`
-            }}
-          />
-        );
-      })}
-    </>
-  );
-});
+// Mantemos o Starfield por compatibilidade se necessário, mas o SpaceScene é o principal agora
+export const Starfield = React.memo(() => <SpaceScene />);
+
 
 function FeatureCard({ item, index }: { item: typeof FEATURE_ITEMS[0]; index: number }) {
   const IconComponent = item.icon;
