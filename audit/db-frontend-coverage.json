@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-16T00:22:46.070Z",
+  "generatedAt": "2026-05-16T00:23:27.064Z",
   "reports": [
     {
       "label": "BD Interno (app)",
@@ -43,7 +43,7 @@
             {
               "name": "strict_access_mode",
               "type": "boolean",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "created_at",
@@ -56,8 +56,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 83,
+          "orphanCount": 1,
           "totalCount": 9
         },
         {
@@ -215,7 +215,7 @@
             {
               "name": "updated_by",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -429,7 +429,7 @@
             {
               "name": "role",
               "type": "USER-DEFINED",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "monthly_limit",
@@ -470,37 +470,37 @@
             {
               "name": "metric_name",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "metric_value",
               "type": "numeric",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "rating",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "request_id",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "page_url",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "user_agent",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "user_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -508,8 +508,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 43,
+          "orphanCount": 4,
           "totalCount": 9
         },
         {
@@ -571,7 +571,7 @@
             {
               "name": "notes",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -643,27 +643,27 @@
             {
               "name": "email",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "ip_address",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "success",
               "type": "boolean",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "failure_reason",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "user_agent",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -671,8 +671,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 80,
+          "orphanCount": 1,
           "totalCount": 7
         },
         {
@@ -796,17 +796,17 @@
             {
               "name": "icon",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "description",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "is_active",
               "type": "boolean",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -837,32 +837,32 @@
             {
               "name": "collection_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "item_id",
               "type": "uuid",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "anon_id",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "emoji",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "ip_hash",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "user_agent",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -870,8 +870,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 33,
+          "orphanCount": 4,
           "totalCount": 8
         },
         {
@@ -954,7 +954,7 @@
             {
               "name": "original_id",
               "type": "uuid",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "collection_id",
@@ -1009,11 +1009,11 @@
             {
               "name": "expires_at",
               "type": "timestamp with time zone",
-              "status": "READ+WRITE"
+              "status": "READ"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 91,
+          "orphanCount": 1,
           "totalCount": 13
         },
         {
@@ -1095,11 +1095,11 @@
             {
               "name": "is_deleted",
               "type": "boolean",
-              "status": "READ"
+              "status": "ORPHAN"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 92,
+          "orphanCount": 1,
           "totalCount": 15
         },
         {
@@ -1116,32 +1116,32 @@
             {
               "name": "comparison_id",
               "type": "uuid",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "item_index",
               "type": "integer",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "emoji",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "anon_id",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "ip_hash",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "user_agent",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -1149,8 +1149,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 17,
+          "orphanCount": 5,
           "totalCount": 8
         },
         {
@@ -1167,12 +1167,12 @@
             {
               "name": "component_id",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "product_id",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "media_type",
@@ -1182,22 +1182,22 @@
             {
               "name": "url",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "title",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "sort_order",
               "type": "integer",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "is_cover",
               "type": "boolean",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "created_at",
@@ -1210,8 +1210,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 71,
+          "orphanCount": 2,
           "totalCount": 10
         },
         {
@@ -1263,12 +1263,12 @@
             {
               "name": "triggered_by",
               "type": "text",
-              "status": "READ"
+              "status": "READ+WRITE"
             },
             {
               "name": "error_kind",
               "type": "text",
-              "status": "READ"
+              "status": "READ+WRITE"
             },
             {
               "name": "request_method",
@@ -1323,7 +1323,7 @@
             {
               "name": "attempts",
               "type": "smallint",
-              "status": "READ"
+              "status": "READ+WRITE"
             }
           ],
           "coverage": 100,
@@ -1344,46 +1344,46 @@
             {
               "name": "session_id",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "user_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "started_at",
               "type": "timestamp with time zone",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "ended_at",
               "type": "timestamp with time zone",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "total_tokens_estimated",
               "type": "integer",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "metadata",
               "type": "jsonb",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "status",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "client_info",
               "type": "jsonb",
-              "status": "READ"
+              "status": "ORPHAN"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 50,
+          "orphanCount": 4,
           "totalCount": 9
         },
         {
@@ -1400,17 +1400,17 @@
             {
               "name": "event_id",
               "type": "uuid",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "status",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "error_details",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "updated_at",
@@ -1418,8 +1418,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 33,
+          "orphanCount": 2,
           "totalCount": 5
         },
         {
@@ -1436,37 +1436,37 @@
             {
               "name": "conversation_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "role",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "event_type",
               "type": "USER-DEFINED",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "content",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "media_url",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "media_metadata",
               "type": "jsonb",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "tokens_estimated",
               "type": "integer",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "created_at",
@@ -1476,11 +1476,11 @@
             {
               "name": "request_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 38,
+          "orphanCount": 5,
           "totalCount": 10
         },
         {
@@ -1507,7 +1507,7 @@
             {
               "name": "status",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "box_data",
@@ -1527,7 +1527,7 @@
             {
               "name": "kit_quantity",
               "type": "integer",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "box_price",
@@ -1572,7 +1572,7 @@
             {
               "name": "color",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "tag",
@@ -1582,12 +1582,12 @@
             {
               "name": "icon",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "description",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "is_favorite",
@@ -1694,12 +1694,12 @@
             {
               "name": "email",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "user_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "dry_run",
@@ -1709,22 +1709,22 @@
             {
               "name": "status",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "reason",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "ip",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "user_agent",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "total_deleted",
@@ -1739,12 +1739,12 @@
             {
               "name": "errors",
               "type": "jsonb",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "duration_ms",
               "type": "integer",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -1759,7 +1759,7 @@
             {
               "name": "seller_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "name_filter_prefix",
@@ -1780,17 +1780,17 @@
             {
               "name": "key",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "count",
               "type": "integer",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "window_start",
               "type": "timestamp with time zone",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "updated_at",
@@ -1798,8 +1798,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 0,
+          "orphanCount": 3,
           "totalCount": 4
         },
         {
@@ -1898,12 +1898,12 @@
             {
               "name": "name",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "config",
               "type": "jsonb",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "secret_refs",
@@ -1933,7 +1933,7 @@
             {
               "name": "created_by",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -1999,7 +1999,7 @@
             {
               "name": "processed",
               "type": "integer",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_count",
@@ -2014,22 +2014,22 @@
             {
               "name": "status",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "error_message",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "duration_ms",
               "type": "integer",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "details",
               "type": "jsonb",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -2055,32 +2055,32 @@
             {
               "name": "item_id",
               "type": "uuid",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "list_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "anon_id",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "emoji",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "ip_hash",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "user_agent",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -2088,8 +2088,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 33,
+          "orphanCount": 4,
           "totalCount": 8
         },
         {
@@ -2172,7 +2172,7 @@
             {
               "name": "original_id",
               "type": "uuid",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "list_id",
@@ -2220,8 +2220,8 @@
               "status": "READ+WRITE"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 89,
+          "orphanCount": 1,
           "totalCount": 11
         },
         {
@@ -2263,7 +2263,7 @@
             {
               "name": "is_default",
               "type": "boolean",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "is_archived",
@@ -2324,22 +2324,22 @@
             {
               "name": "user_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "product_id",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "variant_info",
               "type": "jsonb",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "added_at",
               "type": "timestamp with time zone",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "updated_at",
@@ -2349,11 +2349,11 @@
             {
               "name": "is_deleted",
               "type": "boolean",
-              "status": "READ"
+              "status": "ORPHAN"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 40,
+          "orphanCount": 3,
           "totalCount": 7
         },
         {
@@ -2370,7 +2370,7 @@
             {
               "name": "user_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "bucket",
@@ -2380,12 +2380,12 @@
             {
               "name": "path",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "hash",
               "type": "character varying",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "scan_result",
@@ -2421,12 +2421,12 @@
             {
               "name": "quote_id",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "seller_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "reminder_type",
@@ -2456,26 +2456,26 @@
             {
               "name": "title",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "notes",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "is_completed",
               "type": "boolean",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "completed_at",
               "type": "timestamp with time zone",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 80,
+          "orphanCount": 2,
           "totalCount": 12
         },
         {
@@ -2552,17 +2552,17 @@
             {
               "name": "position_y",
               "type": "numeric",
-              "status": "READ"
+              "status": "READ+WRITE"
             },
             {
               "name": "logo_width_cm",
               "type": "numeric",
-              "status": "READ"
+              "status": "READ+WRITE"
             },
             {
               "name": "logo_height_cm",
               "type": "numeric",
-              "status": "READ"
+              "status": "READ+WRITE"
             },
             {
               "name": "location_name",
@@ -2572,12 +2572,12 @@
             {
               "name": "colors_count",
               "type": "integer",
-              "status": "READ"
+              "status": "READ+WRITE"
             },
             {
               "name": "annotations",
               "type": "jsonb",
-              "status": "READ"
+              "status": "READ+WRITE"
             },
             {
               "name": "created_at",
@@ -2608,7 +2608,7 @@
             {
               "name": "country_name",
               "type": "text",
-              "status": "READ"
+              "status": "READ+WRITE"
             },
             {
               "name": "is_active",
@@ -2664,7 +2664,7 @@
             {
               "name": "details",
               "type": "jsonb",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -2710,7 +2710,7 @@
             {
               "name": "allowed_events",
               "type": "ARRAY",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "active",
@@ -2720,7 +2720,7 @@
             {
               "name": "description",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_by",
@@ -2735,12 +2735,12 @@
             {
               "name": "total_received",
               "type": "integer",
-              "status": "READ"
+              "status": "READ+WRITE"
             },
             {
               "name": "total_invalid",
               "type": "integer",
-              "status": "READ"
+              "status": "READ+WRITE"
             },
             {
               "name": "created_at",
@@ -2753,8 +2753,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 91,
+          "orphanCount": 1,
           "totalCount": 14
         },
         {
@@ -2949,7 +2949,7 @@
             {
               "name": "invited_by",
               "type": "uuid",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "invited_email",
@@ -2967,8 +2967,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 80,
+          "orphanCount": 1,
           "totalCount": 8
         },
         {
@@ -3041,22 +3041,22 @@
             {
               "name": "kit_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "seller_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "token",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "client_name",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "client_email",
@@ -3066,17 +3066,17 @@
             {
               "name": "status",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "expires_at",
               "type": "timestamp with time zone",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "viewed_at",
               "type": "timestamp with time zone",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "created_at",
@@ -3089,8 +3089,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 63,
+          "orphanCount": 3,
           "totalCount": 11
         },
         {
@@ -3112,22 +3112,22 @@
             {
               "name": "description",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "category",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "color",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "icon",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "tag",
@@ -3177,7 +3177,7 @@
             {
               "name": "created_by",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -3213,12 +3213,12 @@
             {
               "name": "label",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "sort_order",
               "type": "integer",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "box_data",
@@ -3238,7 +3238,7 @@
             {
               "name": "kit_quantity",
               "type": "integer",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "total_price",
@@ -3330,12 +3330,12 @@
             {
               "name": "client_id",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "client_name",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "logo_urls",
@@ -3375,12 +3375,12 @@
             {
               "name": "notes",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "metadata",
               "type": "jsonb",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -3416,17 +3416,17 @@
             {
               "name": "client_id",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "client_name",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "title",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "objective",
@@ -3461,12 +3461,12 @@
             {
               "name": "status",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "metadata",
               "type": "jsonb",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -3497,27 +3497,27 @@
             {
               "name": "user_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "generation_id",
               "type": "uuid",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "author_name",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "comment",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "is_public",
               "type": "boolean",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -3525,8 +3525,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 40,
+          "orphanCount": 3,
           "totalCount": 7
         },
         {
@@ -3548,7 +3548,7 @@
             {
               "name": "product_name",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "scene_title",
@@ -3563,7 +3563,7 @@
             {
               "name": "client_name",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "generated_image_url",
@@ -3588,22 +3588,22 @@
             {
               "name": "product_id",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "product_sku",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "prompt_text",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "model",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "channel",
@@ -3664,47 +3664,47 @@
             {
               "name": "user_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "generation_id",
               "type": "uuid",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "campaign_id",
               "type": "uuid",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "share_token",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "expires_at",
               "type": "timestamp with time zone",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "allow_download",
               "type": "boolean",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "allow_comments",
               "type": "boolean",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "status",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "metadata",
               "type": "jsonb",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -3717,8 +3717,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 56,
+          "orphanCount": 4,
           "totalCount": 12
         },
         {
@@ -3735,27 +3735,27 @@
             {
               "name": "user_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "generation_id",
               "type": "uuid",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "reaction_type",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "ip_hash",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "user_agent",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -3763,8 +3763,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 40,
+          "orphanCount": 3,
           "totalCount": 7
         },
         {
@@ -3781,47 +3781,47 @@
             {
               "name": "user_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "reason",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "source",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "operation",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "target_key_id",
               "type": "uuid",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "ip_address",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "user_agent",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "request_id",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "details",
               "type": "jsonb",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -3829,8 +3829,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 78,
+          "orphanCount": 2,
           "totalCount": 11
         },
         {
@@ -3877,7 +3877,7 @@
             {
               "name": "last_used_at",
               "type": "timestamp with time zone",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "expires_at",
@@ -3918,26 +3918,26 @@
             {
               "name": "user_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "granted_by",
               "type": "uuid",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "reason",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "granted_at",
               "type": "timestamp with time zone",
-              "status": "READ"
+              "status": "ORPHAN"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 25,
+          "orphanCount": 3,
           "totalCount": 4
         },
         {
@@ -3954,27 +3954,27 @@
             {
               "name": "key_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_by",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "revoked_at",
               "type": "timestamp with time zone",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "source",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "reason",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -4000,32 +4000,32 @@
             {
               "name": "user_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "key_name",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "key_hash",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "scopes",
               "type": "ARRAY",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "expires_at",
               "type": "timestamp with time zone",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "last_used_at",
               "type": "timestamp with time zone",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -4035,11 +4035,11 @@
             {
               "name": "is_revoked",
               "type": "boolean",
-              "status": "READ"
+              "status": "ORPHAN"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 57,
+          "orphanCount": 3,
           "totalCount": 9
         },
         {
@@ -4056,12 +4056,12 @@
             {
               "name": "user_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "draft_key",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "product_id",
@@ -4071,7 +4071,7 @@
             {
               "name": "product_name",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "technique_id",
@@ -4081,7 +4081,7 @@
             {
               "name": "technique_name",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "client_id",
@@ -4091,12 +4091,12 @@
             {
               "name": "client_name",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "personalization_areas",
               "type": "jsonb",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "logo_data",
@@ -4137,7 +4137,7 @@
             {
               "name": "label",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "prompt_text",
@@ -4152,12 +4152,12 @@
             {
               "name": "technique_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "is_active",
               "type": "boolean",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "version",
@@ -4203,12 +4203,12 @@
             {
               "name": "old_prompt",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "new_prompt",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "ai_model",
@@ -4233,11 +4233,11 @@
             {
               "name": "changed_at",
               "type": "timestamp with time zone",
-              "status": "READ"
+              "status": "ORPHAN"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 67,
+          "orphanCount": 3,
           "totalCount": 10
         },
         {
@@ -4254,47 +4254,47 @@
             {
               "name": "user_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "name",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "description",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "product_id",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "product_name",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "technique_id",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "technique_name",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "personalization_areas",
               "type": "jsonb",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "thumbnail_url",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "usage_count",
@@ -4304,7 +4304,7 @@
             {
               "name": "is_favorite",
               "type": "boolean",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -4317,8 +4317,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 91,
+          "orphanCount": 1,
           "totalCount": 14
         },
         {
@@ -4335,17 +4335,17 @@
             {
               "name": "title",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "description",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "category",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "priority",
@@ -4360,7 +4360,7 @@
             {
               "name": "result",
               "type": "jsonb",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "error",
@@ -4375,17 +4375,17 @@
             {
               "name": "started_at",
               "type": "timestamp with time zone",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "finished_at",
               "type": "timestamp with time zone",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_by",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -4416,32 +4416,32 @@
             {
               "name": "queue_id",
               "type": "uuid",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "status",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "notes",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "guardrail_status",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "duration_ms",
               "type": "integer",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "executed_by",
               "type": "uuid",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "created_at",
@@ -4449,8 +4449,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 50,
+          "orphanCount": 3,
           "totalCount": 8
         },
         {
@@ -4467,42 +4467,42 @@
             {
               "name": "order_item_id",
               "type": "uuid",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "technique_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "technique_name",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "location_id",
               "type": "uuid",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "location_name",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "image_url",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "personalization_text",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "price_adjustment",
               "type": "numeric",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "created_at",
@@ -4515,8 +4515,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 38,
+          "orphanCount": 5,
           "totalCount": 11
         },
         {
@@ -4538,27 +4538,27 @@
             {
               "name": "product_id",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "product_sku",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "product_name",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "product_image_url",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "quantity",
               "type": "integer",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "unit_price",
@@ -4583,41 +4583,41 @@
             {
               "name": "color_name",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "color_hex",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "notes",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "size_code",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "gender",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "kit_group_id",
               "type": "uuid",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "kit_name",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 69,
+          "orphanCount": 5,
           "totalCount": 18
         },
         {
@@ -4654,7 +4654,7 @@
             {
               "name": "client_id",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "client_name",
@@ -4704,22 +4704,22 @@
             {
               "name": "notes",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "internal_notes",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "tracking_number",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "shipping_type",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "payment_terms",
@@ -4749,11 +4749,11 @@
             {
               "name": "version",
               "type": "integer",
-              "status": "READ+WRITE"
+              "status": "READ"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 86,
+          "orphanCount": 3,
           "totalCount": 25
         },
         {
@@ -4775,17 +4775,17 @@
             {
               "name": "user_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "role",
               "type": "USER-DEFINED",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "invited_by",
               "type": "uuid",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "joined_at",
@@ -4803,8 +4803,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 80,
+          "orphanCount": 1,
           "totalCount": 8
         },
         {
@@ -4821,27 +4821,27 @@
             {
               "name": "name",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "slug",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "logo_url",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "description",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "is_active",
               "type": "boolean",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "settings",
@@ -4907,7 +4907,7 @@
             {
               "name": "description",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_by",
@@ -4922,7 +4922,7 @@
             {
               "name": "total_success",
               "type": "integer",
-              "status": "READ"
+              "status": "READ+WRITE"
             },
             {
               "name": "total_failure",
@@ -4998,7 +4998,7 @@
             {
               "name": "details",
               "type": "jsonb",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "triggered_by",
@@ -5008,7 +5008,7 @@
             {
               "name": "duration_ms",
               "type": "integer",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "rls_coverage",
@@ -5044,27 +5044,27 @@
             {
               "name": "table_name",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "owner_column",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "issue_type",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "action",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "rows_affected",
               "type": "integer",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "dry_run",
@@ -5079,17 +5079,17 @@
             {
               "name": "triggered_by_label",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "notes",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "error_message",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -5097,8 +5097,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 55,
+          "orphanCount": 5,
           "totalCount": 13
         },
         {
@@ -5115,22 +5115,22 @@
             {
               "name": "code",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "name",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "description",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "category",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -5161,12 +5161,12 @@
             {
               "name": "product_id",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "variant_id",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "price",
@@ -5179,8 +5179,8 @@
               "status": "READ"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 75,
+          "orphanCount": 1,
           "totalCount": 5
         },
         {
@@ -5212,7 +5212,7 @@
             {
               "name": "description",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "max_width_cm",
@@ -5370,7 +5370,7 @@
             {
               "name": "description",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "is_active",
@@ -5462,12 +5462,12 @@
             {
               "name": "records_inserted",
               "type": "integer",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "records_updated",
               "type": "integer",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "records_failed",
@@ -5477,7 +5477,7 @@
             {
               "name": "duration_ms",
               "type": "integer",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "payload",
@@ -5500,8 +5500,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 80,
+          "orphanCount": 2,
           "totalCount": 12
         },
         {
@@ -5640,32 +5640,32 @@
             {
               "name": "resource_type",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "resource_id",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "attempted_token",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "ip_address",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "user_agent",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "reason",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "created_at",
@@ -5673,8 +5673,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 50,
+          "orphanCount": 3,
           "totalCount": 8
         },
         {
@@ -5751,12 +5751,12 @@
             {
               "name": "error_kind",
               "type": "text",
-              "status": "READ"
+              "status": "READ+WRITE"
             },
             {
               "name": "retry_count",
               "type": "integer",
-              "status": "READ"
+              "status": "READ+WRITE"
             },
             {
               "name": "cache_hit",
@@ -5766,12 +5766,12 @@
             {
               "name": "is_cold_start",
               "type": "boolean",
-              "status": "READ"
+              "status": "READ+WRITE"
             },
             {
               "name": "is_503",
               "type": "boolean",
-              "status": "READ"
+              "status": "READ+WRITE"
             }
           ],
           "coverage": 100,
@@ -5792,22 +5792,22 @@
             {
               "name": "quote_id",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "token",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "seller_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "client_name",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "client_email",
@@ -5817,32 +5817,32 @@
             {
               "name": "status",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "expires_at",
               "type": "timestamp with time zone",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "viewed_at",
               "type": "timestamp with time zone",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "responded_at",
               "type": "timestamp with time zone",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "response",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "response_notes",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "created_at",
@@ -5857,36 +5857,36 @@
             {
               "name": "signer_name",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "signer_document",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "signer_ip",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "signer_user_agent",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "signature_hash",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "signed_at",
               "type": "timestamp with time zone",
-              "status": "READ"
+              "status": "ORPHAN"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 35,
+          "orphanCount": 11,
           "totalCount": 20
         },
         {
@@ -5954,21 +5954,21 @@
             {
               "name": "user_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "data",
               "type": "jsonb",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "last_saved_at",
               "type": "timestamp with time zone",
-              "status": "READ"
+              "status": "ORPHAN"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 33,
+          "orphanCount": 2,
           "totalCount": 4
         },
         {
@@ -6051,12 +6051,12 @@
             {
               "name": "technique_id",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "technique_name",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "colors_count",
@@ -6142,27 +6142,27 @@
             {
               "name": "product_id",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "product_name",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "product_sku",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "product_image_url",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "quantity",
               "type": "integer",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "unit_price",
@@ -6177,12 +6177,12 @@
             {
               "name": "color_name",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "color_hex",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "notes",
@@ -6192,12 +6192,12 @@
             {
               "name": "sort_order",
               "type": "integer",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "display_order",
               "type": "integer",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "created_at",
@@ -6222,21 +6222,21 @@
             {
               "name": "size_code",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "gender",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "price_confirmed_at",
               "type": "timestamp with time zone",
-              "status": "READ"
+              "status": "ORPHAN"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 78,
+          "orphanCount": 4,
           "totalCount": 21
         },
         {
@@ -6253,22 +6253,22 @@
             {
               "name": "seller_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "name",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "description",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "is_default",
               "type": "boolean",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "template_data",
@@ -6293,7 +6293,7 @@
             {
               "name": "notes",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "internal_notes",
@@ -6374,7 +6374,7 @@
             {
               "name": "client_cnpj",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "seller_id",
@@ -6434,7 +6434,7 @@
             {
               "name": "internal_notes",
               "type": "text",
-              "status": "READ"
+              "status": "READ+WRITE"
             },
             {
               "name": "valid_until",
@@ -6444,12 +6444,12 @@
             {
               "name": "bitrix_deal_id",
               "type": "text",
-              "status": "READ"
+              "status": "READ+WRITE"
             },
             {
               "name": "bitrix_quote_id",
               "type": "text",
-              "status": "READ"
+              "status": "READ+WRITE"
             },
             {
               "name": "synced_to_bitrix",
@@ -6474,7 +6474,7 @@
             {
               "name": "client_response_notes",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "sent_at",
@@ -6527,8 +6527,8 @@
               "status": "READ+WRITE"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 94,
+          "orphanCount": 2,
           "totalCount": 38
         },
         {
@@ -6545,21 +6545,21 @@
             {
               "name": "user_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "product_id",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "viewed_at",
               "type": "timestamp with time zone",
-              "status": "READ"
+              "status": "ORPHAN"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 67,
+          "orphanCount": 1,
           "totalCount": 4
         },
         {
@@ -6576,12 +6576,12 @@
             {
               "name": "identifier",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "endpoint",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "request_count",
@@ -6627,12 +6627,12 @@
             {
               "name": "user_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "user_email",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "user_role",
@@ -6642,17 +6642,17 @@
             {
               "name": "table_name",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "operation",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "endpoint",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "query_summary",
@@ -6682,17 +6682,17 @@
             {
               "name": "error_message",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "user_agent",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "ip_address",
               "type": "inet",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -6718,12 +6718,12 @@
             {
               "name": "label",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "reason",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "initiated_by",
@@ -6738,7 +6738,7 @@
             {
               "name": "status",
               "type": "USER-DEFINED",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "total_items",
@@ -6763,17 +6763,17 @@
             {
               "name": "started_at",
               "type": "timestamp with time zone",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "finished_at",
               "type": "timestamp with time zone",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "duration_ms",
               "type": "integer",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -6804,12 +6804,12 @@
             {
               "name": "user_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "user_email",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "from_role",
@@ -6824,22 +6824,22 @@
             {
               "name": "operation",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "status",
               "type": "USER-DEFINED",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "error_message",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "duration_ms",
               "type": "integer",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "processed_at",
@@ -6870,7 +6870,7 @@
             {
               "name": "role",
               "type": "USER-DEFINED",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "permission_code",
@@ -7079,7 +7079,7 @@
             {
               "name": "user_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "search_term",
@@ -7089,12 +7089,12 @@
             {
               "name": "results_count",
               "type": "integer",
-              "status": "READ"
+              "status": "READ+WRITE"
             },
             {
               "name": "search_context",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "created_at",
@@ -7102,8 +7102,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 75,
+          "orphanCount": 1,
           "totalCount": 6
         },
         {
@@ -7440,7 +7440,7 @@
             {
               "name": "token_id",
               "type": "uuid",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "ip_address",
@@ -7463,8 +7463,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 89,
+          "orphanCount": 1,
           "totalCount": 11
         },
         {
@@ -7481,22 +7481,22 @@
             {
               "name": "user_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "action",
               "type": "USER-DEFINED",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "target_ref",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "otp_hash",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "attempts",
@@ -7506,22 +7506,22 @@
             {
               "name": "max_attempts",
               "type": "smallint",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "password_verified",
               "type": "boolean",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "otp_verified",
               "type": "boolean",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "consumed",
               "type": "boolean",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "created_at",
@@ -7531,21 +7531,21 @@
             {
               "name": "expires_at",
               "type": "timestamp with time zone",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "ip_address",
               "type": "inet",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "user_agent",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 58,
+          "orphanCount": 5,
           "totalCount": 14
         },
         {
@@ -7562,32 +7562,32 @@
             {
               "name": "user_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "action",
               "type": "USER-DEFINED",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "target_ref",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "token_hash",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "challenge_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "consumed",
               "type": "boolean",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "created_at",
@@ -7597,16 +7597,16 @@
             {
               "name": "expires_at",
               "type": "timestamp with time zone",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "consumed_at",
               "type": "timestamp with time zone",
-              "status": "READ"
+              "status": "ORPHAN"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 50,
+          "orphanCount": 4,
           "totalCount": 10
         },
         {
@@ -7618,12 +7618,12 @@
             {
               "name": "key",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "value",
               "type": "jsonb",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "updated_at",
@@ -7633,11 +7633,11 @@
             {
               "name": "updated_by",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 67,
+          "orphanCount": 1,
           "totalCount": 4
         },
         {
@@ -7669,7 +7669,7 @@
             {
               "name": "name",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "items",
@@ -7679,7 +7679,7 @@
             {
               "name": "share_token",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "is_public",
@@ -7694,7 +7694,7 @@
             {
               "name": "view_count",
               "type": "integer",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "created_at",
@@ -7707,8 +7707,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 89,
+          "orphanCount": 1,
           "totalCount": 12
         },
         {
@@ -7735,7 +7735,7 @@
             {
               "name": "device_name",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "last_seen_at",
@@ -7748,8 +7748,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 75,
+          "orphanCount": 1,
           "totalCount": 6
         },
         {
@@ -7786,7 +7786,7 @@
             {
               "name": "started_at",
               "type": "timestamp with time zone",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "completed_at",
@@ -7832,7 +7832,7 @@
             {
               "name": "comparison_column_order",
               "type": "jsonb",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "created_at",
@@ -7847,11 +7847,11 @@
             {
               "name": "filter_states",
               "type": "jsonb",
-              "status": "READ"
+              "status": "ORPHAN"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 50,
+          "orphanCount": 2,
           "totalCount": 7
         },
         {
@@ -7894,32 +7894,32 @@
             {
               "name": "user_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "query_text",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "history_type",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "result_count",
               "type": "integer",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "is_pinned",
               "type": "boolean",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "metadata",
               "type": "jsonb",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -7932,8 +7932,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 33,
+          "orphanCount": 4,
           "totalCount": 9
         },
         {
@@ -7945,12 +7945,12 @@
             {
               "name": "user_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "revoked_at",
               "type": "timestamp with time zone",
-              "status": "READ+WRITE"
+              "status": "READ"
             }
           ],
           "coverage": 100,
@@ -7966,96 +7966,96 @@
             {
               "name": "audit_id",
               "type": "uuid",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "granted_at",
               "type": "timestamp with time zone",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "granted_to_user_id",
               "type": "uuid",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "granted_to_name",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "granted_to_email",
               "type": "character varying",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "step_up_action",
               "type": "USER-DEFINED",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "operation",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "key_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "key_prefix",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "key_expires_at",
               "type": "timestamp with time zone",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "justification",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "challenge_id",
               "type": "uuid",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "token_id",
               "type": "uuid",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "ip_address",
               "type": "inet",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "user_agent",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "request_id",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "verifications_applied",
               "type": "jsonb",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "extra",
               "type": "jsonb",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 28,
+          "orphanCount": 13,
           "totalCount": 18
         },
         {
@@ -8148,12 +8148,12 @@
             {
               "name": "duration_ms",
               "type": "integer",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "success",
               "type": "boolean",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "created_at",
@@ -8245,76 +8245,76 @@
             {
               "name": "request_id",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "event_type",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "source",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "direction",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "endpoint",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "http_status",
               "type": "integer",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "duration_ms",
               "type": "integer",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "attempt",
               "type": "integer",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "success",
               "type": "boolean",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "error_class",
               "type": "text",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "error_message",
               "type": "text",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "payload_bytes",
               "type": "integer",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "metadata",
               "type": "jsonb",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "occurred_at",
               "type": "timestamp with time zone",
-              "status": "READ"
+              "status": "ORPHAN"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 57,
+          "orphanCount": 6,
           "totalCount": 15
         },
         {
@@ -8417,12 +8417,12 @@
             {
               "name": "description",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "short_description",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "category_name",
@@ -8442,12 +8442,12 @@
             {
               "name": "base_price",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "cost_price",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "stock_quantity",
@@ -8472,7 +8472,7 @@
             {
               "name": "supplier_code",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "supplier_name",
@@ -8487,7 +8487,7 @@
             {
               "name": "videos",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "category_id",
@@ -8502,7 +8502,7 @@
             {
               "name": "og_image_url",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "images",
@@ -8537,52 +8537,52 @@
             {
               "name": "supplier_reference",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "is_active",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "minQuantity",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "dimensions",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "height_cm",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "width_cm",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "length_cm",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "diameter_cm",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "weight_g",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "capacity_ml",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "stock_status",
@@ -8645,8 +8645,8 @@
               "status": "READ+WRITE"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 67,
+          "orphanCount": 15,
           "totalCount": 49
         },
         {
@@ -8663,66 +8663,66 @@
             {
               "name": "name",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "technique_name",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "code",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "technique_code",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "setup_cost",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "setup_price",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "unit_cost",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "handling_price",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "max_colors",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "min_area_cm2",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "max_area_cm2",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "sla_days",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 25,
+          "orphanCount": 9,
           "totalCount": 13
         },
         {
@@ -8739,41 +8739,41 @@
             {
               "name": "component_name",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "location_name",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "width_cm",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "height_cm",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "unit",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "is_primary",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "allowed_technique_ids",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 29,
+          "orphanCount": 5,
           "totalCount": 8
         },
         {
@@ -8785,37 +8785,37 @@
             {
               "name": "name",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "hex",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "group",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "groupSlug",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "variationSlug",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "code",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "image",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "images",
@@ -8823,8 +8823,8 @@
               "status": "READ"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 38,
+          "orphanCount": 5,
           "totalCount": 8
         },
         {
@@ -8841,47 +8841,47 @@
             {
               "name": "productId",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "variantId",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "colorName",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "type",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "quantity",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "previousStock",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "newStock",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "reason",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "reference",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "referenceType",
@@ -8891,22 +8891,22 @@
             {
               "name": "unitCost",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "totalCost",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "createdAt",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "createdBy",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "createdByName",
@@ -8914,8 +8914,8 @@
               "status": "ORPHAN"
             }
           ],
-          "coverage": 87,
-          "orphanCount": 2,
+          "coverage": 13,
+          "orphanCount": 13,
           "totalCount": 16
         }
       ]
@@ -8947,7 +8947,7 @@
             {
               "name": "title",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "cnpj",
@@ -8962,12 +8962,12 @@
             {
               "name": "status",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "source",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "is_customer",
@@ -8982,32 +8982,32 @@
             {
               "name": "is_carrier",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "is_matriz",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "logradouro",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "numero",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "complemento",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "bairro",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "cidade",
@@ -9022,42 +9022,42 @@
             {
               "name": "cep",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "pais",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "endereco",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "endereco_faturamento",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "inscricao_estadual",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "inscricao_municipal",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "cnae_principal",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "cnae_descricao",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "website",
@@ -9072,112 +9072,112 @@
             {
               "name": "facebook",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "linkedin",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "logo_url",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "grupo_economico",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "grupo_economico_id",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "matriz_id",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "central_id",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "singular_id",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "tipo_cooperativa",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "employee_count",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "annual_revenue",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "financial_health",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "bitrix_company_id",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "bitrix_created_at",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "bitrix_updated_at",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "_deprecated_email",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "_deprecated_phone",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "_deprecated_phone_secondary",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "tags_array",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "challenges",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "competitors",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "search_vector",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "deleted_at",
@@ -9187,27 +9187,27 @@
             {
               "name": "deleted_by",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "user_id",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "assigned_by_id",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "created_by_id",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "merge_notes",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "created_at",
@@ -9220,8 +9220,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 28,
+          "orphanCount": 39,
           "totalCount": 58
         },
         {
@@ -9238,7 +9238,7 @@
             {
               "name": "company_id",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "first_name",
@@ -9253,17 +9253,17 @@
             {
               "name": "full_name",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "nome_tratamento",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "apelido",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "cargo",
@@ -9278,32 +9278,32 @@
             {
               "name": "role",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "cpf",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "sexo",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "birthday",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "data_nascimento",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "linkedin",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "instagram",
@@ -9313,52 +9313,52 @@
             {
               "name": "notes",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "source",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "sentiment",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "relationship_score",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "relationship_stage",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "behavior",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "hobbies",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "interests_array",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "tags_array",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "bitrix_contact_id",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "deleted_at",
@@ -9368,17 +9368,17 @@
             {
               "name": "deleted_by",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "user_id",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "assigned_by_id",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "created_at",
@@ -9393,31 +9393,31 @@
             {
               "name": "_deprecated_email",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "_deprecated_phone",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "_deprecated_whatsapp",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "emails",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "phones",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 30,
+          "orphanCount": 23,
           "totalCount": 37
         },
         {
@@ -9434,32 +9434,32 @@
             {
               "name": "contact_id",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "email",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "READ"
             },
             {
               "name": "email_normalizado",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "email_type",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "is_primary",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "is_verified",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "created_at",
@@ -9472,8 +9472,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 17,
+          "orphanCount": 5,
           "totalCount": 9
         },
         {
@@ -9490,47 +9490,47 @@
             {
               "name": "contact_id",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "numero",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "numero_normalizado",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "numero_e164",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "phone_type",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "is_primary",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "is_whatsapp",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "is_verified",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "observacao",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "created_at",
@@ -9543,8 +9543,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 0,
+          "orphanCount": 9,
           "totalCount": 12
         },
         {
@@ -9561,37 +9561,37 @@
             {
               "name": "company_id",
               "type": "unknown",
-              "status": "READ+WRITE"
+              "status": "ORPHAN"
             },
             {
               "name": "tipo",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "is_primary",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "logradouro",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "numero",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "complemento",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "bairro",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "cidade",
@@ -9606,47 +9606,47 @@
             {
               "name": "cep",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "pais",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "google_maps_url",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "google_place_id",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "latitude",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "longitude",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "horario_funcionamento",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "instrucoes_entrega",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "ponto_referencia",
               "type": "unknown",
-              "status": "READ"
+              "status": "ORPHAN"
             },
             {
               "name": "created_at",
@@ -9659,8 +9659,8 @@
               "status": "SYSTEM"
             }
           ],
-          "coverage": 100,
-          "orphanCount": 0,
+          "coverage": 11,
+          "orphanCount": 16,
           "totalCount": 21
         }
       ]

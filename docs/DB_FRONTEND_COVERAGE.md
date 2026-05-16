@@ -1,6 +1,6 @@
 # DB ↔ Frontend Coverage Report
 
-_Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`._
+_Gerado em 2026-05-16T00:23:27.052Z por `scripts/audit-db-frontend-coverage.mjs`._
 
 > **Como ler:** para cada coluna, classificamos como `READ`, `WRITE`, `READ+WRITE`, `ORPHAN` ou `SYSTEM`. `ORPHAN` = não encontramos referência no código (`src/`, `supabase/functions/`, `api/`). Pode ser falso-positivo se for usada apenas por triggers/RPCs.
 
@@ -8,34 +8,34 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 | Banco | Tabelas analisadas | Tabelas excluídas | Colunas | Órfãs | Cobertura média |
 |---|---:|---:|---:|---:|---:|
-| BD Interno (app) | 129 | 10 | 1383 | 0 | 100% |
-| BD Externo (produtos SSOT) | 5 | 0 | 94 | 2 | 97% |
-| BD CRM (Bitrix mirror) | 5 | 0 | 137 | 0 | 100% |
+| BD Interno (app) | 129 | 10 | 1383 | 157 | 84% |
+| BD Externo (produtos SSOT) | 5 | 0 | 94 | 47 | 34% |
+| BD CRM (Bitrix mirror) | 5 | 0 | 137 | 92 | 17% |
 
 ## Top 20 tabelas com mais colunas órfãs
 
 | Banco | Tabela | Módulo | Órfãs | Total | Cob. | Rows |
 |---|---|---|---:|---:|---:|---:|
-| BD Externo (produtos SSOT) | `stock_movements` | Estoque | 2 | 16 | 87% | — |
-| BD Interno (app) | `access_security_settings` | Outros | 0 | 9 | 100% | 0 |
-| BD Interno (app) | `admin_audit_log` | Auditoria | 0 | 16 | 100% | 0 |
-| BD Interno (app) | `admin_settings` | Outros | 0 | 6 | 100% | 0 |
-| BD Interno (app) | `ai_insights_cache` | IA & Flow | 0 | 11 | 100% | 0 |
-| BD Interno (app) | `ai_usage_events` | IA & Flow | 0 | 6 | 100% | 0 |
-| BD Interno (app) | `ai_usage_logs` | IA & Flow | 0 | 13 | 100% | 0 |
-| BD Interno (app) | `ai_usage_quotas` | IA & Flow | 0 | 6 | 100% | 0 |
-| BD Interno (app) | `app_vitals` | Infra & Observabilidade | 0 | 9 | 100% | 0 |
-| BD Interno (app) | `art_file_attachments` | Outros | 0 | 13 | 100% | 0 |
-| BD Interno (app) | `audit_logs` | Auditoria | 0 | 6 | 100% | 0 |
-| BD Interno (app) | `auth_login_attempts` | Segurança | 0 | 7 | 100% | 0 |
-| BD Interno (app) | `bot_detection_log` | Segurança | 0 | 9 | 100% | 0 |
-| BD Interno (app) | `cart_templates` | Kits & Carrinhos | 0 | 7 | 100% | 0 |
-| BD Interno (app) | `category_icons` | Catálogo / Produtos | 0 | 7 | 100% | 0 |
-| BD Interno (app) | `collection_item_reactions` | Coleções | 0 | 8 | 100% | 0 |
-| BD Interno (app) | `collection_items` | Coleções | 0 | 11 | 100% | 0 |
-| BD Interno (app) | `collection_items_trash` | Coleções | 0 | 13 | 100% | 0 |
-| BD Interno (app) | `collections` | Coleções | 0 | 15 | 100% | 0 |
-| BD Interno (app) | `comparison_reactions` | Outros | 0 | 8 | 100% | 0 |
+| BD CRM (Bitrix mirror) | `companies` | CRM | 39 | 58 | 28% | — |
+| BD CRM (Bitrix mirror) | `contacts` | CRM | 23 | 37 | 30% | — |
+| BD CRM (Bitrix mirror) | `company_addresses` | CRM | 16 | 21 | 11% | — |
+| BD Externo (produtos SSOT) | `products` | Catálogo / Produtos | 15 | 49 | 67% | — |
+| BD Interno (app) | `v_full_scope_grants` | Outros | 13 | 18 | 28% | 0 |
+| BD Externo (produtos SSOT) | `stock_movements` | Estoque | 13 | 16 | 13% | — |
+| BD Interno (app) | `quote_approval_tokens` | Orçamentos | 11 | 20 | 35% | 0 |
+| BD Externo (produtos SSOT) | `tecnicas_gravacao` | Outros | 9 | 13 | 25% | — |
+| BD CRM (Bitrix mirror) | `contact_phones` | Outros | 9 | 12 | 0% | — |
+| BD Interno (app) | `webhook_delivery_metrics` | Webhooks & Conexões | 6 | 15 | 57% | 0 |
+| BD Interno (app) | `comparison_reactions` | Outros | 5 | 8 | 17% | 0 |
+| BD Interno (app) | `conversation_event_history` | Outros | 5 | 10 | 38% | 0 |
+| BD Interno (app) | `order_item_personalizations` | Pedidos | 5 | 11 | 38% | 0 |
+| BD Interno (app) | `order_items` | Pedidos | 5 | 18 | 69% | 0 |
+| BD Interno (app) | `ownership_repair_logs` | Outros | 5 | 13 | 55% | 0 |
+| BD Interno (app) | `step_up_challenges` | MCP & Step-Up | 5 | 14 | 58% | 0 |
+| BD Externo (produtos SSOT) | `print_areas` | Outros | 5 | 8 | 29% | — |
+| BD Externo (produtos SSOT) | `product_colors_view` | Catálogo / Produtos | 5 | 8 | 38% | — |
+| BD CRM (Bitrix mirror) | `contact_emails` | Outros | 5 | 9 | 17% | — |
+| BD Interno (app) | `app_vitals` | Infra & Observabilidade | 4 | 9 | 43% | 0 |
 
 ## BD Interno (app)
 
@@ -77,19 +77,19 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 </details>
 
-<details><summary><code>conversation_audit_logs</code> — 100% cobertura, 0/9 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>conversation_audit_logs</code> — 50% cobertura, 4/9 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `session_id` | text | READ |
-| `user_id` | uuid | READ+WRITE |
-| `started_at` | timestamp with time zone | READ+WRITE |
-| `ended_at` | timestamp with time zone | READ |
-| `total_tokens_estimated` | integer | READ |
-| `metadata` | jsonb | READ+WRITE |
-| `status` | text | READ+WRITE |
-| `client_info` | jsonb | READ |
+| `session_id` | text | ORPHAN |
+| `user_id` | uuid | READ |
+| `started_at` | timestamp with time zone | READ |
+| `ended_at` | timestamp with time zone | ORPHAN |
+| `total_tokens_estimated` | integer | ORPHAN |
+| `metadata` | jsonb | READ |
+| `status` | text | READ |
+| `client_info` | jsonb | ORPHAN |
 
 </details>
 
@@ -98,20 +98,20 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `user_id` | uuid | READ+WRITE |
-| `user_email` | text | READ+WRITE |
+| `user_id` | uuid | READ |
+| `user_email` | text | READ |
 | `user_role` | text | READ |
-| `table_name` | text | READ+WRITE |
-| `operation` | text | READ+WRITE |
-| `endpoint` | text | READ+WRITE |
+| `table_name` | text | READ |
+| `operation` | text | READ |
+| `endpoint` | text | READ |
 | `query_summary` | text | READ |
 | `target_id` | uuid | READ |
 | `target_seller_id` | uuid | READ |
 | `policy_hint` | text | READ |
 | `error_code` | text | READ |
-| `error_message` | text | READ+WRITE |
-| `user_agent` | text | READ+WRITE |
-| `ip_address` | inet | READ+WRITE |
+| `error_message` | text | READ |
+| `user_agent` | text | READ |
+| `ip_address` | inet | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 
 </details>
@@ -178,9 +178,9 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 |---|---|---|
 | `id` | uuid | SYSTEM |
 | `category_name` | text | READ |
-| `icon` | text | READ+WRITE |
-| `description` | text | READ+WRITE |
-| `is_active` | boolean | READ+WRITE |
+| `icon` | text | READ |
+| `description` | text | READ |
+| `is_active` | boolean | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
 
@@ -194,7 +194,7 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `component_id` | uuid | READ+WRITE |
 | `location_code` | text | READ+WRITE |
 | `location_name` | text | READ+WRITE |
-| `description` | text | READ+WRITE |
+| `description` | text | READ |
 | `max_width_cm` | numeric | READ+WRITE |
 | `max_height_cm` | numeric | READ+WRITE |
 | `is_active` | boolean | READ+WRITE |
@@ -240,7 +240,7 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `id` | uuid | SYSTEM |
 | `group_code` | text | READ |
 | `group_name` | text | READ |
-| `description` | text | READ+WRITE |
+| `description` | text | READ |
 | `is_active` | boolean | READ+WRITE |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
@@ -260,7 +260,7 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 </details>
 
-<details><summary><code>product_sync_logs</code> — 100% cobertura, 0/12 órfãs, rows: 0</summary>
+<details><summary><code>product_sync_logs</code> — 80% cobertura, 2/12 órfãs, rows: 0</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
@@ -268,10 +268,10 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `source` | text | READ+WRITE |
 | `status` | text | READ+WRITE |
 | `records_processed` | integer | READ |
-| `records_inserted` | integer | READ |
-| `records_updated` | integer | READ |
+| `records_inserted` | integer | ORPHAN |
+| `records_updated` | integer | ORPHAN |
 | `records_failed` | integer | READ |
-| `duration_ms` | integer | READ+WRITE |
+| `duration_ms` | integer | READ |
 | `payload` | jsonb | READ+WRITE |
 | `error_message` | text | READ+WRITE |
 | `triggered_by` | uuid | READ |
@@ -295,17 +295,17 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 ### Coleções
 
-<details><summary><code>collection_item_reactions</code> — 100% cobertura, 0/8 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>collection_item_reactions</code> — 33% cobertura, 4/8 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `collection_id` | uuid | READ+WRITE |
-| `item_id` | uuid | READ |
-| `anon_id` | text | READ |
-| `emoji` | text | READ |
-| `ip_hash` | text | READ |
-| `user_agent` | text | READ+WRITE |
+| `collection_id` | uuid | READ |
+| `item_id` | uuid | ORPHAN |
+| `anon_id` | text | ORPHAN |
+| `emoji` | text | ORPHAN |
+| `ip_hash` | text | ORPHAN |
+| `user_agent` | text | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 
 </details>
@@ -328,12 +328,12 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 </details>
 
-<details><summary><code>collection_items_trash</code> — 100% cobertura, 0/13 órfãs, rows: 0</summary>
+<details><summary><code>collection_items_trash</code> — 91% cobertura, 1/13 órfãs, rows: 0</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `original_id` | uuid | READ |
+| `original_id` | uuid | ORPHAN |
 | `collection_id` | uuid | READ+WRITE |
 | `user_id` | uuid | READ+WRITE |
 | `product_id` | text | READ+WRITE |
@@ -344,11 +344,11 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `price_at_save` | numeric | READ+WRITE |
 | `sort_order` | integer | READ+WRITE |
 | `deleted_at` | timestamp with time zone | SYSTEM |
-| `expires_at` | timestamp with time zone | READ+WRITE |
+| `expires_at` | timestamp with time zone | READ |
 
 </details>
 
-<details><summary><code>collections</code> — 100% cobertura, 0/15 órfãs, rows: 0</summary>
+<details><summary><code>collections</code> — 92% cobertura, 1/15 órfãs, rows: 0</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
@@ -366,7 +366,7 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `share_token` | text | READ+WRITE |
 | `share_expires_at` | timestamp with time zone | READ+WRITE |
 | `is_public` | boolean | READ+WRITE |
-| `is_deleted` | boolean | READ |
+| `is_deleted` | boolean | ORPHAN |
 
 </details>
 
@@ -377,50 +377,50 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `title` | text | READ+WRITE |
-| `description` | text | READ+WRITE |
-| `category` | text | READ+WRITE |
+| `title` | text | READ |
+| `description` | text | READ |
+| `category` | text | READ |
 | `priority` | integer | READ |
 | `status` | text | READ+WRITE |
-| `result` | jsonb | READ+WRITE |
+| `result` | jsonb | READ |
 | `error` | text | READ+WRITE |
 | `guardrail_status` | text | READ |
-| `started_at` | timestamp with time zone | READ+WRITE |
-| `finished_at` | timestamp with time zone | READ+WRITE |
-| `created_by` | uuid | READ+WRITE |
+| `started_at` | timestamp with time zone | READ |
+| `finished_at` | timestamp with time zone | READ |
+| `created_by` | uuid | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
 
 </details>
 
-<details><summary><code>optimization_queue_runs</code> — 100% cobertura, 0/8 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>optimization_queue_runs</code> — 50% cobertura, 3/8 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `queue_id` | uuid | READ |
-| `status` | text | READ+WRITE |
-| `notes` | text | READ+WRITE |
-| `guardrail_status` | text | READ |
-| `duration_ms` | integer | READ+WRITE |
-| `executed_by` | uuid | READ |
+| `queue_id` | uuid | ORPHAN |
+| `status` | text | READ |
+| `notes` | text | READ |
+| `guardrail_status` | text | ORPHAN |
+| `duration_ms` | integer | READ |
+| `executed_by` | uuid | ORPHAN |
 | `created_at` | timestamp with time zone | SYSTEM |
 
 </details>
 
 ### Favoritos
 
-<details><summary><code>favorite_item_reactions</code> — 100% cobertura, 0/8 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>favorite_item_reactions</code> — 33% cobertura, 4/8 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `item_id` | uuid | READ |
-| `list_id` | uuid | READ+WRITE |
-| `anon_id` | text | READ |
-| `emoji` | text | READ |
-| `ip_hash` | text | READ |
-| `user_agent` | text | READ+WRITE |
+| `item_id` | uuid | ORPHAN |
+| `list_id` | uuid | READ |
+| `anon_id` | text | ORPHAN |
+| `emoji` | text | ORPHAN |
+| `ip_hash` | text | ORPHAN |
+| `user_agent` | text | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 
 </details>
@@ -443,12 +443,12 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 </details>
 
-<details><summary><code>favorite_items_trash</code> — 100% cobertura, 0/11 órfãs, rows: 0</summary>
+<details><summary><code>favorite_items_trash</code> — 89% cobertura, 1/11 órfãs, rows: 0</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `original_id` | uuid | READ |
+| `original_id` | uuid | ORPHAN |
 | `list_id` | uuid | READ+WRITE |
 | `user_id` | uuid | READ+WRITE |
 | `product_id` | text | READ+WRITE |
@@ -471,7 +471,7 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `description` | text | READ+WRITE |
 | `color` | text | READ+WRITE |
 | `icon` | text | READ+WRITE |
-| `is_default` | boolean | READ+WRITE |
+| `is_default` | boolean | READ |
 | `is_archived` | boolean | READ |
 | `client_id` | text | READ+WRITE |
 | `client_name` | text | READ+WRITE |
@@ -483,17 +483,17 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 </details>
 
-<details><summary><code>favorites</code> — 100% cobertura, 0/7 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>favorites</code> — 40% cobertura, 3/7 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `user_id` | uuid | READ+WRITE |
-| `product_id` | text | READ+WRITE |
-| `variant_info` | jsonb | READ+WRITE |
-| `added_at` | timestamp with time zone | READ |
+| `user_id` | uuid | READ |
+| `product_id` | text | READ |
+| `variant_info` | jsonb | ORPHAN |
+| `added_at` | timestamp with time zone | ORPHAN |
 | `updated_at` | timestamp with time zone | SYSTEM |
-| `is_deleted` | boolean | READ |
+| `is_deleted` | boolean | ORPHAN |
 
 </details>
 
@@ -555,7 +555,7 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `role` | USER-DEFINED | READ+WRITE |
+| `role` | USER-DEFINED | READ |
 | `monthly_limit` | integer | READ+WRITE |
 | `is_unlimited` | boolean | READ+WRITE |
 | `created_at` | timestamp with time zone | SYSTEM |
@@ -590,18 +590,18 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 ### Infra & Observabilidade
 
-<details><summary><code>app_vitals</code> — 100% cobertura, 0/9 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>app_vitals</code> — 43% cobertura, 4/9 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `metric_name` | text | READ |
-| `metric_value` | numeric | READ |
-| `rating` | text | READ |
-| `request_id` | text | READ+WRITE |
-| `page_url` | text | READ |
-| `user_agent` | text | READ+WRITE |
-| `user_id` | uuid | READ+WRITE |
+| `metric_name` | text | ORPHAN |
+| `metric_value` | numeric | ORPHAN |
+| `rating` | text | ORPHAN |
+| `request_id` | text | READ |
+| `page_url` | text | ORPHAN |
+| `user_agent` | text | READ |
+| `user_id` | uuid | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 
 </details>
@@ -615,7 +615,7 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `score` | integer | READ |
 | `max_score` | integer | READ |
 | `failures` | ARRAY | READ |
-| `details` | jsonb | READ+WRITE |
+| `details` | jsonb | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 
 </details>
@@ -637,11 +637,11 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `error_message` | text | READ+WRITE |
 | `user_id` | uuid | READ+WRITE |
 | `created_at` | timestamp with time zone | SYSTEM |
-| `error_kind` | text | READ |
-| `retry_count` | integer | READ |
+| `error_kind` | text | READ+WRITE |
+| `retry_count` | integer | READ+WRITE |
 | `cache_hit` | boolean | READ+WRITE |
-| `is_cold_start` | boolean | READ |
-| `is_503` | boolean | READ |
+| `is_cold_start` | boolean | READ+WRITE |
+| `is_503` | boolean | READ+WRITE |
 
 </details>
 
@@ -650,8 +650,8 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `identifier` | text | READ+WRITE |
-| `endpoint` | text | READ+WRITE |
+| `identifier` | text | READ |
+| `endpoint` | text | READ |
 | `request_count` | integer | READ |
 | `window_start` | timestamp with time zone | READ |
 | `blocked_until` | timestamp with time zone | READ |
@@ -719,14 +719,14 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 |---|---|---|
 | `id` | uuid | SYSTEM |
 | `type` | text | READ+WRITE |
-| `name` | text | READ+WRITE |
-| `config` | jsonb | READ+WRITE |
+| `name` | text | READ |
+| `config` | jsonb | READ |
 | `secret_refs` | ARRAY | READ |
 | `status` | text | READ+WRITE |
 | `last_test_at` | timestamp with time zone | READ+WRITE |
 | `last_test_ok` | boolean | READ+WRITE |
 | `last_test_message` | text | READ+WRITE |
-| `created_by` | uuid | READ+WRITE |
+| `created_by` | uuid | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
 | `last_latency_ms` | integer | READ+WRITE |
@@ -744,13 +744,13 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `triggered_by_user_id` | uuid | READ |
 | `triggered_by_secret_name` | text | READ |
 | `trigger_op` | text | READ |
-| `processed` | integer | READ+WRITE |
+| `processed` | integer | READ |
 | `created_count` | integer | READ |
 | `updated_count` | integer | READ |
-| `status` | text | READ+WRITE |
-| `error_message` | text | READ+WRITE |
-| `duration_ms` | integer | READ+WRITE |
-| `details` | jsonb | READ+WRITE |
+| `status` | text | READ |
+| `error_message` | text | READ |
+| `duration_ms` | integer | READ |
+| `details` | jsonb | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 
 </details>
@@ -787,7 +787,7 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 </details>
 
-<details><summary><code>kit_collaborators</code> — 100% cobertura, 0/8 órfãs, rows: 0</summary>
+<details><summary><code>kit_collaborators</code> — 80% cobertura, 1/8 órfãs, rows: 0</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
@@ -795,7 +795,7 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `kit_id` | uuid | READ+WRITE |
 | `user_id` | uuid | READ+WRITE |
 | `permission` | text | READ+WRITE |
-| `invited_by` | uuid | READ |
+| `invited_by` | uuid | ORPHAN |
 | `invited_email` | text | READ+WRITE |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
@@ -818,19 +818,19 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 </details>
 
-<details><summary><code>kit_share_tokens</code> — 100% cobertura, 0/11 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>kit_share_tokens</code> — 63% cobertura, 3/11 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `kit_id` | uuid | READ+WRITE |
-| `seller_id` | uuid | READ+WRITE |
-| `token` | text | READ+WRITE |
-| `client_name` | text | READ+WRITE |
+| `kit_id` | uuid | ORPHAN |
+| `seller_id` | uuid | READ |
+| `token` | text | ORPHAN |
+| `client_name` | text | READ |
 | `client_email` | text | READ |
-| `status` | text | READ+WRITE |
-| `expires_at` | timestamp with time zone | READ+WRITE |
-| `viewed_at` | timestamp with time zone | READ |
+| `status` | text | READ |
+| `expires_at` | timestamp with time zone | READ |
+| `viewed_at` | timestamp with time zone | ORPHAN |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
 
@@ -842,10 +842,10 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 |---|---|---|
 | `id` | uuid | SYSTEM |
 | `name` | text | READ+WRITE |
-| `description` | text | READ+WRITE |
-| `category` | text | READ+WRITE |
-| `color` | text | READ+WRITE |
-| `icon` | text | READ+WRITE |
+| `description` | text | READ |
+| `category` | text | READ |
+| `color` | text | READ |
+| `icon` | text | READ |
 | `tag` | text | READ |
 | `cover_image_url` | text | READ |
 | `box_data` | jsonb | READ |
@@ -855,7 +855,7 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `volume_usage_percent` | numeric | READ |
 | `usage_count` | integer | READ |
 | `is_active` | boolean | READ+WRITE |
-| `created_by` | uuid | READ+WRITE |
+| `created_by` | uuid | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
 
@@ -867,12 +867,12 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 |---|---|---|
 | `id` | uuid | SYSTEM |
 | `kit_master_id` | uuid | READ |
-| `label` | text | READ+WRITE |
-| `sort_order` | integer | READ+WRITE |
+| `label` | text | READ |
+| `sort_order` | integer | READ |
 | `box_data` | jsonb | READ |
 | `items_data` | jsonb | READ |
 | `personalization_data` | jsonb | READ |
-| `kit_quantity` | integer | READ+WRITE |
+| `kit_quantity` | integer | READ |
 | `total_price` | numeric | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
@@ -881,20 +881,20 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 ### MCP & Step-Up
 
-<details><summary><code>mcp_access_violations</code> — 100% cobertura, 0/11 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>mcp_access_violations</code> — 78% cobertura, 2/11 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `user_id` | uuid | READ+WRITE |
-| `reason` | text | READ+WRITE |
-| `source` | text | READ+WRITE |
-| `operation` | text | READ+WRITE |
-| `target_key_id` | uuid | READ |
-| `ip_address` | text | READ+WRITE |
-| `user_agent` | text | READ+WRITE |
-| `request_id` | text | READ+WRITE |
-| `details` | jsonb | READ+WRITE |
+| `user_id` | uuid | READ |
+| `reason` | text | ORPHAN |
+| `source` | text | READ |
+| `operation` | text | READ |
+| `target_key_id` | uuid | ORPHAN |
+| `ip_address` | text | READ |
+| `user_agent` | text | READ |
+| `request_id` | text | READ |
+| `details` | jsonb | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 
 </details>
@@ -910,7 +910,7 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `scopes` | ARRAY | READ+WRITE |
 | `description` | text | READ+WRITE |
 | `created_by` | uuid | READ+WRITE |
-| `last_used_at` | timestamp with time zone | READ+WRITE |
+| `last_used_at` | timestamp with time zone | READ |
 | `expires_at` | timestamp with time zone | READ+WRITE |
 | `revoked_at` | timestamp with time zone | READ+WRITE |
 | `created_at` | timestamp with time zone | SYSTEM |
@@ -919,14 +919,14 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 </details>
 
-<details><summary><code>mcp_full_grantors</code> — 100% cobertura, 0/4 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>mcp_full_grantors</code> — 25% cobertura, 3/4 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
-| `user_id` | uuid | READ+WRITE |
-| `granted_by` | uuid | READ |
-| `reason` | text | READ+WRITE |
-| `granted_at` | timestamp with time zone | READ |
+| `user_id` | uuid | READ |
+| `granted_by` | uuid | ORPHAN |
+| `reason` | text | ORPHAN |
+| `granted_at` | timestamp with time zone | ORPHAN |
 
 </details>
 
@@ -935,32 +935,32 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `key_id` | uuid | READ+WRITE |
-| `created_by` | uuid | READ+WRITE |
-| `revoked_at` | timestamp with time zone | READ+WRITE |
-| `source` | text | READ+WRITE |
-| `reason` | text | READ+WRITE |
+| `key_id` | uuid | READ |
+| `created_by` | uuid | READ |
+| `revoked_at` | timestamp with time zone | READ |
+| `source` | text | READ |
+| `reason` | text | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 
 </details>
 
-<details><summary><code>mcp_keys</code> — 100% cobertura, 0/9 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>mcp_keys</code> — 57% cobertura, 3/9 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `user_id` | uuid | READ+WRITE |
-| `key_name` | text | READ |
-| `key_hash` | text | READ+WRITE |
-| `scopes` | ARRAY | READ+WRITE |
-| `expires_at` | timestamp with time zone | READ+WRITE |
-| `last_used_at` | timestamp with time zone | READ+WRITE |
+| `user_id` | uuid | READ |
+| `key_name` | text | ORPHAN |
+| `key_hash` | text | ORPHAN |
+| `scopes` | ARRAY | READ |
+| `expires_at` | timestamp with time zone | READ |
+| `last_used_at` | timestamp with time zone | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
-| `is_revoked` | boolean | READ |
+| `is_revoked` | boolean | ORPHAN |
 
 </details>
 
-<details><summary><code>step_up_audit_log</code> — 100% cobertura, 0/11 órfãs, rows: 0</summary>
+<details><summary><code>step_up_audit_log</code> — 89% cobertura, 1/11 órfãs, rows: 0</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
@@ -970,7 +970,7 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `target_ref` | text | READ+WRITE |
 | `event_type` | text | READ+WRITE |
 | `challenge_id` | uuid | READ+WRITE |
-| `token_id` | uuid | READ |
+| `token_id` | uuid | ORPHAN |
 | `ip_address` | inet | READ+WRITE |
 | `user_agent` | text | READ+WRITE |
 | `metadata` | jsonb | READ+WRITE |
@@ -978,41 +978,41 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 </details>
 
-<details><summary><code>step_up_challenges</code> — 100% cobertura, 0/14 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>step_up_challenges</code> — 58% cobertura, 5/14 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `user_id` | uuid | READ+WRITE |
-| `action` | USER-DEFINED | READ+WRITE |
-| `target_ref` | text | READ+WRITE |
-| `otp_hash` | text | READ |
+| `user_id` | uuid | READ |
+| `action` | USER-DEFINED | READ |
+| `target_ref` | text | READ |
+| `otp_hash` | text | ORPHAN |
 | `attempts` | smallint | READ |
-| `max_attempts` | smallint | READ |
-| `password_verified` | boolean | READ |
-| `otp_verified` | boolean | READ |
-| `consumed` | boolean | READ |
+| `max_attempts` | smallint | ORPHAN |
+| `password_verified` | boolean | ORPHAN |
+| `otp_verified` | boolean | ORPHAN |
+| `consumed` | boolean | ORPHAN |
 | `created_at` | timestamp with time zone | SYSTEM |
-| `expires_at` | timestamp with time zone | READ+WRITE |
-| `ip_address` | inet | READ+WRITE |
-| `user_agent` | text | READ+WRITE |
+| `expires_at` | timestamp with time zone | READ |
+| `ip_address` | inet | READ |
+| `user_agent` | text | READ |
 
 </details>
 
-<details><summary><code>step_up_tokens</code> — 100% cobertura, 0/10 órfãs, rows: 0</summary>
+<details><summary><code>step_up_tokens</code> — 50% cobertura, 4/10 órfãs, rows: 0</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `user_id` | uuid | READ+WRITE |
-| `action` | USER-DEFINED | READ+WRITE |
-| `target_ref` | text | READ+WRITE |
-| `token_hash` | text | READ |
-| `challenge_id` | uuid | READ+WRITE |
-| `consumed` | boolean | READ |
+| `user_id` | uuid | READ |
+| `action` | USER-DEFINED | READ |
+| `target_ref` | text | READ |
+| `token_hash` | text | ORPHAN |
+| `challenge_id` | uuid | ORPHAN |
+| `consumed` | boolean | ORPHAN |
 | `created_at` | timestamp with time zone | SYSTEM |
-| `expires_at` | timestamp with time zone | READ+WRITE |
-| `consumed_at` | timestamp with time zone | READ |
+| `expires_at` | timestamp with time zone | READ |
+| `consumed_at` | timestamp with time zone | ORPHAN |
 
 </details>
 
@@ -1024,8 +1024,8 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 |---|---|---|
 | `id` | uuid | SYSTEM |
 | `user_id` | uuid | READ+WRITE |
-| `client_id` | text | READ+WRITE |
-| `client_name` | text | READ+WRITE |
+| `client_id` | text | READ |
+| `client_name` | text | READ |
 | `logo_urls` | jsonb | READ |
 | `primary_color` | text | READ |
 | `secondary_color` | text | READ |
@@ -1033,8 +1033,8 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `visual_style` | text | READ |
 | `required_words` | ARRAY | READ |
 | `forbidden_words` | ARRAY | READ |
-| `notes` | text | READ+WRITE |
-| `metadata` | jsonb | READ+WRITE |
+| `notes` | text | READ |
+| `metadata` | jsonb | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
 
@@ -1046,32 +1046,32 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 |---|---|---|
 | `id` | uuid | SYSTEM |
 | `user_id` | uuid | READ+WRITE |
-| `client_id` | text | READ+WRITE |
-| `client_name` | text | READ+WRITE |
-| `title` | text | READ+WRITE |
+| `client_id` | text | READ |
+| `client_name` | text | READ |
+| `title` | text | READ |
 | `objective` | text | READ |
 | `channel` | text | READ |
 | `audience` | text | READ |
 | `tone` | text | READ |
 | `cta` | text | READ |
 | `occasion` | text | READ |
-| `status` | text | READ+WRITE |
-| `metadata` | jsonb | READ+WRITE |
+| `status` | text | READ |
+| `metadata` | jsonb | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
 
 </details>
 
-<details><summary><code>magic_up_comments</code> — 100% cobertura, 0/7 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>magic_up_comments</code> — 40% cobertura, 3/7 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `user_id` | uuid | READ+WRITE |
-| `generation_id` | uuid | READ |
-| `author_name` | text | READ |
-| `comment` | text | READ |
-| `is_public` | boolean | READ+WRITE |
+| `user_id` | uuid | READ |
+| `generation_id` | uuid | ORPHAN |
+| `author_name` | text | ORPHAN |
+| `comment` | text | ORPHAN |
+| `is_public` | boolean | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 
 </details>
@@ -1082,18 +1082,18 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 |---|---|---|
 | `id` | uuid | SYSTEM |
 | `user_id` | uuid | READ+WRITE |
-| `product_name` | text | READ+WRITE |
+| `product_name` | text | READ |
 | `scene_title` | text | READ |
 | `scene_category` | text | READ |
-| `client_name` | text | READ+WRITE |
+| `client_name` | text | READ |
 | `generated_image_url` | text | READ |
 | `is_favorite` | boolean | READ+WRITE |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `campaign_id` | uuid | READ |
-| `product_id` | text | READ+WRITE |
-| `product_sku` | text | READ+WRITE |
-| `prompt_text` | text | READ+WRITE |
-| `model` | text | READ+WRITE |
+| `product_id` | text | READ |
+| `product_sku` | text | READ |
+| `prompt_text` | text | READ |
+| `model` | text | READ |
 | `channel` | text | READ |
 | `aspect_ratio` | text | READ |
 | `quality_score` | integer | READ+WRITE |
@@ -1105,35 +1105,35 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 </details>
 
-<details><summary><code>magic_up_public_shares</code> — 100% cobertura, 0/12 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>magic_up_public_shares</code> — 56% cobertura, 4/12 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `user_id` | uuid | READ+WRITE |
-| `generation_id` | uuid | READ |
-| `campaign_id` | uuid | READ |
-| `share_token` | text | READ+WRITE |
-| `expires_at` | timestamp with time zone | READ+WRITE |
-| `allow_download` | boolean | READ |
-| `allow_comments` | boolean | READ |
-| `status` | text | READ+WRITE |
-| `metadata` | jsonb | READ+WRITE |
+| `user_id` | uuid | READ |
+| `generation_id` | uuid | ORPHAN |
+| `campaign_id` | uuid | ORPHAN |
+| `share_token` | text | READ |
+| `expires_at` | timestamp with time zone | READ |
+| `allow_download` | boolean | ORPHAN |
+| `allow_comments` | boolean | ORPHAN |
+| `status` | text | READ |
+| `metadata` | jsonb | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
 
 </details>
 
-<details><summary><code>magic_up_reactions</code> — 100% cobertura, 0/7 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>magic_up_reactions</code> — 40% cobertura, 3/7 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `user_id` | uuid | READ+WRITE |
-| `generation_id` | uuid | READ |
-| `reaction_type` | text | READ |
-| `ip_hash` | text | READ |
-| `user_agent` | text | READ+WRITE |
+| `user_id` | uuid | READ |
+| `generation_id` | uuid | ORPHAN |
+| `reaction_type` | text | ORPHAN |
+| `ip_hash` | text | ORPHAN |
+| `user_agent` | text | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 
 </details>
@@ -1145,15 +1145,15 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `user_id` | uuid | READ+WRITE |
-| `draft_key` | text | READ+WRITE |
+| `user_id` | uuid | READ |
+| `draft_key` | text | READ |
 | `product_id` | text | READ+WRITE |
-| `product_name` | text | READ+WRITE |
+| `product_name` | text | READ |
 | `technique_id` | text | READ+WRITE |
-| `technique_name` | text | READ+WRITE |
+| `technique_name` | text | READ |
 | `client_id` | text | READ+WRITE |
-| `client_name` | text | READ+WRITE |
-| `personalization_areas` | jsonb | READ+WRITE |
+| `client_name` | text | READ |
+| `personalization_areas` | jsonb | READ |
 | `logo_data` | text | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
@@ -1166,50 +1166,50 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 |---|---|---|
 | `id` | uuid | SYSTEM |
 | `config_key` | text | READ+WRITE |
-| `label` | text | READ+WRITE |
+| `label` | text | READ |
 | `prompt_text` | text | READ+WRITE |
 | `ai_model` | text | READ+WRITE |
-| `technique_id` | uuid | READ+WRITE |
-| `is_active` | boolean | READ+WRITE |
+| `technique_id` | uuid | READ |
+| `is_active` | boolean | READ |
 | `version` | integer | READ+WRITE |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
 
 </details>
 
-<details><summary><code>mockup_prompt_history</code> — 100% cobertura, 0/10 órfãs, rows: 0</summary>
+<details><summary><code>mockup_prompt_history</code> — 67% cobertura, 3/10 órfãs, rows: 0</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
 | `config_id` | uuid | READ+WRITE |
 | `config_key` | text | READ+WRITE |
-| `old_prompt` | text | READ |
-| `new_prompt` | text | READ |
+| `old_prompt` | text | ORPHAN |
+| `new_prompt` | text | ORPHAN |
 | `ai_model` | text | READ+WRITE |
 | `version` | integer | READ+WRITE |
 | `changed_by` | uuid | READ+WRITE |
 | `change_notes` | text | READ+WRITE |
-| `changed_at` | timestamp with time zone | READ |
+| `changed_at` | timestamp with time zone | ORPHAN |
 
 </details>
 
-<details><summary><code>mockup_templates</code> — 100% cobertura, 0/14 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>mockup_templates</code> — 91% cobertura, 1/14 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `user_id` | uuid | READ+WRITE |
-| `name` | text | READ+WRITE |
-| `description` | text | READ+WRITE |
-| `product_id` | text | READ+WRITE |
-| `product_name` | text | READ+WRITE |
-| `technique_id` | text | READ+WRITE |
-| `technique_name` | text | READ+WRITE |
-| `personalization_areas` | jsonb | READ+WRITE |
-| `thumbnail_url` | text | READ+WRITE |
+| `user_id` | uuid | READ |
+| `name` | text | READ |
+| `description` | text | READ |
+| `product_id` | text | READ |
+| `product_name` | text | READ |
+| `technique_id` | text | READ |
+| `technique_name` | text | READ |
+| `personalization_areas` | jsonb | READ |
+| `thumbnail_url` | text | ORPHAN |
 | `usage_count` | integer | READ |
-| `is_favorite` | boolean | READ+WRITE |
+| `is_favorite` | boolean | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
 
@@ -1217,30 +1217,30 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 ### Orçamentos
 
-<details><summary><code>quote_approval_tokens</code> — 100% cobertura, 0/20 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>quote_approval_tokens</code> — 35% cobertura, 11/20 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `quote_id` | text | READ+WRITE |
-| `token` | text | READ+WRITE |
-| `seller_id` | uuid | READ+WRITE |
-| `client_name` | text | READ+WRITE |
+| `quote_id` | text | READ |
+| `token` | text | ORPHAN |
+| `seller_id` | uuid | READ |
+| `client_name` | text | READ |
 | `client_email` | text | READ |
-| `status` | text | READ+WRITE |
-| `expires_at` | timestamp with time zone | READ+WRITE |
-| `viewed_at` | timestamp with time zone | READ |
-| `responded_at` | timestamp with time zone | READ+WRITE |
-| `response` | text | READ+WRITE |
-| `response_notes` | text | READ |
+| `status` | text | READ |
+| `expires_at` | timestamp with time zone | READ |
+| `viewed_at` | timestamp with time zone | ORPHAN |
+| `responded_at` | timestamp with time zone | ORPHAN |
+| `response` | text | ORPHAN |
+| `response_notes` | text | ORPHAN |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
-| `signer_name` | text | READ |
-| `signer_document` | text | READ |
-| `signer_ip` | text | READ |
-| `signer_user_agent` | text | READ |
-| `signature_hash` | text | READ |
-| `signed_at` | timestamp with time zone | READ |
+| `signer_name` | text | ORPHAN |
+| `signer_document` | text | ORPHAN |
+| `signer_ip` | text | ORPHAN |
+| `signer_user_agent` | text | ORPHAN |
+| `signature_hash` | text | ORPHAN |
+| `signed_at` | timestamp with time zone | ORPHAN |
 
 </details>
 
@@ -1259,14 +1259,14 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 </details>
 
-<details><summary><code>quote_drafts</code> — 100% cobertura, 0/4 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>quote_drafts</code> — 33% cobertura, 2/4 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `user_id` | uuid | READ+WRITE |
-| `data` | jsonb | READ+WRITE |
-| `last_saved_at` | timestamp with time zone | READ |
+| `user_id` | uuid | READ |
+| `data` | jsonb | ORPHAN |
+| `last_saved_at` | timestamp with time zone | ORPHAN |
 
 </details>
 
@@ -1293,8 +1293,8 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 |---|---|---|
 | `id` | uuid | SYSTEM |
 | `quote_item_id` | uuid | READ |
-| `technique_id` | text | READ+WRITE |
-| `technique_name` | text | READ+WRITE |
+| `technique_id` | text | READ |
+| `technique_name` | text | READ |
 | `colors_count` | integer | READ |
 | `positions_count` | integer | READ |
 | `area_cm2` | numeric | READ |
@@ -1310,31 +1310,31 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 </details>
 
-<details><summary><code>quote_items</code> — 100% cobertura, 0/21 órfãs, rows: 0</summary>
+<details><summary><code>quote_items</code> — 78% cobertura, 4/21 órfãs, rows: 0</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
 | `quote_id` | uuid | READ+WRITE |
-| `product_id` | text | READ+WRITE |
-| `product_name` | text | READ+WRITE |
-| `product_sku` | text | READ+WRITE |
-| `product_image_url` | text | READ+WRITE |
-| `quantity` | integer | READ+WRITE |
+| `product_id` | text | READ |
+| `product_name` | text | READ |
+| `product_sku` | text | READ |
+| `product_image_url` | text | READ |
+| `quantity` | integer | READ |
 | `unit_price` | numeric | READ |
 | `subtotal` | numeric | READ+WRITE |
-| `color_name` | text | READ+WRITE |
-| `color_hex` | text | READ+WRITE |
+| `color_name` | text | READ |
+| `color_hex` | text | READ |
 | `notes` | text | READ+WRITE |
-| `sort_order` | integer | READ+WRITE |
-| `display_order` | integer | READ |
+| `sort_order` | integer | READ |
+| `display_order` | integer | ORPHAN |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
 | `kit_group_id` | text | READ |
 | `kit_name` | text | READ |
-| `size_code` | text | READ |
-| `gender` | text | READ |
-| `price_confirmed_at` | timestamp with time zone | READ |
+| `size_code` | text | ORPHAN |
+| `gender` | text | ORPHAN |
+| `price_confirmed_at` | timestamp with time zone | ORPHAN |
 
 </details>
 
@@ -1343,15 +1343,15 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `seller_id` | uuid | READ+WRITE |
-| `name` | text | READ+WRITE |
-| `description` | text | READ+WRITE |
-| `is_default` | boolean | READ+WRITE |
+| `seller_id` | uuid | READ |
+| `name` | text | READ |
+| `description` | text | READ |
+| `is_default` | boolean | READ |
 | `template_data` | jsonb | READ |
 | `items_data` | jsonb | READ |
 | `discount_percent` | numeric | READ |
 | `discount_amount` | numeric | READ |
-| `notes` | text | READ+WRITE |
+| `notes` | text | READ |
 | `internal_notes` | text | READ |
 | `payment_terms` | text | READ |
 | `delivery_time` | text | READ |
@@ -1361,7 +1361,7 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 </details>
 
-<details><summary><code>quotes</code> — 100% cobertura, 0/38 órfãs, rows: 0</summary>
+<details><summary><code>quotes</code> — 94% cobertura, 2/38 órfãs, rows: 0</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
@@ -1372,7 +1372,7 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `client_email` | text | READ |
 | `client_phone` | text | READ |
 | `client_company` | text | READ |
-| `client_cnpj` | text | READ |
+| `client_cnpj` | text | ORPHAN |
 | `seller_id` | uuid | READ+WRITE |
 | `status` | text | READ+WRITE |
 | `subtotal` | numeric | READ+WRITE |
@@ -1384,15 +1384,15 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `delivery_time` | text | READ |
 | `shipping_type` | text | READ |
 | `shipping_cost` | numeric | READ |
-| `internal_notes` | text | READ |
+| `internal_notes` | text | READ+WRITE |
 | `valid_until` | timestamp with time zone | READ |
-| `bitrix_deal_id` | text | READ |
-| `bitrix_quote_id` | text | READ |
+| `bitrix_deal_id` | text | READ+WRITE |
+| `bitrix_quote_id` | text | READ+WRITE |
 | `synced_to_bitrix` | boolean | READ+WRITE |
 | `synced_at` | timestamp with time zone | READ+WRITE |
 | `client_response` | text | READ |
 | `client_response_at` | timestamp with time zone | READ |
-| `client_response_notes` | text | READ |
+| `client_response_notes` | text | ORPHAN |
 | `sent_at` | timestamp with time zone | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
@@ -1408,7 +1408,7 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 ### Outros
 
-<details><summary><code>access_security_settings</code> — 100% cobertura, 0/9 órfãs, rows: 0</summary>
+<details><summary><code>access_security_settings</code> — 83% cobertura, 1/9 órfãs, rows: 0</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
@@ -1418,7 +1418,7 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `block_unknown_locations` | boolean | READ |
 | `max_failed_attempts` | integer | READ |
 | `lockout_duration_minutes` | integer | READ |
-| `strict_access_mode` | boolean | READ |
+| `strict_access_mode` | boolean | ORPHAN |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
 
@@ -1431,7 +1431,7 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `id` | uuid | SYSTEM |
 | `key` | text | READ+WRITE |
 | `value` | jsonb | READ+WRITE |
-| `updated_by` | uuid | READ+WRITE |
+| `updated_by` | uuid | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
 
@@ -1451,70 +1451,70 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `mime_type` | text | READ+WRITE |
 | `file_size_bytes` | bigint | READ+WRITE |
 | `file_extension` | text | READ+WRITE |
-| `notes` | text | READ+WRITE |
+| `notes` | text | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
 
 </details>
 
-<details><summary><code>comparison_reactions</code> — 100% cobertura, 0/8 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>comparison_reactions</code> — 17% cobertura, 5/8 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `comparison_id` | uuid | READ |
-| `item_index` | integer | READ |
-| `emoji` | text | READ |
-| `anon_id` | text | READ |
-| `ip_hash` | text | READ |
-| `user_agent` | text | READ+WRITE |
+| `comparison_id` | uuid | ORPHAN |
+| `item_index` | integer | ORPHAN |
+| `emoji` | text | ORPHAN |
+| `anon_id` | text | ORPHAN |
+| `ip_hash` | text | ORPHAN |
+| `user_agent` | text | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 
 </details>
 
-<details><summary><code>component_media</code> — 100% cobertura, 0/10 órfãs, rows: 0</summary>
+<details><summary><code>component_media</code> — 71% cobertura, 2/10 órfãs, rows: 0</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `component_id` | text | READ+WRITE |
-| `product_id` | text | READ+WRITE |
+| `component_id` | text | ORPHAN |
+| `product_id` | text | READ |
 | `media_type` | text | READ |
-| `url` | text | READ+WRITE |
-| `title` | text | READ+WRITE |
-| `sort_order` | integer | READ+WRITE |
-| `is_cover` | boolean | READ |
+| `url` | text | READ |
+| `title` | text | READ |
+| `sort_order` | integer | READ |
+| `is_cover` | boolean | ORPHAN |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
 
 </details>
 
-<details><summary><code>conversation_delivery_status</code> — 100% cobertura, 0/5 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>conversation_delivery_status</code> — 33% cobertura, 2/5 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `event_id` | uuid | READ |
-| `status` | text | READ+WRITE |
-| `error_details` | text | READ |
+| `event_id` | uuid | ORPHAN |
+| `status` | text | READ |
+| `error_details` | text | ORPHAN |
 | `updated_at` | timestamp with time zone | SYSTEM |
 
 </details>
 
-<details><summary><code>conversation_event_history</code> — 100% cobertura, 0/10 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>conversation_event_history</code> — 38% cobertura, 5/10 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `conversation_id` | uuid | READ+WRITE |
-| `role` | text | READ+WRITE |
-| `event_type` | USER-DEFINED | READ+WRITE |
-| `content` | text | READ+WRITE |
-| `media_url` | text | READ |
-| `media_metadata` | jsonb | READ |
-| `tokens_estimated` | integer | READ |
+| `conversation_id` | uuid | ORPHAN |
+| `role` | text | READ |
+| `event_type` | USER-DEFINED | READ |
+| `content` | text | ORPHAN |
+| `media_url` | text | ORPHAN |
+| `media_metadata` | jsonb | ORPHAN |
+| `tokens_estimated` | integer | ORPHAN |
 | `created_at` | timestamp with time zone | SYSTEM |
-| `request_id` | uuid | READ+WRITE |
+| `request_id` | uuid | READ |
 
 </details>
 
@@ -1525,11 +1525,11 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `id` | uuid | SYSTEM |
 | `user_id` | uuid | READ+WRITE |
 | `name` | text | READ+WRITE |
-| `status` | text | READ+WRITE |
+| `status` | text | READ |
 | `box_data` | jsonb | READ |
 | `items_data` | jsonb | READ |
 | `personalization_data` | jsonb | READ |
-| `kit_quantity` | integer | READ+WRITE |
+| `kit_quantity` | integer | READ |
 | `box_price` | numeric | READ |
 | `items_price` | numeric | READ |
 | `personalization_price` | numeric | READ |
@@ -1538,10 +1538,10 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
 | `kit_type` | text | READ |
-| `color` | text | READ+WRITE |
+| `color` | text | READ |
 | `tag` | text | READ |
-| `icon` | text | READ+WRITE |
-| `description` | text | READ+WRITE |
+| `icon` | text | READ |
+| `description` | text | READ |
 | `is_favorite` | boolean | READ+WRITE |
 | `last_used_at` | timestamp with time zone | READ+WRITE |
 | `is_pinned` | boolean | READ+WRITE |
@@ -1553,51 +1553,51 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `email` | text | READ+WRITE |
-| `user_id` | uuid | READ+WRITE |
+| `email` | text | READ |
+| `user_id` | uuid | READ |
 | `dry_run` | boolean | READ |
-| `status` | text | READ+WRITE |
-| `reason` | text | READ+WRITE |
-| `ip` | text | READ+WRITE |
-| `user_agent` | text | READ+WRITE |
+| `status` | text | READ |
+| `reason` | text | READ |
+| `ip` | text | READ |
+| `user_agent` | text | READ |
 | `total_deleted` | integer | READ |
 | `deleted_by_table` | jsonb | READ |
-| `errors` | jsonb | READ+WRITE |
-| `duration_ms` | integer | READ+WRITE |
+| `errors` | jsonb | READ |
+| `duration_ms` | integer | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `seller_scope` | text | READ |
-| `seller_id` | uuid | READ+WRITE |
+| `seller_id` | uuid | READ |
 | `name_filter_prefix` | text | READ |
 
 </details>
 
-<details><summary><code>e2e_cleanup_rate_limit</code> — 100% cobertura, 0/4 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>e2e_cleanup_rate_limit</code> — 0% cobertura, 3/4 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
-| `key` | text | READ+WRITE |
-| `count` | integer | READ+WRITE |
-| `window_start` | timestamp with time zone | READ |
+| `key` | text | ORPHAN |
+| `count` | integer | ORPHAN |
+| `window_start` | timestamp with time zone | ORPHAN |
 | `updated_at` | timestamp with time zone | SYSTEM |
 
 </details>
 
-<details><summary><code>follow_up_reminders</code> — 100% cobertura, 0/12 órfãs, rows: 0</summary>
+<details><summary><code>follow_up_reminders</code> — 80% cobertura, 2/12 órfãs, rows: 0</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `quote_id` | text | READ+WRITE |
-| `seller_id` | uuid | READ+WRITE |
+| `quote_id` | text | READ |
+| `seller_id` | uuid | READ |
 | `reminder_type` | text | READ |
 | `scheduled_for` | timestamp with time zone | READ |
 | `is_sent` | boolean | READ |
 | `sent_at` | timestamp with time zone | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
-| `title` | text | READ+WRITE |
-| `notes` | text | READ+WRITE |
-| `is_completed` | boolean | READ |
-| `completed_at` | timestamp with time zone | READ+WRITE |
+| `title` | text | READ |
+| `notes` | text | READ |
+| `is_completed` | boolean | ORPHAN |
+| `completed_at` | timestamp with time zone | ORPHAN |
 
 </details>
 
@@ -1618,12 +1618,12 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `mockup_url` | text | READ+WRITE |
 | `layout_url` | text | READ+WRITE |
 | `position_x` | numeric | READ+WRITE |
-| `position_y` | numeric | READ |
-| `logo_width_cm` | numeric | READ |
-| `logo_height_cm` | numeric | READ |
+| `position_y` | numeric | READ+WRITE |
+| `logo_width_cm` | numeric | READ+WRITE |
+| `logo_height_cm` | numeric | READ+WRITE |
 | `location_name` | text | READ+WRITE |
-| `colors_count` | integer | READ |
-| `annotations` | jsonb | READ |
+| `colors_count` | integer | READ+WRITE |
+| `annotations` | jsonb | READ+WRITE |
 | `created_at` | timestamp with time zone | SYSTEM |
 
 </details>
@@ -1638,78 +1638,78 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `total_issues_found` | integer | READ |
 | `null_owner_count` | integer | READ |
 | `missing_user_count` | integer | READ |
-| `details` | jsonb | READ+WRITE |
+| `details` | jsonb | READ |
 | `triggered_by` | text | READ |
-| `duration_ms` | integer | READ+WRITE |
+| `duration_ms` | integer | READ |
 | `rls_coverage` | jsonb | READ |
 | `rls_gaps_count` | integer | READ |
 
 </details>
 
-<details><summary><code>ownership_repair_logs</code> — 100% cobertura, 0/13 órfãs, rows: 0</summary>
+<details><summary><code>ownership_repair_logs</code> — 55% cobertura, 5/13 órfãs, rows: 0</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
 | `report_id` | uuid | READ |
-| `table_name` | text | READ+WRITE |
-| `owner_column` | text | READ |
-| `issue_type` | text | READ |
-| `action` | text | READ+WRITE |
-| `rows_affected` | integer | READ |
+| `table_name` | text | ORPHAN |
+| `owner_column` | text | ORPHAN |
+| `issue_type` | text | ORPHAN |
+| `action` | text | READ |
+| `rows_affected` | integer | ORPHAN |
 | `dry_run` | boolean | READ |
 | `triggered_by` | uuid | READ |
-| `triggered_by_label` | text | READ |
-| `notes` | text | READ+WRITE |
-| `error_message` | text | READ+WRITE |
+| `triggered_by_label` | text | ORPHAN |
+| `notes` | text | READ |
+| `error_message` | text | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 
 </details>
 
-<details><summary><code>recently_viewed_products</code> — 100% cobertura, 0/4 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>recently_viewed_products</code> — 67% cobertura, 1/4 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `user_id` | uuid | READ+WRITE |
-| `product_id` | text | READ+WRITE |
-| `viewed_at` | timestamp with time zone | READ |
+| `user_id` | uuid | READ |
+| `product_id` | text | READ |
+| `viewed_at` | timestamp with time zone | ORPHAN |
 
 </details>
 
-<details><summary><code>system_settings</code> — 100% cobertura, 0/4 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>system_settings</code> — 67% cobertura, 1/4 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
-| `key` | text | READ+WRITE |
-| `value` | jsonb | READ+WRITE |
+| `key` | text | ORPHAN |
+| `value` | jsonb | READ |
 | `updated_at` | timestamp with time zone | SYSTEM |
-| `updated_by` | uuid | READ+WRITE |
+| `updated_by` | uuid | READ |
 
 </details>
 
-<details><summary><code>v_full_scope_grants</code> — 100% cobertura, 0/18 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>v_full_scope_grants</code> — 28% cobertura, 13/18 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
-| `audit_id` | uuid | READ |
-| `granted_at` | timestamp with time zone | READ |
-| `granted_to_user_id` | uuid | READ |
-| `granted_to_name` | text | READ |
-| `granted_to_email` | character varying | READ |
-| `step_up_action` | USER-DEFINED | READ |
-| `operation` | text | READ+WRITE |
-| `key_id` | uuid | READ+WRITE |
-| `key_prefix` | text | READ+WRITE |
-| `key_expires_at` | timestamp with time zone | READ |
-| `justification` | text | READ+WRITE |
-| `challenge_id` | uuid | READ+WRITE |
-| `token_id` | uuid | READ |
-| `ip_address` | inet | READ+WRITE |
-| `user_agent` | text | READ+WRITE |
-| `request_id` | text | READ+WRITE |
-| `verifications_applied` | jsonb | READ |
-| `extra` | jsonb | READ+WRITE |
+| `audit_id` | uuid | ORPHAN |
+| `granted_at` | timestamp with time zone | ORPHAN |
+| `granted_to_user_id` | uuid | ORPHAN |
+| `granted_to_name` | text | ORPHAN |
+| `granted_to_email` | character varying | ORPHAN |
+| `step_up_action` | USER-DEFINED | ORPHAN |
+| `operation` | text | READ |
+| `key_id` | uuid | ORPHAN |
+| `key_prefix` | text | READ |
+| `key_expires_at` | timestamp with time zone | ORPHAN |
+| `justification` | text | ORPHAN |
+| `challenge_id` | uuid | ORPHAN |
+| `token_id` | uuid | ORPHAN |
+| `ip_address` | inet | READ |
+| `user_agent` | text | READ |
+| `request_id` | text | READ |
+| `verifications_applied` | jsonb | ORPHAN |
+| `extra` | jsonb | ORPHAN |
 
 </details>
 
@@ -1738,58 +1738,58 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `action` | text | READ+WRITE |
 | `response` | text | READ+WRITE |
 | `data` | jsonb | READ+WRITE |
-| `duration_ms` | integer | READ+WRITE |
-| `success` | boolean | READ+WRITE |
+| `duration_ms` | integer | READ |
+| `success` | boolean | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 
 </details>
 
 ### Pedidos
 
-<details><summary><code>order_item_personalizations</code> — 100% cobertura, 0/11 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>order_item_personalizations</code> — 38% cobertura, 5/11 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `order_item_id` | uuid | READ |
-| `technique_id` | uuid | READ+WRITE |
-| `technique_name` | text | READ+WRITE |
-| `location_id` | uuid | READ |
-| `location_name` | text | READ+WRITE |
-| `image_url` | text | READ |
-| `personalization_text` | text | READ |
-| `price_adjustment` | numeric | READ |
+| `order_item_id` | uuid | ORPHAN |
+| `technique_id` | uuid | READ |
+| `technique_name` | text | READ |
+| `location_id` | uuid | ORPHAN |
+| `location_name` | text | READ |
+| `image_url` | text | ORPHAN |
+| `personalization_text` | text | ORPHAN |
+| `price_adjustment` | numeric | ORPHAN |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
 
 </details>
 
-<details><summary><code>order_items</code> — 100% cobertura, 0/18 órfãs, rows: 0</summary>
+<details><summary><code>order_items</code> — 69% cobertura, 5/18 órfãs, rows: 0</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
 | `order_id` | uuid | READ |
-| `product_id` | text | READ+WRITE |
-| `product_sku` | text | READ+WRITE |
-| `product_name` | text | READ+WRITE |
-| `product_image_url` | text | READ+WRITE |
-| `quantity` | integer | READ+WRITE |
+| `product_id` | text | READ |
+| `product_sku` | text | READ |
+| `product_name` | text | READ |
+| `product_image_url` | text | READ |
+| `quantity` | integer | READ |
 | `unit_price` | numeric | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `organization_id` | uuid | READ |
 | `total_price` | numeric | READ |
-| `color_name` | text | READ+WRITE |
-| `color_hex` | text | READ+WRITE |
-| `notes` | text | READ+WRITE |
-| `size_code` | text | READ |
-| `gender` | text | READ |
-| `kit_group_id` | uuid | READ |
-| `kit_name` | text | READ |
+| `color_name` | text | READ |
+| `color_hex` | text | ORPHAN |
+| `notes` | text | READ |
+| `size_code` | text | ORPHAN |
+| `gender` | text | ORPHAN |
+| `kit_group_id` | uuid | ORPHAN |
+| `kit_name` | text | ORPHAN |
 
 </details>
 
-<details><summary><code>orders</code> — 100% cobertura, 0/25 órfãs, rows: 0</summary>
+<details><summary><code>orders</code> — 86% cobertura, 3/25 órfãs, rows: 0</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
@@ -1798,7 +1798,7 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `order_number` | text | READ |
 | `status` | text | READ+WRITE |
 | `fulfillment_status` | text | READ |
-| `client_id` | text | READ+WRITE |
+| `client_id` | text | READ |
 | `client_name` | text | READ+WRITE |
 | `client_email` | text | READ |
 | `client_phone` | text | READ |
@@ -1808,16 +1808,16 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `discount_amount` | numeric | READ |
 | `shipping_cost` | numeric | READ |
 | `total` | numeric | READ+WRITE |
-| `notes` | text | READ+WRITE |
-| `internal_notes` | text | READ |
-| `tracking_number` | text | READ |
-| `shipping_type` | text | READ |
+| `notes` | text | READ |
+| `internal_notes` | text | ORPHAN |
+| `tracking_number` | text | ORPHAN |
+| `shipping_type` | text | ORPHAN |
 | `payment_terms` | text | READ |
 | `delivery_time` | text | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
 | `organization_id` | uuid | READ |
-| `version` | integer | READ+WRITE |
+| `version` | integer | READ |
 
 </details>
 
@@ -1842,13 +1842,13 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 </details>
 
-<details><summary><code>price_history</code> — 100% cobertura, 0/5 órfãs, rows: 0</summary>
+<details><summary><code>price_history</code> — 75% cobertura, 1/5 órfãs, rows: 0</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `product_id` | text | READ+WRITE |
-| `variant_id` | text | READ+WRITE |
+| `product_id` | text | READ |
+| `variant_id` | text | ORPHAN |
 | `price` | numeric | READ |
 | `recorded_at` | timestamp with time zone | READ |
 
@@ -1856,31 +1856,31 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 ### SEO & Busca
 
-<details><summary><code>search_analytics</code> — 100% cobertura, 0/6 órfãs, rows: 0</summary>
+<details><summary><code>search_analytics</code> — 75% cobertura, 1/6 órfãs, rows: 0</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `user_id` | uuid | READ+WRITE |
+| `user_id` | uuid | READ |
 | `search_term` | text | READ+WRITE |
-| `results_count` | integer | READ |
-| `search_context` | text | READ |
+| `results_count` | integer | READ+WRITE |
+| `search_context` | text | ORPHAN |
 | `created_at` | timestamp with time zone | SYSTEM |
 
 </details>
 
 ### Segurança
 
-<details><summary><code>auth_login_attempts</code> — 100% cobertura, 0/7 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>auth_login_attempts</code> — 80% cobertura, 1/7 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `email` | text | READ+WRITE |
-| `ip_address` | text | READ+WRITE |
-| `success` | boolean | READ+WRITE |
-| `failure_reason` | text | READ+WRITE |
-| `user_agent` | text | READ+WRITE |
+| `email` | text | READ |
+| `ip_address` | text | READ |
+| `success` | boolean | READ |
+| `failure_reason` | text | ORPHAN |
+| `user_agent` | text | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 
 </details>
@@ -1906,10 +1906,10 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `user_id` | uuid | READ+WRITE |
+| `user_id` | uuid | READ |
 | `bucket` | character varying | READ |
-| `path` | text | READ+WRITE |
-| `hash` | character varying | READ+WRITE |
+| `path` | text | READ |
+| `hash` | character varying | READ |
 | `scan_result` | jsonb | READ+WRITE |
 | `status_code` | integer | READ+WRITE |
 | `created_at` | timestamp with time zone | SYSTEM |
@@ -1922,7 +1922,7 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 |---|---|---|
 | `id` | uuid | SYSTEM |
 | `country_code` | character | READ+WRITE |
-| `country_name` | text | READ |
+| `country_name` | text | READ+WRITE |
 | `is_active` | boolean | READ+WRITE |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `created_by` | uuid | READ+WRITE |
@@ -1959,17 +1959,17 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 </details>
 
-<details><summary><code>public_token_failures</code> — 100% cobertura, 0/8 órfãs, rows: 0</summary>
+<details><summary><code>public_token_failures</code> — 50% cobertura, 3/8 órfãs, rows: 0</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `resource_type` | text | READ+WRITE |
-| `resource_id` | text | READ+WRITE |
-| `attempted_token` | text | READ |
-| `ip_address` | text | READ+WRITE |
-| `user_agent` | text | READ+WRITE |
-| `reason` | text | READ+WRITE |
+| `resource_type` | text | ORPHAN |
+| `resource_id` | text | READ |
+| `attempted_token` | text | ORPHAN |
+| `ip_address` | text | READ |
+| `user_agent` | text | READ |
+| `reason` | text | ORPHAN |
 | `created_at` | timestamp with time zone | SYSTEM |
 
 </details>
@@ -2025,15 +2025,15 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 ### Usuários & RBAC
 
-<details><summary><code>organization_members</code> — 100% cobertura, 0/8 órfãs, rows: 0</summary>
+<details><summary><code>organization_members</code> — 80% cobertura, 1/8 órfãs, rows: 0</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
 | `organization_id` | uuid | READ |
-| `user_id` | uuid | READ+WRITE |
-| `role` | USER-DEFINED | READ+WRITE |
-| `invited_by` | uuid | READ |
+| `user_id` | uuid | READ |
+| `role` | USER-DEFINED | READ |
+| `invited_by` | uuid | ORPHAN |
 | `joined_at` | timestamp with time zone | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
@@ -2045,11 +2045,11 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `name` | text | READ+WRITE |
-| `slug` | text | READ+WRITE |
-| `logo_url` | text | READ+WRITE |
-| `description` | text | READ+WRITE |
-| `is_active` | boolean | READ+WRITE |
+| `name` | text | READ |
+| `slug` | text | READ |
+| `logo_url` | text | READ |
+| `description` | text | READ |
+| `is_active` | boolean | READ |
 | `settings` | jsonb | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
@@ -2061,10 +2061,10 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `code` | text | READ+WRITE |
-| `name` | text | READ+WRITE |
-| `description` | text | READ+WRITE |
-| `category` | text | READ+WRITE |
+| `code` | text | READ |
+| `name` | text | READ |
+| `description` | text | READ |
+| `category` | text | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
 
@@ -2095,18 +2095,18 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `label` | text | READ+WRITE |
-| `reason` | text | READ+WRITE |
+| `label` | text | READ |
+| `reason` | text | READ |
 | `initiated_by` | uuid | READ |
 | `dry_run` | boolean | READ |
-| `status` | USER-DEFINED | READ+WRITE |
+| `status` | USER-DEFINED | READ |
 | `total_items` | integer | READ |
 | `success_count` | integer | READ |
 | `failed_count` | integer | READ |
 | `skipped_count` | integer | READ |
-| `started_at` | timestamp with time zone | READ+WRITE |
-| `finished_at` | timestamp with time zone | READ+WRITE |
-| `duration_ms` | integer | READ+WRITE |
+| `started_at` | timestamp with time zone | READ |
+| `finished_at` | timestamp with time zone | READ |
+| `duration_ms` | integer | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 
 </details>
@@ -2117,14 +2117,14 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 |---|---|---|
 | `id` | uuid | SYSTEM |
 | `batch_id` | uuid | READ |
-| `user_id` | uuid | READ+WRITE |
-| `user_email` | text | READ+WRITE |
+| `user_id` | uuid | READ |
+| `user_email` | text | READ |
 | `from_role` | USER-DEFINED | READ |
 | `to_role` | USER-DEFINED | READ |
-| `operation` | text | READ+WRITE |
-| `status` | USER-DEFINED | READ+WRITE |
-| `error_message` | text | READ+WRITE |
-| `duration_ms` | integer | READ+WRITE |
+| `operation` | text | READ |
+| `status` | USER-DEFINED | READ |
+| `error_message` | text | READ |
+| `duration_ms` | integer | READ |
 | `processed_at` | timestamp with time zone | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 
@@ -2135,13 +2135,13 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `role` | USER-DEFINED | READ+WRITE |
+| `role` | USER-DEFINED | READ |
 | `permission_code` | text | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 
 </details>
 
-<details><summary><code>user_comparisons</code> — 100% cobertura, 0/12 órfãs, rows: 0</summary>
+<details><summary><code>user_comparisons</code> — 89% cobertura, 1/12 órfãs, rows: 0</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
@@ -2149,25 +2149,25 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `user_id` | uuid | READ+WRITE |
 | `client_id` | text | READ+WRITE |
 | `client_name` | text | READ+WRITE |
-| `name` | text | READ+WRITE |
+| `name` | text | READ |
 | `items` | jsonb | READ+WRITE |
-| `share_token` | text | READ+WRITE |
+| `share_token` | text | READ |
 | `is_public` | boolean | READ+WRITE |
 | `share_expires_at` | timestamp with time zone | READ+WRITE |
-| `view_count` | integer | READ |
+| `view_count` | integer | ORPHAN |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
 
 </details>
 
-<details><summary><code>user_known_devices</code> — 100% cobertura, 0/6 órfãs, rows: 0</summary>
+<details><summary><code>user_known_devices</code> — 75% cobertura, 1/6 órfãs, rows: 0</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
 | `user_id` | uuid | READ+WRITE |
 | `fingerprint` | text | READ+WRITE |
-| `device_name` | text | READ |
+| `device_name` | text | ORPHAN |
 | `last_seen_at` | timestamp with time zone | READ+WRITE |
 | `created_at` | timestamp with time zone | SYSTEM |
 
@@ -2182,24 +2182,24 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `has_completed_tour` | boolean | READ+WRITE |
 | `current_step` | integer | READ+WRITE |
 | `completed_steps` | jsonb | READ+WRITE |
-| `started_at` | timestamp with time zone | READ+WRITE |
+| `started_at` | timestamp with time zone | READ |
 | `completed_at` | timestamp with time zone | READ+WRITE |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
 
 </details>
 
-<details><summary><code>user_preferences</code> — 100% cobertura, 0/7 órfãs, rows: 0</summary>
+<details><summary><code>user_preferences</code> — 50% cobertura, 2/7 órfãs, rows: 0</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
 | `user_id` | uuid | READ+WRITE |
 | `comparison_weights` | jsonb | READ+WRITE |
-| `comparison_column_order` | jsonb | READ |
+| `comparison_column_order` | jsonb | ORPHAN |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
-| `filter_states` | jsonb | READ |
+| `filter_states` | jsonb | ORPHAN |
 
 </details>
 
@@ -2213,17 +2213,17 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 </details>
 
-<details><summary><code>user_search_history</code> — 100% cobertura, 0/9 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>user_search_history</code> — 33% cobertura, 4/9 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `user_id` | uuid | READ+WRITE |
-| `query_text` | text | READ |
-| `history_type` | text | READ |
-| `result_count` | integer | READ |
-| `is_pinned` | boolean | READ+WRITE |
-| `metadata` | jsonb | READ+WRITE |
+| `user_id` | uuid | READ |
+| `query_text` | text | ORPHAN |
+| `history_type` | text | ORPHAN |
+| `result_count` | integer | ORPHAN |
+| `is_pinned` | boolean | ORPHAN |
+| `metadata` | jsonb | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
 
@@ -2233,8 +2233,8 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 | Coluna | Tipo | Status |
 |---|---|---|
-| `user_id` | uuid | READ+WRITE |
-| `revoked_at` | timestamp with time zone | READ+WRITE |
+| `user_id` | uuid | READ |
+| `revoked_at` | timestamp with time zone | READ |
 
 </details>
 
@@ -2252,8 +2252,8 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `status_code` | integer | READ+WRITE |
 | `error_message` | text | READ+WRITE |
 | `created_at` | timestamp with time zone | SYSTEM |
-| `triggered_by` | text | READ |
-| `error_kind` | text | READ |
+| `triggered_by` | text | READ+WRITE |
+| `error_kind` | text | READ+WRITE |
 | `request_method` | text | READ |
 | `request_url` | text | READ |
 | `response_headers` | jsonb | READ |
@@ -2264,11 +2264,11 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `ttfb_ms` | integer | READ |
 | `download_ms` | integer | READ |
 | `triggered_by_user_id` | uuid | READ |
-| `attempts` | smallint | READ |
+| `attempts` | smallint | READ+WRITE |
 
 </details>
 
-<details><summary><code>inbound_webhook_endpoints</code> — 100% cobertura, 0/14 órfãs, rows: 0</summary>
+<details><summary><code>inbound_webhook_endpoints</code> — 91% cobertura, 1/14 órfãs, rows: 0</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
@@ -2277,13 +2277,13 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `name` | text | READ+WRITE |
 | `source_system` | text | READ+WRITE |
 | `hmac_secret_ref` | text | READ+WRITE |
-| `allowed_events` | ARRAY | READ |
+| `allowed_events` | ARRAY | ORPHAN |
 | `active` | boolean | READ+WRITE |
-| `description` | text | READ+WRITE |
+| `description` | text | READ |
 | `created_by` | uuid | READ+WRITE |
 | `last_received_at` | timestamp with time zone | READ+WRITE |
-| `total_received` | integer | READ |
-| `total_invalid` | integer | READ |
+| `total_received` | integer | READ+WRITE |
+| `total_invalid` | integer | READ+WRITE |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
 
@@ -2316,10 +2316,10 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 | `events` | ARRAY | READ+WRITE |
 | `active` | boolean | READ+WRITE |
 | `retry_policy` | jsonb | READ |
-| `description` | text | READ+WRITE |
+| `description` | text | READ |
 | `created_by` | uuid | READ+WRITE |
 | `last_triggered_at` | timestamp with time zone | READ+WRITE |
-| `total_success` | integer | READ |
+| `total_success` | integer | READ+WRITE |
 | `total_failure` | integer | READ |
 | `created_at` | timestamp with time zone | SYSTEM |
 | `updated_at` | timestamp with time zone | SYSTEM |
@@ -2347,25 +2347,25 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 </details>
 
-<details><summary><code>webhook_delivery_metrics</code> — 100% cobertura, 0/15 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>webhook_delivery_metrics</code> — 57% cobertura, 6/15 órfãs, rows: 0 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | uuid | SYSTEM |
-| `request_id` | text | READ+WRITE |
-| `event_type` | text | READ+WRITE |
-| `source` | text | READ+WRITE |
-| `direction` | text | READ |
-| `endpoint` | text | READ+WRITE |
-| `http_status` | integer | READ |
-| `duration_ms` | integer | READ+WRITE |
-| `attempt` | integer | READ+WRITE |
-| `success` | boolean | READ+WRITE |
-| `error_class` | text | READ |
-| `error_message` | text | READ+WRITE |
-| `payload_bytes` | integer | READ |
-| `metadata` | jsonb | READ+WRITE |
-| `occurred_at` | timestamp with time zone | READ |
+| `request_id` | text | READ |
+| `event_type` | text | READ |
+| `source` | text | READ |
+| `direction` | text | ORPHAN |
+| `endpoint` | text | ORPHAN |
+| `http_status` | integer | ORPHAN |
+| `duration_ms` | integer | READ |
+| `attempt` | integer | READ |
+| `success` | boolean | READ |
+| `error_class` | text | ORPHAN |
+| `error_message` | text | READ |
+| `payload_bytes` | integer | ORPHAN |
+| `metadata` | jsonb | READ |
+| `occurred_at` | timestamp with time zone | ORPHAN |
 
 </details>
 
@@ -2388,62 +2388,62 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 ### Catálogo / Produtos
 
-<details><summary><code>product_colors_view</code> — 100% cobertura, 0/8 órfãs, rows: — 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>product_colors_view</code> — 38% cobertura, 5/8 órfãs, rows: — 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
-| `name` | unknown | READ+WRITE |
-| `hex` | unknown | READ |
-| `group` | unknown | READ |
-| `groupSlug` | unknown | READ |
-| `variationSlug` | unknown | READ |
-| `code` | unknown | READ+WRITE |
-| `image` | unknown | READ |
+| `name` | unknown | READ |
+| `hex` | unknown | ORPHAN |
+| `group` | unknown | ORPHAN |
+| `groupSlug` | unknown | ORPHAN |
+| `variationSlug` | unknown | ORPHAN |
+| `code` | unknown | READ |
+| `image` | unknown | ORPHAN |
 | `images` | unknown | READ |
 
 </details>
 
-<details><summary><code>products</code> — 100% cobertura, 0/49 órfãs, rows: —</summary>
+<details><summary><code>products</code> — 67% cobertura, 15/49 órfãs, rows: —</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | unknown | SYSTEM |
 | `sku` | unknown | READ+WRITE |
 | `name` | unknown | READ+WRITE |
-| `description` | unknown | READ+WRITE |
-| `short_description` | unknown | READ |
+| `description` | unknown | READ |
+| `short_description` | unknown | ORPHAN |
 | `category_name` | unknown | READ |
 | `brand` | unknown | READ |
 | `sale_price` | unknown | READ |
-| `base_price` | unknown | READ |
-| `cost_price` | unknown | READ |
+| `base_price` | unknown | ORPHAN |
+| `cost_price` | unknown | ORPHAN |
 | `stock_quantity` | unknown | READ |
 | `is_bestseller` | unknown | READ |
 | `is_new` | unknown | READ |
 | `is_kit` | unknown | READ |
-| `supplier_code` | unknown | READ+WRITE |
+| `supplier_code` | unknown | ORPHAN |
 | `supplier_name` | unknown | READ |
 | `image_url` | unknown | READ |
-| `videos` | unknown | READ |
+| `videos` | unknown | ORPHAN |
 | `category_id` | unknown | READ |
 | `price` | unknown | READ |
-| `og_image_url` | unknown | READ |
+| `og_image_url` | unknown | ORPHAN |
 | `images` | unknown | READ |
 | `stock` | unknown | READ |
 | `created_at` | unknown | SYSTEM |
 | `updated_at` | unknown | SYSTEM |
 | `colors` | unknown | READ |
 | `materials` | unknown | READ |
-| `supplier_reference` | unknown | READ |
-| `is_active` | unknown | READ+WRITE |
-| `minQuantity` | unknown | READ |
-| `dimensions` | unknown | READ |
-| `height_cm` | unknown | READ |
-| `width_cm` | unknown | READ |
-| `length_cm` | unknown | READ |
-| `diameter_cm` | unknown | READ |
-| `weight_g` | unknown | READ |
-| `capacity_ml` | unknown | READ |
+| `supplier_reference` | unknown | ORPHAN |
+| `is_active` | unknown | READ |
+| `minQuantity` | unknown | ORPHAN |
+| `dimensions` | unknown | ORPHAN |
+| `height_cm` | unknown | ORPHAN |
+| `width_cm` | unknown | ORPHAN |
+| `length_cm` | unknown | ORPHAN |
+| `diameter_cm` | unknown | ORPHAN |
+| `weight_g` | unknown | ORPHAN |
+| `capacity_ml` | unknown | ORPHAN |
 | `stock_status` | unknown | READ |
 | `subcategory` | unknown | READ |
 | `supplier_id` | unknown | READ |
@@ -2461,63 +2461,63 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 ### Estoque
 
-<details><summary><code>stock_movements</code> — 87% cobertura, 2/16 órfãs, rows: — 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>stock_movements</code> — 13% cobertura, 13/16 órfãs, rows: — 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | unknown | SYSTEM |
-| `productId` | unknown | READ+WRITE |
-| `variantId` | unknown | READ+WRITE |
-| `colorName` | unknown | READ |
-| `type` | unknown | READ+WRITE |
-| `quantity` | unknown | READ+WRITE |
-| `previousStock` | unknown | READ |
-| `newStock` | unknown | READ |
-| `reason` | unknown | READ+WRITE |
-| `reference` | unknown | READ |
+| `productId` | unknown | ORPHAN |
+| `variantId` | unknown | ORPHAN |
+| `colorName` | unknown | ORPHAN |
+| `type` | unknown | READ |
+| `quantity` | unknown | READ |
+| `previousStock` | unknown | ORPHAN |
+| `newStock` | unknown | ORPHAN |
+| `reason` | unknown | ORPHAN |
+| `reference` | unknown | ORPHAN |
 | `referenceType` | unknown | ORPHAN |
-| `unitCost` | unknown | READ |
-| `totalCost` | unknown | READ |
-| `createdAt` | unknown | READ |
-| `createdBy` | unknown | READ+WRITE |
+| `unitCost` | unknown | ORPHAN |
+| `totalCost` | unknown | ORPHAN |
+| `createdAt` | unknown | ORPHAN |
+| `createdBy` | unknown | ORPHAN |
 | `createdByName` | unknown | ORPHAN |
 
 </details>
 
 ### Outros
 
-<details><summary><code>print_areas</code> — 100% cobertura, 0/8 órfãs, rows: — 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>print_areas</code> — 29% cobertura, 5/8 órfãs, rows: — 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | unknown | SYSTEM |
-| `component_name` | unknown | READ+WRITE |
-| `location_name` | unknown | READ+WRITE |
-| `width_cm` | unknown | READ |
-| `height_cm` | unknown | READ |
-| `unit` | unknown | READ |
-| `is_primary` | unknown | READ |
-| `allowed_technique_ids` | unknown | READ |
+| `component_name` | unknown | READ |
+| `location_name` | unknown | READ |
+| `width_cm` | unknown | ORPHAN |
+| `height_cm` | unknown | ORPHAN |
+| `unit` | unknown | ORPHAN |
+| `is_primary` | unknown | ORPHAN |
+| `allowed_technique_ids` | unknown | ORPHAN |
 
 </details>
 
-<details><summary><code>tecnicas_gravacao</code> — 100% cobertura, 0/13 órfãs, rows: — 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>tecnicas_gravacao</code> — 25% cobertura, 9/13 órfãs, rows: — 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | unknown | SYSTEM |
-| `name` | unknown | READ+WRITE |
-| `technique_name` | unknown | READ+WRITE |
-| `code` | unknown | READ+WRITE |
-| `technique_code` | unknown | READ |
-| `setup_cost` | unknown | READ |
-| `setup_price` | unknown | READ |
-| `unit_cost` | unknown | READ |
-| `handling_price` | unknown | READ |
-| `max_colors` | unknown | READ+WRITE |
-| `min_area_cm2` | unknown | READ |
-| `max_area_cm2` | unknown | READ+WRITE |
-| `sla_days` | unknown | READ |
+| `name` | unknown | READ |
+| `technique_name` | unknown | READ |
+| `code` | unknown | READ |
+| `technique_code` | unknown | ORPHAN |
+| `setup_cost` | unknown | ORPHAN |
+| `setup_price` | unknown | ORPHAN |
+| `unit_cost` | unknown | ORPHAN |
+| `handling_price` | unknown | ORPHAN |
+| `max_colors` | unknown | ORPHAN |
+| `min_area_cm2` | unknown | ORPHAN |
+| `max_area_cm2` | unknown | ORPHAN |
+| `sla_days` | unknown | ORPHAN |
 
 </details>
 
@@ -2525,175 +2525,175 @@ _Gerado em 2026-05-16T00:22:46.056Z por `scripts/audit-db-frontend-coverage.mjs`
 
 ### CRM
 
-<details><summary><code>companies</code> — 100% cobertura, 0/58 órfãs, rows: —</summary>
+<details><summary><code>companies</code> — 28% cobertura, 39/58 órfãs, rows: —</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | unknown | SYSTEM |
 | `razao_social` | unknown | READ |
 | `nome_fantasia` | unknown | READ |
-| `title` | unknown | READ+WRITE |
+| `title` | unknown | READ |
 | `cnpj` | unknown | READ |
 | `ramo_atividade` | unknown | READ |
-| `status` | unknown | READ+WRITE |
-| `source` | unknown | READ+WRITE |
+| `status` | unknown | READ |
+| `source` | unknown | READ |
 | `is_customer` | unknown | READ |
 | `is_supplier` | unknown | READ |
-| `is_carrier` | unknown | READ |
-| `is_matriz` | unknown | READ |
-| `logradouro` | unknown | READ |
-| `numero` | unknown | READ |
-| `complemento` | unknown | READ |
-| `bairro` | unknown | READ |
+| `is_carrier` | unknown | ORPHAN |
+| `is_matriz` | unknown | ORPHAN |
+| `logradouro` | unknown | ORPHAN |
+| `numero` | unknown | ORPHAN |
+| `complemento` | unknown | ORPHAN |
+| `bairro` | unknown | ORPHAN |
 | `cidade` | unknown | READ |
 | `estado` | unknown | READ |
-| `cep` | unknown | READ |
-| `pais` | unknown | READ |
-| `endereco` | unknown | READ |
-| `endereco_faturamento` | unknown | READ |
-| `inscricao_estadual` | unknown | READ |
-| `inscricao_municipal` | unknown | READ |
-| `cnae_principal` | unknown | READ |
-| `cnae_descricao` | unknown | READ |
+| `cep` | unknown | ORPHAN |
+| `pais` | unknown | ORPHAN |
+| `endereco` | unknown | ORPHAN |
+| `endereco_faturamento` | unknown | ORPHAN |
+| `inscricao_estadual` | unknown | ORPHAN |
+| `inscricao_municipal` | unknown | ORPHAN |
+| `cnae_principal` | unknown | ORPHAN |
+| `cnae_descricao` | unknown | ORPHAN |
 | `website` | unknown | READ |
 | `instagram` | unknown | READ |
-| `facebook` | unknown | READ |
-| `linkedin` | unknown | READ |
-| `logo_url` | unknown | READ+WRITE |
-| `grupo_economico` | unknown | READ |
-| `grupo_economico_id` | unknown | READ |
-| `matriz_id` | unknown | READ |
-| `central_id` | unknown | READ |
-| `singular_id` | unknown | READ |
-| `tipo_cooperativa` | unknown | READ |
-| `employee_count` | unknown | READ |
-| `annual_revenue` | unknown | READ |
-| `financial_health` | unknown | READ |
-| `bitrix_company_id` | unknown | READ |
-| `bitrix_created_at` | unknown | READ |
-| `bitrix_updated_at` | unknown | READ |
-| `_deprecated_email` | unknown | READ |
-| `_deprecated_phone` | unknown | READ |
-| `_deprecated_phone_secondary` | unknown | READ |
-| `tags_array` | unknown | READ |
-| `challenges` | unknown | READ |
-| `competitors` | unknown | READ |
-| `search_vector` | unknown | READ |
+| `facebook` | unknown | ORPHAN |
+| `linkedin` | unknown | ORPHAN |
+| `logo_url` | unknown | READ |
+| `grupo_economico` | unknown | ORPHAN |
+| `grupo_economico_id` | unknown | ORPHAN |
+| `matriz_id` | unknown | ORPHAN |
+| `central_id` | unknown | ORPHAN |
+| `singular_id` | unknown | ORPHAN |
+| `tipo_cooperativa` | unknown | ORPHAN |
+| `employee_count` | unknown | ORPHAN |
+| `annual_revenue` | unknown | ORPHAN |
+| `financial_health` | unknown | ORPHAN |
+| `bitrix_company_id` | unknown | ORPHAN |
+| `bitrix_created_at` | unknown | ORPHAN |
+| `bitrix_updated_at` | unknown | ORPHAN |
+| `_deprecated_email` | unknown | ORPHAN |
+| `_deprecated_phone` | unknown | ORPHAN |
+| `_deprecated_phone_secondary` | unknown | ORPHAN |
+| `tags_array` | unknown | ORPHAN |
+| `challenges` | unknown | ORPHAN |
+| `competitors` | unknown | ORPHAN |
+| `search_vector` | unknown | ORPHAN |
 | `deleted_at` | unknown | SYSTEM |
-| `deleted_by` | unknown | READ |
-| `user_id` | unknown | READ+WRITE |
-| `assigned_by_id` | unknown | READ |
-| `created_by_id` | unknown | READ |
-| `merge_notes` | unknown | READ |
+| `deleted_by` | unknown | ORPHAN |
+| `user_id` | unknown | READ |
+| `assigned_by_id` | unknown | ORPHAN |
+| `created_by_id` | unknown | ORPHAN |
+| `merge_notes` | unknown | ORPHAN |
 | `created_at` | unknown | SYSTEM |
 | `updated_at` | unknown | SYSTEM |
 
 </details>
 
-<details><summary><code>company_addresses</code> — 100% cobertura, 0/21 órfãs, rows: — 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>company_addresses</code> — 11% cobertura, 16/21 órfãs, rows: — 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | unknown | SYSTEM |
-| `company_id` | unknown | READ+WRITE |
-| `tipo` | unknown | READ |
-| `is_primary` | unknown | READ |
-| `logradouro` | unknown | READ |
-| `numero` | unknown | READ |
-| `complemento` | unknown | READ |
-| `bairro` | unknown | READ |
+| `company_id` | unknown | ORPHAN |
+| `tipo` | unknown | ORPHAN |
+| `is_primary` | unknown | ORPHAN |
+| `logradouro` | unknown | ORPHAN |
+| `numero` | unknown | ORPHAN |
+| `complemento` | unknown | ORPHAN |
+| `bairro` | unknown | ORPHAN |
 | `cidade` | unknown | READ |
 | `estado` | unknown | READ |
-| `cep` | unknown | READ |
-| `pais` | unknown | READ |
-| `google_maps_url` | unknown | READ |
-| `google_place_id` | unknown | READ |
-| `latitude` | unknown | READ |
-| `longitude` | unknown | READ |
-| `horario_funcionamento` | unknown | READ |
-| `instrucoes_entrega` | unknown | READ |
-| `ponto_referencia` | unknown | READ |
+| `cep` | unknown | ORPHAN |
+| `pais` | unknown | ORPHAN |
+| `google_maps_url` | unknown | ORPHAN |
+| `google_place_id` | unknown | ORPHAN |
+| `latitude` | unknown | ORPHAN |
+| `longitude` | unknown | ORPHAN |
+| `horario_funcionamento` | unknown | ORPHAN |
+| `instrucoes_entrega` | unknown | ORPHAN |
+| `ponto_referencia` | unknown | ORPHAN |
 | `created_at` | unknown | SYSTEM |
 | `updated_at` | unknown | SYSTEM |
 
 </details>
 
-<details><summary><code>contacts</code> — 100% cobertura, 0/37 órfãs, rows: —</summary>
+<details><summary><code>contacts</code> — 30% cobertura, 23/37 órfãs, rows: —</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | unknown | SYSTEM |
-| `company_id` | unknown | READ+WRITE |
+| `company_id` | unknown | ORPHAN |
 | `first_name` | unknown | READ |
 | `last_name` | unknown | READ |
-| `full_name` | unknown | READ+WRITE |
-| `nome_tratamento` | unknown | READ |
-| `apelido` | unknown | READ |
+| `full_name` | unknown | READ |
+| `nome_tratamento` | unknown | ORPHAN |
+| `apelido` | unknown | ORPHAN |
 | `cargo` | unknown | READ |
 | `departamento` | unknown | READ |
-| `role` | unknown | READ+WRITE |
-| `cpf` | unknown | READ |
-| `sexo` | unknown | READ |
-| `birthday` | unknown | READ |
-| `data_nascimento` | unknown | READ |
-| `linkedin` | unknown | READ |
+| `role` | unknown | READ |
+| `cpf` | unknown | ORPHAN |
+| `sexo` | unknown | ORPHAN |
+| `birthday` | unknown | ORPHAN |
+| `data_nascimento` | unknown | ORPHAN |
+| `linkedin` | unknown | ORPHAN |
 | `instagram` | unknown | READ |
-| `notes` | unknown | READ+WRITE |
-| `source` | unknown | READ+WRITE |
-| `sentiment` | unknown | READ |
-| `relationship_score` | unknown | READ |
-| `relationship_stage` | unknown | READ |
-| `behavior` | unknown | READ |
-| `hobbies` | unknown | READ |
-| `interests_array` | unknown | READ |
-| `tags_array` | unknown | READ |
-| `bitrix_contact_id` | unknown | READ |
+| `notes` | unknown | READ |
+| `source` | unknown | READ |
+| `sentiment` | unknown | ORPHAN |
+| `relationship_score` | unknown | ORPHAN |
+| `relationship_stage` | unknown | ORPHAN |
+| `behavior` | unknown | ORPHAN |
+| `hobbies` | unknown | ORPHAN |
+| `interests_array` | unknown | ORPHAN |
+| `tags_array` | unknown | ORPHAN |
+| `bitrix_contact_id` | unknown | ORPHAN |
 | `deleted_at` | unknown | SYSTEM |
-| `deleted_by` | unknown | READ |
-| `user_id` | unknown | READ+WRITE |
-| `assigned_by_id` | unknown | READ |
+| `deleted_by` | unknown | ORPHAN |
+| `user_id` | unknown | READ |
+| `assigned_by_id` | unknown | ORPHAN |
 | `created_at` | unknown | SYSTEM |
 | `updated_at` | unknown | SYSTEM |
-| `_deprecated_email` | unknown | READ |
-| `_deprecated_phone` | unknown | READ |
-| `_deprecated_whatsapp` | unknown | READ |
-| `emails` | unknown | READ |
-| `phones` | unknown | READ |
+| `_deprecated_email` | unknown | ORPHAN |
+| `_deprecated_phone` | unknown | ORPHAN |
+| `_deprecated_whatsapp` | unknown | ORPHAN |
+| `emails` | unknown | ORPHAN |
+| `phones` | unknown | ORPHAN |
 
 </details>
 
 ### Outros
 
-<details><summary><code>contact_emails</code> — 100% cobertura, 0/9 órfãs, rows: — 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>contact_emails</code> — 17% cobertura, 5/9 órfãs, rows: — 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | unknown | SYSTEM |
-| `contact_id` | unknown | READ |
-| `email` | unknown | READ+WRITE |
-| `email_normalizado` | unknown | READ |
-| `email_type` | unknown | READ |
-| `is_primary` | unknown | READ |
-| `is_verified` | unknown | READ |
+| `contact_id` | unknown | ORPHAN |
+| `email` | unknown | READ |
+| `email_normalizado` | unknown | ORPHAN |
+| `email_type` | unknown | ORPHAN |
+| `is_primary` | unknown | ORPHAN |
+| `is_verified` | unknown | ORPHAN |
 | `created_at` | unknown | SYSTEM |
 | `updated_at` | unknown | SYSTEM |
 
 </details>
 
-<details><summary><code>contact_phones</code> — 100% cobertura, 0/12 órfãs, rows: — 🚫 _(tabela não referenciada no código)_</summary>
+<details><summary><code>contact_phones</code> — 0% cobertura, 9/12 órfãs, rows: — 🚫 _(tabela não referenciada no código)_</summary>
 
 | Coluna | Tipo | Status |
 |---|---|---|
 | `id` | unknown | SYSTEM |
-| `contact_id` | unknown | READ |
-| `numero` | unknown | READ |
-| `numero_normalizado` | unknown | READ |
-| `numero_e164` | unknown | READ |
-| `phone_type` | unknown | READ |
-| `is_primary` | unknown | READ |
-| `is_whatsapp` | unknown | READ |
-| `is_verified` | unknown | READ |
-| `observacao` | unknown | READ |
+| `contact_id` | unknown | ORPHAN |
+| `numero` | unknown | ORPHAN |
+| `numero_normalizado` | unknown | ORPHAN |
+| `numero_e164` | unknown | ORPHAN |
+| `phone_type` | unknown | ORPHAN |
+| `is_primary` | unknown | ORPHAN |
+| `is_whatsapp` | unknown | ORPHAN |
+| `is_verified` | unknown | ORPHAN |
+| `observacao` | unknown | ORPHAN |
 | `created_at` | unknown | SYSTEM |
 | `updated_at` | unknown | SYSTEM |
 

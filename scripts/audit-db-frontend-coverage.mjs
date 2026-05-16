@@ -437,7 +437,7 @@ function renderMarkdown(reports) {
 function main() {
   console.log("→ Indexando código…");
   const blob = indexCodeUsage();
-  console.log(`  ${(blob.length / 1024 / 1024).toFixed(1)} MB indexados`);
+  console.log(`  ${blob.perFile.length} arquivos, ${(blob.bigBlob.length / 1024 / 1024).toFixed(1)} MB`);
 
   console.log("→ Schema BD interno (psql)…");
   const internal = fetchInternalSchema();
