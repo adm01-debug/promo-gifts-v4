@@ -513,17 +513,24 @@ export default function Auth() {
                       data-testid="login-submit"
                       variant="orange"
                       className="h-12 w-full text-base font-semibold shadow-lg shadow-orange/25 transition-all duration-300 hover:shadow-xl hover:shadow-orange/30"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Entrando...
-                        </>
-                      ) : (
-                        'Entrar'
-                      )}
-                    </Button>
+                        disabled={isSubmitting || loginStatus === 'success'}
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Entrando...
+                          </>
+                        ) : loginStatus === 'success' ? (
+                          <>
+                            <div className="flex items-center gap-2 animate-in zoom-in duration-300">
+                              <Gift className="h-4 w-4" />
+                              <span>Pronto!</span>
+                            </div>
+                          </>
+                        ) : (
+                          'Entrar'
+                        )}
+                      </Button>
 
                     <div className="relative">
                       <div className="absolute inset-0 flex items-center">
