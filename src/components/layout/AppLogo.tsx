@@ -7,7 +7,7 @@ interface AppLogoProps {
   iconClassName?: string;
   textClassName?: string;
   showText?: boolean;
-  variant?: 'light' | 'dark' | 'brand';
+  variant?: 'light' | 'dark' | 'brand' | 'sidebar';
 }
 
 export function AppLogo({ 
