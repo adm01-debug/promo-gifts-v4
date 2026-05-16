@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Gift, Package, Factory, SlidersHorizontal, Brain, Rocket } from "lucide-react";
 import { AppLogo } from "@/components/layout/AppLogo";
+import astronautImg from "@/assets/astronaut-cute.avif";
 
 interface RocketData { id: number; left: number; size: number; duration: number; rotation: number; scale: number; }
 interface PlanetData { id: number; left: number; top: number; size: number; duration: number; type: number; delay: number; }
