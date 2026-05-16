@@ -19,6 +19,11 @@ import {
   Wifi,
   AlertTriangle,
   RotateCw,
+  Database,
+  Server,
+  Activity,
+  CheckCircle2,
+  XCircle,
 } from 'lucide-react';
 import { AuthBrandingPanel, Starfield } from './auth/AuthBranding';
 import { Button } from '@/components/ui/button';
@@ -72,6 +77,17 @@ export default function Auth() {
   const [geoLocation, setGeoLocation] = useState<string | null>(null);
   // Fallback social → email/senha: mensagem amigável quando OAuth falha.
   const [socialError, setSocialError] = useState<OAuthErrorCopy | null>(null);
+  
+  // External Database Check State
+  const [dbStatus, setDbStatus] = useState<{
+    principal: { ok: boolean; url?: string; source?: string; loading: boolean };
+    external: { ok: boolean; url?: string; source?: string; loading: boolean };
+    crm: { ok: boolean; url?: string; source?: string; loading: boolean };
+  }>({
+    principal: { ok: false, loading: true },
+    external: { ok: false, loading: true },
+    crm: { ok: false, loading: true },
+  });
   const emailInputRef = useRef<HTMLInputElement | null>(null);
   // Função `retry` publicada pelo SocialLoginButtons para reexecutar o Google login.
   const googleRetryRef = useRef<(() => void) | null>(null);
@@ -116,9 +132,10 @@ export default function Auth() {
     [toast, focusEmailFallback],
   );
 
-  // Fetch IP and geolocation via edge function (works in preview + production)
+  // Fetch IP, geolocation and backend status
   useEffect(() => {
-    const loadIPInfo = async () => {
+    const loadInfo = async () => {
+      // 1. IP Info
       try {
         const { data, error } = await supabase.functions.invoke('get-visitor-info');
         if (!error && data) {
@@ -128,8 +145,46 @@ export default function Auth() {
       } catch {
         // silent fail
       }
+
+      // 2. Principal Backend (Directly from env)
+      const principalUrl = import.meta.env.VITE_SUPABASE_URL;
+      const isExternalPrincipal = principalUrl && !principalUrl.includes('lovable.app') && !principalUrl.includes('supabase.co/auth/v1');
+      
+      setDbStatus(prev => ({
+        ...prev,
+        principal: { 
+          ok: !!principalUrl, 
+          url: principalUrl, 
+          source: isExternalPrincipal ? 'Externo' : 'Lovable Cloud',
+          loading: false 
+        }
+      }));
+
+      // 3. External (Gestão de Produtos) via bridge ping op
+      try {
+        const { data, error } = await supabase.functions.invoke('external-db-bridge', {
+          body: { operation: 'ping' }
+        });
+
+        if (!error && data?.ok) {
+          setDbStatus(prev => ({
+            ...prev,
+            external: { 
+              ok: data.config?.has_url && data.config?.has_key, 
+              url: data.config?.url || 'Configurado', 
+              source: data.config?.is_external ? 'Externo' : 'Cloud', 
+              loading: false 
+            }
+          }));
+        } else {
+          setDbStatus(prev => ({ ...prev, external: { ok: false, loading: false } }));
+        }
+      } catch (err) {
+        setDbStatus(prev => ({ ...prev, external: { ok: false, loading: false } }));
+      }
     };
-    loadIPInfo();
+    
+    loadInfo();
   }, []);
 
   // Redirect if already logged in (only on initial load)
@@ -566,6 +621,62 @@ export default function Auth() {
               )}
             </div>
           )}
+
+          {/* Backend Status Widget */}
+          <div 
+            className="mx-auto flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 shadow-xl backdrop-blur-md opacity-0"
+            style={{ animation: 'scale-fade-in 0.5s ease-out 800ms forwards' }}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <Server className="h-4 w-4 text-orange" />
+              <span className="text-xs font-bold uppercase tracking-wider text-white/60">Status da Infraestrutura</span>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+              {/* Principal DB */}
+              <div className="flex items-center justify-between gap-4 rounded-lg bg-white/5 px-3 py-2 border border-white/5">
+                <div className="flex items-center gap-2">
+                  <Database className="h-3.5 w-3.5 text-white/40" />
+                  <span className="text-[11px] font-medium text-white/80">Principal</span>
+                </div>
+                {dbStatus.principal.loading ? (
+                  <Loader2 className="h-3 w-3 animate-spin text-white/20" />
+                ) : dbStatus.principal.ok ? (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-success font-bold uppercase tracking-tighter">{dbStatus.principal.source}</span>
+                    <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                  </div>
+                ) : (
+                  <XCircle className="h-3.5 w-3.5 text-destructive" />
+                )}
+              </div>
+
+              {/* External DB (Gestão de Produtos) */}
+              <div className="flex items-center justify-between gap-4 rounded-lg bg-white/5 px-3 py-2 border border-white/5">
+                <div className="flex items-center gap-2">
+                  <Activity className="h-3.5 w-3.5 text-white/40" />
+                  <span className="text-[11px] font-medium text-white/80">Produtos</span>
+                </div>
+                {dbStatus.external.loading ? (
+                  <Loader2 className="h-3 w-3 animate-spin text-white/20" />
+                ) : dbStatus.external.ok ? (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-success font-bold uppercase tracking-tighter">Externo</span>
+                    <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-warning font-bold uppercase tracking-tighter">Pendente</span>
+                    <AlertTriangle className="h-3.5 w-3.5 text-warning" />
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <p className="text-[10px] text-white/30 italic text-center px-2">
+              Verificação em tempo real das instâncias Supabase configuradas via secrets.
+            </p>
+          </div>
 
           <p className="text-center text-xs text-muted-foreground">
             Acesso restrito a usuários autorizados.

@@ -460,9 +460,27 @@ Deno.serve((req) => {
     // ============================================
     // PING (keep-alive — sem DB I/O, sem auth, sem breaker)
     // Ping é diagnóstico/warm-up — deve responder mesmo com circuito aberto.
+    // Agora estendido para retornar metadados de saúde das credenciais (sem expor valores).
     // ============================================
     if (body.operation === 'ping') {
-      return jsonResponse({ ok: true, ts: Date.now(), warm: true }, 200, corsHeaders);
+      const [{ value: externalUrl }, { value: externalKey }] = await Promise.all([
+        resolveCredential("EXTERNAL_PROMOBRIND_URL"),
+        resolveCredential("EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY"),
+      ]);
+
+      return jsonResponse({ 
+        ok: true, 
+        ts: Date.now(), 
+        warm: true,
+        config: {
+          url: externalUrl ? externalUrl.replace(/\/\/.*@/, '//***@') : null, // sanitize basic auth if present
+          has_url: !!externalUrl,
+          has_key: !!externalKey,
+          // Fingerprint para confirmar que estamos na instância certa
+          url_suffix: externalUrl ? externalUrl.slice(-10) : null,
+          is_external: externalUrl ? !externalUrl.includes('supabase.co') : false
+        }
+      }, 200, corsHeaders);
     }
 
     // Circuit breaker só barra operações reais (após parse do body).
