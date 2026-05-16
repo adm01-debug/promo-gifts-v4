@@ -363,7 +363,7 @@ function FeatureCard({ item, index }: { item: typeof FEATURE_ITEMS[0]; index: nu
     >
       {/* Glossy Scanning Effect (10/10) */}
       <div className="absolute inset-0 w-full h-full pointer-events-none">
-        <div className="absolute top-0 -left-[100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/[0.03] to-transparent skew-x-[-25deg] group-hover:animate-[shimmer_2s_infinite]" />
+        <div className="absolute top-0 -left-[100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/[0.05] to-transparent group-hover:animate-[shimmerTranslate_2s_infinite]" />
       </div>
 
       <div className="min-w-0 flex-1 text-left relative z-10">
