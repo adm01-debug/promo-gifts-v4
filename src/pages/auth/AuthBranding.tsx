@@ -16,86 +16,47 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
   const [astronauts, setAstronauts] = useState<AstronautData[]>([]);
   const nextIdRef = useRef(0);
 
+  // Estabilizamos os dados das estrelas para evitar o "salto" em re-renders
+  const stars = React.useMemo(() => {
+    const count = isFull ? 70 : 35;
+    return [...Array(count)].map((_, i) => ({
+      id: i,
+      size: 1 + (i % 3),
+      top: Math.random() * 100,
+      left: Math.random() * 100,
+      // Respiração humana: ~12–16s por ciclo
+      breathingDur: 12 + Math.random() * 4,
+      breathingDelay: Math.random() * 10,
+      // Deriva estelar: extremamente lenta (80-120s)
+      driftDur: 80 + Math.random() * 40,
+    }));
+  }, [isFull]);
+
   const spawnRocket = useCallback((isInitial = false) => {
-    const id = nextIdRef.current++;
-    const left = 5 + Math.random() * 90;
-    const size = 24 + Math.random() * 40;
-    // Movimento lento, contemplativo
-    const duration = isInitial ? (12 + Math.random() * 6) : (14 + Math.random() * 8);
-    const rotationOffset = -3 + Math.random() * 6;
-    const scale = 0.9 + Math.random() * 0.5;
-
-    const rocket: RocketData = { id, left, size, duration, rotation: rotationOffset, scale };
-    setRockets((prev) => [...prev, rocket]);
-    setTimeout(() => setRockets((prev) => prev.filter((r) => r.id !== id)), (duration + 1) * 1000);
-  }, []);
-
-  useEffect(() => {
-    // Planetas — distribuídos em quadrantes para evitar amontoamento e movimento extremamente lento
-    const positions = [
-      { left: 12, top: 15 },
-      { left: 78, top: 22 },
-      { left: 45, top: 48 },
-      { left: 18, top: 75 },
-      { left: 82, top: 80 },
-    ];
-
-    const initialPlanets = positions.map((pos, i) => ({
-      id: i,
-      left: pos.left + (Math.random() * 8 - 4),
-      top: pos.top + (Math.random() * 8 - 4),
-      size: 45 + Math.random() * 85,
-      duration: 70 + Math.random() * 40,
-      type: i % 3,
-      delay: Math.random() * 20
-    }));
-    setPlanets(initialPlanets);
-
-    // Astronautas — flutuação lenta (50–80s)
-    const initialAstronauts = [...Array(3)].map((_, i) => ({
-      id: i,
-      left: 20 + Math.random() * 60,
-      top: 20 + Math.random() * 60,
-      size: 50 + Math.random() * 30,
-      duration: 50 + Math.random() * 30,
-      delay: Math.random() * 5,
-      rotation: Math.random() * 360
-    }));
-    setAstronauts(initialAstronauts);
-
-    // Foguetes — espaçados para não poluir
-    [0, 3000, 7000].forEach(d => setTimeout(() => spawnRocket(true), d));
-    const rocketInterval = setInterval(() => {
-      if (document.visibilityState === 'visible') spawnRocket();
-    }, 9000);
-
+// ... keep existing code
     return () => clearInterval(rocketInterval);
   }, [spawnRocket]);
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden z-0" aria-hidden="true">
-      {/* Dynamic Stars with breathing effect */}
-      {[...Array(isFull ? 60 : 30)].map((_, i) => {
-        const size = 1 + (i % 3);
-        const top = Math.random() * 100;
-        const left = Math.random() * 100;
-        // Respiração humana: ~8–12s por ciclo (5–7 respirações/min em repouso)
-        const dur = 8 + Math.random() * 4;
-        const delay = Math.random() * 6;
-        return (
-          <div
-            key={`star-${i}`}
-            className="absolute rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.5)]"
-            style={{
-              width: `${size}px`,
-              height: `${size}px`,
-              top: `${top}%`,
-              left: `${left}%`,
-              animation: `breathingStar ${dur}s ease-in-out ${delay}s infinite`
-            }}
-          />
-        );
-      })}
+      {/* Dynamic Stars with breathing and slow drift effects */}
+      {stars.map((star) => (
+        <div
+          key={`star-${star.id}`}
+          className="absolute rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.4)]"
+          style={{
+            width: `${star.size}px`,
+            height: `${star.size}px`,
+            top: `${star.top}%`,
+            left: `${star.left}%`,
+            // Combinando respiração (opacidade/escala) com deriva (posição)
+            animation: `
+              breathingStar ${star.breathingDur}s ease-in-out ${star.breathingDelay}s infinite,
+              starDrift ${star.driftDur}s linear infinite alternate
+            `
+          }}
+        />
+      ))}
 
       {/* Planets with zigzag trajectory */}
       {planets.map(p => (
