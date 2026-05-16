@@ -433,18 +433,18 @@ export function AuthBrandingPanel() {
       >
         <div className="space-y-6 w-full max-w-xl flex flex-col items-center text-center">
           <div className="flex items-center gap-4">
-            <AppLogo variant="light" iconClassName="h-14 w-14 rounded-xl shadow-orange/30" textClassName="text-4xl" />
+            <AppLogo variant="light" iconClassName="h-14 w-14 rounded-xl shadow-white/10" textClassName="text-4xl" />
           </div>
 
           <div className="space-y-4 max-w-md flex flex-col items-center">
             <h2 className="text-4xl xl:text-5xl font-display font-bold text-white leading-[1.1] tracking-tight relative group text-center">
               Um Universo de Produtos, para o{" "}
-              <span className="text-orange drop-shadow-[0_0_15px_rgba(251,146,60,0.3)]">
+              <span className="text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
                 Melhor Time das{" "}
                 <span className="relative inline-block">
                   Galáxias!
-                  <span className="absolute -bottom-2 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-orange to-transparent opacity-40 group-hover:opacity-100 transition-all duration-700 shadow-[0_0_12px_rgba(251,146,60,0.4)]" />
-                  <span className="absolute -bottom-2 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-orange/60 to-transparent scale-x-75 group-hover:scale-x-110 transition-transform duration-700" />
+                  <span className="absolute -bottom-2 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-white to-transparent opacity-40 group-hover:opacity-100 transition-all duration-700 shadow-[0_0_12px_rgba(255,255,255,0.2)]" />
+                  <span className="absolute -bottom-2 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-white/60 to-transparent scale-x-75 group-hover:scale-x-110 transition-transform duration-700" />
                 </span>
               </span>
             </h2>
