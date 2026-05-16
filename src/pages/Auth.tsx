@@ -298,8 +298,8 @@ export default function Auth() {
 
   if (user && !authLoading && !isSubmitting) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-[#0A0D14] text-white">
-        <Starfield />
+      <main className="flex min-h-screen flex-col items-center justify-center bg-[#0A0E1A] text-white">
+        <SpaceScene />
         <div className="z-10 flex flex-col items-center gap-6 animate-in fade-in zoom-in duration-500">
           <div className="relative">
             <AppLogo showText={false} iconClassName="h-20 w-20 rounded-2xl shadow-orange/40 animate-pulse" />
