@@ -1,7 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2 } from 'lucide-react';
+import { CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { logger } from '@/lib/logger';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,18 +18,26 @@ import { consumePostLoginRedirect } from '@/lib/auth/post-login-redirect';
  *  2. Implicit grant legado: chega `#access_token=...` no hash — o cliente
  *     supabase detecta automaticamente em `getSession()`.
  *
- * Todo o fluxo é instrumentado por `AuthFlowTracer`:
- *  - cada callback recebe um `flowId` curto (8 hex chars)
- *  - todos os logs no console vêm prefixados com `[AUTH-FLOW] flow=<id>`
- *  - ao final, é emitido um `console.groupCollapsed` com a timeline
- *  - um snapshot é gravado em `sessionStorage.__sso_last_flow` para
- *    inspeção posterior em `/login`
+ * UI progressiva:
+ *  - `processing`: aguardando troca/sessão
+ *  - `slow`: passou de 3s sem sessão (mostra dica de fallback)
+ *  - `confirming`: sessão capturada, atualizando contexto
+ *  - `confirmed`: tudo OK, navegando para destino
+ *  - `failed`: erro detectado, redirecionando para /login
  */
+type CallbackStatus = 'processing' | 'slow' | 'confirming' | 'confirmed' | 'failed';
+
+const CONFIRMED_HOLD_MS = 700;
+const SLOW_HINT_MS = 3000;
+
 export default function SSOCallbackPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { refreshSession } = useAuth();
   const handledRef = useRef(false);
+  const [status, setStatus] = useState<CallbackStatus>('processing');
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (handledRef.current) return;
@@ -44,6 +52,11 @@ export default function SSOCallbackPage() {
       hasHash: window.location.hash.length > 0,
     });
 
+    // Slow-hint timer: se em 3s ainda estivermos em "processing", troca para "slow"
+    const slowHintId = window.setTimeout(() => {
+      setStatus((prev) => (prev === 'processing' ? 'slow' : prev));
+    }, SLOW_HINT_MS);
+
     const error = searchParams.get('error');
     const errorDescription = searchParams.get('error_description');
     if (error) {
@@ -54,8 +67,11 @@ export default function SSOCallbackPage() {
         error,
         errorDescription,
       });
+      setStatus('failed');
+      setErrorMessage(errorDescription || error);
       const target = '/login?error=' + encodeURIComponent(errorDescription || error);
       tracer.finish('failure', target, `provider:${error}`);
+      window.clearTimeout(slowHintId);
       navigate(target, { replace: true });
       return;
     }
@@ -69,8 +85,11 @@ export default function SSOCallbackPage() {
       tracer.setProviderError(hashError);
       tracer.stepError('provider-error-hash', { error: hashError, desc });
       logger.error('[sso-callback] hash error', { flowId: tracer.flowId, error: hashError, desc });
+      setStatus('failed');
+      setErrorMessage(desc);
       const target = '/login?error=' + encodeURIComponent(desc);
       tracer.finish('failure', target, `provider-hash:${hashError}`);
+      window.clearTimeout(slowHintId);
       navigate(target, { replace: true });
       return;
     }
@@ -78,10 +97,14 @@ export default function SSOCallbackPage() {
     let cancelled = false;
     let unsub: (() => void) | null = null;
     let timeoutId: number | null = null;
+    let confirmedHoldId: number | null = null;
 
     const goHome = async (session?: import('@supabase/supabase-js').Session | null) => {
       if (cancelled) return;
       if (session) tracer.captureSession(session);
+      // Status: sessão capturada, atualizando contexto local
+      setStatus('confirming');
+      if (session?.user?.email) setUserEmail(session.user.email);
       try {
         await refreshSession();
       } catch (e) {
@@ -95,14 +118,22 @@ export default function SSOCallbackPage() {
       const target = consumePostLoginRedirect('/');
       tracer.step('redirect-home', { target });
       tracer.finish('success', target);
-      navigate(target, { replace: true });
+      // Mostra "confirmado" por um instante antes de navegar
+      setStatus('confirmed');
+      window.clearTimeout(slowHintId);
+      confirmedHoldId = window.setTimeout(() => {
+        if (!cancelled) navigate(target, { replace: true });
+      }, CONFIRMED_HOLD_MS);
     };
 
     const goLogin = (reason: string) => {
       if (cancelled) return;
+      setStatus('failed');
+      setErrorMessage(reason);
       const target = '/login?error=' + encodeURIComponent(reason);
       tracer.step('redirect-login', { target, reason });
       tracer.finish('failure', target, reason);
+      window.clearTimeout(slowHintId);
       navigate(target, { replace: true });
     };
 
@@ -186,21 +217,107 @@ export default function SSOCallbackPage() {
       cancelled = true;
       if (unsub) unsub();
       if (timeoutId !== null) window.clearTimeout(timeoutId);
+      if (confirmedHoldId !== null) window.clearTimeout(confirmedHoldId);
+      window.clearTimeout(slowHintId);
     };
   }, [navigate, searchParams, refreshSession]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <PageSEO
         title="Autenticação SSO"
         description="Processando autenticação via SSO."
         path="/auth/callback"
         noIndex
       />
-      <div className="flex flex-col items-center gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-muted-foreground">Processando autenticação...</p>
+      <div
+        role="status"
+        aria-live="polite"
+        aria-busy={status !== 'confirmed' && status !== 'failed'}
+        className="flex w-full max-w-sm flex-col items-center gap-4 rounded-2xl border border-border/60 bg-card/60 p-8 text-center shadow-sm"
+        data-status={status}
+      >
+        <StatusIcon status={status} />
+        <div className="space-y-1">
+          <h1 className="text-base font-semibold text-foreground">
+            {STATUS_TITLE[status]}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {status === 'failed' && errorMessage
+              ? errorMessage
+              : STATUS_DESCRIPTION[status]}
+          </p>
+          {(status === 'confirming' || status === 'confirmed') && userEmail && (
+            <p className="pt-1 text-xs text-muted-foreground/80">
+              {userEmail}
+            </p>
+          )}
+        </div>
+        <StatusSteps status={status} />
       </div>
     </div>
+  );
+}
+
+const STATUS_TITLE: Record<CallbackStatus, string> = {
+  processing: 'Processando autenticação',
+  slow: 'Ainda processando...',
+  confirming: 'Sessão recebida',
+  confirmed: 'Tudo certo!',
+  failed: 'Falha na autenticação',
+};
+
+const STATUS_DESCRIPTION: Record<CallbackStatus, string> = {
+  processing: 'Validando credenciais do provedor.',
+  slow: 'A resposta está demorando mais do que o esperado. Aguarde alguns segundos antes de tentar novamente.',
+  confirming: 'Atualizando sua sessão local...',
+  confirmed: 'Redirecionando você para o app.',
+  failed: 'Não foi possível completar o login.',
+};
+
+function StatusIcon({ status }: { status: CallbackStatus }) {
+  if (status === 'confirmed') {
+    return <CheckCircle2 className="h-10 w-10 text-primary animate-fade-in" />;
+  }
+  if (status === 'failed') {
+    return <AlertCircle className="h-10 w-10 text-destructive" />;
+  }
+  return <Loader2 className="h-10 w-10 animate-spin text-primary" />;
+}
+
+function StatusSteps({ status }: { status: CallbackStatus }) {
+  const steps: { key: CallbackStatus; label: string }[] = [
+    { key: 'processing', label: 'Recebendo' },
+    { key: 'confirming', label: 'Atualizando' },
+    { key: 'confirmed', label: 'Pronto' },
+  ];
+  const order: CallbackStatus[] = ['processing', 'slow', 'confirming', 'confirmed'];
+  const currentIdx = order.indexOf(status);
+  return (
+    <ol className="flex w-full items-center justify-between gap-2 pt-2 text-[10px] uppercase tracking-wide text-muted-foreground">
+      {steps.map((s) => {
+        const stepIdx = order.indexOf(s.key);
+        const done = status === 'failed' ? false : currentIdx >= stepIdx;
+        const active = status === s.key || (s.key === 'processing' && status === 'slow');
+        return (
+          <li
+            key={s.key}
+            className={
+              'flex flex-1 flex-col items-center gap-1 ' +
+              (done ? 'text-foreground' : '')
+            }
+          >
+            <span
+              className={
+                'h-1 w-full rounded-full transition-colors ' +
+                (done ? 'bg-primary' : 'bg-muted')
+              }
+              aria-current={active ? 'step' : undefined}
+            />
+            <span>{s.label}</span>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
