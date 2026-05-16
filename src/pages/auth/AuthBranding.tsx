@@ -358,15 +358,20 @@ function FeatureCard({ item, index }: { item: typeof FEATURE_ITEMS[0]; index: nu
   const IconComponent = item.icon;
   return (
     <div
-      className="flex h-[99px] items-center justify-between gap-2 sm:gap-4 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl hover:bg-white/10 hover:border-orange/30 hover:scale-[1.02] transition-all duration-500 group opacity-0 px-4 sm:px-6"
+      className="flex h-[99px] items-center justify-between gap-2 sm:gap-4 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] shadow-2xl hover:bg-white/[0.07] hover:border-orange/40 hover:scale-[1.02] transition-all duration-500 group opacity-0 px-4 sm:px-6 relative overflow-hidden"
       style={{ animation: `scale-fade-in 0.5s ease-out ${300 + index * 150}ms forwards` }}
     >
-      <div className="min-w-0 flex-1 text-left">
-        <p className="text-[14px] sm:text-2xl font-bold text-white leading-tight truncate">{item.label}</p>
-        <p className="text-[9px] sm:text-sm font-medium text-white/50 leading-tight truncate">{item.desc}</p>
+      {/* Glossy Scanning Effect (10/10) */}
+      <div className="absolute inset-0 w-full h-full pointer-events-none">
+        <div className="absolute top-0 -left-[100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/[0.03] to-transparent skew-x-[-25deg] group-hover:animate-[shimmer_2s_infinite]" />
       </div>
-      <div className="w-11 h-11 shrink-0 rounded-xl bg-orange/15 flex items-center justify-center group-hover:bg-orange/25 transition-colors">
-        <IconComponent className="h-5 w-5 text-orange" />
+
+      <div className="min-w-0 flex-1 text-left relative z-10">
+        <p className="text-[14px] sm:text-2xl font-bold text-white leading-tight truncate tracking-tight">{item.label}</p>
+        <p className="text-[9px] sm:text-sm font-medium text-white/40 leading-tight truncate uppercase tracking-widest mt-0.5">{item.desc}</p>
+      </div>
+      <div className="w-11 h-11 shrink-0 rounded-xl bg-orange/10 flex items-center justify-center group-hover:bg-orange/20 transition-all duration-500 group-hover:rotate-[10deg] relative z-10 border border-white/[0.05]">
+        <IconComponent className="h-5 w-5 text-orange drop-shadow-[0_0_8px_rgba(251,146,60,0.4)]" />
       </div>
     </div>
   );
