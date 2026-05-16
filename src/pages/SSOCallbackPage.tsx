@@ -9,6 +9,7 @@ import { authDebugUrl } from '@/lib/auth/auth-debug';
 import { AuthFlowTracer } from '@/lib/auth/auth-flow-tracer';
 import { consumePostLoginRedirect } from '@/lib/auth/post-login-redirect';
 import { clearOAuthPending } from '@/lib/auth/oauth-pending';
+import { explainOAuthError, type OAuthErrorExplanation } from '@/lib/auth/oauth-error-explainer';
 
 /**
  * Callback do login social via Supabase Auth.
@@ -39,6 +40,7 @@ export default function SSOCallbackPage() {
   const [status, setStatus] = useState<CallbackStatus>('processing');
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorDetail, setErrorDetail] = useState<OAuthErrorExplanation | null>(null);
 
   useEffect(() => {
     if (handledRef.current) return;
@@ -63,20 +65,32 @@ export default function SSOCallbackPage() {
       setStatus((prev) => (prev === 'processing' ? 'slow' : prev));
     }, SLOW_HINT_MS);
 
+    const buildLoginTarget = (detail: OAuthErrorExplanation): string => {
+      const params = new URLSearchParams();
+      params.set('error', detail.code);
+      params.set('error_description', detail.description);
+      params.set('hint', detail.hint);
+      return `/login?${params.toString()}`;
+    };
+
     const error = searchParams.get('error');
     const errorDescription = searchParams.get('error_description');
     if (error) {
+      const detail = explainOAuthError({ error, description: errorDescription });
       tracer.setProviderError(error);
-      tracer.stepError('provider-error-query', { error, errorDescription });
+      tracer.stepError('provider-error-query', { error, errorDescription, code: detail.code });
       logger.error('[sso-callback] provider returned error', {
         flowId: tracer.flowId,
         error,
         errorDescription,
+        code: detail.code,
+        severity: detail.severity,
       });
       setStatus('failed');
-      setErrorMessage(errorDescription || error);
-      const target = '/login?error=' + encodeURIComponent(errorDescription || error);
-      tracer.finish('failure', target, `provider:${error}`);
+      setErrorMessage(detail.description);
+      setErrorDetail(detail);
+      const target = buildLoginTarget(detail);
+      tracer.finish('failure', target, `provider:${detail.code}`);
       window.clearTimeout(slowHintId);
       navigate(target, { replace: true });
       return;
@@ -87,14 +101,22 @@ export default function SSOCallbackPage() {
     const hashParams = new URLSearchParams(hash);
     const hashError = hashParams.get('error');
     if (hashError) {
-      const desc = hashParams.get('error_description') || hashError;
+      const desc = hashParams.get('error_description');
+      const detail = explainOAuthError({ error: hashError, description: desc });
       tracer.setProviderError(hashError);
-      tracer.stepError('provider-error-hash', { error: hashError, desc });
-      logger.error('[sso-callback] hash error', { flowId: tracer.flowId, error: hashError, desc });
+      tracer.stepError('provider-error-hash', { error: hashError, desc, code: detail.code });
+      logger.error('[sso-callback] hash error', {
+        flowId: tracer.flowId,
+        error: hashError,
+        desc,
+        code: detail.code,
+        severity: detail.severity,
+      });
       setStatus('failed');
-      setErrorMessage(desc);
-      const target = '/login?error=' + encodeURIComponent(desc);
-      tracer.finish('failure', target, `provider-hash:${hashError}`);
+      setErrorMessage(detail.description);
+      setErrorDetail(detail);
+      const target = buildLoginTarget(detail);
+      tracer.finish('failure', target, `provider-hash:${detail.code}`);
       window.clearTimeout(slowHintId);
       navigate(target, { replace: true });
       return;
@@ -132,13 +154,15 @@ export default function SSOCallbackPage() {
       }, CONFIRMED_HOLD_MS);
     };
 
-    const goLogin = (reason: string) => {
+    const goLogin = (reason: string, rawCode?: string) => {
       if (cancelled) return;
+      const detail = explainOAuthError({ error: rawCode ?? null, description: reason });
       setStatus('failed');
-      setErrorMessage(reason);
-      const target = '/login?error=' + encodeURIComponent(reason);
-      tracer.step('redirect-login', { target, reason });
-      tracer.finish('failure', target, reason);
+      setErrorMessage(detail.description);
+      setErrorDetail(detail);
+      const target = buildLoginTarget(detail);
+      tracer.step('redirect-login', { target, reason, code: detail.code });
+      tracer.finish('failure', target, `${detail.code}:${reason}`);
       window.clearTimeout(slowHintId);
       navigate(target, { replace: true });
     };
@@ -245,10 +269,10 @@ export default function SSOCallbackPage() {
       >
         <StatusIcon status={status} />
         <div className="space-y-1">
-          <h1 className="text-base font-semibold text-foreground">
-            {STATUS_TITLE[status]}
+          <h1 className="text-base font-semibold text-foreground" data-testid="sso-callback-title">
+            {status === 'failed' && errorDetail ? errorDetail.title : STATUS_TITLE[status]}
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground" data-testid="sso-callback-description">
             {status === 'failed' && errorMessage
               ? errorMessage
               : STATUS_DESCRIPTION[status]}
@@ -259,6 +283,23 @@ export default function SSOCallbackPage() {
             </p>
           )}
         </div>
+        {status === 'failed' && errorDetail && (
+          <div
+            className={
+              'w-full rounded-lg border px-3 py-2 text-left text-xs ' +
+              SEVERITY_STYLES[errorDetail.severity]
+            }
+            data-testid="sso-callback-hint"
+            data-severity={errorDetail.severity}
+            data-error-code={errorDetail.code}
+          >
+            <p className="font-medium">Como resolver</p>
+            <p className="mt-1 text-muted-foreground">{errorDetail.hint}</p>
+            <p className="mt-2 text-[10px] uppercase tracking-wide text-muted-foreground/60">
+              Código: {errorDetail.code}
+            </p>
+          </div>
+        )}
         <StatusSteps status={status} />
       </div>
     </div>
@@ -279,6 +320,13 @@ const STATUS_DESCRIPTION: Record<CallbackStatus, string> = {
   confirming: 'Atualizando sua sessão local...',
   confirmed: 'Redirecionando você para o app.',
   failed: 'Não foi possível completar o login.',
+};
+
+const SEVERITY_STYLES: Record<OAuthErrorExplanation['severity'], string> = {
+  config: 'border-destructive/40 bg-destructive/5',
+  user: 'border-amber-500/40 bg-amber-500/5',
+  transient: 'border-primary/30 bg-primary/5',
+  unknown: 'border-border bg-muted/40',
 };
 
 function StatusIcon({ status }: { status: CallbackStatus }) {
