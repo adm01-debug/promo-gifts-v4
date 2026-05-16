@@ -100,7 +100,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
       {planets.map(p => (
         <div
           key={`planet-${p.id}`}
-          className="absolute opacity-25 blur-[1px]"
+          className="absolute opacity-35 blur-[0.5px]"
           style={{
             width: `${p.size}px`,
             height: `${p.size}px`,
