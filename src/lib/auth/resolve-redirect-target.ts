@@ -54,14 +54,14 @@ export function resolveRedirectTarget(input: ResolveRedirectInput): string {
     const path = `${fromState.pathname}${fromState.search ?? ''}${fromState.hash ?? ''}`;
     if (isSafeRedirectPath(path)) {
       clearPostLoginRedirect(); // descarta storage — precedência maior venceu
-      return path;
+      return enforceSafe(path);
     }
   }
 
   // 2. ?redirect
   if (queryRedirect && isSafeRedirectPath(queryRedirect)) {
     clearPostLoginRedirect();
-    return queryRedirect;
+    return enforceSafe(queryRedirect);
   }
 
   // 3. sessionStorage (consome one-shot) → 4. fallback '/'
