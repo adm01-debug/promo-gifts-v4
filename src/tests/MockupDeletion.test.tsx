@@ -208,12 +208,11 @@ describe('Mockup Deletion Flow', () => {
     mockMg.activeTab = 'history';
     renderWithProviders(<MockupGenerator />);
 
-    const deleteButton = await screen.findByLabelText(/excluir/i);
+    const deleteButton = await screen.findByTestId("delete-mockup-button");
     fireEvent.click(deleteButton);
 
     const confirmButton = screen.getByRole('button', {
       name: /excluir/i,
-      className: /bg-destructive/i,
     });
     fireEvent.click(confirmButton);
 
@@ -231,7 +230,7 @@ describe('Mockup Deletion Flow', () => {
 
     renderWithProviders(<MockupGenerator />);
 
-    const deleteButton = await screen.findByLabelText(/excluir/i);
+    const deleteButton = await screen.findByTestId("delete-mockup-button");
     fireEvent.click(deleteButton);
 
     const confirmButton = screen.getByRole('button', {
