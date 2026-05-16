@@ -353,7 +353,7 @@ export function AuthBrandingPanel() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:gap-5 pt-6 w-full lg:w-[94.5%] xl:w-[99%] lg:mx-[2.75%] xl:mx-[0.5%] px-2 sm:px-0">
+          <div className="grid grid-cols-2 gap-[0.6rem] sm:gap-4 pt-6 w-full lg:w-[94.5%] xl:w-[99%] lg:mx-[2.75%] xl:mx-[0.5%] px-2 sm:px-0">
             {FEATURE_ITEMS.map((item, i) => (
               <FeatureCard key={i} item={item} index={i} />
             ))}
