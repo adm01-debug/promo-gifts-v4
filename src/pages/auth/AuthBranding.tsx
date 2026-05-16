@@ -354,11 +354,35 @@ export const Starfield = React.memo(() => <SpaceScene isFull={false} />);
 
 function FeatureCard({ item, index }: { item: typeof FEATURE_ITEMS[0]; index: number }) {
   const IconComponent = item.icon;
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [glowPos, setGlowPos] = useState({ x: 0, y: 0 });
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    setGlowPos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
+
   return (
     <div
+      ref={cardRef}
+      onMouseMove={handleMouseMove}
       className="flex h-[99px] items-center justify-between gap-2 sm:gap-4 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] shadow-2xl hover:bg-white/[0.07] hover:border-orange/40 hover:scale-[1.02] transition-all duration-500 group opacity-0 px-4 sm:px-6 relative overflow-hidden"
       style={{ animation: `scale-fade-in 0.5s ease-out ${300 + index * 150}ms forwards` }}
     >
+      {/* Dynamic Cursor Glow (10/10) */}
+      <div 
+        className="absolute w-40 h-40 rounded-full bg-orange/15 blur-[40px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        style={{
+          left: `${glowPos.x}px`,
+          top: `${glowPos.y}px`,
+          transform: 'translate(-50%, -50%)',
+        }}
+      />
+
       {/* Glossy Scanning Effect (10/10) */}
       <div className="absolute inset-0 w-full h-full pointer-events-none">
         <div className="absolute top-0 -left-[100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/[0.05] to-transparent group-hover:animate-[shimmerTranslate_2s_infinite]" />
