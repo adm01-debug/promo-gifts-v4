@@ -291,7 +291,7 @@ export default function Auth() {
         role="main"
         aria-label="Carregando autenticação"
       >
-        <Loader2 className="h-8 w-8 animate-spin text-white" />
+        <Loader2 className="h-8 w-8 animate-spin text-orange" />
       </main>
     );
   }
@@ -302,8 +302,8 @@ export default function Auth() {
         <SpaceScene />
         <div className="z-10 flex flex-col items-center gap-6 animate-in fade-in zoom-in duration-500">
           <div className="relative">
-            <AppLogo showText={false} iconClassName="h-20 w-20 rounded-2xl shadow-white/20 animate-pulse" />
-            <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-slate-800 flex items-center justify-center ring-4 ring-[#030508]">
+            <AppLogo showText={false} iconClassName="h-20 w-20 rounded-2xl shadow-orange/40 animate-pulse" />
+            <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-success flex items-center justify-center ring-4 ring-[#030508]">
               <RotateCw className="h-3 w-3 text-white animate-spin-slow" />
             </div>
           </div>
@@ -323,7 +323,7 @@ export default function Auth() {
       aria-label="Autenticação"
     >
       {/* Fundo unificado azul-noite saturado com cena espacial coordenada */}
-      <SpaceScene variant="default" />
+      <SpaceScene />
 
       <PageSEO
         title="Login"
@@ -346,7 +346,7 @@ export default function Auth() {
         <div className="w-full max-w-md animate-fade-in space-y-8">
           {/* Mobile Logo */}
           <div className="flex justify-center lg:hidden">
-            <AppLogo variant="light" />
+            <AppLogo />
           </div>
 
           {/* IP Blocked Alert */}
@@ -495,7 +495,7 @@ export default function Auth() {
                           type="email"
                           placeholder="seu@email.com"
                           autoComplete="email"
-                          className="border-border bg-input pl-10 focus:border-white focus:ring-white"
+                          className="border-border bg-input pl-10 focus:border-orange focus:ring-orange"
                           {...loginForm.register('email')}
                           ref={(el) => {
                             loginForm.register('email').ref(el);
@@ -522,14 +522,14 @@ export default function Auth() {
                           type={showPassword ? 'text' : 'password'}
                           placeholder="••••••••"
                           autoComplete="current-password"
-                          className="border-border bg-input pl-10 pr-10 focus:border-white focus:ring-white"
+                          className="border-border bg-input pl-10 pr-10 focus:border-orange focus:ring-orange"
                           {...loginForm.register('password')}
                         />
                         <button
                           type="button"
                           data-testid="login-password-toggle"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -mr-2 flex min-h-[44px] min-w-[44px] -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors hover:text-white"
+                          className="absolute right-3 top-1/2 -mr-2 flex min-h-[44px] min-w-[44px] -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors hover:text-orange"
                           aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                         >
                           {showPassword ? (
@@ -562,7 +562,7 @@ export default function Auth() {
                       type="submit"
                       data-testid="login-submit"
                       variant="orange"
-                      className="h-12 w-full text-base font-semibold shadow-lg shadow-white/10 transition-all duration-300 hover:shadow-xl hover:shadow-white/20"
+                      className="h-12 w-full text-base font-semibold shadow-lg shadow-orange/25 transition-all duration-300 hover:shadow-xl hover:shadow-orange/30"
                         disabled={isSubmitting || loginStatus === 'success'}
                       >
                         {isSubmitting ? (
@@ -607,7 +607,7 @@ export default function Auth() {
               style={{ animation: 'scale-fade-in 0.5s ease-out 600ms forwards' }}
             >
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Globe className="h-3.5 w-3.5 text-white" />
+                <Globe className="h-3.5 w-3.5 text-orange" />
                 <span className="font-mono">{currentIP}</span>
               </div>
               {geoLocation && (
@@ -629,7 +629,7 @@ export default function Auth() {
               style={{ animation: 'scale-fade-in 0.5s ease-out 800ms forwards' }}
             >
               <div className="flex items-center gap-2 mb-1">
-                <Server className="h-4 w-4 text-white" />
+                <Server className="h-4 w-4 text-orange" />
                 <span className="text-xs font-bold uppercase tracking-wider text-white/60">Status da Infraestrutura</span>
               </div>
               

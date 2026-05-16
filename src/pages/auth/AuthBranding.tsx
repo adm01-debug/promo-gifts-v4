@@ -12,24 +12,18 @@ interface AstronautData { id: number; left: number; top: number; size: number; r
 interface StarData { id: number; size: number; top: number; left: number; breathingDur: number; breathingDelay: number; driftDur: number; }
 interface MeteorData { id: number; top: number; left: number; duration: number; delay: number; }
 
-const ASTRONAUT_LAYOUT: AstronautData[] = [
-  { id: 0, left: 12, top: 18, size: 52, depth: 0.85, rotation: -8, zIndex: 8, initialAngle: 0 },
-  { id: 1, left: 88, top: 27, size: 46, depth: 0.75, rotation: 12, zIndex: 9, initialAngle: 120 },
-  { id: 2, left: 16, top: 78, size: 58, depth: 1.05, rotation: -15, zIndex: 11, initialAngle: 240 },
-  { id: 3, left: 82, top: 70, size: 62, depth: 1.15, rotation: 20, zIndex: 12, initialAngle: 60 },
-];
-
-export const SpaceScene = React.memo(({ isFull = true, variant = 'default' }: { isFull?: boolean; variant?: 'default' | 'eclipse' | 'supernova' | 'nebula' | 'matrix' }) => {
+export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) => {
   const [rockets, setRockets] = useState<RocketData[]>([]);
   const [planets, setPlanets] = useState<PlanetData[]>([]);
+  const [astronauts, setAstronauts] = useState<AstronautData[]>([]);
   const [meteors, setMeteors] = useState<MeteorData[]>([]);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [scrollY, setScrollY] = useState(0);
   
   // Parâmetros controláveis expandidos
   const [config, setConfig] = useState({
-    astroCount: ASTRONAUT_LAYOUT.length,
-    speed: 0.42, 
+    astroCount: 4,
+    speed: 0.2, 
     spacing: 1.0,
     parallaxIntensity: 1.0,
     depthProfile: 1.0, 
@@ -131,79 +125,56 @@ export const SpaceScene = React.memo(({ isFull = true, variant = 'default' }: { 
       type: i % 3,
       delay: Math.random() * 5,
     })));
+    
+    // Layout base para astronautas com ângulos iniciais diferentes para órbita
+    const baseLayout = [
+      { left: 15, top: 20, depth: 0.3, rotation: -8, zIndex: 5, initialAngle: 0 },
+      { left: 75, top: 30, depth: 0.5, rotation: 12, zIndex: 10, initialAngle: 90 },
+      { left: 25, top: 65, depth: 0.8, rotation: -15, zIndex: 15, initialAngle: 180 },
+      { left: 65, top: 70, depth: 1.2, rotation: 20, zIndex: 20, initialAngle: 270 },
+      { left: 45, top: 45, depth: 0.6, rotation: 45, zIndex: 12, initialAngle: 45 },
+      { left: 10, top: 85, depth: 0.4, rotation: -30, zIndex: 8, initialAngle: 135 },
+    ];
+
+    setAstronauts(baseLayout.slice(0, config.astroCount).map((a, i) => {
+      const individual = config.individualAstronauts.find(idx => idx.id === i);
+      return {
+        id: i,
+        ...a,
+        left: 50 + (a.left - 50) * config.spacing,
+        top: 50 + (a.top - 50) * config.spacing,
+        individualScale: individual?.scale ?? 1.0,
+        individualOpacity: individual?.opacity ?? 1.0,
+      };
+    }));
+
     return () => {
       clearInterval(rocketInterval);
       clearInterval(meteorInterval);
     };
-  }, [spawnRocket]);
+  }, [spawnRocket, config.astroCount, config.spacing, config.individualAstronauts]);
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden z-0" aria-hidden="true">
       {/* Background Deep Space Glow & Nebula */}
-      <div 
-        className="absolute inset-0 transition-all duration-1000"
-        style={{
-          background: variant === 'eclipse' 
-            ? 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.03) 0%, rgba(0,0,0,1) 70%)'
-            : variant === 'supernova'
-              ? 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.08) 0%, rgba(2,6,23,0.9) 100%)'
-              : variant === 'nebula'
-                ? 'bg-[#0a0a0c]'
-                : 'radial-gradient(circle at 50% 50%,rgba(15,23,42,0) 0%,rgba(2,6,23,0.6) 100%)'
-        }}
-      />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(15,23,42,0)_0%,rgba(2,6,23,0.6)_100%)]" />
       
-      {/* Mouse Follow Glow - Interactive Depth (10/10) */}
-      <div 
-        className="absolute w-[600px] h-[600px] rounded-full opacity-[0.07] blur-[100px] pointer-events-none"
-        style={{
-          background: 'radial-gradient(circle, hsl(var(--primary) / var(--glow-intensity)) 0%, transparent 70%)',
-          left: `calc(50% + ${mousePos.x * 2}px)`,
-          top: `calc(50% + ${mousePos.y * 2}px)`,
-          transform: 'translate(-50%, -50%)',
-          transition: 'left 0.15s ease-out, top 0.15s ease-out'
-        }}
-      />
-
       {/* Atmospheric Nebula Layers (10/10 Depth) */}
       <div 
-        className="absolute inset-0 opacity-15 blur-[80px] transition-all duration-1000"
+        className="absolute inset-0 opacity-10 blur-[80px]"
         style={{
-          background: variant === 'supernova'
-            ? 'radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.15) 0%, transparent 60%)'
-            : variant === 'nebula'
-              ? 'radial-gradient(ellipse at 20% 30%, rgba(255,255,255,0.08) 0%, transparent 50%), radial-gradient(ellipse at 80% 70%, rgba(255,255,255,0.08) 0%, transparent 50%)'
-              : 'radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.05) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(255,255,255,0.05) 0%, transparent 50%)',
-          animation: variant === 'supernova' ? 'pulse 10s ease-in-out infinite' : 'nebulaDrift 30s ease-in-out infinite alternate'
+          background: 'radial-gradient(ellipse at 30% 20%, #1e40af 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, #1e3a8a 0%, transparent 50%)',
+          animation: 'nebulaDrift 30s ease-in-out infinite alternate'
         }}
       />
       
       <div 
-        className="absolute inset-0 opacity-[0.12] blur-[120px] transition-all duration-1000"
+        className="absolute inset-0 opacity-[0.05] blur-[120px]"
         style={{
-          background: variant === 'eclipse'
-            ? 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.02) 0%, transparent 40%)'
-            : variant === 'nebula'
-              ? 'radial-gradient(circle at 70% 30%, rgba(255,255,255,0.05) 0%, transparent 40%)'
-              : 'radial-gradient(circle at 60% 40%, #000000 0%, transparent 40%)',
+          background: 'radial-gradient(circle at 60% 40%, #fb923c 0%, transparent 40%)',
           animation: 'nebulaDrift 45s ease-in-out infinite alternate-reverse'
         }}
       />
-
-      {/* Star Matrix Grid (Only for variant matrix) */}
-      {variant === 'matrix' && (
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-          <svg className="absolute inset-0 w-full h-full">
-            <defs>
-              <pattern id="grid" width="120" height="120" patternUnits="userSpaceOnUse">
-                <path d="M 120 0 L 0 0 0 120" fill="none" stroke="white" strokeWidth="0.5" strokeOpacity="0.2" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
-          </svg>
-        </div>
-      )}
 
       {/* Space Dust Layer - Profundidade Extra */}
       <div className="absolute inset-0 opacity-30">
@@ -217,8 +188,8 @@ export const SpaceScene = React.memo(({ isFull = true, variant = 'default' }: { 
               top: `${(i * 17) % 100}%`,
               left: `${(i * 23) % 100}%`,
               animation: `starDrift ${60 + (i % 20)}s linear infinite alternate`,
-              backgroundColor: i % 5 === 0 ? 'hsl(0 0% 25%)' : i % 7 === 0 ? 'hsl(0 0% 32%)' : 'hsl(0 0% 100% / 0.4)',
-              boxShadow: i % 5 === 0 ? '0 0 4px hsl(0 0% 25% / 0.8)' : i % 7 === 0 ? '0 0 4px hsl(0 0% 32%)' : 'none',
+              backgroundColor: i % 5 === 0 ? '#FB923C' : i % 7 === 0 ? '#60A5FA' : 'rgba(255,255,255,0.4)',
+              boxShadow: i % 5 === 0 ? '0 0 4px #FB923C' : i % 7 === 0 ? '0 0 4px #60A5FA' : 'none',
               opacity: i % 3 === 0 ? 0.4 : 0.2,
             }}
           />
@@ -264,35 +235,39 @@ export const SpaceScene = React.memo(({ isFull = true, variant = 'default' }: { 
             animation: `zigzagMovement ${p.duration}s ease-in-out ${p.delay}s infinite alternate`,
             willChange: "transform",
             background: p.type === 0
-              ? 'radial-gradient(circle at 30% 30%, hsl(0 0% 15%), hsl(0 0% 0%))'
+              ? 'radial-gradient(circle at 30% 30%, #0B1E47, #000000)'
               : p.type === 1
-                ? 'radial-gradient(circle at 30% 30%, hsl(0 0% 25%), hsl(0 0% 0%))'
-                : 'radial-gradient(circle at 30% 30%, hsl(0 0% 9%), hsl(0 0% 0%))',
+                ? 'radial-gradient(circle at 30% 30%, #0A1F4D, #000000)'
+                : 'radial-gradient(circle at 30% 30%, #0C2456, #000000)',
             borderRadius: '50%',
             boxShadow: 'inset -12px -12px 24px rgba(0,0,0,0.75), 0 0 24px rgba(15, 23, 60, 0.15)'
           }}
         />
       ))}
 
-      {/* Floating Astronauts — sempre renderizados desde o primeiro frame */}
-      {ASTRONAUT_LAYOUT.slice(0, config.astroCount).map((a) => {
-        const individual = config.individualAstronauts.find(idx => idx.id === a.id);
-        const size = a.size * config.depthProfile * (individual?.scale ?? 1.0);
-        const opacity = 0.5 * config.depthProfile * (individual?.opacity ?? 1.0);
-        const orbitRadius = 14 + a.depth * 14;
+      {/* Floating Astronauts — Sincronizados, Menores e com Parallax Mouse + Scroll */}
+      {!config.reducedMotion && astronauts.map((a, idx) => {
+        // Tamanhos reduzidos e escala baseada na profundidade, perfil global e ajuste individual
+        const baseSize = 35; 
+        const size = baseSize * a.depth * config.depthProfile * (a.individualScale ?? 1.0);
+        
+        // Opacidade baseada no perfil global, profundidade e ajuste individual
+        const opacity = (0.12 + (a.depth * 0.2)) * config.depthProfile * (a.individualOpacity ?? 1.0);
+        
+        // Parallax Mouse + Scroll baseado na profundidade (com suavização adicional)
         const translateX = mousePos.x * a.depth;
         const translateY = (mousePos.y + scrollY) * a.depth;
-        const orbitDuration = 32 / config.speed;
-        const left = 50 + (a.left - 50) * config.spacing;
-        const top = 50 + (a.top - 50) * config.spacing;
 
+        // Órbita circular suave (circularOrbit) — Sincronizada via delay negativo
+        const orbitDuration = 18 / config.speed;
+        
         return (
           <div
             key={`astro-${a.id}`}
             className="absolute transition-transform duration-1000 ease-out"
             style={{
-              left: `${left}%`,
-              top: `${top}%`,
+              left: `${a.left}%`,
+              top: `${a.top}%`,
               opacity,
               zIndex: a.zIndex,
               transform: `translate3d(${translateX}px, ${translateY}px, 0)`,
@@ -304,24 +279,20 @@ export const SpaceScene = React.memo(({ isFull = true, variant = 'default' }: { 
               style={{
                 // circularOrbit rotaciona e move
                 animation: `circularOrbit ${orbitDuration}s linear infinite`,
-                animationDelay: `-${(a.initialAngle / 360) * orbitDuration}s`, 
-                transformOrigin: "center center",
-                ['--orbit-radius' as string]: `${orbitRadius}px`,
+                animationDelay: `0s`, 
                 // Rim lighting and glassmorphism effect (10/10)
-                filter: `brightness(1.05) drop-shadow(0 0 ${size / 5}px rgba(255, 255, 255, 0.2)) drop-shadow(0 0 6px rgba(255, 255, 255, 0.35)) ${a.depth < 0.9 ? 'blur(0.8px)' : 'blur(0px)'}`,
+                filter: `brightness(0.65) drop-shadow(0 0 ${size / 8}px rgba(6, 135, 255, 0.2)) drop-shadow(0 0 2px rgba(255, 255, 255, 0.3))`,
               }}
             >
               <img
                 src={astronautSvg}
                 alt=""
-                className="select-none animate-pulse"
+                className="animate-pulse"
                 style={{
                   width: size,
                   height: size,
                   transform: `rotate(${a.rotation}deg)`,
                   animationDuration: `${orbitDuration / 2}s`,
-                  minWidth: 44,
-                  minHeight: 44,
                 }}
               />
             </div>
@@ -355,11 +326,11 @@ export const SpaceScene = React.memo(({ isFull = true, variant = 'default' }: { 
         >
           <div style={{ transform: `scale(${r.scale}) rotate(${r.rotation}deg)` }}>
             <Rocket
-              className="-rotate-45 text-slate-400"
+              className="-rotate-45 text-orange"
               style={{
                 width: r.size,
                 height: r.size,
-                filter: "drop-shadow(0 0 15px hsl(var(--primary) / 0.3))",
+                filter: "drop-shadow(0 0 15px rgba(251, 146, 60, 0.7))",
               }}
             />
             {/* Flame Trail */}
@@ -369,7 +340,7 @@ export const SpaceScene = React.memo(({ isFull = true, variant = 'default' }: { 
                 top: `${r.size * 0.8}px`,
                 width: `${r.size * 0.4}px`,
                 height: `${r.size * 1.5}px`,
-                background: "linear-gradient(to bottom, hsl(0 0% 30%), hsl(0 0% 10%), transparent)",
+                background: "linear-gradient(to bottom, #FB923C, #FBBF24, transparent)",
                 filter: "blur(4px)",
                 zIndex: -1,
               }}
@@ -388,35 +359,11 @@ export const Starfield = React.memo(() => <SpaceScene isFull={false} />);
 
 function FeatureCard({ item, index }: { item: typeof FEATURE_ITEMS[0]; index: number }) {
   const IconComponent = item.icon;
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [glowPos, setGlowPos] = useState({ x: 0, y: 0 });
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    setGlowPos({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
-  };
-
   return (
     <div
-      ref={cardRef}
-      onMouseMove={handleMouseMove}
-      className="flex h-[99px] items-center justify-between gap-2 sm:gap-4 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] shadow-2xl hover:bg-white/[0.07] hover:border-white/40 hover:scale-[1.02] transition-all duration-500 group opacity-0 px-4 sm:px-6 relative overflow-hidden"
+      className="flex h-[99px] items-center justify-between gap-2 sm:gap-4 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] shadow-2xl hover:bg-white/[0.07] hover:border-orange/40 hover:scale-[1.02] transition-all duration-500 group opacity-0 px-4 sm:px-6 relative overflow-hidden"
       style={{ animation: `scale-fade-in 0.5s ease-out ${300 + index * 150}ms forwards` }}
     >
-      {/* Dynamic Cursor Glow (10/10) */}
-      <div 
-        className="absolute w-40 h-40 rounded-full bg-white/5 blur-[40px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-        style={{
-          left: `${glowPos.x}px`,
-          top: `${glowPos.y}px`,
-          transform: 'translate(-50%, -50%)',
-        }}
-      />
-
       {/* Glossy Scanning Effect (10/10) */}
       <div className="absolute inset-0 w-full h-full pointer-events-none">
         <div className="absolute top-0 -left-[100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/[0.05] to-transparent group-hover:animate-[shimmerTranslate_2s_infinite]" />
@@ -426,8 +373,8 @@ function FeatureCard({ item, index }: { item: typeof FEATURE_ITEMS[0]; index: nu
         <p className="text-[14px] sm:text-2xl font-bold text-white leading-tight truncate tracking-tight">{item.label}</p>
         <p className="text-[9px] sm:text-sm font-medium text-white/40 leading-tight truncate uppercase tracking-widest mt-0.5">{item.desc}</p>
       </div>
-      <div className="w-11 h-11 shrink-0 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all duration-500 group-hover:rotate-[10deg] relative z-10 border border-white/[0.05]">
-        <IconComponent className="h-5 w-5 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]" />
+      <div className="w-11 h-11 shrink-0 rounded-xl bg-orange/10 flex items-center justify-center group-hover:bg-orange/20 transition-all duration-500 group-hover:rotate-[10deg] relative z-10 border border-white/[0.05]">
+        <IconComponent className="h-5 w-5 text-orange drop-shadow-[0_0_8px_rgba(251,146,60,0.4)]" />
       </div>
     </div>
   );
@@ -441,78 +388,25 @@ const FEATURE_ITEMS = [
 ];
 
 export function AuthBrandingPanel() {
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
-  const [bgVariant, setBgVariant] = useState<'default' | 'eclipse' | 'supernova' | 'nebula' | 'matrix'>('default');
-
-  const variants = [
-    { id: 'default', label: 'Padrão' },
-    { id: 'eclipse', label: 'Eclipse' },
-    { id: 'supernova', label: 'Supernova' },
-    { id: 'nebula', label: 'Nebulosa' },
-    { id: 'matrix', label: 'Matriz' }
-  ] as const;
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      const { clientX, clientY } = e;
-      const x = (clientX / window.innerWidth - 0.5) * 4;
-      const y = (clientY / window.innerHeight - 0.5) * -4;
-      setTilt({ x, y });
-    };
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, []);
-
   return (
-    <div className="flex w-full lg:w-1/2 relative min-h-[500px] lg:h-screen items-center overflow-hidden">
-      {/* Background with variant support */}
-      <SpaceScene variant={bgVariant} />
-      
-      {/* Selector UI (Admin only or for testing) */}
-      <div className="absolute top-6 right-6 z-50 flex gap-2">
-        {variants.map((v) => (
-          <button
-            key={v.id}
-            onClick={() => setBgVariant(v.id)}
-            className={`px-3 py-1 rounded-full text-[10px] uppercase tracking-widest transition-all ${
-              bgVariant === v.id 
-                ? 'bg-white text-black font-bold' 
-                : 'bg-white/5 text-white/40 hover:bg-white/10'
-            }`}
-          >
-            {v.label}
-          </button>
-        ))}
-      </div>
-      {/* Design System Documentation (Hidden/Internal reference)
-          Palette: Premium Monochrome
-          Primary: hsl(var(--primary))
-          Shadows: var(--shadow-premium)
-          Glows: drop-shadow(0 0 Xpx hsl(var(--primary) / Y))
-          Gradients: var(--gradient-hero), var(--gradient-glow)
-      */}
+    <div className="flex w-full lg:w-1/2 relative min-h-[500px] lg:h-screen items-center">
+      {/* Sem decoração lateral — fundo 100% unificado vem do <main> em Auth.tsx */}
 
       {/* Content */}
-      <div 
-        className="relative z-10 flex flex-col justify-center items-center px-12 xl:px-20 w-full min-h-screen transition-transform duration-300 ease-out"
-        style={{
-          transform: `perspective(1000px) rotateX(${tilt.y}deg) rotateY(${tilt.x}deg)`,
-        }}
-      >
+      <div className="relative z-10 flex flex-col justify-center items-center px-12 xl:px-20 w-full min-h-screen">
         <div className="space-y-6 w-full max-w-xl flex flex-col items-center text-center">
           <div className="flex items-center gap-4">
-            <AppLogo variant="light" iconClassName="h-14 w-14 rounded-xl shadow-white/10" textClassName="text-4xl" />
+            <AppLogo variant="light" iconClassName="h-14 w-14 rounded-xl shadow-orange/30" textClassName="text-4xl" />
           </div>
 
           <div className="space-y-4 max-w-md flex flex-col items-center">
             <h2 className="text-4xl xl:text-5xl font-display font-bold text-white leading-[1.1] tracking-tight relative group text-center">
               Um Universo de Produtos, para o{" "}
-              <span className="text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+              <span className="text-orange">
                 Melhor Time das{" "}
                 <span className="relative inline-block">
                   Galáxias!
-                  <span className="absolute -bottom-2 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-white to-transparent opacity-40 group-hover:opacity-100 transition-all duration-700 shadow-[0_0_12px_rgba(255,255,255,0.2)]" />
-                  <span className="absolute -bottom-2 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-white/60 to-transparent scale-x-75 group-hover:scale-x-110 transition-transform duration-700" />
+                  <span className="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r from-orange/0 via-orange/60 to-orange/0 scale-x-0 group-hover:scale-x-100 transition-transform duration-700 shadow-[0_0_15px_rgba(251,146,60,0.5)]" />
                 </span>
               </span>
             </h2>
