@@ -392,7 +392,7 @@ export function AuthBrandingPanel() {
       {/* Sem decoração lateral — fundo 100% unificado vem do <main> em Auth.tsx */}
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col justify-center items-center px-12 xl:px-20 w-full min-h-screen">
+      <div className="relative z-10 flex flex-col justify-center items-center px-12 xl:px-20 w-full min-h-screen lg:translate-x-[10%]">
         <div className="space-y-6 w-full max-w-xl flex flex-col items-center text-center">
           <div className="flex items-center gap-4">
             <AppLogo variant="light" iconClassName="h-14 w-14 rounded-xl shadow-blue-500/30" textClassName="text-4xl" />
