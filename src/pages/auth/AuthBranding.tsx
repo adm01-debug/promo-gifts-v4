@@ -12,18 +12,24 @@ interface AstronautData { id: number; left: number; top: number; size: number; r
 interface StarData { id: number; size: number; top: number; left: number; breathingDur: number; breathingDelay: number; driftDur: number; }
 interface MeteorData { id: number; top: number; left: number; duration: number; delay: number; }
 
+const ASTRONAUT_LAYOUT: AstronautData[] = [
+  { id: 0, left: 12, top: 18, size: 52, depth: 0.85, rotation: -8, zIndex: 8, initialAngle: 0 },
+  { id: 1, left: 88, top: 27, size: 46, depth: 0.75, rotation: 12, zIndex: 9, initialAngle: 120 },
+  { id: 2, left: 16, top: 78, size: 58, depth: 1.05, rotation: -15, zIndex: 11, initialAngle: 240 },
+  { id: 3, left: 82, top: 70, size: 62, depth: 1.15, rotation: 20, zIndex: 12, initialAngle: 60 },
+];
+
 export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) => {
   const [rockets, setRockets] = useState<RocketData[]>([]);
   const [planets, setPlanets] = useState<PlanetData[]>([]);
-  const [astronauts, setAstronauts] = useState<AstronautData[]>([]);
   const [meteors, setMeteors] = useState<MeteorData[]>([]);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [scrollY, setScrollY] = useState(0);
   
   // Parâmetros controláveis expandidos
   const [config, setConfig] = useState({
-    astroCount: 4,
-    speed: 0.2, 
+    astroCount: ASTRONAUT_LAYOUT.length,
+    speed: 0.42, 
     spacing: 1.0,
     parallaxIntensity: 1.0,
     depthProfile: 1.0, 
