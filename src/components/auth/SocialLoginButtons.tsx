@@ -1,9 +1,32 @@
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { useState, forwardRef } from 'react';
+import { useState, useEffect, useRef, forwardRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { authDebug, authDebugError } from '@/lib/auth/auth-debug';
+
+/** Mapeia erros conhecidos do Supabase OAuth para mensagens PT-BR amigáveis. */
+function mapOAuthError(raw: string): string {
+  const m = raw.toLowerCase();
+  if (m.includes('unsupported provider') || m.includes('provider is not enabled')) {
+    return 'Login com Google ainda não está habilitado neste ambiente. Avise o administrador.';
+  }
+  if (m.includes('redirect') && m.includes('not allowed')) {
+    return 'URL de retorno não autorizada. Verifique a configuração do provedor.';
+  }
+  if (m.includes('network') || m.includes('failed to fetch')) {
+    return 'Sem conexão com o servidor de autenticação. Verifique sua internet e tente novamente.';
+  }
+  if (m.includes('popup') && m.includes('closed')) {
+    return 'Janela do Google fechada antes de concluir o login.';
+  }
+  return raw || 'Falha ao iniciar login com Google.';
+}
+
+/** Tempo (ms) até avisar o usuário que o redirect está demorando. */
+const SLOW_REDIRECT_MS = 6000;
+/** Tempo (ms) até considerar que o redirect falhou silenciosamente. */
+const REDIRECT_TIMEOUT_MS = 15000;
 
 interface SocialLoginButtonsProps {
   /** Disparado quando o login social falha — habilita fallback para e-mail/senha. */
