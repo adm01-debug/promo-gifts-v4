@@ -323,7 +323,7 @@ export default function Auth() {
       aria-label="Autenticação"
     >
       {/* Fundo unificado azul-noite saturado com cena espacial coordenada */}
-      <SpaceScene />
+      <SpaceScene variant="default" />
 
       <PageSEO
         title="Login"

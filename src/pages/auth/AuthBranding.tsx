@@ -19,7 +19,7 @@ const ASTRONAUT_LAYOUT: AstronautData[] = [
   { id: 3, left: 82, top: 70, size: 62, depth: 1.15, rotation: 20, zIndex: 12, initialAngle: 60 },
 ];
 
-export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) => {
+export const SpaceScene = React.memo(({ isFull = true, variant = 'default' }: { isFull?: boolean; variant?: 'default' | 'eclipse' | 'supernova' | 'nebula' | 'matrix' }) => {
   const [rockets, setRockets] = useState<RocketData[]>([]);
   const [planets, setPlanets] = useState<PlanetData[]>([]);
   const [meteors, setMeteors] = useState<MeteorData[]>([]);
@@ -140,7 +140,18 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden z-0" aria-hidden="true">
       {/* Background Deep Space Glow & Nebula */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(15,23,42,0)_0%,rgba(2,6,23,0.6)_100%)]" />
+      <div 
+        className="absolute inset-0 transition-all duration-1000"
+        style={{
+          background: variant === 'eclipse' 
+            ? 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.03) 0%, rgba(0,0,0,1) 70%)'
+            : variant === 'supernova'
+              ? 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.08) 0%, rgba(2,6,23,0.9) 100%)'
+              : variant === 'nebula'
+                ? 'bg-[#0a0a0c]'
+                : 'radial-gradient(circle at 50% 50%,rgba(15,23,42,0) 0%,rgba(2,6,23,0.6) 100%)'
+        }}
+      />
       
       {/* Mouse Follow Glow - Interactive Depth (10/10) */}
       <div 
@@ -156,20 +167,43 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
 
       {/* Atmospheric Nebula Layers (10/10 Depth) */}
       <div 
-        className="absolute inset-0 opacity-15 blur-[80px]"
+        className="absolute inset-0 opacity-15 blur-[80px] transition-all duration-1000"
         style={{
-          background: 'radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.05) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(255,255,255,0.05) 0%, transparent 50%)',
-          animation: 'nebulaDrift 30s ease-in-out infinite alternate'
+          background: variant === 'supernova'
+            ? 'radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.15) 0%, transparent 60%)'
+            : variant === 'nebula'
+              ? 'radial-gradient(ellipse at 20% 30%, rgba(255,255,255,0.08) 0%, transparent 50%), radial-gradient(ellipse at 80% 70%, rgba(255,255,255,0.08) 0%, transparent 50%)'
+              : 'radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.05) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(255,255,255,0.05) 0%, transparent 50%)',
+          animation: variant === 'supernova' ? 'pulse 10s ease-in-out infinite' : 'nebulaDrift 30s ease-in-out infinite alternate'
         }}
       />
       
       <div 
-        className="absolute inset-0 opacity-[0.12] blur-[120px]"
+        className="absolute inset-0 opacity-[0.12] blur-[120px] transition-all duration-1000"
         style={{
-          background: 'radial-gradient(circle at 60% 40%, #000000 0%, transparent 40%)',
+          background: variant === 'eclipse'
+            ? 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.02) 0%, transparent 40%)'
+            : variant === 'nebula'
+              ? 'radial-gradient(circle at 70% 30%, rgba(255,255,255,0.05) 0%, transparent 40%)'
+              : 'radial-gradient(circle at 60% 40%, #000000 0%, transparent 40%)',
           animation: 'nebulaDrift 45s ease-in-out infinite alternate-reverse'
         }}
       />
+
+      {/* Star Matrix Grid (Only for variant matrix) */}
+      {variant === 'matrix' && (
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+          <svg className="absolute inset-0 w-full h-full">
+            <defs>
+              <pattern id="grid" width="120" height="120" patternUnits="userSpaceOnUse">
+                <path d="M 120 0 L 0 0 0 120" fill="none" stroke="white" strokeWidth="0.5" strokeOpacity="0.2" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+          </svg>
+        </div>
+      )}
 
       {/* Space Dust Layer - Profundidade Extra */}
       <div className="absolute inset-0 opacity-30">
@@ -408,6 +442,15 @@ const FEATURE_ITEMS = [
 
 export function AuthBrandingPanel() {
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [bgVariant, setBgVariant] = useState<'default' | 'eclipse' | 'supernova' | 'nebula' | 'matrix'>('default');
+
+  const variants = [
+    { id: 'default', label: 'Padrão' },
+    { id: 'eclipse', label: 'Eclipse' },
+    { id: 'supernova', label: 'Supernova' },
+    { id: 'nebula', label: 'Nebulosa' },
+    { id: 'matrix', label: 'Matriz' }
+  ] as const;
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -422,6 +465,25 @@ export function AuthBrandingPanel() {
 
   return (
     <div className="flex w-full lg:w-1/2 relative min-h-[500px] lg:h-screen items-center overflow-hidden">
+      {/* Background with variant support */}
+      <SpaceScene variant={bgVariant} />
+      
+      {/* Selector UI (Admin only or for testing) */}
+      <div className="absolute top-6 right-6 z-50 flex gap-2">
+        {variants.map((v) => (
+          <button
+            key={v.id}
+            onClick={() => setBgVariant(v.id)}
+            className={`px-3 py-1 rounded-full text-[10px] uppercase tracking-widest transition-all ${
+              bgVariant === v.id 
+                ? 'bg-white text-black font-bold' 
+                : 'bg-white/5 text-white/40 hover:bg-white/10'
+            }`}
+          >
+            {v.label}
+          </button>
+        ))}
+      </div>
       {/* Design System Documentation (Hidden/Internal reference)
           Palette: Premium Monochrome
           Primary: hsl(var(--primary))
