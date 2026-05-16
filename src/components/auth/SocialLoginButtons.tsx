@@ -31,6 +31,12 @@ const REDIRECT_TIMEOUT_MS = 15000;
 interface SocialLoginButtonsProps {
   /** Disparado quando o login social falha — habilita fallback para e-mail/senha. */
   onError?: (message: string) => void;
+  /**
+   * Ref mutável onde o componente publica a função `retry()`.
+   * Permite que o pai (banner de erro) reexecute o fluxo Google sem
+   * o usuário precisar rolar até o botão original.
+   */
+  retryRef?: React.MutableRefObject<(() => void) | null>;
 }
 
 /**
