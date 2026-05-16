@@ -160,12 +160,12 @@ function FeatureCard({ item, index }: { item: typeof FEATURE_ITEMS[0]; index: nu
   const IconComponent = item.icon;
   return (
     <div
-      className="flex h-[99px] items-center justify-between gap-4 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl hover:bg-white/10 hover:border-orange/30 hover:scale-[1.02] transition-all duration-500 group opacity-0 px-6"
+      className="flex h-[99px] items-center justify-between gap-2 sm:gap-4 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl hover:bg-white/10 hover:border-orange/30 hover:scale-[1.02] transition-all duration-500 group opacity-0 px-4 sm:px-6"
       style={{ animation: `scale-fade-in 0.5s ease-out ${300 + index * 150}ms forwards` }}
     >
       <div className="min-w-0 flex-1 text-left">
-        <p className="text-xl sm:text-2xl font-bold text-white leading-tight truncate">{item.label}</p>
-        <p className="text-xs sm:text-sm font-medium text-white/50 leading-tight truncate">{item.desc}</p>
+        <p className="text-lg sm:text-2xl font-bold text-white leading-tight truncate">{item.label}</p>
+        <p className="text-[10px] sm:text-sm font-medium text-white/50 leading-tight truncate">{item.desc}</p>
       </div>
       <div className="w-11 h-11 shrink-0 rounded-xl bg-orange/15 flex items-center justify-center group-hover:bg-orange/25 transition-colors">
         <IconComponent className="h-5 w-5 text-orange" />
@@ -212,7 +212,7 @@ export function AuthBrandingPanel() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 sm:gap-5 pt-6 w-[95%] sm:w-full lg:w-[105%] xl:w-[110%] -mx-[2.5%] sm:mx-0 lg:-mx-[2.5%] xl:-mx-[5%]">
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 pt-6 w-full lg:w-[105%] xl:w-[110%] lg:-mx-[2.5%] xl:-mx-[5%] px-2 sm:px-0">
             {FEATURE_ITEMS.map((item, i) => (
               <FeatureCard key={i} item={item} index={i} />
             ))}
