@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { consumePostLoginRedirect } from '@/lib/auth/post-login-redirect';
+import { resolveRedirectTarget } from '@/lib/auth/resolve-redirect-target';
 import { resolveOAuthError, type OAuthErrorCopy } from '@/lib/auth/oauth-error-messages';
 
 import { useForm } from 'react-hook-form';
@@ -53,15 +54,13 @@ export default function Auth() {
    *  4. fallback `/`
    * Consumido aqui para que login por e-mail/senha também respeite o destino.
    */
-  const resolveRedirectTarget = useCallback((): string => {
+  const resolveRedirectTargetCb = useCallback((): string => {
     const fromState = (location.state as { from?: { pathname?: string; search?: string; hash?: string } } | null)
       ?.from;
-    if (fromState?.pathname) {
-      const path = `${fromState.pathname}${fromState.search ?? ''}${fromState.hash ?? ''}`;
-      return consumePostLoginRedirect(path);
-    }
-    const queryRedirect = searchParams.get('redirect');
-    return consumePostLoginRedirect(queryRedirect ?? '/');
+    return resolveRedirectTarget({
+      fromState: fromState ?? null,
+      queryRedirect: searchParams.get('redirect'),
+    });
   }, [location.state, searchParams]);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -135,9 +134,9 @@ export default function Auth() {
   // Redirect if already logged in (only on initial load)
   useEffect(() => {
     if (user && !authLoading && !isSubmitting) {
-      navigate(resolveRedirectTarget(), { replace: true });
+      navigate(resolveRedirectTargetCb(), { replace: true });
     }
-  }, [user, authLoading, navigate, isSubmitting, resolveRedirectTarget]);
+  }, [user, authLoading, navigate, isSubmitting, resolveRedirectTargetCb]);
 
   const loginForm = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -173,11 +172,11 @@ export default function Auth() {
         description: 'Login realizado com sucesso',
       });
 
-      navigate(resolveRedirectTarget(), { replace: true });
+      navigate(resolveRedirectTargetCb(), { replace: true });
       return true;
     } catch (error) {
       console.error('Validation error:', error);
-      navigate(resolveRedirectTarget(), { replace: true }); // Fail-open
+      navigate(resolveRedirectTargetCb(), { replace: true }); // Fail-open
       return true;
     }
   };
@@ -210,7 +209,7 @@ export default function Auth() {
       if (userId) {
         await validateAndRedirect(userId, data.email);
       } else {
-        navigate(resolveRedirectTarget());
+        navigate(resolveRedirectTargetCb());
       }
     } catch {
       toast({
