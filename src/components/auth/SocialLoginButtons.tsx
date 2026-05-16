@@ -80,10 +80,34 @@ export const SocialLoginButtons = forwardRef<HTMLDivElement, SocialLoginButtonsP
     // Limpa timers no unmount
     useEffect(() => () => clearTimers(), []);
 
+    // Restaura o spinner se o usuário voltou de /auth/callback (ou cancelou)
+    // enquanto um fluxo OAuth ainda estava marcado como pendente. Evita
+    // o flash do botão idle antes do AuthContext reconciliar.
+    useEffect(() => {
+      const pending = readOAuthPending();
+      if (pending) {
+        setIsLoading(pending.provider);
+        // Reagenda o timeout duro com o tempo restante.
+        const elapsed = Date.now() - pending.startedAt;
+        const remaining = Math.max(1000, REDIRECT_TIMEOUT_MS - elapsed);
+        failTimerRef.current = window.setTimeout(() => {
+          authDebugError('social-login', 'pending timeout on remount', { remaining });
+          finishWithError(
+            'Tempo esgotado ao contatar o Google. Verifique sua conexão e tente novamente.',
+            { autoFallback: true },
+          );
+        }, remaining);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     // Se a aba ficar oculta (redirect iniciou), libera o spinner ao voltar.
     useEffect(() => {
       const onVis = () => {
         if (document.visibilityState === 'visible' && isLoading) {
+          // Se voltou rápido (sem callback intermediário) e ainda há pending,
+          // assumimos que o usuário cancelou — limpa o marcador.
+          clearOAuthPending();
           setIsLoading(null);
           setSlowHint(null);
           clearTimers();
@@ -95,6 +119,7 @@ export const SocialLoginButtons = forwardRef<HTMLDivElement, SocialLoginButtonsP
 
     const finishWithError = (msg: string, opts?: { autoFallback?: boolean }) => {
       clearTimers();
+      clearOAuthPending();
       setIsLoading(null);
       setSlowHint(null);
       toast({ variant: 'destructive', title: 'Erro ao entrar com Google', description: msg });
