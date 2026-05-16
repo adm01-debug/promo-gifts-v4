@@ -113,9 +113,9 @@ export default function Auth() {
   // Redirect if already logged in (only on initial load)
   useEffect(() => {
     if (user && !authLoading && !isSubmitting) {
-      navigate('/', { replace: true });
+      navigate(resolveRedirectTarget(), { replace: true });
     }
-  }, [user, authLoading, navigate, isSubmitting]);
+  }, [user, authLoading, navigate, isSubmitting, resolveRedirectTarget]);
 
   const loginForm = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
