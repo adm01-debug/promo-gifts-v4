@@ -473,6 +473,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         toast.warning("Sessão prestes a expirar", {
           description: "Sua sessão encerrará em 2 minutos. Salve seu trabalho.",
           duration: 10000,
+          action: {
+            label: "Renovar agora",
+            onClick: () => refreshSession(),
+          },
         });
       }, warningTime);
     }

@@ -333,6 +333,7 @@ export default function Auth() {
 
           {/* Auth Card */}
           <Card
+            aria-labelledby="auth-title"
             className={`border-white/20 bg-[#0A0D14]/75 shadow-2xl shadow-black/40 backdrop-blur-xl ${ipBlocked ? 'pointer-events-none opacity-50' : ''}`}
           >
             {showForgotPassword ? (
@@ -343,7 +344,7 @@ export default function Auth() {
               <>
                 <CardHeader className="pb-4">
                   <div className="space-y-1 text-center">
-                    <h1 className="font-display text-xl sm:text-2xl font-semibold text-foreground">
+                    <h1 className="font-display text-xl sm:text-2xl font-semibold text-foreground" id="auth-title">
                       Bem-vindo de volta
                     </h1>
                     <p className="text-sm text-muted-foreground">
