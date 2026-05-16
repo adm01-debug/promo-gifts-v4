@@ -16,46 +16,51 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
   const [astronauts, setAstronauts] = useState<AstronautData[]>([]);
   const nextIdRef = useRef(0);
 
-  // Estabilizamos os dados das estrelas para evitar o "salto" em re-renders
-  const stars = React.useMemo(() => {
-    const count = isFull ? 70 : 35;
-    return [...Array(count)].map((_, i) => ({
+  // Pool de estrelas estável para evitar saltos durante re-renders ou mudanças de breakpoint
+  const allStars = React.useMemo(() => {
+    return [...Array(100)].map((_, i) => ({
       id: i,
-      size: 1 + (i % 3),
-      top: Math.random() * 100,
-      left: Math.random() * 100,
-      // Respiração humana: ~12–16s por ciclo
-      breathingDur: 12 + Math.random() * 4,
-      breathingDelay: Math.random() * 10,
-      // Deriva estelar: extremamente lenta (80-120s)
-      driftDur: 80 + Math.random() * 40,
+      size: 1 + (i % 2), // Estrelas ligeiramente menores para performance
+      top: ((i * 131) % 1000) / 10, // Determinístico baseado no index
+      left: ((i * 179) % 1000) / 10, // Determinístico baseado no index
+      // Respiração unificada: ciclos sincronizados com pequenas variações controladas
+      breathingDur: 14, 
+      breathingDelay: (i % 8) * 0.15, // Pequeno offset para naturalidade, mas uniforme
+      driftDur: 100 + (i % 30),
     }));
-  }, [isFull]);
+  }, []);
+
+  // Filtramos apenas a quantidade necessária sem regenerar as posições
+  const activeStars = isFull ? allStars : allStars.slice(0, 50);
 
   const spawnRocket = useCallback((isInitial = false) => {
 // ... keep existing code
-    return () => clearInterval(rocketInterval);
-  }, [spawnRocket]);
-
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden z-0" aria-hidden="true">
-      {/* Dynamic Stars with breathing and slow drift effects */}
-      {stars.map((star) => (
+      {/* Dynamic Stars - Otimizado com camadas de animação separadas */}
+      {activeStars.map((star) => (
         <div
-          key={`star-${star.id}`}
-          className="absolute rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.4)]"
+          key={`star-container-${star.id}`}
+          className="absolute"
           style={{
-            width: `${star.size}px`,
-            height: `${star.size}px`,
             top: `${star.top}%`,
             left: `${star.left}%`,
-            // Combinando respiração (opacidade/escala) com deriva (posição)
-            animation: `
-              breathingStar ${star.breathingDur}s ease-in-out ${star.breathingDelay}s infinite,
-              starDrift ${star.driftDur}s linear infinite alternate
-            `
+            width: `${star.size}px`,
+            height: `${star.size}px`,
+            // Drift (Movimento) na camada externa
+            animation: `starDrift ${star.driftDur}s linear infinite alternate`,
+            willChange: "transform",
           }}
-        />
+        >
+          <div
+            className="w-full h-full rounded-full bg-white shadow-[0_0_6px_rgba(255,255,255,0.4)]"
+            style={{
+              // Respiração (Brilho/Escala) na camada interna
+              animation: `breathingStar ${star.breathingDur}s ease-in-out ${star.breathingDelay}s infinite`,
+              willChange: "opacity, transform",
+            }}
+          />
+        </div>
       ))}
 
       {/* Planets with zigzag trajectory */}
