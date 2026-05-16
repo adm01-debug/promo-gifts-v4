@@ -182,6 +182,8 @@ const FEATURE_ITEMS = [
 ];
 
 export function AuthBrandingPanel() {
+  console.log("Rendering AuthBrandingPanel");
+
   return (
     <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
       {/* Background decoration (sem bg sólido — fundo unificado vem do <main>) */}
