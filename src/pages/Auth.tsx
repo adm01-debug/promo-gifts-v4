@@ -343,7 +343,7 @@ export default function Auth() {
 
       {/* Right side - Auth Form */}
       <div className="relative z-10 flex flex-1 items-center justify-center p-6 lg:p-12">
-        <div className="w-full max-w-md animate-fade-in space-y-8">
+        <div className="w-full max-w-[23.8rem] animate-fade-in space-y-8">
           {/* Mobile Logo */}
           <div className="flex justify-center lg:hidden">
             <AppLogo />
