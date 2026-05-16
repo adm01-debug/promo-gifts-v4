@@ -21,7 +21,7 @@ export function LegalFooter({ className, withDivider = true }: LegalFooterProps)
   return (
     <footer
       className={cn(
-        "w-full space-y-3 px-2 pt-4 sm:space-y-4 sm:px-4 sm:pt-5",
+        "w-full space-y-1.5 px-2 pt-1 sm:space-y-2 sm:px-4 sm:pt-2 -mt-4 sm:-mt-6",
         withDivider && "border-t border-white/10",
         className,
       )}
