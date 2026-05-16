@@ -25,11 +25,12 @@ export function AppLogo({
   return (
     <div className={cn("flex items-center gap-3", className)}>
       <div className={cn(
-        "inline-flex h-10 w-10 items-center justify-center rounded-xl shadow-lg",
+        "inline-flex items-center justify-center rounded-xl shadow-md transition-all duration-200",
+        variant === 'sidebar' ? "h-9 w-9" : "h-10 w-10",
         iconBg,
         iconClassName
       )}>
-        <Gift className={cn("h-6 w-6", iconColor)} />
+        <Gift className={cn(variant === 'sidebar' ? "h-5 w-5" : "h-6 w-6", iconColor)} />
       </div>
       {showText && (
         <div className="flex flex-col">
