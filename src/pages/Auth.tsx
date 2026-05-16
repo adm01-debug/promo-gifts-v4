@@ -529,7 +529,7 @@ export default function Auth() {
                           type="button"
                           data-testid="login-password-toggle"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -mr-2 flex min-h-[44px] min-w-[44px] -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors hover:text-orange"
+                          className="absolute right-3 top-1/2 -mr-2 flex min-h-[44px] min-w-[44px] -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors hover:text-blue-500"
                           aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                         >
                           {showPassword ? (
