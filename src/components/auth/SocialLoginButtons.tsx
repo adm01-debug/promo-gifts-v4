@@ -1,9 +1,32 @@
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { useState, forwardRef } from 'react';
+import { useState, useEffect, useRef, forwardRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { authDebug, authDebugError } from '@/lib/auth/auth-debug';
+
+/** Mapeia erros conhecidos do Supabase OAuth para mensagens PT-BR amigáveis. */
+function mapOAuthError(raw: string): string {
+  const m = raw.toLowerCase();
+  if (m.includes('unsupported provider') || m.includes('provider is not enabled')) {
+    return 'Login com Google ainda não está habilitado neste ambiente. Avise o administrador.';
+  }
+  if (m.includes('redirect') && m.includes('not allowed')) {
+    return 'URL de retorno não autorizada. Verifique a configuração do provedor.';
+  }
+  if (m.includes('network') || m.includes('failed to fetch')) {
+    return 'Sem conexão com o servidor de autenticação. Verifique sua internet e tente novamente.';
+  }
+  if (m.includes('popup') && m.includes('closed')) {
+    return 'Janela do Google fechada antes de concluir o login.';
+  }
+  return raw || 'Falha ao iniciar login com Google.';
+}
+
+/** Tempo (ms) até avisar o usuário que o redirect está demorando. */
+const SLOW_REDIRECT_MS = 6000;
+/** Tempo (ms) até considerar que o redirect falhou silenciosamente. */
+const REDIRECT_TIMEOUT_MS = 15000;
 
 interface SocialLoginButtonsProps {
   /** Disparado quando o login social falha — habilita fallback para e-mail/senha. */
@@ -23,12 +46,65 @@ interface SocialLoginButtonsProps {
 export const SocialLoginButtons = forwardRef<HTMLDivElement, SocialLoginButtonsProps>(
   function SocialLoginButtons({ onError }, ref) {
     const [isLoading, setIsLoading] = useState<string | null>(null);
+    const [slowHint, setSlowHint] = useState<string | null>(null);
     const { toast } = useToast();
+    const slowTimerRef = useRef<number | null>(null);
+    const failTimerRef = useRef<number | null>(null);
+
+    const clearTimers = () => {
+      if (slowTimerRef.current !== null) {
+        window.clearTimeout(slowTimerRef.current);
+        slowTimerRef.current = null;
+      }
+      if (failTimerRef.current !== null) {
+        window.clearTimeout(failTimerRef.current);
+        failTimerRef.current = null;
+      }
+    };
+
+    // Limpa timers no unmount
+    useEffect(() => () => clearTimers(), []);
+
+    // Se a aba ficar oculta (redirect iniciou), libera o spinner ao voltar.
+    useEffect(() => {
+      const onVis = () => {
+        if (document.visibilityState === 'visible' && isLoading) {
+          setIsLoading(null);
+          setSlowHint(null);
+          clearTimers();
+        }
+      };
+      document.addEventListener('visibilitychange', onVis);
+      return () => document.removeEventListener('visibilitychange', onVis);
+    }, [isLoading]);
+
+    const finishWithError = (msg: string) => {
+      clearTimers();
+      setIsLoading(null);
+      setSlowHint(null);
+      toast({ variant: 'destructive', title: 'Erro ao entrar com Google', description: msg });
+      onError?.(msg);
+    };
 
     const handleGoogleLogin = async () => {
       setIsLoading('google');
+      setSlowHint(null);
       const redirect_uri = `${window.location.origin}/auth/callback`;
       authDebug('social-login', 'google click', { redirect_uri, origin: window.location.origin });
+
+      // Aviso de lentidão
+      slowTimerRef.current = window.setTimeout(() => {
+        setSlowHint('Conectando ao Google… isto pode levar alguns segundos.');
+      }, SLOW_REDIRECT_MS);
+
+      // Timeout duro: se nada acontecer, assume falha silenciosa.
+      failTimerRef.current = window.setTimeout(() => {
+        authDebugError('social-login', 'redirect timeout', { ms: REDIRECT_TIMEOUT_MS });
+        finishWithError(
+          'Tempo esgotado ao contatar o Google. Verifique sua conexão e tente novamente.',
+        );
+      }, REDIRECT_TIMEOUT_MS);
+
       try {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
@@ -36,35 +112,34 @@ export const SocialLoginButtons = forwardRef<HTMLDivElement, SocialLoginButtonsP
         });
         if (error) {
           authDebugError('social-login', 'supabase.signInWithOAuth returned error', error);
-          const msg = error.message || 'Falha ao iniciar login com Google.';
-          toast({ variant: 'destructive', title: 'Erro ao entrar com Google', description: msg });
-          onError?.(msg);
-        } else {
-          authDebug('social-login', 'redirect dispatched via Supabase OAuth');
+          finishWithError(mapOAuthError(error.message));
+          return;
         }
+        authDebug('social-login', 'redirect dispatched via Supabase OAuth');
+        // Sucesso: o navegador deve redirecionar. Timers serão limpos pelo unmount/visibilitychange.
       } catch (err) {
         authDebugError('social-login', 'unexpected exception during OAuth', err);
-        const msg = err instanceof Error ? err.message : 'Tente novamente mais tarde';
-        toast({ variant: 'destructive', title: 'Erro inesperado', description: msg });
-        onError?.(msg);
-      } finally {
-        setIsLoading(null);
+        const raw = err instanceof Error ? err.message : 'Tente novamente mais tarde';
+        finishWithError(mapOAuthError(raw));
       }
     };
 
+    const loading = isLoading === 'google';
+
     return (
-      <div ref={ref} className="space-y-3">
+      <div ref={ref} className="space-y-2">
         <Button
           type="button"
           variant="outline"
           className="h-11 w-full gap-3 border-border/60 font-medium transition-all hover:border-border hover:bg-muted/50"
           onClick={handleGoogleLogin}
           disabled={!!isLoading}
+          aria-busy={loading}
         >
-          {isLoading === 'google' ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
+          {loading ? (
+            <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
           ) : (
-            <svg className="h-5 w-5" viewBox="0 0 24 24">
+            <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
               <path
                 fill="#4285F4"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -83,8 +158,17 @@ export const SocialLoginButtons = forwardRef<HTMLDivElement, SocialLoginButtonsP
               />
             </svg>
           )}
-          Continuar com Google
+          {loading ? 'Conectando ao Google…' : 'Continuar com Google'}
         </Button>
+        {slowHint && loading && (
+          <p
+            className="text-center text-xs text-muted-foreground animate-fade-in"
+            role="status"
+            aria-live="polite"
+          >
+            {slowHint}
+          </p>
+        )}
       </div>
     );
   },
