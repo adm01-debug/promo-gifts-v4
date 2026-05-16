@@ -446,7 +446,7 @@ export default function Auth() {
                           <Button
                             type="button"
                             size="sm"
-                            variant="orange"
+                            variant="default"
                             className="h-8 gap-1.5 text-xs font-medium shadow-sm hover:shadow-md transition-all active:scale-95"
                             onClick={handleRetryGoogle}
                             data-testid="social-fallback-retry-google"
