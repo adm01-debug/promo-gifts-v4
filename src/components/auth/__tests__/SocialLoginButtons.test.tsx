@@ -41,6 +41,7 @@ describe('SocialLoginButtons (Google)', () => {
   beforeEach(() => {
     signInWithOAuthMock.mockReset();
     toastMock.mockReset();
+    sessionStorage.clear();
   });
 
   afterEach(() => {
