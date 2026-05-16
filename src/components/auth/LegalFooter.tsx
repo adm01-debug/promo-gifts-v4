@@ -27,14 +27,14 @@ export function LegalFooter({ className, withDivider = true }: LegalFooterProps)
       )}
       aria-label="Rodapé legal"
     >
-      <p className="mx-auto max-w-md text-center text-[11px] leading-relaxed text-muted-foreground/80 sm:text-xs">
+      <p className="mx-auto max-w-md text-center text-[9px] leading-relaxed text-muted-foreground/80 sm:text-[10px]">
         Este sistema é propriedade intelectual exclusiva da Brasil Marcas, sendo
         protegido pela Lei nº 9.609/98 e demais normas aplicáveis. É proibida sua
         reprodução, cópia, modificação, distribuição ou uso não autorizado.
       </p>
 
       <nav
-        className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] sm:text-xs"
+        className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[9px] sm:text-[10px]"
         aria-label="Links legais"
       >
         <Link
@@ -54,7 +54,7 @@ export function LegalFooter({ className, withDivider = true }: LegalFooterProps)
         </Link>
       </nav>
 
-      <p className="text-center text-[11px] font-medium text-muted-foreground sm:text-xs">
+      <p className="text-center text-[9px] font-medium text-muted-foreground sm:text-[10px]">
         © {year} Promo Gifts — Todos os direitos reservados.
       </p>
     </footer>
