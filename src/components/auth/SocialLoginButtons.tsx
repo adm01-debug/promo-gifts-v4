@@ -130,6 +130,18 @@ export const SocialLoginButtons = forwardRef<HTMLDivElement, SocialLoginButtonsP
       }
     };
 
+    // Publica a função `retry()` no ref do pai (banner de erro).
+    useEffect(() => {
+      if (!retryRef) return;
+      retryRef.current = () => {
+        if (isLoading) return;
+        void handleGoogleLogin();
+      };
+      return () => {
+        if (retryRef) retryRef.current = null;
+      };
+    });
+
     const loading = isLoading === 'google';
 
     return (
