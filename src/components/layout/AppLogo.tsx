@@ -17,8 +17,8 @@ export function AppLogo({
   showText = true,
   variant = 'brand'
 }: AppLogoProps) {
-  const iconBg = variant === 'brand' ? 'bg-white' : variant === 'light' ? 'bg-white' : 'bg-foreground';
-  const iconColor = variant === 'brand' ? 'text-primary' : variant === 'light' ? 'text-foreground' : 'text-background';
+  const iconBg = variant === 'brand' ? 'bg-primary' : variant === 'light' ? 'bg-white' : 'bg-foreground';
+  const iconColor = variant === 'brand' ? 'text-white' : variant === 'light' ? 'text-foreground' : 'text-background';
   const textColor = variant === 'light' ? 'text-white' : 'text-foreground';
 
   return (
