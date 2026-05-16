@@ -5,7 +5,8 @@ import { Loader2 } from 'lucide-react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { logger } from '@/lib/logger';
 import { useAuth } from '@/contexts/AuthContext';
-import { authDebug, authDebugError, authDebugUrl, summarizeSession } from '@/lib/auth/auth-debug';
+import { authDebugUrl } from '@/lib/auth/auth-debug';
+import { AuthFlowTracer } from '@/lib/auth/auth-flow-tracer';
 import { consumePostLoginRedirect } from '@/lib/auth/post-login-redirect';
 
 /**
@@ -17,8 +18,12 @@ import { consumePostLoginRedirect } from '@/lib/auth/post-login-redirect';
  *  2. Implicit grant legado: chega `#access_token=...` no hash — o cliente
  *     supabase detecta automaticamente em `getSession()`.
  *
- * Se a sessão ainda não estiver aplicada, escuta `onAuthStateChange` e
- * tem timeout de segurança de 8s pra evitar loop.
+ * Todo o fluxo é instrumentado por `AuthFlowTracer`:
+ *  - cada callback recebe um `flowId` curto (8 hex chars)
+ *  - todos os logs no console vêm prefixados com `[AUTH-FLOW] flow=<id>`
+ *  - ao final, é emitido um `console.groupCollapsed` com a timeline
+ *  - um snapshot é gravado em `sessionStorage.__sso_last_flow` para
+ *    inspeção posterior em `/login`
  */
 export default function SSOCallbackPage() {
   const navigate = useNavigate();
@@ -30,18 +35,28 @@ export default function SSOCallbackPage() {
     if (handledRef.current) return;
     handledRef.current = true;
 
-    authDebug('sso-callback', 'mount');
-    authDebugUrl('sso-callback');
+    const tracer = new AuthFlowTracer();
+    tracer.step('mount');
+    authDebugUrl(`sso-callback:${tracer.flowId}`);
+    tracer.step('url-parsed', {
+      hasCode: searchParams.has('code'),
+      hasError: searchParams.has('error'),
+      hasHash: window.location.hash.length > 0,
+    });
 
     const error = searchParams.get('error');
     const errorDescription = searchParams.get('error_description');
     if (error) {
-      authDebugError('sso-callback', 'provider returned error in query', {
+      tracer.setProviderError(error);
+      tracer.stepError('provider-error-query', { error, errorDescription });
+      logger.error('[sso-callback] provider returned error', {
+        flowId: tracer.flowId,
         error,
         errorDescription,
       });
-      logger.error('[sso-callback] provider returned error', { error, errorDescription });
-      navigate('/login?error=' + encodeURIComponent(errorDescription || error), { replace: true });
+      const target = '/login?error=' + encodeURIComponent(errorDescription || error);
+      tracer.finish('failure', target, `provider:${error}`);
+      navigate(target, { replace: true });
       return;
     }
 
@@ -51,9 +66,12 @@ export default function SSOCallbackPage() {
     const hashError = hashParams.get('error');
     if (hashError) {
       const desc = hashParams.get('error_description') || hashError;
-      authDebugError('sso-callback', 'provider returned error in hash', { error: hashError, desc });
-      logger.error('[sso-callback] hash error', { error: hashError, desc });
-      navigate('/login?error=' + encodeURIComponent(desc), { replace: true });
+      tracer.setProviderError(hashError);
+      tracer.stepError('provider-error-hash', { error: hashError, desc });
+      logger.error('[sso-callback] hash error', { flowId: tracer.flowId, error: hashError, desc });
+      const target = '/login?error=' + encodeURIComponent(desc);
+      tracer.finish('failure', target, `provider-hash:${hashError}`);
+      navigate(target, { replace: true });
       return;
     }
 
@@ -61,28 +79,31 @@ export default function SSOCallbackPage() {
     let unsub: (() => void) | null = null;
     let timeoutId: number | null = null;
 
-    const goHome = async () => {
+    const goHome = async (session?: import('@supabase/supabase-js').Session | null) => {
       if (cancelled) return;
-      authDebug('sso-callback', 'goHome — calling refreshSession()');
+      if (session) tracer.captureSession(session);
       try {
         await refreshSession();
-        authDebug('sso-callback', 'refreshSession ok');
       } catch (e) {
-        authDebugError('sso-callback', 'refreshSession failed', e);
+        tracer.stepError('redirect-home', e);
         logger.warn('[sso-callback] refreshSession failed', {
+          flowId: tracer.flowId,
           message: e instanceof Error ? e.message : String(e),
         });
       }
       if (cancelled) return;
       const target = consumePostLoginRedirect('/');
-      authDebug('sso-callback', 'navigating to post-login target', { target });
+      tracer.step('redirect-home', { target });
+      tracer.finish('success', target);
       navigate(target, { replace: true });
     };
 
     const goLogin = (reason: string) => {
       if (cancelled) return;
-      authDebug('sso-callback', 'goLogin', { reason });
-      navigate('/login?error=' + encodeURIComponent(reason), { replace: true });
+      const target = '/login?error=' + encodeURIComponent(reason);
+      tracer.step('redirect-login', { target, reason });
+      tracer.finish('failure', target, reason);
+      navigate(target, { replace: true });
     };
 
     const run = async () => {
@@ -91,23 +112,25 @@ export default function SSOCallbackPage() {
 
         // (2) Fluxo PKCE — troca o code por sessão
         if (code) {
-          authDebug('sso-callback', 'PKCE flow: exchangeCodeForSession start');
+          tracer.setFlow('pkce');
+          tracer.step('pkce-exchange-start', { codePrefix: code.slice(0, 6) + '…' });
           const { data: exData, error: exchangeError } =
             await supabase.auth.exchangeCodeForSession(code);
           if (exchangeError) {
-            authDebugError('sso-callback', 'exchangeCodeForSession failed', exchangeError);
+            tracer.stepError('pkce-exchange-failed', exchangeError);
             logger.error('[sso-callback] exchangeCodeForSession failed', {
+              flowId: tracer.flowId,
               message: exchangeError.message,
             });
             goLogin(exchangeError.message);
             return;
           }
-          authDebug(
-            'sso-callback',
-            'exchangeCodeForSession ok',
-            summarizeSession(exData?.session ?? null),
-          );
-          await goHome();
+          tracer.captureSession(exData?.session ?? null);
+          tracer.step('pkce-exchange-ok', {
+            hasSession: !!exData?.session,
+            provider: exData?.session?.user?.app_metadata?.provider ?? null,
+          });
+          await goHome(exData?.session ?? null);
           return;
         }
 
@@ -116,22 +139,22 @@ export default function SSOCallbackPage() {
         const {
           data: { session },
         } = await supabase.auth.getSession();
-        authDebug('sso-callback', 'initial getSession()', summarizeSession(session));
+        tracer.step('session-check-initial', { hasSession: !!session });
         if (session) {
-          await goHome();
+          tracer.setFlow(hash ? 'implicit' : 'unknown');
+          tracer.step('session-found-immediately');
+          tracer.captureSession(session);
+          await goHome(session);
           return;
         }
 
         // Caso a sessão ainda não tenha sido aplicada, escuta onAuthStateChange.
-        authDebug('sso-callback', 'no session yet — subscribing to onAuthStateChange');
+        tracer.step('auth-listener-subscribed');
         const { data } = supabase.auth.onAuthStateChange((event, newSession) => {
-          authDebug(
-            'sso-callback',
-            `onAuthStateChange event=${event}`,
-            summarizeSession(newSession),
-          );
+          tracer.step('auth-state-change', { event, hasSession: !!newSession });
           if (newSession) {
-            void goHome();
+            tracer.captureSession(newSession);
+            void goHome(newSession);
           }
         });
         unsub = () => data.subscription.unsubscribe();
@@ -139,19 +162,20 @@ export default function SSOCallbackPage() {
         // Timeout de segurança: 8s sem sessão → volta para login.
         timeoutId = window.setTimeout(() => {
           supabase.auth.getSession().then(({ data: { session: s } }) => {
-            authDebug('sso-callback', 'timeout 8s — re-checking session', summarizeSession(s));
+            tracer.step('timeout-recheck', { hasSession: !!s });
             if (s) {
-              void goHome();
+              tracer.captureSession(s);
+              void goHome(s);
             } else {
-              logger.warn('[sso-callback] no session after timeout');
+              logger.warn('[sso-callback] no session after timeout', { flowId: tracer.flowId });
               goLogin('Sessão não estabelecida. Tente novamente.');
             }
           });
         }, 8000);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Erro inesperado';
-        authDebugError('sso-callback', 'unexpected error in run()', err);
-        logger.error('[sso-callback] unexpected error', { message });
+        tracer.stepError('unexpected-error', err);
+        logger.error('[sso-callback] unexpected error', { flowId: tracer.flowId, message });
         goLogin(message);
       }
     };
