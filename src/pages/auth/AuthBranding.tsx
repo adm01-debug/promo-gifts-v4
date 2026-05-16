@@ -388,7 +388,7 @@ export function AuthBrandingPanel() {
       <div className="relative z-10 flex flex-col justify-center items-center px-12 xl:px-20 w-full min-h-screen">
         <div className="space-y-6 w-full max-w-xl flex flex-col items-center text-center">
           <div className="flex items-center gap-4">
-            <AppLogo variant="light" iconClassName="h-14 w-14 rounded-xl shadow-orange/30" textClassName="text-4xl" />
+            <AppLogo variant="light" iconClassName="h-14 w-14 rounded-xl shadow-blue-500/30" textClassName="text-4xl" />
           </div>
 
           <div className="space-y-4 max-w-md flex flex-col items-center">
