@@ -66,7 +66,7 @@ export default function SSOCallbackPage() {
       authDebug('sso-callback', 'goHome — calling refreshSession()');
       try {
         await refreshSession();
-        authDebug('sso-callback', 'refreshSession ok, navigating to /');
+        authDebug('sso-callback', 'refreshSession ok');
       } catch (e) {
         authDebugError('sso-callback', 'refreshSession failed', e);
         logger.warn('[sso-callback] refreshSession failed', {
@@ -74,7 +74,9 @@ export default function SSOCallbackPage() {
         });
       }
       if (cancelled) return;
-      navigate('/', { replace: true });
+      const target = consumePostLoginRedirect('/');
+      authDebug('sso-callback', 'navigating to post-login target', { target });
+      navigate(target, { replace: true });
     };
 
     const goLogin = (reason: string) => {
