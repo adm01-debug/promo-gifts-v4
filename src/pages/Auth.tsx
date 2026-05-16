@@ -298,12 +298,12 @@ export default function Auth() {
 
   if (user && !authLoading && !isSubmitting) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-[#0A0E1A] text-white">
+      <main className="flex min-h-screen flex-col items-center justify-center bg-[#030508] text-white">
         <SpaceScene />
         <div className="z-10 flex flex-col items-center gap-6 animate-in fade-in zoom-in duration-500">
           <div className="relative">
             <AppLogo showText={false} iconClassName="h-20 w-20 rounded-2xl shadow-orange/40 animate-pulse" />
-            <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-success flex items-center justify-center ring-4 ring-[#0A0D14]">
+            <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-success flex items-center justify-center ring-4 ring-[#030508]">
               <RotateCw className="h-3 w-3 text-white animate-spin-slow" />
             </div>
           </div>
@@ -318,7 +318,7 @@ export default function Auth() {
 
   return (
     <main
-      className="relative flex flex-col lg:flex-row min-h-screen bg-[#0A0E1A]"
+      className="relative flex flex-col lg:flex-row min-h-screen bg-[#030508]"
       role="main"
       aria-label="Autenticação"
     >
@@ -389,7 +389,7 @@ export default function Auth() {
           {/* Auth Card */}
           <Card
             aria-labelledby="auth-title"
-            className={`border-white/20 bg-[#0A0E1A]/60 shadow-2xl shadow-black/40 backdrop-blur-md ${ipBlocked ? 'pointer-events-none opacity-50' : ''}`}
+            className={`border-white/10 bg-[#030508]/60 shadow-2xl shadow-black/40 backdrop-blur-md ${ipBlocked ? 'pointer-events-none opacity-50' : ''}`}
           >
             {showForgotPassword ? (
               <CardContent className="pb-6 pt-6">

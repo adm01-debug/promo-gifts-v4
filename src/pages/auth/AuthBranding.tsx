@@ -92,7 +92,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
       {planets.map(p => (
         <div
           key={`planet-${p.id}`}
-          className="absolute opacity-20 blur-[1px]"
+          className="absolute opacity-25 blur-[1px]"
           style={{
             width: `${p.size}px`,
             height: `${p.size}px`,
@@ -114,7 +114,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
       {astronauts.map(a => (
         <div
           key={`astro-${a.id}`}
-          className="absolute opacity-30"
+          className="absolute opacity-40"
           style={{
             left: `${a.left}%`,
             top: `${a.top}%`,
