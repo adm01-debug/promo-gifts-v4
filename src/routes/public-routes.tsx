@@ -15,5 +15,7 @@ export const publicRoutes = (
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/auth/callback" element={<SSOCallbackPage />} />
     <Route path="/unauthorized" element={<Unauthorized />} />
+    <Route path="/termos" element={<TermsPage />} />
+    <Route path="/privacidade" element={<PrivacyPage />} />
   </>
 );
