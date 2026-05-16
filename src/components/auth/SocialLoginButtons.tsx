@@ -50,7 +50,7 @@ interface SocialLoginButtonsProps {
  * Para reativar o SSO antes do deploy, ver `docs/AUTH-SSO-ACTIVATION.md`.
  */
 export const SocialLoginButtons = forwardRef<HTMLDivElement, SocialLoginButtonsProps>(
-  function SocialLoginButtons({ onError }, ref) {
+  function SocialLoginButtons({ onError, retryRef }, ref) {
     const [isLoading, setIsLoading] = useState<string | null>(null);
     const [slowHint, setSlowHint] = useState<string | null>(null);
     const { toast } = useToast();
