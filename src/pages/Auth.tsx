@@ -34,6 +34,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
 import { useIPValidation } from '@/hooks/useIPValidation';
+import { useDevGate } from '@/hooks/useDevGate';
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLogo } from '@/components/layout/AppLogo';
@@ -50,6 +51,7 @@ export default function Auth() {
   const { toast } = useToast();
   const { user, isLoading: authLoading, signIn, signOut } = useAuth();
   const { validateIPForAuthenticatedUser, logLoginAttempt } = useIPValidation();
+  const { isAllowed: isDevAllowed } = useDevGate();
 
   /**
    * Destino pós-login. Precedência:
@@ -622,61 +624,63 @@ export default function Auth() {
             </div>
           )}
 
-          {/* Backend Status Widget */}
-          <div 
-            className="mx-auto flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 shadow-xl backdrop-blur-md opacity-0"
-            style={{ animation: 'scale-fade-in 0.5s ease-out 800ms forwards' }}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <Server className="h-4 w-4 text-orange" />
-              <span className="text-xs font-bold uppercase tracking-wider text-white/60">Status da Infraestrutura</span>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-              {/* Principal DB */}
-              <div className="flex items-center justify-between gap-4 rounded-lg bg-white/5 px-3 py-2 border border-white/5">
-                <div className="flex items-center gap-2">
-                  <Database className="h-3.5 w-3.5 text-white/40" />
-                  <span className="text-[11px] font-medium text-white/80">Principal</span>
-                </div>
-                {dbStatus.principal.loading ? (
-                  <Loader2 className="h-3 w-3 animate-spin text-white/20" />
-                ) : dbStatus.principal.ok ? (
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] text-success font-bold uppercase tracking-tighter">{dbStatus.principal.source}</span>
-                    <CheckCircle2 className="h-3.5 w-3.5 text-success" />
-                  </div>
-                ) : (
-                  <XCircle className="h-3.5 w-3.5 text-destructive" />
-                )}
+          {/* Backend Status Widget — apenas visível para devs (gate via useDevGate) */}
+          {isDevAllowed && (
+            <div 
+              className="mx-auto flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 shadow-xl backdrop-blur-md opacity-0"
+              style={{ animation: 'scale-fade-in 0.5s ease-out 800ms forwards' }}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <Server className="h-4 w-4 text-orange" />
+                <span className="text-xs font-bold uppercase tracking-wider text-white/60">Status da Infraestrutura</span>
               </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+                {/* Principal DB */}
+                <div className="flex items-center justify-between gap-4 rounded-lg bg-white/5 px-3 py-2 border border-white/5">
+                  <div className="flex items-center gap-2">
+                    <Database className="h-3.5 w-3.5 text-white/40" />
+                    <span className="text-[11px] font-medium text-white/80">Principal</span>
+                  </div>
+                  {dbStatus.principal.loading ? (
+                    <Loader2 className="h-3 w-3 animate-spin text-white/20" />
+                  ) : dbStatus.principal.ok ? (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-success font-bold uppercase tracking-tighter">{dbStatus.principal.source}</span>
+                      <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                    </div>
+                  ) : (
+                    <XCircle className="h-3.5 w-3.5 text-destructive" />
+                  )}
+                </div>
 
-              {/* External DB (Gestão de Produtos) */}
-              <div className="flex items-center justify-between gap-4 rounded-lg bg-white/5 px-3 py-2 border border-white/5">
-                <div className="flex items-center gap-2">
-                  <Activity className="h-3.5 w-3.5 text-white/40" />
-                  <span className="text-[11px] font-medium text-white/80">Produtos</span>
+                {/* External DB (Gestão de Produtos) */}
+                <div className="flex items-center justify-between gap-4 rounded-lg bg-white/5 px-3 py-2 border border-white/5">
+                  <div className="flex items-center gap-2">
+                    <Activity className="h-3.5 w-3.5 text-white/40" />
+                    <span className="text-[11px] font-medium text-white/80">Produtos</span>
+                  </div>
+                  {dbStatus.external.loading ? (
+                    <Loader2 className="h-3 w-3 animate-spin text-white/20" />
+                  ) : dbStatus.external.ok ? (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-success font-bold uppercase tracking-tighter">Externo</span>
+                      <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-warning font-bold uppercase tracking-tighter">Pendente</span>
+                      <AlertTriangle className="h-3.5 w-3.5 text-warning" />
+                    </div>
+                  )}
                 </div>
-                {dbStatus.external.loading ? (
-                  <Loader2 className="h-3 w-3 animate-spin text-white/20" />
-                ) : dbStatus.external.ok ? (
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] text-success font-bold uppercase tracking-tighter">Externo</span>
-                    <CheckCircle2 className="h-3.5 w-3.5 text-success" />
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] text-warning font-bold uppercase tracking-tighter">Pendente</span>
-                    <AlertTriangle className="h-3.5 w-3.5 text-warning" />
-                  </div>
-                )}
               </div>
+              
+              <p className="text-[10px] text-white/30 italic text-center px-2">
+                Verificação em tempo real das instâncias Supabase configuradas via secrets.
+              </p>
             </div>
-            
-            <p className="text-[10px] text-white/30 italic text-center px-2">
-              Verificação em tempo real das instâncias Supabase configuradas via secrets.
-            </p>
-          </div>
+          )}
 
           <p className="text-center text-xs text-muted-foreground">
             Acesso restrito a usuários autorizados.
