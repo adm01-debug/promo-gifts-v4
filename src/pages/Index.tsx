@@ -39,7 +39,7 @@ export default function Index() {
   }), [catalog.searchQuery, catalog.filteredProducts.length, catalog.totalEstimate, catalog.paginatedProducts]);
 
   return (
-    <MainLayout>
+    <>
       <PageSEO
         title={catalog.searchQuery ? `Busca: ${catalog.searchQuery}` : "Catálogo de Produtos"}
         description={catalog.searchQuery 
@@ -185,6 +185,6 @@ export default function Index() {
           } : null}
         />
       )}
-    </MainLayout>
+    </>
   );
 }
