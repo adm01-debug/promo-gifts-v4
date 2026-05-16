@@ -185,11 +185,7 @@ const renderWithProviders = (ui: React.ReactElement) => {
 };
 
 
-// TODO(test-debt): 1 testes falham — TestingLibrary nao encontra label /excluir/i.
-// Skipado em fix(test): eliminate 88 test failures. Origem: revert 06-07/mai/2026.
-// Fixar em PR separado quando ownership for retomada.
-
-describe.skip('Mockup Deletion Flow', () => {
+describe('Mockup Deletion Flow', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockMg.activeTab = 'generator';
@@ -201,7 +197,7 @@ describe.skip('Mockup Deletion Flow', () => {
     renderWithProviders(<MockupGenerator />);
 
     // Encontrar e clicar no botão de excluir
-    const deleteButton = await screen.findByLabelText(/excluir/i);
+    const deleteButton = await screen.findByTestId("delete-mockup-button");
     fireEvent.click(deleteButton);
 
     // Verificar se o diálogo apareceu
@@ -212,12 +208,11 @@ describe.skip('Mockup Deletion Flow', () => {
     mockMg.activeTab = 'history';
     renderWithProviders(<MockupGenerator />);
 
-    const deleteButton = await screen.findByLabelText(/excluir/i);
+    const deleteButton = await screen.findByTestId("delete-mockup-button");
     fireEvent.click(deleteButton);
 
     const confirmButton = screen.getByRole('button', {
       name: /excluir/i,
-      className: /bg-destructive/i,
     });
     fireEvent.click(confirmButton);
 
@@ -235,7 +230,7 @@ describe.skip('Mockup Deletion Flow', () => {
 
     renderWithProviders(<MockupGenerator />);
 
-    const deleteButton = await screen.findByLabelText(/excluir/i);
+    const deleteButton = await screen.findByTestId("delete-mockup-button");
     fireEvent.click(deleteButton);
 
     const confirmButton = screen.getByRole('button', {

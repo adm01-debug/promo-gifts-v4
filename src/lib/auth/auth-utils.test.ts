@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { getGreeting, getHighestRole, isSupervisorOrAbove, getRandomGreeting } from './auth-utils';
+import { getGreeting, getHighestRole, isSupervisorOrAbove, getRandomGreeting, FLOW_GREETINGS } from './auth-utils';
 import { type AppRole } from '@/contexts/AuthContext';
 
 describe('auth-utils', () => {
@@ -79,18 +79,38 @@ describe('auth-utils', () => {
     });
   });
 
-  // TODO(test-debt): teste flaky — Math.random() em getRandomGreeting pode
-  // selecionar template sem `{greeting}` (ex: "Fala, {name}!" não tem
-  // placeholder), fazendo o expect('Bom dia') falhar. Fix: forçar seed
-  // determinístico ou alterar assertion para containers diferentes.
-  describe.skip('getRandomGreeting', () => {
-    it('replaces templates correctly', () => {
+  describe('getRandomGreeting', () => {
+    it('replaces name correctly even if greeting is not in template', () => {
+      const name = 'John';
+      // Mock Math.random to return 0.5 (should pick template 2 which has {greeting} and {name})
+      vi.spyOn(Math, 'random').mockReturnValue(0.5);
+      
+      const result = getRandomGreeting(name);
+      expect(result).toContain(name);
+      vi.restoreAllMocks();
+    });
+
+    it('works for all templates', () => {
+      const name = 'John';
+      FLOW_GREETINGS.forEach((_, index) => {
+        // Force specific template
+        vi.spyOn(Math, 'random').mockReturnValue(index / FLOW_GREETINGS.length + 0.01);
+        const result = getRandomGreeting(name);
+        expect(result).toContain(name);
+        vi.restoreAllMocks();
+      });
+    });
+
+    it('replaces greeting when present', () => {
       vi.setSystemTime(new Date(2024, 0, 1, 9, 0)); // 09:00 -> "Bom dia"
       const name = 'John';
+      // Force first template: '{greeting}, {name}! ...'
+      vi.spyOn(Math, 'random').mockReturnValue(0);
+      
       const result = getRandomGreeting(name);
-
-      expect(result).toContain(name);
       expect(result).toContain('Bom dia');
+      expect(result).toContain(name);
+      vi.restoreAllMocks();
     });
   });
 });

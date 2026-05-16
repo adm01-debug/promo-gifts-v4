@@ -413,7 +413,7 @@ const PRIDE_YELLOW = '55 90% 50%';
 const PRIDE_GREEN = '130 70% 45%';
 const PRIDE_BLUE = '210 80% 55%';
 const PRIDE_PURPLE = '280 80% 58%';
-const PRIDE_PINK = '330 85% 58%';
+const PRIDE_PINK = '330 85% 52%'; // Reduzido de 58% para 52% para contraste > 3:1 com branco
 
 const rainbowGrad = `linear-gradient(135deg, hsl(${PRIDE_RED}), hsl(${PRIDE_ORANGE}), hsl(${PRIDE_YELLOW}), hsl(${PRIDE_GREEN}), hsl(${PRIDE_BLUE}), hsl(${PRIDE_PURPLE}))`;
 const rainbowDivider = `linear-gradient(90deg, hsl(${PRIDE_RED} / 0.5), hsl(${PRIDE_YELLOW} / 0.5), hsl(${PRIDE_GREEN} / 0.5), hsl(${PRIDE_BLUE} / 0.5), hsl(${PRIDE_PURPLE} / 0.5))`;
@@ -800,7 +800,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     description: 'Rosa intenso e viciante',
     h: 330,
     s: 95,
-    l: 60,
+    l: 50, // Reduzido de 60 para 50 para contraste WCAG
     gh: 340,
     sh: 300,
     ss: 90,
@@ -826,7 +826,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     description: 'Rosa quartzo cristalino',
     h: 345,
     s: 75,
-    l: 68,
+    l: 54, // Reduzido de 68 para 54 para contraste WCAG
     gh: 355,
     sh: 320,
     ss: 60,
@@ -852,7 +852,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     description: 'Verde Matrix de hacker',
     h: 127,
     s: 65,
-    l: 46,
+    l: 40, // Reduzido de 46 para 40 para contraste WCAG
     gh: 135,
     sh: 115,
     ss: 60,
@@ -865,25 +865,30 @@ export const THEME_PRESETS: ThemePreset[] = [
     description: 'Azul-petróleo do fundo do mar',
     h: 182,
     s: 90,
-    l: 42,
+    l: 35, // Reduzido de 42 para 35 para contraste WCAG com texto branco
     gh: 190,
     sh: 200,
     ss: 75,
     sl: 45,
   }),
-  buildGxPreset({
-    id: 'gx-cyberpunk',
-    name: 'Cyberpunk',
-    emoji: '⚡',
-    description: 'Amarelo neon de Night City',
-    h: 55,
-    s: 100,
-    l: 51,
-    gh: 180,
-    sh: 320,
-    ss: 95,
-    sl: 55,
-  }),
+  (() => {
+    const p = buildGxPreset({
+      id: 'gx-cyberpunk',
+      name: 'Cyberpunk',
+      emoji: '⚡',
+      description: 'Amarelo neon de Night City',
+      h: 55,
+      s: 100,
+      l: 51,
+      gh: 180,
+      sh: 320,
+      ss: 95,
+      sl: 55,
+    });
+    p.light['primary-foreground'] = '222 25% 10%';
+    p.dark['primary-foreground'] = '222 25% 10%';
+    return p;
+  })(),
   buildGxPreset({
     id: 'gx-razer',
     name: 'Razer',
@@ -891,7 +896,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     description: 'Verde RGB Razer Chroma',
     h: 113,
     s: 70,
-    l: 51,
+    l: 35, // Reduzido de 51 para 35 para contraste WCAG
     gh: 120,
     sh: 100,
     ss: 60,

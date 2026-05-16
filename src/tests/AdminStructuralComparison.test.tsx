@@ -7,6 +7,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { HelmetProvider } from 'react-helmet-async';
 import React from 'react';
+import { AriaLiveProvider } from '@/components/a11y/AriaLive';
 import AdminConexoesPage from '@/pages/admin/AdminConexoesPage';
 import AdminUsuariosPage from '@/pages/admin/AdminUsuariosPage';
 
@@ -19,7 +20,9 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
         <ThemeProvider>
           <AuthProvider>
             <TooltipProvider>
-              {children}
+              <AriaLiveProvider>
+                {children}
+              </AriaLiveProvider>
             </TooltipProvider>
           </AuthProvider>
         </ThemeProvider>
@@ -29,14 +32,51 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 );
 
 
-// TODO(test-debt): async leak — promises React-DOM completam após teardown,
-// disparando 5 unhandled "ReferenceError: window is not defined" que causam
-// EXIT 1 mesmo com o teste passando. Origem: revert 06/mai/2026.
-// Causa raiz: useSecretsManager.ts:169 setIsLoading(false) em .finally() de
-// promise que sobrevive ao unmount.
-// Fix necessário: await cleanup completo OU mockar useSecretsManager.
+// Mock hooks that use network/Supabase to avoid async leaks during tests
+vi.mock('@/hooks/useSecretsManager', () => ({
+  useSecretsManager: () => ({
+    secrets: [],
+    isLoading: false,
+    listError: null,
+    list: vi.fn().mockResolvedValue([]),
+    setSecret: vi.fn(),
+    rotateSecret: vi.fn(),
+    getRotationHistory: vi.fn().mockResolvedValue([]),
+    refreshCache: vi.fn(),
+  }),
+}));
 
-describe.skip('Admin Module Structural Comparison', () => {
+vi.mock('@/hooks/usePasswordResetRequests', () => ({
+  usePasswordResetRequests: () => ({
+    requests: [],
+    pendingCount: 0,
+    isLoading: false,
+    approve: vi.fn(),
+    reject: vi.fn(),
+  }),
+}));
+
+vi.mock('@/components/admin/users/useUserManagement', () => ({
+  useUserManagement: () => ({
+    users: [],
+    isLoading: false,
+    updatingUserId: null,
+    fetchUsers: vi.fn(),
+    handleRoleChange: vi.fn(),
+    handleCreateUser: vi.fn(),
+    handleDeleteUser: vi.fn(),
+    handleSaveEdit: vi.fn(),
+    handleAvatarUpload: vi.fn(),
+    handleRemoveAvatar: vi.fn(),
+  }),
+}));
+
+// Mock DevAccessAuditAlert to avoid internal queries
+vi.mock('@/components/admin/DevAccessAuditAlert', () => ({
+  DevAccessAuditAlert: () => <div data-testid="dev-audit-alert">Dev Audit</div>,
+}));
+
+describe('Admin Module Structural Comparison', () => {
   it('Conexoes and Usuarios should share matching container hierarchy', async () => {
     const { container: conexoes } = render(<AdminConexoesPage />, { wrapper });
     const { container: usuarios } = render(<AdminUsuariosPage />, { wrapper });

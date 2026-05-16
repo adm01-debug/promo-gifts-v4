@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { HelmetProvider } from "react-helmet-async";
+import { AriaLiveProvider } from "@/components/a11y/AriaLive";
 
 // Mock das hooks que dependem de rede/Supabase
 vi.mock("@/hooks/useSecretsManager", () => ({
@@ -15,6 +16,7 @@ vi.mock("@/hooks/useSecretsManager", () => ({
     secrets: [],
     list: vi.fn(),
     refreshCache: vi.fn(),
+    getRotationHistory: vi.fn().mockResolvedValue([]),
     isLoading: false,
   }),
 }));
@@ -44,6 +46,7 @@ vi.mock("@/integrations/supabase/client", () => ({
       subscribe: vi.fn().mockReturnThis(),
       unsubscribe: vi.fn().mockReturnThis(),
     }),
+    removeChannel: vi.fn(),
   },
 }));
 
@@ -64,26 +67,24 @@ const renderWithProviders = (ui: React.ReactElement) => {
   return render(
     <HelmetProvider>
       <TooltipProvider>
-        <QueryClientProvider client={queryClient}>
-          <MemoryRouter>
-            <ThemeProvider>
-              <AuthProvider>
-                {ui}
-              </AuthProvider>
-            </ThemeProvider>
-          </MemoryRouter>
-        </QueryClientProvider>
+        <AriaLiveProvider>
+          <QueryClientProvider client={queryClient}>
+            <MemoryRouter>
+              <ThemeProvider>
+                <AuthProvider>
+                  {ui}
+                </AuthProvider>
+              </ThemeProvider>
+            </MemoryRouter>
+          </QueryClientProvider>
+        </AriaLiveProvider>
       </TooltipProvider>
     </HelmetProvider>
   );
 };
 
 
-// TODO(test-debt): 2 testes falham — supabase.removeChannel nao mockada.
-// Skipado em fix(test): eliminate 88 test failures. Origem: revert 06-07/mai/2026.
-// Fixar em PR separado quando ownership for retomada.
-
-describe.skip("Admin Layout Standardization", () => {
+describe("Admin Layout Standardization", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -91,14 +92,14 @@ describe.skip("Admin Layout Standardization", () => {
   it("AdminConexoesPage deve renderizar dentro do MainLayout (com sidebar)", async () => {
     renderWithProviders(<AdminConexoesPage />);
     // O MainLayout renderiza o sidebar. Verificamos se o mock do sidebar apareceu.
-    expect(screen.getByTestId("sidebar")).toBeInTheDocument();
+    expect(await screen.findByTestId("sidebar", {}, { timeout: 3000 })).toBeInTheDocument();
     // Verifica título da página para garantir que o conteúdo está lá
     expect(screen.getAllByText(/Conexões/i).length).toBeGreaterThan(0);
   });
 
   it("AdminConexoesStatusPage deve renderizar dentro do MainLayout (com sidebar)", async () => {
     renderWithProviders(<AdminConexoesStatusPage />);
-    expect(screen.getByTestId("sidebar")).toBeInTheDocument();
+    expect(await screen.findByTestId("sidebar", {}, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.getByText(/Status da sincronização/i)).toBeInTheDocument();
   });
 });

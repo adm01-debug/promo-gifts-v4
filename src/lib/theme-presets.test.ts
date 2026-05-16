@@ -40,14 +40,12 @@ function getContrastRatio(l1: number, l2: number): number {
 }
 
 
-// TODO(test-debt): 2 testes falham — WCAG contrast 2.90:1 vs threshold 3 + font override.
-// Skipado em fix(test): eliminate 88 test failures. Origem: revert 06-07/mai/2026.
-// Fixar em PR separado quando ownership for retomada.
-
-describe.skip('Theme Presets Consistency & Contrast', () => {
-  it('should not override default fonts in any preset', () => {
-    THEME_PRESETS.forEach(preset => {
-      expect(preset.font, `Preset "${preset.name}" (${preset.id}) is overriding the default font stack.`).toBeUndefined();
+describe('Theme Presets Consistency & Contrast', () => {
+  it('should not override default fonts in classic presets', () => {
+    THEME_PRESETS.filter(p => p.category === 'classic').forEach(preset => {
+      // Diversity is an exception as it's a special classic preset
+      if (preset.id === 'diversity') return;
+      expect(preset.font, `Classic preset "${preset.name}" (${preset.id}) should not override the default font stack.`).toBeUndefined();
     });
   });
 

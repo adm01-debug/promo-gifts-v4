@@ -337,41 +337,45 @@ export default function Auth() {
                     <div
                       role="alert"
                       data-testid="social-login-fallback-banner"
-                      className="animate-fade-in space-y-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-foreground"
+                      className="animate-fade-in space-y-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-foreground shadow-sm"
                     >
-                      <div className="flex items-start gap-2">
-                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-                        <div className="flex-1 space-y-1">
-                          <p className="font-medium" data-testid="social-login-error-title">
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500/20">
+                          <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
+                        </div>
+                        <div className="flex-1 space-y-1.5">
+                          <p className="font-semibold leading-tight text-amber-900 dark:text-amber-200" data-testid="social-login-error-title">
                             {socialError.title}
                           </p>
-                          <p className="break-words text-xs text-muted-foreground" data-testid="social-login-error-description">
+                          <p className="text-xs leading-relaxed text-amber-800/80 dark:text-amber-300/80" data-testid="social-login-error-description">
                             {socialError.description}
                           </p>
                           {socialError.hint && (
-                            <p className="break-words text-xs text-muted-foreground/90" data-testid="social-login-error-hint">
-                              <span className="font-medium text-foreground/80">Dica: </span>
-                              {socialError.hint}
-                            </p>
+                            <div className="rounded-md bg-amber-500/10 p-2 border border-amber-500/20" data-testid="social-login-error-hint">
+                              <p className="text-[11px] leading-snug text-amber-900/90 dark:text-amber-100/90">
+                                <span className="font-bold uppercase tracking-wider text-[9px] opacity-70 mr-1">Dica:</span>
+                                {socialError.hint}
+                              </p>
+                            </div>
                           )}
                           {socialError.isConfig && (
-                            <p className="text-[11px] text-amber-700/90">
-                              Este é um problema de configuração do provedor — não adianta tentar de novo agora.
+                            <p className="text-[10px] italic text-amber-700/70 dark:text-amber-400/60">
+                              Este é um problema de configuração que requer atenção do administrador.
                             </p>
                           )}
                         </div>
                       </div>
-                      <div className="flex flex-wrap items-center gap-2 pt-1">
+                      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-amber-500/10">
                         {!socialError.isConfig && (
                           <Button
                             type="button"
                             size="sm"
                             variant="orange"
-                            className="h-8 gap-1.5 text-xs"
+                            className="h-8 gap-1.5 text-xs font-medium shadow-sm hover:shadow-md transition-all active:scale-95"
                             onClick={handleRetryGoogle}
                             data-testid="social-fallback-retry-google"
                           >
-                            <RotateCw className="h-3.5 w-3.5" aria-hidden="true" />
+                            <RotateCw className="h-3 w-3" aria-hidden="true" />
                             Tentar novamente
                           </Button>
                         )}
@@ -379,17 +383,17 @@ export default function Auth() {
                           type="button"
                           size="sm"
                           variant={socialError.isConfig ? 'orange' : 'outline'}
-                          className="h-8 text-xs"
+                          className={`h-8 text-xs font-medium transition-all active:scale-95 ${!socialError.isConfig ? 'border-amber-500/30 hover:bg-amber-500/10 hover:text-amber-900' : 'shadow-sm'}`}
                           onClick={focusEmailFallback}
                           data-testid="social-fallback-use-email"
                         >
-                          Entrar com e-mail e senha
+                          Usar e-mail e senha
                         </Button>
                         <Button
                           type="button"
                           size="sm"
                           variant="ghost"
-                          className="h-8 text-xs"
+                          className="h-8 text-xs text-amber-800/60 hover:text-amber-900 hover:bg-transparent"
                           onClick={() => setSocialError(null)}
                         >
                           Dispensar
