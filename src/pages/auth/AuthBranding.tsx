@@ -160,7 +160,7 @@ function FeatureCard({ item, index }: { item: typeof FEATURE_ITEMS[0]; index: nu
   const IconComponent = item.icon;
   return (
     <div
-      className="flex h-[104px] items-center justify-between gap-3 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl hover:bg-white/10 hover:border-orange/30 hover:scale-[1.02] transition-all duration-500 group opacity-0 px-5"
+      className="flex h-[99px] items-center justify-between gap-3 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl hover:bg-white/10 hover:border-orange/30 hover:scale-[1.02] transition-all duration-500 group opacity-0 px-5"
       style={{ animation: `scale-fade-in 0.5s ease-out ${300 + index * 150}ms forwards` }}
     >
       <div className="min-w-0 flex-1 text-left">
@@ -212,7 +212,7 @@ export function AuthBrandingPanel() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 pt-6">
+          <div className="grid grid-cols-2 gap-4 pt-6 w-[120%] -mx-[10%]">
             {FEATURE_ITEMS.map((item, i) => (
               <FeatureCard key={i} item={item} index={i} />
             ))}
