@@ -33,6 +33,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
+import { LegalFooter } from '@/components/auth/LegalFooter';
 import { useIPValidation } from '@/hooks/useIPValidation';
 import { useDevGate } from '@/hooks/useDevGate';
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
