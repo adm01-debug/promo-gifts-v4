@@ -21,8 +21,10 @@ const GlobalCommandBar = lazyWithRetry(() => import("@/components/command/Global
 const PersistentBreadcrumbs = lazyWithRetry(() => import("@/components/common/PersistentBreadcrumbs").then(m => ({ default: m.PersistentBreadcrumbs })));
 import { cn } from "@/lib/utils";
 
+import { Outlet } from "react-router-dom";
+
 interface MainLayoutProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export function MainLayout({ children }: MainLayoutProps) {
