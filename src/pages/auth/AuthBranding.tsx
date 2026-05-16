@@ -142,9 +142,21 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
       {/* Background Deep Space Glow & Nebula */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(15,23,42,0)_0%,rgba(2,6,23,0.6)_100%)]" />
       
+      {/* Mouse Follow Glow - Interactive Depth (10/10) */}
+      <div 
+        className="absolute w-[600px] h-[600px] rounded-full opacity-[0.07] blur-[100px] pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle, #3b82f6 0%, transparent 70%)',
+          left: `calc(50% + ${mousePos.x * 2}px)`,
+          top: `calc(50% + ${mousePos.y * 2}px)`,
+          transform: 'translate(-50%, -50%)',
+          transition: 'left 0.15s ease-out, top 0.15s ease-out'
+        }}
+      />
+
       {/* Atmospheric Nebula Layers (10/10 Depth) */}
       <div 
-        className="absolute inset-0 opacity-10 blur-[80px]"
+        className="absolute inset-0 opacity-15 blur-[80px]"
         style={{
           background: 'radial-gradient(ellipse at 30% 20%, #1e40af 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, #1e3a8a 0%, transparent 50%)',
           animation: 'nebulaDrift 30s ease-in-out infinite alternate'
@@ -152,7 +164,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
       />
       
       <div 
-        className="absolute inset-0 opacity-[0.05] blur-[120px]"
+        className="absolute inset-0 opacity-[0.08] blur-[120px]"
         style={{
           background: 'radial-gradient(circle at 60% 40%, #fb923c 0%, transparent 40%)',
           animation: 'nebulaDrift 45s ease-in-out infinite alternate-reverse'
