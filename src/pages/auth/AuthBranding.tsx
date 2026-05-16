@@ -146,7 +146,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
       <div 
         className="absolute w-[600px] h-[600px] rounded-full opacity-[0.07] blur-[100px] pointer-events-none"
         style={{
-          background: 'radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, hsl(var(--primary) / var(--glow-intensity)) 0%, transparent 70%)',
           left: `calc(50% + ${mousePos.x * 2}px)`,
           top: `calc(50% + ${mousePos.y * 2}px)`,
           transform: 'translate(-50%, -50%)',
@@ -325,7 +325,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
               style={{
                 width: r.size,
                 height: r.size,
-                filter: "drop-shadow(0 0 15px rgba(255, 255, 255, 0.3))",
+                filter: "drop-shadow(0 0 15px hsl(var(--primary) / 0.3))",
               }}
             />
             {/* Flame Trail */}
@@ -335,7 +335,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
                 top: `${r.size * 0.8}px`,
                 width: `${r.size * 0.4}px`,
                 height: `${r.size * 1.5}px`,
-                background: "linear-gradient(to bottom, #404040, #171717, transparent)",
+                background: "linear-gradient(to bottom, hsl(0 0% 30%), hsl(0 0% 10%), transparent)",
                 filter: "blur(4px)",
                 zIndex: -1,
               }}

@@ -60,13 +60,6 @@ export default {
           hover: "hsl(var(--cart-hover))",
           foreground: "hsl(var(--cart-foreground))",
         },
-        orange: {
-          DEFAULT: "hsl(var(--orange))",
-          hover: "hsl(var(--orange-hover))",
-          active: "hsl(var(--orange-active))",
-          glow: "hsl(var(--orange-glow))",
-          foreground: "hsl(var(--orange-foreground))",
-        },
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
@@ -189,7 +182,7 @@ export default {
         "glow-secondary": "0 0 25px hsl(var(--secondary) / 0.3)",
         "glow-success": "0 0 25px hsl(var(--success) / 0.3)",
         "glow-warning": "0 0 25px hsl(var(--warning) / 0.3)",
-        "glow-orange": "var(--shadow-glow)",
+        
         "glow-cart": "0 0 25px hsl(var(--cart) / 0.4)",
         header: "var(--shadow-header)",
         elevated: "var(--shadow-premium)",
