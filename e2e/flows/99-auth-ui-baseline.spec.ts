@@ -23,6 +23,8 @@ test.describe("Auth UI Baseline", () => {
           transition-delay: 0s !important;
           animation-delay: 0s !important;
         }
+        /* Esconde elementos que podem variar (como o IP no rodapé legal se for dinâmico) */
+        [data-testid="user-ip-info"] { visibility: hidden !important; }
       `;
       document.head.appendChild(style);
     });
@@ -50,6 +52,27 @@ test.describe("Auth UI Baseline", () => {
     await page.waitForTimeout(500);
     
     await expect(page).toHaveScreenshot("auth-login-error-state.png", {
+      maxDiffPixelRatio: 0.01
+    });
+  });
+
+  test("Estado de Loading (Botão)", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    
+    // Intercepta a chamada de login do Supabase para fazê-la demorar infinitamente
+    await page.route('**/auth/v1/token*', () => {
+      // Não responde, mantendo o loading ativo
+    });
+
+    await gotoAndSettle(page, "/login");
+    await page.fill('[data-testid="login-email-input"]', 'test@example.com');
+    await page.fill('[data-testid="login-password-input"]', 'password123');
+    await page.click('[data-testid="login-submit"]');
+    
+    // Aguarda o estado de loading no botão
+    await expect(page.locator('[data-testid="login-submit"]')).toHaveAttribute('data-loading', 'true');
+    
+    await expect(page).toHaveScreenshot("auth-login-loading-state.png", {
       maxDiffPixelRatio: 0.01
     });
   });
