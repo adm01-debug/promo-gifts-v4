@@ -164,9 +164,9 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
       />
       
       <div 
-        className="absolute inset-0 opacity-[0.08] blur-[120px]"
+        className="absolute inset-0 opacity-[0.12] blur-[120px]"
         style={{
-          background: 'radial-gradient(circle at 60% 40%, #fb923c 0%, transparent 40%)',
+          background: 'radial-gradient(circle at 60% 40%, #000000 0%, transparent 40%)',
           animation: 'nebulaDrift 45s ease-in-out infinite alternate-reverse'
         }}
       />
@@ -183,8 +183,8 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
               top: `${(i * 17) % 100}%`,
               left: `${(i * 23) % 100}%`,
               animation: `starDrift ${60 + (i % 20)}s linear infinite alternate`,
-              backgroundColor: i % 5 === 0 ? '#FB923C' : i % 7 === 0 ? '#60A5FA' : 'rgba(255,255,255,0.4)',
-              boxShadow: i % 5 === 0 ? '0 0 4px #FB923C' : i % 7 === 0 ? '0 0 4px #60A5FA' : 'none',
+              backgroundColor: i % 5 === 0 ? '#000000' : i % 7 === 0 ? '#60A5FA' : 'rgba(255,255,255,0.4)',
+              boxShadow: i % 5 === 0 ? '0 0 4px rgba(0,0,0,0.8)' : i % 7 === 0 ? '0 0 4px #60A5FA' : 'none',
               opacity: i % 3 === 0 ? 0.4 : 0.2,
             }}
           />
@@ -321,11 +321,11 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
         >
           <div style={{ transform: `scale(${r.scale}) rotate(${r.rotation}deg)` }}>
             <Rocket
-              className="-rotate-45 text-orange"
+              className="-rotate-45 text-slate-400"
               style={{
                 width: r.size,
                 height: r.size,
-                filter: "drop-shadow(0 0 15px rgba(251, 146, 60, 0.7))",
+                filter: "drop-shadow(0 0 15px rgba(255, 255, 255, 0.3))",
               }}
             />
             {/* Flame Trail */}
@@ -335,7 +335,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
                 top: `${r.size * 0.8}px`,
                 width: `${r.size * 0.4}px`,
                 height: `${r.size * 1.5}px`,
-                background: "linear-gradient(to bottom, #FB923C, #FBBF24, transparent)",
+                background: "linear-gradient(to bottom, #1e293b, #0f172a, transparent)",
                 filter: "blur(4px)",
                 zIndex: -1,
               }}
@@ -370,12 +370,12 @@ function FeatureCard({ item, index }: { item: typeof FEATURE_ITEMS[0]; index: nu
     <div
       ref={cardRef}
       onMouseMove={handleMouseMove}
-      className="flex h-[99px] items-center justify-between gap-2 sm:gap-4 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] shadow-2xl hover:bg-white/[0.07] hover:border-orange/40 hover:scale-[1.02] transition-all duration-500 group opacity-0 px-4 sm:px-6 relative overflow-hidden"
+      className="flex h-[99px] items-center justify-between gap-2 sm:gap-4 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] shadow-2xl hover:bg-white/[0.07] hover:border-white/40 hover:scale-[1.02] transition-all duration-500 group opacity-0 px-4 sm:px-6 relative overflow-hidden"
       style={{ animation: `scale-fade-in 0.5s ease-out ${300 + index * 150}ms forwards` }}
     >
       {/* Dynamic Cursor Glow (10/10) */}
       <div 
-        className="absolute w-40 h-40 rounded-full bg-orange/15 blur-[40px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        className="absolute w-40 h-40 rounded-full bg-white/5 blur-[40px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
         style={{
           left: `${glowPos.x}px`,
           top: `${glowPos.y}px`,
@@ -392,8 +392,8 @@ function FeatureCard({ item, index }: { item: typeof FEATURE_ITEMS[0]; index: nu
         <p className="text-[14px] sm:text-2xl font-bold text-white leading-tight truncate tracking-tight">{item.label}</p>
         <p className="text-[9px] sm:text-sm font-medium text-white/40 leading-tight truncate uppercase tracking-widest mt-0.5">{item.desc}</p>
       </div>
-      <div className="w-11 h-11 shrink-0 rounded-xl bg-orange/10 flex items-center justify-center group-hover:bg-orange/20 transition-all duration-500 group-hover:rotate-[10deg] relative z-10 border border-white/[0.05]">
-        <IconComponent className="h-5 w-5 text-orange drop-shadow-[0_0_8px_rgba(251,146,60,0.4)]" />
+      <div className="w-11 h-11 shrink-0 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all duration-500 group-hover:rotate-[10deg] relative z-10 border border-white/[0.05]">
+        <IconComponent className="h-5 w-5 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]" />
       </div>
     </div>
   );
