@@ -44,6 +44,16 @@ export function explainOAuthError(input: RawErrorInput): OAuthErrorExplanation {
   const desc = (input.description ?? '').trim();
   const descLower = desc.toLowerCase();
 
+  // --- 0. Overrides por descrição (mais específicos que o code genérico) ---
+  // Provedores às vezes retornam `server_error` ou `invalid_request` com a
+  // causa real apenas no `error_description` — checamos antes do switch.
+  if (descLower.includes('redirect') && descLower.includes('uri')) {
+    return REDIRECT_URI_MISMATCH(desc);
+  }
+  if (descLower.includes('provider is not enabled') || descLower.includes('unsupported provider')) {
+    return PROVIDER_NOT_ENABLED(desc);
+  }
+
   // --- 1. Matches por código exato -----------------------------------------
   switch (code) {
     case 'redirect_uri_mismatch':
