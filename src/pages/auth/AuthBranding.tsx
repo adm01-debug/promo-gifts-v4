@@ -164,8 +164,8 @@ function FeatureCard({ item, index }: { item: typeof FEATURE_ITEMS[0]; index: nu
       style={{ animation: `scale-fade-in 0.5s ease-out ${300 + index * 150}ms forwards` }}
     >
       <div className="min-w-0 flex-1 text-left">
-        <p className="text-base sm:text-2xl font-bold text-white leading-tight truncate">{item.label}</p>
-        <p className="text-[10px] sm:text-sm font-medium text-white/50 leading-tight truncate">{item.desc}</p>
+        <p className="text-[14px] sm:text-2xl font-bold text-white leading-tight truncate">{item.label}</p>
+        <p className="text-[9px] sm:text-sm font-medium text-white/50 leading-tight truncate">{item.desc}</p>
       </div>
       <div className="w-11 h-11 shrink-0 rounded-xl bg-orange/15 flex items-center justify-center group-hover:bg-orange/25 transition-colors">
         <IconComponent className="h-5 w-5 text-orange" />
