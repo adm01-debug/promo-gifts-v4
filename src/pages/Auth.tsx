@@ -348,11 +348,24 @@ export default function Auth() {
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 pt-1">
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
+                        {!socialError.isConfig && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="orange"
+                            className="h-8 gap-1.5 text-xs"
+                            onClick={handleRetryGoogle}
+                            data-testid="social-fallback-retry-google"
+                          >
+                            <RotateCw className="h-3.5 w-3.5" aria-hidden="true" />
+                            Tentar novamente
+                          </Button>
+                        )}
                         <Button
                           type="button"
                           size="sm"
-                          variant="orange"
+                          variant={socialError.isConfig ? 'orange' : 'outline'}
                           className="h-8 text-xs"
                           onClick={focusEmailFallback}
                           data-testid="social-fallback-use-email"
