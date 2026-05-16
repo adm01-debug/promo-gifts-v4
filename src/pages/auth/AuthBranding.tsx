@@ -30,15 +30,23 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
   }, []);
 
   useEffect(() => {
-    // Planetas — movimento extremamente lento (60–90s)
-    const initialPlanets = [...Array(5)].map((_, i) => ({
+    // Planetas — distribuídos em quadrantes para evitar amontoamento e movimento extremamente lento
+    const positions = [
+      { left: 12, top: 15 },
+      { left: 78, top: 22 },
+      { left: 45, top: 48 },
+      { left: 18, top: 75 },
+      { left: 82, top: 80 },
+    ];
+
+    const initialPlanets = positions.map((pos, i) => ({
       id: i,
-      left: 10 + Math.random() * 80,
-      top: 10 + Math.random() * 80,
-      size: 40 + Math.random() * 80,
-      duration: 60 + Math.random() * 30,
+      left: pos.left + (Math.random() * 8 - 4),
+      top: pos.top + (Math.random() * 8 - 4),
+      size: 45 + Math.random() * 85,
+      duration: 70 + Math.random() * 40,
       type: i % 3,
-      delay: Math.random() * 10
+      delay: Math.random() * 20
     }));
     setPlanets(initialPlanets);
 
@@ -100,10 +108,10 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
             top: `${p.top}%`,
             animation: `zigzagMovement ${p.duration}s ease-in-out ${p.delay}s infinite alternate`,
             background: p.type === 0 
-              ? 'radial-gradient(circle at 30% 30%, #4F46E5, #1E1B4B)' 
+              ? 'radial-gradient(circle at 30% 30%, #1E3A8A, #030712)' 
               : p.type === 1 
-                ? 'radial-gradient(circle at 30% 30%, #FB923C, #7C2D12)'
-                : 'radial-gradient(circle at 30% 30%, #06B6D4, #164E63)',
+                ? 'radial-gradient(circle at 30% 30%, #1E40AF, #111827)'
+                : 'radial-gradient(circle at 30% 30%, #1D4ED8, #0F172A)',
             borderRadius: '50%',
             boxShadow: 'inset -10px -10px 20px rgba(0,0,0,0.5), 0 0 30px rgba(79, 70, 229, 0.1)'
           }}
