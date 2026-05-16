@@ -29,14 +29,21 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 );
 
 
-// TODO(test-debt): async leak — promises React-DOM completam após teardown,
-// disparando 5 unhandled "ReferenceError: window is not defined" que causam
-// EXIT 1 mesmo com o teste passando. Origem: revert 06/mai/2026.
-// Causa raiz: useSecretsManager.ts:169 setIsLoading(false) em .finally() de
-// promise que sobrevive ao unmount.
-// Fix necessário: await cleanup completo OU mockar useSecretsManager.
+// Mock useSecretsManager to avoid async leaks during tests
+vi.mock('@/hooks/useSecretsManager', () => ({
+  useSecretsManager: () => ({
+    secrets: [],
+    isLoading: false,
+    listError: null,
+    list: vi.fn().mockResolvedValue([]),
+    setSecret: vi.fn(),
+    rotateSecret: vi.fn(),
+    getRotationHistory: vi.fn().mockResolvedValue([]),
+    refreshCache: vi.fn(),
+  }),
+}));
 
-describe.skip('Admin Module Structural Comparison', () => {
+describe('Admin Module Structural Comparison', () => {
   it('Conexoes and Usuarios should share matching container hierarchy', async () => {
     const { container: conexoes } = render(<AdminConexoesPage />, { wrapper });
     const { container: usuarios } = render(<AdminUsuariosPage />, { wrapper });
