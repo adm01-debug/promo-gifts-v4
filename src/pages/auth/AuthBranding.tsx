@@ -183,7 +183,7 @@ const FEATURE_ITEMS = [
 
 export function AuthBrandingPanel() {
   return (
-    <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+    <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden h-screen items-center bg-[#0A0D14]">
       {/* Background decoration (sem bg sólido — fundo unificado vem do <main>) */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 -left-20 w-80 h-80 bg-orange/20 rounded-full blur-[120px] animate-pulse" />
@@ -193,21 +193,21 @@ export function AuthBrandingPanel() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col justify-center items-center px-12 xl:px-20 w-full">
-        <div className="space-y-6 w-full max-w-xl">
+      <div className="relative z-10 flex flex-col justify-center items-center px-12 xl:px-20 w-full min-h-screen">
+        <div className="space-y-6 w-full max-w-xl flex flex-col items-center text-center">
           <div className="flex items-center gap-4">
             <AppLogo variant="light" iconClassName="h-14 w-14 rounded-xl shadow-orange/30" textClassName="text-4xl" />
           </div>
 
-          <div className="space-y-4 max-w-md">
-            <h2 className="text-4xl xl:text-5xl font-display font-bold text-white leading-[1.1] tracking-tight relative group">
+          <div className="space-y-4 max-w-md flex flex-col items-center">
+            <h2 className="text-4xl xl:text-5xl font-display font-bold text-white leading-[1.1] tracking-tight relative group text-center">
               Um Universo de Produtos, para o{" "}
               <span className="text-orange relative">
                 Melhor Time das Galáxias!
                 <div className="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r from-orange/0 via-orange/60 to-orange/0 scale-x-0 group-hover:scale-x-100 transition-transform duration-700" />
               </span>
             </h2>
-            <p className="text-base text-white/70 leading-relaxed font-light">
+            <p className="text-base text-white/70 leading-relaxed font-light text-center">
               Tenha acesso ao maior mix de produtos personalizados, consulte estoque em tempo real, visualize locais e técnicas de personalização. Feito especialmente para você decolar!!!
             </p>
           </div>
@@ -219,7 +219,7 @@ export function AuthBrandingPanel() {
           </div>
 
           {/* Trust Indicators */}
-          <div className="flex items-center justify-center gap-4 pt-6 opacity-0" style={{ animation: 'scale-fade-in 0.5s ease-out 900ms forwards' }}>
+          <div className="flex items-center gap-4 pt-6 opacity-0" style={{ animation: 'scale-fade-in 0.5s ease-out 900ms forwards' }}>
             {[
               { label: "Conexão segura", path: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" },
               { label: "Dados criptografados", path: "M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" },
