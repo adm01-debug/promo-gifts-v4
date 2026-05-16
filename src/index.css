@@ -34,8 +34,8 @@
 
 /* Animação de órbita circular balanceada */
 @keyframes circularOrbit {
-  from { transform: rotate(0deg) translateX(25px) rotate(0deg); }
-  to { transform: rotate(360deg) translateX(25px) rotate(-360deg); }
+  from { transform: rotate(0deg) translateX(var(--orbit-radius, 28px)) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(var(--orbit-radius, 28px)) rotate(-360deg); }
 }
 
 @keyframes breathingStar {
