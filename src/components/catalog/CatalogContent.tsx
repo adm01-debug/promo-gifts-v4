@@ -53,24 +53,8 @@ interface CatalogContentProps {
   setActiveProductId?: (id: string | null) => void;
 }
 
-function ScrollToTopButton({ show, onClick }: { show: boolean; onClick: () => void }) {
-  return (
-    <AnimatePresence>
-      {show && (
-        <motion.button
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.8 }}
-          className="absolute bottom-4 right-4 z-30 rounded-full bg-primary p-3 text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
-          onClick={onClick}
-          title="Voltar ao topo"
-        >
-          <ArrowUp className="h-5 w-5" />
-        </motion.button>
-      )}
-    </AnimatePresence>
-  );
-}
+// ScrollToTopButton migrado para src/components/common/ScrollToTopButton.tsx
+import { ScrollToTopButton } from '@/components/common/ScrollToTopButton';
 
 function VirtualFooter({
   hasMore,
@@ -120,12 +104,10 @@ function VirtualFooter({
 
 function useScrollableContainer(hasMore: boolean, isLoadingMore: boolean, onLoadMore?: () => void) {
   const parentRef = useRef<HTMLDivElement>(null);
-  const [showScrollTop, setShowScrollTop] = useState(false);
 
   const handleScroll = useCallback(() => {
     if (!parentRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = parentRef.current;
-    setShowScrollTop(scrollTop > 400);
     if (hasMore && !isLoadingMore && onLoadMore && scrollHeight - scrollTop - clientHeight < 500)
       onLoadMore();
   }, [hasMore, isLoadingMore, onLoadMore]);
@@ -137,12 +119,7 @@ function useScrollableContainer(hasMore: boolean, isLoadingMore: boolean, onLoad
     return () => el.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
 
-  const scrollToTop = useCallback(
-    () => parentRef.current?.scrollTo({ top: 0, behavior: 'smooth' }),
-    [],
-  );
-
-  return { parentRef, showScrollTop, scrollToTop };
+  return { parentRef };
 }
 
 const CONTAINER_CLASS =
@@ -197,7 +174,7 @@ function VirtualGrid({
   activeProductId?: string | null;
   setActiveProductId?: (id: string | null) => void;
 }) {
-  const { parentRef, showScrollTop, scrollToTop } = useScrollableContainer(
+  const { parentRef } = useScrollableContainer(
     hasMore,
     isLoadingMore,
     onLoadMore,
@@ -342,7 +319,7 @@ function VirtualGrid({
           })}
         </div>
       </div>
-      <ScrollToTopButton show={showScrollTop} onClick={scrollToTop} />
+      <ScrollToTopButton containerRef={parentRef} className="absolute bottom-4 right-4 h-10 w-10 sm:bottom-4 sm:right-4" />
     </div>
   );
 }
@@ -394,7 +371,7 @@ function VirtualList({
   activeProductId?: string | null;
   setActiveProductId?: (id: string | null) => void;
 }) {
-  const { parentRef, showScrollTop, scrollToTop } = useScrollableContainer(
+  const { parentRef } = useScrollableContainer(
     hasMore,
     isLoadingMore,
     onLoadMore,
@@ -508,7 +485,7 @@ function VirtualList({
           })}
         </div>
       </div>
-      <ScrollToTopButton show={showScrollTop} onClick={scrollToTop} />
+      <ScrollToTopButton containerRef={parentRef} className="absolute bottom-4 right-4 h-10 w-10 sm:bottom-4 sm:right-4" />
     </div>
   );
 }

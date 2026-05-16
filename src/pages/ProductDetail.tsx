@@ -31,6 +31,7 @@ import { MobileProductActions } from '@/components/mobile/MobileProductActions';
 import { useRecentlyViewedStore } from '@/stores/useRecentlyViewedStore';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { ProductDetailHero } from './product-detail/ProductDetailHero';
+import { ScrollToTopButton } from '@/components/common/ScrollToTopButton';
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -391,6 +392,7 @@ export default function ProductDetail() {
           onComplete={handleFavoriteVariantSelected}
         />
       )}
+      <ScrollToTopButton />
     </MainLayout>
   );
 }
