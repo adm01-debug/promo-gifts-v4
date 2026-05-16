@@ -127,13 +127,14 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
     })));
     
     // Layout base para astronautas com ângulos iniciais diferentes para órbita
+    // Distribuídos para evitar sobreposição e preencher o espaço
     const baseLayout = [
-      { left: 15, top: 20, depth: 0.3, rotation: -8, zIndex: 5, initialAngle: 0 },
-      { left: 75, top: 30, depth: 0.5, rotation: 12, zIndex: 10, initialAngle: 90 },
-      { left: 25, top: 65, depth: 0.8, rotation: -15, zIndex: 15, initialAngle: 180 },
-      { left: 65, top: 70, depth: 1.2, rotation: 20, zIndex: 20, initialAngle: 270 },
-      { left: 45, top: 45, depth: 0.6, rotation: 45, zIndex: 12, initialAngle: 45 },
-      { left: 10, top: 85, depth: 0.4, rotation: -30, zIndex: 8, initialAngle: 135 },
+      { left: 20, top: 25, depth: 0.3, rotation: -8, zIndex: 5, initialAngle: 0 },
+      { left: 70, top: 35, depth: 0.5, rotation: 12, zIndex: 10, initialAngle: 120 },
+      { left: 30, top: 70, depth: 0.8, rotation: -15, zIndex: 15, initialAngle: 240 },
+      { left: 60, top: 65, depth: 1.2, rotation: 20, zIndex: 20, initialAngle: 60 },
+      { left: 45, top: 45, depth: 0.6, rotation: 45, zIndex: 12, initialAngle: 180 },
+      { left: 15, top: 80, depth: 0.4, rotation: -30, zIndex: 8, initialAngle: 300 },
     ];
 
     setAstronauts(baseLayout.slice(0, config.astroCount).map((a, i) => {
@@ -245,8 +246,8 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
         />
       ))}
 
-      {/* Floating Astronauts — Sincronizados, Menores e com Parallax Mouse + Scroll */}
-      {!config.reducedMotion && astronauts.map((a, idx) => {
+      {/* Floating Astronauts — Sincronizados e Persistentes */}
+      {astronauts.map((a, idx) => {
         // Tamanhos reduzidos e escala baseada na profundidade, perfil global e ajuste individual
         const baseSize = 35; 
         const size = baseSize * a.depth * config.depthProfile * (a.individualScale ?? 1.0);
@@ -258,8 +259,8 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
         const translateX = mousePos.x * a.depth;
         const translateY = (mousePos.y + scrollY) * a.depth;
 
-        // Órbita circular suave (circularOrbit) — Sincronizada via delay negativo
-        const orbitDuration = 25 / config.speed;
+        // Órbita circular balanceada
+        const orbitDuration = 30 / config.speed;
 
         return (
           <div

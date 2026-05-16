@@ -32,10 +32,10 @@
   100% { transform: translate(0, 0) rotate(0deg); }
 }
 
-/* Nova animação de órbita circular perfeita */
+/* Animação de órbita circular balanceada */
 @keyframes circularOrbit {
-  from { transform: rotate(0deg) translateX(15px) rotate(0deg); }
-  to { transform: rotate(360deg) translateX(15px) rotate(-360deg); }
+  from { transform: rotate(0deg) translateX(25px) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(25px) rotate(-360deg); }
 }
 
 @keyframes breathingStar {
