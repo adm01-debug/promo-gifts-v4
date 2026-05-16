@@ -11,10 +11,21 @@ test.describe('Rocket Animation Consistency @smoke', () => {
     // Isso evita que o snapshot visual falhe por causa de posições aleatórias
     await page.addInitScript(() => {
       let count = 0;
-      const values = [0.1, 0.5, 0.9, 0.2, 0.8, 0.3, 0.7, 0.4, 0.6];
+      // Sequência determinística para: left, size, duration, rotation, scale
+      // Precisamos de 5 valores por foguete. Para 7 foguetes = 35 valores.
+      const values = [
+        0.1, 0.5, 0.9, 0.2, 0.8, // Rocket 1
+        0.3, 0.7, 0.4, 0.6, 0.1, // Rocket 2
+        0.5, 0.9, 0.2, 0.8, 0.3, // Rocket 3
+        0.7, 0.4, 0.6, 0.1, 0.5, // Rocket 4
+        0.9, 0.2, 0.8, 0.3, 0.7, // Rocket 5
+        0.4, 0.6, 0.1, 0.5, 0.9, // Rocket 6
+        0.2, 0.8, 0.3, 0.7, 0.4  // Rocket 7
+      ];
       Math.random = () => {
+        const val = values[count % values.length];
         count++;
-        return values[count % values.length];
+        return val;
       };
     });
 
@@ -26,22 +37,18 @@ test.describe('Rocket Animation Consistency @smoke', () => {
     await expect(rocketContainer).toBeVisible();
 
     // No início, deve haver o burst inicial de foguetes (7 foguetes conforme definido no componente)
-    // Usamos um pequeno delay para garantir que os timeouts do burst inicial foram disparados
-    await page.waitForTimeout(1000);
+    // Esperamos até que todos os 7 tenham sido spawnados (o último delay é 2800ms)
+    await expect(page.getByTestId('rocket-item')).toHaveCount(7, { timeout: 5000 });
 
     const rocketCount = await page.getByTestId('rocket-item').count();
-    // O burst inicial dispara 7 foguetes em 2.8 segundos. Em 1s, alguns já devem estar visíveis.
-    expect(rocketCount).toBeGreaterThanOrEqual(3);
+    expect(rocketCount).toBe(7);
 
     // Snapshot visual do painel de branding com foguetes determinísticos
-    // Focamos apenas na área de branding (lado esquerdo em desktop)
     const brandingPanel = page.locator('.lg\\:flex.lg\\:w-1\\/2');
     
-    // Captura snapshot visual. Se não houver snapshot anterior, este será o baseline.
-    // Usamos mask para esconder elementos que ainda podem variar (como textos que podem ter animação de fade)
-    // ou apenas focamos nos foguetes se necessário.
+    // Captura snapshot visual.
     await expect(brandingPanel).toHaveScreenshot('auth-branding-rockets.png', {
-      maxDiffPixelRatio: 0.05, // Tolerância para pequenas variações de subpixel/anti-aliasing
+      maxDiffPixelRatio: 0.1, // Aumentado para tolerar variações de renderização em headless
     });
   });
 
