@@ -135,8 +135,9 @@ const navGroups: NavGroup[] = [
   },
 ];
 
-export const SidebarReorganized = React.forwardRef<HTMLElement, SidebarProps>(
-  function SidebarReorganized({ isOpen, onToggle }, ref) {
+export const SidebarReorganized = React.memo(
+  React.forwardRef<HTMLElement, SidebarProps>(
+    function SidebarReorganized({ isOpen, onToggle }, ref) {
   const location = useLocation();
   const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
