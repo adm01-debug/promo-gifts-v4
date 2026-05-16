@@ -16,22 +16,23 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
   const [astronauts, setAstronauts] = useState<AstronautData[]>([]);
   const nextIdRef = useRef(0);
 
-  // Pool de estrelas estável para evitar saltos durante re-renders ou mudanças de breakpoint
-  const allStars = React.useMemo(() => {
-    return [...Array(100)].map((_, i) => ({
+  // Pool de estrelas estável e estático fora do ciclo de renderização para garantir 0 saltos
+  const starsRef = useRef<StarData[]>([]);
+  
+  if (starsRef.current.length === 0) {
+    starsRef.current = [...Array(100)].map((_, i) => ({
       id: i,
-      size: 1 + (i % 2), // Estrelas ligeiramente menores para performance
-      top: ((i * 131) % 1000) / 10, // Determinístico baseado no index
-      left: ((i * 179) % 1000) / 10, // Determinístico baseado no index
-      // Respiração unificada: ciclos sincronizados com pequenas variações controladas
+      size: 0.8 + (i % 3) * 0.4, // Tamanhos variados sutilmente
+      top: ((i * 137.7) % 100), // Distribuição pseudo-aleatória determinística
+      left: ((i * 149.3) % 100),
+      // Sincronização respiratória: Delays mínimos para unificar o movimento do conjunto
       breathingDur: 14, 
-      breathingDelay: (i % 8) * 0.15, // Pequeno offset para naturalidade, mas uniforme
-      driftDur: 100 + (i % 30),
+      breathingDelay: (i % 4) * 0.05, // Offset quase imperceptível para evitar aspecto robótico
+      driftDur: 120 + (i % 40),
     }));
-  }, []);
+  }
 
-  // Filtramos apenas a quantidade necessária sem regenerar as posições
-  const activeStars = isFull ? allStars : allStars.slice(0, 50);
+  const activeStars = isFull ? starsRef.current : starsRef.current.slice(0, 50);
 
   const spawnRocket = useCallback((isInitial = false) => {
     const id = nextIdRef.current++;
