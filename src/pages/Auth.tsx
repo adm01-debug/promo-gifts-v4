@@ -458,7 +458,7 @@ export default function Auth() {
                         <Button
                           type="button"
                           size="sm"
-                          variant={socialError.isConfig ? 'orange' : 'outline'}
+                          variant={socialError.isConfig ? 'default' : 'outline'}
                           className={`h-8 text-xs font-medium transition-all active:scale-95 ${!socialError.isConfig ? 'border-amber-500/30 hover:bg-amber-500/10 hover:text-amber-900' : 'shadow-sm'}`}
                           onClick={focusEmailFallback}
                           data-testid="social-fallback-use-email"
