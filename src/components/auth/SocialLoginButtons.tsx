@@ -192,6 +192,7 @@ export const SocialLoginButtons = forwardRef<HTMLDivElement, SocialLoginButtonsP
           onClick={handleGoogleLogin}
           disabled={!!isLoading}
           aria-busy={loading}
+          data-testid="social-login-google"
         >
           {loading ? (
             <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
