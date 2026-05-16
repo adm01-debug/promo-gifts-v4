@@ -3,29 +3,29 @@ import { describe, it, expect } from 'vitest';
 import { AppLogo } from './AppLogo';
 
 describe('AppLogo Visual Consistency', () => {
-  it('renders brand variant with primary background and white icon', () => {
+  it('renders brand variant with primary background and primary foreground icon', () => {
     const { container } = render(<AppLogo variant="brand" />);
     const iconContainer = container.querySelector('.bg-primary');
     expect(iconContainer).toBeInTheDocument();
     const icon = iconContainer?.querySelector('svg');
-    expect(icon).toHaveClass('text-white');
+    expect(icon).toHaveClass('text-primary-foreground');
   });
 
-  it('renders sidebar variant with primary background and white icon', () => {
+  it('renders sidebar variant with primary background and primary foreground icon', () => {
     const { container } = render(<AppLogo variant="sidebar" />);
     const iconContainer = container.querySelector('.bg-primary');
     expect(iconContainer).toBeInTheDocument();
     const icon = iconContainer?.querySelector('svg');
-    expect(icon).toHaveClass('text-white');
+    expect(icon).toHaveClass('text-primary-foreground');
     expect(iconContainer).toHaveClass('h-9 w-9');
   });
 
-  it('renders light variant with white background and primary icon', () => {
+  it('renders light variant with primary background and primary foreground icon', () => {
     const { container } = render(<AppLogo variant="light" />);
-    const iconContainer = container.querySelector('.bg-white');
+    const iconContainer = container.querySelector('.bg-primary');
     expect(iconContainer).toBeInTheDocument();
     const icon = iconContainer?.querySelector('svg');
-    expect(icon).toHaveClass('text-primary');
+    expect(icon).toHaveClass('text-primary-foreground');
   });
 
   it('hides text when showText is false', () => {
