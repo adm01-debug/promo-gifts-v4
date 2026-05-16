@@ -198,6 +198,9 @@ export const ProductCard = memo(forwardRef<HTMLElement, ProductCardProps>(functi
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           navigate(`/produto/${product.id}`);
+        } else if (e.key.toLowerCase() === 'q') {
+          e.preventDefault();
+          setQuickViewOpen(true);
         }
       }}
       onClick={(e) => {
