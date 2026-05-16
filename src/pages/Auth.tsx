@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { consumePostLoginRedirect } from '@/lib/auth/post-login-redirect';
+import { resolveOAuthError, type OAuthErrorCopy } from '@/lib/auth/oauth-error-messages';
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -69,15 +70,15 @@ export default function Auth() {
   const [currentIP, setCurrentIP] = useState<string | null>(null);
   const [geoLocation, setGeoLocation] = useState<string | null>(null);
   // Fallback social → email/senha: mensagem amigável quando OAuth falha.
-  const [socialError, setSocialError] = useState<string | null>(null);
+  const [socialError, setSocialError] = useState<OAuthErrorCopy | null>(null);
   const emailInputRef = useRef<HTMLInputElement | null>(null);
 
   // Captura `?error=` vindo do SSOCallbackPage (Google falhou) e exibe o
-  // banner de fallback. Limpa o param da URL para não persistir.
+  // banner de fallback com mensagem descritiva. Limpa o param da URL.
   useEffect(() => {
     const err = searchParams.get('error');
     if (err) {
-      setSocialError(err);
+      setSocialError(resolveOAuthError(err));
       const next = new URLSearchParams(searchParams);
       next.delete('error');
       setSearchParams(next, { replace: true });
@@ -85,7 +86,7 @@ export default function Auth() {
   }, [searchParams, setSearchParams]);
 
   const handleSocialError = useCallback((message: string) => {
-    setSocialError(message);
+    setSocialError(resolveOAuthError(message));
     setTimeout(() => emailInputRef.current?.focus(), 50);
   }, []);
 
@@ -321,8 +322,23 @@ export default function Auth() {
                       <div className="flex items-start gap-2">
                         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
                         <div className="flex-1 space-y-1">
-                          <p className="font-medium">Não consegui te autenticar pelo Google.</p>
-                          <p className="break-words text-xs text-muted-foreground">{socialError}</p>
+                          <p className="font-medium" data-testid="social-login-error-title">
+                            {socialError.title}
+                          </p>
+                          <p className="break-words text-xs text-muted-foreground" data-testid="social-login-error-description">
+                            {socialError.description}
+                          </p>
+                          {socialError.hint && (
+                            <p className="break-words text-xs text-muted-foreground/90" data-testid="social-login-error-hint">
+                              <span className="font-medium text-foreground/80">Dica: </span>
+                              {socialError.hint}
+                            </p>
+                          )}
+                          {socialError.isConfig && (
+                            <p className="text-[11px] text-amber-700/90">
+                              Este é um problema de configuração do provedor — não adianta tentar de novo agora.
+                            </p>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2 pt-1">
