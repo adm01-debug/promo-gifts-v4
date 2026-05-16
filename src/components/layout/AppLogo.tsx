@@ -31,9 +31,10 @@ export function AppLogo({
         iconClassName
       )}>
         <Gift className={cn(
-          !iconClassName?.includes('h-') && (variant === 'sidebar' ? "h-5 w-5" : "h-6 w-6"),
-          iconClassName?.includes('h-20') && "h-12 w-12",
-          iconClassName?.includes('h-14') && "h-8 w-8",
+          "shrink-0 transition-transform duration-200",
+          iconClassName?.includes('h-20') ? "h-12 w-12" : 
+          iconClassName?.includes('h-14') ? "h-8 w-8" : 
+          variant === 'sidebar' ? "h-5 w-5" : "h-6 w-6",
           iconColor
         )} />
       </div>
