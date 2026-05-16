@@ -31,7 +31,7 @@ import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
 import { useIPValidation } from '@/hooks/useIPValidation';
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
 import { supabase } from '@/integrations/supabase/client';
-
+import { AppLogo } from '@/components/layout/AppLogo';
 import { loginSchema, type LoginFormData } from '@/lib/validations';
 
 type LoginForm = LoginFormData;
@@ -245,9 +245,7 @@ export default function Auth() {
         <Starfield />
         <div className="z-10 flex flex-col items-center gap-6 animate-in fade-in zoom-in duration-500">
           <div className="relative">
-            <div className="h-20 w-20 rounded-2xl bg-orange flex items-center justify-center shadow-2xl shadow-orange/40 animate-pulse">
-              <Gift className="h-10 w-10 text-orange-foreground" />
-            </div>
+            <AppLogo showText={false} iconClassName="h-20 w-20 rounded-2xl shadow-orange/40 animate-pulse" />
             <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-success flex items-center justify-center ring-4 ring-[#0A0D14]">
               <RotateCw className="h-3 w-3 text-white animate-spin-slow" />
             </div>
@@ -292,14 +290,8 @@ export default function Auth() {
       <div className="relative z-10 flex flex-1 items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-md animate-fade-in space-y-8">
           {/* Mobile Logo */}
-          <div className="space-y-3 text-center lg:hidden">
-            <div className="inline-flex h-16 w-16 items-center justify-center rounded-xl bg-orange shadow-lg shadow-orange/30">
-              <Gift className="h-8 w-8 text-orange-foreground" />
-            </div>
-            <div>
-              <p className="font-display text-2xl font-bold text-foreground">Promo Gifts</p>
-              <p className="text-sm text-muted-foreground">Plataforma de Vendas</p>
-            </div>
+          <div className="flex justify-center lg:hidden">
+            <AppLogo />
           </div>
 
           {/* IP Blocked Alert */}

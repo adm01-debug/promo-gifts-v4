@@ -3,6 +3,7 @@
  */
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Gift, Package, Factory, SlidersHorizontal, Brain, Rocket } from "lucide-react";
+import { AppLogo } from "@/components/layout/AppLogo";
 
 interface RocketData { id: number; left: number; size: number; duration: number; rotation: number; scale: number; }
 
@@ -187,13 +188,7 @@ export function AuthBrandingPanel() {
       <div className="relative z-10 flex flex-col justify-center items-center px-12 xl:px-20 w-full">
         <div className="space-y-6 w-full max-w-xl">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-xl bg-orange flex items-center justify-center shadow-lg shadow-orange/30">
-              <Gift className="h-7 w-7 text-orange-foreground" />
-            </div>
-            <div>
-              <p className="font-display text-4xl font-bold text-white tracking-tight">Promo Gifts</p>
-              <p className="text-orange font-semibold uppercase tracking-widest text-sm -mt-1">Plataforma de Vendas</p>
-            </div>
+            <AppLogo variant="light" iconClassName="h-14 w-14 rounded-xl shadow-orange/30" textClassName="text-4xl" />
           </div>
 
           <div className="space-y-4 max-w-md">

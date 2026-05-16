@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Lock, Loader2, Eye, EyeOff, CheckCircle, Sparkles } from 'lucide-react';
+import { AppLogo } from '@/components/layout/AppLogo';
 import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -192,13 +193,8 @@ export default function ResetPassword() {
     <div className="flex min-h-screen items-center justify-center bg-background p-6">
       <div className="w-full max-w-md animate-fade-in space-y-8">
         {/* Logo */}
-        <div className="space-y-3 text-center">
-          <div className="inline-flex h-16 w-16 items-center justify-center rounded-xl bg-orange shadow-lg shadow-orange/30">
-            <Sparkles className="h-8 w-8 text-orange-foreground" />
-          </div>
-          <div>
-            <p className="font-display text-2xl font-bold text-foreground">Promo Gifts</p>
-          </div>
+        <div className="flex justify-center">
+          <AppLogo />
         </div>
 
         <Card className="border-border bg-card shadow-xl">
