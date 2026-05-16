@@ -135,28 +135,35 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
         />
       ))}
 
-      {/* Floating Astronauts */}
+      {/* Floating Astronauts — imagem fofa, movimento lento, tamanhos variados (profundidade) */}
       {astronauts.map(a => (
         <div
           key={`astro-${a.id}`}
-          className="absolute opacity-40"
+          className="absolute"
           style={{
             left: `${a.left}%`,
             top: `${a.top}%`,
+            width: a.size,
+            height: a.size,
+            // opacidade menor para os menores (mais ao fundo)
+            opacity: 0.35 + (a.size / 400),
             animation: `floatMovement ${a.duration}s ease-in-out ${a.delay}s infinite alternate`,
             willChange: "transform",
+            filter: `drop-shadow(0 0 ${Math.round(a.size / 8)}px rgba(120,160,255,0.25))`,
           }}
         >
-          <svg 
-            viewBox="0 0 24 24" 
-            style={{ width: a.size, height: a.size, transform: `rotate(${a.rotation}deg)` }}
-            fill="none" 
-            stroke="currentColor" 
-            className="text-white/40"
-            strokeWidth="1"
-          >
-            <path d="M12 2a5 5 0 0 1 5 5v2a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V7a5 5 0 0 1 5-5zM7 10h10v6a3 3 0 0 1-3 3h-4a3 3 0 0 1-3-3v-6zM9 19v3M15 19v3M6 13h2M16 13h2" strokeLinecap="round" />
-          </svg>
+          <img
+            src={astronautImg}
+            alt=""
+            draggable={false}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              transform: `rotate(${a.rotation}deg)`,
+              animation: `breathingStar 8s ease-in-out infinite`,
+            }}
+          />
         </div>
       ))}
 
