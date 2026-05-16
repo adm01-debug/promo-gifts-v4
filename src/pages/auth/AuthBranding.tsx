@@ -279,7 +279,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
               style={{
                 // circularOrbit rotaciona e move
                 animation: `circularOrbit ${orbitDuration}s linear infinite`,
-                animationDelay: `0s`, 
+                animationDelay: `-${(a.initialAngle / 360) * orbitDuration}s`, 
                 // Rim lighting and glassmorphism effect (10/10)
                 filter: `brightness(0.65) drop-shadow(0 0 ${size / 8}px rgba(6, 135, 255, 0.2)) drop-shadow(0 0 2px rgba(255, 255, 255, 0.3))`,
               }}
