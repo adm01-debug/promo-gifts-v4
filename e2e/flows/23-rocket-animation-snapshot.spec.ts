@@ -21,16 +21,15 @@ test.describe('Rocket Animation Consistency', () => {
     await page.goto('/auth/login');
 
     // Espera pelo container da animação
-    const rocketContainer = page.locator('div[aria-hidden="true"]').filter({ has: page.locator('svg.lucide-rocket') });
+    const rocketContainer = page.getByTestId('rocket-container');
     await expect(rocketContainer).toBeVisible();
 
     // No início, deve haver o burst inicial de foguetes (7 foguetes conforme definido no componente)
     // Usamos um pequeno delay para garantir que os timeouts do burst inicial foram disparados
     await page.waitForTimeout(1000);
 
-    const rocketCount = await page.locator('svg.lucide-rocket').count();
+    const rocketCount = await page.getByTestId('rocket-item').count();
     // O burst inicial dispara 7 foguetes em 2.8 segundos. Em 1s, alguns já devem estar visíveis.
-    // Dependendo do timing exato, esperamos pelo menos 3-4.
     expect(rocketCount).toBeGreaterThanOrEqual(3);
 
     // Snapshot visual do painel de branding com foguetes determinísticos
