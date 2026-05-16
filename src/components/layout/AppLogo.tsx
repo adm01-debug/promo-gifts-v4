@@ -7,7 +7,7 @@ interface AppLogoProps {
   iconClassName?: string;
   textClassName?: string;
   showText?: boolean;
-  variant?: 'light' | 'dark' | 'brand';
+  variant?: 'light' | 'dark' | 'brand' | 'sidebar';
 }
 
 export function AppLogo({ 
@@ -17,18 +17,26 @@ export function AppLogo({
   showText = true,
   variant = 'brand'
 }: AppLogoProps) {
-  const iconBg = variant === 'brand' ? 'bg-primary' : variant === 'light' ? 'bg-white' : 'bg-foreground';
-  const iconColor = variant === 'brand' ? 'text-white' : variant === 'light' ? 'text-foreground' : 'text-background';
+  const isBrandOrSidebar = variant === 'brand' || variant === 'sidebar';
+  const iconBg = isBrandOrSidebar ? 'bg-primary' : variant === 'light' ? 'bg-white' : 'bg-foreground';
+  const iconColor = isBrandOrSidebar ? 'text-white' : variant === 'light' ? 'text-primary' : 'text-background';
   const textColor = variant === 'light' ? 'text-white' : 'text-foreground';
 
   return (
     <div className={cn("flex items-center gap-3", className)}>
       <div className={cn(
-        "inline-flex h-10 w-10 items-center justify-center rounded-xl shadow-lg",
+        "inline-flex items-center justify-center rounded-xl shadow-md transition-all duration-200 shrink-0",
+        !iconClassName?.includes('h-') && (variant === 'sidebar' ? "h-9 w-9" : "h-10 w-10"),
         iconBg,
         iconClassName
       )}>
-        <Gift className={cn("h-6 w-6", iconColor)} />
+        <Gift className={cn(
+          "shrink-0 transition-transform duration-200",
+          iconClassName?.includes('h-20') ? "h-12 w-12" : 
+          iconClassName?.includes('h-14') ? "h-8 w-8" : 
+          variant === 'sidebar' ? "h-5 w-5" : "h-6 w-6",
+          iconColor
+        )} />
       </div>
       {showText && (
         <div className="flex flex-col">

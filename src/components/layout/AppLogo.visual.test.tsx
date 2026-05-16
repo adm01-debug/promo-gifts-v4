@@ -11,12 +11,21 @@ describe('AppLogo Visual Consistency', () => {
     expect(icon).toHaveClass('text-white');
   });
 
-  it('renders light variant with white background and foreground icon', () => {
+  it('renders sidebar variant with primary background and white icon', () => {
+    const { container } = render(<AppLogo variant="sidebar" />);
+    const iconContainer = container.querySelector('.bg-primary');
+    expect(iconContainer).toBeInTheDocument();
+    const icon = iconContainer?.querySelector('svg');
+    expect(icon).toHaveClass('text-white');
+    expect(iconContainer).toHaveClass('h-9 w-9');
+  });
+
+  it('renders light variant with white background and primary icon', () => {
     const { container } = render(<AppLogo variant="light" />);
     const iconContainer = container.querySelector('.bg-white');
     expect(iconContainer).toBeInTheDocument();
     const icon = iconContainer?.querySelector('svg');
-    expect(icon).toHaveClass('text-foreground');
+    expect(icon).toHaveClass('text-primary');
   });
 
   it('hides text when showText is false', () => {
