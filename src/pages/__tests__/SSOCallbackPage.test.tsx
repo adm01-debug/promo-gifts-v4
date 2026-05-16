@@ -181,12 +181,12 @@ describe('SSOCallbackPage', () => {
   });
 
   it('5) timeout 8s sem sessão → redirect /login com motivo', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
     getSessionMock.mockResolvedValue({ data: { session: null } });
     renderAt('/auth/callback');
 
     await waitFor(() => expect(onAuthStateChangeMock).toHaveBeenCalled());
-    // Avança 8s — primeiro getSession (initial) + getSession do timeout
-    await vi.advanceTimersByTimeAsync(8000);
+    await vi.advanceTimersByTimeAsync(8500);
     await waitFor(() => expect(navigateMock).toHaveBeenCalled());
     expect(navigateMock.mock.calls[0][0]).toMatch(/\/login\?error=/);
     expect(navigateMock.mock.calls[0][0]).toMatch(/Sess/);
