@@ -13,9 +13,8 @@ vi.mock('lucide-react', () => ({
 }));
 
 
-// TODO(test-debt): 2 testes falham — getRotationHistory nao mockada.
-// Skipado em fix(test): eliminate 88 test failures. Origem: revert 06-07/mai/2026.
-// Fixar em PR separado quando ownership for retomada.
+// Tests for the rocket animation in the branding panel.
+
 
 describe('ContinuousRockets Component', () => {
   beforeEach(() => {
