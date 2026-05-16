@@ -481,6 +481,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (warningTimer) window.clearTimeout(warningTimer);
     };
   }, [session, refreshSession]);
+  useEffect(() => {
+    if (!session) return;
+    const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
+    const now = Date.now();
     const buffer = 5 * 60 * 1000; // 5 minutos antes
     const delay = expiresAt - now - buffer;
 
