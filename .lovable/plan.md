@@ -1,134 +1,99 @@
+# Auditoria DB ↔ Frontend (coluna a coluna)
 
-# Erradicação Total da Sombra/Glow Laranja
+## Objetivo
 
-Após varredura minuciosa, identifiquei **3 camadas de origem** do glow laranja, espalhadas por **162 ocorrências** em ~40 arquivos. O plano ataca a raiz (tokens) e depois faz a varredura nos consumidores.
+Para cada **coluna** dos 3 bancos (Interno, Externo de produtos, CRM), determinar:
 
-## Diagnóstico — Onde nasce o glow
+1. **É usada no front?** (lida/escrita por algum componente, hook, edge function consumida no front)
+2. Se não → **coluna órfã** (candidata a deprecar ou expor)
+3. O inverso: **estado/UI no front que não é persistido** em nenhum dos bancos
 
-### Camada 1 — Tokens raiz (`src/index.css`)
-São a fonte primária. Mesmo componentes que parecem "limpos" herdam glow daqui:
-- `--shadow-glow`, `--shadow-glow-hover`, `--shadow-glow-active`, `--shadow-glow-focus`
-- `--shadow-premium`, `--shadow-premium-hover`
-- Variáveis de controle: `--glow-blur`, `--glow-intensity`, `--glow-color`, `--glow-blur-hover`, `--glow-intensity-hover`
-- Definições duplicadas em `:root` (light) e `.dark` — ambas precisam ser neutralizadas
+Cobertura limitada a **tabelas com linhas > 0** (ignora `*_old`, partições `_y2026m*`, tabelas vazias).
 
-### Camada 2 — Pseudo-elementos e classes utilitárias globais
-- `.dark .ambient-glow::before` e `::after` (gradientes radiais laranja/azul fixos na viewport)
-- `.hover-glow`, `.hover-glow-primary`, `.skin-glow` (em `index.css`, `design-polish.css`, `animations.css`)
-- `text-shadow` laranja em `link-primary`, `link-secondary` e em links globais (modo light e dark)
-- Aplicação no `MainLayout.tsx` (`className="...ambient-glow"`)
+---
 
-### Camada 3 — Consumidores diretos (componentes)
-~40 arquivos usando `shadow-glow*`, `shadow-premium*`, `drop-shadow-[...primary...]`. Os principais ofensores:
-- **UI base:** `tooltip.tsx`, `textarea.tsx`, `tabs.tsx`, `switch.tsx`, `sidebar.tsx`, `button.tsx`, `breadcrumb.tsx`
-- **Páginas:** `Auth.tsx`, `ResetPassword.tsx`, `QuotesListPage.tsx`, `FiltersPage.tsx`, `SimuladorWizard.tsx`, `ProductDetailHero.tsx`
-- **Wizard simulador:** `StepProduct`, `StepSpecs`, `StepLocation`, `PersonalizationSummary`, `ComparisonCard`
-- **Busca/cards:** `GlobalSearchPalette`, `GlobalSearchHelpers`, `GlobalSearchIdleState`, `RelatedProducts`
-- **Outros:** `LocationCard`, `MockupLayoutButtons`, `FilterPanelHeader`, `FlowFilterPrimitives`, `HorizontalStepper`, `AddToCollectionModal`, `AdminDesignTokensPage`, `AuthBranding`
+## Entregáveis
 
-### Camada 4 — Theme presets (`src/lib/theme-presets.ts`)
-Todos os skins (default, neon, pride, etc.) **regeram** tokens de `shadow-glow*` em runtime via `boostGlowAlpha`. Se não neutralizar aqui, ao trocar de skin o glow retorna.
+1. **`scripts/audit-db-frontend-coverage.mjs`** — script Node reutilizável que:
+   - Conecta no BD interno via `psql` (vars `PG*`) e introspecciona schema completo.
+   - Para BD externo e CRM: lê schema a partir de fontes já presentes no repo (`src/types/external-db*.ts`, código das edges `external-db-bridge` / `crm-db-bridge`, e — se possível — chama o bridge com uma operação `introspect` (adicionada se não existir, read-only).
+   - Filtra tabelas vazias (`SELECT n_live_tup FROM pg_stat_user_tables`).
+   - Roda `rg` sobre `src/`, `supabase/functions/`, `api/` procurando ocorrências de cada `tabela` e `coluna` (heurística: `.from('tabela')`, `.select('col,...')`, `tabela.col`, snake↔camel, JSON destructuring).
+   - Classifica cada coluna: `READ`, `WRITE`, `READ+WRITE`, `ORPHAN`, `SYSTEM` (id/created_at/updated_at — ignoradas).
+   - Detecta candidatos a "front sem persistência": busca `useState`/`useReducer` com nomes de domínio que não casam com nenhuma coluna conhecida (heurística best-effort, marcada como sugestão).
+   - Gera `docs/DB_FRONTEND_COVERAGE.md` e um JSON `audit/db-frontend-coverage.json` para diffs futuros.
 
-## Estratégia (cirúrgica e segura)
+2. **`docs/DB_FRONTEND_COVERAGE.md`** — relatório legível:
+   - Sumário executivo (totais, % cobertura por banco, top 20 tabelas com mais órfãs).
+   - Por **módulo funcional** (Quotes, Favoritos, Coleções, Kits, MCP, Auditoria, Magic Up, Produtos, CRM, etc.): tabelas envolvidas + lista de colunas órfãs com recomendação (Expor / Deprecar / Confirmar).
+   - Seção "Front sem persistência" (lista de candidatos, marcados como hipótese a validar).
+   - Apêndice: tabelas excluídas (vazias/legadas/particionadas) com motivo.
 
-A premissa é **neutralizar na raiz** (tokens viram `none`/sombra neutra) para que 90% dos consumidores fiquem limpos sem tocar arquivo por arquivo. Depois faço a varredura cirúrgica nos casos remanescentes.
+3. **`package.json` script**: `"audit:db-frontend": "node scripts/audit-db-frontend-coverage.mjs"`.
 
-### Etapa 1 — Neutralizar tokens no `src/index.css`
-Em `:root` (light) **e** em `.dark`, redefinir:
-- `--shadow-glow: none;`
-- `--shadow-glow-hover: none;`
-- `--shadow-glow-active: none;`
-- `--shadow-premium: 0 4px 12px hsl(0 0% 0% / 0.08);` (sombra neutra cinza, sem laranja)
-- `--shadow-premium-hover: 0 6px 16px hsl(0 0% 0% / 0.12);`
-- `--shadow-glow-focus: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--primary) / 0.4);` (mantém só o anel de foco a11y, sem o terceiro halo de 30–40px)
-- Zerar/reduzir as variáveis de controle: `--glow-intensity: 0`, `--glow-intensity-hover: 0`, `--glow-blur: 0`
+---
 
-### Etapa 2 — Remover glow ambiental e text-shadow
-- Esvaziar `.dark .ambient-glow::before` e `.dark .ambient-glow::after` (manter o seletor mas com `background: none` e `display: none`) — ou remover a classe do `MainLayout.tsx`
-- Remover/zerar todos os `text-shadow` em `link-primary`, `link-secondary`, links globais, `:root a:not(...)` e suas variantes `.dark`
-- Zerar as classes utilitárias: `.hover-glow`, `.hover-glow-primary`, `.hover-glow-secondary`, `.hover-glow-success`, `.skin-glow` em `index.css`, `design-polish.css` e `animations.css` (manter o seletor com `box-shadow: none` para não quebrar JSX existente)
-- Remover `box-shadow: 0 0 0 6px hsl(var(--primary) / 0.2)` (linha 1895) e similares em linhas 866, 869, 1096, 1099, 1199, 1206, 1262, 1266, 1270, 1545, 1603, 2203, 2208
+## Detalhes técnicos
 
-### Etapa 3 — Limpar `theme-presets.ts`
-- Sobrescrever todas as keys `shadow-glow*` para retornarem `'none'`
-- Remover/neutralizar a função `boostGlowAlpha` (ou fazê-la retornar `'none'`)
-- Garante que skins futuros (pride, neon, default) não reintroduzam o glow
-
-### Etapa 4 — Varredura nos componentes
-Substituições pontuais nos arquivos onde a classe está hardcoded e ainda interfere visualmente mesmo com token zerado (ex.: `drop-shadow-[0_0_8px_hsl(var(--primary)/0.3)]`):
-
-| Arquivo | Classe atual | Substituir por |
-|---|---|---|
-| `breadcrumb.tsx` | `drop-shadow-[0_0_8px_hsl(var(--primary)/0.3)]` | (remover a classe) |
-| `tooltip.tsx` | `shadow-glow` | `shadow-md` |
-| `textarea.tsx` | `focus-visible:shadow-glow` | (remover) |
-| `tabs.tsx` | `data-[state=active]:shadow-glow` + `focus-visible:shadow-glow-focus` | (remover) |
-| `switch.tsx` | `data-[state=checked]:shadow-glow` | (remover) |
-| `sidebar.tsx` | `focus-visible:shadow-glow-focus` (2 ocorrências) | (remover) |
-| `ProductDetailHero.tsx` | `shadow-premium` em hero | `shadow-md` |
-| Demais arquivos (~30) | `shadow-glow*`, `shadow-premium*`, `hover:shadow-glow*` | Remover ou trocar por `shadow-sm`/`shadow-md` neutros |
-
-### Etapa 5 — Estado de foco (a11y)
-**Não remover totalmente o foco visual** — usuários de teclado dependem dele. Padrão final:
-- `focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2`
-- Remover o `shadow-glow-focus` em pares (que era o que adicionava o halo grande de 30–40px)
-
-### Etapa 6 — Sidebar (refinos finais já discutidos)
-- Manter `bg-orange/[0.03]` e o indicador lateral 1.5px (já estão calibrados)
-- Garantir que nenhum `shadow-glow*` residual sobrou em `SidebarNavGroup`, `SidebarReorganized`, `SmartMobileNav`, `ui/sidebar.tsx`
-
-### Etapa 7 — Atualizar testes de regressão
-- Expandir `SidebarMobileRegression.test.ts` para escanear **todo `src/`** (não só sidebar) e falhar se `shadow-glow|shadow-premium|hover:shadow-orange|drop-shadow.*primary` reaparecer em qualquer arquivo (com allowlist mínima para a11y)
-- Adicionar verificação no `src/index.css` de que os tokens `--shadow-glow*` resolvem para `none`
-
-### Etapa 8 — Memória de projeto
-- Atualizar `mem://design/no-orange-glow-policy` (novo) marcando como **constraint** que glow/halo laranja é proibido em todo o sistema, com a política de tokens neutralizados.
-
-## Detalhes Técnicos (para referência)
+### Introspecção
 
 ```text
-src/index.css
-├── :root                        → tokens shadow-glow* = none, premium = neutro
-├── .dark                        → idem + ambient-glow::before/after vazios
-├── .link-primary, .link-secondary → text-shadow removidos (light + dark)
-├── .hover-glow*                 → box-shadow: none
-└── linhas 866/869/1096/1099/1199/1206/1262/1266/1270/1545/1603/1895/2203/2208
-                                 → box-shadow neutralizado
-
-src/styles/design-polish.css     → .hover-glow, .focus-ring-primary neutros
-src/styles/animations.css        → .hover-glow neutro
-src/lib/theme-presets.ts         → todos shadow-glow* = 'none', boostGlowAlpha → 'none'
-
-~40 componentes                  → remoção das classes shadow-glow*/shadow-premium*/drop-shadow primary
-src/components/layout/MainLayout.tsx → remover className "ambient-glow"
-src/tailwind.config.lov.json     → opcional: apontar shadow.glow* para 'none' direto
+BD Interno    → information_schema.columns + pg_stat_user_tables (psql direto)
+BD Externo    → src/types/external-db*.ts + supabase/functions/external-db-bridge/**
+                + (opcional) operação introspect read-only no bridge
+BD CRM        → supabase/functions/crm-db-bridge/** + tipos já existentes
 ```
 
-## Critérios de Aceitação
+### Heurística de uso no front
 
-1. Nenhum elemento do sistema (sidebar, cards, modais, tooltips, links, badges, buttons, switches, tabs, hero) exibe halo/glow laranja em estado normal, hover, active ou focus.
-2. Foco de teclado continua **visível** (anel sólido fino, sem halo radial).
-3. Sombras de profundidade (cards, popovers, dropdowns) viram cinza neutro suave.
-4. Trocar entre skins (default/neon/pride) **não** reintroduz glow.
-5. Modo dark e light ambos validados.
-6. Teste de regressão global passa e falha automaticamente se alguém reintroduzir `shadow-glow*` em qualquer arquivo do `src/`.
+Para coluna `foo_bar` da tabela `quotes`:
 
-## Riscos e Mitigações
+```text
+Sinais READ:
+  - .select('...foo_bar...')   em src/ ou edges
+  - .foo_bar                   acessor em arquivos .ts/.tsx
+  - "foo_bar":                 destructuring JSON
 
-- **Risco:** elementos críticos (CTA principal, foco de inputs) ficarem "apagados" demais.  
-  **Mitigação:** manter `shadow-md`/`shadow-sm` neutros + anel de foco sólido `ring-2 ring-primary/40`.
-- **Risco:** quebra visual em páginas que dependiam do glow para hierarquia (ex.: `ProductDetailHero`, `Auth`).  
-  **Mitigação:** substituir por `border-primary/20` + `shadow-md` neutros, preservando profundidade sem cor.
-- **Risco:** skins customizados perderem identidade.  
-  **Mitigação:** identidade fica no `--primary` (cor de texto, bordas, ícones, fundos sutis), só o glow morre.
+Sinais WRITE:
+  - .insert({...foo_bar...})
+  - .update({...foo_bar...})
+  - .upsert(...)
 
-## Ordem de Execução
+Camel-case: também procura fooBar (Supabase types já entregam camel em alguns hooks).
+```
 
-1. Tokens em `index.css` (impacto cascata imediato)
-2. `theme-presets.ts` (impede regressão por troca de skin)
-3. `ambient-glow` + text-shadow + classes utilitárias globais
-4. Varredura nos ~40 componentes consumidores
-5. Atualização do teste de regressão global
-6. Atualização da memória de projeto (constraint)
+### Falsos-positivos esperados
 
-Pronto para aprovar e executar?
+- Colunas usadas só por **triggers/RPCs** aparecem como órfãs (relatório marca como "possivelmente usada por trigger" se nome bate com função SQL).
+- Edge functions internas (cron, webhooks) que escrevem mas nunca expõem — relatório separa "usado em edge mas não no front" como categoria distinta.
+
+### Exclusões automáticas
+
+- Tabelas com `n_live_tup = 0`.
+- Sufixos: `_old`, `_y\d{4}m\d{2}`, `_backup`, `_tmp`.
+- Tabelas em schemas `auth.*`, `storage.*`, `realtime.*`.
+- Colunas sistêmicas: `id`, `created_at`, `updated_at`, `deleted_at`, `tenant_id` (não geram ruído).
+
+---
+
+## Plano de execução
+
+```text
+1. Levantar schema completo dos 3 bancos
+   - Interno: psql information_schema
+   - Externo: ler tipos do repo + (se necessário) acrescentar op introspect no bridge
+   - CRM: idem
+2. Levantar contagem de linhas (filtro "com dados")
+3. Escrever scripts/audit-db-frontend-coverage.mjs
+4. Rodar localmente, validar amostra (10 tabelas) manualmente
+5. Gerar docs/DB_FRONTEND_COVERAGE.md
+6. Adicionar npm script
+7. Resumo final no chat: total de órfãs, top achados, recomendações imediatas
+```
+
+## Fora de escopo
+
+- Refatoração de código (só relatório).
+- Migrations para remover colunas órfãs (ficam como recomendação).
+- Cobertura de schemas internos do Supabase (`auth`, `storage`).
+- Validação semântica (se a coluna é usada **corretamente** — só presença).

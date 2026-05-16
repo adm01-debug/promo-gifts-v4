@@ -60,6 +60,7 @@
     "e2e:smoke-coverage-check": "node scripts/e2e-smoke-coverage-doc.mjs --check",
     "check:security-definer-acl": "node scripts/check-security-definer-acl.mjs",
     "check:edge-cors": "node scripts/check-edge-cors-headers.mjs",
+    "audit:db-frontend": "node scripts/audit-db-frontend-coverage.mjs",
     "check:no-inline-cors": "node scripts/check-no-inline-cors.mjs",
     "build:cors-snapshot": "node scripts/build-cors-snapshot.mjs",
     "test:e2e:critical": "npx playwright test e2e/catalog.spec.ts e2e/kit-builder.spec.ts e2e/login.spec.ts e2e/mockup-generate.spec.ts",
