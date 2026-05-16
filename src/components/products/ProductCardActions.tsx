@@ -109,7 +109,7 @@ export const ProductCardActions = memo(function ProductCardActions({
         />
 
         {/* Quick View */}
-        <ActionButton icon={Eye} label="Visualização Rápida" className={btnClass}
+        <ActionButton icon={Eye} label="Visualização Rápida" shortcut="Q" className={btnClass}
           testId="product-card-quickview"
           onClick={(e) => { e.stopPropagation(); markBusy(); onQuickView(); }} />
       </div>
@@ -119,10 +119,10 @@ export const ProductCardActions = memo(function ProductCardActions({
 
 // Tiny helper to reduce repetition
 function ActionButton({
-  icon: Icon, label, className, iconClassName, disabled, onClick, testId, ariaPressed,
+  icon: Icon, label, shortcut, className, iconClassName, disabled, onClick, testId, ariaPressed,
 }: {
   icon: React.ComponentType<{ className?: string }>;
-  label: string; className?: string; iconClassName?: string;
+  label: string; shortcut?: string; className?: string; iconClassName?: string;
   disabled?: boolean; onClick: (e: React.MouseEvent) => void;
   testId?: string;
   ariaPressed?: boolean;
@@ -137,7 +137,10 @@ function ActionButton({
           <Icon className={cn("h-4 w-4 md:h-5 md:w-5 transition-all duration-300", iconClassName)} />
         </Button>
       </TooltipTrigger>
-      <TooltipContent side="left">{label}</TooltipContent>
+      <TooltipContent side="left" className="flex items-center gap-2">
+        {label}
+        {shortcut && <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">{shortcut}</kbd>}
+      </TooltipContent>
     </Tooltip>
   );
 }
