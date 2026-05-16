@@ -65,20 +65,32 @@ export default function SSOCallbackPage() {
       setStatus((prev) => (prev === 'processing' ? 'slow' : prev));
     }, SLOW_HINT_MS);
 
+    const buildLoginTarget = (detail: OAuthErrorExplanation): string => {
+      const params = new URLSearchParams();
+      params.set('error', detail.code);
+      params.set('error_description', detail.description);
+      params.set('hint', detail.hint);
+      return `/login?${params.toString()}`;
+    };
+
     const error = searchParams.get('error');
     const errorDescription = searchParams.get('error_description');
     if (error) {
+      const detail = explainOAuthError({ error, description: errorDescription });
       tracer.setProviderError(error);
-      tracer.stepError('provider-error-query', { error, errorDescription });
+      tracer.stepError('provider-error-query', { error, errorDescription, code: detail.code });
       logger.error('[sso-callback] provider returned error', {
         flowId: tracer.flowId,
         error,
         errorDescription,
+        code: detail.code,
+        severity: detail.severity,
       });
       setStatus('failed');
-      setErrorMessage(errorDescription || error);
-      const target = '/login?error=' + encodeURIComponent(errorDescription || error);
-      tracer.finish('failure', target, `provider:${error}`);
+      setErrorMessage(detail.description);
+      setErrorDetail(detail);
+      const target = buildLoginTarget(detail);
+      tracer.finish('failure', target, `provider:${detail.code}`);
       window.clearTimeout(slowHintId);
       navigate(target, { replace: true });
       return;
@@ -89,14 +101,22 @@ export default function SSOCallbackPage() {
     const hashParams = new URLSearchParams(hash);
     const hashError = hashParams.get('error');
     if (hashError) {
-      const desc = hashParams.get('error_description') || hashError;
+      const desc = hashParams.get('error_description');
+      const detail = explainOAuthError({ error: hashError, description: desc });
       tracer.setProviderError(hashError);
-      tracer.stepError('provider-error-hash', { error: hashError, desc });
-      logger.error('[sso-callback] hash error', { flowId: tracer.flowId, error: hashError, desc });
+      tracer.stepError('provider-error-hash', { error: hashError, desc, code: detail.code });
+      logger.error('[sso-callback] hash error', {
+        flowId: tracer.flowId,
+        error: hashError,
+        desc,
+        code: detail.code,
+        severity: detail.severity,
+      });
       setStatus('failed');
-      setErrorMessage(desc);
-      const target = '/login?error=' + encodeURIComponent(desc);
-      tracer.finish('failure', target, `provider-hash:${hashError}`);
+      setErrorMessage(detail.description);
+      setErrorDetail(detail);
+      const target = buildLoginTarget(detail);
+      tracer.finish('failure', target, `provider-hash:${detail.code}`);
       window.clearTimeout(slowHintId);
       navigate(target, { replace: true });
       return;
