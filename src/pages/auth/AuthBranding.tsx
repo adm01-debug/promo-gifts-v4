@@ -161,17 +161,17 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
       
       {/* Atmospheric Nebula Layers (10/10 Depth) */}
       <div 
-        className="absolute inset-0 opacity-10 blur-[80px]"
+        className="absolute inset-0 opacity-[0.15] blur-[100px]"
         style={{
-          background: 'radial-gradient(ellipse at 30% 20%, #1e40af 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, #1e3a8a 0%, transparent 50%)',
+          background: 'radial-gradient(ellipse at 20% 30%, #3b82f6 0%, transparent 60%), radial-gradient(ellipse at 80% 70%, #1d4ed8 0%, transparent 60%)',
           animation: 'nebulaDrift 30s ease-in-out infinite alternate'
         }}
       />
       
       <div 
-        className="absolute inset-0 opacity-[0.03] blur-[120px]"
+        className="absolute inset-0 opacity-[0.1] blur-[130px]"
         style={{
-          background: 'radial-gradient(circle at 60% 40%, #1e40af 0%, transparent 40%)',
+          background: 'radial-gradient(circle at 50% 50%, #60a5fa 0%, transparent 50%)',
           animation: 'nebulaDrift 45s ease-in-out infinite alternate-reverse'
         }}
       />
