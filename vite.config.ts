@@ -23,8 +23,8 @@ export default defineConfig(({ mode }: { mode: string }) => {
     ? externalSupabaseAnonKey
     : env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-  return ({
-  plugins: [
+  return {
+    plugins: [
     react(),
     mode === 'development' && componentTagger(),
     mode === 'production' && visualizer({
@@ -139,5 +139,5 @@ export default defineConfig(({ mode }: { mode: string }) => {
     'import.meta.env.VITE_EXTERNAL_SUPABASE_URL': JSON.stringify(resolvedSupabaseUrl),
     'import.meta.env.VITE_EXTERNAL_SUPABASE_ANON_KEY': JSON.stringify(resolvedSupabaseAnonKey),
   },
-})
+  }
 })
