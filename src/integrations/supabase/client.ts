@@ -2,8 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
 // Use external Supabase if configured, otherwise fallback to project default
-const SUPABASE_URL = import.meta.env.VITE_EXTERNAL_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_EXTERNAL_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_URL = import.meta.env.VITE_EXTERNAL_SUPABASE_URL || 'https://pqpdolkaeqlyzpdpbizo.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_EXTERNAL_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxcGRvbGthZXFseXpwZHBiaXpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NzEwNTcsImV4cCI6MjA5NDQ0NzA1N30.j9Kk_nu8J5OUn3pcDmRETLMwkhddXmtiSjgI-KCEnrc';
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
