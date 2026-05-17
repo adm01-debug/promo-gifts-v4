@@ -653,9 +653,10 @@ export default function Auth() {
                     <SocialLoginButtons onError={handleSocialError} retryRef={googleRetryRef} />
                   </form>
                 </CardContent>
-              </>
+              </motion.div>
             )}
-          </Card>
+          </AnimatePresence>
+        </Card>
 
           {/* IP/Location Widget */}
           {currentIP && (
