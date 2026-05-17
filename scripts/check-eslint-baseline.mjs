@@ -125,14 +125,16 @@ for (const r of regressions.slice(0, MAX_LIST)) {
 for (const file of report) {
   const rel = relative(ROOT, file.filePath).replaceAll("\\", "/");
   for (const m of file.messages ?? []) {
-    if (m.severity !== 2) continue;
+    if (m.severity === 0) continue;
     const key = `${rel}::${m.ruleId ?? "<no-rule>"}`;
     const arr = examplesByKey.get(key);
     if (arr && arr.length < 3) {
-      arr.push(`${m.line}:${m.column} ${m.message}`);
+      const prefix = m.severity === 2 ? 'ERROR' : 'WARN';
+      arr.push(`${prefix} ${m.line}:${m.column} ${m.message}`);
     }
   }
 }
+
 
 console.error(
   `\n❌ ${totalDelta} erro(s) novo(s) de ESLint em ${regressions.length} par(es) file:rule:`
