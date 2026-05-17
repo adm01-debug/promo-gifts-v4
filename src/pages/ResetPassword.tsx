@@ -130,36 +130,40 @@ export default function ResetPassword() {
 
   if (isCheckingToken) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex min-h-screen items-center justify-center bg-[#030508]">
+        <SpaceScene />
         <PageSEO
           title="Redefinir Senha"
           description="Redefina sua senha de acesso à plataforma Promo Gifts."
           path="/reset-password"
         />
-        <Loader2 className="h-8 w-8 animate-spin text-orange" />
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
       </div>
     );
   }
 
   if (!isValidToken) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-6">
-        <Card className="w-full max-w-md border-border bg-card shadow-xl">
-          <CardContent className="space-y-4 pb-8 pt-8 text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+      <div className="relative flex min-h-screen items-center justify-center bg-[#030508] p-6 overflow-hidden">
+        <SpaceScene />
+        <Card className="relative z-10 w-full max-w-md border-white/10 bg-black/60 shadow-2xl backdrop-blur-xl rounded-[2rem]">
+          <CardContent className="space-y-6 pb-10 pt-10 text-center px-8">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10">
               <Lock className="h-8 w-8 text-destructive" />
             </div>
             <div className="space-y-2">
-              <h2 className="font-display text-xl font-semibold text-foreground">
+              <h2 className="font-display text-2xl font-bold text-white">
                 Link inválido ou expirado
               </h2>
-              <p className="text-sm text-muted-foreground">
-                Este link de recuperação de senha não é mais válido. Por favor, solicite um novo
-                link.
+              <p className="text-sm text-white/50">
+                Este link de recuperação de senha não é mais válido ou já foi utilizado.
               </p>
             </div>
-            <Button variant="orange" className="w-full" onClick={() => navigate('/auth')}>
-              Voltar ao login
+            <Button 
+              className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-xl" 
+              onClick={() => navigate('/login')}
+            >
+              Solicitar novo link
             </Button>
           </CardContent>
         </Card>
