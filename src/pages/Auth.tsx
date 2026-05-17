@@ -569,8 +569,8 @@ export default function Auth() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="login-password" className="text-foreground">
-                        Senha
+                      <Label htmlFor="login-password" title="password" className="text-foreground">
+                        Senha de Acesso
                       </Label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
