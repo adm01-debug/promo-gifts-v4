@@ -72,19 +72,19 @@ export function GlobalSearchPalette() {
       <div className="flex items-center gap-2 w-full md:w-auto">
         <button
           onClick={() => s.setOpen(true)}
-          className="group relative flex items-center gap-2.5 px-3.5 py-2 text-sm rounded-xl border [border-color:hsl(var(--command-border))] hover:[border-color:hsl(var(--command-border-strong))] [background-color:hsl(var(--command-surface-raised))] hover:[background-color:hsl(var(--command-surface-soft))] transition-all duration-300 flex-1 md:w-64 overflow-hidden"
+          className="group relative flex items-center gap-2.5 px-4 py-2.5 text-sm rounded-2xl border border-primary/20 hover:border-primary/40 bg-primary/5 backdrop-blur-md transition-all duration-300 flex-1 md:w-72 overflow-hidden shadow-[0_0_20px_rgba(var(--primary),0.05)]"
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/[0.03] to-primary/0 group-hover:via-primary/[0.06] transition-all duration-500 pointer-events-none" />
-          <div className="relative h-6 w-6 rounded-lg bg-primary/8 group-hover:bg-primary/12 flex items-center justify-center transition-colors duration-300 shrink-0">
-            <Brain className="h-3.5 w-3.5 text-primary/60 group-hover:text-primary transition-colors duration-300" />
-            <div className="absolute inset-0 rounded-lg bg-primary/10 animate-[brain-glow_3s_ease-in-out_infinite] pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/[0.05] to-primary/0 group-hover:via-primary/[0.1] transition-all duration-500 pointer-events-none" />
+          <div className="relative h-6 w-6 rounded-lg bg-primary/15 group-hover:bg-primary/25 flex items-center justify-center transition-colors duration-300 shrink-0">
+            <Brain className="h-3.5 w-3.5 text-primary group-hover:scale-110 transition-transform duration-300" />
+            <div className="absolute inset-0 rounded-lg bg-primary/20 animate-pulse pointer-events-none" />
           </div>
-          <span className="relative flex-1 text-left [color:hsl(var(--command-text-muted))] group-hover:text-foreground transition-colors duration-300 text-[13px]">Busca inteligente...</span>
-          <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md border border-border/50 bg-muted/50 text-[10px] font-medium text-muted-foreground/60 group-hover:border-primary/20 group-hover:text-primary/50 transition-colors shrink-0">⌘K</kbd>
+          <span className="relative flex-1 text-left text-primary/60 group-hover:text-primary transition-colors duration-300 text-[13px] font-medium tracking-wide">Busca galáctica...</span>
+          <kbd className="hidden sm:inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md border border-primary/20 bg-primary/5 text-[10px] font-bold text-primary/50 group-hover:border-primary/40 group-hover:text-primary transition-colors shrink-0 shadow-sm">⌘K</kbd>
         </button>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline" size="icon" onClick={s.handleOpenVoiceOverlay} className="shrink-0 h-10 w-10 rounded-xl border-border/50 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-all" aria-label="Microfone"><Mic className="h-4 w-4" /></Button>
+            <Button variant="outline" size="icon" onClick={s.handleOpenVoiceOverlay} className="shrink-0 h-11 w-11 rounded-2xl border-primary/20 bg-primary/5 hover:bg-primary/15 hover:text-primary hover:border-primary/40 transition-all shadow-sm" aria-label="Microfone"><Mic className="h-4 w-4" /></Button>
           </TooltipTrigger>
           <TooltipContent className="bg-card border-border text-xs">Assistente de voz IA <kbd className="ml-1 text-[9px] opacity-60">Ctrl+Shift+V</kbd></TooltipContent>
         </Tooltip>
