@@ -79,7 +79,10 @@
     "dev:clean:pnpm": "npm run clean:vite && pnpm install && pnpm dev",
     "dev:clean:yarn": "npm run clean:vite && yarn install && yarn dev",
     "clean:all": "rm -rf node_modules node_modules/.vite && npm install",
-    "clean:all:hard": "rm -rf node_modules node_modules/.vite package-lock.json bun.lock && npm install"
+    "clean:all:hard": "rm -rf node_modules node_modules/.vite package-lock.json bun.lock && npm install",
+    "predev:pnp": "npm run clean:vite",
+    "predev:pnpm": "npm run clean:vite",
+    "dev:pnpm": "pnpm run predev:pnpm && pnpm exec vite"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [
