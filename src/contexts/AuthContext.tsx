@@ -464,12 +464,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const now = Date.now();
     const timeToExpiry = expiresAt - now;
 
-    // Se expira em menos de 10 min, tenta refresh agora
-    if (timeToExpiry > 0 && timeToExpiry < 10 * 60 * 1000) {
+    // 1. Silent Background Refresh: 5 minutos antes de expirar
+    const refreshBuffer = 5 * 60 * 1000;
+    const refreshDelay = timeToExpiry - refreshBuffer;
+
+    let refreshTimer: number | null = null;
+    if (refreshDelay > 0) {
+      refreshTimer = window.setTimeout(() => {
+        authDebug("AuthContext.autoRefresh", "triggering token refresh");
+        refreshSession();
+      }, refreshDelay);
+    } else if (timeToExpiry > 0 && timeToExpiry < refreshBuffer) {
+      // Já está na janela de 5 min
       refreshSession();
     }
 
-    // Watchdog: Avisa o usuário 2 minutos antes de expirar se ele ainda estiver na página
+    // 2. Expiry Watchdog: Avisa o usuário 2 minutos antes de expirar
     const warningThreshold = 2 * 60 * 1000;
     const warningTime = timeToExpiry - warningThreshold;
 
@@ -488,24 +498,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     return () => {
+      if (refreshTimer) window.clearTimeout(refreshTimer);
       if (warningTimer) window.clearTimeout(warningTimer);
     };
-  }, [session, refreshSession]);
-  useEffect(() => {
-    if (!session) return;
-    const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
-    const now = Date.now();
-    const buffer = 5 * 60 * 1000; // 5 minutos antes
-    const delay = expiresAt - now - buffer;
-
-    if (delay <= 0) return;
-
-    const timer = setTimeout(() => {
-      authDebug("AuthContext.autoRefresh", "triggering token refresh");
-      refreshSession();
-    }, delay);
-
-    return () => clearTimeout(timer);
   }, [session, refreshSession]);
 
   const has = (r: AppRole) => userRoles.includes(r);
