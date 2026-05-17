@@ -16,7 +16,7 @@ import { CloudStatusDot } from "@/components/system/CloudStatusDot";
 import { GlobalOfflineAlert } from "@/components/common/GlobalOfflineAlert";
 import { DevOnlyBridgeOverlay } from "@/components/dev/DevOnlyBridgeOverlay";
 import { RouteScrollReset } from "@/components/common/RouteScrollReset";
-import { ErrorBoundary } from "@/components/common/ErrorBoundary";
+import EnhancedErrorBoundary from "@/components/errors/EnhancedErrorBoundary";
 import { ThemeInitializer } from "@/components/ThemeInitializer";
 import { useAppBootstrap } from "@/hooks/useAppBootstrap";
 import { AppRoutes } from "@/routes/AppRoutes";
