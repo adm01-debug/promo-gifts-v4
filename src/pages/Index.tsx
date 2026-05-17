@@ -26,7 +26,7 @@ export default function Index() {
       ? `Encontramos ${catalog.filteredProducts?.length || 0} brindes promocionais para sua busca "${catalog.searchQuery}".`
       : "Explore nosso catálogo com mais de 15.000 brindes personalizáveis. Filtre por categoria, material, cor e preço.",
     "url": typeof window !== 'undefined' ? window.location.href : '',
-    "numberOfItems": catalog.totalEstimate || catalog.filteredProducts.length,
+    "numberOfItems": catalog.totalEstimate || catalog.filteredProducts?.length || 0,
     "mainEntity": {
       "@type": "ItemList",
       "itemListElement": catalog.paginatedProducts.slice(0, 10).map((p, i) => ({
