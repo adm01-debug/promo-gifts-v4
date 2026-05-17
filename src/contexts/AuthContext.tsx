@@ -229,9 +229,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Não chutar fallback "agente" — manter userRoles como está (vazio = indeterminado).
       } finally {
         fetchPromiseRef.current = null;
-        // isLoading só fica false APÓS os dados carregarem (#5)
         if (mountedRef.current) {
           setIsLoading(false);
+          setIsRolesLoading(false);
+          setRolesLoadedAt(Date.now());
         }
         authDebug("AuthContext.fetchUserData", "done");
       }
