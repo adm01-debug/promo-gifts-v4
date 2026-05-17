@@ -63,7 +63,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   }, [location.pathname]);
 
   const layoutContent = (
-    <div className="min-h-screen bg-background print:min-h-0" role="document">
+    <div className="min-h-screen bg-transparent print:min-h-0" role="document">
       <StarBackground />
       <GlobalOverlay />
       <div className="print:hidden">
@@ -98,7 +98,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           <div
             className={cn(
               "sticky z-30 print:hidden transition-all duration-300",
-              "bg-background/85 backdrop-blur-md",
+              "bg-background/20 backdrop-blur-xl",
               "border-b border-border/40",
               isHome && "hidden",
             )}
@@ -116,7 +116,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             ref={mainRef}
             tabIndex={-1}
             id="main-content" 
-            className="flex-1 p-3 sm:p-4 lg:p-6 pb-24 sm:pb-20 lg:pb-6 print:p-0 print:pb-0 outline-none overflow-x-clip" 
+            className="flex-1 p-3 sm:p-4 lg:p-6 pb-24 sm:pb-20 lg:pb-6 print:p-0 print:pb-0 outline-none overflow-x-clip bg-transparent" 
             role="main"
             aria-label="Conteúdo principal"
           >
