@@ -166,6 +166,17 @@ export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
     });
   };
 
+  // Gate: valida credenciais ANTES da 1ª tentativa (cacheado por 60s).
+  // Curto-circuita com mensagem amigável em vez de bater na edge e receber 500.
+  const creds = await validateCrmCredentials();
+  if (!creds.ok) {
+    const errMsg =
+      `CRM indisponível: credenciais ${creds.health}. ` +
+      `Verifique CRM_SUPABASE_URL e CRM_SUPABASE_SERVICE_KEY em Connectors → Lovable Cloud.`;
+    record(false, null, errMsg);
+    throw new Error(errMsg);
+  }
+
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const { data, error } = await supabase.functions.invoke("crm-db-bridge", {
       body: query,
