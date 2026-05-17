@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Lock, Loader2, Eye, EyeOff, CheckCircle, Sparkles } from 'lucide-react';
+import { Lock, Loader2, Eye, EyeOff, CheckCircle, Sparkles, Rocket } from 'lucide-react';
 import { AppLogo } from '@/components/layout/AppLogo';
 import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { LegalFooter } from '@/components/auth/LegalFooter';
+import { SpaceScene } from './auth/AuthBranding';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const resetPasswordSchema = z
   .object({
