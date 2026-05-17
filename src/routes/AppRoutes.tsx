@@ -1,7 +1,6 @@
 import { type ReactNode, Suspense } from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
-import { MainLayout } from '@/components/layout/MainLayout';
 import { getFallback } from '@/components/layout/SkeletonLoaders';
 import { adminRoutes } from './admin-routes';
 import { homeAndClientRoutes, notFoundRoute } from './client-routes';
@@ -38,13 +37,11 @@ export function AppRoutes() {
         {publicRoutes}
 
         <Route element={<ProtectedRoute />}>
-          <Route element={<MainLayout />}>
-            {productRoutes}
-            {quoteRoutes}
-            {adminRoutes}
-            {toolsRoutes}
-            {homeAndClientRoutes}
-          </Route>
+          {productRoutes}
+          {quoteRoutes}
+          {adminRoutes}
+          {toolsRoutes}
+          {homeAndClientRoutes}
         </Route>
 
         {notFoundRoute}
