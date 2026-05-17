@@ -196,7 +196,8 @@ export default function Auth() {
   // Redirect if already logged in (only on initial load)
   useEffect(() => {
     if (user && !authLoading && !isSubmitting) {
-      navigate(resolveRedirectTargetCb(), { replace: true });
+      const target = resolveRedirectTargetCb();
+      setTimeout(() => navigate(target, { replace: true }), 100);
     }
   }, [user, authLoading, navigate, isSubmitting, resolveRedirectTargetCb]);
 
@@ -406,8 +407,8 @@ export default function Auth() {
                   className="flex flex-col items-center justify-center py-16 px-8 text-center"
                 >
                   <div className="relative mb-8">
-                    <div className="absolute inset-0 animate-ping rounded-full bg-blue-500/20 duration-1000" />
-                    <div className="relative flex h-24 w-24 items-center justify-center rounded-3xl bg-blue-500/10 text-blue-400 ring-1 ring-blue-500/20 shadow-[0_0_50px_rgba(59,130,246,0.3)] overflow-hidden">
+                    <div className="absolute inset-0 animate-ping rounded-full bg-blue-500/30 duration-700" />
+                    <div className="relative flex h-24 w-24 items-center justify-center rounded-3xl bg-blue-500/10 text-blue-400 ring-1 ring-blue-500/20 shadow-[0_0_50px_rgba(59,130,246,0.5)] overflow-hidden">
                       <Rocket className="h-12 w-12 -rotate-45 animate-bounce" />
                     </div>
                     <motion.div 

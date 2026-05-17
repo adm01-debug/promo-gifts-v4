@@ -99,7 +99,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
   }, []);
 
   useEffect(() => {
-    const rocketInterval = setInterval(() => spawnRocket(), 4000);
+    const rocketInterval = setInterval(() => spawnRocket(), 2000);
     
     // Meteor shower interval
     const meteorInterval = setInterval(() => {

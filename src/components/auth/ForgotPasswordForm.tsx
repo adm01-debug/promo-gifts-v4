@@ -143,7 +143,7 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
 
             <Button
               type="submit"
-              className="w-full h-11 text-base font-semibold bg-primary hover:brightness-110 shadow-lg shadow-primary/20 transition-all active:scale-[0.98] rounded-xl text-white"
+              className="w-full h-11 text-base font-semibold bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all active:scale-[0.98] rounded-xl text-white border border-white/10"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
