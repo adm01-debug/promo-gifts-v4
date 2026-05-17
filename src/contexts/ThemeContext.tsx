@@ -20,7 +20,7 @@ interface ThemeProviderProps {
 
 export function ThemeProvider({
   children,
-  defaultTheme = 'auto',
+  defaultTheme = 'dark',
   storageKey = 'gifts-store-theme',
 }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(() => {
