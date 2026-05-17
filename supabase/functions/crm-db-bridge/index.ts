@@ -895,8 +895,6 @@ Deno.serve((req) => {
     if (auth.error) return auth.error;
 
     // SSOT: DB-first via integration_credentials, env fallback via aliases.
-    // Antes lia Deno.env.get() direto e ignorava credenciais salvas pela UI
-    // (/admin/conexoes), causando 500 mesmo após o usuário cadastrar a CRM.
     const [urlRes, svcRes, anonRes] = await Promise.all([
       resolveCredential("EXTERNAL_CRM_URL"),
       resolveCredential("EXTERNAL_CRM_SERVICE_ROLE_KEY"),
@@ -906,8 +904,18 @@ Deno.serve((req) => {
     const CRM_SERVICE_KEY = svcRes.value;
     const CRM_ANON_VAL = anonRes.value;
     const CRM_KEY = CRM_SERVICE_KEY || CRM_ANON_VAL;
+
     if (!CRM_URL || !CRM_KEY) {
-      return jsonResponse({ error: "CRM database credentials not configured" }, 500);
+      const diag = {
+        url: { name: urlRes.resolved_name, source: urlRes.source, present: !!CRM_URL },
+        key: { name: svcRes.resolved_name, source: svcRes.source, present: !!CRM_SERVICE_KEY },
+        anon: { name: anonRes.resolved_name, source: anonRes.source, present: !!CRM_ANON_VAL }
+      };
+      console.error(`[crm-db-bridge] ❌ Credenciais não configuradas: ${JSON.stringify(diag)}`);
+      return jsonResponse({ 
+        error: "CRM database credentials not configured", 
+        diagnostics: diag 
+      }, 500);
     }
 
     const CRM_ANON = CRM_ANON_VAL ?? "";
