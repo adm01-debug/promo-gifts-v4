@@ -580,7 +580,7 @@ export default function Auth() {
                           type={showPassword ? 'text' : 'password'}
                           placeholder="••••••••"
                           autoComplete="current-password"
-                          className="border-border bg-input pl-10 pr-10 focus:border-blue-500 focus:ring-blue-500"
+                          className="border-white/10 bg-white/5 pl-10 pr-10 focus:border-primary/50 focus:ring-primary/20 transition-all duration-300 placeholder:text-white/20"
                           {...loginForm.register('password')}
                         />
                         <button
