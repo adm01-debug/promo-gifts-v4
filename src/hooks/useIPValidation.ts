@@ -10,6 +10,8 @@ interface IPValidationResult {
   details?: Record<string, unknown>;
 }
 
+let cachedIPPromise: Promise<string | null> | null = null;
+
 export function useIPValidation() {
   const [isValidating, setIsValidating] = useState(false);
 
