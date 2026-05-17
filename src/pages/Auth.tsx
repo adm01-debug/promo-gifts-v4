@@ -619,19 +619,19 @@ export default function Auth() {
           {/* IP/Location Widget */}
           {currentIP && (
             <div
-              className="mx-auto flex max-w-fit items-center justify-center gap-3 rounded-full border border-border/60 bg-card/80 px-5 py-2.5 opacity-0 shadow-md backdrop-blur-md"
+              className="mx-auto flex max-w-fit items-center justify-center gap-4 rounded-full border border-white/5 bg-black/40 px-6 py-2.5 opacity-0 shadow-lg backdrop-blur-md transition-all hover:bg-black/60 hover:border-white/10"
               style={{ animation: 'scale-fade-in 0.5s ease-out 600ms forwards' }}
             >
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Globe className="h-3.5 w-3.5 text-blue-500" />
-                <span className="font-mono">{currentIP}</span>
+              <div className="flex items-center gap-2.5 text-xs text-white/50">
+                <Globe className="h-4 w-4 text-blue-500/80" />
+                <span className="font-mono tracking-wider">{currentIP}</span>
               </div>
               {geoLocation && (
                 <>
-                  <div className="h-4 w-px bg-border" />
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Wifi className="h-3.5 w-3.5 text-success" />
-                    <span>{geoLocation}</span>
+                  <div className="h-4 w-px bg-white/10" />
+                  <div className="flex items-center gap-2 text-xs text-white/50">
+                    <Wifi className="h-4 w-4 text-emerald-500/80" />
+                    <span className="font-medium">{geoLocation}</span>
                   </div>
                 </>
               )}
