@@ -364,7 +364,7 @@ function FeatureCard({ item, index }: { item: typeof FEATURE_ITEMS[0]; index: nu
   const IconComponent = item.icon;
   return (
     <div
-      className="flex h-[110px] items-center justify-between gap-4 rounded-3xl bg-black/40 backdrop-blur-2xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:bg-black/60 hover:border-blue-500/50 hover:scale-[1.05] transition-all duration-500 group opacity-0 px-6 relative overflow-hidden"
+      className="flex h-[88px] items-center justify-between gap-3 rounded-3xl bg-black/40 backdrop-blur-2xl border border-white/10 shadow-[0_16px_40px_rgba(0,0,0,0.5)] hover:bg-black/60 hover:border-blue-500/50 hover:scale-[1.05] transition-all duration-500 group opacity-0 px-5 relative overflow-hidden"
       style={{ animation: `scale-fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) ${300 + index * 150}ms forwards` }}
     >
       <div className="absolute inset-0 w-full h-full pointer-events-none">
@@ -372,11 +372,11 @@ function FeatureCard({ item, index }: { item: typeof FEATURE_ITEMS[0]; index: nu
       </div>
 
       <div className="min-w-0 flex-1 text-left relative z-10">
-        <p className="text-2xl font-display font-bold text-white leading-tight tracking-tight">{item.label}</p>
-        <p className="text-[11px] font-bold text-white/50 leading-tight uppercase tracking-[0.2em] mt-1">{item.desc}</p>
+        <p className="text-xl font-display font-bold text-white leading-tight tracking-tight">{item.label}</p>
+        <p className="text-[10px] font-bold text-white/50 leading-tight uppercase tracking-[0.18em] mt-1">{item.desc}</p>
       </div>
-      <div className="w-14 h-14 shrink-0 rounded-2xl bg-blue-500/10 flex items-center justify-center group-hover:bg-blue-500/20 transition-all duration-500 group-hover:rotate-[8deg] relative z-10 border border-white/10 shadow-inner">
-        <IconComponent className="h-7 w-7 text-blue-400 drop-shadow-[0_0_12px_rgba(59,130,246,0.6)]" />
+      <div className="w-11 h-11 shrink-0 rounded-2xl bg-blue-500/10 flex items-center justify-center group-hover:bg-blue-500/20 transition-all duration-500 group-hover:rotate-[8deg] relative z-10 border border-white/10 shadow-inner">
+        <IconComponent className="h-[1.4rem] w-[1.4rem] text-blue-400 drop-shadow-[0_0_10px_rgba(59,130,246,0.6)]" />
       </div>
     </div>
   );
@@ -394,28 +394,28 @@ export function AuthBrandingPanel() {
     <div className="flex w-full lg:w-1/2 relative min-h-screen items-center">
       {/* Content */}
       <div className="relative z-10 flex flex-col justify-center items-center px-12 xl:px-20 w-full min-h-screen lg:translate-x-[5%] xl:translate-x-[10%]">
-        <div className="space-y-8 w-full max-w-xl flex flex-col items-center text-center">
+        <div className="space-y-6 w-full max-w-xl flex flex-col items-center text-center">
           <div className="flex items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-700">
-            <AppLogo variant="light" iconClassName="h-16 w-16 rounded-2xl shadow-blue-500/40" textClassName="text-5xl" />
+            <AppLogo variant="light" iconClassName="h-[3.25rem] w-[3.25rem] rounded-xl shadow-blue-500/40" textClassName="text-4xl" />
           </div>
 
-          <div className="space-y-6 max-w-lg flex flex-col items-center">
-            <h2 className="text-5xl xl:text-6xl font-display font-bold text-white leading-[1.05] tracking-tight relative group text-center">
+          <div className="space-y-5 max-w-lg flex flex-col items-center">
+            <h2 className="text-4xl xl:text-5xl font-display font-bold text-white leading-[1.05] tracking-tight relative group text-center">
               Um Universo de Produtos, para o{" "}
               <span className="text-blue-400">
                 Melhor Time das{" "}
                 <span className="relative inline-block">
                   Galáxias!
-                  <span className="absolute -bottom-2 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-400/0 via-blue-400/60 to-blue-400/0 scale-x-0 group-hover:scale-x-100 transition-transform duration-700 shadow-[0_0_20px_rgba(59,130,246,0.6)]" />
+                  <span className="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r from-blue-400/0 via-blue-400/60 to-blue-400/0 scale-x-0 group-hover:scale-x-100 transition-transform duration-700 shadow-[0_0_18px_rgba(59,130,246,0.6)]" />
                 </span>
               </span>
             </h2>
-            <p className="text-lg text-white/60 leading-relaxed font-light text-center max-w-md">
+            <p className="text-[0.95rem] text-white/60 leading-relaxed font-light text-center max-w-md">
               Tenha acesso ao maior mix de produtos personalizados, consulte estoque em tempo real, visualize locais e técnicas de personalização. Feito especialmente para você decolar!!!
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 sm:gap-6 pt-8 w-full">
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 pt-6 w-full">
             {FEATURE_ITEMS.map((item, i) => (
               <FeatureCard key={i} item={item} index={i} />
             ))}
