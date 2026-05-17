@@ -25,6 +25,7 @@ import {
   CheckCircle2,
   XCircle,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { AuthBrandingPanel, Starfield, SpaceScene } from './auth/AuthBranding';
 
 import { Button } from '@/components/ui/button';
@@ -391,24 +392,71 @@ export default function Auth() {
           {/* Auth Card */}
           <Card
             aria-labelledby="auth-title"
-            className={`border-white/10 bg-black/60 shadow-2xl shadow-black/60 backdrop-blur-xl rounded-[2rem] overflow-hidden ${ipBlocked ? 'pointer-events-none opacity-50' : ''}`}
+            className={`relative border-white/10 bg-black/60 shadow-2xl shadow-black/60 backdrop-blur-xl rounded-[2rem] overflow-hidden transition-all duration-500 ${ipBlocked ? 'pointer-events-none opacity-50' : ''}`}
           >
-            {showForgotPassword ? (
-              <CardContent className="pb-7 pt-7">
-                <ForgotPasswordForm onBack={() => setShowForgotPassword(false)} />
-              </CardContent>
-            ) : (
-              <>
-                <CardHeader className="pb-3 pt-9">
-                  <div className="space-y-1 text-center">
-                    <h1 className="font-display text-[1.4rem] font-bold text-white tracking-tight" id="auth-title">
-                      Bem-vindo de volta
-                    </h1>
-                    <p className="text-[13px] text-white/50">
-                      Entre com suas credenciais para Brilhar, você nasceu para isso!
-                    </p>
+            <AnimatePresence mode="wait">
+              {loginStatus === 'success' ? (
+                <motion.div
+                  key="success"
+                  initial={{ opacity: 0, scale: 0.9, filter: 'blur(10px)' }}
+                  animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, scale: 1.1, filter: 'blur(10px)' }}
+                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  className="flex flex-col items-center justify-center py-16 px-8 text-center"
+                >
+                  <div className="relative mb-6">
+                    <div className="absolute inset-0 animate-ping rounded-full bg-success/20 duration-1000" />
+                    <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-success/10 text-success ring-1 ring-success/20">
+                      <CheckCircle2 className="h-10 w-10" />
+                    </div>
                   </div>
-                </CardHeader>
+                  <motion.h2
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="font-display text-2xl font-bold text-white"
+                  >
+                    Acesso concedido
+                  </motion.h2>
+                  <motion.p
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="mt-2 text-sm text-white/60"
+                  >
+                    Preparando seu ambiente de trabalho...
+                  </motion.p>
+                </motion.div>
+              ) : showForgotPassword ? (
+                <motion.div
+                  key="forgot-password"
+                  initial={{ opacity: 0, x: 20, filter: 'blur(5px)' }}
+                  animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, x: -20, filter: 'blur(5px)' }}
+                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <CardContent className="pb-7 pt-7">
+                    <ForgotPasswordForm onBack={() => setShowForgotPassword(false)} />
+                  </CardContent>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="login-form"
+                  initial={{ opacity: 0, x: -20, filter: 'blur(5px)' }}
+                  animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, x: 20, filter: 'blur(5px)' }}
+                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <CardHeader className="pb-3 pt-9">
+                    <div className="space-y-1 text-center">
+                      <h1 className="font-display text-[1.4rem] font-bold text-white tracking-tight" id="auth-title">
+                        Bem-vindo de volta
+                      </h1>
+                      <p className="text-[13px] text-white/50">
+                        Entre com suas credenciais para Brilhar, você nasceu para isso!
+                      </p>
+                    </div>
+                  </CardHeader>
 
                 <CardContent className="space-y-5 pb-9">
                   {socialError && (
@@ -500,7 +548,7 @@ export default function Auth() {
                           inputMode="email"
                           autoCapitalize="none"
                           spellCheck={false}
-                          className="border-border bg-input pl-10 lowercase focus:border-blue-500 focus:ring-blue-500"
+                          className="border-white/10 bg-white/5 pl-10 lowercase focus:border-primary/50 focus:ring-primary/20 transition-all duration-300 placeholder:text-white/20"
                           {...loginForm.register('email')}
                           onChange={(e) => {
                             const lower = e.target.value.toLowerCase();
@@ -532,7 +580,7 @@ export default function Auth() {
                           type={showPassword ? 'text' : 'password'}
                           placeholder="••••••••"
                           autoComplete="current-password"
-                          className="border-border bg-input pl-10 pr-10 focus:border-blue-500 focus:ring-blue-500"
+                          className="border-white/10 bg-white/5 pl-10 pr-10 focus:border-primary/50 focus:ring-primary/20 transition-all duration-300 placeholder:text-white/20"
                           {...loginForm.register('password')}
                         />
                         <button
@@ -605,9 +653,10 @@ export default function Auth() {
                     <SocialLoginButtons onError={handleSocialError} retryRef={googleRetryRef} />
                   </form>
                 </CardContent>
-              </>
+              </motion.div>
             )}
-          </Card>
+          </AnimatePresence>
+        </Card>
 
           {/* IP/Location Widget */}
           {currentIP && (
