@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { CheckCircle2, Mail, ArrowLeft, ExternalLink } from 'lucide-react';
+import { CheckCircle2, Mail, ArrowLeft, ExternalLink, Rocket } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -31,9 +31,20 @@ export default function ForgotPasswordConfirmation() {
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", damping: 12, stiffness: 200 }}
-              className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-blue-500/20 text-blue-400 shadow-[0_0_30px_rgba(59,130,246,0.2)]"
+              className="relative mx-auto h-20 w-20"
             >
-              <CheckCircle2 className="h-10 w-10" />
+              <div className="absolute inset-0 animate-ping rounded-full bg-blue-500/20 duration-1000" />
+              <div className="relative flex h-full w-full items-center justify-center rounded-3xl bg-blue-500/10 text-blue-400 shadow-[0_0_30px_rgba(59,130,246,0.3)]">
+                <Rocket className="h-10 w-10 -rotate-45" />
+              </div>
+              <motion.div 
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.4 }}
+                className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg border-4 border-[#030508]"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5 text-white" />
+              </motion.div>
             </motion.div>
 
             <div className="space-y-3">

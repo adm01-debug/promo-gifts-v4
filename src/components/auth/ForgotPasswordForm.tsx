@@ -116,10 +116,10 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
           className="space-y-6"
           data-testid="forgot-password-screen"
         >
-          <div className="text-center space-y-1">
-            <h2 className="font-display text-xl font-semibold text-white">Esqueceu sua senha?</h2>
-            <p className="text-sm text-white/50">
-              Digite seu email e enviaremos um link para redefinir sua senha
+          <div className="text-center space-y-2">
+            <h2 className="font-display text-2xl font-bold text-white tracking-tight">Esqueceu sua senha?</h2>
+            <p className="text-[13px] text-white/50 leading-relaxed">
+              Não se preocupe, comandante! Digite seu e-mail abaixo para iniciarmos o procedimento de resgate.
             </p>
           </div>
 

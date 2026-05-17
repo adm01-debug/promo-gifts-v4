@@ -625,23 +625,23 @@ export default function Auth() {
                     <Button
                       type="submit"
                       data-testid="login-submit"
-                      className="h-12 w-full text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/30 border border-white/20"
+                      className="h-12 w-full text-base font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/40 border border-white/10 rounded-xl active:scale-[0.98]"
                         disabled={isSubmitting || loginStatus === 'success'}
                       >
                         {isSubmitting ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Entrando...
+                            Iniciando Sistemas...
                           </>
                         ) : loginStatus === 'success' ? (
                           <>
                             <div className="flex items-center gap-2 animate-in zoom-in duration-300">
-                              <Gift className="h-4 w-4" />
-                              <span>Pronto!</span>
+                              <Rocket className="h-4 w-4 -rotate-45" />
+                              <span>Decolando!</span>
                             </div>
                           </>
                         ) : (
-                          'Entrar'
+                          'Entrar na Plataforma'
                         )}
                       </Button>
 
