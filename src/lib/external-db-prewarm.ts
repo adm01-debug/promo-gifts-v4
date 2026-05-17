@@ -13,6 +13,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { waitForBridgeReady } from '@/lib/external-db/health-check';
+import { validateCrmCredentials } from '@/lib/crm-creds-validator';
 
 const PREWARM_TABLES = [
   'products',
