@@ -1,29 +1,11 @@
-// E2E tests garantindo que o external-db-bridge aplica a regra de
-// PRODUCTS_LIGHTWEIGHT_SELECT EXATAMENTE onde deve:
-//   - SIM: select em `products` com limit > 50 e sem `id` no payload
-//   - NÃO: fetch por `id`, listings pequenos, outras tabelas, RPCs
-//
-// Esta camada complementa `resolveProductsSelect.test.ts` (unit) ao
-// validar que o roteamento real do handler chama o resolver — pega
-// regressões que testes puros não detectam.
-
-import { load } from "https://deno.land/std@0.224.0/dotenv/mod.ts";
 import { assert, assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-
-await load({ export: true, allowEmptyValues: true });
 
 const SUPABASE_URL = Deno.env.get("VITE_SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("VITE_SUPABASE_PUBLISHABLE_KEY")!;
 const ENDPOINT = `${SUPABASE_URL}/functions/v1/external-db-bridge`;
 
-// Confirmados empiricamente:
-//  - Payload completo (full SELECT *):     ~148 colunas
-//  - Payload lightweight (forced select):  ~24 colunas (id,name,sku,sale_price,...)
 const LIGHTWEIGHT_MAX_COLUMNS = 40;
 const FULL_MIN_COLUMNS = 60;
-
-// Subconjunto de colunas pesadas (JSONB / array / texto longo) presentes no
-// SELECT * mas NÃO no PRODUCTS_LIGHTWEIGHT_SELECT.
 const HEAVY_FIELDS_SAMPLE = ["schema_json", "images", "videos", "dimensions", "seo_issues"];
 
 interface BridgeResponse {
@@ -63,10 +45,6 @@ function hasAnyHeavy(row: unknown): boolean {
   return HEAVY_FIELDS_SAMPLE.some((f) => Object.prototype.hasOwnProperty.call(obj, f));
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// CASOS QUE DEVEM FORÇAR LIGHTWEIGHT
-// ────────────────────────────────────────────────────────────────────────────
-
 Deno.test("E2E force-lightweight: products + limit=51 + select='*' → lightweight", async () => {
   const rows = await callBridge({ operation: "select", table: "products", select: "*", limit: 51 });
   assert(rows.length > 0, "esperava ao menos 1 registro");
@@ -85,17 +63,11 @@ Deno.test("E2E force-lightweight: products + limit=300 + select omitido → ligh
   assertEquals(hasAnyHeavy(rows[0]), false);
 });
 
-// ────────────────────────────────────────────────────────────────────────────
-// CASOS QUE NÃO DEVEM FORÇAR (regressão de página de detalhe / edição)
-// ────────────────────────────────────────────────────────────────────────────
-
 Deno.test("E2E no-force: products + fetch por id (filters.id) → payload completo", async () => {
-  // Pega um id real para o fetch
   const seed = await callBridge({ operation: "select", table: "products", select: "id", limit: 1 });
   assert(seed.length > 0, "precisa de ao menos 1 produto para o teste");
   const productId = (seed[0] as { id: string }).id;
 
-  // Fetch por id com select='*' e limit alto — NÃO deve forçar lightweight
   const rows = await callBridge({
     operation: "select",
     table: "products",
@@ -138,7 +110,6 @@ Deno.test("E2E no-force: products + limit=500 + select focado → respeita o cal
   });
   assert(rows.length > 0);
   const keys = Object.keys(rows[0] as Record<string, unknown>).sort();
-  // Deve retornar exatamente as colunas pedidas (ou subset em caso de null elision)
   assertEquals(
     keys,
     focused.split(",").sort(),
@@ -149,8 +120,6 @@ Deno.test("E2E no-force: products + limit=500 + select focado → respeita o cal
 Deno.test("E2E no-force: outra tabela (categories) com limit alto → payload completo", async () => {
   const rows = await callBridge({ operation: "select", table: "categories", select: "*", limit: 200 });
   assert(rows.length > 0, "esperava categorias retornadas");
-  // Não há um threshold específico; só validamos que a regra não vazou para outras tabelas
-  // — payload completo significa MAIS de uma punhada de colunas mínimas.
   const cols = columnCount(rows[0]);
   assert(cols > 5, `lightweight não deveria afetar 'categories' — recebeu apenas ${cols} cols`);
 });

@@ -1,8 +1,4 @@
 import { assertEquals, assertExists } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { load } from "https://deno.land/std@0.224.0/dotenv/mod.ts";
-
-// Load env with allowEmptyValues to avoid MissingEnvVarsError from .env.example
-await load({ export: true, allowEmptyValues: true });
 
 const SUPABASE_URL = Deno.env.get("VITE_SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("VITE_SUPABASE_PUBLISHABLE_KEY")!;
