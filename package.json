@@ -74,7 +74,8 @@
     "typecheck:baseline:update": "node scripts/tsc-baseline-generate.mjs",
     "check:observability": "node scripts/observability-check.mjs",
     "clean:vite": "rm -rf node_modules/.vite node_modules/.vite-temp",
-    "dev:clean": "npm run clean:vite && npm install && npm run dev"
+    "dev:clean": "npm run clean:vite && npm install && npm run dev",
+    "predev": "npm run clean:vite"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [
