@@ -32,7 +32,7 @@ export default function Index() {
       "itemListElement": (catalog.paginatedProducts || []).slice(0, 10).map((p, i) => ({
         "@type": "ListItem",
         "position": i + 1,
-        "url": `${window.location.origin}/produto/${p.id}`,
+        "url": typeof window !== 'undefined' ? `${window.location.origin}/produto/${p.id}` : '',
         "name": p.name
       }))
     }
