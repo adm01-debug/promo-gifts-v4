@@ -142,6 +142,12 @@ export async function invokeBridge<T>(body: Record<string, unknown>): Promise<Br
     if (!data?.success) {
       throw new Error(data?.error || 'Erro desconhecido no banco externo');
     }
+    
+    if (data.data && typeof data.data === 'object' && (data.data as any)._unconfigured) {
+      const msg = (data.data as any)._message || 'Banco externo não configurado';
+      logger.warn(`[external-db] Bridge is unconfigured: ${msg}`);
+    }
+
     if (sawColdStart) emitBridgeStatus({ type: 'recovered' });
     return data as BridgeResponse<T>;
   }
