@@ -137,8 +137,9 @@ for (const file of report) {
 
 
 console.error(
-  `\n❌ ${totalDelta} erro(s) novo(s) de ESLint em ${regressions.length} par(es) file:rule:`
+  `\n❌ ${totalDelta} problema(s) novo(s) de ESLint (erros ou warnings) em ${regressions.length} par(es) file:rule:`
 );
+
 for (const r of regressions.slice(0, MAX_LIST)) {
   console.error(
     `  • ${r.file} [${r.rule}] baseline=${r.baseline} → atual=${r.current} (+${r.delta})`
