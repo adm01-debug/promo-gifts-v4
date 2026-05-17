@@ -183,7 +183,7 @@ export const SidebarReorganized = React.memo(
     setOpenGroups(computeAutoOpen());
   }
 
-  const { isAdmin, isDev } = useAuth();
+  const { isAdmin, isDev, signOut } = useAuth();
 
   // Pending discount approval count for admin badge
   const { data: pendingApprovalCount } = useQuery({
@@ -449,8 +449,7 @@ export const SidebarReorganized = React.memo(
                     size="icon" 
                     className="h-8 w-8 text-sidebar-foreground/40 hover:text-destructive hover:bg-destructive/10"
                     onClick={() => {
-                      const { signOut } = useAuth.getState();
-                      signOut();
+                      void signOut();
                     }}
                   >
                     <LogOut className="h-4 w-4" />

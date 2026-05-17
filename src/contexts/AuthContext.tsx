@@ -82,6 +82,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userRoles, setUserRoles] = useState<AppRole[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRolesLoading, setIsRolesLoading] = useState(false);
+  const [rolesLoadedAt, setRolesLoadedAt] = useState<number | null>(null);
   const [currentAAL, setCurrentAAL] = useState<'aal1' | 'aal2' | null>(null);
   const [nextAAL, setNextAAL] = useState<'aal1' | 'aal2' | null>(null);
   const [hasMFA, setHasMFA] = useState(false);
@@ -112,6 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     const doFetch = async () => {
       authDebug("AuthContext.fetchUserData", "start", { userId });
+      setIsRolesLoading(true);
       try {
         // Garante que o cliente Supabase já tem a sessão hidratada antes de consultar
         // tabelas com RLS (evita query como anon retornando 0 linhas → fallback "agente").
@@ -226,9 +229,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Não chutar fallback "agente" — manter userRoles como está (vazio = indeterminado).
       } finally {
         fetchPromiseRef.current = null;
-        // isLoading só fica false APÓS os dados carregarem (#5)
         if (mountedRef.current) {
           setIsLoading(false);
+          setIsRolesLoading(false);
+          setRolesLoadedAt(Date.now());
         }
         authDebug("AuthContext.fetchUserData", "done");
       }
@@ -292,13 +296,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       authDebug("AuthContext.init", "initial getSession()", summarizeSession(session));
-      setSession(session);
-      setUser(session?.user ?? null);
+      // SOMENTE atualiza se o listener ainda não pegou a sessão.
+      // onAuthStateChange geralmente dispara IMEDIATAMENTE após ser subscrito se houver sessão no storage.
+      setSession((prev) => {
+        if (prev) return prev;
+        return session;
+      });
+      setUser((prev) => {
+        if (prev) return prev;
+        return session?.user ?? null;
+      });
 
-      if (session?.user) {
+      if (session?.user && !fetchPromiseRef.current && rolesLoadedAt === null) {
         fetchUserData(session.user.id);
         fetchAAL();
-      } else {
+      } else if (!session?.user) {
         setIsLoading(false);
       }
     });
@@ -460,12 +472,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const now = Date.now();
     const timeToExpiry = expiresAt - now;
 
-    // Se expira em menos de 10 min, tenta refresh agora
-    if (timeToExpiry > 0 && timeToExpiry < 10 * 60 * 1000) {
+    // 1. Silent Background Refresh: 5 minutos antes de expirar
+    const refreshBuffer = 5 * 60 * 1000;
+    const refreshDelay = timeToExpiry - refreshBuffer;
+
+    let refreshTimer: number | null = null;
+    if (refreshDelay > 0) {
+      refreshTimer = window.setTimeout(() => {
+        authDebug("AuthContext.autoRefresh", "triggering token refresh");
+        refreshSession();
+      }, refreshDelay);
+    } else if (timeToExpiry > 0 && timeToExpiry < refreshBuffer) {
+      // Já está na janela de 5 min
       refreshSession();
     }
 
-    // Watchdog: Avisa o usuário 2 minutos antes de expirar se ele ainda estiver na página
+    // 2. Expiry Watchdog: Avisa o usuário 2 minutos antes de expirar
     const warningThreshold = 2 * 60 * 1000;
     const warningTime = timeToExpiry - warningThreshold;
 
@@ -484,24 +506,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     return () => {
+      if (refreshTimer) window.clearTimeout(refreshTimer);
       if (warningTimer) window.clearTimeout(warningTimer);
     };
-  }, [session, refreshSession]);
-  useEffect(() => {
-    if (!session) return;
-    const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
-    const now = Date.now();
-    const buffer = 5 * 60 * 1000; // 5 minutos antes
-    const delay = expiresAt - now - buffer;
-
-    if (delay <= 0) return;
-
-    const timer = setTimeout(() => {
-      authDebug("AuthContext.autoRefresh", "triggering token refresh");
-      refreshSession();
-    }, delay);
-
-    return () => clearTimeout(timer);
   }, [session, refreshSession]);
 
   const has = (r: AppRole) => userRoles.includes(r);
@@ -539,7 +546,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     nextAAL,
     hasMFA,
     mfaRequired,
-    rolesLoaded: userRoles.length > 0,
+    rolesLoaded: rolesLoadedAt !== null,
     refreshAAL: fetchAAL,
     signIn,
     signOut,

@@ -140,15 +140,9 @@ export function useCatalogState() {
 
   const totalEstimate = catalogData?.pages?.[0]?.totalEstimate ?? null;
 
-  useEffect(() => {
-    if (hasNextPage && !isFetchingNextPage) {
-      if ('requestIdleCallback' in window) {
-        window.requestIdleCallback(() => fetchNextPage());
-      } else {
-        setTimeout(() => fetchNextPage(), 1000);
-      }
-    }
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  // REMOVIDO: Auto-fetch agressivo de todas as páginas em background.
+  // O IntersectionObserver já garante que as páginas carreguem sob demanda.
+  // Isso evita baixar 15.000+ produtos sem necessidade e economiza memória/banda.
 
   useEffect(() => {
     if (realProducts.length > 0) registerProducts(realProducts);
