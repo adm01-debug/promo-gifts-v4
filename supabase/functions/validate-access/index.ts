@@ -67,12 +67,15 @@ Deno.serve(async (req: Request) => {
     );
 
     const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
+    
     if (userError || !user) {
+      console.error(`[validate-access] ❌ Falha na autenticação: ${userError?.message || 'Usuário não encontrado'}. URL=${Deno.env.get("SUPABASE_URL")}`);
       return new Response(
-        JSON.stringify({ error: "Token inválido" }),
+        JSON.stringify({ error: "Token inválido", detail: userError?.message }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
+
 
     const userId = user.id;
     const userEmail = user.email || "";

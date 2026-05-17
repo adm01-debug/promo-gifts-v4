@@ -3,6 +3,16 @@ project_id = "doufsxqlfjyuvxuezpln"
 [functions.crm-db-bridge]
 verify_jwt = false
 
+[functions.validate-access]
+verify_jwt = false
+
+[functions.log-login-attempt]
+verify_jwt = false
+
+[functions.get-visitor-info]
+verify_jwt = false
+
+
 [functions.ai-recommendations]
 verify_jwt = false
 
