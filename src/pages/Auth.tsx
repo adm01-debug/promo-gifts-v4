@@ -323,7 +323,7 @@ export default function Auth() {
 
   return (
     <main
-      className="relative flex flex-col lg:flex-row min-h-screen bg-[#030508] overflow-hidden"
+      className="relative flex flex-col lg:flex-row min-h-screen bg-[#030508] overflow-x-hidden"
       role="main"
       aria-label="Autenticação"
     >
@@ -331,16 +331,9 @@ export default function Auth() {
       <SpaceScene />
 
       <PageSEO
-        title="Login"
-        description="Acesse a plataforma Promo Gifts. Faça login para gerenciar seus orçamentos e catálogo."
+        title="Login | Promo Gifts"
+        description="Acesse a plataforma Promo Gifts. Entre com suas credenciais para gerenciar seus produtos e orçamentos com a melhor IA das Galáxias!"
         path="/login"
-        jsonLd={{
-          '@context': 'https://schema.org',
-          '@type': 'WebPage',
-          name: 'Login — Promo Gifts',
-          description: 'Página de autenticação da plataforma Promo Gifts.',
-          url: 'https://criar-together-now.lovable.app/login',
-        }}
       />
       {/* Left side - Branding */}
       <AuthBrandingPanel />
@@ -507,17 +500,17 @@ export default function Auth() {
                           {!socialError.isConfig && (
                             <Button
                               type="button"
-                              className="flex-1 h-10 gap-2 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs transition-all active:scale-95 rounded-xl"
+                              className="flex-1 h-11 gap-2 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs transition-all active:scale-95 rounded-xl shadow-lg shadow-amber-500/20"
                               onClick={handleRetryGoogle}
                             >
-                              <RotateCw className="h-3.5 w-3.5" />
+                              <RotateCw className="h-4 w-4" />
                               Tentar Google Novamente
                             </Button>
                           )}
                           <Button
                             type="button"
                             variant="outline"
-                            className="flex-1 h-10 text-xs font-bold border-white/10 bg-white/5 text-white hover:bg-white/10 rounded-xl"
+                            className="flex-1 h-11 text-xs font-bold border-white/10 bg-white/5 text-white hover:bg-white/10 rounded-xl transition-all active:scale-95"
                             onClick={focusEmailFallback}
                           >
                             Usar E-mail
@@ -625,23 +618,23 @@ export default function Auth() {
                     <Button
                       type="submit"
                       data-testid="login-submit"
-                      className="h-12 w-full text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/30 border border-white/20"
+                      className="h-12 w-full text-base font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/40 border border-white/10 rounded-xl active:scale-[0.98]"
                         disabled={isSubmitting || loginStatus === 'success'}
                       >
                         {isSubmitting ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Entrando...
+                            Iniciando Sistemas...
                           </>
                         ) : loginStatus === 'success' ? (
                           <>
                             <div className="flex items-center gap-2 animate-in zoom-in duration-300">
-                              <Gift className="h-4 w-4" />
-                              <span>Pronto!</span>
+                              <Rocket className="h-4 w-4 -rotate-45" />
+                              <span>Decolando!</span>
                             </div>
                           </>
                         ) : (
-                          'Entrar'
+                          'Entrar na Plataforma'
                         )}
                       </Button>
 
