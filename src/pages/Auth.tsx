@@ -612,15 +612,14 @@ export default function Auth() {
                     </div>
 
                     <div className="flex items-center justify-end">
-                      <Button
+                      <button
                         type="button"
                         data-testid="login-forgot-link"
-                        variant="link-primary"
-                        className="h-auto p-0 text-sm"
+                        className="h-auto p-0 text-xs font-bold uppercase tracking-wider text-blue-400 hover:text-blue-300 transition-colors"
                         onClick={() => setShowForgotPassword(true)}
                       >
                         Esqueci minha senha
-                      </Button>
+                      </button>
                     </div>
 
                     <Button

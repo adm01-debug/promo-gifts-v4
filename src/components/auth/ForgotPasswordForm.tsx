@@ -133,8 +133,13 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
                   type="email"
                   placeholder="seu@email.com"
                   autoComplete="email"
-                  className="pl-10 bg-white/5 border-white/10 text-white focus:border-primary/50 focus:ring-primary/20 transition-all duration-300 placeholder:text-white/20"
+                  className="pl-10 bg-white/5 border-white/10 text-white lowercase focus:border-blue-500/50 focus:ring-blue-500/20 transition-all duration-300 placeholder:text-white/20"
                   {...form.register('email')}
+                  onChange={(e) => {
+                    const lower = e.target.value.toLowerCase();
+                    if (e.target.value !== lower) e.target.value = lower;
+                    form.register('email').onChange(e);
+                  }}
                 />
               </div>
               {form.formState.errors.email && (
