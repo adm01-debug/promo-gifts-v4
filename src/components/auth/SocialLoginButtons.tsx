@@ -14,7 +14,7 @@ import {
 function mapOAuthError(raw: string): string {
   const m = raw.toLowerCase();
   if (m.includes('unsupported provider') || m.includes('provider is not enabled')) {
-    return 'Login com Google ainda não está habilitado neste ambiente. Avise o administrador.';
+    return 'provider_is_not_enabled';
   }
   if (m.includes('redirect') && m.includes('not allowed')) {
     return 'URL de retorno não autorizada. Verifique a configuração do provedor.';
