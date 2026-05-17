@@ -17,6 +17,7 @@ import { SellerCartProvider } from "@/contexts/SellerCartContext";
 import { OnboardingProvider } from "@/contexts/OnboardingContext";
 
 import { GlobalOverlay } from "./GlobalOverlay";
+import { StarBackground } from "@/components/effects/StarBackground";
 const GlobalCommandBar = lazyWithRetry(() => import("@/components/command/GlobalCommandBar").then(m => ({ default: m.GlobalCommandBar })));
 const PersistentBreadcrumbs = lazyWithRetry(() => import("@/components/common/PersistentBreadcrumbs").then(m => ({ default: m.PersistentBreadcrumbs })));
 import { cn } from "@/lib/utils";
@@ -63,6 +64,7 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   const layoutContent = (
     <div className="min-h-screen bg-background print:min-h-0" role="document">
+      <StarBackground />
       <GlobalOverlay />
       <div className="print:hidden">
         <SkipToContent />
