@@ -401,4 +401,4 @@ export const Header = React.memo(function Header({ onMenuToggle, searchQuery, on
       <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary/80 via-primary to-primary/40 opacity-60" />
     </header>
   );
-}
+});

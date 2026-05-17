@@ -393,5 +393,6 @@ export const SidebarReorganized = React.memo(
       </aside>
     </>
   );
+}
   )
 );
