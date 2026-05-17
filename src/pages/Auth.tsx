@@ -405,7 +405,7 @@ export default function Auth() {
                       Bem-vindo de volta
                     </h1>
                     <p className="text-[13px] text-white/50">
-                      Entre com suas credenciais para continuar
+                      Entre com suas credenciais para Brilhar, você nasceu para isso!
                     </p>
                   </div>
                 </CardHeader>
