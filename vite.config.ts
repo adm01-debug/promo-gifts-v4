@@ -11,14 +11,16 @@ import { visualizer } from "rollup-plugin-visualizer";
  */
 export default defineConfig(({ mode }: { mode: string }) => {
   const env = loadEnv(mode, process.cwd(), '');
+  const externalSupabaseUrl = env.VITE_EXTERNAL_SUPABASE_URL || env.EXTERNAL_SUPABASE_URL;
+  const externalSupabaseAnonKey = env.VITE_EXTERNAL_SUPABASE_ANON_KEY || env.EXTERNAL_SUPABASE_ANON_KEY;
   const hasExternalBrowserPair = Boolean(
-    env.VITE_EXTERNAL_SUPABASE_URL && env.VITE_EXTERNAL_SUPABASE_ANON_KEY,
+    externalSupabaseUrl && externalSupabaseAnonKey,
   );
   const resolvedSupabaseUrl = hasExternalBrowserPair
-    ? env.VITE_EXTERNAL_SUPABASE_URL
+    ? externalSupabaseUrl
     : env.VITE_SUPABASE_URL;
   const resolvedSupabaseAnonKey = hasExternalBrowserPair
-    ? env.VITE_EXTERNAL_SUPABASE_ANON_KEY
+    ? externalSupabaseAnonKey
     : env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
   return ({
