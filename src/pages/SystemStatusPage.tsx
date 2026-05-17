@@ -124,18 +124,20 @@ export default function SystemStatusPage() {
         let msg = "Acessível";
         
         if (error) {
+          // PGRST301 = JWT Expirado/Inválido
+          // 42501 = Forbidden (RLS block)
           if (error.code === 'PGRST301') {
             status = "error";
-            msg = "JWT Inválido/Expirado (Sessão corrompida)";
-          } else if (httpStatus === 403) {
+            msg = `JWT Inválido/Expirado (${error.code})`;
+          } else if (httpStatus === 403 || error.code === '42501') {
             status = "warning";
             msg = `Forbidden (Bloqueado por RLS: ${error.code})`;
           } else if (error.code === '42P01') {
             status = "error";
-            msg = "Tabela Inexistente (Esquema não sincronizado)";
+            msg = `Tabela Inexistente (Esquema não sincronizado: ${error.code})`;
           } else {
             status = "error";
-            msg = `${error.code}: ${error.message}`;
+            msg = `Erro ${error.code}: ${error.message} (HTTP ${httpStatus})`;
           }
         }
 
@@ -156,12 +158,25 @@ export default function SystemStatusPage() {
     setIsChecking(false);
   };
 
-  const downloadReport = () => {
+  const downloadReport = async () => {
+    setIsChecking(true);
+    
+    // Buscar erros de login recentes (últimas 24h) para incluir no relatório
+    const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { data: recentErrors } = await supabase
+      .from('login_attempts')
+      .select('*')
+      .eq('success', false)
+      .gte('created_at', last24h)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
     const report = {
       timestamp: new Date().toISOString(),
       instance: instanceInfo,
       statuses: statuses.map(s => ({ name: s.name, status: s.status, message: s.message })),
       rls: rlsChecks,
+      recentLoginErrors: recentErrors || [],
       crm: crmTables
     };
     
@@ -172,6 +187,7 @@ export default function SystemStatusPage() {
     a.download = `diagnostico-sistema-${new Date().getTime()}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    setIsChecking(false);
   };
 
   const runCrmHealthCheck = async () => {

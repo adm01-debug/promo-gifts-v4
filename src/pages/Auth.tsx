@@ -285,7 +285,7 @@ export default function Auth() {
                 variant="link" 
                 size="sm" 
                 className="h-auto p-0 text-xs text-white/60 hover:text-white"
-                onClick={() => navigate('/status')}
+                onClick={() => navigate('/admin/status')}
               >
                 Executar teste completo de conexão →
               </Button>
@@ -295,15 +295,44 @@ export default function Auth() {
         return;
       }
 
-      // Verificação pós-auth de perfil e roles
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData?.session;
+      const userId = session?.user?.id;
+
+      if (!userId) {
+        toast({
+          variant: 'destructive',
+          title: 'Erro de sessão',
+          description: 'Login realizado mas a sessão não pôde ser iniciada.',
+        });
+        return;
+      }
+
+      // 1. Verificação detalhada de Perfil (is_active)
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('is_active, role')
-        .eq('email', data.email.toLowerCase())
+        .eq('user_id', userId)
         .single();
 
-      if (profileError && profileError.code !== 'PGRST116') {
-         console.warn('Profile fetch error:', profileError);
+      if (profileError) {
+        const isRLSError = profileError.code === 'PGRST301' || profileError.code === '42501';
+        toast({
+          variant: 'destructive',
+          title: 'Erro ao validar perfil',
+          description: (
+            <div className="space-y-2">
+              <p>Não conseguimos carregar suas permissões.</p>
+              <div className="p-2 bg-black/40 rounded border border-white/5 font-mono text-[9px] text-white/50">
+                {isRLSError ? 'FALHA_RLS' : 'FALHA_PERFIL'}: {profileError.code} - {profileError.message}
+              </div>
+            </div>
+          ),
+        });
+        // Se for erro de RLS ou perfil ausente, pode ser um problema crítico de sincronização
+        if (isRLSError) {
+          console.error('[AUTH_DIAGNOSTIC] RLS Block on profile fetch after login');
+        }
       }
 
       if (profileData && profileData.is_active === false) {
@@ -316,14 +345,20 @@ export default function Auth() {
         return;
       }
 
-      const { data: sessionData } = await supabase.auth.getSession();
-      const userId = sessionData?.session?.user?.id;
+      // 2. Verificação de Roles (user_roles)
+      const { data: rolesData, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId);
 
-      if (userId) {
-        await validateAndRedirect(userId, data.email);
-      } else {
-        navigate(resolveRedirectTargetCb());
+      if (rolesError || !rolesData || rolesData.length === 0) {
+        console.warn('[AUTH_DIAGNOSTIC] User logged in but has no roles assigned');
+        // Não bloqueia o login, mas registra o diagnóstico
       }
+
+      // 3. Validação final de IP e Redirecionamento
+      await validateAndRedirect(userId, data.email);
+      
     } catch (err) {
       console.error('Login exception:', err);
       toast({
