@@ -152,16 +152,16 @@ export default function Auth() {
         // silent fail
       }
 
-      // 2. Principal Backend (Directly from env)
-      const principalUrl = import.meta.env.VITE_SUPABASE_URL;
-      const isExternalPrincipal = principalUrl && !principalUrl.includes('lovable.app') && !principalUrl.includes('supabase.co/auth/v1');
+      // 2. Principal Backend (Directly from env or client)
+      const principalUrl = import.meta.env.VITE_EXTERNAL_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
+      const isExternal = !!import.meta.env.VITE_EXTERNAL_SUPABASE_URL;
       
       setDbStatus(prev => ({
         ...prev,
         principal: { 
           ok: !!principalUrl, 
           url: principalUrl, 
-          source: isExternalPrincipal ? 'Externo' : 'Lovable Cloud',
+          source: isExternal ? 'Externo (Principal)' : 'Lovable Cloud',
           loading: false 
         }
       }));

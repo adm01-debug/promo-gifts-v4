@@ -1,0 +1,84 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  try {
+    const { table, direction = "to-external" } = await req.json();
+
+    if (!table) {
+      return new Response(JSON.stringify({ error: "Table name is required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // 1. Conexão com Supabase Interno (Lovable)
+    const internalUrl = Deno.env.get("SUPABASE_URL")!;
+    const internalKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const internalSupabase = createClient(internalUrl, internalKey);
+
+    // 2. Conexão com Supabase Externo
+    const externalUrl = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("VITE_EXTERNAL_SUPABASE_URL");
+    const externalKey = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY");
+
+    if (!externalUrl || !externalKey) {
+       return new Response(JSON.stringify({ error: "External Supabase credentials not configured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const externalSupabase = createClient(externalUrl, externalKey);
+
+    let sourceClient = direction === "to-external" ? internalSupabase : externalSupabase;
+    let targetClient = direction === "to-external" ? externalSupabase : internalSupabase;
+
+    console.log(`Starting sync for table ${table} in direction ${direction}`);
+
+    // 3. Buscar dados da origem
+    const { data: sourceData, error: sourceError } = await sourceClient
+      .from(table)
+      .select("*")
+      .limit(1000); // Limitando para evitar estouro de memória em tabelas grandes
+
+    if (sourceError) throw sourceError;
+
+    if (!sourceData || sourceData.length === 0) {
+      return new Response(JSON.stringify({ message: "No data to sync", count: 0 }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // 4. Inserir/Atualizar no destino (Upsert)
+    // Note: Requer que a tabela tenha uma Primary Key definida corretamente
+    const { data: syncResult, error: syncError } = await targetClient
+      .from(table)
+      .upsert(sourceData, { onConflict: 'id' });
+
+    if (syncError) throw syncError;
+
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: `Synced ${sourceData.length} records to ${direction === "to-external" ? 'external' : 'internal'} database.`,
+      count: sourceData.length
+    }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+
+  } catch (error) {
+    console.error("Sync error:", error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});

@@ -81,6 +81,7 @@ export const AdminRbacRoutesPage = lazyWithRetry(() => import("@/pages/admin/Adm
 export const SellerDiscountLimitsAdminPage = lazyWithRetry(() => import("@/pages/admin/SellerDiscountLimitsAdminPage"));
 export const RlsDenialsAdminPage = lazyWithRetry(() => import("@/pages/admin/RlsDenialsAdminPage"));
 export const OwnershipAuditAdminPage = lazyWithRetry(() => import("@/pages/admin/OwnershipAuditAdminPage"));
+export const StorageTestPage = lazyWithRetry(() => import("@/pages/admin/StorageTestPage"));
 
 // ─────────────────────────────────────────────────────────────────
 // Tools
