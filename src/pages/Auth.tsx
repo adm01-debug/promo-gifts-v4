@@ -25,6 +25,7 @@ import {
   CheckCircle2,
   XCircle,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { AuthBrandingPanel, Starfield, SpaceScene } from './auth/AuthBranding';
 
 import { Button } from '@/components/ui/button';
