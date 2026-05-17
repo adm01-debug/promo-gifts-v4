@@ -2,6 +2,7 @@ import { type ReactNode } from 'react';
 import { Navigate, useLocation, Outlet } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 import { EnhancedErrorBoundary } from '@/components/errors/EnhancedErrorBoundary';
 import { EmptyState } from '@/components/common/EmptyState';
 import { checkAccess, type AccessPolicy } from '@/lib/access/access-policy';
@@ -46,9 +47,16 @@ export function ProtectedRoute({
   });
 
   if (!allowed) {
+    const log = createClientLogger('security.access');
+    log.warn('access_denied', { 
+      reason, 
+      path: location.pathname, 
+      user_id: user.id,
+      roles: roles.join(',') 
+    });
+
     if (reason === 'mfa_required') {
       // O AdminRoute/DevRoute tratam o diálogo de MFA, aqui apenas bloqueamos se for o caso
-      // mas o ProtectedRoute genérico geralmente não exige MFA a menos que passado explicitamente
     }
 
     return (

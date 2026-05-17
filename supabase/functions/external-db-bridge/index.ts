@@ -449,15 +449,14 @@ Deno.serve((req) => {
     if (authHeader?.startsWith("Bearer ")) {
       const token = authHeader.substring(7);
       try {
-        // Decode sem verificação de assinatura (verify_jwt=false já permite isso)
-        // Usamos para inspecionar claims e injetar no client do DB externo
         const [, payload] = decode(token);
+        const p = payload as Record<string, unknown>;
         userContext = {
-          id: payload.sub as string,
-          email: payload.email as string,
-          role: payload.role as string,
+          id: p.sub as string,
+          email: p.email as string,
+          role: p.role as string,
         };
-        console.log(`[external-db-bridge] [req_id=${requestId}] JWT decoded sub=${userContext.id} email=${userContext.email} role=${userContext.role} iss=${payload.iss} aud=${payload.aud}`);
+        console.log(`[external-db-bridge] [req_id=${requestId}] JWT decoded sub=${userContext.id} email=${userContext.email} role=${userContext.role} iss=${p.iss} aud=${p.aud}`);
       } catch (err) {
         console.warn(`[external-db-bridge] [req_id=${requestId}] JWT decode failed: ${(err as Error).message}`);
       }
