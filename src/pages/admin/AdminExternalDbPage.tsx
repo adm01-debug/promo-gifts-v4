@@ -97,9 +97,28 @@ export default function AdminExternalDbPage() {
   };
 
   const testContract = async (contractName: string) => {
-... keep existing code
-
-
+    setLiveLoading(contractName);
+    try {
+      const contract = ALL_CONTRACTS.find((c) => c.name === contractName);
+      if (!contract) throw new Error("Contrato não encontrado");
+      const payload = await invokeExternalRpc(contractName, {});
+      const result = validateRpcPayload(contract, payload);
+      setLiveResults((prev) => ({ ...prev, [contractName]: result }));
+      if (result.ok) {
+        toast.success(`Contrato ${contractName} OK`);
+      } else {
+        toast.error(`Mismatch em ${contractName}`, {
+          description: `${result.missing.length} campos ausentes`,
+        });
+      }
+    } catch (err) {
+      toast.error("Erro ao testar contrato", {
+        description: err instanceof Error ? err.message : "Erro desconhecido",
+      });
+    } finally {
+      setLiveLoading(null);
+    }
+  };
 
   const runEngravingDiff = async () => {
     setDiffLoading(true);
