@@ -404,27 +404,35 @@ export default function Auth() {
                   transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                   className="flex flex-col items-center justify-center py-16 px-8 text-center"
                 >
-                  <div className="relative mb-6">
-                    <div className="absolute inset-0 animate-ping rounded-full bg-success/20 duration-1000" />
-                    <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-success/10 text-success ring-1 ring-success/20">
-                      <CheckCircle2 className="h-10 w-10" />
+                  <div className="relative mb-8">
+                    <div className="absolute inset-0 animate-ping rounded-full bg-blue-500/20 duration-1000" />
+                    <div className="relative flex h-24 w-24 items-center justify-center rounded-3xl bg-blue-500/10 text-blue-400 ring-1 ring-blue-500/20 shadow-[0_0_50px_rgba(59,130,246,0.3)]">
+                      <Rocket className="h-12 w-12 -rotate-45 animate-bounce" />
                     </div>
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.4 }}
+                      className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg border-4 border-[#030508]"
+                    >
+                      <CheckCircle2 className="h-4 w-4 text-white" />
+                    </motion.div>
                   </div>
                   <motion.h2
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
-                    className="font-display text-2xl font-bold text-white"
+                    className="font-display text-3xl font-bold text-white tracking-tight"
                   >
-                    Acesso concedido
+                    Decolagem autorizada!
                   </motion.h2>
                   <motion.p
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
-                    className="mt-2 text-sm text-white/60"
+                    className="mt-3 text-base text-white/50"
                   >
-                    Preparando seu ambiente de trabalho...
+                    Bem-vindo a bordo. Iniciando sistemas...
                   </motion.p>
                 </motion.div>
               ) : showForgotPassword ? (
@@ -460,72 +468,69 @@ export default function Auth() {
 
                 <CardContent className="space-y-5 pb-9">
                   {socialError && (
-                    <div
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
                       role="alert"
-                      data-testid="social-login-fallback-banner"
-                      className="animate-fade-in space-y-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-foreground shadow-sm"
+                      className="relative overflow-hidden animate-fade-in space-y-3 rounded-[1.5rem] border border-amber-500/20 bg-gradient-to-br from-amber-500/10 to-transparent p-5 text-sm shadow-2xl backdrop-blur-xl"
                     >
-                      <div className="flex items-start gap-3">
-                        <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500/20">
-                          <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
+                      <div className="absolute top-0 right-0 p-2 opacity-10">
+                        <ShieldAlert className="h-12 w-12 text-amber-500" />
+                      </div>
+                      
+                      <div className="flex items-start gap-4">
+                        <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-500/20 shadow-inner">
+                          <AlertTriangle className="h-5 w-5 text-amber-500" />
                         </div>
-                        <div className="flex-1 space-y-1.5">
-                          <p className="font-semibold leading-tight text-amber-900 dark:text-amber-200" data-testid="social-login-error-title">
+                        <div className="flex-1 space-y-2">
+                          <h3 className="font-display text-base font-bold text-amber-200" data-testid="social-login-error-title">
                             {socialError.title}
-                          </p>
-                          <p className="text-xs leading-relaxed text-amber-800/80 dark:text-amber-300/80" data-testid="social-login-error-description">
+                          </h3>
+                          <p className="text-[13px] leading-relaxed text-amber-100/70" data-testid="social-login-error-description">
                             {socialError.description}
                           </p>
                           {socialError.hint && (
-                            <div className="rounded-md bg-amber-500/10 p-2 border border-amber-500/20" data-testid="social-login-error-hint">
-                              <p className="text-[11px] leading-snug text-amber-900/90 dark:text-amber-100/90">
-                                <span className="font-bold uppercase tracking-wider text-[9px] opacity-70 mr-1">Dica:</span>
+                            <div className="mt-3 rounded-xl bg-black/40 p-3 border border-white/5" data-testid="social-login-error-hint">
+                              <p className="text-[11px] leading-snug text-white/60">
+                                <span className="font-bold uppercase tracking-wider text-[9px] text-amber-500 mr-2">Solução:</span>
                                 {socialError.hint}
                               </p>
                             </div>
                           )}
-                          {socialError.isConfig && (
-                            <p className="text-[10px] italic text-amber-700/70 dark:text-amber-400/60">
-                              Este é um problema de configuração que requer atenção do administrador.
-                            </p>
-                          )}
                         </div>
                       </div>
-                      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-amber-500/10">
-                        {!socialError.isConfig && (
+                      
+                      <div className="flex flex-col gap-2 pt-3">
+                        <div className="flex items-center gap-2">
+                          {!socialError.isConfig && (
+                            <Button
+                              type="button"
+                              className="flex-1 h-10 gap-2 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs transition-all active:scale-95 rounded-xl"
+                              onClick={handleRetryGoogle}
+                            >
+                              <RotateCw className="h-3.5 w-3.5" />
+                              Tentar Google Novamente
+                            </Button>
+                          )}
                           <Button
                             type="button"
-                            size="sm"
-                            variant="default"
-                            className="h-8 gap-1.5 text-xs font-medium shadow-sm hover:shadow-md transition-all active:scale-95"
-                            onClick={handleRetryGoogle}
-                            data-testid="social-fallback-retry-google"
+                            variant="outline"
+                            className="flex-1 h-10 text-xs font-bold border-white/10 bg-white/5 text-white hover:bg-white/10 rounded-xl"
+                            onClick={focusEmailFallback}
                           >
-                            <RotateCw className="h-3 w-3" aria-hidden="true" />
-                            Tentar novamente
+                            Usar E-mail
                           </Button>
-                        )}
+                        </div>
                         <Button
                           type="button"
-                          size="sm"
-                          variant={socialError.isConfig ? 'default' : 'outline'}
-                          className={`h-8 text-xs font-medium transition-all active:scale-95 ${!socialError.isConfig ? 'border-amber-500/30 hover:bg-amber-500/10 hover:text-amber-900' : 'shadow-sm'}`}
-                          onClick={focusEmailFallback}
-                          data-testid="social-fallback-use-email"
-                        >
-                          Usar e-mail e senha
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
                           variant="ghost"
-                          className="h-8 text-xs text-amber-800/60 hover:text-amber-900 hover:bg-transparent"
+                          className="h-8 text-[10px] uppercase tracking-widest text-white/30 hover:text-white/60 hover:bg-transparent"
                           onClick={() => setSocialError(null)}
                         >
-                          Dispensar
+                          Ignorar aviso
                         </Button>
                       </div>
-                    </div>
+                    </motion.div>
                   )}
 
                   <form

@@ -127,9 +127,9 @@ const RAW_MAP: Record<string, OAuthErrorCopy> = {
     hint: "Tente novamente.",
   },
   provider_is_not_enabled: {
-    title: "Login com Google indisponível",
-    description: "O login social ainda não foi configurado no servidor Supabase.",
-    hint: "Avise o administrador para habilitar o provider Google no painel.",
+    title: "Google Login em manutenção",
+    description: "Estamos preparando a conexão com o Google para esta conta. Por enquanto, use seu e-mail e senha cadastrados.",
+    hint: "Se você é o administrador, ative o provider Google no painel do Supabase.",
     isConfig: true,
   },
   unsupported_provider: {
