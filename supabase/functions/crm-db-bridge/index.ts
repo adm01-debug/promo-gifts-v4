@@ -866,8 +866,8 @@ Deno.serve((req) => {
       all,
     });
   }
-  if (diagOp === "creds_health") {
-    return jsonResponse(await buildCredsHealthSnapshot());
+  if (diagOp === "creds_debug") {
+    return jsonResponse({ ok: true, ts: Date.now(), metrics: getCredentialCacheMetrics() });
   }
 
   // Marca início da request real (pós-diag) para medir cold vs warm path.
