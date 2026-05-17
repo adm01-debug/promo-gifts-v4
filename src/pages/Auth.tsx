@@ -497,8 +497,16 @@ export default function Auth() {
                           type="email"
                           placeholder="seu@email.com"
                           autoComplete="email"
-                          className="border-border bg-input pl-10 focus:border-blue-500 focus:ring-blue-500"
+                          inputMode="email"
+                          autoCapitalize="none"
+                          spellCheck={false}
+                          className="border-border bg-input pl-10 lowercase focus:border-blue-500 focus:ring-blue-500"
                           {...loginForm.register('email')}
+                          onChange={(e) => {
+                            const lower = e.target.value.toLowerCase();
+                            if (e.target.value !== lower) e.target.value = lower;
+                            loginForm.register('email').onChange(e);
+                          }}
                           ref={(el) => {
                             loginForm.register('email').ref(el);
                             emailInputRef.current = el;
