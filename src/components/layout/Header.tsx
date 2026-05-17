@@ -133,9 +133,9 @@ export const Header = React.memo(function Header({ onMenuToggle, searchQuery, on
       } as CSSProperties}
       className={cn(
         "fixed top-0 right-0 z-40 border-b transition-all duration-300 print:hidden",
-        "bg-card/95 backdrop-blur-md border-border",
+        "bg-transparent backdrop-blur-none border-transparent",
         "h-[var(--header-h)]",
-        isScrolled && "bg-card/98 backdrop-blur-lg shadow-md border-border/80",
+        isScrolled && "bg-card/40 backdrop-blur-xl shadow-lg border-border/20",
       )}
     >
       <div className="flex items-center justify-between h-full px-2 sm:px-4 lg:px-6">
@@ -151,7 +151,7 @@ export const Header = React.memo(function Header({ onMenuToggle, searchQuery, on
 
           {/* #1 — Seção atual como âncora */}
           <div className="hidden lg:flex items-center gap-2">
-            <span className="font-display text-sm font-semibold text-foreground tracking-tight truncate max-w-[160px]">
+            <span className="font-display text-sm font-bold text-primary tracking-wider uppercase truncate max-w-[160px] drop-shadow-[0_0_8px_rgba(var(--primary),0.5)]">
               {currentSection}
             </span>
           </div>
