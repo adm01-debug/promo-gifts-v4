@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/lib/logger";
 import { recordBridgeCall, estimatePayloadBytes } from "@/lib/telemetry/bridgeCallMetrics";
 import { newRequestId, REQUEST_ID_HEADER } from "@/lib/telemetry/requestId";
+import { validateCrmCredentials } from "@/lib/crm-creds-validator";
 
 export interface CrmQuery {
   table: string;
