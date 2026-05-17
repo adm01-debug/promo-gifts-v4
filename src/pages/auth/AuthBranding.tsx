@@ -215,9 +215,8 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
             className="w-full h-full rounded-full bg-white"
             data-testid={`star-breathing-${star.id}`}
             style={{
-              // Efeito de brilho intenso com multicamadas de glow
-              boxShadow: '0 0 10px #fff, 0 0 20px #3b82f6, 0 0 40px #3b82f6, 0 0 80px rgba(59, 130, 246, 0.4)',
-              animation: `breathingStar ${star.breathingDur}s ease-in-out ${star.breathingDelay}s infinite, starGlowPulse ${star.breathingDur * 1.5}s ease-in-out infinite`,
+              // Brilho intenso triplo (30x) + escala (8x) via animação breathingStar em index.css
+              animation: `breathingStar ${star.breathingDur}s ease-in-out ${star.breathingDelay}s infinite`,
               willChange: "opacity, transform, filter",
               mixBlendMode: 'screen',
             }}
