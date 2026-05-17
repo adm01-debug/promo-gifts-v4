@@ -34,8 +34,9 @@ export function DiscountApprovalHeaderBadge() {
   // Realtime: invalidate on any change
   useEffect(() => {
     if (!isAdmin) return;
+    const channelName = `discount-approvals-badge-${crypto.randomUUID()}`;
     const channel = supabase
-      .channel("discount-approvals-badge")
+      .channel(channelName)
       .on("postgres_changes", {
         event: "*",
         schema: "public",
