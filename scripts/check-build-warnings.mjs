@@ -58,6 +58,7 @@ async function runBuildAndCheckWarnings() {
       'Circular dependency', // Muitas vezes presente em libs grandes, avaliar se bloqueia
     ];
 
+
     for (const line of lines) {
       if (allowedExceptions.some(exc => line.includes(exc))) continue;
       
