@@ -468,7 +468,12 @@ Deno.serve((req) => {
       try {
         rawBody = await req.json();
       } catch {
-        return jsonResponse({ error: 'Invalid JSON body' }, 400, corsHeaders);
+        // Se for GET ou corpo vazio, permitimos apenas para PING ou OPTIONS
+        if (req.method === 'GET' || req.method === 'OPTIONS') {
+          rawBody = { operation: 'ping' };
+        } else {
+          return jsonResponse({ error: 'Invalid JSON body' }, 400, corsHeaders);
+        }
       }
 
       const parsed = TopLevelBodySchema.safeParse(rawBody);
@@ -1543,7 +1548,14 @@ function jsonResponse(body: unknown, status: number, corsHeaders: Record<string,
   if (reqId && body && typeof body === "object" && !Array.isArray(body)) {
     finalBody = { ...(body as Record<string, unknown>), request_id: reqId };
   }
-  const headers: Record<string, string> = { ...corsHeaders, 'Content-Type': 'application/json' };
+  
+  const headers: Record<string, string> = { 
+    ...corsHeaders, 
+    'Content-Type': 'application/json',
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY'
+  };
+  
   if (reqId) headers[REQUEST_ID_HEADER] = reqId;
   return new Response(JSON.stringify(finalBody), { status, headers });
 }
@@ -1638,6 +1650,8 @@ function cachedJsonResponse(payload: string, corsHeaders: Record<string, string>
       ...corsHeaders,
       'Content-Type': 'application/json',
       'X-Bridge-Cache': hit ? 'HIT' : 'MISS',
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY'
     },
   });
 }
@@ -1665,7 +1679,7 @@ function buildExternalClient(url: string, key: string): ServiceClient {
   }));
 }
 
-async function getExternalClient(corsHeaders: Record<string, string>, userContext?: { id: string; role?: string } | null) {
+async function getExternalClient(corsHeaders: Record<string, string>, userContext?: { id: string; role?: string; email?: string } | null) {
   if (cachedExternalClient && !userContext) return cachedExternalClient;
 
   const [{ value: externalUrl }, { value: externalKey }] = await Promise.all([
@@ -1682,11 +1696,26 @@ async function getExternalClient(corsHeaders: Record<string, string>, userContex
     );
   }
 
-  // Se temos contexto de usuário, criamos um client efêmero ou injetamos headers de RLS
-  // NOTA: Para Supabase externo, idealmente passaríamos o JWT do usuário se o DB externo
-  // também usar Supabase Auth. Como estamos usando Service Role no bridge, simulamos a role
-  // via session variables se o Postgres externo permitir ou apenas confiamos no gate do bridge.
-  const client = buildExternalClient(externalUrl, externalKey);
+  // Se temos contexto de usuário, injetamos como session variables para RLS no DB externo
+  const globalHeaders: Record<string, string> = {
+    'x-connection-timeout': '15000',
+    'Prefer': 'max-affected=1000',
+  };
+  
+  if (userContext) {
+    // Injeta claims do JWT para o Supabase externo honrar o RLS
+    // Nota: Requer que o Supabase externo aceite essas claims via session variables (set_config)
+    // ou que o client use um auth token válido do projeto destino.
+    // Como usamos Service Role, forçamos claims via headers se o bridge permitir bypass.
+    globalHeaders['x-supabase-auth-sub'] = userContext.id;
+    if (userContext.role) globalHeaders['x-supabase-auth-role'] = userContext.role;
+    if (userContext.email) globalHeaders['x-supabase-auth-email'] = userContext.email;
+  }
+
+  const client = castSupabaseClient(createClient(externalUrl, externalKey, {
+    db: { schema: 'public' },
+    global: { headers: globalHeaders },
+  }));
   
   if (!userContext) {
     cachedExternalClient = client;
