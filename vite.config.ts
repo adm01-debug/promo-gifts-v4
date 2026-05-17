@@ -12,13 +12,15 @@ import { visualizer } from "rollup-plugin-visualizer";
 export default defineConfig(({ mode }: { mode: string }) => {
   const env = loadEnv(mode, process.cwd(), '');
   
-  // SSOT: As variáveis VITE_SUPABASE_* devem SEMPRE apontar para o projeto interno (Lovable).
-  // As variáveis VITE_EXTERNAL_SUPABASE_* apontam para o projeto externo.
-  const resolvedSupabaseUrl = env.VITE_SUPABASE_URL;
-  const resolvedSupabaseAnonKey = env.VITE_SUPABASE_PUBLISHABLE_KEY;
-  
-  const externalSupabaseUrl = env.VITE_EXTERNAL_SUPABASE_URL || env.EXTERNAL_SUPABASE_URL;
+  // O usuário deseja usar o Supabase Externo como o backend principal do sistema.
+  // Resolvemos as URLs e Chaves priorizando as externas para que o Auth e Functions 
+  // ocorram no projeto de destino (doufsxqlfjyuvxuezpln).
+  const externalSupabaseUrl = env.VITE_EXTERNAL_SUPABASE_URL || env.EXTERNAL_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co';
   const externalSupabaseAnonKey = env.VITE_EXTERNAL_SUPABASE_ANON_KEY || env.EXTERNAL_SUPABASE_ANON_KEY;
+
+  const resolvedSupabaseUrl = externalSupabaseUrl;
+  const resolvedSupabaseAnonKey = externalSupabaseAnonKey || env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
 
 
   return {
