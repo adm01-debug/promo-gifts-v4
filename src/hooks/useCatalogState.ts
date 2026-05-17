@@ -295,7 +295,7 @@ export function useCatalogState() {
     filters.colorVariations,
   ]);
 
-  const hasActiveCatalogConstraints = activeFiltersCount > 0 || searchQuery.trim().length > 0;
+  const hasActiveCatalogConstraints = (activeFiltersCount > 0 || (searchQuery && searchQuery.trim().length > 0));
   const shouldShowCatalogSkeleton =
     isInitialCatalogLoad ||
     (isLoading && paginatedProducts.length === 0 && !hasActiveCatalogConstraints);
