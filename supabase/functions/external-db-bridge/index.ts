@@ -519,7 +519,7 @@ Deno.serve((req) => {
       // BATCH OPERATION
       // ============================================
       if (body.operation === 'batch') {
-        return await handleBatch(body, req, corsHeaders, requestStartTime);
+        return await handleBatch(body, req, corsHeaders, requestStartTime, userContext);
       }
 
       const operation = body.operation as Operation;
@@ -528,13 +528,13 @@ Deno.serve((req) => {
       // RPC OPERATION
       // ============================================
       if (operation === 'rpc') {
-        return await handleRpc(body, corsHeaders);
+        return await handleRpc(body, corsHeaders, userContext);
       }
 
       // ============================================
       // CRUD OPERATIONS
       // ============================================
-      const response = await handleCrud(body, req, corsHeaders, requestStartTime);
+      const response = await handleCrud(body, req, corsHeaders, requestStartTime, userContext);
       if (response.status >= 500) breaker.recordFailure(); else breaker.recordSuccess();
       return response;
 
@@ -568,7 +568,7 @@ Deno.serve((req) => {
 // BATCH HANDLER
 // ============================================
 
-async function handleBatch(body: any, req: Request, corsHeaders: Record<string, string>, requestStartTime: number) {
+async function handleBatch(body: any, req: Request, corsHeaders: Record<string, string>, requestStartTime: number, userContext?: { id: string; role?: string } | null) {
   const queries = body.queries as Array<Record<string, unknown>>;
   if (!Array.isArray(queries) || queries.length === 0) {
     return jsonResponse({ error: 'Batch requires a non-empty "queries" array' }, 400, corsHeaders);
@@ -577,7 +577,7 @@ async function handleBatch(body: any, req: Request, corsHeaders: Record<string, 
     return jsonResponse({ error: 'Batch limited to 10 queries max' }, 400, corsHeaders);
   }
 
-  const externalSupabaseOrResp = await getExternalClient(corsHeaders);
+  const externalSupabaseOrResp = await getExternalClient(corsHeaders, userContext);
   if (externalSupabaseOrResp instanceof Response) return externalSupabaseOrResp;
   // Narrow estável dentro de closures async (TS perde narrow em vars que mudam globalmente).
   const externalSupabase: ServiceClient = externalSupabaseOrResp;
@@ -726,7 +726,7 @@ async function handleBatch(body: any, req: Request, corsHeaders: Record<string, 
 // RPC HANDLER
 // ============================================
 
-async function handleRpc(body: any, corsHeaders: Record<string, string>) {
+async function handleRpc(body: any, corsHeaders: Record<string, string>, userContext?: { id: string; role?: string } | null) {
   const rpcName = body.rpcName as string;
   const rpcParams = body.rpcParams as Record<string, unknown>;
 
@@ -734,7 +734,7 @@ async function handleRpc(body: any, corsHeaders: Record<string, string>) {
     return jsonResponse({ error: `RPC '${rpcName}' não permitida`, allowedRpcs: ALLOWED_RPCS }, 403, corsHeaders);
   }
 
-  const externalSupabase = await getExternalClient(corsHeaders);
+  const externalSupabase = await getExternalClient(corsHeaders, userContext);
   if (externalSupabase instanceof Response) return externalSupabase;
 
   console.log(`RPC: ${rpcName}`, rpcParams);
@@ -801,7 +801,7 @@ async function enrichCustomizationPrice(externalSupabase: any, rpcData: any) {
 // CRUD HANDLER
 // ============================================
 
-async function handleCrud(body: any, req: Request, corsHeaders: Record<string, string>, requestStartTime: number) {
+async function handleCrud(body: any, req: Request, corsHeaders: Record<string, string>, requestStartTime: number, userContext?: { id: string; role?: string } | null) {
   const operation = body.operation as Operation;
   let table = body.table as string;
 
@@ -919,7 +919,7 @@ async function handleCrud(body: any, req: Request, corsHeaders: Record<string, s
     cacheMissesTotal++;
   }
 
-  const externalSupabase = await getExternalClient(corsHeaders);
+  const externalSupabase = await getExternalClient(corsHeaders, userContext);
   if (externalSupabase instanceof Response) return externalSupabase;
 
   const isVirtual = table === 'product_print_areas';
