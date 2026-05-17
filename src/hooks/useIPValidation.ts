@@ -10,35 +10,28 @@ interface IPValidationResult {
   details?: Record<string, unknown>;
 }
 
-let cachedIPPromise: Promise<string | null> | null = null;
-
 export function useIPValidation() {
   const [isValidating, setIsValidating] = useState(false);
 
   // Buscar IP atual do usuário (Opcional - Edge Function já identifica via headers)
   const fetchCurrentIP = useCallback(async (): Promise<string | null> => {
-    if (cachedIPPromise) return cachedIPPromise;
-
-    cachedIPPromise = (async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke('get-visitor-info');
-        if (error || !data?.ip) {
-          console.warn('Fallback to secondary IP identification');
-          const response = await fetch('https://api.ipify.org?format=json').catch(() => null);
-          if (response) {
-            const data = await response.json();
-            return data.ip;
-          }
-          return null;
+    try {
+      // Usar a nossa própria edge function que é mais confiável e contorna AdBlockers
+      const { data, error } = await supabase.functions.invoke('get-visitor-info');
+      if (error || !data?.ip) {
+        console.warn('Fallback to secondary IP identification');
+        const response = await fetch('https://api.ipify.org?format=json').catch(() => null);
+        if (response) {
+          const data = await response.json();
+          return data.ip;
         }
-        return data.ip;
-      } catch (error) {
-        console.error('Error fetching current IP:', error);
         return null;
       }
-    })();
-
-    return cachedIPPromise;
+      return data.ip;
+    } catch (error) {
+      console.error('Error fetching current IP:', error);
+      return null;
+    }
   }, []);
 
   // Validar IP para um usuário específico (por email) - pré-login

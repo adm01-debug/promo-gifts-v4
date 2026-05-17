@@ -13,7 +13,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { waitForBridgeReady } from '@/lib/external-db/health-check';
-import { validateCrmCredentials } from '@/lib/crm-creds-validator';
 
 const PREWARM_TABLES = [
   'products',
@@ -32,19 +31,8 @@ const SESSION_KEY = '__pg_prewarm_done__';
  * Acorda o crm-db-bridge em paralelo (cold start ~80–250ms).
  * Mesma estratégia: ping leve via OPTIONS, falha silenciosa.
  */
-async function pingCrmBridge(): Promise<{ ok: boolean; ms: number; skipped?: boolean }> {
+async function pingCrmBridge(): Promise<{ ok: boolean; ms: number }> {
   const t0 = performance.now();
-  // GATE: valida credenciais antes de tentar consumir o CRM.
-  // Sem isto, a request real cai em 500 "CRM database credentials not configured"
-  // e ainda consome rate-limit do bot-protection. Ver src/lib/crm-creds-validator.ts.
-  const creds = await validateCrmCredentials();
-  if (!creds.ok) {
-    logger.warn(
-      `[Prewarm] ⛔ CRM ping abortado — credenciais ${creds.health}. ` +
-        `Cadastre CRM_SUPABASE_URL e CRM_SUPABASE_SERVICE_KEY em Connectors → Lovable Cloud.`,
-    );
-    return { ok: false, ms: Math.round(performance.now() - t0), skipped: true };
-  }
   try {
     const { error } = await supabase.functions.invoke('crm-db-bridge', {
       body: { table: 'companies', operation: 'select', select: 'id', limit: 1, countMode: 'none' },

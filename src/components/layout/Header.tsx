@@ -1,5 +1,5 @@
 import React, { useEffect, type CSSProperties } from "react";
-import { User, Menu, Sun, Moon, Heart, GitCompare, Search, LogOut, Settings, HelpCircle, Shield, MoreHorizontal, Palette, RotateCcw, Activity } from "lucide-react";
+import { User, Menu, Sun, Moon, Heart, GitCompare, Search, LogOut, Settings, HelpCircle, Shield, MoreHorizontal, Palette, RotateCcw } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -371,15 +371,6 @@ export const Header = React.memo(function Header({ onMenuToggle, searchQuery, on
                 <Palette className="h-4 w-4 mr-2" />
                 Skins
               </DropdownMenuItem>
-              {isAdmin && (
-                <DropdownMenuItem
-                  onClick={() => navigate("/status")}
-                  className="hover:bg-primary/10 focus:bg-primary/10 cursor-pointer"
-                >
-                  <Activity className="h-4 w-4 mr-2" />
-                  Status do Sistema
-                </DropdownMenuItem>
-              )}
               <DropdownMenuItem className="hover:bg-primary/10 focus:bg-primary/10 cursor-pointer">
                 <HelpCircle className="h-4 w-4 mr-2" />
                 Ajuda

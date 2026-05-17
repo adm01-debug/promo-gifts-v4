@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { Navigate, useLocation, Outlet } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,26 +14,6 @@ interface ProtectedRouteProps extends AccessPolicy {
   requireAdmin?: boolean;
 }
 
-function ProtectedRouteErrorFallback() {
-  const location = useLocation();
-
-  return (
-    <EmptyState
-      variant="error"
-      title="Falha no Carregamento"
-      description="Ocorreu um erro ao carregar este módulo. Tente recarregar a página ou voltar ao início."
-      action={{ 
-        label: 'Recarregar Página', 
-        onClick: () => window.location.reload() 
-      }}
-      secondaryAction={{
-        label: 'Ir para o Início',
-        onClick: () => window.location.href = '/'
-      }}
-    />
-  );
-}
-
 export function ProtectedRoute({
   children,
   requiredRole,
@@ -41,7 +21,7 @@ export function ProtectedRoute({
   requireDev,
   requireAdmin = false,
 }: ProtectedRouteProps) {
-  const { user, session, roles, currentAAL, isLoading } = useAuth();
+  const { user, roles, currentAAL, isLoading } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -52,7 +32,7 @@ export function ProtectedRoute({
     );
   }
 
-  if (!user || !session) {
+  if (!user) {
     // Salva destino pós-login (sobrevive ao round-trip OAuth)
     savePostLoginRedirect(`${location.pathname}${location.search}${location.hash}`);
     return <Navigate to="/auth" state={{ from: location }} replace />;
@@ -95,7 +75,16 @@ export function ProtectedRoute({
 
   return (
     <EnhancedErrorBoundary
-      fallback={<ProtectedRouteErrorFallback />}
+      fallback={
+        <div className="p-8">
+          <EmptyState
+            variant="error"
+            title="Falha no Módulo"
+            description="Ocorreu um erro ao carregar esta seção. Tente recarregar a página."
+            action={{ label: 'Recarregar', onClick: () => window.location.reload() }}
+          />
+        </div>
+      }
     >
       {children ? <>{children}</> : <Outlet />}
     </EnhancedErrorBoundary>

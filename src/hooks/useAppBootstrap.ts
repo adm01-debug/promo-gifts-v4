@@ -56,8 +56,14 @@ export function useAppBootstrap() {
     };
   }, []);
 
+  // 4. Lógica de Scroll Progressivo em Navegação
   const isHome = location.pathname === "/";
-
+  useEffect(() => {
+    document.documentElement.style.setProperty(
+      "--breadcrumb-h",
+      isHome ? "0px" : "40px"
+    );
+  }, [isHome]);
 
   return {
     isHome,

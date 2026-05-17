@@ -140,9 +140,15 @@ export function useCatalogState() {
 
   const totalEstimate = catalogData?.pages?.[0]?.totalEstimate ?? null;
 
-  // REMOVIDO: Auto-fetch agressivo de todas as páginas em background.
-  // O IntersectionObserver já garante que as páginas carreguem sob demanda.
-  // Isso evita baixar 15.000+ produtos sem necessidade e economiza memória/banda.
+  useEffect(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(() => fetchNextPage());
+      } else {
+        setTimeout(() => fetchNextPage(), 1000);
+      }
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   useEffect(() => {
     if (realProducts.length > 0) registerProducts(realProducts);
@@ -289,10 +295,10 @@ export function useCatalogState() {
     filters.colorVariations,
   ]);
 
-  const hasActiveCatalogConstraints = (activeFiltersCount > 0 || (searchQuery && searchQuery.trim().length > 0));
   const shouldShowCatalogSkeleton =
     isInitialCatalogLoad ||
     (isLoading && paginatedProducts.length === 0 && !hasActiveCatalogConstraints);
+  const hasActiveCatalogConstraints = activeFiltersCount > 0 || searchQuery.trim().length > 0;
   const shouldShowEmptyState =
     !shouldShowCatalogSkeleton && paginatedProducts.length === 0 && !isFetchingNextPage;
 

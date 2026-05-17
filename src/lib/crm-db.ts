@@ -9,7 +9,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/lib/logger";
 import { recordBridgeCall, estimatePayloadBytes } from "@/lib/telemetry/bridgeCallMetrics";
 import { newRequestId, REQUEST_ID_HEADER } from "@/lib/telemetry/requestId";
-import { validateCrmCredentials } from "@/lib/crm-creds-validator";
 
 export interface CrmQuery {
   table: string;
@@ -59,15 +58,6 @@ export async function invokeCrmBatch(queries: CrmBatchQuery[]): Promise<CrmBatch
   const body = { operation: "batch", queries };
   const reqBytes = estimatePayloadBytes(body);
   const requestId = newRequestId();
-
-  // Gate: credenciais resolvidas? Sem isto a edge devolve 500.
-  const creds = await validateCrmCredentials();
-  if (!creds.ok) {
-    throw new Error(
-      `CRM indisponível: credenciais ${creds.health}. Configure CRM_SUPABASE_URL e CRM_SUPABASE_SERVICE_KEY.`,
-    );
-  }
-
   const { data, error } = await supabase.functions.invoke("crm-db-bridge", {
     body,
     headers: { [REQUEST_ID_HEADER]: requestId },
@@ -174,17 +164,6 @@ export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
       serverRequestId: serverRequestId || undefined,
     });
   };
-
-  // Gate: valida credenciais ANTES da 1ª tentativa (cacheado por 60s).
-  // Curto-circuita com mensagem amigável em vez de bater na edge e receber 500.
-  const creds = await validateCrmCredentials();
-  if (!creds.ok) {
-    const errMsg =
-      `CRM indisponível: credenciais ${creds.health}. ` +
-      `Verifique CRM_SUPABASE_URL e CRM_SUPABASE_SERVICE_KEY em Connectors → Lovable Cloud.`;
-    record(false, null, errMsg);
-    throw new Error(errMsg);
-  }
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const { data, error } = await supabase.functions.invoke("crm-db-bridge", {

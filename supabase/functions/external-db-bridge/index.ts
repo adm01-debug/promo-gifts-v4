@@ -31,7 +31,7 @@ import { retrySupabaseCall } from "../_shared/retry-backoff.ts";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { getOrCreateRequestId, REQUEST_ID_HEADER } from "../_shared/request-id.ts";
 import { resolveCredential } from "../_shared/credentials.ts";
-import { decode, verify } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
+import { decode } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
 
 const breaker = getBreaker("external-db");
 
@@ -449,58 +449,16 @@ Deno.serve((req) => {
     if (authHeader?.startsWith("Bearer ")) {
       const token = authHeader.substring(7);
       try {
-        // Tentativa 1: Verificação local do JWT (rápida, evita RTT)
-        // O Supabase usa a secret "JWT_SECRET" para assinar os tokens.
-        // Se ela estiver disponível, podemos validar o token sem chamar a API da Auth.
-        const jwtSecret = Deno.env.get("JWT_SECRET");
-        let payload: Record<string, unknown> | null = null;
-        
-        if (jwtSecret) {
-          try {
-            // Importante: no Deno, precisamos importar a chave como CryptoKey para o verify
-            const encoder = new TextEncoder();
-            const keyData = encoder.encode(jwtSecret);
-            const cryptoKey = await crypto.subtle.importKey(
-              "raw",
-              keyData,
-              { name: "HMAC", hash: "SHA-256" },
-              false,
-              ["verify"]
-            );
-            
-            payload = await verify(token, cryptoKey) as Record<string, unknown>;
-            console.log(`[external-db-bridge] [req_id=${requestId}] JWT verified locally`);
-          } catch (verifyErr) {
-            console.warn(`[external-db-bridge] [req_id=${requestId}] Local JWT verification failed: ${(verifyErr as Error).message}. Falling back to decode.`);
-          }
-        }
-
-        if (!payload) {
-          const [, decodedPayload] = decode(token);
-          payload = decodedPayload as Record<string, unknown>;
-        }
-
+        const [, payload] = decode(token);
+        const p = payload as Record<string, unknown>;
         userContext = {
-          id: payload.sub as string,
-          email: payload.email as string,
-          role: payload.role as string,
+          id: p.sub as string,
+          email: p.email as string,
+          role: p.role as string,
         };
-        
-        // Validação de expiração se decodificado manualmente
-        if (payload.exp && typeof payload.exp === 'number') {
-          const now = Math.floor(Date.now() / 1000);
-          if (payload.exp < now) {
-            console.warn(`[external-db-bridge] [req_id=${requestId}] Token expired at ${payload.exp} (now=${now})`);
-            // Se o token expirou, não confiamos no contexto
-            userContext = null;
-          }
-        }
-
-        if (userContext) {
-          console.log(`[external-db-bridge] [req_id=${requestId}] JWT context: sub=${userContext.id} email=${userContext.email} role=${userContext.role} iss=${payload.iss} aud=${payload.aud}`);
-        }
+        console.log(`[external-db-bridge] [req_id=${requestId}] JWT decoded sub=${userContext.id} email=${userContext.email} role=${userContext.role} iss=${p.iss} aud=${p.aud}`);
       } catch (err) {
-        console.warn(`[external-db-bridge] [req_id=${requestId}] JWT processing failed: ${(err as Error).message}`);
+        console.warn(`[external-db-bridge] [req_id=${requestId}] JWT decode failed: ${(err as Error).message}`);
       }
     }
 
@@ -880,35 +838,23 @@ async function handleCrud(body: any, req: Request, corsHeaders: Record<string, s
   const skipAuth = allowPublicAccess && !isWriteOp && (!authHeader || !authHeader.startsWith('Bearer '));
 
   if (!skipAuth && authHeader?.startsWith('Bearer ')) {
+    const localSupabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    // getClaims is faster than getUser — verifies JWT locally without server RTT.
     const token = authHeader.replace('Bearer ', '');
-    
-    // Tentativa 1: Usar o userContext já resolvido no início da função
-    if (userContext) {
-      userId = userContext.id;
-      // Fetch roles with service role to bypass RLS on user_roles
+    const { data: claimsData, error: claimsError } = await localSupabase.auth.getClaims(token);
+
+    if (claimsData?.claims?.sub && !claimsError) {
+      userId = claimsData.claims.sub;
       const localService = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
       const { data: userRoles, error: roleError } = await localService.from('user_roles').select('role').eq('user_id', userId);
-      if (roleError) console.error('[external-db-bridge] Error fetching user roles:', roleError);
-      userRole = userRoles?.[0]?.role || userContext.role || 'vendedor';
-    } else {
-      // Fallback: Autenticação via Supabase Auth API
-      const localSupabase = createClient(
-        Deno.env.get('SUPABASE_URL')!,
-        Deno.env.get('SUPABASE_ANON_KEY')!,
-        { global: { headers: { Authorization: authHeader } } }
-      );
-      
-      const { data: userData, error: authError } = await localSupabase.auth.getUser();
-      
-      if (userData?.user && !authError) {
-        userId = userData.user.id;
-        const localService = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-        const { data: userRoles, error: roleError } = await localService.from('user_roles').select('role').eq('user_id', userId);
-        if (roleError) console.error('[external-db-bridge] Error fetching user roles (fallback):', roleError);
-        userRole = userRoles?.[0]?.role || (userData.user.app_metadata?.role as string) || 'vendedor';
-      } else if (!allowPublicAccess) {
-        console.error('[external-db-bridge] Auth fallback failed:', authError?.message || 'No user data');
-      }
+      if (roleError) console.error('Error fetching user roles:', roleError);
+      userRole = userRoles?.[0]?.role || 'vendedor';
+    } else if (!allowPublicAccess) {
+      console.error('Auth failed:', claimsError?.message);
     }
   }
 
@@ -1740,20 +1686,9 @@ async function getExternalClient(corsHeaders: Record<string, string>, userContex
   ]);
   
   if (!externalUrl || !externalKey) {
-    const missing = [];
-    if (!externalUrl) missing.push("EXTERNAL_PROMOBRIND_URL");
-    if (!externalKey) missing.push("EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY");
-    
-    console.warn(`[external-db-bridge] ⚠️ Credenciais não configuradas: ${missing.join(", ")}. Retornando payload vazio.`);
+    console.warn('[external-db-bridge] EXTERNAL_PROMOBRIND_URL/KEY not configured (DB or env) — returning empty payload');
     return jsonResponse(
-      { 
-        records: [], 
-        data: [], 
-        count: 0, 
-        _unconfigured: true, 
-        _missing: missing,
-        _message: 'Banco externo não configurado. Verifique as secrets EXTERNAL_PROMOBRIND_URL e EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY.' 
-      },
+      { records: [], data: [], count: 0, _unconfigured: true, _message: 'Banco externo não configurado' },
       200,
       corsHeaders,
     );

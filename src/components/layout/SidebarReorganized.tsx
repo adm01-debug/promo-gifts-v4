@@ -47,7 +47,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { SidebarBrandHeader } from "./sidebar/SidebarBrandHeader";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { SidebarNavGroup, type NavGroup } from "./sidebar/SidebarNavGroup";
 import { RestrictedRouteNotice } from "./sidebar/RestrictedRouteNotice";
@@ -183,7 +182,7 @@ export const SidebarReorganized = React.memo(
     setOpenGroups(computeAutoOpen());
   }
 
-  const { isAdmin, isDev, signOut } = useAuth();
+  const { isAdmin, isDev } = useAuth();
 
   // Pending discount approval count for admin badge
   const { data: pendingApprovalCount } = useQuery({
@@ -449,7 +448,8 @@ export const SidebarReorganized = React.memo(
                     size="icon" 
                     className="h-8 w-8 text-sidebar-foreground/40 hover:text-destructive hover:bg-destructive/10"
                     onClick={() => {
-                      void signOut();
+                      const { signOut } = useAuth.getState();
+                      signOut();
                     }}
                   >
                     <LogOut className="h-4 w-4" />

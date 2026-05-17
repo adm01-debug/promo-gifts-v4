@@ -72,12 +72,8 @@ export async function getCrmClient(): Promise<SupabaseClient | null> {
   const CRM_KEY = CRM_SERVICE_KEY || CRM_ANON_VAL;
 
   if (!CRM_URL || !CRM_KEY) {
-    const missing = [];
-    if (!CRM_URL) missing.push("CRM_SUPABASE_URL (EXTERNAL_CRM_URL)");
-    if (!CRM_KEY) missing.push("CRM_SUPABASE_SERVICE_KEY (EXTERNAL_CRM_SERVICE_ROLE_KEY)");
-    
     console.error(
-      `[crm-boot] ❌ Falha na resolução de credenciais. Faltando: ${missing.join(", ")}. ` +
+      `[crm-boot] ❌ Falha na resolução de credenciais: ` +
       `URL=${urlRes.resolved_name}(${urlRes.source}) ` +
       `KEY=${svcRes.resolved_name}(${svcRes.source}) ` +
       `ANON=${anonRes.resolved_name}(${anonRes.source})`
@@ -481,51 +477,23 @@ async function authenticateRequest(req: Request): Promise<AuthResult> {
   const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-  try {
-    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
+  const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
 
-    const { data: userData, error: userError } = await userClient.auth.getUser();
-    
-    if (userError || !userData?.user) {
-      console.error("[crm-db-bridge] Auth failed:", userError?.message || "No user found");
-      return { 
-        userId: null, 
-        userRole: "public", 
-        error: jsonResponse({ 
-          error: "Token inválido ou expirado", 
-          details: userError?.message,
-          code: userError?.status ? `AUTH_${userError.status}` : "AUTH_FAILED"
-        }, 401) 
-      };
-    }
-
-    const user = userData.user;
-    const adminClient = createClient(supabaseUrl, supabaseServiceKey);
-    const { data: roleData, error: roleError } = await adminClient
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (roleError) {
-      console.warn(`[crm-db-bridge] Error fetching roles for ${user.id}:`, roleError.message);
-    }
-
-    const userRole = roleData?.role || (user.app_metadata?.role as string) || "vendedor";
-    console.log(`[crm-db-bridge] Request from user=${user.id} email=${user.email} role=${userRole}`);
-    
-    return { userId: user.id, userRole };
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("[crm-db-bridge] Unexpected auth error:", msg);
-    return { 
-      userId: null, 
-      userRole: "public", 
-      error: jsonResponse({ error: "Erro interno na autenticação", message: msg }, 500) 
-    };
+  const { data: { user }, error: userError } = await userClient.auth.getUser();
+  if (!user || userError) {
+    console.error("CRM auth failed:", userError?.message);
+    return { userId: null, userRole: "public", error: jsonResponse({ error: "Token inválido ou expirado" }, 401) };
   }
+
+  const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+  const { data: roleData } = await adminClient
+    .from("user_roles").select("role").eq("user_id", user.id).single();
+
+  const userRole = roleData?.role || "vendedor";
+  console.log(`Request from user: ${user.id}, role: ${userRole}`);
+  return { userId: user.id, userRole };
 }
 
 // ============================================

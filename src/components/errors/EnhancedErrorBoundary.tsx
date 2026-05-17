@@ -1,6 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { AlertTriangle, RefreshCw, Home, Bug, ChevronDown, ChevronUp, RotateCcw, Trash2, Copy, Check, LogOut } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { AlertTriangle, RefreshCw, Home, Bug, ChevronDown, ChevronUp, RotateCcw, Trash2, Copy, Check } from 'lucide-react';
 import { logger } from '@/lib/logger';
 import { reportError } from '@/lib/error-reporter';
 import { attemptChunkRecovery, isChunkLoadError } from '@/lib/chunk-recovery';
@@ -140,15 +139,6 @@ class EnhancedErrorBoundary extends Component<Props, State> {
     window.location.href = '/';
   };
 
-  handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      window.location.href = '/auth?reason=manual-recovery';
-    } catch {
-      window.location.href = '/auth';
-    }
-  };
-
   handleClearCacheReload = async () => {
     // Reaproveita o pipeline de recovery (Cache API + SW + cache-bust no URL).
     // Ignora o limite de reloads aqui pois é uma ação manual do usuário.
@@ -275,13 +265,6 @@ class EnhancedErrorBoundary extends Component<Props, State> {
               >
                 <Home className="h-4 w-4" />
                 Início
-              </button>
-              <button
-                onClick={this.handleLogout}
-                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-destructive/20 bg-background px-4 py-3 text-sm font-medium text-destructive shadow-sm transition-colors hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <LogOut className="h-4 w-4" />
-                Sair
               </button>
               <button
                 aria-label="Recarregar"
