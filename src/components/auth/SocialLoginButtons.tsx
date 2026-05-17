@@ -14,7 +14,7 @@ import {
 function mapOAuthError(raw: string): string {
   const m = raw.toLowerCase();
   if (m.includes('unsupported provider') || m.includes('provider is not enabled')) {
-    return 'Login com Google ainda não está habilitado neste ambiente. Avise o administrador.';
+    return 'provider_is_not_enabled';
   }
   if (m.includes('redirect') && m.includes('not allowed')) {
     return 'URL de retorno não autorizada. Verifique a configuração do provedor.';
@@ -188,7 +188,7 @@ export const SocialLoginButtons = forwardRef<HTMLDivElement, SocialLoginButtonsP
         <Button
           type="button"
           variant="outline"
-          className="h-11 w-full gap-3 border-border/60 font-medium transition-all hover:border-border hover:bg-muted/50"
+          className="h-11 w-full gap-3 border-white/10 bg-white/5 text-white font-medium transition-all hover:bg-white/10 hover:border-white/20 hover:scale-[1.01] active:scale-[0.98] shadow-lg backdrop-blur-sm"
           onClick={handleGoogleLogin}
           disabled={!!isLoading}
           aria-busy={loading}

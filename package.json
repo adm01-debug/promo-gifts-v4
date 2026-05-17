@@ -70,6 +70,7 @@
     "test:fuzz": "node scripts/fuzz-testing.mjs",
     "check:critical-coverage": "node scripts/check-critical-modules-coverage.mjs",
     "typecheck:full": "tsc -p tsconfig.app.json --noEmit",
+    "ci:build": "node scripts/check-build-warnings.mjs",
     "typecheck:baseline:update": "node scripts/tsc-baseline-generate.mjs",
     "check:observability": "node scripts/observability-check.mjs"
   },
@@ -90,6 +91,7 @@
     "@elevenlabs/react": "^1.0.2",
     "@eslint/js": "^9.17.0",
     "@hookform/resolvers": "^3.3.4",
+    "@lovable.dev/cloud-auth-js": "^1.1.2",
     "@radix-ui/react-accordion": "^1.1.2",
     "@radix-ui/react-alert-dialog": "^1.0.5",
     "@radix-ui/react-aspect-ratio": "^1.0.3",

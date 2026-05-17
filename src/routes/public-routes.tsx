@@ -1,5 +1,5 @@
 import { Route } from "react-router-dom";
-import { Auth, ResetPassword, SSOCallbackPage, Unauthorized, TermsPage, PrivacyPage } from "./lazy-pages";
+import { Auth, ResetPassword, ForgotPasswordConfirmation, SSOCallbackPage, Unauthorized, TermsPage, PrivacyPage } from "./lazy-pages";
 
 /**
  * Public routes — accessible without authentication.
@@ -13,6 +13,7 @@ export const publicRoutes = (
     {/* Alias legado — mantém /login funcionando para bookmarks e links externos */}
     <Route path="/login" element={<Auth />} />
     <Route path="/reset-password" element={<ResetPassword />} />
+    <Route path="/forgot-password-confirmation" element={<ForgotPasswordConfirmation />} />
     <Route path="/auth/callback" element={<SSOCallbackPage />} />
     <Route path="/unauthorized" element={<Unauthorized />} />
     <Route path="/termos" element={<TermsPage />} />

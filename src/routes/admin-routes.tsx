@@ -36,6 +36,7 @@ import {
   RolesPage,
   SellerDiscountLimitsAdminPage,
   SidebarQAPage,
+  StorageTestPage,
   SystemStatusPage,
   TrendsPage,
 } from "./lazy-pages";
@@ -119,6 +120,7 @@ export const adminRoutes = (
       <Route path="/status" element={<SystemStatusPage />} />
       <Route path="/external-db-test" element={<ExternalDatabaseTest />} />
       <Route path="/admin/rbac-rotas" element={<AdminRbacRoutesPage />} />
+      <Route path="/admin/storage-test" element={<StorageTestPage />} />
       <Route path="/admin/qa" element={<QAPage />} />
       <Route path="/admin/qa/sidebar" element={<SidebarQAPage />} />
     </Route>

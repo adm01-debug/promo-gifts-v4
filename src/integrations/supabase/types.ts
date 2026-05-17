@@ -3933,6 +3933,39 @@ export type Database = {
           },
         ]
       }
+      password_reset_requests: {
+        Row: {
+          email: string
+          id: string
+          requested_at: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewer_notes: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          email: string
+          id?: string
+          requested_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_notes?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          email?: string
+          id?: string
+          requested_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_notes?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       permissions: {
         Row: {
           category: string
@@ -4237,6 +4270,36 @@ export type Database = {
           product_sku?: string | null
           seller_id?: string | null
           view_type?: string | null
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          price: number | null
+          stock_quantity: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          price?: number | null
+          stock_quantity?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          price?: number | null
+          stock_quantity?: number | null
+          updated_at?: string | null
         }
         Relationships: []
       }

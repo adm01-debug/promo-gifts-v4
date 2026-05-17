@@ -126,6 +126,18 @@ const RAW_MAP: Record<string, OAuthErrorCopy> = {
     description: "O estado de segurança do OAuth não é válido.",
     hint: "Tente novamente.",
   },
+  provider_is_not_enabled: {
+    title: "Google Login em manutenção",
+    description: "Estamos preparando a conexão com o Google para esta conta. Por enquanto, use seu e-mail e senha cadastrados.",
+    hint: "Se você é o administrador, ative o provider Google no painel do Supabase.",
+    isConfig: true,
+  },
+  unsupported_provider: {
+    title: "Provedor não suportado",
+    description: "O login com Google não está habilitado neste ambiente.",
+    hint: "Use e-mail e senha por enquanto.",
+    isConfig: true,
+  },
 };
 
 /** Normaliza o input — códigos OAuth costumam vir em snake_case minúsculo. */

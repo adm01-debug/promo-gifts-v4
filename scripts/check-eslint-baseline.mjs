@@ -6,7 +6,8 @@
  *   • Falha SOMENTE se houver erro NOVO (file:rule não presente no baseline,
  *     ou contagem maior que a registrada).
  *   • Não falha se contagens diminuírem (apenas avisa "drift positivo").
- *   • Warnings (severity=1) são ignorados pelo gate.
+ *   • Falha se houver qualquer warning (severity=1) ou erro novo.
+
  *
  * Saídas:
  *   exit 0 — sem regressão.
@@ -55,18 +56,23 @@ const report = JSON.parse(readFileSync(out, "utf8"));
 // Agrega current igual ao generator.
 const current = {};
 let totalErrors = 0;
-const newOccurrences = []; // {file, rule, line, col, message}
+let totalWarnings = 0;
 for (const file of report) {
   if (!file.messages?.length) continue;
   const rel = relative(ROOT, file.filePath).replaceAll("\\", "/");
   for (const m of file.messages) {
-    if (m.severity !== 2) continue;
+    // Agora processamos tanto erros (2) quanto warnings (1)
+    if (m.severity === 0) continue;
+    
     const rule = m.ruleId ?? "<no-rule>";
     current[rel] ??= {};
     current[rel][rule] = (current[rel][rule] ?? 0) + 1;
-    totalErrors += 1;
+    
+    if (m.severity === 2) totalErrors += 1;
+    if (m.severity === 1) totalWarnings += 1;
   }
 }
+
 
 // Compara: por (file,rule), conta quantas excedem o baseline.
 // Quando há regressão, escolhemos as primeiras N mensagens daquele par
@@ -92,8 +98,9 @@ for (const [file, rules] of Object.entries(baselineCounts)) {
 
 const baselineTotal = baseline.totalErrors ?? 0;
 console.log(
-  `ESLint baseline gate — atual: ${totalErrors} erros · baseline: ${baselineTotal} erros`
+  `ESLint baseline gate — atual: ${totalErrors} erros, ${totalWarnings} warnings · baseline: ${baselineTotal} erros`
 );
+
 
 if (improvements.length) {
   const improved = improvements.reduce((s, i) => s + (i.baseline - i.current), 0);
@@ -118,18 +125,21 @@ for (const r of regressions.slice(0, MAX_LIST)) {
 for (const file of report) {
   const rel = relative(ROOT, file.filePath).replaceAll("\\", "/");
   for (const m of file.messages ?? []) {
-    if (m.severity !== 2) continue;
+    if (m.severity === 0) continue;
     const key = `${rel}::${m.ruleId ?? "<no-rule>"}`;
     const arr = examplesByKey.get(key);
     if (arr && arr.length < 3) {
-      arr.push(`${m.line}:${m.column} ${m.message}`);
+      const prefix = m.severity === 2 ? 'ERROR' : 'WARN';
+      arr.push(`${prefix} ${m.line}:${m.column} ${m.message}`);
     }
   }
 }
 
+
 console.error(
-  `\n❌ ${totalDelta} erro(s) novo(s) de ESLint em ${regressions.length} par(es) file:rule:`
+  `\n❌ ${totalDelta} problema(s) novo(s) de ESLint (erros ou warnings) em ${regressions.length} par(es) file:rule:`
 );
+
 for (const r of regressions.slice(0, MAX_LIST)) {
   console.error(
     `  • ${r.file} [${r.rule}] baseline=${r.baseline} → atual=${r.current} (+${r.delta})`

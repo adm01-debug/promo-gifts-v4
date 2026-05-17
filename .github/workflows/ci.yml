@@ -93,7 +93,8 @@ jobs:
       # e falha SOMENTE para erros NOVOS vs .eslint-baseline.json.
       # Step informacional separado removido (era redundante e dobrava o tempo de CI).
       - name: ESLint baseline gate (bloqueia apenas regressões novas)
-        run: node scripts/check-eslint-baseline.mjs
+        run: npm run lint:baseline
+
 
       - name: TypeScript type check
         run: npm run typecheck
@@ -169,7 +170,24 @@ jobs:
         run: npx vitest run tests/rls/ --reporter=verbose --coverage.reporter=json-summary
         continue-on-error: true
 
+  build-gate:
+    name: Production Build & Warnings Gate
+    runs-on: ubuntu-latest
+    needs: quality
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Production Build with Warning Analysis
+        run: npm run ci:build
+
   coverage:
+
     name: Test Coverage
     runs-on: ubuntu-latest
     needs: smoke

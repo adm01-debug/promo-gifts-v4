@@ -9,6 +9,9 @@ verify_jwt = false
 [functions.external-db-inspect]
 verify_jwt = false
 
+[functions.external-db-bridge]
+verify_jwt = false
+
 [functions.image-proxy]
 verify_jwt = false
 
@@ -68,6 +71,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.send-scheduled-reports]
+verify_jwt = false
+
+[functions.sync-external-db]
 verify_jwt = false
 
 [auth]

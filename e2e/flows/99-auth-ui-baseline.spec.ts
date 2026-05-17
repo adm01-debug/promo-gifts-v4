@@ -13,21 +13,39 @@ test.describe("Auth UI Baseline", () => {
   });
 
   test.beforeEach(async ({ page }) => {
-    // Congela fontes e desabilita animações, EXCETO as que queremos validar
+    // Congela fontes, temas e desabilita animações instáveis, mantendo o determinismo
     await page.addInitScript(() => {
       const style = document.createElement('style');
       style.innerHTML = `
+        /* Congelamos as fontes para evitar variações de renderização entre sistemas */
+        @font-face {
+          font-family: 'Inter';
+          src: local('Arial');
+        }
+        
         *, *::before, *::after {
           transition-duration: 0s !important;
           animation-duration: 0s !important;
           transition-delay: 0s !important;
           animation-delay: 0s !important;
         }
-        /* Forçamos a animação das estrelas a ficar em um estado específico para o baseline */
-        /* Ou, se quisermos ver a mudança, podemos comentar as linhas acima para as estrelas */
         
-        /* Esconde elementos que podem variar (como o IP no rodapé legal se for dinâmico) */
-        [data-testid="user-ip-info"] { visibility: hidden !important; }
+        /* Permitimos a animação das estrelas em um frame fixo para o screenshot */
+        [data-testid^="star-breathing-"] {
+          animation-play-state: paused !important;
+        }
+
+        /* Congela temas e preferências do sistema */
+        :root {
+          color-scheme: dark !important;
+        }
+
+        /* Esconde elementos dinâmicos ou instáveis */
+        [data-testid="user-ip-info"], 
+        [data-testid="visitor-geo-location"],
+        .lucide-loader2 { 
+          visibility: hidden !important; 
+        }
       `;
       document.head.appendChild(style);
     });

@@ -15,6 +15,11 @@ import {
   Clock,
   Wifi,
   TableProperties,
+  Download,
+  ShieldCheck,
+  Key,
+  ShieldAlert,
+  Fingerprint
 } from "lucide-react";
 import { PageSEO } from "@/components/seo/PageSEO";
 
@@ -47,9 +52,16 @@ const CRM_CRITICAL_TABLES = [
 export default function SystemStatusPage() {
   const [statuses, setStatuses] = useState<StatusItem[]>([]);
   const [crmTables, setCrmTables] = useState<CrmTableCheck[]>([]);
+  const [rlsChecks, setRlsChecks] = useState<any[]>([]);
   const [isChecking, setIsChecking] = useState(false);
   const [isCheckingCrm, setIsCheckingCrm] = useState(false);
   const [lastCheck, setLastCheck] = useState<Date | null>(null);
+  const [instanceInfo, setInstanceInfo] = useState<{
+    url: string;
+    hasAnon: boolean;
+    sessionType: string;
+    jwtValid: boolean;
+  }>({ url: "", hasAnon: false, sessionType: "Nenhum", jwtValid: false });
 
   const appVersion = "2.0.0";
   const buildDate = "2026-01-05";
@@ -58,103 +70,126 @@ export default function SystemStatusPage() {
     setIsChecking(true);
     const results: StatusItem[] = [];
 
-    // 1. Frontend Build
-    results.push({
-      name: "Frontend Build",
-      status: "ok",
-      message: "React app carregado com sucesso",
-      icon: <Code className="h-5 w-5" />,
+    // 1. Instance & Session Info
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
+    const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    setInstanceInfo({
+      url: supabaseUrl,
+      hasAnon: !!supabaseKey,
+      sessionType: session ? `Autenticado (${session.user.app_metadata.provider || 'e-mail'})` : "Anônimo",
+      jwtValid: !!session && (session.expires_at ? session.expires_at * 1000 > Date.now() : false)
     });
 
-    // 2. Env vars
-    const hasSupabaseUrl = !!import.meta.env.VITE_SUPABASE_URL;
-    const hasSupabaseKey = !!import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    // 2. Env vars Check
     results.push({
       name: "Variáveis de Ambiente",
-      status: hasSupabaseUrl && hasSupabaseKey ? "ok" : "error",
-      message:
-        hasSupabaseUrl && hasSupabaseKey
-          ? "Configuradas corretamente"
-          : `Faltando: ${!hasSupabaseUrl ? "SUPABASE_URL " : ""}${!hasSupabaseKey ? "SUPABASE_KEY" : ""}`,
-      icon: <Server className="h-5 w-5" />,
+      status: supabaseUrl && supabaseKey ? "ok" : "error",
+      message: supabaseUrl && supabaseKey ? "Configuradas corretamente" : "Faltando chaves VITE_SUPABASE",
+      icon: <Key className="h-5 w-5" />,
     });
 
-    // 3. Database connection
+    // 3. Database connection & Latency
+    const start = performance.now();
     try {
       const { error } = await supabase.from("profiles").select("id").limit(1);
+      const latency = Math.round(performance.now() - start);
+      const isConnected = !error || (error.code !== 'PGRST301' && error.code !== '42P01');
+      
       results.push({
         name: "Conexão com Database",
-        status: error ? "error" : "ok",
-        message: error ? error.message : "Conectado ao Lovable Cloud",
+        status: error ? (isConnected ? "warning" : "error") : "ok",
+        message: error 
+          ? `Status: ${error.code} - ${error.message}` 
+          : `Conectado em ${latency}ms`,
         icon: <Database className="h-5 w-5" />,
       });
     } catch (err) {
       results.push({
         name: "Conexão com Database",
         status: "error",
-        message: err instanceof Error ? err.message : "Erro de conexão",
+        message: "Erro fatal de rede",
         icon: <Database className="h-5 w-5" />,
       });
     }
 
-    // 4. Auth service
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      results.push({
-        name: "Serviço de Autenticação",
-        status: "ok",
-        message: session ? "Usuário logado" : "Serviço disponível (não autenticado)",
-        icon: <Wifi className="h-5 w-5" />,
-      });
-    } catch (err) {
-      results.push({
-        name: "Serviço de Autenticação",
-        status: "error",
-        message: err instanceof Error ? err.message : "Erro no auth",
-        icon: <Wifi className="h-5 w-5" />,
-      });
-    }
+    // 4. Detailed RLS Validation
+    const criticalTables = ["profiles", "user_roles", "quotes", "products"] as const;
+    const rlsResults = await Promise.all(
+      criticalTables.map(async (t) => {
+        const { error, count, status: httpStatus } = await supabase.from(t).select("*", { count: "exact", head: true });
+        
+        let status: "ok" | "error" | "warning" = "ok";
+        let msg = "Acessível";
+        let suggestion = "";
+        
+        if (error) {
+          if (error.code === 'PGRST301') {
+            status = "error";
+            msg = `JWT Inválido/Expirado (${error.code})`;
+            suggestion = "Sua sessão expirou. Tente sair e entrar novamente para renovar o token.";
+          } else if (httpStatus === 403 || error.code === '42501') {
+            status = "warning";
+            msg = `Forbidden (Bloqueado por RLS: ${error.code})`;
+            suggestion = `Verifique se existe uma política SELECT para a role '${instanceInfo.sessionType}' na tabela ${t}.`;
+          } else if (error.code === '42P01') {
+            status = "error";
+            msg = `Tabela Inexistente (Esquema não sincronizado: ${error.code})`;
+            suggestion = "Execute as migrações no banco de dados para criar a tabela.";
+          } else {
+            status = "error";
+            msg = `Erro ${error.code}: ${error.message} (HTTP ${httpStatus})`;
+            suggestion = "Verifique os logs do Supabase para mais detalhes.";
+          }
+        }
 
-    // 5. Network
+        return { table: t, status, msg, code: error?.code, httpStatus, suggestion };
+      })
+    );
+    setRlsChecks(rlsResults);
+
     results.push({
-      name: "Conexão de Rede",
-      status: navigator.onLine ? "ok" : "error",
-      message: navigator.onLine ? "Online" : "Offline",
-      icon: <Wifi className="h-5 w-5" />,
+      name: "Integridade de RLS",
+      status: rlsResults.every(r => r.status === 'ok') ? "ok" : "warning",
+      message: `${rlsResults.filter(r => r.status === 'ok').length}/${criticalTables.length} tabelas OK`,
+      icon: <ShieldCheck className="h-5 w-5" />,
     });
-
-    // 6. Local quotes tables
-    try {
-      const localTables = ["quotes", "quote_items", "quote_templates", "quote_history"] as const;
-      const checks = await Promise.all(
-        localTables.map(async (t) => {
-          const { error } = await supabase.from(t).select("id", { count: "exact", head: true });
-          return { table: t, ok: !error, msg: error?.message };
-        })
-      );
-      const allOk = checks.every((c) => c.ok);
-      const failed = checks.filter((c) => !c.ok);
-      results.push({
-        name: "Tabelas de Orçamentos (Local)",
-        status: allOk ? "ok" : "error",
-        message: allOk
-          ? `${localTables.length} tabelas verificadas`
-          : `Falha em: ${failed.map((f) => f.table).join(", ")}`,
-        icon: <TableProperties className="h-5 w-5" />,
-      });
-    } catch {
-      results.push({
-        name: "Tabelas de Orçamentos (Local)",
-        status: "error",
-        message: "Erro ao verificar tabelas locais",
-        icon: <TableProperties className="h-5 w-5" />,
-      });
-    }
 
     setStatuses(results);
     setLastCheck(new Date());
+    setIsChecking(false);
+  };
+
+  const downloadReport = async () => {
+    setIsChecking(true);
+    
+    // Buscar erros de login recentes (últimas 24h) para incluir no relatório
+    const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { data: recentErrors } = await supabase
+      .from('login_attempts')
+      .select('*')
+      .eq('success', false)
+      .gte('created_at', last24h)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    const report = {
+      timestamp: new Date().toISOString(),
+      instance: instanceInfo,
+      statuses: statuses.map(s => ({ name: s.name, status: s.status, message: s.message })),
+      rls: rlsChecks,
+      recentLoginErrors: recentErrors || [],
+      crm: crmTables
+    };
+    
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `diagnostico-sistema-${new Date().getTime()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
     setIsChecking(false);
   };
 
@@ -252,33 +287,67 @@ export default function SystemStatusPage() {
         </div>
 
         {/* Overall Status */}
-        <Card
-          className={`border-2 ${overallStatus === "ok" ? "border-primary/50 bg-primary/5" : "border-destructive/50 bg-destructive/5"}`}
-        >
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                {overallStatus === "ok" ? (
-                  <CheckCircle className="h-10 w-10 text-primary" />
-                ) : (
-                  <XCircle className="h-10 w-10 text-destructive" />
-                )}
-                <div>
-                  <h2 className="text-xl font-semibold font-display">
-                    {overallStatus === "ok" ? "Sistema Operacional" : "Problemas Detectados"}
-                  </h2>
-                  <p className="text-muted-foreground text-sm">
-                    {statuses.filter((s) => s.status === "ok").length}/{statuses.length} serviços funcionando
-                  </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card
+            className={`border-2 h-full ${overallStatus === "ok" ? "border-primary/50 bg-primary/5" : "border-destructive/50 bg-destructive/5"}`}
+          >
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between h-full">
+                <div className="flex items-center gap-4">
+                  {overallStatus === "ok" ? (
+                    <CheckCircle className="h-10 w-10 text-primary" />
+                  ) : (
+                    <XCircle className="h-10 w-10 text-destructive" />
+                  )}
+                  <div>
+                    <h2 className="text-xl font-semibold font-display">
+                      {overallStatus === "ok" ? "Sistema Operacional" : "Problemas Detectados"}
+                    </h2>
+                    <p className="text-muted-foreground text-sm">
+                      {statuses.filter((s) => s.status === "ok").length}/{statuses.length} serviços OK
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Button onClick={runHealthCheck} disabled={isChecking} variant="outline" size="sm">
+                    <RefreshCw className={`h-3 w-3 mr-2 ${isChecking ? "animate-spin" : ""}`} />
+                    Verificar
+                  </Button>
+                  <Button onClick={downloadReport} variant="secondary" size="sm">
+                    <Download className="h-3 w-3 mr-2" />
+                    Relatório
+                  </Button>
                 </div>
               </div>
-              <Button onClick={runHealthCheck} disabled={isChecking} variant="outline">
-                <RefreshCw className={`h-4 w-4 mr-2 ${isChecking ? "animate-spin" : ""}`} />
-                Verificar
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
+            <CardHeader className="pb-2 pt-4">
+              <CardTitle className="text-sm font-bold uppercase tracking-wider text-white/60 flex items-center gap-2">
+                <Fingerprint className="h-4 w-4" /> Instância Supabase
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 pb-4">
+              <div className="flex justify-between text-xs">
+                <span className="text-white/40">URL:</span>
+                <span className="font-mono text-white/80">{instanceInfo.url.split('//')[1]}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-white/40">Sessão:</span>
+                <span className={instanceInfo.sessionType.includes('Autenticado') ? "text-success font-bold" : "text-warning"}>
+                  {instanceInfo.sessionType}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-white/40">JWT Válido:</span>
+                <Badge variant={instanceInfo.jwtValid ? "success" : "destructive"} className="h-4 text-[9px]">
+                  {instanceInfo.jwtValid ? "SIM" : "NÃO/ANON"}
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Version Info */}
         <Card>
@@ -308,12 +377,50 @@ export default function SystemStatusPage() {
           </CardContent>
         </Card>
 
+        {/* Detailed RLS Checks */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-blue-500" />
+              Detalhamento de RLS e Tabelas
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">Validação de permissões de acesso por camada de segurança.</p>
+          </CardHeader>
+          <CardContent className="space-y-1">
+            {rlsChecks.map((check, i) => (
+              <div key={i} className="flex flex-col py-3 px-2 rounded-lg hover:bg-muted/50 transition-colors border-b border-white/5 last:border-0">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-mono text-sm font-bold">{check.table}</p>
+                    <p className={`text-xs ${check.status === 'error' ? 'text-destructive' : check.status === 'warning' ? 'text-warning' : 'text-success'}`}>
+                      {check.msg}
+                    </p>
+                  </div>
+                  {check.code && (
+                    <Badge variant="outline" className="font-mono text-[9px] h-5 opacity-60">
+                      {check.code}
+                    </Badge>
+                  )}
+                </div>
+                {check.suggestion && (
+                  <div className="mt-2 ml-11 p-2 bg-blue-500/5 rounded border border-blue-500/10">
+                    <p className="text-[11px] text-blue-400 leading-relaxed italic">
+                      <span className="font-bold uppercase text-[9px] mr-1">Sugestão:</span>
+                      {check.suggestion}
+                    </p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
         {/* Status Items */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Server className="h-5 w-5" />
-              Status dos Serviços
+              Infraestrutura de Rede
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-1">

@@ -155,7 +155,7 @@ export default defineConfig({
         trace: "retain-on-failure",
       },
       dependencies: ["setup"],
-      testMatch: /flows\/(20-all-features-smoke|22-google-oauth-smoke|23-rocket-animation-snapshot)\.spec\.ts/,
+      testMatch: /flows\/(20-all-features-smoke|22-google-oauth-smoke|23-rocket-animation-snapshot|24-visual-regression-stars)\.spec\.ts/,
       // Exige tag @smoke explícita — qualquer test() sem a tag no
       // describe é ignorado, mesmo no spec do smoke. Garante que apenas
       // testes intencionalmente marcados @smoke rodem aqui.

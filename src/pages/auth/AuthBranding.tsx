@@ -2,6 +2,7 @@
  * Left-side branding panel for Auth page — extracted for modularity
  */
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Gift, Package, Factory, SlidersHorizontal, Brain, Rocket } from "lucide-react";
 import { AppLogo } from "@/components/layout/AppLogo";
 import astronautSvg from "@/assets/astronaut.svg";
@@ -68,7 +69,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
   }, [config.parallaxIntensity, config.reducedMotion]);
   
   if (starsRef.current.length === 0) {
-    starsRef.current = [...Array(100)].map((_, i) => ({
+    starsRef.current = [...Array(150)].map((_, i) => ({
       id: i,
       size: 0.8 + (i % 3) * 0.4,
       top: ((i * 137.7) % 100),
@@ -98,7 +99,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
   }, []);
 
   useEffect(() => {
-    const rocketInterval = setInterval(() => spawnRocket(), 4000);
+    const rocketInterval = setInterval(() => spawnRocket(), 2000);
     
     // Meteor shower interval
     const meteorInterval = setInterval(() => {
@@ -155,7 +156,7 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
   }, [spawnRocket, config.astroCount, config.spacing, config.individualAstronauts]);
 
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden z-0" aria-hidden="true">
+    <div className="pointer-events-none absolute inset-0 overflow-hidden z-0" aria-hidden="true" data-testid="space-scene">
       {/* Background Deep Space Glow & Nebula */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(15,23,42,0)_0%,rgba(2,6,23,0.6)_100%)]" />
       
@@ -212,16 +213,18 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
           }}
         >
           <div
-            className="w-full h-full rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.8)]"
+            className="w-full h-full rounded-full bg-white"
             data-testid={`star-breathing-${star.id}`}
             style={{
-              // Respiração (Brilho/Escala) na camada interna
+              // Brilho intenso triplo (30x) + escala (8x) via animação breathingStar em index.css
               animation: `breathingStar ${star.breathingDur}s ease-in-out ${star.breathingDelay}s infinite`,
-              willChange: "opacity, transform",
+              willChange: "opacity, transform, filter",
+              mixBlendMode: 'screen',
             }}
           />
         </div>
       ))}
+
 
       {/* Planets with zigzag trajectory */}
       {planets.map(p => (
@@ -325,7 +328,12 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
             willChange: "transform, opacity",
           }}
         >
-          <div style={{ transform: `scale(${r.scale}) rotate(${r.rotation}deg)` }}>
+          <div 
+            style={{ 
+              transform: `scale(${r.scale}) rotate(${r.rotation}deg)`,
+              filter: `drop-shadow(0 0 ${r.size / 2}px rgba(59, 130, 246, 0.4))`
+            }}
+          >
             <Rocket
               className="-rotate-45 text-blue-400"
               style={{
@@ -334,16 +342,17 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
                 filter: "drop-shadow(0 0 15px rgba(59, 130, 246, 0.7))",
               }}
             />
-            {/* Flame Trail */}
+            {/* Dynamic Flame Trail (Refined for 10/10) */}
             <div
-              className="absolute left-1/2 -translate-x-1/2 rounded-full opacity-80"
+              className="absolute left-1/2 -translate-x-1/2 rounded-full opacity-80 animate-pulse"
               style={{
                 top: `${r.size * 0.8}px`,
                 width: `${r.size * 0.4}px`,
-                height: `${r.size * 1.5}px`,
-                background: "linear-gradient(to bottom, #3b82f6, #60a5fa, transparent)",
-                filter: "blur(4px)",
+                height: `${r.size * 2}px`,
+                background: "linear-gradient(to bottom, #3b82f6, #60a5fa, #2563eb, transparent)",
+                filter: "blur(6px)",
                 zIndex: -1,
+                boxShadow: `0 0 ${r.size}px rgba(59, 130, 246, 0.6)`,
               }}
             />
           </div>
@@ -362,85 +371,101 @@ function FeatureCard({ item, index }: { item: typeof FEATURE_ITEMS[0]; index: nu
   const IconComponent = item.icon;
   return (
     <div
-      className="flex h-[99px] items-center justify-between gap-2 sm:gap-4 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] shadow-2xl hover:bg-white/[0.07] hover:border-blue-500/40 hover:scale-[1.02] transition-all duration-500 group opacity-0 px-4 sm:px-6 relative overflow-hidden"
-      style={{ animation: `scale-fade-in 0.5s ease-out ${300 + index * 150}ms forwards` }}
+      className="flex h-[88px] items-center justify-between gap-3 rounded-3xl bg-black/40 backdrop-blur-2xl border border-white/10 shadow-[0_16px_40px_rgba(0,0,0,0.5)] hover:bg-black/60 hover:border-blue-500/50 hover:scale-[1.05] transition-all duration-500 group opacity-0 px-5 relative overflow-hidden"
+      style={{ animation: `scale-fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) ${300 + index * 150}ms forwards` }}
     >
       <div className="absolute inset-0 w-full h-full pointer-events-none">
-        <div className="absolute top-0 -left-[100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/[0.05] to-transparent group-hover:animate-[shimmerTranslate_2s_infinite]" />
+        <div className="absolute top-0 -left-[100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/[0.03] to-transparent group-hover:animate-[shimmerTranslate_2s_infinite]" />
       </div>
 
       <div className="min-w-0 flex-1 text-left relative z-10">
-        <p className="text-base sm:text-xl font-bold text-white leading-tight tracking-tight">{item.label}</p>
-        <p className="text-[10px] sm:text-xs font-medium text-white/50 leading-tight uppercase tracking-widest mt-0.5">{item.desc}</p>
+        <p className="text-xl font-display font-bold text-white leading-tight tracking-tight">{item.label}</p>
+        <p className="text-[10px] font-bold text-white/50 leading-tight uppercase tracking-[0.18em] mt-1">{item.desc}</p>
       </div>
-      <div className="w-11 h-11 shrink-0 rounded-xl bg-blue-500/10 flex items-center justify-center group-hover:bg-blue-500/20 transition-all duration-500 group-hover:rotate-[10deg] relative z-10 border border-white/[0.05]">
-        <IconComponent className="h-5 w-5 text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.4)]" />
+      <div className="w-11 h-11 shrink-0 rounded-2xl bg-blue-500/10 flex items-center justify-center group-hover:bg-blue-500/20 transition-all duration-500 group-hover:rotate-[8deg] relative z-10 border border-white/10 shadow-inner">
+        <IconComponent className="h-[1.4rem] w-[1.4rem] text-blue-400 drop-shadow-[0_0_10px_rgba(59,130,246,0.6)]" />
       </div>
     </div>
   );
 }
 
 const FEATURE_ITEMS = [
-  { label: "+20.000", desc: "Produtos", icon: Package },
-  { label: "+100", desc: "Fornecedores", icon: Factory },
-  { label: "Filtros", desc: "Avançados", icon: SlidersHorizontal },
-  { label: "IA", desc: "Assistente Pessoal", icon: Brain },
+  { label: "+20.000", desc: "PRODUTOS", icon: Package },
+  { label: "+100", desc: "FORNECEDORES", icon: Factory },
+  { label: "Filtros", desc: "AVANÇADOS", icon: SlidersHorizontal },
+  { label: "IA", desc: "ASSISTENTE PESSOAL", icon: Brain },
 ];
 
 export function AuthBrandingPanel() {
   return (
-    <div className="flex w-full lg:w-1/2 relative min-h-[500px] lg:h-screen items-center">
-      {/* Sem decoração lateral — fundo 100% unificado vem do <main> em Auth.tsx */}
-
+    <div className="flex w-full lg:w-1/2 relative min-h-screen items-center">
       {/* Content */}
-      <div className="relative z-10 flex flex-col justify-center items-center px-12 xl:px-20 w-full min-h-screen lg:translate-x-[10%]">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="relative z-10 flex flex-col justify-center items-center px-12 xl:px-20 w-full min-h-screen lg:translate-x-[5%] xl:translate-x-[10%]"
+      >
         <div className="space-y-6 w-full max-w-xl flex flex-col items-center text-center">
-          <div className="flex items-center gap-4">
-            <AppLogo variant="light" iconClassName="h-14 w-14 rounded-xl shadow-blue-500/30" textClassName="text-4xl" />
-          </div>
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="flex items-center gap-4"
+          >
+            <AppLogo variant="light" iconClassName="h-[3.25rem] w-[3.25rem] rounded-xl shadow-blue-500/40" textClassName="text-4xl" />
+          </motion.div>
 
-          <div className="space-y-4 max-w-md flex flex-col items-center">
-            <h2 className="text-4xl xl:text-5xl font-display font-bold text-white leading-[1.1] tracking-tight relative group text-center">
-              Um Universo de Produtos, para o{" "}
+          <div className="space-y-5 max-w-lg flex flex-col items-center">
+            <motion.h2 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="text-4xl xl:text-5xl font-display font-bold text-white leading-[1.05] tracking-tight relative group text-center"
+            >
+              Um Universo de Brindes, para o{" "}
               <span className="text-blue-400">
                 Melhor Time das{" "}
                 <span className="relative inline-block">
                   Galáxias!
-                  <span className="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r from-blue-400/0 via-blue-400/60 to-blue-400/0 scale-x-0 group-hover:scale-x-100 transition-transform duration-700 shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+                  <span className="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r from-blue-400/0 via-blue-400/60 to-blue-400/0 scale-x-0 group-hover:scale-x-100 transition-transform duration-700 shadow-[0_0_18px_rgba(59,130,246,0.6)]" />
                 </span>
               </span>
-            </h2>
-            <p className="text-base text-white/70 leading-relaxed font-light text-center">
+            </motion.h2>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              className="text-[0.95rem] text-white/60 leading-relaxed font-light text-center max-w-md"
+            >
               Tenha acesso ao maior mix de produtos personalizados, consulte estoque em tempo real, visualize locais e técnicas de personalização. Feito especialmente para você decolar!!!
-            </p>
+            </motion.p>
           </div>
 
-          <div className="grid grid-cols-2 gap-[0.6rem] sm:gap-4 pt-6 w-full lg:w-[94.5%] xl:w-[99%] lg:mx-[2.75%] xl:mx-[0.5%] px-2 sm:px-0">
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 pt-6 w-full">
             {FEATURE_ITEMS.map((item, i) => (
               <FeatureCard key={i} item={item} index={i} />
             ))}
           </div>
 
           {/* Trust Indicators */}
-          <div className="flex items-center gap-4 pt-6 opacity-0" style={{ animation: 'scale-fade-in 0.5s ease-out 900ms forwards' }}>
+          <div className="flex flex-wrap items-center justify-center gap-6 pt-12 opacity-0" style={{ animation: 'scale-fade-in 0.6s ease-out 1000ms forwards' }}>
             {[
-              { label: "Conexão segura", path: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" },
-              { label: "Dados criptografados", path: "M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" },
-              { label: "Infraestrutura SOC 2", path: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" },
+              { label: "Conexão segura", icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" },
+              { label: "Dados criptografados", icon: "M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" },
+              { label: "Infraestrutura SOC 2", icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" },
             ].map((item, i) => (
-              <React.Fragment key={i}>
-                {i > 0 && <div className="w-px h-4 bg-border" />}
-                <div className="flex items-center gap-2 text-xs text-white/40">
-                  <svg className="h-4 w-4 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.path} />
+              <div key={i} className="flex items-center gap-2.5 group">
+                <div className="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
+                  <svg className="h-4 w-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
                   </svg>
-                  <span>{item.label}</span>
                 </div>
-              </React.Fragment>
+                <span className="text-xs font-medium text-white/40 group-hover:text-white/60 transition-colors">{item.label}</span>
+              </div>
             ))}
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
