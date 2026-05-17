@@ -7,8 +7,10 @@
 // O teste é tolerante a cold start: faz 1 warm-up + N medições e usa a mediana
 // para a asserção principal (evita flakiness em CI), mas também trava um teto
 // absoluto generoso para qualquer requisição individual.
-import "https://deno.land/std@0.224.0/dotenv/load.ts";
+import { load } from "https://deno.land/std@0.224.0/dotenv/mod.ts";
 import { assert, assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+
+await load({ export: true, allowEmptyValues: true });
 
 const SUPABASE_URL = Deno.env.get("VITE_SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("VITE_SUPABASE_PUBLISHABLE_KEY")!;
