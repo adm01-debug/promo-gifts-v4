@@ -499,7 +499,7 @@ export default function Auth() {
                 >
                   <CardHeader className="pb-3 pt-9">
                     <div className="space-y-1 text-center">
-                      <h1 className="font-display text-[1.4rem] font-bold text-white tracking-tight" id="auth-title">
+                      <h1 className="font-display text-[1.036rem] font-bold text-white tracking-tight" id="auth-title">
                         Entre com suas credenciais para Brilhar, você nasceu para isso!
                       </h1>
                       <p className="text-[13px] text-white/50">
