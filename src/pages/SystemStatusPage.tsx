@@ -390,12 +390,11 @@ export default function SystemStatusPage() {
             {rlsChecks.map((check, i) => (
               <div key={i} className="flex flex-col py-3 px-2 rounded-lg hover:bg-muted/50 transition-colors border-b border-white/5 last:border-0">
                 <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-mono text-sm font-bold">{check.table}</p>
-                      <p className={`text-xs ${check.status === 'error' ? 'text-destructive' : check.status === 'warning' ? 'text-warning' : 'text-success'}`}>
-                        {check.msg}
-                      </p>
-                    </div>
+                  <div>
+                    <p className="font-mono text-sm font-bold">{check.table}</p>
+                    <p className={`text-xs ${check.status === 'error' ? 'text-destructive' : check.status === 'warning' ? 'text-warning' : 'text-success'}`}>
+                      {check.msg}
+                    </p>
                   </div>
                   {check.code && (
                     <Badge variant="outline" className="font-mono text-[9px] h-5 opacity-60">

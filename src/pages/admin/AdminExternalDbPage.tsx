@@ -34,71 +34,39 @@ export default function AdminExternalDbPage() {
   const [recentMismatches, setRecentMismatches] = useState<ContractMismatchEntry[]>([]);
   const [liveResults, setLiveResults] = useState<Record<string, ValidationResult>>({});
   const [liveLoading, setLiveLoading] = useState<string | null>(null);
-  
-  // Novos estados para o fluxo de autenticação e RLS
-  const [rlsResults, setRlsResults] = useState<Record<string, any>>({});
-  const [rlsLoading, setRlsLoading] = useState<string | null>(null);
-  const [syncLoading, setSyncLoading] = useState<string | null>(null);
 
   const refreshTelemetry = () => {
     setContractCounts(getContractMismatches() as Record<string, number>);
     setRecentMismatches([...getRecentMismatches()]);
   };
 
-  const testRLS = async (tableName: string) => {
-    setRlsLoading(tableName);
-    try {
-      // Teste de Leitura
-      const { data: readData, error: readError } = await supabase
-        .from(tableName as any)
-        .select("*")
-        .limit(1);
-      
-      const readOk = !readError;
-      
-      // Teste de Escrita (Simulado via RPC ou tentativa de insert/delete controlada)
-      // Para não poluir o banco, apenas verificamos se temos erro de permissão explícito
-      const writeOk = false; // Por padrão falso para segurança se não testado
-      
-      setRlsResults(prev => ({ 
-        ...prev, 
-        [tableName]: { read: readOk, readError: readError?.message } 
-      }));
-      
-      if (readOk) {
-        toast.success(`Leitura em ${tableName} OK`);
-      } else {
-        toast.error(`Falha de leitura em ${tableName}: ${readError.message}`);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setRlsLoading(null);
-    }
-  };
-
-  const runSync = async (tableName: string) => {
-    setSyncLoading(tableName);
-    try {
-      const { data, error } = await supabase.functions.invoke("sync-external-db", {
-        body: { table: tableName, direction: "to-external" },
-      });
-      if (error) throw error;
-      toast.success(`Sincronização de ${tableName} concluída`, {
-        description: `${data.count} registros movidos.`
-      });
-    } catch (err) {
-      toast.error("Erro na sincronização", {
-        description: err instanceof Error ? err.message : "Erro desconhecido"
-      });
-    } finally {
-      setSyncLoading(null);
-    }
-  };
-
   const testContract = async (contractName: string) => {
-... keep existing code
-
+    setLiveLoading(contractName);
+    try {
+      const contract = ALL_CONTRACTS.find((c) => c.name === contractName);
+      if (!contract) return;
+      // Payloads de teste mínimos — front aceita "samples".
+      // O usuário pode ajustar via UI futura; por ora validamos o último payload conhecido.
+      // Aqui só rodamos uma chamada vazia para registrar erro/sucesso.
+      const params: Record<string, unknown> =
+        contractName === "fn_get_customization_price"
+          ? { p_area_id: "00000000-0000-0000-0000-000000000000", p_quantidade: 100, p_num_cores: 1 }
+          : { p_product_id: "00000000-0000-0000-0000-000000000000" };
+      const result = await invokeExternalRpc<Record<string, unknown>>(contractName, params);
+      const validation = validateRpcPayload(contract, result ?? {});
+      setLiveResults((prev) => ({ ...prev, [contractName]: validation }));
+      toast.success(`${contractName}`, {
+        description: validation.ok ? "Contrato OK" : `${validation.missing.length} campos ausentes`,
+      });
+      refreshTelemetry();
+    } catch (err) {
+      toast.error("Falha ao testar RPC", {
+        description: err instanceof Error ? err.message : "Erro desconhecido",
+      });
+    } finally {
+      setLiveLoading(null);
+    }
+  };
 
 
   const runEngravingDiff = async () => {
@@ -186,52 +154,7 @@ export default function AdminExternalDbPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="border-primary/30">
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5" /> Status RLS e Sincronização
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {ENGRAVING_TABLES.map((t) => (
-              <div key={t.table} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex flex-col">
-                  <span className="text-sm font-mono font-bold">{t.table}</span>
-                  <div className="flex gap-2 mt-1">
-                    {rlsResults[t.table] ? (
-                      <Badge variant={rlsResults[t.table].read ? "default" : "destructive"} className="text-[10px] h-4">
-                        READ: {rlsResults[t.table].read ? "OK" : "ERRO"}
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-[10px] h-4">RLS não testado</Badge>
-                    )}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    onClick={() => testRLS(t.table)}
-                    disabled={rlsLoading === t.table}
-                  >
-                    {rlsLoading === t.table ? "..." : "Testar RLS"}
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => runSync(t.table)}
-                    disabled={syncLoading === t.table}
-                  >
-                    {syncLoading === t.table ? <RefreshCw className="h-3 w-3 animate-spin" /> : "Sincronizar"}
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card className="border-primary/30">
+      <Card className="border-primary/30">
         <CardHeader className="flex flex-row items-center justify-between gap-2">
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -333,9 +256,7 @@ export default function AdminExternalDbPage() {
             ))}
           </CardContent>
         )}
-      </div>
-
-      <Card className="border-primary/30">
+      </Card>
 
       <Card className="border-primary/30">
         <CardHeader>
