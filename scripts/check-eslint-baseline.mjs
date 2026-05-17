@@ -6,7 +6,8 @@
  *   • Falha SOMENTE se houver erro NOVO (file:rule não presente no baseline,
  *     ou contagem maior que a registrada).
  *   • Não falha se contagens diminuírem (apenas avisa "drift positivo").
- *   • Warnings (severity=1) são ignorados pelo gate.
+ *   • Falha se houver qualquer warning (severity=1) ou erro novo.
+
  *
  * Saídas:
  *   exit 0 — sem regressão.
