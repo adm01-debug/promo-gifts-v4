@@ -34,8 +34,13 @@
 
 /* Nova animação de órbita circular perfeita */
 @keyframes circularOrbit {
-  from { transform: rotate(0deg) translateX(15px) rotate(0deg); }
-  to { transform: rotate(360deg) translateX(15px) rotate(-360deg); }
+  from { transform: rotate(0deg) translateX(25px) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(25px) rotate(-360deg); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.5)); opacity: 0.8; }
+  50% { filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.8)); opacity: 1; }
 }
 
 /* A definição oficial está no final do arquivo */

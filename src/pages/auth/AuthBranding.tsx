@@ -422,7 +422,7 @@ export function AuthBrandingPanel() {
               transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
               className="text-4xl xl:text-5xl font-display font-bold text-white leading-[1.05] tracking-tight relative group text-center"
             >
-              Um Universo de Produtos, para o{" "}
+              Um Universo de Brindes, para o{" "}
               <span className="text-blue-400">
                 Melhor Time das{" "}
                 <span className="relative inline-block">
