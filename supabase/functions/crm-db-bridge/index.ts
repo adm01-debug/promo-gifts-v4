@@ -177,7 +177,7 @@ function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(finalBody), { status, headers });
 }
 
-type DiagOp = "ping" | "diag" | "breaker_status" | "creds_health";
+type DiagOp = "ping" | "diag" | "breaker_status" | "creds_health" | "creds_debug";
 
 /**
  * Detecta operações de diagnóstico (`ping` | `diag` | `breaker_status` |
