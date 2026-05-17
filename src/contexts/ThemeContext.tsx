@@ -25,7 +25,11 @@ export function ThemeProvider({
 }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
-      return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
+      const stored = localStorage.getItem(storageKey) as Theme | null;
+      // Closed dark-only platform: migrate legacy 'auto' to the dark default
+      // so the OS preference can't flip the app into light mode.
+      if (stored === 'auto') return 'dark';
+      return stored || defaultTheme;
     }
     return defaultTheme;
   });
