@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload, Download, FileText, Trash2, Database, ShieldCheck } from "lucide-react";
+import { Loader2, Upload, Download, FileText, Trash2, Database, ShieldCheck, RefreshCw, ArrowRightLeft } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { PageSEO } from "@/components/seo/PageSEO";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 export default function StorageTestPage() {
   const [uploading, setUploading] = useState(false);
   const [loadingFiles, setLoadingFiles] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [files, setFiles] = useState<any[]>([]);
   const { toast } = useToast();
   
