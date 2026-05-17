@@ -321,7 +321,7 @@ export const SidebarReorganized = React.memo(
           isCollapsed ? "overflow-visible" : "overflow-hidden",
           "lg:sticky lg:top-0 lg:z-auto lg:h-screen",
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
-          isCollapsed ? "w-16" : "w-64"
+          isCollapsed ? "w-16 shadow-[20px_0_40px_rgba(0,0,0,0.3)]" : "w-64 shadow-[30px_0_60px_rgba(0,0,0,0.4)]"
         )}
       >
         <div className={cn("flex flex-col h-full pt-16 lg:pt-0 min-h-0", isCollapsed && "overflow-visible")}>
