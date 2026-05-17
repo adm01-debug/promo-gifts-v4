@@ -359,8 +359,8 @@ export default function Auth() {
 
 
       {/* Right side - Auth Form */}
-      <div className="relative z-10 flex flex-1 items-center justify-center p-6 lg:p-12">
-        <div className="w-full max-w-[23.8rem] animate-fade-in space-y-8">
+      <div className="relative z-10 flex flex-1 items-center justify-center p-5 lg:p-10">
+        <div className="w-full max-w-[22.2rem] animate-fade-in space-y-7">
           {/* Mobile Logo */}
           <div className="flex justify-center lg:hidden">
             <AppLogo />
@@ -409,23 +409,23 @@ export default function Auth() {
             className={`border-white/10 bg-black/60 shadow-2xl shadow-black/60 backdrop-blur-xl rounded-[2rem] overflow-hidden ${ipBlocked ? 'pointer-events-none opacity-50' : ''}`}
           >
             {showForgotPassword ? (
-              <CardContent className="pb-8 pt-8">
+              <CardContent className="pb-7 pt-7">
                 <ForgotPasswordForm onBack={() => setShowForgotPassword(false)} />
               </CardContent>
             ) : (
               <>
-                <CardHeader className="pb-4 pt-10">
+                <CardHeader className="pb-3 pt-9">
                   <div className="space-y-1 text-center">
-                    <h1 className="font-display text-2xl font-bold text-white tracking-tight" id="auth-title">
+                    <h1 className="font-display text-[1.4rem] font-bold text-white tracking-tight" id="auth-title">
                       Bem-vindo de volta
                     </h1>
-                    <p className="text-sm text-white/50">
+                    <p className="text-[13px] text-white/50">
                       Entre com suas credenciais para continuar
                     </p>
                   </div>
                 </CardHeader>
 
-                <CardContent className="space-y-6 pb-10">
+                <CardContent className="space-y-5 pb-9">
                   {socialError && (
                     <div
                       role="alert"
