@@ -10,6 +10,8 @@ import { AuthFlowTracer } from '@/lib/auth/auth-flow-tracer';
 import { consumePostLoginRedirect } from '@/lib/auth/post-login-redirect';
 import { clearOAuthPending } from '@/lib/auth/oauth-pending';
 import { explainOAuthError, type OAuthErrorExplanation } from '@/lib/auth/oauth-error-explainer';
+import { SpaceScene } from './auth/AuthBranding';
+import { motion } from 'framer-motion';
 
 /**
  * Callback do login social via Supabase Auth.
@@ -253,7 +255,8 @@ export default function SSOCallbackPage() {
   }, [navigate, searchParams, refreshSession]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="relative flex min-h-screen items-center justify-center bg-[#030508] px-4 overflow-hidden">
+      <SpaceScene />
       <PageSEO
         title="Autenticação SSO"
         description="Processando autenticação via SSO."
@@ -264,15 +267,15 @@ export default function SSOCallbackPage() {
         role="status"
         aria-live="polite"
         aria-busy={status !== 'confirmed' && status !== 'failed'}
-        className="flex w-full max-w-sm flex-col items-center gap-4 rounded-2xl border border-border/60 bg-card/60 p-8 text-center shadow-sm"
+        className="relative z-10 flex w-full max-w-sm flex-col items-center gap-6 rounded-[2rem] border border-white/10 bg-black/60 p-10 text-center shadow-2xl backdrop-blur-xl"
         data-status={status}
       >
         <StatusIcon status={status} />
         <div className="space-y-1">
-          <h1 className="text-base font-semibold text-foreground" data-testid="sso-callback-title">
+          <h1 className="text-xl font-bold text-white tracking-tight" data-testid="sso-callback-title">
             {status === 'failed' && errorDetail ? errorDetail.title : STATUS_TITLE[status]}
           </h1>
-          <p className="text-sm text-muted-foreground" data-testid="sso-callback-description">
+          <p className="text-[13px] text-white/50 leading-relaxed" data-testid="sso-callback-description">
             {status === 'failed' && errorMessage
               ? errorMessage
               : STATUS_DESCRIPTION[status]}
@@ -331,12 +334,12 @@ const SEVERITY_STYLES: Record<OAuthErrorExplanation['severity'], string> = {
 
 function StatusIcon({ status }: { status: CallbackStatus }) {
   if (status === 'confirmed') {
-    return <CheckCircle2 className="h-10 w-10 text-primary animate-fade-in" />;
+    return <CheckCircle2 className="h-12 w-12 text-blue-400 animate-fade-in" />;
   }
   if (status === 'failed') {
-    return <AlertCircle className="h-10 w-10 text-destructive" />;
+    return <AlertCircle className="h-12 w-12 text-destructive" />;
   }
-  return <Loader2 className="h-10 w-10 animate-spin text-primary" />;
+  return <Loader2 className="h-12 w-12 animate-spin text-blue-500" />;
 }
 
 function StatusSteps({ status }: { status: CallbackStatus }) {
@@ -348,7 +351,7 @@ function StatusSteps({ status }: { status: CallbackStatus }) {
   const order: CallbackStatus[] = ['processing', 'slow', 'confirming', 'confirmed'];
   const currentIdx = order.indexOf(status);
   return (
-    <ol className="flex w-full items-center justify-between gap-2 pt-2 text-[10px] uppercase tracking-wide text-muted-foreground">
+    <ol className="flex w-full items-center justify-between gap-3 pt-4 text-[10px] font-bold uppercase tracking-[0.15em] text-white/30">
       {steps.map((s) => {
         const stepIdx = order.indexOf(s.key);
         const done = status === 'failed' ? false : currentIdx >= stepIdx;
@@ -357,14 +360,14 @@ function StatusSteps({ status }: { status: CallbackStatus }) {
           <li
             key={s.key}
             className={
-              'flex flex-1 flex-col items-center gap-1 ' +
-              (done ? 'text-foreground' : '')
+              'flex flex-1 flex-col items-center gap-2 ' +
+              (done ? 'text-white' : '')
             }
           >
             <span
               className={
-                'h-1 w-full rounded-full transition-colors ' +
-                (done ? 'bg-primary' : 'bg-muted')
+                'h-1.5 w-full rounded-full transition-all duration-500 ' +
+                (done ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-white/5')
               }
               aria-current={active ? 'step' : undefined}
             />
