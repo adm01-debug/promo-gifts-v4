@@ -114,6 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     const doFetch = async () => {
       authDebug("AuthContext.fetchUserData", "start", { userId });
+      setIsRolesLoading(true);
       try {
         // Garante que o cliente Supabase já tem a sessão hidratada antes de consultar
         // tabelas com RLS (evita query como anon retornando 0 linhas → fallback "agente").
