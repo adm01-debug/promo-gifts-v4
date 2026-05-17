@@ -173,21 +173,28 @@ export default function ResetPassword() {
 
   if (isSuccess) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-6">
-        <Card className="w-full max-w-md border-border bg-card shadow-xl">
-          <CardContent className="space-y-4 pb-8 pt-8 text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
-              <CheckCircle className="h-8 w-8 text-success" />
+      <div className="relative flex min-h-screen items-center justify-center bg-[#030508] p-6 overflow-hidden">
+        <SpaceScene />
+        <Card className="relative z-10 w-full max-w-md border-white/10 bg-black/60 shadow-2xl backdrop-blur-xl rounded-[2rem]">
+          <CardContent className="space-y-8 pb-10 pt-10 text-center px-8">
+            <div className="relative mx-auto h-20 w-20">
+              <div className="absolute inset-0 animate-ping rounded-full bg-success/20 duration-1000" />
+              <div className="relative flex h-full w-full items-center justify-center rounded-3xl bg-success/10 text-success shadow-[0_0_30px_rgba(34,197,94,0.3)]">
+                <CheckCircle className="h-10 w-10" />
+              </div>
             </div>
             <div className="space-y-2">
-              <h2 className="font-display text-xl font-semibold text-foreground">
+              <h2 className="font-display text-2xl font-bold text-white">
                 Senha redefinida!
               </h2>
-              <p className="text-sm text-muted-foreground">
-                Sua senha foi alterada com sucesso. Você será redirecionado automaticamente...
+              <p className="text-sm text-white/50 leading-relaxed">
+                Sua senha foi alterada com sucesso. Em instantes você será redirecionado para decolar conosco!
               </p>
             </div>
-            <Button variant="orange" className="w-full" onClick={() => navigate('/')}>
+            <Button 
+              className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-xl" 
+              onClick={() => navigate('/login')}
+            >
               Ir para o início
             </Button>
           </CardContent>
