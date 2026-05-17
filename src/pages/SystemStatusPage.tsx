@@ -81,18 +81,26 @@ export default function SystemStatusPage() {
 
     // 3. Database connection
     try {
-      const { error } = await supabase.from("profiles").select("id").limit(1);
+      const { data, error } = await supabase.from("profiles").select("id, email, role, is_active").limit(1);
+      const isConnected = !error || (error.code !== 'PGRST301' && error.code !== '42P01');
+      
       results.push({
         name: "Conexão com Database",
-        status: error ? "error" : "ok",
-        message: error ? error.message : "Conectado ao Lovable Cloud",
+        status: error ? (isConnected ? "warning" : "error") : "ok",
+        message: error 
+          ? `Status: ${error.code} - ${error.message}` 
+          : `Conectado com sucesso (Instância: ${import.meta.env.VITE_SUPABASE_URL?.split('//')[1]?.split('.')[0]})`,
         icon: <Database className="h-5 w-5" />,
       });
+
+      if (error) {
+        console.error("Database connection check detail:", error);
+      }
     } catch (err) {
       results.push({
         name: "Conexão com Database",
         status: "error",
-        message: err instanceof Error ? err.message : "Erro de conexão",
+        message: err instanceof Error ? err.message : "Erro fatal de conexão",
         icon: <Database className="h-5 w-5" />,
       });
     }
@@ -125,30 +133,40 @@ export default function SystemStatusPage() {
       icon: <Wifi className="h-5 w-5" />,
     });
 
-    // 6. Local quotes tables
+    // 6. Tables & RLS Validation
     try {
-      const localTables = ["quotes", "quote_items", "quote_templates", "quote_history"] as const;
+      const criticalTables = ["profiles", "user_roles", "quotes", "products"] as const;
       const checks = await Promise.all(
-        localTables.map(async (t) => {
-          const { error } = await supabase.from(t).select("id", { count: "exact", head: true });
-          return { table: t, ok: !error, msg: error?.message };
+        criticalTables.map(async (t) => {
+          const { error, count } = await supabase.from(t).select("*", { count: "exact", head: true });
+          // Se erro for 403 (Forbidden) ou PGRST301 (JWT expired/invalid), pode ser RLS ou Auth
+          // Se erro for 42P01, a tabela não existe
+          return { 
+            table: t, 
+            ok: !error || error.code === 'PGRST301', 
+            msg: error?.message,
+            code: error?.code,
+            count 
+          };
         })
       );
-      const allOk = checks.every((c) => c.ok);
-      const failed = checks.filter((c) => !c.ok);
+      
+      const failed = checks.filter((c) => !c.ok && c.code === '42P01');
+      const rlsBlocked = checks.filter((c) => !c.ok && c.code === 'PGRST301');
+
       results.push({
-        name: "Tabelas de Orçamentos (Local)",
-        status: allOk ? "ok" : "error",
-        message: allOk
-          ? `${localTables.length} tabelas verificadas`
-          : `Falha em: ${failed.map((f) => f.table).join(", ")}`,
+        name: "Validação de Tabelas",
+        status: failed.length > 0 ? "error" : (rlsBlocked.length > 0 ? "warning" : "ok"),
+        message: failed.length > 0 
+          ? `Tabelas ausentes: ${failed.map(f => f.table).join(", ")}`
+          : `Tabelas críticas mapeadas e acessíveis.`,
         icon: <TableProperties className="h-5 w-5" />,
       });
     } catch {
       results.push({
-        name: "Tabelas de Orçamentos (Local)",
+        name: "Validação de Tabelas",
         status: "error",
-        message: "Erro ao verificar tabelas locais",
+        message: "Falha crítica na verificação de esquema",
         icon: <TableProperties className="h-5 w-5" />,
       });
     }

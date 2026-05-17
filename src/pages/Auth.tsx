@@ -253,19 +253,36 @@ export default function Auth() {
     setIpBlocked(false);
 
     try {
-      const { error } = await signIn(data.email, data.password);
+      const { error, data: signInData } = await signIn(data.email, data.password);
 
       if (error) {
         await logLoginAttempt(data.email, null, false, error.message);
 
-        const description = error.message.includes('Invalid login credentials')
-          ? 'Email ou senha incorretos'
-          : error.message;
+        let description = error.message;
+        if (error.message.includes('Invalid login credentials')) {
+          description = 'Email ou senha incorretos';
+        } else if (error.message.includes('Email not confirmed')) {
+          description = 'E-mail ainda não confirmado. Verifique sua caixa de entrada.';
+        } else if (error.message.includes('Database error')) {
+          description = 'Erro de sincronização com o banco de dados. Tente novamente em instantes.';
+        }
 
         toast({
           variant: 'destructive',
           title: 'Erro ao entrar',
-          description,
+          description: (
+            <div className="space-y-2">
+              <p>{description}</p>
+              <Button 
+                variant="link" 
+                size="sm" 
+                className="h-auto p-0 text-xs text-white/60 hover:text-white"
+                onClick={() => navigate('/status')}
+              >
+                Verificar status da conexão →
+              </Button>
+            </div>
+          ),
         });
         return;
       }
@@ -278,11 +295,12 @@ export default function Auth() {
       } else {
         navigate(resolveRedirectTargetCb());
       }
-    } catch {
+    } catch (err) {
+      console.error('Login exception:', err);
       toast({
         variant: 'destructive',
         title: 'Erro inesperado',
-        description: 'Tente novamente mais tarde',
+        description: 'Não foi possível conectar ao servidor. Verifique sua internet.',
       });
     } finally {
       setIsSubmitting(false);
