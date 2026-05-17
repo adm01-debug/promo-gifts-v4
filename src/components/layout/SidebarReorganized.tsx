@@ -314,7 +314,7 @@ export const SidebarReorganized = React.memo(
         aria-label="Menu principal"
         style={{ ['--sidebar-w' as string]: isCollapsed ? '4rem' : '16rem' }}
         className={cn(
-          "fixed left-0 top-0 z-50 h-full bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-out",
+          "fixed left-0 top-0 z-50 h-full bg-sidebar/40 backdrop-blur-xl border-r border-sidebar-border/30 transition-all duration-300 ease-out",
           isCollapsed ? "overflow-visible" : "overflow-hidden",
           "lg:sticky lg:top-0 lg:z-auto lg:h-screen",
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
