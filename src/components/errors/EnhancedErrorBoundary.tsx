@@ -277,6 +277,13 @@ class EnhancedErrorBoundary extends Component<Props, State> {
                 Início
               </button>
               <button
+                onClick={this.handleLogout}
+                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-destructive/20 bg-background px-4 py-3 text-sm font-medium text-destructive shadow-sm transition-colors hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <LogOut className="h-4 w-4" />
+                Sair
+              </button>
+              <button
                 aria-label="Recarregar"
                 onClick={this.handleReload}
                 className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
