@@ -82,7 +82,9 @@
     "clean:all:hard": "rm -rf node_modules node_modules/.vite package-lock.json bun.lock && npm install",
     "predev:pnp": "npm run clean:vite",
     "predev:pnpm": "npm run clean:vite",
-    "dev:pnpm": "pnpm run predev:pnpm && pnpm exec vite"
+    "dev:pnpm": "pnpm run predev:pnpm && pnpm exec vite",
+    "predev:yarn": "npm run clean:vite",
+    "dev:yarn": "yarn run predev:yarn && yarn exec vite"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [
