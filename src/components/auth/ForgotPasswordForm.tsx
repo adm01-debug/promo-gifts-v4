@@ -168,11 +168,11 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
           <Button
             type="button"
             variant="ghost"
-            className="w-full text-white/40 hover:text-white hover:bg-white/5"
+            className="w-full h-11 text-white/40 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
             onClick={onBack}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar ao login
+            Voltar para a Base
           </Button>
         </motion.div>
       )}
