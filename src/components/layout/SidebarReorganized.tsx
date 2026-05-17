@@ -183,7 +183,7 @@ export const SidebarReorganized = React.memo(
     setOpenGroups(computeAutoOpen());
   }
 
-  const { isAdmin, isDev } = useAuth();
+  const { isAdmin, isDev, signOut } = useAuth();
 
   // Pending discount approval count for admin badge
   const { data: pendingApprovalCount } = useQuery({
