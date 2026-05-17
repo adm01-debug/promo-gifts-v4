@@ -16,6 +16,7 @@ export const Unauthorized = lazyWithRetry(() =>
   import("@/components/access/UnauthorizedPage").then((m) => ({ default: m.UnauthorizedPage })),
 );
 export const ResetPassword = lazyWithRetry(() => import("@/pages/ResetPassword"));
+export const ForgotPasswordConfirmation = lazyWithRetry(() => import("@/pages/ForgotPasswordConfirmation"));
 export const SSOCallbackPage = lazyWithRetry(() => import("@/pages/SSOCallbackPage"));
 export const TermsPage = lazyWithRetry(() => import("@/pages/TermsPage"));
 export const PrivacyPage = lazyWithRetry(() => import("@/pages/PrivacyPage"));
