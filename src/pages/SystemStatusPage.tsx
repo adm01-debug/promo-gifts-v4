@@ -390,21 +390,26 @@ export default function SystemStatusPage() {
             {rlsChecks.map((check, i) => (
               <div key={i} className="flex flex-col py-3 px-2 rounded-lg hover:bg-muted/50 transition-colors border-b border-white/5 last:border-0">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded bg-white/5 flex items-center justify-center font-mono text-[10px] text-white/40">
-                      {check.table.substring(0, 2).toUpperCase()}
+                    <div>
+                      <p className="font-mono text-sm font-bold">{check.table}</p>
+                      <p className={`text-xs ${check.status === 'error' ? 'text-destructive' : check.status === 'warning' ? 'text-warning' : 'text-success'}`}>
+                        {check.msg}
+                      </p>
                     </div>
-                  <div>
-                    <p className="font-mono text-sm font-bold">{check.table}</p>
-                    <p className={`text-xs ${check.status === 'error' ? 'text-destructive' : check.status === 'warning' ? 'text-warning' : 'text-success'}`}>
-                      {check.msg}
+                  </div>
+                  {check.code && (
+                    <Badge variant="outline" className="font-mono text-[9px] h-5 opacity-60">
+                      {check.code}
+                    </Badge>
+                  )}
+                </div>
+                {check.suggestion && (
+                  <div className="mt-2 ml-11 p-2 bg-blue-500/5 rounded border border-blue-500/10">
+                    <p className="text-[11px] text-blue-400 leading-relaxed italic">
+                      <span className="font-bold uppercase text-[9px] mr-1">Sugestão:</span>
+                      {check.suggestion}
                     </p>
                   </div>
-                </div>
-                {check.code && (
-                  <Badge variant="outline" className="font-mono text-[9px] h-5 opacity-60">
-                    {check.code}
-                  </Badge>
                 )}
               </div>
             ))}
