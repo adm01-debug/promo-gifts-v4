@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import React from "react";
 import { render } from "@testing-library/react";
 import { Header } from "@/components/layout/Header";
@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { OnboardingProvider } from "@/contexts/OnboardingContext";
 
 // Mock das dependências que poderiam causar efeitos colaterais ou erros de contexto
 vi.mock("@/integrations/supabase/client", () => ({
@@ -22,9 +23,23 @@ vi.mock("@/integrations/supabase/client", () => ({
           single: vi.fn(() => Promise.resolve({ data: null })),
           order: vi.fn(() => Promise.resolve({ data: [] })),
         })),
+        count: vi.fn(() => ({
+          eq: vi.fn(() => Promise.resolve({ count: 0 })),
+        })),
       })),
     })),
+    rpc: vi.fn(),
   },
+}));
+
+// Mock do módulo de telemetria para evitar erros de importação ou execução em teste
+vi.mock("@/lib/telemetry/structuredLogger", () => ({
+  createClientLogger: vi.fn(() => ({
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    headers: vi.fn(() => ({})),
+  })),
 }));
 
 const queryClient = new QueryClient({
@@ -40,9 +55,11 @@ const AllProviders = ({ children }: { children: React.ReactNode }) => (
     <MemoryRouter>
       <ThemeProvider>
         <AuthProvider>
-          <TooltipProvider>
-            {children}
-          </TooltipProvider>
+          <OnboardingProvider>
+            <TooltipProvider>
+              {children}
+            </TooltipProvider>
+          </OnboardingProvider>
         </AuthProvider>
       </ThemeProvider>
     </MemoryRouter>
@@ -60,11 +77,12 @@ describe("Integridade de Sintaxe e Renderização Básica", () => {
   });
 
   it("SidebarReorganized deve renderizar sem erros de sintaxe ou JSX", () => {
-    const { getByRole } = render(
+    const { getByLabelText } = render(
       <AllProviders>
         <SidebarReorganized isOpen={true} onToggle={() => {}} />
       </AllProviders>
     );
-    expect(getByRole("navigation")).toBeDefined();
+    expect(getByLabelText("Menu principal")).toBeDefined();
   });
 });
+
