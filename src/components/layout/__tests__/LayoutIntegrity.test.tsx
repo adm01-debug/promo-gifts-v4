@@ -5,6 +5,7 @@ import { Header } from '../Header';
 import { SidebarReorganized } from '../SidebarReorganized';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
+import { OnboardingProvider } from '@/contexts/OnboardingContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Mock simple hooks that might cause issues in a basic render test
@@ -29,7 +30,9 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
-          {children}
+          <OnboardingProvider>
+            {children}
+          </OnboardingProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>
