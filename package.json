@@ -72,7 +72,9 @@
     "typecheck:full": "tsc -p tsconfig.app.json --noEmit",
     "ci:build": "node scripts/check-build-warnings.mjs",
     "typecheck:baseline:update": "node scripts/tsc-baseline-generate.mjs",
-    "check:observability": "node scripts/observability-check.mjs"
+    "check:observability": "node scripts/observability-check.mjs",
+    "clean:vite": "rm -rf node_modules/.vite node_modules/.vite-temp",
+    "dev:clean": "npm run clean:vite && npm install && npm run dev"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [
