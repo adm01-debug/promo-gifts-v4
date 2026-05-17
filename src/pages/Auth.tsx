@@ -24,6 +24,7 @@ import {
   Activity,
   CheckCircle2,
   XCircle,
+  Rocket,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AuthBrandingPanel, Starfield, SpaceScene } from './auth/AuthBranding';
@@ -307,7 +308,7 @@ export default function Auth() {
           <div className="relative">
             <AppLogo showText={false} iconClassName="h-20 w-20 rounded-2xl shadow-blue-500/40 animate-pulse" />
             <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-success flex items-center justify-center ring-4 ring-[#030508]">
-              <RotateCw className="h-3 w-3 text-white animate-spin-slow" />
+              <Rocket className="h-3 w-3 text-white" />
             </div>
           </div>
           <div className="text-center space-y-2">
@@ -321,7 +322,7 @@ export default function Auth() {
 
   return (
     <main
-      className="relative flex flex-col lg:flex-row min-h-screen bg-[#030508]"
+      className="relative flex flex-col lg:flex-row min-h-screen bg-[#030508] overflow-hidden"
       role="main"
       aria-label="Autenticação"
     >
@@ -406,7 +407,7 @@ export default function Auth() {
                 >
                   <div className="relative mb-8">
                     <div className="absolute inset-0 animate-ping rounded-full bg-blue-500/20 duration-1000" />
-                    <div className="relative flex h-24 w-24 items-center justify-center rounded-3xl bg-blue-500/10 text-blue-400 ring-1 ring-blue-500/20 shadow-[0_0_50px_rgba(59,130,246,0.3)]">
+                    <div className="relative flex h-24 w-24 items-center justify-center rounded-3xl bg-blue-500/10 text-blue-400 ring-1 ring-blue-500/20 shadow-[0_0_50px_rgba(59,130,246,0.3)] overflow-hidden">
                       <Rocket className="h-12 w-12 -rotate-45 animate-bounce" />
                     </div>
                     <motion.div 
@@ -458,10 +459,10 @@ export default function Auth() {
                   <CardHeader className="pb-3 pt-9">
                     <div className="space-y-1 text-center">
                       <h1 className="font-display text-[1.4rem] font-bold text-white tracking-tight" id="auth-title">
-                        Bem-vindo de volta
+                        Entre com suas credenciais para Brilhar, você nasceu para isso!
                       </h1>
                       <p className="text-[13px] text-white/50">
-                        Entre com suas credenciais para Brilhar, você nasceu para isso!
+                        Inicie sua jornada rumo ao sucesso
                       </p>
                     </div>
                   </CardHeader>
