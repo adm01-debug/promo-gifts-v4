@@ -1,0 +1,2 @@
+rm: cannot remove 'tables.txt': No such file or directory
+rm: cannot remove 'check_external_tables.js': No such file or directory
