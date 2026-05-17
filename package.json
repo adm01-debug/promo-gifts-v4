@@ -75,7 +75,9 @@
     "check:observability": "node scripts/observability-check.mjs",
     "clean:vite": "rm -rf node_modules/.vite node_modules/.vite-temp",
     "dev:clean": "npm run clean:vite && npm install && npm run dev",
-    "predev": "npm run clean:vite"
+    "predev": "npm run clean:vite",
+    "dev:clean:pnpm": "npm run clean:vite && pnpm install && pnpm dev",
+    "dev:clean:yarn": "npm run clean:vite && yarn install && yarn dev"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [
