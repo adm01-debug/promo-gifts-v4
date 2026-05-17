@@ -327,7 +327,12 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
             willChange: "transform, opacity",
           }}
         >
-          <div style={{ transform: `scale(${r.scale}) rotate(${r.rotation}deg)` }}>
+          <div 
+            style={{ 
+              transform: `scale(${r.scale}) rotate(${r.rotation}deg)`,
+              filter: `drop-shadow(0 0 ${r.size / 2}px rgba(59, 130, 246, 0.4))`
+            }}
+          >
             <Rocket
               className="-rotate-45 text-blue-400"
               style={{
@@ -336,16 +341,17 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
                 filter: "drop-shadow(0 0 15px rgba(59, 130, 246, 0.7))",
               }}
             />
-            {/* Flame Trail */}
+            {/* Dynamic Flame Trail (Refined for 10/10) */}
             <div
-              className="absolute left-1/2 -translate-x-1/2 rounded-full opacity-80"
+              className="absolute left-1/2 -translate-x-1/2 rounded-full opacity-80 animate-pulse"
               style={{
                 top: `${r.size * 0.8}px`,
                 width: `${r.size * 0.4}px`,
-                height: `${r.size * 1.5}px`,
-                background: "linear-gradient(to bottom, #3b82f6, #60a5fa, transparent)",
-                filter: "blur(4px)",
+                height: `${r.size * 2}px`,
+                background: "linear-gradient(to bottom, #3b82f6, #60a5fa, #2563eb, transparent)",
+                filter: "blur(6px)",
                 zIndex: -1,
+                boxShadow: `0 0 ${r.size}px rgba(59, 130, 246, 0.6)`,
               }}
             />
           </div>
