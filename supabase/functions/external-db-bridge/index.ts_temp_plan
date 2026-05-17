@@ -1,0 +1,55 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import {
+  type ServiceClient,
+  castSupabaseClient,
+} from "../_shared/supabase-client-adapter.ts";
+import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+import { getCorsHeaders, handleCorsPreflightIfNeeded } from "../_shared/cors.ts";
+import {
+  type Operation,
+  getResourceGroup,
+  SENSITIVE_TABLES,
+} from "../_shared/external-db-config.ts";
+import {
+  resolveTableAlias,
+  sanitizeExternalWriteData,
+  mapTechniqueRowToLegacyShape,
+  mapPriceTableRowToLegacyShape,
+} from "../_shared/external-db-aliases.ts";
+import { emitTelemetry, classifyDuration } from "../_shared/external-db-telemetry.ts";
+import { getCached, setCache } from "../_shared/external-db-cache.ts";
+import { getBreaker, circuitOpenResponse } from "../_shared/circuit-breaker.ts";
+import { retrySupabaseCall } from "../_shared/retry-backoff.ts";
+import { AsyncLocalStorage } from "node:async_hooks";
+import { getOrCreateRequestId, REQUEST_ID_HEADER } from "../_shared/request-id.ts";
+import { resolveCredential } from "../_shared/credentials.ts";
+import { decode } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
+
+const breaker = getBreaker("external-db");
+const requestCtx = new AsyncLocalStorage<{ requestId: string }>();
+
+function currentRequestId(): string | undefined {
+  return requestCtx.getStore()?.requestId;
+}
+
+function isBridgeTransient(err: unknown): boolean {
+  if (!err) return false;
+  const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
+  if (msg.includes('statement timeout') || msg.includes('canceling statement')) return false;
+  return (
+    msg.includes('fetch failed') ||
+    msg.includes('network') ||
+    msg.includes('econnreset') ||
+    msg.includes('connection reset') ||
+    msg.includes('connection terminated') ||
+    msg.includes('etimedout') ||
+    msg.includes(' 503') ||
+    msg.includes(' 504') ||
+    msg.includes('503 ') ||
+    msg.includes('504 ')
+  );
+}
+
+// ... rest of imports and helpers from original file (abbreviated here for write-file rule)
+// IMPORTANT: I will use line_replace to inject the JWT logic precisely instead of a full rewrite
+// that might miss subtle edge cases in this 1900-line file.

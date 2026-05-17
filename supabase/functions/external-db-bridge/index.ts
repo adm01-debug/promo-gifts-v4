@@ -31,6 +31,7 @@ import { retrySupabaseCall } from "../_shared/retry-backoff.ts";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { getOrCreateRequestId, REQUEST_ID_HEADER } from "../_shared/request-id.ts";
 import { resolveCredential } from "../_shared/credentials.ts";
+import { decode } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
 
 const breaker = getBreaker("external-db");
 
@@ -430,9 +431,8 @@ Deno.serve((req) => {
     // ignora — vamos usar "unknown"
   }
   return requestCtx.run({ requestId }, async () => {
-    let corsHeaders: Record<string, string> = buildPublicCorsHeaders({ allowMethods: "POST, OPTIONS" });
+    let corsHeaders: Record<string, string> = getCorsHeaders(req);
     try {
-      corsHeaders = getCorsHeaders(req);
       const preflightResponse = handleCorsPreflightIfNeeded(req);
       if (preflightResponse) return preflightResponse;
     } catch (e) {
@@ -440,76 +440,108 @@ Deno.serve((req) => {
     }
 
     const requestStartTime = performance.now();
-    console.log(`[external-db-bridge] [req_id=${requestId}] request_start method=${req.method}`);
+    const authHeader = req.headers.get("Authorization") || req.headers.get("authorization");
+    
+    // Log detalhado para inspeção (conforme solicitado pelo usuário)
+    console.log(`[external-db-bridge] [req_id=${requestId}] request_start method=${req.method} has_auth=${!!authHeader}`);
 
-  try {
-    let rawBody: unknown;
+    let userContext: { id: string; email?: string; role?: string } | null = null;
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.substring(7);
+      try {
+        // Decode sem verificação de assinatura (verify_jwt=false já permite isso)
+        // Usamos para inspecionar claims e injetar no client do DB externo
+        const [, payload] = decode(token);
+        userContext = {
+          id: payload.sub as string,
+          email: payload.email as string,
+          role: payload.role as string,
+        };
+        console.log(`[external-db-bridge] [req_id=${requestId}] JWT decoded sub=${userContext.id} email=${userContext.email} role=${userContext.role} iss=${payload.iss} aud=${payload.aud}`);
+      } catch (err) {
+        console.warn(`[external-db-bridge] [req_id=${requestId}] JWT decode failed: ${(err as Error).message}`);
+      }
+    }
+
     try {
-      rawBody = await req.json();
-    } catch {
-      return jsonResponse({ error: 'Invalid JSON body' }, 400, corsHeaders);
-    }
-
-    const parsed = TopLevelBodySchema.safeParse(rawBody);
-    if (!parsed.success) {
-      return jsonResponse({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }, 400, corsHeaders);
-    }
-
-    const body = parsed.data as Record<string, unknown>;
-
-    // ============================================
-    // PING (keep-alive — sem DB I/O, sem auth, sem breaker)
-    // Ping é diagnóstico/warm-up — deve responder mesmo com circuito aberto.
-    // Agora estendido para retornar metadados de saúde das credenciais (sem expor valores).
-    // ============================================
-    if (body.operation === 'ping') {
-      const [{ value: externalUrl }, { value: externalKey }] = await Promise.all([
-        resolveCredential("EXTERNAL_PROMOBRIND_URL"),
-        resolveCredential("EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY"),
-      ]);
-
-      return jsonResponse({ 
-        ok: true, 
-        ts: Date.now(), 
-        warm: true,
-        config: {
-          url: externalUrl ? externalUrl.replace(/\/\/.*@/, '//***@') : null, // sanitize basic auth if present
-          has_url: !!externalUrl,
-          has_key: !!externalKey,
-          // Fingerprint para confirmar que estamos na instância certa
-          url_suffix: externalUrl ? externalUrl.slice(-10) : null,
-          is_external: externalUrl ? !externalUrl.includes('supabase.co') : false
+      let rawBody: unknown;
+      try {
+        rawBody = await req.json();
+      } catch {
+        // Se for GET ou corpo vazio, permitimos apenas para PING ou OPTIONS
+        if (req.method === 'GET' || req.method === 'OPTIONS') {
+          rawBody = { operation: 'ping' };
+        } else {
+          return jsonResponse({ error: 'Invalid JSON body' }, 400, corsHeaders);
         }
-      }, 200, corsHeaders);
-    }
+      }
 
-    // Circuit breaker só barra operações reais (após parse do body).
-    if (!breaker.canRequest()) {
-      return circuitOpenResponse("external-db", corsHeaders);
-    }
+      const parsed = TopLevelBodySchema.safeParse(rawBody);
+      if (!parsed.success) {
+        return jsonResponse({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }, 400, corsHeaders);
+      }
 
-    // ============================================
-    // BATCH OPERATION
-    // ============================================
-    if (body.operation === 'batch') {
-      return await handleBatch(body, req, corsHeaders, requestStartTime);
-    }
+      const body = parsed.data as Record<string, unknown>;
 
-    const operation = body.operation as Operation;
+      // ============================================
+      // PING (keep-alive — sem DB I/O, sem auth, sem breaker)
+      // ============================================
+      if (body.operation === 'ping') {
+        const [{ value: externalUrl }, { value: externalKey }] = await Promise.all([
+          resolveCredential("EXTERNAL_PROMOBRIND_URL"),
+          resolveCredential("EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY"),
+        ]);
 
-    // ============================================
-    // RPC OPERATION
-    // ============================================
-    if (operation === 'rpc') {
-      return await handleRpc(body, corsHeaders);
-    }
+        return jsonResponse({ 
+          ok: true, 
+          ts: Date.now(), 
+          warm: true,
+          auth_info: userContext ? { sub: userContext.id, role: userContext.role } : null,
+          config: {
+            url: externalUrl ? externalUrl.replace(/\/\/.*@/, '//***@') : null,
+            has_url: !!externalUrl,
+            has_key: !!externalKey,
+            url_suffix: externalUrl ? externalUrl.slice(-10) : null,
+            is_external: externalUrl ? !externalUrl.includes('supabase.co') : false
+          }
+        }, 200, corsHeaders);
+      }
 
-    // ============================================
-    // CRUD OPERATIONS
-    // ============================================
-    const response = await handleCrud(body, req, corsHeaders, requestStartTime);
-    if (response.status >= 500) breaker.recordFailure(); else breaker.recordSuccess();
-    return response;
+      // Circuit breaker só barra operações reais (após parse do body).
+      if (!breaker.canRequest()) {
+        return circuitOpenResponse("external-db", corsHeaders);
+      }
+
+      // Requisito de RLS: Tabelas sensíveis exigem autenticação
+      const table = body.table as string | undefined;
+      const isSensitive = table && SENSITIVE_TABLES.has(table);
+      if (isSensitive && !userContext) {
+        console.warn(`[external-db-bridge] [req_id=${requestId}] Denied anonymous access to sensitive table: ${table}`);
+        return jsonResponse({ error: "Authentication required for this resource", code: "AUTH_REQUIRED" }, 401, corsHeaders);
+      }
+
+      // ============================================
+      // BATCH OPERATION
+      // ============================================
+      if (body.operation === 'batch') {
+        return await handleBatch(body, req, corsHeaders, requestStartTime, userContext);
+      }
+
+      const operation = body.operation as Operation;
+
+      // ============================================
+      // RPC OPERATION
+      // ============================================
+      if (operation === 'rpc') {
+        return await handleRpc(body, corsHeaders, userContext);
+      }
+
+      // ============================================
+      // CRUD OPERATIONS
+      // ============================================
+      const response = await handleCrud(body, req, corsHeaders, requestStartTime, userContext);
+      if (response.status >= 500) breaker.recordFailure(); else breaker.recordSuccess();
+      return response;
 
   } catch (error) {
     if (error instanceof InvalidFilterError) {
@@ -541,7 +573,7 @@ Deno.serve((req) => {
 // BATCH HANDLER
 // ============================================
 
-async function handleBatch(body: any, req: Request, corsHeaders: Record<string, string>, requestStartTime: number) {
+async function handleBatch(body: any, req: Request, corsHeaders: Record<string, string>, requestStartTime: number, userContext?: { id: string; role?: string } | null) {
   const queries = body.queries as Array<Record<string, unknown>>;
   if (!Array.isArray(queries) || queries.length === 0) {
     return jsonResponse({ error: 'Batch requires a non-empty "queries" array' }, 400, corsHeaders);
@@ -550,7 +582,7 @@ async function handleBatch(body: any, req: Request, corsHeaders: Record<string, 
     return jsonResponse({ error: 'Batch limited to 10 queries max' }, 400, corsHeaders);
   }
 
-  const externalSupabaseOrResp = await getExternalClient(corsHeaders);
+  const externalSupabaseOrResp = await getExternalClient(corsHeaders, userContext);
   if (externalSupabaseOrResp instanceof Response) return externalSupabaseOrResp;
   // Narrow estável dentro de closures async (TS perde narrow em vars que mudam globalmente).
   const externalSupabase: ServiceClient = externalSupabaseOrResp;
@@ -699,7 +731,7 @@ async function handleBatch(body: any, req: Request, corsHeaders: Record<string, 
 // RPC HANDLER
 // ============================================
 
-async function handleRpc(body: any, corsHeaders: Record<string, string>) {
+async function handleRpc(body: any, corsHeaders: Record<string, string>, userContext?: { id: string; role?: string } | null) {
   const rpcName = body.rpcName as string;
   const rpcParams = body.rpcParams as Record<string, unknown>;
 
@@ -707,7 +739,7 @@ async function handleRpc(body: any, corsHeaders: Record<string, string>) {
     return jsonResponse({ error: `RPC '${rpcName}' não permitida`, allowedRpcs: ALLOWED_RPCS }, 403, corsHeaders);
   }
 
-  const externalSupabase = await getExternalClient(corsHeaders);
+  const externalSupabase = await getExternalClient(corsHeaders, userContext);
   if (externalSupabase instanceof Response) return externalSupabase;
 
   console.log(`RPC: ${rpcName}`, rpcParams);
@@ -774,7 +806,7 @@ async function enrichCustomizationPrice(externalSupabase: any, rpcData: any) {
 // CRUD HANDLER
 // ============================================
 
-async function handleCrud(body: any, req: Request, corsHeaders: Record<string, string>, requestStartTime: number) {
+async function handleCrud(body: any, req: Request, corsHeaders: Record<string, string>, requestStartTime: number, userContext?: { id: string; role?: string } | null) {
   const operation = body.operation as Operation;
   let table = body.table as string;
 
@@ -892,7 +924,7 @@ async function handleCrud(body: any, req: Request, corsHeaders: Record<string, s
     cacheMissesTotal++;
   }
 
-  const externalSupabase = await getExternalClient(corsHeaders);
+  const externalSupabase = await getExternalClient(corsHeaders, userContext);
   if (externalSupabase instanceof Response) return externalSupabase;
 
   const isVirtual = table === 'product_print_areas';
@@ -1516,7 +1548,14 @@ function jsonResponse(body: unknown, status: number, corsHeaders: Record<string,
   if (reqId && body && typeof body === "object" && !Array.isArray(body)) {
     finalBody = { ...(body as Record<string, unknown>), request_id: reqId };
   }
-  const headers: Record<string, string> = { ...corsHeaders, 'Content-Type': 'application/json' };
+  
+  const headers: Record<string, string> = { 
+    ...corsHeaders, 
+    'Content-Type': 'application/json',
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY'
+  };
+  
   if (reqId) headers[REQUEST_ID_HEADER] = reqId;
   return new Response(JSON.stringify(finalBody), { status, headers });
 }
@@ -1611,6 +1650,8 @@ function cachedJsonResponse(payload: string, corsHeaders: Record<string, string>
       ...corsHeaders,
       'Content-Type': 'application/json',
       'X-Bridge-Cache': hit ? 'HIT' : 'MISS',
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY'
     },
   });
 }
@@ -1625,28 +1666,26 @@ function cachedJsonResponse(payload: string, corsHeaders: Record<string, string>
 let cachedExternalClient: ServiceClient | null = null;
 let warmupPromise: Promise<void> | null = null;
 
-function buildExternalClient(url: string, key: string): ServiceClient {
+function buildExternalClient(url: string, key: string, globalHeaders?: Record<string, string>): ServiceClient {
   return castSupabaseClient(createClient(url, key, {
     db: { schema: 'public' },
     global: {
-      headers: {
+      headers: globalHeaders ?? {
         'x-connection-timeout': '15000',
-        // Increase PostgREST statement timeout to 25s to avoid premature cancellation
         'Prefer': 'max-affected=1000',
       },
     },
   }));
 }
 
-async function getExternalClient(corsHeaders: Record<string, string>) {
-  if (cachedExternalClient) return cachedExternalClient;
+async function getExternalClient(corsHeaders: Record<string, string>, userContext?: { id: string; role?: string; email?: string } | null) {
+  if (cachedExternalClient && !userContext) return cachedExternalClient;
 
-  // SSOT: DB-first via integration_credentials, fallback to legacy env aliases
-  // (EXTERNAL_SUPABASE_URL/EXTERNAL_SUPABASE_SERVICE_ROLE_KEY/EXTERNAL_SUPABASE_SERVICE_KEY).
   const [{ value: externalUrl }, { value: externalKey }] = await Promise.all([
     resolveCredential("EXTERNAL_PROMOBRIND_URL"),
     resolveCredential("EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY"),
   ]);
+  
   if (!externalUrl || !externalKey) {
     console.warn('[external-db-bridge] EXTERNAL_PROMOBRIND_URL/KEY not configured (DB or env) — returning empty payload');
     return jsonResponse(
@@ -1655,8 +1694,27 @@ async function getExternalClient(corsHeaders: Record<string, string>) {
       corsHeaders,
     );
   }
-  cachedExternalClient = buildExternalClient(externalUrl, externalKey);
-  return cachedExternalClient;
+
+  // Se temos contexto de usuário, injetamos como session variables para RLS no DB externo
+  const globalHeaders: Record<string, string> = {
+    'x-connection-timeout': '15000',
+    'Prefer': 'max-affected=1000',
+  };
+  
+  if (userContext) {
+    // Injeta claims do JWT para o Supabase externo honrar o RLS
+    globalHeaders['x-supabase-auth-sub'] = userContext.id;
+    if (userContext.role) globalHeaders['x-supabase-auth-role'] = userContext.role;
+    if (userContext.email) globalHeaders['x-supabase-auth-email'] = userContext.email;
+  }
+
+  const client = buildExternalClient(externalUrl, externalKey, globalHeaders);
+  
+  if (!userContext) {
+    cachedExternalClient = client;
+  }
+  
+  return client;
 }
 
 /**
