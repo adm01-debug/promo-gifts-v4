@@ -383,62 +383,59 @@ function FeatureCard({ item, index }: { item: typeof FEATURE_ITEMS[0]; index: nu
 }
 
 const FEATURE_ITEMS = [
-  { label: "+20.000", desc: "Produtos", icon: Package },
-  { label: "+100", desc: "Fornecedores", icon: Factory },
-  { label: "Filtros", desc: "Avançados", icon: SlidersHorizontal },
-  { label: "IA", desc: "Assistente Pessoal", icon: Brain },
+  { label: "+20.000", desc: "PRODUTOS", icon: Package },
+  { label: "+100", desc: "FORNECEDORES", icon: Factory },
+  { label: "Filtros", desc: "AVANÇADOS", icon: SlidersHorizontal },
+  { label: "IA", desc: "ASSISTENTE PESSOAL", icon: Brain },
 ];
 
 export function AuthBrandingPanel() {
   return (
-    <div className="flex w-full lg:w-1/2 relative min-h-[500px] lg:h-screen items-center">
-      {/* Sem decoração lateral — fundo 100% unificado vem do <main> em Auth.tsx */}
-
+    <div className="flex w-full lg:w-1/2 relative min-h-screen items-center">
       {/* Content */}
-      <div className="relative z-10 flex flex-col justify-center items-center px-12 xl:px-20 w-full min-h-screen lg:translate-x-[10%]">
-        <div className="space-y-6 w-full max-w-xl flex flex-col items-center text-center">
-          <div className="flex items-center gap-4">
-            <AppLogo variant="light" iconClassName="h-14 w-14 rounded-xl shadow-blue-500/30" textClassName="text-4xl" />
+      <div className="relative z-10 flex flex-col justify-center items-center px-12 xl:px-20 w-full min-h-screen lg:translate-x-[5%] xl:translate-x-[10%]">
+        <div className="space-y-8 w-full max-w-xl flex flex-col items-center text-center">
+          <div className="flex items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-700">
+            <AppLogo variant="light" iconClassName="h-16 w-16 rounded-2xl shadow-blue-500/40" textClassName="text-5xl" />
           </div>
 
-          <div className="space-y-4 max-w-md flex flex-col items-center">
-            <h2 className="text-4xl xl:text-5xl font-display font-bold text-white leading-[1.1] tracking-tight relative group text-center">
+          <div className="space-y-6 max-w-lg flex flex-col items-center">
+            <h2 className="text-5xl xl:text-6xl font-display font-bold text-white leading-[1.05] tracking-tight relative group text-center">
               Um Universo de Produtos, para o{" "}
               <span className="text-blue-400">
                 Melhor Time das{" "}
                 <span className="relative inline-block">
                   Galáxias!
-                  <span className="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r from-blue-400/0 via-blue-400/60 to-blue-400/0 scale-x-0 group-hover:scale-x-100 transition-transform duration-700 shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+                  <span className="absolute -bottom-2 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-400/0 via-blue-400/60 to-blue-400/0 scale-x-0 group-hover:scale-x-100 transition-transform duration-700 shadow-[0_0_20px_rgba(59,130,246,0.6)]" />
                 </span>
               </span>
             </h2>
-            <p className="text-base text-white/70 leading-relaxed font-light text-center">
+            <p className="text-lg text-white/60 leading-relaxed font-light text-center max-w-md">
               Tenha acesso ao maior mix de produtos personalizados, consulte estoque em tempo real, visualize locais e técnicas de personalização. Feito especialmente para você decolar!!!
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-[0.6rem] sm:gap-4 pt-6 w-full lg:w-[94.5%] xl:w-[99%] lg:mx-[2.75%] xl:mx-[0.5%] px-2 sm:px-0">
+          <div className="grid grid-cols-2 gap-4 sm:gap-6 pt-8 w-full">
             {FEATURE_ITEMS.map((item, i) => (
               <FeatureCard key={i} item={item} index={i} />
             ))}
           </div>
 
           {/* Trust Indicators */}
-          <div className="flex items-center gap-4 pt-6 opacity-0" style={{ animation: 'scale-fade-in 0.5s ease-out 900ms forwards' }}>
+          <div className="flex flex-wrap items-center justify-center gap-6 pt-12 opacity-0" style={{ animation: 'scale-fade-in 0.6s ease-out 1000ms forwards' }}>
             {[
-              { label: "Conexão segura", path: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" },
-              { label: "Dados criptografados", path: "M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" },
-              { label: "Infraestrutura SOC 2", path: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" },
+              { label: "Conexão segura", icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" },
+              { label: "Dados criptografados", icon: "M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" },
+              { label: "Infraestrutura SOC 2", icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" },
             ].map((item, i) => (
-              <React.Fragment key={i}>
-                {i > 0 && <div className="w-px h-4 bg-border" />}
-                <div className="flex items-center gap-2 text-xs text-white/40">
-                  <svg className="h-4 w-4 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.path} />
+              <div key={i} className="flex items-center gap-2.5 group">
+                <div className="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
+                  <svg className="h-4 w-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
                   </svg>
-                  <span>{item.label}</span>
                 </div>
-              </React.Fragment>
+                <span className="text-xs font-medium text-white/40 group-hover:text-white/60 transition-colors">{item.label}</span>
+              </div>
             ))}
           </div>
         </div>
