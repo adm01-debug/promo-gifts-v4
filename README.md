@@ -172,28 +172,65 @@ npx supabase secrets set EXTERNAL_SUPABASE_URL="https://..." \
 ### 4. Rodar em desenvolvimento
 
 ```bash
+# npm (recomendado — o hook `predev` já roda `clean:vite` automaticamente)
 npm run dev          # http://localhost:8080
-npm run test         # Vitest
-npm run build        # build de produção
+
+# pnpm (pnpm v7+ NÃO executa hooks pre*; use o script explícito)
+pnpm run dev:pnpm    # = clean:vite + pnpm exec vite
+
+# yarn classic v1 (roda `predev` sozinho)
+yarn dev
+# yarn berry v2+ (sem pre-hooks): use o script explícito
+yarn dev:yarn        # = clean:vite + yarn exec vite
 ```
 
 ### Comandos disponíveis
 
 | Comando | Descrição |
 |---|---|
-| `npm run dev` | Servidor de desenvolvimento (porta 8080) |
+| `npm run dev` | Servidor de desenvolvimento (porta 8080), com `clean:vite` automático via `predev` |
 | `npm run build` | Build de produção |
 | `npm run preview` | Preview do build |
 | `npm run test` | Executa testes Vitest |
 | `npm run test:coverage` | Testes com cobertura |
 | `npm run lint:check` | ESLint |
 | `npm run test:e2e` | Suíte E2E Playwright |
+| `npm run clean:vite` | Remove `node_modules/.vite` e `node_modules/.vite-temp` |
+| `npm run dev:clean` | `clean:vite` + `npm install` + `npm run dev` |
+| `npm run dev:clean:pnpm` | `clean:vite` + `pnpm install` + `pnpm dev` |
+| `npm run dev:clean:yarn` | `clean:vite` + `yarn install` + `yarn dev` |
+| `npm run clean:all` | Remove `node_modules` (+ cache Vite), reinstala e sobe o dev |
+| `npm run clean:all:hard` | Idem + apaga `package-lock.json`/`bun.lock` antes de reinstalar |
+
+### Limpando caches quando houver chunks obsoletos
+
+Se aparecerem erros tipo `Failed to fetch dynamically imported module`, `ChunkLoadError`
+ou a tela ficar em branco após uma atualização, o cache do Vite ou os módulos
+instalados provavelmente estão desatualizados. Em ordem do mais leve para o mais agressivo:
+
+```bash
+# 1) Só o cache do Vite (resolve 90% dos casos)
+npm run clean:vite
+
+# 2) Cache + reinstalar dependências + subir o dev (escolha o gerenciador)
+npm run dev:clean
+pnpm run dev:clean:pnpm
+yarn run dev:clean:yarn
+
+# 3) Reset completo: apaga node_modules e reinstala do zero
+npm run clean:all          # mantém o lockfile
+npm run clean:all:hard     # também apaga package-lock.json / bun.lock
+```
+
+Depois disso, faça um hard reload no navegador (Ctrl/Cmd + Shift + R) para descartar
+chunks antigos cacheados pelo Service Worker.
 
 ### Solução de problemas
 
 - **`Failed to fetch` em edge function** → verifique se o secret `*_SUPABASE_URL` correspondente está setado no projeto certo.
 - **`401 Unauthorized` no catálogo** → confirme `VITE_EXTERNAL_SUPABASE_ANON_KEY` no `.env.local`.
 - **Login não funciona** → no painel Supabase principal, em **Authentication → URL Configuration**, adicione `http://localhost:8080` em *Site URL* e *Redirect URLs*.
+- **`ChunkLoadError` / tela branca após deploy** → rode `npm run clean:vite` (ou `npm run dev:clean`) e dê hard reload no navegador.
 
 ---
 
