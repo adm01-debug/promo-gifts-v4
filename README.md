@@ -202,6 +202,37 @@ yarn dev:yarn        # = clean:vite + yarn exec vite
 | `npm run clean:all` | Remove `node_modules` (+ cache Vite), reinstala e sobe o dev |
 | `npm run clean:all:hard` | Idem + apaga `package-lock.json`/`bun.lock` antes de reinstalar |
 
+#### Opcional: fazer `pnpm dev` rodar `predev` sozinho
+
+A partir do **pnpm v7**, hooks `pre*`/`post*` ficam desativados por padrão
+(`enable-pre-post-scripts=false`), então `pnpm dev` **não** executa `predev`
+automaticamente — por isso oferecemos o `pnpm run dev:pnpm` (que já faz o
+chaining explícito). Se você quiser o mesmo comportamento do npm/yarn classic
+(rodar `predev` antes de `dev`), habilite a flag do pnpm em **um** dos níveis
+abaixo:
+
+```bash
+# A) Por projeto (recomendado — versionável) — cria/edita .npmrc na raiz
+echo "enable-pre-post-scripts=true" >> .npmrc
+
+# B) Por usuário (afeta todos os projetos da sua máquina)
+pnpm config set enable-pre-post-scripts true
+
+# C) Pontual, sem persistir (apenas nesta execução)
+npm_config_enable_pre_post_scripts=true pnpm dev
+```
+
+Depois disso, `pnpm dev` passa a chamar `predev` (= `npm run clean:vite`) antes
+de subir o Vite, igual ao npm. Observações:
+
+- A flag liga **todos** os hooks `pre*`/`post*` do `package.json` — confira se
+  não há nenhum que você não queira executar.
+- Ela controla apenas hooks com o prefixo padrão (`predev`, `postbuild`, etc.).
+  Scripts customizados como `predev:pnpm` continuam só sendo executados quando
+  chamados explicitamente (ex.: `pnpm run dev:pnpm`).
+- Para desligar de novo: `pnpm config set enable-pre-post-scripts false` ou
+  remover a linha do `.npmrc`.
+
 ### Limpando caches quando houver chunks obsoletos
 
 Se aparecerem erros tipo `Failed to fetch dynamically imported module`, `ChunkLoadError`
