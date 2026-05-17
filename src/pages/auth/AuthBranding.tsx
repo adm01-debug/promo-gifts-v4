@@ -212,13 +212,15 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
           }}
         >
           <div
-            className="w-full h-full rounded-full bg-white shadow-[0_0_15px_rgba(255,255,255,0.9)]"
+            className="w-full h-full rounded-full"
             data-testid={`star-breathing-${star.id}`}
             style={{
+              background: 'radial-gradient(circle, #ffffff 0%, #3b82f6 40%, transparent 100%)',
+              boxShadow: '0 0 20px rgba(255, 255, 255, 0.8), 0 0 40px rgba(59, 130, 246, 0.6)',
               // Respiração (Brilho/Escala) na camada interna
               animation: `breathingStar ${star.breathingDur}s ease-in-out ${star.breathingDelay}s infinite, starGlowPulse ${star.breathingDur * 1.5}s ease-in-out infinite`,
               willChange: "opacity, transform, filter",
-              mixBlendMode: 'screen',
+              mixBlendMode: 'color-dodge',
             }}
           />
         </div>
