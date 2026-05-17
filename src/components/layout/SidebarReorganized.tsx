@@ -38,9 +38,7 @@ import {
   Percent,
   Plug,
   X,
-  User,
-  LogOut,
-  HelpCircle,
+
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -394,71 +392,6 @@ export const SidebarReorganized = React.memo(
             ))}
           </nav>
 
-          {/* User Section at bottom of Sidebar */}
-          <div className="mt-auto border-t border-sidebar-border/10 p-2">
-            <div className={cn(
-              "flex items-center gap-3 p-2 rounded-xl transition-all duration-300",
-              isCollapsed ? "justify-center" : "hover:bg-primary/5 group/user"
-            )}>
-              <div className="relative shrink-0">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-primary to-primary-foreground/20 flex items-center justify-center ring-2 ring-primary/20">
-                  <User className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full ring-2 ring-sidebar" />
-              </div>
-              
-              {!isCollapsed && (
-                <div className="flex flex-col min-w-0 flex-1">
-                  <span className="text-sm font-semibold truncate text-sidebar-foreground group-hover/user:text-primary transition-colors">
-                    Minha Conta
-                  </span>
-                  <span className="text-[10px] text-muted-foreground truncate uppercase tracking-widest font-medium">
-                    Acesso Rápido
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <div className={cn(
-              "flex items-center gap-1 mt-2",
-              isCollapsed ? "flex-col" : "justify-between px-1"
-            )}>
-              <Tooltip delayDuration={0}>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-sidebar-foreground/40 hover:text-primary hover:bg-primary/10">
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right">Configurações</TooltipContent>
-              </Tooltip>
-
-              <Tooltip delayDuration={0}>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-sidebar-foreground/40 hover:text-primary hover:bg-primary/10">
-                    <HelpCircle className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right">Ajuda</TooltipContent>
-              </Tooltip>
-
-              <Tooltip delayDuration={0}>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8 text-sidebar-foreground/40 hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => {
-                      const { signOut } = useAuth.getState();
-                      signOut();
-                    }}
-                  >
-                    <LogOut className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right">Sair</TooltipContent>
-              </Tooltip>
-            </div>
-          </div>
 
 
         </div>
