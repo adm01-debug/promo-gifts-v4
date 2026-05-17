@@ -113,39 +113,46 @@ export function __getClientBootStateForTests() {
 function warmupCrmClient(): Promise<void> {
   if (crmWarmupPromise) return crmWarmupPromise;
   warmupStartedAtMs = Math.round(performance.now() - isolateMonoStart);
+  
+  console.log(`[crm-boot-warmup] Iniciando validação de boot (isolate_age=${warmupStartedAtMs}ms)`);
+  
   crmWarmupPromise = (async () => {
     const t0 = performance.now();
     try {
       const client = await getCrmClient();
       if (!client) {
         warmupError = 'CRM_SUPABASE_URL/KEY not configured';
-        console.warn(`[crm-boot-warmup] ⚠️ ${warmupError}`);
+        // getCrmClient já logou o erro detalhado
         warmupMs = Math.round(performance.now() - t0);
         return;
       }
+      
+      // Validação ativa: tenta um select simples
       const { error } = await client.from('companies').select('id').limit(1);
       warmupMs = Math.round(performance.now() - t0);
+      
       if (error) {
         warmupError = error.message;
-        console.warn(`[crm-boot-warmup] ⚠️ warmup_ms=${warmupMs} error="${error.message}"`);
+        console.warn(`[crm-boot-warmup] ⚠️ Falha na query de teste (warmup_ms=${warmupMs}): "${error.message}"`);
       } else {
         warmupOk = true;
         crmWarmupCompleted = true;
         console.log(
-          `[crm-boot-warmup] ✅ ready client_build_ms=${clientBuildMs} ` +
-            `warmup_started_at_ms=${warmupStartedAtMs} warmup_ms=${warmupMs}`,
+          `[crm-boot-warmup] ✅ Warmup concluído com sucesso: client_build_ms=${clientBuildMs} ` +
+          `warmup_started_at_ms=${warmupStartedAtMs} warmup_ms=${warmupMs}`,
         );
       }
     } catch (e) {
       warmupMs = Math.round(performance.now() - t0);
       warmupError = e instanceof Error ? e.message : String(e);
-      console.warn(`[crm-boot-warmup] ⚠️ warmup_ms=${warmupMs} ${warmupError}`);
+      console.warn(`[crm-boot-warmup] ⚠️ Erro inesperado no warmup (warmup_ms=${warmupMs}): ${warmupError}`);
     }
   })();
   return crmWarmupPromise;
 }
 
-// Dispara warm-up no boot do isolate (não-bloqueante).
+// Executa a validação de início imediatamente no boot do isolate
+// Isso garante que os logs apareçam nos Logs da Edge Function antes mesmo da primeira request real.
 warmupCrmClient();
 
 
