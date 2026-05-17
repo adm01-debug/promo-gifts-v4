@@ -124,18 +124,20 @@ export default function SystemStatusPage() {
         let msg = "Acessível";
         
         if (error) {
+          // PGRST301 = JWT Expirado/Inválido
+          // 42501 = Forbidden (RLS block)
           if (error.code === 'PGRST301') {
             status = "error";
-            msg = "JWT Inválido/Expirado (Sessão corrompida)";
-          } else if (httpStatus === 403) {
+            msg = `JWT Inválido/Expirado (${error.code})`;
+          } else if (httpStatus === 403 || error.code === '42501') {
             status = "warning";
             msg = `Forbidden (Bloqueado por RLS: ${error.code})`;
           } else if (error.code === '42P01') {
             status = "error";
-            msg = "Tabela Inexistente (Esquema não sincronizado)";
+            msg = `Tabela Inexistente (Esquema não sincronizado: ${error.code})`;
           } else {
             status = "error";
-            msg = `${error.code}: ${error.message}`;
+            msg = `Erro ${error.code}: ${error.message} (HTTP ${httpStatus})`;
           }
         }
 
