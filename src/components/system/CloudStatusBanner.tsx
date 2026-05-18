@@ -3,7 +3,7 @@ import { AlertTriangle, CheckCircle2, Clock, Info, Loader2, RefreshCw, WifiOff, 
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useCloudStatus } from '@/hooks/useCloudStatus';
-import { useDevGate } from '@/hooks/useDevGate';
+import { DevOnly } from '@/components/dev/DevOnly';
 import { getStatusTimeline } from '@/lib/cloud-status';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
