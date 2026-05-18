@@ -342,7 +342,6 @@ export function ProductCustomizationOptions({
           )}
         </div>
         {/* /fim do bloco sticky (stepper + locais) */}
-        </div>
 
         {/* STEPS 2 + 3 — Content Area (Modular Bento) */}
         {currentLocation ? (
