@@ -81,7 +81,7 @@ export function MarginInsightBadge({
               <br />
               Cliente vê desconto de <strong>{currentMarginPercent.toFixed(1)}%</strong>
               <br />
-              Desconto real (alçada): <strong>{realMarginPercent!.toFixed(2)}%</strong>
+              Desconto real (alçada): <strong>{realMarginPercent!.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%</strong>
             </p>
           </TooltipContent>
         </Tooltip>

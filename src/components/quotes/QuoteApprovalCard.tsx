@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, Clock } from "lucide-react";
+import { formatCurrency } from "@/lib/format";
 
 interface QuoteApprovalCardProps {
   quoteNumber: string;
@@ -43,7 +44,7 @@ export function QuoteApprovalCard({
       <CardContent className="space-y-4">
         <div className="rounded-lg bg-muted/50 p-4">
           <p className="text-xs text-muted-foreground">Valor total</p>
-          <p className="text-3xl font-semibold text-primary">R$ {total.toFixed(2)}</p>
+          <p className="text-3xl font-semibold text-primary tabular-nums">{formatCurrency(total)}</p>
         </div>
         {validUntil && (
           <p className="text-sm text-muted-foreground inline-flex items-center gap-1">
