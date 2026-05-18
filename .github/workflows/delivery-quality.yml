@@ -1,0 +1,43 @@
+name: Quote Builder Delivery Quality
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  quality-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 18
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+
+    - name: 🧪 Unit Tests (Vitest)
+      run: npx vitest run src/pages/__tests__/QuoteBuilderDeliveryTooltip.test.tsx
+
+    - name: 🎭 Install Playwright
+      run: npx playwright install --with-deps chromium
+
+    - name: 🌍 E2E & Visual Regression
+      run: npx playwright test e2e/quote-builder-delivery.spec.ts
+      env:
+        CI: true
+        VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+
+    - name: 📦 Upload Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: delivery-quality-report
+        path: |
+          playwright-report/
+          test-results/
+        retention-days: 7

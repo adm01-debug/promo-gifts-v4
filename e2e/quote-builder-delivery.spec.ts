@@ -32,18 +32,34 @@ test.describe('QuoteBuilderPage - Delivery Field E2E', () => {
     await expect(tooltipContent).not.toBeVisible();
   });
 
-  test('should verify visual alignment of delivery label and info icon', async ({ page }) => {
-    const container = page.getByTestId('delivery-label-container');
-    const label = page.getByTestId('delivery-label');
+  test('should hide tooltip on Escape key', async ({ page }) => {
     const trigger = page.getByTestId('delivery-info-tooltip-trigger');
+    const tooltipContent = page.getByTestId('delivery-info-tooltip-content');
 
-    // Check CSS properties for alignment
-    await expect(container).toHaveCSS('display', 'flex');
-    await expect(container).toHaveCSS('align-items', 'center');
-    await expect(container).toHaveCSS('gap', '6px'); // gap-1.5 = 0.375rem = 6px
+    await trigger.hover();
+    await expect(tooltipContent).toBeVisible();
 
-    // Visual regression snapshot of the label area
-    await expect(container).toHaveScreenshot('delivery-label-alignment.png');
+    await page.keyboard.press('Escape');
+    await expect(tooltipContent).not.toBeVisible();
+  });
+
+  test('should verify visual alignment across viewports', async ({ page }) => {
+    const viewports = [
+      { name: 'mobile', width: 375, height: 667 },
+      { name: 'tablet', width: 768, height: 1024 },
+      { name: 'desktop', width: 1280, height: 800 }
+    ];
+
+    const container = page.getByTestId('delivery-label-container');
+
+    for (const vp of viewports) {
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      // Small wait for layout stability
+      await page.waitForTimeout(300);
+      
+      await expect(container).toBeVisible();
+      await expect(container).toHaveScreenshot(`delivery-label-alignment-${vp.name}.png`);
+    }
   });
 
   test('should verify warning banner presence above delivery options', async ({ page }) => {
