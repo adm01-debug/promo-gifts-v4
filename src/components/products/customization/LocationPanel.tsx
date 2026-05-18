@@ -81,7 +81,10 @@ export function LocationPanel({ location, quantity, confirmedPersonalization, on
           key={selectedTechnique.technique_id}
           technique={selectedTechnique}
           quantity={quantity}
-          isConfirmed={confirmedTechniqueId === selectedTechnique.technique_id}
+          isConfirmed={confirmedPersonalization?.techniqueId === selectedTechnique.technique_id}
+          initialWidth={confirmedPersonalization?.width}
+          initialHeight={confirmedPersonalization?.height}
+          initialColors={confirmedPersonalization?.numberOfColors}
           onPriceCalculated={handlePriceCalculated}
         />
       )}
