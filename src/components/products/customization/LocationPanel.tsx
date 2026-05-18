@@ -81,6 +81,7 @@ export function LocationPanel({ location, quantity, confirmedTechniqueId, onPric
           key={selectedTechnique.technique_id}
           technique={selectedTechnique}
           quantity={quantity}
+          isConfirmed={confirmedTechniqueId === selectedTechnique.technique_id}
           onPriceCalculated={handlePriceCalculated}
         />
       )}
