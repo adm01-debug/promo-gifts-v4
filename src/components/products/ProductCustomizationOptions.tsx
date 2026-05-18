@@ -211,31 +211,33 @@ export function ProductCustomizationOptions({
               <div key={s.step} className="flex flex-1 items-center gap-2">
                 <button
                   type="button"
+                  aria-label={`Passo ${s.step}: ${s.label}`}
+                  aria-current={s.active ? "step" : undefined}
                   onClick={() => s.step === 1 ? window.scrollTo({ top: 0, behavior: 'smooth' }) : scrollToStep(s.step)}
                   className={cn(
-                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition-all",
-                    s.done ? "bg-primary text-primary-foreground" : s.active ? "bg-primary/20 text-primary ring-2 ring-primary/30" : "bg-muted text-muted-foreground"
+                    "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold transition-all focus-visible:ring-2 focus-visible:ring-primary outline-none",
+                    s.done ? "bg-primary text-primary-foreground shadow-sm" : s.active ? "bg-primary/20 text-primary ring-2 ring-primary/40" : "bg-muted text-muted-foreground"
                   )}
                 >
                   {s.done ? (
                     <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
-                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      <CheckCircle2 className="h-4 w-4" />
                     </motion.div>
                   ) : s.step}
                 </button>
                 <span className={cn(
-                  "text-[10px] font-bold uppercase tracking-wider",
+                  "text-[10px] font-bold uppercase tracking-widest",
                   s.active || s.done ? "text-foreground" : "text-muted-foreground"
                 )}>
                   {s.label}
                 </span>
                 {i < arr.length - 1 && (
-                  <div className="flex-1 h-[2px] bg-muted mx-2 rounded-full overflow-hidden">
+                  <div className="flex-1 h-[1.5px] bg-muted/60 mx-1 rounded-full overflow-hidden">
                     <motion.div 
                       className="h-full bg-primary"
                       initial={{ width: 0 }}
                       animate={{ width: s.done ? "100%" : "0%" }}
-                      transition={{ duration: 0.5, ease: "easeInOut" }}
+                      transition={{ duration: 0.6, ease: "anticipate" }}
                     />
                   </div>
                 )}
@@ -387,18 +389,18 @@ export function ProductCustomizationOptions({
         </div>
 
         {/* Footer shortcuts legend */}
-        <div className="flex items-center justify-center gap-6 pt-4 border-t border-border/40">
-          <div className="flex items-center gap-1.5 text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
-            <kbd className="px-1.5 py-0.5 rounded bg-muted border border-border/60 text-foreground">1-4</kbd>
-            Trocar Local
+        <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 pt-6 border-t border-border/40">
+          <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest" aria-hidden="true">
+            <kbd className="px-2 py-1 rounded bg-muted border border-border/60 text-foreground shadow-sm">1-4</kbd>
+            <span>Trocar Local</span>
           </div>
-          <div className="flex items-center gap-1.5 text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
-            <kbd className="px-1.5 py-0.5 rounded bg-muted border border-border/60 text-foreground">Enter</kbd>
-            Confirmar
+          <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest" aria-hidden="true">
+            <kbd className="px-2 py-1 rounded bg-muted border border-border/60 text-foreground shadow-sm">Enter</kbd>
+            <span>Confirmar</span>
           </div>
-          <div className="flex items-center gap-1.5 text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
-            <kbd className="px-1.5 py-0.5 rounded bg-muted border border-border/60 text-foreground">Esc</kbd>
-            Sair
+          <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest" aria-hidden="true">
+            <kbd className="px-2 py-1 rounded bg-muted border border-border/60 text-foreground shadow-sm">Esc</kbd>
+            <span>Sair</span>
           </div>
         </div>
       </div>
