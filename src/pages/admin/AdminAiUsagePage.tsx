@@ -28,7 +28,7 @@ export default function AdminAiUsagePage() {
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/10"><Brain className="h-6 w-6 text-primary" /></div>
-              <div><h1 className="font-display text-2xl font-bold text-foreground">Consumo de IA</h1><p className="text-sm text-muted-foreground">Monitoramento de uso e quotas por usuário</p></div>
+              <div><h1 data-testid="page-title-ai-usage" className="font-display text-2xl font-bold text-foreground">Consumo de IA</h1><p className="text-sm text-muted-foreground">Monitoramento de uso e quotas por usuário</p></div>
             </div>
             <Tabs value={period} onValueChange={v => setPeriod(v as typeof period)}>
               <TabsList><TabsTrigger value="day">Hoje</TabsTrigger><TabsTrigger value="week">7 dias</TabsTrigger><TabsTrigger value="month">Mês</TabsTrigger></TabsList>
