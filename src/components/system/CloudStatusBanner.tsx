@@ -79,28 +79,26 @@ const CloudStatusBannerInner = memo(function CloudStatusBannerInner() {
             </div>
             
             <div className="flex items-center gap-2">
-              {isDev && (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => setShowTimeline(!showTimeline)}
-                    title="Ver histórico"
-                  >
-                    <Clock className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => setShowDebug(!showDebug)}
-                    title="Debug Latência"
-                  >
-                    <Info className="h-3.5 w-3.5" />
-                  </Button>
-                </>
-              )}
+              <DevOnly strict>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setShowTimeline(!showTimeline)}
+                  title="Ver histórico"
+                >
+                  <Clock className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setShowDebug(!showDebug)}
+                  title="Debug Latência"
+                >
+                  <Info className="h-3.5 w-3.5" />
+                </Button>
+              </DevOnly>
 
               {status === 'down' && (
                 <Button
