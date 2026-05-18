@@ -311,6 +311,7 @@ export default function QuoteBuilderPage() {
                   </Label>
                   <Select value={s.paymentTerms} onValueChange={s.setPaymentTerms}>
                     <SelectTrigger
+                      data-testid="payment-terms-select"
                       className={cn(
                         'h-8 text-xs',
                         s.validationErrors.includes('prazo_pagamento') && 'border-destructive',
