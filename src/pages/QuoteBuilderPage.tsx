@@ -370,38 +370,40 @@ export default function QuoteBuilderPage() {
                   </div>
 
 
-                    <div className="flex gap-0.5 rounded-md bg-muted p-0.5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          s.setDeliveryMode('prazo');
-                          s.setDeliveryTime('');
-                          s.setDeliveryDate(undefined);
-                        }}
-                        className={cn(
-                          'rounded-sm px-2 py-0.5 text-[10px] font-medium transition-colors',
-                          s.deliveryMode === 'prazo'
-                            ? 'bg-background text-foreground shadow-sm'
-                            : 'text-muted-foreground',
-                        )}
-                      >
-                        Prazo
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          s.setDeliveryMode('data');
-                          s.setDeliveryTime('');
-                        }}
-                        className={cn(
-                          'rounded-sm px-2 py-0.5 text-[10px] font-medium transition-colors',
-                          s.deliveryMode === 'data'
-                            ? 'bg-background text-foreground shadow-sm'
-                            : 'text-muted-foreground',
-                        )}
-                      >
-                        Data
-                      </button>
+                    <div className="flex flex-col gap-1.5 rounded-xl bg-muted/30 p-1.5 border border-border/40">
+                      <div className="flex gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            s.setDeliveryMode('prazo');
+                            s.setDeliveryTime('');
+                            s.setDeliveryDate(undefined);
+                          }}
+                          className={cn(
+                            'flex-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition-all',
+                            s.deliveryMode === 'prazo'
+                              ? 'bg-background text-primary shadow-sm ring-1 ring-border/50'
+                              : 'text-muted-foreground hover:bg-muted/50',
+                          )}
+                        >
+                          Contar dias
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            s.setDeliveryMode('data');
+                            s.setDeliveryTime('');
+                          }}
+                          className={cn(
+                            'flex-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition-all',
+                            s.deliveryMode === 'data'
+                              ? 'bg-background text-primary shadow-sm ring-1 ring-border/50'
+                              : 'text-muted-foreground hover:bg-muted/50',
+                          )}
+                        >
+                          Data fixa
+                        </button>
+                      </div>
                     </div>
                   {s.deliveryMode === 'prazo' ? (
                     <Select value={s.deliveryTime} onValueChange={s.setDeliveryTime}>
