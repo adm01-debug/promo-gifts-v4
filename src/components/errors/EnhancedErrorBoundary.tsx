@@ -235,26 +235,28 @@ class EnhancedErrorBoundary extends Component<Props, State> {
               )}
             </div>
 
-            {/* Error message — sempre visível para o usuário entender o que houve */}
+            {/* Error message — restrito a usuários `dev` (gate de infra). Não-dev veem apenas a copy amigável acima. */}
             {error?.message && (
-              <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] uppercase tracking-wider text-destructive/80 font-semibold">
-                    Mensagem do erro
-                  </span>
-                  <button
-                    onClick={this.handleCopyError}
-                    className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label="Copiar detalhes do erro"
-                  >
-                    {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                    {copied ? 'Copiado' : 'Copiar'}
-                  </button>
+              <DevOnly>
+                <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] uppercase tracking-wider text-destructive/80 font-semibold">
+                      Mensagem do erro
+                    </span>
+                    <button
+                      onClick={this.handleCopyError}
+                      className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label="Copiar detalhes do erro"
+                    >
+                      {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                      {copied ? 'Copiado' : 'Copiar'}
+                    </button>
+                  </div>
+                  <p className="text-sm font-mono text-destructive break-words">
+                    {error.message}
+                  </p>
                 </div>
-                <p className="text-sm font-mono text-destructive break-words">
-                  {error.message}
-                </p>
-              </div>
+              </DevOnly>
             )}
 
             {/* Actions principais */}
