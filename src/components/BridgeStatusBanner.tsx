@@ -14,7 +14,9 @@ export const BridgeStatusBanner = memo(function BridgeStatusBanner() {
   const { isAllowed } = useDevGate();
   const { unavailable, reason, closeUnavailable, reload } = useBridgeStatusBanner(isAllowed);
 
-  if (!unavailable) return null;
+  // Banner de infra é exclusivo para usuários DEV — usuários finais não devem
+  // ver mensagens técnicas sobre o bridge externo.
+  if (!isAllowed || !unavailable) return null;
 
   return (
     <div
