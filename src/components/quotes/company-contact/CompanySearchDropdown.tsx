@@ -4,7 +4,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Fuse from "fuse.js";
-import { Building2, Search, X, Loader2 } from "lucide-react";
+import { Building2, Search, X, Loader2, Clock, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { selectCrm, searchCrm } from "@/lib/crm-db";
 import { getCompanyDisplayName, type CrmCompany } from "@/types/crm";
 import { CompanyAvatar, type CompanyOption } from "./shared-types";
+import { useSearchHistory } from "@/hooks/useSearchHistory";
 
 interface CompanySearchDropdownProps {
   companyId: string;
