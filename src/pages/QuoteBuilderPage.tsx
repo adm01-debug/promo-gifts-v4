@@ -65,6 +65,7 @@ export default function QuoteBuilderPage() {
   }
 
   return (
+    <>
       <PageSEO
         title={s.quoteId ? 'Editar Orçamento' : 'Novo Orçamento'}
         description="Crie e edite orçamentos com seleção de produtos e personalização."
@@ -616,5 +617,6 @@ export default function QuoteBuilderPage() {
         onCancel={cancelLeave}
         message={message}
       />
+    </>
   );
 }
