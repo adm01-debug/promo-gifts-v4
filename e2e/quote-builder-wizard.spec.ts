@@ -39,19 +39,20 @@ test.describe('Quote Builder Wizard Flow (5 Steps)', () => {
     await expect(page.getByText('Etapa 2: Condições (Atual)', { exact: false })).toBeVisible();
     
     // Payment Method
-    await page.getByTestId('payment-method-select').click();
+    await page.getByTestId('payment-method-select-root').click();
     await page.getByRole('option', { name: 'Boleto Bancário' }).click();
     
     // Payment Terms
-    await page.getByTestId('payment-terms-select').click();
+    await page.getByTestId('payment-terms-select-root').click();
     await page.getByRole('option', { name: '28 dias a partir da entrega' }).click();
     
-    // Delivery Time (already set to "Contar dias" by default usually, but let's be explicit)
+    // Delivery Time
     await page.getByRole('button', { name: 'Contar dias' }).click();
-    await page.getByPlaceholder('Ex: 15 dias').fill('15');
+    await page.getByTestId('delivery-time-select-root').click();
+    await page.getByRole('option', { name: '28 dias | Após aprovação' }).click();
     
     // Shipping Type
-    await page.getByTestId('shipping-type-select').click();
+    await page.getByTestId('shipping-type-select-root').click();
     await page.getByRole('option', { name: 'FOB | Valor pré negociado' }).click();
     
     // Shipping Cost (required for fob_pre)
