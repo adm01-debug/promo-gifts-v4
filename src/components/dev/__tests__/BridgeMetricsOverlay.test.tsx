@@ -37,7 +37,17 @@ describe('BridgeMetricsOverlay Regression Tests', () => {
     vi.clearAllMocks();
   });
 
-  it('should return null if not allowed', () => {
+  it('retorna null quando NÃO é dev (mesmo com isAllowed=true para admin)', () => {
+    // Regressão: admin tinha isAllowed=true e via o overlay. Agora deve ficar oculto.
+    vi.mocked(useDevGate).mockReturnValue({ isAllowed: true, isDev: false });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(useBridgeMetrics).mockReturnValue(mockMetrics as any);
+
+    const { container } = render(<BridgeMetricsOverlay />);
+    expect(container.firstChild).toBeNull();
+  });
+
+  it('retorna null quando não há acesso algum', () => {
     vi.mocked(useDevGate).mockReturnValue({ isAllowed: false, isDev: false });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(useBridgeMetrics).mockReturnValue(mockMetrics as any);
@@ -46,7 +56,7 @@ describe('BridgeMetricsOverlay Regression Tests', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('should render the open button if allowed but closed', () => {
+  it('renderiza o botão flutuante quando isDev=true e fechado', () => {
     vi.mocked(useDevGate).mockReturnValue({ isAllowed: true, isDev: true });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(useBridgeMetrics).mockReturnValue({ ...mockMetrics, open: false } as any);
@@ -55,7 +65,7 @@ describe('BridgeMetricsOverlay Regression Tests', () => {
     expect(screen.getByRole('button', { name: /Abrir métricas de bridge/i })).toBeInTheDocument();
   });
 
-  it('should render the full panel when open', () => {
+  it('renderiza o painel completo quando isDev=true e aberto', () => {
     vi.mocked(useDevGate).mockReturnValue({ isAllowed: true, isDev: true });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(useBridgeMetrics).mockReturnValue({ ...mockMetrics, open: true } as any);
