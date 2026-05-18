@@ -115,58 +115,59 @@ export function ProductCustomizationModal({
           </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar bg-background">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Left Column: Context info */}
-            <div className="lg:col-span-4 space-y-4">
-              <div className="rounded-xl border bg-card p-4 space-y-3">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                  <Info className="h-3.5 w-3.5" />
-                  Contexto do Produto
+        <div className="flex-1 overflow-hidden bg-background">
+          <div className="grid grid-cols-1 lg:grid-cols-12 h-full">
+            {/* Left Column: Context & Selection (Fixed/Sticky Area) */}
+            <div className="lg:col-span-3 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto custom-scrollbar">
+              <div className="rounded-xl border bg-card p-4 space-y-3 shadow-sm border-primary/20 bg-primary/5">
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
+                  <Palette className="h-3.5 w-3.5" />
+                  Orçamento Atual
                 </h4>
                 <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Quantidade:</span>
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-muted-foreground">Volume:</span>
                     <span className="font-bold">{quantity} un</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Gravações Ativas:</span>
-                    <span className="font-bold text-primary">{confirmedCount}</span>
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-muted-foreground">Configurações:</span>
+                    <Badge variant="secondary" className="h-4 px-1 text-[10px] font-bold">
+                      {confirmedCount}
+                    </Badge>
                   </div>
                 </div>
               </div>
 
-              <div className="hidden lg:block p-4 rounded-xl border border-dashed text-sm text-muted-foreground">
-                <p>Escolha o local no topo, selecione a técnica abaixo e defina o tamanho. O sistema calcula o preço em tempo real.</p>
-              </div>
+              {/* Lista compacta de gravações já confirmadas (Fixed Summary) */}
+              {confirmedCount > 0 && (
+                <div className="space-y-2 pt-2 border-t border-border/60">
+                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Confirmados
+                  </h4>
+                  <div className="grid gap-1.5">
+                    {existingPersonalizations.map((p, i) => (
+                      <div key={i} className="p-2 rounded-lg bg-card border text-[10px] space-y-0.5">
+                        <div className="flex justify-between">
+                          <span className="font-bold uppercase text-primary line-clamp-1">{p.location_name}</span>
+                          <span className="text-muted-foreground font-medium">
+                            {p.total_cost?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          </span>
+                        </div>
+                        <p className="text-muted-foreground line-clamp-1">{p.technique_name}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Right Column: The actual config options */}
-            <div className="lg:col-span-8">
+            {/* Right Column: Configuration Workspace (Bento Area) */}
+            <div className="lg:col-span-9 overflow-y-auto custom-scrollbar bg-card/30 p-4 md:p-6">
               <ProductCustomizationOptions
                 productId={productId}
                 quantity={quantity}
                 initialPersonalizations={existingPersonalizations.map(p => ({
-                  locationCode: p.location_code || "",
-                  locationName: p.location_name || "",
-                  techniqueId: p.technique_id,
-                  techniqueName: p.technique_name || "",
-                  codigoTabela: "",
-                  grupoTecnica: "",
-                  width: p.width_cm,
-                  height: p.height_cm,
-                  numberOfColors: p.colors_count || 1,
-                  usaDimensao: !!(p.width_cm || p.height_cm),
-                  price: {
-                    success: true,
-                    preco_unitario: p.unit_cost || 0,
-                    valor_gravacao: (p.unit_cost || 0) * quantity,
-                    setup_total: p.setup_cost || 0,
-                    total_cobrado: p.total_cost || 0,
-                    nome_tabela: p.technique_name || "",
-                    quantidade: quantity,
-                    num_cores: p.colors_count || 1,
-                    faixa: { qtd_min: 0, qtd_max: 9999 }
+...
                   } as any
                 }))}
                 onSelectionChange={handleSelectionChange}
