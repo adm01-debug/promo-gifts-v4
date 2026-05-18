@@ -91,6 +91,7 @@ export function formatDeliveryTime(value?: string): string {
     return value;
   }
   const map: Record<string, string> = {
+    "7_dias": "7 dias após aprovação",
     "14_dias": "14 dias após aprovação",
     "21_dias": "21 dias após aprovação",
     "28_dias": "28 dias após aprovação",
