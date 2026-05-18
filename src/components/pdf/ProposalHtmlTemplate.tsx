@@ -58,8 +58,17 @@ export interface ProposalTemplateData {
   shippingType?: string;
   total: number;
   notes?: string;
+  paymentMethod?: string;
   paymentTerms?: string;
   deliveryTime?: string;
+}
+
+export function formatPaymentMethod(value?: string): string {
+  const map: Record<string, string> = {
+    "boleto": "Boleto Bancário",
+    "pix_transferencia": "Transferência Bancária / Pix",
+  };
+  return value ? (map[value] || value) : "";
 }
 
 export function formatPaymentTerms(value?: string): string {
