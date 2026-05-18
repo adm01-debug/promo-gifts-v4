@@ -47,6 +47,7 @@ import { QuoteAutoSave } from '@/components/quotes/QuoteAutoSave';
 import { DraggableQuoteItems } from '@/components/quotes/DraggableQuoteItems';
 import { QuoteBuilderStepper } from '@/components/quotes/QuoteBuilderStepper';
 import { QuoteBuilderSummaryColumn } from '@/components/quotes/QuoteBuilderSummaryColumn';
+import { QuoteBuilderNavigation } from '@/components/quotes/QuoteBuilderNavigation';
 import { QuoteBuilderProductSearch } from '@/components/quotes/QuoteBuilderProductSearch';
 import { useQuoteBuilderState } from '@/hooks/useQuoteBuilderState';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
