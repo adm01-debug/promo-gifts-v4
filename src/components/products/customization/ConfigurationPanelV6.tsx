@@ -8,6 +8,7 @@
 
 import { useState, useMemo, useRef } from "react";
 import { Loader2, Palette, Ruler, AlertCircle, Check, Pencil, Trash2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
