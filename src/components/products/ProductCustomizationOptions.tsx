@@ -11,11 +11,6 @@
  * Selecionar CIRCULAR bloqueia LADO A/B (e vice-versa) com tooltip explicando.
  */
 
-/**
- * ProductCustomizationOptions — Interface base para configuração de gravação.
- * Utilizado dentro do ProductCustomizationModal para isolar a complexidade.
- */
-
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -196,11 +191,11 @@ export function ProductCustomizationOptions({
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="space-y-6">
+      <div className="space-y-3">
         {/* Bloco fixo: stepper + locais — sempre visíveis durante a rolagem */}
         <div 
           ref={stickyHeaderRef}
-          className="sticky top-0 z-20 -mx-4 px-4 py-3 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 border-b border-border/40 shadow-sm md:shadow-none space-y-3"
+          className="sticky top-0 z-20 -mx-3 px-3 py-2 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 border-b border-border/40 shadow-sm md:shadow-none space-y-2 md:space-y-3"
         >
 
         {/* STEP HEADER — guia didático com âncoras */}

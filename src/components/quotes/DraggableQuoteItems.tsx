@@ -123,7 +123,7 @@ function SortableItem({
           "transition-all duration-200 overflow-hidden",
           isDragging && "opacity-50 shadow-2xl ring-2 ring-primary",
           "hover:shadow-md",
-          isExpanded && "flex flex-col"
+          isExpanded && "max-h-[calc(100vh-12rem)] flex flex-col"
         )}
       >
         {/* Product header — sticky when personalization is open */}

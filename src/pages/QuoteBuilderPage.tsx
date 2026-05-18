@@ -603,7 +603,6 @@ export default function QuoteBuilderPage() {
                             renderPersonalization={() => (
                               <QuoteProductCustomization
                                 productId={item.product_id}
-                                productName={item.product_name}
                                 quantity={item.quantity}
                                 existingPersonalizations={item.personalizations}
                                 onPersonalizationsChange={(p) =>

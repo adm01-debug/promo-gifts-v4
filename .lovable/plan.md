@@ -1,22 +1,34 @@
-text
-1. Problem Analysis & Strategic Proposal
-The current inline customization approach in the Quote Builder is suffering from cognitive overload. Sellers need to focus on one thing at a time: either the overall quote structure or the technical details of a specific product.
+I will switch the application's primary Supabase instance to your external database and migrate the existing tables.
 
-Strategy: "Context-Isolated Configuration"
-Instead of expanding a complex form inside the item list, we will implement a dedicated configuration modal/overlay. This follows the "Progressive Disclosure" design pattern—showing complex options only when necessary.
+**Note on Auth & Edge Functions:**
+*   **Auth:** Your external Supabase must have the same Authentication providers and settings configured for login to work seamlessly.
+*   **Edge Functions:** These will be updated to point to the external database by injecting the new credentials into their environment.
+*   **Storage:** Buckets must be manually recreated in the external Supabase to match the current ones.
 
-2. Design Changes
-- Modal Interface: A full-screen or large dialog dedicated to a single product's customization.
-- Layout: Split view in the modal. Left side for Product Preview/Basic Info, Right side for the 3-Step Customization Flow (Local -> Technique -> Size).
-- Visual Hierarchy: The main quote screen stays "clean" with just a summary of the customization, while the modal handles the "heavy lifting".
+### Proposed Changes
 
-3. Technical Implementation Steps
-- Component Refactoring: Convert `ProductCustomizationOptions.tsx` into a modal-based component `ProductCustomizationModal.tsx`.
-- State Management: Update `useQuoteItems.ts` to provide a clear way to trigger the "Configuration Mode" for a specific item.
-- UI Update: In `QuoteProductCustomization.tsx`, replace the inline expansion with a "Customize" button that launches the modal.
-- Transition: Use Framer Motion for a smooth "zoom-in" effect when opening the configuration for a product.
+#### 1. Database Migration
+*   Export the current database schema and data from the internal Supabase.
+*   Since I have service role access to both, I will use a script to migrate the core tables and their content to your external instance.
+*   I will prioritize tables like `profiles`, `organizations`, and others visible in your current schema.
 
-4. Deliverables
-- ProductCustomizationModal.tsx: The new isolated configuration environment.
-- Updated Quote Builder UI: Cleaner item list with clear call-to-actions for customization.
-- UX Refinement: Auto-opening the modal for new items (optional based on preference) to maintain workflow speed.
+#### 2. Supabase Client Update
+*   Modify `src/integrations/supabase/client.ts` to use `EXTERNAL_SUPABASE_URL` and `EXTERNAL_SUPABASE_ANON_KEY` from your secrets.
+*   This will ensure the frontend immediately starts talking to your external database.
+
+#### 3. Edge Functions Configuration
+*   Update any existing Edge Functions to use the `EXTERNAL_SUPABASE_URL` and `EXTERNAL_SUPABASE_SERVICE_ROLE_KEY` for server-side operations.
+
+#### 4. Verification
+*   Run a connectivity test to ensure the frontend can read/write to the external database.
+*   Verify that the Auth session can still be established (if the external DB is configured correctly).
+
+### Technical Details
+*   I will create a migration script `scripts/migrate-to-external.ts` that uses the Supabase JS client to copy data between instances.
+*   I will update `src/integrations/supabase/client.ts` to look for the external credentials first.
+*   I will check if there are any hardcoded references to the old project ID.
+
+**Next steps after approval:**
+1. Execute the migration script.
+2. Update the client code.
+3. Test and verify.
