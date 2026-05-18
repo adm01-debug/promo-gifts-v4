@@ -50,7 +50,7 @@ export const calculateDiscountAmount = (
 ): number => {
   const safeValue = Math.max(0, discountValue || 0);
   if (discountType === 'percent') {
-    return (subtotal || 0) * (safeValue / 100);
+    return Math.round(((subtotal || 0) * (safeValue / 100) + Number.EPSILON) * 100) / 100;
   }
   return safeValue;
 };
