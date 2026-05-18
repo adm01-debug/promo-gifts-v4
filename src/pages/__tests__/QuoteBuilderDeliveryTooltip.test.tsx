@@ -183,8 +183,12 @@ describe('QuoteBuilderPage Delivery Tooltip', () => {
     // Unhover to hide
     await user.unhover(trigger);
     
-    // Wait for it to disappear
-    const isHidden = await screen.queryByTestId('delivery-info-tooltip-content');
-    expect(isHidden).not.toBeInTheDocument();
+    // Wait for it to disappear with waitForElementToBeRemoved
+    await vi.waitFor(async () => {
+      const isHidden = screen.queryByTestId('delivery-info-tooltip-content');
+      if (isHidden) throw new Error('Tooltip still present');
+    }, { timeout: 2000 });
+    
+    expect(screen.queryByTestId('delivery-info-tooltip-content')).not.toBeInTheDocument();
   });
 });
