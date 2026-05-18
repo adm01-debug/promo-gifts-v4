@@ -12,7 +12,7 @@ export default function AdminWorkflowsPage() {
               <Workflow className="h-8 w-8 text-primary" />
             </div>
             <div>
-              <h1 className="font-display text-3xl font-bold tracking-tight">Workflows IA</h1>
+              <h1 data-testid="page-title-workflows" className="font-display text-3xl font-bold tracking-tight">Workflows IA</h1>
               <p className="text-muted-foreground">
                 Canvas visual para orquestração multiagente com etapas arrastáveis
               </p>
