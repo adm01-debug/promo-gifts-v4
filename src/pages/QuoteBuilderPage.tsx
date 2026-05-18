@@ -100,9 +100,12 @@ export default function QuoteBuilderPage() {
         className="fixed right-4 top-20 z-40"
       />
 
-      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 pt-0 sm:pt-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
-        {/* Header (minimal — title hidden for SEO/E2E) */}
-        <h1 data-testid="page-title-orcamento-novo" className="sr-only">
+      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 pt-0 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
+        {/* Header (minimal — title positioned off-screen for E2E visibility) */}
+        <h1 
+          data-testid="page-title-orcamento-novo" 
+          className="absolute -top-[1000px] left-0"
+        >
           {s.isEditMode ? 'Editar Orçamento' : 'Novo Orçamento'}
         </h1>
         
