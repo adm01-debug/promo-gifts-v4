@@ -88,8 +88,9 @@ export function QuoteBuilderStepper({
                 </div>
                 <span
                   className={cn(
-                    "text-xs font-medium transition-colors whitespace-nowrap leading-none",
-                    isActive && "text-primary font-semibold",
+                    "text-[10px] sm:text-xs font-medium transition-colors whitespace-nowrap leading-none",
+                    "hidden sm:block", // Esconde no mobile por padrão para economizar espaço
+                    isActive && "text-primary font-semibold block", // Sempre mostra o texto da etapa ativa
                     isCompleted && !isActive && "text-foreground",
                     !isActive && !isCompleted && "text-muted-foreground"
                   )}
@@ -101,7 +102,7 @@ export function QuoteBuilderStepper({
               {/* Connector line */}
               {index < STEPS.length - 1 && (
                 <div 
-                  className="flex-1 h-0.5 mx-4 mt-[19px]" 
+                  className="flex-1 h-0.5 mx-1 sm:mx-4 mt-[19px]" 
                   aria-hidden="true"
                 >
                   <div
