@@ -443,6 +443,7 @@ export function QuoteBuilderSummaryColumn({
                 <ul className="text-xs text-destructive/80 space-y-0.5 list-disc list-inside">
                   {validationErrors.includes("empresa") && <li>Empresa</li>}
                   {validationErrors.includes("contato") && <li>Contato</li>}
+                  {validationErrors.includes("forma_pagamento") && <li>Forma de Pagamento</li>}
                   {validationErrors.includes("prazo_pagamento") && <li>Prazo de Pagamento</li>}
                   {validationErrors.includes("prazo_entrega") && <li>Prazo de Entrega</li>}
                   {validationErrors.includes("frete") && <li>Frete</li>}
