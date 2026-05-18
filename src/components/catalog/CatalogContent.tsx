@@ -728,25 +728,6 @@ export const CatalogContent = memo(function CatalogContent({
 
   return (
     <div className="relative">
-      <AnimatePresence>
-        {showKbdTip && !activeProductId && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="absolute -top-12 right-0 z-30 hidden items-center gap-2 rounded-full border border-primary-foreground/20 bg-primary/90 px-3 py-1.5 text-[10px] font-medium text-primary-foreground shadow-lg backdrop-blur-sm lg:flex"
-          >
-            <Keyboard className="h-3 w-3" />
-            <span>
-              Use <kbd className="rounded bg-white/20 px-1">J</kbd> /{' '}
-              <kbd className="rounded bg-white/20 px-1">K</kbd> para navegar rapidamente
-            </span>
-            <button onClick={() => setShowKbdTip(false)} className="ml-1 hover:text-white/60">
-              <X className="h-3 w-3" />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
       {renderContent()}
       <CatalogBulkModals
         sel={sel}
