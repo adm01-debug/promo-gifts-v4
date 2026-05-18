@@ -3,6 +3,7 @@ import confetti from 'canvas-confetti';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { PageSEO } from '@/components/seo/PageSEO';
+import { formatCurrency } from '@/lib/format';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
