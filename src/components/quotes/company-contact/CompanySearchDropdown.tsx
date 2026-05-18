@@ -101,7 +101,26 @@ export function CompanySearchDropdown({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const handleSelect = (id: string) => { onSelectCompany(id); setIsOpen(false); setSearchTerm(""); };
+  const { history, addToHistory, removeFromHistory, clearHistory } = useSearchHistory("company");
+
+  const handleSelect = (id: string) => {
+    if (id) {
+      const c = (companies || []).concat(serverResults || []).find((x) => x.id === id);
+      if (c) {
+        addToHistory({
+          id: c.id,
+          label: c.name,
+          type: "company",
+          metadata: { razao_social: c.razao_social, cnpj: c.cnpj, logo_url: c.logo_url },
+        });
+      }
+    }
+    onSelectCompany(id);
+    setIsOpen(false);
+    setSearchTerm("");
+  };
+
+  const showHistory = isOpen && !searchTerm.trim() && history.length > 0;
 
   if (selectedCompany && !isOpen) {
     return (
