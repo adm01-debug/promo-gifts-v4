@@ -3,6 +3,7 @@ import { z } from "zod";
 export const quoteFormSchema = z.object({
   clientId: z.string().min(1, "Empresa é obrigatória"),
   contactId: z.string().min(1, "Contato é obrigatório"),
+  paymentMethod: z.string().min(1, "Forma de pagamento é obrigatória"),
   paymentTerms: z.string().min(1, "Prazo de pagamento é obrigatório"),
   deliveryTime: z.string().min(1, "Prazo de entrega é obrigatório"),
   shippingType: z.string().min(1, "Tipo de frete é obrigatório"),
