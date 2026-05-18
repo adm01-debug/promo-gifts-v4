@@ -23,13 +23,15 @@ const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 const formatBR = (n: number) =>
   round2(n).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-// Permite apenas dígitos, separadores (.,) e sinal opcional no início.
-const VALID_NUMERIC_RE = /^-?[\d.,]*$/;
+// Apenas dígitos e separadores; sinal `-` só quando explicitamente permitido.
+const RE_NO_NEG = /^[\d.,]*$/;
+const RE_WITH_NEG = /^-?[\d.,]*$/;
 
-const parseStrict = (raw: string): { n: number; ok: boolean } => {
+const parseStrict = (raw: string, allowNegative: boolean): { n: number; ok: boolean } => {
   const trimmed = raw.trim();
   if (!trimmed) return { n: 0, ok: true }; // vazio = 0 (válido)
-  if (!VALID_NUMERIC_RE.test(trimmed)) return { n: NaN, ok: false };
+  const re = allowNegative ? RE_WITH_NEG : RE_NO_NEG;
+  if (!re.test(trimmed)) return { n: NaN, ok: false };
   const clean = trimmed
     .replace(/\.(?=\d{3}(\D|$))/g, '') // remove pontos de milhar
     .replace(',', '.');
@@ -55,6 +57,7 @@ export function CurrencyInput({
   max,
   onValidityChange,
 }: CurrencyInputProps) {
+  const allowNegative = min < 0;
   const [text, setText] = useState<string>(value || showZero ? formatBR(value) : '');
   const [focused, setFocused] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,11 +73,18 @@ export function CurrencyInput({
     onValidityChange?.(msg === null);
   };
 
+  const validateRange = (n: number): string | null => {
+    if (!allowNegative && n < 0) return 'Valores negativos não são permitidos.';
+    if (n < min) return `Valor mínimo é ${formatBR(min)}.`;
+    if (typeof max === 'number' && n > max) return `Valor máximo é ${formatBR(max)}.`;
+    return null;
+  };
+
   return (
     <div className="w-full">
       <Input
         type="text"
-        inputMode="decimal"
+        inputMode={allowNegative ? 'decimal' : 'decimal'}
         value={text}
         placeholder={placeholder}
         disabled={disabled}
@@ -82,12 +92,24 @@ export function CurrencyInput({
         aria-describedby={error ? errorId : undefined}
         className={cn(error && 'border-destructive focus-visible:ring-destructive', className)}
         onFocus={() => setFocused(true)}
+        onKeyDown={(e) => {
+          // Bloqueia "-" e "+" quando negativos não são permitidos
+          if (!allowNegative && (e.key === '-' || e.key === '+')) {
+            e.preventDefault();
+          }
+        }}
         onChange={(e) => {
-          const raw = e.target.value;
+          // Strip "-" do paste/autofill quando proibido
+          const raw = allowNegative ? e.target.value : e.target.value.replace(/-/g, '');
           setText(raw);
-          const { n, ok } = parseStrict(raw);
+          const { n, ok } = parseStrict(raw, allowNegative);
           if (!ok) {
             setValidity('Digite um valor numérico válido.');
+            return;
+          }
+          const rangeErr = validateRange(n);
+          if (rangeErr) {
+            setValidity(rangeErr);
             return;
           }
           setValidity(null);
@@ -95,17 +117,14 @@ export function CurrencyInput({
         }}
         onBlur={() => {
           setFocused(false);
-          const { n, ok } = parseStrict(text);
+          const { n, ok } = parseStrict(text, allowNegative);
           if (!ok) {
             setValidity('Digite um valor numérico válido.');
             return;
           }
-          if (n < min) {
-            setValidity(`Valor mínimo é ${formatBR(min)}.`);
-            return;
-          }
-          if (typeof max === 'number' && n > max) {
-            setValidity(`Valor máximo é ${formatBR(max)}.`);
+          const rangeErr = validateRange(n);
+          if (rangeErr) {
+            setValidity(rangeErr);
             return;
           }
           setValidity(null);
