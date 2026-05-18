@@ -159,6 +159,13 @@ export function useQuoteBuilderState() {
   const [shippingType, setShippingType] = useState('');
   const [shippingCost, setShippingCost] = useState(0);
 
+  const handleShippingTypeChange = useCallback((value: string) => {
+    setShippingType(value);
+    if (value !== 'fob_pre') {
+      setShippingCost(0);
+    }
+  }, []);
+
   const [productSearchOpen, setProductSearchOpen] = useState(false);
   const [productSearch, setProductSearch] = useState('');
   const [selectedProductForColor, setSelectedProductForColor] = useState<Product | null>(null);
