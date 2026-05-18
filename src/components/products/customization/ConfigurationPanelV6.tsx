@@ -125,14 +125,44 @@ export function ConfigurationPanelV6({
 
       {/* Dimension inputs (conditional) */}
       {technique.usa_dimensao && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-1.5 text-sm text-foreground">
-            <Ruler className="h-3.5 w-3.5" />
-            <span className="font-medium">Tamanho da gravação</span>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-1.5">
+            <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+              <Ruler className="h-3.5 w-3.5" />
+              Tamanho da gravação
+            </div>
+            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded uppercase tracking-wider font-bold">
+              Máx: {technique.efetiva_largura_max} × {technique.efetiva_altura_max} cm
+            </span>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Máx. {technique.efetiva_largura_max} × {technique.efetiva_altura_max} cm
-          </p>
+
+          {/* Smart Dimension Chips */}
+          <div className="flex flex-wrap gap-1.5">
+            {[
+              { label: "P", w: Math.min(2, technique.efetiva_largura_max), h: Math.min(2, technique.efetiva_altura_max) },
+              { label: "M", w: Math.min(5, technique.efetiva_largura_max), h: Math.min(5, technique.efetiva_altura_max) },
+              { label: "G", w: Math.min(8, technique.efetiva_largura_max), h: Math.min(8, technique.efetiva_altura_max) },
+              { label: "Máx", w: technique.efetiva_largura_max, h: technique.efetiva_altura_max },
+            ].map((chip) => (
+              <button
+                key={chip.label}
+                type="button"
+                disabled={isLocked}
+                onClick={() => {
+                  setLargura(String(chip.w));
+                  setAltura(String(chip.h));
+                }}
+                className={cn(
+                  "px-2 py-1 rounded border text-[10px] font-bold transition-all",
+                  isLocked ? "opacity-50 cursor-not-allowed" : "hover:border-primary/50 hover:bg-primary/5 active:scale-95",
+                  larguraNum === chip.w && alturaNum === chip.h ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"
+                )}
+              >
+                {chip.label} ({chip.w}×{chip.h})
+              </button>
+            ))}
+          </div>
+
           <div className="flex items-center gap-3">
             <div className="flex-1">
               <Label className="text-xs text-muted-foreground">Largura (cm)</Label>
