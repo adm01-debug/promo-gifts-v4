@@ -3,6 +3,7 @@
  */
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { Button } from "@/components/ui/button";
 import { Trash2, Package } from "lucide-react";
 
@@ -59,12 +60,10 @@ export function ItemsListEditor({ items, onChange }: ItemsListEditorProps) {
                 />
               </div>
               <div className="col-span-6 sm:col-span-3">
-                <Input
-                  type="number"
-                  step="0.01"
+                <CurrencyInput
                   placeholder="Preço unit."
                   value={item.unit_price}
-                  onChange={(e) => update(idx, { unit_price: +e.target.value })}
+                  onChange={(n) => update(idx, { unit_price: n })}
                 />
               </div>
               <div className="col-span-2 flex justify-end">

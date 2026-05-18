@@ -216,12 +216,9 @@ function SortableItem({
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground">Preço:</span>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min={0}
+                  <CurrencyInput
                     value={item.unit_price}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdatePrice(parseFloat(e.target.value) || 0)}
+                    onChange={(n) => onUpdatePrice(n)}
                     className="w-28 h-8 text-sm"
                   />
                 </div>
