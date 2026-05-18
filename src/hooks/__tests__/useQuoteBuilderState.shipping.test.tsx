@@ -92,15 +92,13 @@ describe('useQuoteBuilderState - Shipping Logic', () => {
   it('should validate shipping requirement in conditions step', () => {
     const { result } = renderHook(() => useQuoteBuilderState(), { wrapper });
 
-    // Configura estado inicial válido para etapa de cliente
+    // Configura estado inicial válido para etapa de cliente + outros campos de condições
     act(() => {
       result.current.setClientId('client-123');
       result.current.setContactId('contact-456');
-    });
-
-    // Tenta validar etapa de condições sem frete
-    act(() => {
-      result.current.setCurrentStep('conditions');
+      result.current.setPaymentMethod('boleto');
+      result.current.setPaymentTerms('7_dias');
+      result.current.setDeliveryTime('7_dias');
     });
 
     let isValid = false;
@@ -145,7 +143,7 @@ describe('useQuoteBuilderState - Shipping Logic', () => {
     expect(result.current.shippingCost).toBe(150);
 
     act(() => {
-      result.current.handleShippingTypeChange('cif');
+      result.current.setShippingType('cif');
     });
 
     expect(result.current.shippingType).toBe('cif');
