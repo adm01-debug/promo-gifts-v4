@@ -398,7 +398,7 @@ export function QuoteBuilderSummaryColumn({
                 value={negotiationMarkup}
                 onChange={setNegotiationMarkup}
                 realSubtotal={realSubtotal}
-                apparentDiscountPercent={discountType === "percent" ? discountValue : (realSubtotal > 0 ? (discountValue / (realSubtotal * (1 + (negotiationMarkup || 0) / 100))) * 100 : 0)}
+                apparentDiscountPercent={discountType === "percent" ? discountValue : (realSubtotal > 0 ? (discountAmount / (realSubtotal * (1 + (negotiationMarkup || 0) / 100))) * 100 : 0)}
                 realDiscountPercent={realDiscountPercent}
                 maxDiscountPercent={maxDiscountPercent ?? null}
               />
