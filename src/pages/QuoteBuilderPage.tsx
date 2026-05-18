@@ -410,6 +410,7 @@ export default function QuoteBuilderPage() {
                   {s.deliveryMode === 'prazo' ? (
                     <Select value={s.deliveryTime} onValueChange={s.setDeliveryTime}>
                       <SelectTrigger
+                        data-testid="delivery-time-select"
                         className={cn(
                           'h-8 text-xs',
                           s.validationErrors.includes('prazo_entrega') && 'border-destructive',
