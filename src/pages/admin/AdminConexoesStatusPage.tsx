@@ -245,6 +245,7 @@ export default function AdminConexoesStatusPage() {
         <h2 className="text-lg font-medium">Histórico de execuções</h2>
         <ExternalConnectionsSyncLogPanel />
       </section>
-    </div>
+      </div>
+    </>
   );
 }
