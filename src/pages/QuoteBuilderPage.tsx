@@ -101,7 +101,7 @@ export default function QuoteBuilderPage() {
         className="fixed right-4 top-20 z-40"
       />
 
-      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 pt-3 sm:pt-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
+      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 pt-3 sm:pt-4 space-y-3 sm:space-y-4 pb-6 animate-fade-in">
         <div aria-live="polite" className="sr-only" role="status" id="quote-builder-announcer"></div>
         {/* Header */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
