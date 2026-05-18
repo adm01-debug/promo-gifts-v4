@@ -284,7 +284,11 @@ export default function QuoteBuilderPage() {
                       <span className="ml-1">*</span>
                     )}
                   </Label>
-                  <Select value={s.paymentMethod} onValueChange={s.setPaymentMethod}>
+                  <Select 
+                    data-testid="payment-method-select-root"
+                    value={s.paymentMethod} 
+                    onValueChange={s.setPaymentMethod}
+                  >
                     <SelectTrigger
                       data-testid="payment-method-select"
                       className={cn(
@@ -316,7 +320,11 @@ export default function QuoteBuilderPage() {
                       <span className="ml-1">*</span>
                     )}
                   </Label>
-                  <Select value={s.paymentTerms} onValueChange={s.setPaymentTerms}>
+                  <Select 
+                    data-testid="payment-terms-select-root"
+                    value={s.paymentTerms} 
+                    onValueChange={s.setPaymentTerms}
+                  >
                     <SelectTrigger
                       data-testid="payment-terms-select"
                       className={cn(
@@ -407,7 +415,11 @@ export default function QuoteBuilderPage() {
                       </div>
                     </div>
                   {s.deliveryMode === 'prazo' ? (
-                    <Select value={s.deliveryTime} onValueChange={s.setDeliveryTime}>
+                    <Select 
+                      data-testid="delivery-time-select-root"
+                      value={s.deliveryTime} 
+                      onValueChange={s.setDeliveryTime}
+                    >
                       <SelectTrigger
                         data-testid="delivery-time-select"
                         className={cn(
@@ -468,7 +480,11 @@ export default function QuoteBuilderPage() {
                   >
                     Frete {s.validationErrors.includes('frete') && <span className="ml-1">*</span>}
                   </Label>
-                  <Select value={s.shippingType} onValueChange={s.handleShippingTypeChange}>
+                  <Select 
+                    data-testid="shipping-type-select-root"
+                    value={s.shippingType} 
+                    onValueChange={s.handleShippingTypeChange}
+                  >
                     <SelectTrigger
                       data-testid="shipping-type-select"
                       className={cn(
