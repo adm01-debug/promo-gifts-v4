@@ -844,6 +844,12 @@ export function useQuoteBuilderState() {
     quoteId,
     isEditMode,
     loadingQuote,
+    currentStep,
+    setCurrentStep,
+    nextStep,
+    prevStep,
+    activeStep,
+    completedSteps,
     // Auth
     user,
     // State setters
