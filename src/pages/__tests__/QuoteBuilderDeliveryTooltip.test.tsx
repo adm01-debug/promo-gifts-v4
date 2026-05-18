@@ -181,10 +181,23 @@ describe('QuoteBuilderPage Delivery Tooltip', () => {
     
     // Unhover to hide - simulate moving away
     await user.unhover(trigger);
-    
-    // Many tooltip libraries use a delay for closing as well. 
-    // Since unit tests have issues with portal/radix transitions, we'll rely on E2E for unhover confirmation
-    // but we can at least assert the trigger is still there
     expect(trigger).toBeInTheDocument();
+  });
+
+  it('should hide the tooltip content when pressing Escape', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    
+    const trigger = screen.getByTestId('delivery-info-tooltip-trigger');
+    
+    // Hover to show
+    await user.hover(trigger);
+    expect(await screen.findByTestId('delivery-info-tooltip-content')).toBeInTheDocument();
+    
+    // Press Escape
+    await user.keyboard('{Escape}');
+    
+    // In unit tests with Radix, Escape usually triggers immediate closure
+    expect(screen.queryByTestId('delivery-info-tooltip-content')).not.toBeInTheDocument();
   });
 });
