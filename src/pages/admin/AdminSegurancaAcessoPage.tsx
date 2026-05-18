@@ -224,7 +224,7 @@ export default function AdminSegurancaAcessoPage() {
         <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-4 px-3 py-3 pb-24 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="font-display text-2xl font-bold tracking-tight">Segurança e Acesso</h1>
+              <h1 data-testid="page-title-seguranca-acesso" className="font-display text-2xl font-bold tracking-tight">Segurança e Acesso</h1>
               <p className="text-muted-foreground">
                 Bot detection, rate limits e controle manual de IPs (atualiza a cada 30s)
               </p>
