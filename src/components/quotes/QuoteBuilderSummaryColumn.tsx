@@ -348,33 +348,6 @@ export function QuoteBuilderSummaryColumn({
                     )}
                   />
                 </div>
-                {discountType === "percent" ? (
-                  <CurrencyInput
-                    value={discountValue}
-                    onChange={setDiscountValue}
-                    max={100}
-                    min={0}
-                    placeholder="0%"
-                    aria-label="Valor do desconto em porcentagem"
-                    className={cn(
-                      "h-8 text-sm transition-all",
-                      isDiscountExceeded && "border-amber-500 ring-2 ring-amber-500/20 bg-amber-500/[0.03]"
-                    )}
-                  />
-                ) : (
-                  <CurrencyInput
-                    value={discountValue}
-                    onChange={setDiscountValue}
-                    max={presentedSubtotal}
-                    min={0}
-                    placeholder="R$ 0,00"
-                    aria-label="Valor do desconto em reais"
-                    className={cn(
-                      "h-8 text-sm transition-all",
-                      isDiscountExceeded && "border-amber-500 ring-2 ring-amber-500/20 bg-amber-500/[0.03]"
-                    )}
-                  />
-                )}
               </div>
               {isDiscountExceeded && (
                 <div className="flex items-start gap-2 rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2">
