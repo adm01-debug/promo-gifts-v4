@@ -26,10 +26,11 @@ export default function AdminLoginAttemptsPage() {
   const { data: stats } = useLoginAttemptStats();
 
   return (
-      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
-      <PageSEO title="Tentativas de Login" description="Monitore tentativas de login e atividades suspeitas." path="/admin/login-attempts" noIndex />
-      <div>
-        <h1 className="font-display text-2xl font-bold text-foreground">Tentativas de Login</h1>
+      <>
+        <PageSEO title="Tentativas de Login" description="Monitore tentativas de login e atividades suspeitas." path="/admin/login-attempts" noIndex />
+        <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
+          <div>
+            <h1 data-testid="page-title-login-attempts" className="font-display text-2xl font-bold text-foreground">Tentativas de Login</h1>
         <p className="text-muted-foreground">Monitoramento de acessos e tentativas de autenticação</p>
       </div>
 
