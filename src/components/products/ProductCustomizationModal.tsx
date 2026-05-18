@@ -187,7 +187,7 @@ export function ProductCustomizationModal({
 
         <div className="p-4 border-t bg-muted/20 flex items-center justify-between">
           <p className="text-[11px] text-muted-foreground max-w-[200px] leading-tight">
-            As alterações são salvas automaticamente ao confirmar cada técnica.
+            Suas escolhas são salvas ao clicar em Concluir Configuração.
           </p>
           <Button onClick={() => setIsOpen(false)} variant="default">
             Concluir Configuração

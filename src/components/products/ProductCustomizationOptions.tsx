@@ -12,7 +12,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
-import { Info, Palette, Package, Ruler } from "lucide-react";
+import { Info, Palette, Package, Ruler, Lock, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -266,10 +266,16 @@ export function ProductCustomizationOptions({
                 Escolha o Local
               </h3>
               {mutuallyExclusive && (
-                <Badge variant="outline" className="text-[9px] gap-1 text-amber-600 border-amber-200 bg-amber-50">
-                  <Info className="h-2.5 w-2.5" />
-                  Opções Exclusivas
-                </Badge>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="text-amber-600 hover:text-amber-700 transition-colors">
+                      <Info className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="bg-amber-50 text-amber-900 border-amber-200 text-[10px] max-w-[200px]">
+                    Este produto possui opções de gravação que não podem ser selecionadas simultaneamente.
+                  </TooltipContent>
+                </Tooltip>
               )}
             </div>
 
