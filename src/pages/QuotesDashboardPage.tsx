@@ -75,7 +75,7 @@ export default function QuotesDashboardPage() {
           path="/orcamentos/dashboard"
           noIndex
         />
-        <div className="space-y-6">
+        <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-4 animate-fade-in">
           {/* Header */}
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div className="flex items-center gap-4">
@@ -336,7 +336,7 @@ export default function QuotesDashboardPage() {
               <CardTitle className="text-lg">Últimas Respostas de Clientes</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
+              <div className="space-y-3">
                 {s.quotes
                   .filter((q) => q.client_response_at)
                   .sort(
