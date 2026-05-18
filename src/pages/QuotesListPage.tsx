@@ -3,6 +3,7 @@ import confetti from 'canvas-confetti';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { PageSEO } from '@/components/seo/PageSEO';
+import { formatCurrency } from '@/lib/format';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -142,7 +143,6 @@ export default function QuotesListPage() {
     return results;
   }, [quotes, searchTerm, statusFilter, quoteFuse, sortBy]);
 
-import { formatCurrency } from '@/lib/format';
 
   const handleDelete = async () => {
     if (deleteConfirmId) {
