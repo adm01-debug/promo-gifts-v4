@@ -637,6 +637,16 @@ export default function QuoteBuilderPage() {
             confirmAllStalePrices={s.confirmAllStalePrices}
           />
         </div>
+
+        {/* Navigation Bar */}
+        <div className="flex flex-col gap-4 mt-6">
+          <QuoteBuilderNavigation
+            currentStep={s.currentStep}
+            onNext={s.nextStep}
+            onPrev={s.prevStep}
+            isLastStep={s.currentStep === 'review'}
+          />
+        </div>
       </div>
 
       {/* Product Search Dialog */}
