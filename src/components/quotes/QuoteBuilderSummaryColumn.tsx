@@ -131,7 +131,7 @@ export function QuoteBuilderSummaryColumn({
   };
 
   return (
-    <div className="lg:col-span-4">
+    <aside className={cn("w-full", className)}>
       <div className="sticky top-24">
         <div className="flex flex-col rounded-2xl border border-border/50 bg-card shadow-xl overflow-hidden">
           {/* Header */}
