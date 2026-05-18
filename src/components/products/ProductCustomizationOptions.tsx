@@ -216,38 +216,41 @@ export function ProductCustomizationOptions({
               {activeLocation ? 'Passo 2 de 3' : 'Passo 1 de 3'}
             </span>
           </div>
-          <button 
-            type="button"
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="flex items-center gap-1 md:gap-1.5 shrink-0 hover:text-primary transition-colors"
-          >
-            <span className="flex h-3.5 w-3.5 md:h-4 md:w-4 items-center justify-center rounded-full bg-primary text-[9px] md:text-[10px] font-bold text-primary-foreground">
-              1
-            </span>
-            <span>Local</span>
-          </button>
-          <span className="text-muted-foreground/40 shrink-0">→</span>
-          <button 
-            type="button"
-            onClick={() => scrollToStep(2)}
-            className="flex items-center gap-1 md:gap-1.5 shrink-0 hover:text-primary transition-colors"
-          >
-            <span className="flex h-3.5 w-3.5 md:h-4 md:w-4 items-center justify-center rounded-full bg-muted text-[9px] md:text-[10px] font-bold text-foreground">
-              2
-            </span>
-            <span>Técnica</span>
-          </button>
-          <span className="text-muted-foreground/40 shrink-0">→</span>
-          <button 
-            type="button"
-            onClick={() => scrollToStep(3)}
-            className="flex items-center gap-1 md:gap-1.5 shrink-0 hover:text-primary transition-colors"
-          >
-            <span className="flex h-3.5 w-3.5 md:h-4 md:w-4 items-center justify-center rounded-full bg-muted text-[9px] md:text-[10px] font-bold text-foreground">
-              3
-            </span>
-            <span>Tamanho</span>
-          </button>
+          <div className="flex items-center gap-2 md:gap-4 pb-2">
+            <button 
+              type="button"
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="flex items-center gap-1.5 shrink-0 hover:text-primary transition-colors"
+            >
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                1
+              </span>
+              <span className="text-xs font-bold">Local</span>
+            </button>
+            <span className="text-muted-foreground/30 shrink-0">→</span>
+            <button 
+              type="button"
+              onClick={() => scrollToStep(2)}
+              className="flex items-center gap-1.5 shrink-0 hover:text-primary transition-colors"
+            >
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-foreground">
+                2
+              </span>
+              <span className="text-xs font-bold">Técnica</span>
+            </button>
+            <span className="text-muted-foreground/30 shrink-0">→</span>
+            <button 
+              type="button"
+              onClick={() => scrollToStep(3)}
+              className="flex items-center gap-1.5 shrink-0 hover:text-primary transition-colors"
+            >
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-foreground">
+                3
+              </span>
+              <span className="text-xs font-bold">Tamanho</span>
+            </button>
+          </div>
+
         </div>
 
         {/* STEP 1 — Local Selection Cards */}
