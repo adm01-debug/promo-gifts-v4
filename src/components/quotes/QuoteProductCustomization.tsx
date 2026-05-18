@@ -97,19 +97,36 @@ export function QuoteProductCustomization({
 
   return (
     <div className="space-y-4">
-      {/* Already-confirmed personalizations summary */}
-      {confirmed.length > 0 && (
-        <div className="space-y-1.5">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            Gravações adicionadas
-          </p>
+      {/* 1) Configurador — auto-confirma ao calcular preço */}
+      <ProductCustomizationOptions
+        productId={productId}
+        quantity={quantity}
+        onSelectionChange={handleSelectionChange}
+      />
+
+      {/* 2) Gravações já confirmadas (aparecem ABAIXO, como resultado do passo) */}
+      {confirmed.length > 0 ? (
+        <div className="space-y-1.5 rounded-xl border border-primary/20 bg-primary/5 p-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-bold uppercase tracking-wide text-primary">
+              ✓ Gravações no orçamento
+            </p>
+            <Badge variant="secondary" className="text-[10px]">
+              {confirmed.length} aplicada{confirmed.length !== 1 ? "s" : ""}
+            </Badge>
+          </div>
           {confirmed.map((p, i) => (
-            <div key={i} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-primary/5 border border-primary/20">
+            <div
+              key={i}
+              className="flex items-center justify-between gap-2 p-2 rounded-lg bg-background/60 border border-border/50"
+            >
               <div className="flex items-center gap-2 min-w-0">
                 <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
                 <div className="min-w-0">
-                  <span className="text-xs font-semibold text-primary block truncate">{p.technique_name}</span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs font-semibold text-foreground block truncate">
+                    {p.technique_name}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">
                     {p.width_cm && p.height_cm ? `${p.width_cm}×${p.height_cm}cm · ` : ""}
                     {p.colors_count || 1} cor{(p.colors_count || 1) > 1 ? "es" : ""}
                   </span>
@@ -121,7 +138,8 @@ export function QuoteProductCustomization({
                 </Badge>
                 <Button
                   variant="ghost"
-                  size="icon" aria-label="Excluir"
+                  size="icon"
+                  aria-label="Excluir"
                   className="h-6 w-6 text-muted-foreground hover:text-destructive"
                   onClick={() => handleRemove(i)}
                 >
@@ -130,26 +148,18 @@ export function QuoteProductCustomization({
               </div>
             </div>
           ))}
-          <div className="flex justify-between text-xs text-muted-foreground pt-1 px-1">
-            <span>Total gravação:</span>
-            <span className="font-semibold text-primary">{fmt(confirmedTotal)}</span>
+          <div className="flex justify-between text-xs pt-1 px-1 border-t border-primary/15 mt-1">
+            <span className="text-muted-foreground">Total gravação:</span>
+            <span className="font-bold text-primary">{fmt(confirmedTotal)}</span>
           </div>
         </div>
-      )}
-
-      {/* Configurador — auto-confirms on price calculation */}
-      <ProductCustomizationOptions
-        productId={productId}
-        quantity={quantity}
-        onSelectionChange={handleSelectionChange}
-      />
-
-      {confirmed.length === 0 && (
-        <p className="text-xs text-center text-muted-foreground/70 pt-1">
+      ) : (
+        <p className="text-[11px] text-center text-muted-foreground/70">
           Configure a técnica acima — o preço será adicionado automaticamente ao orçamento.
         </p>
       )}
     </div>
   );
 }
+
 
