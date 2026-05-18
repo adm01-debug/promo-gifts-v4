@@ -5,21 +5,18 @@
  * SRP: Responsável apenas pela injeção condicional do componente dev.
  */
 import { Suspense } from 'react';
-import { useDevGate } from '@/hooks/useDevGate';
+import { DevOnly } from '@/components/dev/DevOnly';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 
 const Overlay = lazyWithRetry(() => import('./BridgeMetricsOverlay'));
 
 export function DevOnlyBridgeOverlay() {
-  // Restrito EXCLUSIVAMENTE a usuários com role `dev` — admin/supervisor não veem.
-  const { isDev } = useDevGate();
-
-  if (!isDev) return null;
-
+  // Restrito EXCLUSIVAMENTE a usuários com role `dev` real — admin/supervisor não veem.
   return (
-    <Suspense fallback={null}>
-      <Overlay />
-    </Suspense>
+    <DevOnly strict>
+      <Suspense fallback={null}>
+        <Overlay />
+      </Suspense>
+    </DevOnly>
   );
 }
-

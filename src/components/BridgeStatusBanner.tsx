@@ -7,16 +7,16 @@
 import { memo } from 'react';
 import { AlertTriangle, X, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { DevOnly } from '@/components/dev/DevOnly';
 import { useDevGate } from '@/hooks/useDevGate';
 import { useBridgeStatusBanner } from '@/hooks/useBridgeStatusBanner';
 
-export const BridgeStatusBanner = memo(function BridgeStatusBanner() {
+const BridgeStatusBannerInner = memo(function BridgeStatusBannerInner() {
+  // O hook ainda precisa do flag para suprimir toasts internos.
   const { isAllowed } = useDevGate();
   const { unavailable, reason, closeUnavailable, reload } = useBridgeStatusBanner(isAllowed);
 
-  // Banner de infra é exclusivo para usuários DEV — usuários finais não devem
-  // ver mensagens técnicas sobre o bridge externo.
-  if (!isAllowed || !unavailable) return null;
+  if (!unavailable) return null;
 
   return (
     <div
@@ -59,5 +59,13 @@ export const BridgeStatusBanner = memo(function BridgeStatusBanner() {
         </div>
       </div>
     </div>
+  );
+});
+
+export const BridgeStatusBanner = memo(function BridgeStatusBanner() {
+  return (
+    <DevOnly>
+      <BridgeStatusBannerInner />
+    </DevOnly>
   );
 });

@@ -3,7 +3,7 @@ import { AlertTriangle, CheckCircle2, Clock, Info, Loader2, RefreshCw, WifiOff, 
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useCloudStatus } from '@/hooks/useCloudStatus';
-import { useDevGate } from '@/hooks/useDevGate';
+import { DevOnly } from '@/components/dev/DevOnly';
 import { getStatusTimeline } from '@/lib/cloud-status';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
@@ -33,8 +33,7 @@ const STATUS_CONFIG: Partial<Record<'down' | 'degraded' | 'warming', BannerVaria
   }
 };
 
-export const CloudStatusBanner = memo(function CloudStatusBanner() {
-  const { isAllowed, isDev } = useDevGate();
+const CloudStatusBannerInner = memo(function CloudStatusBannerInner() {
   const { status, snapshot, retry, isChecking } = useCloudStatus();
   const [showDebug, setShowDebug] = useState(false);
   const [showTimeline, setShowTimeline] = useState(false);
@@ -42,14 +41,9 @@ export const CloudStatusBanner = memo(function CloudStatusBanner() {
   const timeline = useMemo(() => getStatusTimeline(), []);
   const isIssueStatus = status === 'down' || status === 'degraded' || status === 'warming';
   const config = isIssueStatus ? STATUS_CONFIG[status] : null;
-  // Banner de saúde do backend é exclusivo para usuários DEV — usuários finais
-  // não devem ver mensagens de infra ("Backend instável", "indisponível", etc.).
-  const shouldShowIssue = isAllowed && (
-    status === 'down' || status === 'degraded' || status === 'warming'
-  );
-  const shouldShow = shouldShowIssue;
-
-  if (!shouldShow) return null;
+  // Banner de saúde do backend é gateado externamente por <DevOnly> — aqui só
+  // decidimos se há issue ativo para renderizar.
+  if (!isIssueStatus) return null;
 
   // Defensivo: como shouldShow exige status ∈ {down, degraded, warming},
   // config sempre estará definido aqui. Os fallbacks (?? ...) protegem caso
@@ -85,28 +79,26 @@ export const CloudStatusBanner = memo(function CloudStatusBanner() {
             </div>
             
             <div className="flex items-center gap-2">
-              {isDev && (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => setShowTimeline(!showTimeline)}
-                    title="Ver histórico"
-                  >
-                    <Clock className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => setShowDebug(!showDebug)}
-                    title="Debug Latência"
-                  >
-                    <Info className="h-3.5 w-3.5" />
-                  </Button>
-                </>
-              )}
+              <DevOnly strict>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setShowTimeline(!showTimeline)}
+                  title="Ver histórico"
+                >
+                  <Clock className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setShowDebug(!showDebug)}
+                  title="Debug Latência"
+                >
+                  <Info className="h-3.5 w-3.5" />
+                </Button>
+              </DevOnly>
 
               {status === 'down' && (
                 <Button
@@ -180,5 +172,13 @@ export const CloudStatusBanner = memo(function CloudStatusBanner() {
         </div>
       </motion.div>
     </AnimatePresence>
+  );
+});
+
+export const CloudStatusBanner = memo(function CloudStatusBanner() {
+  return (
+    <DevOnly>
+      <CloudStatusBannerInner />
+    </DevOnly>
   );
 });

@@ -5,15 +5,13 @@
  */
 import { memo } from 'react';
 import { useCloudStatus } from '@/hooks/useCloudStatus';
-import { useDevGate } from '@/hooks/useDevGate';
+import { DevOnly } from '@/components/dev/DevOnly';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-export const CloudStatusDot = memo(function CloudStatusDot() {
-  const { isDev } = useDevGate();
+const CloudStatusDotInner = memo(function CloudStatusDotInner() {
   const { status } = useCloudStatus();
 
-  if (!isDev) return null;
   // Mostra apenas em estados saudáveis — banner já cobre os demais.
   if (status !== 'healthy' && status !== 'unknown') return null;
 
@@ -39,5 +37,13 @@ export const CloudStatusDot = memo(function CloudStatusDot() {
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
+  );
+});
+
+export const CloudStatusDot = memo(function CloudStatusDot() {
+  return (
+    <DevOnly strict>
+      <CloudStatusDotInner />
+    </DevOnly>
   );
 });
