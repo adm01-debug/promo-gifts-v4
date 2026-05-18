@@ -53,6 +53,7 @@ function isCircularLocation(loc: GravacaoLocation): boolean {
 export function ProductCustomizationOptions({
   productId,
   quantity = 100,
+  initialPersonalizations = [],
   onSelectionChange,
 }: ProductCustomizationOptionsProps) {
   const { data: options, isLoading } = useProductCustomizationOptions(productId);
@@ -60,8 +61,23 @@ export function ProductCustomizationOptions({
 
   // Track prices per location
   const pricesRef = useRef<Map<string, PersonalizationItem>>(new Map());
+  const hasInitialized = useRef(false);
+  
   // Force re-render when pricesRef changes (badges/exclusão dependem disso)
   const [, forceTick] = useState(0);
+
+  // Initialize from initialPersonalizations
+  useEffect(() => {
+    if (!hasInitialized.current && initialPersonalizations.length > 0) {
+      initialPersonalizations.forEach(item => {
+        if (item.locationCode) {
+          pricesRef.current.set(item.locationCode, item);
+        }
+      });
+      hasInitialized.current = true;
+      forceTick(n => n + 1);
+    }
+  }, [initialPersonalizations]);
 
   // Auto-select primeiro local quando dados carregam
   useEffect(() => {
