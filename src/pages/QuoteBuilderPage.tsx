@@ -481,7 +481,7 @@ export default function QuoteBuilderPage() {
                       <SelectItem value="fob_pre">FOB | Valor pré negociado</SelectItem>
                     </SelectContent>
                   </Select>
-                  {(s.shippingType === 'fob_pre' || s.shippingType === 'fob') && (
+                  {s.shippingType === 'fob_pre' && (
                     <div className="mt-1.5 space-y-1">
                       <Label
                         className={cn(
