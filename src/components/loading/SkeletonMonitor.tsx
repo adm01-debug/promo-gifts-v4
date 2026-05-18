@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { logger } from "@/lib/logger";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import { getSkeletonThreshold } from "@/config/skeleton.config";
 
 interface SkeletonMonitorProps {
   name: string;
@@ -16,8 +17,9 @@ interface SkeletonMonitorProps {
 export function SkeletonMonitor({ 
   name, 
   children, 
-  thresholdMs = 2000 
+  thresholdMs: manualThresholdMs 
 }: SkeletonMonitorProps) {
+  const thresholdMs = manualThresholdMs || getSkeletonThreshold(name);
   const startTime = useRef<number>(performance.now());
   const [elapsed, setElapsed] = useState(0);
   const { userRole } = useAuth();
@@ -47,7 +49,7 @@ export function SkeletonMonitor({
           timestamp: new Date().toISOString()
         });
       } else {
-        logger.debug(`[Performance] Skeleton "${name}" resolved in ${(duration / 1000).toFixed(2)}s`);
+        logger.debug(`[Performance] Skeleton "${name}" resolved in ${(duration / 1000).toFixed(2)}s (threshold: ${thresholdMs}ms)`);
       }
     };
   }, [name, thresholdMs]);
