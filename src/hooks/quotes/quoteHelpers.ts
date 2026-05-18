@@ -4,6 +4,12 @@
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import type { Quote, QuoteItem } from "./quoteTypes";
 
+/** Half-up rounding to 2 decimals — SSOT for monetary persistence */
+export const round2 = (n: number | null | undefined): number => {
+  const v = typeof n === "number" && Number.isFinite(n) ? n : 0;
+  return Math.round((v + Number.EPSILON) * 100) / 100;
+};
+
 export function calculateQuoteTotals(quote: Partial<Quote>, items: QuoteItem[]) {
   // Subtotal real = soma direta dos itens + personalizações (sem markup)
   const realSubtotal = items.reduce((sum, item) => {
@@ -34,7 +40,7 @@ export function calculateQuoteTotals(quote: Partial<Quote>, items: QuoteItem[]) 
     ? Math.round(((realSubtotal - finalBeforeShipping) / realSubtotal) * 10000) / 100
     : 0;
 
-  return { subtotal, realSubtotal, discountAmount, total, realDiscountPercent, markup };
+  return { subtotal: round2(subtotal), realSubtotal: round2(realSubtotal), discountAmount: round2(discountAmount), total: round2(total), realDiscountPercent, markup };
 }
 
 export function buildInsertPayload(
@@ -52,15 +58,15 @@ export function buildInsertPayload(
     seller_id: userId,
     organization_id: orgId,
     status: quote.status || "draft",
-    subtotal: totals.subtotal,
-    discount_percent: quote.discount_percent || 0,
-    discount_amount: totals.discountAmount,
-    total: totals.total,
-    negotiation_markup_percent: quote.negotiation_markup_percent || 0,
+    subtotal: round2(totals.subtotal),
+    discount_percent: round2(quote.discount_percent || 0),
+    discount_amount: round2(totals.discountAmount),
+    total: round2(totals.total),
+    negotiation_markup_percent: round2(quote.negotiation_markup_percent || 0),
     payment_terms: quote.payment_terms || null,
     delivery_time: quote.delivery_time || null,
     shipping_type: quote.shipping_type || null,
-    shipping_cost: quote.shipping_cost || 0,
+    shipping_cost: round2(quote.shipping_cost || 0),
     notes: quote.notes || null,
     internal_notes: quote.internal_notes || null,
     valid_until: quote.valid_until || null,
@@ -78,15 +84,15 @@ export function buildUpdatePayload(
     client_phone: quote.client_phone || null,
     client_company: quote.client_company || null,
     status: quote.status,
-    subtotal: totals.subtotal,
-    discount_percent: quote.discount_percent || 0,
-    discount_amount: totals.discountAmount,
-    total: totals.total,
-    negotiation_markup_percent: quote.negotiation_markup_percent || 0,
+    subtotal: round2(totals.subtotal),
+    discount_percent: round2(quote.discount_percent || 0),
+    discount_amount: round2(totals.discountAmount),
+    total: round2(totals.total),
+    negotiation_markup_percent: round2(quote.negotiation_markup_percent || 0),
     payment_terms: quote.payment_terms || null,
     delivery_time: quote.delivery_time || null,
     shipping_type: quote.shipping_type || null,
-    shipping_cost: quote.shipping_cost || 0,
+    shipping_cost: round2(quote.shipping_cost || 0),
     notes: quote.notes || null,
     internal_notes: quote.internal_notes || null,
     valid_until: quote.valid_until || null,
@@ -105,7 +111,7 @@ export function buildItemsInsertPayload(
     product_sku: item.product_sku,
     product_image_url: item.product_image_url,
     quantity: item.quantity,
-    unit_price: item.unit_price,
+    unit_price: round2(item.unit_price),
     color_name: item.color_name,
     color_hex: item.color_hex,
     size_code: item.size_code || null,
@@ -129,9 +135,9 @@ export function buildPersonalizationsInsertPayload(
     colors_count: p.colors_count || 1,
     positions_count: p.positions_count || 1,
     area_cm2: p.area_cm2,
-    setup_cost: p.setup_cost || 0,
-    unit_cost: p.unit_cost || 0,
-    total_cost: p.total_cost || 0,
+    setup_cost: round2(p.setup_cost || 0),
+    unit_cost: round2(p.unit_cost || 0),
+    total_cost: round2(p.total_cost || 0),
     notes: p.notes,
   }));
 }
