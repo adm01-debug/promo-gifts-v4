@@ -10,6 +10,18 @@ export const round2 = (n: number | null | undefined): number => {
   return Math.round((v + Number.EPSILON) * 100) / 100;
 };
 
+export function validateDiscount(quote: Partial<Quote>, totals: { subtotal: number; discountAmount: number }) {
+  if (quote.discount_percent && (quote.discount_percent < 0 || quote.discount_percent > 100)) {
+    throw new Error("Desconto em porcentagem deve estar entre 0% e 100%");
+  }
+  if (totals.discountAmount < 0) {
+    throw new Error("O valor do desconto não pode ser negativo");
+  }
+  if (totals.discountAmount > totals.subtotal + 0.01) { // Tolerância de arredondamento
+    throw new Error(`O desconto não pode exceder o subtotal (${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totals.subtotal)})`);
+  }
+}
+
 export function calculateQuoteTotals(quote: Partial<Quote>, items: QuoteItem[]) {
   // Subtotal real = soma direta dos itens + personalizações (sem markup)
   const realSubtotal = items.reduce((sum, item) => {
@@ -49,6 +61,7 @@ export function buildInsertPayload(
   orgId: string | null,
   totals: { subtotal: number; discountAmount: number; total: number }
 ): TablesInsert<"quotes"> {
+  validateDiscount(quote, totals);
   return {
     client_id: quote.client_id || null,
     client_name: quote.client_name || null,
@@ -77,6 +90,7 @@ export function buildUpdatePayload(
   quote: Partial<Quote>,
   totals: { subtotal: number; discountAmount: number; total: number }
 ): TablesUpdate<"quotes"> {
+  validateDiscount(quote, totals);
   return {
     client_id: quote.client_id || null,
     client_name: quote.client_name || null,
