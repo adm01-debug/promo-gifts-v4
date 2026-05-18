@@ -337,6 +337,17 @@ export function QuoteBuilderSummaryColumn({
                     <SelectItem value="amount">R$</SelectItem>
                   </SelectContent>
                 </Select>
+                <div className="flex-1">
+                  <CurrencyInput
+                    value={discountValue}
+                    onChange={setDiscountValue}
+                    max={discountType === "percent" ? 100 : presentedSubtotal}
+                    className={cn(
+                      "h-8 text-xs font-semibold tabular-nums",
+                      isDiscountExceeded ? "border-amber-500/50 focus-visible:ring-amber-500/30" : "border-border/50"
+                    )}
+                  />
+                </div>
                 {discountType === "percent" ? (
                   <CurrencyInput
                     value={discountValue}
