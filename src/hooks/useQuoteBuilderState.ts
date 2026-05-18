@@ -527,7 +527,10 @@ export function useQuoteBuilderState() {
     [subtotal, discountType, discountValue],
   );
 
-  const total = useMemo(() => Math.max(0, subtotal - discountAmount), [subtotal, discountAmount]);
+  const total = useMemo(() => {
+    const baseTotal = Math.max(0, subtotal - discountAmount);
+    return shippingType === 'fob_pre' ? baseTotal + shippingCost : baseTotal;
+  }, [subtotal, discountAmount, shippingCost, shippingType]);
 
   // ── Desconto REAL (sobre subtotal real) — usado para alçada ──
   const realDiscountPercent = useMemo(
