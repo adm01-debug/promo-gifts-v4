@@ -321,11 +321,11 @@ export default function QuoteBuilderPage() {
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="7_dias">7 dias após entrega</SelectItem>
-                      <SelectItem value="14_dias">14 dias após entrega</SelectItem>
-                      <SelectItem value="21_dias">21 dias após entrega</SelectItem>
-                      <SelectItem value="28_dias">28 dias após entrega</SelectItem>
-                      <SelectItem value="7_14_dias">7 e 14 dias após entrega</SelectItem>
+                      <SelectItem value="7_dias">7 dias a partir da entrega</SelectItem>
+                      <SelectItem value="14_dias">14 dias a partir da entrega</SelectItem>
+                      <SelectItem value="21_dias">21 dias a partir da entrega</SelectItem>
+                      <SelectItem value="28_dias">28 dias a partir da entrega</SelectItem>
+                      <SelectItem value="7_14_dias">7 e 14 dias a partir da entrega</SelectItem>
                       <SelectItem value="50_50">50/50 | 50% entrada / 50% após entrega</SelectItem>
                     </SelectContent>
                   </Select>
