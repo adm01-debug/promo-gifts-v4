@@ -130,6 +130,11 @@ export default defineConfig({
       grepInvert: /@smoke/,
     },
     {
+      name: "chromium-wizard",
+      use: { ...devices["Desktop Chrome"] },
+      testMatch: /quote-builder-wizard\.spec\.ts/,
+    },
+    {
       name: "chromium-authed",
       use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
