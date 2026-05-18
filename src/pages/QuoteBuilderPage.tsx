@@ -647,6 +647,7 @@ export default function QuoteBuilderPage() {
           />
         </div>
       </div>
+      </div>
 
       {/* Product Search Dialog */}
       <QuoteBuilderProductSearch
