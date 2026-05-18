@@ -351,22 +351,44 @@ export function ProductCustomizationOptions({
 
         {/* Workspace Area */}
         <div className="space-y-6">
-          {currentLocation ? (
-            <div ref={step2Ref} className="rounded-2xl border border-border/40 bg-background/50 p-4 md:p-6 shadow-sm animate-in fade-in zoom-in-95 duration-300">
-              <LocationPanel
+          <AnimatePresence mode="wait">
+            {currentLocation ? (
+              <motion.div 
                 key={currentLocation.location_code}
-                location={currentLocation}
-                quantity={quantity}
-                confirmedPersonalization={pricesRef.current.get(currentLocation.location_code)}
-                onPriceCalculated={handlePriceCalculated}
-              />
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-24 border-2 border-dashed rounded-2xl bg-muted/5">
-              <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4"><Package className="h-8 w-8 text-muted-foreground/40" /></div>
-              <p className="text-sm font-medium text-muted-foreground">Selecione um local acima para começar</p>
-            </div>
-          )}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+                ref={step2Ref} 
+                className="rounded-2xl border border-border/40 bg-background/50 p-4 md:p-6 shadow-sm"
+              >
+                <LocationPanel
+                  key={currentLocation.location_code}
+                  location={currentLocation}
+                  quantity={quantity}
+                  confirmedPersonalization={pricesRef.current.get(currentLocation.location_code)}
+                  onPriceCalculated={handlePriceCalculated}
+                />
+              </motion.div>
+            ) : (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex flex-col items-center justify-center py-20 border-2 border-dashed rounded-3xl bg-muted/5 border-muted-foreground/10"
+              >
+                <div className="relative mb-6">
+                  <div className="absolute inset-0 bg-primary/10 blur-3xl rounded-full" />
+                  <div className="relative h-20 w-20 rounded-2xl bg-gradient-to-br from-background to-muted flex items-center justify-center shadow-inner border border-border/50">
+                    <Palette className="h-10 w-10 text-muted-foreground/30 animate-pulse" />
+                  </div>
+                </div>
+                <h4 className="text-sm font-bold text-foreground mb-1">Inicie a Configuração</h4>
+                <p className="text-[11px] text-muted-foreground max-w-[220px] text-center px-4 leading-relaxed">
+                  Selecione um local de gravação no topo para definir a técnica e as dimensões.
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Footer shortcuts legend */}
