@@ -155,6 +155,13 @@ jobs:
       - name: 🚫 Inline CORS literals gate
         run: node scripts/check-no-inline-cors.mjs
 
+      # Bloqueia novas ocorrências de toast.error/warning vazando texto
+      # técnico (Error.message, stack, payload cru). Baseline congelada em
+      # .toast-leaks-baseline.json — somente regressões falham o build.
+      # ver scripts/check-toast-leaks.mjs.
+      - name: 🍞 Toast leaks gate (texto técnico em sonner)
+        run: node scripts/check-toast-leaks.mjs
+
       # Garante que supabase/functions/_shared/cors-snapshot.json está em sync
       # com os index.ts (consumido pela edge function `cors-audit`).
       - name: 📸 CORS snapshot freshness

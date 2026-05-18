@@ -4,6 +4,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { registerServiceWorker } from "@/lib/sw-register";
 import { installGlobalErrorHandlers } from "@/lib/error-reporter";
 import { initSentry } from "@/lib/sentry";
+import { installSafeToast } from "@/lib/security/safeToast";
 import EnhancedErrorBoundary from "@/components/errors/EnhancedErrorBoundary";
 import App from "./App.tsx";
 import "./index.css";
@@ -13,6 +14,10 @@ initSentry();
 
 // Install global error handlers for unhandled errors/rejections
 installGlobalErrorHandlers();
+
+// Patch global de `sonner` — bloqueia mensagens técnicas em toasts para não-dev.
+// Idempotente; respeita o Dev Infra Messages Gate.
+installSafeToast();
 
 const root = document.getElementById("root");
 
