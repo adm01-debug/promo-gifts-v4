@@ -3,6 +3,7 @@
  * Table/Grid views extracted to ./admin-templates/
  */
 import { useState, useMemo } from "react";
+import { formatCurrency } from "@/lib/format";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -48,7 +49,7 @@ export function AdminTemplatesManager({ onEditTemplate }: AdminTemplatesManagerP
     return grouped;
   }, [filteredTemplates]);
 
-  const formatCurrency = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+  
 
   const calculateTotal = (template: QuoteTemplate) => {
     const itemsTotal = template.items_data.reduce((sum, item) => {

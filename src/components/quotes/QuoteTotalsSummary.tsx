@@ -1,10 +1,7 @@
 /**
  * QuoteTotalsSummary — Totals breakdown card for QuoteViewPage
  */
-
-function formatCurrency(value: number): string {
-  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
+import { formatCurrency } from "@/lib/format";
 
 function calcPersTotal(totalCost: number, qty: number): number {
   if (qty <= 0) return totalCost;
