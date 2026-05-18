@@ -375,6 +375,12 @@ export default function QuoteBuilderPage() {
                         </Tooltip>
                       </TooltipProvider>
                     </Label>
+                    <div className="flex items-start gap-2 rounded-lg border border-warning/20 bg-warning/5 p-2 mb-2 animate-in fade-in slide-in-from-top-1 duration-300">
+                      <AlertTriangle className="h-3.5 w-3.5 text-warning shrink-0 mt-0.5" />
+                      <p className="text-[10px] leading-tight text-warning-foreground/80">
+                        Valide a viabilidade do prazo com <span className="font-semibold">Fornecedores, Compras e Logística</span> antes de enviar.
+                      </p>
+                    </div>
                     <div className="flex gap-0.5 rounded-md bg-muted p-0.5">
                       <button
                         type="button"
