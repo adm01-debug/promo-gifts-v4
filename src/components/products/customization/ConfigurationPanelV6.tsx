@@ -6,10 +6,11 @@
  * Briefing v6 (12/02/2026).
  */
 
-import { useState, useEffect, useMemo, useRef } from "react";
-import { Loader2, Palette, Clock, Ruler, AlertCircle, Check } from "lucide-react";
+import { useState, useMemo, useRef } from "react";
+import { Loader2, Palette, Ruler, AlertCircle, Check, Pencil, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useCustomizationPriceReactive } from "@/hooks/useCustomizationPrice";
 import type { TechniqueOption, CustomizationPriceResponseV6 } from "@/types/customization";
@@ -17,10 +18,12 @@ import type { TechniqueOption, CustomizationPriceResponseV6 } from "@/types/cust
 interface ConfigurationPanelV6Props {
   technique: TechniqueOption;
   quantity: number;
+  /** True quando esta técnica já foi confirmada e está no orçamento. */
+  isConfirmed?: boolean;
   onPriceCalculated: (techniqueId: string, price: CustomizationPriceResponseV6 | null, dimensions?: { width?: number; height?: number }) => void;
 }
 
-export function ConfigurationPanelV6({ technique, quantity, onPriceCalculated }: ConfigurationPanelV6Props) {
+export function ConfigurationPanelV6({ technique, quantity, isConfirmed = false, onPriceCalculated }: ConfigurationPanelV6Props) {
   // Dimensions
   const [largura, setLargura] = useState<string>(
     technique.usa_dimensao ? String(technique.efetiva_largura_max) : ""
@@ -31,6 +34,10 @@ export function ConfigurationPanelV6({ technique, quantity, onPriceCalculated }:
 
   // Colors
   const [numCores, setNumCores] = useState(1);
+
+  // Edição local: quando confirmado, bloqueia inputs até clicar em "Editar"
+  const [editing, setEditing] = useState(false);
+  const isLocked = isConfirmed && !editing;
 
   const larguraNum = parseFloat(largura) || 0;
   const alturaNum = parseFloat(altura) || 0;
@@ -44,7 +51,7 @@ export function ConfigurationPanelV6({ technique, quantity, onPriceCalculated }:
     return null;
   }, [technique, larguraNum, alturaNum]);
 
-  // Reactive price calculation with debounce
+  // Preview reativo apenas — inserção no orçamento ocorre via botão "Confirmar".
   const { price, loading, error } = useCustomizationPriceReactive(
     technique.technique_id,
     quantity,
@@ -57,11 +64,19 @@ export function ConfigurationPanelV6({ technique, quantity, onPriceCalculated }:
   const onPriceCalculatedRef = useRef(onPriceCalculated);
   onPriceCalculatedRef.current = onPriceCalculated;
 
-  // Notify parent when price or dimensions change
-  useEffect(() => {
+  const canConfirm = !!price && !loading && !error && !dimensionError;
+
+  const handleConfirm = () => {
+    if (!canConfirm || !price) return;
     const dims = technique.usa_dimensao ? { width: larguraNum, height: alturaNum } : undefined;
     onPriceCalculatedRef.current(technique.technique_id, price, dims);
-  }, [price, technique.technique_id, technique.usa_dimensao, larguraNum, alturaNum]);
+    setEditing(false);
+  };
+
+  const handleRemove = () => {
+    onPriceCalculatedRef.current(technique.technique_id, null);
+    setEditing(false);
+  };
 
   return (
     <div className="space-y-4 p-4 rounded-lg bg-secondary/30 border border-border/50">
