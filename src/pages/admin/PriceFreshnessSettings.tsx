@@ -147,6 +147,7 @@ export default function PriceFreshnessSettings() {
           )}
         </CardContent>
       </Card>
-      </div>
+        </div>
+      </>
   );
 }
