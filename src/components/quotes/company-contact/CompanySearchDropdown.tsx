@@ -245,14 +245,14 @@ export function CompanySearchDropdown({
             <div className="relative">
               <ScrollArea style={{ height: `${Math.min(Math.max((filteredCompanies.length + 1 + (showHistory ? history.length + 1 : 0)), 2) * 56, 320)}px` }}>
                 <button type="button" className={cn("flex items-center gap-3 w-full px-3 py-2.5 text-left transition-colors duration-150 hover:bg-primary/10 border-b border-border/30", !companyId && "bg-primary/5")}
-                  onClick={() => handleSelect("")}><span className="text-sm text-muted-foreground">Sem empresa</span></button>
+                  onClick={() => handleSelect("")} data-testid="no-company-option"><span className="text-sm text-muted-foreground">Sem empresa</span></button>
                 {showHistory && (
-                  <div className="border-b border-border/30">
+                  <div className="border-b border-border/30" data-testid="search-history-section">
                     <div className="flex items-center justify-between px-3 py-1.5 bg-muted/20">
                       <span className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide font-semibold text-muted-foreground">
                         <Clock className="h-3 w-3" /> Pesquisas recentes
                       </span>
-                      <button type="button" onClick={() => clearHistory()}
+                      <button type="button" onClick={() => clearHistory()} data-testid="clear-history-button"
                         className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-destructive transition-colors">
                         <Trash2 className="h-3 w-3" /> Limpar
                       </button>
