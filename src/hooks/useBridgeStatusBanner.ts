@@ -48,14 +48,18 @@ export function useBridgeStatusBanner(isAllowed: boolean) {
     } else if (e.type === 'recovered') {
       toast.dismiss(TOAST_ID_DEGRADED);
       if (unavailableRef.current) {
-        toast.success('Conexão restabelecida', {
-          id: TOAST_ID_UNAVAILABLE,
-          description: 'O catálogo voltou a responder normalmente.',
-          duration: 4000,
-        });
+        if (isAllowed) {
+          toast.success('Conexão restabelecida', {
+            id: TOAST_ID_UNAVAILABLE,
+            description: 'O catálogo voltou a responder normalmente.',
+            duration: 4000,
+          });
+        } else {
+          toast.dismiss(TOAST_ID_UNAVAILABLE);
+        }
         setUnavailable(false);
         setReason('');
-      } else {
+      } else if (isAllowed) {
         toast.success('Conexão normalizada', {
           id: TOAST_ID_DEGRADED,
           duration: 3000,
