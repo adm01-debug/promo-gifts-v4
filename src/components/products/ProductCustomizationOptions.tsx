@@ -84,10 +84,10 @@ export function ProductCustomizationOptions({
 
   const scrollToStep = (step: number) => {
     const refs = [null, null, step2Ref];
-    const target = refs[step];
-    if (target?.current) {
+    const target = (refs[step] as React.RefObject<HTMLDivElement>)?.current;
+    if (target) {
       const headerOffset = stickyHeaderRef.current?.offsetHeight || 80;
-      const elementPosition = target.current.getBoundingClientRect().top;
+      const elementPosition = target.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.pageYOffset - headerOffset - 20;
 
       window.scrollTo({
@@ -96,6 +96,13 @@ export function ProductCustomizationOptions({
       });
     }
   };
+
+  const handleResetAll = useCallback(() => {
+    pricesRef.current.clear();
+    setActiveLocation(null);
+    forceTick(n => n + 1);
+    onSelectionChange?.([]);
+  }, [onSelectionChange]);
 
   const handleLocationSelect = useCallback((locationCode: string) => {
     setActiveLocation(locationCode);
