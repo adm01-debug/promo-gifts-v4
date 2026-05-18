@@ -4632,6 +4632,8 @@ export type Database = {
           created_at: string
           height_cm: number | null
           id: string
+          location_code: string | null
+          location_name: string | null
           notes: string | null
           personalized_quantity: number | null
           positions_count: number | null
@@ -4650,6 +4652,8 @@ export type Database = {
           created_at?: string
           height_cm?: number | null
           id?: string
+          location_code?: string | null
+          location_name?: string | null
           notes?: string | null
           personalized_quantity?: number | null
           positions_count?: number | null
@@ -4668,6 +4672,8 @@ export type Database = {
           created_at?: string
           height_cm?: number | null
           id?: string
+          location_code?: string | null
+          location_name?: string | null
           notes?: string | null
           personalized_quantity?: number | null
           positions_count?: number | null

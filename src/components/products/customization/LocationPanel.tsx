@@ -14,8 +14,8 @@ import type { TechniqueOption, GravacaoLocation, CustomizationPriceResponseV6 } 
 interface LocationPanelProps {
   location: GravacaoLocation;
   quantity: number;
-  /** technique_id já confirmada para este local (vindo do parent). */
-  confirmedTechniqueId?: string;
+  /** técnica já confirmada para este local (vindo do parent). */
+  confirmedPersonalization?: PersonalizationItem;
   onPriceCalculated: (locationCode: string, techniqueId: string, price: CustomizationPriceResponseV6 | null, dimensions?: { width?: number; height?: number }) => void;
 }
 
@@ -30,12 +30,12 @@ function groupByGrupo(options: TechniqueOption[]): Record<string, TechniqueOptio
   }, {} as Record<string, TechniqueOption[]>);
 }
 
-export function LocationPanel({ location, quantity, confirmedTechniqueId, onPriceCalculated }: LocationPanelProps) {
+export function LocationPanel({ location, quantity, confirmedPersonalization, onPriceCalculated }: LocationPanelProps) {
   // Inicializa com a técnica confirmada (se houver) para que ao reabrir o local
   // o vendedor já veja o painel da gravação adicionada.
   const [selectedTechnique, setSelectedTechnique] = useState<TechniqueOption | null>(() => {
-    if (!confirmedTechniqueId) return null;
-    return location.options.find((t) => t.technique_id === confirmedTechniqueId) ?? null;
+    if (!confirmedPersonalization?.techniqueId) return null;
+    return location.options.find((t) => t.technique_id === confirmedPersonalization.techniqueId) ?? null;
   });
 
   const grouped = useMemo(() => groupByGrupo(location.options), [location.options]);
@@ -81,7 +81,10 @@ export function LocationPanel({ location, quantity, confirmedTechniqueId, onPric
           key={selectedTechnique.technique_id}
           technique={selectedTechnique}
           quantity={quantity}
-          isConfirmed={confirmedTechniqueId === selectedTechnique.technique_id}
+          isConfirmed={confirmedPersonalization?.techniqueId === selectedTechnique.technique_id}
+          initialWidth={confirmedPersonalization?.width}
+          initialHeight={confirmedPersonalization?.height}
+          initialColors={confirmedPersonalization?.numberOfColors}
           onPriceCalculated={handlePriceCalculated}
         />
       )}

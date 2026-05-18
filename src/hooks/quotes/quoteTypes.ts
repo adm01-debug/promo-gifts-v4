@@ -7,6 +7,8 @@ export interface QuoteItemPersonalization {
   quote_item_id?: string;
   technique_id: string;
   technique_name?: string;
+  location_code?: string;
+  location_name?: string;
   colors_count?: number;
   positions_count?: number;
   area_cm2?: number;

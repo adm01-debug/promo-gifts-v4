@@ -20,23 +20,35 @@ interface ConfigurationPanelV6Props {
   quantity: number;
   /** True quando esta técnica já foi confirmada e está no orçamento. */
   isConfirmed?: boolean;
+  initialWidth?: number;
+  initialHeight?: number;
+  initialColors?: number;
   onPriceCalculated: (techniqueId: string, price: CustomizationPriceResponseV6 | null, dimensions?: { width?: number; height?: number }) => void;
 }
 
-export function ConfigurationPanelV6({ technique, quantity, isConfirmed = false, onPriceCalculated }: ConfigurationPanelV6Props) {
+export function ConfigurationPanelV6({ 
+  technique, 
+  quantity, 
+  isConfirmed = false, 
+  initialWidth,
+  initialHeight,
+  initialColors,
+  onPriceCalculated 
+}: ConfigurationPanelV6Props) {
   // Dimensions
   const [largura, setLargura] = useState<string>(
-    technique.usa_dimensao ? String(technique.efetiva_largura_max) : ""
+    initialWidth ? String(initialWidth) : (technique.usa_dimensao ? String(technique.efetiva_largura_max) : "")
   );
   const [altura, setAltura] = useState<string>(
-    technique.usa_dimensao ? String(technique.efetiva_altura_max) : ""
+    initialHeight ? String(initialHeight) : (technique.usa_dimensao ? String(technique.efetiva_altura_max) : "")
   );
 
   // Colors
-  const [numCores, setNumCores] = useState(1);
+  const [numCores, setNumCores] = useState(initialColors || 1);
 
   // Edição local: quando confirmado, bloqueia inputs até clicar em "Editar"
   const [editing, setEditing] = useState(false);
+  const [showConfirmError, setShowConfirmError] = useState(false);
   const isLocked = isConfirmed && !editing;
 
   const larguraNum = parseFloat(largura) || 0;
@@ -67,15 +79,29 @@ export function ConfigurationPanelV6({ technique, quantity, isConfirmed = false,
   const canConfirm = !!price && !loading && !error && !dimensionError;
 
   const handleConfirm = () => {
-    if (!canConfirm || !price) return;
+    if (!canConfirm) {
+      setShowConfirmError(true);
+      return;
+    }
+    if (!price) return;
+    
+    setShowConfirmError(false);
     const dims = technique.usa_dimensao ? { width: larguraNum, height: alturaNum } : undefined;
     onPriceCalculatedRef.current(technique.technique_id, price, dims);
     setEditing(false);
   };
 
+  const handleEdit = () => {
+    if (window.confirm("Deseja editar esta gravação? Isso permitirá alterar as dimensões e cores já confirmadas.")) {
+      setEditing(true);
+    }
+  };
+
   const handleRemove = () => {
-    onPriceCalculatedRef.current(technique.technique_id, null);
-    setEditing(false);
+    if (window.confirm("Tem certeza que deseja remover esta gravação do orçamento?")) {
+      onPriceCalculatedRef.current(technique.technique_id, null);
+      setEditing(false);
+    }
   };
 
   return (
@@ -266,65 +292,74 @@ export function ConfigurationPanelV6({ technique, quantity, isConfirmed = false,
       )}
 
       {/* AÇÕES — Confirmar / Editar / Remover */}
-      <div className="flex items-center gap-2 pt-1">
-        {!isConfirmed && (
-          <Button
-            type="button"
-            size="sm"
-            className="flex-1"
-            disabled={!canConfirm}
-            onClick={handleConfirm}
-          >
-            <Check className="h-4 w-4 mr-1.5" />
-            Confirmar e adicionar ao orçamento
-          </Button>
+      <div className="flex flex-col gap-2 pt-1">
+        {showConfirmError && (
+          <div className="flex items-center gap-1.5 p-2 rounded bg-destructive/10 border border-destructive/20 text-[11px] text-destructive animate-in fade-in slide-in-from-top-1">
+            <AlertCircle className="h-3.5 w-3.5" />
+            <span>
+              {dimensionError || (error ? "Erro ao calcular preço" : "Aguarde o cálculo do preço")}
+            </span>
+          </div>
         )}
-        {isConfirmed && !editing && (
-          <>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="flex-1"
-              onClick={() => setEditing(true)}
-            >
-              <Pencil className="h-4 w-4 mr-1.5" />
-              Editar
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={handleRemove}
-            >
-              <Trash2 className="h-4 w-4 mr-1.5" />
-              Remover
-            </Button>
-          </>
-        )}
-        {isConfirmed && editing && (
-          <>
+
+        <div className="flex items-center gap-2">
+          {!isConfirmed && (
             <Button
               type="button"
               size="sm"
               className="flex-1"
-              disabled={!canConfirm}
               onClick={handleConfirm}
             >
               <Check className="h-4 w-4 mr-1.5" />
-              Atualizar gravação
+              Confirmar e adicionar ao orçamento
             </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={() => setEditing(false)}
-            >
-              Cancelar
-            </Button>
-          </>
-        )}
+          )}
+          {isConfirmed && !editing && (
+            <>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="flex-1"
+                onClick={handleEdit}
+              >
+                <Pencil className="h-4 w-4 mr-1.5" />
+                Editar
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={handleRemove}
+              >
+                <Trash2 className="h-4 w-4 mr-1.5" />
+                Remover
+              </Button>
+            </>
+          )}
+          {isConfirmed && editing && (
+            <>
+              <Button
+                type="button"
+                size="sm"
+                className="flex-1"
+                onClick={handleConfirm}
+              >
+                <Check className="h-4 w-4 mr-1.5" />
+                Atualizar gravação
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => setEditing(false)}
+              >
+                Cancelar
+              </Button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
