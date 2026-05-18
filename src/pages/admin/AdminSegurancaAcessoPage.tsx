@@ -214,461 +214,463 @@ export default function AdminSegurancaAcessoPage() {
   };
 
   return (
-      <PageSEO
-        title="Segurança e Acesso"
-        description="Painel admin para gestão de bot detection, rate limits e allowlist/blocklist de IPs."
-        path="/admin/seguranca-acesso"
-        noIndex
-      />
-      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-4 px-3 py-3 pb-24 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="font-display text-2xl font-bold tracking-tight">Segurança e Acesso</h1>
-            <p className="text-muted-foreground">
-              Bot detection, rate limits e controle manual de IPs (atualiza a cada 30s)
-            </p>
+      <>
+        <PageSEO
+          title="Segurança e Acesso"
+          description="Painel admin para gestão de bot detection, rate limits e allowlist/blocklist de IPs."
+          path="/admin/seguranca-acesso"
+          noIndex
+        />
+        <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-4 px-3 py-3 pb-24 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="font-display text-2xl font-bold tracking-tight">Segurança e Acesso</h1>
+              <p className="text-muted-foreground">
+                Bot detection, rate limits e controle manual de IPs (atualiza a cada 30s)
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <ForceGlobalLogoutDialog />
+              <Button variant="outline" size="sm" onClick={fetchAll} disabled={isLoading}>
+                <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                Atualizar
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <ForceGlobalLogoutDialog />
-            <Button variant="outline" size="sm" onClick={fetchAll} disabled={isLoading}>
-              <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-              Atualizar
-            </Button>
+
+          <HardeningHealthCard />
+
+          <div className="grid gap-3 md:grid-cols-4">
+            <StatCard
+              label="Detecções (200 últimas)"
+              value={stats.total}
+              icon={<Activity className="h-4 w-4 text-muted-foreground" />}
+            />
+            <StatCard
+              label="Bloqueadas"
+              value={stats.blocked}
+              icon={<Ban className="h-4 w-4 text-destructive" />}
+              valueClass="text-destructive"
+            />
+            <StatCard
+              label="IPs únicos"
+              value={stats.uniqueIps}
+              icon={<Shield className="h-4 w-4 text-muted-foreground" />}
+            />
+            <StatCard
+              label="Bloqueios ativos"
+              value={stats.activeBlocks}
+              icon={<Clock className="h-4 w-4 text-warning" />}
+              valueClass="text-warning"
+            />
           </div>
-        </div>
 
-        <HardeningHealthCard />
+          <Tabs defaultValue="anomalias" className="w-full">
+            <TabsList className="h-auto flex-wrap">
+              <TabsTrigger value="anomalias">
+                <Siren className="mr-1.5 h-3.5 w-3.5" /> Anomalias 24h
+              </TabsTrigger>
+              <TabsTrigger value="audit">
+                <History className="mr-1.5 h-3.5 w-3.5" /> Auditoria
+              </TabsTrigger>
+              <TabsTrigger value="tokens">
+                <KeySquare className="mr-1.5 h-3.5 w-3.5" /> Tokens suspeitos
+              </TabsTrigger>
+              <TabsTrigger value="active-ips">
+                <Network className="mr-1.5 h-3.5 w-3.5" /> IPs ativos
+              </TabsTrigger>
+              <TabsTrigger value="auto-defense">
+                <TrendingUp className="mr-1.5 h-3.5 w-3.5" /> Histórico & Auto-defesa
+              </TabsTrigger>
+              <TabsTrigger value="analytics">
+                <BarChart3 className="mr-1.5 h-3.5 w-3.5" /> Analytics
+              </TabsTrigger>
+              <TabsTrigger value="bots">Bot Detection</TabsTrigger>
+              <TabsTrigger value="rate">Rate Limits</TabsTrigger>
+              <TabsTrigger value="ips">Allow/Block IPs ({ipList.length})</TabsTrigger>
+            </TabsList>
 
-        <div className="grid gap-3 md:grid-cols-4">
-          <StatCard
-            label="Detecções (200 últimas)"
-            value={stats.total}
-            icon={<Activity className="h-4 w-4 text-muted-foreground" />}
-          />
-          <StatCard
-            label="Bloqueadas"
-            value={stats.blocked}
-            icon={<Ban className="h-4 w-4 text-destructive" />}
-            valueClass="text-destructive"
-          />
-          <StatCard
-            label="IPs únicos"
-            value={stats.uniqueIps}
-            icon={<Shield className="h-4 w-4 text-muted-foreground" />}
-          />
-          <StatCard
-            label="Bloqueios ativos"
-            value={stats.activeBlocks}
-            icon={<Clock className="h-4 w-4 text-warning" />}
-            valueClass="text-warning"
-          />
-        </div>
+            <TabsContent value="anomalias" className="space-y-3">
+              <AnomalyCards />
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Siren className="h-5 w-5" /> Como interpretar
+                  </CardTitle>
+                  <CardDescription>
+                    Indicadores em vermelho exigem investigação imediata
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-1.5 text-sm text-muted-foreground">
+                  <p>
+                    • <strong>Falhas de login &gt; 50/24h</strong>: possível brute-force — verifique
+                    aba "Bot Detection" e use blocklist.
+                  </p>
+                  <p>
+                    • <strong>Bots bloqueados &gt; 100</strong>: scraping ativo — confirme padrão de
+                    IPs e bloqueie em massa.
+                  </p>
+                  <p>
+                    • <strong>Falhas de token &gt; 20</strong>: tentativa de adivinhação — token é
+                    auto-expirado após 5 falhas/hora.
+                  </p>
+                  <p>
+                    • <strong>IPs distintos em tokens &gt; 30</strong>: possível link vazado — revogue
+                    tokens do recurso afetado.
+                  </p>
+                  <p className="border-t border-border/50 pt-2">
+                    Em caso de comprometimento confirmado, use <strong>Forçar logout global</strong>{' '}
+                    no topo da página.
+                  </p>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-        <Tabs defaultValue="anomalias" className="w-full">
-          <TabsList className="h-auto flex-wrap">
-            <TabsTrigger value="anomalias">
-              <Siren className="mr-1.5 h-3.5 w-3.5" /> Anomalias 24h
-            </TabsTrigger>
-            <TabsTrigger value="audit">
-              <History className="mr-1.5 h-3.5 w-3.5" /> Auditoria
-            </TabsTrigger>
-            <TabsTrigger value="tokens">
-              <KeySquare className="mr-1.5 h-3.5 w-3.5" /> Tokens suspeitos
-            </TabsTrigger>
-            <TabsTrigger value="active-ips">
-              <Network className="mr-1.5 h-3.5 w-3.5" /> IPs ativos
-            </TabsTrigger>
-            <TabsTrigger value="auto-defense">
-              <TrendingUp className="mr-1.5 h-3.5 w-3.5" /> Histórico & Auto-defesa
-            </TabsTrigger>
-            <TabsTrigger value="analytics">
-              <BarChart3 className="mr-1.5 h-3.5 w-3.5" /> Analytics
-            </TabsTrigger>
-            <TabsTrigger value="bots">Bot Detection</TabsTrigger>
-            <TabsTrigger value="rate">Rate Limits</TabsTrigger>
-            <TabsTrigger value="ips">Allow/Block IPs ({ipList.length})</TabsTrigger>
-          </TabsList>
+            <TabsContent value="audit">
+              <RecentAuditTable />
+            </TabsContent>
 
-          <TabsContent value="anomalias" className="space-y-3">
-            <AnomalyCards />
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Siren className="h-5 w-5" /> Como interpretar
-                </CardTitle>
-                <CardDescription>
-                  Indicadores em vermelho exigem investigação imediata
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-1.5 text-sm text-muted-foreground">
-                <p>
-                  • <strong>Falhas de login &gt; 50/24h</strong>: possível brute-force — verifique
-                  aba "Bot Detection" e use blocklist.
-                </p>
-                <p>
-                  • <strong>Bots bloqueados &gt; 100</strong>: scraping ativo — confirme padrão de
-                  IPs e bloqueie em massa.
-                </p>
-                <p>
-                  • <strong>Falhas de token &gt; 20</strong>: tentativa de adivinhação — token é
-                  auto-expirado após 5 falhas/hora.
-                </p>
-                <p>
-                  • <strong>IPs distintos em tokens &gt; 30</strong>: possível link vazado — revogue
-                  tokens do recurso afetado.
-                </p>
-                <p className="border-t border-border/50 pt-2">
-                  Em caso de comprometimento confirmado, use <strong>Forçar logout global</strong>{' '}
-                  no topo da página.
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
+            <TabsContent value="tokens"></TabsContent>
 
-          <TabsContent value="audit">
-            <RecentAuditTable />
-          </TabsContent>
+            <TabsContent value="active-ips">
+              <ActiveIpsList />
+            </TabsContent>
 
-          <TabsContent value="tokens"></TabsContent>
+            <TabsContent value="auto-defense">
+              <AutoDefenseTab />
+            </TabsContent>
 
-          <TabsContent value="active-ips">
-            <ActiveIpsList />
-          </TabsContent>
+            <TabsContent value="analytics">
+              <SecurityAnalytics botLogs={botLogs} onBlockIp={(ip) => quickAddIp(ip, 'block')} />
+            </TabsContent>
 
-          <TabsContent value="auto-defense">
-            <AutoDefenseTab />
-          </TabsContent>
-
-          <TabsContent value="analytics">
-            <SecurityAnalytics botLogs={botLogs} onBlockIp={(ip) => quickAddIp(ip, 'block')} />
-          </TabsContent>
-
-          <TabsContent value="bots">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5" /> Detecções de bot e scraping
-                </CardTitle>
-                <CardDescription>
-                  Tentativas suspeitas registradas pelo sistema anti-scraping
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>IP</TableHead>
-                        <TableHead>Endpoint</TableHead>
-                        <TableHead>Razão</TableHead>
-                        <TableHead>User-Agent</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Quando</TableHead>
-                        <TableHead>Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {botLogs.length === 0 ? (
+            <TabsContent value="bots">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5" /> Detecções de bot e scraping
+                  </CardTitle>
+                  <CardDescription>
+                    Tentativas suspeitas registradas pelo sistema anti-scraping
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
                         <TableRow>
-                          <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
-                            Nenhuma detecção registrada
-                          </TableCell>
+                          <TableHead>IP</TableHead>
+                          <TableHead>Endpoint</TableHead>
+                          <TableHead>Razão</TableHead>
+                          <TableHead>User-Agent</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Quando</TableHead>
+                          <TableHead>Ações</TableHead>
                         </TableRow>
-                      ) : (
-                        botLogs.map((log) => (
-                          <TableRow key={log.id}>
-                            <TableCell className="font-mono text-xs">{log.ip_address}</TableCell>
-                            <TableCell className="text-xs">{log.endpoint}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="text-xs">
-                                {log.detection_reason}
-                              </Badge>
-                            </TableCell>
-                            <TableCell
-                              className="max-w-[200px] truncate text-xs text-muted-foreground"
-                              title={log.user_agent || ''}
-                            >
-                              {log.user_agent || '—'}
-                            </TableCell>
-                            <TableCell>
-                              {log.blocked ? (
-                                <Badge variant="destructive" className="text-xs">
-                                  Bloqueado
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline" className="text-xs">
-                                  Permitido
-                                </Badge>
-                              )}
-                            </TableCell>
-                            <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                              {format(new Date(log.created_at), 'dd/MM HH:mm:ss', { locale: ptBR })}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex gap-1">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-7 px-2 text-xs"
-                                  onClick={() => quickAddIp(log.ip_address, 'block')}
-                                >
-                                  Bloquear
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-7 px-2 text-xs"
-                                  onClick={() => quickAddIp(log.ip_address, 'allow')}
-                                >
-                                  Permitir
-                                </Button>
-                              </div>
+                      </TableHeader>
+                      <TableBody>
+                        {botLogs.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
+                              Nenhuma detecção registrada
                             </TableCell>
                           </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="rate">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" /> Rate limits ativos
-                </CardTitle>
-                <CardDescription>Janelas de contagem por IP/endpoint</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Identificador</TableHead>
-                        <TableHead>Endpoint</TableHead>
-                        <TableHead>Requests</TableHead>
-                        <TableHead>Bloqueado até</TableHead>
-                        <TableHead>Última atividade</TableHead>
-                        <TableHead>Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {rateLimits.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-                            Nenhum rate limit ativo
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        rateLimits.map((rl) => {
-                          const blockedActive =
-                            rl.blocked_until && new Date(rl.blocked_until) > new Date();
-                          return (
-                            <TableRow key={rl.id}>
-                              <TableCell className="font-mono text-xs">{rl.identifier}</TableCell>
-                              <TableCell className="text-xs">{rl.endpoint}</TableCell>
+                        ) : (
+                          botLogs.map((log) => (
+                            <TableRow key={log.id}>
+                              <TableCell className="font-mono text-xs">{log.ip_address}</TableCell>
+                              <TableCell className="text-xs">{log.endpoint}</TableCell>
                               <TableCell>
                                 <Badge variant="outline" className="text-xs">
-                                  {rl.request_count}
+                                  {log.detection_reason}
                                 </Badge>
                               </TableCell>
-                              <TableCell className="text-xs">
-                                {blockedActive ? (
+                              <TableCell
+                                className="max-w-[200px] truncate text-xs text-muted-foreground"
+                                title={log.user_agent || ''}
+                              >
+                                {log.user_agent || '—'}
+                              </TableCell>
+                              <TableCell>
+                                {log.blocked ? (
                                   <Badge variant="destructive" className="text-xs">
-                                    {rl.blocked_until &&
-                                      format(new Date(rl.blocked_until), 'dd/MM HH:mm', {
-                                        locale: ptBR,
-                                      })}
+                                    Bloqueado
                                   </Badge>
                                 ) : (
-                                  <span className="text-muted-foreground">—</span>
+                                  <Badge variant="outline" className="text-xs">
+                                    Permitido
+                                  </Badge>
                                 )}
                               </TableCell>
                               <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                                {format(new Date(rl.updated_at), 'dd/MM HH:mm:ss', {
+                                {format(new Date(log.created_at), 'dd/MM HH:mm:ss', { locale: ptBR })}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 px-2 text-xs"
+                                    onClick={() => quickAddIp(log.ip_address, 'block')}
+                                  >
+                                    Bloquear
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 px-2 text-xs"
+                                    onClick={() => quickAddIp(log.ip_address, 'allow')}
+                                  >
+                                    Permitir
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="rate">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-5 w-5" /> Rate limits ativos
+                  </CardTitle>
+                  <CardDescription>Janelas de contagem por IP/endpoint</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Identificador</TableHead>
+                          <TableHead>Endpoint</TableHead>
+                          <TableHead>Requests</TableHead>
+                          <TableHead>Bloqueado até</TableHead>
+                          <TableHead>Última atividade</TableHead>
+                          <TableHead>Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {rateLimits.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                              Nenhum rate limit ativo
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          rateLimits.map((rl) => {
+                            const blockedActive =
+                              rl.blocked_until && new Date(rl.blocked_until) > new Date();
+                            return (
+                              <TableRow key={rl.id}>
+                                <TableCell className="font-mono text-xs">{rl.identifier}</TableCell>
+                                <TableCell className="text-xs">{rl.endpoint}</TableCell>
+                                <TableCell>
+                                  <Badge variant="outline" className="text-xs">
+                                    {rl.request_count}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-xs">
+                                  {blockedActive ? (
+                                    <Badge variant="destructive" className="text-xs">
+                                      {rl.blocked_until &&
+                                        format(new Date(rl.blocked_until), 'dd/MM HH:mm', {
+                                          locale: ptBR,
+                                        })}
+                                    </Badge>
+                                  ) : (
+                                    <span className="text-muted-foreground">—</span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                                  {format(new Date(rl.updated_at), 'dd/MM HH:mm:ss', {
+                                    locale: ptBR,
+                                  })}
+                                </TableCell>
+                                <TableCell>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 px-2 text-xs"
+                                    onClick={() => quickAddIp(rl.identifier, 'block')}
+                                  >
+                                    Bloquear permanente
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="ips">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Shield className="h-5 w-5" /> Allowlist e Blocklist manual
+                    </CardTitle>
+                    <CardDescription>
+                      IPs sempre permitidos ou sempre bloqueados (sobrescreve detecção automática)
+                    </CardDescription>
+                  </div>
+                  <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="sm">
+                        <Plus className="mr-2 h-4 w-4" /> Adicionar IP
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Adicionar IP à lista</DialogTitle>
+                        <DialogDescription>
+                          Allowlist ignora todas as checagens. Blocklist rejeita imediatamente com
+                          403.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-3">
+                        <div>
+                          <Label htmlFor="ip">IP (IPv4, IPv6 ou CIDR)</Label>
+                          <Input
+                            id="ip"
+                            value={form.ip_address}
+                            onChange={(e) => setForm({ ...form, ip_address: e.target.value })}
+                            placeholder="192.168.1.1"
+                            maxLength={45}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="type">Tipo</Label>
+                          <Select
+                            value={form.list_type}
+                            onValueChange={(v) =>
+                              setForm({ ...form, list_type: v as 'allow' | 'block' })
+                            }
+                          >
+                            <SelectTrigger id="type">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="block">🚫 Blocklist (bloquear)</SelectItem>
+                              <SelectItem value="allow">✅ Allowlist (sempre permitir)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="reason">Motivo (opcional)</Label>
+                          <Textarea
+                            id="reason"
+                            value={form.reason}
+                            onChange={(e) => setForm({ ...form, reason: e.target.value })}
+                            maxLength={500}
+                            rows={2}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="exp">Expira em (opcional)</Label>
+                          <Input
+                            id="exp"
+                            type="datetime-local"
+                            value={form.expires_at}
+                            onChange={(e) => setForm({ ...form, expires_at: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                          Cancelar
+                        </Button>
+                        <Button onClick={submitIpEntry}>Salvar</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>IP</TableHead>
+                          <TableHead>Tipo</TableHead>
+                          <TableHead>Motivo</TableHead>
+                          <TableHead>Expira</TableHead>
+                          <TableHead>Criado</TableHead>
+                          <TableHead>Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {ipList.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                              Nenhum IP cadastrado
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          ipList.map((entry) => (
+                            <TableRow key={entry.id}>
+                              <TableCell className="font-mono text-xs">{entry.ip_address}</TableCell>
+                              <TableCell>
+                                {entry.list_type === 'allow' ? (
+                                  <Badge variant="outline" className="text-xs">
+                                    <CheckCircle2 className="mr-1 h-3 w-3" /> Allow
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="destructive" className="text-xs">
+                                    <Ban className="mr-1 h-3 w-3" /> Block
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              <TableCell
+                                className="max-w-[300px] truncate text-xs text-muted-foreground"
+                                title={entry.reason || ''}
+                              >
+                                {entry.reason || '—'}
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground">
+                                {entry.expires_at
+                                  ? format(new Date(entry.expires_at), 'dd/MM/yy HH:mm', {
+                                      locale: ptBR,
+                                    })
+                                  : 'Permanente'}
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground">
+                                {format(new Date(entry.created_at), 'dd/MM/yy HH:mm', {
                                   locale: ptBR,
                                 })}
                               </TableCell>
                               <TableCell>
                                 <Button
                                   size="sm"
-                                  variant="outline"
-                                  className="h-7 px-2 text-xs"
-                                  onClick={() => quickAddIp(rl.identifier, 'block')}
+                                  variant="ghost"
+                                  className="h-7 px-2"
+                                  onClick={() => removeIpEntry(entry.id)}
                                 >
-                                  Bloquear permanente
+                                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
                                 </Button>
                               </TableCell>
                             </TableRow>
-                          );
-                        })
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="ips">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Shield className="h-5 w-5" /> Allowlist e Blocklist manual
-                  </CardTitle>
-                  <CardDescription>
-                    IPs sempre permitidos ou sempre bloqueados (sobrescreve detecção automática)
-                  </CardDescription>
-                </div>
-                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button size="sm">
-                      <Plus className="mr-2 h-4 w-4" /> Adicionar IP
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Adicionar IP à lista</DialogTitle>
-                      <DialogDescription>
-                        Allowlist ignora todas as checagens. Blocklist rejeita imediatamente com
-                        403.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-3">
-                      <div>
-                        <Label htmlFor="ip">IP (IPv4, IPv6 ou CIDR)</Label>
-                        <Input
-                          id="ip"
-                          value={form.ip_address}
-                          onChange={(e) => setForm({ ...form, ip_address: e.target.value })}
-                          placeholder="192.168.1.1"
-                          maxLength={45}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="type">Tipo</Label>
-                        <Select
-                          value={form.list_type}
-                          onValueChange={(v) =>
-                            setForm({ ...form, list_type: v as 'allow' | 'block' })
-                          }
-                        >
-                          <SelectTrigger id="type">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="block">🚫 Blocklist (bloquear)</SelectItem>
-                            <SelectItem value="allow">✅ Allowlist (sempre permitir)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="reason">Motivo (opcional)</Label>
-                        <Textarea
-                          id="reason"
-                          value={form.reason}
-                          onChange={(e) => setForm({ ...form, reason: e.target.value })}
-                          maxLength={500}
-                          rows={2}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="exp">Expira em (opcional)</Label>
-                        <Input
-                          id="exp"
-                          type="datetime-local"
-                          value={form.expires_at}
-                          onChange={(e) => setForm({ ...form, expires_at: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                        Cancelar
-                      </Button>
-                      <Button onClick={submitIpEntry}>Salvar</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>IP</TableHead>
-                        <TableHead>Tipo</TableHead>
-                        <TableHead>Motivo</TableHead>
-                        <TableHead>Expira</TableHead>
-                        <TableHead>Criado</TableHead>
-                        <TableHead>Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {ipList.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-                            Nenhum IP cadastrado
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        ipList.map((entry) => (
-                          <TableRow key={entry.id}>
-                            <TableCell className="font-mono text-xs">{entry.ip_address}</TableCell>
-                            <TableCell>
-                              {entry.list_type === 'allow' ? (
-                                <Badge variant="outline" className="text-xs">
-                                  <CheckCircle2 className="mr-1 h-3 w-3" /> Allow
-                                </Badge>
-                              ) : (
-                                <Badge variant="destructive" className="text-xs">
-                                  <Ban className="mr-1 h-3 w-3" /> Block
-                                </Badge>
-                              )}
-                            </TableCell>
-                            <TableCell
-                              className="max-w-[300px] truncate text-xs text-muted-foreground"
-                              title={entry.reason || ''}
-                            >
-                              {entry.reason || '—'}
-                            </TableCell>
-                            <TableCell className="text-xs text-muted-foreground">
-                              {entry.expires_at
-                                ? format(new Date(entry.expires_at), 'dd/MM/yy HH:mm', {
-                                    locale: ptBR,
-                                  })
-                                : 'Permanente'}
-                            </TableCell>
-                            <TableCell className="text-xs text-muted-foreground">
-                              {format(new Date(entry.created_at), 'dd/MM/yy HH:mm', {
-                                locale: ptBR,
-                              })}
-                            </TableCell>
-                            <TableCell>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-7 px-2"
-                                onClick={() => removeIpEntry(entry.id)}
-                              >
-                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </>
   );
 }
 

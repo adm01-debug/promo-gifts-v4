@@ -187,221 +187,223 @@ export default function SellerDiscountLimitsAdminPage() {
   }, [impact]);
 
   return (
-      <PageSEO
-        title="Limites de Desconto — Admin"
-        description="Configure os limites máximos de desconto por vendedor e visualize o impacto nas solicitações de aprovação."
-        path="/admin/limites-desconto"
-        noIndex
-      />
-      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-4 pb-24 md:pb-6 animate-fade-in">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-xl bg-primary/10">
-              <Percent className="h-8 w-8 text-primary" />
-            </div>
-            <div>
-              <h1 className="font-display text-3xl font-bold tracking-tight">Limites de desconto</h1>
-              <p className="text-muted-foreground">
-                Defina o teto de desconto por vendedor — solicitações acima do limite exigem aprovação.
-              </p>
-            </div>
-          </div>
-          <Button asChild variant="outline" size="sm">
-            <Link to="/admin/usuarios"><ArrowLeft className="h-4 w-4 mr-1" /> Voltar</Link>
-          </Button>
-        </div>
-
-        {/* Regras gerais */}
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertTitle>Como o limite afeta as requisições</AlertTitle>
-          <AlertDescription className="text-sm space-y-1 mt-2">
-            <p>• <b>Desconto ≤ limite</b>: aplicado direto no orçamento, sem aprovação.</p>
-            <p>• <b>Desconto &gt; limite</b>: cria uma <code>discount_approval_request</code> pendente que precisa ser aprovada por supervisor/admin.</p>
-            <p>• <b>Sem limite definido</b>: o vendedor herda o padrão global de <b>{DEFAULT_LIMIT}%</b>.</p>
-            <p>• Alterações de limite valem apenas para <b>novas</b> solicitações; pendentes existentes mantêm o teto registrado no momento da criação.</p>
-          </AlertDescription>
-        </Alert>
-
-        {/* KPIs */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <KpiCard icon={<Clock className="h-4 w-4" />} label="Pendentes" value={totals.pending} tone="warning" />
-          <KpiCard icon={<CheckCircle2 className="h-4 w-4" />} label="Aprovadas" value={totals.approved} tone="success" />
-          <KpiCard icon={<XCircle className="h-4 w-4" />} label="Recusadas" value={totals.rejected} tone="danger" />
-          <KpiCard icon={<TrendingUp className="h-4 w-4" />} label="Total histórico" value={totals.total} />
-        </div>
-
-        <div className="grid lg:grid-cols-3 gap-4">
-          {/* Tabela de vendedores */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-base">Limites por vendedor</CardTitle>
-              <CardDescription>
-                Edite o percentual e adicione observações para justificar exceções. Métricas mostram o impacto histórico.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {loadingSellers ? (
-                <div className="space-y-2">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-20" />)}</div>
-              ) : (sellers?.length ?? 0) === 0 ? (
-                <p className="text-sm text-muted-foreground">Nenhum vendedor ativo encontrado.</p>
-              ) : (
-                <div className="space-y-2">
-                  {sellers!.map((row) => {
-                    const edit = edits[row.user_id] ?? {};
-                    const currentPct = edit.percent ?? row.max_discount_percent;
-                    const currentNotes = edit.notes ?? row.notes ?? "";
-                    const dirty =
-                      currentPct !== row.max_discount_percent ||
-                      currentNotes !== (row.notes ?? "");
-                    const imp = impact?.get(row.user_id);
-                    const stress =
-                      imp && imp.max_requested > row.max_discount_percent;
-
-                    return (
-                      <div
-                        key={row.user_id}
-                        className="rounded-lg border p-3 space-y-3 hover:bg-muted/30 transition-colors"
-                      >
-                        <div className="flex flex-wrap items-start gap-3">
-                          <div className="flex-1 min-w-[180px]">
-                            <p className="text-sm font-medium truncate">
-                              {row.full_name || "Sem nome"}
-                              {!row.hasCustomLimit && (
-                                <Badge variant="outline" className="ml-2 text-[10px]">padrão</Badge>
-                              )}
-                            </p>
-                            <p className="text-xs text-muted-foreground truncate">{row.email}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              type="number"
-                              min={0}
-                              max={100}
-                              step={0.5}
-                              value={currentPct}
-                              onChange={(e) =>
-                                setEdits((p) => ({
-                                  ...p,
-                                  [row.user_id]: { ...p[row.user_id], percent: +e.target.value },
-                                }))
-                              }
-                              className="w-24"
-                              aria-label="Limite máximo de desconto em porcentagem"
-                            />
-                            <span className="text-xs text-muted-foreground">%</span>
-                            <Button
-                              size="sm"
-                              disabled={!dirty || save.isPending}
-                              onClick={() =>
-                                save.mutate({
-                                  userId: row.user_id,
-                                  percent: currentPct,
-                                  notes: currentNotes,
-                                })
-                              }
-                            >
-                              <Save className="h-3.5 w-3.5 mr-1" /> Salvar
-                            </Button>
-                          </div>
-                        </div>
-
-                        <Textarea
-                          placeholder="Observações internas (motivo da exceção, validade, etc.)"
-                          value={currentNotes}
-                          onChange={(e) =>
-                            setEdits((p) => ({
-                              ...p,
-                              [row.user_id]: { ...p[row.user_id], notes: e.target.value },
-                            }))
-                          }
-                          rows={2}
-                          className="text-xs"
-                        />
-
-                        {/* Impacto */}
-                        <div className="flex flex-wrap items-center gap-2 text-xs">
-                          <ImpactPill label="pendentes" value={imp?.pending ?? 0} tone="warning" />
-                          <ImpactPill label="aprovadas" value={imp?.approved ?? 0} tone="success" />
-                          <ImpactPill label="recusadas" value={imp?.rejected ?? 0} tone="danger" />
-                          {imp && imp.avg_requested > 0 && (
-                            <span className="text-muted-foreground">
-                              média solicitada: <b>{imp.avg_requested}%</b>
-                            </span>
-                          )}
-                          {imp && imp.max_requested > 0 && (
-                            <span className="text-muted-foreground">
-                              pico: <b>{imp.max_requested}%</b>
-                            </span>
-                          )}
-                          {stress && (
-                            <Badge variant="destructive" className="gap-1">
-                              <ShieldAlert className="h-3 w-3" />
-                              vendedor solicita acima do limite
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Requisições que excederam */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <ShieldAlert className="h-4 w-4 text-destructive" />
-                Requisições acima do limite
-              </CardTitle>
-              <CardDescription>Últimas 20 solicitações criadas — destaque para as que estouraram.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {!exceeded ? (
-                <Skeleton className="h-32" />
-              ) : exceeded.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Nenhuma solicitação recente excedeu o limite. ✅
+      <>
+        <PageSEO
+          title="Limites de Desconto — Admin"
+          description="Configure os limites máximos de desconto por vendedor e visualize o impacto nas solicitações de aprovação."
+          path="/admin/limites-desconto"
+          noIndex
+        />
+        <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-4 pb-24 md:pb-6 animate-fade-in">
+          {/* Header */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-primary/10">
+                <Percent className="h-8 w-8 text-primary" />
+              </div>
+              <div>
+                <h1 className="font-display text-3xl font-bold tracking-tight">Limites de desconto</h1>
+                <p className="text-muted-foreground">
+                  Defina o teto de desconto por vendedor — solicitações acima do limite exigem aprovação.
                 </p>
-              ) : (
-                <ul className="divide-y">
-                  {exceeded.map((r) => (
-                    <li key={r.id} className="py-2 text-xs space-y-0.5">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium truncate">
-                          {sellerNameById.get(r.seller_id) ?? r.seller_id.slice(0, 8)}
-                        </span>
-                        <Badge
-                          variant={
-                            r.status === "approved" ? "default" :
-                            r.status === "rejected" ? "destructive" : "outline"
-                          }
-                          className="text-[10px]"
+              </div>
+            </div>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/admin/usuarios"><ArrowLeft className="h-4 w-4 mr-1" /> Voltar</Link>
+            </Button>
+          </div>
+
+          {/* Regras gerais */}
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertTitle>Como o limite afeta as requisições</AlertTitle>
+            <AlertDescription className="text-sm space-y-1 mt-2">
+              <p>• <b>Desconto ≤ limite</b>: aplicado direto no orçamento, sem aprovação.</p>
+              <p>• <b>Desconto &gt; limite</b>: cria uma <code>discount_approval_request</code> pendente que precisa ser aprovada por supervisor/admin.</p>
+              <p>• <b>Sem limite definido</b>: o vendedor herda o padrão global de <b>{DEFAULT_LIMIT}%</b>.</p>
+              <p>• Alterações de limite valem apenas para <b>novas</b> solicitações; pendentes existentes mantêm o teto registrado no momento da criação.</p>
+            </AlertDescription>
+          </Alert>
+
+          {/* KPIs */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <KpiCard icon={<Clock className="h-4 w-4" />} label="Pendentes" value={totals.pending} tone="warning" />
+            <KpiCard icon={<CheckCircle2 className="h-4 w-4" />} label="Aprovadas" value={totals.approved} tone="success" />
+            <KpiCard icon={<XCircle className="h-4 w-4" />} label="Recusadas" value={totals.rejected} tone="danger" />
+            <KpiCard icon={<TrendingUp className="h-4 w-4" />} label="Total histórico" value={totals.total} />
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-4">
+            {/* Tabela de vendedores */}
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-base">Limites por vendedor</CardTitle>
+                <CardDescription>
+                  Edite o percentual e adicione observações para justificar exceções. Métricas mostram o impacto histórico.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loadingSellers ? (
+                  <div className="space-y-2">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-20" />)}</div>
+                ) : (sellers?.length ?? 0) === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhum vendedor ativo encontrado.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {sellers!.map((row) => {
+                      const edit = edits[row.user_id] ?? {};
+                      const currentPct = edit.percent ?? row.max_discount_percent;
+                      const currentNotes = edit.notes ?? row.notes ?? "";
+                      const dirty =
+                        currentPct !== row.max_discount_percent ||
+                        currentNotes !== (row.notes ?? "");
+                      const imp = impact?.get(row.user_id);
+                      const stress =
+                        imp && imp.max_requested > row.max_discount_percent;
+
+                      return (
+                        <div
+                          key={row.user_id}
+                          className="rounded-lg border p-3 space-y-3 hover:bg-muted/30 transition-colors"
                         >
-                          {r.status}
-                        </Badge>
-                      </div>
-                      <div className="text-muted-foreground">
-                        solicitou <b className="text-destructive">{r.requested_discount_percent}%</b>
-                        {" "}/ teto <b>{r.max_allowed_percent}%</b>
-                      </div>
-                      <div className="text-muted-foreground">
-                        {new Date(r.created_at).toLocaleString()} ·{" "}
-                        <Link to={`/orcamentos/${r.quote_id}`} className="underline">
-                          ver orçamento
-                        </Link>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
+                          <div className="flex flex-wrap items-start gap-3">
+                            <div className="flex-1 min-w-[180px]">
+                              <p className="text-sm font-medium truncate">
+                                {row.full_name || "Sem nome"}
+                                {!row.hasCustomLimit && (
+                                  <Badge variant="outline" className="ml-2 text-[10px]">padrão</Badge>
+                                )}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">{row.email}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number"
+                                min={0}
+                                max={100}
+                                step={0.5}
+                                value={currentPct}
+                                onChange={(e) =>
+                                  setEdits((p) => ({
+                                    ...p,
+                                    [row.user_id]: { ...p[row.user_id], percent: +e.target.value },
+                                  }))
+                                }
+                                className="w-24"
+                                aria-label="Limite máximo de desconto em porcentagem"
+                              />
+                              <span className="text-xs text-muted-foreground">%</span>
+                              <Button
+                                size="sm"
+                                disabled={!dirty || save.isPending}
+                                onClick={() =>
+                                  save.mutate({
+                                    userId: row.user_id,
+                                    percent: currentPct,
+                                    notes: currentNotes,
+                                  })
+                                }
+                              >
+                                <Save className="h-3.5 w-3.5 mr-1" /> Salvar
+                              </Button>
+                            </div>
+                          </div>
+
+                          <Textarea
+                            placeholder="Observações internas (motivo da exceção, validade, etc.)"
+                            value={currentNotes}
+                            onChange={(e) =>
+                              setEdits((p) => ({
+                                ...p,
+                                [row.user_id]: { ...p[row.user_id], notes: e.target.value },
+                              }))
+                            }
+                            rows={2}
+                            className="text-xs"
+                          />
+
+                          {/* Impacto */}
+                          <div className="flex flex-wrap items-center gap-2 text-xs">
+                            <ImpactPill label="pendentes" value={imp?.pending ?? 0} tone="warning" />
+                            <ImpactPill label="aprovadas" value={imp?.approved ?? 0} tone="success" />
+                            <ImpactPill label="recusadas" value={imp?.rejected ?? 0} tone="danger" />
+                            {imp && imp.avg_requested > 0 && (
+                              <span className="text-muted-foreground">
+                                média solicitada: <b>{imp.avg_requested}%</b>
+                              </span>
+                            )}
+                            {imp && imp.max_requested > 0 && (
+                              <span className="text-muted-foreground">
+                                pico: <b>{imp.max_requested}%</b>
+                              </span>
+                            )}
+                            {stress && (
+                              <Badge variant="destructive" className="gap-1">
+                                <ShieldAlert className="h-3 w-3" />
+                                vendedor solicita acima do limite
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Requisições que excederam */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <ShieldAlert className="h-4 w-4 text-destructive" />
+                  Requisições acima do limite
+                </CardTitle>
+                <CardDescription>Últimas 20 solicitações criadas — destaque para as que estouraram.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {!exceeded ? (
+                  <Skeleton className="h-32" />
+                ) : exceeded.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Nenhuma solicitação recente excedeu o limite. ✅
+                  </p>
+                ) : (
+                  <ul className="divide-y">
+                    {exceeded.map((r) => (
+                      <li key={r.id} className="py-2 text-xs space-y-0.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-medium truncate">
+                            {sellerNameById.get(r.seller_id) ?? r.seller_id.slice(0, 8)}
+                          </span>
+                          <Badge
+                            variant={
+                              r.status === "approved" ? "default" :
+                              r.status === "rejected" ? "destructive" : "outline"
+                            }
+                            className="text-[10px]"
+                          >
+                            {r.status}
+                          </Badge>
+                        </div>
+                        <div className="text-muted-foreground">
+                          solicitou <b className="text-destructive">{r.requested_discount_percent}%</b>
+                          {" "}/ teto <b>{r.max_allowed_percent}%</b>
+                        </div>
+                        <div className="text-muted-foreground">
+                          {new Date(r.created_at).toLocaleString()} ·{" "}
+                          <Link to={`/orcamentos/${r.quote_id}`} className="underline">
+                            ver orçamento
+                          </Link>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
+      </>
   );
 }
 

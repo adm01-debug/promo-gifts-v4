@@ -65,114 +65,116 @@ export default function RateLimitDashboardPage() {
   };
 
   return (
-      <PageSEO title="Rate Limit" description="Monitore limites de requisições e controle de acesso." path="/admin/rate-limit" noIndex />
-      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="font-display text-2xl font-bold tracking-tight">Dashboard de Rate Limiting</h1>
-            <p className="text-muted-foreground">Monitoramento de requisições e bloqueios</p>
+      <>
+        <PageSEO title="Rate Limit" description="Monitore limites de requisições e controle de acesso." path="/admin/rate-limit" noIndex />
+        <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="font-display text-2xl font-bold tracking-tight">Dashboard de Rate Limiting</h1>
+              <p className="text-muted-foreground">Monitoramento de requisições e bloqueios</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={fetchData}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Atualizar
+            </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={fetchData}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Atualizar
-          </Button>
-        </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total de Requisições</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalRequests}</div>
-              <p className="text-xs text-muted-foreground">Últimas 100 requisições</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Requisições Bloqueadas</CardTitle>
-              <Ban className="h-4 w-4 text-destructive" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-destructive">{stats.blockedRequests}</div>
-              <p className="text-xs text-muted-foreground">
-                {stats.totalRequests > 0
-                  ? ((stats.blockedRequests / stats.totalRequests) * 100).toFixed(1)
-                  : 0}% do total
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">IPs Únicos</CardTitle>
-              <Shield className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.uniqueIPs}</div>
-              <p className="text-xs text-muted-foreground">Endereços distintos</p>
-            </CardContent>
-          </Card>
-        </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Total de Requisições</CardTitle>
+                <Activity className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.totalRequests}</div>
+                <p className="text-xs text-muted-foreground">Últimas 100 requisições</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Requisições Bloqueadas</CardTitle>
+                <Ban className="h-4 w-4 text-destructive" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-destructive">{stats.blockedRequests}</div>
+                <p className="text-xs text-muted-foreground">
+                  {stats.totalRequests > 0
+                    ? ((stats.blockedRequests / stats.totalRequests) * 100).toFixed(1)
+                    : 0}% do total
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">IPs Únicos</CardTitle>
+                <Shield className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.uniqueIPs}</div>
+                <p className="text-xs text-muted-foreground">Endereços distintos</p>
+              </CardContent>
+            </Card>
+          </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Logs de Requisições
-            </CardTitle>
-            <CardDescription>Histórico recente de requisições e tentativas</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>IP</TableHead>
-                    <TableHead>Endpoint</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Data</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {logs.length === 0 ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                Logs de Requisições
+              </CardTitle>
+              <CardDescription>Histórico recente de requisições e tentativas</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                        Nenhuma tentativa registrada
-                      </TableCell>
+                      <TableHead>IP</TableHead>
+                      <TableHead>Endpoint</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Data</TableHead>
                     </TableRow>
-                  ) : (
-                    logs.map((log) => (
-                      <TableRow key={log.id}>
-                        <TableCell className="font-mono text-sm">{log.ip_address}</TableCell>
-                        <TableCell>{log.endpoint}</TableCell>
-                        <TableCell>
-                          {log.blocked ? (
-                            <Badge variant="destructive" className="flex items-center gap-1 w-fit">
-                              <AlertTriangle className="h-3 w-3" />
-                              Falhou
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-success border-success">
-                              Sucesso
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {format(new Date(log.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                  </TableHeader>
+                  <TableBody>
+                    {logs.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                          Nenhuma tentativa registrada
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                    ) : (
+                      logs.map((log) => (
+                        <TableRow key={log.id}>
+                          <TableCell className="font-mono text-sm">{log.ip_address}</TableCell>
+                          <TableCell>{log.endpoint}</TableCell>
+                          <TableCell>
+                            {log.blocked ? (
+                              <Badge variant="destructive" className="flex items-center gap-1 w-fit">
+                                <AlertTriangle className="h-3 w-3" />
+                                Falhou
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-success border-success">
+                                Sucesso
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {format(new Date(log.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </>
   );
 }

@@ -83,120 +83,122 @@ export default function QuotesKanbanPage() {
   }
 
   return (
-      <PageSEO title="Kanban de Orçamentos" description="Visualize e gerencie orçamentos no formato Kanban." path="/orcamentos/kanban" noIndex />
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon" aria-label="Voltar"
-              onClick={() => navigate("/orcamentos")}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 data-testid="page-title-orcamentos-funil" className="font-display text-2xl font-bold text-foreground">
-                Funil de Orçamentos
-              </h1>
-              <p className="text-muted-foreground">
-                Arraste os cartões para alterar o status
-              </p>
+      <>
+        <PageSEO title="Kanban de Orçamentos" description="Visualize e gerencie orçamentos no formato Kanban." path="/orcamentos/kanban" noIndex />
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon" aria-label="Voltar"
+                onClick={() => navigate("/orcamentos")}
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div>
+                <h1 data-testid="page-title-orcamentos-funil" className="font-display text-2xl font-bold text-foreground">
+                  Funil de Orçamentos
+                </h1>
+                <p className="text-muted-foreground">
+                  Arraste os cartões para alterar o status
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Client Filter */}
+              <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+                <SelectTrigger className="w-[200px]">
+                  <Building2 className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <SelectValue placeholder="Todos os clientes" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os clientes</SelectItem>
+                  {(clients.length > 0 ? clients : quotesClients).map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* View Switchers */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/orcamentos")}
+              >
+                <List className="h-4 w-4 mr-2" />
+                Lista
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled
+              >
+                <LayoutGrid className="h-4 w-4 mr-2" />
+                Kanban
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/orcamentos/dashboard")}
+              >
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Dashboard
+              </Button>
+
+              <Button onClick={() => navigate("/orcamentos/novo")}>
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Orçamento
+              </Button>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Client Filter */}
-            <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-              <SelectTrigger className="w-[200px]">
-                <Building2 className="h-4 w-4 mr-2 text-muted-foreground" />
-                <SelectValue placeholder="Todos os clientes" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os clientes</SelectItem>
-                {(clients.length > 0 ? clients : quotesClients).map((client) => (
-                  <SelectItem key={client.id} value={client.id}>
-                    {client.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Active Client Filter Badge */}
+          {selectedClientName && (
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="gap-2 py-1.5 px-3">
+                <Building2 className="h-3.5 w-3.5" />
+                Filtrando por: {selectedClientName}
+                <button
+                  onClick={() => setSelectedClientId("all")}
+                  className="ml-1 hover:text-destructive"
+                >
+                  ×
+                </button>
+              </Badge>
+            </div>
+          )}
 
-            {/* View Switchers */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate("/orcamentos")}
-            >
-              <List className="h-4 w-4 mr-2" />
-              Lista
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled
-            >
-              <LayoutGrid className="h-4 w-4 mr-2" />
-              Kanban
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate("/orcamentos/dashboard")}
-            >
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Dashboard
-            </Button>
+          {/* Kanban Board */}
+          <QuoteKanbanBoard quotes={filteredQuotes} />
 
-            <Button onClick={() => navigate("/orcamentos/novo")}>
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Orçamento
-            </Button>
+          {/* Legend */}
+          <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded bg-muted/50" />
+              <span>Rascunho → Pendente/Enviado</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded bg-amber-500/50" />
+              <span>Aguardando Aprovação (desconto acima do limite)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded bg-warning/50" />
+              <span>Pendente → Rascunho/Enviado/Expirado</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded bg-info/50" />
+              <span>Enviado → Aprovado/Rejeitado/Pendente/Expirado</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded bg-success/50" />
+              <span>Aprovado/Rejeitado → Enviado (reverter)</span>
+            </div>
           </div>
         </div>
-
-        {/* Active Client Filter Badge */}
-        {selectedClientName && (
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="gap-2 py-1.5 px-3">
-              <Building2 className="h-3.5 w-3.5" />
-              Filtrando por: {selectedClientName}
-              <button
-                onClick={() => setSelectedClientId("all")}
-                className="ml-1 hover:text-destructive"
-              >
-                ×
-              </button>
-            </Badge>
-          </div>
-        )}
-
-        {/* Kanban Board */}
-        <QuoteKanbanBoard quotes={filteredQuotes} />
-
-        {/* Legend */}
-        <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-muted/50" />
-            <span>Rascunho → Pendente/Enviado</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-amber-500/50" />
-            <span>Aguardando Aprovação (desconto acima do limite)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-warning/50" />
-            <span>Pendente → Rascunho/Enviado/Expirado</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-info/50" />
-            <span>Enviado → Aprovado/Rejeitado/Pendente/Expirado</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-success/50" />
-            <span>Aprovado/Rejeitado → Enviado (reverter)</span>
-          </div>
-        </div>
-      </div>
+      </>
   );
 }

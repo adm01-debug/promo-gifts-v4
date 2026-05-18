@@ -261,101 +261,103 @@ export function CustomizableDashboard() {
   ]);
 
   return (
-      <PageSEO
-        title="Dashboard"
-        description="Painel personalizado com métricas, ações rápidas e widgets."
-        path="/dashboard"
-      />
-      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h1
-              data-testid="page-title-dashboard"
-              className="flex items-center gap-2 font-display text-2xl font-bold"
-            >
-              <LayoutDashboard className="h-6 w-6" />
-              Dashboard
-            </h1>
-            <div className="mt-1 flex flex-wrap items-center gap-2">
-              <p className="text-sm text-muted-foreground">
-                {isCustomizing ? 'Personalize seu dashboard' : 'Arraste widgets para reorganizar'}
-              </p>
-              <ScopeBadge />
+      <>
+        <PageSEO
+          title="Dashboard"
+          description="Painel personalizado com métricas, ações rápidas e widgets."
+          path="/dashboard"
+        />
+        <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h1
+                data-testid="page-title-dashboard"
+                className="flex items-center gap-2 font-display text-2xl font-bold"
+              >
+                <LayoutDashboard className="h-6 w-6" />
+                Dashboard
+              </h1>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <p className="text-sm text-muted-foreground">
+                  {isCustomizing ? 'Personalize seu dashboard' : 'Arraste widgets para reorganizar'}
+                </p>
+                <ScopeBadge />
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {isCustomizing && (
-              <Button variant="ghost" size="sm" onClick={resetLayout} className="gap-1 text-xs">
-                <RotateCcw className="h-3.5 w-3.5" />
-                Restaurar Padrão
-              </Button>
-            )}
-            <Button
-              variant={isCustomizing ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setIsCustomizing(!isCustomizing)}
-              className="gap-1"
-            >
-              {isCustomizing ? (
-                <Save className="h-3.5 w-3.5" />
-              ) : (
-                <LayoutDashboard className="h-3.5 w-3.5" />
+            <div className="flex items-center gap-2">
+              {isCustomizing && (
+                <Button variant="ghost" size="sm" onClick={resetLayout} className="gap-1 text-xs">
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Restaurar Padrão
+                </Button>
               )}
-              {isCustomizing ? 'Concluir' : 'Personalizar'}
-            </Button>
-          </div>
-        </div>
-
-        {/* Widget visibility toggles */}
-        {isCustomizing && (
-          <Card>
-            <CardContent className="p-4">
-              <h3 className="mb-3 font-display text-sm font-medium">Widgets Visíveis</h3>
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-                {widgetOrder.map((w) => (
-                  <label key={w.id} className="flex cursor-pointer items-center gap-2 text-sm">
-                    <Switch checked={w.visible} onCheckedChange={() => toggleWidget(w.id)} />
-                    <span className={w.visible ? '' : 'text-muted-foreground line-through'}>
-                      {w.title}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={visibleWidgets.map((w) => w.id)} strategy={rectSortingStrategy}>
-            <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
-              {visibleWidgets.map((widget) => {
-                const isFullWidth = fullWidthIds.has(widget.id);
-
-                if (isFullWidth) {
-                  return (
-                    <SortableWidget key={widget.id} id={widget.id} title={widget.title}>
-                      <CardContent className="p-0">{renderWidgetContent(widget.id)}</CardContent>
-                    </SortableWidget>
-                  );
-                }
-
-                return null; // metric cards rendered below in grid
-              })}
-
-              {/* Metric cards in grid */}
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {visibleWidgets
-                  .filter((w) => !fullWidthIds.has(w.id))
-                  .map((widget) => (
-                    <SortableWidget key={widget.id} id={widget.id} title={widget.title}>
-                      {renderWidgetContent(widget.id)}
-                    </SortableWidget>
-                  ))}
-              </div>
+              <Button
+                variant={isCustomizing ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setIsCustomizing(!isCustomizing)}
+                className="gap-1"
+              >
+                {isCustomizing ? (
+                  <Save className="h-3.5 w-3.5" />
+                ) : (
+                  <LayoutDashboard className="h-3.5 w-3.5" />
+                )}
+                {isCustomizing ? 'Concluir' : 'Personalizar'}
+              </Button>
             </div>
-          </SortableContext>
-        </DndContext>
-      </div>
+          </div>
+
+          {/* Widget visibility toggles */}
+          {isCustomizing && (
+            <Card>
+              <CardContent className="p-4">
+                <h3 className="mb-3 font-display text-sm font-medium">Widgets Visíveis</h3>
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                  {widgetOrder.map((w) => (
+                    <label key={w.id} className="flex cursor-pointer items-center gap-2 text-sm">
+                      <Switch checked={w.visible} onCheckedChange={() => toggleWidget(w.id)} />
+                      <span className={w.visible ? '' : 'text-muted-foreground line-through'}>
+                        {w.title}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={visibleWidgets.map((w) => w.id)} strategy={rectSortingStrategy}>
+              <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
+                {visibleWidgets.map((widget) => {
+                  const isFullWidth = fullWidthIds.has(widget.id);
+
+                  if (isFullWidth) {
+                    return (
+                      <SortableWidget key={widget.id} id={widget.id} title={widget.title}>
+                        <CardContent className="p-0">{renderWidgetContent(widget.id)}</CardContent>
+                      </SortableWidget>
+                    );
+                  }
+
+                  return null; // metric cards rendered below in grid
+                })}
+
+                {/* Metric cards in grid */}
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {visibleWidgets
+                    .filter((w) => !fullWidthIds.has(w.id))
+                    .map((widget) => (
+                      <SortableWidget key={widget.id} id={widget.id} title={widget.title}>
+                        {renderWidgetContent(widget.id)}
+                      </SortableWidget>
+                    ))}
+                </div>
+              </div>
+            </SortableContext>
+          </DndContext>
+        </div>
+      </>
   );
 }
 

@@ -52,13 +52,15 @@ import { CartSidebar } from './seller-carts/CartSidebar';
 
 export default function SellerCartsPage() {
   return (
-      <PageSEO
-        title="Carrinhos"
-        description="Gerencie carrinhos de seleção de produtos para seus clientes."
-        path="/carrinhos"
-        noIndex
-      />
-      <SellerCartsContent />
+      <>
+        <PageSEO
+          title="Carrinhos"
+          description="Gerencie carrinhos de seleção de produtos para seus clientes."
+          path="/carrinhos"
+          noIndex
+        />
+        <SellerCartsContent />
+      </>
   );
 }
 

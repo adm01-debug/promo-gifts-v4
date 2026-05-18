@@ -95,158 +95,160 @@ export default function KitTemplatesMetricsPage() {
   const maxCount = heatmap?.[0]?.count ?? 1;
 
   return (
-      <PageSEO
-        title="Métricas de Templates de Kit"
-        description="Adoção e desempenho dos templates de kit do sistema."
-        path="/admin/kit-templates/metricas"
-        noIndex
-      />
-      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
-        <div>
-          <h1 className="font-display text-2xl font-semibold">Métricas de Kits</h1>
-          <p className="text-sm text-muted-foreground">
-            Adoção de templates e itens mais usados pela equipe.
-          </p>
-        </div>
+      <>
+        <PageSEO
+          title="Métricas de Templates de Kit"
+          description="Adoção e desempenho dos templates de kit do sistema."
+          path="/admin/kit-templates/metricas"
+          noIndex
+        />
+        <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
+          <div>
+            <h1 className="font-display text-2xl font-semibold">Métricas de Kits</h1>
+            <p className="text-sm text-muted-foreground">
+              Adoção de templates e itens mais usados pela equipe.
+            </p>
+          </div>
 
-        {/* KPIs */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <Card>
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                <Package className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Templates ativos</p>
-                <p className="font-display text-2xl font-semibold">{stats.total}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                <TrendingUp className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Clonagens totais</p>
-                <p className="font-display text-2xl font-semibold">{stats.totalUsage}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                <Award className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Templates populares (≥5 usos)</p>
-                <p className="font-display text-2xl font-semibold">{stats.popular}</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+          {/* KPIs */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <Card>
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                  <Package className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Templates ativos</p>
+                  <p className="font-display text-2xl font-semibold">{stats.total}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Clonagens totais</p>
+                  <p className="font-display text-2xl font-semibold">{stats.totalUsage}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                  <Award className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Templates populares (≥5 usos)</p>
+                  <p className="font-display text-2xl font-semibold">{stats.popular}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-        {/* Templates table */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Ranking de templates</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loadingTemplates ? (
-              <div className="space-y-2">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-10 w-full" />
-                ))}
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Template</TableHead>
-                    <TableHead>Categoria</TableHead>
-                    <TableHead className="text-right">Preço</TableHead>
-                    <TableHead className="text-right">Clonagens</TableHead>
-                    <TableHead>Última atualização</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(templates ?? []).map((t) => (
-                    <TableRow key={t.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="h-2 w-2 rounded-full"
-                            style={{ backgroundColor: t.color }}
-                          />
-                          <span className="font-medium">{t.name}</span>
-                          {t.tag && (
-                            <Badge variant="outline" className="text-[10px]">
-                              {t.tag}
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="text-[10px]">
-                          {t.category}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {formatCurrency(t.total_price)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Badge variant={t.usage_count >= 5 ? 'default' : 'outline'}>
-                          {t.usage_count}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {new Date(t.updated_at).toLocaleDateString('pt-BR')}
-                      </TableCell>
-                    </TableRow>
+          {/* Templates table */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Ranking de templates</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loadingTemplates ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-10 w-full" />
                   ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Template</TableHead>
+                      <TableHead>Categoria</TableHead>
+                      <TableHead className="text-right">Preço</TableHead>
+                      <TableHead className="text-right">Clonagens</TableHead>
+                      <TableHead>Última atualização</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(templates ?? []).map((t) => (
+                      <TableRow key={t.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="h-2 w-2 rounded-full"
+                              style={{ backgroundColor: t.color }}
+                            />
+                            <span className="font-medium">{t.name}</span>
+                            {t.tag && (
+                              <Badge variant="outline" className="text-[10px]">
+                                {t.tag}
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="text-[10px]">
+                            {t.category}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {formatCurrency(t.total_price)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge variant={t.usage_count >= 5 ? 'default' : 'outline'}>
+                            {t.usage_count}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {new Date(t.updated_at).toLocaleDateString('pt-BR')}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
 
-        {/* Heatmap items */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Top 20 itens mais usados em kits</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loadingHeatmap ? (
-              <div className="space-y-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <Skeleton key={i} className="h-8 w-full" />
-                ))}
-              </div>
-            ) : (heatmap ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">Sem dados ainda.</p>
-            ) : (
-              <div className="space-y-1.5">
-                {(heatmap ?? []).map((item, idx) => (
-                  <div key={item.sku} className="flex items-center gap-3 text-sm">
-                    <span className="w-6 text-right tabular-nums text-muted-foreground">
-                      {idx + 1}.
-                    </span>
-                    <span className="flex-1 truncate font-medium">{item.name}</span>
-                    <span className="text-xs tabular-nums text-muted-foreground">
-                      {item.count}×
-                    </span>
-                    <div className="h-2 w-32 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full bg-primary"
-                        style={{ width: `${(item.count / maxCount) * 100}%` }}
-                      />
+          {/* Heatmap items */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Top 20 itens mais usados em kits</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loadingHeatmap ? (
+                <div className="space-y-2">
+                  {[1, 2, 3, 4].map((i) => (
+                    <Skeleton key={i} className="h-8 w-full" />
+                  ))}
+                </div>
+              ) : (heatmap ?? []).length === 0 ? (
+                <p className="text-sm text-muted-foreground">Sem dados ainda.</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {(heatmap ?? []).map((item, idx) => (
+                    <div key={item.sku} className="flex items-center gap-3 text-sm">
+                      <span className="w-6 text-right tabular-nums text-muted-foreground">
+                        {idx + 1}.
+                      </span>
+                      <span className="flex-1 truncate font-medium">{item.name}</span>
+                      <span className="text-xs tabular-nums text-muted-foreground">
+                        {item.count}×
+                      </span>
+                      <div className="h-2 w-32 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full bg-primary"
+                          style={{ width: `${(item.count / maxCount) * 100}%` }}
+                        />
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </>
   );
 }

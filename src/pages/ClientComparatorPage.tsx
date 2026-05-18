@@ -38,50 +38,52 @@ export default function ClientComparatorPage() {
   };
 
   return (
-      <PageSEO
-        title="Comparador de clientes · BI"
-        description="Compare lado a lado até 3 clientes da carteira: Health Score, LTV, ticket, sazonalidade."
-        path="/ferramentas/bi/comparar"
-        noIndex
-      />
-      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-4 pb-24 md:pb-6 animate-fade-in">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/ferramentas/bi")} className="gap-1.5">
-              <ArrowLeft className="h-4 w-4" /> Voltar
-            </Button>
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-700 flex items-center justify-center shadow-lg shadow-violet-500/25">
-                <GitCompare className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="font-display text-lg font-bold">Comparador de clientes</h1>
-                <p className="text-xs text-muted-foreground">
-                  Lado a lado · até {MAX_CLIENTS} clientes da sua carteira
-                </p>
+      <>
+        <PageSEO
+          title="Comparador de clientes · BI"
+          description="Compare lado a lado até 3 clientes da carteira: Health Score, LTV, ticket, sazonalidade."
+          path="/ferramentas/bi/comparar"
+          noIndex
+        />
+        <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-4 pb-24 md:pb-6 animate-fade-in">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="sm" onClick={() => navigate("/ferramentas/bi")} className="gap-1.5">
+                <ArrowLeft className="h-4 w-4" /> Voltar
+              </Button>
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-700 flex items-center justify-center shadow-lg shadow-violet-500/25">
+                  <GitCompare className="h-4 w-4 text-primary-foreground" />
+                </div>
+                <div>
+                  <h1 className="font-display text-lg font-bold">Comparador de clientes</h1>
+                  <p className="text-xs text-muted-foreground">
+                    Lado a lado · até {MAX_CLIENTS} clientes da sua carteira
+                  </p>
+                </div>
               </div>
             </div>
           </div>
+
+          {clientIds.length < MAX_CLIENTS && (
+            <Card className="border-[1.5px] border-dashed">
+              <CardContent className="p-4 space-y-3">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                  <Plus className="h-3.5 w-3.5" />
+                  Adicionar cliente ({clientIds.length}/{MAX_CLIENTS})
+                </label>
+                <ClientSelector value={adding} onChange={addClient} />
+                {clientIds.length > 0 && (
+                  <p className="text-[10px] text-muted-foreground">
+                    Já em comparação: {clientIds.length} {clientIds.length === 1 ? "cliente" : "clientes"}.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          <ClientComparator clientIds={clientIds} onRemove={removeClient} />
         </div>
-
-        {clientIds.length < MAX_CLIENTS && (
-          <Card className="border-[1.5px] border-dashed">
-            <CardContent className="p-4 space-y-3">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                <Plus className="h-3.5 w-3.5" />
-                Adicionar cliente ({clientIds.length}/{MAX_CLIENTS})
-              </label>
-              <ClientSelector value={adding} onChange={addClient} />
-              {clientIds.length > 0 && (
-                <p className="text-[10px] text-muted-foreground">
-                  Já em comparação: {clientIds.length} {clientIds.length === 1 ? "cliente" : "clientes"}.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        <ClientComparator clientIds={clientIds} onRemove={removeClient} />
-      </div>
+      </>
   );
 }

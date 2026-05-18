@@ -98,19 +98,21 @@ export default function MagicUp() {
   const m = useMagicUpState();
 
   return (
-      <PageSEO title="MagicUp — Gerador de Imagens IA" description="Crie imagens publicitárias profissionais com inteligência artificial." path="/magic-up" />
-      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
-        <MagicUpHeader variationsCount={m.variations.length} historyCount={m.history.length} summary={`${m.selectedClient?.name || "Cliente não definido"} · ${m.selectedProduct?.name || "Produto não selecionado"} · ${m.brief.channel} · ${m.brief.objective} · ${m.brief.tone}`} />
-        <MagicUpProgress step={m.step} />
+      <>
+        <PageSEO title="MagicUp — Gerador de Imagens IA" description="Crie imagens publicitárias profissionais com inteligência artificial." path="/magic-up" />
+        <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
+          <MagicUpHeader variationsCount={m.variations.length} historyCount={m.history.length} summary={`${m.selectedClient?.name || "Cliente não definido"} · ${m.selectedProduct?.name || "Produto não selecionado"} · ${m.brief.channel} · ${m.brief.objective} · ${m.brief.tone}`} />
+          <MagicUpProgress step={m.step} />
 
-        {m.loadingProducts && <MagicUpSkeleton />}
+          {m.loadingProducts && <MagicUpSkeleton />}
 
-        {!m.loadingProducts && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <MagicUpConfigPanel m={m} />
-            <MagicUpResultPanel m={m} />
-          </div>
-        )}
-      </div>
+          {!m.loadingProducts && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <MagicUpConfigPanel m={m} />
+              <MagicUpResultPanel m={m} />
+            </div>
+          )}
+        </div>
+      </>
   );
 }

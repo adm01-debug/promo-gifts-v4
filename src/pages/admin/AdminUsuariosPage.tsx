@@ -94,169 +94,171 @@ export default function AdminUsuariosPage() {
     });
 
   return (
-      <PageSEO title="Gerenciar Usuários" description="Administre usuários, permissões e roles do sistema." path="/admin/usuarios" noIndex />
-      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
-        <div className="flex items-center gap-3">
-          <div className="p-3 rounded-xl bg-primary/10">
-            <UserCog className="h-8 w-8 text-primary" />
+      <>
+        <PageSEO title="Gerenciar Usuários" description="Administre usuários, permissões e roles do sistema." path="/admin/usuarios" noIndex />
+        <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-xl bg-primary/10">
+              <UserCog className="h-8 w-8 text-primary" />
+            </div>
+            <div>
+              <h1 className="font-display text-3xl font-bold tracking-tight">Usuários</h1>
+              <p className="text-muted-foreground">Gerencie usuários, roles e aprovações de reset de senha</p>
+            </div>
           </div>
-          <div>
-            <h1 className="font-display text-3xl font-bold tracking-tight">Usuários</h1>
-            <p className="text-muted-foreground">Gerencie usuários, roles e aprovações de reset de senha</p>
-          </div>
-        </div>
 
-        <DevAccessAuditAlert />
+          <DevAccessAuditAlert />
 
-        <UserStatsCards
-          total={users.length}
-          devCount={devCount}
-          supervisorCount={supervisorCount}
-          agenteCount={agenteCount}
-          pendingCount={pendingCount}
-        />
+          <UserStatsCards
+            total={users.length}
+            devCount={devCount}
+            supervisorCount={supervisorCount}
+            agenteCount={agenteCount}
+            pendingCount={pendingCount}
+          />
 
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="users" className="gap-2">
-              <Users className="h-4 w-4" />
-              Usuários & Roles
-            </TabsTrigger>
-            <TabsTrigger value="password-reset" className="gap-2">
-              <KeyRound className="h-4 w-4" />
-              Reset de Senha
-              {pendingCount > 0 && (
-                <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                  {pendingCount}
-                </Badge>
-              )}
-            </TabsTrigger>
-            {isAdmin && (
-              <TabsTrigger value="discounts" className="gap-2">
-                <Percent className="h-4 w-4" />
-                Gestão de Descontos
-                {pendingDiscountCount > 0 && (
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="users" className="gap-2">
+                <Users className="h-4 w-4" />
+                Usuários & Roles
+              </TabsTrigger>
+              <TabsTrigger value="password-reset" className="gap-2">
+                <KeyRound className="h-4 w-4" />
+                Reset de Senha
+                {pendingCount > 0 && (
                   <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                    {pendingDiscountCount}
+                    {pendingCount}
                   </Badge>
                 )}
               </TabsTrigger>
+              {isAdmin && (
+                <TabsTrigger value="discounts" className="gap-2">
+                  <Percent className="h-4 w-4" />
+                  Gestão de Descontos
+                  {pendingDiscountCount > 0 && (
+                    <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                      {pendingDiscountCount}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+              )}
+              {isDev && (
+                <TabsTrigger value="audit" className="gap-2">
+                  <History className="h-4 w-4" />
+                  Auditoria de Roles
+                </TabsTrigger>
+              )}
+            </TabsList>
+
+            <TabsContent value="users">
+              <Card className="border-border/50">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle>Gerenciamento de Usuários e Roles</CardTitle>
+                    <CardDescription>
+                      Atribua roles aos usuários: Dev (técnico), Supervisor (gestão comercial) ou Agente (acesso básico)
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button asChild variant="outline" className="gap-2">
+                      <Link to="/admin/usuarios/promover">
+                        <ArrowUpCircle className="h-4 w-4" />
+                        Promover Agente
+                      </Link>
+                    </Button>
+                    <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
+                      <Plus className="h-4 w-4" />
+                      Novo Usuário
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="relative max-w-sm">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar por nome ou email..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+
+                  {isLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : filteredUsers.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      {searchQuery ? "Nenhum usuário encontrado para esta busca" : "Nenhum usuário encontrado"}
+                    </div>
+                  ) : (
+                    <UserTable
+                      users={filteredUsers}
+                      currentUserId={user?.id}
+                      updatingUserId={updatingUserId}
+                      onEditUser={setEditDialogUser}
+                      onChangeRole={setRoleDialogUser}
+                      onDeleteUser={setDeleteDialogUser}
+                      onPromoteUser={setPromoteDialogUser}
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="password-reset">
+              <PasswordResetApproval />
+            </TabsContent>
+
+            {isAdmin && (
+              <TabsContent value="discounts">
+                <DiscountManagementPanel />
+              </TabsContent>
             )}
+
             {isDev && (
-              <TabsTrigger value="audit" className="gap-2">
-                <History className="h-4 w-4" />
-                Auditoria de Roles
-              </TabsTrigger>
+              <TabsContent value="audit">
+                <RoleAuditLogPanel />
+              </TabsContent>
             )}
-          </TabsList>
+          </Tabs>
 
-          <TabsContent value="users">
-            <Card className="border-border/50">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>Gerenciamento de Usuários e Roles</CardTitle>
-                  <CardDescription>
-                    Atribua roles aos usuários: Dev (técnico), Supervisor (gestão comercial) ou Agente (acesso básico)
-                  </CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button asChild variant="outline" className="gap-2">
-                    <Link to="/admin/usuarios/promover">
-                      <ArrowUpCircle className="h-4 w-4" />
-                      Promover Agente
-                    </Link>
-                  </Button>
-                  <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Novo Usuário
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="relative max-w-sm">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar por nome ou email..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-
-                {isLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  </div>
-                ) : filteredUsers.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    {searchQuery ? "Nenhum usuário encontrado para esta busca" : "Nenhum usuário encontrado"}
-                  </div>
-                ) : (
-                  <UserTable
-                    users={filteredUsers}
-                    currentUserId={user?.id}
-                    updatingUserId={updatingUserId}
-                    onEditUser={setEditDialogUser}
-                    onChangeRole={setRoleDialogUser}
-                    onDeleteUser={setDeleteDialogUser}
-                    onPromoteUser={setPromoteDialogUser}
-                  />
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="password-reset">
-            <PasswordResetApproval />
-          </TabsContent>
-
-          {isAdmin && (
-            <TabsContent value="discounts">
-              <DiscountManagementPanel />
-            </TabsContent>
-          )}
-
-          {isDev && (
-            <TabsContent value="audit">
-              <RoleAuditLogPanel />
-            </TabsContent>
-          )}
-        </Tabs>
-
-        {/* Dialogs */}
-        <RoleChangeDialog
-          user={roleDialogUser}
-          onClose={() => setRoleDialogUser(null)}
-          onConfirm={handleRoleChange}
-        />
-        <EditUserDialog
-          user={editDialogUser}
-          onClose={() => setEditDialogUser(null)}
-          onSave={handleSaveEdit}
-          onUploadAvatar={handleAvatarUpload}
-          onRemoveAvatar={handleRemoveAvatar}
-        />
-        <CreateUserDialog
-          open={isCreateOpen}
-          onOpenChange={setIsCreateOpen}
-          onCreate={handleCreateUser}
-        />
-        <DeleteUserDialog
-          user={deleteDialogUser}
-          onClose={() => setDeleteDialogUser(null)}
-          onConfirm={handleDeleteUser}
-        />
-        <PromotionDialog
-          user={promoteDialogUser}
-          targetRole="supervisor"
-          open={!!promoteDialogUser}
-          onOpenChange={(open) => {
-            if (!open) setPromoteDialogUser(null);
-          }}
-          onSuccess={() => {
-            void fetchUsers();
-          }}
-        />
-      </div>
+          {/* Dialogs */}
+          <RoleChangeDialog
+            user={roleDialogUser}
+            onClose={() => setRoleDialogUser(null)}
+            onConfirm={handleRoleChange}
+          />
+          <EditUserDialog
+            user={editDialogUser}
+            onClose={() => setEditDialogUser(null)}
+            onSave={handleSaveEdit}
+            onUploadAvatar={handleAvatarUpload}
+            onRemoveAvatar={handleRemoveAvatar}
+          />
+          <CreateUserDialog
+            open={isCreateOpen}
+            onOpenChange={setIsCreateOpen}
+            onCreate={handleCreateUser}
+          />
+          <DeleteUserDialog
+            user={deleteDialogUser}
+            onClose={() => setDeleteDialogUser(null)}
+            onConfirm={handleDeleteUser}
+          />
+          <PromotionDialog
+            user={promoteDialogUser}
+            targetRole="supervisor"
+            open={!!promoteDialogUser}
+            onOpenChange={(open) => {
+              if (!open) setPromoteDialogUser(null);
+            }}
+            onSuccess={() => {
+              void fetchUsers();
+            }}
+          />
+        </div>
+      </>
   );
 }
