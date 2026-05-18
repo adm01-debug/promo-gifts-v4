@@ -25,18 +25,18 @@ export const calculateItemPersonalizationTotal = (item: Pick<QuoteItemCalculatio
 };
 
 /**
- * Calcula o total bruto de um item (quantidade * preço + gravações).
+ * Calcula o total bruto de um item (quantidade * preço + gravações) com arredondamento.
  */
 export const calculateItemTotal = (item: QuoteItemCalculationParams): number => {
-  return (item.quantity * item.unitPrice) + calculateItemPersonalizationTotal(item);
+  return round2((item.quantity * item.unitPrice) + calculateItemPersonalizationTotal(item));
 };
 
 /**
- * Calcula o subtotal de uma lista de itens.
+ * Calcula o subtotal de uma lista de itens com arredondamento.
  */
 export const calculateSubtotal = (items: QuoteItemCalculationParams[]): number => {
   if (!items || !Array.isArray(items)) return 0;
-  return items.reduce((sum, item) => sum + calculateItemTotal(item), 0);
+  return round2(items.reduce((sum, item) => sum + calculateItemTotal(item), 0));
 };
 
 /**
