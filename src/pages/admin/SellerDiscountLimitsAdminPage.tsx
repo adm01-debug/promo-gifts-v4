@@ -202,7 +202,7 @@ export default function SellerDiscountLimitsAdminPage() {
                 <Percent className="h-8 w-8 text-primary" />
               </div>
               <div>
-                <h1 className="font-display text-3xl font-bold tracking-tight">Limites de desconto</h1>
+                <h1 data-testid="page-title-seller-discount-limits" className="font-display text-3xl font-bold tracking-tight">Limites de desconto</h1>
                 <p className="text-muted-foreground">
                   Defina o teto de desconto por vendedor — solicitações acima do limite exigem aprovação.
                 </p>
