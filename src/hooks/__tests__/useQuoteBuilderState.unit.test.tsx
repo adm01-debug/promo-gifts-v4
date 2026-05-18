@@ -1,0 +1,153 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
+import { useQuoteBuilderState } from '../useQuoteBuilderState';
+import * as router from 'react-router-dom';
+import { toast } from 'sonner';
+
+// Mock dependencies
+vi.mock('react-router-dom', () => ({
+  useNavigate: vi.fn(),
+  useParams: vi.fn(() => ({})),
+  useSearchParams: vi.fn(() => [new URLSearchParams()]),
+  useLocation: vi.fn(() => ({ pathname: '/', state: {} })),
+}));
+
+vi.mock('sonner', () => ({
+  toast: {
+    error: vi.fn(),
+    success: vi.fn(),
+  },
+}));
+
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: vi.fn(() => ({ user: { id: 'test-user' } })),
+}));
+
+// Mock hooks that might trigger side effects or complex logic
+vi.mock('@/hooks/useSellerDiscountLimits', () => ({
+  useSellerDiscountLimits: vi.fn(() => ({ myLimit: 10 })),
+}));
+
+vi.mock('@/hooks/useDiscountApproval', () => ({
+  useDiscountApproval: vi.fn(() => ({ requestApproval: vi.fn() })),
+}));
+
+vi.mock('@/hooks/useQuotes', () => ({
+  useQuotes: vi.fn(() => ({
+    createQuote: vi.fn(),
+    updateQuote: vi.fn(),
+    fetchQuote: vi.fn(),
+    isLoading: false,
+  })),
+}));
+
+vi.mock('@/hooks/useQuoteTemplates', () => ({
+  useQuoteTemplates: vi.fn(() => ({ templates: [] })),
+}));
+
+vi.mock('@/hooks/useQuoteItems', () => ({
+  useQuoteItems: vi.fn(() => ({
+    items: [],
+    setItems: vi.fn(),
+    activeItemIndex: 0,
+    setActiveItemIndex: vi.fn(),
+    expandedItems: new Set(),
+    setExpandedItems: vi.fn(),
+    toggleExpanded: vi.fn(),
+    addProductWithColor: vi.fn(),
+    updateItemQuantity: vi.fn(),
+    updateItemPrice: vi.fn(),
+    removeItem: vi.fn(),
+    handlePersonalizationsChange: vi.fn(),
+    confirmItemPrice: vi.fn(),
+  })),
+}));
+
+vi.mock('@/hooks/useAutoSaveQuote', () => ({
+  useAutoSaveQuote: vi.fn(() => ({ clearAutoSave: vi.fn() })),
+}));
+
+describe('useQuoteBuilderState Navigation and Validation', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Resetting body to clear aria-live announcer if needed
+    document.body.innerHTML = '<div id="quote-builder-announcer"></div>';
+  });
+
+  it('starts at "client" step', () => {
+    const { result } = renderHook(() => useQuoteBuilderState());
+    expect(result.current.currentStep).toBe('client');
+  });
+
+  it('prevents nextStep if client/contact not selected', () => {
+    const { result } = renderHook(() => useQuoteBuilderState());
+    
+    act(() => {
+      result.current.nextStep();
+    });
+
+    expect(toast.error).toHaveBeenCalledWith('Selecione um cliente');
+    expect(result.current.currentStep).toBe('client');
+  });
+
+  it('allows nextStep if client/contact are selected', () => {
+    const { result } = renderHook(() => useQuoteBuilderState());
+    
+    act(() => {
+      result.current.setClientId('company-1');
+      result.current.setContactId('contact-1');
+    });
+
+    act(() => {
+      result.current.nextStep();
+    });
+
+    expect(result.current.currentStep).toBe('conditions');
+  });
+
+  it('prevents moving to conditions if items are missing when skipping', () => {
+    const { result } = renderHook(() => useQuoteBuilderState());
+    
+    act(() => {
+      result.current.setClientId('company-1');
+      result.current.setContactId('contact-1');
+    });
+
+    act(() => {
+      result.current.goToStep('items');
+    });
+
+    // Validates 'client' and 'conditions'. 'conditions' will fail.
+    expect(toast.error).toHaveBeenCalledWith('Preencha todas as condições comerciais');
+    expect(result.current.currentStep).toBe('client');
+  });
+
+  it('allows jumping back to a previous step without validation', () => {
+    const { result } = renderHook(() => useQuoteBuilderState());
+    
+    act(() => {
+      result.current.setClientId('company-1');
+      result.current.setContactId('contact-1');
+      result.current.nextStep(); // Now at conditions
+    });
+
+    expect(result.current.currentStep).toBe('conditions');
+
+    act(() => {
+      result.current.goToStep('client');
+    });
+
+    expect(result.current.currentStep).toBe('client');
+  });
+
+  it('announces errors for screen readers', () => {
+    const { result } = renderHook(() => useQuoteBuilderState());
+    
+    act(() => {
+      result.current.nextStep();
+    });
+
+    const announcer = document.getElementById('quote-builder-announcer');
+    expect(announcer?.textContent).toBe('Erro: Selecione um cliente');
+  });
+});

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { QuoteBuilderStepper } from '../QuoteBuilderStepper';
 import React from 'react';
 
@@ -24,7 +24,9 @@ describe('QuoteBuilderStepper UI (5 etapas)', () => {
     const clientStep = screen.getByText('Cliente').parentElement?.querySelector('.rounded-full');
     expect(clientStep?.className).toContain('bg-primary');
     expect(clientStep?.className).toContain('text-primary-foreground');
-    expect(clientStep?.className).toContain('scale-110');
+    expect(clientStep?.className).toContain('ring-4');
+    expect(clientStep?.className).toContain('w-10');
+    expect(clientStep?.className).toContain('h-10');
   });
 
   it('shows check icon for completed non-active steps', () => {
@@ -74,5 +76,17 @@ describe('QuoteBuilderStepper UI (5 etapas)', () => {
     render(<QuoteBuilderStepper completedSteps={[]} />);
     const mutedSteps = document.querySelectorAll('.bg-muted\\/50');
     expect(mutedSteps.length).toBe(5);
+  });
+
+  it('calls onStepClick when a step is clicked', () => {
+    const onStepClick = vi.fn();
+    render(<QuoteBuilderStepper completedSteps={[]} activeStep="client" onStepClick={onStepClick} />);
+    
+    const conditionsStep = screen.getByText('Condições').closest('button');
+    if (conditionsStep) {
+      fireEvent.click(conditionsStep);
+    }
+    
+    expect(onStepClick).toHaveBeenCalledWith('conditions');
   });
 });
