@@ -4,14 +4,13 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 // `globalThis` para conseguir observar chamadas mesmo após `installSafeToast`
 // substituir `toast.error/warning/message` por wrappers.
 vi.mock('sonner', () => {
-  const fns = {
-    error: vi.fn(),
-    warning: vi.fn(),
-    message: vi.fn(),
-    success: vi.fn(),
-    info: vi.fn(),
-  };
-  (globalThis as unknown as { __sonner: typeof fns }).__sonner = fns;
+  const error = vi.fn();
+  const warning = vi.fn();
+  const message = vi.fn();
+  const fns = { error, warning, message, success: vi.fn(), info: vi.fn() };
+  // Guardamos referência aos spies originais — installSafeToast troca
+  // fns.error/warning/message por wrappers, mas o wrapper chama o original.
+  (globalThis as unknown as { __sonnerOriginals: { error: typeof error; warning: typeof warning; message: typeof message } }).__sonnerOriginals = { error, warning, message };
   return { toast: fns };
 });
 
