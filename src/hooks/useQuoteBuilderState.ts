@@ -699,7 +699,7 @@ export function useQuoteBuilderState() {
         delivery_time: deliveryTime || undefined,
         shipping_type: shippingType || undefined,
         shipping_cost:
-          shippingType === 'fob_pre' || shippingType === 'fob' ? shippingCost : undefined,
+          shippingType === 'fob_pre' ? shippingCost : undefined,
       };
       let result;
       if (isEditMode && quoteId) {
