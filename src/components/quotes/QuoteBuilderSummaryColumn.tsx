@@ -79,15 +79,22 @@ export function QuoteBuilderSummaryColumn({
 
   const handleDiscountTypeChange = (next: "percent" | "amount") => {
     if (next === discountType) return;
-    const round2 = (n: number) => Math.round(n * 100) / 100;
+    const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
     if (presentedSubtotal > 0 && discountValue > 0) {
       if (next === "amount") {
         // % → R$
-        setDiscountValue(round2(Math.max(0, presentedSubtotal * (discountValue / 100))));
+        // Garante que o desconto em R$ não exceda o subtotal disponível
+        setDiscountValue(round2(Math.min(presentedSubtotal, presentedSubtotal * (discountValue / 100))));
       } else {
         // R$ → %
+        // Garante que o desconto em % não exceda 100%
         const pct = (discountValue / presentedSubtotal) * 100;
         setDiscountValue(round2(Math.max(0, Math.min(100, pct))));
+      }
+    } else if (presentedSubtotal === 0 && discountValue > 0) {
+      // Se o subtotal for zero, o desconto monetário deve zerar ao converter para %
+      if (next === "percent") {
+        setDiscountValue(0);
       }
     }
     setDiscountType(next);
