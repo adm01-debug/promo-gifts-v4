@@ -64,7 +64,7 @@ export default function KitBuilderPage() {
           </div>
         </div>
 
-        <div className="container py-6">
+        <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 animate-fade-in">
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <div className="lg:col-span-2">
               <Card className="overflow-hidden rounded-2xl border-border/60 shadow-sm">
