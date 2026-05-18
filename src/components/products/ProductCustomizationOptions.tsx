@@ -307,6 +307,50 @@ export function ProductCustomizationOptions({
             />
           </div>
         )}
+
+        {/* SUMMARY — Resumo final das gravações confirmadas */}
+        {pricesRef.current.size > 0 && (
+          <div className="mt-6 pt-4 border-t border-border/60 animate-in fade-in slide-in-from-bottom-2">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+              <h4 className="text-[11px] font-bold uppercase tracking-wider text-foreground">
+                Resumo das Configurações
+              </h4>
+            </div>
+            
+            <div className="grid gap-2">
+              {Array.from(pricesRef.current.values()).map((item) => (
+                <div 
+                  key={item.locationCode}
+                  className="flex items-start justify-between p-2.5 rounded-lg bg-primary/5 border border-primary/10"
+                >
+                  <div className="space-y-0.5">
+                    <p className="text-[10px] font-bold text-primary uppercase leading-none mb-1">
+                      {item.locationName}
+                    </p>
+                    <p className="text-xs font-semibold text-foreground">
+                      {item.techniqueName}
+                    </p>
+                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                      {item.width && item.height && (
+                        <span>{item.width} × {item.height} cm</span>
+                      )}
+                      {item.width && item.height && <span>•</span>}
+                      <span>{item.numberOfColors} {item.numberOfColors === 1 ? 'cor' : 'cores'}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="text-right">
+                    <p className="text-[10px] text-muted-foreground uppercase">Total Local</p>
+                    <p className="text-xs font-bold text-primary">
+                      {item.price?.total_cobrado?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </TooltipProvider>
   );
