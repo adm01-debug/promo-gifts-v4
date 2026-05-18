@@ -365,45 +365,82 @@ export function ConfigurationPanelV6({
 
       {/* Workspace Right (Live Preview / Summary) */}
       <div className="lg:col-span-5 flex flex-col gap-4">
-        <div className="flex-1 min-h-[160px] rounded-2xl bg-muted/40 border-2 border-dashed border-border/40 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+        <div className="flex-1 min-h-[180px] rounded-2xl bg-muted/40 border-2 border-dashed border-border/40 flex flex-col items-center justify-center p-6 relative overflow-hidden">
           <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--primary)_0%,_transparent_70%)]" />
           
           {/* Visual Mockup SVG */}
-          <div className="relative w-full max-w-[120px] aspect-[1/1.5] bg-card rounded-xl border-2 border-border/60 shadow-xl flex items-center justify-center">
-            <div 
-              className="border-2 border-primary border-dashed bg-primary/10 flex items-center justify-center transition-all duration-300"
-              style={{
+          <motion.div 
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="relative w-full max-w-[120px] aspect-[1/1.5] bg-card rounded-xl border-2 border-border/60 shadow-xl flex items-center justify-center"
+          >
+            <motion.div 
+              className="border-2 border-primary border-dashed bg-primary/10 flex items-center justify-center"
+              initial={false}
+              animate={{
                 width: technique.usa_dimensao ? `${Math.max(20, (larguraNum / technique.efetiva_largura_max) * 100)}%` : "60%",
                 height: technique.usa_dimensao ? `${Math.max(20, (alturaNum / technique.efetiva_altura_max) * 100)}%` : "40%",
               }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
             >
               <span className="text-[8px] font-black text-primary opacity-40 uppercase tracking-tighter">Arte</span>
-            </div>
+            </motion.div>
+            
             {/* Medidas indicadoras */}
-            <div className="absolute -bottom-5 left-0 right-0 flex justify-center">
-              <span className="text-[9px] font-bold text-muted-foreground">{larguraNum}cm</span>
-            </div>
-            <div className="absolute -right-7 top-0 bottom-0 flex items-center">
-              <span className="text-[9px] font-bold text-muted-foreground origin-center rotate-90">{alturaNum}cm</span>
-            </div>
-          </div>
+            <AnimatePresence>
+              {larguraNum > 0 && (
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="absolute -bottom-6 left-0 right-0 flex justify-center"
+                >
+                  <span className="text-[10px] font-bold text-primary">{larguraNum}cm</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            
+            <AnimatePresence>
+              {alturaNum > 0 && (
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="absolute -right-8 top-0 bottom-0 flex items-center"
+                >
+                  <span className="text-[10px] font-bold text-primary origin-center rotate-90">{alturaNum}cm</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
           
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-8">Prévia de Área Útil</p>
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-10">Prévia Visual Dinâmica</p>
         </div>
 
         {/* Dynamic Summary Panel */}
-        {price && !loading && (
-          <div className="p-4 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 space-y-3">
-            <div className="flex justify-between items-center border-b border-primary-foreground/20 pb-2">
-              <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">Valor Unitário</span>
-              <span className="text-xl font-black">R$ {price.preco_unitario.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">Total Local</span>
-              <span className="text-lg font-bold">R$ {price.total_cobrado.toFixed(2)}</span>
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {price && !loading && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="p-5 rounded-2xl bg-primary text-primary-foreground shadow-xl shadow-primary/20 space-y-3 relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 p-4 opacity-10">
+                <Check className="h-12 w-12" />
+              </div>
+              <div className="flex justify-between items-center border-b border-primary-foreground/20 pb-3">
+                <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">Unitário Estimado</span>
+                <span className="text-2xl font-black">R$ {price.preco_unitario.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">Total do Local</span>
+                  <span className="text-[9px] opacity-60">Para {quantity} unidades</span>
+                </div>
+                <span className="text-xl font-bold">R$ {price.total_cobrado.toFixed(2)}</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
