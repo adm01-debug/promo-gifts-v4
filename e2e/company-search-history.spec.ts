@@ -49,6 +49,32 @@ test.describe('Company Search Dropdown - History & Prioritization', () => {
     await expect(firstResult).toContainText('Promo');
   });
 
+  test('should prioritize history when searching by CNPJ', async ({ page }) => {
+    const searchInput = page.getByTestId('company-search-input');
+    
+    // 1. Search and select a company with a specific CNPJ
+    await searchInput.fill('Promo');
+    const company = page.locator('[data-testid^="company-option-"]').first();
+    await company.waitFor({ state: 'visible' });
+    const cnpj = await company.locator('span.font-mono').innerText();
+    const companyId = (await company.getAttribute('data-testid'))?.replace('company-option-', '');
+    await company.click();
+
+    // 2. Re-open and search only by CNPJ
+    await page.locator('.cursor-pointer.group').click();
+    await searchInput.waitFor({ state: 'visible' });
+    await searchInput.fill(cnpj);
+    
+    // 3. Verify history item is visible and prioritized
+    const historyItem = page.getByTestId(`history-item-${companyId}`);
+    await expect(historyItem).toBeVisible();
+    await expect(historyItem).toContainText(cnpj);
+    
+    // Check it's the first result after "Sem empresa"
+    const firstResult = page.locator('[data-testid="no-company-option"] + div, [data-testid^="history-item-"]').first();
+    await expect(firstResult).toContainText(cnpj);
+  });
+
   test('should maintain highlighted state when clearing search or re-opening', async ({ page }) => {
     const searchInput = page.getByTestId('company-search-input');
 
