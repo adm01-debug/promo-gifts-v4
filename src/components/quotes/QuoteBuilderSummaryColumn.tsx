@@ -53,6 +53,8 @@ interface Props {
   confirmItemPrice?: (index: number) => void;
   /** Marca todos os itens com preço aging/stale como confirmados. */
   confirmAllStalePrices?: () => void;
+  shippingType?: string;
+  shippingCost?: number;
 }
 
 export function QuoteBuilderSummaryColumn({
