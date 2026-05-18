@@ -1,12 +1,17 @@
 /**
  * QuoteBuilderStepper — Indicador visual de progresso para o fluxo de orçamento
- * 4 etapas: Cliente → Itens → Condições → Revisão
+ * 5 etapas: Cliente → Condições → Itens → Personalização → Revisão
  */
 
-import { Check, Building2, Package, CreditCard, FileCheck } from "lucide-react";
+import { Check, Building2, CreditCard, Package, Sparkles, FileCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type QuoteBuilderStep = "client" | "items" | "conditions" | "review";
+export type QuoteBuilderStep =
+  | "client"
+  | "conditions"
+  | "items"
+  | "personalization"
+  | "review";
 
 interface StepDef {
   id: QuoteBuilderStep;
@@ -16,8 +21,9 @@ interface StepDef {
 
 const STEPS: StepDef[] = [
   { id: "client", label: "Cliente", icon: Building2 },
-  { id: "items", label: "Itens", icon: Package },
   { id: "conditions", label: "Condições", icon: CreditCard },
+  { id: "items", label: "Itens", icon: Package },
+  { id: "personalization", label: "Personalização", icon: Sparkles },
   { id: "review", label: "Revisão", icon: FileCheck },
 ];
 

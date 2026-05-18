@@ -194,19 +194,21 @@ export function useQuoteBuilderState() {
   // ── Stepper ──
   const activeStep = useMemo((): QuoteBuilderStep => {
     if (!clientId) return 'client';
-    if (items.length === 0) return 'items';
     if (!paymentMethod || !paymentTerms || !deliveryTime || !shippingType) return 'conditions';
+    if (items.length === 0) return 'items';
+    const hasAnyPersonalization = items.some((it) => (it.personalizations?.length ?? 0) > 0);
+    if (!hasAnyPersonalization) return 'personalization';
     return 'review';
-  }, [clientId, items.length, paymentMethod, paymentTerms, deliveryTime, shippingType]);
+  }, [clientId, items, paymentMethod, paymentTerms, deliveryTime, shippingType]);
 
   const completedSteps = useMemo((): QuoteBuilderStep[] => {
     const steps: QuoteBuilderStep[] = [];
     if (clientId) steps.push('client');
-    if (items.length > 0) steps.push('items');
     if (paymentMethod && paymentTerms && deliveryTime && shippingType) steps.push('conditions');
-    // No review, we only mark as completed if saved
+    if (items.length > 0) steps.push('items');
+    if (items.some((it) => (it.personalizations?.length ?? 0) > 0)) steps.push('personalization');
     return steps;
-  }, [clientId, items.length, paymentMethod, paymentTerms, deliveryTime, shippingType]);
+  }, [clientId, items, paymentMethod, paymentTerms, deliveryTime, shippingType]);
   // ── AutoSave ──
   const { clearAutoSave } = useAutoSaveQuote({
     enabled: !!clientId && items.length > 0 && !isEditMode,
