@@ -20,29 +20,20 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Verificar autenticação
+    // Identificação best-effort: materials-api expõe dados de referência (grupos/tipos).
+    // Não exigimos sessão válida — apenas logamos quem chamou quando o token for válido.
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(
-        JSON.stringify({ error: 'Não autorizado' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (authHeader?.startsWith('Bearer ')) {
+      try {
+        const localSupabase = createClient(
+          Deno.env.get('SUPABASE_URL')!,
+          Deno.env.get('SUPABASE_ANON_KEY')!,
+          { global: { headers: { Authorization: authHeader } } }
+        );
+        const { data: { user } } = await localSupabase.auth.getUser();
+        if (user) console.log(`Materials API request from user: ${user.id}`);
+      } catch (_) { /* ignora token inválido — segue como anônimo */ }
     }
-
-    const localSupabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const { data: { user }, error: userError } = await localSupabase.auth.getUser();
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Token inválido' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    console.log(`Materials API request from user: ${user.id}`);
 
     const rawBody = await req.json().catch(() => ({}));
     const parsed = MaterialsRequestSchema.safeParse(rawBody);
