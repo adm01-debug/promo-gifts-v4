@@ -355,7 +355,19 @@ export function useQuoteBuilderState() {
         if (saved.items) setItems(saved.items);
         if (saved.paymentMethod) setPaymentMethod(saved.paymentMethod);
         if (saved.paymentTerms) setPaymentTerms(saved.paymentTerms);
-        if (saved.deliveryTime) setDeliveryTime(saved.deliveryTime);
+        if (saved.deliveryTime) {
+          setDeliveryTime(saved.deliveryTime);
+          if (saved.deliveryTime.startsWith('date:')) {
+            setDeliveryMode('data');
+            try {
+              setDeliveryDate(new Date(saved.deliveryTime.slice(5) + 'T12:00:00'));
+            } catch (e) {
+              console.warn('Failed to restore delivery date', e);
+            }
+          } else {
+            setDeliveryMode('prazo');
+          }
+        }
         if (saved.shippingType) setShippingType(saved.shippingType);
         if (saved.shippingCost) setShippingCost(saved.shippingCost);
         if (saved.validUntil) setValidUntil(saved.validUntil);
