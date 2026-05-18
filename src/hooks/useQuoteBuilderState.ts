@@ -936,6 +936,8 @@ export function useQuoteBuilderState() {
     activeItemIndex,
     setActiveItemIndex,
     // Computed
+    completedSteps,
+    activeStep,
     filteredProducts,
     subtotal,
     realSubtotal,

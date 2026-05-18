@@ -9,14 +9,7 @@ test.describe('Quote Builder Wizard Flow (5 Steps)', () => {
   });
 
   test('should complete the full quote creation flow', async ({ page }) => {
-    // Navigation via stepper buttons since footer buttons were removed
-    const stepConditions = page.getByTestId('wizard-step-conditions');
-    const stepItems = page.getByTestId('wizard-step-items');
-    const stepPersonalization = page.getByTestId('wizard-step-personalization');
-    const stepReview = page.getByTestId('wizard-step-review');
-    
-    // Save button in summary column (Col 3)
-    const saveButton = page.getByRole('button', { name: /Criar|Salvar|Salvar Alterações/i }).last();
+    const nextButton = page.getByTestId('wizard-next-button');
     
     // 1. STEP: CLIENTE
     await expect(page.getByText('Etapa 1: Cliente (Atual)', { exact: false })).toBeVisible();
@@ -27,12 +20,14 @@ test.describe('Quote Builder Wizard Flow (5 Steps)', () => {
     await searchInput.fill('Promo');
     
     // Wait for the specific result to be visible and click it
+    // Using a more specific selector for the company item
     const companyOption = page.locator('button:has-text("Promo")').first();
     await companyOption.waitFor({ state: 'visible', timeout: 10000 });
     await companyOption.click();
     
-    // Wait for contact to be loaded
+    // Wait for contact to be loaded and auto-selected if unique, or select first
     const contactTrigger = page.getByTestId('contact-selector-trigger');
+    const contactAutoSelected = page.getByText('Selecione uma empresa primeiro');
     
     // Give some time for queries
     await page.waitForTimeout(1000);
@@ -46,7 +41,7 @@ test.describe('Quote Builder Wizard Flow (5 Steps)', () => {
     }
     
     // Advance to Conditions
-    await stepConditions.click();
+    await nextButton.click();
 
     // 2. STEP: CONDIÇÕES
     await expect(page.getByText('Etapa 2: Condições (Atual)', { exact: false })).toBeVisible();
@@ -72,7 +67,7 @@ test.describe('Quote Builder Wizard Flow (5 Steps)', () => {
     await page.getByTestId('shipping-cost-input').fill('150');
     
     // Advance to Items
-    await stepItems.click();
+    await nextButton.click();
 
     // 3. STEP: ÍTENS
     await expect(page.getByText('Etapa 3: Itens (Atual)', { exact: false })).toBeVisible();
@@ -99,13 +94,16 @@ test.describe('Quote Builder Wizard Flow (5 Steps)', () => {
     await page.getByLabel('Quantidade').first().fill('100');
     
     // Advance to Personalization
-    await stepPersonalization.click();
+    await nextButton.click();
 
     // 4. STEP: PERSONALIZAÇÃO
     await expect(page.getByText('Etapa 4: Personalização (Atual)', { exact: false })).toBeVisible();
     
+    // Since personalization is optional for the flow to finish, but good to test if it loads
+    await expect(page.getByText('Personalização de caneta', { exact: false }).or(page.getByText('Personalização de produto', { exact: false }))).toBeVisible();
+    
     // Advance to Review
-    await stepReview.click();
+    await nextButton.click();
 
     // 5. STEP: REVISÃO
     await expect(page.getByText('Etapa 5: Revisão (Atual)', { exact: false })).toBeVisible();
@@ -114,13 +112,13 @@ test.describe('Quote Builder Wizard Flow (5 Steps)', () => {
     await expect(page.getByText('Resumo', { exact: true })).toBeVisible();
     await expect(page.getByText('Total', { exact: true })).toBeVisible();
     
-    // Final Button should be "Salvar" or "Criar"
-    await expect(saveButton).toBeVisible();
+    // Final Button should be "Salvar Orçamento"
+    await expect(nextButton).toHaveText('Salvar Orçamento');
   });
 
   test('should block jumping ahead if current step is invalid', async ({ page }) => {
     // Try to click "Itens" step directly from "Cliente"
-    const itemsStep = page.getByTestId('wizard-step-items');
+    const itemsStep = page.getByLabel(/Etapa 3: Itens/);
     await itemsStep.click();
     
     // Should show error and stay on Step 1
@@ -129,8 +127,8 @@ test.describe('Quote Builder Wizard Flow (5 Steps)', () => {
   });
 
   test('should show accessibility announcements on validation failure', async ({ page }) => {
-    const itemsStep = page.getByTestId('wizard-step-items');
-    await itemsStep.click();
+    const nextButton = page.getByTestId('wizard-next-button');
+    await nextButton.click();
     
     const announcer = page.locator('#quote-builder-announcer');
     await expect(announcer).toHaveText('Erro: Selecione um cliente');
