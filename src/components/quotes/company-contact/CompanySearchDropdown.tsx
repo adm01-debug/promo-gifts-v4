@@ -286,7 +286,7 @@ export function CompanySearchDropdown({
                 ) : (
                   <div className="py-0">
                     {filteredCompanies.map((company, index) => (
-                      <button key={company.id} type="button" className={cn("flex items-center gap-3 w-full px-3 py-2.5 text-left transition-colors duration-150 hover:bg-primary/10", index < filteredCompanies.length - 1 && "border-b border-border/30", companyId === company.id && "bg-primary/10 border-l-2 border-l-primary")}
+                      <button key={company.id} type="button" data-testid={`company-option-${company.id}`} className={cn("flex items-center gap-3 w-full px-3 py-2.5 text-left transition-colors duration-150 hover:bg-primary/10", index < filteredCompanies.length - 1 && "border-b border-border/30", companyId === company.id && "bg-primary/10 border-l-2 border-l-primary")}
                         onClick={() => handleSelect(company.id)}>
                         <CompanyAvatar name={company.name} logoUrl={company.logo_url} size="sm" />
                         <div className="flex flex-col flex-1 min-w-0">
