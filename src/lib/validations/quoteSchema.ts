@@ -90,6 +90,7 @@ export function validateQuoteForm(data: {
 export const QUOTE_FIELD_LABELS: Record<string, string> = {
   empresa: "Empresa",
   contato: "Contato",
+  forma_pagamento: "Forma de Pagamento",
   prazo_pagamento: "Prazo de Pagamento",
   prazo_entrega: "Prazo de Entrega",
   frete: "Frete",
