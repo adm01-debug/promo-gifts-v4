@@ -249,7 +249,7 @@ export function CompanySearchDropdown({
                     {history.map((item) => {
                       const meta = (item.metadata || {}) as { razao_social?: string | null; cnpj?: string | null; logo_url?: string | null };
                       return (
-                        <div key={item.id} className="group flex items-center gap-3 w-full px-3 py-2 text-left hover:bg-primary/10 transition-colors border-b border-border/20 last:border-b-0">
+                        <div key={item.id} className={cn("group flex items-center gap-3 w-full px-3 py-2 text-left hover:bg-primary/10 transition-colors border-b border-border/20 last:border-b-0", companyId === item.id && "bg-primary/10 border-l-2 border-l-primary")}>
                           <button type="button" className="flex items-center gap-3 flex-1 min-w-0" onClick={() => handleSelect(item.id)}>
                             <CompanyAvatar name={item.label} logoUrl={meta.logo_url ?? null} size="sm" />
                             <div className="flex flex-col flex-1 min-w-0">
