@@ -215,6 +215,7 @@ export default function ProductDetail() {
   };
 
   return (
+    <>
       <Helmet>
         <title>{product.name} | Promo Gifts</title>
         <meta
@@ -387,5 +388,6 @@ export default function ProductDetail() {
         />
       )}
       <ScrollToTopButton />
+    </>
   );
 }
