@@ -17,8 +17,10 @@
  */
 
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { Info, Palette, Package, Ruler } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+
 import {
   Tooltip,
   TooltipContent,
