@@ -280,7 +280,38 @@ export default function QuoteBuilderPage() {
                   Condições
                 </h3>
 
-                {/* Pagamento */}
+                {/* Pagamento Form */}
+                <div className="space-y-1">
+                  <Label
+                    className={cn(
+                      'text-xs',
+                      s.validationErrors.includes('forma_pagamento')
+                        ? 'text-destructive'
+                        : 'text-muted-foreground',
+                    )}
+                  >
+                    Forma | Pagamento{' '}
+                    {s.validationErrors.includes('forma_pagamento') && (
+                      <span className="ml-1">*</span>
+                    )}
+                  </Label>
+                  <Select value={s.paymentMethod} onValueChange={s.setPaymentMethod}>
+                    <SelectTrigger
+                      className={cn(
+                        'h-8 text-xs',
+                        s.validationErrors.includes('forma_pagamento') && 'border-destructive',
+                      )}
+                    >
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="boleto">Boleto Bancário</SelectItem>
+                      <SelectItem value="pix_transferencia">Transferência Bancária / Pix</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Pagamento Terms */}
                 <div className="space-y-1">
                   <Label
                     className={cn(
