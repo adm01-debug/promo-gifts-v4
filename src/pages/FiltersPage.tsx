@@ -4,7 +4,7 @@ import { SharePreviewDialog } from "@/components/products/share/SharePreviewDial
 import { VariantPickerDialog } from "@/components/products/VariantPickerDialog";
 import type { Product } from "@/hooks/useProducts";
 import type { ExternalVariantStock } from "@/hooks/useExternalVariantStock";
-import { MainLayout } from "@/components/layout/MainLayout";
+
 import { PageSEO } from "@/components/seo/PageSEO";
 import { FilterPanel, type FilterState, defaultFilters } from "@/components/filters/FilterPanel";
 import { SORT_OPTIONS } from "@/constants/filters";
@@ -103,7 +103,7 @@ export default function FiltersPage() {
   }, [state]);
 
   return (
-    <MainLayout>
+    <>
       <PageSEO title="Filtros de Produtos" description="Filtre e encontre brindes por cor, categoria, preço e fornecedor." path="/produtos" />
       <div className="animate-fade-in">
         <div className="flex gap-8">
@@ -486,6 +486,6 @@ export default function FiltersPage() {
           } : null}
         />
       )}
-    </MainLayout>
+    </>
   );
 }
