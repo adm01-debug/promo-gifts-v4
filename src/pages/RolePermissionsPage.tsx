@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BackButton } from '@/components/common/BackButton';
 import { supabase } from '@/integrations/supabase/client';
-import { SidebarProvider, Sidebar, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -195,29 +194,25 @@ export default function RolePermissionsPage() {
   };
 
   return (
-    <SidebarProvider>
+    <div className="space-y-6">
       <PageSEO title="Permissões por Role" description="Configure permissões associadas a cada perfil de acesso." path="/admin/role-permissoes" noIndex />
-      <div className="flex min-h-screen w-full">
-        <Sidebar />
-        <SidebarInset className="flex-1">
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-            <SidebarTrigger className="-ml-1" />
-            <BackButton fallbackPath="/admin" />
-            <div className="flex-1 flex items-center justify-between">
-              <div>
-                <h1 className="font-display text-lg font-semibold">Gerenciamento de Permissões por Role</h1>
-                <p className="text-sm text-muted-foreground">Configure quais permissões cada role possui</p>
-              </div>
-              {pendingChanges.size > 0 && (
-                <Button onClick={saveChanges} disabled={isSaving}>
-                  <Save className="h-4 w-4 mr-2" />
-                  {isSaving ? 'Salvando...' : `Salvar ${pendingChanges.size} alteração(ões)`}
-                </Button>
-              )}
-            </div>
-          </header>
-          
-          <main className="flex-1 w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
+      <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 -mx-3 sm:-mx-4 lg:-mx-6 -mt-3 sm:-mt-4 lg:-mt-6 mb-6">
+        <BackButton fallbackPath="/admin" />
+        <div className="flex-1 flex items-center justify-between">
+          <div>
+            <h1 className="font-display text-lg font-semibold">Gerenciamento de Permissões por Role</h1>
+            <p className="text-sm text-muted-foreground">Configure quais permissões cada role possui</p>
+          </div>
+          {pendingChanges.size > 0 && (
+            <Button onClick={saveChanges} disabled={isSaving}>
+              <Save className="h-4 w-4 mr-2" />
+              {isSaving ? 'Salvando...' : `Salvar ${pendingChanges.size} alteração(ões)`}
+            </Button>
+          )}
+        </div>
+      </header>
+      
+      <main className="max-w-[1920px] mx-auto animate-fade-in">
             <div className="max-w-6xl mx-auto space-y-6">
               {/* Role Cards Overview */}
               <div className="grid gap-4 md:grid-cols-2">
@@ -417,9 +412,7 @@ export default function RolePermissionsPage() {
                 </CardContent>
               </Card>
             </div>
-          </main>
-        </SidebarInset>
-      </div>
-    </SidebarProvider>
+      </main>
+    </div>
   );
 }
