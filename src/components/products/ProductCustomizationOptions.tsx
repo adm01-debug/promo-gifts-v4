@@ -34,7 +34,7 @@ import type {
   PersonalizationItem,
 } from "@/types/customization";
 
-interface ProductCustomizationOptionsProps {
+export interface ProductCustomizationOptionsProps {
   productId: string;
   productSku?: string;
   quantity?: number;
@@ -43,7 +43,14 @@ interface ProductCustomizationOptionsProps {
 }
 
 /** Detecta se um local é "CIRCULAR/360°" (mutuamente exclusivo com locais planos). */
-function isCircularLocation(loc: GravacaoLocation): boolean {
+export default function ProductCustomizationOptions({
+  productId,
+  productSku,
+  quantity = 1,
+  initialPersonalizations = [],
+  onSelectionChange,
+}: ProductCustomizationOptionsProps) {
+
   const code = (loc.location_code || "").toUpperCase();
   const name = (loc.location_name || "").toUpperCase();
   return (
