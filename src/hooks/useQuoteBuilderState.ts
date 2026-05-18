@@ -180,6 +180,11 @@ export function useQuoteBuilderState() {
     if (value !== 'fob_pre') {
       setShippingCost(0);
     }
+    toast.success(`Frete alterado para: ${
+      value === 'cif' ? 'CIF' : 
+      value === 'fob' ? 'FOB' : 
+      'FOB Pré-negociado'
+    }`);
   }, []);
 
   const [productSearchOpen, setProductSearchOpen] = useState(false);
@@ -228,18 +233,41 @@ export function useQuoteBuilderState() {
           return false;
         }
         return true;
-      case 'conditions':
-        if (!paymentMethod || !paymentTerms || !deliveryTime || !shippingType) {
-          toast.error('Preencha todas as condições comerciais');
-          announce('Erro: Preencha todas as condições comerciais');
+      case 'conditions': {
+        const errors = validateQuoteForm({
+          clientId,
+          contactId,
+          paymentMethod,
+          paymentTerms,
+          deliveryTime,
+          shippingType,
+          shippingCost,
+          itemsCount: items.length,
+        });
+
+        if (errors.includes('forma_pagamento')) {
+          toast.error('Selecione a forma de pagamento');
           return false;
         }
-        if (shippingType === 'fob_pre' && !shippingCost) {
-          toast.error('Informe o valor do frete');
-          announce('Erro: Informe o valor do frete');
+        if (errors.includes('prazo_pagamento')) {
+          toast.error('Selecione o prazo de pagamento');
+          return false;
+        }
+        if (errors.includes('prazo_entrega')) {
+          toast.error('Defina o prazo de entrega');
+          return false;
+        }
+        if (errors.includes('frete')) {
+          toast.error('Selecione a modalidade de frete');
+          announce('Erro: Selecione a modalidade de frete');
+          return false;
+        }
+        if (errors.includes('valor_frete')) {
+          toast.error('Informe o valor do frete pré-negociado');
           return false;
         }
         return true;
+      }
       case 'items':
         if (items.length === 0) {
           toast.error('Adicione pelo menos um item');
@@ -326,7 +354,13 @@ export function useQuoteBuilderState() {
         if (saved.contactId) setContactId(saved.contactId);
         if (saved.items) setItems(saved.items);
         if (saved.paymentMethod) setPaymentMethod(saved.paymentMethod);
-        // ... outros campos conforme necessário
+        if (saved.paymentTerms) setPaymentTerms(saved.paymentTerms);
+        if (saved.deliveryTime) setDeliveryTime(saved.deliveryTime);
+        if (saved.shippingType) setShippingType(saved.shippingType);
+        if (saved.shippingCost) setShippingCost(saved.shippingCost);
+        if (saved.validUntil) setValidUntil(saved.validUntil);
+        if (saved.notes) setNotes(saved.notes);
+        if (saved.internalNotes) setInternalNotes(saved.internalNotes);
       }
     },
   });
