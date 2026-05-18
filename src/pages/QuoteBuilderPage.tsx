@@ -415,7 +415,6 @@ export default function QuoteBuilderPage() {
                         Data
                       </button>
                     </div>
-                  </div>
                   {s.deliveryMode === 'prazo' ? (
                     <Select value={s.deliveryTime} onValueChange={s.setDeliveryTime}>
                       <SelectTrigger
@@ -522,7 +521,6 @@ export default function QuoteBuilderPage() {
                     </div>
                   )}
                 </div>
-              </div>
 
               {/* Atalho para Business Analytics do cliente — substitui o antigo painel de Recomendações IA,
                   consolidando inteligência comercial no módulo /ferramentas/bi (SSOT). */}
@@ -648,6 +646,7 @@ export default function QuoteBuilderPage() {
             confirmAllStalePrices={s.confirmAllStalePrices}
           />
         </div>
+      </div>
       </div>
 
       {/* Product Search Dialog */}
