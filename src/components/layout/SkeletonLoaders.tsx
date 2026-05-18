@@ -117,6 +117,27 @@ export const QuotesSkeleton = makeSkeleton(
   "p-3 sm:p-4 lg:p-6",
 );
 
+/** Clients (CRM) skeleton */
+export const ClientsSkeleton = makeSkeleton(
+  "Clients",
+  () => (
+    <div className="space-y-6">
+      <PageHeaderSkeleton />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[1, 2, 3].map((i) => (
+          <StatsCardSkeleton key={i} />
+        ))}
+      </div>
+      <div className="flex gap-3">
+        <Skeleton className="h-10 w-full max-w-sm rounded-lg" />
+        <Skeleton className="h-10 w-32 rounded-lg" />
+      </div>
+      <TableSkeleton rows={10} columns={5} />
+    </div>
+  ),
+  "p-3 sm:p-4 lg:p-6",
+);
+
 /** Admin pages skeleton */
 export const AdminSkeleton = makeSkeleton(
   "Admin",
@@ -245,6 +266,7 @@ export function getFallback(pathname: string): React.ReactNode {
   )
     return <CatalogSkeleton />;
   if (pathname.startsWith("/orcamentos")) return <QuotesSkeleton />;
+  if (pathname.startsWith("/clientes")) return <ClientsSkeleton />;
   if (pathname.startsWith("/admin") || pathname === "/status")
     return <AdminSkeleton />;
   if (pathname === "/dashboard") return <DashboardSkeleton />;
