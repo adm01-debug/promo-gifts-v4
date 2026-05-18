@@ -457,7 +457,7 @@ export default function QuoteBuilderPage() {
                 </div>
 
                 {/* Frete */}
-                <div className="space-y-1">
+                <div className="space-y-1.5 border-t border-border/30 pt-3 mt-1">
                   <Label
                     className={cn(
                       'text-xs',
