@@ -2,6 +2,8 @@ import { renderHook, act } from '@testing-library/react';
 import { useQuoteBuilderState } from '../useQuoteBuilderState';
 import { toast } from 'sonner';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import React from 'react';
 
 // Mock dependências externas
 vi.mock('sonner', () => ({
@@ -65,8 +67,21 @@ vi.mock('@/hooks/useQuoteItems', () => ({
     updateItemPrice: vi.fn(),
     removeItem: vi.fn(),
     handlePersonalizationsChange: vi.fn(),
+    confirmItemPrice: vi.fn(),
   }),
 }));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+});
+
+const wrapper = ({ children }: { children: React.ReactNode }) => (
+  <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+);
 
 describe('useQuoteBuilderState - Shipping Logic', () => {
   beforeEach(() => {
@@ -75,7 +90,7 @@ describe('useQuoteBuilderState - Shipping Logic', () => {
   });
 
   it('should validate shipping requirement in conditions step', () => {
-    const { result } = renderHook(() => useQuoteBuilderState());
+    const { result } = renderHook(() => useQuoteBuilderState(), { wrapper });
 
     // Configura estado inicial válido para etapa de cliente
     act(() => {
@@ -98,7 +113,7 @@ describe('useQuoteBuilderState - Shipping Logic', () => {
   });
 
   it('should require shipping cost for fob_pre mode', () => {
-    const { result } = renderHook(() => useQuoteBuilderState());
+    const { result } = renderHook(() => useQuoteBuilderState(), { wrapper });
 
     act(() => {
       result.current.setClientId('client-123');
@@ -120,7 +135,7 @@ describe('useQuoteBuilderState - Shipping Logic', () => {
   });
 
   it('should reset shipping cost when switching from fob_pre to cif', () => {
-    const { result } = renderHook(() => useQuoteBuilderState());
+    const { result } = renderHook(() => useQuoteBuilderState(), { wrapper });
 
     act(() => {
       result.current.setShippingType('fob_pre');
