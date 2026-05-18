@@ -119,43 +119,65 @@ export function ProductCustomizationModal({
           <div className="grid grid-cols-1 lg:grid-cols-12 h-full">
             {/* Left Column: Context & Selection (Fixed/Sticky Area) */}
             <div className="lg:col-span-3 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto custom-scrollbar">
-              <div className="rounded-xl border bg-card p-4 space-y-3 shadow-sm border-primary/20 bg-primary/5">
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
-                  <Palette className="h-3.5 w-3.5" />
-                  Orçamento Atual
-                </h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-muted-foreground">Volume:</span>
-                    <span className="font-bold">{quantity} un</span>
+              <div className="rounded-xl border bg-card p-5 space-y-4 shadow-sm border-primary/20 bg-primary/5">
+                <div className="space-y-1">
+                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-primary">
+                    Resumo do Item
+                  </h4>
+                  <p className="text-xs font-bold text-foreground line-clamp-2">
+                    {productName || "Produto Selecionado"}
+                  </p>
+                </div>
+
+                <div className="grid gap-2 pt-2 border-t border-primary/10">
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-muted-foreground">Volume total:</span>
+                    <span className="font-bold text-foreground bg-primary/10 px-1.5 py-0.5 rounded">{quantity} un</span>
                   </div>
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-muted-foreground">Configurações:</span>
-                    <Badge variant="secondary" className="h-4 px-1 text-[10px] font-bold">
-                      {confirmedCount}
-                    </Badge>
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-muted-foreground">Locais configurados:</span>
+                    <span className="font-bold text-foreground">{confirmedCount}</span>
                   </div>
                 </div>
               </div>
 
               {/* Lista compacta de gravações já confirmadas (Fixed Summary) */}
               {confirmedCount > 0 && (
-                <div className="space-y-2 pt-2 border-t border-border/60">
-                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                    Confirmados
+                <div className="space-y-3 pt-4">
+                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-1">
+                    Gravações Confirmadas
                   </h4>
-                  <div className="grid gap-1.5">
+                  <div className="grid gap-2">
                     {existingPersonalizations.map((p, i) => (
-                      <div key={i} className="p-2 rounded-lg bg-card border text-[10px] space-y-0.5">
-                        <div className="flex justify-between">
-                          <span className="font-bold uppercase text-primary line-clamp-1">{p.location_name}</span>
-                          <span className="text-muted-foreground font-medium">
+                      <div key={i} className="group relative p-3 rounded-xl bg-card border border-border/40 hover:border-primary/30 transition-all shadow-sm">
+                        <div className="flex justify-between items-start gap-2 mb-1">
+                          <span className="text-[10px] font-black uppercase tracking-tighter text-primary">
+                            {p.location_name}
+                          </span>
+                          <span className="text-[11px] font-bold text-foreground">
                             {p.total_cost?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                           </span>
                         </div>
-                        <p className="text-muted-foreground line-clamp-1">{p.technique_name}</p>
+                        <p className="text-[11px] font-medium text-muted-foreground line-clamp-1">
+                          {p.technique_name}
+                        </p>
+                        {p.width_cm && p.height_cm && (
+                          <p className="text-[9px] text-muted-foreground/70 font-bold uppercase mt-1">
+                            Dimensões: {p.width_cm} × {p.height_cm} cm
+                          </p>
+                        )}
                       </div>
                     ))}
+                  </div>
+                  
+                  {/* Totalizador na Sidebar */}
+                  <div className="mt-4 p-3 rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">Total Extra</span>
+                      <span className="text-sm font-black">
+                        {existingPersonalizations.reduce((s, p) => s + (p.total_cost || 0), 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -187,7 +209,7 @@ export function ProductCustomizationModal({
 
         <div className="p-4 border-t bg-muted/20 flex items-center justify-between">
           <p className="text-[11px] text-muted-foreground max-w-[200px] leading-tight">
-            As alterações são salvas automaticamente ao confirmar cada técnica.
+            Suas escolhas são salvas ao clicar em Concluir Configuração.
           </p>
           <Button onClick={() => setIsOpen(false)} variant="default">
             Concluir Configuração
