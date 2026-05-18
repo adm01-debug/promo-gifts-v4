@@ -407,7 +407,11 @@ export default function QuoteBuilderPage() {
                       </div>
                     </div>
                   {s.deliveryMode === 'prazo' ? (
-                    <Select value={s.deliveryTime} onValueChange={s.setDeliveryTime}>
+                    <Select 
+                      data-testid="delivery-time-select-root"
+                      value={s.deliveryTime} 
+                      onValueChange={s.setDeliveryTime}
+                    >
                       <SelectTrigger
                         data-testid="delivery-time-select"
                         className={cn(
