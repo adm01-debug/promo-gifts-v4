@@ -81,22 +81,18 @@ export default function QuoteBuilderPage() {
         quoteId={s.quoteId}
         data={{
           clientId: s.clientId,
+          contactId: s.contactId,
           validUntil: s.validUntil,
           discountType: s.discountType,
           discountValue: s.discountValue,
+          paymentMethod: s.paymentMethod,
+          paymentTerms: s.paymentTerms,
+          deliveryTime: s.deliveryTime,
+          shippingType: s.shippingType,
+          shippingCost: s.shippingCost,
           notes: s.notes,
           internalNotes: s.internalNotes,
           items: s.items,
-        }}
-        onRestore={(data) => {
-          s.setClientId(data.clientId || '');
-          s.setValidUntil(data.validUntil || format(addDays(new Date(), 30), 'yyyy-MM-dd'));
-          s.setDiscountType(data.discountType || 'percent');
-          s.setDiscountValue(data.discountValue || 0);
-          s.setNotes(data.notes || '');
-          s.setInternalNotes(data.internalNotes || '');
-          s.setItems(data.items || []);
-          toast.success('Rascunho restaurado!');
         }}
         className="fixed right-4 top-20 z-40"
       />
