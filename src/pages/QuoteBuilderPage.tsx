@@ -553,6 +553,7 @@ export default function QuoteBuilderPage() {
                   <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
                 </a>
               )}
+              </div>
             </div>
           </div>
 
@@ -654,7 +655,6 @@ export default function QuoteBuilderPage() {
             confirmAllStalePrices={s.confirmAllStalePrices}
           />
         </div>
-      </div>
       </div>
 
       {/* Product Search Dialog */}
