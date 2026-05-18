@@ -104,6 +104,7 @@ export function buildUpdatePayload(
     discount_amount: round2(totals.discountAmount),
     total: round2(totals.total),
     negotiation_markup_percent: round2(quote.negotiation_markup_percent || 0),
+    payment_method: quote.payment_method || null,
     payment_terms: quote.payment_terms || null,
     delivery_time: quote.delivery_time || null,
     shipping_type: quote.shipping_type || null,
