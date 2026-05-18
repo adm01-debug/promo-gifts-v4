@@ -87,6 +87,28 @@ describe('CompanySearchDropdown', () => {
     });
   });
 
+  it('should filter and prioritize history matches when searching by CNPJ', async () => {
+    render(
+      <CompanySearchDropdown
+        companyId=""
+        selectedCompany={null}
+        onSelectCompany={vi.fn()}
+        onClearCompany={vi.fn()}
+      />
+    );
+
+    const input = screen.getByTestId('company-search-input');
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: '111' } }); // CNPJ of Alpha Corp in history
+
+    await waitFor(() => {
+      const results = screen.getAllByRole('button');
+      // Should find Alpha Corp via history CNPJ match
+      expect(results[1]).toHaveTextContent('Alpha Corp');
+      expect(results[1]).toHaveTextContent('111');
+    });
+  });
+
   it('should highlight the selected company in history and regular list', async () => {
     render(
       <CompanySearchDropdown
