@@ -14,7 +14,9 @@ export const BridgeStatusBanner = memo(function BridgeStatusBanner() {
   const { isAllowed } = useDevGate();
   const { unavailable, reason, closeUnavailable, reload } = useBridgeStatusBanner(isAllowed);
 
-  if (!unavailable) return null;
+  // Banner de infra é exclusivo para usuários DEV — usuários finais não devem
+  // ver mensagens técnicas sobre o bridge externo.
+  if (!isAllowed || !unavailable) return null;
 
   return (
     <div
@@ -27,12 +29,10 @@ export const BridgeStatusBanner = memo(function BridgeStatusBanner() {
           <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 sm:mt-0" aria-hidden />
           <div className="min-w-0 flex-1">
             <span className="font-medium block sm:inline">
-              {isAllowed ? 'Catálogo externo indisponível.' : 'Catálogo temporariamente indisponível.'}
+              Catálogo externo indisponível.
             </span>{' '}
             <span className="opacity-90 block sm:inline leading-tight mt-1 sm:mt-0">
-              {isAllowed 
-                ? 'Tentativas automáticas esgotadas. Aguarde alguns segundos enquanto o serviço reinicia, ou recarregue a página.'
-                : 'Estamos com uma instabilidade momentânea no catálogo. Tente recarregar a página em alguns instantes.'}
+              Tentativas automáticas esgotadas. Aguarde alguns segundos enquanto o serviço reinicia, ou recarregue a página.
             </span>
           </div>
         </div>

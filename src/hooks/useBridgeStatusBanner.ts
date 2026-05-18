@@ -32,15 +32,13 @@ export function useBridgeStatusBanner(isAllowed: boolean) {
       setUnavailable(true);
       setReason(e.reason);
       toast.dismiss(TOAST_ID_DEGRADED);
-      
-      const title = 'Catálogo temporariamente indisponível';
-      const description = isAllowed 
-        ? 'O serviço está reiniciando. Aguarde alguns segundos e tente novamente.'
-        : 'Estamos com uma instabilidade momentânea no acesso ao catálogo. Tente recarregar a página em instantes.';
 
-      toast.error(title, {
+      // Toast técnico só para DEV — usuários finais não devem ver mensagens de infra.
+      if (!isAllowed) return;
+
+      toast.error('Catálogo temporariamente indisponível', {
         id: TOAST_ID_UNAVAILABLE,
-        description,
+        description: 'O serviço está reiniciando. Aguarde alguns segundos e tente novamente.',
         duration: Infinity,
         action: {
           label: 'Recarregar',
@@ -50,14 +48,18 @@ export function useBridgeStatusBanner(isAllowed: boolean) {
     } else if (e.type === 'recovered') {
       toast.dismiss(TOAST_ID_DEGRADED);
       if (unavailableRef.current) {
-        toast.success('Conexão restabelecida', {
-          id: TOAST_ID_UNAVAILABLE,
-          description: 'O catálogo voltou a responder normalmente.',
-          duration: 4000,
-        });
+        if (isAllowed) {
+          toast.success('Conexão restabelecida', {
+            id: TOAST_ID_UNAVAILABLE,
+            description: 'O catálogo voltou a responder normalmente.',
+            duration: 4000,
+          });
+        } else {
+          toast.dismiss(TOAST_ID_UNAVAILABLE);
+        }
         setUnavailable(false);
         setReason('');
-      } else {
+      } else if (isAllowed) {
         toast.success('Conexão normalizada', {
           id: TOAST_ID_DEGRADED,
           duration: 3000,
