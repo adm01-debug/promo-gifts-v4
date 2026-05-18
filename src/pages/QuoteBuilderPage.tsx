@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { CurrencyInput } from '@/components/ui/currency-input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -453,16 +454,9 @@ export default function QuoteBuilderPage() {
                       </Label>
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs text-muted-foreground">R$</span>
-                        <Input
-                          type="text"
-                          inputMode="decimal"
-                          value={s.shippingCost ? String(s.shippingCost).replace('.', ',') : ''}
-                          onChange={(e) => {
-                            const raw = e.target.value.replace(/[^\d,.]/g, '').replace(',', '.');
-                            const n = parseFloat(raw);
-                            s.setShippingCost(Number.isFinite(n) ? n : 0);
-                          }}
-                          placeholder="0,00"
+                        <CurrencyInput
+                          value={s.shippingCost || 0}
+                          onChange={(n) => s.setShippingCost(n)}
                           className={cn(
                             'h-8 text-xs',
                             s.validationErrors.includes('valor_frete') && 'border-destructive',
