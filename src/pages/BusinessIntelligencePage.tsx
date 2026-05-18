@@ -99,7 +99,7 @@ export default function BusinessIntelligencePage() {
           path="/ferramentas/bi"
           noIndex
         />
-        <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-4 px-3 py-3 pb-24 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
+        <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
           {/* Header compacto */}
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex items-center gap-3">
