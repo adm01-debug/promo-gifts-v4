@@ -65,6 +65,17 @@ export function ProductCustomizationOptions({
   const { data: options, isLoading } = useProductCustomizationOptions(productId);
   const [activeLocation, setActiveLocation] = useState<string | null>(null);
 
+  const handleLocationSelect = useCallback((locationCode: string) => {
+    setActiveLocation(locationCode);
+    // Smooth scroll para a área de conteúdo se estiver no mobile
+    if (window.innerWidth < 768) {
+      setTimeout(() => {
+        step2Ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, []);
+
+
   // Track prices per location
   const pricesRef = useRef<Map<string, PersonalizationItem>>(new Map());
   const hasInitialized = useRef(false);
