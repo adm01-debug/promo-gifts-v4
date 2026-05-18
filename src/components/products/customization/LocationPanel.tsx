@@ -30,12 +30,12 @@ function groupByGrupo(options: TechniqueOption[]): Record<string, TechniqueOptio
   }, {} as Record<string, TechniqueOption[]>);
 }
 
-export function LocationPanel({ location, quantity, confirmedTechniqueId, onPriceCalculated }: LocationPanelProps) {
+export function LocationPanel({ location, quantity, confirmedPersonalization, onPriceCalculated }: LocationPanelProps) {
   // Inicializa com a técnica confirmada (se houver) para que ao reabrir o local
   // o vendedor já veja o painel da gravação adicionada.
   const [selectedTechnique, setSelectedTechnique] = useState<TechniqueOption | null>(() => {
-    if (!confirmedTechniqueId) return null;
-    return location.options.find((t) => t.technique_id === confirmedTechniqueId) ?? null;
+    if (!confirmedPersonalization?.techniqueId) return null;
+    return location.options.find((t) => t.technique_id === confirmedPersonalization.techniqueId) ?? null;
   });
 
   const grouped = useMemo(() => groupByGrupo(location.options), [location.options]);
