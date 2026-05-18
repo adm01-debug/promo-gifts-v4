@@ -11,11 +11,6 @@
  * Selecionar CIRCULAR bloqueia LADO A/B (e vice-versa) com tooltip explicando.
  */
 
-/**
- * ProductCustomizationOptions — Interface base para configuração de gravação.
- * Utilizado dentro do ProductCustomizationModal para isolar a complexidade.
- */
-
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -196,24 +191,15 @@ export function ProductCustomizationOptions({
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="flex flex-col gap-6">
-        {/* STEP 1 — Local Selection (Pinned Bento Grid) */}
+      <div className="space-y-3">
+        {/* Bloco fixo: stepper + locais — sempre visíveis durante a rolagem */}
         <div 
           ref={stickyHeaderRef}
-          className="sticky top-0 z-20 -mx-4 px-4 py-4 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 border-b border-border/40 shadow-sm md:shadow-none space-y-4"
+          className="sticky top-0 z-20 -mx-3 px-3 py-2 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 border-b border-border/40 shadow-sm md:shadow-none space-y-2 md:space-y-3"
         >
-          {/* STEP HEADER — Modern Progress Bar */}
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
-              <div 
-                className="h-full bg-primary transition-all duration-500" 
-                style={{ width: activeLocation ? '66%' : '33%' }}
-              />
-            </div>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
-              {activeLocation ? 'Passo 2 de 3' : 'Passo 1 de 3'}
-            </span>
-          </div>
+
+        {/* STEP HEADER — guia didático com âncoras */}
+        <div className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-[11px] font-medium text-muted-foreground overflow-x-auto pb-1 md:pb-0 scrollbar-none">
           <button 
             type="button"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -248,21 +234,18 @@ export function ProductCustomizationOptions({
           </button>
         </div>
 
-        {/* STEP 1 — Local Selection Cards */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h3 className="text-[11px] font-bold uppercase tracking-wider text-foreground">
-              Escolha o Local
-            </h3>
-            {mutuallyExclusive && (
-              <Badge variant="outline" className="text-[9px] gap-1 text-amber-600 border-amber-200 bg-amber-50">
-                <Info className="h-2.5 w-2.5" />
-                Opções Exclusivas
-              </Badge>
-            )}
+        {/* STEP 1 — Local */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[10px] md:text-xs font-semibold text-foreground truncate">
+              Onde a arte será gravada?
+            </p>
+            <Badge variant="outline" className="text-[9px] px-1 h-4">
+              {locations.length}
+            </Badge>
           </div>
 
-          <div className="flex md:grid md:grid-cols-4 gap-2 overflow-x-auto md:overflow-x-visible pb-1 md:pb-0 scrollbar-none snap-x">
+          <div className="flex md:grid md:grid-cols-3 gap-2 overflow-x-auto md:overflow-x-visible pb-1 md:pb-0 scrollbar-none snap-x">
             {locations.map((loc) => {
               const isActive = activeLocation === loc.location_code;
               const hasPrice = pricesRef.current.has(loc.location_code);
@@ -342,50 +325,30 @@ export function ProductCustomizationOptions({
           )}
         </div>
         {/* /fim do bloco sticky (stepper + locais) */}
+        </div>
 
-        {/* STEPS 2 + 3 — Content Area (Modular Bento) */}
-        {currentLocation ? (
-          <div ref={step2Ref} className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in zoom-in-95 duration-300">
-            {/* Technique Selection Module */}
-            <div className="rounded-xl border border-border/60 bg-background/60 p-4 space-y-3 shadow-sm">
-              <div className="flex items-center justify-between border-b pb-2">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  2. Selecione a Técnica
-                </p>
-                <Badge variant="secondary" className="text-[9px] h-4">
-                  {currentLocation.options.length} opções
-                </Badge>
-              </div>
-              <div className="max-h-[400px] overflow-y-auto custom-scrollbar pr-1">
-                <LocationPanel
-                  key={currentLocation.location_code}
-                  location={currentLocation}
-                  quantity={quantity}
-                  confirmedPersonalization={pricesRef.current.get(currentLocation.location_code)}
-                  onPriceCalculated={handlePriceCalculated}
-                />
-              </div>
+        {/* STEPS 2 + 3 — Técnica + Tamanho (rolam normalmente abaixo do bloco fixo) */}
+        {currentLocation && (
+          <div ref={step2Ref} className="rounded-xl border border-border/60 bg-background/40 p-3 space-y-2.5 scroll-mt-28">
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Técnicas para{" "}
+                <span className="text-primary">{currentLocation.location_name}</span>
+              </p>
+              <Badge variant="secondary" className="text-[10px]">
+                {currentLocation.options.length} técnica
+                {currentLocation.options.length !== 1 ? "s" : ""}
+              </Badge>
             </div>
-
-            {/* Config & Preview Module */}
-            <div className="space-y-4">
-              <div className="hidden md:flex flex-col items-center justify-center h-full p-8 rounded-xl border border-dashed border-primary/20 bg-primary/5 text-center">
-                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                  <Palette className="h-6 w-6 text-primary" />
-                </div>
-                <h4 className="text-sm font-bold text-foreground">Configuração em Tempo Real</h4>
-                <p className="text-[11px] text-muted-foreground mt-1 max-w-[200px]">
-                  Os valores são calculados automaticamente conforme você ajusta cores e dimensões.
-                </p>
-              </div>
+            <div ref={step3Ref} className="pt-2 border-t border-border/40 scroll-mt-28">
+              <LocationPanel
+                key={currentLocation.location_code}
+                location={currentLocation}
+                quantity={quantity}
+                confirmedPersonalization={pricesRef.current.get(currentLocation.location_code)}
+                onPriceCalculated={handlePriceCalculated}
+              />
             </div>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed rounded-2xl bg-muted/5">
-            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-              <Package className="h-8 w-8 text-muted-foreground/40" />
-            </div>
-            <p className="text-sm font-medium text-muted-foreground">Selecione um local acima para começar</p>
           </div>
         )}
 
