@@ -17,6 +17,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { Info, Palette, Package } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -28,6 +29,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useProductCustomizationOptions } from "@/hooks/useProductCustomizationOptions";
 import { LocationPanel } from "./customization/LocationPanel";
+
 import type {
   CustomizationPriceResponseV6,
   GravacaoLocation,
