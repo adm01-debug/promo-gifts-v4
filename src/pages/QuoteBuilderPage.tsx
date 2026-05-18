@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   FileText,
   Plus,
@@ -33,6 +34,7 @@ import {
   Calendar as CalendarIcon,
   Sparkles,
   ExternalLink,
+  Info,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, addDays } from 'date-fns';
@@ -327,6 +329,20 @@ export default function QuoteBuilderPage() {
                       {s.validationErrors.includes('prazo_entrega') && (
                         <span className="ml-1">*</span>
                       )}
+                      <TooltipProvider delayDuration={150}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="ml-1 inline-flex cursor-help align-middle text-muted-foreground hover:text-foreground">
+                              <Info className="h-3 w-3" aria-label="Informação sobre prazo de entrega" />
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
+                            Antes de assumir o compromisso com seu Cliente, valide com todo o time
+                            (Fornecedores, Coordenador de Compras, Coordenador de Logística) a
+                            viabilidade do prazo.
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </Label>
                     <div className="flex gap-0.5 rounded-md bg-muted p-0.5">
                       <button
