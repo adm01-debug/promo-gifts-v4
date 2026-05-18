@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { MainLayout } from "@/components/layout/MainLayout";
 import { useLoginAttempts, useLoginAttemptStats } from "@/hooks/useLoginAttempts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,7 +26,6 @@ export default function AdminLoginAttemptsPage() {
   const { data: stats } = useLoginAttemptStats();
 
   return (
-    <MainLayout>
       <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
       <PageSEO title="Tentativas de Login" description="Monitore tentativas de login e atividades suspeitas." path="/admin/login-attempts" noIndex />
       <div>
@@ -186,6 +184,5 @@ export default function AdminLoginAttemptsPage() {
         </CardContent>
       </Card>
       </div>
-    </MainLayout>
   );
 }

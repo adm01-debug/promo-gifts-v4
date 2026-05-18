@@ -1,6 +1,5 @@
 import React, { Suspense } from "react";
 import { useSearchParams } from "react-router-dom";
-import { MainLayout } from "@/components/layout/MainLayout";
 import { PageSEO } from "@/components/seo/PageSEO";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Package, Palette, FolderOpen, Truck } from "lucide-react";
@@ -38,7 +37,6 @@ export default function AdminCadastrosPage() {
   };
 
   return (
-    <MainLayout>
       <PageSEO title="Cadastros" description="Gerencie produtos, fornecedores e técnicas de personalização." path="/admin/cadastros" noIndex />
       <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
         <div className="flex items-center gap-3">
@@ -86,6 +84,5 @@ export default function AdminCadastrosPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </MainLayout>
   );
 }

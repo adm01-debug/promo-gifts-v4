@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { MainLayout } from '@/components/layout/MainLayout';
 import { untypedFrom } from '@/lib/supabase-untyped';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -423,7 +422,6 @@ export default function TrendsPage() {
   };
 
   return (
-    <MainLayout>
       <PageSEO
         title="Tendências"
         description="Analise tendências de produtos e buscas."
@@ -540,6 +538,5 @@ export default function TrendsPage() {
         </Tabs>
       </div>
       <TrendsTour />
-    </MainLayout>
   );
 }

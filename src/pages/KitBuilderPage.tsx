@@ -1,5 +1,4 @@
 import { lazy, Suspense } from 'react';
-import { MainLayout } from '@/components/layout/MainLayout';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { useKitBuilderPageState } from '@/hooks/useKitBuilderPageState';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,7 +16,6 @@ export default function KitBuilderPage() {
   const { state, actions, meta } = useKitBuilderPageState();
 
   return (
-    <MainLayout>
       <div
         className="relative min-h-screen"
         style={{
@@ -117,6 +115,5 @@ export default function KitBuilderPage() {
           </div>
         </div>
       </div>
-    </MainLayout>
   );
 }

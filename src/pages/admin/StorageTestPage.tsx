@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload, Download, FileText, Trash2, Database, ShieldCheck, RefreshCw, ArrowRightLeft } from "lucide-react";
-import { MainLayout } from "@/components/layout/MainLayout";
 import { PageSEO } from "@/components/seo/PageSEO";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -150,7 +149,6 @@ export default function StorageTestPage() {
   };
 
   return (
-    <MainLayout>
       <PageSEO title="Teste de Storage e Sincronização" description="Validar infraestrutura externa." path="/admin/storage-test" noIndex />
       <div className="container mx-auto py-10 space-y-8">
         <div className="flex items-center justify-between">
@@ -318,6 +316,5 @@ export default function StorageTestPage() {
           </CardContent>
         </Card>
       </div>
-    </MainLayout>
   );
 }

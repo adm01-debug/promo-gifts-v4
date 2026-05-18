@@ -1,4 +1,3 @@
-import { MainLayout } from "@/components/layout/MainLayout";
 import { PageSEO } from "@/components/seo/PageSEO";
 import { Users, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -7,7 +6,6 @@ import { RoleMigrationPanel } from "@/components/admin/security/role-migration/R
 
 export default function AdminMigracaoPapeisPage() {
   return (
-    <MainLayout>
       <PageSEO
         title="Migração de papéis"
         description="Execute trocas de papéis em lote com auditoria por usuário e por evento."
@@ -36,6 +34,5 @@ export default function AdminMigracaoPapeisPage() {
 
         <RoleMigrationPanel />
       </div>
-    </MainLayout>
   );
 }

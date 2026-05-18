@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -66,7 +65,6 @@ export default function RateLimitDashboardPage() {
   };
 
   return (
-    <MainLayout>
       <PageSEO title="Rate Limit" description="Monitore limites de requisições e controle de acesso." path="/admin/rate-limit" noIndex />
       <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
         <div className="flex items-center justify-between">
@@ -176,6 +174,5 @@ export default function RateLimitDashboardPage() {
           </CardContent>
         </Card>
       </div>
-    </MainLayout>
   );
 }

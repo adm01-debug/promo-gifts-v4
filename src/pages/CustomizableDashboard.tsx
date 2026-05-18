@@ -13,7 +13,6 @@ import { GripVertical, LayoutDashboard, FileText, Target, RotateCcw, Save } from
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { MainLayout } from '@/components/layout/MainLayout';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { UpcomingDatesWidget } from '@/components/dashboard/UpcomingDatesWidget';
 import { QuickActionsPanel } from '@/components/dashboard/QuickActionsPanel';
@@ -262,7 +261,6 @@ export function CustomizableDashboard() {
   ]);
 
   return (
-    <MainLayout>
       <PageSEO
         title="Dashboard"
         description="Painel personalizado com métricas, ações rápidas e widgets."
@@ -358,7 +356,6 @@ export function CustomizableDashboard() {
           </SortableContext>
         </DndContext>
       </div>
-    </MainLayout>
   );
 }
 

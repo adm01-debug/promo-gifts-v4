@@ -1,7 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MainLayout } from "@/components/layout/MainLayout";
 import { PageSEO } from "@/components/seo/PageSEO";
 
 /**
@@ -102,7 +101,6 @@ const BORDER_WIDTHS = [
 
 export default function AdminDesignTokensPage() {
   return (
-    <MainLayout>
       <PageSEO title="Design Tokens" description="Paleta visual viva dos tokens do sistema." path="/admin/design-tokens" />
       <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
       <header className="space-y-2">
@@ -270,6 +268,5 @@ export default function AdminDesignTokensPage() {
         + `.dark`). Esta página reflete automaticamente.
       </footer>
       </div>
-    </MainLayout>
   );
 }

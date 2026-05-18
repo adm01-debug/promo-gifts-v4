@@ -1,4 +1,3 @@
-import { MainLayout } from "@/components/layout/MainLayout";
 import { PageSEO } from "@/components/seo/PageSEO";
 import { AccessSecurityManager } from "@/components/admin/AccessSecurityManager";
 import { SecurityDashboard } from "@/components/security/SecurityDashboard";
@@ -8,7 +7,6 @@ import { SecureUploadManager } from "@/components/admin/security/SecureUploadMan
 
 export default function AdminSegurancaPage() {
   return (
-    <MainLayout>
       <PageSEO title="Segurança" description="Central de segurança, monitoramento de acessos e restrições." path="/admin/seguranca" noIndex />
       <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
         <div className="flex items-center gap-3">
@@ -50,7 +48,6 @@ export default function AdminSegurancaPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </MainLayout>
   );
 }
 

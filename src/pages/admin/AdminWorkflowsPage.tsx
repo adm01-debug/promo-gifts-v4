@@ -1,11 +1,9 @@
-import { MainLayout } from "@/components/layout/MainLayout";
 import { WorkflowCanvas } from "@/components/workflows/WorkflowCanvas";
 import { Workflow } from "lucide-react";
 import { PageSEO } from "@/components/seo/PageSEO";
 
 export default function AdminWorkflowsPage() {
   return (
-    <MainLayout>
       <PageSEO title="Workflows" description="Configure automações e fluxos de trabalho." path="/admin/workflows" noIndex />
       <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
         <div className="flex items-center gap-3">
@@ -22,6 +20,5 @@ export default function AdminWorkflowsPage() {
 
         <WorkflowCanvas />
       </div>
-    </MainLayout>
   );
 }

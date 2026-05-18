@@ -5,7 +5,6 @@ import { useMemo, useState } from 'react';
 import * as Lucide from 'lucide-react';
 import { Plus, Pencil, Trash2, EyeOff, Eye, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { MainLayout } from '@/components/layout/MainLayout';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -85,7 +84,6 @@ export default function KitTemplatesAdminPage() {
   };
 
   return (
-    <MainLayout>
       <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
       <PageSEO title="Templates de Kits" description="Gestão de templates sugeridos pelo sistema." path="/admin/kit-templates" noIndex />
 
@@ -275,6 +273,5 @@ export default function KitTemplatesAdminPage() {
         </AlertDialogContent>
       </AlertDialog>
       </div>
-    </MainLayout>
   );
 }

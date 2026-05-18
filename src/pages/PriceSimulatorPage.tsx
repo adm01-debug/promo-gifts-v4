@@ -1,4 +1,3 @@
-import { MainLayout } from '@/components/layout/MainLayout';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { ProductPriceSimulator } from '@/components/pricing/ProductPriceSimulator';
 import { QuantityPriceCalculator } from '@/components/pricing/QuantityPriceCalculator';
@@ -7,7 +6,6 @@ import { Package, BarChart3 } from 'lucide-react';
 
 export default function PriceSimulatorPage() {
   return (
-    <MainLayout>
       <PageSEO
         title="Simulador de Preços"
         description="Simule preços de brindes com personalização, quantidades e custos."
@@ -60,6 +58,5 @@ export default function PriceSimulatorPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </MainLayout>
   );
 }

@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-import { MainLayout } from '@/components/layout/MainLayout';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -53,7 +52,6 @@ export default function QuotesDashboardPage() {
 
   if (s.isLoading) {
     return (
-      <MainLayout>
         <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
           <Skeleton className="h-10 w-64" />
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -66,12 +64,10 @@ export default function QuotesDashboardPage() {
             <Skeleton className="h-80" />
           </div>
         </div>
-      </MainLayout>
     );
   }
 
   return (
-    <MainLayout>
       <PageSEO
         title="Dashboard de Orçamentos"
         description="Acompanhe métricas e indicadores dos seus orçamentos."
@@ -398,6 +394,5 @@ export default function QuotesDashboardPage() {
           </CardContent>
         </Card>
       </div>
-    </MainLayout>
   );
 }

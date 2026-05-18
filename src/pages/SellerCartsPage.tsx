@@ -10,7 +10,6 @@
  */
 import { useCallback, useMemo, useRef } from 'react';
 
-import { MainLayout } from '@/components/layout/MainLayout';
 import { type CartStatus } from '@/hooks/useSellerCarts';
 import type { CartTemplateItem } from '@/hooks/useCartTemplates';
 import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
@@ -53,7 +52,6 @@ import { CartSidebar } from './seller-carts/CartSidebar';
 
 export default function SellerCartsPage() {
   return (
-    <MainLayout>
       <PageSEO
         title="Carrinhos"
         description="Gerencie carrinhos de seleção de produtos para seus clientes."
@@ -61,7 +59,6 @@ export default function SellerCartsPage() {
         noIndex
       />
       <SellerCartsContent />
-    </MainLayout>
   );
 }
 

@@ -21,7 +21,6 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
-import { MainLayout } from '@/components/layout/MainLayout';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { ProductGrid } from '@/components/products/ProductGrid';
 import { ProductTableView } from '@/components/products/ProductTableView';
@@ -299,7 +298,6 @@ export default function CollectionDetailPage() {
   // Loading state for external collections
   if (isExternal && isLoadingExternalProducts) {
     return (
-      <MainLayout>
         <div className="mx-auto w-full max-w-[1920px] space-y-4 px-3 py-3 sm:px-4 sm:py-4 lg:px-6 xl:px-8">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-16 w-full" />
@@ -309,18 +307,15 @@ export default function CollectionDetailPage() {
             ))}
           </div>
         </div>
-      </MainLayout>
     );
   }
 
   if (!collection) {
     return (
-      <MainLayout>
         <div className="py-16 text-center">
           <h2 className="mb-4 font-display text-xl font-semibold">Coleção não encontrada</h2>
           <Button onClick={() => navigate('/colecoes')}>Voltar para coleções</Button>
         </div>
-      </MainLayout>
     );
   }
 
@@ -380,7 +375,6 @@ export default function CollectionDetailPage() {
 
   return (
     <>
-      <MainLayout>
         <PageSEO
           title={`Coleção: ${collection.name}`}
           description={`Explore os produtos da coleção ${collection.name}.`}
@@ -706,7 +700,6 @@ export default function CollectionDetailPage() {
             </div>
           )}
         </div>
-      </MainLayout>
 
       {showPresentation && products.length > 0 && (
         <CollectionPresentationLauncher

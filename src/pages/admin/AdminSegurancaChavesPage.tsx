@@ -1,4 +1,3 @@
-import { MainLayout } from "@/components/layout/MainLayout";
 import { PageSEO } from "@/components/seo/PageSEO";
 import { KeyRound, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -13,7 +12,6 @@ import { RlsAuditPanel } from "@/components/admin/security/RlsAuditPanel";
 
 export default function AdminSegurancaChavesPage() {
   return (
-    <MainLayout>
       <PageSEO
         title="Chaves MCP"
         description="Gerencie ciclo de vida de chaves do MCP server: criar, listar, rotacionar, revogar e auditar."
@@ -69,7 +67,6 @@ export default function AdminSegurancaChavesPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </MainLayout>
   );
 }
 

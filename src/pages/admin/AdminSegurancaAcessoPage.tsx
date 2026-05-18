@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
-import { MainLayout } from '@/components/layout/MainLayout';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -215,7 +214,6 @@ export default function AdminSegurancaAcessoPage() {
   };
 
   return (
-    <MainLayout>
       <PageSEO
         title="Segurança e Acesso"
         description="Painel admin para gestão de bot detection, rate limits e allowlist/blocklist de IPs."
@@ -671,7 +669,6 @@ export default function AdminSegurancaAcessoPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </MainLayout>
   );
 }
 

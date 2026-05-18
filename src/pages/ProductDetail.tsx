@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { getCdnUrl } from '@/utils/image-utils';
-import { MainLayout } from '@/components/layout/MainLayout';
 import { ProductStickyHeader } from '@/components/products/ProductStickyHeader';
 import { SimilarProducts } from '@/components/products/SimilarProducts';
 import { SmartRecommendations } from '@/components/products/SmartRecommendations';
@@ -169,14 +168,11 @@ export default function ProductDetail() {
 
   if (isLoading)
     return (
-      <MainLayout>
         <ProductDetailSkeleton />
-      </MainLayout>
     );
 
   if (isError || !product) {
     return (
-      <MainLayout>
         <EmptyState
           variant="products"
           title={isError ? 'Erro ao carregar produto' : 'Produto não encontrado'}
@@ -190,7 +186,6 @@ export default function ProductDetail() {
             onClick: () => (isError ? window.location.reload() : navigate('/')),
           }}
         />
-      </MainLayout>
     );
   }
 
@@ -220,7 +215,6 @@ export default function ProductDetail() {
   };
 
   return (
-    <MainLayout>
       <Helmet>
         <title>{product.name} | Promo Gifts</title>
         <meta
@@ -393,6 +387,5 @@ export default function ProductDetail() {
         />
       )}
       <ScrollToTopButton />
-    </MainLayout>
   );
 }

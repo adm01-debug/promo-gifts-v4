@@ -8,7 +8,6 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MainLayout } from '@/components/layout/MainLayout';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { useComparisonStore, type CompareVariantInfo } from '@/stores/useComparisonStore';
 import type { Product, ProductColor } from '@/types/product';
@@ -122,7 +121,6 @@ export default function ComparePage() {
   // Empty state with smart suggestions
   if (compareCount < 2) {
     return (
-      <MainLayout>
         <PageSEO
           title="Comparar Produtos"
           description="Compare brindes lado a lado."
@@ -135,12 +133,10 @@ export default function ComparePage() {
           }}
         />
         <CompareEmptyStateSmart />
-      </MainLayout>
     );
   }
 
   return (
-    <MainLayout>
       {/* ARIA-live region for accessibility announcements */}
       <div aria-live="polite" aria-atomic="true" className="sr-only">
         {ariaMessage}
@@ -390,6 +386,5 @@ export default function ComparePage() {
           <SimilarProductsRail products={products} formatCurrency={formatCurrency} />
         </div>
       </div>
-    </MainLayout>
   );
 }

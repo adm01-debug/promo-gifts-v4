@@ -3,7 +3,6 @@
  * Refatorado: lógica em useQuoteBuilderState, UI em sub-componentes.
  */
 
-import { MainLayout } from '@/components/layout/MainLayout';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { cn } from '@/lib/utils';
 
@@ -59,16 +58,13 @@ export default function QuoteBuilderPage() {
 
   if (s.loadingQuote) {
     return (
-      <MainLayout>
         <div className="flex min-h-[60vh] items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </MainLayout>
     );
   }
 
   return (
-    <MainLayout>
       <PageSEO
         title={s.quoteId ? 'Editar Orçamento' : 'Novo Orçamento'}
         description="Crie e edite orçamentos com seleção de produtos e personalização."
@@ -620,6 +616,5 @@ export default function QuoteBuilderPage() {
         onCancel={cancelLeave}
         message={message}
       />
-    </MainLayout>
   );
 }

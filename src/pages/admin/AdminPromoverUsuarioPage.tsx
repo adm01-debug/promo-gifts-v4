@@ -8,7 +8,6 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { MainLayout } from "@/components/layout/MainLayout";
 import { PageSEO } from "@/components/seo/PageSEO";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -89,7 +88,6 @@ export default function AdminPromoverUsuarioPage() {
   // Guard de UI extra (ProtectedRoute já cobre, mas evita flash em reload)
   if (!isSupervisorOrAbove) {
     return (
-      <MainLayout>
         <PageSEO
           title="Acesso Restrito"
           description="Acesso negado ao módulo de promoção."
@@ -103,12 +101,10 @@ export default function AdminPromoverUsuarioPage() {
             Apenas supervisores podem promover agentes.
           </p>
         </div>
-      </MainLayout>
     );
   }
 
   return (
-    <MainLayout>
       <PageSEO
         title="Promover Agente"
         description="Promover um agente a supervisor com auditoria e step-up de segurança."
@@ -243,7 +239,6 @@ export default function AdminPromoverUsuarioPage() {
           }}
         />
       </div>
-    </MainLayout>
   );
 }
 

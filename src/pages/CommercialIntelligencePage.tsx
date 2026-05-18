@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { MainLayout } from "@/components/layout/MainLayout";
 import { PageSEO } from "@/components/seo/PageSEO";
 import { IntelligenceFilterBar, type IntelligenceFilters } from "@/components/intelligence/IntelligenceFilterBar";
 import { IntelligenceKPICards } from "@/components/intelligence/IntelligenceKPICards";
@@ -37,7 +36,6 @@ export default function CommercialIntelligencePage() {
   };
 
   return (
-    <MainLayout>
       <PageSEO
         title="Inteligência de Mercado"
         description="Painel estratégico com insights de mercado para decisões comerciais."
@@ -116,6 +114,5 @@ export default function CommercialIntelligencePage() {
           <SalesOverviewChart days={filters.days} productId={filters.productId} />
         </div>
       </div>
-    </MainLayout>
   );
 }

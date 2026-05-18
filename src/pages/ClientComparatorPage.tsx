@@ -3,7 +3,6 @@
  */
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { MainLayout } from "@/components/layout/MainLayout";
 import { PageSEO } from "@/components/seo/PageSEO";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,7 +38,6 @@ export default function ClientComparatorPage() {
   };
 
   return (
-    <MainLayout>
       <PageSEO
         title="Comparador de clientes · BI"
         description="Compare lado a lado até 3 clientes da carteira: Health Score, LTV, ticket, sazonalidade."
@@ -85,6 +83,5 @@ export default function ClientComparatorPage() {
 
         <ClientComparator clientIds={clientIds} onRemove={removeClient} />
       </div>
-    </MainLayout>
   );
 }

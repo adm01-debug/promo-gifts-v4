@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { MainLayout } from "@/components/layout/MainLayout";
 import { useVideoVariantLinks } from "@/hooks/useVideoVariantLinks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,7 +49,6 @@ export default function AdminVideoVariantsPage() {
   };
 
   return (
-    <MainLayout>
       <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
       <PageSEO title="Vídeos por Variante" description="Gerencie vídeos associados a variantes de produtos." path="/admin/video-variantes" noIndex />
       <div className="flex items-center justify-between">
@@ -201,6 +199,5 @@ export default function AdminVideoVariantsPage() {
         </CardContent>
       </Card>
       </div>
-    </MainLayout>
   );
 }

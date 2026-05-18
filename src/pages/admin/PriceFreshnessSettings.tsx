@@ -8,7 +8,6 @@
  * Rota: /admin/validade-precos (admin-only — protegida por AdminRoute).
  */
 import { useMemo, useState } from "react";
-import { MainLayout } from "@/components/layout/MainLayout";
 import { Trash2, Loader2, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,7 +55,6 @@ export default function PriceFreshnessSettings() {
   }, [overrides]);
 
   return (
-    <MainLayout>
       <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
       <PageSEO
         title="Validade de Preços | Admin"
@@ -150,6 +148,5 @@ export default function PriceFreshnessSettings() {
         </CardContent>
       </Card>
       </div>
-    </MainLayout>
   );
 }

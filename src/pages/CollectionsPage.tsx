@@ -13,7 +13,6 @@ import { ExternalCollectionCard } from "@/components/collections/ExternalCollect
 import { CollectionsHeatmap } from "@/components/collections/CollectionsHeatmap";
 import { CollectionsEmptyStateSmart } from "@/components/collections/CollectionsEmptyStateSmart";
 import { useCollectionsGlobalShortcuts } from "@/hooks/useCollectionsGlobalShortcuts";
-import { MainLayout } from "@/components/layout/MainLayout";
 import { PageSEO } from "@/components/seo/PageSEO";
 import { Button } from "@/components/ui/button";
 import { LayoutPopover } from "@/components/products/LayoutPopover";
@@ -64,7 +63,6 @@ export default function CollectionsPage() {
   } = state;
 
   return (
-    <MainLayout>
       <PageSEO title="Coleções" description="Organize seus produtos favoritos em coleções personalizadas." path="/colecoes" />
       <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
         {/* KPI Stat Cards */}
@@ -350,6 +348,5 @@ export default function CollectionsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </MainLayout>
   );
 }

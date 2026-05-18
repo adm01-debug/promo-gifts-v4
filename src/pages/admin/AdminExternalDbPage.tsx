@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { MainLayout } from "@/components/layout/MainLayout";
 import { useExternalDbInspect } from "@/hooks/useExternalDbInspect";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -138,7 +137,6 @@ export default function AdminExternalDbPage() {
   };
 
   return (
-    <MainLayout>
       <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
       <PageSEO title="Banco de Dados Externo" description="Configure conexões com bancos de dados externos." path="/admin/external-db" noIndex />
       <div className="flex items-center justify-between">
@@ -451,6 +449,5 @@ export default function AdminExternalDbPage() {
         </Card>
       )}
       </div>
-    </MainLayout>
   );
 }
