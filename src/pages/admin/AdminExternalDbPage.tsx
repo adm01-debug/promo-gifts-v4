@@ -449,6 +449,7 @@ export default function AdminExternalDbPage() {
           </CardContent>
         </Card>
       )}
-      </div>
+        </div>
+      </>
   );
 }
