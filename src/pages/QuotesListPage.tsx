@@ -203,7 +203,7 @@ export default function QuotesListPage() {
           path="/orcamentos"
         />
         <TooltipProvider>
-          <div className="space-y-5">
+          <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-4 animate-fade-in">
             {/* Header */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <FadeInView>
@@ -424,7 +424,7 @@ export default function QuotesListPage() {
                 />
               )}
             </ScrollArea>
-          </div>
+            </div>
 
           {/* Delete Confirmation Dialog */}
           <AlertDialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
