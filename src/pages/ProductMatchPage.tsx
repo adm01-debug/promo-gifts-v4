@@ -66,7 +66,7 @@ export default function ProductMatchPage() {
         path="/match"
       />
 
-      <div className="max-w-[1600px] mx-auto space-y-4 animate-fade-in">
+      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-4 animate-fade-in">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
