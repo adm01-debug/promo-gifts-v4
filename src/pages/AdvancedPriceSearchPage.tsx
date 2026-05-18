@@ -117,7 +117,7 @@ export default function AdvancedPriceSearchPage() {
                   Filtros de Busca
                 </CardTitle>
               </CardHeader>
-              <CardContent className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
+              <CardContent className="space-y-3">
                 <FilterSection title="Buscar Produto" icon={Search}>
                   <Input
                     placeholder="Nome ou SKU..."
