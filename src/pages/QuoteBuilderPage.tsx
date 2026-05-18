@@ -468,6 +468,7 @@ export default function QuoteBuilderPage() {
                   </Label>
                   <Select value={s.shippingType} onValueChange={s.setShippingType}>
                     <SelectTrigger
+                      data-testid="shipping-type-select"
                       className={cn(
                         'h-8 text-xs',
                         s.validationErrors.includes('frete') && 'border-destructive',
