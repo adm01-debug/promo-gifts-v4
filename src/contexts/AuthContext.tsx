@@ -504,7 +504,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(timer);
   }, [session, refreshSession]);
 
+  // Sincroniza roles atuais com o safeToast (gate runtime de mensagens
+  // técnicas em sonner). Idempotente e barato.
+  useEffect(() => {
+    void import('@/lib/security/safeToast').then(({ setSafeToastRoles }) => {
+      setSafeToastRoles(userRoles);
+    });
+  }, [userRoles]);
+
   const has = (r: AppRole) => userRoles.includes(r);
+
   const isDev = has("dev");
   const isSupervisor = has("supervisor") || has("admin") || has("manager");
   const isAgente = has("agente") || has("vendedor");
