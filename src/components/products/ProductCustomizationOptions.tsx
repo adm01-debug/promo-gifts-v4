@@ -147,6 +147,9 @@ export function ProductCustomizationOptions({
   return (
     <TooltipProvider delayDuration={200}>
       <div className="space-y-3">
+        {/* Bloco fixo: stepper + locais — sempre visíveis durante a rolagem */}
+        <div className="sticky top-0 z-20 -mx-3 px-3 pt-2 pb-2 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 border-b border-border/40 space-y-3">
+
         {/* STEP HEADER — guia didático */}
         <div className="flex items-center gap-2 text-[11px] font-medium text-muted-foreground">
           <span className="flex items-center gap-1.5">
@@ -261,9 +264,12 @@ export function ProductCustomizationOptions({
             </p>
           )}
         </div>
+        {/* /fim do bloco sticky (stepper + locais) */}
+        </div>
 
-        {/* STEPS 2 + 3 — Técnica + Tamanho (dentro do LocationPanel) */}
+        {/* STEPS 2 + 3 — Técnica + Tamanho (rolam normalmente abaixo do bloco fixo) */}
         {currentLocation && (
+
           <div className="rounded-xl border border-border/60 bg-background/40 p-3 space-y-2.5">
             <div className="flex items-center justify-between">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
