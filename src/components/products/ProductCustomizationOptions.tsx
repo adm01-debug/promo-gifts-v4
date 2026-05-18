@@ -324,8 +324,7 @@ export function ProductCustomizationOptions({
 
         {/* STEPS 2 + 3 — Técnica + Tamanho (rolam normalmente abaixo do bloco fixo) */}
         {currentLocation && (
-
-          <div className="rounded-xl border border-border/60 bg-background/40 p-3 space-y-2.5">
+          <div ref={step2Ref} className="rounded-xl border border-border/60 bg-background/40 p-3 space-y-2.5 scroll-mt-28">
             <div className="flex items-center justify-between">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                 Técnicas para{" "}
