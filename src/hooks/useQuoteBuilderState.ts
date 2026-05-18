@@ -616,13 +616,14 @@ export function useQuoteBuilderState() {
       validateQuoteForm({
         clientId,
         contactId,
+        paymentMethod,
         paymentTerms,
         deliveryTime,
         shippingType,
         shippingCost,
         itemsCount: items.length,
       }),
-    [clientId, contactId, paymentTerms, deliveryTime, shippingType, shippingCost, items],
+    [clientId, contactId, paymentMethod, paymentTerms, deliveryTime, shippingType, shippingCost, items],
   );
 
   const isFormValid = validationErrors.length === 0;
