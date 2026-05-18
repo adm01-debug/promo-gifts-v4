@@ -41,21 +41,37 @@ export function QuoteBuilderStepper({
   className,
 }: QuoteBuilderStepperProps) {
   return (
-    <div data-testid="quote-wizard" role="tablist" className={cn("w-full", className)}>
-      <div className="flex items-start justify-between">
+    <nav 
+      aria-label="Progresso do orçamento" 
+      data-testid="quote-wizard" 
+      className={cn("w-full", className)}
+    >
+      <ol className="flex items-start justify-between list-none p-0 m-0">
         {STEPS.map((step, index) => {
           const isCompleted = completedSteps.includes(step.id);
           const isActive = step.id === activeStep;
           const Icon = step.icon;
           const activeIndex = STEPS.findIndex((s) => s.id === activeStep);
+          
+          const stepNumber = index + 1;
+          const status = isActive ? "Atual" : isCompleted ? "Concluída" : "Pendente";
 
           return (
-            <div key={step.id} className="flex items-start flex-1 min-w-0">
-              {/* Step column — circle + label, fixed widths para harmonia visual */}
-              <div className="flex flex-col items-center gap-2 shrink-0">
+            <li 
+              key={step.id} 
+              className="flex items-start flex-1 min-w-0"
+              aria-current={isActive ? "step" : undefined}
+            >
+              {/* Step column — circle + label */}
+              <div 
+                className="flex flex-col items-center gap-2 shrink-0 group focus:outline-none"
+                tabIndex={0}
+                aria-label={`Etapa ${stepNumber}: ${step.label} (${status})`}
+              >
                 <div
                   className={cn(
                     "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-200",
+                    "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 outline-none",
                     isCompleted && !isActive &&
                       "bg-primary/20 border-primary text-primary",
                     isActive &&
@@ -73,7 +89,7 @@ export function QuoteBuilderStepper({
                 <span
                   className={cn(
                     "text-xs font-medium transition-colors whitespace-nowrap leading-none",
-                    isActive && "text-primary",
+                    isActive && "text-primary font-semibold",
                     isCompleted && !isActive && "text-foreground",
                     !isActive && !isCompleted && "text-muted-foreground"
                   )}
@@ -82,9 +98,12 @@ export function QuoteBuilderStepper({
                 </span>
               </div>
 
-              {/* Connector line — centralizada verticalmente com o círculo (h-10 → center = 20px) */}
+              {/* Connector line */}
               {index < STEPS.length - 1 && (
-                <div className="flex-1 h-0.5 mx-4 mt-[19px]">
+                <div 
+                  className="flex-1 h-0.5 mx-4 mt-[19px]" 
+                  aria-hidden="true"
+                >
                   <div
                     className={cn(
                       "h-full rounded-full transition-all duration-300",
@@ -93,10 +112,10 @@ export function QuoteBuilderStepper({
                   />
                 </div>
               )}
-            </div>
+            </li>
           );
         })}
-      </div>
-    </div>
+      </ol>
+    </nav>
   );
 }
