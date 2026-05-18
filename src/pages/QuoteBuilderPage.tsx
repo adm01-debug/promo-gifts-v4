@@ -376,11 +376,7 @@ export default function QuoteBuilderPage() {
                       <div className="flex gap-1">
                         <button
                           type="button"
-                          onClick={() => {
-                            s.setDeliveryMode('prazo');
-                            s.setDeliveryTime('');
-                            s.setDeliveryDate(undefined);
-                          }}
+                          onClick={() => s.handleDeliveryModeChange('prazo')}
                           className={cn(
                             'flex-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition-all',
                             s.deliveryMode === 'prazo'
@@ -392,10 +388,7 @@ export default function QuoteBuilderPage() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => {
-                            s.setDeliveryMode('data');
-                            s.setDeliveryTime('');
-                          }}
+                          onClick={() => s.handleDeliveryModeChange('data')}
                           className={cn(
                             'flex-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition-all',
                             s.deliveryMode === 'data'
@@ -448,10 +441,7 @@ export default function QuoteBuilderPage() {
                         <Calendar
                           mode="single"
                           selected={s.deliveryDate}
-                          onSelect={(date) => {
-                            s.setDeliveryDate(date);
-                            s.setDeliveryTime(date ? `date:${format(date, 'yyyy-MM-dd')}` : '');
-                          }}
+                          onSelect={s.handleDeliveryDateChange}
                           disabled={(date) => date < new Date()}
                           initialFocus
                         />

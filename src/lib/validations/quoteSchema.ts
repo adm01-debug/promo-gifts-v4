@@ -7,7 +7,7 @@ export const quoteFormSchema = z.object({
   paymentTerms: z.string().min(1, "Prazo de pagamento é obrigatório"),
   deliveryTime: z.string().min(1, "Prazo de entrega é obrigatório"),
   shippingType: z.string().min(1, "Tipo de frete é obrigatório"),
-  shippingCost: z.number().optional(),
+  shippingCost: z.number().default(0),
   validUntil: z.string().optional(),
   discountType: z.enum(["percent", "amount"]).default("percent"),
   discountValue: z.number().min(0, "Desconto não pode ser negativo").default(0),
@@ -15,13 +15,18 @@ export const quoteFormSchema = z.object({
   internalNotes: z.string().max(2000, "Notas internas devem ter no máximo 2000 caracteres").optional(),
 }).refine(
   (data) => {
+    // Validação de frete: obrigatório valor se for FOB Valor Pré-negociado
     if (data.shippingType === "fob_pre") {
       return typeof data.shippingCost === "number" && data.shippingCost > 0;
+    }
+    // Se não for FOB pré, o custo DEVE ser 0 (consistência de payload)
+    if (data.shippingType !== "fob_pre" && data.shippingCost !== 0) {
+      return false;
     }
     return true;
   },
   {
-    message: "Valor do frete é obrigatório para modalidade FOB",
+    message: "Valor do frete inconsistente com a modalidade selecionada",
     path: ["shippingCost"],
   }
 );

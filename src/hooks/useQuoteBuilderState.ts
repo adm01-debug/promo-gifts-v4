@@ -160,6 +160,21 @@ export function useQuoteBuilderState() {
   const [shippingType, setShippingType] = useState('');
   const [shippingCost, setShippingCost] = useState(0);
 
+  const handleDeliveryModeChange = useCallback((mode: 'prazo' | 'data') => {
+    setDeliveryMode(mode);
+    setDeliveryTime('');
+    setDeliveryDate(undefined);
+  }, []);
+
+  const handleDeliveryDateChange = useCallback((date: Date | undefined) => {
+    setDeliveryDate(date);
+    if (date) {
+      setDeliveryTime(`date:${format(date, 'yyyy-MM-dd')}`);
+    } else {
+      setDeliveryTime('');
+    }
+  }, []);
+
   const handleShippingTypeChange = useCallback((value: string) => {
     setShippingType(value);
     if (value !== 'fob_pre') {
@@ -711,7 +726,7 @@ export function useQuoteBuilderState() {
         delivery_time: deliveryTime || undefined,
         shipping_type: shippingType || undefined,
         shipping_cost:
-          shippingType === 'fob_pre' ? shippingCost : undefined,
+          shippingType === 'fob_pre' ? (shippingCost || 0) : 0,
       };
       let result;
       if (isEditMode && quoteId) {
@@ -805,9 +820,9 @@ export function useQuoteBuilderState() {
     deliveryTime,
     setDeliveryTime,
     deliveryMode,
-    setDeliveryMode,
+    handleDeliveryModeChange,
     deliveryDate,
-    setDeliveryDate,
+    handleDeliveryDateChange,
     shippingType,
     setShippingType: handleShippingTypeChange,
     shippingCost,
