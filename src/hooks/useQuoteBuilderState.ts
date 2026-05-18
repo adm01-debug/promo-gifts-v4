@@ -259,6 +259,7 @@ export function useQuoteBuilderState() {
         }
         if (typeof quote.negotiation_markup_percent === 'number')
           setNegotiationMarkup(quote.negotiation_markup_percent);
+        if (quote.payment_method) setPaymentMethod(quote.payment_method);
         if (quote.payment_terms) setPaymentTerms(quote.payment_terms);
         if (quote.shipping_type) setShippingType(quote.shipping_type);
         if (quote.shipping_cost) setShippingCost(quote.shipping_cost);
