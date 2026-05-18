@@ -31,6 +31,7 @@ export function CompanySearchDropdown({
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const { history, addToHistory, removeFromHistory, clearHistory } = useSearchHistory("company");
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300);
