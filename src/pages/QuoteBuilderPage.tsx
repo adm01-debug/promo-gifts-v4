@@ -101,42 +101,21 @@ export default function QuoteBuilderPage() {
       />
 
       <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
-        {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Voltar"
-              onClick={() => guardNavigation(() => s.navigate(-1))}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1
-                data-testid="page-title-orcamento-novo"
-                className="flex items-center gap-3 font-display text-2xl font-bold text-foreground"
-              >
-                <div className="rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 p-2">
-                  {s.isEditMode ? (
-                    <Edit className="h-6 w-6 text-primary" />
-                  ) : (
-                    <FileText className="h-6 w-6 text-primary" />
-                  )}
-                </div>
-                {s.isEditMode ? 'Editar Orçamento' : 'Novo Orçamento'}
-              </h1>
-              <p className="mt-1 text-muted-foreground">
-                {s.isEditMode && s.quoteNumber ? (
-                  <>
-                    Editando: <strong>{s.quoteNumber}</strong>
-                  </>
-                ) : (
-                  'Crie um orçamento com produtos e personalizações'
-                )}
-              </p>
-            </div>
-          </div>
+        {/* Header (minimal — title hidden for SEO/E2E) */}
+        <h1 data-testid="page-title-orcamento-novo" className="sr-only">
+          {s.isEditMode ? 'Editar Orçamento' : 'Novo Orçamento'}
+        </h1>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label="Voltar"
+            onClick={() => guardNavigation(() => s.navigate(-1))}
+            className="gap-2 -ml-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span className="text-sm">Voltar</span>
+          </Button>
           <div className="flex items-center gap-2">
             {!s.isEditMode && (
               <QuoteTemplateSelector
