@@ -927,11 +927,6 @@ export function useQuoteBuilderState() {
     loadingQuote,
     currentStep,
     setCurrentStep,
-    nextStep,
-    prevStep,
-    goToStep,
-    activeStep,
-    completedSteps,
     // Auth
     user,
     // State setters
