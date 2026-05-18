@@ -264,9 +264,12 @@ export function ProductCustomizationOptions({
             </p>
           )}
         </div>
+        {/* /fim do bloco sticky (stepper + locais) */}
+        </div>
 
-        {/* STEPS 2 + 3 — Técnica + Tamanho (dentro do LocationPanel) */}
+        {/* STEPS 2 + 3 — Técnica + Tamanho (rolam normalmente abaixo do bloco fixo) */}
         {currentLocation && (
+
           <div className="rounded-xl border border-border/60 bg-background/40 p-3 space-y-2.5">
             <div className="flex items-center justify-between">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
