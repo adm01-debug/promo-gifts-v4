@@ -31,7 +31,7 @@ export function ClientDetailHeader({ client }: ClientDetailHeaderProps) {
         </div>
         <div className="min-w-0 flex-1">
           <h1 
-            data-testid="page-title-client-detail"
+            data-testid="page-title-clientes-detalhe"
             className="text-2xl font-bold font-display text-foreground truncate"
           >
             {name}

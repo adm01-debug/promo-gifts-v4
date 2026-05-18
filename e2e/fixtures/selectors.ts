@@ -36,6 +36,7 @@ export type PageSlug =
   | "carrinhos"
   | "pedidos"
   | "clientes"
+  | "clientes-detalhe"
   | "comparador"
   | "tendencias"
   | "kits"
@@ -56,6 +57,9 @@ export type PageSlug =
   | "orcamentos-templates"
   | "orcamento-novo"
   | "novidades"
+  | "estoque"
+  | "detalhe-produto"
+  | "admin-produto"
   | "404";
 
 export const Sel = {

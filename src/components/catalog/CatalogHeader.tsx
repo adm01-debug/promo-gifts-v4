@@ -75,7 +75,7 @@ export function CatalogHeader({
         )}
 
         <h1 
-          data-testid="page-title-catalog"
+          data-testid="page-title-produtos"
           className="font-display text-xl sm:text-2xl lg:text-3xl font-bold whitespace-nowrap"
         >
           Catálogo de Produtos
