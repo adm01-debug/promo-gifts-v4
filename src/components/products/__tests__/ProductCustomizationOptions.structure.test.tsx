@@ -1,8 +1,9 @@
 import { render } from "@testing-library/react";
 import ProductCustomizationOptions from "../ProductCustomizationOptions";
 import { vi, describe, it, expect } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-// Mock das dependências que não são o foco do teste de estrutura
+// Mock das dependências
 vi.mock("@/hooks/useQuoteItems", () => ({
   useQuoteItems: () => ({
     updateItemPersonalization: vi.fn(),
@@ -15,6 +16,14 @@ vi.mock("@/components/ui/use-toast", () => ({
   }),
 }));
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+});
+
 describe("ProductCustomizationOptions Structural Test", () => {
   const mockProps = {
     productId: "prod-123",
@@ -23,10 +32,12 @@ describe("ProductCustomizationOptions Structural Test", () => {
   };
 
   it("should render without crashing and have balanced divs", () => {
-    const { container } = render(<ProductCustomizationOptions {...mockProps} />);
+    const { container } = render(
+      <QueryClientProvider client={queryClient}>
+        <ProductCustomizationOptions {...mockProps} />
+      </QueryClientProvider>
+    );
     expect(container).toBeDefined();
-    // Se o JSX estivesse quebrado (divs desalinhados), o render falharia ou o build não passaria.
-    // O teste de fumaça garante que a árvore de componentes é montada.
     expect(container.firstChild).not.toBeNull();
   });
 });
