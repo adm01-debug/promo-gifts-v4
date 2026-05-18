@@ -164,7 +164,6 @@ export function CompanySearchDropdown({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const { history, addToHistory, removeFromHistory, clearHistory } = useSearchHistory("company");
 
   const handleSelect = (id: string) => {
     if (id) {
