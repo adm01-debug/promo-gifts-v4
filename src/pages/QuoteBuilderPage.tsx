@@ -619,6 +619,8 @@ export default function QuoteBuilderPage() {
             setDiscountValue={s.setDiscountValue}
             discountAmount={s.discountAmount}
             total={s.total}
+            shippingType={s.shippingType}
+            shippingCost={s.shippingCost}
             isFormValid={s.isFormValid}
             isDraftValid={s.isDraftValid}
             validationErrors={s.validationErrors}
