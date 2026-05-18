@@ -49,9 +49,7 @@ export default function Index() {
         path="/"
         jsonLd={structuredData}
       />
-      <div>
-        <div className="flex-1 min-w-0">
-          <div className="space-y-3 p-4 sm:p-6 animate-fade-in">
+      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-4 animate-fade-in">
             {/* Header: Title + Search */}
             <CatalogHeader
               shouldShowCatalogSkeleton={catalog.shouldShowCatalogSkeleton}
@@ -140,8 +138,6 @@ export default function Index() {
                   : null
               }
             />
-          </div>
-        </div>
       </div>
 
       <FloatingCompareBar />
