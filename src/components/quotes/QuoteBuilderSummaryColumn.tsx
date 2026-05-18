@@ -324,7 +324,7 @@ export function QuoteBuilderSummaryColumn({
               )}
               <div className="flex items-center gap-2">
                 <Select value={discountType} onValueChange={(v) => handleDiscountTypeChange(v as "percent" | "amount")}>
-                  <SelectTrigger className="w-16 h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-16 h-8 text-xs" aria-label="Tipo de desconto"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="percent">%</SelectItem>
                     <SelectItem value="amount">R$</SelectItem>
@@ -341,6 +341,7 @@ export function QuoteBuilderSummaryColumn({
                       setDiscountValue(Math.min(100, Math.max(0, n)));
                     }}
                     placeholder="Desconto"
+                    aria-label="Valor do desconto em porcentagem"
                     className={cn(
                       "h-8 text-sm transition-all",
                       isDiscountExceeded && "border-amber-500 ring-2 ring-amber-500/20 bg-amber-500/[0.03]"
@@ -351,6 +352,7 @@ export function QuoteBuilderSummaryColumn({
                     value={discountValue}
                     onChange={(n) => setDiscountValue(n)}
                     placeholder="Desconto"
+                    aria-label="Valor do desconto em reais"
                     className={cn(
                       "h-8 text-sm transition-all",
                       isDiscountExceeded && "border-amber-500 ring-2 ring-amber-500/20 bg-amber-500/[0.03]"
@@ -369,10 +371,32 @@ export function QuoteBuilderSummaryColumn({
                   </div>
                 </div>
               )}
-              {discountAmount > 0 && !isDiscountExceeded && (
-                <div className="flex justify-between text-xs text-destructive">
-                  <span>Desconto aplicado</span>
-                  <span className="font-semibold tabular-nums">-{formatCurrency(discountAmount)}</span>
+              {/* Desconto efetivo em tempo real — sempre que houver desconto, mostra equivalência R$ ↔ % */}
+              {discountAmount > 0 && (
+                <div
+                  className={cn(
+                    "flex flex-col gap-0.5 rounded-lg px-2.5 py-1.5 text-xs transition-colors",
+                    isDiscountExceeded ? "bg-amber-500/10 border border-amber-500/30" : "bg-destructive/5 border border-destructive/20"
+                  )}
+                  aria-live="polite"
+                  data-testid="discount-effective"
+                >
+                  <div className="flex justify-between text-destructive">
+                    <span className="font-medium">Desconto aplicado</span>
+                    <span className="font-semibold tabular-nums" data-testid="discount-effective-amount">
+                      -{formatCurrency(discountAmount)}
+                    </span>
+                  </div>
+                  {presentedSubtotal > 0 && (
+                    <div className="flex justify-between text-[10px] text-muted-foreground">
+                      <span>Equivalente</span>
+                      <span className="tabular-nums" data-testid="discount-effective-equivalent">
+                        {discountType === "percent"
+                          ? `${formatCurrency(discountAmount)} sobre ${formatCurrency(presentedSubtotal)}`
+                          : `${((discountAmount / presentedSubtotal) * 100).toFixed(2).replace(".", ",")}% sobre ${formatCurrency(presentedSubtotal)}`}
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
