@@ -3,6 +3,7 @@ import { AlertTriangle, RefreshCw, Home, Bug, ChevronDown, ChevronUp, RotateCcw,
 import { logger } from '@/lib/logger';
 import { reportError } from '@/lib/error-reporter';
 import { attemptChunkRecovery, isChunkLoadError } from '@/lib/chunk-recovery';
+import { DevOnly } from '@/components/dev/DevOnly';
 
 interface Props {
   children: ReactNode;
@@ -235,26 +236,28 @@ class EnhancedErrorBoundary extends Component<Props, State> {
               )}
             </div>
 
-            {/* Error message — sempre visível para o usuário entender o que houve */}
+            {/* Error message — restrito a usuários `dev` (gate de infra). Não-dev veem apenas a copy amigável acima. */}
             {error?.message && (
-              <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] uppercase tracking-wider text-destructive/80 font-semibold">
-                    Mensagem do erro
-                  </span>
-                  <button
-                    onClick={this.handleCopyError}
-                    className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label="Copiar detalhes do erro"
-                  >
-                    {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                    {copied ? 'Copiado' : 'Copiar'}
-                  </button>
+              <DevOnly>
+                <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] uppercase tracking-wider text-destructive/80 font-semibold">
+                      Mensagem do erro
+                    </span>
+                    <button
+                      onClick={this.handleCopyError}
+                      className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label="Copiar detalhes do erro"
+                    >
+                      {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                      {copied ? 'Copiado' : 'Copiar'}
+                    </button>
+                  </div>
+                  <p className="text-sm font-mono text-destructive break-words">
+                    {error.message}
+                  </p>
                 </div>
-                <p className="text-sm font-mono text-destructive break-words">
-                  {error.message}
-                </p>
-              </div>
+              </DevOnly>
             )}
 
             {/* Actions principais */}
@@ -300,24 +303,27 @@ class EnhancedErrorBoundary extends Component<Props, State> {
             )}
 
             {/* Technical details toggle */}
+            {/* Technical details — só para dev (stack/component stack são ruído e risco para usuário final). */}
             {(errorInfo || error?.stack) && (
-              <div className="pt-2">
-                <button
-                  onClick={() => this.setState(prev => ({ showDetails: !prev.showDetails }))}
-                  className="w-full inline-flex items-center justify-between rounded-lg px-3 py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                >
-                  <span>Detalhes técnicos</span>
-                  {showDetails
-                    ? <ChevronUp className="h-3.5 w-3.5" />
-                    : <ChevronDown className="h-3.5 w-3.5" />}
-                </button>
-                {showDetails && (
-                  <pre className="mt-2 max-h-48 overflow-auto rounded-lg bg-muted p-4 text-[11px] leading-relaxed text-muted-foreground font-mono">
-                    {error?.stack || 'Stack trace não disponível'}
-                    {errorInfo?.componentStack ? `\n\nComponent Stack:${errorInfo.componentStack}` : ''}
-                  </pre>
-                )}
-              </div>
+              <DevOnly>
+                <div className="pt-2">
+                  <button
+                    onClick={() => this.setState(prev => ({ showDetails: !prev.showDetails }))}
+                    className="w-full inline-flex items-center justify-between rounded-lg px-3 py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                  >
+                    <span>Detalhes técnicos</span>
+                    {showDetails
+                      ? <ChevronUp className="h-3.5 w-3.5" />
+                      : <ChevronDown className="h-3.5 w-3.5" />}
+                  </button>
+                  {showDetails && (
+                    <pre className="mt-2 max-h-48 overflow-auto rounded-lg bg-muted p-4 text-[11px] leading-relaxed text-muted-foreground font-mono">
+                      {error?.stack || 'Stack trace não disponível'}
+                      {errorInfo?.componentStack ? `\n\nComponent Stack:${errorInfo.componentStack}` : ''}
+                    </pre>
+                  )}
+                </div>
+              </DevOnly>
             )}
           </div>
         </div>
