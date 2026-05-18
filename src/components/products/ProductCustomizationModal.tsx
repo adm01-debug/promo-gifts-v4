@@ -167,9 +167,18 @@ export function ProductCustomizationModal({
                 productId={productId}
                 quantity={quantity}
                 initialPersonalizations={existingPersonalizations.map(p => ({
-...
-                  } as any
-                }))}
+                  locationCode: p.location_code ?? '',
+                  locationName: p.location_name ?? '',
+                  techniqueId: p.technique_id,
+                  techniqueName: p.technique_name,
+                  codigoTabela: '',
+                  grupoTecnica: '',
+                  width: p.width_cm ?? undefined,
+                  height: p.height_cm ?? undefined,
+                  numberOfColors: p.colors_count ?? 1,
+                  usaDimensao: !!(p.width_cm && p.height_cm),
+                  price: null,
+                } as PersonalizationItem))}
                 onSelectionChange={handleSelectionChange}
               />
             </div>
