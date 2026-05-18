@@ -85,6 +85,7 @@ export function CurrencyInput({
   return (
     <div className="w-full">
       <Input
+        {...props}
         type="text"
         inputMode={allowNegative ? 'decimal' : 'decimal'}
         value={text}
