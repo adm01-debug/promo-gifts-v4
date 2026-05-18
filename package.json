@@ -71,7 +71,8 @@
     "typecheck:full": "tsc -p tsconfig.app.json --noEmit",
     "ci:build": "node scripts/check-build-warnings.mjs",
     "typecheck:baseline:update": "node scripts/tsc-baseline-generate.mjs",
-    "check:observability": "node scripts/observability-check.mjs"
+    "check:observability": "node scripts/observability-check.mjs",
+    "check:toast-leaks": "node scripts/check-toast-leaks.mjs"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [
