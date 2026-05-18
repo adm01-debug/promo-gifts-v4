@@ -67,6 +67,7 @@ export function QuoteBuilderSummaryColumn({
   negotiationMarkup = 0, setNegotiationMarkup,
   realSubtotal = 0, realDiscountPercent = 0,
   confirmItemPrice, confirmAllStalePrices,
+  shippingType, shippingCost = 0,
 }: Props) {
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
   const [sellerNotes, setSellerNotes] = useState("");
