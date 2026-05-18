@@ -119,6 +119,7 @@ export function ConfigurationPanelV6({ technique, quantity, isConfirmed = false,
                 onChange={(e) => setLargura(e.target.value)}
                 placeholder={`até ${technique.efetiva_largura_max}`}
                 className="h-9 text-sm"
+                disabled={isLocked}
               />
             </div>
             <span className="text-muted-foreground mt-5">×</span>
@@ -133,9 +134,11 @@ export function ConfigurationPanelV6({ technique, quantity, isConfirmed = false,
                 onChange={(e) => setAltura(e.target.value)}
                 placeholder={`até ${technique.efetiva_altura_max}`}
                 className="h-9 text-sm"
+                disabled={isLocked}
               />
             </div>
           </div>
+
           {dimensionError && larguraNum > 0 && alturaNum > 0 && (
             <div className="flex items-center gap-1.5 text-xs text-destructive">
               <AlertCircle className="h-3 w-3" />
