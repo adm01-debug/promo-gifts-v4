@@ -3,6 +3,7 @@ import { AlertTriangle, RefreshCw, Home, Bug, ChevronDown, ChevronUp, RotateCcw,
 import { logger } from '@/lib/logger';
 import { reportError } from '@/lib/error-reporter';
 import { attemptChunkRecovery, isChunkLoadError } from '@/lib/chunk-recovery';
+import { DevOnly } from '@/components/dev/DevOnly';
 
 interface Props {
   children: ReactNode;
