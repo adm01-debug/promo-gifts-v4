@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { logger } from "@/lib/logger";
 import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "@/lib/utils";
 
 interface SkeletonMonitorProps {
   name: string;
@@ -23,6 +24,9 @@ export function SkeletonMonitor({
   const isDev = userRole === 'admin' || userRole === 'dev';
 
   useEffect(() => {
+    // Only track if we are in the browser
+    if (typeof window === 'undefined') return;
+
     const timer = setInterval(() => {
       setElapsed(Math.round(performance.now() - startTime.current));
     }, 100);
@@ -31,10 +35,13 @@ export function SkeletonMonitor({
       clearInterval(timer);
       const duration = performance.now() - startTime.current;
       
+      // Se durou menos de 50ms, ignoramos (provavelmente renderização síncrona/cache)
+      if (duration < 50) return;
+
       if (duration > thresholdMs) {
         logger.warn(`[Performance] Skeleton "${name}" visible for ${(duration / 1000).toFixed(2)}s`, {
           skeleton: name,
-          duration_ms: duration,
+          duration_ms: Math.round(duration),
           threshold_ms: thresholdMs,
           path: window.location.pathname,
           timestamp: new Date().toISOString()
@@ -46,19 +53,23 @@ export function SkeletonMonitor({
   }, [name, thresholdMs]);
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full min-h-[200px]">
       {children}
       
       {/* Dev-only overlay timer */}
-      {isDev && elapsed > 500 && (
-        <div className="absolute top-2 right-2 z-50 pointer-events-none">
+      {isDev && elapsed > 300 && (
+        <div className="fixed bottom-4 right-4 z-[9999] pointer-events-none">
           <div className={cn(
-            "px-2 py-1 rounded text-[10px] font-mono font-bold shadow-sm backdrop-blur-md border",
+            "px-3 py-1.5 rounded-full text-[11px] font-mono font-bold shadow-lg backdrop-blur-md border flex items-center gap-2",
             elapsed > thresholdMs 
-              ? "bg-destructive/10 text-destructive border-destructive/20 animate-pulse" 
-              : "bg-background/80 text-muted-foreground border-border/40"
+              ? "bg-destructive text-destructive-foreground border-destructive/20 animate-pulse" 
+              : "bg-background/80 text-foreground border-border/40"
           )}>
-            {name}: {(elapsed / 1000).toFixed(1)}s
+            <div className={cn(
+              "w-2 h-2 rounded-full",
+              elapsed > thresholdMs ? "bg-white" : "bg-primary animate-pulse"
+            )} />
+            Loading {name}: {(elapsed / 1000).toFixed(1)}s
           </div>
         </div>
       )}
@@ -66,6 +77,3 @@ export function SkeletonMonitor({
   );
 }
 
-function cn(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(" ");
-}
