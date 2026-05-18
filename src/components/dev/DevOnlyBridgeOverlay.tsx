@@ -11,14 +11,11 @@ import { lazyWithRetry } from '@/lib/lazyWithRetry';
 const Overlay = lazyWithRetry(() => import('./BridgeMetricsOverlay'));
 
 export function DevOnlyBridgeOverlay() {
-  const { isAllowed } = useDevGate();
-  
-  // O componente Overlay deve ser instanciado de forma estável ou 
-  // ser retornado apenas após o gate, mas para evitar "Rendered more hooks" 
-  // se o overlay interno for montado/desmontado bruscamente em um 
-  // contexto de re-render de Auth, garantimos que o gate seja estável.
-  if (!isAllowed) return null;
-  
+  // Restrito EXCLUSIVAMENTE a usuários com role `dev` — admin/supervisor não veem.
+  const { isDev } = useDevGate();
+
+  if (!isDev) return null;
+
   return (
     <Suspense fallback={null}>
       <Overlay />
