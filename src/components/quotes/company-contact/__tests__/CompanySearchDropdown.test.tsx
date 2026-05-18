@@ -111,6 +111,46 @@ describe('CompanySearchDropdown', () => {
     });
   });
 
+  it('should filter correctly by partial CNPJ, masked/unmasked and show only regular results for non-history items', async () => {
+    render(
+      <CompanySearchDropdown
+        companyId=""
+        selectedCompany={null}
+        onSelectCompany={vi.fn()}
+        onClearCompany={vi.fn()}
+      />
+    );
+
+    const input = screen.getByTestId('company-search-input');
+    fireEvent.focus(input);
+
+    // 1. Partial CNPJ search (company 1: "111", search for "11")
+    fireEvent.change(input, { target: { value: '11' } });
+    await waitFor(() => {
+      expect(screen.getByTestId('company-option-1')).toBeInTheDocument();
+      expect(screen.getByText('Alpha Corp')).toBeInTheDocument();
+    });
+
+    // 2. Masked CNPJ search (company 2 in history has mask)
+    fireEvent.change(input, { target: { value: '22.222' } });
+    await waitFor(() => {
+      expect(screen.getByTestId('company-option-2')).toBeInTheDocument();
+      expect(screen.getByText('Beta Solutions')).toBeInTheDocument();
+    });
+
+    // 3. Unmasked CNPJ search (company 2 digits only)
+    fireEvent.change(input, { target: { value: '22222' } });
+    await waitFor(() => {
+      expect(screen.getByTestId('company-option-2')).toBeInTheDocument();
+    });
+
+    // 4. CNPJ not in history (company 3: "333")
+    fireEvent.change(input, { target: { value: '333' } });
+    await waitFor(() => {
+      expect(screen.getByTestId('company-option-3')).toBeInTheDocument();
+    });
+  });
+
   it('should highlight the selected company in history and regular list', async () => {
     render(
       <CompanySearchDropdown
