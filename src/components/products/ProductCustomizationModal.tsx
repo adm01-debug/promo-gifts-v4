@@ -166,10 +166,7 @@ export function ProductCustomizationModal({
               <ProductCustomizationOptions
                 productId={productId}
                 quantity={quantity}
-                initialPersonalizations={existingPersonalizations.map(p => ({
-...
-                  } as any
-                }))}
+                initialPersonalizations={existingPersonalizations as any}
                 onSelectionChange={handleSelectionChange}
               />
             </div>
