@@ -85,15 +85,10 @@ export function ProductCustomizationOptions({
   const scrollToStep = (step: number) => {
     const refs = [null, null, step2Ref];
     const target = (refs[step] as React.RefObject<HTMLDivElement>)?.current;
+    
     if (target) {
-      const headerOffset = stickyHeaderRef.current?.offsetHeight || 80;
-      const elementPosition = target.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - headerOffset - 20;
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: "smooth"
-      });
+      // Inside a modal, we need to scroll the container, not the window
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
