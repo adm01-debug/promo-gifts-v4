@@ -69,6 +69,7 @@ export function QuoteBuilderSummaryColumn({
   realSubtotal = 0, realDiscountPercent = 0,
   confirmItemPrice, confirmAllStalePrices,
   shippingType, shippingCost = 0,
+  className,
 }: Props) {
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
   const [sellerNotes, setSellerNotes] = useState("");
