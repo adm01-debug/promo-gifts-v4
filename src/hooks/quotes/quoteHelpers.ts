@@ -135,9 +135,9 @@ export function buildPersonalizationsInsertPayload(
     colors_count: p.colors_count || 1,
     positions_count: p.positions_count || 1,
     area_cm2: p.area_cm2,
-    setup_cost: p.setup_cost || 0,
-    unit_cost: p.unit_cost || 0,
-    total_cost: p.total_cost || 0,
+    setup_cost: round2(p.setup_cost || 0),
+    unit_cost: round2(p.unit_cost || 0),
+    total_cost: round2(p.total_cost || 0),
     notes: p.notes,
   }));
 }
