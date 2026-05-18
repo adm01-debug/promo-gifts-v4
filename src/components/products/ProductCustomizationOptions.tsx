@@ -34,6 +34,7 @@ interface ProductCustomizationOptionsProps {
   productId: string;
   productSku?: string;
   quantity?: number;
+  initialPersonalizations?: PersonalizationItem[];
   onSelectionChange?: (personalizations: PersonalizationItem[]) => void;
 }
 
