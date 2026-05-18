@@ -429,9 +429,10 @@ export default function QuoteBuilderPage() {
                   ) : (
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
+                          <Button
+                            data-testid="delivery-date-picker"
+                            variant="outline"
+                            className={cn(
                             'h-8 w-full justify-start text-left text-xs font-normal',
                             !s.deliveryDate && 'text-muted-foreground',
                             s.validationErrors.includes('prazo_entrega') && 'border-destructive',
