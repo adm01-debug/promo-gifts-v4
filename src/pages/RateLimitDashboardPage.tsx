@@ -70,7 +70,7 @@ export default function RateLimitDashboardPage() {
         <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="font-display text-2xl font-bold tracking-tight">Dashboard de Rate Limiting</h1>
+              <h1 data-testid="page-title-rate-limit" className="font-display text-2xl font-bold tracking-tight">Dashboard de Rate Limiting</h1>
               <p className="text-muted-foreground">Monitoramento de requisições e bloqueios</p>
             </div>
             <Button variant="outline" size="sm" onClick={fetchData}>

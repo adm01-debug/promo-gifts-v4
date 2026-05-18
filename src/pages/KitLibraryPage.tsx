@@ -264,7 +264,7 @@ export default function KitLibraryPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-4 px-3 py-4 pb-24 sm:px-4 md:pb-6 lg:px-6 xl:px-8">
+    <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
       <PageSEO
         title="Biblioteca de Kits — Seus kits salvos e templates do sistema"
         description="Acesse seu banco pessoal de kits e clone templates curados pelo sistema para acelerar a montagem de propostas."

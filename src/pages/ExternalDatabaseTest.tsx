@@ -86,12 +86,12 @@ export default function ExternalDatabaseTest() {
   return (
       <>
         <PageSEO title="Teste de Banco Externo" description="Teste de conexão com banco de dados externo." path="/external-db-test" noIndex />
-        <div className="container mx-auto py-6 space-y-6">
+        <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Database className="h-8 w-8 text-primary" />
               <div>
-                <h1 className="font-display text-2xl font-bold">Teste de Conexão - Banco Externo</h1>
+                <h1 data-testid="page-title-external-db-test" className="font-display text-2xl font-bold">Teste de Conexão - Banco Externo</h1>
                 <p className="text-muted-foreground">Verificando conexão com o Supabase externo</p>
               </div>
             </div>

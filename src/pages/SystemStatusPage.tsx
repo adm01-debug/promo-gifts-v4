@@ -282,7 +282,7 @@ export default function SystemStatusPage() {
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold font-display">Status do Sistema</h1>
+          <h1 data-testid="page-title-status" className="text-3xl font-bold font-display">Status do Sistema</h1>
           <p className="text-muted-foreground">Diagnóstico de saúde da aplicação</p>
         </div>
 

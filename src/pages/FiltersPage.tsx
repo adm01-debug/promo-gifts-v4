@@ -105,7 +105,7 @@ export default function FiltersPage() {
   return (
     <>
       <PageSEO title="Filtros de Produtos" description="Filtre e encontre brindes por cor, categoria, preço e fornecedor." path="/produtos" />
-      <div className="animate-fade-in">
+      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
         <div className="flex gap-8">
           {/* Sidebar */}
           <aside className="hidden lg:flex lg:flex-col w-80 shrink-0 sticky top-4 max-h-[calc(100vh-6rem)] overflow-hidden rounded-b-xl">
