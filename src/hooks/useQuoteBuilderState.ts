@@ -1006,6 +1006,10 @@ export function useQuoteBuilderState() {
     maxDiscountPercent,
     isDiscountExceeded,
     // Actions
+    validateStep,
+    nextStep,
+    prevStep,
+    goToStep,
     formatCurrency,
     calculateItemPersonalizationTotal,
     calculateItemTotal,

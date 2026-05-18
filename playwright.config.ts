@@ -132,7 +132,7 @@ export default defineConfig({
     {
       name: "chromium-wizard",
       use: { ...devices["Desktop Chrome"] },
-      testMatch: /quote-builder-wizard\.spec\.ts/,
+      testMatch: [/quote-builder-wizard\.spec\.ts/, /quote-builder-shipping-validation\.spec\.ts/],
     },
     {
       name: "chromium-authed",
