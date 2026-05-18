@@ -221,6 +221,9 @@ export function FooterSection({ data }: { data: ProposalTemplateData }) {
           <div style={{ width: "180px", height: "1px", backgroundColor: "#333", margin: "2px auto" }} />
           <div style={{ fontSize: "11px", color: "#666" }}>Executivo de Vendas</div>
         </div>
+        <div style={{ position: "absolute", bottom: "10px", right: "260px" }}>
+          <img src="/images/promo-brindes-logo.png" alt="Logo" style={{ height: "40px", opacity: 0.5, mixBlendMode: "multiply" }} />
+        </div>
       </div>
     </div>
   );
