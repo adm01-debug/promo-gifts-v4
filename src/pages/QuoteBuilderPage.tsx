@@ -770,38 +770,39 @@ export default function QuoteBuilderPage() {
           {/* Persistent Summary Sidebar for Steps 1-4 */}
           {s.activeStep !== 'review' && (
             <QuoteBuilderSummaryColumn
+              className="lg:col-span-4 hidden lg:block"
               items={s.items}
               activeItemIndex={s.activeItemIndex}
-                setActiveItemIndex={s.setActiveItemIndex}
-                removeItem={s.removeItem}
-                discountType={s.discountType}
-                setDiscountType={s.setDiscountType}
-                discountValue={s.discountValue}
-                setDiscountValue={s.setDiscountValue}
-                discountAmount={s.discountAmount}
-                total={s.total}
-                shippingType={s.shippingType}
-                shippingCost={s.shippingCost}
-                isFormValid={s.isFormValid}
-                isDraftValid={s.isDraftValid}
-                validationErrors={s.validationErrors}
-                quotesLoading={s.quotesLoading}
-                isEditMode={s.isEditMode}
-                formatCurrency={s.formatCurrency}
-                calculateItemPersonalizationTotal={s.calculateItemPersonalizationTotal}
-                calculateItemTotal={s.calculateItemTotal}
-                onSave={s.handleSaveQuote}
-                maxDiscountPercent={s.maxDiscountPercent}
-                isDiscountExceeded={s.isDiscountExceeded}
-                negotiationMarkup={s.negotiationMarkup}
-                setNegotiationMarkup={s.setNegotiationMarkup}
-                realSubtotal={s.realSubtotal}
-                realDiscountPercent={s.realDiscountPercent}
-                confirmItemPrice={s.confirmItemPrice}
-                confirmAllStalePrices={s.confirmAllStalePrices}
-              />
-            </div>
-          </div>
+              setActiveItemIndex={s.setActiveItemIndex}
+              removeItem={s.removeItem}
+              discountType={s.discountType}
+              setDiscountType={s.setDiscountType}
+              discountValue={s.discountValue}
+              setDiscountValue={s.setDiscountValue}
+              discountAmount={s.discountAmount}
+              total={s.total}
+              shippingType={s.shippingType}
+              shippingCost={s.shippingCost}
+              isFormValid={s.isFormValid}
+              isDraftValid={s.isDraftValid}
+              validationErrors={s.validationErrors}
+              quotesLoading={s.quotesLoading}
+              isEditMode={s.isEditMode}
+              formatCurrency={s.formatCurrency}
+              calculateItemPersonalizationTotal={s.calculateItemPersonalizationTotal}
+              calculateItemTotal={s.calculateItemTotal}
+              onSave={s.handleSaveQuote}
+              maxDiscountPercent={s.maxDiscountPercent}
+              isDiscountExceeded={s.isDiscountExceeded}
+              negotiationMarkup={s.negotiationMarkup}
+              setNegotiationMarkup={s.setNegotiationMarkup}
+              realSubtotal={s.realSubtotal}
+              realDiscountPercent={s.realDiscountPercent}
+              confirmItemPrice={s.confirmItemPrice}
+              confirmAllStalePrices={s.confirmAllStalePrices}
+            />
+          )}
+        </div>
 
 
       </div>
