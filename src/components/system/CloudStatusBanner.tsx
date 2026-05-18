@@ -42,10 +42,11 @@ export const CloudStatusBanner = memo(function CloudStatusBanner() {
   const timeline = useMemo(() => getStatusTimeline(), []);
   const isIssueStatus = status === 'down' || status === 'degraded' || status === 'warming';
   const config = isIssueStatus ? STATUS_CONFIG[status] : null;
-  const shouldShowIssue = status === 'warming'
-    ? isAllowed
-    : status === 'down' || status === 'degraded';
-  // Banner removido quando saudável — indicador discreto fica no rodapé via DevStatusDot.
+  // Banner de saúde do backend é exclusivo para usuários DEV — usuários finais
+  // não devem ver mensagens de infra ("Backend instável", "indisponível", etc.).
+  const shouldShowIssue = isAllowed && (
+    status === 'down' || status === 'degraded' || status === 'warming'
+  );
   const shouldShow = shouldShowIssue;
 
   if (!shouldShow) return null;
