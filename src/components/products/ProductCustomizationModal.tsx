@@ -118,42 +118,51 @@ export function ProductCustomizationModal({
         <div className="flex-1 overflow-hidden bg-background">
           <div className="grid grid-cols-1 lg:grid-cols-12 h-full">
             {/* Left Column: Context & Selection (Fixed/Sticky Area) */}
-            <div className="lg:col-span-4 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto custom-scrollbar">
-              <div className="rounded-xl border bg-card p-4 space-y-3 shadow-sm">
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                  <Info className="h-3.5 w-3.5" />
-                  Produto Selecionado
+            <div className="lg:col-span-3 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto custom-scrollbar">
+              <div className="rounded-xl border bg-card p-4 space-y-3 shadow-sm border-primary/20 bg-primary/5">
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
+                  <Palette className="h-3.5 w-3.5" />
+                  Orçamento Atual
                 </h4>
                 <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Quantidade:</span>
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-muted-foreground">Volume:</span>
                     <span className="font-bold">{quantity} un</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Gravações:</span>
-                    <Badge variant="secondary" className="h-5 px-1.5 font-bold">
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-muted-foreground">Configurações:</span>
+                    <Badge variant="secondary" className="h-4 px-1 text-[10px] font-bold">
                       {confirmedCount}
                     </Badge>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between px-1">
+              {/* Lista compacta de gravações já confirmadas (Fixed Summary) */}
+              {confirmedCount > 0 && (
+                <div className="space-y-2 pt-2 border-t border-border/60">
                   <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                    Locais Disponíveis
+                    Confirmados
                   </h4>
+                  <div className="grid gap-1.5">
+                    {existingPersonalizations.map((p, i) => (
+                      <div key={i} className="p-2 rounded-lg bg-card border text-[10px] space-y-0.5">
+                        <div className="flex justify-between">
+                          <span className="font-bold uppercase text-primary line-clamp-1">{p.location_name}</span>
+                          <span className="text-muted-foreground font-medium">
+                            {p.total_cost?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          </span>
+                        </div>
+                        <p className="text-muted-foreground line-clamp-1">{p.technique_name}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                {/* Note: In the final version, we'll move the Location selection grid here 
-                    by refactoring ProductCustomizationOptions to allow externalizing the step 1 */}
-                <div className="p-4 rounded-xl border border-dashed text-[11px] text-muted-foreground leading-relaxed bg-muted/20">
-                  Selecione o local de gravação no painel à direita para configurar a técnica e dimensões.
-                </div>
-              </div>
+              )}
             </div>
 
-            {/* Right Column: Configuration Workspace (Modular/Bento area) */}
-            <div className="lg:col-span-8 overflow-y-auto custom-scrollbar bg-card/30 p-4 md:p-6">
+            {/* Right Column: Configuration Workspace (Bento Area) */}
+            <div className="lg:col-span-9 overflow-y-auto custom-scrollbar bg-card/30 p-4 md:p-6">
               <ProductCustomizationOptions
                 productId={productId}
                 quantity={quantity}
