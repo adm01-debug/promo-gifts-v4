@@ -10,6 +10,14 @@ export interface QuoteItemCalculationParams {
 }
 
 /**
+ * Utilitário para arredondamento monetário de 2 casas decimais (Half-up).
+ */
+export const round2 = (n: number | null | undefined): number => {
+  const v = typeof n === "number" && Number.isFinite(n) ? n : 0;
+  return Math.round((v + Number.EPSILON) * 100) / 100;
+};
+
+/**
  * Calcula o total de personalizações de um item.
  */
 export const calculateItemPersonalizationTotal = (item: Pick<QuoteItemCalculationParams, 'personalizations'>): number => {
