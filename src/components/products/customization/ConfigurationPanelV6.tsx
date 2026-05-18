@@ -159,14 +159,18 @@ export function ConfigurationPanelV6({ technique, quantity, isConfirmed = false,
             {Array.from({ length: technique.max_cores }, (_, i) => i + 1).map(n => (
               <button
                 key={n}
+                type="button"
+                disabled={isLocked}
                 className={cn(
                   "px-3 h-9 rounded-md text-sm font-medium transition-colors",
+                  isLocked && "opacity-50 cursor-not-allowed",
                   n === numCores
                     ? "bg-primary text-primary-foreground"
                     : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                 )}
-                onClick={() => setNumCores(n)}
+                onClick={() => !isLocked && setNumCores(n)}
               >
+
                 {n} {n === 1 ? 'cor' : 'cores'}
                 {n === 2 && ' (-10%)'}
                 {n === 3 && ' (-15%)'}
