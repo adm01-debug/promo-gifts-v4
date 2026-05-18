@@ -100,27 +100,25 @@ export default function QuoteBuilderPage() {
         className="fixed right-4 top-20 z-40"
       />
 
-      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 pt-0 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
-        {/* Header (minimal — title positioned off-screen for E2E visibility) */}
-        <h1 
-          data-testid="page-title-orcamento-novo" 
-          className="absolute -top-[1000px] left-0"
-        >
-          {s.isEditMode ? 'Editar Orçamento' : 'Novo Orçamento'}
-        </h1>
-        
-        {/* Fixed Back Button on Mobile */}
-        <div className="sticky top-[96px] z-30 -mx-3 px-3 py-2 bg-background/95 backdrop-blur-sm border-b border-border/10 sm:static sm:z-auto sm:mx-0 sm:px-0 sm:py-0 sm:bg-transparent sm:backdrop-blur-none sm:border-none flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="sm"
-            aria-label="Voltar"
-            onClick={() => guardNavigation(() => s.navigate(-1))}
-            className="gap-2 -ml-2 h-8 px-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="text-sm">Voltar</span>
-          </Button>
+      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 pt-3 sm:pt-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
+        {/* Header */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="shrink-0 rounded-xl bg-primary/10 p-2.5">
+              <FileText className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h1
+                data-testid="page-title-orcamento-novo"
+                className="font-display text-xl font-bold leading-tight sm:text-2xl"
+              >
+                {s.isEditMode ? 'Editar Orçamento' : 'Novo Orçamento'}
+              </h1>
+              <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
+                Crie um orçamento com produtos e personalizações
+              </p>
+            </div>
+          </div>
           <div className="flex items-center gap-2">
             {!s.isEditMode && (
               <QuoteTemplateSelector
@@ -149,6 +147,7 @@ export default function QuoteBuilderPage() {
             )}
           </div>
         </div>
+
 
         {/* Stepper */}
         <QuoteBuilderStepper completedSteps={s.completedSteps} activeStep={s.activeStep} />
