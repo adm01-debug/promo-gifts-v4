@@ -1,37 +1,46 @@
 import { test, expect } from '@playwright/test';
 
+/**
+ * Esse teste verifica se a seção de personalização expande automaticamente
+ * ao adicionar um produto, eliminando cliques desnecessários conforme solicitado.
+ */
 test.describe('Quote Personalization Auto-Expand', () => {
   test('should auto-expand personalization when adding a product', async ({ page }) => {
-    // Navigate to new quote page
+    // 1. Ir para a página de novo orçamento
     await page.goto('/orcamentos/novo');
     
-    // Step 1: Select client (simplified for E2E)
-    // Assuming there's a button to "Next" or similar
-    // For this test, we skip to step 3 if possible or follow the flow
+    // 2. Simular preenchimento do cliente para liberar o wizard se necessário
+    // (Em muitos casos o passo de itens está bloqueado até o cliente ser selecionado)
+    // Se o app já estiver no passo de itens por rascunho, prossegue.
     
-    // Search for a product
-    await page.click('button:has-text("Produto")');
-    await page.fill('input[placeholder*="Pesquisar"]', 'Caneta');
-    
-    // Wait for results and add first one
-    const productItem = page.locator('button:has-text("Adicionar")').first();
-    await productItem.click();
-    
-    // Check if the item is added and personalization is expanded
-    // The "Personalização" button should have the expanded state (ChevronUp)
-    const personalizationSection = page.locator('button:has-text("Personalização")');
-    await expect(personalizationSection).toBeVisible();
-    
-    // According to our changes, it should contain a ChevronUp (expanded)
-    const chevronUp = personalizationSection.locator('svg.lucide-chevron-up');
-    await expect(chevronUp).toBeVisible();
-    
-    // Verify techniques are visible
-    const techniqueCard = page.locator('button:has-text("LASER")').first();
-    if (await techniqueCard.isVisible()) {
-        await techniqueCard.click();
-        // Should show configuration panel
-        await expect(page.locator('text=Configure a gravação')).toBeVisible();
+    // Abrir busca de produtos
+    const addProductBtn = page.locator('button:has-text("Produto")');
+    if (await addProductBtn.isVisible()) {
+      await addProductBtn.click();
+    } else {
+      // Tentar selecionar cliente primeiro se o botão não aparecer
+      await page.locator('input[placeholder*="empresa"]').first().fill('Empresa Teste');
+      await page.locator('text=Empresa Teste').first().click();
+      await page.locator('button:has-text("Próximo")').click(); // Condições
+      await page.locator('button:has-text("Próximo")').click(); // Itens
     }
+    
+    // 3. Pesquisar e adicionar produto
+    await page.fill('input[placeholder*="Pesquisar"]', 'Caneta');
+    const addButton = page.locator('button:has-text("Adicionar")').first();
+    await addButton.click();
+    
+    // 4. VERIFICAÇÃO CRÍTICA: O botão "Personalização" deve estar com ChevronUp (expandido)
+    const personalizationBtn = page.locator('button:has-text("Personalização")');
+    await expect(personalizationBtn).toBeVisible();
+    
+    // Se estiver expandido, o ChevronDown desaparece e o ChevronUp aparece
+    const chevronUp = personalizationBtn.locator('svg.lucide-chevron-up');
+    await expect(chevronUp).toBeVisible();
+
+    // 5. Verificar se o conteúdo da personalização está visível
+    // (Abas de locais: Lado A, Lado B, etc)
+    await expect(page.locator('button:has-text("LADO A")').or(page.locator('button:has-text("CIRCULAR")'))).toBeVisible();
   });
 });
+
