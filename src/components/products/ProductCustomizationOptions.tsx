@@ -315,7 +315,7 @@ export function ProductCustomizationOptions({
                   key={loc.location_code}
                   type="button"
                   disabled={isDisabled}
-                  onClick={() => !isDisabled && setActiveLocation(loc.location_code)}
+                  onClick={() => !isDisabled && handleLocationSelect(loc.location_code)}
                   className={cn(
                     "group relative flex flex-col items-start gap-0.5 rounded-xl border px-3 py-2 text-left transition-all min-w-[120px] md:min-w-0 snap-start",
                     isDisabled
