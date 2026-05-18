@@ -60,16 +60,16 @@ export function LocationPanel({ location, quantity, confirmedPersonalization, on
           exit={{ opacity: 0, x: -20 }}
           className="space-y-4"
         >
-          {/* Header de Técnica Selecionada (Permite Voltar) */}
-          <div className="flex items-center justify-between gap-3 bg-primary/5 border border-primary/20 p-3 rounded-xl">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                <Palette className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-primary uppercase tracking-wider leading-tight">
-                  Técnica Selecionada
-                </p>
+        {/* Header de Técnica Selecionada (Permite Voltar) */}
+        <div className="flex items-center justify-between gap-3 bg-secondary/30 border border-border/60 p-3 rounded-xl">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0" aria-hidden="true">
+              <Palette className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider leading-tight">
+                Técnica Ativa
+              </p>
                 <p className="text-sm font-bold text-foreground">
                   {selectedTechnique.tecnica_nome}
                 </p>

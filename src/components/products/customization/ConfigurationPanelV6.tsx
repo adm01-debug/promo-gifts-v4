@@ -115,8 +115,8 @@ export function ConfigurationPanelV6({
       {/* Workspace Left (Inputs) */}
       <div className="lg:col-span-7 space-y-6">
         <div className="flex items-center justify-between">
-          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
-            {isConfirmed && !editing ? "Gravação confirmada" : "Parâmetros da Gravação"}
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+            {isConfirmed && !editing ? "Configuração Confirmada" : "Ajuste as Dimensões e Cores"}
           </p>
           {isConfirmed && !editing && (
             <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px] font-black uppercase tracking-tighter">
