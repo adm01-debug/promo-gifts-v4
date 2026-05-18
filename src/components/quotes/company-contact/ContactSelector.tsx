@@ -27,7 +27,10 @@ export function ContactDropdown({ contacts, contactId, onContactChange, onContac
 
   return (
     <div ref={ref} className="relative">
-      <button type="button" className={cn("flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-accent/50 transition-colors")}
+      <button 
+        type="button" 
+        data-testid="contact-selector-trigger"
+        className={cn("flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-accent/50 transition-colors")}
         onClick={() => setOpen(!open)}>
         <div className={cn("flex items-center gap-2 min-w-0", !selected && "text-muted-foreground")}>
           {selected ? (
