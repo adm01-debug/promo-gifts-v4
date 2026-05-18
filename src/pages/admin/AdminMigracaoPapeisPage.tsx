@@ -20,7 +20,7 @@ export default function AdminMigracaoPapeisPage() {
                 <Users className="h-8 w-8 text-primary" />
               </div>
               <div>
-                <h1 className="font-display text-3xl font-bold tracking-tight">Migração de papéis</h1>
+                <h1 data-testid="page-title-migracao-papeis" className="font-display text-3xl font-bold tracking-tight">Migração de papéis</h1>
                 <p className="text-muted-foreground">
                   Execução em lotes com dry-run e auditoria por usuário e por evento
                 </p>
