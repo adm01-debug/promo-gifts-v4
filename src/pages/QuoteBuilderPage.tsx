@@ -330,7 +330,7 @@ export default function QuoteBuilderPage() {
                 </div>
 
                 {/* Entrega */}
-                <div className="space-y-1">
+                <div className="space-y-1.5 border-t border-border/30 pt-3 mt-1">
                   <div className="flex items-center gap-1.5" data-testid="delivery-label-container">
                     <Label
                       data-testid="delivery-label"
