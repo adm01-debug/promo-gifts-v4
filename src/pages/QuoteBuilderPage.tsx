@@ -472,7 +472,11 @@ export default function QuoteBuilderPage() {
                   >
                     Frete {s.validationErrors.includes('frete') && <span className="ml-1">*</span>}
                   </Label>
-                  <Select value={s.shippingType} onValueChange={s.handleShippingTypeChange}>
+                  <Select 
+                    data-testid="shipping-type-select-root"
+                    value={s.shippingType} 
+                    onValueChange={s.handleShippingTypeChange}
+                  >
                     <SelectTrigger
                       data-testid="shipping-type-select"
                       className={cn(
