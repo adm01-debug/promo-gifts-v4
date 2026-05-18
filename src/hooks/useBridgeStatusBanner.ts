@@ -32,15 +32,13 @@ export function useBridgeStatusBanner(isAllowed: boolean) {
       setUnavailable(true);
       setReason(e.reason);
       toast.dismiss(TOAST_ID_DEGRADED);
-      
-      const title = 'Catálogo temporariamente indisponível';
-      const description = isAllowed 
-        ? 'O serviço está reiniciando. Aguarde alguns segundos e tente novamente.'
-        : 'Estamos com uma instabilidade momentânea no acesso ao catálogo. Tente recarregar a página em instantes.';
 
-      toast.error(title, {
+      // Toast técnico só para DEV — usuários finais não devem ver mensagens de infra.
+      if (!isAllowed) return;
+
+      toast.error('Catálogo temporariamente indisponível', {
         id: TOAST_ID_UNAVAILABLE,
-        description,
+        description: 'O serviço está reiniciando. Aguarde alguns segundos e tente novamente.',
         duration: Infinity,
         action: {
           label: 'Recarregar',
