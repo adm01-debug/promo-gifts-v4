@@ -69,6 +69,7 @@ export function QuoteBuilderStepper({
               <button 
                 type="button"
                 onClick={() => onStepClick?.(step.id)}
+                data-testid={`wizard-step-${step.id}`}
                 className="flex flex-col items-center gap-2 shrink-0 group focus:outline-none cursor-pointer disabled:cursor-not-allowed"
                 aria-label={`Etapa ${stepNumber}: ${step.label} (${status})`}
               >
