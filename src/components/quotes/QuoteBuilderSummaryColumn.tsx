@@ -410,6 +410,12 @@ export function QuoteBuilderSummaryColumn({
 
           {/* Footer */}
           <div className="shrink-0 pt-3 mt-3 border-t border-border/50 px-4 pb-4 space-y-3">
+            {shippingType === "fob_pre" && shippingCost > 0 && (
+              <div className="flex items-center justify-between text-sm mb-2 text-muted-foreground">
+                <span>Frete (FOB)</span>
+                <span className="font-medium tabular-nums">{formatCurrency(shippingCost)}</span>
+              </div>
+            )}
             <div className="flex items-baseline justify-between gap-2">
               <div>
                 <span className="font-bold text-base">Total</span>
