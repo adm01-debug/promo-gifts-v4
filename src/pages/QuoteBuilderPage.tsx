@@ -47,7 +47,7 @@ import { QuoteAutoSave } from '@/components/quotes/QuoteAutoSave';
 import { DraggableQuoteItems } from '@/components/quotes/DraggableQuoteItems';
 import { QuoteBuilderStepper } from '@/components/quotes/QuoteBuilderStepper';
 import { QuoteBuilderSummaryColumn } from '@/components/quotes/QuoteBuilderSummaryColumn';
-import { QuoteBuilderNavigation } from '@/components/quotes/QuoteBuilderNavigation';
+
 import { QuoteBuilderProductSearch } from '@/components/quotes/QuoteBuilderProductSearch';
 import { useQuoteBuilderState } from '@/hooks/useQuoteBuilderState';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
@@ -659,15 +659,6 @@ export default function QuoteBuilderPage() {
           />
         </div>
 
-        {/* Navigation Bar */}
-        <div className="flex flex-col gap-4 mt-6">
-          <QuoteBuilderNavigation
-            currentStep={s.currentStep}
-            onNext={s.nextStep}
-            onPrev={s.prevStep}
-            isLastStep={s.currentStep === 'review'}
-          />
-        </div>
       </div>
 
       {/* Product Search Dialog */}
