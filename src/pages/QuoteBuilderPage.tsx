@@ -430,6 +430,7 @@ export default function QuoteBuilderPage() {
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="7_dias">7 dias | Após aprovação</SelectItem>
                         <SelectItem value="14_dias">14 dias | Após aprovação</SelectItem>
                         <SelectItem value="21_dias">21 dias | Após aprovação</SelectItem>
                         <SelectItem value="28_dias">28 dias | Após aprovação</SelectItem>
