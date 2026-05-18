@@ -232,6 +232,5 @@ export default function PermissionsPage() {
             </div>
           </main>
       </div>
-    </>
   );
 }
