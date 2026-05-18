@@ -143,8 +143,12 @@ describe('useQuoteBuilderState Navigation and Validation', () => {
       result.current.setContactId('contact-1');
     });
 
+    // Re-render happens after each act
+    expect(result.current.clientId).toBe('company-1');
+    expect(result.current.contactId).toBe('contact-1');
+
     act(() => {
-      result.current.nextStep(); // Now at conditions
+      result.current.nextStep(); 
     });
 
     expect(result.current.currentStep).toBe('conditions');
