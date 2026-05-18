@@ -160,6 +160,21 @@ export function useQuoteBuilderState() {
   const [shippingType, setShippingType] = useState('');
   const [shippingCost, setShippingCost] = useState(0);
 
+  const handleDeliveryModeChange = useCallback((mode: 'prazo' | 'data') => {
+    setDeliveryMode(mode);
+    setDeliveryTime('');
+    setDeliveryDate(undefined);
+  }, []);
+
+  const handleDeliveryDateChange = useCallback((date: Date | undefined) => {
+    setDeliveryDate(date);
+    if (date) {
+      setDeliveryTime(`date:${format(date, 'yyyy-MM-dd')}`);
+    } else {
+      setDeliveryTime('');
+    }
+  }, []);
+
   const handleShippingTypeChange = useCallback((value: string) => {
     setShippingType(value);
     if (value !== 'fob_pre') {
