@@ -12,7 +12,7 @@ export default function AdminPromptsIAPage() {
               <Brain className="h-8 w-8 text-primary" />
             </div>
             <div>
-              <h1 className="font-display text-3xl font-bold tracking-tight">Prompts IA</h1>
+              <h1 data-testid="page-title-prompts-ia" className="font-display text-3xl font-bold tracking-tight">Prompts IA</h1>
               <p className="text-muted-foreground">Gerencie prompts do gerador de mockups e modelos de IA</p>
             </div>
           </div>

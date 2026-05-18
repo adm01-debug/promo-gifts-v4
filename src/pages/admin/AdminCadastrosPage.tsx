@@ -45,7 +45,7 @@ export default function AdminCadastrosPage() {
               <FolderOpen className="h-8 w-8 text-primary" />
             </div>
             <div>
-              <h1 className="font-display text-3xl font-bold tracking-tight">Cadastros</h1>
+              <h1 data-testid="page-title-cadastros" className="font-display text-3xl font-bold tracking-tight">Cadastros</h1>
               <p className="text-muted-foreground">Gerencie produtos, fornecedores e técnicas de personalização</p>
             </div>
           </div>

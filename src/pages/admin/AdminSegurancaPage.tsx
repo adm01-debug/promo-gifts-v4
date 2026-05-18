@@ -15,7 +15,7 @@ export default function AdminSegurancaPage() {
               <ShieldCheck className="h-8 w-8 text-primary" />
             </div>
             <div>
-              <h1 className="font-display text-3xl font-bold tracking-tight">Segurança</h1>
+              <h1 data-testid="page-title-seguranca" className="font-display text-3xl font-bold tracking-tight">Segurança</h1>
               <p className="text-muted-foreground">Central de segurança e restrições de acesso</p>
             </div>
           </div>

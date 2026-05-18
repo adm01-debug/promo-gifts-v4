@@ -163,7 +163,7 @@ export default function AdminConexoesPage() {
               <Plug className="h-5 w-5 text-primary" aria-hidden="true" />
             </div>
             <div className="flex-1">
-              <h1 className="text-2xl font-bold tracking-tight">Conexões</h1>
+              <h1 data-testid="page-title-conexoes" className="text-2xl font-bold tracking-tight">Conexões</h1>
               <p className="text-sm text-muted-foreground">
                 Hub central de integrações externas e credenciais do sistema.
               </p>

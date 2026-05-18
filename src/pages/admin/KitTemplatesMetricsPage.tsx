@@ -104,7 +104,7 @@ export default function KitTemplatesMetricsPage() {
         />
         <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
           <div>
-            <h1 className="font-display text-2xl font-semibold">Métricas de Kits</h1>
+            <h1 data-testid="page-title-kit-templates-metrics" className="font-display text-2xl font-semibold">Métricas de Kits</h1>
             <p className="text-sm text-muted-foreground">
               Adoção de templates e itens mais usados pela equipe.
             </p>

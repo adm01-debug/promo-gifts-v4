@@ -125,7 +125,7 @@ export default function AdminPromoverUsuarioPage() {
               <ShieldCheck className="h-7 w-7 text-primary" />
             </div>
             <div>
-              <h1 className="font-display text-3xl font-bold tracking-tight">
+              <h1 data-testid="page-title-promover-usuario" className="font-display text-3xl font-bold tracking-tight">
                 Promover Agente
               </h1>
               <p className="text-muted-foreground">

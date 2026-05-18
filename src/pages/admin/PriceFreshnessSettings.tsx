@@ -55,16 +55,16 @@ export default function PriceFreshnessSettings() {
   }, [overrides]);
 
   return (
-      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
-      <PageSEO
-        title="Validade de Preços | Admin"
-        description="Configure a janela de validade do alerta de preço por produto (30, 60 ou 90 dias)."
-      />
-
-      <div className="mb-6">
-        <h1 className="text-2xl font-display font-bold text-foreground">
-          Validade de Preços
-        </h1>
+      <>
+        <PageSEO
+          title="Validade de Preços | Admin"
+          description="Configure a janela de validade do alerta de preço por produto (30, 60 ou 90 dias)."
+        />
+        <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
+          <div className="mb-6">
+            <h1 data-testid="page-title-validade-precos" className="text-2xl font-display font-bold text-foreground">
+              Validade de Preços
+            </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Produtos com janela de validade customizada. Sem override, o padrão
           do sistema é <strong>60 dias</strong>.
@@ -147,6 +147,7 @@ export default function PriceFreshnessSettings() {
           )}
         </CardContent>
       </Card>
-      </div>
+        </div>
+      </>
   );
 }

@@ -123,20 +123,20 @@ export default function AdminConexoesStatusPage() {
   }, [conns, creds]);
 
   return (
-    <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
+    <>
       <PageSEO
         title="Status da sincronização de conexões | Promo Gifts"
         description="Histórico recente da sincronização de external_connections e diagnóstico de credenciais."
       />
-
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <Button variant="ghost" size="sm" asChild className="-ml-2">
-            <Link to="/admin/conexoes">
-              <ArrowLeft className="h-4 w-4 mr-1" /> Voltar para Conexões
-            </Link>
-          </Button>
-          <h1 className="text-2xl font-display font-semibold">Status da sincronização</h1>
+      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <Button variant="ghost" size="sm" asChild className="-ml-2">
+              <Link to="/admin/conexoes">
+                <ArrowLeft className="h-4 w-4 mr-1" /> Voltar para Conexões
+              </Link>
+            </Button>
+            <h1 data-testid="page-title-conexoes-status" className="text-2xl font-display font-semibold">Status da sincronização</h1>
           <p className="text-sm text-muted-foreground">
             Histórico recente e diagnóstico da sincronização entre <code>integration_credentials</code> e{" "}
             <code>external_connections</code>.
@@ -245,6 +245,7 @@ export default function AdminConexoesStatusPage() {
         <h2 className="text-lg font-medium">Histórico de execuções</h2>
         <ExternalConnectionsSyncLogPanel />
       </section>
-    </div>
+      </div>
+    </>
   );
 }

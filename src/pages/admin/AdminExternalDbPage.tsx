@@ -137,14 +137,15 @@ export default function AdminExternalDbPage() {
   };
 
   return (
-      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
-      <PageSEO title="Banco de Dados Externo" description="Configure conexões com bancos de dados externos." path="/admin/external-db" noIndex />
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-            <Database className="h-6 w-6" />
-            Inspeção do Banco Externo
-          </h1>
+      <>
+        <PageSEO title="Banco de Dados Externo" description="Configure conexões com bancos de dados externos." path="/admin/external-db" noIndex />
+        <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 data-testid="page-title-external-db" className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
+                <Database className="h-6 w-6" />
+                Inspeção do Banco Externo
+              </h1>
           <p className="text-muted-foreground">Visualize a estrutura das tabelas do banco de dados externo (somente leitura)</p>
         </div>
         <Button variant="outline" size="sm" onClick={() => selectedTable ? handleSelectTable(selectedTable) : listTables()}>
@@ -448,6 +449,7 @@ export default function AdminExternalDbPage() {
           </CardContent>
         </Card>
       )}
-      </div>
+        </div>
+      </>
   );
 }

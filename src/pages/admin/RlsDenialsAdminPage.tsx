@@ -115,7 +115,7 @@ export default function RlsDenialsAdminPage() {
                 <ShieldAlert className="h-8 w-8 text-destructive" />
               </div>
               <div>
-                <h1 className="font-display text-3xl font-bold tracking-tight">Acessos negados (RLS)</h1>
+                <h1 data-testid="page-title-rls-denials" className="font-display text-3xl font-bold tracking-tight">Acessos negados (RLS)</h1>
                 <p className="text-muted-foreground">
                   Toda vez que uma política bloqueia uma operação, o evento é registrado aqui.
                 </p>

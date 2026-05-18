@@ -151,10 +151,10 @@ export default function StorageTestPage() {
   return (
       <>
         <PageSEO title="Teste de Storage e Sincronização" description="Validar infraestrutura externa." path="/admin/storage-test" noIndex />
-        <div className="container mx-auto py-10 space-y-8">
+        <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <h1 className="text-3xl font-bold tracking-tight text-white">Infraestrutura Externa</h1>
+              <h1 data-testid="page-title-storage-test" className="text-3xl font-bold tracking-tight text-white">Infraestrutura Externa</h1>
               <p className="text-muted-foreground">
                 Validar autenticação, storage e sincronização com o Supabase externo.
               </p>

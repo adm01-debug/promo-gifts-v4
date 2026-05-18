@@ -26,7 +26,7 @@ export default function AdminSegurancaChavesPage() {
                 <KeyRound className="h-8 w-8 text-primary" />
               </div>
               <div>
-                <h1 className="font-display text-3xl font-bold tracking-tight">Chaves MCP</h1>
+                <h1 data-testid="page-title-security-keys" className="font-display text-3xl font-bold tracking-tight">Chaves MCP</h1>
                 <p className="text-muted-foreground">
                   Ciclo de vida completo: criação, rotação, revogação e auditoria
                 </p>

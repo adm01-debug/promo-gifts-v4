@@ -84,14 +84,14 @@ export default function KitTemplatesAdminPage() {
   };
 
   return (
-      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
-      <PageSEO title="Templates de Kits" description="Gestão de templates sugeridos pelo sistema." path="/admin/kit-templates" noIndex />
-
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl font-bold tracking-tight flex items-center gap-2">
-            <Sparkles className="h-7 w-7 text-primary" /> Templates de Kits
-          </h1>
+      <>
+        <PageSEO title="Templates de Kits" description="Gestão de templates sugeridos pelo sistema." path="/admin/kit-templates" noIndex />
+        <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h1 data-testid="page-title-kit-templates" className="font-display text-3xl font-bold tracking-tight flex items-center gap-2">
+                <Sparkles className="h-7 w-7 text-primary" /> Templates de Kits
+              </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Crie e mantenha o banco de kits sugeridos disponíveis para todos os vendedores.
           </p>
@@ -272,6 +272,7 @@ export default function KitTemplatesAdminPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      </div>
+        </div>
+      </>
   );
 }

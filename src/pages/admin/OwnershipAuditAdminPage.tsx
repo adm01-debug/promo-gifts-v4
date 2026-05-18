@@ -134,7 +134,7 @@ export default function OwnershipAuditAdminPage() {
         <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
           <header className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
+              <h1 data-testid="page-title-ownership-audit" className="text-2xl font-bold flex items-center gap-2">
                 <ShieldAlert className="h-6 w-6 text-primary" />
                 Auditoria de Propriedade de Registros
               </h1>

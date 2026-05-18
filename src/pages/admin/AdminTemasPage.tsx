@@ -126,7 +126,7 @@ export default function AdminTemasPage() {
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
                 <Palette className="h-5 w-5 shrink-0 text-primary" />
-                <h1 className="truncate font-display text-xl font-bold text-foreground">Skins</h1>
+                <h1 data-testid="page-title-temas" className="truncate font-display text-xl font-bold text-foreground">Skins</h1>
                 {/* Badge da skin ativa */}
                 <span className="hidden items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary sm:inline-flex">
                   <Check className="h-3 w-3" />

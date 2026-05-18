@@ -114,7 +114,7 @@ export default function AdminTelemetriaPage() {
             <div className="flex items-center gap-3">
               <Activity className="h-7 w-7 text-primary" />
               <div>
-                <h1 className="font-display text-2xl font-bold">Telemetria de Queries</h1>
+                <h1 data-testid="page-title-telemetria" className="font-display text-2xl font-bold">Telemetria de Queries</h1>
                 <p className="text-sm text-muted-foreground">Monitoramento de performance do banco externo</p>
               </div>
             </div>
