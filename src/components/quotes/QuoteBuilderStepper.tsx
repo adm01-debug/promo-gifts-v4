@@ -32,12 +32,15 @@ interface QuoteBuilderStepperProps {
   completedSteps: QuoteBuilderStep[];
   /** Optional: highlight a specific step */
   activeStep?: QuoteBuilderStep;
+  /** Navigation callback */
+  onStepClick?: (step: QuoteBuilderStep) => void;
   className?: string;
 }
 
 export function QuoteBuilderStepper({
   completedSteps,
   activeStep,
+  onStepClick,
   className,
 }: QuoteBuilderStepperProps) {
   return (
@@ -63,9 +66,10 @@ export function QuoteBuilderStepper({
               aria-current={isActive ? "step" : undefined}
             >
               {/* Step column — circle + label */}
-              <div 
-                className="flex flex-col items-center gap-2 shrink-0 group focus:outline-none"
-                tabIndex={0}
+              <button 
+                type="button"
+                onClick={() => onStepClick?.(step.id)}
+                className="flex flex-col items-center gap-2 shrink-0 group focus:outline-none cursor-pointer disabled:cursor-not-allowed"
                 aria-label={`Etapa ${stepNumber}: ${step.label} (${status})`}
               >
                 <div
@@ -97,7 +101,7 @@ export function QuoteBuilderStepper({
                 >
                   {step.label}
                 </span>
-              </div>
+              </button>
 
               {/* Connector line */}
               {index < STEPS.length - 1 && (

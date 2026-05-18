@@ -267,6 +267,25 @@ export function useQuoteBuilderState() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [currentStep]);
+  
+  const goToStep = useCallback((step: QuoteBuilderStep) => {
+    const steps: QuoteBuilderStep[] = ['client', 'conditions', 'items', 'personalization', 'review'];
+    const targetIndex = steps.indexOf(step);
+    const currentIndex = steps.indexOf(currentStep);
+
+    if (targetIndex === currentIndex) return;
+
+    // Se estiver tentando ir para uma etapa posterior, validar as anteriores
+    if (targetIndex > currentIndex) {
+      // Validar cada etapa entre a atual e a alvo (não inclusiva da alvo, pois a alvo é onde queremos chegar)
+      for (let i = currentIndex; i < targetIndex; i++) {
+        if (!validateStep(steps[i])) return;
+      }
+    }
+
+    setCurrentStep(step);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentStep, validateStep]);
   // ── AutoSave ──
   const { clearAutoSave } = useAutoSaveQuote({
     enabled: !!clientId && items.length > 0 && !isEditMode,
@@ -848,6 +867,7 @@ export function useQuoteBuilderState() {
     setCurrentStep,
     nextStep,
     prevStep,
+    goToStep,
     activeStep,
     completedSteps,
     // Auth
