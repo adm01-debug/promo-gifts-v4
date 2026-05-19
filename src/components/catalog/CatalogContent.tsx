@@ -85,10 +85,12 @@ export const CatalogContent = memo(function CatalogContent({
   activeProductId,
   setActiveProductId,
 }: CatalogContentProps) {
-  const { selectedIds, onToggleSelect, setSelectedCount } = useCatalogSelection(
+  const selection = useCatalogSelection(
     paginatedProducts,
+    selectionMode,
     onSelectedCountChange
   );
+  const { selectedIds, toggleSelect: onToggleSelect } = selection;
 
   if (shouldShowCatalogSkeleton) {
     if (viewMode === "list") {
