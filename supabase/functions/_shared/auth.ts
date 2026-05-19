@@ -62,12 +62,7 @@ export async function authenticateRequest(req: Request): Promise<AuthResult> {
 
   const userId = user.id;
 
-  // Fetch ALL roles using service role client (bypasses RLS)
-  const localServiceClient = createClient(supabaseUrl, serviceRoleKey);
-
   // Onda 15 / item 6.2: bloqueia tokens emitidos antes de uma revogacao.
-  // Extrai o token bruto do Authorization header (sem "Bearer ").
-  const rawToken = authHeader.slice(7).trim();
   const revoked = await isTokenRevoked(localServiceClient, userId, rawToken);
   if (revoked) {
     throw { status: 401, message: 'Sessao foi revogada. Faca login novamente.' };
