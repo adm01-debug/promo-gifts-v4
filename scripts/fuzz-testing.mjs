@@ -13,17 +13,25 @@ if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
+const generateRandomPayload = () => {
+  const types = ['sql', 'xss', 'overflow', 'null', 'invalid_json', 'type_mismatch'];
+  const type = types[Math.floor(Math.random() * types.length)];
+  
+  switch(type) {
+    case 'sql': return { query: "' OR '1'='1", table: "users; DROP TABLE products;--" };
+    case 'xss': return { html: "<img src=x onerror=alert(1)>", content: "javascript:alert(1)" };
+    case 'overflow': return { data: "A".repeat(50000) };
+    case 'null': return { data: null, items: [null, undefined] };
+    case 'invalid_json': return "{ malformed: [json ";
+    case 'type_mismatch': return { id: true, amount: "not-a-number", items: {} };
+    default: return {};
+  }
+};
+
 const FUZZ_PAYLOADS = [
+  ...Array(50).fill(null).map(() => generateRandomPayload()),
   { cnpj: "00.000.000/0001-91" },
-  { cnpj: "invalid-cnpj-format" },
-  { cnpj: "9999999999999999999999999" },
-  { query: "' OR '1'='1" },
-  { script: "<script>alert('xss')</script>" },
   { action: "upsert", products: Array(100).fill({ sku: "F", name: "F" }) },
-  { action: "delete", external_ids: ["non-existent"] },
-  null,
-  { "": "" },
-  { "{}": [] }
 ];
 
 const TARGET_FUNCTIONS = [

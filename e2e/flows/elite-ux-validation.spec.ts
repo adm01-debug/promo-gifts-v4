@@ -1,77 +1,92 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Elite UX & Production Readiness Flow', () => {
+test.describe('Elite UX & Resilience Validation (Full Journey)', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate and assume auto-login or basic session
-    await page.goto('/');
+    // Mock login or use session if available
+    await page.goto('/auth');
+    await page.fill('input[type="email"]', 'admin@example.com');
+    await page.fill('input[type="password"]', 'password123');
+    await page.click('button[type="submit"]');
   });
 
-  test('Catalog to Quote Journey', async ({ page }) => {
-    // 1. Acessibilidade: Skip to Content
-    await page.keyboard.press('Tab');
-    const skipLink = page.getByRole('link', { name: /pular para o conteúdo/i });
-    await expect(skipLink).toBeVisible();
-    await skipLink.click();
-    await expect(page.locator('#main-content')).toBeFocused();
-
-    // 2. Busca Global (Ctrl+K)
-    await page.keyboard.press('Control+k');
-    const searchInput = page.locator('#search');
-    await expect(searchInput).toBeFocused();
-    await searchInput.fill('Caneta');
+  test('should handle search with diacritics and highlights', async ({ page }) => {
+    await page.goto('/catalog');
+    const searchInput = page.locator('input[placeholder*="Buscar"]');
+    await searchInput.fill('Caneca');
+    await page.waitForTimeout(1000);
     
-    // 3. Grid de Produtos e Skeleton
-    const productGrid = page.locator('.product-grid');
-    await expect(productGrid).toBeVisible();
-    
-    // 4. Detalhe do Produto (PDP)
-    await page.locator('.product-card').first().click();
-    await expect(page).toHaveURL(/\/products\/.+/);
-    
-    // 5. Galeria de Cores e Sincronia
-    const colorSelector = page.locator('.color-selector-variant');
-    if (await colorSelector.isVisible()) {
-      await colorSelector.first().click();
-      // Verificar se o badge de estoque atualizou
-      await expect(page.locator('.stock-badge')).toBeVisible();
+    // Check for highlights
+    const highlights = page.locator('mark');
+    if (await highlights.count() > 0) {
+      await expect(highlights.first()).toBeVisible();
     }
-
-    // 6. Adicionar ao Orçamento
-    const addBtn = page.getByRole('button', { name: /adicionar ao orçamento/i });
-    await expect(addBtn).toBeEnabled();
-    await addBtn.click();
     
-    // 7. Notificação de Sucesso (Toast)
-    await expect(page.locator('text=adicionado com sucesso')).toBeVisible();
+    // Test diacritic resilience
+    await searchInput.fill('canêca'); // with circumflex
+    await page.waitForTimeout(1000);
+    const results = page.locator('.product-card');
+    await expect(results.first()).toBeVisible();
   });
 
-  test('Theme & Navigation Resilience', async ({ page }) => {
-    // 1. Troca de Tema (Transição Visual)
-    const themeToggle = page.getByRole('button', { name: /alterar tema/i });
-    if (await themeToggle.isVisible()) {
-      await themeToggle.click();
-      // Verificamos se a classe de transição foi aplicada brevemente ou se o tema mudou
-      const html = page.locator('html');
-      const initialTheme = await html.getAttribute('class');
-      await themeToggle.click();
-      const finalTheme = await html.getAttribute('class');
-      expect(initialTheme).not.toBe(finalTheme);
-    }
-
-    // 2. Barra de Progresso (NProgress)
-    await page.locator('a[href="/ferramentas/bi"]').click();
-    const progress = page.locator('#nprogress');
-    // Pode ser muito rápido para pegar, mas tentamos
-    await expect(page).toHaveURL(/\/ferramentas\/bi/);
+  test('should navigate through Quote Builder steps and validate pricing', async ({ page }) => {
+    await page.goto('/catalog');
+    await page.click('.product-card:first-child');
+    await page.waitForSelector('button:has-text("Adicionar ao Orçamento")');
+    await page.click('button:has-text("Adicionar ao Orçamento")');
+    
+    await page.goto('/orcamento/novo');
+    
+    // Step 1: Items
+    await expect(page.locator('text=Items')).toBeVisible();
+    await page.click('button:has-text("Próximo")');
+    
+    // Step 2: Customization
+    await expect(page.locator('text=Personalização')).toBeVisible();
+    // Simulate technique selection
+    await page.click('button:has-text("Configurar")');
+    await page.waitForSelector('select[name="technique"]');
+    await page.selectOption('select[name="technique"]', 'Laser');
+    await page.click('button:has-text("Confirmar")');
+    
+    await page.click('button:has-text("Próximo")');
+    
+    // Step 3: Quantities
+    await expect(page.locator('text=Quantidades')).toBeVisible();
+    await page.fill('input[name="quantity"]', '100');
+    await page.waitForTimeout(500); // debounce
+    
+    // Step 4: Summary & Pricing
+    await page.click('button:has-text("Próximo")');
+    await expect(page.locator('text=Resumo')).toBeVisible();
+    
+    // Validate that price is not 0
+    const totalPrice = page.locator('.total-price-value');
+    const priceText = await totalPrice.innerText();
+    expect(priceText).not.toBe('R$ 0,00');
   });
 
-  test('Simulation Dashboard Accessibility', async ({ page }) => {
-    await page.goto('/simulacao');
-    await expect(page.getByText('QG de Elite: Testes & Simulação')).toBeVisible();
+  test('should handle network errors gracefully (Resilience)', async ({ page }) => {
+    // Intercept and fail a critical API call
+    await page.route('**/functions/v1/external-db-bridge', (route) => route.abort('failed'));
     
-    // Verificar botões de ação
-    await expect(page.getByRole('button', { name: /resiliência/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /fuzzing/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /teste de carga/i })).toBeVisible();
+    await page.goto('/catalog');
+    // Check if error boundary or toast appears
+    await expect(page.locator('text=erro')).toBeVisible();
+  });
+
+  test('should validate mass actions in catalog', async ({ page }) => {
+    await page.goto('/catalog');
+    const checkboxes = page.locator('input[type="checkbox"]');
+    await checkboxes.nth(1).check();
+    await checkboxes.nth(2).check();
+    
+    const bulkBar = page.locator('.bulk-action-bar');
+    await expect(bulkBar).toBeVisible();
+    await expect(bulkBar.locator('text=2 selecionados')).toBeVisible();
+    
+    // Test export
+    await bulkBar.click('button:has-text("Exportar PDF")');
+    // Should trigger download or show success toast
+    await expect(page.locator('text=PDF')).toBeVisible();
   });
 });

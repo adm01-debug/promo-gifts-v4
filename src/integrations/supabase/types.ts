@@ -5536,6 +5536,92 @@ export type Database = {
         }
         Relationships: []
       }
+      simulation_logs: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          fn_name: string
+          id: string
+          latency_ms: number | null
+          payload: Json | null
+          run_id: string | null
+          status_code: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          fn_name: string
+          id?: string
+          latency_ms?: number | null
+          payload?: Json | null
+          run_id?: string | null
+          status_code?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          fn_name?: string
+          id?: string
+          latency_ms?: number | null
+          payload?: Json | null
+          run_id?: string | null
+          status_code?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulation_logs_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "simulation_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      simulation_runs: {
+        Row: {
+          avg_latency_ms: number | null
+          created_at: string | null
+          failures: number | null
+          id: string
+          metadata: Json | null
+          mode: string
+          p50_latency_ms: number | null
+          p90_latency_ms: number | null
+          p99_latency_ms: number | null
+          status: string
+          successes: number | null
+          total_scenarios: number | null
+        }
+        Insert: {
+          avg_latency_ms?: number | null
+          created_at?: string | null
+          failures?: number | null
+          id?: string
+          metadata?: Json | null
+          mode: string
+          p50_latency_ms?: number | null
+          p90_latency_ms?: number | null
+          p99_latency_ms?: number | null
+          status?: string
+          successes?: number | null
+          total_scenarios?: number | null
+        }
+        Update: {
+          avg_latency_ms?: number | null
+          created_at?: string | null
+          failures?: number | null
+          id?: string
+          metadata?: Json | null
+          mode?: string
+          p50_latency_ms?: number | null
+          p90_latency_ms?: number | null
+          p99_latency_ms?: number | null
+          status?: string
+          successes?: number | null
+          total_scenarios?: number | null
+        }
+        Relationships: []
+      }
       simulator_wizard_drafts: {
         Row: {
           created_at: string
