@@ -33,13 +33,16 @@ export async function authenticateRequest(req: Request): Promise<AuthResult> {
 
   // ⚡ FAST-PATH: Bypasse para chamadas do sistema (service_role)
   // Útil para automações, webhooks internos e testes de contrato.
-  if (rawToken === serviceRoleKey) {
+  const isServiceRole = rawToken === serviceRoleKey;
+  if (isServiceRole) {
     return {
       userId: '00000000-0000-0000-0000-000000000000', // System user
       userRole: 'dev',
       userRoles: ['dev', 'service_role'],
       localServiceClient
     };
+  } else {
+    // console.log(`[auth] Token mismatch. RawToken len: ${rawToken.length}, ServiceKey len: ${serviceRoleKey.length}`);
   }
 
   // Validate token using getUser (works with all supabase-js versions)
