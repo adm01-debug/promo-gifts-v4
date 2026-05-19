@@ -57,7 +57,14 @@ serve(async (req) => {
     const n8nSecret = Deno.env.get("N8N_PRODUCT_WEBHOOK_SECRET") || "sim-secret";
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+    const { data: run } = await supabase
+      .from("simulation_runs")
+      .insert({ mode, status: "running" })
+      .select()
+      .single();
+
     const report = {
+      id: run?.id,
       totalScenarios: 0,
       successes: 0,
       failures: 0,
@@ -94,6 +101,17 @@ serve(async (req) => {
         const latency = performance.now() - callStart;
         report.latencies.push(latency);
         
+        if (run?.id) {
+          await supabase.from("simulation_logs").insert({
+            run_id: run.id,
+            fn_name: fnName,
+            status_code: status,
+            payload: payload,
+            latency_ms: latency,
+            error_message: !success ? await res.clone().text().catch(() => "N/A") : null
+          });
+        }
+
         if (success) {
           report.successes++;
         } else {
@@ -108,6 +126,14 @@ serve(async (req) => {
       } catch (err) {
         report.failures++;
         report.totalScenarios++;
+        if (run?.id) {
+          await supabase.from("simulation_logs").insert({
+            run_id: run.id,
+            fn_name: fnName,
+            error_message: String(err),
+            payload: payload
+          });
+        }
         return { success: false, error: String(err) };
       }
     };
@@ -166,6 +192,26 @@ serve(async (req) => {
     }
 
     report.endTime = new Date().toISOString();
+    
+    if (run?.id) {
+      const sortedLatencies = [...report.latencies].sort((a, b) => a - b);
+      const p50 = sortedLatencies[Math.floor(sortedLatencies.length * 0.5)] || 0;
+      const p90 = sortedLatencies[Math.floor(sortedLatencies.length * 0.9)] || 0;
+      const p99 = sortedLatencies[Math.floor(sortedLatencies.length * 0.99)] || 0;
+      const avg = report.latencies.reduce((a, b) => a + b, 0) / (report.latencies.length || 1);
+
+      await supabase.from("simulation_runs").update({
+        status: "completed",
+        total_scenarios: report.totalScenarios,
+        successes: report.successes,
+        failures: report.failures,
+        avg_latency_ms: avg,
+        p50_latency_ms: p50,
+        p90_latency_ms: p90,
+        p99_latency_ms: p99,
+        metadata: { consistency: report.consistencyChecks }
+      }).eq("id", run.id);
+    }
     
     return new Response(JSON.stringify(report), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
