@@ -126,7 +126,7 @@ export const BulkActionBar = memo(function BulkActionBar({
                 selecionado{selectedCount > 1 ? "s" : ""}
               </span>
               {selectedTotalValue > 0 && (
-                <span className="text-[10px] text-primary font-bold leading-tight hidden md:inline">
+                <span className="text-[10px] text-primary font-bold leading-tight">
                   {formatCurrency(selectedTotalValue)}
                 </span>
               )}
