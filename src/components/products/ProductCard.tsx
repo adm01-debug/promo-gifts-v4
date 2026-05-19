@@ -6,6 +6,7 @@ import { useState, useRef, useEffect, memo, forwardRef, useCallback } from "reac
 import { GenderBadge } from "./GenderBadge";
 import { Building2, Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { getCdnUrl, getSrcSet } from "@/utils/image-utils";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -56,6 +57,7 @@ export const ProductCard = memo(forwardRef<HTMLElement, ProductCardProps>(functi
   activeColorFilter,
 }, ref) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isHovered, setIsHovered] = useState(false);
   const [collectionModalOpen, setCollectionModalOpen] = useState(false);
   const [collectionVariant, setCollectionVariant] = useState<{ color_name?: string | null; color_hex?: string | null; variant_id?: string | null; thumbnail?: string | null } | undefined>(undefined);
@@ -182,14 +184,10 @@ export const ProductCard = memo(forwardRef<HTMLElement, ProductCardProps>(functi
       onMouseEnter={() => {
         setIsHovered(true);
         // Prefetch product details when hovering to make "click to open" instant
-        const prefetchKey = ['promobrind-product', product.id];
-        // Global prefetch helper if available
-        if ((window as Record<string, unknown>).queryClient) {
-          (window as Record<string, { prefetchQuery: (opts: unknown) => void }>).queryClient.prefetchQuery({
-             queryKey: ['promobrind-product', product.id],
-             staleTime: 15 * 60 * 1000
-          });
-        }
+        queryClient.prefetchQuery({
+           queryKey: ['promobrind-product', product.id],
+           staleTime: 15 * 60 * 1000
+        });
       }}
       onMouseLeave={() => { setIsHovered(false); setActionsOpen(false); }}
       aria-label={`Ver detalhes de ${product.name}`}
