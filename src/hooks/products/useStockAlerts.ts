@@ -16,7 +16,7 @@ export interface StockAlert {
   supplier: string;
 }
 
-const STOCK_ALERT_SELECT = 'id, name, sku, stock_quantity, min_quantity, brand, supplier_name, primary_image_url, image_url, images';
+const STOCK_ALERT_SELECT = 'id, name, sku, stock_quantity, min_quantity, brand, primary_image_url, image_url, images';
 
 export function useStockAlerts(lowStockThreshold = 50, criticalStockThreshold = 10) {
   return useQuery<StockAlert[], Error>({
@@ -48,7 +48,7 @@ export function useStockAlerts(lowStockThreshold = 50, criticalStockThreshold = 
           imageUrl: getProductImageUrl(p),
           currentStock: stock,
           alertLevel,
-          supplier: p.brand || p.supplier_name || "",
+          supplier: p.brand || "",
         };
       });
     },
