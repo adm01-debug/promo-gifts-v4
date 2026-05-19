@@ -10,12 +10,13 @@
  * - Responsivo: labels escondidos em mobile, apenas ícones
  */
 import { memo } from "react";
-import { Heart, GitCompare, FolderPlus, X, CheckSquare, ShoppingBag, FileText, Sparkles } from "lucide-react";
+import { Heart, GitCompare, FolderPlus, X, CheckSquare, ShoppingBag, FileText, Sparkles, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 interface BulkActionBarProps {
   selectedCount: number;
@@ -27,6 +28,8 @@ interface BulkActionBarProps {
   onBulkCollection: () => void;
   onBulkCart?: () => void;
   onBulkQuote?: () => void;
+  onBulkPDF?: () => void;
+  selectedTotalValue?: number;
 }
 
 const actionVariants = {
@@ -87,6 +90,8 @@ export const BulkActionBar = memo(function BulkActionBar({
   onBulkCollection,
   onBulkCart,
   onBulkQuote,
+  onBulkPDF,
+  selectedTotalValue = 0,
 }: BulkActionBarProps) {
   return (
     <AnimatePresence>
@@ -116,9 +121,16 @@ export const BulkActionBar = memo(function BulkActionBar({
             >
               {selectedCount}
             </Badge>
-            <span className="text-sm text-muted-foreground whitespace-nowrap hidden sm:inline">
-              selecionado{selectedCount > 1 ? "s" : ""}
-            </span>
+            <div className="flex flex-col">
+              <span className="text-sm text-muted-foreground whitespace-nowrap hidden sm:inline">
+                selecionado{selectedCount > 1 ? "s" : ""}
+              </span>
+              {selectedTotalValue > 0 && (
+                <span className="text-[10px] text-primary font-bold leading-tight">
+                  {formatCurrency(selectedTotalValue)}
+                </span>
+              )}
+            </div>
           </motion.div>
 
           {/* Primary actions — Cart & Quote */}
@@ -142,20 +154,29 @@ export const BulkActionBar = memo(function BulkActionBar({
                   className="text-primary hover:text-primary hover:bg-primary/10"
                 />
               )}
+              {onBulkPDF && (
+                <ActionButton
+                  icon={FileDown}
+                  label="Catálogo"
+                  onClick={onBulkPDF}
+                  index={2}
+                  className="text-orange-500 hover:text-orange-500 hover:bg-orange-500/10"
+                />
+              )}
             </div>
           )}
 
           {/* Secondary actions */}
           <div className="flex items-center gap-0.5">
-            <ActionButton icon={Heart} label="Favoritar" onClick={onBulkFavorite} index={2} />
+            <ActionButton icon={Heart} label="Favoritar" onClick={onBulkFavorite} index={3} />
             <ActionButton
               icon={GitCompare}
               label="Comparar"
               onClick={onBulkCompare}
               disabled={selectedCount > 4}
-              index={3}
+              index={4}
             />
-            <ActionButton icon={FolderPlus} label="Coleção" onClick={onBulkCollection} index={4} />
+            <ActionButton icon={FolderPlus} label="Coleção" onClick={onBulkCollection} index={5} />
           </div>
 
           {/* Controls */}

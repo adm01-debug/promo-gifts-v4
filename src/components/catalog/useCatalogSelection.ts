@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { useComparisonStore } from "@/stores/useComparisonStore";
+import { exportCollectionPDF } from "@/lib/export-collection-pdf";
 import type { Product } from "@/hooks/products";
 import type { BulkVariantSelection, BulkWizardMode } from "@/components/catalog/BulkVariantWizard";
 
@@ -63,6 +64,7 @@ export function useCatalogSelection(
   const handleBulkCollection = useCallback(() => openWizard("collection"), [openWizard]);
   const handleBulkQuote = useCallback(() => openWizard("quote"), [openWizard]);
   const handleBulkCart = useCallback(() => openWizard("cart"), [openWizard]);
+  const handleBulkPDF = useCallback(() => openWizard("pdf"), [openWizard]);
 
   const handleWizardComplete = useCallback((selections: BulkVariantSelection[]) => {
     if (wizardMode === "cart") {
@@ -114,6 +116,27 @@ export function useCatalogSelection(
     } else if (wizardMode === "collection") {
       setWizardSelections(selections);
       setCollectionModalOpen(true);
+    } else if (wizardMode === "pdf") {
+      if (selections.length === 0) return;
+      
+      const variantMap = new Map();
+      selections.forEach(s => {
+        if (s.variant) {
+          variantMap.set(s.product.id, {
+            color_name: s.variant.color_name,
+            color_hex: s.variant.color_hex
+          });
+        }
+      });
+
+      void exportCollectionPDF({
+        collectionName: `Catálogo Personalizado - ${new Date().toLocaleDateString("pt-BR")}`,
+        products: selections.map(s => s.product),
+        variantMap
+      });
+      
+      toast.success(`PDF gerado com ${selections.length} produtos`);
+      clearSelection();
     }
   }, [wizardMode, navigate, clearSelection, favStore, compStore]);
 
@@ -125,6 +148,10 @@ export function useCatalogSelection(
   const firstSelectedId = selectedIds.size > 0 ? Array.from(selectedIds)[0] : "";
   const firstSelectedProduct = paginatedProducts.find(p => p.id === firstSelectedId);
 
+  const selectedTotalValue = useMemo(() => {
+    return bulkCartProducts.reduce((sum, p) => sum + (p.price || 0), 0);
+  }, [bulkCartProducts]);
+
   return {
     selectedIds, toggleSelect, selectAll, clearSelection,
     collectionModalOpen, setCollectionModalOpen,
@@ -132,7 +159,8 @@ export function useCatalogSelection(
     variantWizardOpen, setVariantWizardOpen,
     wizardMode, wizardSelections, bulkCartProducts,
     firstSelectedId, firstSelectedProduct,
+    selectedTotalValue,
     handleBulkFavorite, handleBulkCompare, handleBulkCollection,
-    handleBulkQuote, handleBulkCart, handleWizardComplete,
+    handleBulkQuote, handleBulkCart, handleBulkPDF, handleWizardComplete,
   };
 }

@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import {
-  Package, AlertTriangle, SkipForward, ShoppingBag, FileText, Heart, GitCompare, FolderPlus,
+  Package, AlertTriangle, SkipForward, ShoppingBag, FileText, Heart, GitCompare, FolderPlus, FileDown,
 } from 'lucide-react';
 import { useExternalVariantStock, type ExternalVariantStock } from '@/hooks/products';
 import type { Product } from '@/hooks/products';
@@ -19,7 +19,7 @@ export interface BulkVariantSelection {
   variant: ExternalVariantStock | null;
 }
 
-export type BulkWizardMode = 'cart' | 'quote' | 'favorite' | 'compare' | 'collection';
+export type BulkWizardMode = 'cart' | 'quote' | 'favorite' | 'compare' | 'collection' | 'pdf';
 
 interface BulkVariantWizardProps {
   open: boolean;
@@ -271,12 +271,13 @@ export function BulkVariantWizard({ open, onOpenChange, products, mode, onComple
   const currentProduct = products[currentIndex];
   if (!currentProduct) return null;
 
-  const modeConfig: Record<BulkWizardMode, { icon: typeof ShoppingBag; title: string; colorClass: string; bgClass: string }> = {
+  const modeConfig: Record<BulkWizardMode, { icon: any; title: string; colorClass: string; bgClass: string }> = {
     cart: { icon: ShoppingBag, title: 'Adicionar ao Carrinho', colorClass: 'text-primary', bgClass: 'bg-primary/15' },
     quote: { icon: FileText, title: 'Enviar para Orçamento', colorClass: 'text-success', bgClass: 'bg-success/15' },
     favorite: { icon: Heart, title: 'Favoritar com Cor', colorClass: 'text-destructive', bgClass: 'bg-destructive/15' },
     compare: { icon: GitCompare, title: 'Comparar com Cor', colorClass: 'text-primary', bgClass: 'bg-primary/15' },
     collection: { icon: FolderPlus, title: 'Coleção com Cor', colorClass: 'text-info', bgClass: 'bg-info/15' },
+    pdf: { icon: FileDown, title: 'Gerar Catálogo PDF', colorClass: 'text-orange-500', bgClass: 'bg-orange-500/15' },
   };
   const { icon: Icon, title, colorClass } = modeConfig[mode];
   const bgClass = modeConfig[mode].bgClass;
