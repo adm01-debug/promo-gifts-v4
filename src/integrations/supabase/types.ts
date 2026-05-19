@@ -4224,11 +4224,16 @@ export type Database = {
       }
       product_sync_logs: {
         Row: {
+          completed_at: string | null
           created_at: string
           duration_ms: number | null
           error_message: string | null
           id: string
           payload: Json | null
+          products_created: number | null
+          products_failed: number | null
+          products_received: number | null
+          products_updated: number | null
           records_failed: number
           records_inserted: number
           records_processed: number
@@ -4238,11 +4243,16 @@ export type Database = {
           triggered_by: string | null
         }
         Insert: {
+          completed_at?: string | null
           created_at?: string
           duration_ms?: number | null
           error_message?: string | null
           id?: string
           payload?: Json | null
+          products_created?: number | null
+          products_failed?: number | null
+          products_received?: number | null
+          products_updated?: number | null
           records_failed?: number
           records_inserted?: number
           records_processed?: number
@@ -4252,11 +4262,16 @@ export type Database = {
           triggered_by?: string | null
         }
         Update: {
+          completed_at?: string | null
           created_at?: string
           duration_ms?: number | null
           error_message?: string | null
           id?: string
           payload?: Json | null
+          products_created?: number | null
+          products_failed?: number | null
+          products_received?: number | null
+          products_updated?: number | null
           records_failed?: number
           records_inserted?: number
           records_processed?: number
@@ -4299,31 +4314,100 @@ export type Database = {
       }
       products: {
         Row: {
+          category_id: string | null
+          category_name: string | null
+          colors: Json | null
           created_at: string | null
           description: string | null
+          external_id: string | null
+          featured: boolean | null
           id: string
+          images: string[] | null
+          is_active: boolean | null
+          is_kit: boolean | null
+          kit_items: Json | null
+          materials: string[] | null
+          metadata: Json | null
           name: string
+          new_arrival: boolean | null
+          on_sale: boolean | null
           price: number | null
+          sku: string | null
+          stock: number | null
           stock_quantity: number | null
+          stock_status: string | null
+          subcategory: string | null
+          supplier_id: string | null
+          supplier_name: string | null
+          synced_at: string | null
+          tags: Json | null
           updated_at: string | null
+          variations: Json | null
+          video_url: string | null
         }
         Insert: {
+          category_id?: string | null
+          category_name?: string | null
+          colors?: Json | null
           created_at?: string | null
           description?: string | null
+          external_id?: string | null
+          featured?: boolean | null
           id?: string
+          images?: string[] | null
+          is_active?: boolean | null
+          is_kit?: boolean | null
+          kit_items?: Json | null
+          materials?: string[] | null
+          metadata?: Json | null
           name: string
+          new_arrival?: boolean | null
+          on_sale?: boolean | null
           price?: number | null
+          sku?: string | null
+          stock?: number | null
           stock_quantity?: number | null
+          stock_status?: string | null
+          subcategory?: string | null
+          supplier_id?: string | null
+          supplier_name?: string | null
+          synced_at?: string | null
+          tags?: Json | null
           updated_at?: string | null
+          variations?: Json | null
+          video_url?: string | null
         }
         Update: {
+          category_id?: string | null
+          category_name?: string | null
+          colors?: Json | null
           created_at?: string | null
           description?: string | null
+          external_id?: string | null
+          featured?: boolean | null
           id?: string
+          images?: string[] | null
+          is_active?: boolean | null
+          is_kit?: boolean | null
+          kit_items?: Json | null
+          materials?: string[] | null
+          metadata?: Json | null
           name?: string
+          new_arrival?: boolean | null
+          on_sale?: boolean | null
           price?: number | null
+          sku?: string | null
+          stock?: number | null
           stock_quantity?: number | null
+          stock_status?: string | null
+          subcategory?: string | null
+          supplier_id?: string | null
+          supplier_name?: string | null
+          synced_at?: string | null
+          tags?: Json | null
           updated_at?: string | null
+          variations?: Json | null
+          video_url?: string | null
         }
         Relationships: []
       }
