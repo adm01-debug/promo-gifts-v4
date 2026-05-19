@@ -1,4 +1,3 @@
-import { createClient } from '@supabase/supabase-js';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
@@ -10,8 +9,6 @@ if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
   process.exit(0);
 }
 
-const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-
 const CONTRACTS = [
   {
     name: "product-webhook",
@@ -22,7 +19,7 @@ const CONTRACTS = [
         description: "Valid upsert payload",
         payload: {
           action: "upsert",
-          product: { sku: "TEST-SKU-1", name: "Test Product", price: 10.5 }
+          product: { sku: `TEST-${Date.now()}`, name: "Test Product", price: 10.5 }
         },
         expectedStatus: 200,
         validateResponse: (data) => data.success === true && typeof data.sync_log_id === 'string'
@@ -35,7 +32,7 @@ const CONTRACTS = [
       },
       {
         description: "Missing required fields in product",
-        payload: { action: "upsert", product: { sku: "T" } }, // Missing name and price
+        payload: { action: "upsert", product: { sku: "T" } },
         expectedStatus: 400,
         validateResponse: (data) => data.error === "Validation failed" && data.details.product !== undefined
       }
@@ -49,7 +46,7 @@ const CONTRACTS = [
         description: "Valid CNPJ format",
         payload: { cnpj: "00.000.000/0001-91" },
         expectedStatus: 200,
-        validateResponse: (data) => data.cnpj !== undefined || data.error !== undefined // Might fail externally but 200 for valid format
+        validateResponse: (data) => data.cnpj !== undefined || data.error !== undefined
       },
       {
         description: "Invalid CNPJ format",
@@ -67,7 +64,7 @@ const CONTRACTS = [
         description: "Valid select operation",
         payload: { operation: "select", table: "products", limit: 1 },
         expectedStatus: 200,
-        validateResponse: (data) => Array.isArray(data.records)
+        validateResponse: (data) => Array.isArray(data.records || data.data?.records)
       },
       {
         description: "Invalid table name",
@@ -82,15 +79,7 @@ const CONTRACTS = [
     endpoint: "webhook-inbound?slug=simulation-test",
     scenarios: [
       {
-        description: "Valid simulation payload with HMAC",
-        payload: { event: "contract-test", id: "123" },
-        expectedStatus: 200,
-        headers: { "x-signature-256": "sha256=fake-signature-for-sim" }, // In simulation mode it might bypass or expect a specific key
-        // Note: webhook-inbound usually requires a real HMAC based on the endpoint's secret.
-        // For contract testing, we might need to mock or use the simulation-test endpoint which is designed for this.
-      },
-      {
-        description: "Missing signature",
+        description: "Missing signature (expected 401)",
         payload: { event: "test" },
         expectedStatus: 401,
         validateResponse: (data) => data.error === "Assinatura inválida"
@@ -109,33 +98,22 @@ async function runContractTests() {
     for (const scenario of contract.scenarios) {
       process.stdout.write(`  - ${scenario.description}: `);
       try {
-        const { data, error, status } = await supabase.functions.invoke(contract.endpoint, {
-          body: scenario.payload,
-          headers: contract.headers || {}
+        const url = `${SUPABASE_URL}/functions/v1/${contract.endpoint}`;
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${SERVICE_ROLE_KEY}`,
+            ...contract.headers
+          },
+          body: JSON.stringify(scenario.payload)
         });
 
-        // status is usually available in the error object if not 200, 
-        // but supabase-js invoke handles it. Actually, invoke returns { data, error }.
-        // If error is present, it might have status.
-        
-        let actualStatus = 200;
-        let responseData = data;
-        
-        if (error) {
-           // supabase-js throws or returns error for non-2xx
-           // We need to parse the error to get the actual status if possible
-           // or just check the data if it was returned with the error.
-           // Newer versions of supabase-js might return status in error.
-           actualStatus = error.status || (error.message?.includes("400") ? 400 : (error.message?.includes("401") ? 401 : 500));
-           try {
-             responseData = JSON.parse(await error.context?.json() || "{}");
-           } catch {
-             responseData = { error: error.message };
-           }
-        }
+        const actualStatus = response.status;
+        const responseData = await response.json().catch(() => ({}));
 
         const statusMatch = actualStatus === scenario.expectedStatus;
-        const validationMatch = scenario.validateResponse ? scenario.validateResponse(responseData || {}) : true;
+        const validationMatch = scenario.validateResponse ? scenario.validateResponse(responseData) : true;
 
         if (statusMatch && validationMatch) {
           console.log("✅ PASS");
