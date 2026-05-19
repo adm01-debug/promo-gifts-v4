@@ -202,17 +202,15 @@ export function useGlobalSearch() {
     }
   }, [query, history]);
 
-  // ── Keyboard shortcut ──
+  // Keyboard shortcut moved to useGlobalShortcuts.ts for better centralization
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      // Ctrl+K → toggle search palette
-      if (e.key === "k" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); setOpen(o => !o); }
-      // Ctrl+Shift+V → open voice assistant
+      // Ctrl+Shift+V → open voice assistant (keep here as it is voice-specific)
       if (e.key === "V" && (e.metaKey || e.ctrlKey) && e.shiftKey) { e.preventDefault(); setVoiceOverlayOpen(true); }
     };
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
-  }, []);
+  }, [setVoiceOverlayOpen]);
 
   // ── Semantic search ──
   const abortRef = useRef<AbortController | null>(null);
