@@ -36,7 +36,7 @@ vi.mock('@/contexts/AuthContext', () => ({
 }));
 
 const mockUseCloudStatus = vi.fn();
-vi.mock('@/hooks/useCloudStatus', () => ({
+vi.mock('@/hooks/ui/useCloudStatus', () => ({
   useCloudStatus: () => mockUseCloudStatus(),
 }));
 
@@ -51,7 +51,7 @@ vi.mock('@/lib/cloud-status', async () => {
 
 // Mock do hook useDevGate (já que o componente o usa agora)
 const mockIsAllowed = vi.fn();
-vi.mock('@/hooks/useDevGate', () => ({
+vi.mock('@/hooks/admin/useDevGate', () => ({
   useDevGate: () => ({
     isAllowed: mockIsAllowed(),
     isDev: mockUseAuth().isDev

@@ -3,6 +3,7 @@ import { AlertTriangle, CheckCircle2, Clock, Info, Loader2, RefreshCw, WifiOff, 
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useCloudStatus } from '@/hooks/ui';
+import { useDevGate } from '@/hooks/admin';
 import { DevOnly } from '@/components/dev/DevOnly';
 import { getStatusTimeline } from '@/lib/cloud-status';
 import { cn } from '@/lib/utils';
@@ -35,15 +36,22 @@ const STATUS_CONFIG: Partial<Record<'down' | 'degraded' | 'warming', BannerVaria
 
 const CloudStatusBannerInner = memo(function CloudStatusBannerInner() {
   const { status, snapshot, retry, isChecking } = useCloudStatus();
+  const { isAllowed } = useDevGate();
   const [showDebug, setShowDebug] = useState(false);
   const [showTimeline, setShowTimeline] = useState(false);
 
   const timeline = useMemo(() => getStatusTimeline(), []);
-  const isIssueStatus = status === 'down' || status === 'degraded' || status === 'warming';
+  const isCritical = status === 'down' || status === 'degraded';
+  const isIssueStatus = isCritical || status === 'warming';
   const config = isIssueStatus ? STATUS_CONFIG[status] : null;
-  // Banner de saúde do backend é gateado externamente por <DevOnly> — aqui só
-  // decidimos se há issue ativo para renderizar.
+
+  // Política de visibilidade:
+  //  - down/degraded (crítico) → SEMPRE renderiza para todos os usuários,
+  //    pois afeta diretamente a capacidade de trabalho do vendedor.
+  //  - warming (técnico)        → só para devs (gate de infra), por ser ruído.
+  //  - healthy/unknown          → nunca renderiza (indicador fica no DevStatusDot).
   if (!isIssueStatus) return null;
+  if (status === 'warming' && !isAllowed) return null;
 
   // Defensivo: como shouldShow exige status ∈ {down, degraded, warming},
   // config sempre estará definido aqui. Os fallbacks (?? ...) protegem caso
@@ -176,9 +184,7 @@ const CloudStatusBannerInner = memo(function CloudStatusBannerInner() {
 });
 
 export const CloudStatusBanner = memo(function CloudStatusBanner() {
-  return (
-    <DevOnly>
-      <CloudStatusBannerInner />
-    </DevOnly>
-  );
+  // Gating de visibilidade (crítico vs técnico) é feito dentro do Inner para
+  // permitir que falhas críticas alcancem TODOS os usuários, não só devs.
+  return <CloudStatusBannerInner />;
 });

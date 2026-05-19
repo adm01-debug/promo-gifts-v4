@@ -49,9 +49,43 @@ env:
   VITE_CRM_SUPABASE_ANON_KEY: ${{ secrets.VITE_CRM_SUPABASE_ANON_KEY }}
 
 jobs:
+  # Gate: só roda o deploy quando VERCEL_TOKEN está configurado.
+  # Sem isso o job inteiro falha tentando autenticar contra Vercel.
+  # Enquanto o Lovable bot faz o auto-deploy, manter este gate como
+  # "skipped" não bloqueia outros workflows nem cria red flags no CI.
+  # Para ativar: Settings → Secrets and variables → Actions → adicionar
+  # VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID + as VITE_* listadas
+  # no header deste arquivo.
+  check-secrets:
+    name: Check deploy prerequisites
+    runs-on: ubuntu-latest
+    outputs:
+      can_deploy: ${{ steps.check.outputs.can_deploy }}
+    steps:
+      - id: check
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ -n "$VERCEL_TOKEN" ]; then
+            echo "can_deploy=true" >> "$GITHUB_OUTPUT"
+            echo "✅ VERCEL_TOKEN configurado — deploy seguirá adiante." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "can_deploy=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "## ⏭️  Deploy via GitHub Actions desabilitado"
+              echo ""
+              echo "VERCEL_TOKEN não está configurado nos secrets do repo."
+              echo "Enquanto isso, o Lovable bot continua fazendo auto-deploy."
+              echo ""
+              echo "Para ativar este workflow: Settings → Secrets and variables → Actions."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   deploy:
     name: Build & Deploy
     runs-on: ubuntu-latest
+    needs: check-secrets
+    if: needs.check-secrets.outputs.can_deploy == 'true'
     steps:
       - uses: actions/checkout@v4
 

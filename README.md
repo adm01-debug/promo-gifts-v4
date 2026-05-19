@@ -117,7 +117,7 @@ Para cada projeto Supabase você precisa de:
 3. Aplicar as migrações em `supabase/migrations/` no projeto principal:
    ```bash
    npx supabase link --project-ref <seu-project-ref>
-   npx supabase db push
+   npx supabase migration up
    ```
 4. Deployar as edge functions (opcional em dev — feito via CI):
    ```bash

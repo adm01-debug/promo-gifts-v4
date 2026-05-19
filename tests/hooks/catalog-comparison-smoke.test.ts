@@ -13,7 +13,7 @@ vi.mock("@/contexts/OrganizationContext", () => ({
 }));
 
 import { useCatalogFiltering } from "@/hooks/products";
-import { useComparisonSync } from "@/hooks/useComparisonSync";
+import { useComparisonSync } from "@/hooks/comparison/useComparisonSync";
 import { smokeHook } from "./_helpers/smoke-template";
 
 // Proxy que retorna [] para qualquer campo de array acessado, evitando crash

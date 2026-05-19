@@ -17,7 +17,7 @@ vi.mock("@/integrations/supabase/client", () => ({
 
 import { renderHookWithProviders } from "./_helpers/render-hook-providers";
 import { supabase } from "@/integrations/supabase/client";
-import { usePrintAreas } from "@/hooks/usePrintAreas";
+import { usePrintAreas } from "@/hooks/simulation/usePrintAreas";
 import { PRINT_AREA_ROW_PT, TABELA_PRECO_ROW_PT } from "../fixtures/personalization-payloads";
 
 beforeEach(() => {

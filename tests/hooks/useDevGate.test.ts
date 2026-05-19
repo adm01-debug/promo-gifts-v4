@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useDevGate } from '@/hooks/useDevGate';
+import { useDevGate } from '@/hooks/admin/useDevGate';
 import { useAuth } from '@/contexts/AuthContext';
 import { devInfraGate } from '@/lib/system/dev-gate/DevInfraGate';
 

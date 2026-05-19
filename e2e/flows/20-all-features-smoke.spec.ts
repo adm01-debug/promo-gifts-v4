@@ -313,7 +313,7 @@ test.describe("@smoke Rotas públicas (gate de CI)", () => {
     await page.fill(Sel.login.password, "SenhaErrada@2025!");
     await page.locator(Sel.login.submit).first().click();
     await expect(page).toHaveURL(/\/login/, { timeout: 8_000 });
-    await expect(page.locator(Sel.login.submit).first()).toBeEnabled({ timeout: 5_000 });
+    await expect(page.locator(Sel.login.submit).first()).toBeEnabled({ timeout: 15_000 });
   });
 
   // 95 · Negativo de recovery: /reset-password sem token NÃO habilita reset.

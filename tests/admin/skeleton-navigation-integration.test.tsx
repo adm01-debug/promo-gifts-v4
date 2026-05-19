@@ -26,6 +26,14 @@ import {
 import { installReactWarningGuard } from "../helpers/react-warning-guard";
 import { getFallback } from "@/components/layout/SkeletonLoaders";
 
+// SkeletonMonitor (envolvido por makeSkeleton) chama useAuth() para decidir
+// se mostra o overlay de debug do tempo de skeleton. Em testes de renderização
+// isolada, não temos AuthProvider — mockamos com um stub mínimo.
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ userRole: null, user: null, isLoading: false }),
+}));
+
+
 // ---------- Lazy controlado --------------------------------------------------
 //
 // Cada rota usa um `lazy()` com Promise que mantemos pendente — força o

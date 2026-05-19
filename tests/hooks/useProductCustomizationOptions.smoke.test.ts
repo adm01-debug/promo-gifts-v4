@@ -22,7 +22,7 @@ vi.mock("@/lib/external-rpc", () => ({
 
 import { renderHookWithProviders } from "./_helpers/render-hook-providers";
 import { invokeExternalRpc } from "@/lib/external-rpc";
-import { useProductCustomizationOptions } from "@/hooks/productsCustomizationOptions";
+import { useProductCustomizationOptions } from "@/hooks/products/useProductCustomizationOptions";
 import { OPTIONS_PAYLOAD_PT } from "../fixtures/personalization-payloads";
 
 const mockedRpc = invokeExternalRpc as unknown as ReturnType<typeof vi.fn>;

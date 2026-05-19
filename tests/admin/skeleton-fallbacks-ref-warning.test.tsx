@@ -8,7 +8,7 @@
  *  - render como fallback de <Suspense> com filho que suspende (Promise pendente);
  *  - render via helper getFallback() para várias rotas representativas.
  */
-import { describe, it, afterEach } from "vitest";
+import { describe, it, afterEach, vi } from "vitest";
 import { render, cleanup } from "@testing-library/react";
 import * as React from "react";
 import { Suspense } from "react";
@@ -54,6 +54,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+// SkeletonMonitor (envolvido por makeSkeleton) chama useAuth() para decidir
+// se mostra o overlay de debug do tempo de skeleton. Em testes de renderização
+// isolada, não temos AuthProvider — mockamos com um stub mínimo.
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ userRole: null, user: null, isLoading: false }),
+}));
+
 
 afterEach(() => cleanup());
 
