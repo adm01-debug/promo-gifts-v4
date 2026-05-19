@@ -157,7 +157,7 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
               transition={{ duration: 0.2 }}
               className="overflow-hidden"
             >
-              <div className="pl-4 mt-0.5 space-y-0.5">
+              <div className="pl-4 mt-0.5 space-y-0.5" id={`submenu-${item.label}`} role="group">
                 {item.children.map(child => renderNavLink(child, depth + 1))}
               </div>
             </motion.div>
