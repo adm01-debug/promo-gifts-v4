@@ -134,14 +134,7 @@ export function ReplenishmentProductGrid() {
           </div>
           <div className={`grid ${getGridColsClass(gridColumns)} ${getGridGapClass(gridColumns)}`}>
             {Array.from({ length: 10 }).map((_, i) => (
-              <div key={i} className="rounded-xl border border-border/30 overflow-hidden animate-pulse">
-                <div className="aspect-square bg-muted/40" />
-                <div className="p-3 space-y-2">
-                  <div className="h-3 bg-muted/50 rounded w-3/4" />
-                  <div className="h-3 bg-muted/40 rounded w-1/2" />
-                  <div className="h-3 bg-muted/30 rounded w-1/3" />
-                </div>
-              </div>
+              <ProductCardSkeleton key={i} />
             ))}
           </div>
         </div>
