@@ -168,7 +168,7 @@ export function ProductList({
     setCollectionModalOpen(true);
   }, []);
 
-  if (products.length === 0) {
+  if (products.length === 0 && !isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
         <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
@@ -183,6 +183,11 @@ export function ProductList({
       </div>
     );
   }
+
+  const displayProducts = isLoading && products.length === 0
+    ? Array.from({ length: 8 }).map((_, i) => ({ id: `skeleton-${i}`, isSkeleton: true } as any))
+    : products;
+
 
   // Get first selected product for collection modal
   const firstSelectedId = selectedIds.size > 0 ? Array.from(selectedIds)[0] : "";
