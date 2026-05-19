@@ -112,9 +112,17 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
       return (
         <div key={item.label}>
           <button
-            aria-expanded={openSubMenus[item.label]}
+            aria-expanded={isSubOpen}
+            aria-controls={`submenu-${item.label}`}
             aria-label={`Expandir ${item.label}`}
             onClick={() => toggleSubMenu(item.label)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                toggleSubMenu(item.label);
+              }
+            }}
+
             className={cn(
               "flex items-center gap-3 w-full px-3 py-2 rounded-lg transition-all duration-150 group relative",
               "hover:bg-sidebar-accent/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-orange/20 active:scale-[0.995]",
