@@ -254,18 +254,22 @@ export function LocationPanel({
   }, [isPickerOpen, selectedTechnique]);
 
   // Mensagem para o announcer aria-live (transições de estado)
-  const [announcement, setAnnouncement] = useState<string>("");
   useEffect(() => {
     if (!selectedTechnique) {
       setAnnouncement("");
       return;
     }
-    setAnnouncement(
-      isPickerOpen
-        ? `Seletor de técnicas aberto. Técnica atual: ${selectedTechnique.tecnica_nome}.`
-        : `Técnica selecionada: ${selectedTechnique.tecnica_nome}.`,
-    );
-  }, [isPickerOpen, selectedTechnique]);
+    
+    let msg = isPickerOpen
+      ? `Seletor de técnicas aberto. Técnica atual: ${selectedTechnique.tecnica_nome}.`
+      : `Técnica selecionada: ${selectedTechnique.tecnica_nome}.`;
+      
+    if (!isPickerOpen && clampNotice) {
+      msg += ` ${clampNotice}`;
+    }
+    
+    setAnnouncement(msg);
+  }, [isPickerOpen, selectedTechnique, clampNotice]);
 
   const [clampNotice, setClampNotice] = useState<string | null>(null);
 
