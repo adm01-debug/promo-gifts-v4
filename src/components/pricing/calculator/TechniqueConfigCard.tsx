@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Paintbrush, Palette, Ruler, Trash2 } from 'lucide-react';
-import { type SelectedTechniqueConfig, availableSizes } from "@/pages/advanced-price-search/types";
+import { type SelectedTechniqueConfig, availableSizes } from "./types";
 
 interface Props {
   config: SelectedTechniqueConfig;
