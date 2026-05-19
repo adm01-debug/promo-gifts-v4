@@ -344,14 +344,14 @@ export default function ProductDetail() {
           </Suspense>
         </div>
 
-        <Suspense fallback={null}>
+        <Suspense fallback={<ModalSkeleton />}>
           <SupplierComparisonModal
             product={product}
             open={supplierCompareOpen}
             onOpenChange={setSupplierCompareOpen}
           />
         </Suspense>
-        <Suspense fallback={null}>
+        <Suspense fallback={<ModalSkeleton />}>
           <FutureStockModal
             open={futureStockOpen}
             onOpenChange={setFutureStockOpen}
@@ -360,7 +360,7 @@ export default function ProductDetail() {
             productSku={product.sku}
           />
         </Suspense>
-        <Suspense fallback={null}>
+        <Suspense fallback={<ModalSkeleton />}>
           <PackagingModal
             isOpen={packagingModalOpen}
             onClose={() => setPackagingModalOpen(false)}

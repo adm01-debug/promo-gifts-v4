@@ -25,7 +25,7 @@ interface SupplierComparisonResult {
 export function useSupplierComparison(product: Product | null | undefined) {
   // Fetch products in the same category (server-side, lazy)
   const categoryName = product?.category?.name;
-  const { data: categoryProducts = [] } = useProducts(
+  const { data: categoryProducts = [], isLoading } = useProducts(
     categoryName ? { category: categoryName } : undefined,
     { enabled: !!product && !!categoryName, staleTime: 10 * 60 * 1000 }
   );
@@ -83,7 +83,7 @@ export function useSupplierComparison(product: Product | null | undefined) {
     };
   }, [product, categoryProducts]);
 
-  return result;
+  return { data: result, isLoading };
 }
 
 const STOP_WORDS = new Set(['de', 'da', 'do', 'dos', 'das', 'a', 'o', 'e', 'em', 'com', 'para', 'por', 'um', 'uma', 'no', 'na']);
