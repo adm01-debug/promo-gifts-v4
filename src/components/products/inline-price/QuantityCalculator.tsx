@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { ArrowRight, Info, Calculator } from "lucide-react";
+import { ArrowRight, Info, Calculator, Loader2 } from "lucide-react";
 import React from "react";
 
 interface QuantityCalculatorProps {
@@ -15,10 +15,11 @@ interface QuantityCalculatorProps {
   discount: number;
   formatPrice: (price: number) => string;
   compact?: boolean;
+  isLoading?: boolean;
 }
 
 export function QuantityCalculator({
-  customQuantity, onQuantityChange, minQuantity, unitPrice, total, discount, formatPrice, compact = false,
+  customQuantity, onQuantityChange, minQuantity, unitPrice, total, discount, formatPrice, compact = false, isLoading = false,
 }: QuantityCalculatorProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     onQuantityChange(Math.max(minQuantity, parseInt(e.target.value) || minQuantity));
@@ -38,7 +39,8 @@ export function QuantityCalculator({
           <ArrowRight className="h-4 w-4 text-muted-foreground/40 mt-5 shrink-0" />
           <div className="space-y-1 flex-[1.5]">
             <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Resultado</Label>
-            <div className="h-11 px-3 rounded-lg bg-success/10 border border-success/20 flex items-center gap-2">
+            <div className="h-11 px-3 rounded-lg bg-success/10 border border-success/20 flex items-center gap-2 relative">
+              {isLoading && <div className="absolute inset-0 bg-background/50 flex items-center justify-center rounded-lg z-10"><Loader2 className="h-4 w-4 animate-spin text-primary" /></div>}
               <span className="font-bold text-base text-success whitespace-nowrap">{formatPrice(total)}</span>
               <span className="text-[11px] text-muted-foreground/60 whitespace-nowrap">({formatPrice(unitPrice)}/un)</span>
             </div>
@@ -46,7 +48,7 @@ export function QuantityCalculator({
         </div>
         <Button className="w-full gap-2 h-11 font-bold" size="lg">
           <Calculator className="h-4 w-4" />
-          Adicionar {customQuantity.toLocaleString('pt-BR')} un ao Orçamento
+          Adicionar {Math.round(customQuantity + Number.EPSILON).toLocaleString('pt-BR')} un ao Orçamento
         </Button>
       </div>
     );
@@ -66,7 +68,8 @@ export function QuantityCalculator({
         <div className="flex items-end"><ArrowRight className="h-5 w-5 text-muted-foreground mb-4 hidden sm:block" /></div>
         <div className="flex-1 space-y-2">
           <Label className="text-sm">Resultado</Label>
-          <div className="h-12 px-4 rounded-lg bg-success/10 border border-success/20 flex items-center justify-between">
+          <div className="h-12 px-4 rounded-lg bg-success/10 border border-success/20 flex items-center justify-between relative">
+            {isLoading && <div className="absolute inset-0 bg-background/50 flex items-center justify-center rounded-lg z-10"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>}
             <div>
               <span className="font-bold text-lg text-success">{formatPrice(total)}</span>
               {discount > 0 && <Badge variant="secondary" className="ml-2 bg-success/20 text-success text-xs">-{discount}%</Badge>}
@@ -75,9 +78,9 @@ export function QuantityCalculator({
           </div>
         </div>
       </div>
-      <Button className="w-full gap-2" size="lg">
+      <Button className="w-full gap-2 transition-all hover:scale-[1.01] active:scale-[0.99] font-bold" size="lg">
         <Calculator className="h-4 w-4" />
-        Adicionar {customQuantity.toLocaleString('pt-BR')} un ao Orçamento
+        Adicionar {Math.round(customQuantity + Number.EPSILON).toLocaleString('pt-BR')} un ao Orçamento
       </Button>
     </div>
   );

@@ -241,7 +241,7 @@ export const ProductQuickView = forwardRef<HTMLDivElement, ProductQuickViewProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl p-0 overflow-hidden bg-card border-border gap-0" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+      <DialogContent className="max-w-4xl p-0 overflow-hidden bg-card border-border gap-0 rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
         <VisuallyHidden>
           <DialogTitle>Visualização rápida: {product.name}</DialogTitle>
         </VisuallyHidden>
@@ -260,7 +260,7 @@ export const ProductQuickView = forwardRef<HTMLDivElement, ProductQuickViewProps
           />
 
           {/* Product Info */}
-          <div className="p-6 flex flex-col">
+          <div className="p-8 flex flex-col">
             {/* Header */}
             <div className="space-y-3">
               {/* Category Badges - Ícones das categorias */}

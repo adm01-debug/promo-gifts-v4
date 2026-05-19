@@ -106,7 +106,7 @@ export function InlinePriceCalculator({
   };
 
   const customPriceInfo = getCustomPrice(customQuantity);
-  const customTotal = customPriceInfo.unitPrice * customQuantity;
+  const customTotal = (customPriceInfo.unitPrice * customQuantity) + Number.EPSILON;
 
   if (defaultOpen) {
     return (
@@ -114,7 +114,7 @@ export function InlinePriceCalculator({
         <div className="overflow-hidden rounded-xl border border-border/40">
           <PriceTiersTable tiers={priceTiers} isLoading={isLoading} compact formatPrice={formatPrice} />
         </div>
-        <QuantityCalculator compact customQuantity={customQuantity} onQuantityChange={setCustomQuantity} minQuantity={minQuantity} unitPrice={customPriceInfo.unitPrice} total={customTotal} discount={customPriceInfo.discount} formatPrice={formatPrice} />
+        <QuantityCalculator compact customQuantity={customQuantity} onQuantityChange={setCustomQuantity} minQuantity={minQuantity} unitPrice={customPriceInfo.unitPrice} total={customTotal} discount={customPriceInfo.discount} formatPrice={formatPrice} isLoading={isLoading} />
       </div>
     );
   }
@@ -139,7 +139,7 @@ export function InlinePriceCalculator({
               <PriceTiersTable tiers={priceTiers} isLoading={isLoading} formatPrice={formatPrice} />
             </div>
             <Separator />
-            <QuantityCalculator customQuantity={customQuantity} onQuantityChange={setCustomQuantity} minQuantity={minQuantity} unitPrice={customPriceInfo.unitPrice} total={customTotal} discount={customPriceInfo.discount} formatPrice={formatPrice} />
+            <QuantityCalculator customQuantity={customQuantity} onQuantityChange={setCustomQuantity} minQuantity={minQuantity} unitPrice={customPriceInfo.unitPrice} total={customTotal} discount={customPriceInfo.discount} formatPrice={formatPrice} isLoading={isLoading} />
           </CardContent>
         </CollapsibleContent>
       </Card>

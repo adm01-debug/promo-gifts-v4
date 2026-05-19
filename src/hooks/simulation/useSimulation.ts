@@ -369,7 +369,7 @@ export function useSimulation() {
     }, 500);
     return () => clearTimeout(timer);
   }, [
-    selectedProduct,
+    selectedProduct?.id,
     selectedTechniques,
     techniques,
     techniqueSettings,

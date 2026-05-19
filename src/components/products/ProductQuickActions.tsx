@@ -22,6 +22,8 @@ interface ProductQuickActionsProps {
   niches?: string[];
   product?: Product;
   selectedVariant?: { variantName?: string | null; colorHex?: string | null; thumbnailUrl?: string | null } | null;
+  onConfirmPrice?: () => void;
+  priceConfirmedAt?: string | Date | null;
 }
 
 type ModalType = "precos" | "personalizacao" | "indicacao" | "nicho" | null;
@@ -50,6 +52,8 @@ export function ProductQuickActions({
   niches,
   product,
   selectedVariant,
+  onConfirmPrice,
+  priceConfirmedAt,
 }: ProductQuickActionsProps) {
   const [activeModal, setActiveModal] = useState<ModalType>(null);
 
@@ -74,8 +78,22 @@ export function ProductQuickActions({
 
   return (
     <>
-      <div className="flex items-center gap-2 pt-2 w-full">
-        <div className="flex items-center gap-2 flex-1">
+      <div className="flex flex-col gap-3 pt-2 w-full">
+        {onConfirmPrice && (
+          <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border/40">
+            <div className="flex items-center gap-2">
+              <TableProperties className="h-4 w-4 text-primary" />
+              <span className="text-xs font-medium">Validar preço com fornecedor?</span>
+            </div>
+            <button
+              onClick={onConfirmPrice}
+              className="text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
+            >
+              Confirmar agora
+            </button>
+          </div>
+        )}
+        <div className="flex items-center gap-2 w-full">
           {actions.map(({ key, label, icon: Icon, iconColor }) => {
             const disabled = isActionDisabled(key);
 
