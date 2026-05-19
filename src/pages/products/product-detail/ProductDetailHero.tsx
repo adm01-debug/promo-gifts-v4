@@ -249,7 +249,7 @@ export function ProductDetailHero({
                                 ? {
                                     backgroundColor: variation.color?.hex ? `${variation.color.hex}15` : undefined,
                                     border: variation.color?.hex ? `1.5px solid ${variation.color.hex}` : undefined,
-                                    boxShadow: `0 0 0 2px ${variation.color.hex}20`,
+                                    boxShadow: variation.color?.hex ? `0 0 0 2px ${variation.color.hex}20` : undefined,
                                   }
                                 : undefined
                             }
