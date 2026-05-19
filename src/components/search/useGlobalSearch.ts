@@ -13,7 +13,9 @@ import { playTtsAudio } from "@/hooks/voice/playTtsAudio";
 import { processVoiceTranscript } from "@/hooks/voice/processTranscript";
 import { useDebounce, useSearch, useSearchHistory } from "@/hooks/common";
 import { useContextualSuggestions, useVoiceCommandHistory, type VoiceCommandRecord } from "@/hooks/intelligence";
+import { useSlashCommands, type CommandDefinition } from "@/hooks/ui/useSlashCommands";
 import type { VoiceAgentAction } from "@/hooks/voice/types";
+
 import { createProductFuseOptions, rankProductSearchResults } from "@/utils/product-search";
 import type { ExternalProduct } from "@/types/external-db";
 
