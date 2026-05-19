@@ -11,6 +11,7 @@ const domainMapping = {
     'kit': 'kit-builder',
     'mockup': 'mockup',
     'favorites': 'favorites',
+    'comparison': 'comparison',
 };
 
 function processDirectory(dir) {
