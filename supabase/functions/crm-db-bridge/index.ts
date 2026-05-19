@@ -843,6 +843,24 @@ Deno.serve((req) => {
     const auth = await authenticateRequest(req);
     if (auth.error) return auth.error;
 
+    // Hardening 4.6: Diagnósticos sensíveis exigem autenticação
+    if (diagOp === "diag") return jsonResponse(buildDiagSnapshot());
+    if (diagOp === "creds_health") return jsonResponse(await buildCredsHealthSnapshot());
+    if (diagOp === "breaker_status") {
+      const all = getAllBreakerStatuses();
+      const primary = all.find((b) => b.name === "crm-db") ?? all[0] ?? null;
+      return jsonResponse({
+        ok: true,
+        ts: Date.now(),
+        state: primary?.state ?? "UNKNOWN",
+        failures: primary?.failures ?? 0,
+        openedAt: primary?.openedAt ?? 0,
+        willResetAt: primary?.willResetAt ?? null,
+        breaker: primary,
+        all,
+      });
+    }
+
     // SSOT: DB-first via integration_credentials, env fallback via aliases.
     // Antes lia Deno.env.get() direto e ignorava credenciais salvas pela UI
     // (/admin/conexoes), causando 500 mesmo após o usuário cadastrar a CRM.
