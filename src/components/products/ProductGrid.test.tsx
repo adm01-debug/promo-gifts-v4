@@ -1,35 +1,64 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ProductGrid } from './ProductGrid';
+import { BrowserRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+});
+
+const Wrapper = ({ children }: { children: React.ReactNode }) => (
+  <BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      {children}
+    </QueryClientProvider>
+  </BrowserRouter>
+);
 
 describe('ProductGrid Skeleton', () => {
   it('renders skeletons when isLoading is true and products are empty', () => {
     render(
-      <ProductGrid 
-        products={[]} 
-        isLoading={true} 
-      />
+      <Wrapper>
+        <ProductGrid 
+          products={[]} 
+          isLoading={true} 
+        />
+      </Wrapper>
     );
     
-    // Check if at least some skeleton elements are present
-    // The ProductCardSkeleton has animate-shimmer or similar classes
+    // Check for shimmer elements which are part of ProductCardSkeleton
     const skeletons = document.querySelectorAll('.animate-shimmer');
     expect(skeletons.length).toBeGreaterThan(0);
   });
 
   it('renders actual products when not loading', () => {
     const mockProducts = [
-      { id: '1', name: 'Product 1', slug: 'p1', supplier_id: 's1', category_id: 'c1' } as any
+      { 
+        id: '1', 
+        name: 'Product Test 1', 
+        slug: 'p1', 
+        supplier_id: 's1', 
+        category_id: 'c1',
+        colors: [],
+        materials: []
+      } as any
     ];
     
     render(
-      <ProductGrid 
-        products={mockProducts} 
-        isLoading={false} 
-      />
+      <Wrapper>
+        <ProductGrid 
+          products={mockProducts} 
+          isLoading={false} 
+        />
+      </Wrapper>
     );
     
-    expect(screen.getByText('Product 1')).toBeDefined();
+    expect(screen.getByText(/Product Test 1/i)).toBeDefined();
     const skeletons = document.querySelectorAll('.animate-shimmer');
     expect(skeletons.length).toBe(0);
   });
