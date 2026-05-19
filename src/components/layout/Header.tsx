@@ -218,7 +218,7 @@ export const Header = React.memo(function Header({ onMenuToggle, searchQuery, on
                   className="relative h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-all duration-200"
                   onClick={() => navigate("/favoritos")}
                   onMouseEnter={() => {
-                    import("../../pages/FavoritesPage");
+                    import("@/pages/products/FavoritesPage");
                   }}
                 >
                   <Heart className="h-[17px] w-[17px]" strokeWidth={1.75} />
