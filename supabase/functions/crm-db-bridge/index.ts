@@ -814,31 +814,8 @@ Deno.serve((req) => {
   // ─────────────────────────────────────────────────────────────────
   const diagOp = await detectDiagOp(req);
   if (diagOp === "ping") {
-    return jsonResponse({ ok: true, ts: Date.now(), warm: crmWarmupCompleted });
-  }
-  if (diagOp === "diag") {
-    return jsonResponse(buildDiagSnapshot());
-  }
-  if (diagOp === "breaker_status") {
-    // Status de TODOS os breakers registrados neste isolate (atualmente: "crm-db").
-    // Bypass total (igual a ping/diag) — precisa funcionar mesmo com breaker OPEN.
-    const all = getAllBreakerStatuses();
-    const primary = all.find((b) => b.name === "crm-db") ?? all[0] ?? null;
-    return jsonResponse({
-      ok: true,
-      ts: Date.now(),
-      // Forma "achatada" pedida pelo painel (estado primário do crm-db).
-      state: primary?.state ?? "UNKNOWN",
-      failures: primary?.failures ?? 0,
-      openedAt: primary?.openedAt ?? 0,
-      willResetAt: primary?.willResetAt ?? null,
-      // Bloco completo + lista de todos (futuro-prova caso outro breaker seja adicionado).
-      breaker: primary,
-      all,
-    });
-  }
-  if (diagOp === "creds_health") {
-    return jsonResponse(await buildCredsHealthSnapshot());
+    // Ping minimal: sem expor warm status ou métricas se não houver auth (Hardening 4.6)
+    return jsonResponse({ ok: true, ts: Date.now() });
   }
 
   // Marca início da request real (pós-diag) para medir cold vs warm path.
