@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { type Product } from '@/hooks/products';
-import { type MatchResult } from '@/hooks/productsMatch';
+import { type MatchResult } from '@/hooks/products';
 import { cn } from '@/lib/utils';
 import { getCdnUrl } from '@/utils/image-utils';
 import { ExternalLink, Users, Tag, Layers, Equal, Link2, FileText } from 'lucide-react';

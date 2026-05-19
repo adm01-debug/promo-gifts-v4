@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { PriceFreshnessThresholdEditor } from '@/components/products/PriceFreshnessThresholdEditor';
-import { useProductFreshnessOverride } from '@/hooks/productsFreshnessOverride';
+import { useProductFreshnessOverride } from '@/hooks/products';
 import { DEFAULT_PRICE_FRESHNESS_THRESHOLD_DAYS } from '@/utils/price-freshness';
 import { cn } from '@/lib/utils';
 import { sortVariationsByColor } from '@/utils/colorSorting';

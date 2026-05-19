@@ -7,7 +7,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { useProducts, type Product } from '@/hooks/products';
-import { useProductMatch, type MatchFilters, type MatchResult } from '@/hooks/productsMatch';
+import { useProductMatch, type MatchFilters, type MatchResult } from '@/hooks/products';
 import { MOCK_MATCH_PRODUCTS } from '@/data/mock-match-products';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';

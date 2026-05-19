@@ -9,7 +9,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import React from "react";
 
 // Mock all internal hooks used by useCatalogState to avoid side effects and hangs
-vi.mock("@/hooks/productsLightweight", () => ({
+vi.mock("@/hooks/products", () => ({
   useProductsCatalog: vi.fn(() => ({
     data: { pages: [{ products: [], totalEstimate: 0 }] },
     isLoading: false,
@@ -31,7 +31,7 @@ vi.mock("@/hooks/common", () => ({
   })),
 }));
 
-vi.mock("@/hooks/productsByMaterial", () => ({
+vi.mock("@/hooks/products", () => ({
   useProductsByMaterial: vi.fn(() => ({
     productIds: [],
     hasFilter: false,
@@ -39,7 +39,7 @@ vi.mock("@/hooks/productsByMaterial", () => ({
   })),
 }));
 
-vi.mock("@/hooks/productsByCategory", () => ({
+vi.mock("@/hooks/products", () => ({
   useProductsByCategory: vi.fn(() => ({
     productIds: [],
     hasFilter: false,
@@ -67,7 +67,7 @@ vi.mock("@/hooks/products", () => ({
   useColorEnrichment: vi.fn(() => ({ data: new Map() })),
 }));
 
-vi.mock("@/hooks/productsFuzzySearch", () => ({
+vi.mock("@/hooks/products", () => ({
   useProductFuzzySearch: vi.fn(() => ({ results: [], hasSearch: false })),
 }));
 

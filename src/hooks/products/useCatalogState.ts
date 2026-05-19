@@ -12,16 +12,16 @@ import {
   STORAGE_KEY as GRID_COLUMNS_KEY,
   type ColumnCount,
 } from '@/components/products/ColumnSelector';
-import { useProductsCatalog } from '@/hooks/productsLightweight';
+import { useProductsCatalog } from '@/hooks/products';
 import type { Product } from '@/hooks/products';
 import { useProductsContext } from '@/contexts/ProductsContext';
 import { useSearch } from '@/hooks/common';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useFavoriteQuickAdd } from '@/hooks/favoritesQuickAdd';
 import { useComparisonStore } from '@/stores/useComparisonStore';
-import { useProductsByMaterial } from '@/hooks/productsByMaterial';
-import { useProductFuzzySearch } from '@/hooks/productsFuzzySearch';
-import { useProductsByCategory } from '@/hooks/productsByCategory';
+import { useProductsByMaterial } from '@/hooks/products';
+import { useProductFuzzySearch } from '@/hooks/products';
+import { useProductsByCategory } from '@/hooks/products';
 import { useDebounce } from '@/hooks/common';
 import { useExternalCategoriesQuery } from '@/hooks/products';
 import { useCatalogRealStats } from '@/hooks/products';

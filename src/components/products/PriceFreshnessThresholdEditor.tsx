@@ -27,7 +27,7 @@ import {
   useUpsertFreshnessOverride,
   useDeleteFreshnessOverride,
   type FreshnessThreshold,
-} from "@/hooks/productsFreshnessOverride";
+} from "@/hooks/products";
 
 interface Props {
   productId: string;

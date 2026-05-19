@@ -21,7 +21,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { useProductCustomizationOptions } from "@/hooks/productsCustomizationOptions";
+import { useProductCustomizationOptions } from "@/hooks/products";
 import { LocationPanel } from "./customization/LocationPanel";
 import type {
   CustomizationPriceResponseV6,

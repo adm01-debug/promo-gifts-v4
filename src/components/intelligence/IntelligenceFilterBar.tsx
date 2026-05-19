@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { useCategories } from "@/hooks/products";
 import { useSuppliers } from "@/hooks/products";
-import { useProductsLightweight } from "@/hooks/productsLightweight";
+import { useProductsLightweight } from "@/hooks/products";
 import { cn } from "@/lib/utils";
 
 export interface IntelligenceFilters {

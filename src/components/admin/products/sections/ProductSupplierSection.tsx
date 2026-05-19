@@ -22,7 +22,7 @@ import {
 import {
   Truck, Plus, Star, Trash2, Clock, DollarSign, Loader2, Users
 } from 'lucide-react';
-import { useProductSupplierSources, type SupplierSourceInput } from '@/hooks/productsSupplierSources';
+import { useProductSupplierSources, type SupplierSourceInput } from '@/hooks/products';
 import { cn } from '@/lib/utils';
 
 interface Props extends Pick<FormSectionProps, 'setValue' | 'errors'> {
