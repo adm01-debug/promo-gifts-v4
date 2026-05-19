@@ -4,6 +4,8 @@ import { SidebarReorganized } from "../components/layout/SidebarReorganized";
 import { BrowserRouter } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { TooltipProvider } from "../components/ui/tooltip";
+
 
 // Mock matchMedia
 Object.defineProperty(window, 'matchMedia', {
