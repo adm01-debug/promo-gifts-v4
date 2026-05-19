@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 interface BulkActionBarProps {
   selectedCount: number;
@@ -28,6 +29,7 @@ interface BulkActionBarProps {
   onBulkCart?: () => void;
   onBulkQuote?: () => void;
   onBulkPDF?: () => void;
+  selectedTotalValue?: number;
 }
 
 const actionVariants = {
@@ -89,6 +91,7 @@ export const BulkActionBar = memo(function BulkActionBar({
   onBulkCart,
   onBulkQuote,
   onBulkPDF,
+  selectedTotalValue = 0,
 }: BulkActionBarProps) {
   return (
     <AnimatePresence>
@@ -118,9 +121,16 @@ export const BulkActionBar = memo(function BulkActionBar({
             >
               {selectedCount}
             </Badge>
-            <span className="text-sm text-muted-foreground whitespace-nowrap hidden sm:inline">
-              selecionado{selectedCount > 1 ? "s" : ""}
-            </span>
+            <div className="flex flex-col">
+              <span className="text-sm text-muted-foreground whitespace-nowrap hidden sm:inline">
+                selecionado{selectedCount > 1 ? "s" : ""}
+              </span>
+              {selectedTotalValue > 0 && (
+                <span className="text-[10px] text-primary font-bold leading-tight hidden md:inline">
+                  {formatCurrency(selectedTotalValue)}
+                </span>
+              )}
+            </div>
           </motion.div>
 
           {/* Primary actions — Cart & Quote */}
