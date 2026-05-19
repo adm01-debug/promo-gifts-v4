@@ -16,13 +16,11 @@ export const SidebarBrandHeader = forwardRef<HTMLDivElement, SidebarBrandHeaderP
     }
 
     return (
-      <div ref={ref} className="px-4 py-5 mb-2 border-b border-sidebar-border/10 bg-gradient-to-b from-sidebar-accent/5 to-transparent">
+      <div ref={ref} className="px-4 py-5 mb-2">
         <AppLogo variant="sidebar" textClassName="text-sm" />
       </div>
     );
   }
 );
-
-SidebarBrandHeader.displayName = "SidebarBrandHeader";
 
 SidebarBrandHeader.displayName = "SidebarBrandHeader";

@@ -324,7 +324,7 @@ export const SidebarReorganized = React.memo(
       >
         <div className={cn("flex flex-col h-full pt-16 lg:pt-0 min-h-0", isCollapsed && "overflow-visible")}>
           {/* Brand Header */}
-          <div className="relative group/brand">
+          <div className="relative group/brand border-b border-sidebar-border/10 bg-gradient-to-b from-sidebar-accent/5 to-transparent">
             <SidebarBrandHeader isCollapsed={isCollapsed} />
             <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover/brand:opacity-100 transition-opacity pointer-events-none blur-xl rounded-full" />
           </div>

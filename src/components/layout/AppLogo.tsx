@@ -20,7 +20,6 @@ export function AppLogo({
   const usesBrandIcon = isBrandOrSidebar || variant === 'light';
   const iconBg = usesBrandIcon ? 'bg-primary' : 'bg-foreground';
   const iconColor = usesBrandIcon ? 'text-primary-foreground' : 'text-background';
-  const textColor = variant === 'light' ? 'text-white' : 'text-foreground';
 
   return (
     <div className={cn("flex items-center gap-3", className)}>
@@ -42,7 +41,7 @@ export function AppLogo({
       {showText && (
         <div className="flex flex-col">
           <span className={cn(
-            "font-display text-xl font-bold leading-none tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60",
+            "font-display text-xl font-bold leading-none tracking-tight text-white",
             textClassName
           )}>
             Promo Gifts
