@@ -678,7 +678,9 @@ async function handleBatch(body: any, req: Request, corsHeaders: Record<string, 
           return { success: false, error: selectError.message };
         }
 
-        const result = { records: selectData || [], count };
+        let records = (selectData ?? []) as Record<string, unknown>[];
+        if (qTable === 'products') records = records.map(mapProductRowToLegacyShape);
+        const result = { records, count };
         if (qCacheKey) setCache(qCacheKey, result);
 
         const icon = duration >= VERY_SLOW_QUERY_THRESHOLD_MS ? '🔴' : duration >= SLOW_QUERY_THRESHOLD_MS ? '🟡' : '✅';
