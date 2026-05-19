@@ -85,6 +85,12 @@ class EnhancedErrorBoundary extends Component<Props, State> {
   override componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     this.setState({ errorInfo });
 
+    // Remote telemetry logging
+    telemetryService.logError('React_Boundary_Error', error, {
+      componentStack: errorInfo.componentStack?.slice(0, 1000),
+      retryCount: this.state.retryCount,
+    });
+
     // Structured logging
     logger.error('[GlobalErrorBoundary]', {
       message: error.message,
