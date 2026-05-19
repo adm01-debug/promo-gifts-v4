@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { performanceTracker } from '@/utils/performance';
+
 
 type Theme = 'light' | 'dark' | 'auto';
 
