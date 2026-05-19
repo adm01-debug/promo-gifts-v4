@@ -1640,6 +1640,30 @@ export type Database = {
         }
         Relationships: []
       }
+      edge_rate_limits: {
+        Row: {
+          count: number
+          created_at: string | null
+          key: string
+          reset_at: string
+          updated_at: string | null
+        }
+        Insert: {
+          count?: number
+          created_at?: string | null
+          key: string
+          reset_at: string
+          updated_at?: string | null
+        }
+        Update: {
+          count?: number
+          created_at?: string | null
+          key?: string
+          reset_at?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       expert_conversations: {
         Row: {
           client_id: string | null
@@ -6308,6 +6332,14 @@ export type Database = {
           remaining_seconds: number
         }[]
       }
+      check_edge_rate_limit: {
+        Args: { p_key: string; p_max_requests: number; p_window_ms: number }
+        Returns: {
+          allowed: boolean
+          remaining: number
+          reset_at: string
+        }[]
+      }
       check_hardening_status: { Args: never; Returns: Json }
       check_ip_access: { Args: { _ip: string }; Returns: string }
       check_mcp_abuse_threshold: {
@@ -6352,6 +6384,7 @@ export type Database = {
       }
       cleanup_discount_test_data: { Args: never; Returns: Json }
       cleanup_expired_collection_trash: { Args: never; Returns: number }
+      cleanup_expired_edge_rate_limits: { Args: never; Returns: undefined }
       cleanup_expired_favorite_trash: { Args: never; Returns: number }
       cleanup_expired_public_comparisons: { Args: never; Returns: number }
       cleanup_expired_step_up: { Args: never; Returns: undefined }
