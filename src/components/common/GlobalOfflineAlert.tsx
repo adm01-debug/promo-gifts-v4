@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
-import { WifiOff, X } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { WifiOff, X, Wifi } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 /**
  * Global component to detect and display browser-level offline status.
@@ -9,13 +10,25 @@ import { Button } from '@/components/ui/button';
 export function GlobalOfflineAlert() {
   const [isOffline, setIsOffline] = useState(typeof navigator !== 'undefined' ? !navigator.onLine : false);
   const [dismissed, setDismissed] = useState(false);
+  const wasOfflineRef = useRef(false);
 
   useEffect(() => {
     const handleOnline = () => {
       setIsOffline(false);
       setDismissed(false);
+      if (wasOfflineRef.current) {
+        toast.success("Conexão restaurada", {
+          description: "Sua conexão com a internet voltou.",
+          icon: <Wifi className="h-4 w-4 text-success" />,
+          duration: 4000
+        });
+        wasOfflineRef.current = false;
+      }
     };
-    const handleOffline = () => setIsOffline(true);
+    const handleOffline = () => {
+      setIsOffline(true);
+      wasOfflineRef.current = true;
+    };
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
