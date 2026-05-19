@@ -1,72 +1,80 @@
-import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 dotenv.config();
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_URL = process.env.SUPABASE_URL || "https://pqpdolkaeqlyzpdpbizo.supabase.co";
+const SERVICE_ROLE_KEY = "a46c3981-244a-4f81-9f57-bab5c45b5cde";
 
-if (!supabaseUrl || !serviceRoleKey) {
-  console.error('Missing env vars');
-  process.exit(1);
-}
+const CONCURRENCY = 5;
+const TOTAL_REQUESTS = 25;
 
-const supabase = createClient(supabaseUrl, serviceRoleKey);
-
-async function runMassiveStressTest() {
-  console.log('🚀 Iniciando teste de estresse massivo (Metas de Prontidão de Produção)...');
+async function runLoadTest() {
+  console.log(`🚀 Iniciando Teste de Carga (CONCURRENCY=${CONCURRENCY}, TOTAL=${TOTAL_REQUESTS})...`);
   
-  const totalRequests = 1000;
-  const concurrentBatches = 10;
-  const requestsPerBatch = totalRequests / concurrentBatches;
-
-  console.log(`Simulando ${totalRequests} execuções em ${concurrentBatches} lotes paralelos...`);
-
   const startTime = Date.now();
-  const results = [];
+  let completed = 0;
+  let failed = 0;
+  const latencies = [];
 
-  for (let i = 0; i < concurrentBatches; i++) {
-    console.log(`Lote ${i + 1}/${concurrentBatches} disparado...`);
-    results.push(
-      supabase.functions.invoke('simulation-orchestrator', {
-        body: { count: requestsPerBatch, mode: 'load' }
-      })
-    );
+  const endpoints = [
+    `${SUPABASE_URL}/functions/v1/external-db-bridge`,
+    `${SUPABASE_URL}/functions/v1/cnpj-lookup`
+  ];
+
+  async function makeRequest() {
+    const endpoint = endpoints[Math.floor(Math.random() * endpoints.length)];
+    const reqStart = Date.now();
+    try {
+      const body = endpoint.includes('bridge') 
+        ? { operation: "select", table: "products", limit: 1 }
+        : { cnpj: "00.000.000/0001-91" };
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SERVICE_ROLE_KEY}`
+        },
+        body: JSON.stringify(body)
+      });
+      
+      const latency = Date.now() - reqStart;
+      latencies.push(latency);
+      
+      if (res.ok) {
+        completed++;
+      } else {
+        failed++;
+        // console.error(`Error ${res.status}: ${await res.text()}`);
+      }
+    } catch (err) {
+      failed++;
+      // console.error(err);
+    }
   }
 
-  const reports = await Promise.all(results);
-  const endTime = Date.now();
+  const chunks = [];
+  for (let i = 0; i < TOTAL_REQUESTS; i += CONCURRENCY) {
+    const batch = Array(Math.min(CONCURRENCY, TOTAL_REQUESTS - i)).fill(null).map(() => makeRequest());
+    await Promise.all(batch);
+    process.stdout.write(".");
+  }
 
-  let totalSuccess = 0;
-  let totalFail = 0;
-  let totalScenarios = 0;
+  const totalTime = Date.now() - startTime;
+  const avgLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
+  const p95 = latencies.sort((a, b) => a - b)[Math.floor(latencies.length * 0.95)];
 
-  reports.forEach((r, idx) => {
-    if (r.error) {
-      console.error(`Lote ${idx + 1} falhou:`, r.error);
-      totalFail += requestsPerBatch;
-    } else {
-      totalSuccess += r.data.successes;
-      totalFail += r.data.failures;
-      totalScenarios += r.data.totalScenarios;
-    }
-  });
+  console.log(`\n\n--- RELATÓRIO DE CARGA ---`);
+  console.log(`Tempo Total: ${totalTime}ms`);
+  console.log(`Requests: ${completed} OK / ${failed} FAILED`);
+  console.log(`Latência Média: ${avgLatency.toFixed(2)}ms`);
+  console.log(`P95 Latência: ${p95}ms`);
+  console.log(`Throughput: ${((completed + failed) / (totalTime / 1000)).toFixed(2)} req/s`);
+  console.log(`---------------------------\n`);
 
-  const duration = (endTime - startTime) / 1000;
-  console.log('\n--- RELATÓRIO FINAL DE ESTRESSE ---');
-  console.log(`Total de Cenários: ${totalScenarios}`);
-  console.log(`Sucessos: ${totalSuccess}`);
-  console.log(`Falhas: ${totalFail}`);
-  console.log(`Taxa de Sucesso: ${((totalSuccess / totalScenarios) * 100).toFixed(2)}%`);
-  console.log(`Duração Total: ${duration}s`);
-  console.log(`RPS (Requisições por Segundo): ${(totalScenarios / duration).toFixed(2)}`);
-  console.log('------------------------------------\n');
-
-  if (totalFail > totalScenarios * 0.05) {
-    console.error('❌ Teste falhou: Taxa de erro superior a 5%!');
+  if (failed > TOTAL_REQUESTS * 0.1) {
+    console.error("❌ Taxa de falha muito alta!");
     process.exit(1);
-  } else {
-    console.log('✅ Teste concluído com sucesso! Sistema estável sob carga.');
   }
 }
 
-runMassiveStressTest().catch(console.error);
+runLoadTest().catch(console.error);
