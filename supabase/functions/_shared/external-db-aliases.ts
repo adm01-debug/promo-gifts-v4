@@ -260,5 +260,6 @@ export function resolveTableAlias(
   }
 
   const sanitizedSelect = sanitizeSelect(table, select || '*');
-  return { table, filters, orderBy, select: sanitizedSelect, aliasType: null };
+  const sanitizedFilters = sanitizeFilters(table, filters);
+  return { table, filters: sanitizedFilters, orderBy, select: sanitizedSelect, aliasType: null };
 }
