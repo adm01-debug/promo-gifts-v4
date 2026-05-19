@@ -1,7 +1,9 @@
 import { type ReactNode, Suspense, useEffect } from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
 import NProgress from 'nprogress';
+import { performanceTracker } from '@/utils/performance';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
+
 import { MainLayout } from '@/components/layout/MainLayout';
 import { getFallback } from '@/components/layout/SkeletonLoaders';
 import { adminRoutes } from './admin-routes';
