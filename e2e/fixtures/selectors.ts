@@ -218,9 +218,9 @@ export const Sel = {
     /** Dialog "Solicitar Aprovação de Desconto". */
     approvalDialog: TID("quote-approval-dialog"),
     /** Dentro do dialog: card "Seu Limite" (mostra maxDiscountPercent). */
-    approvalLimitValue: TID("quote-approval-limit-value"),
+    approvalLimit: TID("quote-approval-limit"),
     /** Dentro do dialog: card "Solicitado" (mostra discountValue). */
-    approvalRequestedValue: TID("quote-approval-requested-value"),
+    approvalRequested: TID("quote-approval-requested"),
     /** Dentro do dialog: textarea de justificativa. */
     approvalJustification: TID("quote-approval-justification"),
     /** Dentro do dialog: botão "Enviar para Aprovação". */

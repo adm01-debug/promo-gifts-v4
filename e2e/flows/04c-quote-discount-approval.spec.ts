@@ -142,8 +142,8 @@ test.describe("Quote discount approval — REAL com persistência", () => {
     await expect(dialog).toBeVisible({ timeout: 10_000 });
 
     // Conferir que mostra os 2 cards (Seu Limite + Solicitado)
-    const limitCard = page.locator(Sel.quote.approvalLimitValue).first();
-    const requestedCard = page.locator(Sel.quote.approvalRequestedValue).first();
+    const limitCard = page.locator(Sel.quote.approvalLimit).first();
+    const requestedCard = page.locator(Sel.quote.approvalRequested).first();
     await expect(limitCard).toBeVisible();
     await expect(requestedCard).toBeVisible();
 
