@@ -318,7 +318,7 @@ export const ProductCard = memo(forwardRef<HTMLElement, ProductCardProps>(functi
                   <span className="hidden sm:inline">{getStockStatusLabel(displayStatus)}</span>
                   <span className="sm:hidden">{displayStatus === 'in-stock' ? '✓' : displayStatus === 'low-stock' ? '!' : '✗'}</span>
                 </span>
-                <span className="text-[10px] sm:text-xs text-muted-foreground">{displayStock.toLocaleString('pt-BR')} un.</span>
+                <span className="text-[10px] sm:text-xs text-muted-foreground">{(displayStock ?? 0).toLocaleString('pt-BR')} un.</span>
               </div>
             </div>
           );
