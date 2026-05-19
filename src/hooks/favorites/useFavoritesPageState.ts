@@ -8,7 +8,7 @@ import {
 import { useEnrichedFavoriteItems } from '@/hooks/favorites';
 import { useProductsContext } from '@/contexts/ProductsContext';
 import { useCatalogSelection } from '@/components/catalog/useCatalogSelection';
-import { useFavoritesGlobalShortcuts } from '@/hooks/favoritessGlobalShortcuts';
+import { useFavoritesGlobalShortcuts } from '@/hooks/favoritesGlobalShortcuts';
 import { useUndoStack } from '@/hooks/common';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
 import type { FavoritesSort } from '@/components/favorites/FavoritesSortBar';

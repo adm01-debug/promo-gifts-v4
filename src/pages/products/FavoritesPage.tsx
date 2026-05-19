@@ -37,7 +37,7 @@ import { ItemNoteEditor } from "@/components/favorites/ItemNoteEditor";
 import { PriceDropBadge } from "@/components/favorites/PriceDropBadge";
 import { FavoritesEmptyStateSmart } from "@/components/favorites/FavoritesEmptyStateSmart";
 import { FavoritePresentationLauncher } from "@/components/favorites/FavoritePresentationLauncher";
-import { useFavoritesGlobalShortcuts } from "@/hooks/favoritessGlobalShortcuts";
+import { useFavoritesGlobalShortcuts } from "@/hooks/favoritesGlobalShortcuts";
 import { useUndoStack } from "@/hooks/common";
 import type { FavoritesSort } from "@/components/favorites/FavoritesSortBar";
 
