@@ -4,8 +4,8 @@
  */
 
 // Types
-export * from "@/pages/advanced-price-search/types";
-export { mmToCm } from "@/pages/advanced-price-search/types";
+export * from "./types";
+export { mmToCm } from "./types";
 
 // Mock data
 export { MOCK_BOXES, MOCK_ITEMS } from './mock-data';
