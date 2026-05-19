@@ -48,7 +48,7 @@ export function QuantityCalculator({
         </div>
         <Button className="w-full gap-2 h-11 font-bold" size="lg">
           <Calculator className="h-4 w-4" />
-          Adicionar {customQuantity.toLocaleString('pt-BR')} un ao Orçamento
+          Adicionar {Math.round(customQuantity + Number.EPSILON).toLocaleString('pt-BR')} un ao Orçamento
         </Button>
       </div>
     );
@@ -80,7 +80,7 @@ export function QuantityCalculator({
       </div>
       <Button className="w-full gap-2 transition-all hover:scale-[1.01] active:scale-[0.99] font-bold" size="lg">
         <Calculator className="h-4 w-4" />
-        Adicionar {customQuantity.toLocaleString('pt-BR')} un ao Orçamento
+        Adicionar {Math.round(customQuantity + Number.EPSILON).toLocaleString('pt-BR')} un ao Orçamento
       </Button>
     </div>
   );
