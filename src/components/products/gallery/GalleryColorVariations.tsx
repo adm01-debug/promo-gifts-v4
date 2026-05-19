@@ -2,7 +2,7 @@
  * GalleryColorVariations — Cards de variações de cor abaixo da galeria
  */
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Play, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -44,6 +44,34 @@ interface GalleryColorVariationsProps {
 export function GalleryColorVariations({ colors, selectedColorIndex, onColorSelect, activeColorName }: GalleryColorVariationsProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const sortedColors = sortByColorGroup(colors, (c) => c.name, (c) => c.hex);
+
+  // Sync scroll to selected color
+  useEffect(() => {
+    if (selectedColorIndex >= 0 && scrollRef.current) {
+      const container = scrollRef.current;
+      const buttons = container.querySelectorAll('button');
+      // Find the button that corresponds to the originalIndex
+      let targetButton: HTMLButtonElement | null = null;
+      
+      sortedColors.forEach((color, idx) => {
+        const originalIndex = colors.findIndex(c => c.name === color.name && c.sku === color.sku);
+        if (originalIndex === selectedColorIndex) {
+          targetButton = buttons[idx];
+        }
+      });
+
+      if (targetButton) {
+        const containerWidth = container.offsetWidth;
+        const buttonLeft = (targetButton as HTMLButtonElement).offsetLeft;
+        const buttonWidth = (targetButton as HTMLButtonElement).offsetWidth;
+        
+        container.scrollTo({
+          left: buttonLeft - (containerWidth / 2) + (buttonWidth / 2),
+          behavior: 'smooth'
+        });
+      }
+    }
+  }, [selectedColorIndex, sortedColors, colors]);
 
   const handleColorClick = (originalIndex: number) => {
     onColorSelect(originalIndex);

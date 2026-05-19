@@ -114,6 +114,7 @@ export function ProductDetailHero({
                 (v: ProductVariation) => v.id === selectedVariation?.id,
               ) ?? -1
             }
+            activeColorName={selectedVariation?.color?.name}
           />
         </div>
       </div>
