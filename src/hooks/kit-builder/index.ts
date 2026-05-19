@@ -1,3 +1,7 @@
+// Exporting all hooks from kit-builder
+export * from './useCustomKitPersistence';
+export * from './useCustomKitsRealtime';
+export * from './useDuplicateKitDetector';
 export * from './useKitAutoSave';
 export * from './useKitBuilder';
 export * from './useKitBuilderPageState';
@@ -11,3 +15,5 @@ export * from './useKitTemplates';
 export * from './useKitUndoRedo';
 export * from './useKitVariants';
 export * from './useKitWizardShortcuts';
+export * from './useSimilarKits';
+export * from './useTemplateSnapshot';
