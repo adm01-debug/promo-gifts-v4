@@ -256,6 +256,8 @@ export function LocationPanel({
     prevPickerOpenRef.current = isPickerOpen;
   }, [isPickerOpen, selectedTechnique]);
 
+  const [clampNotice, setClampNotice] = useState<string | null>(null);
+
   // Mensagem para o announcer aria-live (transições de estado)
   // Usamos ref para rastrear se é o primeiro render para evitar anúncios duplicados na hidratação
   const isFirstRenderRef = useRef(true);
@@ -270,20 +272,17 @@ export function LocationPanel({
       setAnnouncement("");
       return;
     }
-    
+
     let msg = isPickerOpen
       ? `Seletor de técnicas aberto. Técnica atual: ${selectedTechnique.tecnica_nome}.`
       : `Técnica selecionada: ${selectedTechnique.tecnica_nome}.`;
-      
+
     if (!isPickerOpen && clampNotice) {
       msg += ` ${clampNotice}`;
     }
-    
+
     setAnnouncement(msg);
   }, [isPickerOpen, selectedTechnique, clampNotice]);
-
-
-  const [clampNotice, setClampNotice] = useState<string | null>(null);
 
   const handleSelectTechnique = useCallback(
     (technique: TechniqueOption) => {
