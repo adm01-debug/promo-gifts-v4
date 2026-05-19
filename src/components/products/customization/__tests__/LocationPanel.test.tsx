@@ -256,4 +256,26 @@ describe("LocationPanel — fluxo Trocar técnica", () => {
     // Nenhum side-effect de preço
     expect(onPrice).not.toHaveBeenCalled();
   });
+
+  it("após Trocar → reselecionar a MESMA técnica, a barra-resumo permanece ativa com a técnica original", () => {
+    render(<LocationPanel location={location} quantity={100} onPriceCalculated={vi.fn()} />);
+
+    // Seleciona técnica A → barra-resumo aparece
+    fireEvent.click(screen.getByText("Silk 1 cor"));
+    const bar = screen.getByTestId("customization-change-technique");
+    expect(bar).toBeInTheDocument();
+    expect(bar.closest("[data-selected-technique]") ?? bar.parentElement).toHaveTextContent("Silk 1 cor");
+
+    // Abre picker e clica novamente em Silk 1 cor
+    fireEvent.click(bar);
+    fireEvent.click(
+      within(screen.getByTestId("customization-technique-picker")).getByText("Silk 1 cor"),
+    );
+
+    // Picker fechou; barra-resumo continua ativa com a mesma técnica
+    expect(screen.queryByTestId("customization-technique-picker")).not.toBeInTheDocument();
+    const barAfter = screen.getByTestId("customization-change-technique");
+    expect(barAfter).toBeInTheDocument();
+    expect(screen.getByTestId("config-panel")).toHaveAttribute("data-technique-id", "tech-A");
+  });
 });
