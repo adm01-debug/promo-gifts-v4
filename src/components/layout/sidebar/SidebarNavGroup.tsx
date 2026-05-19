@@ -218,7 +218,7 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
                 </kbd>
               )}
               {item.badge !== null && (
-                <span className="bg-orange/15 text-orange text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
+                <span className="bg-primary/20 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded-full border border-primary/30">
                   {item.badge}
                 </span>
               )}
