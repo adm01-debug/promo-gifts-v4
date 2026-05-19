@@ -174,6 +174,7 @@ export const ProductCard = memo(forwardRef<HTMLElement, ProductCardProps>(functi
       className={cn(
         "group relative overflow-hidden rounded-xl sm:rounded-2xl bg-card cursor-pointer card-lift",
         "transition-all duration-300 ease-out active:scale-[0.98] active:transition-transform active:duration-100 touch-manipulation",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
         product.featured && "ring-2 ring-primary/20 shadow-lg",
         hasHighlightedColor ? "border-2" : "border-[1.5px] border-primary/20 hover:border-primary/50 hover:shadow-xl",
       )}
