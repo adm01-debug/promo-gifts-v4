@@ -114,7 +114,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             ref={mainRef}
             tabIndex={-1}
             id="main-content" 
-            className="flex-1 p-3 sm:p-4 lg:p-6 pb-6 print:p-0 print:pb-0 outline-none overflow-x-clip bg-transparent" 
+            className="flex-1 p-3 sm:p-4 lg:p-6 pb-6 print:p-0 print:pb-0 outline-none overflow-x-clip bg-transparent theme-transitioning" 
             role="main"
             aria-label="Conteúdo principal"
             aria-labelledby="main-heading"
