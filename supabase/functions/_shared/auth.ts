@@ -27,18 +27,21 @@ export async function authenticateRequest(req: Request): Promise<AuthResult> {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const simulationKey = Deno.env.get('SIMULATION_BYPASS_KEY');
 
   const rawToken = authHeader.slice(7).trim();
   const localServiceClient = createClient(supabaseUrl, serviceRoleKey);
 
-  // ⚡ FAST-PATH: Bypasse para chamadas do sistema (service_role)
+  // ⚡ FAST-PATH: Bypasse para chamadas do sistema (service_role ou simulation)
   // Útil para automações, webhooks internos e testes de contrato.
-  const trimmedServiceKey = serviceRoleKey?.trim();
-  if (trimmedServiceKey && rawToken === trimmedServiceKey) {
+  const isServiceRole = (serviceRoleKey && rawToken === serviceRoleKey.trim());
+  const isSimulation = (simulationKey && rawToken === simulationKey.trim());
+  
+  if (isServiceRole || isSimulation) {
     return {
       userId: '00000000-0000-0000-0000-000000000000', // System user
       userRole: 'dev',
-      userRoles: ['dev', 'service_role'],
+      userRoles: ['dev', 'service_role', 'simulation'],
       localServiceClient
     };
   }
@@ -55,7 +58,6 @@ export async function authenticateRequest(req: Request): Promise<AuthResult> {
   }
 
   // Security Hardening: Validar se a sessão ainda é válida e não foi revogada
-  // Opcional: Adicionar checagem de IP/UserAgent se necessário para alta segurança
   const user = userData.user;
   if (!user.aud || user.aud !== 'authenticated') {
     throw { status: 401, message: 'Audiência de token inválida' };
@@ -88,12 +90,13 @@ export async function authenticateRequest(req: Request): Promise<AuthResult> {
  * Hierarquia: dev > supervisor > agente. `admin` é alias legado de supervisor.
  */
 function isDevRole(auth: AuthResult): boolean {
-  return auth.userRoles.includes('dev');
+  return auth.userRoles.includes('dev') || auth.userRoles.includes('simulation');
 }
 
 function isSupervisorOrAbove(auth: AuthResult): boolean {
   return (
     auth.userRoles.includes('dev') ||
+    auth.userRoles.includes('simulation') ||
     auth.userRoles.includes('supervisor') ||
     auth.userRoles.includes('admin')
   );
@@ -101,8 +104,6 @@ function isSupervisorOrAbove(auth: AuthResult): boolean {
 
 /**
  * Require the user to have a specific role.
- * `dev` sempre passa (top da hierarquia).
- * `admin` (legado) e `supervisor` são equivalentes.
  */
 export function requireRole(auth: AuthResult, requiredRole: string): void {
   if (isDevRole(auth)) return;
