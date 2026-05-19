@@ -441,6 +441,11 @@ export function LocationPanel({
           }
           className="space-y-3 animate-in fade-in slide-in-from-top-1 rounded-lg border border-primary/20 bg-primary/[0.02] p-3"
           data-testid="customization-technique-picker"
+          onKeyDown={(e) => {
+            if (e.key === "Escape" && selectedTechnique) {
+              setIsPickerOpen(false);
+            }
+          }}
         >
           {selectedTechnique && (
             <div className="flex items-center justify-between">

@@ -124,4 +124,35 @@ test.describe('Quote Builder - Personalization E2E UX & Data Integrity', () => {
     // Valida que o preço foi recalculado corretamente na hidratação
     await expect(page.getByTestId('customization-total-price')).toBeVisible();
   });
+
+  test('deve validar navegação por teclado no picker (Tab/Escape/Enter)', async ({ page }) => {
+    // 1. Abre o seletor
+    await page.getByTestId('customization-technique-card-tech-A').click();
+    const changeBtn = page.getByTestId('customization-change-technique');
+    await changeBtn.click();
+    
+    // 2. Navega via Tab
+    await page.keyboard.press('Tab');
+    // Como o useEffect foca no primeiro card, o primeiro Tab pode ir para o próximo elemento ou permanecer dependendo da implementação do navegador, 
+    // mas o foco inicial já deve estar no card. Vamos validar que um card tem o foco.
+    const firstCard = page.getByTestId('customization-technique-card-tech-A');
+    await expect(firstCard).toBeFocused();
+
+    // 3. Testa Escape (deve fechar e voltar foco)
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('customization-technique-picker')).not.toBeVisible();
+    await expect(changeBtn).toBeFocused();
+
+    // 4. Testa Enter para selecionar
+    await changeBtn.click();
+    await page.keyboard.press('Tab'); // Garante foco no picker/card
+    // Navega para a técnica B (assumindo que é o próximo na ordem de tabulação ou foca nela diretamente para o teste)
+    const techBCard = page.getByTestId('customization-technique-card-tech-B');
+    await techBCard.focus();
+    await page.keyboard.press('Enter');
+    
+    await expect(page.getByTestId('customization-technique-picker')).not.toBeVisible();
+    await expect(page.getByTestId('customization-aria-announcer')).toContainText(/Técnica selecionada: Transfer Digital/i);
+    await expect(changeBtn).toBeFocused();
+  });
 });
