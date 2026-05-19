@@ -22,10 +22,11 @@ export function RoutePrefetcher() {
       import("@/pages/Index");
       import("@/pages/FiltersPage");
     } else if (pathname === "/") {
-      // Prefetch heavy pages from dashboard
+      // Prefetch heavy pages from dashboard + Auth (sessão pode expirar)
       import("@/pages/FiltersPage");
       import("@/pages/QuotesListPage");
       import("@/pages/ClientsPage");
+      import("@/pages/Auth");
     } else if (pathname === "/produtos") {
       import("@/pages/ProductDetail");
       import("@/pages/PriceSimulatorPage");

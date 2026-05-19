@@ -13,6 +13,7 @@ export const SKELETON_THRESHOLDS: Record<string, number> = {
   Dashboard: 2000,
   Tools: 2500,
   Profile: 1000,
+  Auth: 1500,
   
   // Specific fallbacks
   Generic: 2000,

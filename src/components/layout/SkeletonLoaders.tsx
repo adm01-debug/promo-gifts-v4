@@ -251,6 +251,27 @@ export const GenericSkeleton = makeSkeleton(
   "p-3 sm:p-4 lg:p-6",
 );
 
+/** Auth / login page skeleton — leve, card centralizado */
+export const AuthSkeleton = makeSkeleton(
+  "Auth",
+  () => (
+    <div className="w-full max-w-sm space-y-5">
+      <div className="flex flex-col items-center gap-3">
+        <Skeleton className="h-12 w-12 rounded-xl" />
+        <Skeleton className="h-5 w-40" />
+        <Skeleton className="h-4 w-56" />
+      </div>
+      <div className="space-y-3 pt-2">
+        <Skeleton className="h-10 w-full rounded-md" />
+        <Skeleton className="h-10 w-full rounded-md" />
+        <Skeleton className="h-10 w-full rounded-md" />
+      </div>
+      <Skeleton className="h-4 w-32 mx-auto" />
+    </div>
+  ),
+  "min-h-[60vh] flex items-center justify-center p-6",
+);
+
 /**
  * Returns the appropriate skeleton component based on the current route.
  */
@@ -270,6 +291,15 @@ export function getFallback(pathname: string): React.ReactNode {
   if (pathname.startsWith("/admin") || pathname === "/status")
     return <AdminSkeleton />;
   if (pathname === "/dashboard") return <DashboardSkeleton />;
+
+  if (
+    pathname.startsWith("/auth") ||
+    pathname === "/login" ||
+    pathname === "/reset-password" ||
+    pathname === "/forgot-password-confirmation" ||
+    pathname === "/unauthorized"
+  )
+    return <AuthSkeleton />;
 
   if (
     pathname === "/mockup-generator" ||
