@@ -1,5 +1,5 @@
 /**
- * LocationPanel — Comportamento "Foco-na-Técnica" e Acessibilidade
+ * LocationPanel — Avançado: Clamp, Acessibilidade e Estabilidade
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -162,40 +162,69 @@ describe("LocationPanel — Avançado: Clamp, Acessibilidade e Estabilidade", ()
     expect(panel).toHaveAttribute("data-initial-colors", "");
   });
 
-  it("gerencia o foco corretamente: abre -> primeiro card; fecha -> botão trocar", () => {
-    // Usamos um container real para testar foco
+  it("gerencia o foco corretamente: abre -> primeiro card; fecha -> botão trocar; troca técnica -> botão trocar", () => {
     const { container } = render(<LocationPanel location={location} quantity={100} onPriceCalculated={vi.fn()} />);
     
-    // Inicialmente seleciona uma técnica para habilitar o botão "Trocar"
+    // Seleciona uma técnica inicial
     fireEvent.click(screen.getByText("Silk 1 cor"));
     
     const changeBtn = screen.getByTestId("customization-change-technique");
     
-    // Abrir
+    // 1. Abrir seletor
     fireEvent.click(changeBtn);
-    
-    // O foco deve estar no primeiro card do radiogroup
     const firstCard = container.querySelector("[role='radio'],[role='button']");
     expect(document.activeElement).toBe(firstCard);
 
-    // Fechar (clicando no botão que agora diz "Fechar")
-    fireEvent.click(screen.getByText("Fechar"));
+    // 2. Trocar técnica (A -> B)
+    const picker = screen.getByTestId("customization-technique-picker");
+    fireEvent.click(within(picker).getByText("Transfer Digital"));
     
-    // O foco deve voltar para o botão
+    // Picker deve fechar e foco voltar para o botão
+    expect(screen.queryByTestId("customization-technique-picker")).not.toBeInTheDocument();
     expect(document.activeElement).toBe(changeBtn);
   });
 
-  it("anuncia via aria-live as transições de estado", () => {
+  it("anuncia via aria-live as transições de estado (incluindo troca de A para B)", () => {
     render(<LocationPanel location={location} quantity={100} onPriceCalculated={vi.fn()} />);
     const announcer = screen.getByTestId("customization-aria-announcer");
 
-    // Seleciona técnica
+    // Seleciona técnica A
     fireEvent.click(screen.getByText("Silk 1 cor"));
     expect(announcer).toHaveTextContent("Técnica selecionada: Silk 1 cor.");
 
     // Abre seletor
     fireEvent.click(screen.getByTestId("customization-change-technique"));
     expect(announcer).toHaveTextContent("Seletor de técnicas aberto. Técnica atual: Silk 1 cor.");
+
+    // Troca para técnica B
+    const picker = screen.getByTestId("customization-technique-picker");
+    fireEvent.click(within(picker).getByText("Transfer Digital"));
+    expect(announcer).toHaveTextContent("Técnica selecionada: Transfer Digital.");
+  });
+
+  it("garante que técnica e dimensões persistam no sessionStorage ao navegar e voltar", () => {
+    const productId = "p123";
+    const { unmount } = render(
+      <LocationPanel location={location} quantity={100} productId={productId} onPriceCalculated={vi.fn()} />
+    );
+
+    // 1. Seleciona técnica A e emite dimensões
+    fireEvent.click(screen.getByText("Silk 1 cor"));
+    fireEvent.click(screen.getByTestId("emit-dims"));
+
+    // 2. Unmount (simula navegação para fora)
+    unmount();
+
+    // 3. Remount (simula volta à página)
+    render(
+      <LocationPanel location={location} quantity={100} productId={productId} onPriceCalculated={vi.fn()} />
+    );
+
+    // Deve restaurar técnica A e dimensões 7x4
+    const panel = screen.getByTestId("config-panel");
+    expect(panel).toHaveAttribute("data-technique-id", "tech-A");
+    expect(panel).toHaveAttribute("data-initial-width", "7");
+    expect(panel).toHaveAttribute("data-initial-height", "4");
   });
 
   it("não dispara efeitos desnecessários ao alternar entre barra e lista", () => {
