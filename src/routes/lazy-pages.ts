@@ -11,15 +11,15 @@ import { lazyWithRetry } from "@/lib/lazyWithRetry";
 // ─────────────────────────────────────────────────────────────────
 // Auth
 // ─────────────────────────────────────────────────────────────────
-export const Auth = lazyWithRetry(() => import("@/pages/Auth"));
+export const Auth = lazyWithRetry(() => import("@/pages/auth/Auth"));
 export const Unauthorized = lazyWithRetry(() =>
   import("@/components/access/UnauthorizedPage").then((m) => ({ default: m.UnauthorizedPage })),
 );
-export const ResetPassword = lazyWithRetry(() => import("@/pages/ResetPassword"));
-export const ForgotPasswordConfirmation = lazyWithRetry(() => import("@/pages/ForgotPasswordConfirmation"));
-export const SSOCallbackPage = lazyWithRetry(() => import("@/pages/SSOCallbackPage"));
-export const TermsPage = lazyWithRetry(() => import("@/pages/TermsPage"));
-export const PrivacyPage = lazyWithRetry(() => import("@/pages/PrivacyPage"));
+export const ResetPassword = lazyWithRetry(() => import("@/pages/auth/ResetPassword"));
+export const ForgotPasswordConfirmation = lazyWithRetry(() => import("@/pages/auth/ForgotPasswordConfirmation"));
+export const SSOCallbackPage = lazyWithRetry(() => import("@/pages/auth/SSOCallbackPage"));
+export const TermsPage = lazyWithRetry(() => import("@/pages/auth/TermsPage"));
+export const PrivacyPage = lazyWithRetry(() => import("@/pages/auth/PrivacyPage"));
 
 // ─────────────────────────────────────────────────────────────────
 // Home / Dashboard / Misc
@@ -31,25 +31,25 @@ export const CustomizableDashboard = lazyWithRetry(() => import("@/pages/Customi
 // ─────────────────────────────────────────────────────────────────
 // Products
 // ─────────────────────────────────────────────────────────────────
-export const ProductDetail = lazyWithRetry(() => import("@/pages/ProductDetail"));
-export const FiltersPage = lazyWithRetry(() => import("@/pages/FiltersPage"));
-export const NoveltiesPage = lazyWithRetry(() => import("@/pages/NoveltiesPage"));
-export const ReplenishmentsPage = lazyWithRetry(() => import("@/pages/ReplenishmentsPage"));
-export const FavoritesPage = lazyWithRetry(() => import("@/pages/FavoritesPage"));
-export const SellerCartsPage = lazyWithRetry(() => import("@/pages/SellerCartsPage"));
-export const ComparePage = lazyWithRetry(() => import("@/pages/ComparePage"));
-export const CollectionsPage = lazyWithRetry(() => import("@/pages/CollectionsPage"));
-export const CollectionDetailPage = lazyWithRetry(() => import("@/pages/CollectionDetailPage"));
+export const ProductDetail = lazyWithRetry(() => import("@/pages/products/ProductDetail"));
+export const FiltersPage = lazyWithRetry(() => import("@/pages/products/FiltersPage"));
+export const NoveltiesPage = lazyWithRetry(() => import("@/pages/products/NoveltiesPage"));
+export const ReplenishmentsPage = lazyWithRetry(() => import("@/pages/products/ReplenishmentsPage"));
+export const FavoritesPage = lazyWithRetry(() => import("@/pages/products/FavoritesPage"));
+export const SellerCartsPage = lazyWithRetry(() => import("@/pages/products/SellerCartsPage"));
+export const ComparePage = lazyWithRetry(() => import("@/pages/products/ComparePage"));
+export const CollectionsPage = lazyWithRetry(() => import("@/pages/collections/CollectionsPage"));
+export const CollectionDetailPage = lazyWithRetry(() => import("@/pages/collections/CollectionDetailPage"));
 
 // ─────────────────────────────────────────────────────────────────
 // Quotes
 // ─────────────────────────────────────────────────────────────────
-export const QuoteTemplatesPage = lazyWithRetry(() => import("@/pages/QuoteTemplatesPage"));
-export const QuotesListPage = lazyWithRetry(() => import("@/pages/QuotesListPage"));
-export const QuotesDashboardPage = lazyWithRetry(() => import("@/pages/QuotesDashboardPage"));
-export const QuoteBuilderPage = lazyWithRetry(() => import("@/pages/QuoteBuilderPage"));
-export const QuoteViewPage = lazyWithRetry(() => import("@/pages/QuoteViewPage"));
-export const QuotesKanbanPage = lazyWithRetry(() => import("@/pages/QuotesKanbanPage"));
+export const QuoteTemplatesPage = lazyWithRetry(() => import("@/pages/quotes/QuoteTemplatesPage"));
+export const QuotesListPage = lazyWithRetry(() => import("@/pages/quotes/QuotesListPage"));
+export const QuotesDashboardPage = lazyWithRetry(() => import("@/pages/quotes/QuotesDashboardPage"));
+export const QuoteBuilderPage = lazyWithRetry(() => import("@/pages/quotes/QuoteBuilderPage"));
+export const QuoteViewPage = lazyWithRetry(() => import("@/pages/quotes/QuoteViewPage"));
+export const QuotesKanbanPage = lazyWithRetry(() => import("@/pages/quotes/QuotesKanbanPage"));
 
 // ─────────────────────────────────────────────────────────────────
 // Admin (supervisor + dev)
@@ -86,45 +86,45 @@ export const StorageTestPage = lazyWithRetry(() => import("@/pages/admin/Storage
 // ─────────────────────────────────────────────────────────────────
 // Tools
 // ─────────────────────────────────────────────────────────────────
-export const SimuladorWizard = lazyWithRetry(() => import("@/pages/SimuladorWizard"));
-export const MockupGenerator = lazyWithRetry(() => import("@/pages/MockupGenerator"));
-export const MagicUp = lazyWithRetry(() => import("@/pages/MagicUp"));
-export const PriceSimulatorPage = lazyWithRetry(() => import("@/pages/PriceSimulatorPage"));
-export const StockDashboardPage = lazyWithRetry(() => import("@/pages/StockDashboardPage"));
-export const AdvancedPriceSearchPage = lazyWithRetry(() => import("@/pages/AdvancedPriceSearchPage"));
-export const KitBuilderPage = lazyWithRetry(() => import("@/pages/KitBuilderPage"));
-export const MeusKitsPage = lazyWithRetry(() => import("@/pages/KitLibraryPage"));
-export const MockupHistoryPage = lazyWithRetry(() => import("@/pages/MockupHistoryPage"));
-export const DropboxBrowserPage = lazyWithRetry(() => import("@/pages/DropboxBrowserPage"));
-export const CommercialIntelligencePage = lazyWithRetry(() => import("@/pages/CommercialIntelligencePage"));
-export const ProductMatchPage = lazyWithRetry(() => import("@/pages/ProductMatchPage"));
-export const BusinessIntelligencePage = lazyWithRetry(() => import("@/pages/BusinessIntelligencePage"));
-export const ClientComparatorPage = lazyWithRetry(() => import("@/pages/ClientComparatorPage"));
+export const SimuladorWizard = lazyWithRetry(() => import("@/pages/tools/SimuladorWizard"));
+export const MockupGenerator = lazyWithRetry(() => import("@/pages/mockups/MockupGenerator"));
+export const MagicUp = lazyWithRetry(() => import("@/pages/tools/MagicUp"));
+export const PriceSimulatorPage = lazyWithRetry(() => import("@/pages/tools/PriceSimulatorPage"));
+export const StockDashboardPage = lazyWithRetry(() => import("@/pages/admin/StockDashboardPage"));
+export const AdvancedPriceSearchPage = lazyWithRetry(() => import("@/pages/tools/AdvancedPriceSearchPage"));
+export const KitBuilderPage = lazyWithRetry(() => import("@/pages/kit-builder/KitBuilderPage"));
+export const MeusKitsPage = lazyWithRetry(() => import("@/pages/kit-builder/KitLibraryPage"));
+export const MockupHistoryPage = lazyWithRetry(() => import("@/pages/mockups/MockupHistoryPage"));
+export const DropboxBrowserPage = lazyWithRetry(() => import("@/pages/tools/DropboxBrowserPage"));
+export const CommercialIntelligencePage = lazyWithRetry(() => import("@/pages/bi/CommercialIntelligencePage"));
+export const ProductMatchPage = lazyWithRetry(() => import("@/pages/products/ProductMatchPage"));
+export const BusinessIntelligencePage = lazyWithRetry(() => import("@/pages/bi/BusinessIntelligencePage"));
+export const ClientComparatorPage = lazyWithRetry(() => import("@/pages/clients/ClientComparatorPage"));
 
 // ─────────────────────────────────────────────────────────────────
 // Clients (CRM)
 // ─────────────────────────────────────────────────────────────────
-export const ClientsPage = lazyWithRetry(() => import("@/pages/ClientsPage"));
-export const ClientDetailPage = lazyWithRetry(() => import("@/pages/ClientDetailPage"));
+export const ClientsPage = lazyWithRetry(() => import("@/pages/clients/ClientsPage"));
+export const ClientDetailPage = lazyWithRetry(() => import("@/pages/clients/ClientDetailPage"));
 
 // ─────────────────────────────────────────────────────────────────
 // Analytics
 // ─────────────────────────────────────────────────────────────────
-export const TrendsPage = lazyWithRetry(() => import("@/pages/TrendsPage"));
+export const TrendsPage = lazyWithRetry(() => import("@/pages/bi/TrendsPage"));
 
 // ─────────────────────────────────────────────────────────────────
 // System (dev-only)
 // ─────────────────────────────────────────────────────────────────
-export const SystemStatusPage = lazyWithRetry(() => import("@/pages/SystemStatusPage"));
-export const RateLimitDashboard = lazyWithRetry(() => import("@/pages/RateLimitDashboardPage"));
-export const ExternalDatabaseTest = lazyWithRetry(() => import("@/pages/ExternalDatabaseTest"));
+export const SystemStatusPage = lazyWithRetry(() => import("@/pages/system/SystemStatusPage"));
+export const RateLimitDashboard = lazyWithRetry(() => import("@/pages/system/RateLimitDashboardPage"));
+export const ExternalDatabaseTest = lazyWithRetry(() => import("@/pages/system/ExternalDatabaseTest"));
 
 // ─────────────────────────────────────────────────────────────────
 // Roles & Permissions (admin)
 // ─────────────────────────────────────────────────────────────────
-export const PermissionsPage = lazyWithRetry(() => import("@/pages/PermissionsPage"));
-export const RolesPage = lazyWithRetry(() => import("@/pages/RolesPage"));
-export const RolePermissionsPage = lazyWithRetry(() => import("@/pages/RolePermissionsPage"));
+export const PermissionsPage = lazyWithRetry(() => import("@/pages/admin/PermissionsPage"));
+export const RolesPage = lazyWithRetry(() => import("@/pages/admin/RolesPage"));
+export const RolePermissionsPage = lazyWithRetry(() => import("@/pages/admin/RolePermissionsPage"));
 
 // ─────────────────────────────────────────────────────────────────
 // QA / Internal
