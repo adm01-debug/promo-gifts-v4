@@ -132,7 +132,7 @@ export function ReplenishmentProductGrid() {
           <div className="w-64 h-1.5 bg-muted/50 rounded-full overflow-hidden mb-4" role="progressbar" aria-valuenow={Math.round(loadingProgress)} aria-valuemin={0} aria-valuemax={100}>
             <div className="h-full bg-gradient-to-r from-primary/60 to-primary rounded-full transition-all duration-300" style={{ width: `${loadingProgress}%` }} />
           </div>
-          <div className={`grid ${getGridColsClass(gridColumns)} ${getGridGapClass(gridColumns)}`}>
+          <div className={cn("grid", viewMode === 'list' ? 'grid-cols-1 gap-2' : `${getGridColsClass(gridColumns)} ${getGridGapClass(gridColumns)}`)}>
             {Array.from({ length: 10 }).map((_, i) => (
               <ProductCardSkeleton key={i} variant={viewMode === "list" ? "compact" : "default"} />
             ))}
