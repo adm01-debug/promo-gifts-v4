@@ -647,7 +647,11 @@ export default function Auth() {
                     onSubmit={loginForm.handleSubmit(handleLogin)}
                     className="space-y-4"
                     data-testid="login-form"
+                    method="post"
+                    action="/auth"
+                    name="login"
                   >
+
                     <div className="space-y-2">
                       <Label htmlFor="login-email" className="text-foreground">
                         Email
