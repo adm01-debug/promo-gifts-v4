@@ -6553,6 +6553,7 @@ export type Database = {
       }
       get_connection_failure_window_minutes: { Args: never; Returns: number }
       get_connections_auto_test_interval: { Args: never; Returns: number }
+      get_edge_function_secret: { Args: { _name: string }; Returns: string }
       get_favorites_weekly_count: {
         Args: { _weeks?: number }
         Returns: {
