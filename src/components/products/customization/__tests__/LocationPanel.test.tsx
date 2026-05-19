@@ -278,4 +278,26 @@ describe("LocationPanel — fluxo Trocar técnica", () => {
     expect(barAfter).toBeInTheDocument();
     expect(screen.getByTestId("config-panel")).toHaveAttribute("data-technique-id", "tech-A");
   });
+
+  it("ao trocar de técnica (A → B), exibe toast.success com 'Técnica alterada' e a transição", () => {
+    render(<LocationPanel location={location} quantity={100} onPriceCalculated={vi.fn()} />);
+
+    // Seleciona A
+    fireEvent.click(screen.getByText("Silk 1 cor"));
+    vi.mocked(toast.success).mockClear();
+
+    // Troca para B
+    fireEvent.click(screen.getByTestId("customization-change-technique"));
+    fireEvent.click(
+      within(screen.getByTestId("customization-technique-picker")).getByText("Transfer Digital"),
+    );
+
+    expect(toast.success).toHaveBeenCalledTimes(1);
+    const [message, opts] = vi.mocked(toast.success).mock.calls[0];
+    expect(message).toBe("Técnica alterada: Silk 1 cor → Transfer Digital");
+    expect(opts).toMatchObject({ duration: 2500 });
+
+    // Barra-resumo agora reflete a técnica B
+    expect(screen.getByTestId("config-panel")).toHaveAttribute("data-technique-id", "tech-B");
+  });
 });
