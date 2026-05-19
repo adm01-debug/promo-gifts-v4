@@ -328,7 +328,7 @@ export function useExternalProductsList(options?: {
         filters: { 
           active: true,
         },
-        select: 'id, name, sku, sale_price, image_url, images, primary_image_url, supplier_reference, brand',
+        select: 'id, name, sku, sale_price, primary_image_url, supplier_reference, brand',
         limit: options?.limit || 100,
         orderBy: { column: 'name', ascending: true },
       });
