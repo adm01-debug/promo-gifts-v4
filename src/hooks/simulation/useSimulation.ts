@@ -594,5 +594,7 @@ export function useSimulation() {
   };
 }
 
-// Re-export for backward compat
-export { formatCurrency } from "@/hooks/simulation/simulationClipboard";
+// Re-export for backward compatibility with legacy simulator imports.
+// Keep the source of truth in the shared formatter module to avoid runtime
+// module-export errors during Vite ESM loading.
+export { formatCurrency } from "@/lib/format";
