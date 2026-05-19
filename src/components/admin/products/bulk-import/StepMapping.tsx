@@ -3,7 +3,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { TARGET_FIELDS, type ColumnMapping, type TargetFieldKey } from "@/pages/advanced-price-search/types";
+import { TARGET_FIELDS, type ColumnMapping, type TargetFieldKey } from "./types";
 
 interface StepMappingProps {
   headers: string[];
