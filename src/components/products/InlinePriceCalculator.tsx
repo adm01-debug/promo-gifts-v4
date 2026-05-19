@@ -106,7 +106,7 @@ export function InlinePriceCalculator({
   };
 
   const customPriceInfo = getCustomPrice(customQuantity);
-  const customTotal = customPriceInfo.unitPrice * customQuantity;
+  const customTotal = (customPriceInfo.unitPrice * customQuantity) + Number.EPSILON;
 
   if (defaultOpen) {
     return (
