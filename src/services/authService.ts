@@ -4,6 +4,27 @@ import { authDebug, authDebugError } from "@/lib/auth/auth-debug";
 import { logger } from "@/lib/logger";
 
 export const authService = {
+  async signIn(email: string, password: string) {
+    return supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+  },
+
+  async signOut() {
+    // Security: Log logout server-side
+    try {
+      await Promise.race([
+        supabase.rpc('log_user_logout'),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout RPC')), 2000))
+      ]);
+    } catch (err) {
+      logger.warn('log_user_logout failed', { err: String(err) });
+    }
+
+    return supabase.auth.signOut({ scope: 'global' });
+  },
+
   async fetchAAL() {
     const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     const { data: factorsData } = await supabase.auth.mfa.listFactors();
