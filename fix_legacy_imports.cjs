@@ -6,6 +6,7 @@ const replacements = {
     '@/hooks/productsIntelligenceBadges': '@/hooks/products',
     '@/hooks/uiLockFix': '@/hooks/ui',
     '@/hooks/useExpertConversations': '@/hooks/intelligence',
+    '@/hooks/commonHistory': '@/hooks/common',
 };
 
 function processDirectory(dir) {
