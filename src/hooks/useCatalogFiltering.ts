@@ -33,6 +33,7 @@ export function useCatalogFiltering({
   const colorFilterSet = useMemo(() => new Set(filters.colors), [filters.colors]);
   const colorGroupSet = useMemo(() => new Set(filters.colorGroups), [filters.colorGroups]);
   const colorVariationSet = useMemo(() => new Set(filters.colorVariations), [filters.colorVariations]);
+  const hasColorFilters = colorFilterSet.size > 0 || colorGroupSet.size > 0 || colorVariationSet.size > 0;
   const categoryFilterSet = useMemo(() => new Set(filters.categories.map(String)), [filters.categories]);
   const supplierFilterSet = useMemo(() => new Set(filters.suppliers), [filters.suppliers]);
   const genderFilterSet = useMemo(() => new Set(filters.gender?.map(g => g.toLowerCase().trim())), [filters.gender]);
@@ -58,7 +59,6 @@ export function useCatalogFiltering({
     if (result.length === 0) return result;
 
     // Optimized Color Filtering: Process once per product
-    const hasColorFilters = colorFilterSet.size > 0 || colorGroupSet.size > 0 || colorVariationSet.size > 0;
     if (hasColorFilters) {
       const groupArray = colorGroupSet.size > 0 ? Array.from(colorGroupSet).map(s => s.toLowerCase()) : null;
       
