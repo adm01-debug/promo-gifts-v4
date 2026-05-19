@@ -345,6 +345,7 @@ export function ProductCustomizationOptions({
                 key={currentLocation.location_code}
                 location={currentLocation}
                 quantity={quantity}
+                productId={productId}
                 confirmedPersonalization={pricesRef.current.get(currentLocation.location_code)}
                 onPriceCalculated={handlePriceCalculated}
               />
