@@ -312,6 +312,17 @@ export function LocationPanel({
 
       setSelectedTechnique(technique);
       setIsPickerOpen(false);
+
+      // Foco automático no controle ajustado se houve clamp (A11y)
+      setTimeout(() => {
+        if (forcedW) {
+          document.querySelector<HTMLElement>('[data-testid="customization-width-input"]')?.focus();
+        } else if (forcedH) {
+          document.querySelector<HTMLElement>('[data-testid="customization-height-input"]')?.focus();
+        } else if (forcedC) {
+          document.querySelector<HTMLElement>('[data-testid^="customization-color-button-"]')?.focus();
+        }
+      }, 50);
     },
     [selectedTechnique],
   );
