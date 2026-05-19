@@ -19,6 +19,13 @@ vi.mock("@/hooks/admin", () => ({
     getRotationHistory: vi.fn().mockResolvedValue([]),
     isLoading: false,
   }),
+  useRetestCooldownSetting: () => ({
+    cooldownMs: 3000,
+    loading: false,
+    saving: false,
+    save: vi.fn(),
+  }),
+  RETEST_COOLDOWN_PRESETS_MS: [3000, 10000, 30000, 60000],
 }));
 
 vi.mock("@/components/admin/connections/useSeverityChangeNotifier", () => ({
