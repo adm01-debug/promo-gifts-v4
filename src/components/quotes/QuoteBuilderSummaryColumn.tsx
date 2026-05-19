@@ -331,7 +331,7 @@ export function QuoteBuilderSummaryColumn({
               )}
               <div className="flex items-center gap-2">
                 <Select value={discountType} onValueChange={(v) => handleDiscountTypeChange(v as "percent" | "amount")}>
-                  <SelectTrigger className="w-16 h-8 text-xs" aria-label="Tipo de desconto"><SelectValue /></SelectTrigger>
+                  <SelectTrigger data-testid="quote-discount-type-select" className="w-16 h-8 text-xs" aria-label="Tipo de desconto"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="percent">%</SelectItem>
                     <SelectItem value="amount">R$</SelectItem>
@@ -339,6 +339,7 @@ export function QuoteBuilderSummaryColumn({
                 </Select>
                 <div className="flex-1">
                   <CurrencyInput
+                    data-testid="quote-discount-input"
                     value={discountValue}
                     onChange={setDiscountValue}
                     max={discountType === "percent" ? 100 : presentedSubtotal}
@@ -461,6 +462,7 @@ export function QuoteBuilderSummaryColumn({
             {isDiscountExceeded ? (
               <Button
                 size="lg"
+                data-testid="quote-request-approval-button"
                 className="w-full gap-2 h-12 text-sm font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/20"
                 onClick={() => setApprovalDialogOpen(true)}
                 disabled={quotesLoading || !isFormValid}
@@ -484,7 +486,7 @@ export function QuoteBuilderSummaryColumn({
 
       {/* Approval Request Dialog */}
       <Dialog open={approvalDialogOpen} onOpenChange={setApprovalDialogOpen}>
-        <DialogContent>
+        <DialogContent data-testid="quote-approval-dialog">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-amber-500" />
@@ -499,11 +501,11 @@ export function QuoteBuilderSummaryColumn({
             {/* Visual comparison */}
             <div className="rounded-xl bg-muted/50 border border-border/40 p-3 space-y-2">
               <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
+                <div data-testid="quote-approval-limit">
                   <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Seu Limite</p>
                   <p className="text-sm font-semibold mt-0.5">{maxDiscountPercent}%</p>
                 </div>
-                <div>
+                <div data-testid="quote-approval-requested">
                   <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Solicitado</p>
                   <p className="text-sm font-bold text-amber-500 mt-0.5">{discountType === "percent" ? `${discountValue}%` : formatCurrency(discountValue)}</p>
                 </div>
@@ -517,6 +519,7 @@ export function QuoteBuilderSummaryColumn({
             <div className="space-y-2">
               <Label>Justificativa <span className="text-muted-foreground font-normal">(opcional)</span></Label>
               <Textarea
+                data-testid="quote-approval-justification"
                 value={sellerNotes}
                 onChange={(e) => setSellerNotes(e.target.value)}
                 placeholder="Ex: Cliente estratégico, pedido de grande volume, negociação especial..."
@@ -528,6 +531,7 @@ export function QuoteBuilderSummaryColumn({
           <DialogFooter>
             <Button variant="outline" onClick={() => setApprovalDialogOpen(false)}>Cancelar</Button>
             <Button
+              data-testid="quote-approval-submit"
               className="gap-1.5 bg-amber-500 hover:bg-amber-600 text-white"
               onClick={handleRequestApproval}
               disabled={quotesLoading}

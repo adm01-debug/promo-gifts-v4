@@ -209,6 +209,22 @@ export const Sel = {
     summarySubtotal: TID("summary-subtotal-products"),
     summaryTotal: TID("summary-total"),
     summaryTotalValue: TID("summary-total-value"),
+    /** Desconto: Input numérico (% ou R$, dependendo do toggle). */
+    discountInput: TID("quote-discount-input"),
+    /** Desconto: Toggle entre percentage (%) e amount (R$). */
+    discountTypeSelect: TID("quote-discount-type-select"),
+    /** Botão "Solicitar Aprovação" — aparece quando desconto > maxDiscountPercent. */
+    requestApprovalButton: TID("quote-request-approval-button"),
+    /** Dialog "Solicitar Aprovação de Desconto". */
+    approvalDialog: TID("quote-approval-dialog"),
+    /** Dentro do dialog: card "Seu Limite" (mostra maxDiscountPercent). */
+    approvalLimitValue: TID("quote-approval-limit-value"),
+    /** Dentro do dialog: card "Solicitado" (mostra discountValue). */
+    approvalRequestedValue: TID("quote-approval-requested-value"),
+    /** Dentro do dialog: textarea de justificativa. */
+    approvalJustification: TID("quote-approval-justification"),
+    /** Dentro do dialog: botão "Enviar para Aprovação". */
+    approvalSubmit: TID("quote-approval-submit"),
   },
 
   // ---------- Pedidos ----------
