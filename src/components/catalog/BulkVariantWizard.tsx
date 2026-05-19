@@ -10,8 +10,7 @@ import { cn } from '@/lib/utils';
 import {
   Package, AlertTriangle, SkipForward, ShoppingBag, FileText, Heart, GitCompare, FolderPlus, FileDown,
 } from 'lucide-react';
-import { useExternalVariantStock, type ExternalVariantStock } from '@/hooks/products';
-import type { Product } from '@/hooks/products';
+import { useExternalVariantStock, type ExternalVariantStock, type Product } from "@/hooks/products";
 import { motion, AnimatePresence } from 'framer-motion';
 
 export interface BulkVariantSelection {

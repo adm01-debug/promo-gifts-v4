@@ -26,10 +26,8 @@ import {
 import { cn } from "@/lib/utils";
 import { ConnectionStatusBadge } from "./ConnectionStatusBadge";
 import { LatencyBadge } from "./LatencyBadge";
-import { useConnectionsOverview, type OverviewRow } from "@/hooks/intelligence";
-import { useConnectionTester, type ConnectionType } from "@/hooks/intelligence";
+import { applyFilters, useConnectionTester, useConnectionsOverview, useConnectionsOverviewFilters, type ConnectionType, type OverviewRow } from "@/hooks/intelligence";
 import { ConnectionsOverviewFilters } from "./ConnectionsOverviewFilters";
-import { applyFilters, useConnectionsOverviewFilters } from "@/hooks/intelligence";
 import { ConnectionTestDetailsDialog } from "./ConnectionTestDetailsDialog";
 import { ConnectionTimelineDrawer } from "./ConnectionTimelineDrawer";
 import { useConsecutiveFailures } from "@/hooks/common";

@@ -4,9 +4,7 @@ import { ChevronLeft, ChevronRight, Layers, Loader2, TrendingDown } from "lucide
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import type { Product } from "@/hooks/products";
-import { useSimilarProducts, type SimilarProductItem } from "@/hooks/products";
-import { useExternalCategoriesQuery } from "@/hooks/products";
+import { useExternalCategoriesQuery, useSimilarProducts, type Product, type SimilarProductItem } from "@/hooks/products";
 
 interface SimilarProductsProps {
   currentProduct: Product;

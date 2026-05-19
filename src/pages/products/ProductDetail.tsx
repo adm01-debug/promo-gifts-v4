@@ -14,20 +14,15 @@ const VariantPickerDialog = lazyWithRetry(() => import('@/components/products/Va
 const FutureStockModal = lazyWithRetry(() => import('@/components/products/FutureStockModal').then(m => ({ default: m.FutureStockModal })));
 const PackagingModal = lazyWithRetry(() => import('@/components/products/PackagingModal').then(m => ({ default: m.PackagingModal })));
 
-import { useSimilarProducts } from '@/hooks/products';
+import { useProduct, useProductAnalytics, useProductIntelligenceBadges, useSimilarProducts, useSupplierTrust, type ExternalVariantStock } from "@/hooks/products";
 import type { ProductForRecommendation } from '@/hooks/intelligence';
 import { useToast } from '@/hooks/ui';
-import { useProductAnalytics } from '@/hooks/products';
-import { useProduct } from '@/hooks/products';
 import type { Product, ProductVariation } from '@/types/product-catalog';
-import type { ExternalVariantStock } from '@/hooks/products';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ProductDetailSkeleton } from '@/components/products/ProductDetailSkeleton';
 import { EmptyState } from '@/components/common/EmptyState';
 import { IntelligenceBadges } from '@/components/common/IntelligenceBadges';
-import { useProductIntelligenceBadges } from '@/hooks/products';
-import { useSupplierTrust } from '@/hooks/products';
 import { FloatingCompareBar } from '@/components/compare/FloatingCompareBar';
 import { MobileProductActions } from '@/components/mobile/MobileProductActions';
 import { useRecentlyViewedStore } from '@/stores/useRecentlyViewedStore';

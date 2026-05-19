@@ -2,7 +2,7 @@
  * useCatalogState — all catalog page state & logic extracted from Index.tsx
  */
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { useColorEnrichment } from '@/hooks/products';
+import { useCatalogRealStats, useColorEnrichment, useExternalCategoriesQuery, useProductFuzzySearch, useProductsByCategory, useProductsByMaterial, useProductsCatalog, useSupplierSalesRanking, type Product } from "@/hooks/products";
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Package, Heart, Users, Palette, FolderTree } from 'lucide-react';
 
@@ -12,22 +12,13 @@ import {
   STORAGE_KEY as GRID_COLUMNS_KEY,
   type ColumnCount,
 } from '@/components/products/ColumnSelector';
-import { useProductsCatalog } from '@/hooks/products';
-import type { Product } from '@/hooks/products';
 import { useProductsContext } from '@/contexts/ProductsContext';
-import { useSearch } from '@/hooks/common';
+import { useDebounce, useSearch } from "@/hooks/common";
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useFavoriteQuickAdd } from '@/hooks/favorites';
 import { useComparisonStore } from '@/stores/useComparisonStore';
-import { useProductsByMaterial } from '@/hooks/products';
-import { useProductFuzzySearch } from '@/hooks/products';
-import { useProductsByCategory } from '@/hooks/products';
-import { useDebounce } from '@/hooks/common';
-import { useExternalCategoriesQuery } from '@/hooks/products';
-import { useCatalogRealStats } from '@/hooks/products';
 import { useToast } from '@/hooks/ui';
 import { usePromoSalesRanking } from '@/hooks/intelligence';
-import { useSupplierSalesRanking } from '@/hooks/products';
 import { useCatalogFiltering } from "@/hooks/products/useCatalogFiltering";
 
 export type ViewMode = 'grid' | 'list' | 'table';

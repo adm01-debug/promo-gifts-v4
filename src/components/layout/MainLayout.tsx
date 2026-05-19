@@ -1,5 +1,5 @@
 import { useState, Suspense, useEffect, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { useScrollLockFix } from "@/hooks/ui/useScrollLockFix";
 import { useGlobalShortcuts } from "@/hooks/ui";
 import { SkipToContent } from "@/components/common/SkipToContent";
@@ -21,7 +21,6 @@ const GlobalCommandBar = lazyWithRetry(() => import("@/components/command/Global
 const PersistentBreadcrumbs = lazyWithRetry(() => import("@/components/common/PersistentBreadcrumbs").then(m => ({ default: m.PersistentBreadcrumbs })));
 import { cn } from "@/lib/utils";
 
-import { Outlet } from "react-router-dom";
 
 interface MainLayoutProps {
   children?: React.ReactNode;

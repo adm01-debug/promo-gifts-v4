@@ -6,8 +6,7 @@ import { ArrowLeft, AlertTriangle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { useProduct, type Product } from "@/hooks/products";
-import { useExternalVariantStock, type ExternalVariantStock } from "@/hooks/products";
+import { useExternalVariantStock, useProduct, type ExternalVariantStock, type Product } from "@/hooks/products";
 
 interface Props {
   productId: string;

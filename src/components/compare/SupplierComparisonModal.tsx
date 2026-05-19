@@ -27,8 +27,7 @@ import {
   Minus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useSupplierComparison } from "@/hooks/products";
-import type { Product } from "@/hooks/products";
+import { useSupplierComparison, type Product } from "@/hooks/products";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface SupplierComparisonModalProps {

@@ -22,14 +22,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import type { Product } from "@/hooks/products";
+import { isLightColor, type ExternalVariantStock, type Product } from "@/hooks/products";
 import { toast } from "sonner";
 import { GenderBadge } from "./GenderBadge";
 import { getSupplierColors } from "@/lib/supplier-colors";
 import { resolveColorImage, resolveColorStock, getActiveColorName, type ActiveColorFilter } from "@/utils/color-image-resolver";
 import { resolveHighlightHex } from "@/utils/color-group-hex";
 import { PriceFreshnessBadge } from "./PriceFreshnessBadge";
-import { isLightColor } from "@/hooks/products";
 import { resolveAllMatchingColors } from "@/utils/color-variant-carousel";
 import { showUndoToast, showErrorToast } from "@/utils/undoToast";
 import { QuickAddToQuote } from "./QuickAddToQuote";
@@ -39,7 +38,6 @@ import { SharePreviewDialog } from "./share/SharePreviewDialog";
 import { VariantPickerDialog, type VariantActionMode } from "./VariantPickerDialog";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { useComparisonStore } from "@/stores/useComparisonStore";
-import type { ExternalVariantStock } from "@/hooks/products";
 
 interface ProductListItemProps {
   product: Product;

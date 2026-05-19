@@ -21,11 +21,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { PriceFreshnessThresholdEditor } from '@/components/products/PriceFreshnessThresholdEditor';
-import { useProductFreshnessOverride } from '@/hooks/products';
+import { useProductFreshnessOverride, type Product } from "@/hooks/products";
 import { DEFAULT_PRICE_FRESHNESS_THRESHOLD_DAYS } from '@/utils/price-freshness';
 import { cn } from '@/lib/utils';
 import { sortVariationsByColor } from '@/utils/colorSorting';
-import type { Product } from '@/hooks/products';
 import type { ProductVariation } from '@/types/product-catalog';
 import { formatCurrency } from '@/lib/format';
 
@@ -114,7 +113,6 @@ export function ProductDetailHero({
                 (v: ProductVariation) => v.id === selectedVariation?.id,
               ) ?? -1
             }
-            activeColorName={selectedVariation?.color?.name}
           />
         </div>
       </div>

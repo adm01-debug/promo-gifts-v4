@@ -10,8 +10,7 @@
  */
 import { useCallback, useMemo, useRef } from 'react';
 
-import { type CartStatus } from '@/hooks/products';
-import type { CartTemplateItem } from '@/hooks/products';
+import { type CartStatus, type CartTemplateItem } from "@/hooks/products";
 import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
 import { CartTabsRich } from '@/components/cart/CartTabsRich';
 import { CartEmptyStateSmart } from '@/components/cart/CartEmptyStateSmart';

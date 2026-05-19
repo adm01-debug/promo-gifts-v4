@@ -16,9 +16,7 @@ import {
 } from "@/components/ui/popover";
 
 import { cn } from "@/lib/utils";
-import { useStockAlerts } from "@/hooks/products";
-import { useNoveltiesWithDetails } from "@/hooks/products";
-import { useReplenishmentsWithDetails } from "@/hooks/products";
+import { useNoveltiesWithDetails, useReplenishmentsWithDetails, useStockAlerts } from "@/hooks/products";
 
 // ─── Types ───────────────────────────────────────────────────
 

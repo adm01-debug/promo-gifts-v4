@@ -3,8 +3,7 @@ import { Search, Trophy, DollarSign, ShoppingBag, BarChart3, Medal } from "lucid
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTrendingProducts } from "@/hooks/intelligence";
-import { useSuppliers } from "@/hooks/products";
-import { useCategories } from "@/hooks/products";
+import { useCategories, useSuppliers } from "@/hooks/products";
 import { useNavigate } from "react-router-dom";
 import { RankingFilterToolbar, type RankingFilters } from "./RankingFilterToolbar";
 import { RankingResultRow } from "./RankingResultRow";

@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { Quote, QuoteItem, PersonalizationTechnique } from "@/hooks/quotes/quoteTypes";
+import { type Quote, type QuoteItem, type PersonalizationTechnique } from "@/hooks/quotes/quoteTypes";
 import { 
   calculateQuoteTotals, 
   buildInsertPayload, 

@@ -4,9 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { useCategories } from "@/hooks/products";
-import { useSuppliers } from "@/hooks/products";
-import { useProductsLightweight } from "@/hooks/products";
+import { useCategories, useProductsLightweight, useSuppliers } from "@/hooks/products";
 import { cn } from "@/lib/utils";
 
 export interface IntelligenceFilters {

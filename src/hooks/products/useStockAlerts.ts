@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { invokeExternalDb } from '@/lib/external-db/bridge';
-import { getProductImageUrl } from '@/lib/external-db/product-types';
-import type { PromobrindProduct } from '@/lib/external-db/product-types';
+import { getProductImageUrl, type PromobrindProduct } from "@/lib/external-db/product-types";
 
 export type AlertLevel = 'low' | 'critical' | 'out';
 

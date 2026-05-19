@@ -18,10 +18,9 @@ import {
   type TechniqueWithLimits,
   type CustomizationOption,
 } from '@/hooks/mockup';
-import { usePositionHistory } from '@/hooks/simulation';
+import { useLogoColorAnalysis, usePositionHistory } from "@/hooks/simulation";
 import { useProductsContext } from '@/contexts/ProductsContext';
 import { getMockupWizardStep } from '@/components/mockup/mockupWizardStep';
-import { useLogoColorAnalysis } from '@/hooks/simulation';
 import { showMockupSuccessToast } from '@/components/mockup/MockupSuccessToast';
 import type { TechniqueColorConfig } from '@/components/mockup/techniqueColorUtils';
 import { invokeWithRetry, extractFunctionErrorMessage } from '@/lib/external-db/invoke';

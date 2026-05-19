@@ -30,8 +30,7 @@ import { KitCardSkeletonGrid } from '@/components/kit-library/KitCardSkeleton';
 import { KitLibraryFilters, type SortOption } from '@/components/kit-library/KitLibraryFilters';
 import { KitTemplatePreviewDialog } from '@/components/kit-library/KitTemplatePreviewDialog';
 import { KitCategoryChips } from '@/components/kit-library/KitCategoryChips';
-import { useKitTemplates, type KitTemplateRow } from '@/hooks/kit-builder';
-import { useCustomKitPersistence, type CustomKitRow } from '@/hooks/kit-builder';
+import { useCustomKitPersistence, useKitTemplates, type CustomKitRow, type KitTemplateRow } from "@/hooks/kit-builder";
 import { buildCustomKitInsert } from '@/lib/kit-library/buildCustomKitInsert';
 
 function getItemsCount(items: unknown): number {

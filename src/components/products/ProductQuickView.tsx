@@ -26,13 +26,12 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { VisuallyHidden } from "@/components/a11y/VisuallyHidden";
 import { cn } from "@/lib/utils";
-import type { Product } from "@/hooks/products";
+import { useProductImages, type Product, type ProductImage } from "@/hooks/products";
 import { ProductCategoryBadges } from "./ProductCategoryBadges";
 import { QuickViewGallery } from "./quick-view/QuickViewGallery";
 import { ProductColorSelector, type ProductColor } from "./ProductColorSelector";
 import { sortByColorGroup } from "@/utils/colorSorting";
 import { toast } from "sonner";
-import { useProductImages, type ProductImage } from "@/hooks/products";
 import { getCdnUrl, getSrcSet, getColorImages, type ProductImageMeta } from "@/utils/image-utils";
 import { PriceFreshnessBadge } from "@/components/products/PriceFreshnessBadge";
 
@@ -241,7 +240,7 @@ export const ProductQuickView = forwardRef<HTMLDivElement, ProductQuickViewProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl p-0 overflow-hidden bg-card border-border gap-0 rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+      <DialogContent className="max-w-4xl p-0 overflow-hidden bg-card border-border gap-0" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
         <VisuallyHidden>
           <DialogTitle>Visualização rápida: {product.name}</DialogTitle>
         </VisuallyHidden>
@@ -260,7 +259,7 @@ export const ProductQuickView = forwardRef<HTMLDivElement, ProductQuickViewProps
           />
 
           {/* Product Info */}
-          <div className="p-8 flex flex-col">
+          <div className="p-6 flex flex-col">
             {/* Header */}
             <div className="space-y-3">
               {/* Category Badges - Ícones das categorias */}

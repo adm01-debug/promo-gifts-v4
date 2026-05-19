@@ -16,9 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { useProductsCatalog, type ProductLightweight } from "@/hooks/products";
-import { type Product } from "@/hooks/products";
-import { type ExternalVariantStock } from "@/hooks/products";
+import { useProductsCatalog, type ExternalVariantStock, type Product, type ProductLightweight } from "@/hooks/products";
 import { ProductLoaderAndColorSelector } from "./MockupColorSelector";
 
 export interface MockupProductSelection {

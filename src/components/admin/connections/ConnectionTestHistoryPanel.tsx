@@ -5,8 +5,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { LatencyBadge } from "./LatencyBadge";
 import { ConnectionTimelineDrawer } from "./ConnectionTimelineDrawer";
 import { ConnectionTestDetailsDialog } from "./ConnectionTestDetailsDialog";
-import { useConnectionTestHistory, type TestHistoryItem } from "@/hooks/intelligence";
-import type { ConnectionType } from "@/hooks/intelligence";
+import { useConnectionTestHistory, type ConnectionType, type TestHistoryItem } from "@/hooks/intelligence";
 import { getErrorCopy, getKindBadgeClass, getKindLabel } from "@/lib/connection-error-copy";
 import { inferErrorKind } from "@/lib/error-kind-inference";
 

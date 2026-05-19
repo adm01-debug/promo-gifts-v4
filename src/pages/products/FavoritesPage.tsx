@@ -7,7 +7,7 @@ import {
   useFavoriteTrash,
   useLegacyFavoritesMigration,
 } from "@/hooks/favorites";
-import { useEnrichedFavoriteItems } from "@/hooks/favorites";
+import { useEnrichedFavoriteItems, useFavoritesGlobalShortcuts } from "@/hooks/favorites";
 import { useProductsContext } from "@/contexts/ProductsContext";
 import { ProductCard } from "@/components/products/ProductCard";
 import { ProductListItem } from "@/components/products/ProductListItem";
@@ -37,7 +37,6 @@ import { ItemNoteEditor } from "@/components/favorites/ItemNoteEditor";
 import { PriceDropBadge } from "@/components/favorites/PriceDropBadge";
 import { FavoritesEmptyStateSmart } from "@/components/favorites/FavoritesEmptyStateSmart";
 import { FavoritePresentationLauncher } from "@/components/favorites/FavoritePresentationLauncher";
-import { useFavoritesGlobalShortcuts } from "@/hooks/favorites";
 import { useUndoStack } from "@/hooks/common";
 import type { FavoritesSort } from "@/components/favorites/FavoritesSortBar";
 

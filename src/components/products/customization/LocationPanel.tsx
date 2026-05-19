@@ -307,9 +307,9 @@ export function LocationPanel({
         const currentH = lastDimsRef.current.height;
         const currentC = lastDimsRef.current.colors;
 
-        const forcedW = technique.usa_dimensao && currentW != null && currentW > (technique.efetiva_largura_max || 0);
-        const forcedH = technique.usa_dimensao && currentH != null && currentH > (technique.efetiva_altura_max || 0);
-        const forcedC = technique.cobra_por_cor && currentC != null && currentC > (technique.max_cores || 1);
+        const forcedW = technique.usa_dimensao && currentW !== null && currentW > (technique.efetiva_largura_max || 0);
+        const forcedH = technique.usa_dimensao && currentH !== null && currentH > (technique.efetiva_altura_max || 0);
+        const forcedC = technique.cobra_por_cor && currentC !== null && currentC > (technique.max_cores || 1);
 
         if (forcedW || forcedH || forcedC) {
           const reasons = [];
@@ -401,7 +401,7 @@ export function LocationPanel({
   // - troca de técnica → usa últimas dimensões digitadas, com clamp aos limites da nova técnica
   //   (evita estourar largura/altura máxima quando a nova técnica é menor).
   const clamp = (v: number | undefined, max: number | undefined) =>
-    v == null ? undefined : max != null && v > max ? max : v;
+    v === null || v === undefined ? undefined : max !== null && max !== undefined && v > max ? max : v;
 
   const isSameAsConfirmed =
     selectedTechnique?.technique_id === confirmedPersonalization?.techniqueId;

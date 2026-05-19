@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { type Product } from "@/hooks/products";
-import { useProductAnalytics } from "@/hooks/products";
+import { useProductAnalytics, type Product } from "@/hooks/products";
 
 const STORAGE_KEY = "product-comparison";
 const MAX_COMPARE_ITEMS = 4;

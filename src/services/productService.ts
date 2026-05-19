@@ -1,6 +1,6 @@
 import { fetchPromobrindProducts, fetchPromobrindProductById } from '@/lib/external-db';
 import { mapPromobrindToProduct } from '@/utils/product-mapper';
-import { Product, ProductFilters } from '@/types/product-catalog';
+import { type Product, type ProductFilters } from '@/types/product-catalog';
 
 export const productService = {
   async fetchProducts(filters?: ProductFilters) {

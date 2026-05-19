@@ -5,28 +5,25 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
-import { useSellerDiscountLimits } from '@/hooks/quotes';
-import { useDiscountApproval } from '@/hooks/quotes';
+import { useAutoSaveQuote, useDiscountApproval, useQuoteItems, useQuotes, useSellerDiscountLimits, type QuoteItem, type QuoteItemPersonalization } from "@/hooks/quotes";
 import { useQuery } from '@tanstack/react-query';
 import Fuse from 'fuse.js';
 import { format, addDays } from 'date-fns';
 import { toast } from 'sonner';
 import { formatCurrency as fmtCurrency } from '@/lib/format';
 import { validateQuoteForm, QUOTE_FIELD_LABELS } from '@/lib/validations';
-import { useQuotes, type QuoteItem, type QuoteItemPersonalization } from '@/hooks/quotes';
 import {
   useQuoteTemplates,
   type QuoteTemplate,
   type QuoteTemplateItem,
 } from '@/hooks/quotes';
 import { useAuth } from '@/contexts/AuthContext';
-import { findKnownHex } from '@/hooks/products';
+import { findKnownHex, type ExternalVariantStock } from "@/hooks/products";
 import { useDebounce } from '@/hooks/common';
 import type {
   SelectedCompanyInfo,
   SelectedContactInfo,
 } from '@/components/quotes/CompanyContactSelector';
-import type { ExternalVariantStock } from '@/hooks/products';
 import type { QuoteBuilderStep } from '@/components/quotes/QuoteBuilderStepper';
 import {
   createProductFuseOptions,
@@ -35,8 +32,6 @@ import {
 } from '@/utils/product-search';
 import { getPriceFreshness } from '@/utils/price-freshness';
 import * as QuoteCalc from '@/logic/quotes/calculations';
-import { useQuoteItems } from '@/hooks/quotes';
-import { useAutoSaveQuote } from '@/hooks/quotes';
 
 interface Product {
   id: string;
@@ -835,7 +830,6 @@ export function useQuoteBuilderState() {
         const staleUnconfirmed = items.filter((item) => {
           if (item.price_confirmed_at) return false;
           const f = getPriceFreshness(item.price_updated_at, item.price_freshness_threshold_days);
-          // consider stale only if it's REALLY stale (not just warning)
           return f.isStale;
         });
         if (staleUnconfirmed.length > 0) {
@@ -846,7 +840,7 @@ export function useQuoteBuilderState() {
             .join(', ');
           const extra = staleUnconfirmed.length > 3 ? ` e mais ${staleUnconfirmed.length - 3}` : '';
           toast.error('Confirme os preços defasados antes de fechar o orçamento', {
-            description: `${staleUnconfirmed.length} ${staleUnconfirmed.length === 1 ? 'item está' : 'itens estão'} com preço defasado (mais de 60 dias): ${names}${extra}. Confirme com o fornecedor para prosseguir.`,
+            description: `${staleUnconfirmed.length} ${staleUnconfirmed.length === 1 ? 'item está' : 'itens estão'} com preço possivelmente defasado: ${names}${extra}. Use o botão "Confirmar com fornecedor" em cada item ou "Confirmar todos" no resumo.`,
             duration: 8000,
           });
           return;

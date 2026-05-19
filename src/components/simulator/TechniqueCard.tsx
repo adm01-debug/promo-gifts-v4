@@ -24,10 +24,8 @@ import {
   Clock, DollarSign, Palette, Ruler, Info, Sparkles, Star, TrendingUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatCurrency } from '@/hooks/simulation';
+import { formatCurrency, type ColorOption, type SizeOption, type TechniqueWithRecommendation } from "@/hooks/simulation";
 import type { TechniqueSettings } from '@/types/simulation';
-import type { TechniqueWithRecommendation } from '@/hooks/simulation';
-import type { ColorOption, SizeOption } from '@/hooks/simulation';
 import {
   getTechniqueStyle, getTechniqueThumbnail, getSlaInfo, TechniquePreview,
 } from './TechniqueCardHelpers';

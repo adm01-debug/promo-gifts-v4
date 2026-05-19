@@ -2,7 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { authService } from '@/services/authService';
 import { authDebug, authDebugError } from '@/lib/auth/auth-debug';
-import { AppRole, Profile } from '@/contexts/AuthContext';
+import { type AppRole, type Profile } from '@/contexts/AuthContext';
 import { logger } from '@/lib/logger';
 
 export function useProfileRoles() {

@@ -32,7 +32,7 @@ import { FadeInView, AnimatedCounter } from '@/components/common/MicroInteractio
 import { QuotesConfigurableList } from '@/components/quotes/QuotesConfigurableList';
 import { QuotesStatusChips } from '@/components/quotes/QuotesStatusChips';
 import { QuotesFunnelChart } from '@/components/quotes/QuotesFunnelChart';
-import { useQuotesListPage, sortOptions, SortOption } from "@/pages/quotes/useQuotesListPage";
+import { useQuotesListPage, sortOptions, type SortOption } from "@/pages/quotes/useQuotesListPage";
 
 export default function QuotesListPage() {
   const {

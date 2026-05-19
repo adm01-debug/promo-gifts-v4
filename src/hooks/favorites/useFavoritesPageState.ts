@@ -5,10 +5,9 @@ import {
   useFavoriteTrash,
   useLegacyFavoritesMigration,
 } from '@/hooks/favorites';
-import { useEnrichedFavoriteItems } from '@/hooks/favorites';
+import { useEnrichedFavoriteItems, useFavoritesGlobalShortcuts } from "@/hooks/favorites";
 import { useProductsContext } from '@/contexts/ProductsContext';
 import { useCatalogSelection } from '@/components/catalog/useCatalogSelection';
-import { useFavoritesGlobalShortcuts } from '@/hooks/favorites';
 import { useUndoStack } from '@/hooks/common';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
 import type { FavoritesSort } from '@/components/favorites/FavoritesSortBar';
