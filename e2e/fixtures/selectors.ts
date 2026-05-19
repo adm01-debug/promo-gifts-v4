@@ -188,6 +188,27 @@ export const Sel = {
     /** Itens do wizard são indexados: quote-item-0, quote-item-1, ... */
     items: TID_PREFIX("quote-item"),
     item: (index: number) => TID(`quote-item-${index}`),
+    /** Step 1 — Cliente: opção "Sem empresa" no CompanySearchDropdown. */
+    noCompanyOption: TID("no-company-option"),
+    /** Step 3 — Itens: botão "Produto" que abre o ProductSearch dialog. */
+    addProductButton: TID("quote-add-product-button"),
+    /** ProductSearch dialog: input de busca. */
+    productSearchInput: TID("product-search-input"),
+    /** ProductSearch dialog: opção de produto (indexado pelo id). */
+    productSearchOption: TID_PREFIX("product-search-option-"),
+    /** ColorSelector: botão "Adicionar sem cor específica". */
+    addWithoutColor: TID("product-add-without-color"),
+    /** Persistir como rascunho (não exige todos os campos). */
+    saveDraft: TID("quote-save-draft"),
+    /** Submeter completo (status 'pending'). */
+    saveFinal: TID("quote-save-final"),
+    /** Wizard nav. */
+    next: TID("wizard-next-button"),
+    prev: TID("wizard-prev-button"),
+    /** Totais. */
+    summarySubtotal: TID("summary-subtotal-products"),
+    summaryTotal: TID("summary-total"),
+    summaryTotalValue: TID("summary-total-value"),
   },
 
   // ---------- Pedidos ----------
