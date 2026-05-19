@@ -25,6 +25,7 @@ export default defineConfig(({ mode }: { mode: string }) => ({
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
+    dedupe: ['react', 'react-dom'],
   },
   
   esbuild: {
@@ -120,6 +121,6 @@ export default defineConfig(({ mode }: { mode: string }) => ({
   },
   
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom'],
+    include: ['react', 'react-dom', 'react-router-dom', 'react-hook-form', '@hookform/resolvers/zod'],
   },
 }))
