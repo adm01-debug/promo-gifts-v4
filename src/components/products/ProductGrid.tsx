@@ -165,28 +165,32 @@ export function ProductGrid({
       ref={gridRef}
       className={`grid ${columnClasses[columns] || columnClasses[5]} ${columns >= 8 ? 'gap-x-4 gap-y-8' : columns >= 6 ? 'gap-x-6 gap-y-8' : 'gap-x-8 gap-y-8'}`}
     >
-      {products.map((product, index) => (
-        <ProductCardWrapper
-          key={product.id}
-          product={product}
-          index={index}
-          isVisible={isGridVisible}
-          onClick={onProductClick ? () => onProductClick(product.id) : undefined}
-          onView={onViewProduct}
-          onShare={onShareProduct}
-          onFavorite={onFavoriteProduct}
-          isFavorited={isFavorite ? isFavorite(product.id) : false}
-          onToggleFavorite={onToggleFavorite}
-          isInCompare={isInCompare ? isInCompare(product.id) : false}
-          onToggleCompare={onToggleCompare}
-          canAddToCompare={canAddToCompare}
-          highlightColors={highlightColors}
-          hideCategoryBadges={hideCategoryBadges}
-          activeColorFilter={activeColorFilter}
-          selectionMode={selectionMode}
-          selectedIds={selectedIds}
-          onToggleSelect={onToggleSelect}
-        />
+      {displayProducts.map((product, index) => (
+        (product as any).isSkeleton ? (
+          <ProductCardSkeleton key={product.id} />
+        ) : (
+          <ProductCardWrapper
+            key={product.id}
+            product={product}
+            index={index}
+            isVisible={isGridVisible}
+            onClick={onProductClick ? () => onProductClick(product.id) : undefined}
+            onView={onViewProduct}
+            onShare={onShareProduct}
+            onFavorite={onFavoriteProduct}
+            isFavorited={isFavorite ? isFavorite(product.id) : false}
+            onToggleFavorite={onToggleFavorite}
+            isInCompare={isInCompare ? isInCompare(product.id) : false}
+            onToggleCompare={onToggleCompare}
+            canAddToCompare={canAddToCompare}
+            highlightColors={highlightColors}
+            hideCategoryBadges={hideCategoryBadges}
+            activeColorFilter={activeColorFilter}
+            selectionMode={selectionMode}
+            selectedIds={selectedIds}
+            onToggleSelect={onToggleSelect}
+          />
+        )
       ))}
     </div>
   );
