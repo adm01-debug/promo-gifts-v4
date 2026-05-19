@@ -163,7 +163,10 @@ test.describe('Quote Builder - Personalization E2E UX & Data Integrity', () => {
     await page.getByTestId('customization-width-input').fill('8');
     await page.getByTestId('customization-height-input').fill('8');
     
-    // 3. Troca para técnica restritiva (Laser Pequeno - Tech Small: 5x3)
+    // 3. Confirma a gravação (isso limpa o rascunho mas agora vamos testar o fluxo de sair e voltar com rascunho)
+    // Para testar o rascunho, NÃO confirmamos.
+    
+    // 4. Troca para técnica restritiva (Laser Pequeno - Tech Small: 5x3)
     await page.getByTestId('customization-change-technique').click();
     await page.getByTestId('customization-technique-card-tech-small').click();
     
@@ -171,7 +174,7 @@ test.describe('Quote Builder - Personalization E2E UX & Data Integrity', () => {
     await expect(page.getByTestId('customization-width-input')).toHaveValue('5');
     await expect(page.getByTestId('customization-height-input')).toHaveValue('3');
     
-    // 4. Sai da página e volta
+    // 5. Sai da página e volta (simulando perda de contexto)
     await page.goto('/dashboard');
     await page.goto('/quotes/new');
     
@@ -180,26 +183,25 @@ test.describe('Quote Builder - Personalization E2E UX & Data Integrity', () => {
     await page.getByText('EMPRESA TESTE').first().click();
     await page.getByTestId('stepper-step-4').click();
     
-    // 5. Valida que os valores continuam clampados
+    // 6. Valida que os valores continuam clampados no rascunho restaurado
     await expect(page.getByTestId('customization-width-input')).toHaveValue('5');
     await expect(page.getByTestId('customization-height-input')).toHaveValue('3');
-    // Preço deve refletir os valores corrigidos (5x3)
+    // Preço deve aparecer (recalculado na hidratação)
     await expect(page.getByTestId('customization-total-price')).toBeVisible();
   });
 
   test('deve ocultar painel de cores para técnicas que não cobram por cor', async ({ page }) => {
-    // 1. Seleciona uma técnica que NÃO cobra por cor (ex: UV Digital / Tech Digital)
-    // Assumindo que tech-digital tem cobra_por_cor=false no mock
+    // 1. Seleciona uma técnica que NÃO cobra por cor (Tech Digital / UV)
     await page.getByTestId('customization-technique-card-tech-digital').click();
     
     // 2. Valida que botões de cor não existem
-    await expect(page.getByTestId(/customization-color-button-/)).not.toBeVisible();
+    await expect(page.locator('[data-testid^="customization-color-button-"]')).not.toBeVisible();
     
     // 3. Verifica mensagem de Full Color
     await expect(page.getByText(/Full Color/i)).toBeVisible();
   });
 
-  test('deve validar foco no controle ajustado após clamp por troca de técnica', async ({ page }) => {
+  test('deve validar foco e anúncio aria-live ao ocorrer clamp por troca de técnica', async ({ page }) => {
     // 1. Seleciona técnica com limites grandes
     await page.getByTestId('customization-technique-card-tech-B').click();
     await page.getByTestId('customization-width-input').fill('9');
@@ -208,13 +210,16 @@ test.describe('Quote Builder - Personalization E2E UX & Data Integrity', () => {
     await page.getByTestId('customization-change-technique').click();
     await page.getByTestId('customization-technique-card-tech-small').click();
     
-    // 3. Valida clamp-notice e FOCO no input de largura
+    // 3. Valida clamp-notice visível
     await expect(page.getByTestId('clamp-notice')).toBeVisible();
+    
+    // 4. Valida FOCO no input de largura (o primeiro que sofreu clamp)
     await expect(page.getByTestId('customization-width-input')).toBeFocused();
     
-    // 4. Valida aria-live announcement
+    // 5. Valida aria-live announcement (contém técnica + aviso de clamp)
     const announcer = page.getByTestId('customization-aria-announcer');
-    await expect(announcer).toContainText(/Técnica selecionada/i);
+    await expect(announcer).toContainText(/Técnica selecionada: Laser Pequeno/i);
+    await expect(announcer).toContainText(/ajustados aos limites/i);
   });
 });
 });
