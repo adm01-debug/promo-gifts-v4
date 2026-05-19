@@ -385,15 +385,6 @@ export const Header = React.memo(function Header({ onMenuToggle, searchQuery, on
                 <HelpCircle className="h-4 w-4 mr-2" />
                 Guia Rápido
               </DropdownMenuItem>
-              {!onboardingLoading && hasCompletedTour && (
-                <DropdownMenuItem
-                  onClick={() => restartTour()}
-                  className="hover:bg-primary/10 focus:bg-primary/10 cursor-pointer"
-                >
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Reiniciar Tour
-                </DropdownMenuItem>
-              )}
               <DropdownMenuSeparator className="bg-border" />
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 cursor-pointer"
