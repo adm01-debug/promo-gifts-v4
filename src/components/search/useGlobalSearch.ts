@@ -551,6 +551,17 @@ export function useGlobalSearch() {
   useEffect(() => { performSemanticSearch(debouncedQuery); }, [debouncedQuery, performSemanticSearch]);
 
   const handleSelect = useCallback((href: string, saveToHistory = true) => {
+    // ── Execute Slash Command ──
+    if (href.startsWith("command:")) {
+      const cmdId = href.split(":")[1];
+      const cmd = commands.find(c => c.id === cmdId);
+      if (cmd) {
+        cmd.action();
+        setOpen(false); setQuery(""); setResults([]); setSearchIntent(null); setTypingSuggestions([]);
+        return;
+      }
+    }
+
     if (saveToHistory && query.trim()) {
       addGlobalHistoryItem({
         id: `history-${query.trim()}`,
@@ -560,6 +571,7 @@ export function useGlobalSearch() {
       pushRecentSearch(query.trim());
     }
     setOpen(false); setQuery(""); setResults([]); setSearchIntent(null); setTypingSuggestions([]);
+
     // Support external URLs (art_file fallback) and "_blank" via Cmd/Ctrl+Enter elsewhere
     if (/^https?:\/\//.test(href)) window.open(href, "_blank", "noopener,noreferrer");
     else navigate(href);
