@@ -1,0 +1,1 @@
+DELETE FROM public.login_attempts WHERE email='adm01@promobrindes.com.br' AND success=false AND created_at > now() - interval '30 minutes';
