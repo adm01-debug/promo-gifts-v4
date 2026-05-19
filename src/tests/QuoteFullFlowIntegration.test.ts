@@ -27,7 +27,14 @@ describe('Módulo de Orçamentos: Teste de Integração de Cálculo (Fim-a-Fim)'
     ];
 
     // 2. Cálculos Individuais de Item (Puro Logic)
-    const item1Total = QuoteCalc.calculateItemTotal(items[0] as any);
+    // Precisamos garantir que os campos batam com QuoteItemCalculationParams (quantity, unitPrice)
+    const calcParams1 = {
+      quantity: items[0].quantity,
+      unitPrice: items[0].unit_price,
+      personalizations: items[0].personalizations
+    };
+    
+    const item1Total = QuoteCalc.calculateItemTotal(calcParams1);
     expect(item1Total).toBe(1075.50); // (100 * 10) + 50 + 25.50
 
     // 3. Integração com QuoteHelpers (Cálculo que vai para o Banco)
@@ -57,12 +64,8 @@ describe('Módulo de Orçamentos: Teste de Integração de Cálculo (Fim-a-Fim)'
   });
 
   it('deve lidar corretamente com arredondamentos de precisão crítica (Floating point)', () => {
-    // 0.1 + 0.2 no JS é 0.30000000000000004
-    // Nosso round2 usa Number.EPSILON para evitar isso
     const value = 0.1 + 0.2;
     expect(QuoteCalc.round2(value)).toBe(0.30);
-
-    // Teste de arredondamento half-up (1.005 deve ser 1.01)
     expect(QuoteCalc.round2(1.005)).toBe(1.01);
   });
 });
