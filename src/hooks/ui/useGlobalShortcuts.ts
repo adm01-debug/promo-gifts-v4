@@ -60,7 +60,17 @@ export function useGlobalShortcuts(handlers?: ShortcutHandlers) {
         }
       }
 
-      if (!isMod) return;
+      if (!isMod) {
+        // "?" → Ajuda e reiniciar tour se disponível
+        if (e.key === "?" && !isInput) {
+          e.preventDefault();
+          if (onboarding) {
+            onboarding.restartTour();
+          }
+          return;
+        }
+        return;
+      }
 
       // Ctrl/Cmd + K → Toggle search palette (works even inside inputs)
       if (e.key === "k" || e.key === "K") {
