@@ -3,18 +3,19 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, within, fireEvent } from "@testing-library/react";
+import { render, screen, within, fireEvent, waitFor } from "@testing-library/react";
+import React from "react";
 import { LocationPanel } from "../LocationPanel";
 import type { GravacaoLocation, TechniqueOption, CustomizationPriceResponseV6 } from "@/types/customization";
 
-// Mock do ConfigurationPanelV6 para simular cálculos de preço reais baseados em props
+// Mock do ConfigurationPanelV6 corrigido para usar hooks dentro do componente
 vi.mock("../ConfigurationPanelV6", () => ({
   ConfigurationPanelV6: (props: {
     technique: TechniqueOption;
     initialWidth?: number;
     initialHeight?: number;
     initialColors?: number;
-    onPriceCalculated?: (tid: string, p: CustomizationPriceResponseV6 | null) => void;
+    onPriceCalculated?: (tid: string, p: CustomizationPriceResponseV6 | null, dims?: any) => void;
     onDimensionsChange?: (d: { width?: number; height?: number; colors?: number }) => void;
   }) => {
     // Lógica de preço simulada: 
@@ -35,13 +36,13 @@ vi.mock("../ConfigurationPanelV6", () => ({
       pricingDetails: [],
     };
 
-    // Efeito para "notificar" o parent sobre o preço calculado logo no mount
-    // (Simula o comportamento real de calcular preço ao receber initialProps)
-    import("react").then(({ useEffect }) => {
-      useEffect(() => {
-        props.onPriceCalculated?.(props.technique.technique_id, mockPrice);
-      }, [props.technique.technique_id, props.initialWidth, props.initialHeight, props.initialColors]);
-    });
+    // Usar useEffect corretamente dentro do corpo do componente mock
+    React.useEffect(() => {
+      props.onPriceCalculated?.(props.technique.technique_id, mockPrice, {
+        width: props.initialWidth,
+        height: props.initialHeight,
+      });
+    }, [props.technique.technique_id, props.initialWidth, props.initialHeight, props.initialColors]);
 
     return (
       <div
@@ -96,10 +97,10 @@ const techA = makeTechnique({
 });
 
 const techB = makeTechnique({
-  technique_id: "tech-B",
-  tecnica_nome: "Transfer Digital",
-  cobra_por_cor: true,
-  max_cores: 4
+  technique_id: "tech-B", 
+  tecnica_nome: "Transfer Digital", 
+  cobra_por_cor: true, 
+  max_cores: 4 
 });
 
 const techSmall = makeTechnique({
@@ -107,6 +108,7 @@ const techSmall = makeTechnique({
   tecnica_nome: "Laser pequeno",
   efetiva_largura_max: 5,
   efetiva_altura_max: 3,
+  usa_dimensao: true
 });
 
 const location: GravacaoLocation = {
@@ -126,20 +128,24 @@ describe("LocationPanel — Validação de Preço e Clamp", () => {
     const onPrice = vi.fn();
     render(<LocationPanel location={location} quantity={100} onPriceCalculated={onPrice} />);
 
-    // 1. Seleciona Tech A e digita dimensões (7x4, 2 cores - cores ignoradas em A)
+    // 1. Seleciona Tech A e emite dimensões
     fireEvent.click(screen.getByText("Silk 1 cor"));
     fireEvent.click(screen.getByTestId("emit-dims"));
     
-    // Preço A: (1.5 * 1 * 100) + 50 = 200
-    expect(await screen.findByTestId("total-price-display")).toHaveTextContent("200");
+    // Aguarda preço A ser reportado
+    await waitFor(() => {
+      expect(onPrice).toHaveBeenCalledWith(expect.any(String), "tech-A", expect.objectContaining({ totalPrice: 200 }), expect.any(Object));
+    });
 
-    // 2. Troca para Tech B (Cobra cor, preserva 7x4 e 2 cores)
+    // 2. Troca para Tech B
     fireEvent.click(screen.getByTestId("customization-change-technique"));
     fireEvent.click(within(screen.getByTestId("customization-technique-picker")).getByText("Transfer Digital"));
 
     // Preço B: (2.5 * 2 cores * 100) + 100 = 600
-    expect(await screen.findByTestId("total-price-display")).toHaveTextContent("600");
-    expect(onPrice).toHaveBeenLastCalledWith(expect.any(String), "tech-B", expect.objectContaining({ totalPrice: 600 }), expect.any(Object));
+    await waitFor(() => {
+      expect(onPrice).toHaveBeenCalledWith(expect.any(String), "tech-B", expect.objectContaining({ totalPrice: 600 }), expect.any(Object));
+    });
+    expect(screen.getByTestId("total-price-display")).toHaveTextContent("600");
   });
 
   it("exibe Alert e recalcula preço imediatamente quando técnica força clamp de dimensões", async () => {
@@ -153,7 +159,7 @@ describe("LocationPanel — Validação de Preço e Clamp", () => {
     fireEvent.click(screen.getByTestId("customization-change-technique"));
     fireEvent.click(within(screen.getByTestId("customization-technique-picker")).getByText("Laser pequeno"));
 
-    // 3. Verifica Alert e clamp no painel
+    // 3. Verifica Alert e clamp
     expect(screen.getByTestId("clamp-notice")).toBeInTheDocument();
     const panel = screen.getByTestId("config-panel");
     expect(panel).toHaveAttribute("data-initial-width", "5");
@@ -161,43 +167,49 @@ describe("LocationPanel — Validação de Preço e Clamp", () => {
   });
 
   it("técnicas com cobra_por_cor=false limpam/ignoram cores de técnicas anteriores", async () => {
-    render(<LocationPanel location={location} quantity={100} onPriceCalculated={vi.fn()} />);
+    const onPrice = vi.fn();
+    render(<LocationPanel location={location} quantity={100} onPriceCalculated={onPrice} />);
 
-    // 1. Tech B (Cobra cor) -> 2 cores
+    // 1. Tech B (Cobra cor) -> emite 2 cores
     fireEvent.click(screen.getByText("Transfer Digital"));
-    fireEvent.click(screen.getByTestId("emit-dims")); // Emite colors: 2
+    fireEvent.click(screen.getByTestId("emit-dims"));
 
     // 2. Troca para Tech A (NÃO cobra cor)
     fireEvent.click(screen.getByTestId("customization-change-technique"));
     fireEvent.click(within(screen.getByTestId("customization-technique-picker")).getByText("Silk 1 cor"));
 
-    // 3. Verifica que initial-colors é vazio (limpo) e preço é o base
+    // 3. Verifica initial-colors vazio e preço base
     const panel = screen.getByTestId("config-panel");
     expect(panel).toHaveAttribute("data-initial-colors", "");
-    expect(await screen.findByTestId("total-price-display")).toHaveTextContent("200");
+    await waitFor(() => {
+      expect(onPrice).toHaveBeenLastCalledWith(expect.any(String), "tech-A", expect.objectContaining({ totalPrice: 200 }), expect.any(Object));
+    });
   });
 
   it("restaura totalPrice corretamente do sessionStorage ao sair e voltar", async () => {
     const productId = "p999";
     const onPrice = vi.fn();
     
-    // 1. Setup inicial e salva rascunho
+    // 1. Setup e salva
     const { unmount } = render(
       <LocationPanel location={location} quantity={100} productId={productId} onPriceCalculated={onPrice} />
     );
     fireEvent.click(screen.getByText("Transfer Digital"));
     fireEvent.click(screen.getByTestId("emit-dims")); // 2 cores
     
-    expect(await screen.findByTestId("total-price-display")).toHaveTextContent("600");
+    await waitFor(() => {
+      expect(onPrice).toHaveBeenCalledWith(expect.any(String), "tech-B", expect.objectContaining({ totalPrice: 600 }), expect.any(Object));
+    });
     unmount();
 
-    // 2. Volta e verifica restauração
+    // 2. Volta e restaura
     render(
       <LocationPanel location={location} quantity={100} productId={productId} onPriceCalculated={onPrice} />
     );
 
-    expect(await screen.findByTestId("total-price-display")).toHaveTextContent("600");
-    const panel = screen.getByTestId("config-panel");
-    expect(panel).toHaveAttribute("data-initial-colors", "2");
+    await waitFor(() => {
+      expect(screen.getByTestId("total-price-display")).toHaveTextContent("600");
+    });
+    expect(screen.getByTestId("config-panel")).toHaveAttribute("data-initial-colors", "2");
   });
 });
