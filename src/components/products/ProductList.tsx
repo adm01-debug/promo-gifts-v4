@@ -82,8 +82,6 @@ function ProductListItemWrapper({
     );
 }
 
-import { ProductCardSkeleton } from "./ProductCardSkeleton";
-
 export function ProductList({
   products,
   isLoading = false,
