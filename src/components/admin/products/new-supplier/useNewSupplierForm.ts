@@ -13,7 +13,7 @@ import {
   createEmptyContact,
   createEmptyPixKey,
   ORGANIZATION_ID,
-} from "@/pages/advanced-price-search/types";
+} from "./types";
 
 export function useNewSupplierForm(onCreated: (id: string) => void) {
   const [open, setOpen] = useState(false);

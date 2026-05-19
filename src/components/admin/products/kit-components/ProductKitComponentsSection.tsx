@@ -21,7 +21,7 @@ import { ComponentMediaManager } from './ComponentMediaManager';
 import { PrintAreasManager } from './PrintAreasManager';
 import { VolumeValidation } from './VolumeValidation';
 import { fetchKitComponents, fetchPrintAreas, createComponent, updateComponent, deleteComponent } from './api';
-import { type KitComponent, type ComponentFormData, type BoxInternalDimensions, EMPTY_FORM } from "@/pages/advanced-price-search/types";
+import { type KitComponent, type ComponentFormData, type BoxInternalDimensions, EMPTY_FORM } from "./types";
 
 interface ProductKitComponentsSectionProps {
   productId: string;

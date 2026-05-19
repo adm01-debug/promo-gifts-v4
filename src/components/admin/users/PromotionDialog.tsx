@@ -22,7 +22,7 @@ import { Loader2, ShieldCheck, ShieldAlert, ArrowRight } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { type UserWithRole } from "@/pages/advanced-price-search/types";
+import { type UserWithRole } from "./types";
 
 interface PromotionDialogProps {
   user: UserWithRole | null;

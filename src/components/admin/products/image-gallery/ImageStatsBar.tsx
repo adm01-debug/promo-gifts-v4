@@ -1,6 +1,6 @@
 import { CheckCircle2, AlertTriangle, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { type GalleryStats, IMAGE_TYPES } from "@/pages/advanced-price-search/types";
+import { type GalleryStats, IMAGE_TYPES } from "./types";
 
 interface Props {
   stats: GalleryStats;

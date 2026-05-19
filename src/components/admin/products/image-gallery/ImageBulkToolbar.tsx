@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { CheckSquare, Trash2, Loader2, Type } from 'lucide-react';
-import { type VariantInfo, IMAGE_TYPES } from "@/pages/advanced-price-search/types";
+import { type VariantInfo, IMAGE_TYPES } from "./types";
 
 interface Props {
   bulkMode: boolean;

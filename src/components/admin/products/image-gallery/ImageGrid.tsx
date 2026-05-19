@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { GripVertical, ZoomIn, Star, X, Film, Type, CheckSquare, Square, CheckCircle2 } from 'lucide-react';
-import { type ExternalImage, type VariantInfo, IMAGE_TYPES } from "@/pages/advanced-price-search/types";
+import { type ExternalImage, type VariantInfo, IMAGE_TYPES } from "./types";
 import { ImageMetaEditor } from './ImageMetaEditor';
 
 interface Props {

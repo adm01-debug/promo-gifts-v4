@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { type ExternalImage, type VariantInfo, IMAGE_TYPES } from "@/pages/advanced-price-search/types";
+import { type ExternalImage, type VariantInfo, IMAGE_TYPES } from "./types";
 
 interface Props {
   previewUrl: string | null;

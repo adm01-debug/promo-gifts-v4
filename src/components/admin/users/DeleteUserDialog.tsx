@@ -4,7 +4,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Loader2, Trash2 } from "lucide-react";
-import { type UserWithRole } from "@/pages/advanced-price-search/types";
+import { type UserWithRole } from "./types";
 
 interface DeleteUserDialogProps {
   user: UserWithRole | null;
