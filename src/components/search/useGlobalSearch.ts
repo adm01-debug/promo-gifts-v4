@@ -85,6 +85,8 @@ export function useGlobalSearch() {
   } = useVoiceCommandHistory();
 
   const { suggestions: contextualSuggestions, routeContext } = useContextualSuggestions({ searchQuery: query });
+  const { commands } = useSlashCommands(() => setOpen(false));
+
 
   // ── Voice Agent (ElevenLabs + AI) ──
   const handleVoiceAction = useCallback((action: VoiceAgentAction) => {
