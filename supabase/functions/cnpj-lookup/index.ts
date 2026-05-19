@@ -15,7 +15,13 @@ Deno.serve(async (req) => {
 
   try {
     // Auth check using centralized logic (allows service_role bypass for contract tests)
-    await authenticateRequest(req);
+    try {
+      await authenticateRequest(req);
+    } catch (authErr) {
+      const authHeader = req.headers.get("Authorization");
+      console.log(`[cnpj-lookup] Auth failed. Header present: ${!!authHeader}, Type: ${authHeader?.split(' ')[0]}`);
+      return authErrorResponse(authErr, corsHeaders);
+    }
 
     const parsed = CnpjBodySchema.safeParse(await req.json());
     if (!parsed.success) {
