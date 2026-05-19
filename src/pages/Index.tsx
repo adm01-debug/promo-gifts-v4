@@ -10,7 +10,7 @@ import { CatalogToolbar } from "@/components/catalog/CatalogToolbar";
 import { CatalogActiveFilters } from "@/components/catalog/CatalogActiveFilters";
 import { CatalogContent } from "@/components/catalog/CatalogContent";
 import { useCatalogState } from "@/hooks/useCatalogState";
-import type { ExternalVariantStock } from "@/hooks/useExternalVariantStock";
+import type { ExternalVariantStock } from "@/hooks/products";
 
 export default function Index() {
   const catalog = useCatalogState();

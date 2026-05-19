@@ -32,7 +32,7 @@ import { QuickViewGallery } from "./quick-view/QuickViewGallery";
 import { ProductColorSelector, type ProductColor } from "./ProductColorSelector";
 import { sortByColorGroup } from "@/utils/colorSorting";
 import { toast } from "sonner";
-import { useProductImages, type ProductImage } from "@/hooks/useProductImages";
+import { useProductImages, type ProductImage } from "@/hooks/productsImages";
 import { getCdnUrl, getSrcSet, getColorImages, type ProductImageMeta } from "@/utils/image-utils";
 import { PriceFreshnessBadge } from "@/components/products/PriceFreshnessBadge";
 

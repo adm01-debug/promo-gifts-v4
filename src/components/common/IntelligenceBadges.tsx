@@ -7,7 +7,7 @@ import { Flame, Zap, Package, Rocket, AlertTriangle, Sparkles, Star, Tag } from 
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import type { IntelligenceBadge, IntelligenceBadgeType } from "@/hooks/useProductIntelligenceBadges";
+import type { IntelligenceBadge, IntelligenceBadgeType } from "@/hooks/productsIntelligenceBadges";
 
 const badgeConfig: Record<IntelligenceBadgeType, {
   icon: typeof Flame;

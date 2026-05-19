@@ -20,7 +20,7 @@ import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useFavoriteQuickAdd } from '@/hooks/favoritesQuickAdd';
 import { useComparisonStore } from '@/stores/useComparisonStore';
 import { useProductsByMaterial } from '@/hooks/productsByMaterial';
-import { useProductFuzzySearch } from '@/hooks/useProductFuzzySearch';
+import { useProductFuzzySearch } from '@/hooks/productsFuzzySearch';
 import { useProductsByCategory } from '@/hooks/productsByCategory';
 import { useDebounce } from '@/hooks/common';
 import { useExternalCategoriesQuery } from '@/hooks/useExternalCategoriesQuery';

@@ -4,11 +4,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 
-vi.mock('@/hooks/useProducts', () => ({
+vi.mock('@/hooks/productss', () => ({
   useProducts: () => ({ data: [], isLoading: false }),
 }));
 
-import { useProductMatch } from '@/hooks/useProductMatch';
+import { useProductMatch } from '@/hooks/productsMatch';
 import { useSupplierComparison, getSupplierProductsInCategory } from '@/hooks/useSupplierComparison';
 import type { Product } from '@/types/product-catalog';
 

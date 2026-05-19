@@ -3,7 +3,7 @@
  * variation sorting logic, and rendering helpers.
  */
 import { describe, it, expect } from 'vitest';
-import { mapPromobrindToProduct, findKnownHex, type Product } from '@/hooks/useProducts';
+import { mapPromobrindToProduct, findKnownHex, type Product } from '@/hooks/productss';
 import { sortVariationsByColor } from '@/utils/colorSorting';
 
 // ============================================

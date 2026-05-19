@@ -27,7 +27,7 @@ import { ProductQuickView } from "./ProductQuickView";
 import { SharePreviewDialog } from "./share/SharePreviewDialog";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { useComparisonStore } from "@/stores/useComparisonStore";
-import type { ExternalVariantStock } from "@/hooks/useExternalVariantStock";
+import type { ExternalVariantStock } from "@/hooks/products";
 import { PriceFreshnessBadge } from "./PriceFreshnessBadge";
 import { toast } from "sonner";
 import { showErrorToast } from "@/utils/undoToast";

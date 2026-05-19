@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Check, Package, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useExternalVariantStock, type ExternalVariantStock } from '@/hooks/useExternalVariantStock';
+import { useExternalVariantStock, type ExternalVariantStock } from '@/hooks/products';
 
 interface QuoteProductColorSelectorProps {
   product: {

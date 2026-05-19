@@ -26,7 +26,7 @@ import type {
   SelectedCompanyInfo,
   SelectedContactInfo,
 } from '@/components/quotes/CompanyContactSelector';
-import type { ExternalVariantStock } from '@/hooks/useExternalVariantStock';
+import type { ExternalVariantStock } from '@/hooks/products';
 import type { QuoteBuilderStep } from '@/components/quotes/QuoteBuilderStepper';
 import {
   createProductFuseOptions,

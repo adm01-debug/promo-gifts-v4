@@ -14,7 +14,7 @@ Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
 import { renderHook, act } from '@testing-library/react';
 import { useSearch } from '@/hooks/useSearch';
-import type { Product } from '@/hooks/useProducts';
+import type { Product } from '@/hooks/productss';
 
 // Minimal product mock
 const makeProduct = (overrides: Partial<Product> = {}): Product => ({

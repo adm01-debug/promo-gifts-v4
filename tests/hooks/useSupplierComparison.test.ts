@@ -3,7 +3,7 @@ import { renderHook } from '@testing-library/react';
 
 // useSupplierComparison expects a Product object, not a string.
 // Mock useProducts to avoid external DB calls.
-vi.mock('@/hooks/useProducts', () => ({
+vi.mock('@/hooks/productss', () => ({
   useProducts: () => ({ data: [], isLoading: false }),
 }));
 

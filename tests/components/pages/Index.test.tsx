@@ -10,7 +10,7 @@ vi.mock("@/components/layout/MainLayout", () => ({
   MainLayout: ({ children }: { children: React.ReactNode }) => <div data-testid="main-layout">{children}</div>,
 }));
 
-vi.mock("@/hooks/useProducts", () => ({
+vi.mock("@/hooks/productss", () => ({
   useProducts: vi.fn().mockReturnValue({
     products: [],
     loading: false,
@@ -40,11 +40,11 @@ vi.mock("@/hooks/useSearch", () => ({
   useSearch: vi.fn().mockReturnValue({ results: [], loading: false, search: vi.fn() }),
 }));
 
-vi.mock("@/hooks/useProductsByMaterial", () => ({
+vi.mock("@/hooks/productssByMaterial", () => ({
   useProductsByMaterial: vi.fn().mockReturnValue({ products: [], loading: false }),
 }));
 
-vi.mock("@/hooks/useProductFuzzySearch", () => ({
+vi.mock("@/hooks/productsFuzzySearch", () => ({
   useProductFuzzySearch: vi.fn().mockReturnValue({ search: vi.fn(), results: [] }),
 }));
 

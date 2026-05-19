@@ -3,7 +3,7 @@ import { useCallback, useState, useRef, lazy, Suspense } from "react";
 import { SharePreviewDialog } from "@/components/products/share/SharePreviewDialog";
 import { VariantPickerDialog } from "@/components/products/VariantPickerDialog";
 import type { Product } from "@/hooks/products";
-import type { ExternalVariantStock } from "@/hooks/useExternalVariantStock";
+import type { ExternalVariantStock } from "@/hooks/products";
 
 import { PageSEO } from "@/components/seo/PageSEO";
 import { FilterPanel, type FilterState, defaultFilters } from "@/components/filters/FilterPanel";

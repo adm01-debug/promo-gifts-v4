@@ -67,11 +67,11 @@ vi.mock("@/hooks/useColorEnrichment", () => ({
   useColorEnrichment: vi.fn(() => ({ data: new Map() })),
 }));
 
-vi.mock("@/hooks/useProductFuzzySearch", () => ({
+vi.mock("@/hooks/productsFuzzySearch", () => ({
   useProductFuzzySearch: vi.fn(() => ({ results: [], hasSearch: false })),
 }));
 
-vi.mock("@/hooks/useCatalogFiltering", () => ({
+vi.mock("@/hooks/products", () => ({
   useCatalogFiltering: vi.fn((args) => args.realProducts || []),
 }));
 

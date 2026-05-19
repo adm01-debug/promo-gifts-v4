@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Filter, X } from "lucide-react";
-import type { MatchFilters } from "@/hooks/useProductMatch";
+import type { MatchFilters } from "@/hooks/productsMatch";
 
 interface MatchFiltersPanelProps {
   filters: Partial<MatchFilters>;

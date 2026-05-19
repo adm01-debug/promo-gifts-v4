@@ -18,7 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { cn } from "@/lib/utils";
 import { useProductsCatalog, type ProductLightweight } from "@/hooks/productsLightweight";
 import { type Product } from "@/hooks/products";
-import { type ExternalVariantStock } from "@/hooks/useExternalVariantStock";
+import { type ExternalVariantStock } from "@/hooks/products";
 import { ProductLoaderAndColorSelector } from "./MockupColorSelector";
 
 export interface MockupProductSelection {

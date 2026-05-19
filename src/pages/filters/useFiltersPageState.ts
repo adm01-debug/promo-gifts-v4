@@ -7,7 +7,7 @@ import { useDebounce } from "@/hooks/common";
 import { useProductsByMaterial } from "@/hooks/productsByMaterial";
 import { useProductsByCategory } from "@/hooks/productsByCategory";
 import { useProductsByColor } from "@/hooks/productsByColor";
-import { useProductFuzzySearch } from "@/hooks/useProductFuzzySearch";
+import { useProductFuzzySearch } from "@/hooks/productsFuzzySearch";
 import { useColorEnrichment } from "@/hooks/useColorEnrichment";
 import { usePromoSalesRanking } from "@/hooks/usePromoSalesRanking";
 import { useSupplierSalesRanking } from "@/hooks/useSupplierSalesRanking";

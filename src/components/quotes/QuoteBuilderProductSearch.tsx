@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { AlertTriangle, Package, PackageCheck, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { QuoteProductColorSelector } from "@/components/quotes/QuoteProductColorSelector";
-import type { ExternalVariantStock } from "@/hooks/useExternalVariantStock";
+import type { ExternalVariantStock } from "@/hooks/products";
 
 interface Product {
   id: string;

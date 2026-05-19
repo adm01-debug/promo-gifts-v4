@@ -31,7 +31,7 @@ import { formatCurrency } from "@/lib/format";
 import { useSalesHistory, type SellerRanking } from "@/hooks/useSalesHistory";
 import { safeParseDateForChart } from "@/lib/stock-chart-utils";
 import { KpiCard } from "@/components/ui/kpi-card";
-import { useProductInsights } from "@/hooks/useProductRecommendations";
+import { useProductInsights } from "@/hooks/productsRecommendations";
 
 
 interface SalesHistoryChartProps {

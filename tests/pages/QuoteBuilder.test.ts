@@ -3,7 +3,7 @@
  * pricing calculations, and data transformations.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { findKnownHex } from '@/hooks/useProducts';
+import { findKnownHex } from '@/hooks/productss';
 
 // ============================================
 // Replicate QuoteBuilder pure logic for testing

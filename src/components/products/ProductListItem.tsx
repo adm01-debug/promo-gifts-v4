@@ -39,7 +39,7 @@ import { SharePreviewDialog } from "./share/SharePreviewDialog";
 import { VariantPickerDialog, type VariantActionMode } from "./VariantPickerDialog";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { useComparisonStore } from "@/stores/useComparisonStore";
-import type { ExternalVariantStock } from "@/hooks/useExternalVariantStock";
+import type { ExternalVariantStock } from "@/hooks/products";
 
 interface ProductListItemProps {
   product: Product;

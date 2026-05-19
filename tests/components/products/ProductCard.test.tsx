@@ -50,7 +50,7 @@ vi.mock("@/utils/color-image-resolver", () => ({
   getActiveColorName: vi.fn().mockReturnValue(null),
 }));
 
-vi.mock("@/hooks/useProductBounds", () => ({
+vi.mock("@/hooks/productsBounds", () => ({
   useProductBounds: vi.fn().mockReturnValue({ width: 0, height: 0 }),
 }));
 

@@ -9,7 +9,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
-import { useProductInsights, useProductRecommendations } from "@/hooks/useProductRecommendations";
+import { useProductInsights, useProductRecommendations } from "@/hooks/productsRecommendations";
 import { cn } from "@/lib/utils";
 
 interface ProductIntelligenceProps {

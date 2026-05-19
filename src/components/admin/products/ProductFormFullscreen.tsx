@@ -34,7 +34,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSkuValidation } from './hooks/useSkuValidation';
-import { useProductSeoAI } from '@/hooks/useProductSeoAI';
+import { useProductSeoAI } from '@/hooks/productsSeoAI';
 
 // ============================================
 // TYPES & STEPS

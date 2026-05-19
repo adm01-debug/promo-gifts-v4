@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { useSellerCartContext } from "@/contexts/SellerCartContext";
 import { CartCompanyPicker } from "@/components/cart/CartCompanyPicker";
 import { SingleVariantPicker } from "@/components/products/SingleVariantPicker";
-import type { ExternalVariantStock } from "@/hooks/useExternalVariantStock";
+import type { ExternalVariantStock } from "@/hooks/products";
 
 interface QuickAddToQuoteProps {
   productId: string;

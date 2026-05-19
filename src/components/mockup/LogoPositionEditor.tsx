@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Move } from "lucide-react";
-import { useProductBounds } from "@/hooks/useProductBounds";
+import { useProductBounds } from "@/hooks/productsBounds";
 import { logger } from "@/lib/logger";
 import type { TechniqueColorConfig } from "./techniqueColorUtils";
 import { getTechniqueFilter } from "./logo-editor/logoTechniqueFilters";

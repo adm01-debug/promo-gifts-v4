@@ -12,7 +12,7 @@ vi.mock("@/contexts/OrganizationContext", () => ({
   useOrganization: () => ({ currentOrg: null, organizations: [], isLoading: false }),
 }));
 
-import { useCatalogFiltering } from "@/hooks/useCatalogFiltering";
+import { useCatalogFiltering } from "@/hooks/products";
 import { useComparisonSync } from "@/hooks/useComparisonSync";
 import { smokeHook } from "./_helpers/smoke-template";
 

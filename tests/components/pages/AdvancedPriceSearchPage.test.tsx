@@ -10,7 +10,7 @@ vi.mock("@/components/layout/MainLayout", () => ({
   MainLayout: ({ children }: { children: React.ReactNode }) => <div data-testid="main-layout">{children}</div>,
 }));
 
-vi.mock("@/hooks/useProducts", () => ({
+vi.mock("@/hooks/productss", () => ({
   useProducts: vi.fn().mockReturnValue({
     products: [],
     loading: false,

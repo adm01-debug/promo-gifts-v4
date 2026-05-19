@@ -32,7 +32,7 @@ import {
   useAllFreshnessOverrides,
   useDeleteFreshnessOverride,
   ALLOWED_FRESHNESS_THRESHOLDS,
-} from "@/hooks/useProductFreshnessOverride";
+} from "@/hooks/productsFreshnessOverride";
 import { formatPriceDateLong } from "@/utils/price-freshness";
 
 export default function PriceFreshnessSettings() {

@@ -26,7 +26,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { formatCurrency, type KitBox, type KitItem, type KitItemPersonalization } from '@/lib/kit-builder';
-import { useProductCustomizationOptions } from '@/hooks/useProductCustomizationOptions';
+import { useProductCustomizationOptions } from '@/hooks/productsCustomizationOptions';
 import { useCustomizationPriceReactive } from '@/hooks/useCustomizationPrice';
 import type { GravacaoLocation } from '@/types/customization';
 
