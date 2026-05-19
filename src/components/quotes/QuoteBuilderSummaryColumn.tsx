@@ -461,7 +461,7 @@ export function QuoteBuilderSummaryColumn({
             {isDiscountExceeded ? (
               <Button
                 size="lg"
-                className="w-full gap-2 h-12 text-sm font-bold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg shadow-amber-500/20"
+                className="w-full gap-2 h-12 text-sm font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/20"
                 onClick={() => setApprovalDialogOpen(true)}
                 disabled={quotesLoading || !isFormValid}
               >
@@ -469,7 +469,7 @@ export function QuoteBuilderSummaryColumn({
                 Solicitar Aprovação
               </Button>
             ) : (
-              <Button size="lg" className="w-full gap-2 h-12 text-sm font-bold bg-gradient-to-r from-primary to-primary/80 shadow-lg shadow-primary/20" onClick={() => onSave("pending")} disabled={quotesLoading || !isFormValid}>
+              <Button size="lg" className="w-full gap-2 h-12 text-sm font-bold bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20" onClick={() => onSave("pending")} disabled={quotesLoading || !isFormValid}>
                 {quotesLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                 {isEditMode ? "Salvar" : "Criar"}
               </Button>
@@ -528,7 +528,7 @@ export function QuoteBuilderSummaryColumn({
           <DialogFooter>
             <Button variant="outline" onClick={() => setApprovalDialogOpen(false)}>Cancelar</Button>
             <Button
-              className="gap-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
+              className="gap-1.5 bg-amber-500 hover:bg-amber-600 text-white"
               onClick={handleRequestApproval}
               disabled={quotesLoading}
             >

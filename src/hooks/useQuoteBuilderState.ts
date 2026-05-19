@@ -215,9 +215,9 @@ export function useQuoteBuilderState() {
       }
     }
     if (items.length > 0) steps.push('items');
-    // Consideramos personalização "concluída" se houver itens e revisarmos
+    // Consideramos personalização "concluída" se houver itens e pelo menos um item tiver personalização
     const hasAnyPersonalization = items.some((it) => (it.personalizations?.length ?? 0) > 0);
-    if (hasAnyPersonalization) steps.push('personalization');
+    if (items.length > 0 && hasAnyPersonalization) steps.push('personalization');
     return steps;
   }, [clientId, contactId, items, paymentMethod, paymentTerms, deliveryTime, shippingType, shippingCost]);
 

@@ -151,6 +151,7 @@ export function buildPersonalizationsInsertPayload(
     technique_name: p.technique_name || null,
     location_code: p.location_code || null,
     location_name: p.location_name || null,
+    personalized_quantity: p.personalized_quantity || null,
     colors_count: p.colors_count || 1,
     positions_count: p.positions_count || 1,
     area_cm2: p.area_cm2,

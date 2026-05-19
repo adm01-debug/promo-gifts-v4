@@ -74,5 +74,6 @@ export const calculateRealDiscountPercent = (
 ): number => {
   if (realSubtotal <= 0) return 0;
   const finalBeforeShipping = Math.max(0, presentedSubtotal - discountAmount);
-  return Math.round(((realSubtotal - finalBeforeShipping) / realSubtotal + Number.EPSILON) * 10000) / 100;
+  // SSOT: Arredondamento para 2 casas decimais no percentual
+  return round2(((realSubtotal - finalBeforeShipping) / realSubtotal) * 100);
 };
