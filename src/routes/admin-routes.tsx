@@ -4,6 +4,7 @@ import { DevRoute } from "@/components/layout/DevRoute";
 import { DeprecatedRoute } from "@/components/layout/DeprecatedRoute";
 import {
   AdminAiUsagePage,
+  AdminClientPerformancePage,
   AdminCadastrosPage,
   AdminConexoesPage,
   AdminConexoesStatusPage,
