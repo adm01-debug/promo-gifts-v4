@@ -362,10 +362,24 @@ export function LocationPanel({
 
   return (
     <div className="space-y-3" data-testid="customization-location-panel">
+      {/* Anúncio de transições de estado (somente leitores de tela) */}
+      <p
+        className="sr-only"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        data-testid="customization-aria-announcer"
+      >
+        {announcement}
+      </p>
+
       {/* Barra resumo da técnica selecionada (Estado B/C) */}
       {showConfig && (
         <SelectedTechniqueBar
           technique={selectedTechnique}
+          isPickerOpen={isPickerOpen}
+          pickerId={pickerId}
+          changeButtonRef={changeButtonRef}
           onChangeClick={() => setIsPickerOpen((v) => !v)}
         />
       )}
@@ -374,7 +388,14 @@ export function LocationPanel({
       {showPicker && (
         <div
           ref={firstCardRef}
-          className="space-y-3 animate-in fade-in slide-in-from-top-1"
+          id={pickerId}
+          role="radiogroup"
+          aria-label={
+            selectedTechnique
+              ? `Trocar técnica de gravação para ${location.location_name}. Atual: ${selectedTechnique.tecnica_nome}.`
+              : `Escolha a técnica de gravação para ${location.location_name}.`
+          }
+          className="space-y-3 animate-in fade-in slide-in-from-top-1 rounded-lg border border-primary/20 bg-primary/[0.02] p-3"
           data-testid="customization-technique-picker"
         >
           {selectedTechnique && (
