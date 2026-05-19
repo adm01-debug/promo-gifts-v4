@@ -231,6 +231,12 @@ export function ProductDetailHero({
                           <button
                             key={variation.id}
                             onClick={() => setSelectedVariation(variation)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                setSelectedVariation(variation);
+                              }
+                            }}
                             title={`${variation.color.name}: ${stock.toLocaleString('pt-BR')} un.`}
                             aria-label={`Cor ${variation.color.name}, ${stock} unidades`}
                             className={cn(
