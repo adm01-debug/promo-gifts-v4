@@ -14,6 +14,7 @@ import {
   ProductMatchPage,
   SimuladorWizard,
   StockDashboardPage,
+  SimulationPage,
 } from "./lazy-pages";
 
 /**
