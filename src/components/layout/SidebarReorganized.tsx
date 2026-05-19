@@ -342,8 +342,10 @@ export const SidebarReorganized = React.memo(
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 gap-1.5 text-[10px] border-sidebar-border/50 hover:bg-primary/10 hover:text-primary text-sidebar-foreground/40"
+                className="h-7 gap-1.5 text-[10px] border-sidebar-border/50 hover:bg-primary/10 hover:text-primary text-sidebar-foreground/40 focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-1"
                 onClick={collapseAllGroups}
+                aria-label="Recolher todos os grupos de navegação"
+
               >
                 <X className="h-3 w-3" />
                 Fechar
