@@ -174,6 +174,17 @@ export function buildActions({ goTo, actualTheme, setTheme, setOpen }: BuildActi
       keywords: ["relatórios", "reports", "métricas", "analytics"],
       category: "navigation",
     },
+    {
+      id: "performance-ux",
+      label: "Performance UX",
+      description: "Monitorar telemetria e latência",
+      icon: <Activity className="h-4 w-4" />,
+      action: () => goTo("/admin/performance", "Performance UX"),
+      keywords: ["performance", "latência", "telemetria", "admin", "ux"],
+      category: "navigation",
+      badge: "Admin",
+      badgeVariant: "outline",
+    },
     // Actions
     {
       id: "export-pdf",
