@@ -42,7 +42,7 @@ export async function authenticateRequest(req: Request): Promise<AuthResult> {
       localServiceClient
     };
   } else {
-    // console.log(`[auth] Token mismatch. RawToken len: ${rawToken.length}, ServiceKey len: ${serviceRoleKey.length}`);
+     // console.log(`[auth] Mismatch: rawToken=${rawToken.slice(0,10)}... len=${rawToken.length}, serviceRoleKey=${serviceRoleKey?.slice(0,10)}... len=${serviceRoleKey?.length}`);
   }
 
   // Validate token using getUser (works with all supabase-js versions)
