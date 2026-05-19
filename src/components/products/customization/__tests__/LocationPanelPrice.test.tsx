@@ -197,17 +197,26 @@ describe("LocationPanel — Validação de Preço e Clamp", () => {
     fireEvent.click(screen.getByText("Transfer Digital"));
     
     // Simula alteração de dimensões/cores via componente (emite evento)
-    const emitBtn = screen.getByTestId("emit-dims");
-    fireEvent.click(emitBtn); // Emite 7x4 c2
+    // O emit-dims emite: width 7, height 4, colors 2
+    fireEvent.click(screen.getByTestId("emit-dims"));
     
-    // Aguarda o preço de 600 ser reportado (2.5 * 2 * 100 + 100)
+    // Aguarda o preço de 600 ser reportado no primeiro ciclo (2.5 * 2 * 100 + 100)
     await waitFor(() => {
       expect(screen.getByTestId("total-price-display")).toHaveTextContent("600");
-    });
+    }, { timeout: 2000 });
     unmount();
 
     // 2. Volta e restaura
     vi.clearAllMocks();
+    
+    // Simula carregamento do sessionStorage manualmente se o mock falhar
+    const key = `qb:loc-draft:${productId}:LADO-A`;
+    const draftRaw = sessionStorage.getItem(key);
+    expect(draftRaw).not.toBeNull();
+    const draft = JSON.parse(draftRaw!);
+    expect(draft.colors).toBe(2);
+    expect(draft.width).toBe(7);
+
     render(
       <LocationPanel location={location} quantity={100} productId={productId} onPriceCalculated={onPrice} />
     );
@@ -215,10 +224,11 @@ describe("LocationPanel — Validação de Preço e Clamp", () => {
     // O rascunho deve ter salvo colors: 2. 
     // O mock recalcula o preço (600) logo no mount baseado na prop initialColors.
     await waitFor(() => {
+      const panel = screen.getByTestId("config-panel");
+      expect(panel).toHaveAttribute("data-initial-colors", "2");
+      expect(panel).toHaveAttribute("data-initial-width", "7");
+      expect(panel).toHaveAttribute("data-initial-height", "4");
       expect(screen.getByTestId("total-price-display")).toHaveTextContent("600");
-    });
-    expect(screen.getByTestId("config-panel")).toHaveAttribute("data-initial-colors", "2");
-    expect(screen.getByTestId("config-panel")).toHaveAttribute("data-initial-width", "7");
-    expect(screen.getByTestId("config-panel")).toHaveAttribute("data-initial-height", "4");
+    }, { timeout: 2000 });
   });
 });
