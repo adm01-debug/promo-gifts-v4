@@ -18,6 +18,7 @@ import { useComparisonStore } from "@/stores/useComparisonStore";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useOnboardingContext } from "@/contexts/OnboardingContext";
+import { OrganizationSwitcher } from "@/components/OrganizationSwitcher";
 
 import { StockAlertsIndicator } from "@/components/inventory/StockAlertsIndicator";
 import { NotificationBell } from "@/components/notifications/NotificationDrawer";
@@ -150,10 +151,12 @@ export const Header = React.memo(function Header({ onMenuToggle, searchQuery, on
           </Button>
 
           {/* #1 — Seção atual como âncora */}
-          <div className="hidden lg:flex items-center gap-2">
-            <span className="font-display text-sm font-bold text-primary tracking-wider uppercase truncate max-w-[160px] drop-shadow-[0_0_8px_rgba(var(--primary),0.5)]">
+          <div className="hidden lg:flex items-center gap-4">
+            <span className="font-display text-sm font-bold text-primary tracking-wider uppercase truncate max-w-[120px] drop-shadow-[0_0_8px_rgba(var(--primary),0.5)]">
               {currentSection}
             </span>
+            <div className="h-4 w-px bg-border/40" />
+            <OrganizationSwitcher />
           </div>
         </div>
 
