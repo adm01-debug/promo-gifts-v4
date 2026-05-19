@@ -255,7 +255,7 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
           <GroupIcon
             className={cn(
               "h-4 w-4 shrink-0 transition-colors",
-              hasActiveItem ? "text-orange" : "text-sidebar-foreground/40"
+              hasActiveItem ? "text-primary" : "text-sidebar-foreground/40"
             )}
           />
           <span className="flex-1 text-left text-xs font-semibold uppercase tracking-wider">
