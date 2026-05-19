@@ -4,7 +4,7 @@
  */
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { selectCrm } from '@/lib/crm-db';
-import { useQuotes } from '@/hooks/useQuotes';
+import { useQuotes } from '@/hooks/quotes';
 import { format, differenceInHours, startOfMonth, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import jsPDF from 'jspdf';

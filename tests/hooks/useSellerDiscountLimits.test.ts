@@ -6,7 +6,7 @@ import "../components/render-helpers";
 import { act, waitFor } from "@testing-library/react";
 import { renderHookWithProviders } from "./_helpers/render-hook-providers";
 import { mockFromOnce, resetSupabaseMocks } from "./_helpers/mock-supabase-builder";
-import { useSellerDiscountLimits } from "@/hooks/useSellerDiscountLimits";
+import { useSellerDiscountLimits } from "@/hooks/quotes";
 import { toast } from "sonner";
 
 beforeEach(() => {

@@ -5,20 +5,20 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
-import { useSellerDiscountLimits } from '@/hooks/useSellerDiscountLimits';
-import { useDiscountApproval } from '@/hooks/useDiscountApproval';
+import { useSellerDiscountLimits } from '@/hooks/quotes';
+import { useDiscountApproval } from '@/hooks/quotes';
 import { useQuery } from '@tanstack/react-query';
 import Fuse from 'fuse.js';
 import { format, addDays } from 'date-fns';
 import { toast } from 'sonner';
 import { formatCurrency as fmtCurrency } from '@/lib/format';
 import { validateQuoteForm, QUOTE_FIELD_LABELS } from '@/lib/validations';
-import { useQuotes, type QuoteItem, type QuoteItemPersonalization } from '@/hooks/useQuotes';
+import { useQuotes, type QuoteItem, type QuoteItemPersonalization } from '@/hooks/quotes';
 import {
   useQuoteTemplates,
   type QuoteTemplate,
   type QuoteTemplateItem,
-} from '@/hooks/useQuoteTemplates';
+} from '@/hooks/quotes';
 import { useAuth } from '@/contexts/AuthContext';
 import { findKnownHex } from '@/hooks/products';
 import { useDebounce } from '@/hooks/common';
@@ -35,8 +35,8 @@ import {
 } from '@/utils/product-search';
 import { getPriceFreshness } from '@/utils/price-freshness';
 import * as QuoteCalc from '@/logic/quotes/calculations';
-import { useQuoteItems } from '@/hooks/useQuoteItems';
-import { useAutoSaveQuote } from '@/hooks/useAutoSaveQuote';
+import { useQuoteItems } from '@/hooks/quotes';
+import { useAutoSaveQuote } from '@/hooks/quotes';
 
 interface Product {
   id: string;

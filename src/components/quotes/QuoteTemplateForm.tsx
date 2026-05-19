@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { type QuoteTemplate, type QuoteTemplateItem, type CreateTemplateInput, useQuoteTemplates } from "@/hooks/useQuoteTemplates";
+import { type QuoteTemplate, type QuoteTemplateItem, type CreateTemplateInput, useQuoteTemplates } from "@/hooks/quotes";
 import { Save, X } from "lucide-react";
 
 interface QuoteTemplateFormProps {

@@ -19,7 +19,7 @@ import {
   BarChart3,
   Building2,
 } from "lucide-react";
-import { useQuotes } from "@/hooks/useQuotes";
+import { useQuotes } from "@/hooks/quotes";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 

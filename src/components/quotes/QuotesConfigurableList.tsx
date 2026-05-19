@@ -41,7 +41,7 @@ import {
   Download,
   RefreshCw,
 } from "lucide-react";
-import type { Quote } from "@/hooks/useQuotes";
+import type { Quote } from "@/hooks/quotes";
 import { BulkActionsBar } from "@/components/common/BulkActionsBar";
 import { useBulkSelection } from "@/hooks/useBulkSelection";
 import { QuoteRowQuickActions } from "./QuoteRowQuickActions";

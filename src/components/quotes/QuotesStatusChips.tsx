@@ -5,7 +5,7 @@
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { QUOTE_STATUS_CONFIG } from "@/lib/quote-status-config";
-import type { Quote } from "@/hooks/useQuotes";
+import type { Quote } from "@/hooks/quotes";
 
 interface QuotesStatusChipsProps {
   quotes: Quote[];

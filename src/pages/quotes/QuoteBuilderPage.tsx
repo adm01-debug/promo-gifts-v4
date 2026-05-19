@@ -49,7 +49,7 @@ import { QuoteBuilderStepper } from '@/components/quotes/QuoteBuilderStepper';
 import { QuoteBuilderSummaryColumn } from '@/components/quotes/QuoteBuilderSummaryColumn';
 
 import { QuoteBuilderProductSearch } from '@/components/quotes/QuoteBuilderProductSearch';
-import { useQuoteBuilderState } from '@/hooks/useQuoteBuilderState';
+import { useQuoteBuilderState } from '@/hooks/quotes';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { UnsavedChangesDialog } from '@/components/common/UnsavedChangesDialog';
 

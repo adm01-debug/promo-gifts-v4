@@ -35,7 +35,7 @@ import {
   UserPlus,
   Download
 } from "lucide-react";
-import { type QuoteTemplate, useQuoteTemplates } from "@/hooks/useQuoteTemplates";
+import { type QuoteTemplate, useQuoteTemplates } from "@/hooks/quotes";
 import { exportTemplatesToJson, exportSingleTemplate } from "@/utils/templateExport";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";

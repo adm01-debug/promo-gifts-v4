@@ -25,15 +25,15 @@ vi.mock('@/contexts/AuthContext', () => ({
 }));
 
 // Mock hooks that might trigger side effects or complex logic
-vi.mock('@/hooks/useSellerDiscountLimits', () => ({
+vi.mock('@/hooks/quotes', () => ({
   useSellerDiscountLimits: vi.fn(() => ({ myLimit: 10 })),
 }));
 
-vi.mock('@/hooks/useDiscountApproval', () => ({
+vi.mock('@/hooks/quotes', () => ({
   useDiscountApproval: vi.fn(() => ({ requestApproval: vi.fn() })),
 }));
 
-vi.mock('@/hooks/useQuotes', () => ({
+vi.mock('@/hooks/quotes', () => ({
   useQuotes: vi.fn(() => ({
     createQuote: vi.fn(),
     updateQuote: vi.fn(),
@@ -42,11 +42,11 @@ vi.mock('@/hooks/useQuotes', () => ({
   })),
 }));
 
-vi.mock('@/hooks/useQuoteTemplates', () => ({
+vi.mock('@/hooks/quotes', () => ({
   useQuoteTemplates: vi.fn(() => ({ templates: [] })),
 }));
 
-vi.mock('@/hooks/useQuoteItems', () => ({
+vi.mock('@/hooks/quotes', () => ({
   useQuoteItems: vi.fn(() => ({
     items: [],
     setItems: vi.fn(),
@@ -64,7 +64,7 @@ vi.mock('@/hooks/useQuoteItems', () => ({
   })),
 }));
 
-vi.mock('@/hooks/useAutoSaveQuote', () => ({
+vi.mock('@/hooks/quotes', () => ({
   useAutoSaveQuote: vi.fn(() => ({ clearAutoSave: vi.fn() })),
 }));
 

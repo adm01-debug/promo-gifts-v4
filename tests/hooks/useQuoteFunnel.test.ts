@@ -3,8 +3,8 @@
  */
 import { describe, it, expect } from "vitest";
 import { renderHook } from "@testing-library/react";
-import { useQuoteFunnel } from "@/hooks/useQuoteFunnel";
-import type { Quote } from "@/hooks/useQuotes";
+import { useQuoteFunnel } from "@/hooks/quotes";
+import type { Quote } from "@/hooks/quotes";
 
 const mkQuote = (overrides: Partial<Quote>): Quote =>
   ({ id: Math.random().toString(36), status: "draft", created_at: "2025-01-01", updated_at: "2025-01-02", ...overrides }) as Quote;

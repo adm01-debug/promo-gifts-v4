@@ -6,7 +6,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 // Mock complex hooks
-vi.mock('@/hooks/useQuoteBuilderState', () => ({
+vi.mock('@/hooks/quotes', () => ({
   useQuoteBuilderState: vi.fn(() => ({
     loadingQuote: false,
     hasUnsavedData: false,

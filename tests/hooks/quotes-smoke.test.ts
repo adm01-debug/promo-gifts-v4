@@ -10,7 +10,7 @@ vi.mock("@/contexts/OrganizationContext", () => ({
   OrganizationProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-import { useQuotes } from "@/hooks/useQuotes";
+import { useQuotes } from "@/hooks/quotes";
 import { smokeHook } from "./_helpers/smoke-template";
 
 smokeHook("useQuotes", () => useQuotes());

@@ -5,7 +5,7 @@
 import { TrendingDown, Clock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import type { QuoteFunnelData } from "@/hooks/useQuoteFunnel";
+import type { QuoteFunnelData } from "@/hooks/quotes";
 
 interface QuotesFunnelChartProps {
   data: QuoteFunnelData;

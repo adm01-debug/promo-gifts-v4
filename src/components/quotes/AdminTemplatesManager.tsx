@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TemplateDeleteDialog, TemplateCloneDialog } from "./AdminTemplateDialogs";
 import { FileText, Search, Users, User, Filter, LayoutGrid, List, Download } from "lucide-react";
-import { type QuoteTemplate, useQuoteTemplates } from "@/hooks/useQuoteTemplates";
+import { type QuoteTemplate, useQuoteTemplates } from "@/hooks/quotes";
 import { exportTemplatesToJson } from "@/utils/templateExport";
 import { TemplateTableView } from "./admin-templates/TemplateTableView";
 import { TemplateGridView } from "./admin-templates/TemplateGridView";

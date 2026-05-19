@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { AlertTriangle, Edit, Loader2, Package, Percent, Save, Send, Shield, ShoppingCart, Trash2, CheckCircle2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { QuoteItem } from "@/hooks/useQuotes";
+import type { QuoteItem } from "@/hooks/quotes";
 import { NegotiationMarkupCard } from "@/components/quotes/NegotiationMarkupCard";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { getPriceFreshness } from "@/utils/price-freshness";

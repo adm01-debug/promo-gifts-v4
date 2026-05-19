@@ -13,7 +13,7 @@ import { CheckCircle2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProductCustomizationOptions } from "@/components/products/ProductCustomizationOptions";
-import type { QuoteItemPersonalization } from "@/hooks/useQuotes";
+import type { QuoteItemPersonalization } from "@/hooks/quotes";
 import type { PersonalizationItem } from "@/types/customization";
 
 function fmt(v: number) {

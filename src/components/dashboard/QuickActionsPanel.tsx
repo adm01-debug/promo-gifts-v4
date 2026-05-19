@@ -16,7 +16,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useQuotes, Quote } from "@/hooks/useQuotes";
+import { useQuotes, Quote } from "@/hooks/quotes";
 import { useAuth } from "@/contexts/AuthContext";
 import { startOfMonth, endOfMonth, parseISO, isWithinInterval } from "date-fns";
 

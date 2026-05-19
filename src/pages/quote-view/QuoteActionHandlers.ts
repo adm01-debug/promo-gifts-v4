@@ -4,7 +4,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { generateProposalPDFv2, downloadPDF } from "@/utils/proposalPdfReactGenerator";
 import type { ProposalTemplateData } from "@/components/pdf/ProposalHtmlTemplate";
-import type { Quote } from "@/hooks/useQuotes";
+import type { Quote } from "@/hooks/quotes";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";

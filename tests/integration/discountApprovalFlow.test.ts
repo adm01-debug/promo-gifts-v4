@@ -147,7 +147,7 @@ vi.mock("sonner", () => ({
 }));
 
 // Imports AFTER mocks
-import { useDiscountApproval } from "@/hooks/useDiscountApproval";
+import { useDiscountApproval } from "@/hooks/quotes";
 import { toast } from "sonner";
 
 const { SELLER_ID, ADMIN_ID, QUOTE_ID, REQUEST_ID, ops } = H;

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { type QuoteItem, type QuoteItemPersonalization } from '@/hooks/useQuotes';
+import { type QuoteItem, type QuoteItemPersonalization } from '@/hooks/quotes';
 import { type ExternalVariantStock } from '@/hooks/useExternalVariantStock';
 
 interface Product {

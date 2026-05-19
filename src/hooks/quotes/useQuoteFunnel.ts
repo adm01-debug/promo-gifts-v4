@@ -4,7 +4,7 @@
  * "viewed" é inferido: status sent/approved/converted COM viewed_at via tokens.
  */
 import { useMemo } from 'react';
-import type { Quote } from '@/hooks/useQuotes';
+import type { Quote } from '@/hooks/quotes';
 
 export interface FunnelStage {
   id: 'draft' | 'sent' | 'viewed' | 'approved' | 'converted';

@@ -37,8 +37,8 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { useSellerDiscountLimits } from "@/hooks/useSellerDiscountLimits";
-import { useDiscountApproval, type DiscountApprovalWithQuote } from "@/hooks/useDiscountApproval";
+import { useSellerDiscountLimits } from "@/hooks/quotes";
+import { useDiscountApproval, type DiscountApprovalWithQuote } from "@/hooks/quotes";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";

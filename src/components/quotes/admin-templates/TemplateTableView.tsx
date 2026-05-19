@@ -5,7 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Star, UserPlus, Edit, Trash2, Download, User } from "lucide-react";
-import { type QuoteTemplate } from "@/hooks/useQuoteTemplates";
+import { type QuoteTemplate } from "@/hooks/quotes";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { exportSingleTemplate } from "@/utils/templateExport";

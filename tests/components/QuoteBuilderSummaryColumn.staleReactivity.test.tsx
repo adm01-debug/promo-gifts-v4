@@ -19,7 +19,7 @@ import { render, screen, act, fireEvent, within } from "@testing-library/react";
 import { useState, useCallback } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QuoteBuilderSummaryColumn } from "@/components/quotes/QuoteBuilderSummaryColumn";
-import type { QuoteItem } from "@/hooks/useQuotes";
+import type { QuoteItem } from "@/hooks/quotes";
 
 const FIXED_NOW = new Date("2026-04-24T12:00:00.000Z").getTime();
 const daysAgo = (d: number) =>

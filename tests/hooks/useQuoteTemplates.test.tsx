@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { useQuoteTemplates } from '@/hooks/useQuoteTemplates';
+import { useQuoteTemplates } from '@/hooks/quotes';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
 import React from 'react';

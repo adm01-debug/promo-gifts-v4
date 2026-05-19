@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useQuotes, type Quote } from '@/hooks/useQuotes';
+import { useQuotes, type Quote } from '@/hooks/quotes';
 import { useAuth } from '@/contexts/AuthContext';
 import { selectCrmById } from '@/lib/crm-db';
 import { toast } from 'sonner';

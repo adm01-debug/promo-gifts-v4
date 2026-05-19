@@ -8,7 +8,7 @@ import { Copy, Share2, MessageCircle, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import type { Quote } from "@/hooks/useQuotes";
+import type { Quote } from "@/hooks/quotes";
 
 interface QuoteRowQuickActionsProps {
   quote: Quote;

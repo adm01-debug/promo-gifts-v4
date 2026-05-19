@@ -13,7 +13,7 @@ import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/react";
 import { useState } from "react";
 import { QuoteBuilderSummaryColumn } from "@/components/quotes/QuoteBuilderSummaryColumn";
-import type { QuoteItem } from "@/hooks/useQuotes";
+import type { QuoteItem } from "@/hooks/quotes";
 
 // O componente importa toast (sonner) — silenciamos para não poluir o stdout.
 vi.mock("sonner", () => ({

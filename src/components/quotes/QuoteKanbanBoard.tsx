@@ -31,7 +31,7 @@ import {
   Building2,
   GripVertical,
 } from "lucide-react";
-import { type Quote, useQuotes } from "@/hooks/useQuotes";
+import { type Quote, useQuotes } from "@/hooks/quotes";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
