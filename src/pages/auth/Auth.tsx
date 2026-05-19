@@ -450,7 +450,7 @@ export default function Auth() {
         path="/login"
       />
       {/* Left side - Branding */}
-      <AuthBrandingPanel />
+      <AuthBrandingPanel onLogoClick={() => window.location.reload()} />
 
 
       {/* Right side - Auth Form */}
