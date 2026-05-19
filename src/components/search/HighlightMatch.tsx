@@ -10,6 +10,7 @@ interface HighlightMatchProps {
 /**
  * Highlights matching portions of text based on the search query.
  * Splits the query into words and highlights each match.
+ * Includes diacritic-insensitive matching.
  */
 export const HighlightMatch = memo(function HighlightMatch({
   text,
@@ -21,18 +22,36 @@ export const HighlightMatch = memo(function HighlightMatch({
     return <span className={className}>{text}</span>;
   }
 
-  // Escape regex special chars and split into words
+  // Remove diacritics for comparison
+  const normalize = (str: string) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
   const words = query
     .trim()
     .split(/\s+/)
-    .filter(w => w.length >= 2)
-    .map(w => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    .filter(w => w.length >= 2);
 
   if (words.length === 0) {
     return <span className={className}>{text}</span>;
   }
 
-  const regex = new RegExp(`(${words.join("|")})`, "gi");
+  // To highlight diacritic-insensitive, we need a smarter approach than simple split
+  // We'll create a regex that matches the words even with accents
+  const createDiacriticRegex = (word: string) => {
+    return word.split('').map(char => {
+      const normalized = normalize(char);
+      if (normalized === 'a') return '[aàáâãäå]';
+      if (normalized === 'e') return '[eèéêë]';
+      if (normalized === 'i') return '[iìíîï]';
+      if (normalized === 'o') return '[oòóôõö]';
+      if (normalized === 'u') return '[uùúûü]';
+      if (normalized === 'c') return '[cç]';
+      if (normalized === 'n') return '[nñ]';
+      return char.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }).join('');
+  };
+
+  const regexStr = words.map(createDiacriticRegex).join("|");
+  const regex = new RegExp(`(${regexStr})`, "gi");
   const parts = text.split(regex);
 
   return (
