@@ -458,7 +458,7 @@ export default function Auth() {
         <div className="w-full max-w-[22.2rem] animate-fade-in space-y-7">
           {/* Mobile Logo */}
           <div className="flex justify-center lg:hidden">
-            <AppLogo />
+            <AppLogo onClick={() => window.location.reload()} />
           </div>
 
           {/* IP Blocked Alert */}
