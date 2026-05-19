@@ -310,6 +310,22 @@ export default function Auth() {
 
       console.log(`[AUTH_OK] Login bem-sucedido para ${data.email}. Validando sessão...`);
 
+      // Credential Management API — pede ao navegador para salvar email/senha
+      // após login bem-sucedido (Chrome/Edge/Brave). Silencioso se não suportado.
+      try {
+        const CredCtor = (window as unknown as {
+          PasswordCredential?: new (init: { id: string; password: string; name?: string }) => Credential;
+        }).PasswordCredential;
+        if (CredCtor && navigator.credentials?.store) {
+          const cred = new CredCtor({ id: data.email, password: data.password, name: data.email });
+          await navigator.credentials.store(cred);
+        }
+      } catch (credErr) {
+        console.warn('[AUTH_CRED_STORE] Não foi possível salvar credenciais:', credErr);
+      }
+
+
+
 
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData?.session;
