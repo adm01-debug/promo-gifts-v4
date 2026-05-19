@@ -34,6 +34,7 @@ import { showErrorToast } from "@/utils/undoToast";
 
 interface ProductTableViewProps {
   products: Product[];
+  isLoading?: boolean;
   onProductClick?: (productId: string) => void;
   isFavorite?: (id: string) => boolean;
   onToggleFavorite?: (id: string) => void;
