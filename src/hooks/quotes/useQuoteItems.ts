@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { toast } from 'sonner';
 import { type QuoteItem, type QuoteItemPersonalization } from '@/hooks/quotes';
 import { type ExternalVariantStock } from '@/hooks/products';
 

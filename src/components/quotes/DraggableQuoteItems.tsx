@@ -33,22 +33,7 @@ import { PriceFreshnessBadge } from "@/components/products/PriceFreshnessBadge";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
-interface QuoteItem {
-  id: string;
-  product_id: string;
-  product_name: string;
-  product_sku: string;
-  product_image_url?: string;
-  quantity: number;
-  unit_price: number;
-  color_name?: string;
-  color_hex?: string;
-  /** ISO timestamp da última atualização do preço (catálogo externo). */
-  price_updated_at?: string | null;
-  /** Janela em dias para alertar preço defasado (default 60). */
-  price_freshness_threshold_days?: number | null;
-  personalizations?: Record<string, unknown>[];
-}
+import { type QuoteItem } from "@/hooks/quotes/quoteTypes";
 
 interface DraggableQuoteItemsProps {
   items: QuoteItem[];
@@ -57,6 +42,7 @@ interface DraggableQuoteItemsProps {
   onUpdatePrice: (index: number, price: number) => void;
   onRemove: (index: number) => void;
   onTogglePersonalization?: (index: number) => void;
+  onConfirmPrice?: (index: number) => void; // Nova ação
   expandedItems?: Set<number>;
   renderPersonalization?: (item: QuoteItem, index: number) => React.ReactNode;
   formatCurrency: (value: number) => string;
@@ -70,6 +56,7 @@ interface SortableItemProps {
   onUpdatePrice: (price: number) => void;
   onRemove: () => void;
   onTogglePersonalization?: () => void;
+  onConfirmPrice?: () => void; // Adicionado
   renderPersonalization?: () => React.ReactNode;
   formatCurrency: (value: number) => string;
 }
@@ -82,6 +69,7 @@ function SortableItem({
   onUpdatePrice,
   onRemove,
   onTogglePersonalization,
+  onConfirmPrice,
   renderPersonalization,
   formatCurrency,
 }: SortableItemProps) {
@@ -221,11 +209,20 @@ function SortableItem({
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground">Preço:</span>
-                  <CurrencyInput
-                    value={item.unit_price}
-                    onChange={(n) => onUpdatePrice(n)}
-                    className="w-28 h-8 text-sm"
-                  />
+                  <div className="flex items-center gap-1.5">
+                    <CurrencyInput
+                      value={item.unit_price}
+                      onChange={(n) => onUpdatePrice(n)}
+                      className="w-28 h-8 text-sm"
+                    />
+                    <PriceFreshnessBadge 
+                      updatedAt={item.price_updated_at}
+                      confirmedAt={item.price_confirmed_at}
+                      thresholdDays={item.price_freshness_threshold_days}
+                      onConfirm={onConfirmPrice}
+                      size="sm"
+                    />
+                  </div>
                 </div>
                 <div className="ml-auto text-right">
                   <p className="text-xs text-muted-foreground">Subtotal</p>
@@ -361,6 +358,9 @@ export function DraggableQuoteItems({
                 onRemove={() => onRemove(index)}
                 onTogglePersonalization={
                   onTogglePersonalization ? () => onTogglePersonalization(index) : undefined
+                }
+                onConfirmPrice={
+                  onConfirmPrice ? () => onConfirmPrice(index) : undefined
                 }
                 renderPersonalization={
                   renderPersonalization ? () => renderPersonalization(item, index) : undefined

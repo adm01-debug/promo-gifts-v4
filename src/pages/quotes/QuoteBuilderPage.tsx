@@ -598,6 +598,7 @@ export default function QuoteBuilderPage() {
                               s.removeItem(idx);
                               s.setActiveItemIndex(null);
                             }}
+                            onConfirmPrice={() => s.confirmItemPrice(idx)}
                             onTogglePersonalization={() => s.toggleExpanded(idx)}
                             expandedItems={new Set(s.expandedItems.has(idx) ? [0] : [])}
                             renderPersonalization={() => (
