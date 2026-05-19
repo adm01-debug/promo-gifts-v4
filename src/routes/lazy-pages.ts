@@ -61,6 +61,7 @@ export const AdminCadastrosPage = lazyWithRetry(() => import("@/pages/admin/Admi
 export const AdminPromptsIAPage = lazyWithRetry(() => import("@/pages/admin/AdminPromptsIAPage"));
 export const AdminProductFormPage = lazyWithRetry(() => import("@/pages/admin/AdminProductFormPage"));
 export const AdminTelemetriaPage = lazyWithRetry(() => import("@/pages/admin/AdminTelemetriaPage"));
+export const AdminClientPerformancePage = lazyWithRetry(() => import("@/pages/admin/AdminClientPerformancePage"));
 export const AdminDesignTokensPage = lazyWithRetry(() => import("@/pages/admin/AdminDesignTokensPage"));
 export const AdminTemasPage = lazyWithRetry(() => import("@/pages/admin/AdminTemasPage"));
 export const AdminWorkflowsPage = lazyWithRetry(() => import("@/pages/admin/AdminWorkflowsPage"));
