@@ -1,5 +1,6 @@
-import { type ReactNode, Suspense } from 'react';
+import { type ReactNode, Suspense, useEffect } from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
+import NProgress from 'nprogress';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { getFallback } from '@/components/layout/SkeletonLoaders';
@@ -10,9 +11,28 @@ import { publicRoutes } from './public-routes';
 import { quoteRoutes } from './quote-routes';
 import { toolsRoutes } from './tools-routes';
 
+// NProgress configuration
+NProgress.configure({ showSpinner: false, speed: 400, minimum: 0.1 });
+
 /** Location-aware Suspense that renders route-specific skeletons. */
 function RouteSuspense({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
+
+  useEffect(() => {
+    // Start progress on pathname change (navigation)
+    NProgress.start();
+    
+    // Complete progress after a short delay (once the new route should be rendering)
+    const timer = setTimeout(() => {
+      NProgress.done();
+    }, 200);
+
+    return () => {
+      clearTimeout(timer);
+      NProgress.done();
+    };
+  }, [pathname]);
+
   return <Suspense fallback={getFallback(pathname)}>{children}</Suspense>;
 }
 
