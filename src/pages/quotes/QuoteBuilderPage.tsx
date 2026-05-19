@@ -571,7 +571,7 @@ export default function QuoteBuilderPage() {
                       {s.items.length} item(ns) adicionado(s)
                     </p>
                   </div>
-                  <Button size="sm" onClick={() => s.setProductSearchOpen(true)}>
+                  <Button size="sm" data-testid="quote-add-product-button" onClick={() => s.setProductSearchOpen(true)}>
                     <Plus className="mr-1.5 h-3.5 w-3.5" />
                     Produto
                   </Button>

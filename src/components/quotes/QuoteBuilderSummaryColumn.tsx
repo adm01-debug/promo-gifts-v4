@@ -469,12 +469,12 @@ export function QuoteBuilderSummaryColumn({
                 Solicitar Aprovação
               </Button>
             ) : (
-              <Button size="lg" className="w-full gap-2 h-12 text-sm font-bold bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20" onClick={() => onSave("pending")} disabled={quotesLoading || !isFormValid}>
+              <Button size="lg" className="w-full gap-2 h-12 text-sm font-bold bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20" data-testid="quote-save-final" onClick={() => onSave("pending")} disabled={quotesLoading || !isFormValid}>
                 {quotesLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                 {isEditMode ? "Salvar" : "Criar"}
               </Button>
             )}
-            <Button variant="outline" className="w-full" onClick={() => onSave("draft")} disabled={quotesLoading || !isDraftValid}>
+            <Button variant="outline" className="w-full" data-testid="quote-save-draft" onClick={() => onSave("draft")} disabled={quotesLoading || !isDraftValid}>
               {quotesLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
               {isEditMode ? "Salvar Alterações" : "Salvar Rascunho"}
             </Button>

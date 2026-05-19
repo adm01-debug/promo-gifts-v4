@@ -66,7 +66,7 @@ export function QuoteBuilderProductSearch({
             <>
               <div className="relative shrink-0">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Buscar por nome ou SKU..." value={productSearch} onChange={(e) => setProductSearch(e.target.value)} className="pl-10 h-11 text-sm border-primary/30 focus-visible:ring-primary/20" autoFocus />
+                <Input data-testid="product-search-input" placeholder="Buscar por nome ou SKU..." value={productSearch} onChange={(e) => setProductSearch(e.target.value)} className="pl-10 h-11 text-sm border-primary/30 focus-visible:ring-primary/20" autoFocus />
                 {productSearch && (
                   <button onClick={() => setProductSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                     <X className="h-4 w-4" />
@@ -91,7 +91,7 @@ export function QuoteBuilderProductSearch({
                       const isLowStock = stock > 0 && stock < 100;
                       const formatStock = (qty: number) => qty >= 1000 ? `${(qty / 1000).toFixed(1)}k` : qty.toString();
                       return (
-                        <button key={product.id} onClick={() => onProductClick(product)} className={cn(
+                        <button key={product.id} data-testid={`product-search-option-${product.id}`} onClick={() => onProductClick(product)} className={cn(
                           "group w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all text-left",
                           isOutOfStock ? "border-destructive/20 bg-destructive/5 opacity-75" : isLowStock ? "border-warning/20 hover:bg-accent/60" : "border-transparent hover:bg-accent/60"
                         )}>
