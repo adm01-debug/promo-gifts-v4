@@ -42,6 +42,7 @@ interface DraggableQuoteItemsProps {
   onUpdatePrice: (index: number, price: number) => void;
   onRemove: (index: number) => void;
   onTogglePersonalization?: (index: number) => void;
+  onConfirmPrice?: (index: number) => void; // Nova ação
   expandedItems?: Set<number>;
   renderPersonalization?: (item: QuoteItem, index: number) => React.ReactNode;
   formatCurrency: (value: number) => string;
