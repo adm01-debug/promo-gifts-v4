@@ -9,6 +9,19 @@ interface SidebarBrandHeaderProps {
 
 export const SidebarBrandHeader = forwardRef<HTMLDivElement, SidebarBrandHeaderProps>(
   ({ isCollapsed }, ref) => {
+    const navigate = useNavigate();
+    let onboarding: any = null;
+    try {
+      onboarding = useOnboardingContext();
+    } catch (e) {}
+
+    const handleLogoClick = () => {
+      navigate("/");
+      if (onboarding && !isCollapsed) {
+        onboarding.restartTour();
+      }
+    };
+
     if (isCollapsed) {
       return (
         <div ref={ref} className="flex flex-col items-center justify-center py-6 mb-2">
