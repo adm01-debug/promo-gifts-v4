@@ -56,6 +56,7 @@ interface SortableItemProps {
   onUpdatePrice: (price: number) => void;
   onRemove: () => void;
   onTogglePersonalization?: () => void;
+  onConfirmPrice?: () => void; // Adicionado
   renderPersonalization?: () => React.ReactNode;
   formatCurrency: (value: number) => string;
 }
