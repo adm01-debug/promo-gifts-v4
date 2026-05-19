@@ -32,7 +32,7 @@ export interface SpotlightItem {
   path?: string;
 }
 
-export function buildSpotlightItems(navigate: (path: string) => void): SpotlightItem[] {
+export function buildSpotlightItems(navigate: (path: string) => void, onRestartTour?: () => void): SpotlightItem[] {
   const nav = (path: string) => () => navigate(path);
   return [
     // Quick Actions
