@@ -117,6 +117,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             className="flex-1 p-3 sm:p-4 lg:p-6 pb-6 print:p-0 print:pb-0 outline-none overflow-x-clip bg-transparent" 
             role="main"
             aria-label="Conteúdo principal"
+            aria-labelledby="main-heading"
           >
             <Suspense fallback={<div>{children || <Outlet />}</div>}>
               <PageTransition variant="fade-slide" duration={0.6}>

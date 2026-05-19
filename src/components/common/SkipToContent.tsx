@@ -11,7 +11,7 @@ interface SkipLink {
 }
 
 const defaultLinks: SkipLink[] = [
-  { href: "#main-content", label: "Ir para o conteúdo principal" },
+  { href: "#main-content", label: "Pular para o conteúdo principal" },
   { href: "#main-navigation", label: "Ir para a navegação" },
   { href: "#search", label: "Ir para a busca" },
 ];
@@ -47,7 +47,7 @@ SkipToContent.displayName = "SkipToContent";
 
 // Simple single skip link for basic usage
 export const SkipLink = forwardRef<HTMLAnchorElement, Partial<SkipLink>>(
-  ({ href = "#main-content", label = "Ir para o conteúdo principal" }, ref) => {
+  ({ href = "#main-content", label = "Pular para o conteúdo principal" }, ref) => {
     return (
       <a
         ref={ref}

@@ -53,10 +53,10 @@ export function useGlobalShortcuts(handlers?: ShortcutHandlers) {
       if (!isMod) return;
 
       // Ctrl/Cmd + K → Focus search (works even inside inputs)
-      if (e.key === "k") {
+      if (e.key === "k" || e.key === "K") {
         e.preventDefault();
         const searchInput = document.querySelector<HTMLInputElement>(
-          'input[type="search"], input[aria-label="Campo de busca"]'
+          'input[type="search"], input[aria-label="Campo de busca"], #search'
         );
         if (searchInput) {
           searchInput.focus();
