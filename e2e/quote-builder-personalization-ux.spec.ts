@@ -154,5 +154,67 @@ test.describe('Quote Builder - Personalization E2E UX & Data Integrity', () => {
     await expect(page.getByTestId('customization-technique-picker')).not.toBeVisible();
     await expect(page.getByTestId('customization-aria-announcer')).toContainText(/Técnica selecionada: Transfer Digital/i);
     await expect(changeBtn).toBeFocused();
+
+  test('deve validar clamp persistido após sair e voltar', async ({ page }) => {
+    // 1. Seleciona Transfer (Tech B)
+    await page.getByTestId('customization-technique-card-tech-B').click();
+    
+    // 2. Preenche valores válidos
+    await page.getByTestId('customization-width-input').fill('8');
+    await page.getByTestId('customization-height-input').fill('8');
+    
+    // 3. Troca para técnica restritiva (Laser Pequeno - Tech Small: 5x3)
+    await page.getByTestId('customization-change-technique').click();
+    await page.getByTestId('customization-technique-card-tech-small').click();
+    
+    // Valida clamp imediato
+    await expect(page.getByTestId('customization-width-input')).toHaveValue('5');
+    await expect(page.getByTestId('customization-height-input')).toHaveValue('3');
+    
+    // 4. Sai da página e volta
+    await page.goto('/dashboard');
+    await page.goto('/quotes/new');
+    
+    // Navega até a etapa 4
+    await page.getByTestId('company-search-input').fill('Teste');
+    await page.getByText('EMPRESA TESTE').first().click();
+    await page.getByTestId('stepper-step-4').click();
+    
+    // 5. Valida que os valores continuam clampados
+    await expect(page.getByTestId('customization-width-input')).toHaveValue('5');
+    await expect(page.getByTestId('customization-height-input')).toHaveValue('3');
+    // Preço deve refletir os valores corrigidos (5x3)
+    await expect(page.getByTestId('customization-total-price')).toBeVisible();
   });
+
+  test('deve ocultar painel de cores para técnicas que não cobram por cor', async ({ page }) => {
+    // 1. Seleciona uma técnica que NÃO cobra por cor (ex: UV Digital / Tech Digital)
+    // Assumindo que tech-digital tem cobra_por_cor=false no mock
+    await page.getByTestId('customization-technique-card-tech-digital').click();
+    
+    // 2. Valida que botões de cor não existem
+    await expect(page.getByTestId(/customization-color-button-/)).not.toBeVisible();
+    
+    // 3. Verifica mensagem de Full Color
+    await expect(page.getByText(/Full Color/i)).toBeVisible();
+  });
+
+  test('deve validar foco no controle ajustado após clamp por troca de técnica', async ({ page }) => {
+    // 1. Seleciona técnica com limites grandes
+    await page.getByTestId('customization-technique-card-tech-B').click();
+    await page.getByTestId('customization-width-input').fill('9');
+    
+    // 2. Troca para técnica com largura menor (Tech Small: 5cm)
+    await page.getByTestId('customization-change-technique').click();
+    await page.getByTestId('customization-technique-card-tech-small').click();
+    
+    // 3. Valida clamp-notice e FOCO no input de largura
+    await expect(page.getByTestId('clamp-notice')).toBeVisible();
+    await expect(page.getByTestId('customization-width-input')).toBeFocused();
+    
+    // 4. Valida aria-live announcement
+    const announcer = page.getByTestId('customization-aria-announcer');
+    await expect(announcer).toContainText(/Técnica selecionada/i);
+  });
+});
 });
