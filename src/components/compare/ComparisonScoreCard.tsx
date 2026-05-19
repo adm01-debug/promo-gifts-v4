@@ -14,7 +14,7 @@ import {
   useComparisonScore,
   DEFAULT_SCORE_WEIGHTS,
   type ComparisonScoreWeights,
-} from "@/hooks/comparisonScore";
+} from "@/hooks/comparison";
 
 interface ComparisonScoreCardProps {
   products: Record<string, unknown>[];

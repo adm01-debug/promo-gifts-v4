@@ -7,7 +7,7 @@ import type { Product, ProductColor } from "@/types/product";
 import { Button } from "@/components/ui/button";
 import { X, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useComparisonScore } from "@/hooks/comparisonScore";
+import { useComparisonScore } from "@/hooks/comparison";
 
 interface Props {
   products: Product[];

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Sliders, RotateCcw } from "lucide-react";
-import { useComparisonWeights, type ComparisonWeights } from "@/hooks/comparisonWeights";
+import { useComparisonWeights, type ComparisonWeights } from "@/hooks/comparison";
 import { toast } from "sonner";
 
 const FIELDS: Array<{ key: keyof ComparisonWeights; label: string }> = [
