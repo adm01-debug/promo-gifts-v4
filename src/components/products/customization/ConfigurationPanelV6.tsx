@@ -212,6 +212,7 @@ export function ConfigurationPanelV6({
                     ? "bg-primary text-primary-foreground"
                     : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                 )}
+                data-testid={`customization-color-button-${n}`}
                 onClick={() => !isLocked && setNumCores(n)}
               >
 
