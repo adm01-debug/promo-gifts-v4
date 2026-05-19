@@ -47,7 +47,9 @@ describe('ProductGrid Skeleton', () => {
         colors: [],
         materials: [],
         images: ['img1.jpg'],
-        og_image_url: 'img1.jpg'
+        og_image_url: 'img1.jpg',
+        supplier: { name: 'Supplier Test' },
+        category: { name: 'Category Test' }
       } as any
     ];
     
@@ -61,8 +63,8 @@ describe('ProductGrid Skeleton', () => {
     );
     
     // Search for text in the document
-    const productTitle = screen.queryByText(/Product Test 1/i);
-    expect(productTitle).toBeDefined();
+    expect(screen.getByText(/Product Test 1/i)).toBeDefined();
+    expect(screen.getByText(/Supplier Test/i)).toBeDefined();
     
     const skeletons = document.querySelectorAll('.animate-shimmer');
     expect(skeletons.length).toBe(0);
