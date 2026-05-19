@@ -135,7 +135,8 @@ export default defineConfig({
       testMatch: [
         /quote-builder-wizard\.spec\.ts/, 
         /quote-builder-shipping-validation\.spec\.ts/,
-        /company-search-history\.spec\.ts/
+        /company-search-history\.spec\.ts/,
+        /quote-builder-personalization-ux\.spec\.ts/
       ],
     },
     {
