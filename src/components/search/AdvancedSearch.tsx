@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { useSearch, type SearchResult } from "@/hooks/common";
 import type { VoiceAgentAction } from "@/hooks/voice/types";
 import { useToast } from "@/hooks/ui";
-import { useProductAnalytics } from "@/hooks/productsAnalytics";
+import { useProductAnalytics } from "@/hooks/products";
 
 const LazyVoiceOverlay = lazy(() => import("./VoiceSearchOverlayConnected"));
 
