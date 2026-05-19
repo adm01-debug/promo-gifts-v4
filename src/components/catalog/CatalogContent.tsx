@@ -1,45 +1,61 @@
-import { memo, useMemo } from "react";
-import { ProductGrid } from "@/components/products/ProductGrid";
-import { ProductList } from "@/components/products/ProductList";
-import { ProductTableView } from "@/components/products/ProductTableView";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ProductCardSkeleton } from "@/components/products/ProductCardSkeleton";
-import { ProductListItemSkeleton } from "@/components/products/ProductListItemSkeleton";
-import { ProductTableSkeleton } from "@/components/products/ProductTableSkeleton";
-import { EmptyState } from "@/components/common/EmptyState";
-import type { Product } from "@/hooks/products";
-import type { ActiveColorFilter } from "@/utils/color-image-resolver";
+import { useRef, useCallback, useEffect, useState, useMemo, memo, type RefObject } from 'react';
+import type { ActiveColorFilter } from '@/utils/color-image-resolver';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { Loader2, ArrowUp, AlertCircle } from 'lucide-react';
+import { useProductsContextSafe } from '@/contexts/ProductsContext';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+
+
+import { ProductGrid } from '@/components/products/ProductGrid';
+import { ProductList } from '@/components/products/ProductList';
+import { ProductTableView } from '@/components/products/ProductTableView';
+import { ProductCardSkeleton } from '@/components/products/ProductCardSkeleton';
+import { ProductListItemSkeleton } from '@/components/products/ProductListItemSkeleton';
+import { ProductTableSkeleton } from '@/components/products/ProductTableSkeleton';
+import { EmptyState } from '@/components/common/EmptyState';
+import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
+import { CatalogBulkModals } from './CatalogBulkModals';
+import { useCatalogSelection } from './useCatalogSelection';
+import { cn } from '@/lib/utils';
+import type { Product } from '@/hooks/products';
+import type { ViewMode } from '@/hooks/products';
+import type { ColumnCount } from '@/components/products/ColumnSelector';
+import { SparklineSalesProvider } from '@/hooks/intelligence';
+import { ScrollToTopButton } from '@/components/common/ScrollToTopButton';
 
 interface CatalogContentProps {
-  viewMode: "grid" | "list" | "table";
+  viewMode: ViewMode;
   shouldShowCatalogSkeleton: boolean;
   shouldShowEmptyState: boolean;
   hasActiveCatalogConstraints: boolean;
   paginatedProducts: Product[];
   filteredProducts: Product[];
-  gridColumns: number;
+  gridColumns: ColumnCount;
   hasMoreProducts: boolean;
   isLoadingMore: boolean;
-  totalEstimate: number;
-  loadMoreRef: (node?: Element | null | undefined) => void;
+  totalEstimate: number | null;
+  loadMoreRef: RefObject<HTMLDivElement>;
   itemsPerPage: number;
   navigate: (path: string) => void;
-  handleViewProduct: (product: Product) => void;
-  handleShareProduct: (product: Product) => void;
-  handleFavoriteProduct: (product: Product) => void;
-  isFavorite: (productId: string) => boolean;
-  toggleFavorite: (productId: string) => void;
-  isInCompare: (productId: string) => boolean;
-  onToggleCompare: (productId: string) => { added: boolean; isFull: boolean };
+  handleViewProduct: (p: Product) => void;
+  handleShareProduct: (p: Product) => void;
+  handleFavoriteProduct: (p: Product) => void;
+  isFavorite: (id: string) => boolean;
+  toggleFavorite: (id: string) => void;
+  isInCompare: (id: string) => boolean;
+  onToggleCompare: (id: string) => { added: boolean; isFull: boolean };
   canAddToCompare: boolean;
-  onLoadMore: () => void;
-  onResetFilters: () => void;
+  onLoadMore?: () => void;
+  onResetFilters?: () => void;
   selectionMode?: boolean;
   onSelectedCountChange?: (count: number) => void;
   activeColorFilter?: ActiveColorFilter | null;
+  activeProductId?: string | null;
+  setActiveProductId?: (id: string | null) => void;
 }
 
-const CatalogContent = memo(function CatalogContent({
+export const CatalogContent = memo(function CatalogContent({
   viewMode,
   shouldShowCatalogSkeleton,
   shouldShowEmptyState,
@@ -64,21 +80,15 @@ const CatalogContent = memo(function CatalogContent({
   onLoadMore,
   onResetFilters,
   selectionMode,
+  onSelectedCountChange,
   activeColorFilter,
+  activeProductId,
+  setActiveProductId,
 }: CatalogContentProps) {
-  const columnClasses: Record<number, string> = {
-    3: "grid-cols-2 sm:grid-cols-3",
-    4: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4",
-    5: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
-    6: "grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6",
-    8: "grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8",
-  };
-
-  const gridGap = useMemo(() => {
-    if (gridColumns >= 8) return 'gap-x-4 gap-y-8';
-    if (gridColumns >= 6) return 'gap-x-6 gap-y-8';
-    return 'gap-x-8 gap-y-8';
-  }, [gridColumns]);
+  const { selectedIds, onToggleSelect, setSelectedCount } = useCatalogSelection(
+    paginatedProducts,
+    onSelectedCountChange
+  );
 
   if (shouldShowCatalogSkeleton) {
     if (viewMode === "list") {
@@ -94,7 +104,13 @@ const CatalogContent = memo(function CatalogContent({
       return <ProductTableSkeleton rows={10} />;
     }
     return (
-      <div className={cn("grid", columnClasses[gridColumns] || columnClasses[5], gridGap)}>
+      <div className={cn("grid", {
+        "grid-cols-2 sm:grid-cols-3": gridColumns === 3,
+        "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4": gridColumns === 4,
+        "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5": gridColumns === 5,
+        "grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6": gridColumns === 6,
+        "grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8": gridColumns === 8,
+      }, gridColumns >= 8 ? 'gap-x-4 gap-y-8' : gridColumns >= 6 ? 'gap-x-6 gap-y-8' : 'gap-x-8 gap-y-8')}>
         {Array.from({ length: 12 }).map((_, i) => (
           <ProductCardSkeleton key={i} />
         ))}
@@ -121,58 +137,67 @@ const CatalogContent = memo(function CatalogContent({
   }
 
   return (
-    <div className="space-y-8 pb-12">
-      {viewMode === "grid" && (
-        <ProductGrid
-          products={paginatedProducts}
-          onProductClick={(pid) => navigate(`/produto/${pid}`)}
-          onViewProduct={handleViewProduct}
-          onShareProduct={handleShareProduct}
-          onFavoriteProduct={handleFavoriteProduct}
-          isFavorite={isFavorite}
-          onToggleFavorite={toggleFavorite}
-          isInCompare={isInCompare}
-          onToggleCompare={onToggleCompare}
-          canAddToCompare={canAddToCompare}
-          columns={gridColumns}
-          activeColorFilter={activeColorFilter}
-          selectionMode={selectionMode}
-        />
-      )}
+    <div className="space-y-8 pb-12 relative">
+      <SparklineSalesProvider>
+        {viewMode === "grid" && (
+          <ProductGrid
+            products={paginatedProducts}
+            isLoading={isLoadingMore}
+            onProductClick={(pid) => navigate(`/produto/${pid}`)}
+            onViewProduct={handleViewProduct}
+            onShareProduct={handleShareProduct}
+            onFavoriteProduct={handleFavoriteProduct}
+            isFavorite={isFavorite}
+            onToggleFavorite={toggleFavorite}
+            isInCompare={isInCompare}
+            onToggleCompare={onToggleCompare}
+            canAddToCompare={canAddToCompare}
+            columns={gridColumns}
+            activeColorFilter={activeColorFilter}
+            selectionMode={selectionMode}
+            selectedIds={selectedIds}
+            onToggleSelect={onToggleSelect}
+          />
+        )}
 
-      {viewMode === "list" && (
-        <ProductList
-          products={paginatedProducts}
-          onProductClick={(pid) => navigate(`/produto/${pid}`)}
-          onViewProduct={handleViewProduct}
-          onShareProduct={handleShareProduct}
-          onFavoriteProduct={handleFavoriteProduct}
-          isFavorite={isFavorite}
-          onToggleFavorite={toggleFavorite}
-          isInCompare={isInCompare}
-          onToggleCompare={onToggleCompare}
-          canAddToCompare={canAddToCompare}
-          activeColorFilter={activeColorFilter}
-          selectionMode={selectionMode}
-        />
-      )}
+        {viewMode === "list" && (
+          <ProductList
+            products={paginatedProducts}
+            isLoading={isLoadingMore}
+            onProductClick={(pid) => navigate(`/produto/${pid}`)}
+            onViewProduct={handleViewProduct}
+            onShareProduct={handleShareProduct}
+            onFavoriteProduct={handleFavoriteProduct}
+            isFavorite={isFavorite}
+            onToggleFavorite={toggleFavorite}
+            isInCompare={isInCompare}
+            onToggleCompare={onToggleCompare}
+            canAddToCompare={canAddToCompare}
+            activeColorFilter={activeColorFilter}
+            selectionMode={selectionMode}
+            externalSelectedIds={selectedIds}
+            onToggleSelect={onToggleSelect}
+          />
+        )}
 
-      {viewMode === "table" && (
-        <ProductTableView
-          products={paginatedProducts}
-          onProductClick={(pid) => navigate(`/produto/${pid}`)}
-          onViewProduct={handleViewProduct}
-          onShareProduct={handleShareProduct}
-          onFavoriteProduct={handleFavoriteProduct}
-          isFavorite={isFavorite}
-          onToggleFavorite={toggleFavorite}
-          isInCompare={isInCompare}
-          onToggleCompare={onToggleCompare}
-          canAddToCompare={canAddToCompare}
-          activeColorFilter={activeColorFilter}
-          selectionMode={selectionMode}
-        />
-      )}
+        {viewMode === "table" && (
+          <ProductTableView
+            products={paginatedProducts}
+            isLoading={isLoadingMore}
+            onProductClick={(pid) => navigate(`/produto/${pid}`)}
+            onShareProduct={handleShareProduct}
+            isFavorite={isFavorite}
+            onToggleFavorite={toggleFavorite}
+            isInCompare={isInCompare}
+            onToggleCompare={onToggleCompare}
+            canAddToCompare={canAddToCompare}
+            activeColorFilter={activeColorFilter}
+            selectionMode={selectionMode}
+            selectedIds={selectedIds}
+            onToggleSelect={onToggleSelect}
+          />
+        )}
+      </SparklineSalesProvider>
 
       {hasMoreProducts && (
         <div
@@ -192,13 +217,21 @@ const CatalogContent = memo(function CatalogContent({
             </div>
           ) : (
             <div className="text-center text-sm text-muted-foreground">
-              Exibindo {Math.min(paginatedProducts.length, totalEstimate)} de {totalEstimate} produtos
+              Exibindo {Math.min(paginatedProducts.length, totalEstimate || filteredProducts.length)} de {totalEstimate || filteredProducts.length} produtos
             </div>
           )}
         </div>
       )}
+
+      <CatalogBulkModals
+        selectionMode={selectionMode}
+        selectedCount={selectedIds.size}
+        selectedIds={selectedIds}
+        onClearSelection={() => setSelectedCount(0)}
+        products={paginatedProducts}
+      />
+      
+      <ScrollToTopButton className="fixed bottom-6 right-6 z-50" />
     </div>
   );
 });
-
-export { CatalogContent };
