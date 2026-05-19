@@ -35,7 +35,8 @@ export function ConfigurationPanelV6({
   initialWidth,
   initialHeight,
   initialColors,
-  onPriceCalculated 
+  onPriceCalculated,
+  onDimensionsChange,
 }: ConfigurationPanelV6Props) {
   // Dimensions
   const [largura, setLargura] = useState<string>(
