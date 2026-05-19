@@ -104,17 +104,35 @@ function groupByGrupo(options: TechniqueOption[]): Record<string, TechniqueOptio
 interface SelectedTechniqueBarProps {
   technique: TechniqueOption;
   onChangeClick: () => void;
+  isPickerOpen: boolean;
+  pickerId: string;
+  changeButtonRef?: React.Ref<HTMLButtonElement>;
 }
 
-function SelectedTechniqueBar({ technique, onChangeClick }: SelectedTechniqueBarProps) {
+function SelectedTechniqueBar({
+  technique,
+  onChangeClick,
+  isPickerOpen,
+  pickerId,
+  changeButtonRef,
+}: SelectedTechniqueBarProps) {
   return (
     <div
-      role="status"
-      aria-live="polite"
-      className="flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2"
+      className={
+        "flex items-center justify-between gap-3 rounded-lg border px-3 py-2 transition-colors " +
+        (isPickerOpen
+          ? "border-primary/60 bg-primary/10 ring-1 ring-primary/30"
+          : "border-primary/30 bg-primary/5")
+      }
     >
       <div className="flex min-w-0 items-center gap-2">
-        <span className="h-2 w-2 shrink-0 rounded-full bg-primary" aria-hidden />
+        <span
+          className={
+            "h-2 w-2 shrink-0 rounded-full bg-primary transition-transform " +
+            (isPickerOpen ? "animate-pulse scale-110" : "")
+          }
+          aria-hidden
+        />
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-foreground">
             {technique.tecnica_nome}
@@ -127,17 +145,23 @@ function SelectedTechniqueBar({ technique, onChangeClick }: SelectedTechniqueBar
         </div>
       </div>
       <Button
+        ref={changeButtonRef}
         type="button"
-        variant="outline"
+        variant={isPickerOpen ? "default" : "outline"}
         size="sm"
         className="h-8 shrink-0 gap-1.5"
         onClick={onChangeClick}
-        aria-expanded={false}
-        aria-label="Trocar técnica de gravação"
+        aria-expanded={isPickerOpen}
+        aria-controls={pickerId}
+        aria-label={
+          isPickerOpen
+            ? `Fechar seletor de técnicas — técnica atual: ${technique.tecnica_nome}`
+            : `Trocar técnica de gravação — técnica atual: ${technique.tecnica_nome}`
+        }
         data-testid="customization-change-technique"
       >
         <Pencil className="h-3.5 w-3.5" />
-        Trocar
+        {isPickerOpen ? "Fechar" : "Trocar"}
       </Button>
     </div>
   );
