@@ -197,8 +197,14 @@ describe("LocationPanel — Validação de Preço e Clamp", () => {
     fireEvent.click(screen.getByText("Transfer Digital"));
     fireEvent.click(screen.getByTestId("emit-dims")); // 2 cores
     
+    // Aguarda preço B ser reportado
     await waitFor(() => {
-      expect(onPrice).toHaveBeenCalledWith(expect.any(String), "tech-B", expect.objectContaining({ totalPrice: 600 }), expect.any(Object));
+      expect(onPrice).toHaveBeenCalledWith(
+        "LADO-A", 
+        "tech-B", 
+        expect.objectContaining({ totalPrice: 600 }), 
+        expect.any(Object)
+      );
     });
     unmount();
 
@@ -207,6 +213,7 @@ describe("LocationPanel — Validação de Preço e Clamp", () => {
       <LocationPanel location={location} quantity={100} productId={productId} onPriceCalculated={onPrice} />
     );
 
+    // Na restauração do rascunho, o panel emite o preço baseado nos valores salvos (colors: 2)
     await waitFor(() => {
       expect(screen.getByTestId("total-price-display")).toHaveTextContent("600");
     });
