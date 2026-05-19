@@ -236,8 +236,8 @@ export function ProductDetailHero({
                                 setSelectedVariation(variation);
                               }
                             }}
-                            title={`${variation.color.name}: ${stock.toLocaleString('pt-BR')} un.`}
-                            aria-label={`Cor ${variation.color.name}, ${stock} unidades`}
+                            title={`${variation.color?.name || 'Cor'}: ${stock.toLocaleString('pt-BR')} un.`}
+                            aria-label={`Cor ${variation.color?.name || 'sem nome'}, ${stock} unidades`}
                             className={cn(
                               'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11.5px] font-medium transition-all duration-200',
                               !isSelected &&
@@ -247,8 +247,8 @@ export function ProductDetailHero({
                             style={
                               isSelected
                                 ? {
-                                    backgroundColor: `${variation.color.hex}15`,
-                                    border: `1.5px solid ${variation.color.hex}`,
+                                    backgroundColor: variation.color?.hex ? `${variation.color.hex}15` : undefined,
+                                    border: variation.color?.hex ? `1.5px solid ${variation.color.hex}` : undefined,
                                     boxShadow: `0 0 0 2px ${variation.color.hex}20`,
                                   }
                                 : undefined
@@ -256,7 +256,7 @@ export function ProductDetailHero({
                           >
                             <div
                               className="h-3 w-3 shrink-0 rounded-full border border-border/40"
-                              style={{ backgroundColor: variation.color.hex }}
+                              style={{ backgroundColor: variation.color?.hex || '#CCC' }}
                             />
                             <span
                               className={cn(

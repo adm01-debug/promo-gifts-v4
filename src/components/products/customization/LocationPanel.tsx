@@ -294,6 +294,11 @@ export function LocationPanel({
 
       setClampNotice(null);
 
+      // Variáveis para foco automático
+      let forcedW = false;
+      let forcedH = false;
+      let forcedC = false;
+
       // Trocando de técnica com uma anterior já selecionada
       if (selectedTechnique && selectedTechnique.technique_id !== technique.technique_id) {
         toast.success(
@@ -306,9 +311,9 @@ export function LocationPanel({
         const currentH = lastDimsRef.current.height;
         const currentC = lastDimsRef.current.colors;
 
-        const forcedW = technique.usa_dimensao && currentW !== null && currentW > (technique.efetiva_largura_max || 0);
-        const forcedH = technique.usa_dimensao && currentH !== null && currentH > (technique.efetiva_altura_max || 0);
-        const forcedC = technique.cobra_por_cor && currentC !== null && currentC > (technique.max_cores || 1);
+        forcedW = technique.usa_dimensao && currentW !== undefined && currentW !== null && currentW > (technique.efetiva_largura_max || 0);
+        forcedH = technique.usa_dimensao && currentH !== undefined && currentH !== null && currentH > (technique.efetiva_altura_max || 0);
+        forcedC = technique.cobra_por_cor && currentC !== undefined && currentC !== null && currentC > (technique.max_cores || 1);
 
         if (forcedW || forcedH || forcedC) {
           const reasons = [];
@@ -321,7 +326,8 @@ export function LocationPanel({
 
       // Clamp de cores se a nova técnica tiver limite menor
       const maxCores = technique.max_cores || 1;
-      if (lastDimsRef.current.colors > maxCores) {
+      const currentC = lastDimsRef.current.colors;
+      if (currentC !== undefined && currentC !== null && currentC > maxCores) {
         lastDimsRef.current.colors = maxCores;
       }
 
@@ -339,7 +345,7 @@ export function LocationPanel({
         }
       }, 50);
     },
-    [selectedTechnique],
+    [selectedTechnique, toast],
   );
 
   const handlePriceCalculated = useCallback(
