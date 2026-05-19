@@ -224,4 +224,33 @@ describe("LocationPanel — fluxo Trocar técnica", () => {
     expect(panel).toHaveAttribute("data-initial-width", "5");
     expect(panel).toHaveAttribute("data-initial-height", "3");
   });
+
+  it("clicar na MESMA técnica apenas fecha o picker — sem toast, sem remount do painel, sem recálculo", () => {
+    const onPrice = vi.fn();
+    render(<LocationPanel location={location} quantity={100} onPriceCalculated={onPrice} />);
+
+    // Seleciona técnica A
+    fireEvent.click(screen.getByText("Silk 1 cor"));
+    const panelBefore = screen.getByTestId("config-panel");
+    expect(panelBefore).toHaveAttribute("data-technique-id", "tech-A");
+    vi.mocked(toast.success).mockClear();
+
+    // Reabre picker e clica na MESMA técnica
+    fireEvent.click(screen.getByTestId("customization-change-technique"));
+    fireEvent.click(within(screen.getByTestId("customization-technique-picker")).getByText("Silk 1 cor"));
+
+    // Picker fecha
+    expect(screen.queryByTestId("customization-technique-picker")).not.toBeInTheDocument();
+
+    // Mesma instância do painel (referência preservada → não houve remount → sem recálculo)
+    const panelAfter = screen.getByTestId("config-panel");
+    expect(panelAfter).toBe(panelBefore);
+    expect(panelAfter).toHaveAttribute("data-technique-id", "tech-A");
+
+    // Nenhum toast de troca disparado
+    expect(toast.success).not.toHaveBeenCalled();
+
+    // Nenhum side-effect de preço
+    expect(onPrice).not.toHaveBeenCalled();
+  });
 });
