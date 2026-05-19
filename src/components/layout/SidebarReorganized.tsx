@@ -341,7 +341,7 @@ export const SidebarReorganized = React.memo(
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 gap-1.5 text-[10px] border-sidebar-border/50 hover:bg-orange/10 hover:text-orange text-sidebar-foreground/40"
+                className="h-7 gap-1.5 text-[10px] border-sidebar-border/50 hover:bg-primary/10 hover:text-primary text-sidebar-foreground/40"
                 onClick={collapseAllGroups}
               >
                 <X className="h-3 w-3" />
