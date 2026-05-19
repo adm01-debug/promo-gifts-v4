@@ -99,6 +99,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               "border-b border-border/40",
               isHome && "hidden",
             )}
+
             style={{ top: "var(--header-h, 56px)" }}
             data-testid="breadcrumb-bar"
           >
