@@ -320,9 +320,10 @@ export const SidebarReorganized = React.memo(
         className={cn(
           "fixed left-0 top-0 z-50 h-full bg-sidebar/40 backdrop-blur-xl border-r border-sidebar-border/30 transition-all duration-300 ease-out theme-transitioning",
           isCollapsed ? "overflow-visible" : "overflow-hidden",
-          "lg:sticky lg:top-0 lg:z-auto lg:h-screen",
+          "lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:z-40",
           isOpen ? "translate-x-0 shadow-[40px_0_80px_rgba(0,0,0,0.5)]" : "-translate-x-full lg:translate-x-0",
           isCollapsed ? "w-16 lg:shadow-[20px_0_40px_rgba(0,0,0,0.3)]" : "w-64 lg:shadow-[30px_0_60px_rgba(0,0,0,0.4)]"
+
 
         )}
       >
