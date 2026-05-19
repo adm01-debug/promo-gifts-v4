@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useDeviceDetection } from '@/hooks/useDeviceDetection';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/ui';
 import { 
   Monitor, 
   Smartphone, 

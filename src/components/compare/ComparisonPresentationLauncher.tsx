@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, X, Maximize, Crown, Presentation } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useComparisonScore } from "@/hooks/useComparisonScore";
+import { useComparisonScore } from "@/hooks/comparisonScore";
 
 interface Props {
   products: Product[];

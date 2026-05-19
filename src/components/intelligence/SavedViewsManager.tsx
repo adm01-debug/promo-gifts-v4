@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Bookmark, Plus, Trash2, Check } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/ui";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface SavedView {

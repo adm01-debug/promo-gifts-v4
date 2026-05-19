@@ -20,8 +20,8 @@ import {
   type QuoteTemplateItem,
 } from '@/hooks/useQuoteTemplates';
 import { useAuth } from '@/contexts/AuthContext';
-import { findKnownHex } from '@/hooks/useProducts';
-import { useDebounce } from '@/hooks/useDebounce';
+import { findKnownHex } from '@/hooks/products';
+import { useDebounce } from '@/hooks/common';
 import type {
   SelectedCompanyInfo,
   SelectedContactInfo,

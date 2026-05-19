@@ -2,8 +2,8 @@
  * ProductSearchPanel — Search sidebar extracted from ProductMatchPage.
  */
 import { useState, useMemo } from 'react';
-import { useProducts, type Product } from '@/hooks/useProducts';
-import { useDebounce } from '@/hooks/useDebounce';
+import { useProducts, type Product } from '@/hooks/products';
+import { useDebounce } from '@/hooks/common';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';

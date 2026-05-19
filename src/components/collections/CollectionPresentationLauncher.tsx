@@ -4,7 +4,7 @@
  */
 import { useMemo } from "react";
 import { PresentationMode, type PresentationSlide } from "@/components/presentation/PresentationMode";
-import type { Product } from "@/hooks/useProducts";
+import type { Product } from "@/hooks/products";
 
 interface Props {
   products: Product[];

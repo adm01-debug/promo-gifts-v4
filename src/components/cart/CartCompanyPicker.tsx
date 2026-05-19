@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { selectCrm, searchCrm } from "@/lib/crm-db";
 import { getCompanyDisplayName, type CrmCompany } from "@/types/crm";
 import { useSellerCartContext, type CreateCartInput } from "@/contexts/SellerCartContext";
-import { useSearchHistory } from "@/hooks/useSearchHistory";
+import { useSearchHistory } from "@/hooks/commonHistory";
 
 interface CompanyItem {
   id: string;

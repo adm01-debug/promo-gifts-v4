@@ -16,7 +16,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { useComparisonStore } from "@/stores/useComparisonStore";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/ui";
 import { useOnboardingContext } from "@/contexts/OnboardingContext";
 import { OrganizationSwitcher } from "@/components/OrganizationSwitcher";
 
@@ -26,7 +26,7 @@ import { DiscountApprovalHeaderBadge } from "@/components/admin/DiscountApproval
 
 import { GlobalSearchPalette } from "@/components/search/GlobalSearchPalette";
 import { CartHeaderButton } from "@/components/cart/CartHeaderButton";
-import { useIsScrolled } from "@/hooks/useScroll";
+import { useIsScrolled } from "@/hooks/ui";
 import { useCurrentSection } from "@/hooks/useCurrentSection";
 import { cn } from "@/lib/utils";
 import { getRoleLabel } from "@/lib/roles";

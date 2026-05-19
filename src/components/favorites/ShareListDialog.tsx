@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Copy, Share2, Trash2, Check } from "lucide-react";
 import { toast } from "sonner";
-import type { FavoriteList } from "@/hooks/useFavoriteLists";
+import type { FavoriteList } from "@/hooks/favoritesLists";
 
 interface Props {
   open: boolean;

@@ -36,7 +36,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/ui';
 import { useGeoBlocking } from '@/hooks/useGeoBlocking';
 
 // Lista de países comuns

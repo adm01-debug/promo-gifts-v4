@@ -10,7 +10,7 @@ import { InlinePriceCalculator } from "@/components/products/InlinePriceCalculat
 import { ProductCustomizationOptions } from "@/components/products/ProductCustomizationOptions";
 import { ProductPersonalizationRules } from "@/components/products/ProductPersonalizationRules";
 import { ShareActions } from "@/components/products/ShareActions";
-import type { Product } from "@/hooks/useProducts";
+import type { Product } from "@/hooks/products";
 
 interface ProductQuickActionsProps {
   productId: string;

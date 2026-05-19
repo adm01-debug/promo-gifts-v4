@@ -27,10 +27,10 @@ import { SavedViewsManager } from '@/components/intelligence/SavedViewsManager';
 import { RealtimeBadge } from '@/components/intelligence/RealtimeBadge';
 import { TrendsTour } from '@/components/intelligence/TrendsTour';
 import { calculateTrendingScore } from '@/lib/trending-score';
-import { useUrlState, useUrlBoolean } from '@/hooks/useUrlState';
+import { useUrlState, useUrlBoolean } from '@/hooks/common';
 import { exportTrendsCsv } from '@/lib/trends-export';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/ui';
 import {
   isDemoMode,
   MOCK_KPI_CURRENT,

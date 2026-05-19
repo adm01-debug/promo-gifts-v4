@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { useSearchHistory } from "@/hooks/useSearchHistory";
+import { useSearchHistory } from "@/hooks/commonHistory";
 import { cn } from "@/lib/utils";
 
 function HighlightMatch({ text, query }: { text: string; query: string }) {

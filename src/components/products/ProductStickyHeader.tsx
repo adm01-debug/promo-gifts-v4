@@ -7,7 +7,7 @@ import { QuickAddToQuote } from "./QuickAddToQuote";
 import { BulkVariantWizard } from "@/components/catalog/BulkVariantWizard";
 import { PriceFreshnessBadge } from "./PriceFreshnessBadge";
 import { cn } from "@/lib/utils";
-import type { Product } from "@/hooks/useProducts";
+import type { Product } from "@/hooks/products";
 
 interface ProductStickyHeaderProps {
   productId: string;

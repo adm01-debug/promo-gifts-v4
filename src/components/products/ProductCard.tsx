@@ -10,7 +10,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { getCdnUrl, getSrcSet } from "@/utils/image-utils";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import type { Product } from "@/hooks/useProducts";
+import type { Product } from "@/hooks/products";
 import { toast } from "sonner";
 import { AddToCollectionModal } from "@/components/collections/AddToCollectionModal";
 import { ProductQuickView } from "./ProductQuickView";

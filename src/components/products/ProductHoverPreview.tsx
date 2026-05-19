@@ -4,7 +4,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import type { Product } from "@/hooks/useProducts";
+import type { Product } from "@/hooks/products";
 
 interface ProductHoverPreviewProps {
   product: Product;

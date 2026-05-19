@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ExportCollectionButton } from "./ExportCollectionButton";
-import type { Product } from "@/hooks/useProducts";
+import type { Product } from "@/hooks/products";
 
 interface CollectionInfo {
   name: string;

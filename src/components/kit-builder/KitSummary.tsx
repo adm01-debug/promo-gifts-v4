@@ -9,7 +9,7 @@ import { KitMarginSimulator } from './KitMarginSimulator';
 import { KitVisualPreview } from './KitVisualPreview';
 import { DiscontinuedItemsAlert } from './DiscontinuedItemsAlert';
 import { FreightEstimator } from './FreightEstimator';
-import { useKitStockValidation } from '@/hooks/useKitStockValidation';
+import { useKitStockValidation } from '@/hooks/kit-builderStockValidation';
 import { calculateTotalKitPrice, type KitState } from '@/lib/kit-builder';
 import { KitIdentificationCard } from './kit-summary/KitIdentificationCard';
 import { KitStatsCards } from './kit-summary/KitStatsCards';

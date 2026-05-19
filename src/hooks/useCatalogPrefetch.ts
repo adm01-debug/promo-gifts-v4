@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { invokeBatchBridge } from '@/lib/external-db';
-import { mapLightweightToProduct, PRODUCT_SELECT_LIGHTWEIGHT, CATALOG_PAGE_SIZE, CATALOG_BATCH_PAGES } from '@/hooks/useProductsLightweight';
+import { mapLightweightToProduct, PRODUCT_SELECT_LIGHTWEIGHT, CATALOG_PAGE_SIZE, CATALOG_BATCH_PAGES } from '@/hooks/productsLightweight';
 
 /**
  * Prefetch do catálogo SOMENTE após autenticação (#6).

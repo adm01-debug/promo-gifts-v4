@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { type Product } from "@/hooks/useProducts";
+import { type Product } from "@/hooks/products";
 import { useProductAnalytics } from "@/hooks/useProductAnalytics";
 
 const STORAGE_KEY = "product-favorites";

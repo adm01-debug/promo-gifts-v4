@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import type { Product } from "@/hooks/useProducts";
+import type { Product } from "@/hooks/products";
 import { formatCurrency } from "@/lib/format";
 
 interface Props {

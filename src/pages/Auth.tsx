@@ -33,7 +33,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/ui';
 import { useAuth } from '@/contexts/AuthContext';
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
 import { LegalFooter } from '@/components/auth/LegalFooter';

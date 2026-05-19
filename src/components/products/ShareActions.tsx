@@ -17,8 +17,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useToast } from "@/hooks/use-toast";
-import type { Product } from "@/hooks/useProducts";
+import { useToast } from "@/hooks/ui";
+import type { Product } from "@/hooks/products";
 import { SharePreviewDialog } from "./share/SharePreviewDialog";
 import { ShareAllColorsDialog } from "./share/ShareAllColorsDialog";
 import { usePhotoDownload } from "./share/usePhotoDownload";

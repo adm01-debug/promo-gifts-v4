@@ -22,7 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import type { Product } from "@/hooks/useProducts";
+import type { Product } from "@/hooks/products";
 import { toast } from "sonner";
 import { GenderBadge } from "./GenderBadge";
 import { getSupplierColors } from "@/lib/supplier-colors";

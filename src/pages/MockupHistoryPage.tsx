@@ -19,7 +19,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { PageSEO } from '@/components/seo/PageSEO';
-import { useDebounce } from '@/hooks/useDebounce';
+import { useDebounce } from '@/hooks/common';
 import { MockupHistorySkeleton } from '@/components/mockup/MockupSkeleton';
 import { DiagnosticProfiler } from '@/components/dev/DiagnosticProfiler';
 

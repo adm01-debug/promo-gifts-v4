@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { PageSEO } from '@/components/seo/PageSEO';
-import { useKitBuilderPageState } from '@/hooks/useKitBuilderPageState';
+import { useKitBuilderPageState } from '@/hooks/kit-builderBuilderPageState';
 import { Card, CardContent } from '@/components/ui/card';
 import { WizardSteps, BoxSelector, ItemSelector, KitSummary } from '@/components/kit-builder';
 import { KitBuilderHeader } from '@/components/kit-builder/KitBuilderHeader';

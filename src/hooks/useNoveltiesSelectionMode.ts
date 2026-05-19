@@ -5,7 +5,7 @@
  * the entity → Product converter; everything else lives in the generic.
  */
 import type { NoveltyWithDetails } from "@/hooks/useNovelties";
-import type { Product } from "@/hooks/useProducts";
+import type { Product } from "@/hooks/products";
 import {
   useEntitySelectionMode,
 } from "@/hooks/useEntitySelectionMode";

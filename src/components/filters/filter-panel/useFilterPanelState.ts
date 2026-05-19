@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { useDebounce } from "@/hooks/useDebounce";
+import { useDebounce } from "@/hooks/common";
 import { useCategoryIcons } from "@/hooks/useCategoryIcons";
 import { useMaterialFilter } from "@/hooks/useMaterialFilter";
 import { useSuppliers } from "@/hooks/useSuppliers";

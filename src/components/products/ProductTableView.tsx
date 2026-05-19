@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import type { Product } from "@/hooks/useProducts";
+import type { Product } from "@/hooks/products";
 import { getCdnUrl } from "@/utils/image-utils";
 import { SelectionCheckbox } from "@/components/common/SelectionCheckbox";
 import { VariantPickerDialog, type VariantActionMode } from "./VariantPickerDialog";

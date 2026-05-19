@@ -9,8 +9,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
-import type { Product } from "@/hooks/useProducts";
+import { useToast } from "@/hooks/ui";
+import type { Product } from "@/hooks/products";
 import { PhotoSelector } from "./PhotoSelector";
 import { ShareContactSelector, type ShareContactSelection } from "./ShareContactSelector";
 import { MESSAGE_TEMPLATES, type TemplateKey } from "./MessageTemplates";

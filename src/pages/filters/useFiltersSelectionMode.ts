@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import type { Product } from "@/hooks/useProducts";
+import type { Product } from "@/hooks/products";
 import type { BulkVariantSelection, BulkWizardMode } from "@/components/catalog/BulkVariantWizard";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { useComparisonStore } from "@/stores/useComparisonStore";

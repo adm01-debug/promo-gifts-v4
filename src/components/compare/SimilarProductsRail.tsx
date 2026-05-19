@@ -3,7 +3,7 @@
  * Mesma categoria + faixa de preço ±20% dos produtos já em comparação.
  */
 import { useMemo } from "react";
-import { useProducts } from "@/hooks/useProducts";
+import { useProducts } from "@/hooks/products";
 import { useComparisonStore } from "@/stores/useComparisonStore";
 import { Button } from "@/components/ui/button";
 import { Plus, Sparkles } from "lucide-react";

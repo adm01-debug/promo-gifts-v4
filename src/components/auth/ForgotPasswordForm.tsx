@@ -8,7 +8,7 @@ import { Mail, Loader2, ArrowLeft, Clock, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/ui';
 import { usePasswordResetRequests } from '@/hooks/usePasswordResetRequests';
 import { motion, AnimatePresence } from 'framer-motion';
 

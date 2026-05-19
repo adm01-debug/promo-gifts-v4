@@ -7,7 +7,7 @@
  */
 
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
-import { useDebounce } from "@/hooks/useDebounce";
+import { useDebounce } from "@/hooks/common";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Search, Package, X, SearchX, Filter, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -16,8 +16,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { useProductsCatalog, type ProductLightweight } from "@/hooks/useProductsLightweight";
-import { type Product } from "@/hooks/useProducts";
+import { useProductsCatalog, type ProductLightweight } from "@/hooks/productsLightweight";
+import { type Product } from "@/hooks/products";
 import { type ExternalVariantStock } from "@/hooks/useExternalVariantStock";
 import { ProductLoaderAndColorSelector } from "./MockupColorSelector";
 

@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useToast } from "@/hooks/use-toast";
-import type { Product, ProductColor } from "@/hooks/useProducts";
+import { useToast } from "@/hooks/ui";
+import type { Product, ProductColor } from "@/hooks/products";
 import { ShareContactSelector, type ShareContactSelection } from "./ShareContactSelector";
 import { WhatsAppPreview } from "./WhatsAppPreview";
 import { openWhatsAppShare } from "./whatsapp";

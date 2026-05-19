@@ -3,7 +3,7 @@
  */
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import type { Product } from "@/hooks/useProducts";
+import type { Product } from "@/hooks/products";
 
 interface ExportOptions {
   collectionName: string;

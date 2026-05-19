@@ -2,7 +2,7 @@
  * useCatalogFiltering — Filtering and sorting logic extracted from useCatalogState
  */
 import { useMemo } from "react";
-import type { Product } from "@/hooks/useProducts";
+import type { Product } from "@/hooks/products";
 import type { FilterState } from "@/components/filters/FilterPanel";
 import type { SortOption } from "./useCatalogState";
 import { sortProducts } from "@/utils/product-sorting";

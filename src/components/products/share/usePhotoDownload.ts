@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/ui";
 
 /**
  * Hook to download product photos.

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Camera, Upload, X, Loader2, Search, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/ui";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ProductAnalysis {

@@ -6,7 +6,7 @@ import { FavoritesSortBar, type FavoritesSort } from "./FavoritesSortBar";
 import { ExportFavoritesButton } from "./ExportFavoritesButton";
 import { FavoritesHeatmap } from "./FavoritesHeatmap";
 import { formatCurrency } from "@/lib/format";
-import type { FavoriteList, FavoriteListItem } from "@/hooks/useFavoriteLists";
+import type { FavoriteList, FavoriteListItem } from "@/hooks/favoritesLists";
 import type { Product } from "@/types/product";
 
 interface Props {

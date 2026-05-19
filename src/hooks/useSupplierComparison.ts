@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { type Product, useProducts } from "@/hooks/useProducts";
+import { type Product, useProducts } from "@/hooks/products";
 
 interface SupplierProduct {
   product: Product;

@@ -7,7 +7,7 @@ import { ProductCard } from "./ProductCard";
 import { ProductListItem } from "./ProductListItem";
 import { ProductCardSkeleton } from "./ProductCardSkeleton";
 import { InlineFilterBar } from "@/components/filters/StickyFilterBar";
-import type { Product } from "@/hooks/useProducts";
+import type { Product } from "@/hooks/products";
 import type { ActiveColorFilter } from "@/utils/color-image-resolver";
 
 interface VirtualizedProductGridProps {

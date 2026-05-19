@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useProducts } from '@/hooks/useProducts';
+import { useProducts } from '@/hooks/products';
 import { useExternalTechniques } from '@/hooks/useExternalDatabase';
 import { fetchPromobrindPriceTables } from '@/lib/external-db';
 import { useQuery } from '@tanstack/react-query';

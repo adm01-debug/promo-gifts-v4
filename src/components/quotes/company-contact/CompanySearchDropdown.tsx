@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { selectCrm, searchCrm } from "@/lib/crm-db";
 import { getCompanyDisplayName, type CrmCompany } from "@/types/crm";
 import { CompanyAvatar, type CompanyOption } from "./shared-types";
-import { useSearchHistory } from "@/hooks/useSearchHistory";
+import { useSearchHistory } from "@/hooks/commonHistory";
 
 interface CompanySearchDropdownProps {
   companyId: string;

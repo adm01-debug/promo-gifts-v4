@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { type Product } from '@/hooks/useProducts';
+import { type Product } from '@/hooks/products';
 import { type MatchResult } from '@/hooks/useProductMatch';
 import { cn } from '@/lib/utils';
 import { getCdnUrl } from '@/utils/image-utils';

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import type { FavoriteList } from "@/hooks/useFavoriteLists";
+import type { FavoriteList } from "@/hooks/favoritesLists";
 
 interface Props {
   open: boolean;

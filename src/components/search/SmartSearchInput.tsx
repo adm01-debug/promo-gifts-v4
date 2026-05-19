@@ -15,9 +15,9 @@ import {
   Search, X, Clock, TrendingUp, Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useSearch, type SearchResult } from "@/hooks/useSearch";
-import { useSearchHistory } from "@/hooks/useSearchHistory";
-import { useDebounce } from "@/hooks/useDebounce";
+import { useSearch, type SearchResult } from "@/hooks/common";
+import { useSearchHistory } from "@/hooks/commonHistory";
+import { useDebounce } from "@/hooks/common";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { GroupedSearchResults } from "./SearchResultGroups";
 import { motion, AnimatePresence } from "framer-motion";

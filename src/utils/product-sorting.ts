@@ -1,4 +1,4 @@
-import type { Product } from "@/hooks/useProducts";
+import type { Product } from "@/hooks/products";
 import type { SupplierSalesEntry } from "@/hooks/useSupplierSalesRanking";
 
 /**

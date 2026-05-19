@@ -7,9 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { VisualSearchButton } from "./VisualSearchButton";
 import { cn } from "@/lib/utils";
-import { useSearch, type SearchResult } from "@/hooks/useSearch";
+import { useSearch, type SearchResult } from "@/hooks/common";
 import type { VoiceAgentAction } from "@/hooks/voice/types";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/ui";
 import { useProductAnalytics } from "@/hooks/useProductAnalytics";
 
 const LazyVoiceOverlay = lazy(() => import("./VoiceSearchOverlayConnected"));

@@ -12,20 +12,20 @@ import {
   STORAGE_KEY as GRID_COLUMNS_KEY,
   type ColumnCount,
 } from '@/components/products/ColumnSelector';
-import { useProductsCatalog } from '@/hooks/useProductsLightweight';
-import type { Product } from '@/hooks/useProducts';
+import { useProductsCatalog } from '@/hooks/productsLightweight';
+import type { Product } from '@/hooks/products';
 import { useProductsContext } from '@/contexts/ProductsContext';
-import { useSearch } from '@/hooks/useSearch';
+import { useSearch } from '@/hooks/common';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
-import { useFavoriteQuickAdd } from '@/hooks/useFavoriteQuickAdd';
+import { useFavoriteQuickAdd } from '@/hooks/favoritesQuickAdd';
 import { useComparisonStore } from '@/stores/useComparisonStore';
-import { useProductsByMaterial } from '@/hooks/useProductsByMaterial';
+import { useProductsByMaterial } from '@/hooks/productsByMaterial';
 import { useProductFuzzySearch } from '@/hooks/useProductFuzzySearch';
-import { useProductsByCategory } from '@/hooks/useProductsByCategory';
-import { useDebounce } from '@/hooks/useDebounce';
+import { useProductsByCategory } from '@/hooks/productsByCategory';
+import { useDebounce } from '@/hooks/common';
 import { useExternalCategoriesQuery } from '@/hooks/useExternalCategoriesQuery';
 import { useCatalogRealStats } from '@/hooks/useCatalogRealStats';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/ui';
 import { usePromoSalesRanking } from '@/hooks/usePromoSalesRanking';
 import { useSupplierSalesRanking } from '@/hooks/useSupplierSalesRanking';
 import { useCatalogFiltering } from './useCatalogFiltering';

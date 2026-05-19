@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { type Product } from "@/hooks/useProducts";
+import { type Product } from "@/hooks/products";
 
 const STORAGE_KEY = "recently-viewed-products";
 const MAX_ITEMS = 10;

@@ -4,11 +4,11 @@ import {
   useFavoriteLists,
   useFavoriteTrash,
   useLegacyFavoritesMigration,
-} from '@/hooks/useFavoriteLists';
+} from '@/hooks/favoritesLists';
 import { useEnrichedFavoriteItems } from '@/hooks/useEnrichedFavoriteItems';
 import { useProductsContext } from '@/contexts/ProductsContext';
 import { useCatalogSelection } from '@/components/catalog/useCatalogSelection';
-import { useFavoritesGlobalShortcuts } from '@/hooks/useFavoritesGlobalShortcuts';
+import { useFavoritesGlobalShortcuts } from '@/hooks/favoritessGlobalShortcuts';
 import { useUndoStack } from '@/hooks/useUndoStack';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
 import type { FavoritesSort } from '@/components/favorites/FavoritesSortBar';

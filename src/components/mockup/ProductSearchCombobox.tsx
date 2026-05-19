@@ -17,7 +17,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { useDebounce } from "@/hooks/useDebounce";
+import { useDebounce } from "@/hooks/common";
 import { createProductFuseOptions, rankProductSearchResults } from "@/utils/product-search";
 
 interface Product {

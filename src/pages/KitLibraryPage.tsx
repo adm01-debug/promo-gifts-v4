@@ -30,7 +30,7 @@ import { KitCardSkeletonGrid } from '@/components/kit-library/KitCardSkeleton';
 import { KitLibraryFilters, type SortOption } from '@/components/kit-library/KitLibraryFilters';
 import { KitTemplatePreviewDialog } from '@/components/kit-library/KitTemplatePreviewDialog';
 import { KitCategoryChips } from '@/components/kit-library/KitCategoryChips';
-import { useKitTemplates, type KitTemplateRow } from '@/hooks/useKitTemplates';
+import { useKitTemplates, type KitTemplateRow } from '@/hooks/kit-builderTemplates';
 import { useCustomKitPersistence, type CustomKitRow } from '@/hooks/useCustomKitPersistence';
 import { buildCustomKitInsert } from '@/lib/kit-library/buildCustomKitInsert';
 

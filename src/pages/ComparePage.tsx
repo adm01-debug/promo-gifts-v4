@@ -42,8 +42,8 @@ import { SimilarProductsRail } from '@/components/compare/SimilarProductsRail';
 import { CompareEmptyStateSmart } from '@/components/compare/CompareEmptyStateSmart';
 import { RecentComparisonsSidebar } from '@/components/compare/RecentComparisonsSidebar';
 import { FavoritesClientPicker } from '@/components/favorites/FavoritesClientPicker';
-import { useComparisonSync } from '@/hooks/useComparisonSync';
-import { useComparisonShortcuts } from '@/hooks/useComparisonShortcuts';
+import { useComparisonSync } from '@/hooks/comparisonSync';
+import { useComparisonShortcuts } from '@/hooks/comparisonShortcuts';
 
 export default function ComparePage() {
   useComparisonSync();

@@ -25,7 +25,7 @@ import { useProductFreshnessOverride } from '@/hooks/useProductFreshnessOverride
 import { DEFAULT_PRICE_FRESHNESS_THRESHOLD_DAYS } from '@/utils/price-freshness';
 import { cn } from '@/lib/utils';
 import { sortVariationsByColor } from '@/utils/colorSorting';
-import type { Product } from '@/hooks/useProducts';
+import type { Product } from '@/hooks/products';
 import type { ProductVariation } from '@/types/product-catalog';
 
 interface ProductDetailHeroProps {

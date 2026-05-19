@@ -1,4 +1,4 @@
-import type { Product } from "@/hooks/useProducts";
+import type { Product } from "@/hooks/products";
 
 export type TemplateKey = "formal" | "informal" | "promotional";
 

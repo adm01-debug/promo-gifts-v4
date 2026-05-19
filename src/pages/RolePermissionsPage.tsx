@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/ui';
 import { Shield, Key, Save, Users, CheckCircle2, XCircle } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 import { PageSEO } from "@/components/seo/PageSEO";

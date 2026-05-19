@@ -9,7 +9,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import type { FavoriteList } from "@/hooks/useFavoriteLists";
+import type { FavoriteList } from "@/hooks/favoritesLists";
 import { CreateListDialog } from "./CreateListDialog";
 import { ShareListDialog } from "./ShareListDialog";
 import { DeleteConfirmDialog } from "@/components/ui/ConfirmDialog";

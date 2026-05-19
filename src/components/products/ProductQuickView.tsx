@@ -26,7 +26,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { VisuallyHidden } from "@/components/a11y/VisuallyHidden";
 import { cn } from "@/lib/utils";
-import type { Product } from "@/hooks/useProducts";
+import type { Product } from "@/hooks/products";
 import { ProductCategoryBadges } from "./ProductCategoryBadges";
 import { QuickViewGallery } from "./quick-view/QuickViewGallery";
 import { ProductColorSelector, type ProductColor } from "./ProductColorSelector";

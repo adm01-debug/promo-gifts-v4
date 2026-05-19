@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { QuickAddToQuote } from "@/components/products/QuickAddToQuote";
 import { BulkVariantWizard } from "@/components/catalog/BulkVariantWizard";
-import type { Product } from "@/hooks/useProducts";
+import type { Product } from "@/hooks/products";
 
 interface MobileProductActionsProps {
   productId: string;

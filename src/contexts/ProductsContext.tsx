@@ -1,5 +1,5 @@
 import React, { createContext, useContext, type ReactNode, useMemo, useCallback, useState, useEffect, useRef } from "react";
-import { type Product, mapPromobrindToProduct } from "@/hooks/useProducts";
+import { type Product, mapPromobrindToProduct } from "@/hooks/products";
 import { fetchPromobrindProducts } from "@/lib/external-db";
 import { logger } from "@/lib/logger";
 

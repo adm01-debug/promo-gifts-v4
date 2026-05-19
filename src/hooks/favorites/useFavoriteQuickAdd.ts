@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavoritesStore, type FavoriteVariantInfo } from '@/stores/useFavoritesStore';
-import { useFavoriteLists } from '@/hooks/useFavoriteLists';
+import { useFavoriteLists } from '@/hooks/favoritesLists';
 import type { Product } from '@/types/product';
 import { toast } from 'sonner';
 

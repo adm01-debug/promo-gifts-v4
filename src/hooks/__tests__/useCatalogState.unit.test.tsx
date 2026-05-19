@@ -9,7 +9,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import React from "react";
 
 // Mock all internal hooks used by useCatalogState to avoid side effects and hangs
-vi.mock("@/hooks/useProductsLightweight", () => ({
+vi.mock("@/hooks/productsLightweight", () => ({
   useProductsCatalog: vi.fn(() => ({
     data: { pages: [{ products: [], totalEstimate: 0 }] },
     isLoading: false,
@@ -21,7 +21,7 @@ vi.mock("@/hooks/useProductsLightweight", () => ({
   })),
 }));
 
-vi.mock("@/hooks/useSearch", () => ({
+vi.mock("@/hooks/common", () => ({
   useSearch: vi.fn(() => ({
     suggestions: [],
     quickSuggestions: [],
@@ -31,7 +31,7 @@ vi.mock("@/hooks/useSearch", () => ({
   })),
 }));
 
-vi.mock("@/hooks/useProductsByMaterial", () => ({
+vi.mock("@/hooks/productsByMaterial", () => ({
   useProductsByMaterial: vi.fn(() => ({
     productIds: [],
     hasFilter: false,
@@ -39,7 +39,7 @@ vi.mock("@/hooks/useProductsByMaterial", () => ({
   })),
 }));
 
-vi.mock("@/hooks/useProductsByCategory", () => ({
+vi.mock("@/hooks/productsByCategory", () => ({
   useProductsByCategory: vi.fn(() => ({
     productIds: [],
     hasFilter: false,
@@ -75,7 +75,7 @@ vi.mock("@/hooks/useCatalogFiltering", () => ({
   useCatalogFiltering: vi.fn((args) => args.realProducts || []),
 }));
 
-vi.mock("@/hooks/useFavoriteQuickAdd", () => ({
+vi.mock("@/hooks/favoritesQuickAdd", () => ({
   useFavoriteQuickAdd: vi.fn(() => ({
     handleFavoriteClick: vi.fn(),
     defaultList: null,

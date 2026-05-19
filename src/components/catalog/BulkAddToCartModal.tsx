@@ -9,7 +9,7 @@ import { Check, ShoppingBag, Loader2 } from "lucide-react";
 import { useSellerCartContext } from "@/contexts/SellerCartContext";
 import { CartCompanyPicker } from "@/components/cart/CartCompanyPicker";
 import { toast } from "sonner";
-import type { Product } from "@/hooks/useProducts";
+import type { Product } from "@/hooks/products";
 import type { BulkVariantSelection } from "./BulkVariantWizard";
 
 interface BulkAddToCartModalProps {

@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatCurrency } from '@/lib/kit-builder';
 import { RelatedTemplates } from '@/components/kit-library/RelatedTemplates';
-import type { KitTemplateRow } from '@/hooks/useKitTemplates';
+import type { KitTemplateRow } from '@/hooks/kit-builderTemplates';
 
 interface Props {
   template: KitTemplateRow | null;

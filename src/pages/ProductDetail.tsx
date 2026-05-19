@@ -13,9 +13,9 @@ import { SupplierComparisonModal } from '@/components/compare/SupplierComparison
 import { VariantPickerDialog } from '@/components/products/VariantPickerDialog';
 import { FutureStockModal } from '@/components/products/FutureStockModal';
 import { PackagingModal } from '@/components/products/PackagingModal';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/ui';
 import { useProductAnalytics } from '@/hooks/useProductAnalytics';
-import { useProduct } from '@/hooks/useProducts';
+import { useProduct } from '@/hooks/products';
 import type { Product, ProductVariation } from '@/types/product-catalog';
 import type { ExternalVariantStock } from '@/hooks/useExternalVariantStock';
 import { useQuery } from '@tanstack/react-query';

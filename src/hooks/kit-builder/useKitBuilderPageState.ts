@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { useSearchParams } from 'react-router-dom';
-import { useKitBuilder } from '@/hooks/useKitBuilder';
+import { useKitBuilder } from '@/hooks/kit-builderBuilder';
 import { useCustomKitPersistence } from '@/hooks/useCustomKitPersistence';
-import { useKitAutoSave } from '@/hooks/useKitAutoSave';
-import { useKitUndoRedo } from '@/hooks/useKitUndoRedo';
+import { useKitAutoSave } from '@/hooks/kit-builderAutoSave';
+import { useKitUndoRedo } from '@/hooks/kit-builderUndoRedo';
 import { useKitBuilderQuote } from '@/pages/kit-builder/useKitBuilderQuote';
 import { useTemplateSnapshot } from '@/hooks/useTemplateSnapshot';
 import { useDuplicateKitDetector } from '@/hooks/useDuplicateKitDetector';
-import { transformToKitItem } from '@/hooks/useKitBuilderTransformers';
+import { transformToKitItem } from '@/hooks/kit-builderBuilderTransformers';
 import { invokeExternalDb, type PromobrindProduct } from '@/lib/external-db';
 import { logger } from '@/lib/logger';
 import { calculateTotalKitPrice } from '@/lib/kit-builder';

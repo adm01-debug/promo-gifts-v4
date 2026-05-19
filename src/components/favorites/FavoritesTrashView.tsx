@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RotateCcw, Trash2 } from "lucide-react";
-import { useFavoriteTrash } from "@/hooks/useFavoriteLists";
+import { useFavoriteTrash } from "@/hooks/favoritesLists";
 import { useProductsContext } from "@/contexts/ProductsContext";
 import { useMemo, useState } from "react";
 import { DeleteConfirmDialog } from "@/components/ui/ConfirmDialog";

@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { FavoritesClientPicker } from "./FavoritesClientPicker";
-import type { FavoriteList } from "@/hooks/useFavoriteLists";
+import type { FavoriteList } from "@/hooks/favoritesLists";
 
 const COLORS = [
   "#EF4444", "#F97316", "#F59E0B", "#EAB308",

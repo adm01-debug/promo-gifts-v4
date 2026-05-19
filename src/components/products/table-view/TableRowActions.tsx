@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { QuickAddToQuote } from "../QuickAddToQuote";
 import { cn } from "@/lib/utils";
-import type { Product } from "@/hooks/useProducts";
+import type { Product } from "@/hooks/products";
 import type { VariantActionMode } from "../VariantPickerDialog";
 import { showUndoToast } from "@/utils/undoToast";
 

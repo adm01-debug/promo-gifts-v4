@@ -1,6 +1,6 @@
 import { useState, Suspense, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
-import { useScrollLockFix } from "@/hooks/useScrollLockFix";
+import { useScrollLockFix } from "@/hooks/uiLockFix";
 import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
 import { SkipToContent } from "@/components/common/SkipToContent";
 import { BackButton } from "@/components/common/BackButton";

@@ -9,7 +9,7 @@ import {
 import { cn } from "@/lib/utils";
 import { HighlightMatch } from "./HighlightMatch";
 import { motion } from "framer-motion";
-import type { SearchResult } from "@/hooks/useSearch";
+import type { SearchResult } from "@/hooks/common";
 import { getCdnUrl } from "@/utils/image-utils";
 
 const typeIcons: Record<string, React.ReactNode> = {

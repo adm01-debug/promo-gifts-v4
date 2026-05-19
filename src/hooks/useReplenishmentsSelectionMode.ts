@@ -5,7 +5,7 @@
  * Supplies the entity → Product converter; everything else lives in the generic.
  */
 import type { ReplenishmentWithDetails } from "@/hooks/useReplenishments";
-import type { Product } from "@/hooks/useProducts";
+import type { Product } from "@/hooks/products";
 import {
   useEntitySelectionMode,
 } from "@/hooks/useEntitySelectionMode";
