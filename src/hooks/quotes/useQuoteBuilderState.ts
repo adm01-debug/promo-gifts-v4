@@ -835,6 +835,7 @@ export function useQuoteBuilderState() {
         const staleUnconfirmed = items.filter((item) => {
           if (item.price_confirmed_at) return false;
           const f = getPriceFreshness(item.price_updated_at, item.price_freshness_threshold_days);
+          // consider stale only if it's REALLY stale (not just warning)
           return f.isStale;
         });
         if (staleUnconfirmed.length > 0) {
@@ -845,7 +846,7 @@ export function useQuoteBuilderState() {
             .join(', ');
           const extra = staleUnconfirmed.length > 3 ? ` e mais ${staleUnconfirmed.length - 3}` : '';
           toast.error('Confirme os preços defasados antes de fechar o orçamento', {
-            description: `${staleUnconfirmed.length} ${staleUnconfirmed.length === 1 ? 'item está' : 'itens estão'} com preço possivelmente defasado: ${names}${extra}. Use o botão "Confirmar com fornecedor" em cada item ou "Confirmar todos" no resumo.`,
+            description: `${staleUnconfirmed.length} ${staleUnconfirmed.length === 1 ? 'item está' : 'itens estão'} com preço defasado (mais de 60 dias): ${names}${extra}. Confirme com o fornecedor para prosseguir.`,
             duration: 8000,
           });
           return;
