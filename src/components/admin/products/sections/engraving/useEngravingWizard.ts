@@ -12,7 +12,7 @@ import {
   type EnrichedArea,
   type WizardStep,
   type DetailFormState,
-} from "@/pages/advanced-price-search/types";
+} from "./types";
 
 export function useEngravingWizard(productId: string | undefined, isEdit: boolean) {
   const queryClient = useQueryClient();

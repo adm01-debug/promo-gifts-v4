@@ -14,7 +14,7 @@ import {
   type ExternalVideo,
   type VariantLink,
   type VideoVariant,
-} from "@/pages/advanced-price-search/types";
+} from "./types";
 
 export function useProductVideoGallery(productId?: string) {
   const queryClient = useQueryClient();

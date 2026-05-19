@@ -14,7 +14,7 @@ import {
   type FilterMode,
   type VariantInfo,
   type GalleryStats,
-} from "@/pages/advanced-price-search/types";
+} from "./types";
 
 interface UseProductImageGalleryProps {
   images: string[];

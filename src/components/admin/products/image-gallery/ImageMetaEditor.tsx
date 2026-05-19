@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { Save, X } from 'lucide-react';
-import { type ExternalImage, IMAGE_TYPES } from "@/pages/advanced-price-search/types";
+import { type ExternalImage, IMAGE_TYPES } from "./types";
 
 interface Props {
   image: ExternalImage;

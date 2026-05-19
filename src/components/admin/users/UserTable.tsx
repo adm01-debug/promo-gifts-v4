@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader2, Pencil, Trash2, ArrowUpCircle } from "lucide-react";
 import { RoleBadge } from "@/components/RoleBadge";
-import { type UserWithRole } from "@/pages/advanced-price-search/types";
+import { type UserWithRole } from "./types";
 
 interface UserTableProps {
   users: UserWithRole[];

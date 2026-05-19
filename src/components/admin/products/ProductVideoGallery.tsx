@@ -14,7 +14,7 @@ import { useProductVideoGallery } from './video-gallery/useProductVideoGallery';
 import { VideoGrid } from './video-gallery/VideoGrid';
 import { VideoUploadArea } from './video-gallery/VideoUploadArea';
 import { ConfirmDeleteDialog } from './image-gallery/ConfirmDeleteDialog';
-import { VIDEO_TYPES, formatBytes } from "@/pages/advanced-price-search/types";
+import { VIDEO_TYPES, formatBytes } from "./video-gallery/types";
 
 interface ProductVideoGalleryProps {
   productId?: string;

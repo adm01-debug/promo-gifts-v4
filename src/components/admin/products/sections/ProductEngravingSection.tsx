@@ -20,7 +20,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   WIZARD_STEPS, COMMON_COMPONENTS, COMMON_LOCATIONS,
   getTechniqueIcon, getTechniqueColor,
-} from "@/pages/advanced-price-search/types";
+} from "./engraving/types";
 import { useEngravingWizard } from './engraving/useEngravingWizard';
 import { EngravingAreaCard } from './engraving/EngravingAreaCard';
 

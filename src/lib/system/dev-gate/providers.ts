@@ -1,4 +1,4 @@
-import { type GateValue, type GateFlagProvider } from "@/pages/advanced-price-search/types";
+import { type GateValue, type GateFlagProvider } from "./types";
 
 const TRUTHY = new Set(['true', '1', 'on', 'yes']);
 const FALSY = new Set(['false', '0', 'off', 'no']);
