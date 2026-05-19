@@ -5,9 +5,12 @@ import { useEffect, useState, useRef } from "react";
 import { useReducedMotion } from "@/hooks/ui";
 import { SelectionCheckbox } from "@/components/common/SelectionCheckbox";
 import { cn } from "@/lib/utils";
+import { ProductGridSkeleton } from "./ProductCardSkeleton";
+import type { ColumnCount } from "./ColumnSelector";
 
 export interface ProductGridProps {
   products: Product[];
+  isLoading?: boolean;
   onProductClick?: (productId: string) => void;
   onViewProduct?: (product: Product) => void;
   onShareProduct?: (product: Product) => void;
@@ -105,6 +108,7 @@ const columnClasses: Record<number, string> = {
 
 export function ProductGrid({ 
   products,
+  isLoading,
   onProductClick,
   onViewProduct, 
   onShareProduct, 
@@ -126,11 +130,21 @@ export function ProductGrid({
   const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (isLoading) return;
     // Reset animation state when products change
     setIsGridVisible(false);
     const timer = setTimeout(() => setIsGridVisible(true), 50);
     return () => clearTimeout(timer);
-  }, [products]);
+  }, [products, isLoading]);
+
+  if (isLoading) {
+    return (
+      <ProductGridSkeleton 
+        count={products.length > 0 ? products.length : 10} 
+        columns={columns as ColumnCount} 
+      />
+    );
+  }
 
   if (products.length === 0) {
     return (
