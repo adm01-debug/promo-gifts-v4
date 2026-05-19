@@ -10,7 +10,7 @@
  * - Responsivo: labels escondidos em mobile, apenas ícones
  */
 import { memo } from "react";
-import { Heart, GitCompare, FolderPlus, X, CheckSquare, ShoppingBag, FileText, Sparkles } from "lucide-react";
+import { Heart, GitCompare, FolderPlus, X, CheckSquare, ShoppingBag, FileText, Sparkles, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -27,6 +27,7 @@ interface BulkActionBarProps {
   onBulkCollection: () => void;
   onBulkCart?: () => void;
   onBulkQuote?: () => void;
+  onBulkPDF?: () => void;
 }
 
 const actionVariants = {
@@ -87,6 +88,7 @@ export const BulkActionBar = memo(function BulkActionBar({
   onBulkCollection,
   onBulkCart,
   onBulkQuote,
+  onBulkPDF,
 }: BulkActionBarProps) {
   return (
     <AnimatePresence>
@@ -142,20 +144,29 @@ export const BulkActionBar = memo(function BulkActionBar({
                   className="text-primary hover:text-primary hover:bg-primary/10"
                 />
               )}
+              {onBulkPDF && (
+                <ActionButton
+                  icon={FileDown}
+                  label="Catálogo"
+                  onClick={onBulkPDF}
+                  index={2}
+                  className="text-orange-500 hover:text-orange-500 hover:bg-orange-500/10"
+                />
+              )}
             </div>
           )}
 
           {/* Secondary actions */}
           <div className="flex items-center gap-0.5">
-            <ActionButton icon={Heart} label="Favoritar" onClick={onBulkFavorite} index={2} />
+            <ActionButton icon={Heart} label="Favoritar" onClick={onBulkFavorite} index={3} />
             <ActionButton
               icon={GitCompare}
               label="Comparar"
               onClick={onBulkCompare}
               disabled={selectedCount > 4}
-              index={3}
+              index={4}
             />
-            <ActionButton icon={FolderPlus} label="Coleção" onClick={onBulkCollection} index={4} />
+            <ActionButton icon={FolderPlus} label="Coleção" onClick={onBulkCollection} index={5} />
           </div>
 
           {/* Controls */}
