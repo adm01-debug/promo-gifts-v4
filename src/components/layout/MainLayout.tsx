@@ -95,7 +95,7 @@ export function MainLayout({ children }: MainLayoutProps) {
 
           <div
             className={cn(
-              "sticky z-30 print:hidden transition-all duration-300",
+              "sticky z-30 print:hidden transition-all duration-300 theme-transitioning",
               "bg-background/20 backdrop-blur-xl",
               "border-b border-border/40",
               isHome && "hidden",
