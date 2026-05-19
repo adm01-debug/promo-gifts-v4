@@ -41,11 +41,16 @@ export function TechniqueCard({ technique, isSelected, onSelect }: TechniqueCard
 
   return (
     <button
+      type="button"
+      role="radio"
+      aria-checked={isSelected}
+      aria-label={`${technique.tecnica_nome} — ${technique.grupo_tecnica}, ${colorLabel}, até ${technique.efetiva_largura_max} por ${technique.efetiva_altura_max} centímetros${isSelected ? " (selecionada)" : ""}`}
       className={cn(
         "w-full p-3 rounded-lg flex items-start gap-3 transition-all duration-200 border text-left",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         isSelected
-          ? "bg-primary/10 border-primary/40 ring-1 ring-primary/20"
-          : "bg-secondary/50 border-border/50 hover:bg-secondary/80 hover:border-border"
+          ? "bg-primary/10 border-primary/60 ring-2 ring-primary/30 shadow-sm"
+          : "bg-secondary/50 border-border/50 hover:bg-secondary/80 hover:border-border",
       )}
       onClick={() => onSelect(technique)}
     >

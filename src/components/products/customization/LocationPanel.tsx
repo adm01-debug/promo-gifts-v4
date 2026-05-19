@@ -9,7 +9,7 @@
  *    selecionar outra técnica troca e mantém as dimensões já preenchidas.
  */
 
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect, useId } from "react";
 import { Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -104,17 +104,35 @@ function groupByGrupo(options: TechniqueOption[]): Record<string, TechniqueOptio
 interface SelectedTechniqueBarProps {
   technique: TechniqueOption;
   onChangeClick: () => void;
+  isPickerOpen: boolean;
+  pickerId: string;
+  changeButtonRef?: React.Ref<HTMLButtonElement>;
 }
 
-function SelectedTechniqueBar({ technique, onChangeClick }: SelectedTechniqueBarProps) {
+function SelectedTechniqueBar({
+  technique,
+  onChangeClick,
+  isPickerOpen,
+  pickerId,
+  changeButtonRef,
+}: SelectedTechniqueBarProps) {
   return (
     <div
-      role="status"
-      aria-live="polite"
-      className="flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2"
+      className={
+        "flex items-center justify-between gap-3 rounded-lg border px-3 py-2 transition-colors " +
+        (isPickerOpen
+          ? "border-primary/60 bg-primary/10 ring-1 ring-primary/30"
+          : "border-primary/30 bg-primary/5")
+      }
     >
       <div className="flex min-w-0 items-center gap-2">
-        <span className="h-2 w-2 shrink-0 rounded-full bg-primary" aria-hidden />
+        <span
+          className={
+            "h-2 w-2 shrink-0 rounded-full bg-primary transition-transform " +
+            (isPickerOpen ? "animate-pulse scale-110" : "")
+          }
+          aria-hidden
+        />
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-foreground">
             {technique.tecnica_nome}
@@ -127,17 +145,23 @@ function SelectedTechniqueBar({ technique, onChangeClick }: SelectedTechniqueBar
         </div>
       </div>
       <Button
+        ref={changeButtonRef}
         type="button"
-        variant="outline"
+        variant={isPickerOpen ? "default" : "outline"}
         size="sm"
         className="h-8 shrink-0 gap-1.5"
         onClick={onChangeClick}
-        aria-expanded={false}
-        aria-label="Trocar técnica de gravação"
+        aria-expanded={isPickerOpen}
+        aria-controls={pickerId}
+        aria-label={
+          isPickerOpen
+            ? `Fechar seletor de técnicas — técnica atual: ${technique.tecnica_nome}`
+            : `Trocar técnica de gravação — técnica atual: ${technique.tecnica_nome}`
+        }
         data-testid="customization-change-technique"
       >
         <Pencil className="h-3.5 w-3.5" />
-        Trocar
+        {isPickerOpen ? "Fechar" : "Trocar"}
       </Button>
     </div>
   );
@@ -207,13 +231,39 @@ export function LocationPanel({
 
   const grouped = useMemo(() => groupByGrupo(location.options), [location.options]);
 
-  // Foco no primeiro card ao reabrir a lista (a11y)
+  // IDs estáveis para wiring de aria-controls
+  const pickerId = useId();
+
+  // Ref do botão "Trocar/Fechar" para restituir foco quando o picker fecha
+  const changeButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  // Foco no primeiro card ao reabrir a lista; foco de volta no botão ao fechar (a11y)
   const firstCardRef = useRef<HTMLDivElement | null>(null);
+  const prevPickerOpenRef = useRef<boolean>(isPickerOpen);
   useEffect(() => {
+    const wasOpen = prevPickerOpenRef.current;
     if (isPickerOpen && selectedTechnique) {
       const el = firstCardRef.current?.querySelector<HTMLElement>("[role='button'],button");
       el?.focus?.();
+    } else if (!isPickerOpen && wasOpen && selectedTechnique) {
+      // Picker fechou enquanto havia técnica selecionada → devolve foco ao trigger.
+      changeButtonRef.current?.focus?.();
     }
+    prevPickerOpenRef.current = isPickerOpen;
+  }, [isPickerOpen, selectedTechnique]);
+
+  // Mensagem para o announcer aria-live (transições de estado)
+  const [announcement, setAnnouncement] = useState<string>("");
+  useEffect(() => {
+    if (!selectedTechnique) {
+      setAnnouncement("");
+      return;
+    }
+    setAnnouncement(
+      isPickerOpen
+        ? `Seletor de técnicas aberto. Técnica atual: ${selectedTechnique.tecnica_nome}.`
+        : `Técnica selecionada: ${selectedTechnique.tecnica_nome}.`,
+    );
   }, [isPickerOpen, selectedTechnique]);
 
   const handleSelectTechnique = useCallback(
@@ -312,10 +362,24 @@ export function LocationPanel({
 
   return (
     <div className="space-y-3" data-testid="customization-location-panel">
+      {/* Anúncio de transições de estado (somente leitores de tela) */}
+      <p
+        className="sr-only"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        data-testid="customization-aria-announcer"
+      >
+        {announcement}
+      </p>
+
       {/* Barra resumo da técnica selecionada (Estado B/C) */}
       {showConfig && (
         <SelectedTechniqueBar
           technique={selectedTechnique}
+          isPickerOpen={isPickerOpen}
+          pickerId={pickerId}
+          changeButtonRef={changeButtonRef}
           onChangeClick={() => setIsPickerOpen((v) => !v)}
         />
       )}
@@ -324,7 +388,14 @@ export function LocationPanel({
       {showPicker && (
         <div
           ref={firstCardRef}
-          className="space-y-3 animate-in fade-in slide-in-from-top-1"
+          id={pickerId}
+          role="radiogroup"
+          aria-label={
+            selectedTechnique
+              ? `Trocar técnica de gravação para ${location.location_name}. Atual: ${selectedTechnique.tecnica_nome}.`
+              : `Escolha a técnica de gravação para ${location.location_name}.`
+          }
+          className="space-y-3 animate-in fade-in slide-in-from-top-1 rounded-lg border border-primary/20 bg-primary/[0.02] p-3"
           data-testid="customization-technique-picker"
         >
           {selectedTechnique && (
