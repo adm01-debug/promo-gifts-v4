@@ -31,6 +31,7 @@ export function CatalogBulkModals({ sel, selectionMode, totalCount }: CatalogBul
           onBulkQuote={sel.handleBulkQuote}
           onBulkCart={sel.handleBulkCart}
           onBulkPDF={sel.handleBulkPDF}
+          selectedTotalValue={sel.selectedTotalValue}
         />
       )}
 
