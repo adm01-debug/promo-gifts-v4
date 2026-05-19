@@ -180,6 +180,8 @@ export function LocationPanel({
     [productId, location.location_code],
   );
 
+  const [announcement, setAnnouncement] = useState("");
+
   // Hidrata estado inicial: confirmada > rascunho persistido > nada.
   const initialDraft = useMemo<LocationDraft | null>(
     () => (confirmedPersonalization ? null : readDraft(storageKey)),
@@ -206,6 +208,7 @@ export function LocationPanel({
     height: confirmedPersonalization?.height ?? initialDraft?.height,
     colors: confirmedPersonalization?.numberOfColors ?? initialDraft?.colors,
   });
+
 
   // Persiste rascunho sempre que técnica/picker muda. Dimensões são persistidas em handleDimensionsChange.
   useEffect(() => {
@@ -254,7 +257,15 @@ export function LocationPanel({
   }, [isPickerOpen, selectedTechnique]);
 
   // Mensagem para o announcer aria-live (transições de estado)
+  // Usamos ref para rastrear se é o primeiro render para evitar anúncios duplicados na hidratação
+  const isFirstRenderRef = useRef(true);
+
   useEffect(() => {
+    if (isFirstRenderRef.current) {
+      isFirstRenderRef.current = false;
+      return;
+    }
+
     if (!selectedTechnique) {
       setAnnouncement("");
       return;
@@ -270,6 +281,7 @@ export function LocationPanel({
     
     setAnnouncement(msg);
   }, [isPickerOpen, selectedTechnique, clampNotice]);
+
 
   const [clampNotice, setClampNotice] = useState<string | null>(null);
 

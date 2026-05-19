@@ -155,18 +155,15 @@ test.describe('Quote Builder - Personalization E2E UX & Data Integrity', () => {
     await expect(page.getByTestId('customization-aria-announcer')).toContainText(/Técnica selecionada: Transfer Digital/i);
     await expect(changeBtn).toBeFocused();
 
-  test('deve validar clamp persistido após sair e voltar', async ({ page }) => {
-    // 1. Seleciona Transfer (Tech B)
+  test('deve validar clamp persistido após sair e voltar e preview íntegro', async ({ page }) => {
+    // 1. Seleciona Transfer (Tech B - Limites: 10x10)
     await page.getByTestId('customization-technique-card-tech-B').click();
     
-    // 2. Preenche valores válidos
+    // 2. Preenche valores válidos mas altos (8x8)
     await page.getByTestId('customization-width-input').fill('8');
     await page.getByTestId('customization-height-input').fill('8');
     
-    // 3. Confirma a gravação (isso limpa o rascunho mas agora vamos testar o fluxo de sair e voltar com rascunho)
-    // Para testar o rascunho, NÃO confirmamos.
-    
-    // 4. Troca para técnica restritiva (Laser Pequeno - Tech Small: 5x3)
+    // 3. Troca para técnica restritiva (Laser Pequeno - Tech Small: 5x3)
     await page.getByTestId('customization-change-technique').click();
     await page.getByTestId('customization-technique-card-tech-small').click();
     
@@ -174,7 +171,7 @@ test.describe('Quote Builder - Personalization E2E UX & Data Integrity', () => {
     await expect(page.getByTestId('customization-width-input')).toHaveValue('5');
     await expect(page.getByTestId('customization-height-input')).toHaveValue('3');
     
-    // 5. Sai da página e volta (simulando perda de contexto)
+    // 4. Sai da página e volta (simulando perda de contexto)
     await page.goto('/dashboard');
     await page.goto('/quotes/new');
     
@@ -183,12 +180,22 @@ test.describe('Quote Builder - Personalization E2E UX & Data Integrity', () => {
     await page.getByText('EMPRESA TESTE').first().click();
     await page.getByTestId('stepper-step-4').click();
     
-    // 6. Valida que os valores continuam clampados no rascunho restaurado
+    // 5. Valida que os valores continuam clampados no rascunho restaurado
     await expect(page.getByTestId('customization-width-input')).toHaveValue('5');
     await expect(page.getByTestId('customization-height-input')).toHaveValue('3');
+    
+    // 6. Valida que o aria-live não disparou mensagens duplicadas na restauração
+    // O announcer deve estar vazio ou conter apenas a técnica se carregado direto
+    // Mas não deve disparar o "Técnica selecionada" de novo se for o mesmo estado.
+    const announcer = page.getByTestId('customization-aria-announcer');
+    const announcerText = await announcer.innerText();
+    // Na restauração, como bloqueamos o primeiro render, ele deve estar vazio até uma nova interação
+    expect(announcerText).toBe('');
+
     // Preço deve aparecer (recalculado na hidratação)
     await expect(page.getByTestId('customization-total-price')).toBeVisible();
   });
+
 
   test('deve ocultar painel de cores para técnicas que não cobram por cor', async ({ page }) => {
     // 1. Seleciona uma técnica que NÃO cobra por cor (Tech Digital / UV)
