@@ -98,6 +98,16 @@ Deno.serve(async (req) => {
     }
 
     const contentType = imageResponse.headers.get('Content-Type') || 'image/jpeg';
+    
+    // Critical #4 fix: Validate Content-Type to prevent content-sniffing or HTML injection
+    if (!contentType.toLowerCase().startsWith('image/')) {
+      console.warn(`[image-proxy] Blocking non-image content: ${contentType} from ${imageUrl}`);
+      return new Response(JSON.stringify({ error: 'Source is not an image' }), {
+        status: 415, // Unsupported Media Type
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const imageBuffer = await imageResponse.arrayBuffer();
 
     return new Response(imageBuffer, {

@@ -1,4 +1,5 @@
 // supabase/functions/_shared/rate-limiter.ts
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 interface RateLimitConfig {
   maxRequests: number;
@@ -6,78 +7,76 @@ interface RateLimitConfig {
   keyPrefix?: string;
 }
 
-// Cache em memória simples (para Edge Functions)
-const requestCounts = new Map<string, { count: number; resetAt: number }>();
-
+/**
+ * Persistent Rate Limiter using Supabase DB.
+ * Fixed Critical #2 from 2026-05-12 Audit.
+ */
 export class RateLimiter {
   constructor(private config: RateLimitConfig) {}
 
   async check(identifier: string): Promise<{ allowed: boolean; remaining: number; resetAt: number; suspicious?: boolean }> {
     const key = `${this.config.keyPrefix || 'rl'}:${identifier}`;
-    const now = Date.now();
     
-    let record = requestCounts.get(key);
+    // Use Admin Client to bypass RLS and access the rate limits table
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
 
-    // Resetar se janela expirou
-    if (!record || now > record.resetAt) {
-      record = {
-        count: 0,
-        resetAt: now + this.config.windowMs
-      };
-    }
+    try {
+      // Atomic increment and check via RPC
+      const { data, error } = await supabaseAdmin.rpc('check_edge_rate_limit', {
+        p_key: key,
+        p_window_ms: this.config.windowMs,
+        p_max_requests: this.config.maxRequests
+      });
 
-    record.count++;
-    requestCounts.set(key, record);
-
-    // Detecção de tentativas suspeitas: 
-    // se o usuário atingir 80% do limite muito rápido (ex: em menos de 10% da janela)
-    const usageRatio = record.count / this.config.maxRequests;
-    const timeRatio = (now - (record.resetAt - this.config.windowMs)) / this.config.windowMs;
-    const suspicious = usageRatio > 0.8 && timeRatio < 0.1;
-
-    // Limpar registros antigos periodicamente
-    if (Math.random() < 0.01) {
-      this.cleanup();
-    }
-
-    const allowed = record.count <= this.config.maxRequests;
-    const remaining = Math.max(0, this.config.maxRequests - record.count);
-
-    return {
-      allowed,
-      remaining,
-      resetAt: record.resetAt,
-      suspicious
-    };
-  }
-
-  private cleanup() {
-    const now = Date.now();
-    for (const [key, record] of requestCounts.entries()) {
-      if (now > record.resetAt) {
-        requestCounts.delete(key);
+      if (error) {
+        console.error(`[rate-limiter] Error checking rate limit for ${key}:`, error);
+        // Fallback to allow (fail-open for UX, but log error)
+        return { allowed: true, remaining: 1, resetAt: Date.now() + this.config.windowMs };
       }
+
+      const result = data[0];
+      const now = Date.now();
+      const resetAt = new Date(result.reset_at).getTime();
+
+      // Detection of suspicious attempts: 
+      // if the user reached 80% of the limit very fast (e.g. in less than 10% of the window)
+      const usageRatio = (this.config.maxRequests - result.remaining) / this.config.maxRequests;
+      const timeRatio = (now - (resetAt - this.config.windowMs)) / this.config.windowMs;
+      const suspicious = usageRatio > 0.8 && timeRatio < 0.1;
+
+      return {
+        allowed: result.allowed,
+        remaining: result.remaining,
+        resetAt: resetAt,
+        suspicious
+      };
+    } catch (err) {
+      console.error(`[rate-limiter] Fatal error checking rate limit for ${key}:`, err);
+      return { allowed: true, remaining: 1, resetAt: Date.now() + this.config.windowMs };
     }
   }
 }
 
-// Rate limiters pré-configurados
+// Rate limiters pre-configured
 export const rateLimiters = {
-  // IA endpoints: 20 req/min por usuário
+  // AI endpoints: 20 req/min per user
   ai: new RateLimiter({
     maxRequests: 20,
     windowMs: 60 * 1000,
     keyPrefix: 'ai'
   }),
 
-  // Busca: 100 req/min por usuário
+  // Search: 100 req/min per user
   search: new RateLimiter({
     maxRequests: 100,
     windowMs: 60 * 1000,
     keyPrefix: 'search'
   }),
 
-  // Aprovação: 5 req/min por token (evitar brute force)
+  // Approval: 5 req/min per token (avoid brute force)
   approval: new RateLimiter({
     maxRequests: 5,
     windowMs: 60 * 1000,
@@ -96,7 +95,6 @@ export async function applyRateLimit(
 
   if (result.suspicious) {
     console.warn(`[suspicious-activity] ID: ${identifier} endpoint: ${limiter['config'].keyPrefix}`);
-    // Opcional: registrar no admin_audit_log se for crítico
   }
 
   if (!result.allowed) {
@@ -120,6 +118,5 @@ export async function applyRateLimit(
     );
   }
 
-  // Adicionar headers de rate limit mesmo quando permitido
-  return null; // null = allowed, continue processing
+  return null; // null = allowed
 }
