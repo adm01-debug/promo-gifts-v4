@@ -38,6 +38,12 @@ export function MainLayout({ children }: MainLayoutProps) {
   useScrollLockFix();
   useGlobalShortcuts();
 
+  useEffect(() => {
+    performanceTracker.mark("main-layout-mounted");
+    performanceTracker.measure("Main Layout Mount", "route-start:" + location.pathname, "main-layout-mounted");
+  }, []);
+
+
   // Propaga --breadcrumb-h ao :root para que stickys filhos (toolbars de
   // página) ancorem corretamente abaixo do Header + Breadcrumb. Em "/" a
   // breadcrumb-bar fica oculta → 0px.
