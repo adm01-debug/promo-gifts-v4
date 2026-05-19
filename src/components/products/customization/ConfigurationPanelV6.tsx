@@ -178,6 +178,7 @@ export function ConfigurationPanelV6({
                 placeholder={`até ${technique.efetiva_altura_max}`}
                 className="h-9 text-sm"
                 disabled={isLocked}
+                data-testid="customization-height-input"
               />
             </div>
           </div>
