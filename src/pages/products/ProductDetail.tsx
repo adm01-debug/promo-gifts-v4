@@ -58,6 +58,7 @@ export default function ProductDetail() {
   const product: Product | null | undefined = data;
   const { data: supplierTrust } = useSupplierTrust(id);
   const { data: similarItems = [] } = useSimilarProducts(product);
+  
   const aiCandidates = useMemo<ProductForRecommendation[]>(
     () =>
       similarItems.slice(0, 12).map((it) => ({
@@ -69,6 +70,7 @@ export default function ProductDetail() {
       })),
     [similarItems, product?.category?.name],
   );
+  
   const catalogFlags = useMemo(
     () =>
       product
@@ -80,8 +82,9 @@ export default function ProductDetail() {
             stock: product.stock,
           }
         : undefined,
-    [product?.featured, product?.newArrival, product?.onSale, product?.stockStatus, product?.stock], // eslint-disable-line react-hooks/exhaustive-deps
+    [product?.featured, product?.newArrival, product?.onSale, product?.stockStatus, product?.stock],
   );
+  
   const {
     badges: intellBadges,
     turnoverScore: intellTurnover,
@@ -103,6 +106,33 @@ export default function ProductDetail() {
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
   });
+
+  const jsonLd = useMemo(() => {
+    if (!product) return null;
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: product.name,
+      description: product.description || `${product.name} - Brinde Promocional`,
+      sku: product.sku,
+      image: product.images?.filter(Boolean) || [],
+      brand: { '@type': 'Brand', name: product.supplier?.name || 'Promo Gifts' },
+      offers: {
+        '@type': 'Offer',
+        price: product.price,
+        priceCurrency: 'BRL',
+        availability:
+          product.stockStatus === 'in-stock'
+            ? 'https://schema.org/InStock'
+            : product.stockStatus === 'out-of-stock'
+              ? 'https://schema.org/OutOfStock'
+              : 'https://schema.org/LimitedAvailability',
+        seller: { '@type': 'Organization', name: 'Promo Gifts' },
+      },
+      category: product.category?.name,
+      material: product.materials?.join(', '),
+    };
+  }, [product]);
 
   useEffect(() => {
     if (product) {
@@ -233,31 +263,11 @@ export default function ProductDetail() {
         }
         ogType="product"
       />
-      <script type="application/ld+json">
-        {JSON.stringify({
-          '@context': 'https://schema.org',
-          '@type': 'Product',
-          name: product.name,
-          description: product.description || `${product.name} - Brinde Promocional`,
-          sku: product.sku,
-          image: product.images?.filter(Boolean) || [],
-          brand: { '@type': 'Brand', name: product.supplier?.name || 'Promo Gifts' },
-          offers: {
-            '@type': 'Offer',
-            price: product.price,
-            priceCurrency: 'BRL',
-            availability:
-              product.stockStatus === 'in-stock'
-                ? 'https://schema.org/InStock'
-                : product.stockStatus === 'out-of-stock'
-                  ? 'https://schema.org/OutOfStock'
-                  : 'https://schema.org/LimitedAvailability',
-            seller: { '@type': 'Organization', name: 'Promo Gifts' },
-          },
-          category: product.category?.name,
-          material: product.materials?.join(', '),
-        })}
-      </script>
+      {jsonLd && (
+        <script type="application/ld+json">
+          {JSON.stringify(jsonLd)}
+        </script>
+      )}
 
       <ProductStickyHeader
         productId={product.id}
