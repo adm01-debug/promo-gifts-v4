@@ -328,6 +328,7 @@ export function ConfigurationPanelV6({
               size="sm"
               className="flex-1"
               onClick={handleConfirm}
+              data-testid="customization-confirm-button"
             >
               <Check className="h-4 w-4 mr-1.5" />
               Confirmar e adicionar ao orçamento
