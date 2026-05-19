@@ -44,6 +44,12 @@ vi.mock('@/hooks/admin', () => ({
     getRotationHistory: vi.fn().mockResolvedValue([]),
     refreshCache: vi.fn(),
   }),
+  useRetestCooldownSetting: () => ({
+    cooldownMs: 3000,
+    loading: false,
+    saving: false,
+    save: vi.fn(),
+  }),
 }));
 
 vi.mock('@/hooks/auth', () => ({
