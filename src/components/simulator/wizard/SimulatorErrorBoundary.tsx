@@ -45,7 +45,16 @@ export class SimulatorErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('[SimulatorErrorBoundary]', error, errorInfo);
+    logger.error('[SimulatorErrorBoundary]', {
+      message: error.message,
+      componentStack: errorInfo.componentStack,
+    });
+
+    reportError(error, {
+      type: 'simulator_error_boundary',
+      componentStack: errorInfo.componentStack?.slice(0, 1000),
+      retryCount: this.state.errorCount,
+    });
   }
 
   handleRetry = () => {
