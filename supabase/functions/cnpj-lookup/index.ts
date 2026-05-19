@@ -48,6 +48,13 @@ Deno.serve(async (req) => {
     }
 
     const apiKey = Deno.env.get("CNPJA_API_KEY");
+    if (!apiKey) {
+      console.error("[cnpj-lookup] CNPJA_API_KEY não configurada");
+      return new Response(
+        JSON.stringify({ error: "Serviço de consulta CNPJ não configurado" }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
     // CNPJá Commercial API
     const response = await fetchWithBreaker(
