@@ -52,6 +52,8 @@ export function TechniqueCard({ technique, isSelected, onSelect }: TechniqueCard
           ? "bg-primary/10 border-primary/60 ring-2 ring-primary/30 shadow-sm"
           : "bg-secondary/50 border-border/50 hover:bg-secondary/80 hover:border-border",
       )}
+      data-technique-id={technique.technique_id}
+      data-testid={`customization-technique-card-${technique.technique_id}`}
       onClick={() => onSelect(technique)}
     >
       {/* Radio */}
