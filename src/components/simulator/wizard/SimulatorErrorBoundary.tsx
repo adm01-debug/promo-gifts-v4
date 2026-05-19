@@ -18,6 +18,8 @@ import React, { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { reportError } from '@/lib/error-reporter';
+import { logger } from '@/lib/logger';
 
 interface Props {
   children: ReactNode;
@@ -43,7 +45,16 @@ export class SimulatorErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('[SimulatorErrorBoundary]', error, errorInfo);
+    logger.error('[SimulatorErrorBoundary]', {
+      message: error.message,
+      componentStack: errorInfo.componentStack,
+    });
+
+    reportError(error, {
+      type: 'simulator_error_boundary',
+      componentStack: errorInfo.componentStack?.slice(0, 1000),
+      retryCount: this.state.errorCount,
+    });
   }
 
   handleRetry = () => {

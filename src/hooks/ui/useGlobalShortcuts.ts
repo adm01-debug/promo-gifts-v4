@@ -27,7 +27,7 @@ let lastGAt = 0;
 export function useGlobalShortcuts(handlers?: ShortcutHandlers) {
   const navigate = useNavigate();
   const openOracle = useOracleVoiceBridge((s) => s.openOracle);
-  const setOpenSearch = useSearchStore((s) => s.setOpen);
+  const { open: searchOpen, setOpen: setOpenSearch } = useSearchStore();
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -54,11 +54,12 @@ export function useGlobalShortcuts(handlers?: ShortcutHandlers) {
 
       if (!isMod) return;
 
-      // Ctrl/Cmd + K → Open search palette (works even inside inputs)
+      // Ctrl/Cmd + K → Toggle search palette (works even inside inputs)
       if (e.key === "k" || e.key === "K") {
         e.preventDefault();
-        setOpenSearch(true);
-        handlers?.onSearchFocus?.();
+        const nextState = !searchOpen;
+        setOpenSearch(nextState);
+        if (nextState) handlers?.onSearchFocus?.();
         return;
       }
 

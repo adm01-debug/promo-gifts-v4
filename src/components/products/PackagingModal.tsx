@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type PackagingContext = 'always' | 'with_customization' | 'without_customization' | null;
 
@@ -81,8 +82,11 @@ export function PackagingModal({
               {boxImage && !imageError ? (
                 <>
                   {!imageLoaded && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-secondary/50">
-                      <Package className="h-12 w-12 text-muted-foreground/30 animate-pulse" />
+                    <div className="absolute inset-0">
+                      <Skeleton className="h-full w-full rounded-none" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Package className="h-12 w-12 text-muted-foreground/20 animate-pulse" />
+                      </div>
                     </div>
                   )}
                   <img

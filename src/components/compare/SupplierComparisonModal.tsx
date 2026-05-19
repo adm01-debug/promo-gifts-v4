@@ -72,7 +72,7 @@ export function SupplierComparisonModal({
     }
   };
 
-  if (!comparison) {
+  if (isLoading || !comparison) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[85vh]">
@@ -193,11 +193,21 @@ export function SupplierComparisonModal({
                       )}
                     >
                       <TableCell>
-                        <div className="relative">
-                          <img
-                            src={product.images[0]}
-                            alt={product.name}
-                            className="w-16 h-16 rounded-lg object-cover" loading="lazy" />
+                        <div className="relative w-16 h-16 rounded-lg bg-muted flex items-center justify-center overflow-hidden border border-border">
+                          {product.images?.[0] ? (
+                            <img
+                              src={product.images[0]}
+                              alt={product.name}
+                              className="w-full h-full object-cover transition-opacity duration-300"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = '/placeholder.svg';
+                                (e.target as HTMLImageElement).className = "w-8 h-8 opacity-20 object-contain";
+                              }}
+                              loading="lazy" 
+                            />
+                          ) : (
+                            <Package className="h-6 w-6 text-muted-foreground/30" />
+                          )}
                           {isBase && (
                             <Badge
                               variant="default"
