@@ -253,19 +253,23 @@ export function LocationPanel({
         </div>
       )}
 
-      {/* Configuration panel (Estado B; permanece visível mesmo em C para não perder contexto) */}
-      {showConfig && !isPickerOpen && (
-        <ConfigurationPanelV6
-          key={selectedTechnique.technique_id}
-          technique={selectedTechnique}
-          quantity={quantity}
-          isConfirmed={confirmedPersonalization?.techniqueId === selectedTechnique.technique_id}
-          initialWidth={initialWidth}
-          initialHeight={initialHeight}
-          initialColors={initialColors}
-          onPriceCalculated={handlePriceCalculated}
-          onDimensionsChange={handleDimensionsChange}
-        />
+      {/* Configuration panel — permanece MONTADO mesmo com o picker aberto,
+          apenas ocultado via `hidden`. Isso preserva o hook reativo de preço
+          e evita re-cálculo desnecessário ao clicar na mesma técnica. */}
+      {showConfig && (
+        <div hidden={isPickerOpen} aria-hidden={isPickerOpen}>
+          <ConfigurationPanelV6
+            key={selectedTechnique.technique_id}
+            technique={selectedTechnique}
+            quantity={quantity}
+            isConfirmed={confirmedPersonalization?.techniqueId === selectedTechnique.technique_id}
+            initialWidth={initialWidth}
+            initialHeight={initialHeight}
+            initialColors={initialColors}
+            onPriceCalculated={handlePriceCalculated}
+            onDimensionsChange={handleDimensionsChange}
+          />
+        </div>
       )}
     </div>
   );
