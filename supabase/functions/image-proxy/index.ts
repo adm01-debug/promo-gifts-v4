@@ -15,9 +15,12 @@ const ALLOWED_REFERER_HOSTS = [
   'www.promogifts.com.br',
   'lovable.app',          // any *.lovable.app subdomain
   'lovableproject.com',
-  'localhost',
-  '127.0.0.1',
 ];
+
+// Localhost/127.0.0.1 conditional (Hardening 6.3)
+if (Deno.env.get('IMAGE_PROXY_ALLOW_LOCALHOST') === 'true') {
+  ALLOWED_REFERER_HOSTS.push('localhost', '127.0.0.1');
+}
 
 function isAllowedReferer(referer: string | null): boolean {
   if (!referer) return false;
