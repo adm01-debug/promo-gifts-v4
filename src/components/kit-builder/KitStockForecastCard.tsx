@@ -5,7 +5,7 @@
 import { CalendarClock, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useKitStockForecast } from '@/hooks/kit-builderStockForecast';
+import { useKitStockForecast } from '@/hooks/kit-builder';
 import type { KitItem } from '@/lib/kit-builder';
 
 interface Props {

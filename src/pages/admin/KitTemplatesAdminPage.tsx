@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { useAdminKitTemplates } from '@/hooks/admin';
-import type { KitTemplateRow } from '@/hooks/kit-builderTemplates';
+import type { KitTemplateRow } from '@/hooks/kit-builder';
 import { formatCurrency } from '@/lib/kit-builder';
 import { cn } from '@/lib/utils';
 

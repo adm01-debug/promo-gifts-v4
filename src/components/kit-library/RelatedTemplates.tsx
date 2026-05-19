@@ -4,7 +4,7 @@
 import * as Lucide from 'lucide-react';
 import { formatCurrency } from '@/lib/kit-builder';
 import { cn } from '@/lib/utils';
-import type { KitTemplateRow } from '@/hooks/kit-builderTemplates';
+import type { KitTemplateRow } from '@/hooks/kit-builder';
 
 interface Props {
   current: KitTemplateRow;
