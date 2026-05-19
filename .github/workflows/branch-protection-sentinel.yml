@@ -31,8 +31,10 @@ jobs:
           # Padroes aceitos:
           # 1. Squash merge: termina em "(#NNN)"
           # 2. Merge commit: comeca com "Merge pull request #NNN"
-          # 3. Bot oficial: github-actions[bot], dependabot[bot], lovable-dev[bot], gpt-engineer-app[bot]
-          # 4. Tag de release: comeca com "chore(release):"
+          # 3. Bot oficial GitHub: github-actions[bot], dependabot[bot], renovate[bot]
+          # 4. Bot familia Lovable (regex): lovable-*[bot] ou gpt-engineer-*[bot]
+          #    (cobre lovable-dev, gpt-engineer-app, e futuras renomeacoes dessas familias)
+          # 5. Tag de release: comeca com "chore(release):"
 
           if echo "$MSG" | head -1 | grep -qE '\(#[0-9]+\)$'; then
             echo "OK: squash merge de PR" >> $GITHUB_STEP_SUMMARY
@@ -45,11 +47,18 @@ jobs:
           fi
 
           case "$AUTHOR" in
-            "github-actions[bot]"|"dependabot[bot]"|"lovable-dev[bot]"|"gpt-engineer-app[bot]"|"renovate[bot]")
-              echo "OK: bot oficial ($AUTHOR)" >> $GITHUB_STEP_SUMMARY
+            "github-actions[bot]"|"dependabot[bot]"|"renovate[bot]")
+              echo "OK: bot oficial GitHub ($AUTHOR)" >> $GITHUB_STEP_SUMMARY
               exit 0
               ;;
           esac
+
+          # Familia Lovable (regex): pega renomeacoes futuras sem quebrar o gate
+          # Cobre: lovable-dev[bot], lovable-bot[bot], gpt-engineer-app[bot], gpt-engineer-*[bot]
+          if [[ "$AUTHOR" =~ ^(lovable|gpt-engineer)-[a-z0-9-]+\[bot\]$ ]]; then
+            echo "OK: bot familia Lovable ($AUTHOR)" >> $GITHUB_STEP_SUMMARY
+            exit 0
+          fi
 
           if echo "$MSG" | head -1 | grep -qE '^chore\(release\):'; then
             echo "OK: release commit" >> $GITHUB_STEP_SUMMARY
