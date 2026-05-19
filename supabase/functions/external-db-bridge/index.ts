@@ -821,7 +821,10 @@ async function handleCrud(body: any, req: Request, corsHeaders: Record<string, s
     const token = authHeader.replace('Bearer ', '').trim();
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')?.trim();
 
-    if (serviceRoleKey && token === serviceRoleKey) {
+    const trimmedToken = token.trim();
+    const trimmedServiceKey = serviceRoleKey?.trim();
+
+    if (trimmedServiceKey && trimmedToken === trimmedServiceKey) {
       userId = '00000000-0000-0000-0000-000000000000';
       userRole = 'dev';
     } else {
