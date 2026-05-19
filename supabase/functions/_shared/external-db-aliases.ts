@@ -275,5 +275,18 @@ export function resolveTableAlias(
 
   const sanitizedSelect = sanitizeSelect(table, select || '*');
   const sanitizedFilters = sanitizeFilters(table, filters);
-  return { table, filters: sanitizedFilters, orderBy, select: sanitizedSelect, aliasType: null };
+  
+  let sanitizedOrderBy = orderBy;
+  if (table === 'products' && orderBy) {
+    const renamed = PRODUCT_FIELD_RENAME_MAP[orderBy.column];
+    if (renamed) {
+      sanitizedOrderBy = { ...orderBy, column: renamed };
+    } else if (PRODUCT_COLUMNS_NOT_IN_EXTERNAL_SCHEMA.has(orderBy.column)) {
+      // If ordering by a column that doesn't exist and has no mapping,
+      // fallback to 'id' to avoid SQL errors.
+      sanitizedOrderBy = { ...orderBy, column: 'id' };
+    }
+  }
+
+  return { table, filters: sanitizedFilters, orderBy: sanitizedOrderBy, select: sanitizedSelect, aliasType: null };
 }
