@@ -119,14 +119,14 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
               "flex items-center gap-3 w-full px-3 py-2 rounded-lg transition-all duration-150 group relative",
               "hover:bg-sidebar-accent/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-orange/20 active:scale-[0.995]",
               hasActiveChild
-                ? "text-orange font-semibold bg-orange/[0.03] before:absolute before:left-0 before:top-[20%] before:bottom-[20%] before:w-[1.5px] before:rounded-r-full before:bg-orange"
+                ? "text-primary font-semibold bg-primary/[0.03] before:absolute before:left-0 before:top-[20%] before:bottom-[20%] before:w-[1.5px] before:rounded-r-full before:bg-primary"
                 : "text-sidebar-foreground/75 hover:text-sidebar-foreground"
             )}
           >
             <Icon
               className={cn(
                 "h-4 w-4 shrink-0 transition-colors",
-                hasActiveChild ? "text-orange" : "group-hover:text-orange/70"
+                hasActiveChild ? "text-primary" : "group-hover:text-primary/70"
               )}
             />
             {!isCollapsed && (
@@ -171,9 +171,10 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
           "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-300 group relative focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/20 active:scale-[0.98]",
           "hover:bg-white/[0.03] hover:translate-x-1",
           isActive
-            ? "bg-white/[0.05] text-white font-bold shadow-[0_0_15px_rgba(255,255,255,0.05)] before:absolute before:left-0 before:top-[15%] before:bottom-[15%] before:w-[3px] before:rounded-r-full before:bg-primary"
+            ? "bg-primary/10 text-white font-bold shadow-[0_0_15px_rgba(var(--primary),0.05)] before:absolute before:left-0 before:top-[15%] before:bottom-[15%] before:w-[3px] before:rounded-r-full before:bg-primary"
             : "text-sidebar-foreground/70 hover:text-sidebar-foreground before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-0 before:w-[2px] before:rounded-r-full before:bg-primary/50 before:transition-all before:duration-300 hover:before:h-4"
         )}
+
         onClick={() => isMobileSidebarOpen && onMobileClose()}
         onMouseEnter={prefetch.onMouseEnter}
         onTouchStart={prefetch.onTouchStart}
@@ -181,7 +182,7 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
         <Icon
           className={cn(
             "h-4 w-4 shrink-0 transition-all duration-300",
-            isActive ? "text-primary scale-110 drop-shadow-[0_0_8px_rgba(var(--primary),0.5)]" : "group-hover:text-primary/70 group-hover:scale-110"
+            isActive ? "text-primary scale-110 drop-shadow-[0_0_8px_rgba(var(--primary),0.8)]" : "group-hover:text-primary/70 group-hover:scale-110"
           )}
         />
         {!isCollapsed && (
@@ -195,7 +196,7 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
           </kbd>
         )}
         {!isCollapsed && item.badge !== null && (
-          <span className="ml-auto bg-orange/15 text-orange text-[10px] font-semibold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+          <span className="ml-auto bg-primary/20 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded-full min-w-[20px] text-center shadow-[0_0_10px_rgba(var(--primary),0.2)] border border-primary/30">
             {item.badge}
           </span>
         )}
@@ -217,7 +218,7 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
                 </kbd>
               )}
               {item.badge !== null && (
-                <span className="bg-orange/15 text-orange text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
+                <span className="bg-primary/20 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded-full border border-primary/30">
                   {item.badge}
                 </span>
               )}
@@ -248,13 +249,13 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
           className={cn(
             "flex items-center gap-3 w-full px-3 py-2 rounded-lg transition-all duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-orange/15 active:scale-[0.995]",
             "hover:bg-sidebar-accent/50 text-sidebar-foreground/70 hover:text-sidebar-foreground",
-            hasActiveItem && "text-orange bg-orange/[0.02]"
+            hasActiveItem && "text-primary bg-primary/[0.05]"
           )}
         >
           <GroupIcon
             className={cn(
               "h-4 w-4 shrink-0 transition-colors",
-              hasActiveItem ? "text-orange" : "text-sidebar-foreground/40"
+              hasActiveItem ? "text-primary" : "text-sidebar-foreground/40"
             )}
           />
           <span className="flex-1 text-left text-xs font-semibold uppercase tracking-wider">

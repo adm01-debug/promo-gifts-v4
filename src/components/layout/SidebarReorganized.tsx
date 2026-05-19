@@ -320,9 +320,11 @@ export const SidebarReorganized = React.memo(
         className={cn(
           "fixed left-0 top-0 z-50 h-full bg-sidebar/40 backdrop-blur-xl border-r border-sidebar-border/30 transition-all duration-300 ease-out theme-transitioning",
           isCollapsed ? "overflow-visible" : "overflow-hidden",
-          "lg:sticky lg:top-0 lg:z-auto lg:h-screen",
-          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
-          isCollapsed ? "w-16 shadow-[20px_0_40px_rgba(0,0,0,0.3)]" : "w-64 shadow-[30px_0_60px_rgba(0,0,0,0.4)]"
+          "lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:z-40",
+          isOpen ? "translate-x-0 shadow-[40px_0_80px_rgba(0,0,0,0.5)]" : "-translate-x-full lg:translate-x-0",
+          isCollapsed ? "w-16 lg:shadow-[20px_0_40px_rgba(0,0,0,0.3)]" : "w-64 lg:shadow-[30px_0_60px_rgba(0,0,0,0.4)]"
+
+
         )}
       >
         <FocusTrap active={isOpen && isMobile} className="h-full" autoFocus={false}>
@@ -340,7 +342,7 @@ export const SidebarReorganized = React.memo(
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 gap-1.5 text-[10px] border-sidebar-border/50 hover:bg-orange/10 hover:text-orange text-sidebar-foreground/40"
+                className="h-7 gap-1.5 text-[10px] border-sidebar-border/50 hover:bg-primary/10 hover:text-primary text-sidebar-foreground/40"
                 onClick={collapseAllGroups}
               >
                 <X className="h-3 w-3" />
@@ -351,7 +353,7 @@ export const SidebarReorganized = React.memo(
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 hover:bg-sidebar-accent/50 hover:text-orange ml-auto text-sidebar-foreground/30"
+              className="h-7 w-7 hover:bg-sidebar-accent/50 hover:text-primary ml-auto text-sidebar-foreground/30"
               onClick={toggleCollapse}
               aria-label={isCollapsed ? "Expandir menu" : "Recolher menu"}
               title={isCollapsed ? "Expandir menu" : "Recolher menu"}
@@ -385,6 +387,8 @@ export const SidebarReorganized = React.memo(
                   <div className="my-1.5 mx-auto w-4 h-px bg-sidebar-border/30" />
                 )}
                 <SidebarNavGroup
+                  key={group.id}
+
                   group={group}
                   isOpen={openGroups[group.id] ?? false}
                   isCollapsed={isCollapsed}

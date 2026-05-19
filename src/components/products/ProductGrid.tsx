@@ -48,7 +48,8 @@ function ProductCardWrapper({
   selectionMode?: boolean;
   selectedIds?: Set<string>;
   onToggleSelect?: (id: string) => void;
-} & Omit<React.ComponentProps<typeof ProductCard>, 'product'>) {
+  priority?: boolean;
+} & Omit<React.ComponentProps<typeof ProductCard>, 'product' | 'priority'>) {
   const reducedMotion = useReducedMotion();
   const [hasAnimated, setHasAnimated] = useState(reducedMotion);
   const ref = useRef<HTMLDivElement>(null);

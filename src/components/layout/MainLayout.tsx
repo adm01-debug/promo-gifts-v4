@@ -99,6 +99,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               "border-b border-border/40",
               isHome && "hidden",
             )}
+
             style={{ top: "var(--header-h, 56px)" }}
             data-testid="breadcrumb-bar"
           >
@@ -113,11 +114,12 @@ export function MainLayout({ children }: MainLayoutProps) {
             ref={mainRef}
             tabIndex={-1}
             id="main-content" 
-            className="flex-1 p-3 sm:p-4 lg:p-6 pb-6 print:p-0 print:pb-0 outline-none overflow-x-clip bg-transparent theme-transitioning" 
+            className="flex-1 p-3 sm:p-4 lg:p-6 pb-6 print:p-0 print:pb-0 outline-none overflow-x-clip bg-transparent theme-transitioning relative z-0" 
             role="main"
             aria-label="Conteúdo principal"
             aria-labelledby="main-heading"
           >
+
             <Suspense fallback={<div>{children || <Outlet />}</div>}>
               <PageTransition variant="fade-slide" duration={0.6}>
                 {children || <Outlet />}
