@@ -72,11 +72,22 @@ export function CatalogToolbar({
                 <Button variant="outline" size="sm" className="px-2.5 sm:px-3" aria-label="Abrir filtros do catálogo">
                   <Filter className="h-4 w-4 sm:mr-2" />
                   <span className="hidden sm:inline">Filtros</span>
-                  {activeFiltersCount > 0 && (
-                    <Badge variant="secondary" className="ml-1 sm:ml-2 h-5 min-w-5 text-xs">
-                      {activeFiltersCount}
-                    </Badge>
-                  )}
+                  <div className="relative w-0 sm:w-auto">
+                    <AnimatePresence>
+                      {activeFiltersCount > 0 && (
+                        <motion.div
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0, opacity: 0 }}
+                          className="sm:ml-2"
+                        >
+                          <Badge variant="secondary" className="h-5 min-w-5 text-xs flex items-center justify-center">
+                            {activeFiltersCount}
+                          </Badge>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </Button>
               </SheetTrigger>
               </span>
