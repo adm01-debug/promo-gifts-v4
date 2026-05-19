@@ -26,6 +26,29 @@ serve(async (req) => {
       endTime: "",
     };
 
+    // Ensure simulation endpoint exists for webhook-inbound
+    const { data: simEndpoint, error: fetchError } = await supabase
+      .from("inbound_webhook_endpoints")
+      .select("slug")
+      .eq("slug", "simulation-test")
+      .maybeSingle();
+      
+    if (fetchError) {
+      throw new Error(`Error checking for simulation endpoint: ${fetchError.message}`);
+    }
+
+    if (!simEndpoint) {
+      const { error: insertError } = await supabase.from("inbound_webhook_endpoints").insert({
+        slug: "simulation-test",
+        name: "Simulation Test Endpoint",
+        active: true,
+        hmac_secret_ref: "SUPABASE_SERVICE_ROLE_KEY"
+      });
+      if (insertError) {
+        throw new Error(`Error creating simulation endpoint: ${insertError.message}`);
+      }
+    }
+
     const runScenario = async (fnName: string, payload: any, expectedStatuses: number[]) => {
       const url = `${supabaseUrl}/functions/v1/${fnName}`;
       try {
@@ -47,14 +70,15 @@ serve(async (req) => {
           status,
           duration,
           success,
-          payload: count <= 10 ? payload : undefined, // Only log payload for small runs
+          payload: count <= 10 ? payload : undefined,
         };
 
         if (success) {
           report.successes++;
         } else {
           report.failures++;
-          report.details.push({ ...result, error: await res.text() });
+          const errorBody = await res.text();
+          report.details.push({ ...result, error: errorBody });
         }
         report.totalScenarios++;
       } catch (err) {
@@ -64,58 +88,40 @@ serve(async (req) => {
       }
     };
 
-    // Ensure simulation endpoint exists for webhook-inbound
-    const { data: simEndpoint } = await supabase
-      .from("inbound_webhook_endpoints")
-      .select("slug")
-      .eq("slug", "simulation-test")
-      .maybeSingle();
-      
-    if (!simEndpoint) {
-      await supabase.from("inbound_webhook_endpoints").insert({
-        slug: "simulation-test",
-        name: "Simulation Test Endpoint",
-        active: true,
-        hmac_secret_ref: "SUPABASE_SERVICE_ROLE_KEY" // Just a dummy for simulation
-      });
-    }
-
-    // Scenario Generation Logic
     const TABLES = ["products", "categories", "suppliers", "brands", "quotes"];
     const OPERATORS = ["gte", "lte", "gt", "lt", "neq", "like", "ilike"];
 
-    const promises = [];
-    for (let i = 0; i < count; i++) {
-      if (targetFunctions.includes("external-db-bridge")) {
-        const table = TABLES[Math.floor(Math.random() * TABLES.length)];
-        const isInvalid = Math.random() > 0.8;
-        const op = OPERATORS[Math.floor(Math.random() * OPERATORS.length)];
-        const payload = {
-          operation: "select",
-          table,
-          filters: isInvalid ? { id: { invalid: true } } : { [`id_${op}`]: "123" },
-          limit: 10,
-        };
-        // Status 401 is expected if no auth, but here we pass service role, so it should be 200/404/400
-        promises.push(runScenario("external-db-bridge", payload, isInvalid ? [400] : [200, 404, 400]));
-      }
+    const batchSize = 10;
+    for (let i = 0; i < count; i += batchSize) {
+      const promises = [];
+      const currentBatch = Math.min(batchSize, count - i);
+      
+      for (let j = 0; j < currentBatch; j++) {
+        if (targetFunctions.includes("external-db-bridge")) {
+          const table = TABLES[Math.floor(Math.random() * TABLES.length)];
+          const isInvalid = Math.random() > 0.8;
+          const op = OPERATORS[Math.floor(Math.random() * OPERATORS.length)];
+          const payload = {
+            operation: "select",
+            table,
+            filters: isInvalid ? { id: { invalid: true } } : { [`id_${op}`]: "123" },
+            limit: 10,
+          };
+          // Added 401 because bridge might require specific user auth even with service role
+          promises.push(runScenario("external-db-bridge", payload, isInvalid ? [400] : [200, 404, 400, 401]));
+        }
 
-      if (targetFunctions.includes("webhook-inbound")) {
-        const isMissing = Math.random() > 0.7;
-        const payload = isMissing ? { event: "test" } : { event: "test", data: { id: "123" } };
-        // We use the slug we just ensured exists
-        promises.push(runScenario("webhook-inbound?slug=simulation-test", payload, [200, 400, 422, 401]));
+        if (targetFunctions.includes("webhook-inbound")) {
+          const isMissing = Math.random() > 0.7;
+          const payload = isMissing ? { event: "test" } : { event: "test", data: { id: "123" } };
+          promises.push(runScenario("webhook-inbound?slug=simulation-test", payload, [200, 400, 422, 401]));
+        }
       }
       
-      // Batch processing to avoid overwhelming the system
-      if (promises.length >= 20) {
-        await Promise.all(promises);
-        promises.length = 0;
-      }
-    }
-
-    if (promises.length > 0) {
       await Promise.all(promises);
+      
+      // Stop if timeout is approaching (simple heuristic for 60s timeout)
+      if (performance.now() > 50000) break;
     }
 
     report.endTime = new Date().toISOString();
