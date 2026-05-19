@@ -32,6 +32,10 @@ const quickActions: QuickAction[] = [
   { id: "products", title: "Catálogo de Produtos", description: "Ver todos os produtos", icon: <Package className="h-4 w-4" />, href: "/" },
   { id: "quotes", title: "Orçamentos", description: "Ver todos os orçamentos", icon: <FileText className="h-4 w-4" />, href: "/orcamentos" },
 ];
+const commandIconMap: Record<string, any> = {
+  Sun, Moon, LogOut, PlusCircle, Users, Calculator, LifeBuoy, Package, Terminal
+};
+
 
 export function GlobalSearchPalette() {
   const s = useGlobalSearch();
