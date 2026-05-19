@@ -16,6 +16,7 @@ import { ReplenishmentTableView } from "./ReplenishmentCards";
 import { ReplenishmentToolbar } from "./ReplenishmentToolbar";
 import { VirtualizedReplenishmentGrid, getGridColsClass, getGridGapClass } from "./VirtualizedReplenishmentGrid";
 import { VirtualizedReplenishmentList } from "./VirtualizedReplenishmentList";
+import { ProductCardSkeleton } from "@/components/products/ProductCardSkeleton";
 
 type ViewMode = "grid" | "list" | "table";
 type SortMode = "name" | "price-asc" | "price-desc" | "newest" | "stock";
