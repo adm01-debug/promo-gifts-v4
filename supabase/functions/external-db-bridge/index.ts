@@ -1230,6 +1230,7 @@ async function handleSelect(externalSupabase: any, table: string, opts: any) {
       let records = retryData || [];
       if (aliasType === 'technique') records = records.map(mapTechniqueRowToLegacyShape);
       if (aliasType === 'priceTable') records = records.map(mapPriceTableRowToLegacyShape);
+      if (table === 'products') records = (records as Record<string, unknown>[]).map(mapProductRowToLegacyShape);
 
       emitTelemetry({
         operation: 'select',
