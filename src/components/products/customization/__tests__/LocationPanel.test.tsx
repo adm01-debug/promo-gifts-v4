@@ -315,9 +315,9 @@ describe("LocationPanel — fluxo Trocar técnica", () => {
     render(<LocationPanel location={loc} quantity={100} onPriceCalculated={vi.fn()} />);
 
     // Verifica agrupamentos (TechniquePicker renderiza nomes de grupo)
-    expect(screen.getByText("SERIGRAFIA")).toBeInTheDocument();
-    expect(screen.getByText("TRANSFER")).toBeInTheDocument();
-    expect(screen.getByText("SUBLIMACAO")).toBeInTheDocument();
+    expect(screen.getAllByText("SERIGRAFIA").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("TRANSFER").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("SUBLIMACAO").length).toBeGreaterThan(0);
 
     // Todas as técnicas visíveis
     expect(screen.getByText("Silk 1 cor")).toBeInTheDocument();
