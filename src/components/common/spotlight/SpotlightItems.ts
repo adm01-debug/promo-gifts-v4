@@ -35,6 +35,17 @@ export interface SpotlightItem {
 export function buildSpotlightItems(navigate: (path: string) => void, onRestartTour?: () => void): SpotlightItem[] {
   const nav = (path: string) => () => navigate(path);
   return [
+    // Help & Onboarding
+    { 
+      id: "restart-tour", 
+      title: "Reiniciar Tour do Sistema", 
+      description: "Ver o guia passo-a-passo novamente", 
+      icon: React.createElement(PlayCircle, { className: "h-4 w-4" }), 
+      action: onRestartTour || (() => {}), 
+      category: "Ajuda", 
+      shortcut: "?", 
+      isQuickAction: true 
+    },
     // Quick Actions
     { id: "new-quote", title: "Novo Orçamento", description: "Criar orçamento rapidamente", icon: React.createElement(Plus, { className: "h-4 w-4" }), action: nav("/orcamentos/novo"), path: "/orcamentos/novo", category: "Ações Rápidas", shortcut: "N", isQuickAction: true },
     { id: "mockup-quick", title: "Gerar Mockup", description: "Criar mockup com logo", icon: React.createElement(Wand2, { className: "h-4 w-4" }), action: nav("/mockup-generator"), path: "/mockup-generator", category: "Ações Rápidas", shortcut: "M", isQuickAction: true },
