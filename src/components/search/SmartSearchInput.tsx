@@ -150,6 +150,7 @@ export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps
 
             <Input
               ref={inputRef}
+              id="search"
               data-testid="catalog-search-input"
               type="text"
               value={query}
