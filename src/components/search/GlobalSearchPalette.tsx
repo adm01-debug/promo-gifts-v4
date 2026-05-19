@@ -196,8 +196,16 @@ export function GlobalSearchPalette() {
                     style={staggerStyle(i, 50)}
                   >
                     <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm", `${config.color}/10`)}>
-                      <Icon className={cn("h-4.5 w-4.5", config.color.replace("bg-", "text-"))} />
+                      {type === "command" && result.metadata?.iconName ? (
+                        (() => {
+                          const CmdIcon = commandIconMap[result.metadata.iconName as string] || Terminal;
+                          return <CmdIcon className={cn("h-4.5 w-4.5", config.color.replace("bg-", "text-"))} />;
+                        })()
+                      ) : (
+                        <BaseIcon className={cn("h-4.5 w-4.5", config.color.replace("bg-", "text-"))} />
+                      )}
                     </div>
+
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate text-[13px]">
                         <HighlightMatch text={result.title} query={s.query} />
