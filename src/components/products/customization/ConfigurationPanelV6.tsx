@@ -24,6 +24,8 @@ interface ConfigurationPanelV6Props {
   initialHeight?: number;
   initialColors?: number;
   onPriceCalculated: (techniqueId: string, price: CustomizationPriceResponseV6 | null, dimensions?: { width?: number; height?: number }) => void;
+  /** Emitido a cada mudança de dimensão/cor (sem precisar confirmar). Usado para preservar inputs ao trocar de técnica. */
+  onDimensionsChange?: (dims: { width?: number; height?: number; colors?: number }) => void;
 }
 
 export function ConfigurationPanelV6({ 
