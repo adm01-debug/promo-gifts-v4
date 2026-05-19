@@ -8,10 +8,10 @@ import { CommemorativeDateFilter } from "./CommemorativeDateFilter";
 import type { ColorFilterSelection } from "./ColorGroupFilter";
 
 // Re-export types for backward compatibility
-export type { FilterState, FilterPanelProps } from "@/pages/advanced-price-search/types";
-export { defaultFilters, SECTION_CONFIG, SECTION_GROUPS } from "@/pages/advanced-price-search/types";
+export type { FilterState, FilterPanelProps } from "./filter-panel/types";
+export { defaultFilters, SECTION_CONFIG, SECTION_GROUPS } from "./filter-panel/types";
 
-import { type FilterPanelProps, SECTION_CONFIG, SECTION_GROUPS } from "@/pages/advanced-price-search/types";
+import { type FilterPanelProps, SECTION_CONFIG, SECTION_GROUPS } from "./filter-panel/types";
 import { useFilterPanelState } from "./filter-panel/useFilterPanelState";
 import { FilterSection, GroupSeparator } from "./filter-panel/FilterSection";
 import { FilterPanelHeader } from "./filter-panel/FilterPanelHeader";
