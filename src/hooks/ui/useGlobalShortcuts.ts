@@ -30,6 +30,12 @@ export function useGlobalShortcuts(handlers?: ShortcutHandlers) {
   const navigate = useNavigate();
   const openOracle = useOracleVoiceBridge((s) => s.openOracle);
   const { open: searchOpen, setOpen: setOpenSearch } = useSearchStore();
+  let onboarding: any = null;
+  try {
+    onboarding = useOnboardingContext();
+  } catch (e) {
+    // Context may not be available outside MainLayout
+  }
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
