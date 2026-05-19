@@ -141,10 +141,47 @@ export function VirtualizedProductGrid({
 
   if (isLoading && products.length === 0) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {Array.from({ length: 12 }).map((_, i) => (
-          <ProductCardSkeleton key={i} />
-        ))}
+      <div className="relative h-full">
+        <div
+          className="h-[calc(100vh-200px)] min-h-[600px] overflow-y-auto rounded-xl border border-border/40 
+            bg-gradient-to-b from-background/80 to-background/40 backdrop-blur-sm
+            scrollbar-products shadow-inner overscroll-contain"
+          style={{ contain: "strict", WebkitOverflowScrolling: "touch" }}
+        >
+          {showFilterBar && onSortChange && onOpenFilters && onClearFilters && onViewModeChange && (
+            <div className="sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px))] z-20 bg-background/95 backdrop-blur-md border-b border-border px-4 py-2.5 mb-2">
+               <InlineFilterBar
+                activeFiltersCount={activeFiltersCount}
+                totalProducts={0}
+                sortBy={sortBy}
+                onSortChange={onSortChange}
+                onOpenFilters={onOpenFilters}
+                onClearFilters={onClearFilters}
+                viewMode={viewMode}
+                onViewModeChange={onViewModeChange}
+                columnSelector={columnSelector}
+              />
+            </div>
+          )}
+          
+          <div className="p-4">
+            <div 
+              className={cn(
+                "grid gap-y-8",
+                viewMode === "list" 
+                  ? "grid-cols-1" 
+                  : `grid-cols-2 sm:grid-cols-3 ${columns >= 4 ? 'lg:grid-cols-4' : ''} ${columns >= 5 ? 'xl:grid-cols-5' : ''} ${columns >= 6 ? '2xl:grid-cols-6' : ''}`
+              )}
+              style={viewMode !== "list" ? {
+                columnGap: `${colGapPx}px`,
+              } : undefined}
+            >
+              {Array.from({ length: 12 }).map((_, i) => (
+                <ProductCardSkeleton key={i} variant={viewMode === "list" ? "compact" : "default"} />
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

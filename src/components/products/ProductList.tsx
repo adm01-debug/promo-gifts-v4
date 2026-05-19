@@ -7,9 +7,11 @@ import type { Product } from "@/hooks/products";
 import type { ActiveColorFilter } from "@/utils/color-image-resolver";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { ProductCardSkeleton } from "./ProductCardSkeleton";
 
 export interface ProductListProps {
   products: Product[];
+  isLoading?: boolean;
   onProductClick?: (productId: string) => void;
   onViewProduct?: (product: Product) => void;
   onShareProduct?: (product: Product) => void;
@@ -82,6 +84,7 @@ function ProductListItemWrapper({
 
 export function ProductList({
   products,
+  isLoading = false,
   onProductClick,
   onViewProduct,
   onShareProduct,
@@ -165,7 +168,7 @@ export function ProductList({
     setCollectionModalOpen(true);
   }, []);
 
-  if (products.length === 0) {
+  if (products.length === 0 && !isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
         <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
@@ -181,6 +184,11 @@ export function ProductList({
     );
   }
 
+  const displayProducts = isLoading && products.length === 0
+    ? Array.from({ length: 8 }).map((_, i) => ({ id: `skeleton-${i}`, isSkeleton: true } as any))
+    : products;
+
+
   // Get first selected product for collection modal
   const firstSelectedId = selectedIds.size > 0 ? Array.from(selectedIds)[0] : "";
   const firstSelectedProduct = products.find((p) => p.id === firstSelectedId);
@@ -188,26 +196,30 @@ export function ProductList({
   return (
     <>
       <div className="flex flex-col gap-2">
-        {products.map((product, index) => (
-          <ProductListItemWrapper
-            key={product.id}
-            product={product}
-            index={index}
-            isSelected={selectedIds.has(product.id)}
-            selectionMode={selectionMode}
-            onToggleSelect={toggleSelect}
-            onClick={onProductClick ? () => onProductClick(product.id) : undefined}
-            onView={onViewProduct}
-            onShare={onShareProduct}
-            onFavorite={onFavoriteProduct}
-            isFavorited={isFavorite ? isFavorite(product.id) : false}
-            onToggleFavorite={onToggleFavorite}
-            isInCompare={isInCompare ? isInCompare(product.id) : false}
-            onToggleCompare={onToggleCompare}
-            canAddToCompare={canAddToCompare}
-            highlightColors={highlightColors}
-            activeColorFilter={activeColorFilter}
-          />
+        {displayProducts.map((product, index) => (
+          (product as any).isSkeleton ? (
+            <ProductCardSkeleton key={product.id} variant="compact" />
+          ) : (
+            <ProductListItemWrapper
+              key={product.id}
+              product={product}
+              index={index}
+              isSelected={selectedIds.has(product.id)}
+              selectionMode={selectionMode}
+              onToggleSelect={toggleSelect}
+              onClick={onProductClick ? () => onProductClick(product.id) : undefined}
+              onView={onViewProduct}
+              onShare={onShareProduct}
+              onFavorite={onFavoriteProduct}
+              isFavorited={isFavorite ? isFavorite(product.id) : false}
+              onToggleFavorite={onToggleFavorite}
+              isInCompare={isInCompare ? isInCompare(product.id) : false}
+              onToggleCompare={onToggleCompare}
+              canAddToCompare={canAddToCompare}
+              highlightColors={highlightColors}
+              activeColorFilter={activeColorFilter}
+            />
+          )
         ))}
       </div>
 

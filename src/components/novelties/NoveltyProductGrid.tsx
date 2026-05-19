@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Package, ArrowUpDown, Building2, FolderTree, X, Sparkles, Search, CheckSquare, Loader2 } from "lucide-react";
 import { useNoveltiesWithDetails } from "@/hooks/products";
 import { useNoveltiesSelectionMode } from "@/hooks/products";
+import { ProductCardSkeleton } from "@/components/products/ProductCardSkeleton";
 import { LayoutPopover } from "@/components/products/LayoutPopover";
 import { getDefaultColumns, type ColumnCount } from "@/components/products/ColumnSelector";
 import { BulkActionBar } from "@/components/products/BulkActionBar";
@@ -127,9 +128,19 @@ export function NoveltyProductGrid() {
   const renderContent = () => {
     if (isLoading && products.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center py-16 gap-4">
-          <div className="flex items-center gap-3"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /><span className="text-sm text-muted-foreground">Carregando {Math.round(loadingProgress)}% dos produtos...</span></div>
-          <div className="w-64 h-1.5 bg-muted/50 rounded-full overflow-hidden"><motion.div className="h-full bg-gradient-to-r from-primary/60 to-primary rounded-full" initial={{ width: 0 }} animate={{ width: `${loadingProgress}%` }} transition={{ duration: 0.4, ease: "easeOut" }} /></div>
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm text-muted-foreground">Carregando {Math.round(loadingProgress)}% dos produtos...</span>
+          </div>
+          <div className="w-64 h-1.5 bg-muted/50 rounded-full overflow-hidden mb-6">
+            <motion.div className="h-full bg-gradient-to-r from-primary/60 to-primary rounded-full" initial={{ width: 0 }} animate={{ width: `${loadingProgress}%` }} transition={{ duration: 0.4, ease: "easeOut" }} />
+          </div>
+          <div className={cn("grid", viewMode === 'list' ? 'grid-cols-1 gap-2' : `${getGridColsClass(gridColumns)} ${getGridGapClass(gridColumns)}`)}>
+            {Array.from({ length: 10 }).map((_, i) => (
+              <ProductCardSkeleton key={i} variant={viewMode === "list" ? "compact" : "default"} />
+            ))}
+          </div>
         </div>
       );
     }

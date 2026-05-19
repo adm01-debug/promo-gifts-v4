@@ -300,67 +300,58 @@ export default function FiltersPage() {
                   </div>
                 </div>
               )}
-              {(state.isLoadingProducts || state.isLoadingMaterialFilter || state.isLoadingCategoryFilter) && state.realProducts.length === 0 ? (
-                <div className="rounded-xl border border-border/40 bg-gradient-to-b from-background/80 to-background/40 p-4 sm:p-6 shadow-inner">
-                  {/* Premium shimmer loading header */}
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 animate-pulse" />
-                    <div className="space-y-1.5 flex-1">
-                      <div className="h-4 w-48 rounded-md bg-gradient-to-r from-muted/80 via-muted/40 to-muted/80 animate-[shimmer_2s_infinite] bg-[length:200%_100%]" />
-                      <div className="h-3 w-32 rounded-md bg-gradient-to-r from-muted/60 via-muted/30 to-muted/60 animate-[shimmer_2s_infinite_0.3s] bg-[length:200%_100%]" />
-                    </div>
-                  </div>
-                  <div className={`${state.viewMode === "grid" ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6" : state.viewMode === "table" ? "space-y-0" : "space-y-3"}`}>
-                    {state.viewMode === "table" ? (
-                      <div className="rounded-xl border border-border/50 overflow-hidden">
-                        <div className="h-10 bg-muted/40 border-b border-border/30 flex items-center gap-4 px-4">
-                          {[80, 200, 100, 80, 80, 100].map((w, i) => (
-                            <div key={i} className="h-3 rounded bg-muted/60 animate-[shimmer_2s_infinite] bg-[length:200%_100%]" style={{ width: w, animationDelay: `${i * 100}ms` }} />
-                          ))}
-                        </div>
-                        {Array.from({ length: 8 }).map((_, index) => (
-                          <div key={index} className="h-14 border-b border-border/20 flex items-center gap-4 px-4" style={{ animationDelay: `${index * 60}ms` }}>
-                            <div className="h-9 w-9 rounded-lg bg-muted/40 animate-[shimmer_2s_infinite] bg-[length:200%_100%] shrink-0" />
-                            <div className="h-3.5 flex-1 max-w-[200px] rounded bg-muted/50 animate-[shimmer_2s_infinite] bg-[length:200%_100%]" />
-                            <div className="h-3 w-20 rounded bg-muted/40 animate-[shimmer_2s_infinite] bg-[length:200%_100%]" />
-                            <div className="h-3 w-16 rounded bg-muted/40 animate-[shimmer_2s_infinite] bg-[length:200%_100%]" />
-                          </div>
-                        ))}
-                      </div>
-                    ) : Array.from({ length: state.viewMode === "grid" ? 6 : 8 }).map((_, index) => (
-                      state.viewMode === "grid" ? (
-                        <div key={index} className="overflow-hidden rounded-2xl border border-border/50 bg-card" style={{ animationDelay: `${index * 100}ms` }}>
-                          <div className="aspect-[4/5] bg-gradient-to-br from-muted/60 via-muted/30 to-muted/60 animate-[shimmer_2s_infinite] bg-[length:200%_100%]" style={{ animationDelay: `${index * 150}ms` }} />
-                          <div className="space-y-3 p-4">
-                            <div className="h-3 w-24 rounded-md bg-gradient-to-r from-muted/70 via-muted/30 to-muted/70 animate-[shimmer_2s_infinite] bg-[length:200%_100%]" />
-                            <div className="h-5 w-full rounded-md bg-gradient-to-r from-muted/60 via-muted/25 to-muted/60 animate-[shimmer_2s_infinite] bg-[length:200%_100%]" />
-                            <div className="h-5 w-2/3 rounded-md bg-gradient-to-r from-muted/50 via-muted/20 to-muted/50 animate-[shimmer_2s_infinite] bg-[length:200%_100%]" />
-                          </div>
-                        </div>
-                      ) : (
-                        <div key={index} className="flex items-center gap-4 rounded-xl border border-border/50 bg-card p-4" style={{ animationDelay: `${index * 80}ms` }}>
-                          <div className="h-20 w-20 rounded-lg bg-gradient-to-br from-muted/60 via-muted/30 to-muted/60 animate-[shimmer_2s_infinite] bg-[length:200%_100%] shrink-0" />
-                          <div className="flex-1 space-y-3">
-                            <div className="h-4 w-1/3 rounded-md bg-gradient-to-r from-muted/70 via-muted/30 to-muted/70 animate-[shimmer_2s_infinite] bg-[length:200%_100%]" />
-                            <div className="h-5 w-2/3 rounded-md bg-gradient-to-r from-muted/60 via-muted/25 to-muted/60 animate-[shimmer_2s_infinite] bg-[length:200%_100%]" />
-                          </div>
-                        </div>
-                      )
-                    ))}
-                  </div>
-                </div>
-              ) : state.filteredProducts.length > 0 ? (
+              {(state.isLoadingProducts && state.realProducts.length === 0) || state.filteredProducts.length > 0 ? (
                 <>
+
                   {state.viewMode === "grid" ? (
-                    <VirtualizedProductGrid products={state.filteredProducts} onProductClick={(product) => state.selectionMode ? sel.toggleSelect(product.id) : navigate(`/produto/${product.id}`)} isFavorited={isFavorite} onToggleFavorite={toggleFavorite} isInCompare={isInCompare} onToggleCompare={toggleCompare} canAddToCompare={canAddMore} onShare={(product) => setShareProduct(product)} columns={state.gridColumns} columnSelector={<ColumnSelector value={state.gridColumns} onChange={state.setGridColumns} />} activeFiltersCount={state.activeFiltersCount} sortBy={state.sortBy} onSortChange={state.setSortBy} onOpenFilters={() => state.setMobileFiltersOpen(true)} onClearFilters={state.handleReset} viewMode={state.viewMode} onViewModeChange={state.setViewMode} showFilterBar={false} activeColorFilter={(state.filters.colorGroups.length > 0 || state.filters.colorVariations.length > 0) ? { groups: state.filters.colorGroups, variations: state.filters.colorVariations } : null} selectionMode={state.selectionMode} selectedIds={sel.selectedIds} onToggleSelect={sel.toggleSelect} />
+                    <VirtualizedProductGrid 
+                      products={state.filteredProducts} 
+                      isLoading={state.isLoadingProducts}
+                      onProductClick={(product) => state.selectionMode ? sel.toggleSelect(product.id) : navigate(`/produto/${product.id}`)} 
+                      isFavorited={isFavorite} 
+                      onToggleFavorite={toggleFavorite} 
+                      isInCompare={isInCompare} 
+                      onToggleCompare={toggleCompare} 
+                      canAddToCompare={canAddMore} 
+                      onShare={(product) => setShareProduct(product)} 
+                      columns={state.gridColumns} 
+                      columnSelector={<ColumnSelector value={state.gridColumns} onChange={state.setGridColumns} />} 
+                      activeFiltersCount={state.activeFiltersCount} 
+                      sortBy={state.sortBy} 
+                      onSortChange={state.setSortBy} 
+                      onOpenFilters={() => state.setMobileFiltersOpen(true)} 
+                      onClearFilters={state.handleReset} 
+                      viewMode={state.viewMode} 
+                      onViewModeChange={state.setViewMode} 
+                      showFilterBar={false} 
+                      activeColorFilter={(state.filters.colorGroups.length > 0 || state.filters.colorVariations.length > 0) ? { groups: state.filters.colorGroups, variations: state.filters.colorVariations } : null} 
+                      selectionMode={state.selectionMode} 
+                      selectedIds={sel.selectedIds} 
+                      onToggleSelect={sel.toggleSelect} 
+                    />
                   ) : state.viewMode === "list" ? (
                     <div className="h-[calc(100vh-280px)] min-h-[500px] overflow-y-auto rounded-xl border border-border/40 bg-gradient-to-b from-background/80 to-background/40 backdrop-blur-sm scrollbar-products shadow-inner p-4">
-                      <ProductList products={state.filteredProducts} onProductClick={(productId) => state.selectionMode ? sel.toggleSelect(productId) : navigate(`/produto/${productId}`)} onShareProduct={(product) => setShareProduct(product)} isFavorite={isFavorite} onToggleFavorite={toggleFavorite} isInCompare={isInCompare} onToggleCompare={toggleCompare} canAddToCompare={canAddMore} activeColorFilter={(state.filters.colorGroups.length > 0 || state.filters.colorVariations.length > 0) ? { groups: state.filters.colorGroups, variations: state.filters.colorVariations } : null} selectionMode={state.selectionMode} externalSelectedIds={sel.selectedIds} onToggleSelect={sel.toggleSelect} />
+                      <ProductList 
+                        products={state.filteredProducts} 
+                        isLoading={state.isLoadingProducts}
+                        onProductClick={(productId) => state.selectionMode ? sel.toggleSelect(productId) : navigate(`/produto/${productId}`)} 
+                        onShareProduct={(product) => setShareProduct(product)} 
+                        isFavorite={isFavorite} 
+                        onToggleFavorite={toggleFavorite} 
+                        isInCompare={isInCompare} 
+                        onToggleCompare={toggleCompare} 
+                        canAddToCompare={canAddMore} 
+                        activeColorFilter={(state.filters.colorGroups.length > 0 || state.filters.colorVariations.length > 0) ? { groups: state.filters.colorGroups, variations: state.filters.colorVariations } : null} 
+                        selectionMode={state.selectionMode} 
+                        externalSelectedIds={sel.selectedIds} 
+                        onToggleSelect={sel.toggleSelect} 
+                      />
                     </div>
                   ) : (
                     <div className="h-[calc(100vh-280px)] min-h-[500px] overflow-y-auto rounded-xl border border-border/40 bg-gradient-to-b from-background/80 to-background/40 backdrop-blur-sm shadow-inner">
                       <ProductTableView
                         products={state.filteredProducts}
+                        isLoading={state.isLoadingProducts}
                         onProductClick={(productId) => state.selectionMode ? sel.toggleSelect(productId) : navigate(`/produto/${productId}`)}
                         isFavorite={isFavorite}
                         onToggleFavorite={toggleFavorite}

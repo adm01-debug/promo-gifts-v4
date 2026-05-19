@@ -137,16 +137,9 @@ export function ProductGrid({
     return () => clearTimeout(timer);
   }, [products, isLoading]);
 
-  if (isLoading) {
-    return (
-      <ProductGridSkeleton 
-        count={products.length > 0 ? products.length : 10} 
-        columns={columns as ColumnCount} 
-      />
-    );
-  }
+  const showEmptyState = !isLoading && products.length === 0;
 
-  if (products.length === 0) {
+  if (showEmptyState) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
         <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
@@ -162,33 +155,42 @@ export function ProductGrid({
     );
   }
 
+  const displayProducts = isLoading && products.length === 0 
+    ? Array.from({ length: 12 }).map((_, i) => ({ id: `skeleton-${i}`, isSkeleton: true } as any))
+    : products;
+
+
   return (
     <div 
       ref={gridRef}
       className={`grid ${columnClasses[columns] || columnClasses[5]} ${columns >= 8 ? 'gap-x-4 gap-y-8' : columns >= 6 ? 'gap-x-6 gap-y-8' : 'gap-x-8 gap-y-8'}`}
     >
-      {products.map((product, index) => (
-        <ProductCardWrapper
-          key={product.id}
-          product={product}
-          index={index}
-          isVisible={isGridVisible}
-          onClick={onProductClick ? () => onProductClick(product.id) : undefined}
-          onView={onViewProduct}
-          onShare={onShareProduct}
-          onFavorite={onFavoriteProduct}
-          isFavorited={isFavorite ? isFavorite(product.id) : false}
-          onToggleFavorite={onToggleFavorite}
-          isInCompare={isInCompare ? isInCompare(product.id) : false}
-          onToggleCompare={onToggleCompare}
-          canAddToCompare={canAddToCompare}
-          highlightColors={highlightColors}
-          hideCategoryBadges={hideCategoryBadges}
-          activeColorFilter={activeColorFilter}
-          selectionMode={selectionMode}
-          selectedIds={selectedIds}
-          onToggleSelect={onToggleSelect}
-        />
+      {displayProducts.map((product, index) => (
+        (product as any).isSkeleton ? (
+          <ProductCardSkeleton key={product.id} />
+        ) : (
+          <ProductCardWrapper
+            key={product.id}
+            product={product}
+            index={index}
+            isVisible={isGridVisible}
+            onClick={onProductClick ? () => onProductClick(product.id) : undefined}
+            onView={onViewProduct}
+            onShare={onShareProduct}
+            onFavorite={onFavoriteProduct}
+            isFavorited={isFavorite ? isFavorite(product.id) : false}
+            onToggleFavorite={onToggleFavorite}
+            isInCompare={isInCompare ? isInCompare(product.id) : false}
+            onToggleCompare={onToggleCompare}
+            canAddToCompare={canAddToCompare}
+            highlightColors={highlightColors}
+            hideCategoryBadges={hideCategoryBadges}
+            activeColorFilter={activeColorFilter}
+            selectionMode={selectionMode}
+            selectedIds={selectedIds}
+            onToggleSelect={onToggleSelect}
+          />
+        )
       ))}
     </div>
   );

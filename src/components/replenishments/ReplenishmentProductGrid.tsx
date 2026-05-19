@@ -16,6 +16,7 @@ import { ReplenishmentTableView } from "./ReplenishmentCards";
 import { ReplenishmentToolbar } from "./ReplenishmentToolbar";
 import { VirtualizedReplenishmentGrid, getGridColsClass, getGridGapClass } from "./VirtualizedReplenishmentGrid";
 import { VirtualizedReplenishmentList } from "./VirtualizedReplenishmentList";
+import { ProductCardSkeleton } from "@/components/products/ProductCardSkeleton";
 
 type ViewMode = "grid" | "list" | "table";
 type SortMode = "name" | "price-asc" | "price-desc" | "newest" | "stock";
@@ -131,16 +132,9 @@ export function ReplenishmentProductGrid() {
           <div className="w-64 h-1.5 bg-muted/50 rounded-full overflow-hidden mb-4" role="progressbar" aria-valuenow={Math.round(loadingProgress)} aria-valuemin={0} aria-valuemax={100}>
             <div className="h-full bg-gradient-to-r from-primary/60 to-primary rounded-full transition-all duration-300" style={{ width: `${loadingProgress}%` }} />
           </div>
-          <div className={`grid ${getGridColsClass(gridColumns)} ${getGridGapClass(gridColumns)}`}>
+          <div className={cn("grid", viewMode === 'list' ? 'grid-cols-1 gap-2' : `${getGridColsClass(gridColumns)} ${getGridGapClass(gridColumns)}`)}>
             {Array.from({ length: 10 }).map((_, i) => (
-              <div key={i} className="rounded-xl border border-border/30 overflow-hidden animate-pulse">
-                <div className="aspect-square bg-muted/40" />
-                <div className="p-3 space-y-2">
-                  <div className="h-3 bg-muted/50 rounded w-3/4" />
-                  <div className="h-3 bg-muted/40 rounded w-1/2" />
-                  <div className="h-3 bg-muted/30 rounded w-1/3" />
-                </div>
-              </div>
+              <ProductCardSkeleton key={i} variant={viewMode === "list" ? "compact" : "default"} />
             ))}
           </div>
         </div>
