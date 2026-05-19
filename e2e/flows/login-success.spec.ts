@@ -1,7 +1,7 @@
-import { test, expect } from "./fixtures/test-base";
-import { gotoAndSettle } from "./helpers/nav";
-import { loginAs, expectAuthenticated } from "./helpers/auth";
-import { expectVisibleByTestId } from "./helpers/waits";
+import { test, expect } from "../fixtures/test-base";
+import { gotoAndSettle } from "../helpers/nav";
+import { loginAs, expectAuthenticated } from "../helpers/auth";
+import { expectVisibleByTestId } from "../helpers/waits";
 
 test.describe("Fluxo: Login e Redirecionamento", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
