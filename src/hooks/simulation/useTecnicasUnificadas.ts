@@ -52,7 +52,7 @@ import {
   usePrecoCalculation,
   type PriceTier,
   type PriceCalculation,
-} from './tecnicas';
+} from '../tecnicas';
 import type { TecnicaFiltros } from '@/types/tecnica-unificada';
 
 /**
