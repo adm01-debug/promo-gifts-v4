@@ -461,9 +461,16 @@ Deno.serve((req) => {
     // ============================================
     // PING (keep-alive — sem DB I/O, sem auth, sem breaker)
     // Ping é diagnóstico/warm-up — deve responder mesmo com circuito aberto.
-    // Agora estendido para retornar metadados de saúde das credenciais (sem expor valores).
     // ============================================
     if (body.operation === 'ping') {
+      const authHeader = req.headers.get('Authorization');
+      
+      // Minimal ping if no auth (Hardening 4.6)
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return jsonResponse({ ok: true, ts: Date.now() }, 200, corsHeaders);
+      }
+
+      // Detailed ping if authenticated
       const [{ value: externalUrl }, { value: externalKey }] = await Promise.all([
         resolveCredential("EXTERNAL_PROMOBRIND_URL"),
         resolveCredential("EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY"),
@@ -474,10 +481,9 @@ Deno.serve((req) => {
         ts: Date.now(), 
         warm: true,
         config: {
-          url: externalUrl ? externalUrl.replace(/\/\/.*@/, '//***@') : null, // sanitize basic auth if present
+          url: externalUrl ? externalUrl.replace(/\/\/.*@/, '//***@') : null,
           has_url: !!externalUrl,
           has_key: !!externalKey,
-          // Fingerprint para confirmar que estamos na instância certa
           url_suffix: externalUrl ? externalUrl.slice(-10) : null,
           is_external: externalUrl ? !externalUrl.includes('supabase.co') : false
         }

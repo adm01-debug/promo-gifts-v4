@@ -15,9 +15,12 @@ const ALLOWED_REFERER_HOSTS = [
   'www.promogifts.com.br',
   'lovable.app',          // any *.lovable.app subdomain
   'lovableproject.com',
-  'localhost',
-  '127.0.0.1',
 ];
+
+// Localhost/127.0.0.1 conditional (Hardening 6.3)
+if (Deno.env.get('IMAGE_PROXY_ALLOW_LOCALHOST') === 'true') {
+  ALLOWED_REFERER_HOSTS.push('localhost', '127.0.0.1');
+}
 
 function isAllowedReferer(referer: string | null): boolean {
   if (!referer) return false;
@@ -97,6 +100,18 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Hardening 6.3: Max bytes limit
+    const maxBytes = parseInt(Deno.env.get('IMAGE_PROXY_MAX_BYTES') || '5242880', 10); // Default 5MB
+    const contentLength = imageResponse.headers.get('content-length');
+    
+    if (contentLength && parseInt(contentLength, 10) > maxBytes) {
+      console.warn(`[image-proxy] Blocking oversized image: ${contentLength} bytes from ${imageUrl}`);
+      return new Response(JSON.stringify({ error: 'Image too large' }), {
+        status: 413, // Payload Too Large
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const contentType = imageResponse.headers.get('Content-Type') || 'image/jpeg';
     
     // Critical #4 fix: Validate Content-Type to prevent content-sniffing or HTML injection
@@ -109,6 +124,15 @@ Deno.serve(async (req) => {
     }
 
     const imageBuffer = await imageResponse.arrayBuffer();
+
+    // Secondary check if Content-Length was missing
+    if (imageBuffer.byteLength > maxBytes) {
+      console.warn(`[image-proxy] Blocking oversized buffer: ${imageBuffer.byteLength} bytes from ${imageUrl}`);
+      return new Response(JSON.stringify({ error: 'Image too large' }), {
+        status: 413,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     return new Response(imageBuffer, {
       status: 200,
