@@ -12,3 +12,4 @@ export * from "@/hooks/ui/useScrollLockFix";
 export * from "@/hooks/ui/use-mobile";
 export * from "@/hooks/ui/usePushNotifications";
 export * from "@/hooks/ui/useWorkspaceNotifications";
+export * from "@/hooks/ui/useMediaQuery";
