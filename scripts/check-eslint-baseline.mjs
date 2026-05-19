@@ -53,7 +53,15 @@ if (res.status !== 0 && res.status !== 1) {
 
 const report = JSON.parse(readFileSync(out, "utf8"));
 
-// Agrega current igual ao generator.
+// Normaliza uma entrada do baseline/current para { e, w }. Aceita o formato
+// novo ({e, w}) e o legado (número = só erros) para retrocompatibilidade.
+function norm(v) {
+  if (v == null) return { e: 0, w: 0 };
+  if (typeof v === "number") return { e: v, w: 0 };
+  return { e: v.e ?? 0, w: v.w ?? 0 };
+}
+
+// Agrega current igual ao generator: { e, w } por (file, rule).
 const current = {};
 let totalErrors = 0;
 let totalWarnings = 0;
@@ -61,28 +69,34 @@ for (const file of report) {
   if (!file.messages?.length) continue;
   const rel = relative(ROOT, file.filePath).replaceAll("\\", "/");
   for (const m of file.messages) {
-    // Agora processamos tanto erros (2) quanto warnings (1)
-    if (m.severity === 0) continue;
-    
+    // Processamos erros (2) e warnings (1)
+    if (m.severity !== 1 && m.severity !== 2) continue;
+
     const rule = m.ruleId ?? "<no-rule>";
     current[rel] ??= {};
-    current[rel][rule] = (current[rel][rule] ?? 0) + 1;
-    
-    if (m.severity === 2) totalErrors += 1;
-    if (m.severity === 1) totalWarnings += 1;
+    current[rel][rule] ??= { e: 0, w: 0 };
+    if (m.severity === 2) {
+      current[rel][rule].e += 1;
+      totalErrors += 1;
+    } else {
+      current[rel][rule].w += 1;
+      totalWarnings += 1;
+    }
   }
 }
 
 
-// Compara: por (file,rule), conta quantas excedem o baseline.
-// Quando há regressão, escolhemos as primeiras N mensagens daquele par
-// para listar no relatório.
-const regressions = []; // {file, rule, baseline, current, delta}
+// Compara erros e warnings SEPARADAMENTE por (file, rule). Assim uma transição
+// warning→error (mesmo total) é flagada: o nº de erros sobe vs baseline.
+const regressions = []; // {file, rule, severity, baseline, current, delta}
 for (const [file, rules] of Object.entries(current)) {
-  for (const [rule, count] of Object.entries(rules)) {
-    const base = baselineCounts[file]?.[rule] ?? 0;
-    if (count > base) {
-      regressions.push({ file, rule, baseline: base, current: count, delta: count - base });
+  for (const [rule, cur] of Object.entries(rules)) {
+    const base = norm(baselineCounts[file]?.[rule]);
+    if (cur.e > base.e) {
+      regressions.push({ file, rule, severity: "erro", baseline: base.e, current: cur.e, delta: cur.e - base.e });
+    }
+    if (cur.w > base.w) {
+      regressions.push({ file, rule, severity: "warning", baseline: base.w, current: cur.w, delta: cur.w - base.w });
     }
   }
 }
@@ -90,9 +104,11 @@ for (const [file, rules] of Object.entries(current)) {
 // Drift positivo (melhorias): não falha, só informa.
 const improvements = [];
 for (const [file, rules] of Object.entries(baselineCounts)) {
-  for (const [rule, count] of Object.entries(rules)) {
-    const cur = current[file]?.[rule] ?? 0;
-    if (cur < count) improvements.push({ file, rule, baseline: count, current: cur });
+  for (const [rule, raw] of Object.entries(rules)) {
+    const baseN = norm(raw);
+    const curN = norm(current[file]?.[rule]);
+    const improved = Math.max(0, baseN.e - curN.e) + Math.max(0, baseN.w - curN.w);
+    if (improved > 0) improvements.push({ file, rule, baseline: baseN.e + baseN.w, current: curN.e + curN.w });
   }
 }
 
@@ -142,7 +158,7 @@ console.error(
 
 for (const r of regressions.slice(0, MAX_LIST)) {
   console.error(
-    `  • ${r.file} [${r.rule}] baseline=${r.baseline} → atual=${r.current} (+${r.delta})`
+    `  • ${r.file} [${r.rule}] (${r.severity}) baseline=${r.baseline} → atual=${r.current} (+${r.delta})`
   );
   const ex = examplesByKey.get(`${r.file}::${r.rule}`) ?? [];
   for (const e of ex) console.error(`      ${e}`);

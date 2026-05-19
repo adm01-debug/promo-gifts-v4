@@ -57,9 +57,16 @@ function aggregate(report) {
       if (m.severity !== 1 && m.severity !== 2) continue;
       const rule = m.ruleId ?? "<no-rule>";
       counts[rel] ??= {};
-      counts[rel][rule] = (counts[rel][rule] ?? 0) + 1;
-      if (m.severity === 2) totalErrors += 1;
-      else totalWarnings += 1;
+      // Rastreia severidade separadamente {e: erros, w: warnings} para que uma
+      // transição warning→error (mesmo total) seja detectada como regressão.
+      counts[rel][rule] ??= { e: 0, w: 0 };
+      if (m.severity === 2) {
+        counts[rel][rule].e += 1;
+        totalErrors += 1;
+      } else {
+        counts[rel][rule].w += 1;
+        totalWarnings += 1;
+      }
     }
   }
   // Ordena para diff estável.

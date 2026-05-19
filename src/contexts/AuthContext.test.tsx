@@ -79,8 +79,10 @@ describe('AuthContext', () => {
       // Note: we can't easily check the internal state of useAuth without causing a re-render
       // or using a test component.
 
+      // O erro remoto é PROPAGADO (para o Header poder avisar), mas o estado
+      // local é limpo de qualquer forma (finally).
       await act(async () => {
-        await result.current.signOut();
+        await expect(result.current.signOut()).rejects.toThrow('Network error');
       });
 
       expect(result.current.user).toBeNull();
@@ -96,6 +98,9 @@ describe('AuthContext', () => {
       vi.mocked(supabase.auth.getSession).mockResolvedValue({
         data: { session: mockSession },
       } as unknown);
+      // signOut remoto resolve aqui (o teste anterior o deixou rejeitando;
+      // clearAllMocks não reseta implementações).
+      vi.mocked(supabase.auth.signOut).mockResolvedValue({ error: null } as unknown);
 
       const { result } = renderHook(() => useAuth(), { wrapper });
 

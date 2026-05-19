@@ -34,12 +34,17 @@ import {
   getFallback,
 } from "@/components/layout/SkeletonLoaders";
 
-// SkeletonMonitor (envolvido por makeSkeleton) chama useAuth() para decidir
-// se mostra o overlay de debug do tempo de skeleton. Em testes de renderização
-// isolada, não temos AuthProvider — mockamos com um stub mínimo.
-vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ userRole: null, user: null, isLoading: false }),
-}));
+// SkeletonMonitor (envolvido por makeSkeleton) lê o AuthContext via useContext
+// para decidir se mostra o overlay de debug. Em testes de render isolado não há
+// AuthProvider — exportamos um AuthContext real (createContext) com default null,
+// então useContext devolve null e o overlay fica oculto.
+vi.mock('@/contexts/AuthContext', async () => {
+  const React = await import('react');
+  return {
+    AuthContext: React.createContext<unknown>(null),
+    useAuth: () => ({ isDev: false, isAdmin: false, user: null, isLoading: false }),
+  };
+});
 
 
 afterEach(() => cleanup());

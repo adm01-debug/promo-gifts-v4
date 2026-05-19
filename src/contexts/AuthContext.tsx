@@ -222,12 +222,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    // O logout local SEMPRE acontece, mesmo que a chamada remota falhe (rede
-    // offline, sessão já expirada). Não propagamos o erro para não travar a UI.
+    // O estado local SEMPRE é limpo (finally), mesmo se a chamada remota falhar.
+    // Mas o erro é PROPAGADO para que callers (ex.: Header) possam avisar que a
+    // revogação global não foi confirmada (offline/5xx).
     try {
       await authService.signOut();
-    } catch {
-      // intencional: estado local é limpo no finally independente do remoto
     } finally {
       setUser(null);
       setSession(null);
