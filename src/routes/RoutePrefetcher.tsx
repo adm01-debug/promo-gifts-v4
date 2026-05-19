@@ -11,28 +11,31 @@ export function RoutePrefetcher() {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    // Only prefetch if we're not on a mobile connection or low power mode if detectable
+    // Only prefetch if we're not on a mobile connection or low power mode
+    const connection = (navigator as any).connection;
+    if (connection && (connection.saveData || connection.effectiveType === '2g')) {
+      return;
+    }
+
     if (pathname === "/auth" || pathname === "/login") {
-      // Prefetch index/produtos right after login screen loads
+      // Prefetch dashboard early
       import("@/pages/Index");
       import("@/pages/FiltersPage");
     } else if (pathname === "/") {
-      // On dashboard, prefetch products and quotes
+      // Prefetch heavy pages from dashboard
       import("@/pages/FiltersPage");
       import("@/pages/QuotesListPage");
       import("@/pages/ClientsPage");
     } else if (pathname === "/produtos") {
-      // On products page, prefetch detailed product view and tools
       import("@/pages/ProductDetail");
-      import("@/pages/MockupGenerator");
       import("@/pages/PriceSimulatorPage");
     }
 
-    // Low priority prefetch for common tools
+    // Secondary priority prefetch
     const timeoutId = setTimeout(() => {
       if (pathname !== "/orcamentos/novo") import("@/pages/QuoteBuilderPage");
-      if (pathname !== "/novidades") import("@/pages/NoveltiesPage");
-    }, 2000);
+      if (pathname === "/produtos") import("@/pages/MockupGenerator");
+    }, 2500);
 
     return () => clearTimeout(timeoutId);
   }, [pathname]);

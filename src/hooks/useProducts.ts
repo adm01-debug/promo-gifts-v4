@@ -53,9 +53,10 @@ export function useProducts(
 
       return result;
     },
-    staleTime: 15 * 60 * 1000,
-    gcTime: 60 * 60 * 1000,
+    staleTime: 30 * 60 * 1000, // 30 min para catálogo pesado
+    gcTime: 24 * 60 * 60 * 1000, // 24h em memória para evitar re-fetch total
     refetchOnWindowFocus: false,
+    refetchOnReconnect: false, // Menos agressivo para performance
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     ...options,
@@ -72,8 +73,8 @@ export function useProduct(id: string) {
       const product = await fetchPromobrindProductById(id);
       return product ? mapPromobrindToProduct(product) : null;
     },
-    staleTime: 15 * 60 * 1000,
-    gcTime: 60 * 60 * 1000,
+    staleTime: 10 * 60 * 1000, // Detalhe do produto expira mais rápido
+    gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
     retry: 2,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),

@@ -28,11 +28,10 @@ export default defineConfig(({ mode }: { mode: string }) => ({
   },
   
   esbuild: {
-    // Strip console.log/debug/info in production but PRESERVE console.warn/error for diagnostics.
-    // `drop: ['console']` removes ALL console methods (including error/warn) — use `pure` instead
-    // to drop only specific methods. See B-1.1 in docs/hardening/AUDITORIA-PROFUNDA-PROMOGIFTS-PRE-PROD.md
     pure: mode === 'production' ? ['console.log', 'console.debug', 'console.info'] : [],
     drop: (mode === 'production' ? ['debugger'] : []) as ('console' | 'debugger')[],
+    legalComments: 'none' as const,
+    treeShaking: true,
   },
   
   build: {
@@ -41,6 +40,8 @@ export default defineConfig(({ mode }: { mode: string }) => ({
     minify: 'esbuild' as const,
     target: 'esnext',
     chunkSizeWarningLimit: 2000,
+    cssCodeSplit: true,
+    reportCompressedSize: false,
     
     rollupOptions: {
       output: {

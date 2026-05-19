@@ -58,7 +58,8 @@ export function useCatalogFiltering({
     if (result.length === 0) return result;
 
     // Optimized Color Filtering: Process once per product
-    if (colorFilterSet.size > 0 || colorGroupSet.size > 0 || colorVariationSet.size > 0) {
+    const hasColorFilters = colorFilterSet.size > 0 || colorGroupSet.size > 0 || colorVariationSet.size > 0;
+    if (hasColorFilters) {
       const groupArray = colorGroupSet.size > 0 ? Array.from(colorGroupSet).map(s => s.toLowerCase()) : null;
       
       result = result.filter((p) => {
@@ -133,6 +134,6 @@ export function useCatalogFiltering({
     hasMaterialFilter, materialFilteredProductIds, isLoadingMaterialFilter, 
     hasCategoryFilter, categoryFilteredProductIds, isLoadingCategoryFilter, 
     promoSalesMap, supplierSalesMap, colorFilterSet, colorGroupSet, colorVariationSet, 
-    categoryFilterSet, supplierFilterSet, genderFilterSet
+    categoryFilterSet, supplierFilterSet, genderFilterSet, hasColorFilters
   ]);
 }
