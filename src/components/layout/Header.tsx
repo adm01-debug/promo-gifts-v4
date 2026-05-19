@@ -45,7 +45,7 @@ export const Header = React.memo(function Header({ onMenuToggle, searchQuery, on
   const compareCount = useComparisonStore((s) => s.compareCount);
   const { user, profile, role, isAdmin, signOut, rolesLoaded } = useAuth();
   const currentSection = useCurrentSection();
-  const { restartTour, hasCompletedTour, isLoading: onboardingLoading } = useOnboardingContext();
+  const { restartTour, hasCompletedTour, isLoading: onboardingLoading, startTour } = useOnboardingContext();
   const setOpenSearch = useSearchStore((s) => s.setOpen);
 
   const isScrolled = useIsScrolled(20);
