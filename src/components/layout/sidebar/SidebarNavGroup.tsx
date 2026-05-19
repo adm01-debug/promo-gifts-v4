@@ -169,10 +169,10 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
         data-tour={item.tourId}
         className={cn(
           "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-300 group relative focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/20 active:scale-[0.98]",
-          "hover:bg-primary/5 hover:translate-x-1",
+          "hover:bg-white/[0.03] hover:translate-x-1",
           isActive
-            ? "bg-primary/10 text-primary font-bold shadow-[0_0_15px_rgba(var(--primary),0.1)] before:absolute before:left-0 before:top-[15%] before:bottom-[15%] before:w-[3px] before:rounded-r-full before:bg-primary"
-            : "text-sidebar-foreground/75 hover:text-sidebar-foreground before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-0 before:w-[2px] before:rounded-r-full before:bg-primary/50 before:transition-all before:duration-300 hover:before:h-4"
+            ? "bg-white/[0.05] text-white font-bold shadow-[0_0_15px_rgba(255,255,255,0.05)] before:absolute before:left-0 before:top-[15%] before:bottom-[15%] before:w-[3px] before:rounded-r-full before:bg-primary"
+            : "text-sidebar-foreground/70 hover:text-sidebar-foreground before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-0 before:w-[2px] before:rounded-r-full before:bg-primary/50 before:transition-all before:duration-300 hover:before:h-4"
         )}
         onClick={() => isMobileSidebarOpen && onMobileClose()}
         onMouseEnter={prefetch.onMouseEnter}
