@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { QuickAddToQuote } from "./QuickAddToQuote";
 import { cn } from "@/lib/utils";
+import { feedback } from "@/lib/feedback";
 import type { VariantActionMode } from "./VariantPickerDialog";
 
 interface ProductCardActionsProps {
@@ -58,7 +59,7 @@ export const ProductCardActions = memo(function ProductCardActions({
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           actionsOpen ? "bg-muted text-muted-foreground rotate-45" : "bg-orange/60 text-orange-foreground hover:bg-orange/80"
         )}
-        onClick={(e) => { e.stopPropagation(); onToggleActions(); }}
+        onClick={(e) => { e.stopPropagation(); feedback.light(); onToggleActions(); }}
         aria-label={actionsOpen ? "Fechar ações" : "Ações rápidas"}
         aria-expanded={actionsOpen}
       >
@@ -111,7 +112,7 @@ export const ProductCardActions = memo(function ProductCardActions({
         {/* Quick View */}
         <ActionButton icon={Eye} label="Visualização Rápida" shortcut="Q" className={btnClass}
           testId="product-card-quickview"
-          onClick={(e) => { e.stopPropagation(); markBusy(); onQuickView(); }} />
+          onClick={(e) => { e.stopPropagation(); feedback.light(); markBusy(); onQuickView(); }} />
       </div>
     </div>
   );
