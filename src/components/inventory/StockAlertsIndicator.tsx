@@ -92,105 +92,65 @@ export function StockAlertsIndicator({
   criticalStockThreshold = 10,
 }: StockAlertsIndicatorProps) {
     const navigate = useNavigate();
-    const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const [isOpen, setIsOpen] = useState(false);
     const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
     const [activeTab, setActiveTab] = useState<NotificationType>("stock");
 
-    // ── Fetch ──
-    useEffect(() => {
-      fetchAllNotifications();
+    // ── Queries ──
+    const { data: stockAlerts = [], isLoading: loadingStock } = useStockAlerts(lowStockThreshold, criticalStockThreshold);
+    const { data: novelties = [], isLoading: loadingNovelties } = useNoveltiesWithDetails({ limit: 30 });
+    const { data: replenishments = [], isLoading: loadingReplenishments } = useReplenishmentsWithDetails({ limit: 30 });
 
-      // Products live in an external DB — no realtime channel available.
-      // Poll every 5 minutes instead.
-      const interval = setInterval(fetchAllNotifications, 5 * 60 * 1000);
-      return () => clearInterval(interval);
-    }, [lowStockThreshold]);
+    const isLoading = loadingStock || loadingNovelties || loadingReplenishments;
 
-    const fetchAllNotifications = async () => {
-      try {
-        const { fetchPromobrindProducts, getProductImageUrl } = await import("@/lib/external-db");
-        const allProducts = await fetchPromobrindProducts({ limit: 500 });
+    // ── Normalization ──
+    const notifications = useMemo(() => {
+      const items: NotificationItem[] = [];
 
-        const now = new Date();
-        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      // Stock alerts
+      stockAlerts.forEach(a => {
+        items.push({
+          id: a.id,
+          productId: a.productId,
+          productName: a.productName,
+          sku: a.sku,
+          imageUrl: a.imageUrl,
+          type: "stock",
+          currentStock: a.currentStock,
+          alertLevel: a.alertLevel,
+          supplier: a.supplier,
+        });
+      });
 
-        const items: NotificationItem[] = [];
+      // Novelties
+      novelties.forEach(n => {
+        items.push({
+          id: `new-${n.product_id}`,
+          productId: n.product_id,
+          productName: n.product_name,
+          sku: n.product_sku || "",
+          imageUrl: n.product_image,
+          type: "new",
+          supplier: n.supplier_name || "",
+        });
+      });
 
-        // ── 1) Stock alerts ──
-        const lowStock = allProducts.filter(p => (p.stock_quantity ?? 0) < lowStockThreshold);
-        for (const p of lowStock.slice(0, 50)) {
-          const stock = p.stock_quantity ?? 0;
-          let alertLevel: "low" | "critical" | "out" = "low";
-          if (stock === 0) alertLevel = "out";
-          else if (stock <= criticalStockThreshold) alertLevel = "critical";
+      // Replenishments
+      replenishments.forEach(r => {
+        items.push({
+          id: `restocked-${r.product_id}`,
+          productId: r.product_id,
+          productName: r.product_name,
+          sku: r.product_sku || "",
+          imageUrl: r.product_image,
+          type: "restocked",
+          currentStock: r.stock_quantity,
+          supplier: r.supplier_name || "",
+        });
+      });
 
-          items.push({
-            id: `stock-${p.id}`,
-            productId: p.id,
-            productName: p.name,
-            sku: p.sku,
-            imageUrl: getProductImageUrl(p),
-            type: "stock",
-            currentStock: stock,
-            alertLevel,
-            supplier: p.brand || p.supplier_name || "",
-          });
-        }
-
-        // ── 2) New products (created in last 7 days) ──
-        for (const p of allProducts) {
-          if (p.created_at) {
-            const created = new Date(p.created_at);
-            if (created >= sevenDaysAgo) {
-              items.push({
-                id: `new-${p.id}`,
-                productId: p.id,
-                productName: p.name,
-                sku: p.sku,
-                imageUrl: getProductImageUrl(p),
-                type: "new",
-              });
-            }
-          }
-        }
-
-        // ── 3) Restocked (stock > 0, updated in last 7 days, updated != created → implies change) ──
-        for (const p of allProducts) {
-          const stock = p.stock_quantity ?? 0;
-          if (stock > 0 && p.updated_at && p.created_at) {
-            const updated = new Date(p.updated_at);
-            const created = new Date(p.created_at);
-            // Only flag if updated recently AND update is significantly after creation (>1h diff)
-            if (
-              updated >= sevenDaysAgo &&
-              updated.getTime() - created.getTime() > 3600_000
-            ) {
-              // Heuristic: only low-stock items that got restocked are interesting
-              // We show products with stock between 1 and lowStockThreshold that were recently updated
-              if (stock <= lowStockThreshold) {
-                items.push({
-                  id: `restocked-${p.id}`,
-                  productId: p.id,
-                  productName: p.name,
-                  sku: p.sku,
-                  imageUrl: getProductImageUrl(p),
-                  type: "restocked",
-                  currentStock: stock,
-                });
-              }
-            }
-          }
-        }
-
-        setNotifications(items);
-      } catch (error) {
-        console.error("Error fetching notifications:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      return items;
+    }, [stockAlerts, novelties, replenishments]);
 
     // ── Derived state ──
     const visible = useMemo(
