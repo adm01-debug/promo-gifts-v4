@@ -15,6 +15,7 @@ serve(async (req) => {
     const { count = 100, targetFunctions = ["external-db-bridge", "webhook-inbound"] } = await req.json();
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const report = {
       totalScenarios: 0,
