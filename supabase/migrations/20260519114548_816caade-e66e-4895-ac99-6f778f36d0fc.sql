@@ -1,0 +1,1 @@
+ALTER FUNCTION public.create_organization_with_owner(text, text) SET search_path = public;
