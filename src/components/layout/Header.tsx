@@ -19,6 +19,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/ui";
 import { useOnboardingContext } from "@/contexts/OnboardingContext";
 import { OrganizationSwitcher } from "@/components/OrganizationSwitcher";
+import { useSearchStore } from "@/stores/useSearchStore";
 
 import { StockAlertsIndicator } from "@/components/inventory/StockAlertsIndicator";
 import { NotificationBell } from "@/components/notifications/NotificationDrawer";
@@ -47,6 +48,7 @@ export const Header = React.memo(function Header({ onMenuToggle, searchQuery, on
   const { user, profile, role, isAdmin, signOut, rolesLoaded } = useAuth();
   const currentSection = useCurrentSection();
   const { restartTour, hasCompletedTour, isLoading: onboardingLoading } = useOnboardingContext();
+  const setOpenSearch = useSearchStore((s) => s.setOpen);
 
   const isScrolled = useIsScrolled(20);
 
@@ -186,10 +188,7 @@ export const Header = React.memo(function Header({ onMenuToggle, searchQuery, on
             size="icon" 
             aria-label="Abrir busca global"
             className="md:hidden h-8 w-8 hover:bg-primary/10 hover:text-primary"
-            onClick={() => {
-              const event = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true });
-              document.dispatchEvent(event);
-            }}
+            onClick={() => setOpenSearch(true)}
           >
             <Search className="h-4 w-4" />
           </Button>

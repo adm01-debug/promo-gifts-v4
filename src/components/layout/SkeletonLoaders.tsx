@@ -272,7 +272,29 @@ export const AuthSkeleton = makeSkeleton(
   "min-h-[60vh] flex items-center justify-center p-6",
 );
 
+/** Modal loading skeleton */
+export const ModalSkeleton = makeSkeleton(
+  "Modal",
+  () => (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <Skeleton className="h-10 w-10 rounded-xl" />
+        <div className="space-y-2">
+          <Skeleton className="h-5 w-32" />
+          <Skeleton className="h-3 w-48" />
+        </div>
+      </div>
+      <div className="space-y-3 pt-4">
+        <Skeleton className="h-20 w-full rounded-xl" />
+        <Skeleton className="h-40 w-full rounded-xl" />
+      </div>
+    </div>
+  ),
+  "p-6",
+);
+
 /**
+
  * Returns the appropriate skeleton component based on the current route.
  */
 export function getFallback(pathname: string): React.ReactNode {

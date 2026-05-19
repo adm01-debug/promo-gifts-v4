@@ -36,6 +36,7 @@ import { ProductDetailHero } from "@/pages/products/product-detail/ProductDetail
 import { ScrollToTopButton } from '@/components/common/ScrollToTopButton';
 import { formatCurrency } from '@/lib/format';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ModalSkeleton } from '@/components/layout/SkeletonLoaders';
 
 
 export default function ProductDetail() {
@@ -109,6 +110,10 @@ export default function ProductDetail() {
 
   const jsonLd = useMemo(() => {
     if (!product) return null;
+    const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
+    const nextYear = new Date();
+    nextYear.setFullYear(nextYear.getFullYear() + 1);
+    
     return {
       '@context': 'https://schema.org',
       '@type': 'Product',
@@ -116,11 +121,14 @@ export default function ProductDetail() {
       description: product.description || `${product.name} - Brinde Promocional`,
       sku: product.sku,
       image: product.images?.filter(Boolean) || [],
+      url: currentUrl,
       brand: { '@type': 'Brand', name: product.supplier?.name || 'Promo Gifts' },
       offers: {
         '@type': 'Offer',
         price: product.price,
         priceCurrency: 'BRL',
+        priceValidUntil: nextYear.toISOString().split('T')[0],
+        itemCondition: 'https://schema.org/NewCondition',
         availability:
           product.stockStatus === 'in-stock'
             ? 'https://schema.org/InStock'
@@ -128,6 +136,7 @@ export default function ProductDetail() {
               ? 'https://schema.org/OutOfStock'
               : 'https://schema.org/LimitedAvailability',
         seller: { '@type': 'Organization', name: 'Promo Gifts' },
+        url: currentUrl,
       },
       category: product.category?.name,
       material: product.materials?.join(', '),
@@ -335,14 +344,14 @@ export default function ProductDetail() {
           </Suspense>
         </div>
 
-        <Suspense fallback={null}>
+        <Suspense fallback={<ModalSkeleton />}>
           <SupplierComparisonModal
             product={product}
             open={supplierCompareOpen}
             onOpenChange={setSupplierCompareOpen}
           />
         </Suspense>
-        <Suspense fallback={null}>
+        <Suspense fallback={<ModalSkeleton />}>
           <FutureStockModal
             open={futureStockOpen}
             onOpenChange={setFutureStockOpen}
@@ -351,7 +360,7 @@ export default function ProductDetail() {
             productSku={product.sku}
           />
         </Suspense>
-        <Suspense fallback={null}>
+        <Suspense fallback={<ModalSkeleton />}>
           <PackagingModal
             isOpen={packagingModalOpen}
             onClose={() => setPackagingModalOpen(false)}

@@ -13,6 +13,7 @@ import {
   calculateColorSummary,
 } from "@/hooks/products";
 import { sortColorSummary } from "@/utils/colorSorting";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type SortOrder = "nearest" | "farthest" | "quantity-desc" | "quantity-asc";
 type DateFilter = "all" | "7days" | "30days" | "90days" | "past";
@@ -130,8 +131,18 @@ export function FutureStockModal({
           <div className="p-6 space-y-6">
             {/* Loading */}
             {isLoading && (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <div className="space-y-4 p-4">
+                <Skeleton className="h-10 w-full rounded-xl" />
+                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+                  {[...Array(8)].map((_, i) => (
+                    <Skeleton key={i} className="aspect-square rounded-lg" />
+                  ))}
+                </div>
+                <div className="space-y-3 pt-6">
+                  {[...Array(3)].map((_, i) => (
+                    <Skeleton key={i} className="h-20 w-full rounded-xl" />
+                  ))}
+                </div>
               </div>
             )}
             

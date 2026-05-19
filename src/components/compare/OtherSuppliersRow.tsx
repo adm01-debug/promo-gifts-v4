@@ -17,7 +17,7 @@ interface Props {
 
 export function OtherSuppliersRow({ product, formatCurrency, onAddToCompare }: Props) {
   const [open, setOpen] = useState(false);
-  const result = useSupplierComparison(open ? product : null);
+  const { data: result, isLoading } = useSupplierComparison(open ? (product as any) : null);
 
   return (
     <div className="rounded-lg border border-border bg-muted/20">
@@ -34,7 +34,7 @@ export function OtherSuppliersRow({ product, formatCurrency, onAddToCompare }: P
       </button>
       {open && (
         <div className="p-3 border-t border-border space-y-2">
-          {!result && (
+          {isLoading && (
             <p className="text-[11px] text-muted-foreground text-center py-2">
               Buscando alternativas...
             </p>

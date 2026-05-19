@@ -14,6 +14,7 @@
 import { useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOracleVoiceBridge } from "@/stores/oracleVoiceBridge";
+import { useSearchStore } from "@/stores/useSearchStore";
 
 interface ShortcutHandlers {
   onSearchFocus?: () => void;
@@ -26,6 +27,7 @@ let lastGAt = 0;
 export function useGlobalShortcuts(handlers?: ShortcutHandlers) {
   const navigate = useNavigate();
   const openOracle = useOracleVoiceBridge((s) => s.openOracle);
+  const setOpenSearch = useSearchStore((s) => s.setOpen);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -52,16 +54,10 @@ export function useGlobalShortcuts(handlers?: ShortcutHandlers) {
 
       if (!isMod) return;
 
-      // Ctrl/Cmd + K → Focus search (works even inside inputs)
+      // Ctrl/Cmd + K → Open search palette (works even inside inputs)
       if (e.key === "k" || e.key === "K") {
         e.preventDefault();
-        const searchInput = document.querySelector<HTMLInputElement>(
-          'input[type="search"], input[aria-label="Campo de busca"], #search'
-        );
-        if (searchInput) {
-          searchInput.focus();
-          searchInput.select();
-        }
+        setOpenSearch(true);
         handlers?.onSearchFocus?.();
         return;
       }

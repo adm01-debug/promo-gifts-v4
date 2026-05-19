@@ -29,6 +29,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useSupplierComparison } from "@/hooks/products";
 import type { Product } from "@/hooks/products";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface SupplierComparisonModalProps {
   product?: Product | null;
@@ -44,7 +45,7 @@ export function SupplierComparisonModal({
   onOpenChange,
 }: SupplierComparisonModalProps) {
   const navigate = useNavigate();
-  const comparison = useSupplierComparison(product ?? null);
+  const { data: comparison, isLoading } = useSupplierComparison(product ?? null);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -74,21 +75,24 @@ export function SupplierComparisonModal({
   if (!comparison) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-4xl max-h-[85vh]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Building2 className="h-5 w-5 text-primary" />
               Comparador de Fornecedores
             </DialogTitle>
           </DialogHeader>
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-              <Package className="h-8 w-8 text-muted-foreground" />
+          <div className="space-y-6 p-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[...Array(4)].map((_, i) => (
+                <Skeleton key={i} className="h-20 w-full rounded-lg" />
+              ))}
             </div>
-            <p className="text-muted-foreground">
-              Não encontramos produtos similares de outros fornecedores para
-              comparação.
-            </p>
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-24 w-full rounded-xl" />
+              ))}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
