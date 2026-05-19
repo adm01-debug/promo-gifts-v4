@@ -19,7 +19,8 @@ Deno.serve(async (req) => {
       await authenticateRequest(req);
     } catch (authErr) {
       const authHeader = req.headers.get("Authorization");
-      console.log(`[cnpj-lookup] Auth failed. Header present: ${!!authHeader}, Type: ${authHeader?.split(' ')[0]}`);
+      const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+      console.log(`[cnpj-lookup] Auth Debug: token_len=${authHeader?.length}, env_key_len=${serviceRoleKey?.length}, env_key_start=${serviceRoleKey?.slice(0, 5)}`);
       return authErrorResponse(authErr, corsHeaders);
     }
 
