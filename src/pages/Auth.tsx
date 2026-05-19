@@ -253,28 +253,41 @@ export default function Auth() {
     setIpBlocked(false);
 
     try {
+      console.log(`[AUTH_START] Tentativa de login para: ${data.email}`);
       const { error, data: signInData } = await signIn(data.email, data.password);
 
       if (error) {
+        console.error(`[AUTH_FAILED] Erro de autenticação para ${data.email}:`, error);
         await logLoginAttempt(data.email, null, false, error.message);
 
         let description = error.message;
         let diagnosis = "Verifique as credenciais";
+        let title = "Erro ao entrar";
 
-        if (error.message.includes('Invalid login credentials')) {
-          description = 'Email ou senha incorretos';
-          diagnosis = "AUTH_FAILED: Senha não confere ou usuário não existe no Supabase.";
+        // Heurística de erro baseada no código e mensagem
+        if (error.message.includes('Invalid login credentials') || error.status === 400) {
+          description = 'Email ou senha incorretos. Por favor, tente novamente.';
+          diagnosis = "AUTH_FAILED: Credenciais inválidas (400).";
         } else if (error.message.includes('Email not confirmed')) {
-          description = 'E-mail ainda não confirmado. Verifique sua caixa de entrada.';
-          diagnosis = "AUTH_CONFIRM: Usuário existe mas e-mail está pendente de validação.";
-        } else if (error.message.includes('Database error')) {
-          description = 'Erro de sincronização com o banco de dados. Tente novamente em instantes.';
-          diagnosis = "DB_ERROR: Supabase recusou a conexão ou RLS está bloqueando o acesso inicial.";
+          description = 'E-mail pendente de confirmação. Por favor, valide sua conta.';
+          diagnosis = "AUTH_CONFIRM: Usuário existe mas e-mail não foi confirmado.";
+        } else if (error.message.includes('rate limit') || error.status === 429) {
+          title = "Conta Temporariamente Bloqueada";
+          description = 'Muitas tentativas falhas. Por segurança, aguarde alguns minutos.';
+          diagnosis = "RATE_LIMIT: Bloqueio temporário ativado (429).";
+        } else if (error.status === 0 || error.message.includes('network') || error.message.includes('Fetch')) {
+          title = "Erro de Conexão";
+          description = 'Não foi possível alcançar o servidor. Verifique sua internet.';
+          diagnosis = "NETWORK_ERROR: Falha física ou DNS (0).";
+        } else if (error.message.includes('Database error') || error.status >= 500) {
+          title = "Erro no Servidor";
+          description = 'O sistema está instável no momento. Nossa equipe já foi notificada.';
+          diagnosis = `SERVER_ERROR: Erro interno do Supabase (${error.status || 500}).`;
         }
 
         toast({
           variant: 'destructive',
-          title: 'Erro ao entrar',
+          title: title,
           description: (
             <div className="space-y-3">
               <p className="font-medium">{description}</p>
@@ -287,13 +300,16 @@ export default function Auth() {
                 className="h-auto p-0 text-xs text-white/60 hover:text-white"
                 onClick={() => navigate('/admin/status')}
               >
-                Executar teste completo de conexão →
+                Verificar status do sistema →
               </Button>
             </div>
           ),
         });
         return;
       }
+
+      console.log(`[AUTH_OK] Login bem-sucedido para ${data.email}. Validando sessão...`);
+
 
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData?.session;
@@ -309,6 +325,7 @@ export default function Auth() {
       }
 
       // 1. Verificação detalhada de Perfil (is_active)
+      console.log(`[AUTH_SESSION] Sessão iniciada para ${userId}. Carregando perfil...`);
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('is_active, role')
@@ -316,24 +333,22 @@ export default function Auth() {
         .single();
 
       if (profileError) {
+        console.error(`[AUTH_PROFILE_FAILED] Erro ao buscar perfil para ${userId}:`, profileError);
         const isRLSError = profileError.code === 'PGRST301' || profileError.code === '42501';
         toast({
           variant: 'destructive',
-          title: 'Erro ao validar perfil',
+          title: 'Erro de Sessão',
           description: (
             <div className="space-y-2">
-              <p>Não conseguimos carregar suas permissões.</p>
+              <p>Autenticado, mas não conseguimos carregar suas permissões.</p>
               <div className="p-2 bg-black/40 rounded border border-white/5 font-mono text-[9px] text-white/50">
-                {isRLSError ? 'FALHA_RLS' : 'FALHA_PERFIL'}: {profileError.code} - {profileError.message}
+                {isRLSError ? 'RLS_BLOCK' : 'PROFILE_MISSING'}: {profileError.code} - {profileError.message}
               </div>
             </div>
           ),
         });
-        // Se for erro de RLS ou perfil ausente, pode ser um problema crítico de sincronização
-        if (isRLSError) {
-          console.error('[AUTH_DIAGNOSTIC] RLS Block on profile fetch after login');
-        }
       }
+
 
       if (profileData && profileData.is_active === false) {
         toast({
@@ -352,9 +367,11 @@ export default function Auth() {
         .eq('user_id', userId);
 
       if (rolesError || !rolesData || rolesData.length === 0) {
-        console.warn('[AUTH_DIAGNOSTIC] User logged in but has no roles assigned');
-        // Não bloqueia o login, mas registra o diagnóstico
+        console.warn(`[AUTH_RBAC_WARN] Usuário ${userId} sem papéis (roles) atribuídos.`);
+      } else {
+        console.log(`[AUTH_RBAC_OK] Usuário ${userId} possui ${rolesData.length} roles.`);
       }
+
 
       // 3. Validação final de IP e Redirecionamento
       await validateAndRedirect(userId, data.email);
