@@ -33,22 +33,7 @@ import { PriceFreshnessBadge } from "@/components/products/PriceFreshnessBadge";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
-interface QuoteItem {
-  id: string;
-  product_id: string;
-  product_name: string;
-  product_sku: string;
-  product_image_url?: string;
-  quantity: number;
-  unit_price: number;
-  color_name?: string;
-  color_hex?: string;
-  /** ISO timestamp da última atualização do preço (catálogo externo). */
-  price_updated_at?: string | null;
-  /** Janela em dias para alertar preço defasado (default 60). */
-  price_freshness_threshold_days?: number | null;
-  personalizations?: Record<string, unknown>[];
-}
+import { type QuoteItem } from "@/hooks/quotes/quoteTypes";
 
 interface DraggableQuoteItemsProps {
   items: QuoteItem[];
