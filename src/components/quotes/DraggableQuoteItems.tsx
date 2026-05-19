@@ -209,11 +209,20 @@ function SortableItem({
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground">Preço:</span>
-                  <CurrencyInput
-                    value={item.unit_price}
-                    onChange={(n) => onUpdatePrice(n)}
-                    className="w-28 h-8 text-sm"
-                  />
+                  <div className="flex items-center gap-1.5">
+                    <CurrencyInput
+                      value={item.unit_price}
+                      onChange={(n) => onUpdatePrice(n)}
+                      className="w-28 h-8 text-sm"
+                    />
+                    <PriceFreshnessBadge 
+                      updatedAt={item.price_updated_at}
+                      confirmedAt={item.price_confirmed_at}
+                      thresholdDays={item.price_freshness_threshold_days}
+                      onConfirm={onConfirmPrice}
+                      size="sm"
+                    />
+                  </div>
                 </div>
                 <div className="ml-auto text-right">
                   <p className="text-xs text-muted-foreground">Subtotal</p>
