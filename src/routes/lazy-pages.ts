@@ -100,6 +100,7 @@ export const CommercialIntelligencePage = lazyWithRetry(() => import("@/pages/bi
 export const ProductMatchPage = lazyWithRetry(() => import("@/pages/products/ProductMatchPage"));
 export const BusinessIntelligencePage = lazyWithRetry(() => import("@/pages/bi/BusinessIntelligencePage"));
 export const ClientComparatorPage = lazyWithRetry(() => import("@/pages/clients/ClientComparatorPage"));
+export const SimulationPage = lazyWithRetry(() => import("@/pages/Simulation"));
 
 // ─────────────────────────────────────────────────────────────────
 // Clients (CRM)
