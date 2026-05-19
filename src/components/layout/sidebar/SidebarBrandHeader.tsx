@@ -1,5 +1,7 @@
 import { forwardRef } from "react";
 import { AppLogo } from "../AppLogo";
+import { useOnboardingContext } from "@/contexts/OnboardingContext";
+import { useNavigate } from "react-router-dom";
 
 interface SidebarBrandHeaderProps {
   isCollapsed: boolean;
