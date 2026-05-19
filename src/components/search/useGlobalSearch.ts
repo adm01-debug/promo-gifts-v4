@@ -19,7 +19,7 @@ import type { VoiceAgentAction } from "@/hooks/voice/types";
 import { createProductFuseOptions, rankProductSearchResults } from "@/utils/product-search";
 import type { ExternalProduct } from "@/types/external-db";
 
-export type SearchResultType = "product" | "client" | "quote" | "collection" | "kit" | "mockup" | "art_file" | "cart_template" | "reminder" | "conversation" | "magic_up" | "category" | "component" | "media";
+export type SearchResultType = "product" | "client" | "quote" | "collection" | "kit" | "mockup" | "art_file" | "cart_template" | "reminder" | "conversation" | "magic_up" | "category" | "component" | "media" | "command";
 
 export interface SearchResult {
   id: string;
