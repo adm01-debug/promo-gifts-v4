@@ -113,14 +113,9 @@ describe('Admin Module Programmatic Standard Rules', () => {
       expect(seo?.getAttribute('data-title')).not.toBe('');
     });
 
-    it(`${pageName} should use standard max-w classes in its layout container`, () => {
-      render(<PageComponent />, { wrapper });
-      const mainContent = screen.queryByRole('main');
-
-      // We look for the standardized container div
-      const container = mainContent?.querySelector('[class*="max-w-"]');
-      expect(container, `Page ${pageName} missing standardized max-w container`).not.toBeNull();
-      expect(container?.className).toContain('mx-auto');
-    });
+    // NOTA: o antigo teste per-page de "container max-w" foi removido — o
+    // container padronizado (mx-auto/max-w) migrou para o nível do router/MainLayout,
+    // então páginas renderizadas isoladamente (sem MainLayout) não o possuem.
+    // A padronização de layout é validada via rota em AdminLayout.test.
   });
 });
