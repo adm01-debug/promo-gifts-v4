@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Package, AlertTriangle } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { replenishmentToProduct, useReplenishmentsSelectionMode, useReplenishmentsWithDetails } from "@/hooks/products";
 import { getDefaultColumns, type ColumnCount } from "@/components/products/ColumnSelector";
 import { BulkActionBar } from "@/components/products/BulkActionBar";
