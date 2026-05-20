@@ -11,6 +11,9 @@ import { Button } from "@/components/ui/button";
 export function AppBootstrap({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const [bootstrapped, setBootstrapped] = useState(false);
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [checkingMaintenance, setCheckingMaintenance] = useState(true);
+
   
   // Acessa o tour se disponível para garantir que possamos reiniciar via "?"
   // mas aqui o objetivo é garantir que o preview "abra" com os dados certos.
