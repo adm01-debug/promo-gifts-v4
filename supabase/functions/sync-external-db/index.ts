@@ -1,14 +1,24 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { buildPublicCorsHeaders } from "../_shared/cors.ts";
+import { createStructuredLogger } from "../_shared/structured-logger.ts";
+import { authorize } from "../_shared/authorize.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const corsHeaders = buildPublicCorsHeaders();
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
+
+  const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
+  const log = createStructuredLogger({ req, fn: "sync-external-db", requestId });
+
+  // Sync dev-only: exige role dev (SSOT _shared/authorize.ts).
+  const auth = await authorize(req, { requireRole: "dev" });
+  if (!auth.ok) {
+    log.warn("denied", { reason: "insufficient_role" });
+    return auth.response;
   }
 
   try {
@@ -42,7 +52,7 @@ serve(async (req) => {
     let sourceClient = direction === "to-external" ? internalSupabase : externalSupabase;
     let targetClient = direction === "to-external" ? externalSupabase : internalSupabase;
 
-    console.log(`Starting sync for table ${table} in direction ${direction}${since ? ` since ${since}` : ''}`);
+    log.info("sync-start", { table, direction, since: since ?? null });
 
     // 3. Buscar dados da origem
     let query = sourceClient.from(table).select("*").limit(1000);
@@ -79,8 +89,8 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error("Sync error:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
+    log.error("sync-failed", { error: errorMessage });
     return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

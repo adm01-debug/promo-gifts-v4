@@ -1,11 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { encodeHex } from "https://deno.land/std@0.224.0/encoding/hex.ts";
+import { buildPublicCorsHeaders } from "../_shared/cors.ts";
+import { createStructuredLogger } from "../_shared/structured-logger.ts";
+import { authorize } from "../_shared/authorize.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const corsHeaders = buildPublicCorsHeaders();
 
 async function hmacSign(payload: string, secret: string): Promise<string> {
   const enc = new TextEncoder();
@@ -43,11 +43,22 @@ function generateFuzzedPayload(type: string) {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+  const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
+  const log = createStructuredLogger({ req, fn: "simulation-orchestrator", requestId });
+
+  // Ferramenta dev-only: exige role dev (SSOT _shared/authorize.ts).
+  const auth = await authorize(req, { requireRole: "dev" });
+  if (!auth.ok) {
+    log.warn("denied", { reason: "insufficient_role" });
+    return auth.response;
+  }
+
   const startTime = performance.now();
 
   try {
-    const { 
-      count = 100, 
+    log.info("simulation-start");
+    const {
+      count = 100,
       targetFunctions = ["external-db-bridge", "webhook-inbound", "product-webhook"],
       mode = "resilience" // "resilience", "load", "fuzzing"
     } = await req.json();
@@ -219,6 +230,7 @@ serve(async (req) => {
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    log.error("simulation-failed", { error: errorMessage });
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 400,

@@ -120,6 +120,8 @@ export const EDGE_AUTHZ_MANIFEST: Record<string, AuthzEntry> = {
   "ownership-repair": { category: "supervisor", rationale: "Reparo de órfãos — has_role inline + dry-run", enforcedBy: "custom" },
 
   // ---------------- Dev-only ----------------
+  "simulation-orchestrator": { category: "dev", rationale: "Ferramenta de simulação/fuzzing — invocada por src/pages/Simulation.tsx (dev/admin)" },
+  "sync-external-db": { category: "dev", rationale: "Sync entre Supabase interno/externo — invocada por src/pages/admin/StorageTestPage.tsx (dev/admin)" },
   "secrets-manager": { category: "dev", rationale: "is_dev() inline check", enforcedBy: "custom" },
   "connection-tester": { category: "dev", rationale: "is_dev() inline check", enforcedBy: "custom" },
   "github-credentials-test": { category: "dev", rationale: "is_dev() inline check", enforcedBy: "custom" },
