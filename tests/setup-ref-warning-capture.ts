@@ -56,14 +56,25 @@ interface CapturedEntry {
 
 const captured: CapturedEntry[] = [];
 
+// Limite de memória: a suíte completa emite dezenas de milhares de mensagens de
+// console; guardar TODAS (com objetos serializados) estourava o heap do worker
+// (OOM em test:quality/coverage). Mantemos SEMPRE os ref warnings (o que o gate
+// estrito audita) e limitamos os demais a um teto, registrando quantos foram
+// descartados. Mensagens individuais também são truncadas.
+const MAX_NON_REF_ENTRIES = 5000;
+const MAX_MESSAGE_LEN = 2000;
+let droppedNonRef = 0;
+let nonRefCount = 0;
+
 function formatArgs(args: unknown[]): string {
-  return args
+  const out = args
     .map((a) => {
       if (typeof a === "string") return a;
       if (a instanceof Error) return a.message;
       try { return JSON.stringify(a); } catch { return String(a); }
     })
     .join(" ");
+  return out.length > MAX_MESSAGE_LEN ? out.slice(0, MAX_MESSAGE_LEN) + "…[truncated]" : out;
 }
 
 function makeWrapper(
@@ -73,12 +84,16 @@ function makeWrapper(
   return (...args: unknown[]) => {
     const message = formatArgs(args);
     const isRef = REF_PATTERNS.some((re) => re.test(message));
-    captured.push({
-      level,
-      message,
-      timestamp: new Date().toISOString(),
-      isRefWarning: isRef,
-    });
+    // Ref warnings (raros e relevantes ao gate) são sempre mantidos; os demais
+    // respeitam o teto para não vazar memória na suíte completa.
+    if (isRef) {
+      captured.push({ level, message, timestamp: new Date().toISOString(), isRefWarning: true });
+    } else if (nonRefCount < MAX_NON_REF_ENTRIES) {
+      captured.push({ level, message, timestamp: new Date().toISOString(), isRefWarning: false });
+      nonRefCount++;
+    } else {
+      droppedNonRef++;
+    }
     // Mantém o comportamento original para não suprimir output útil.
     original(...args);
   };
@@ -107,6 +122,7 @@ afterAll(() => {
           worker: workerSuffix,
           strict: STRICT,
           totalEntries: captured.length,
+          droppedNonRefEntries: droppedNonRef,
           refWarnings: captured.filter((c) => c.isRefWarning).length,
           entries: captured,
         },
