@@ -7,7 +7,15 @@ const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-  console.log("⚠️ Credenciais ausentes. Pulando Fuzz Testing real.");
+  const msg = "Credenciais ausentes (SUPABASE_URL/VITE_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY).";
+  if (process.env.CI) {
+    // No CI o gate NÃO pode passar em silêncio: sem credenciais, zero payloads
+    // rodam e crashers em edges passariam despercebidos. Falha alto.
+    console.error(`❌ ${msg} O gate de fuzz exige credenciais no CI — abortando.`);
+    process.exit(1);
+  }
+  // Localmente (sem CI) seguimos pulando para não exigir credenciais no dev.
+  console.log(`⚠️ ${msg} Pulando Fuzz Testing real (execução local).`);
   process.exit(0);
 }
 
