@@ -1,10 +1,18 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { QuoteBuilderSummaryColumn } from '../QuoteBuilderSummaryColumn';
+import type { QuoteItem } from '@/hooks/quotes';
 
 describe('QuoteBuilderSummaryColumn Discount Logic', () => {
   const defaultProps = {
-    items: [{ product_name: 'Test', quantity: 10, unit_price: 100, product_sku: 'ABC' } as any],
+    items: [
+      {
+        product_name: 'Test',
+        quantity: 10,
+        unit_price: 100,
+        product_sku: 'ABC',
+      } as unknown as QuoteItem,
+    ],
     activeItemIndex: null,
     setActiveItemIndex: vi.fn(),
     removeItem: vi.fn(),
@@ -30,14 +38,14 @@ describe('QuoteBuilderSummaryColumn Discount Logic', () => {
   it('converts percent to amount correctly with round2', () => {
     const setDiscountValue = vi.fn();
     const setDiscountType = vi.fn();
-    
+
     render(
-      <QuoteBuilderSummaryColumn 
-        {...defaultProps} 
+      <QuoteBuilderSummaryColumn
+        {...defaultProps}
         discountValue={10.589} // 10.59%
         setDiscountValue={setDiscountValue}
         setDiscountType={setDiscountType}
-      />
+      />,
     );
 
     // Switch to amount
@@ -50,20 +58,24 @@ describe('QuoteBuilderSummaryColumn Discount Logic', () => {
   // Since we want to test the logic in handleDiscountTypeChange specifically
   it('logic: handleDiscountTypeChange converts correctly', () => {
     const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
-    
+
     const subtotal = 1000;
     const markup = 10; // 10%
     const presentedSubtotal = subtotal * (1 + markup / 100); // 1100
 
     // % -> R$
     const discountValuePct = 10.585; // rounds to 10.59
-    const convertedAmount = round2(Math.min(presentedSubtotal, presentedSubtotal * (discountValuePct / 100)));
+    const convertedAmount = round2(
+      Math.min(presentedSubtotal, presentedSubtotal * (discountValuePct / 100)),
+    );
     // 1100 * 0.10585 = 116.435 -> rounds to 116.44
     expect(convertedAmount).toBe(116.44);
 
     // R$ -> %
     const discountValueAmt = 116.44;
-    const convertedPct = round2(Math.max(0, Math.min(100, (discountValueAmt / presentedSubtotal) * 100)));
+    const convertedPct = round2(
+      Math.max(0, Math.min(100, (discountValueAmt / presentedSubtotal) * 100)),
+    );
     // (116.44 / 1100) * 100 = 10.58545... -> rounds to 10.59
     expect(convertedPct).toBe(10.59);
   });
@@ -71,12 +83,12 @@ describe('QuoteBuilderSummaryColumn Discount Logic', () => {
   it('logic: handles zero subtotal', () => {
     const presentedSubtotal = 0;
     const discountValue = 50;
-    
+
     // amount -> percent
-    const next = "percent";
+    const next = 'percent';
     let newValue = discountValue;
     if (presentedSubtotal === 0 && discountValue > 0) {
-      if (next === "percent") newValue = 0;
+      if (next === 'percent') newValue = 0;
     }
     expect(newValue).toBe(0);
   });
@@ -87,12 +99,16 @@ describe('QuoteBuilderSummaryColumn Discount Logic', () => {
     const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
     // % -> R$
-    const convertedAmount = round2(Math.min(presentedSubtotal, presentedSubtotal * (discountValuePct / 100)));
+    const convertedAmount = round2(
+      Math.min(presentedSubtotal, presentedSubtotal * (discountValuePct / 100)),
+    );
     expect(convertedAmount).toBe(1000); // capped at subtotal
 
     // R$ -> %
     const discountValueAmt = 1500; // invalid $1500 on $1000 subtotal
-    const convertedPct = round2(Math.max(0, Math.min(100, (discountValueAmt / presentedSubtotal) * 100)));
+    const convertedPct = round2(
+      Math.max(0, Math.min(100, (discountValueAmt / presentedSubtotal) * 100)),
+    );
     expect(convertedPct).toBe(100); // capped at 100%
   });
 });
