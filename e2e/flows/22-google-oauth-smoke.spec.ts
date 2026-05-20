@@ -140,6 +140,27 @@ test.describe("@smoke Google OAuth — wiring até /auth/callback", () => {
     // 3. Visita o callback com um code fake (PKCE).
     //    O SSOCallbackPage detecta `?code=` e chama exchangeCodeForSession,
     //    que cai no nosso mock acima.
+    //    PKCE exige o code_verifier no storage (gravado no signInWithOAuth).
+    //    Como o teste pula direto pro callback (sem passar pelo botão), o
+    //    verifier não existe e o supabase-js aborta ANTES do POST /token —
+    //    nenhum mock dispara e o callback falha. Injetamos um verifier
+    //    não-vazio na chave canônica `sb-<ref>-auth-token-code-verifier`
+    //    (derivada do mesmo SUPABASE_URL usado nos globs) para o fluxo real
+    //    do callback alcançar o /token mockado.
+    const projectRef = new URL(SUPABASE_URL).hostname.split(".")[0];
+    await page.addInitScript(
+      ([key, verifier]) => {
+        try {
+          window.localStorage.setItem(key, verifier);
+        } catch {
+          /* storage indisponível no contexto — ignora */
+        }
+      },
+      [
+        `sb-${projectRef}-auth-token-code-verifier`,
+        "e2e-mock-pkce-verifier-0123456789abcdefghijklmnopqrstuvwxyz",
+      ] as const,
+    );
     await page.goto("/auth/callback?code=e2e-mock-code", { waitUntil: "domcontentloaded" });
 
     // 4. Verifica que a UI passou pelos estados sem cair em "failed".
