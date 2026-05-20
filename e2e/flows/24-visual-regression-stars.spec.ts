@@ -5,8 +5,13 @@ import { test, expect } from '@playwright/test';
  * e o brilho das estrelas permaneçam consistentes.
  */
 test.describe('Auth Page Visual Regression @smoke', () => {
-  // Ignoramos a dependência de auth para este teste específico de branding
-  test.use({ storageState: { cookies: [], origins: [] } });
+  // Ignoramos a dependência de auth para este teste específico de branding.
+  // reducedMotion:'no-preference' — o CI roda com 'reduce', mas o app só
+  // renderiza space-scene/estrelas/foguetes com motion habilitado
+  // (AuthBranding.tsx). O screenshot continua determinístico: o teste mocka
+  // Math.random e pausa as animações (animation-play-state: paused) antes do
+  // toHaveScreenshot.
+  test.use({ storageState: { cookies: [], origins: [] }, reducedMotion: 'no-preference' });
 
   test('should match visual snapshot for the space scene branding', async ({ page }) => {
     // 1. Mock do Math.random para garantir determinismo

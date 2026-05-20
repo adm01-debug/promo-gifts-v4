@@ -6,6 +6,12 @@ import { test, expect } from '@playwright/test';
  * @smoke
  */
 test.describe('Rocket Animation Consistency @smoke', () => {
+  // Estes testes verificam a ANIMAÇÃO de foguetes. O CI roda com
+  // reducedMotion:'reduce' (playwright.config.ts), mas o app não renderiza
+  // foguetes/estrelas sob prefers-reduced-motion (AuthBranding.tsx). Sobrescreve
+  // para 'no-preference' aqui para que a animação exista e os asserts valham.
+  test.use({ reducedMotion: 'no-preference' });
+
   test('should render initial burst of rockets and maintain count', async ({ page }) => {
     // Mock Math.random para garantir valores determinísticos para os foguetes
     // Isso evita que o snapshot visual falhe por causa de posições aleatórias
