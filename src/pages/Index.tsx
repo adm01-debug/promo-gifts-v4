@@ -94,6 +94,7 @@ export default function Index() {
               selectionMode={catalog.selectionMode}
               onToggleSelectionMode={catalog.toggleSelectionMode}
               selectedCount={catalog.selectedCount}
+              isTransitioning={catalog.isTransitioning}
             />
             </div>
 
