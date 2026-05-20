@@ -309,6 +309,12 @@ test.describe("@smoke Rotas públicas (gate de CI)", () => {
       route.fulfill({ status: 200, contentType: "application/json", body: '{"ip":"0.0.0.0","ok":true}' }),
     );
     await page.goto("/login");
+    // A página de login tem animações contínuas (estrelas/foguetes no branding)
+    // que mantêm elementos "não-estáveis" para o actionability check do
+    // Playwright, travando o click do submit. Pausamos animações/transições.
+    await page.addStyleTag({
+      content: `*, *::before, *::after { animation-play-state: paused !important; transition: none !important; }`,
+    });
     await page.fill(Sel.login.email, "smoke-fake@example.com");
     await page.fill(Sel.login.password, "SenhaErrada@2025!");
     await page.locator(Sel.login.submit).first().click();
