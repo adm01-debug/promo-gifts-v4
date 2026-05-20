@@ -1,7 +1,7 @@
 /**
  * useCatalogState — all catalog page state & logic extracted from Index.tsx
  */
-import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback, useDeferredValue } from 'react';
 import { useCatalogRealStats, useColorEnrichment, useExternalCategoriesQuery, useProductFuzzySearch, useProductsByCategory, useProductsByMaterial, useProductsCatalog, useSupplierSalesRanking, type Product } from "@/hooks/products";
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Package, Heart, Users, Palette, FolderTree } from 'lucide-react';
