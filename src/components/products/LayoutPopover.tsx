@@ -30,7 +30,7 @@ export const LayoutPopover = React.forwardRef<HTMLDivElement, LayoutPopoverProps
             <TooltipTrigger asChild>
               <span className="inline-flex">
                 <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1.5 h-8" aria-label="Alterar layout">
+                  <Button variant="outline" size="sm" className="gap-1.5 h-8 bg-card/40 backdrop-blur-md" aria-label="Alterar layout">
                     <Settings2 className="h-3.5 w-3.5" />
                     <span className="hidden sm:inline text-xs">Layout</span>
                   </Button>
