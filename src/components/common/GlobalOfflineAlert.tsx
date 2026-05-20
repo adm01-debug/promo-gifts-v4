@@ -12,6 +12,10 @@ export function GlobalOfflineAlert() {
   const [isOffline, setIsOffline] = useState(typeof navigator !== 'undefined' ? !navigator.onLine : false);
   const [dismissed, setDismissed] = useState(false);
   const wasOfflineRef = useRef(false);
+  
+  // Also track bridge status for a more comprehensive overlay
+  const { unavailable: bridgeUnavailable, reload: reloadBridge } = useBridgeStatusBanner(false);
+  const showOverlay = (isOffline || bridgeUnavailable) && !dismissed;
 
   useEffect(() => {
     const handleOnline = () => {
