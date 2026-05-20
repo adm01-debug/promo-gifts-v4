@@ -1,12 +1,18 @@
 #!/usr/bin/env node
 /**
- * Gera o baseline do ESLint (apenas ERROS, severity=2) agregando
+ * Gera o baseline do ESLint (ERROS severity=2 + WARNINGS severity=1) agregando
  * contagens por arquivo (relativo ao repo) + ruleId.
+ *
+ * IMPORTANTE: o checker (check-eslint-baseline.mjs) compara TANTO erros quanto
+ * warnings contra este baseline. Por isso o gerador precisa congelar ambas as
+ * severidades — caso contrário todo warning legado vira "regressão nova" e o
+ * gate fica impossível de passar.
  *
  * Saída: .eslint-baseline.json
  *   {
  *     "generatedAt": "...",
  *     "totalErrors": <n>,
+ *     "totalWarnings": <n>,
  *     "counts": { "src/foo.ts": { "rule-id": 3, ... }, ... }
  *   }
  *
@@ -42,15 +48,17 @@ function runEslint() {
 function aggregate(report) {
   const counts = {};
   let totalErrors = 0;
+  let totalWarnings = 0;
   for (const file of report) {
     if (!file.messages?.length) continue;
     const rel = relative(ROOT, file.filePath).replaceAll("\\", "/");
     for (const m of file.messages) {
-      if (m.severity !== 2) continue; // só erros
+      if (m.severity === 0) continue; // ignora desligados; congela erros (2) e warnings (1)
       const rule = m.ruleId ?? "<no-rule>";
       counts[rel] ??= {};
       counts[rel][rule] = (counts[rel][rule] ?? 0) + 1;
-      totalErrors += 1;
+      if (m.severity === 2) totalErrors += 1;
+      if (m.severity === 1) totalWarnings += 1;
     }
   }
   // Ordena para diff estável.
@@ -62,17 +70,18 @@ function aggregate(report) {
     for (const r of Object.keys(rules).sort()) sortedRules[r] = rules[r];
     sortedCounts[f] = sortedRules;
   }
-  return { totalErrors, counts: sortedCounts };
+  return { totalErrors, totalWarnings, counts: sortedCounts };
 }
 
 const report = runEslint();
-const { totalErrors, counts } = aggregate(report);
+const { totalErrors, totalWarnings, counts } = aggregate(report);
 const payload = {
   generatedAt: new Date().toISOString(),
   totalErrors,
+  totalWarnings,
   counts,
 };
 writeFileSync(BASELINE_PATH, JSON.stringify(payload, null, 2) + "\n", "utf8");
 console.log(
-  `✅ Baseline gravado em ${relative(ROOT, BASELINE_PATH)} — ${totalErrors} erros congelados em ${Object.keys(counts).length} arquivos.`
+  `✅ Baseline gravado em ${relative(ROOT, BASELINE_PATH)} — ${totalErrors} erros + ${totalWarnings} warnings congelados em ${Object.keys(counts).length} arquivos.`
 );

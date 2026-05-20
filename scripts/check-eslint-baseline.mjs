@@ -96,9 +96,10 @@ for (const [file, rules] of Object.entries(baselineCounts)) {
   }
 }
 
-const baselineTotal = baseline.totalErrors ?? 0;
+const baselineErrors = baseline.totalErrors ?? 0;
+const baselineWarnings = baseline.totalWarnings ?? 0;
 console.log(
-  `ESLint baseline gate — atual: ${totalErrors} erros, ${totalWarnings} warnings · baseline: ${baselineTotal} erros`
+  `ESLint baseline gate — atual: ${totalErrors} erros, ${totalWarnings} warnings · baseline: ${baselineErrors} erros, ${baselineWarnings} warnings`
 );
 
 
