@@ -34,14 +34,21 @@ vi.mock('@/integrations/supabase/client', () => ({
 }));
 
 // Mock services and utils
-vi.mock('@/services/authService', () => ({
-  authService: {
-    fetchAAL: vi.fn().mockResolvedValue({ currentLevel: 'aal1', nextLevel: 'aal1', hasMFA: false }),
-    fetchProfile: vi.fn().mockResolvedValue({ data: null, error: null }),
-    queryRoles: vi.fn().mockResolvedValue({ data: [], error: null }),
-    signOut: vi.fn().mockResolvedValue({ error: null }),
-  },
-}));
+vi.mock('@/services/authService', async (importOriginal) => {
+  const actual = (await importOriginal()) as { authService: Record<string, unknown> };
+  return {
+    authService: {
+      ...actual.authService,
+      // Apenas as buscas de dados são stubadas; signOut continua REAL para
+      // exercitar o RPC de auditoria (log_user_logout) + supabase.auth.signOut.
+      fetchAAL: vi
+        .fn()
+        .mockResolvedValue({ currentLevel: 'aal1', nextLevel: 'aal1', hasMFA: false }),
+      fetchProfile: vi.fn().mockResolvedValue({ data: null, error: null }),
+      queryRoles: vi.fn().mockResolvedValue({ data: [], error: null }),
+    },
+  };
+});
 
 const wrapper = ({ children }: { children: ReactNode }) => <AuthProvider>{children}</AuthProvider>;
 
@@ -72,8 +79,10 @@ describe('AuthContext', () => {
       // Note: we can't easily check the internal state of useAuth without causing a re-render
       // or using a test component.
 
+      // signOut delega a authService.signOut, que repropaga a falha de rede;
+      // o estado local deve ser limpo no finally mesmo assim.
       await act(async () => {
-        await result.current.signOut();
+        await result.current.signOut().catch(() => {});
       });
 
       expect(result.current.user).toBeNull();
@@ -89,6 +98,7 @@ describe('AuthContext', () => {
       vi.mocked(supabase.auth.getSession).mockResolvedValue({
         data: { session: mockSession },
       } as unknown);
+      vi.mocked(supabase.auth.signOut).mockResolvedValue({ error: null } as never);
 
       const { result } = renderHook(() => useAuth(), { wrapper });
 
@@ -97,9 +107,10 @@ describe('AuthContext', () => {
       });
 
       await act(async () => {
-        await result.current.signOut();
+        await result.current.signOut().catch(() => {});
       });
 
+      // O RPC de auditoria foi movido para authService.signOut (não removido).
       expect(supabase.rpc).toHaveBeenCalledWith('log_user_logout');
     });
   });
