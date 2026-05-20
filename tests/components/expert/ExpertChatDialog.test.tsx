@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderWithProviders } from "../render-helpers";
 import React from "react";
 
-vi.mock("@/hooks/useExpertConversations", () => ({
+vi.mock("@/hooks/intelligence/useExpertConversations", () => ({
   useExpertConversations: vi.fn().mockReturnValue({
     conversations: [],
     isLoading: false,

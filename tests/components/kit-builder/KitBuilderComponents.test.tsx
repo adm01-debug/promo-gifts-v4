@@ -54,7 +54,7 @@ vi.mock("sonner", () => ({
   Toaster: () => null,
 }));
 
-vi.mock("@/hooks/useKitStockValidation", () => ({
+vi.mock("@/hooks/kit-builder/useKitStockValidation", () => ({
   useKitStockValidation: vi.fn().mockReturnValue({
     stockAlerts: [],
     isChecking: false,

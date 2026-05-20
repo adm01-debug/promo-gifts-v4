@@ -4,23 +4,23 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
 
-vi.mock("@/hooks/useSearch", () => ({
+vi.mock("@/hooks/common/useSearch", () => ({
   useSearch: vi.fn().mockReturnValue({
     results: [], loading: false, search: vi.fn(), clear: vi.fn(), recentSearches: [],
   }),
 }));
 
-vi.mock("@/hooks/useSpeechRecognition", () => ({
+vi.mock("@/hooks/intelligence/useSpeechRecognition", () => ({
   useSpeechRecognition: vi.fn().mockReturnValue({
     isListening: false, transcript: "", startListening: vi.fn(), stopListening: vi.fn(), isSupported: false,
   }),
 }));
 
-vi.mock("@/hooks/useVoiceCommandHistory", () => ({
+vi.mock("@/hooks/intelligence/useVoiceCommandHistory", () => ({
   useVoiceCommandHistory: vi.fn().mockReturnValue({ history: [], addCommand: vi.fn(), clearHistory: vi.fn() }),
 }));
 
-vi.mock("@/hooks/useContextualSuggestions", () => ({
+vi.mock("@/hooks/intelligence/useContextualSuggestions", () => ({
   useContextualSuggestions: vi.fn().mockReturnValue({ suggestions: [], loading: false }),
 }));
 
@@ -28,7 +28,7 @@ vi.mock("@/hooks/useVoiceFeedback", () => ({
   useVoiceFeedback: vi.fn().mockReturnValue({ speak: vi.fn(), stop: vi.fn(), isSpeaking: false }),
 }));
 
-vi.mock("@/hooks/useVoiceAgent", () => ({
+vi.mock("@/hooks/intelligence/useVoiceAgent", () => ({
   useVoiceAgent: vi.fn().mockReturnValue({
     phase: "idle", partialTranscript: "", finalTranscript: "", agentResponse: "",
     error: null, currentAction: null, isConnected: false,

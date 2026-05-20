@@ -10,7 +10,7 @@ vi.mock("@/components/layout/MainLayout", () => ({
   MainLayout: ({ children }: { children: React.ReactNode }) => <div data-testid="main-layout">{children}</div>,
 }));
 
-vi.mock("@/hooks/productss", () => ({
+vi.mock("@/hooks/products/useProducts", () => ({
   useProducts: vi.fn().mockReturnValue({
     products: [],
     loading: false,
@@ -19,7 +19,7 @@ vi.mock("@/hooks/productss", () => ({
   }),
 }));
 
-vi.mock("@/hooks/useTecnicasUnificadas", () => ({
+vi.mock("@/hooks/simulation/useTecnicasUnificadas", () => ({
   useCustomizationPricing: vi.fn().mockReturnValue({
     data: null,
     loading: false,
@@ -36,7 +36,7 @@ describe("AdvancedPriceSearchPage", () => {
   });
 
   it("renders without crashing", async () => {
-    const { default: AdvancedPriceSearchPage } = await import("@/pages/AdvancedPriceSearchPage");
+    const { default: AdvancedPriceSearchPage } = await import("@/pages/tools/AdvancedPriceSearchPage");
     renderWithProviders(<AdvancedPriceSearchPage />);
     expect(screen.getByTestId("main-layout")).toBeInTheDocument();
   });

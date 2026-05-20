@@ -21,7 +21,7 @@ vi.mock('@/contexts/AuthContext', () => ({
 }));
 
 const mockUseCloudStatus = vi.fn();
-vi.mock('@/hooks/useCloudStatus', () => ({
+vi.mock('@/hooks/ui/useCloudStatus', () => ({
   useCloudStatus: () => mockUseCloudStatus(),
 }));
 

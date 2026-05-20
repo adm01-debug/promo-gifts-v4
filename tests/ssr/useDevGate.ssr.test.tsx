@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderToString } from 'react-dom/server';
 import React from 'react';
-import { useDevGate } from '@/hooks/useDevGate';
+import { useDevGate } from '@/hooks/admin/useDevGate';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Mock do AuthContext

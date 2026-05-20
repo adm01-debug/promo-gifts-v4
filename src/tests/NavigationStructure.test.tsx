@@ -30,7 +30,7 @@ vi.mock('../lib/query-config', () => ({
   }),
 }));
 
-vi.mock('../hooks/useCatalogPrefetch', () => ({
+vi.mock('@/hooks/products/useCatalogPrefetch', () => ({
   useCatalogPrefetch: vi.fn(),
 }));
 

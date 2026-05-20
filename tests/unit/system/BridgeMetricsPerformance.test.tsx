@@ -3,10 +3,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import BridgeMetricsOverlay from '@/components/dev/BridgeMetricsOverlay';
 import { useBridgeMetrics } from '@/hooks/dev/useBridgeMetrics';
-import { useDevGate } from '@/hooks/useDevGate';
+import { useDevGate } from '@/hooks/admin/useDevGate';
 
 // Mock hooks
-vi.mock('@/hooks/useDevGate', () => ({
+vi.mock('@/hooks/admin/useDevGate', () => ({
   useDevGate: vi.fn()
 }));
 
@@ -15,10 +15,10 @@ vi.mock('@/hooks/dev/useBridgeMetrics', () => ({
 }));
 
 // Mock child components to isolate Overlay
-vi.mock('./metrics/BridgeMetricsSummary', () => ({
+vi.mock('@/components/dev/metrics/BridgeMetricsSummary', () => ({
   BridgeMetricsSummary: () => <div data-testid="summary" />
 }));
-vi.mock('./metrics/BridgeCallItem', () => ({
+vi.mock('@/components/dev/metrics/BridgeCallItem', () => ({
   BridgeCallItem: () => <div data-testid="call-item" />
 }));
 

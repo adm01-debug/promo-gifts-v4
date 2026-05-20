@@ -6,10 +6,10 @@ import { render, screen, fireEvent } from "@testing-library/react";
 const setSecretMock = vi.fn();
 const rotateSecretMock = vi.fn();
 const getRotationHistoryMock = vi.fn().mockResolvedValue([]);
-vi.mock("@/hooks/useSecretsManager", () => ({
+vi.mock("@/hooks/admin/useSecretsManager", () => ({
   useSecretsManager: () => ({ setSecret: setSecretMock, rotateSecret: rotateSecretMock, getRotationHistory: getRotationHistoryMock }),
 }));
-vi.mock("@/hooks/useConnectionTestDetails", () => ({
+vi.mock("@/hooks/intelligence/useConnectionTestDetails", () => ({
   useConnectionTestDetails: () => ({ details: null, loading: false, error: null, refresh: vi.fn() }),
 }));
 vi.mock("@/components/admin/connections/CredentialsSourceFilterContext", async (importOriginal) => {

@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   findGroupBySlug, findVariationBySlug,
   formatColorName, isLightColor,
-} from '@/hooks/useColorSystem';
-import type { ColorGroup } from '@/hooks/useColorSystem';
+} from '@/hooks/products/useColorSystem';
+import type { ColorGroup } from '@/hooks/products/useColorSystem';
 
 const mockGroup: ColorGroup = {
   id: '1',

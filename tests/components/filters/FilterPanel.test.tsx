@@ -5,12 +5,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderWithProviders } from "../render-helpers";
 import React from "react";
 
-vi.mock("@/hooks/useCategoryIcons", () => ({
+vi.mock("@/hooks/products/useCategoryIcons", () => ({
   useCategoryIcons: vi.fn().mockReturnValue({ data: [], isLoading: false }),
   getCategoryIcon: vi.fn().mockReturnValue("Package"),
 }));
 
-vi.mock("@/hooks/useMaterialFilter", () => ({
+vi.mock("@/hooks/products/useMaterialFilter", () => ({
   useMaterialFilter: vi.fn().mockReturnValue({
     materialGroups: [],
     materialTypes: [],
@@ -34,18 +34,18 @@ vi.mock("@/hooks/useMaterialFilter", () => ({
   }),
 }));
 
-vi.mock("@/hooks/useSuppliers", () => ({
+vi.mock("@/hooks/products/useSuppliers", () => ({
   useSuppliers: vi.fn().mockReturnValue({ suppliers: [], loading: false }),
 }));
 
-vi.mock("@/hooks/useRamoAtividadeFilter", () => ({
+vi.mock("@/hooks/crm/useRamoAtividadeFilter", () => ({
   useRamoAtividadeFilter: vi.fn().mockReturnValue({
     ramos: [], segmentos: [], loading: false,
     ramoFilterState: { selectedRamos: [], selectedSegmentos: [], setSelectedRamos: vi.fn(), setSelectedSegmentos: vi.fn() },
   }),
 }));
 
-vi.mock("@/hooks/useAdvancedFilters", () => ({
+vi.mock("@/hooks/products/useAdvancedFilters", () => ({
   useAdvancedFilters: vi.fn().mockReturnValue({
     filters: {}, setFilter: vi.fn(), resetFilters: vi.fn(),
   }),

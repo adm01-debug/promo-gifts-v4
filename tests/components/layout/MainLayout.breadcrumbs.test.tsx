@@ -44,11 +44,11 @@ vi.mock("@/components/common/BackButton", () => ({
   BackButton: () => null,
 }));
 
-vi.mock("@/hooks/useScrollLockFix", () => ({
+vi.mock("@/hooks/ui/useScrollLockFix", () => ({
   useScrollLockFix: vi.fn(),
 }));
 
-vi.mock("@/hooks/useGlobalShortcuts", () => ({
+vi.mock("@/hooks/ui/useGlobalShortcuts", () => ({
   useGlobalShortcuts: vi.fn(),
 }));
 

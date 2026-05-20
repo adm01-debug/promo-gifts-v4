@@ -3,7 +3,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, useParams } from 'react-router-dom';
-import FavoritesPage from '@/pages/FavoritesPage';
+import FavoritesPage from '@/pages/products/FavoritesPage';
 import PublicFavoriteListPage from '@/pages/PublicFavoriteListPage';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useAuth } from '@/contexts/AuthContext';
@@ -55,7 +55,7 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
-vi.mock('@/hooks/useOnboarding', () => ({
+vi.mock('@/hooks/ui/useOnboarding', () => ({
   useOnboarding: () => ({
     step: null,
     isFirstTime: false,

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import QuoteBuilderPage from '../../src/pages/QuoteBuilderPage';
+import QuoteBuilderPage from '@/pages/quotes/QuoteBuilderPage';
 import { useComparisonStore } from '../../src/stores/useComparisonStore';
 import { TooltipProvider } from '../../src/components/ui/tooltip';
 import { HelmetProvider } from 'react-helmet-async';

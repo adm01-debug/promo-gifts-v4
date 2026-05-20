@@ -3,10 +3,10 @@ import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { render, screen, act } from '@testing-library/react';
 import { DevOnlyBridgeOverlay } from '@/components/dev/DevOnlyBridgeOverlay';
-import { useDevGate } from '@/hooks/useDevGate';
+import { useDevGate } from '@/hooks/admin/useDevGate';
 
 // Mock dos hooks
-vi.mock('@/hooks/useDevGate', () => ({
+vi.mock('@/hooks/admin/useDevGate', () => ({
   useDevGate: vi.fn(),
 }));
 

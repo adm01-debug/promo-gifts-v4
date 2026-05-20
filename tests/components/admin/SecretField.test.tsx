@@ -7,7 +7,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 const setSecretMock = vi.fn();
 const rotateSecretMock = vi.fn();
 const getRotationHistoryMock = vi.fn().mockResolvedValue([]);
-vi.mock("@/hooks/useSecretsManager", () => ({
+vi.mock("@/hooks/admin/useSecretsManager", () => ({
   useSecretsManager: () => ({
     setSecret: setSecretMock,
     rotateSecret: rotateSecretMock,
@@ -16,7 +16,7 @@ vi.mock("@/hooks/useSecretsManager", () => ({
 }));
 
 // O hook de detalhes de teste de conexão dispara queries — neutralizamos.
-vi.mock("@/hooks/useConnectionTestDetails", () => ({
+vi.mock("@/hooks/intelligence/useConnectionTestDetails", () => ({
   useConnectionTestDetails: () => ({ details: null, loading: false, error: null, refresh: vi.fn() }),
 }));
 

@@ -5,7 +5,7 @@ import { MagicUpVariationComparator } from "@/components/magic-up/MagicUpVariati
 import { MagicUpQualityScore } from "@/components/magic-up/MagicUpQualityScore";
 import { MagicUpQualityChecklist } from "@/components/magic-up/MagicUpQualityChecklist";
 import { buildMagicScore, buildQualityDiagnosis } from "@/pages/magic-up/magicUpStrategy";
-import type { VariationItem } from "@/hooks/useMagicUpState";
+import type { VariationItem } from "@/hooks/intelligence/useMagicUpState";
 
 const diagnosis = buildQualityDiagnosis(
   buildMagicScore({ hasProduct: true, hasLogo: true, hasClient: true, hasTechnique: true, hasBrief: true, channel: "whatsapp" })

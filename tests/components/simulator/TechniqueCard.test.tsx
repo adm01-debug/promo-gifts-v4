@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderWithProviders } from "../render-helpers";
 import React from "react";
 
-vi.mock("@/hooks/useSimulation", () => ({
+vi.mock("@/hooks/simulation/useSimulation", () => ({
   formatCurrency: vi.fn((val: number) => `R$ ${val.toFixed(2)}`),
 }));
 
