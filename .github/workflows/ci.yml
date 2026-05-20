@@ -280,11 +280,16 @@ jobs:
           npm run test:edge:integration || true
       # Report-only: gera artifact JSON/HTML sem aplicar thresholds globais.
       # Gates reais ficam em jobs dedicados (per-file).
+      # Report-only: a suíte completa + instrumentação v8 pode estourar a memória
+      # do runner (OOM). Tolera o exit do vitest (o artifact já é gerado) e omite
+      # o reporter `html` (1 arquivo por fonte — pesadíssimo, igual ao job Test
+      # Coverage que também o removeu).
       - name: Generate Coverage Report (JSON/HTML)
+        continue-on-error: true
         run: >-
           npx vitest run --coverage
           --coverage.reporter=json
-          --coverage.reporter=html
+          --coverage.reporter=json-summary
           --coverage.thresholds.lines=0
           --coverage.thresholds.functions=0
           --coverage.thresholds.branches=0
