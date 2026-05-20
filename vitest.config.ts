@@ -2,6 +2,11 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 
+// TZ-fix (nível de processo): precisa estar setado ANTES dos workers nascerem
+// para o ICU/Date.toLocaleString resolverem America/Sao_Paulo. test.env é tarde
+// demais (ICU cacheia o TZ no startup). Snapshots com "Hora local" dependem disso.
+process.env.TZ = 'America/Sao_Paulo';
+
 export default defineConfig({
   plugins: [react()],
   test: {

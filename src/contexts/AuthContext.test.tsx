@@ -39,6 +39,7 @@ vi.mock('@/services/authService', () => ({
     fetchAAL: vi.fn().mockResolvedValue({ currentLevel: 'aal1', nextLevel: 'aal1', hasMFA: false }),
     fetchProfile: vi.fn().mockResolvedValue({ data: null, error: null }),
     queryRoles: vi.fn().mockResolvedValue({ data: [], error: null }),
+    signOut: vi.fn().mockResolvedValue({ error: null }),
   },
 }));
 
