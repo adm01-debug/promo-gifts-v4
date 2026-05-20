@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import { useFilteredTechniques } from '@/hooks/useMockupTechniques';
+import { useFilteredTechniques } from '@/hooks/mockup/useMockupTechniques';
 import { useQuery } from '@tanstack/react-query';
 
 vi.mock('@tanstack/react-query', async () => {

@@ -12,7 +12,7 @@ vi.mock('@/lib/external-db', () => ({
   ]),
 }));
 
-import { useCategories } from '@/hooks/useCategories';
+import { useCategories } from '@/hooks/products/useCategories';
 
 const createWrapper = () => {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });

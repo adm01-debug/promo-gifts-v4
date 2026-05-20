@@ -9,7 +9,7 @@ vi.mock("@/lib/external-rpc", () => ({
   invokeExternalRpc: vi.fn().mockResolvedValue({ data: null, error: null }),
 }));
 
-vi.mock("@/hooks/useExternalSimulator", () => ({
+vi.mock("@/hooks/simulation/useExternalSimulator", () => ({
   useExternalProductSearch: vi.fn().mockReturnValue({
     products: [],
     loading: false,
@@ -17,7 +17,7 @@ vi.mock("@/hooks/useExternalSimulator", () => ({
   }),
 }));
 
-vi.mock("@/hooks/useTecnicasUnificadas", () => ({
+vi.mock("@/hooks/simulation/useTecnicasUnificadas", () => ({
   useCustomizationPricing: vi.fn().mockReturnValue({
     data: null,
     loading: false,

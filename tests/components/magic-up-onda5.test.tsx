@@ -6,7 +6,7 @@ import { MagicUpQualityScore } from "@/components/magic-up/MagicUpQualityScore";
 import { MagicUpQualityChecklist } from "@/components/magic-up/MagicUpQualityChecklist";
 import { MagicUpCurationStatus } from "@/components/magic-up/MagicUpCurationStatus";
 import { MagicUpVariationComparator } from "@/components/magic-up/MagicUpVariationComparator";
-import type { VariationItem } from "@/hooks/useMagicUpState";
+import type { VariationItem } from "@/hooks/intelligence/useMagicUpState";
 import type { MagicUpQualityDiagnosis } from "@/pages/magic-up/magicUpStrategy";
 
 const diagnosis = (total: number, source: "ai" | "heuristic" = "ai"): MagicUpQualityDiagnosis => ({

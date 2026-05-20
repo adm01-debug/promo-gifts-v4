@@ -14,7 +14,7 @@ vi.mock("@/integrations/supabase/client", () => ({
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
-import { useAIRecommendations } from "@/hooks/useAIRecommendations";
+import { useAIRecommendations } from "@/hooks/intelligence/useAIRecommendations";
 
 describe("useAIRecommendations", () => {
   beforeEach(() => {

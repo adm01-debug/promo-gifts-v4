@@ -8,7 +8,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, renderHook } from "@testing-library/react";
 import { createSupabaseMock } from "../../helpers/supabase-mock";
-import type { KitState } from "@/hooks/useKitBuilder";
+import type { KitState } from "@/hooks/kit-builder/useKitBuilder";
 
 vi.mock("@/lib/logger", () => ({ logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));

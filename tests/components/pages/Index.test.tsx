@@ -10,7 +10,7 @@ vi.mock("@/components/layout/MainLayout", () => ({
   MainLayout: ({ children }: { children: React.ReactNode }) => <div data-testid="main-layout">{children}</div>,
 }));
 
-vi.mock("@/hooks/productss", () => ({
+vi.mock("@/hooks/products/useProducts", () => ({
   useProducts: vi.fn().mockReturnValue({
     products: [],
     loading: false,
@@ -36,15 +36,15 @@ vi.mock("@/stores/useComparisonStore", () => ({
   }),
 }));
 
-vi.mock("@/hooks/useSearch", () => ({
+vi.mock("@/hooks/common/useSearch", () => ({
   useSearch: vi.fn().mockReturnValue({ results: [], loading: false, search: vi.fn() }),
 }));
 
-vi.mock("@/hooks/productssByMaterial", () => ({
+vi.mock("@/hooks/products/useProductsByMaterial", () => ({
   useProductsByMaterial: vi.fn().mockReturnValue({ products: [], loading: false }),
 }));
 
-vi.mock("@/hooks/productsFuzzySearch", () => ({
+vi.mock("@/hooks/products/useProductFuzzySearch", () => ({
   useProductFuzzySearch: vi.fn().mockReturnValue({ search: vi.fn(), results: [] }),
 }));
 
@@ -123,7 +123,7 @@ vi.mock("@/data/mockData", () => ({
   SUPPLIERS: [],
 }));
 
-vi.mock("@/hooks/useCatalogState", () => ({
+vi.mock("@/hooks/products/useCatalogState", () => ({
   useCatalogState: vi.fn().mockReturnValue({
     products: [],
     filteredProducts: [],

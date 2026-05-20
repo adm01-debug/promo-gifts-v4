@@ -3,7 +3,7 @@ import { screen } from "@testing-library/react";
 import { renderWithProviders } from "../components/render-helpers";
 import React from "react";
 
-vi.mock("@/hooks/useVideoVariantLinks", () => ({
+vi.mock("@/hooks/products/useVideoVariantLinks", () => ({
   useVideoVariantLinks: () => ({
     data: [
       {

@@ -25,14 +25,14 @@ vi.mock("@/components/a11y/AriaLive", async () => {
   };
 });
 
-vi.mock("@/hooks/usePrintAreas", () => ({
+vi.mock("@/hooks/simulation/usePrintAreas", () => ({
   usePrintAreas: vi.fn().mockReturnValue({
     printAreas: [],
     loading: false,
   }),
 }));
 
-vi.mock("@/hooks/useMockupTechniques", () => ({
+vi.mock("@/hooks/mockup/useMockupTechniques", () => ({
   useProductCustomizationOptionsForMockup: vi.fn().mockReturnValue({
     techniques: [],
     loading: false,

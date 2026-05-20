@@ -88,7 +88,7 @@ afterEach(() => {
 
 async function loadHook() {
   vi.resetModules();
-  const mod = await import("@/hooks/useWorkspaceNotifications");
+  const mod = await import("@/hooks/ui/useWorkspaceNotifications");
   return mod.useWorkspaceNotifications;
 }
 

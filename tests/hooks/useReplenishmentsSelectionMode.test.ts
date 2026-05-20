@@ -2,8 +2,8 @@
  * Unit tests for replenishmentToProduct mapping.
  */
 import { describe, it, expect, vi } from "vitest";
-import { replenishmentToProduct } from "@/hooks/useReplenishmentsSelectionMode";
-import type { ReplenishmentWithDetails } from "@/hooks/useReplenishments";
+import { replenishmentToProduct } from "@/hooks/products/useReplenishmentsSelectionMode";
+import type { ReplenishmentWithDetails } from "@/hooks/products/useReplenishments";
 
 vi.mock("react-router-dom", () => ({
   useNavigate: () => vi.fn(),

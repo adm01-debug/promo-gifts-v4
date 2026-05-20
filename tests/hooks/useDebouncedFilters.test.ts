@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import { useDebouncedFilters } from "@/hooks/useDebouncedFilters";
+import { useDebouncedFilters } from "@/hooks/common/useDebouncedFilters";
 
 beforeEach(() => { vi.useFakeTimers(); });
 afterEach(() => { vi.useRealTimers(); });

@@ -22,7 +22,7 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
-import { useExpertConversations } from '@/hooks/useExpertConversations';
+import { useExpertConversations } from '@/hooks/intelligence/useExpertConversations';
 
 const createWrapper = () => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });

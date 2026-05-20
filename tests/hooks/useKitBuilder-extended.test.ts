@@ -49,14 +49,14 @@ vi.mock("sonner", () => ({
 // ============================
 describe("useKitUndoRedo", () => {
   it("initializes with empty history", async () => {
-    const { useKitUndoRedo } = await import("@/hooks/useKitUndoRedo");
+    const { useKitUndoRedo } = await import("@/hooks/kit-builder/useKitUndoRedo");
     const { result } = renderHook(() => useKitUndoRedo());
     expect(result.current.canUndo).toBe(false);
     expect(result.current.canRedo).toBe(false);
   });
 
   it("pushes snapshot and enables undo", async () => {
-    const { useKitUndoRedo } = await import("@/hooks/useKitUndoRedo");
+    const { useKitUndoRedo } = await import("@/hooks/kit-builder/useKitUndoRedo");
     const { result } = renderHook(() => useKitUndoRedo());
     const snap = { boxId: "b1", items: [], personalizationKeys: [], name: "A", kitQuantity: 1 };
     act(() => { result.current.pushSnapshot({ ...snap, name: "A" }); });

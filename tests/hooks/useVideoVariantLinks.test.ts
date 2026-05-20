@@ -43,7 +43,7 @@ vi.mock("sonner", () => ({
 
 describe("useVideoVariantLinks", () => {
   it("should export the hook function", async () => {
-    const mod = await import("@/hooks/useVideoVariantLinks");
+    const mod = await import("@/hooks/products/useVideoVariantLinks");
     expect(mod.useVideoVariantLinks).toBeDefined();
     expect(typeof mod.useVideoVariantLinks).toBe("function");
   });

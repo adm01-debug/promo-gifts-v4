@@ -7,7 +7,7 @@ vi.mock('@/contexts/OrganizationContext', () => ({
   useOrganization: (...args: any[]) => mockUseOrganization(...args),
 }));
 
-import { useCurrentOrgId } from '@/hooks/useCurrentOrgId';
+import { useCurrentOrgId } from '@/hooks/common/useCurrentOrgId';
 
 describe('useCurrentOrgId', () => {
   beforeEach(() => {

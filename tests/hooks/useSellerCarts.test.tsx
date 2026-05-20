@@ -26,7 +26,7 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
-import { useSellerCarts } from '@/hooks/useSellerCarts';
+import { useSellerCarts } from '@/hooks/products/useSellerCarts';
 
 const createWrapper = () => {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });

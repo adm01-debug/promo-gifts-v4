@@ -7,7 +7,7 @@ vi.mock('sonner', () => {
 });
 
 import { toast } from 'sonner';
-import { useErrorHandler } from '@/hooks/useErrorHandler';
+import { useErrorHandler } from '@/hooks/ui/useErrorHandler';
 
 describe('useErrorHandler', () => {
   beforeEach(() => {

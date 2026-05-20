@@ -3,7 +3,7 @@
  * We replicate the internal pure logic to test without mocking Supabase.
  */
 import { describe, it, expect } from 'vitest';
-import type { TechniquePriceOption, ColorOption, SizeOption } from '@/hooks/useTechniquePricing';
+import type { TechniquePriceOption, ColorOption, SizeOption } from '@/hooks/simulation/useTechniquePricing';
 
 // ============================================
 // Replicate filtering logic from useTechniquePricing

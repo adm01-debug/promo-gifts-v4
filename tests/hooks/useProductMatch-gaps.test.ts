@@ -4,12 +4,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 
-vi.mock('@/hooks/productss', () => ({
+vi.mock('@/hooks/products/useProducts', () => ({
   useProducts: () => ({ data: [], isLoading: false }),
 }));
 
-import { useProductMatch } from '@/hooks/productsMatch';
-import { useSupplierComparison, getSupplierProductsInCategory } from '@/hooks/useSupplierComparison';
+import { useProductMatch } from '@/hooks/products/useProductMatch';
+import { useSupplierComparison, getSupplierProductsInCategory } from '@/hooks/products/useSupplierComparison';
 import type { Product } from '@/types/product-catalog';
 
 function makeProduct(overrides: Partial<Product> = {}): Product {
@@ -36,7 +36,7 @@ describe('FIX 1: useSupplierComparison — price zero guard', () => {
     const { result } = renderHook(() =>
       useSupplierComparison(makeProduct({ price: 0 }))
     );
-    expect(result.current).toBeNull();
+    expect(result.current.data).toBeNull();
   });
 });
 

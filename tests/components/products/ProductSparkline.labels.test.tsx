@@ -22,7 +22,7 @@ const mockSparklineData = {
   dailyQty: [5, 3, 8, 10, 4, 7, 9, 6, 3, 12, 5, 8, 4, 6, 11, 9, 3, 7, 5, 10, 8, 6, 4, 9, 11, 5, 7, 3, 8, 6],
 };
 
-vi.mock("@/hooks/useSparklineSales", () => ({
+vi.mock("@/hooks/intelligence/useSparklineSales", () => ({
   useSparklineData: vi.fn(() => mockSparklineData),
 }));
 
@@ -118,7 +118,7 @@ describe("ProductSparkline — PR label changes", () => {
   });
 
   it("returns null when product has no real data (no render)", async () => {
-    const { useSparklineData } = await import("@/hooks/useSparklineSales");
+    const { useSparklineData } = await import("@/hooks/intelligence/useSparklineSales");
     vi.mocked(useSparklineData).mockReturnValueOnce(null);
 
     const { ProductSparkline } = await import("@/components/products/ProductSparkline");
@@ -127,7 +127,7 @@ describe("ProductSparkline — PR label changes", () => {
   });
 
   it("returns null when totalQty is 0 (all-zero data treated as no data)", async () => {
-    const { useSparklineData } = await import("@/hooks/useSparklineSales");
+    const { useSparklineData } = await import("@/hooks/intelligence/useSparklineSales");
     vi.mocked(useSparklineData).mockReturnValueOnce({
       totalQty: 0,
       totalReplenished: 0,

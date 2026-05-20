@@ -17,7 +17,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { adaptPriceResponse } from '@/lib/personalization/adapters';
-import type { CustomizationPriceFlat, PrintAreaV2 } from '@/hooks/useGravacaoPriceV2';
+import type { CustomizationPriceFlat, PrintAreaV2 } from '@/hooks/simulation/useGravacaoPriceV2';
 import type { Technique, TechniqueSettings } from '@/types/simulation';
 
 // ---- Mocks ----------------------------------------------------------------
@@ -26,8 +26,8 @@ vi.mock('@/lib/external-rpc', () => ({
   invokeExternalRpc: vi.fn(),
 }));
 
-vi.mock('@/hooks/useGravacaoPriceV2', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/hooks/useGravacaoPriceV2')>();
+vi.mock('@/hooks/simulation/useGravacaoPriceV2', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/simulation/useGravacaoPriceV2')>();
   return {
     ...actual,
     fetchProductPrintAreasV2: vi.fn(),
@@ -35,7 +35,7 @@ vi.mock('@/hooks/useGravacaoPriceV2', async (importOriginal) => {
 });
 
 import { invokeExternalRpc } from '@/lib/external-rpc';
-import { fetchProductPrintAreasV2 } from '@/hooks/useGravacaoPriceV2';
+import { fetchProductPrintAreasV2 } from '@/hooks/simulation/useGravacaoPriceV2';
 import { fetchOptionForTechnique } from '@/hooks/simulation/simulationPriceFetcher';
 
 const mockedRpc = invokeExternalRpc as unknown as ReturnType<typeof vi.fn>;

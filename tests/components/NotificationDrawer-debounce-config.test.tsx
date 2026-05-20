@@ -16,7 +16,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 const prefetchMock = vi.fn(() => Promise.resolve());
 
-vi.mock("@/hooks/useNotifications", () => ({
+vi.mock("@/hooks/ui/useNotifications", () => ({
   useNotifications: () => ({
     notifications: [],
     unreadCount: 0,

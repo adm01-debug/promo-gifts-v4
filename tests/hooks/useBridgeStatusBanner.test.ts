@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useBridgeStatusBanner } from '@/hooks/useBridgeStatusBanner';
+import { useBridgeStatusBanner } from '@/hooks/intelligence/useBridgeStatusBanner';
 import { emitBridgeStatus } from '@/lib/external-db/bridge-status-events';
 import * as bridgeStatusEvents from '@/lib/external-db/bridge-status-events';
 import { toast } from 'sonner';

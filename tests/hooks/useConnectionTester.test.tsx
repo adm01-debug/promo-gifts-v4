@@ -16,7 +16,7 @@ vi.mock("sonner", () => ({
   },
 }));
 
-import { useConnectionTester } from "@/hooks/useConnectionTester";
+import { useConnectionTester } from "@/hooks/intelligence/useConnectionTester";
 import {
   makeTimeoutResult,
   makeNetworkResult,
