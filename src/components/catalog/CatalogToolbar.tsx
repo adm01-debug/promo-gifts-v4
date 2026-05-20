@@ -1,23 +1,29 @@
-import React, { Suspense } from "react";
-import { SORT_OPTIONS } from "@/constants/filters";
-import { Filter, ArrowUpDown, CheckSquare } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import type { FilterState } from "@/components/filters/FilterPanel";
-import { StatsPopover } from "@/components/products/StatsPopover";
-import { LayoutPopover } from "@/components/products/LayoutPopover";
-import type { ColumnCount } from "@/components/products/ColumnSelector";
-import type { ViewMode, SortOption } from "@/hooks/products";
-import { Skeleton } from "@/components/ui/skeleton";
-import { lazyWithRetry } from "@/lib/lazyWithRetry";
-import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { Suspense, useDeferredValue } from 'react';
+import { SORT_OPTIONS } from '@/constants/filters';
+import { Filter, ArrowUpDown, CheckSquare } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import type { FilterState } from '@/components/filters/FilterPanel';
+import { StatsPopover } from '@/components/products/StatsPopover';
+import { LayoutPopover } from '@/components/products/LayoutPopover';
+import type { ColumnCount } from '@/components/products/ColumnSelector';
+import type { ViewMode, SortOption } from '@/hooks/products';
+import { Skeleton } from '@/components/ui/skeleton';
+import { lazyWithRetry } from '@/lib/lazyWithRetry';
+import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const LazyFilterPanel = lazyWithRetry(() =>
-  import("@/components/filters/FilterPanel").then((m) => ({ default: m.FilterPanel }))
+  import('@/components/filters/FilterPanel').then((m) => ({ default: m.FilterPanel })),
 );
 
 function FilterPanelSkeleton() {
@@ -49,53 +55,82 @@ interface CatalogToolbarProps {
   selectionMode: boolean;
   onToggleSelectionMode: () => void;
   selectedCount?: number;
+  isTransitioning?: boolean;
 }
 
 export function CatalogToolbar({
-  filters, setFilters, activeFiltersCount,
-  filterSheetOpen, setFilterSheetOpen, resetFilters,
-  sortBy, setSortBy,
+  filters,
+  setFilters,
+  activeFiltersCount,
+  filterSheetOpen,
+  setFilterSheetOpen,
+  resetFilters,
+  sortBy,
+  setSortBy,
   statBadges,
-  viewMode, setViewMode,
-  gridColumns, setGridColumns,
-  selectionMode, onToggleSelectionMode,
+  viewMode,
+  setViewMode,
+  gridColumns,
+  setGridColumns,
+  selectionMode,
+  onToggleSelectionMode,
   selectedCount = 0,
+  isTransitioning = false,
 }: CatalogToolbarProps) {
+  // `useDeferredValue` evita flicker: o esmaecer só "pega" quando o React
+  // termina o trabalho pesado da transição (troca de view/filtro), em vez de
+  // piscar a cada render intermediário.
+  const deferredIsTransitioning = useDeferredValue(isTransitioning);
+
   return (
-    <div className="flex items-center justify-between gap-2 flex-wrap">
-      <div className="flex items-center gap-2 flex-shrink-0">
+    <div
+      aria-busy={deferredIsTransitioning}
+      className={cn(
+        'flex flex-wrap items-center justify-between gap-2 transition-opacity duration-200',
+        deferredIsTransitioning && 'opacity-60',
+      )}
+    >
+      <div className="flex flex-shrink-0 items-center gap-2">
         <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
           <Tooltip>
             <TooltipTrigger asChild>
               <span className="inline-flex">
-              <SheetTrigger asChild>
-                <Button variant="outline" size="sm" className="px-2.5 sm:px-3" aria-label="Abrir filtros do catálogo">
-                  <Filter className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Filtros</span>
-                  <div className="relative w-0 sm:w-auto">
-                    <AnimatePresence>
-                      {activeFiltersCount > 0 && (
-                        <motion.div
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0, opacity: 0 }}
-                          className="sm:ml-2"
-                        >
-                          <Badge variant="secondary" className="h-5 min-w-5 text-xs flex items-center justify-center">
-                            {activeFiltersCount}
-                          </Badge>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </Button>
-              </SheetTrigger>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="px-2.5 sm:px-3"
+                    aria-label="Abrir filtros do catálogo"
+                  >
+                    <Filter className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Filtros</span>
+                    <div className="relative w-0 sm:w-auto">
+                      <AnimatePresence>
+                        {activeFiltersCount > 0 && (
+                          <motion.div
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0, opacity: 0 }}
+                            className="sm:ml-2"
+                          >
+                            <Badge
+                              variant="secondary"
+                              className="flex h-5 min-w-5 items-center justify-center text-xs"
+                            >
+                              {activeFiltersCount}
+                            </Badge>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </Button>
+                </SheetTrigger>
               </span>
             </TooltipTrigger>
             <TooltipContent>
               {activeFiltersCount > 0
-                ? `Refinar busca · ${activeFiltersCount} filtro${activeFiltersCount > 1 ? "s" : ""} ativo${activeFiltersCount > 1 ? "s" : ""}`
-                : "Refinar por categoria, cor, preço e mais"}
+                ? `Refinar busca · ${activeFiltersCount} filtro${activeFiltersCount > 1 ? 's' : ''} ativo${activeFiltersCount > 1 ? 's' : ''}`
+                : 'Refinar por categoria, cor, preço e mais'}
             </TooltipContent>
           </Tooltip>
           <SheetContent side="left" className="w-80 overflow-y-auto">
@@ -116,15 +151,20 @@ export function CatalogToolbar({
           <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <SelectTrigger className="w-10 sm:w-44 h-9 sm:h-10 text-xs sm:text-sm font-medium" aria-label="Ordenar por">
-                  <ArrowUpDown className="h-3.5 w-3.5 sm:mr-2 shrink-0 text-muted-foreground" />
-                  <span className="hidden sm:inline"><SelectValue placeholder="Ordenar" /></span>
+                <SelectTrigger
+                  className="h-9 w-10 text-xs font-medium sm:h-10 sm:w-44 sm:text-sm"
+                  aria-label="Ordenar por"
+                >
+                  <ArrowUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground sm:mr-2" />
+                  <span className="hidden sm:inline">
+                    <SelectValue placeholder="Ordenar" />
+                  </span>
                 </SelectTrigger>
               </TooltipTrigger>
               <TooltipContent>Ordenar produtos (relevância, preço, novidades…)</TooltipContent>
             </Tooltip>
             <SelectContent>
-              {SORT_OPTIONS.map(option => (
+              {SORT_OPTIONS.map((option) => (
                 <SelectItem key={option.value} value={option.value} className="text-xs sm:text-sm">
                   {option.label}
                 </SelectItem>
@@ -142,19 +182,23 @@ export function CatalogToolbar({
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              variant={selectionMode ? "default" : "outline"}
+              variant={selectionMode ? 'default' : 'outline'}
               size="sm"
               className={cn(
-                "gap-1.5 h-8 transition-all relative",
+                'relative h-8 gap-1.5 transition-all',
                 selectionMode
-                  ? "bg-primary text-primary-foreground shadow-md hover:bg-primary/90"
-                  : "hover:border-primary/50"
+                  ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90'
+                  : 'hover:border-primary/50',
               )}
               onClick={onToggleSelectionMode}
-              aria-label={selectionMode ? "Cancelar seleção de produtos" : "Selecionar vários produtos"}
+              aria-label={
+                selectionMode ? 'Cancelar seleção de produtos' : 'Selecionar vários produtos'
+              }
             >
               <CheckSquare className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline text-xs">{selectionMode ? "Cancelar" : "Selecionar"}</span>
+              <span className="hidden text-xs sm:inline">
+                {selectionMode ? 'Cancelar' : 'Selecionar'}
+              </span>
 
               {/* Animated counter badge */}
               <AnimatePresence>
@@ -163,12 +207,10 @@ export function CatalogToolbar({
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 0, opacity: 0 }}
-                    transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                    className="absolute -top-2 -right-2"
+                    transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                    className="absolute -right-2 -top-2"
                   >
-                    <Badge
-                      className="bg-destructive text-destructive-foreground h-5 min-w-5 text-[10px] font-bold px-1.5 py-0 flex items-center justify-center tabular-nums shadow-lg"
-                    >
+                    <Badge className="flex h-5 min-w-5 items-center justify-center bg-destructive px-1.5 py-0 text-[10px] font-bold tabular-nums text-destructive-foreground shadow-lg">
                       {selectedCount}
                     </Badge>
                   </motion.div>
@@ -178,8 +220,8 @@ export function CatalogToolbar({
           </TooltipTrigger>
           <TooltipContent>
             {selectionMode
-              ? `Sair do modo seleção${selectedCount > 0 ? ` (${selectedCount} selecionado${selectedCount > 1 ? "s" : ""})` : ""}`
-              : "Selecionar vários produtos para orçamento, coleção ou comparação"}
+              ? `Sair do modo seleção${selectedCount > 0 ? ` (${selectedCount} selecionado${selectedCount > 1 ? 's' : ''})` : ''}`
+              : 'Selecionar vários produtos para orçamento, coleção ou comparação'}
           </TooltipContent>
         </Tooltip>
 
