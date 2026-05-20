@@ -188,7 +188,9 @@ export function useCatalogState() {
   }, [searchQueryFromUrl]);
 
   useEffect(() => {
-    setDisplayCount(ITEMS_PER_PAGE);
+    React.startTransition(() => {
+      setDisplayCount(ITEMS_PER_PAGE);
+    });
   }, [filters, sortBy, searchQuery]);
 
   const activeFiltersCount = useMemo(() => {
