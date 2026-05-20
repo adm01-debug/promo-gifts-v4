@@ -126,7 +126,7 @@ function getNavLink(label: string): HTMLAnchorElement {
   return screen.getByRole('link', { name: new RegExp(label, 'i') }) as HTMLAnchorElement;
 }
 function isLinkActive(label: string): boolean {
-  return getNavLink(label).className.includes('bg-orange/[0.03]');
+  return getNavLink(label).className.includes('bg-primary/10');
 }
 function getHeader(): HTMLButtonElement {
   return screen.getByRole('button', { name: /alternar grupo|orçamentos/i }) as HTMLButtonElement;
