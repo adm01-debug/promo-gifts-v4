@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { WifiOff, X, Wifi } from 'lucide-react';
+import { WifiOff, X, Wifi, AlertCircle, RefreshCw } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { useBridgeStatusBanner } from '@/hooks/intelligence';
 import { toast } from 'sonner';
 
 /**
