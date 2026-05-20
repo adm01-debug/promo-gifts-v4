@@ -28,6 +28,7 @@ export * from "@/hooks/products/useProductInsights";
 export * from "@/hooks/products/useProductIntelligenceBadges";
 export * from "@/hooks/products/useProductMatch";
 export * from "@/hooks/products/useProductRecommendations";
+export * from "@/hooks/products/usePrefetchProduct";
 export * from "@/hooks/products/useProductSeoAI";
 export * from "@/hooks/products/useProductSupplierSources";
 export * from "@/hooks/products/useProducts";
