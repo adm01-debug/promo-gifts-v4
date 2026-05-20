@@ -29,6 +29,7 @@ import { ProductCardImage } from "./ProductCardImage";
 import { ProductCardActions } from "./ProductCardActions";
 import { PriceFreshnessBadge } from "./PriceFreshnessBadge";
 import { feedback } from "@/lib/feedback";
+import { telemetryService } from "@/services/telemetryService";
 
 export interface ProductCardProps {
   product: Product;
