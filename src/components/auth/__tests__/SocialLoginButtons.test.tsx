@@ -65,7 +65,9 @@ describe('SocialLoginButtons (Google)', () => {
     expect(signInWithOAuthMock).toHaveBeenCalledWith(
       expect.objectContaining({
         provider: 'google',
-        options: expect.objectContaining({ redirectTo: expect.stringMatching(/\/auth\/callback$/) }),
+        options: expect.objectContaining({
+          redirectTo: expect.stringMatching(/\/auth\/callback$/),
+        }),
       }),
     );
   });
@@ -105,15 +107,14 @@ describe('SocialLoginButtons (Google)', () => {
         description: expect.stringMatching(/tempo esgotado/i),
       }),
     );
-    expect(onError).toHaveBeenCalledWith(
-      expect.stringMatching(/tempo esgotado/i),
-      { autoFallback: true },
-    );
+    expect(onError).toHaveBeenCalledWith(expect.stringMatching(/tempo esgotado/i), {
+      autoFallback: true,
+    });
     // Spinner liberado
     expect(getGoogleButton()).not.toBeDisabled();
   });
 
-  it('4) provider error "unsupported provider" → mensagem PT-BR + onError sem autoFallback', async () => {
+  it('4) provider error "unsupported provider" → toast humano + onError com a CHAVE estável (sem autoFallback)', async () => {
     signInWithOAuthMock.mockResolvedValue({
       error: { message: 'Unsupported provider: provider is not enabled' },
     });
@@ -127,14 +128,16 @@ describe('SocialLoginButtons (Google)', () => {
       await Promise.resolve();
     });
 
+    // O toast mostra a cópia humana resolvida (config), não a chave crua.
     expect(toastMock).toHaveBeenCalledWith(
       expect.objectContaining({
         variant: 'destructive',
-        description: expect.stringMatching(/ainda não está habilitado/i),
+        description: expect.stringMatching(/e-mail e senha/i),
       }),
     );
+    // onError recebe a CHAVE estável para o Auth classificar isConfig (sem retry).
     expect(onError).toHaveBeenCalledTimes(1);
-    expect(onError.mock.calls[0][0]).toMatch(/ainda não está habilitado/i);
+    expect(onError.mock.calls[0][0]).toBe('provider_is_not_enabled');
     // autoFallback NÃO deve estar setado em erros do provider direto
     expect(onError.mock.calls[0][1]).toBeUndefined();
   });

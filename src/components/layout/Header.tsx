@@ -46,8 +46,6 @@ import { RoleBadge } from '@/components/RoleBadge';
 interface HeaderProps {
   onMenuToggle: () => void;
   isMenuOpen?: boolean;
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
 }
 
 export const Header = React.memo(function Header({
@@ -235,7 +233,7 @@ export const Header = React.memo(function Header({
                   className="relative h-8 w-8 rounded-full text-muted-foreground transition-all duration-200 hover:bg-primary/10 hover:text-foreground"
                   onClick={() => navigate('/favoritos')}
                   onMouseEnter={() => {
-                    import('@/pages/products/FavoritesPage');
+                    void import('@/pages/products/FavoritesPage').catch(() => undefined);
                   }}
                 >
                   <Heart className="h-[17px] w-[17px]" strokeWidth={1.75} />
@@ -259,11 +257,11 @@ export const Header = React.memo(function Header({
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label="GitCompare"
+                  aria-label="Comparar produtos"
                   className="relative h-8 w-8 rounded-full text-muted-foreground transition-all duration-200 hover:bg-primary/10 hover:text-foreground"
                   onClick={() => navigate('/comparar')}
                   onMouseEnter={() => {
-                    import('@/pages/products/ComparePage');
+                    void import('@/pages/products/ComparePage').catch(() => undefined);
                   }}
                 >
                   <GitCompare className="h-[17px] w-[17px]" strokeWidth={1.75} />
@@ -289,7 +287,7 @@ export const Header = React.memo(function Header({
                   size="icon"
                   onClick={handleToggleTheme}
                   className="relative h-8 w-8 rounded-full text-muted-foreground transition-all duration-200 hover:bg-primary/10 hover:text-foreground"
-                  aria-label="Tema claro"
+                  aria-label={actualTheme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
                 >
                   <Sun
                     className="h-[17px] w-[17px] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0"

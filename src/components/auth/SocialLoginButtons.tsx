@@ -5,12 +5,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/ui';
 import { authDebug, authDebugError } from '@/lib/auth/auth-debug';
 import { markOAuthPending, clearOAuthPending, readOAuthPending } from '@/lib/auth/oauth-pending';
+import { resolveOAuthError } from '@/lib/auth/oauth-error-messages';
 
-/** Mapeia erros conhecidos do Supabase OAuth para mensagens PT-BR amigáveis. */
+/**
+ * Mapeia erros do Supabase OAuth para uma CHAVE estável (consumida por
+ * `resolveOAuthError` no Auth para classificar `isConfig` e decidir se o botão
+ * de retry aparece). NÃO retornar frase livre aqui: erros de config (provider
+ * desabilitado) precisam da chave para não cair no fallback genérico (que
+ * mostraria "Tentar novamente" para uma falha não-recuperável).
+ */
 function mapOAuthError(raw: string): string {
   const m = raw.toLowerCase();
   if (m.includes('unsupported provider') || m.includes('provider is not enabled')) {
-    return 'O login com Google ainda não está habilitado. Use e-mail e senha por enquanto.';
+    return 'provider_is_not_enabled';
   }
   if (m.includes('redirect') && m.includes('not allowed')) {
     return 'URL de retorno não autorizada. Verifique a configuração do provedor.';
@@ -118,7 +125,15 @@ export const SocialLoginButtons = forwardRef<HTMLDivElement, SocialLoginButtonsP
       clearOAuthPending();
       setIsLoading(null);
       setSlowHint(null);
-      toast({ variant: 'destructive', title: 'Erro ao entrar com Google', description: msg });
+      // `msg` pode ser uma chave (ex: provider_is_not_enabled) ou texto livre;
+      // resolveOAuthError devolve a cópia humana em ambos os casos para o toast.
+      const copy = resolveOAuthError(msg);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao entrar com Google',
+        description: copy.description,
+      });
+      // onError recebe a `msg` original (chave preservada) para o Auth classificar.
       onError?.(msg, opts);
     };
 

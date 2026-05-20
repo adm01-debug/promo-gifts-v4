@@ -138,7 +138,7 @@ describe('Cálculos de Orçamento (Unit Tests)', () => {
         unitPrice: 10.5555
       };
       // 0.3333 * 10.5555 = 3.51814815 → arredondado para 2 casas (moeda) = 3.52
-      expect(calculateItemTotal(params)).toBeCloseTo(3.52, 2);
+      expect(calculateItemTotal(params)).toBe(3.52);
     });
   });
 });

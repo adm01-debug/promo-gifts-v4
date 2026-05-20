@@ -107,7 +107,7 @@ describe('AuthContext', () => {
       });
 
       await act(async () => {
-        await result.current.signOut().catch(() => {});
+        await result.current.signOut();
       });
 
       // O RPC de auditoria foi movido para authService.signOut (não removido).

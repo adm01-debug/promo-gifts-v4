@@ -201,7 +201,7 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
               {item.shortcut}
             </kbd>
           )}
-          {!isCollapsed && item.badge !== null && (
+          {!isCollapsed && item.badge !== null && item.badge !== undefined && (
             <span className="ml-auto min-w-[20px] rounded-full bg-primary/20 px-1.5 py-0.5 text-center text-[10px] font-semibold text-white shadow-[0_0_10px_rgba(var(--primary),0.2)]">
               {item.badge}
             </span>
@@ -223,7 +223,7 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
                     {item.shortcut}
                   </kbd>
                 )}
-                {item.badge !== null && (
+                {item.badge !== null && item.badge !== undefined && (
                   <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-semibold text-white">
                     {item.badge}
                   </span>
