@@ -111,7 +111,7 @@ export const CatalogContent = memo(function CatalogContent({
         "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5": gridColumns === 5,
         "grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6": gridColumns === 6,
         "grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8": gridColumns === 8,
-      }, gridColumns >= 8 ? 'gap-x-4 gap-y-8' : gridColumns >= 6 ? 'gap-x-6 gap-y-8' : 'gap-x-8 gap-y-8')}>
+      }, gridColumns >= 8 ? 'gap-x-4 gap-y-8' : gridColumns >= 6 ? 'gap-x-6 gap-y-8' : 'gap-x-4 sm:gap-x-6 lg:gap-x-8 gap-y-8')}>
         {Array.from({ length: 12 }).map((_, i) => (
           <ProductCardSkeleton key={i} />
         ))}
