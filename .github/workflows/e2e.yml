@@ -102,7 +102,7 @@ jobs:
         run: |
           npx playwright test \
             --project=chromium-smoke \
-            --max-failures=1 \
+            --max-failures=50 \
             --forbid-only \
             --reporter=github,list,json
         env:
