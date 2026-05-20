@@ -89,9 +89,11 @@ Deno.serve(async (req) => {
     }));
 
   } catch (error) {
+    // Detalhe do erro fica só no log estruturado (server-side); ao cliente
+    // devolvemos mensagem genérica + request_id (evita vazar stack trace — CodeQL).
     const errorMessage = error instanceof Error ? error.message : String(error);
     log.error("sync_failed", { error: errorMessage });
-    return log.respond(new Response(JSON.stringify({ error: errorMessage }), {
+    return log.respond(new Response(JSON.stringify({ error: "Sync failed", request_id: requestId }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     }));

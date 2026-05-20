@@ -234,9 +234,11 @@ Deno.serve(async (req) => {
       status: 200,
     }));
   } catch (error) {
+    // Detalhe do erro fica só no log estruturado (server-side); ao cliente
+    // devolvemos mensagem genérica + request_id (evita vazar stack trace — CodeQL).
     const errorMessage = error instanceof Error ? error.message : String(error);
     log.error("simulation_failed", { error: errorMessage });
-    return log.respond(new Response(JSON.stringify({ error: errorMessage }), {
+    return log.respond(new Response(JSON.stringify({ error: "Simulation failed", request_id: requestId }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 400,
     }));
