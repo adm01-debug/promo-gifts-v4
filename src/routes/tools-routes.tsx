@@ -1,4 +1,5 @@
 import { Navigate, Route } from "react-router-dom";
+import { DevRoute } from "@/components/layout/DevRoute";
 import {
   AdvancedPriceSearchPage,
   BusinessIntelligencePage,
@@ -42,6 +43,10 @@ export const toolsRoutes = (
     <Route path="/ferramentas/bi/comparar" element={<ClientComparatorPage />} />
     <Route path="/match" element={<ProductMatchPage />} />
     <Route path="/dropbox" element={<DropboxBrowserPage />} />
-    <Route path="/simulacao" element={<SimulationPage />} />
+    {/* DEV-ONLY: a simulation-orchestrator (edge) exige role dev; gateamos a
+        página para o mesmo público e evitar 403 para não-devs. */}
+    <Route element={<DevRoute />}>
+      <Route path="/simulacao" element={<SimulationPage />} />
+    </Route>
   </>
 );
