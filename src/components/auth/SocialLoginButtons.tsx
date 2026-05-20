@@ -4,17 +4,13 @@ import { useState, useEffect, useRef, forwardRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/ui';
 import { authDebug, authDebugError } from '@/lib/auth/auth-debug';
-import {
-  markOAuthPending,
-  clearOAuthPending,
-  readOAuthPending,
-} from '@/lib/auth/oauth-pending';
+import { markOAuthPending, clearOAuthPending, readOAuthPending } from '@/lib/auth/oauth-pending';
 
 /** Mapeia erros conhecidos do Supabase OAuth para mensagens PT-BR amigáveis. */
 function mapOAuthError(raw: string): string {
   const m = raw.toLowerCase();
   if (m.includes('unsupported provider') || m.includes('provider is not enabled')) {
-    return 'provider_is_not_enabled';
+    return 'Login com Google ainda não está habilitado. Tente outro método ou contate o suporte.';
   }
   if (m.includes('redirect') && m.includes('not allowed')) {
     return 'URL de retorno não autorizada. Verifique a configuração do provedor.';
@@ -188,7 +184,7 @@ export const SocialLoginButtons = forwardRef<HTMLDivElement, SocialLoginButtonsP
         <Button
           type="button"
           variant="outline"
-          className="h-11 w-full gap-3 border-white/10 bg-white/5 text-white font-medium transition-all hover:bg-white/10 hover:border-white/20 hover:scale-[1.01] active:scale-[0.98] shadow-lg backdrop-blur-sm"
+          className="h-11 w-full gap-3 border-white/10 bg-white/5 font-medium text-white shadow-lg backdrop-blur-sm transition-all hover:scale-[1.01] hover:border-white/20 hover:bg-white/10 active:scale-[0.98]"
           onClick={handleGoogleLogin}
           disabled={!!isLoading}
           aria-busy={loading}
@@ -220,7 +216,7 @@ export const SocialLoginButtons = forwardRef<HTMLDivElement, SocialLoginButtonsP
         </Button>
         {slowHint && loading && (
           <p
-            className="text-center text-xs text-muted-foreground animate-fade-in"
+            className="animate-fade-in text-center text-xs text-muted-foreground"
             role="status"
             aria-live="polite"
           >
