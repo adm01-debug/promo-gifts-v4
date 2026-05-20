@@ -58,6 +58,14 @@ vi.mock("@/contexts/SellerCartContext", () => ({
 
 vi.mock("@/contexts/OnboardingContext", () => ({
   OnboardingProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  // Header (renderizado pelo MainLayout) consome useOnboardingContext; o mock
+  // precisa expô-lo para não quebrar quando o Header real é exercitado na suíte.
+  useOnboardingContext: () => ({
+    restartTour: vi.fn(),
+    startTour: vi.fn(),
+    hasCompletedTour: true,
+    isLoading: false,
+  }),
 }));
 
 describe("MainLayout — PersistentBreadcrumbs (PR)", () => {
