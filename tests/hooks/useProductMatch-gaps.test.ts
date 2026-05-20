@@ -36,7 +36,8 @@ describe('FIX 1: useSupplierComparison — price zero guard', () => {
     const { result } = renderHook(() =>
       useSupplierComparison(makeProduct({ price: 0 }))
     );
-    expect(result.current).toBeNull();
+    // Shape de query: sem produtos de categoria comparáveis → data: null (sem Infinity).
+    expect(result.current).toEqual({ data: null, isLoading: false });
   });
 });
 

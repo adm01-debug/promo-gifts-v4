@@ -10,13 +10,14 @@ vi.mock('@/hooks/products/useProducts', () => ({
 import { useSupplierComparison } from '@/hooks/products/useSupplierComparison';
 
 describe('useSupplierComparison', () => {
-  it('should return null when no product is provided', () => {
+  // O hook expõe shape de query: { data, isLoading }. Sem produto → data: null.
+  it('should return data: null when no product is provided', () => {
     const { result } = renderHook(() => useSupplierComparison(null));
-    expect(result.current).toBeNull();
+    expect(result.current).toEqual({ data: null, isLoading: false });
   });
 
-  it('should return null when undefined product is provided', () => {
+  it('should return data: null when undefined product is provided', () => {
     const { result } = renderHook(() => useSupplierComparison(undefined));
-    expect(result.current).toBeNull();
+    expect(result.current).toEqual({ data: null, isLoading: false });
   });
 });
