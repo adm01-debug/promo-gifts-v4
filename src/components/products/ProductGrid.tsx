@@ -166,7 +166,7 @@ export function ProductGrid({
   return (
     <div 
       ref={gridRef}
-      className={`grid ${columnClasses[columns] || columnClasses[5]} ${columns >= 8 ? 'gap-x-4 gap-y-8' : columns >= 6 ? 'gap-x-6 gap-y-8' : 'gap-x-8 gap-y-8'}`}
+      className={`grid ${columnClasses[columns] || columnClasses[5]} ${columns >= 8 ? 'gap-x-4 gap-y-8' : columns >= 6 ? 'gap-x-6 gap-y-8' : 'gap-x-4 sm:gap-x-6 lg:gap-x-8 gap-y-8'}`}
     >
       {displayProducts.map((product, index) => (
         (product as any).isSkeleton ? (
