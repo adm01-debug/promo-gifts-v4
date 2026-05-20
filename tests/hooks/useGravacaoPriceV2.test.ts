@@ -4,7 +4,7 @@
  * - getColorSelectorConfig
  */
 import { describe, it, expect } from 'vitest';
-import { mapPriceResponseToFlat, getColorSelectorConfig } from '@/hooks/useGravacaoPriceV2';
+import { mapPriceResponseToFlat, getColorSelectorConfig } from '@/hooks/simulation/useGravacaoPriceV2';
 
 // ============================================
 // mapPriceResponseToFlat — NESTED format

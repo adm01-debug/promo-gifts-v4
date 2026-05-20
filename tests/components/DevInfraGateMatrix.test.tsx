@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 import { DevOnlyBridgeOverlay } from '@/components/dev/DevOnlyBridgeOverlay';
-import { useDevGate } from '@/hooks/useDevGate';
+import { useDevGate } from '@/hooks/admin/useDevGate';
 
 // Mock do hook useDevGate
-vi.mock('@/hooks/useDevGate', () => ({
+vi.mock('@/hooks/admin/useDevGate', () => ({
   useDevGate: vi.fn(),
 }));
 

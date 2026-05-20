@@ -77,7 +77,7 @@ Object.defineProperty(global.navigator, "mediaDevices", {
   configurable: true,
 });
 
-import { useVoiceAgent } from "@/hooks/useVoiceAgent";
+import { useVoiceAgent } from "@/hooks/intelligence/useVoiceAgent";
 
 describe("useVoiceAgent", () => {
   beforeEach(() => {

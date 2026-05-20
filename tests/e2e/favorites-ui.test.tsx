@@ -55,7 +55,7 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
-vi.mock('@/hooks/useOnboarding', () => ({
+vi.mock('@/hooks/ui/useOnboarding', () => ({
   useOnboarding: () => ({
     step: null,
     isFirstTime: false,

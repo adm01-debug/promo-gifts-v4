@@ -49,7 +49,7 @@ vi.mock('@/lib/system/dev-infra-messages', () => ({
 }));
 
 // Mock do hook useDevGate (já que o componente o usa agora)
-vi.mock('@/hooks/useDevGate', () => ({
+vi.mock('@/hooks/admin/useDevGate', () => ({
   useDevGate: () => ({
     isAllowed: mockShouldShow(mockUseAuth().isDev),
     isDev: mockUseAuth().isDev

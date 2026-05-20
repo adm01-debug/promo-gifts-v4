@@ -4,7 +4,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
 
-vi.mock("@/hooks/use2FA", () => ({
+vi.mock("@/hooks/auth/use2FA", () => ({
   use2FA: vi.fn().mockReturnValue({
     is2FAEnabled: false,
     isLoading: false,
@@ -16,7 +16,7 @@ vi.mock("@/hooks/use2FA", () => ({
   }),
 }));
 
-vi.mock("@/hooks/useAllowedIPs", () => ({
+vi.mock("@/hooks/admin/useAllowedIPs", () => ({
   useAllowedIPs: vi.fn().mockReturnValue({
     allowedIPs: [],
     isLoading: false,

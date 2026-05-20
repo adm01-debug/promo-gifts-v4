@@ -11,7 +11,7 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
-import { useFavorites } from '@/hooks/useFavorites';
+import { useFavorites } from '@/hooks/favorites/useFavorites';
 
 describe('useFavorites', () => {
   beforeEach(() => {

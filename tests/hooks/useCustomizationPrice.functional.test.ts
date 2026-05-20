@@ -11,7 +11,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { act } from "@testing-library/react";
 import { renderHookWithProviders } from "./_helpers/render-hook-providers";
-import { useCustomizationPriceCalculator } from "@/hooks/useCustomizationPrice";
+import { useCustomizationPriceCalculator } from "@/hooks/simulation/useCustomizationPrice";
 import {
   PRICE_PAYLOAD_PT_V6,
   PRICE_PAYLOAD_EN_FUTURE,

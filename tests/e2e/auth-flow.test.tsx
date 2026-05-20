@@ -39,7 +39,7 @@ vi.mock('@/contexts/AuthContext', () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
-vi.mock('@/hooks/useIPValidation', () => ({
+vi.mock('@/hooks/admin/useIPValidation', () => ({
   useIPValidation: () => ({
     validateIPForAuthenticatedUser: vi.fn().mockResolvedValue(true),
     logLoginAttempt: vi.fn(),

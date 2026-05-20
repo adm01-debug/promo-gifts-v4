@@ -10,7 +10,7 @@ vi.mock("@/components/layout/MainLayout", () => ({
   MainLayout: ({ children }: { children: React.ReactNode }) => <div data-testid="main-layout">{children}</div>,
 }));
 
-vi.mock("@/hooks/productss", () => ({
+vi.mock("@/hooks/products/useProducts", () => ({
   useProducts: vi.fn().mockReturnValue({
     products: [],
     loading: false,
@@ -79,7 +79,7 @@ vi.mock("@elevenlabs/react", () => ({
   useElevenLabsConversation: vi.fn().mockReturnValue({ status: "idle", start: vi.fn(), stop: vi.fn() }),
 }));
 
-vi.mock("@/hooks/useVoiceAgent", () => ({
+vi.mock("@/hooks/intelligence/useVoiceAgent", () => ({
   useVoiceAgent: vi.fn().mockReturnValue({
     phase: "idle", partialTranscript: "", finalTranscript: "", agentResponse: "",
     error: null, startListening: vi.fn(), stopListening: vi.fn(), stopSpeaking: vi.fn(), reset: vi.fn(),
@@ -96,7 +96,7 @@ describe("FiltersPage", () => {
   });
 
   it("renders without crashing", async () => {
-    const { default: FiltersPage } = await import("@/pages/FiltersPage");
+    const { default: FiltersPage } = await import("@/pages/products/FiltersPage");
     renderWithProviders(<FiltersPage />);
     expect(screen.getByTestId("main-layout")).toBeInTheDocument();
   }, 15000);

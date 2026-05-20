@@ -36,19 +36,19 @@ beforeEach(() => {
 
 describe("useLoginAttempts", () => {
   it("should export the hook function", async () => {
-    const mod = await import("@/hooks/useLoginAttempts");
+    const mod = await import("@/hooks/auth/useLoginAttempts");
     expect(mod.useLoginAttempts).toBeDefined();
     expect(typeof mod.useLoginAttempts).toBe("function");
   });
 
   it("should export useLoginAttemptStats", async () => {
-    const mod = await import("@/hooks/useLoginAttempts");
+    const mod = await import("@/hooks/auth/useLoginAttempts");
     expect(mod.useLoginAttemptStats).toBeDefined();
     expect(typeof mod.useLoginAttemptStats).toBe("function");
   });
 
   it("should export LoginAttempt interface shape", async () => {
-    const mod = await import("@/hooks/useLoginAttempts");
+    const mod = await import("@/hooks/auth/useLoginAttempts");
     // Verify exports exist
     expect(mod).toHaveProperty("useLoginAttempts");
     expect(mod).toHaveProperty("useLoginAttemptStats");

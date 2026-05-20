@@ -2,7 +2,7 @@ import React from "react";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useMagicUpGeneration } from "@/hooks/useMagicUpGeneration";
+import { useMagicUpGeneration } from "@/hooks/intelligence/useMagicUpGeneration";
 import { DEFAULT_BRAND_KIT, DEFAULT_BRIEF, DEFAULT_CREATIVE_CONTROLS, buildCopyPack, buildMagicScore, type MagicUpQualityDiagnosis } from "@/pages/magic-up/magicUpStrategy";
 
 const mocks = vi.hoisted(() => ({

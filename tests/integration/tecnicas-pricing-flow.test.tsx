@@ -24,7 +24,7 @@ vi.mock("@/lib/external-rpc", () => ({
 import { renderHookWithProviders } from "../hooks/_helpers/render-hook-providers";
 import { supabase } from "@/integrations/supabase/client";
 import { useTecnicasList } from "@/hooks/tecnicas/useTecnicasList";
-import { useCustomizationPriceCalculator } from "@/hooks/useCustomizationPrice";
+import { useCustomizationPriceCalculator } from "@/hooks/simulation/useCustomizationPrice";
 import {
   TECNICA_ROW_PT,
   TECNICA_ROW_EN,

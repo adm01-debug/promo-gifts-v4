@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 
-vi.mock("@/hooks/useLoginAttempts", () => ({
+vi.mock("@/hooks/auth/useLoginAttempts", () => ({
   useLoginAttempts: () => ({
     data: {
       attempts: [

@@ -7,7 +7,7 @@ import { act, waitFor } from "@testing-library/react";
 import { renderHookWithProviders } from "./_helpers/render-hook-providers";
 import { resetSupabaseMocks, makeChain } from "./_helpers/mock-supabase-builder";
 import { supabase } from "@/integrations/supabase/client";
-import { useAccessSecurity } from "@/hooks/useAccessSecurity";
+import { useAccessSecurity } from "@/hooks/auth/useAccessSecurity";
 import { toast } from "sonner";
 
 const mockedFrom = supabase.from as unknown as ReturnType<typeof vi.fn>;

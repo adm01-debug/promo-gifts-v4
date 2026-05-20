@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useDebounce, useThrottle } from '@/hooks/useDebounce';
+import { useDebounce, useThrottle } from '@/hooks/common/useDebounce';
 
 describe('useDebounce — extended', () => {
   beforeEach(() => vi.useFakeTimers());

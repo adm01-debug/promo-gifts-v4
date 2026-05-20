@@ -31,7 +31,7 @@ const prefetchMock = vi.fn(() => {
   });
 });
 
-vi.mock("@/hooks/useNotifications", () => ({
+vi.mock("@/hooks/ui/useNotifications", () => ({
   useNotifications: () => ({
     notifications: [],
     unreadCount: 0,

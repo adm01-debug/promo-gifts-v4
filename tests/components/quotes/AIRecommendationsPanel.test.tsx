@@ -42,12 +42,12 @@ const defaultHookState = {
   clearCache: mockClearCache,
 };
 
-vi.mock("@/hooks/useAIRecommendations", () => ({
+vi.mock("@/hooks/intelligence/useAIRecommendations", () => ({
   useAIRecommendations: vi.fn(() => defaultHookState),
 }));
 
-import { useAIRecommendations } from "@/hooks/useAIRecommendations";
-import type { ProductForRecommendation } from "@/hooks/useAIRecommendations";
+import { useAIRecommendations } from "@/hooks/intelligence/useAIRecommendations";
+import type { ProductForRecommendation } from "@/hooks/intelligence/useAIRecommendations";
 
 const PRODUCTS: ProductForRecommendation[] = [
   { id: "prod-1", name: "Caneta Esferográfica", category: "Escritório", description: "Caneta azul" },

@@ -3,7 +3,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useBulkSelection } from '@/hooks/useBulkSelection';
+import { useBulkSelection } from '@/hooks/common/useBulkSelection';
 
 describe('useBulkSelection — extended', () => {
   const items = [{ id: '1' }, { id: '2' }, { id: '3' }, { id: '4' }, { id: '5' }];

@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { act } from "@testing-library/react";
 import { renderHookWithProviders } from "./_helpers/render-hook-providers";
-import { usePasswordBreachCheck } from "@/hooks/usePasswordBreachCheck";
+import { usePasswordBreachCheck } from "@/hooks/auth/usePasswordBreachCheck";
 
 const SHA1_HEX = "5BAA61E4C9B93F3F0682250B6CF8331B7EE68FD8".toUpperCase(); // sha1("password")
 

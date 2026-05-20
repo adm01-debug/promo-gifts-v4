@@ -2,7 +2,7 @@
  * Tests for voice-related logic in useGlobalSearch
  */
 import { describe, it, expect, vi } from "vitest";
-import type { VoiceAgentAction } from "@/hooks/useVoiceAgent";
+import type { VoiceAgentAction } from "@/hooks/intelligence/useVoiceAgent";
 
 // Test the handleVoiceAction logic in isolation
 describe("Voice Action Handler Logic", () => {
