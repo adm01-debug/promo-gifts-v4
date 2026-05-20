@@ -187,7 +187,21 @@ export function CatalogToolbar({
           </TooltipContent>
         </Tooltip>
 
-        <div className="hidden sm:block">
+        <div className="hidden sm:flex items-center gap-2">
+          <AnimatePresence>
+            {deferredIsTransitioning && (
+              <motion.div
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+                className="flex items-center gap-1.5 px-2 py-1 bg-muted/30 rounded-full border border-primary/20"
+              >
+                <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">Otimizando...</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <LayoutPopover
             viewMode={viewMode}
             setViewMode={setViewMode}
