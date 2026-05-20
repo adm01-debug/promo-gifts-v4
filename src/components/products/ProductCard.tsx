@@ -193,6 +193,9 @@ export const ProductCard = memo(forwardRef<HTMLElement, ProductCardProps>(functi
       } as React.CSSProperties : undefined}
       onMouseEnter={() => {
         setIsHovered(true);
+        // Telemetry for analytics (popular products)
+        telemetryService.logUXAction('product_hover', { productId: product.id, name: product.name });
+
         // Prefetch product details when hovering to make "click to open" instant
         prefetchProduct(product.id);
       }}
