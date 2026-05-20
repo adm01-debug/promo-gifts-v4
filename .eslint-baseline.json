@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-05-19T23:42:14.147Z",
-  "totalErrors": 458,
-  "totalWarnings": 526,
+  "generatedAt": "2026-05-20T19:51:25.193Z",
+  "totalErrors": 442,
+  "totalWarnings": 525,
   "counts": {
     "src/components/access/DevAccessDeniedPage.tsx": {
       "react-hooks/exhaustive-deps": {
@@ -327,12 +327,6 @@
       "@typescript-eslint/no-non-null-assertion": {
         "e": 0,
         "w": 1
-      }
-    },
-    "src/components/catalog/CatalogContent.tsx": {
-      "@typescript-eslint/no-unused-vars": {
-        "e": 16,
-        "w": 0
       }
     },
     "src/components/catalog/CatalogHeader.tsx": {
@@ -2523,12 +2517,6 @@
       "@typescript-eslint/no-unused-vars": {
         "e": 3,
         "w": 0
-      }
-    },
-    "src/pages/auth/AuthBranding.visual.test.tsx": {
-      "@typescript-eslint/no-explicit-any": {
-        "e": 0,
-        "w": 1
       }
     },
     "src/pages/auth/ResetPassword.tsx": {

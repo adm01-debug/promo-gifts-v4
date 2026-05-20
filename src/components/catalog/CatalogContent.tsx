@@ -1,11 +1,6 @@
-import { useRef, useCallback, useEffect, useState, useMemo, memo, type RefObject } from 'react';
+import { memo, type RefObject } from 'react';
 import type { ActiveColorFilter } from '@/utils/color-image-resolver';
-import { useVirtualizer } from '@tanstack/react-virtual';
-import { Loader2, ArrowUp, AlertCircle } from 'lucide-react';
-import { useProductsContextSafe } from '@/contexts/ProductsContext';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-
 
 import { ProductGrid } from '@/components/products/ProductGrid';
 import { ProductList } from '@/components/products/ProductList';
@@ -14,11 +9,10 @@ import { ProductCardSkeleton } from '@/components/products/ProductCardSkeleton';
 import { ProductListItemSkeleton } from '@/components/products/ProductListItemSkeleton';
 import { ProductTableSkeleton } from '@/components/products/ProductTableSkeleton';
 import { EmptyState } from '@/components/common/EmptyState';
-import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
 import { CatalogBulkModals } from './CatalogBulkModals';
 import { useCatalogSelection } from './useCatalogSelection';
 import { cn } from '@/lib/utils';
-import { type Product, type ViewMode } from "@/hooks/products";
+import { type Product, type ViewMode } from '@/hooks/products';
 import type { ColumnCount } from '@/components/products/ColumnSelector';
 import { SparklineSalesProvider } from '@/hooks/intelligence';
 import { ScrollToTopButton } from '@/components/common/ScrollToTopButton';
@@ -66,7 +60,6 @@ export const CatalogContent = memo(function CatalogContent({
   isLoadingMore,
   totalEstimate,
   loadMoreRef,
-  itemsPerPage,
   navigate,
   handleViewProduct,
   handleShareProduct,
@@ -76,23 +69,16 @@ export const CatalogContent = memo(function CatalogContent({
   isInCompare,
   onToggleCompare,
   canAddToCompare,
-  onLoadMore,
   onResetFilters,
   selectionMode,
   onSelectedCountChange,
   activeColorFilter,
-  activeProductId,
-  setActiveProductId,
 }: CatalogContentProps) {
-  const selection = useCatalogSelection(
-    paginatedProducts,
-    selectionMode,
-    onSelectedCountChange
-  );
+  const selection = useCatalogSelection(paginatedProducts, selectionMode, onSelectedCountChange);
   const { selectedIds, toggleSelect: onToggleSelect } = selection;
 
   if (shouldShowCatalogSkeleton) {
-    if (viewMode === "list") {
+    if (viewMode === 'list') {
       return (
         <div className="space-y-4">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -101,17 +87,27 @@ export const CatalogContent = memo(function CatalogContent({
         </div>
       );
     }
-    if (viewMode === "table") {
+    if (viewMode === 'table') {
       return <ProductTableSkeleton rows={10} />;
     }
     return (
-      <div className={cn("grid", {
-        "grid-cols-2 sm:grid-cols-3": gridColumns === 3,
-        "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4": gridColumns === 4,
-        "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5": gridColumns === 5,
-        "grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6": gridColumns === 6,
-        "grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8": gridColumns === 8,
-      }, gridColumns >= 8 ? 'gap-x-4 gap-y-8' : gridColumns >= 6 ? 'gap-x-6 gap-y-8' : 'gap-x-8 gap-y-8')}>
+      <div
+        className={cn(
+          'grid',
+          {
+            'grid-cols-2 sm:grid-cols-3': gridColumns === 3,
+            'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4': gridColumns === 4,
+            'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5': gridColumns === 5,
+            'grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6': gridColumns === 6,
+            'grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8': gridColumns === 8,
+          },
+          gridColumns >= 8
+            ? 'gap-x-4 gap-y-8'
+            : gridColumns >= 6
+              ? 'gap-x-6 gap-y-8'
+              : 'gap-x-8 gap-y-8',
+        )}
+      >
         {Array.from({ length: 12 }).map((_, i) => (
           <ProductCardSkeleton key={i} />
         ))}
@@ -126,11 +122,11 @@ export const CatalogContent = memo(function CatalogContent({
         title="Nenhum produto encontrado"
         description={
           hasActiveCatalogConstraints
-            ? "Tente ajustar seus filtros para ver mais resultados."
-            : "Explore nosso catálogo completo para encontrar o que procura."
+            ? 'Tente ajustar seus filtros para ver mais resultados.'
+            : 'Explore nosso catálogo completo para encontrar o que procura.'
         }
         action={{
-          label: "Limpar todos os filtros",
+          label: 'Limpar todos os filtros',
           onClick: onResetFilters,
         }}
       />
@@ -138,9 +134,9 @@ export const CatalogContent = memo(function CatalogContent({
   }
 
   return (
-    <div className="space-y-8 pb-12 relative">
+    <div className="relative space-y-8 pb-12">
       <SparklineSalesProvider>
-        {viewMode === "grid" && (
+        {viewMode === 'grid' && (
           <ProductGrid
             products={paginatedProducts}
             isLoading={isLoadingMore}
@@ -161,7 +157,7 @@ export const CatalogContent = memo(function CatalogContent({
           />
         )}
 
-        {viewMode === "list" && (
+        {viewMode === 'list' && (
           <ProductList
             products={paginatedProducts}
             isLoading={isLoadingMore}
@@ -181,7 +177,7 @@ export const CatalogContent = memo(function CatalogContent({
           />
         )}
 
-        {viewMode === "table" && (
+        {viewMode === 'table' && (
           <ProductTableView
             products={paginatedProducts}
             isLoading={isLoadingMore}
@@ -201,24 +197,32 @@ export const CatalogContent = memo(function CatalogContent({
       </SparklineSalesProvider>
 
       {hasMoreProducts && (
-        <div
-          ref={loadMoreRef}
-          className="flex justify-center py-8"
-        >
+        <div ref={loadMoreRef} className="flex justify-center py-8">
           {isLoadingMore ? (
             <div className="flex flex-col items-center gap-3">
               <div className="flex gap-1.5">
-                <Skeleton className="h-2 w-2 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <Skeleton className="h-2 w-2 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <Skeleton className="h-2 w-2 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                <Skeleton
+                  className="h-2 w-2 animate-bounce rounded-full"
+                  style={{ animationDelay: '0ms' }}
+                />
+                <Skeleton
+                  className="h-2 w-2 animate-bounce rounded-full"
+                  style={{ animationDelay: '150ms' }}
+                />
+                <Skeleton
+                  className="h-2 w-2 animate-bounce rounded-full"
+                  style={{ animationDelay: '300ms' }}
+                />
               </div>
-              <p className="text-xs text-muted-foreground font-medium animate-pulse">
+              <p className="animate-pulse text-xs font-medium text-muted-foreground">
                 Carregando mais produtos...
               </p>
             </div>
           ) : (
             <div className="text-center text-sm text-muted-foreground">
-              Exibindo {Math.min(paginatedProducts.length, totalEstimate || filteredProducts.length)} de {totalEstimate || filteredProducts.length} produtos
+              Exibindo{' '}
+              {Math.min(paginatedProducts.length, totalEstimate || filteredProducts.length)} de{' '}
+              {totalEstimate || filteredProducts.length} produtos
             </div>
           )}
         </div>
@@ -229,7 +233,7 @@ export const CatalogContent = memo(function CatalogContent({
         selectionMode={selectionMode}
         totalCount={totalEstimate || filteredProducts.length}
       />
-      
+
       <ScrollToTopButton className="fixed bottom-6 right-6 z-50" />
     </div>
   );
