@@ -31,7 +31,7 @@ describe('BridgeMetricsOverlay Rendering Performance', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useDevGate as any).mockReturnValue({ isAllowed: true });
+    (useDevGate as any).mockReturnValue({ isDev: true });
     (useBridgeMetrics as any).mockReturnValue({
       open: true,
       setOpen: mockSetOpen,
