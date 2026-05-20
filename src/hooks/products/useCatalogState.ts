@@ -1,8 +1,18 @@
 /**
  * useCatalogState — all catalog page state & logic extracted from Index.tsx
  */
-import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { useCatalogRealStats, useColorEnrichment, useExternalCategoriesQuery, useProductFuzzySearch, useProductsByCategory, useProductsByMaterial, useProductsCatalog, useSupplierSalesRanking, type Product } from "@/hooks/products";
+import React, { useState, useMemo, useEffect, useRef, useCallback, useTransition } from 'react';
+import {
+  useCatalogRealStats,
+  useColorEnrichment,
+  useExternalCategoriesQuery,
+  useProductFuzzySearch,
+  useProductsByCategory,
+  useProductsByMaterial,
+  useProductsCatalog,
+  useSupplierSalesRanking,
+  type Product,
+} from '@/hooks/products';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Package, Heart, Users, Palette, FolderTree } from 'lucide-react';
 
@@ -13,13 +23,13 @@ import {
   type ColumnCount,
 } from '@/components/products/ColumnSelector';
 import { useProductsContext } from '@/contexts/ProductsContext';
-import { useDebounce, useSearch } from "@/hooks/common";
+import { useDebounce, useSearch } from '@/hooks/common';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useFavoriteQuickAdd } from '@/hooks/favorites';
 import { useComparisonStore } from '@/stores/useComparisonStore';
 import { useToast } from '@/hooks/ui';
 import { usePromoSalesRanking } from '@/hooks/intelligence';
-import { useCatalogFiltering } from "@/hooks/products/useCatalogFiltering";
+import { useCatalogFiltering } from '@/hooks/products/useCatalogFiltering';
 
 export type ViewMode = 'grid' | 'list' | 'table';
 export type SortOption =
@@ -60,26 +70,37 @@ export function useCatalogState() {
 
   const searchQueryFromUrl = searchParams.get('search') || '';
 
-  const [filters, setFilters] = useState<FilterState>(defaultFilters);
+  // Trocar view/colunas/ordenação/filtros dispara um re-render pesado (filtragem
+  // e re-layout de milhares de produtos). `useTransition` mantém a UI responsiva
+  // e expõe `isTransitioning` para feedback visual (ex.: a toolbar esmaece).
+  const [isTransitioning, startTransition] = useTransition();
+
+  const [filters, setFiltersState] = useState<FilterState>(defaultFilters);
+  const setFilters = useCallback((f: FilterState) => {
+    startTransition(() => setFiltersState(f));
+  }, []);
   const [viewMode, setViewModeState] = useState<ViewMode>(getPersistedViewMode);
   const setViewMode = useCallback((mode: ViewMode) => {
-    setViewModeState(mode);
     try {
       localStorage.setItem(VIEW_MODE_KEY, mode);
     } catch {
       /* empty */
     }
+    startTransition(() => setViewModeState(mode));
   }, []);
   const [gridColumns, setGridColumnsState] = useState<ColumnCount>(getDefaultColumns);
   const setGridColumns = useCallback((cols: ColumnCount) => {
-    setGridColumnsState(cols);
     try {
       localStorage.setItem(GRID_COLUMNS_KEY, String(cols));
     } catch {
       /* empty */
     }
+    startTransition(() => setGridColumnsState(cols));
   }, []);
-  const [sortBy, setSortBy] = useState<SortOption>('relevance');
+  const [sortBy, setSortByState] = useState<SortOption>('relevance');
+  const setSortBy = useCallback((s: SortOption) => {
+    startTransition(() => setSortByState(s));
+  }, []);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedCount, setSelectedCount] = useState(0);
   const [activeProductId, setActiveProductId] = useState<string | null>(null);
@@ -450,7 +471,7 @@ export function useCatalogState() {
     setSortBy('name');
     setSearchQuery('');
     navigate('/', { replace: true });
-  }, [navigate]);
+  }, [navigate, setFilters, setSortBy]);
 
   const handleViewProduct = useCallback(
     (product: Product) => {
@@ -562,6 +583,7 @@ export function useCatalogState() {
     setGridColumns,
     sortBy,
     setSortBy,
+    isTransitioning,
     refetchCatalog,
     selectionMode,
     setSelectionMode,
