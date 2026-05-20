@@ -1,9 +1,38 @@
+import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Auth from '@/pages/auth/Auth';
 import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { HelmetProvider } from 'react-helmet-async';
+
+// framer-motion: AnimatePresence "mode=wait" não resolve a saída em jsdom, então
+// o ramo entrante (forgot password) nunca monta. Renderiza tudo síncrono.
+vi.mock('framer-motion', () => {
+  const passthrough = (Tag: any) =>
+    React.forwardRef(function M(props: any, ref: any) {
+      const { children, ...rest } = props;
+      const clean: any = {};
+      for (const k of Object.keys(rest)) {
+        if (!/^(initial|animate|exit|transition|whileHover|whileTap|variants|layout)/.test(k)) {
+          clean[k] = rest[k];
+        }
+      }
+      return React.createElement(Tag, { ref, ...clean }, children);
+    });
+  // Cacheia por tag para identidade de componente estável (evita remontagem da
+  // subárvore a cada render, que invalidaria nós capturados nos testes).
+  const cache = new Map<string, any>();
+  return {
+    motion: new Proxy({}, {
+      get: (_t, p: any) => {
+        if (!cache.has(p)) cache.set(p, passthrough(p));
+        return cache.get(p);
+      },
+    }),
+    AnimatePresence: ({ children }: any) => React.createElement(React.Fragment, null, children),
+  };
+});
 
 // Mocking useIPValidation + useDevGate (ambos exportados via @/hooks/admin)
 vi.mock('@/hooks/admin', () => ({

@@ -58,7 +58,7 @@ const BridgeStatusBannerInner = memo(function BridgeStatusBannerInner() {
             className="h-7 w-7 text-destructive-foreground hover:bg-destructive-foreground/10"
             onClick={closeUnavailable}
             aria-label="Fechar aviso"
-            title={reason}
+            title={isAllowed ? reason : undefined}
           >
             <X className="h-3.5 w-3.5" aria-hidden />
           </Button>

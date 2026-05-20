@@ -1,12 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { QuoteBuilderStepper, QuoteBuilderStep } from '../../src/components/quotes/QuoteBuilderStepper';
+import { QuoteBuilderStepper } from '../../src/components/quotes/QuoteBuilderStepper';
 import '@testing-library/jest-dom';
 
 describe('QuoteBuilderStepper (UI Unit Tests)', () => {
-  const steps: QuoteBuilderStep[] = ['client', 'items', 'conditions', 'review'];
-
   describe('Visualização de Estados', () => {
     it('deve marcar a etapa ativa com as classes de destaque', () => {
       render(<QuoteBuilderStepper completedSteps={[]} activeStep="items" />);

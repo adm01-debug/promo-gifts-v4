@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { supabase } from '@/integrations/supabase/client';
 
 /**
@@ -6,6 +6,10 @@ import { supabase } from '@/integrations/supabase/client';
  * This ensures the bridge between frontend and simulation logic is intact.
  */
 describe('Simulation Orchestrator Integration', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   // We mock the fetch for edge function calls if we are in a pure unit test env,
   // but here we try to validate the invocation structure.
   

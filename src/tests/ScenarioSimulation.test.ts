@@ -10,10 +10,12 @@ describe('Real-World Scenario: Security & Validation Layer', () => {
   });
 
   it('Scenario 2: Complex Quote Creation with Shipping Logistics', () => {
-    // Testing the logic: FOB requires shippingCost, CIF does not
+    // Lógica do schema: "fob_pre" (FOB valor pré-negociado) exige shippingCost > 0;
+    // demais modalidades exigem shippingCost === 0.
     const validCIF = {
       clientId: 'c-1',
       contactId: 'ct-1',
+      paymentMethod: 'pix',
       paymentTerms: 'net30',
       deliveryTime: '10days',
       shippingType: 'cif',
@@ -24,10 +26,11 @@ describe('Real-World Scenario: Security & Validation Layer', () => {
     const invalidFOB = {
       clientId: 'c-1',
       contactId: 'ct-1',
+      paymentMethod: 'pix',
       paymentTerms: 'net30',
       deliveryTime: '10days',
-      shippingType: 'fob',
-      shippingCost: 0 // Should fail refine check
+      shippingType: 'fob_pre',
+      shippingCost: 0 // fob_pre exige > 0 → falha no refine
     };
     const fobResult = quoteFormSchema.safeParse(invalidFOB);
     expect(fobResult.success).toBe(false);
