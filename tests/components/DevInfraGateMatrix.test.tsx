@@ -20,10 +20,11 @@ describe('DevInfraGate Matrix — Parameterized Permission Tests', () => {
   });
 
   const testCases = [
-    { isAllowed: true,  isDev: true,  expectedVisible: true,  desc: 'Usuário Dev com permissão aprovada' },
-    { isAllowed: true,  isDev: false, expectedVisible: true,  desc: 'Usuário não-Dev mas com permissão aprovada (ex: override ou Admin)' },
-    { isAllowed: false, isDev: true,  expectedVisible: false, desc: 'Usuário Dev mas com permissão negada (ex: env gate desligado)' },
-    { isAllowed: false, isDev: false, expectedVisible: false, desc: 'Usuário comum com permissão negada' },
+    // Overlays dev são gated estritamente por isDev (isAllowed é ignorado).
+    { isAllowed: true,  isDev: true,  expectedVisible: true,  desc: 'Dev (isDev=true) → visível' },
+    { isAllowed: true,  isDev: false, expectedVisible: false, desc: 'Não-Dev com isAllowed=true → oculto (gate por isDev)' },
+    { isAllowed: false, isDev: true,  expectedVisible: true,  desc: 'Dev com isAllowed=false → visível (gate por isDev)' },
+    { isAllowed: false, isDev: false, expectedVisible: false, desc: 'Comum (isDev=false) → oculto' },
   ];
 
   it.each(testCases)('$desc -> visível: $expectedVisible', async ({ isAllowed, isDev, expectedVisible }) => {
