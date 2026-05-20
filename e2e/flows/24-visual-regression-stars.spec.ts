@@ -5,13 +5,8 @@ import { test, expect } from '@playwright/test';
  * e o brilho das estrelas permaneçam consistentes.
  */
 test.describe('Auth Page Visual Regression @smoke', () => {
-  // Ignoramos a dependência de auth para este teste específico de branding.
-  // reducedMotion:'no-preference' — o CI roda com 'reduce', mas o app só
-  // renderiza space-scene/estrelas/foguetes com motion habilitado
-  // (AuthBranding.tsx). O screenshot continua determinístico: o teste mocka
-  // Math.random e pausa as animações (animation-play-state: paused) antes do
-  // toHaveScreenshot.
-  test.use({ storageState: { cookies: [], origins: [] }, reducedMotion: 'no-preference' });
+  // Ignoramos a dependência de auth para este teste específico de branding
+  test.use({ storageState: { cookies: [], origins: [] } });
 
   test('should match visual snapshot for the space scene branding', async ({ page }) => {
     // 1. Mock do Math.random para garantir determinismo
@@ -22,7 +17,7 @@ test.describe('Auth Page Visual Regression @smoke', () => {
     });
 
     // 2. Navegação para área pública
-    await page.goto('/auth/login');
+    await page.goto('/login');
 
     // 3. Aguardar estabilização
     await expect(page.getByTestId('space-scene')).toBeVisible();
@@ -50,7 +45,7 @@ test.describe('Auth Page Visual Regression @smoke', () => {
   });
 
   test('should verify star brightness presence in DOM', async ({ page }) => {
-    await page.goto('/auth/login');
+    await page.goto('/login');
     const firstStar = page.getByTestId(/^star-breathing-/).first();
     await expect(firstStar).toBeVisible();
     
