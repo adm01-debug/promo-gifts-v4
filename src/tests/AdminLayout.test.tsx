@@ -96,17 +96,18 @@ describe("Admin Layout Standardization", () => {
     vi.clearAllMocks();
   });
 
-  it("AdminConexoesPage deve renderizar dentro do MainLayout (com sidebar)", async () => {
-    renderWithProviders(<AdminConexoesPage />);
-    // O MainLayout renderiza o sidebar. Verificamos se o mock do sidebar apareceu.
-    expect(await screen.findByTestId("sidebar", {}, { timeout: 3000 })).toBeInTheDocument();
-    // Verifica título da página para garantir que o conteúdo está lá
-    expect(screen.getAllByText(/Conexões/i).length).toBeGreaterThan(0);
+  // NOTA: o MainLayout/sidebar passou a ser aplicado no nível do router (não mais
+  // por página). Estes testes validam que as páginas renderizam seu conteúdo no
+  // container padronizado (max-w/mx-auto), responsabilidade que segue na página.
+  it("AdminConexoesPage renderiza conteúdo no container padronizado", async () => {
+    const { container } = renderWithProviders(<AdminConexoesPage />);
+    expect((await screen.findAllByText(/Conexões/i, {}, { timeout: 3000 })).length).toBeGreaterThan(0);
+    expect(container.querySelector('[class*="max-w-"]')).not.toBeNull();
   });
 
-  it("AdminConexoesStatusPage deve renderizar dentro do MainLayout (com sidebar)", async () => {
-    renderWithProviders(<AdminConexoesStatusPage />);
-    expect(await screen.findByTestId("sidebar", {}, { timeout: 3000 })).toBeInTheDocument();
-    expect(screen.getByText(/Status da sincronização/i)).toBeInTheDocument();
+  it("AdminConexoesStatusPage renderiza conteúdo no container padronizado", async () => {
+    const { container } = renderWithProviders(<AdminConexoesStatusPage />);
+    expect(await screen.findByText(/Status da sincronização/i, {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(container.querySelector('[class*="max-w-"]')).not.toBeNull();
   });
 });
