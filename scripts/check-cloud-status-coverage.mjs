@@ -20,7 +20,7 @@ const FILE_THRESHOLDS = {
     functions: 72,
     lines: 97,
   },
-  "src/hooks/useDevGate.ts": {
+  "src/hooks/admin/useDevGate.ts": {
     statements: 90,
     branches: 85,
     functions: 90,
