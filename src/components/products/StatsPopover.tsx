@@ -28,7 +28,7 @@ export function StatsPopover({ stats, isFiltered = false }: StatsPopoverProps) {
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-1.5 h-8"
+                className="gap-1.5 h-8 bg-card/40 backdrop-blur-md"
                 aria-label="Resumo de estatísticas do catálogo"
               >
                 <BarChart3 className="h-3.5 w-3.5" />
