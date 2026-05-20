@@ -9,7 +9,7 @@ import { visualizer } from "rollup-plugin-visualizer";
  * 
  * @see https://vitejs.dev/config/
  */
-export default defineConfig(async ({ mode }: { mode: string }) => {
+export default defineConfig(async ({ mode }) => {
   // ── GlitchTip / Sentry — upload de source maps ──────────────────────────────
   // Carregado DINAMICAMENTE e apenas quando SENTRY_AUTH_TOKEN está presente
   // (ativação manual). Sem o token, o @sentry/vite-plugin NÃO é importado: o build
