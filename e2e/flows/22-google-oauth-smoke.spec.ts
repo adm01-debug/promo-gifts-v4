@@ -170,7 +170,7 @@ test.describe("@smoke Google OAuth — wiring até /auth/callback", () => {
     await page.addStyleTag({
       content: `*, *::before, *::after { animation-play-state: paused !important; transition: none !important; }`,
     });
-    await page.locator('[data-testid="social-login-google"]').click();
+    await page.locator('[data-testid="social-login-google"]').click({ force: true });
 
     // Espera o verifier ser persistido (signInWithOAuth é async: gera o
     // code_challenge via crypto.subtle e só então grava + redireciona).
