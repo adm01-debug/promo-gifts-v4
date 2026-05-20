@@ -94,7 +94,9 @@ describe('SSOCallbackPage', () => {
     await waitFor(() => expect(navigateMock).toHaveBeenCalledTimes(1));
     const [to, opts] = navigateMock.mock.calls[0];
     expect(to).toMatch(/^\/login\?error=/);
-    expect(decodeURIComponent(String(to).split('error=')[1])).toBe('User cancelled');
+    // Formato estruturado: error={code}&error_description={msg}&hint=…
+    const params1 = new URLSearchParams(String(to).split('?')[1]);
+    expect(params1.get('error_description')).toBe('User cancelled');
     expect(opts).toEqual({ replace: true });
 
     const snap = JSON.parse(sessionStorage.getItem('__sso_last_flow')!);
@@ -112,7 +114,8 @@ describe('SSOCallbackPage', () => {
     try {
       renderAt('/auth/callback');
       await waitFor(() => expect(navigateMock).toHaveBeenCalledTimes(1));
-      expect(navigateMock.mock.calls[0][0]).toMatch(/\/login\?error=Boom/);
+      const params2 = new URLSearchParams(String(navigateMock.mock.calls[0][0]).split('?')[1]);
+      expect(params2.get('error_description')).toBe('Boom');
     } finally {
       window.location.hash = '';
       // restaura href se mudou
@@ -150,7 +153,9 @@ describe('SSOCallbackPage', () => {
     });
     renderAt('/auth/callback?code=expired');
     await waitFor(() => expect(navigateMock).toHaveBeenCalled());
-    expect(navigateMock.mock.calls[0][0]).toMatch(/\/login\?error=invalid_grant/);
+    // A mensagem do exchange ('invalid_grant') é preservada em error_description.
+    const params3b = new URLSearchParams(String(navigateMock.mock.calls[0][0]).split('?')[1]);
+    expect(params3b.get('error_description')).toBe('invalid_grant');
     expect(refreshSessionMock).not.toHaveBeenCalled();
   });
 
