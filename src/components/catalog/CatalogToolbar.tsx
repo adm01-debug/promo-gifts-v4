@@ -49,6 +49,7 @@ interface CatalogToolbarProps {
   selectionMode: boolean;
   onToggleSelectionMode: () => void;
   selectedCount?: number;
+  isTransitioning?: boolean;
 }
 
 export function CatalogToolbar({
