@@ -59,6 +59,7 @@ export const ProductCard = memo(forwardRef<HTMLElement, ProductCardProps>(functi
 }, ref) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { prefetchProduct } = usePrefetchProduct();
   const [isHovered, setIsHovered] = useState(false);
   const [collectionModalOpen, setCollectionModalOpen] = useState(false);
   const [collectionVariant, setCollectionVariant] = useState<{ color_name?: string | null; color_hex?: string | null; variant_id?: string | null; thumbnail?: string | null } | undefined>(undefined);
