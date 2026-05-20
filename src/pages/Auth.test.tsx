@@ -9,28 +9,28 @@ import { HelmetProvider } from 'react-helmet-async';
 // framer-motion: AnimatePresence "mode=wait" não resolve a saída em jsdom, então
 // o ramo entrante (forgot password) nunca monta. Renderiza tudo síncrono.
 vi.mock('framer-motion', () => {
-  const passthrough = (Tag: any) =>
-    React.forwardRef(function M(props: any, ref: any) {
+  const ANIM_PROP = /^(initial|animate|exit|transition|whileHover|whileTap|variants|layout)/;
+  const passthrough = (tag: string) =>
+    React.forwardRef<unknown, Record<string, unknown>>(function MotionMock(props, ref) {
       const { children, ...rest } = props;
-      const clean: any = {};
+      const clean: Record<string, unknown> = {};
       for (const k of Object.keys(rest)) {
-        if (!/^(initial|animate|exit|transition|whileHover|whileTap|variants|layout)/.test(k)) {
-          clean[k] = rest[k];
-        }
+        if (!ANIM_PROP.test(k)) clean[k] = rest[k];
       }
-      return React.createElement(Tag, { ref, ...clean }, children);
+      return React.createElement(tag, { ref, ...clean }, children as React.ReactNode);
     });
   // Cacheia por tag para identidade de componente estável (evita remontagem da
   // subárvore a cada render, que invalidaria nós capturados nos testes).
-  const cache = new Map<string, any>();
+  const cache = new Map<string, React.ComponentType<Record<string, unknown>>>();
   return {
-    motion: new Proxy({}, {
-      get: (_t, p: any) => {
-        if (!cache.has(p)) cache.set(p, passthrough(p));
-        return cache.get(p);
+    motion: new Proxy({} as Record<string, React.ComponentType<Record<string, unknown>>>, {
+      get: (_target, prop: string) => {
+        if (!cache.has(prop)) cache.set(prop, passthrough(prop));
+        return cache.get(prop);
       },
     }),
-    AnimatePresence: ({ children }: any) => React.createElement(React.Fragment, null, children),
+    AnimatePresence: ({ children }: { children: React.ReactNode }) =>
+      React.createElement(React.Fragment, null, children),
   };
 });
 
