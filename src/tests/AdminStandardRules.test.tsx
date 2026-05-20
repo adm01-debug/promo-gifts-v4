@@ -8,6 +8,39 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { HelmetProvider } from 'react-helmet-async';
 import React from 'react';
 
+// Evita chamadas de rede reais (supabase edge / fetch de IP) disparadas no
+// render de páginas admin, que geram unhandled rejections em ambientes sem
+// acesso externo ("Host not in allowlist") e fazem o vitest sair !=0.
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: {
+    auth: {
+      getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+      onAuthStateChange: vi.fn().mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } }),
+      getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
+    },
+    from: vi.fn(() => {
+      const q: Record<string, unknown> = {};
+      for (const m of ['select','insert','update','delete','eq','neq','like','ilike','gte','lte','in','is','order','limit','range','or']) {
+        q[m] = vi.fn(() => q);
+      }
+      q.single = vi.fn().mockResolvedValue({ data: null, error: null });
+      q.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+      q.then = (resolve: (v: { data: unknown[]; error: null }) => unknown) => resolve({ data: [], error: null });
+      return q;
+    }),
+    rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
+    functions: { invoke: vi.fn().mockResolvedValue({ data: null, error: null }) },
+    channel: vi.fn(() => ({ on: vi.fn().mockReturnThis(), subscribe: vi.fn().mockReturnThis(), unsubscribe: vi.fn().mockReturnThis() })),
+    removeChannel: vi.fn(),
+  },
+}));
+
+vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+  ok: true,
+  json: async () => ({ ip: '127.0.0.1' }),
+  text: async () => '',
+}));
+
 // Mock specific logic
 vi.mock('@/contexts/DevChallengeContext', () => ({
   DevChallengeProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
