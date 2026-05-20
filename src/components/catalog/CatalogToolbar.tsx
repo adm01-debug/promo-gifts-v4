@@ -60,8 +60,11 @@ export function CatalogToolbar({
   viewMode, setViewMode,
   gridColumns, setGridColumns,
   selectionMode, onToggleSelectionMode,
-  selectedCount = 0,
-}: CatalogToolbarProps) {
+    selectedCount = 0,
+    isTransitioning = false,
+  }: CatalogToolbarProps) {
+    const deferredIsTransitioning = useDeferredValue(isTransitioning);
+
   return (
     <div className="flex items-center justify-between gap-2 flex-wrap">
       <div className="flex items-center gap-2 flex-shrink-0">
