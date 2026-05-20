@@ -73,11 +73,17 @@ test.describe("@smoke Google OAuth — wiring até /auth/callback", () => {
   test("clique em 'Continuar com Google' dispara authorize com provider=google", async ({
     page,
   }) => {
-    // Captura a URL para onde o botão tenta navegar e aborta antes de bater no
-    // Google real — assim o spec roda offline e sem efeitos colaterais.
+    // Captura a URL de authorize por DOIS mecanismos (robustez): o redirect é
+    // uma navegação top-level cross-origin que pode escapar de um único
+    // mecanismo dependendo do timing do abort. `page.on('request')` é o mais
+    // amplo; o route handler também captura e aborta para não bater no Google.
     const authorizeUrls: string[] = [];
+    page.on("request", (req) => {
+      if (req.url().includes("/auth/v1/authorize")) authorizeUrls.push(req.url());
+    });
     await page.route(AUTHORIZE_GLOB, async (route) => {
-      authorizeUrls.push(route.request().url());
+      const u = route.request().url();
+      if (!authorizeUrls.includes(u)) authorizeUrls.push(u);
       await route.abort();
     });
 
@@ -116,6 +122,11 @@ test.describe("@smoke Google OAuth — wiring até /auth/callback", () => {
     // Sinaliza que a troca PKCE (code → token) realmente disparou e foi atendida.
     let pkceTokenExchanged = false;
 
+    // Aborta o redirect de authorize: vamos disparar o signInWithOAuth real só
+    // para que o PRÓPRIO app grave o code_verifier no storage (com a chave/
+    // storage corretos do supabase-js) — sem sair da página.
+    await page.route(AUTHORIZE_GLOB, (route) => route.abort());
+
     // 1. Mocka a troca code → token (PKCE exchange).
     await page.route(TOKEN_GLOB, async (route) => {
       const url = new URL(route.request().url());
@@ -149,30 +160,33 @@ test.describe("@smoke Google OAuth — wiring até /auth/callback", () => {
       });
     });
 
-    // 3. Visita o callback com um code fake (PKCE).
-    //    O SSOCallbackPage detecta `?code=` e chama exchangeCodeForSession,
-    //    que cai no nosso mock acima.
-    //    PKCE exige o code_verifier no storage (gravado no signInWithOAuth).
-    //    Como o teste pula direto pro callback (sem passar pelo botão), o
-    //    verifier não existe e o supabase-js aborta ANTES do POST /token —
-    //    nenhum mock dispara e o callback falha. Injetamos um verifier
-    //    não-vazio na chave canônica `sb-<ref>-auth-token-code-verifier`
-    //    (derivada do mesmo SUPABASE_URL usado nos globs) para o fluxo real
-    //    do callback alcançar o /token mockado.
-    const projectRef = new URL(SUPABASE_URL).hostname.split(".")[0];
-    await page.addInitScript(
-      ([key, verifier]) => {
-        try {
-          window.localStorage.setItem(key, verifier);
-        } catch {
-          /* storage indisponível no contexto — ignora */
-        }
-      },
-      [
-        `sb-${projectRef}-auth-token-code-verifier`,
-        "e2e-mock-pkce-verifier-0123456789abcdefghijklmnopqrstuvwxyz",
-      ] as const,
-    );
+    // 3. Faz o app GRAVAR o code_verifier do jeito certo: dispara o
+    //    signInWithOAuth real (botão Google). O supabase-js gera e persiste o
+    //    verifier no storage com sua própria chave antes do redirect (que
+    //    abortamos acima). Assim não dependemos de adivinhar `sb-<ref>-auth-
+    //    token-code-verifier` — usamos o storage real do app.
+    await gotoAndSettle(page, "/login");
+    await expectVisibleByTestId(page, "social-login-google");
+    await page.addStyleTag({
+      content: `*, *::before, *::after { animation-play-state: paused !important; transition: none !important; }`,
+    });
+    await page.locator('[data-testid="social-login-google"]').click();
+
+    // Espera o verifier ser persistido (signInWithOAuth é async: gera o
+    // code_challenge via crypto.subtle e só então grava + redireciona).
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() =>
+            Object.keys(window.localStorage).some((k) => k.endsWith("-code-verifier")),
+          ),
+        { timeout: 8_000 },
+      )
+      .toBe(true);
+
+    // 4. Agora visita o callback com um code fake (PKCE). O SSOCallbackPage
+    //    chama exchangeCodeForSession, que encontra o verifier gravado pelo app
+    //    e faz o POST /token (mockado acima).
     await page.goto("/auth/callback?code=e2e-mock-code", { waitUntil: "domcontentloaded" });
 
     // 4. O wiring do callback é "trocar o code por sessão". Validamos exatamente
