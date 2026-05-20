@@ -35,6 +35,31 @@ vi.mock("@/integrations/supabase/client", () => ({
   },
 }));
 
+// Stubs de filhos do Header com data-fetch/subscriptions próprios — fora do
+// escopo deste smoke test (que valida o JSX do próprio Header) e fonte de
+// effects sem fim em jsdom.
+vi.mock("@/components/OrganizationSwitcher", () => ({ OrganizationSwitcher: () => null }));
+vi.mock("@/components/inventory/StockAlertsIndicator", () => ({ StockAlertsIndicator: () => null }));
+vi.mock("@/components/notifications/NotificationDrawer", () => ({ NotificationBell: () => null }));
+vi.mock("@/components/admin/DiscountApprovalHeaderBadge", () => ({ DiscountApprovalHeaderBadge: () => null }));
+vi.mock("@/components/search/GlobalSearchPalette", () => ({ GlobalSearchPalette: () => null }));
+vi.mock("@/components/cart/CartHeaderButton", () => ({ CartHeaderButton: () => null }));
+
+// Stub do contexto de organização: o provider real faz fetch assíncrono que
+// trava o teste sem rede; um filho do Header consome useOrganization.
+vi.mock("@/contexts/OrganizationContext", () => ({
+  OrganizationProvider: ({ children }: { children: React.ReactNode }) => children,
+  useOrganization: () => ({
+    organizations: [],
+    currentOrg: null,
+    currentRole: null,
+    isLoading: false,
+    switchOrganization: vi.fn(),
+    createOrganization: vi.fn(),
+    refetch: vi.fn(),
+  }),
+}));
+
 // Mock do módulo de telemetria para evitar erros de importação ou execução em teste
 vi.mock("@/lib/telemetry/structuredLogger", () => ({
   createClientLogger: vi.fn(() => ({

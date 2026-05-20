@@ -89,8 +89,9 @@ export function MainLayout({ children }: MainLayoutProps) {
         
         <div className="flex-1 flex flex-col min-h-screen min-w-0 print:min-h-0 isolate">
           <Suspense fallback={<div style={{ height: 56 }} className="print:hidden" />}>
-            <Header 
+            <Header
               onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
+              sidebarOpen={sidebarOpen}
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
             />
