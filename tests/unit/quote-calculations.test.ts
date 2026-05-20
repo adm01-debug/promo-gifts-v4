@@ -132,13 +132,13 @@ describe('Cálculos de Orçamento (Unit Tests)', () => {
       expect(calculateRealDiscountPercent(33.33, 36.66, 5)).toBe(5.01);
     });
 
-    it('deve lidar com quantidades fracionadas com alta precisão', () => {
+    it('deve lidar com quantidades fracionadas arredondando para centavos', () => {
       const params = {
         quantity: 0.3333,
         unitPrice: 10.5555
       };
-      // 0.3333 * 10.5555 = 3.51814815
-      expect(calculateItemTotal(params)).toBeCloseTo(3.51814815, 8);
+      // 0.3333 * 10.5555 = 3.51814815 → arredondado para 2 casas (moeda) = 3.52
+      expect(calculateItemTotal(params)).toBeCloseTo(3.52, 2);
     });
   });
 });
