@@ -239,9 +239,19 @@ export function useCatalogState() {
     supplierSalesMap,
   });
 
+  const [lastNonTransitionedProducts, setLastNonTransitionedProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    if (!React.useDeferredValue(isTransitioning)) {
+      setLastNonTransitionedProducts(filteredProducts);
+    }
+  }, [filteredProducts, isTransitioning]);
+
+  const displayFilteredProducts = isTransitioning ? lastNonTransitionedProducts : filteredProducts;
+
   const rawPaginatedProducts = useMemo(
-    () => filteredProducts.slice(0, displayCount),
-    [filteredProducts, displayCount],
+    () => displayFilteredProducts.slice(0, displayCount),
+    [displayFilteredProducts, displayCount],
   );
 
   const hasColorFilterActive =
