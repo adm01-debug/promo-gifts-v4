@@ -111,6 +111,7 @@ export function useCatalogState() {
   const [isSearching, setIsSearching] = useState(false);
   const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const debouncedServerSearch = useDebounce(searchQuery, 400);
 
