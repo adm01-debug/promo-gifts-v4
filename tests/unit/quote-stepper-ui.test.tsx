@@ -17,7 +17,8 @@ describe('QuoteBuilderStepper (UI Unit Tests)', () => {
       const activeContainer = stepLabel.parentElement;
       const activeCircle = activeContainer?.querySelector('.rounded-full');
       expect(activeCircle).toHaveClass('bg-primary');
-      expect(activeCircle).toHaveClass('scale-110');
+      // Destaque da etapa ativa passou a usar ring/shadow (antes scale-110).
+      expect(activeCircle).toHaveClass('ring-4');
     });
 
     it('deve mostrar o ícone de Check em etapas completadas que não são a ativa', () => {
@@ -49,23 +50,26 @@ describe('QuoteBuilderStepper (UI Unit Tests)', () => {
       let connectors = document.querySelectorAll('.h-full.rounded-full.transition-all');
       expect(connectors[0]).toHaveClass('bg-border');
 
+      // Ordem atual: client(0) · conditions(1) · items(2) · personalization(3) · review(4).
+      // Conector i é bg-primary quando activeIndex > i.
       rerender(<QuoteBuilderStepper completedSteps={['client']} activeStep="items" />);
       connectors = document.querySelectorAll('.h-full.rounded-full.transition-all');
-      expect(connectors[0]).toHaveClass('bg-primary');
-      expect(connectors[1]).toHaveClass('bg-border');
+      expect(connectors[0]).toHaveClass('bg-primary'); // antes de conditions
+      expect(connectors[1]).toHaveClass('bg-primary'); // antes de items
+      expect(connectors[2]).toHaveClass('bg-border'); // depois de items
     });
 
     it('deve retroceder o estado visual da barra ao voltar etapas', () => {
-      const { rerender } = render(<QuoteBuilderStepper completedSteps={['client', 'items']} activeStep="conditions" />);
-      
+      const { rerender } = render(<QuoteBuilderStepper completedSteps={['client', 'conditions']} activeStep="items" />);
+
       let connectors = document.querySelectorAll('.h-full.rounded-full.transition-all');
       expect(connectors[0]).toHaveClass('bg-primary');
       expect(connectors[1]).toHaveClass('bg-primary');
 
-      rerender(<QuoteBuilderStepper completedSteps={['client']} activeStep="items" />);
+      rerender(<QuoteBuilderStepper completedSteps={['client']} activeStep="conditions" />);
       connectors = document.querySelectorAll('.h-full.rounded-full.transition-all');
-      expect(connectors[0]).toHaveClass('bg-primary');
-      expect(connectors[1]).toHaveClass('bg-border');
+      expect(connectors[0]).toHaveClass('bg-primary'); // antes de conditions (activeIndex 1 > 0)
+      expect(connectors[1]).toHaveClass('bg-border'); // antes de items (1 > 1 = false)
     });
 
     it('deve manter todas as conexões anteriores como ativas se estiver na última etapa', () => {

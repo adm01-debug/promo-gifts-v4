@@ -137,8 +137,8 @@ describe('Cálculos de Orçamento (Unit Tests)', () => {
         quantity: 0.3333,
         unitPrice: 10.5555
       };
-      // 0.3333 * 10.5555 = 3.51814815
-      expect(calculateItemTotal(params)).toBeCloseTo(3.51814815, 8);
+      // 0.3333 * 10.5555 = 3.51814815, arredondado a centavos (cent rounding) = 3.52
+      expect(calculateItemTotal(params)).toBe(3.52);
     });
   });
 });
