@@ -20,11 +20,11 @@ describe('DevInfraGate Matrix — Parameterized Permission Tests', () => {
   });
 
   const testCases = [
-    // Overlays dev são gated estritamente por isDev (isAllowed é ignorado).
-    { isAllowed: true,  isDev: true,  expectedVisible: true,  desc: 'Dev (isDev=true) → visível' },
-    { isAllowed: true,  isDev: false, expectedVisible: false, desc: 'Não-Dev com isAllowed=true → oculto (gate por isDev)' },
-    { isAllowed: false, isDev: true,  expectedVisible: true,  desc: 'Dev com isAllowed=false → visível (gate por isDev)' },
-    { isAllowed: false, isDev: false, expectedVisible: false, desc: 'Comum (isDev=false) → oculto' },
+    // Overlays dev são gated pelo SSOT isAllowed (role dev OU override env/localStorage).
+    { isAllowed: true,  isDev: true,  expectedVisible: true,  desc: 'Dev + gate aberto → visível' },
+    { isAllowed: true,  isDev: false, expectedVisible: true,  desc: 'Não-Dev com isAllowed=true (override) → visível' },
+    { isAllowed: false, isDev: true,  expectedVisible: false, desc: 'Dev com isAllowed=false (gate fechado) → oculto' },
+    { isAllowed: false, isDev: false, expectedVisible: false, desc: 'Comum (isAllowed=false) → oculto' },
   ];
 
   it.each(testCases)('$desc -> visível: $expectedVisible', async ({ isAllowed, isDev, expectedVisible }) => {

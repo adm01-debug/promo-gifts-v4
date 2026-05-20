@@ -11,9 +11,10 @@ import { lazyWithRetry } from '@/lib/lazyWithRetry';
 const Overlay = lazyWithRetry(() => import('./BridgeMetricsOverlay'));
 
 export function DevOnlyBridgeOverlay() {
-  // Restrito EXCLUSIVAMENTE a usuários com role `dev` real — admin/supervisor não veem.
+  // Gate SSOT (isAllowed): role dev OU override de env/localStorage. Permite
+  // habilitar o overlay de infra fora do papel dev quando o gate SSOT autoriza.
   return (
-    <DevOnly strict>
+    <DevOnly>
       <Suspense fallback={null}>
         <Overlay />
       </Suspense>
