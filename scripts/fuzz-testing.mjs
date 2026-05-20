@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
-import * as dotenv from 'dotenv';
 
-dotenv.config();
+// dotenv é opcional (conveniência local); o CI injeta env vars diretamente.
+try { (await import('dotenv')).config(); } catch { /* sem dotenv: usa env do ambiente */ }
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;

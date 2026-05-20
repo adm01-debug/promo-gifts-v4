@@ -1,8 +1,14 @@
-import * as dotenv from 'dotenv';
-dotenv.config();
+// dotenv é opcional (conveniência local); o CI injeta env vars diretamente.
+try { (await import('dotenv')).config(); } catch { /* sem dotenv: usa env do ambiente */ }
 
-const SUPABASE_URL = process.env.SUPABASE_URL || "https://pqpdolkaeqlyzpdpbizo.supabase.co";
-const SERVICE_ROLE_KEY = "a46c3981-244a-4f81-9f57-bab5c45b5cde";
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+// Teste de carga real exige credenciais; sem elas (ex.: CI de PR), pula.
+if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+  console.log("⚠️ Credenciais ausentes. Pulando Teste de Carga real.");
+  process.exit(0);
+}
 
 const CONCURRENCY = 5;
 const TOTAL_REQUESTS = 25;
