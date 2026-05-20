@@ -93,8 +93,10 @@ describe('SSOCallbackPage', () => {
     renderAt('/auth/callback?error=access_denied&error_description=User+cancelled');
     await waitFor(() => expect(navigateMock).toHaveBeenCalledTimes(1));
     const [to, opts] = navigateMock.mock.calls[0];
-    expect(to).toMatch(/^\/login\?error=/);
-    expect(decodeURIComponent(String(to).split('error=')[1])).toBe('User cancelled');
+    const url = new URL(String(to), 'http://localhost');
+    expect(url.pathname).toBe('/login');
+    expect(url.searchParams.get('error')).toBe('access_denied');
+    expect(url.searchParams.get('error_description')).toBe('User cancelled');
     expect(opts).toEqual({ replace: true });
 
     const snap = JSON.parse(sessionStorage.getItem('__sso_last_flow')!);
@@ -112,7 +114,10 @@ describe('SSOCallbackPage', () => {
     try {
       renderAt('/auth/callback');
       await waitFor(() => expect(navigateMock).toHaveBeenCalledTimes(1));
-      expect(navigateMock.mock.calls[0][0]).toMatch(/\/login\?error=Boom/);
+      const url = new URL(String(navigateMock.mock.calls[0][0]), 'http://localhost');
+      expect(url.pathname).toBe('/login');
+      expect(url.searchParams.get('error')).toBe('server_error');
+      expect(url.searchParams.get('error_description')).toBe('Boom');
     } finally {
       window.location.hash = '';
       // restaura href se mudou
@@ -150,7 +155,11 @@ describe('SSOCallbackPage', () => {
     });
     renderAt('/auth/callback?code=expired');
     await waitFor(() => expect(navigateMock).toHaveBeenCalled());
-    expect(navigateMock.mock.calls[0][0]).toMatch(/\/login\?error=invalid_grant/);
+    // A mensagem do exchange ('invalid_grant') vai para error_description; o
+    // code normalizado pelo explainer é 'unknown' (não bate nenhuma keyword).
+    const url = new URL(String(navigateMock.mock.calls[0][0]), 'http://localhost');
+    expect(url.pathname).toBe('/login');
+    expect(url.searchParams.get('error_description')).toContain('invalid_grant');
     expect(refreshSessionMock).not.toHaveBeenCalled();
   });
 
