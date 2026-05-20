@@ -108,7 +108,7 @@ export function ProductGridSkeleton({
   columns = 5,
 }: ProductGridSkeletonProps) {
   return (
-    <div className={cn("grid", getGridColsClass(columns), getGridGapClass(columns), "will-change-transform")}>
+    <div className={cn("grid", getGridColsClass(columns), columns >= 8 ? 'gap-x-4 gap-y-8' : columns >= 6 ? 'gap-x-6 gap-y-8' : 'gap-x-4 sm:gap-x-6 lg:gap-x-8 gap-y-8', "will-change-transform")}>
       {[...Array(count)].map((_, i) => (
         <div
           key={i}
