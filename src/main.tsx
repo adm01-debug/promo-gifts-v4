@@ -39,9 +39,8 @@ createRoot(root).render(
   </Fragment>
 );
 
-// Service Worker disabled in all environments to resolve 412 caching issues
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(registrations => {
-    registrations.forEach(r => r.unregister());
-  });
+// Register Service Worker for PWA support
+// Performance Note: This enables caching and offline support
+if (import.meta.env.PROD) {
+  registerServiceWorker();
 }
