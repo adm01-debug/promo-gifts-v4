@@ -40,7 +40,9 @@ export const quoteService = {
       .from('quotes')
       .select('*')
       .eq('id', quoteId)
-      .single();
+      // maybeSingle: 0 linhas é caso válido (orçamento inexistente) → null, não exceção.
+      // .single() lançaria PGRST116 e o `return null` abaixo nunca seria atingido.
+      .maybeSingle();
 
     if (qErr) throw qErr;
     if (!quoteData) return null;

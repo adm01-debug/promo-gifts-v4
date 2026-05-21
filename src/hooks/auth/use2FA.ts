@@ -47,7 +47,7 @@ export function use2FA(targetUserId?: string) {
 
   const generateSecret = useCallback((email: string): { secret: string; uri: string } => {
     const totp = new OTPAuth.TOTP({
-       issuer: 'Promo Gifts',
+      issuer: 'Promo Gifts',
       label: email,
       algorithm: 'SHA1',
       digits: 6,
@@ -57,7 +57,7 @@ export function use2FA(targetUserId?: string) {
 
     const secret = totp.secret.base32;
     const uri = totp.toString();
-    
+
     setPendingSecret(secret);
     return { secret, uri };
   }, []);
@@ -72,7 +72,7 @@ export function use2FA(targetUserId?: string) {
         period: 30,
         secret: OTPAuth.Secret.fromBase32(secret),
       });
-      
+
       const delta = totp.validate({ token, window: 1 });
       return delta !== null;
     } catch {
@@ -80,25 +80,24 @@ export function use2FA(targetUserId?: string) {
     }
   }, []);
 
-  const enable2FA = useCallback(async (token: string): Promise<{ success: boolean; error?: string }> => {
-    if (!effectiveUserId || !pendingSecret) {
-      return { success: false, error: 'Nenhum secret pendente' };
-    }
+  const enable2FA = useCallback(
+    async (token: string): Promise<{ success: boolean; error?: string }> => {
+      if (!effectiveUserId || !pendingSecret) {
+        return { success: false, error: 'Nenhum secret pendente' };
+      }
 
-    // Verificar token antes de salvar
-    if (!verifyToken(pendingSecret, token)) {
-      return { success: false, error: 'Código inválido' };
-    }
+      // Verificar token antes de salvar
+      if (!verifyToken(pendingSecret, token)) {
+        return { success: false, error: 'Código inválido' };
+      }
 
-    try {
-      // Gerar códigos de backup
-      const backupCodes = Array.from({ length: 8 }, () => 
-        Math.random().toString(36).substring(2, 10).toUpperCase()
-      );
+      try {
+        // Gerar códigos de backup
+        const backupCodes = Array.from({ length: 8 }, () =>
+          Math.random().toString(36).substring(2, 10).toUpperCase(),
+        );
 
-      const { error } = await supabase
-        .from('user_2fa_settings')
-        .upsert({
+        const { error } = await supabase.from('user_2fa_settings').upsert({
           user_id: effectiveUserId,
           totp_secret: pendingSecret,
           is_enabled: true,
@@ -106,61 +105,72 @@ export function use2FA(targetUserId?: string) {
           enabled_at: new Date().toISOString(),
         });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      setPendingSecret(null);
-      await fetchSettings();
-      
-      return { success: true };
-    } catch (error: unknown) {
-      return { success: false, error: error instanceof Error ? error.message : 'Erro desconhecido' };
-    }
-  }, [effectiveUserId, pendingSecret, verifyToken, fetchSettings]);
+        setPendingSecret(null);
+        await fetchSettings();
 
-  const disable2FA = useCallback(async (token?: string): Promise<{ success: boolean; error?: string }> => {
-    if (!effectiveUserId) {
-      return { success: false, error: 'Usuário não autenticado' };
-    }
+        return { success: true };
+      } catch (error: unknown) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Erro desconhecido',
+        };
+      }
+    },
+    [effectiveUserId, pendingSecret, verifyToken, fetchSettings],
+  );
 
-    try {
-      // Buscar secret atual
-      const { data: currentSettings } = await supabase
-        .from('user_2fa_settings')
-        .select('totp_secret')
-        .eq('user_id', effectiveUserId)
-        .single();
-
-      if (!currentSettings?.totp_secret) {
-        return { success: false, error: '2FA não está habilitado' };
+  const disable2FA = useCallback(
+    async (token?: string): Promise<{ success: boolean; error?: string }> => {
+      if (!effectiveUserId) {
+        return { success: false, error: 'Usuário não autenticado' };
       }
 
-      // Se token fornecido, verificar. Admin pode desativar sem token se targetUserId diferente
-      if (token) {
-        if (!verifyToken(currentSettings.totp_secret, token)) {
-          return { success: false, error: 'Código inválido' };
+      try {
+        // Buscar secret atual
+        const { data: currentSettings } = await supabase
+          .from('user_2fa_settings')
+          .select('totp_secret')
+          .eq('user_id', effectiveUserId)
+          .maybeSingle();
+
+        if (!currentSettings?.totp_secret) {
+          return { success: false, error: '2FA não está habilitado' };
         }
-      } else if (!targetUserId) {
-        return { success: false, error: 'Código necessário' };
+
+        // Se token fornecido, verificar. Admin pode desativar sem token se targetUserId diferente
+        if (token) {
+          if (!verifyToken(currentSettings.totp_secret, token)) {
+            return { success: false, error: 'Código inválido' };
+          }
+        } else if (!targetUserId) {
+          return { success: false, error: 'Código necessário' };
+        }
+
+        const { error } = await supabase
+          .from('user_2fa_settings')
+          .update({
+            is_enabled: false,
+            totp_secret: null,
+            backup_codes: null,
+            enabled_at: null,
+          })
+          .eq('user_id', effectiveUserId);
+
+        if (error) throw error;
+
+        await fetchSettings();
+        return { success: true };
+      } catch (error: unknown) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Erro desconhecido',
+        };
       }
-
-      const { error } = await supabase
-        .from('user_2fa_settings')
-        .update({
-          is_enabled: false,
-          totp_secret: null,
-          backup_codes: null,
-          enabled_at: null,
-        })
-        .eq('user_id', effectiveUserId);
-
-      if (error) throw error;
-
-      await fetchSettings();
-      return { success: true };
-    } catch (error: unknown) {
-      return { success: false, error: error instanceof Error ? error.message : 'Erro desconhecido' };
-    }
-  }, [effectiveUserId, targetUserId, verifyToken, fetchSettings]);
+    },
+    [effectiveUserId, targetUserId, verifyToken, fetchSettings],
+  );
 
   return {
     settings,
