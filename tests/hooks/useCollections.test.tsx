@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
-import { useCollections } from '@/hooks/useCollections';
+import { useCollections } from '@/hooks/collections/useCollections';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Mock AuthContext so useCollections can call useAuth

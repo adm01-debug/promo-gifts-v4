@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import React from 'react';
-import { useCollections, type CollectionVariantInfo, type Collection } from '@/hooks/useCollections';
+import { useCollections, type CollectionVariantInfo, type Collection } from '@/hooks/collections/useCollections';
 
 // Mock AuthContext so useCollections can call useAuth
 vi.mock("@/contexts/AuthContext", () => ({

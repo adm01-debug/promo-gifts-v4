@@ -38,7 +38,7 @@ vi.mock("@/contexts/AuthContext", () => ({
 
 describe("useWorkspaceNotifications", () => {
   it("should export the hook function", async () => {
-    const mod = await import("@/hooks/useWorkspaceNotifications");
+    const mod = await import("@/hooks/ui/useWorkspaceNotifications");
     expect(mod.useWorkspaceNotifications).toBeDefined();
     expect(typeof mod.useWorkspaceNotifications).toBe("function");
   });

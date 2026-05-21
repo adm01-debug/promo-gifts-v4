@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import QuoteBuilderPage from '../../src/pages/QuoteBuilderPage';
+import QuoteBuilderPage from '../../src/pages/quotes/QuoteBuilderPage';
 import { TooltipProvider } from '../../src/components/ui/tooltip';
 import { HelmetProvider } from 'react-helmet-async';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -68,7 +68,7 @@ vi.mock('../../src/components/layout/MainLayout', () => ({
 }));
 
 // Mock do hook useQuotes para evitar chamadas externas de técnicas
-vi.mock('../../src/hooks/useQuotes', () => ({
+vi.mock('../../src/hooks/quotes/useQuotes', () => ({
   useQuotes: () => ({
     createQuote: vi.fn().mockResolvedValue({ id: 'q123' }),
     updateQuote: vi.fn().mockResolvedValue({ id: 'q123' }),

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { migratePayload } from '../../src/hooks/useAutoSaveQuote';
+import { migratePayload } from '../../src/hooks/quotes/useAutoSaveQuote';
 
 describe('AutoSave Migration (Unit Tests)', () => {
   const CURRENT_VERSION = 2;

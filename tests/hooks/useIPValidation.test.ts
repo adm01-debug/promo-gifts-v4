@@ -7,7 +7,7 @@ import "../components/render-helpers"; // mocks globais
 import { act } from "@testing-library/react";
 import { renderHookWithProviders } from "./_helpers/render-hook-providers";
 import { mockFunctionsInvoke, resetSupabaseMocks } from "./_helpers/mock-supabase-builder";
-import { useIPValidation } from "@/hooks/useIPValidation";
+import { useIPValidation } from "@/hooks/admin/useIPValidation";
 
 beforeEach(() => {
   resetSupabaseMocks();

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import ComparePage from '../../src/pages/ComparePage';
+import ComparePage from '../../src/pages/products/ComparePage';
 import { useComparisonStore } from '../../src/stores/useComparisonStore';
 import { TooltipProvider } from '../../src/components/ui/tooltip';
 import { HelmetProvider } from 'react-helmet-async';
@@ -91,7 +91,7 @@ vi.mock('recharts', () => ({
   Line: () => <div />,
 }));
 
-vi.mock('../../src/hooks/useComparisonScore', () => ({
+vi.mock('../../src/hooks/comparison/useComparisonScore', () => ({
   useComparisonScore: (products: any[]) => (products || []).map(p => ({
     productId: String(p.id), total: 80, score: 80, isWinner: true, rank: 1,
     breakdown: { price: 35, stock: 20, minQuantity: 15, colorVariety: 10, verifiedSupplier: 10, leadTime: 10 }

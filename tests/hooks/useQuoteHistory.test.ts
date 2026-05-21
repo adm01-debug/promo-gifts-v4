@@ -6,7 +6,7 @@ import "../components/render-helpers";
 import { act } from "@testing-library/react";
 import { renderHookWithProviders } from "./_helpers/render-hook-providers";
 import { mockFromOnce, resetSupabaseMocks } from "./_helpers/mock-supabase-builder";
-import { useQuoteHistory } from "@/hooks/useQuoteHistory";
+import { useQuoteHistory } from "@/hooks/quotes/useQuoteHistory";
 
 beforeEach(() => {
   resetSupabaseMocks();

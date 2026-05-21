@@ -3,7 +3,7 @@
  * We test the exported findKnownHex + replicate internal pure functions for coverage.
  */
 import { describe, it, expect } from 'vitest';
-import { findKnownHex } from '@/hooks/productss';
+import { findKnownHex } from '@/hooks/products/useProducts';
 
 // Replicate internal helpers for testing
 function detectColorGroup(colorName: string): string {

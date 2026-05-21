@@ -1,4 +1,4 @@
-import type { TestResult } from "@/hooks/useConnectionTester";
+import type { TestResult } from "@/hooks/intelligence/useConnectionTester";
 import type { LastTestInfo } from "@/components/admin/connections/LastTestLine";
 
 export function makeTimeoutResult(overrides: Partial<TestResult> = {}): TestResult {

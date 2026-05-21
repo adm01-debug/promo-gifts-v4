@@ -4,7 +4,7 @@
 import { describe, it, expect } from "vitest";
 import { act } from "@testing-library/react";
 import { renderHookWithProviders } from "./_helpers/render-hook-providers";
-import { useUrlState, useUrlBoolean } from "@/hooks/useUrlState";
+import { useUrlState, useUrlBoolean } from "@/hooks/common/useUrlState";
 
 describe("useUrlState", () => {
   it("retorna defaultValue quando param ausente", () => {

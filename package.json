@@ -18,7 +18,7 @@
     "coverage": "vitest run --coverage",
     "test:price-freshness": "bash -c 'set -euo pipefail; files=( tests/utils/price-freshness*.test.ts tests/components/PriceFreshnessBadge*.test.tsx ); vitest run \"${files[@]}\" --coverage --coverage.reporter=text --coverage.reporter=json-summary --coverage.reporter=html --coverage.include=src/utils/price-freshness.ts --coverage.include=src/components/products/PriceFreshnessBadge.tsx --coverage.thresholds.statements=0 --coverage.thresholds.branches=0 --coverage.thresholds.functions=0 --coverage.thresholds.lines=0 && node scripts/check-price-freshness-coverage.mjs'",
     "test:cloud-status": "vitest run tests/components/CloudStatusBanner.test.tsx tests/hooks/useDevGate.test.ts",
-    "test:cloud-status-coverage": "vitest run tests/components/CloudStatusBanner.test.tsx tests/hooks/useDevGate.test.ts --coverage --coverage.reporter=text --coverage.reporter=json-summary --coverage.include=src/components/system/CloudStatusBanner.tsx --coverage.include=src/hooks/useDevGate.ts && node scripts/check-cloud-status-coverage.mjs",
+    "test:cloud-status-coverage": "vitest run tests/components/CloudStatusBanner.test.tsx tests/hooks/useDevGate.test.ts --coverage --coverage.reporter=text --coverage.reporter=json-summary --coverage.include=src/components/system/CloudStatusBanner.tsx --coverage.include=src/hooks/admin/useDevGate.ts && node scripts/check-cloud-status-coverage.mjs",
     "lint": "node scripts/check-tsc-baseline.mjs",
     "lint:check": "eslint src --max-warnings=500",
     "lint:baseline": "node scripts/check-eslint-baseline.mjs",

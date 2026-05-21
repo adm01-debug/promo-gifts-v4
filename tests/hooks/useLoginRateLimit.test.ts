@@ -6,7 +6,7 @@ import {
   checkLoginAllowed,
   recordFailedAttempt,
   clearLoginAttempts,
-} from "@/hooks/useLoginRateLimit";
+} from "@/lib/auth/rate-limit";
 
 beforeEach(() => {
   sessionStorage.clear();

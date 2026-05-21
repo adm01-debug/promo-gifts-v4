@@ -5,7 +5,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import "../components/render-helpers";
 import { act, waitFor } from "@testing-library/react";
 import { renderHookWithProviders } from "./_helpers/render-hook-providers";
-import { useComparisonWeights, DEFAULT_WEIGHTS } from "@/hooks/useComparisonWeights";
+import { useComparisonWeights, DEFAULT_WEIGHTS } from "@/hooks/comparison/useComparisonWeights";
 import { supabase } from "@/integrations/supabase/client";
 
 beforeEach(() => {
