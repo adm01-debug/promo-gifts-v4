@@ -185,7 +185,7 @@ export const ProductCard = memo(forwardRef<HTMLElement, ProductCardProps>(functi
         "transition-all duration-300 ease-out active:scale-[0.98] active:transition-transform active:duration-100 touch-manipulation",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
         product.featured && "ring-2 ring-primary/20 shadow-lg",
-        hasHighlightedColor ? "border-2" : "border-[1.5px] border-primary/20 hover:border-primary/50 hover:shadow-xl",
+        hasHighlightedColor ? "border-2 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.1)]" : "border-border/40 hover:border-primary/40 hover:shadow-[0_20px_40px_-20px_rgba(0,0,0,0.15)]",
       )}
       style={hasHighlightedColor && matchedHighlightColor ? {
         borderColor: `${matchedHighlightColor}70`,
