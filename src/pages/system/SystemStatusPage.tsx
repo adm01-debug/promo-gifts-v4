@@ -50,6 +50,9 @@ const CRM_CRITICAL_TABLES = [
 ];
 
 export default function SystemStatusPage() {
+  const { user, roles, currentAAL } = useAuth();
+  const { actualTheme } = useTheme();
+  const location = useLocation();
   const [statuses, setStatuses] = useState<StatusItem[]>([]);
   const [crmTables, setCrmTables] = useState<CrmTableCheck[]>([]);
   const [rlsChecks, setRlsChecks] = useState<any[]>([]);
@@ -63,8 +66,8 @@ export default function SystemStatusPage() {
     jwtValid: boolean;
   }>({ url: "", hasAnon: false, sessionType: "Nenhum", jwtValid: false });
 
-  const appVersion = "2.0.0";
-  const buildDate = "2026-01-05";
+  const appVersion = "2.1.0-diagnostic";
+  const buildDate = new Date().toISOString().split('T')[0];
 
   const runHealthCheck = async () => {
     setIsChecking(true);
