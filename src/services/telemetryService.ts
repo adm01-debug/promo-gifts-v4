@@ -43,13 +43,18 @@ class TelemetryService {
   }
 
   async logError(name: string, error: any, metadata?: Record<string, any>) {
+    // Captura stack trace detalhado para facilitar depuração de crashes
+    const stack = error?.stack || new Error().stack;
+    
     return this.log({
       event_type: 'error',
       name,
       metadata: {
         message: error?.message || String(error),
-        stack: error?.stack,
-        ...metadata
+        stack,
+        context_data: metadata,
+        pathname: window.location.pathname,
+        timestamp: new Date().toISOString()
       }
     });
   }
