@@ -170,7 +170,7 @@ export const Header = React.memo(function Header({ onMenuToggle, searchQuery, on
         </div>
 
         {/* ══════ Center section — Global Search (#4 expandida) ══════ */}
-        <div className="flex-1 max-w-lg mx-4 hidden md:block" data-tour="search">
+        <div className="flex-1 max-w-2xl mx-6 hidden md:block" data-tour="search">
           <GlobalSearchPalette />
         </div>
 
