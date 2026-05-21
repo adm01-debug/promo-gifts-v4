@@ -300,7 +300,7 @@ export const ProductCard = memo(forwardRef<HTMLElement, ProductCardProps>(functi
         <h3
           data-testid="product-card-name"
           data-product-name={product.name}
-          className="font-display font-semibold text-foreground line-clamp-2 min-h-[2.25rem] sm:min-h-[2.75rem] text-sm sm:text-base leading-snug group-hover:text-primary transition-colors duration-300"
+          className="font-display font-bold text-foreground line-clamp-2 min-h-[2.25rem] sm:min-h-[2.75rem] text-sm sm:text-base leading-tight group-hover:text-primary transition-colors duration-300 tracking-tight"
         >
           {product.name}
         </h3>
