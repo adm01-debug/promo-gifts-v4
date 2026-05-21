@@ -34,7 +34,7 @@ export function AppLogo({
           "shrink-0 transition-transform duration-500 hover:scale-110",
           iconClassName?.includes('h-20') ? "h-12 w-12" : 
           iconClassName?.includes('h-14') ? "h-8 w-8" : 
-          variant === 'sidebar' ? "h-5 w-5" : "h-6 w-6",
+          variant === 'sidebar' ? "h-5.5 w-5.5" : "h-6.5 w-6.5",
           iconColor
         )} />
         <Sparkles className="absolute top-0 right-0 h-3 w-3 text-white/40 animate-pulse" />
