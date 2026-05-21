@@ -311,7 +311,12 @@ test.describe("@smoke Rotas públicas (gate de CI)", () => {
     await page.goto("/login");
     await page.fill(Sel.login.email, "smoke-fake@example.com");
     await page.fill(Sel.login.password, "SenhaErrada@2025!");
-    await page.locator(Sel.login.submit).first().click();
+    // The submit button uses Tailwind `hover:-translate-y-0.5` so Playwright's
+    // actionability check ("element is stable") flakes on slow CI runners that
+    // catch the hover transform mid-frame. `force: true` skips that check —
+    // safe here because we resolved the locator explicitly and the test asserts
+    // the post-click URL/state.
+    await page.locator(Sel.login.submit).first().click({ force: true });
     await expect(page).toHaveURL(/\/login/, { timeout: 8_000 });
     await expect(page.locator(Sel.login.submit).first()).toBeEnabled({ timeout: 15_000 });
   });
