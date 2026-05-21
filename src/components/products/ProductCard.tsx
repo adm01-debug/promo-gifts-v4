@@ -185,7 +185,7 @@ export const ProductCard = memo(forwardRef<HTMLElement, ProductCardProps>(functi
         "transition-all duration-300 ease-out active:scale-[0.98] active:transition-transform active:duration-100 touch-manipulation",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
         product.featured && "ring-2 ring-primary/20 shadow-lg",
-        hasHighlightedColor ? "border-2" : "border-[1.5px] border-primary/20 hover:border-primary/50 hover:shadow-xl",
+        hasHighlightedColor ? "border-2 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.1)]" : "border-border/40 hover:border-primary/40 hover:shadow-[0_20px_40px_-20px_rgba(0,0,0,0.15)]",
       )}
       style={hasHighlightedColor && matchedHighlightColor ? {
         borderColor: `${matchedHighlightColor}70`,
@@ -279,18 +279,18 @@ export const ProductCard = memo(forwardRef<HTMLElement, ProductCardProps>(functi
 
       {/* Info section */}
       <div className={cn(
-        "relative p-2.5 sm:p-4 space-y-2 sm:space-y-3 transition-all duration-500",
-        isHovered ? "bg-card/95 backdrop-blur-md translate-y-[-4px]" : "bg-card"
+        "relative p-3 sm:p-5 space-y-2.5 sm:space-y-4 transition-all duration-500",
+        isHovered ? "bg-background/95 backdrop-blur-md translate-y-[-2px]" : "bg-background"
       )} style={{ zIndex: 10 }}>
         {!hideCategoryBadges && (
           <ProductCategoryBadges category={product.category} groups={product.groups} categoryUuid={product.category_id} className="flex-wrap" />
         )}
 
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[10px] sm:text-xs text-muted-foreground font-mono truncate">{product.sku}</span>
-          <div className="flex items-center gap-1 shrink-0">
+          <span className="text-[10px] sm:text-xs text-muted-foreground font-mono tracking-tighter opacity-60 group-hover:opacity-100 transition-opacity">{product.sku}</span>
+          <div className="flex items-center gap-1.5 shrink-0">
             <GenderBadge gender={product.gender} size="sm" />
-            <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground font-medium truncate max-w-[120px] flex items-center gap-1">
+            <span className="text-[10px] sm:text-xs px-2 py-0.5 rounded-lg bg-muted text-muted-foreground font-semibold truncate max-w-[120px] flex items-center gap-1.5 border border-border/20">
               <Building2 className={cn("h-3 w-3 shrink-0", getSupplierColors(product.supplier.name).text)} />
               {product.supplier.name}
             </span>
@@ -300,7 +300,7 @@ export const ProductCard = memo(forwardRef<HTMLElement, ProductCardProps>(functi
         <h3
           data-testid="product-card-name"
           data-product-name={product.name}
-          className="font-display font-semibold text-foreground line-clamp-2 min-h-[2.25rem] sm:min-h-[2.75rem] text-sm sm:text-base leading-snug group-hover:text-primary transition-colors duration-300"
+          className="font-display font-bold text-foreground line-clamp-2 min-h-[2.25rem] sm:min-h-[2.75rem] text-sm sm:text-base leading-tight group-hover:text-primary transition-colors duration-300 tracking-tight"
         >
           {product.name}
         </h3>
@@ -312,8 +312,8 @@ export const ProductCard = memo(forwardRef<HTMLElement, ProductCardProps>(functi
           return (
             <div className="flex items-end justify-between pt-0.5 sm:pt-1">
               <div>
-                <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5">A partir de</p>
-                <span className="text-base sm:text-xl font-display font-bold text-foreground inline-flex items-center gap-1.5">
+                <p className="text-[10px] sm:text-[11px] text-muted-foreground font-medium mb-0.5 opacity-70">A partir de</p>
+                <span className="text-base sm:text-2xl font-display font-black text-foreground inline-flex items-center gap-2 tracking-tight">
                   {formatPrice(product.price)}
                   <PriceFreshnessBadge
                     priceUpdatedAt={product.priceUpdatedAt}

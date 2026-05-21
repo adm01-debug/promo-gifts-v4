@@ -319,12 +319,12 @@ export const SidebarReorganized = React.memo(
         aria-label="Menu principal"
         style={{ ['--sidebar-w' as string]: isCollapsed ? '4rem' : '16rem' }}
         className={cn(
-          "fixed left-0 top-0 z-50 h-full bg-sidebar/60 backdrop-blur-2xl border-r border-sidebar-border/30 transition-all duration-300 ease-out theme-transitioning",
+          "fixed left-0 top-0 z-50 h-full bg-sidebar/80 backdrop-blur-3xl border-r border-sidebar-border/20 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] theme-transitioning",
           isCollapsed ? "overflow-visible" : "overflow-hidden",
           "lg:sticky lg:top-0 lg:h-screen lg:z-40",
 
-          isOpen ? "translate-x-0 shadow-[40px_0_80px_rgba(0,0,0,0.5)]" : "-translate-x-full lg:translate-x-0",
-          isCollapsed ? "w-16 lg:shadow-[20px_0_40px_rgba(0,0,0,0.3)]" : "w-64 lg:shadow-[30px_0_60px_rgba(0,0,0,0.4)]"
+          isOpen ? "translate-x-0 shadow-[40px_0_100px_rgba(0,0,0,0.4)]" : "-translate-x-full lg:translate-x-0",
+          isCollapsed ? "w-16 lg:shadow-[20px_0_50px_rgba(0,0,0,0.15)]" : "w-64 lg:shadow-[30px_0_80px_rgba(0,0,0,0.2)]"
 
 
         )}
@@ -332,19 +332,19 @@ export const SidebarReorganized = React.memo(
         <FocusTrap active={isOpen && isMobile} className="h-full" autoFocus={false}>
           <div className={cn("flex flex-col h-full pt-16 lg:pt-0 min-h-0", isCollapsed && "overflow-visible")}>
             {/* Brand Header */}
-            <div className="relative group/brand border-b border-white/5 bg-gradient-to-b from-white/[0.03] to-transparent">
+            <div className="relative group/brand border-b border-white/5 bg-gradient-to-b from-white/[0.04] to-transparent mb-2">
             <SidebarBrandHeader isCollapsed={isCollapsed} />
-            <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover/brand:opacity-100 transition-opacity pointer-events-none blur-xl rounded-full" />
+            <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover/brand:opacity-100 transition-opacity duration-500 pointer-events-none blur-2xl rounded-full" />
           </div>
 
 
           {/* Collapse controls (desktop) */}
-          <div className="hidden lg:flex items-center justify-between px-2 mb-1">
+          <div className="hidden lg:flex items-center justify-between px-3 mb-2">
             {!isCollapsed && hasAnyGroupOpen && (
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 gap-1.5 text-[10px] border-sidebar-border/50 hover:bg-primary/10 hover:text-primary text-sidebar-foreground/40 focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-1"
+                className="h-8 gap-2 text-[10px] border-sidebar-border/30 hover:bg-primary/10 hover:text-primary text-sidebar-foreground/40 focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-1 rounded-xl transition-all duration-300"
                 onClick={collapseAllGroups}
                 aria-label="Recolher todos os grupos de navegação"
 
@@ -357,7 +357,7 @@ export const SidebarReorganized = React.memo(
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 hover:bg-sidebar-accent/50 hover:text-primary ml-auto text-sidebar-foreground/30 focus-visible:ring-1 focus-visible:ring-primary"
+              className="h-8 w-8 hover:bg-sidebar-accent/50 hover:text-primary ml-auto text-sidebar-foreground/30 focus-visible:ring-1 focus-visible:ring-primary rounded-xl transition-all duration-300"
               onClick={toggleCollapse}
               aria-label={isCollapsed ? "Expandir menu" : "Recolher menu"}
               title={isCollapsed ? "Expandir menu" : "Recolher menu"}

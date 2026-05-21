@@ -25,8 +25,8 @@ export function AppLogo({
   return (
     <div className={cn("flex items-center gap-3", className, onClick && "cursor-pointer")} onClick={onClick}>
       <div className={cn(
-        "relative inline-flex items-center justify-center rounded-xl shadow-[0_0_15px_rgba(var(--primary),0.3)] transition-all duration-300 shrink-0 overflow-hidden",
-        !iconClassName?.includes('h-') && (variant === 'sidebar' ? "h-9 w-9" : "h-10 w-10"),
+        "relative inline-flex items-center justify-center rounded-[14px] shadow-[0_8px_16px_-4px_rgba(var(--primary),0.25)] transition-all duration-500 shrink-0 overflow-hidden border border-white/10",
+        !iconClassName?.includes('h-') && (variant === 'sidebar' ? "h-10 w-10" : "h-11 w-11"),
         iconBg,
         iconClassName
       )}>
@@ -34,7 +34,7 @@ export function AppLogo({
           "shrink-0 transition-transform duration-500 hover:scale-110",
           iconClassName?.includes('h-20') ? "h-12 w-12" : 
           iconClassName?.includes('h-14') ? "h-8 w-8" : 
-          variant === 'sidebar' ? "h-5 w-5" : "h-6 w-6",
+          variant === 'sidebar' ? "h-5.5 w-5.5" : "h-6.5 w-6.5",
           iconColor
         )} />
         <Sparkles className="absolute top-0 right-0 h-3 w-3 text-white/40 animate-pulse" />
@@ -42,13 +42,13 @@ export function AppLogo({
       {showText && (
         <div className="flex flex-col">
           <span className={cn(
-            "font-display text-xl font-bold leading-none tracking-tight text-white",
+            "font-display text-xl font-black leading-none tracking-tight text-white drop-shadow-sm",
             textClassName
           )}>
             Promo Gifts
           </span>
           <span className={cn(
-            "text-[10px] font-semibold uppercase tracking-widest text-primary/80 flex items-center gap-1",
+            "text-[9px] font-bold uppercase tracking-[0.2em] text-primary/70 flex items-center gap-1.5 mt-0.5",
           )}>
             Plataforma de Produtos
             <span className="inline-block w-1 h-1 rounded-full bg-primary animate-ping" />

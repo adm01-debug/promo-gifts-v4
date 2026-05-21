@@ -122,6 +122,7 @@ export const Header = React.memo(function Header({ onMenuToggle, searchQuery, on
   const truncatedName = (() => {
     const parts = displayName.trim().split(/\s+/);
     if (parts.length <= 1) return displayName;
+    if (displayName.length <= 12) return displayName;
     return `${parts[0]} ${parts[parts.length - 1][0]}.`;
   })();
 
@@ -134,9 +135,9 @@ export const Header = React.memo(function Header({ onMenuToggle, searchQuery, on
       } as CSSProperties}
       className={cn(
         "fixed top-0 right-0 z-40 border-b transition-all duration-300 print:hidden theme-transitioning",
-        "bg-card/40 backdrop-blur-xl border-border/30",
+        "bg-background/40 backdrop-blur-xl border-border/30",
         "h-[var(--header-h)]",
-        isScrolled && "bg-card/60 backdrop-blur-2xl shadow-lg border-border/50",
+        isScrolled && "bg-background/60 backdrop-blur-2xl shadow-[0_4px_20px_-5px_rgba(0,0,0,0.1)] border-border/50",
       )}
     >
       <div className="flex items-center justify-between h-full px-2 sm:px-4 lg:px-6">
@@ -156,16 +157,21 @@ export const Header = React.memo(function Header({ onMenuToggle, searchQuery, on
 
           {/* #1 — Seção atual como âncora */}
           <div className="hidden lg:flex items-center gap-4">
-            <span className="font-display text-sm font-bold text-primary tracking-wider uppercase truncate max-w-[120px] drop-shadow-[0_0_8px_rgba(var(--primary),0.5)]">
-              {currentSection}
-            </span>
-            <div className="h-4 w-px bg-border/40" />
+            <div className="flex flex-col">
+              <span className="font-display text-[10px] font-bold text-primary/60 tracking-[0.2em] uppercase leading-none mb-1">
+                Seção Atual
+              </span>
+              <span className="font-display text-sm font-bold text-foreground tracking-wide truncate max-w-[150px]">
+                {currentSection}
+              </span>
+            </div>
+            <div className="h-8 w-px bg-border/20 mx-1" />
             <OrganizationSwitcher />
           </div>
         </div>
 
         {/* ══════ Center section — Global Search (#4 expandida) ══════ */}
-        <div className="flex-1 max-w-lg mx-4 hidden md:block" data-tour="search">
+        <div className="flex-1 max-w-2xl mx-6 hidden md:block" data-tour="search">
           <GlobalSearchPalette />
         </div>
 
@@ -196,11 +202,13 @@ export const Header = React.memo(function Header({ onMenuToggle, searchQuery, on
           </Button>
 
           {/* ── Cluster 1: Transacional (carrinho, notificações, alertas) ── */}
-          <div className="flex items-center gap-0.5">
+          <div className="flex items-center gap-1 sm:gap-1.5 px-1.5 py-1 rounded-2xl bg-muted/30 border border-border/20">
             <CartHeaderButton />
+            <div className="w-px h-4 bg-border/40 mx-0.5" />
             <DiscountApprovalHeaderBadge />
             <NotificationBell />
-            <div className="hidden md:block">
+            <div className="hidden md:flex items-center gap-1">
+              <div className="w-px h-4 bg-border/40 mx-0.5" />
               <StockAlertsIndicator />
             </div>
           </div>
@@ -321,21 +329,21 @@ export const Header = React.memo(function Header({ onMenuToggle, searchQuery, on
               <Button
                 variant="ghost"
                 aria-label={`Menu de usuário: ${displayName}`}
-                className="flex items-center gap-2 h-9 px-1.5 sm:px-2 hover:bg-primary/10 rounded-lg"
+                className="flex items-center gap-3 h-10 px-2 sm:px-2.5 hover:bg-muted/40 rounded-xl transition-all duration-300"
               >
-                <div className="relative">
-                  <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center ring-2 ring-background shadow-md">
+                <div className="relative group/avatar">
+                  <div className="w-8 h-8 rounded-full bg-muted border border-border/40 flex items-center justify-center transition-all duration-300 group-hover/avatar:border-primary/50 group-hover/avatar:shadow-[0_0_10px_rgba(var(--primary),0.3)] overflow-hidden">
                     {profile?.avatar_url ? (
                       <img
                         src={profile.avatar_url}
                         alt={displayName}
-                        className="w-8 h-8 rounded-full object-cover" loading="lazy" />
+                        className="w-full h-full object-cover" loading="lazy" />
                     ) : (
-                      <User className="h-4 w-4 text-primary-foreground" />
+                      <User className="h-4 w-4 text-muted-foreground" />
                     )}
                   </div>
                   {/* #6 — Status online dot */}
-                  <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-success rounded-full ring-2 ring-background" />
+                  <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-success rounded-full ring-2 ring-background shadow-sm" />
                 </div>
                 <div className="hidden lg:flex flex-col items-start">
                   <span className="text-sm font-medium text-foreground leading-tight truncate max-w-[120px]">
