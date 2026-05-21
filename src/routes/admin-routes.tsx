@@ -119,7 +119,7 @@ export const adminRoutes = (
       <Route path="/admin/consumo-ia" element={<AdminAiUsagePage />} />
       <Route path="/admin/conexoes" element={<AdminConexoesPage />} />
       <Route path="/admin/conexoes/status" element={<AdminConexoesStatusPage />} />
-      <Route path="/status" element={<SystemStatusPage />} />
+      <Route path="/admin/status" element={<SystemStatusPage />} />
       <Route path="/external-db-test" element={<ExternalDatabaseTest />} />
       <Route path="/admin/rbac-rotas" element={<AdminRbacRoutesPage />} />
       <Route path="/admin/storage-test" element={<StorageTestPage />} />
