@@ -190,8 +190,8 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
       >
         <Icon
           className={cn(
-            "h-4 w-4 shrink-0 transition-all duration-300",
-            isActive ? "text-primary scale-110 drop-shadow-[0_0_8px_rgba(var(--primary),0.8)]" : "group-hover:text-primary/70 group-hover:scale-110"
+            "h-[18px] w-[18px] shrink-0 transition-all duration-500",
+            isActive ? "text-primary scale-110 drop-shadow-[0_0_12px_rgba(var(--primary),0.9)]" : "group-hover:text-primary group-hover:scale-110"
           )}
         />
         {!isCollapsed && (
