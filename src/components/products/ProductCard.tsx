@@ -312,8 +312,8 @@ export const ProductCard = memo(forwardRef<HTMLElement, ProductCardProps>(functi
           return (
             <div className="flex items-end justify-between pt-0.5 sm:pt-1">
               <div>
-                <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5">A partir de</p>
-                <span className="text-base sm:text-xl font-display font-bold text-foreground inline-flex items-center gap-1.5">
+                <p className="text-[10px] sm:text-[11px] text-muted-foreground font-medium mb-0.5 opacity-70">A partir de</p>
+                <span className="text-base sm:text-2xl font-display font-black text-foreground inline-flex items-center gap-2 tracking-tight">
                   {formatPrice(product.price)}
                   <PriceFreshnessBadge
                     priceUpdatedAt={product.priceUpdatedAt}
