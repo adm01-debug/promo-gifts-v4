@@ -81,12 +81,11 @@ export function GlobalSearchPalette() {
           className="group relative flex items-center gap-3 px-4 py-2.5 text-sm rounded-2xl border border-border/40 hover:border-primary/40 bg-muted/40 backdrop-blur-md transition-all duration-300 flex-1 md:w-full overflow-hidden shadow-sm"
         >
           <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/[0.05] to-primary/0 group-hover:via-primary/[0.1] transition-all duration-500 pointer-events-none" />
-          <div className="relative h-6 w-6 rounded-lg bg-primary/15 group-hover:bg-primary/25 flex items-center justify-center transition-colors duration-300 shrink-0">
-            <Brain className="h-3.5 w-3.5 text-primary group-hover:scale-110 transition-transform duration-300" />
-            <div className="absolute inset-0 rounded-lg bg-primary/20 animate-pulse pointer-events-none" />
+          <div className="relative h-6 w-6 rounded-lg bg-primary/10 group-hover:bg-primary/20 flex items-center justify-center transition-colors duration-300 shrink-0">
+            <Search className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary group-hover:scale-110 transition-all duration-300" />
           </div>
-          <span className="relative flex-1 text-left text-primary/60 group-hover:text-primary transition-colors duration-300 text-[13px] font-medium tracking-wide">Busca galáctica...</span>
-          <kbd className="hidden sm:inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md border border-primary/20 bg-primary/5 text-[10px] font-bold text-primary/50 group-hover:border-primary/40 group-hover:text-primary transition-colors shrink-0 shadow-sm">⌘K</kbd>
+          <span className="relative flex-1 text-left text-muted-foreground/60 group-hover:text-foreground transition-colors duration-300 text-[13px] font-medium tracking-wide">Busque por produtos, orçamentos ou clientes...</span>
+          <kbd className="hidden sm:inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md border border-border/40 bg-background text-[10px] font-bold text-muted-foreground group-hover:border-primary/40 group-hover:text-primary transition-colors shrink-0 shadow-sm">⌘K</kbd>
         </button>
         <Tooltip>
           <TooltipTrigger asChild>
