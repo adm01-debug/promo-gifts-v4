@@ -100,7 +100,7 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v2
         with:
-          version: latest
+          version: 2.101.0
 
       - name: Deploy ${{ matrix.fn }}
         id: deploy

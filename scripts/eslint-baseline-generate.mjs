@@ -46,11 +46,11 @@ function aggregate(report) {
     if (!file.messages?.length) continue;
     const rel = relative(ROOT, file.filePath).replaceAll("\\", "/");
     for (const m of file.messages) {
-      if (m.severity !== 2) continue; // só erros
+      if (m.severity === 0) continue; // ignora "off"; congela erros e warnings
       const rule = m.ruleId ?? "<no-rule>";
       counts[rel] ??= {};
       counts[rel][rule] = (counts[rel][rule] ?? 0) + 1;
-      totalErrors += 1;
+      if (m.severity === 2) totalErrors += 1;
     }
   }
   // Ordena para diff estável.
