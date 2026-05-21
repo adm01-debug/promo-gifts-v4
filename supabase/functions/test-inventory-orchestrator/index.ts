@@ -27,13 +27,16 @@ Deno.serve(async (req) => {
 
     // 2. Mapeamento de dependências críticas (Secrets & Tabelas)
     const inventory = await Promise.all(functions.map(async (fn) => {
-      const path = `./supabase/functions/${fn}/index.ts`;
-      let content = "";
-      try {
-        content = await Deno.readTextFile(path);
-      } catch {
-        return { name: fn, error: "Arquivo index.ts não encontrado" };
-      }
+      // Como não podemos ler o arquivo index.ts de outras funções em runtime (isolamento),
+      // vamos usar o resolveCredential para testar a presença das chaves conhecidas
+      // que cada função costuma usar baseado nos padrões do projeto.
+
+      const commonEnvs = [
+        "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_ANON_KEY",
+        "N8N_PRODUCT_WEBHOOK_SECRET", "WEBHOOK_DISPATCHER_SECRET",
+        "EXTERNAL_PROMOBRIND_URL", "EXTERNAL_CRM_URL"
+      ];
+
 
       // Regex para capturar envs e tabelas
       const envs = [...content.matchAll(/Deno\.env\.get\(["'](.+?)["']\)/g)].map(m => m[1]);
