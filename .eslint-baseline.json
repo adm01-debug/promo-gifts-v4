@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-21T16:35:02.858Z",
-  "totalErrors": 473,
+  "generatedAt": "2026-05-21T23:25:15.061Z",
+  "totalErrors": 472,
   "counts": {
     "src/components/access/DevAccessDeniedPage.tsx": {
       "react-hooks/exhaustive-deps": 1
@@ -867,9 +867,6 @@
     },
     "src/components/ui/LoadingState.tsx": {
       "@typescript-eslint/no-unused-vars": 1
-    },
-    "src/components/ui/OptimizedImage.tsx": {
-      "@typescript-eslint/no-explicit-any": 1
     },
     "src/components/ui/ShortcutsHelpDialog.tsx": {
       "@typescript-eslint/naming-convention": 1,
