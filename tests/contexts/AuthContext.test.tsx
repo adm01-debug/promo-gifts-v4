@@ -108,13 +108,16 @@ describe('AuthContext', () => {
 
     vi.mocked(supabase.from).mockImplementation((table: string) => {
       if (table === 'profiles') {
+        // authService.fetchProfile usa .maybeSingle() (0 linhas = null válido)
+        const profileResult = {
+          data: { id: 'p1', user_id: 'user-1', email: 'admin@test.com', full_name: 'Admin' },
+          error: null,
+        };
         return {
           select: vi.fn().mockReturnThis(),
           eq: vi.fn().mockReturnThis(),
-          single: vi.fn().mockResolvedValue({
-            data: { id: 'p1', user_id: 'user-1', email: 'admin@test.com', full_name: 'Admin' },
-            error: null,
-          }),
+          maybeSingle: vi.fn().mockResolvedValue(profileResult),
+          single: vi.fn().mockResolvedValue(profileResult),
           update: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
               then: vi.fn((cb?: any) => { cb?.({ error: null }); return Promise.resolve({ error: null }); }),

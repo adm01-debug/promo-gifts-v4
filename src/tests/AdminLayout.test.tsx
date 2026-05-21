@@ -87,9 +87,19 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
-// Mock do SidebarReorganized para verificar se ele é renderizado
-vi.mock('@/components/layout/SidebarReorganized', () => ({
-  SidebarReorganized: () => <div data-testid="sidebar">Sidebar</div>,
+// MainLayout real usa lazyWithRetry (Header/Sidebar/PageTransition/CommandBar)
+// + Suspense aninhado. Montá-lo 2x na mesma suíte penduzava o worker (retry/
+// recovery dos imports lazy). O MainLayout REAL já tem cobertura dedicada em
+// tests/components/layout/MainLayout.breadcrumbs.test.tsx. Aqui o contrato sob
+// teste é "a página Admin renderiza DENTRO de um layout com sidebar" — então
+// mockamos o MainLayout com um wrapper fiel e leve (sidebar + children).
+vi.mock('@/components/layout/MainLayout', () => ({
+  MainLayout: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="main-layout">
+      <div data-testid="sidebar">Sidebar</div>
+      <main>{children}</main>
+    </div>
+  ),
 }));
 
 const queryClient = new QueryClient({

@@ -7,12 +7,32 @@ import { HelmetProvider } from 'react-helmet-async';
 
 // Mocking useIPValidation
 vi.mock('@/hooks/admin', () => ({
+  useDevGate: () => ({ isAllowed: false, isDev: false }),
   useIPValidation: () => ({
     validateIPForAuthenticatedUser: vi.fn().mockResolvedValue({ isAllowed: true }),
     logLoginAttempt: vi.fn(),
     fetchCurrentIP: vi.fn().mockResolvedValue('1.2.3.4'),
   }),
 }));
+
+// usePasswordResetRequests dispara supabase.from() num useEffect de montagem.
+// Mock parcial: preserva o resto do barrel e neutraliza só esse hook, para o
+// ForgotPasswordForm montar sem tocar no client real.
+vi.mock('@/hooks/auth', async (importOriginal) => {
+  const actual = (await importOriginal()) as Record<string, unknown>;
+  return {
+    ...actual,
+    usePasswordResetRequests: () => ({
+      requests: [],
+      isLoading: false,
+      pendingCount: 0,
+      approveRequest: vi.fn(),
+      rejectRequest: vi.fn(),
+      createRequest: vi.fn().mockResolvedValue({ success: true, message: 'ok' }),
+      refetch: vi.fn(),
+    }),
+  };
+});
 
 // Mocking useAuth - we need to wrap with AuthProvider or mock the hook
 vi.mock('@/contexts/AuthContext', async (importOriginal) => {
@@ -65,14 +85,15 @@ describe('Auth Page', () => {
     expect(passwordInput).toHaveAttribute('type', 'password');
   });
 
-  it('shows forgot password form when link is clicked', () => {
+  it('shows forgot password form when link is clicked', async () => {
     renderAuth();
     const forgotLink = screen.getByTestId('login-forgot-link');
 
     fireEvent.click(forgotLink);
 
-    // Check for forgot password form elements
-    expect(screen.getByText(/Esqueceu sua senha\?/i)).toBeInTheDocument();
+    // O ForgotPasswordForm entra via AnimatePresence (motion.div), montado de
+    // forma assíncrona — findByRole aguarda a transição antes de asseverar.
+    expect(await screen.findByRole('heading', { name: /Esqueceu sua senha/i })).toBeInTheDocument();
 
     expect(screen.queryByTestId('login-password-input')).not.toBeInTheDocument();
   });

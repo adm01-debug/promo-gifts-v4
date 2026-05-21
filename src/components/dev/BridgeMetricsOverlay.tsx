@@ -51,9 +51,11 @@ export default function BridgeMetricsOverlay() {
 
   // Guards APÓS todos os hooks (ordem de hooks fica estável entre renders).
   if (import.meta.env.PROD) return null;
-  // Gate SSOT em runtime: respeita env/override além do papel dev (defesa em
-  // profundidade caso o guard de build PROD falhe por config do ambiente).
-  if (!isAllowed) return null;
+  // Overlay de métricas = ferramenta de DEV PREVIEW com gate SSOT em runtime.
+  // Exige AMBOS: papel `dev` (isDev) E aprovação do gate (isAllowed).
+  //  - admin com isAllowed=true mas isDev=false → NÃO vê (não é dev).
+  //  - dev com isAllowed=false → NÃO vê (gate SSOT rejeitou, mesmo sendo dev).
+  if (!isDev || !isAllowed) return null;
 
   if (!open) {
     return (

@@ -14,6 +14,7 @@ vi.mock('@/integrations/supabase/client', () => ({
       order: vi.fn().mockReturnThis(),
       limit: vi.fn().mockReturnThis(),
       single: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockReturnThis(),
     })),
   },
 }));
@@ -44,8 +45,9 @@ describe('quoteService', () => {
     const fromMock = supabase.from as any;
     
     // First call: quotes
+    // fetchQuote usa .maybeSingle() (0 linhas é caso válido → null, sem PGRST116)
     fromMock.mockReturnValueOnce({
-      select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: mockQuote, error: null }) }) })
+      select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: mockQuote, error: null }) }) })
     });
     // Second call: items
     fromMock.mockReturnValueOnce({
