@@ -7,6 +7,7 @@ import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import {
   fetchPromobrindProductsLightweight,
   invokeBatchBridge,
+  fetchPromobrindCategories,
   type LightweightProduct,
 } from '@/lib/external-db';
 
@@ -38,17 +39,24 @@ function getStockStatus(stock: number): 'in-stock' | 'low-stock' | 'out-of-stock
   return 'in-stock';
 }
 
-export function mapLightweightToProduct(p: LightweightProduct): Product {
+export function mapLightweightToProduct(
+  p: LightweightProduct,
+  categoriesById?: ReadonlyMap<string, string>,
+): Product {
   const imageUrl = p.primary_image_url || p.image_url || '/placeholder.svg';
   const price = p.sale_price ?? p.cost_price ?? 0;
   const stock = p.stock_quantity || 0;
+  const resolvedCategoryId = p.category_id || p.main_category_id;
+  const resolvedCategoryName = resolvedCategoryId
+    ? (categoriesById?.get(resolvedCategoryId) ?? null)
+    : null;
 
   return {
     id: p.id,
     name: p.name,
     description: '',
-    category_id: p.category_id || p.main_category_id,
-    category_name: null,
+    category_id: resolvedCategoryId,
+    category_name: resolvedCategoryName,
     price: typeof price === 'number' ? price : 0,
     image_url: imageUrl,
     images: [imageUrl],
@@ -67,8 +75,8 @@ export function mapLightweightToProduct(p: LightweightProduct): Product {
     isKit: p.is_kit ?? false,
     gender: p.gender || null,
     category: {
-      id: p.category_id || p.main_category_id || '0',
-      name: 'Sem categoria',
+      id: resolvedCategoryId || '0',
+      name: resolvedCategoryName ?? 'Sem categoria',
     },
     supplier: {
       id: p.supplier_id || p.brand || 'unknown',
@@ -113,6 +121,15 @@ interface CatalogPage {
  * First call fetches 4 pages (2000 products) via batch bridge.
  * Subsequent calls fetch 1 page (500 products) each.
  */
+async function loadCategoriesMap(): Promise<ReadonlyMap<string, string>> {
+  try {
+    const categories = await fetchPromobrindCategories();
+    return new Map(categories.map((c) => [String(c.id), c.name]));
+  } catch {
+    return new Map();
+  }
+}
+
 async function fetchCatalogPage(offset: number, search?: string): Promise<CatalogPage> {
   const filters: Record<string, unknown> = { active: true };
   if (search) filters._search = search;
@@ -132,32 +149,40 @@ async function fetchCatalogPage(offset: number, search?: string): Promise<Catalo
     ...(i === 0 && isFirstLoad ? { countMode: 'exact' } : {}),
   }));
 
+  const categoriesPromise = loadCategoriesMap();
+
   let batchResults;
   try {
     batchResults = await invokeBatchBridge(batchQueries);
   } catch {
-    const fallbackProducts = await fetchPromobrindProductsLightweight({
-      search,
-      limit: CATALOG_PAGE_SIZE,
-      offset,
-      orderBy,
-      filters: { active: true },
-    });
+    const [fallbackProducts, categoriesById] = await Promise.all([
+      fetchPromobrindProductsLightweight({
+        search,
+        limit: CATALOG_PAGE_SIZE,
+        offset,
+        orderBy,
+        filters: { active: true },
+      }),
+      categoriesPromise,
+    ]);
 
     return {
-      products: fallbackProducts.map(mapLightweightToProduct),
+      products: fallbackProducts.map((p) => mapLightweightToProduct(p, categoriesById)),
       nextOffset: fallbackProducts.length === CATALOG_PAGE_SIZE ? offset + CATALOG_PAGE_SIZE : null,
       totalEstimate: null,
     };
   }
 
+  const categoriesById = await categoriesPromise;
   const products: Product[] = [];
   let totalEstimate: number | null = null;
   let lastPageSize = 0;
 
   for (const result of batchResults) {
     if (result.success && result.data?.records) {
-      const mapped = (result.data.records as LightweightProduct[]).map(mapLightweightToProduct);
+      const mapped = (result.data.records as LightweightProduct[]).map((p) =>
+        mapLightweightToProduct(p, categoriesById),
+      );
       products.push(...mapped);
       lastPageSize = result.data.records.length;
       if (result.data.count !== null && totalEstimate === null) {
