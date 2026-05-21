@@ -62,7 +62,9 @@ Deno.serve(async (req) => {
     const eventType = req.headers.get("x-event") || "unknown";
     const sourceIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
 
-    const secret = Deno.env.get(endpoint.hmac_secret_ref);
+    const secretRes = await supabase.from('integration_credentials').select('secret_value').eq('secret_name', endpoint.hmac_secret_ref).maybeSingle();
+    const secret = secretRes.data?.secret_value || Deno.env.get(endpoint.hmac_secret_ref);
+
     let signatureValid = false;
     if (secret) {
       const expected = "sha256=" + await hmacSign(rawBody, secret);

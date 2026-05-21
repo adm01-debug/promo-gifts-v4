@@ -284,7 +284,7 @@ export default function SystemStatusPage() {
 
   return (
     <div className="min-h-screen bg-background w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
-      <PageSEO title="Status do Sistema" description="Monitore a saúde e status de todos os serviços." path="/status" noIndex />
+      <PageSEO title="Status do Sistema" description="Monitore a saúde e status de todos os serviços." path="/admin/status" noIndex />
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">

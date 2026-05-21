@@ -135,6 +135,7 @@ const navGroups: NavGroup[] = [
       { icon: Gauge, label: "Performance UX", href: "/admin/client-performance", devOnly: true },
       { icon: DollarSign, label: "Validade de Preços", href: "/admin/validade-precos", devOnly: true },
       { icon: ShieldCheck, label: "Auditoria RBAC", href: "/admin/rbac-rotas", devOnly: true },
+      { icon: Activity, label: "Status do Sistema", href: "/admin/status", devOnly: true },
     ],
   },
 ];
