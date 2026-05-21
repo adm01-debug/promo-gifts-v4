@@ -25,8 +25,8 @@ export function AppLogo({
   return (
     <div className={cn("flex items-center gap-3", className, onClick && "cursor-pointer")} onClick={onClick}>
       <div className={cn(
-        "relative inline-flex items-center justify-center rounded-xl shadow-[0_0_15px_rgba(var(--primary),0.3)] transition-all duration-300 shrink-0 overflow-hidden",
-        !iconClassName?.includes('h-') && (variant === 'sidebar' ? "h-9 w-9" : "h-10 w-10"),
+        "relative inline-flex items-center justify-center rounded-[14px] shadow-[0_8px_16px_-4px_rgba(var(--primary),0.25)] transition-all duration-500 shrink-0 overflow-hidden border border-white/10",
+        !iconClassName?.includes('h-') && (variant === 'sidebar' ? "h-10 w-10" : "h-11 w-11"),
         iconBg,
         iconClassName
       )}>
