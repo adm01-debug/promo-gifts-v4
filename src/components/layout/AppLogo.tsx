@@ -42,7 +42,7 @@ export function AppLogo({
       {showText && (
         <div className="flex flex-col">
           <span className={cn(
-            "font-display text-xl font-bold leading-none tracking-tight text-white",
+            "font-display text-xl font-black leading-none tracking-tight text-white drop-shadow-sm",
             textClassName
           )}>
             Promo Gifts
