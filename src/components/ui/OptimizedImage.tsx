@@ -23,6 +23,8 @@ export function OptimizedImage({
   fallbackClassName,
   containerClassName,
   priority = false,
+  onLoad: onLoadProp,
+  onError: onErrorProp,
   ...props
 }: OptimizedImageProps) {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -42,7 +44,7 @@ export function OptimizedImage({
           observer.disconnect();
         }
       },
-      { rootMargin: '200px' } // Load slightly before it enters the viewport
+      { rootMargin: '200px' }, // Load slightly before it enters the viewport
     );
 
     if (imgRef.current) {
@@ -53,13 +55,16 @@ export function OptimizedImage({
   }, [src, priority]);
 
   return (
-    <div className={cn("relative overflow-hidden bg-muted/20", containerClassName)}>
-      {!isLoaded && !error && (
-        <Skeleton className="absolute inset-0 z-0 h-full w-full" />
-      )}
-      
+    <div className={cn('relative overflow-hidden bg-muted/20', containerClassName)}>
+      {!isLoaded && !error && <Skeleton className="absolute inset-0 z-0 h-full w-full" />}
+
       {error ? (
-        <div className={cn("flex h-full w-full items-center justify-center bg-muted/50 text-muted-foreground", fallbackClassName)}>
+        <div
+          className={cn(
+            'flex h-full w-full items-center justify-center bg-muted/50 text-muted-foreground',
+            fallbackClassName,
+          )}
+        >
           <ImageOff className="h-6 w-6 opacity-20" />
         </div>
       ) : (
@@ -68,14 +73,20 @@ export function OptimizedImage({
           src={isInView ? src : undefined}
           alt={alt}
           className={cn(
-            "h-full w-full object-cover transition-opacity duration-500",
-            isLoaded ? "opacity-100" : "opacity-0",
-            className
+            'h-full w-full object-cover transition-opacity duration-500',
+            isLoaded ? 'opacity-100' : 'opacity-0',
+            className,
           )}
-          onLoad={() => setIsLoaded(true)}
-          onError={() => setError(true)}
-          loading={priority ? "eager" : "lazy"}
-          {...(priority ? { fetchpriority: "high" } as any : {})}
+          onLoad={(e) => {
+            setIsLoaded(true);
+            onLoadProp?.(e);
+          }}
+          onError={(e) => {
+            setError(true);
+            onErrorProp?.(e);
+          }}
+          loading={priority ? 'eager' : 'lazy'}
+          fetchPriority={priority ? 'high' : undefined}
           {...props}
         />
       )}
