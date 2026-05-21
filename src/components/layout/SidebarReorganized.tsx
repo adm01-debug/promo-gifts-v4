@@ -319,12 +319,12 @@ export const SidebarReorganized = React.memo(
         aria-label="Menu principal"
         style={{ ['--sidebar-w' as string]: isCollapsed ? '4rem' : '16rem' }}
         className={cn(
-          "fixed left-0 top-0 z-50 h-full bg-sidebar/60 backdrop-blur-2xl border-r border-sidebar-border/30 transition-all duration-300 ease-out theme-transitioning",
+          "fixed left-0 top-0 z-50 h-full bg-sidebar/80 backdrop-blur-3xl border-r border-sidebar-border/20 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] theme-transitioning",
           isCollapsed ? "overflow-visible" : "overflow-hidden",
           "lg:sticky lg:top-0 lg:h-screen lg:z-40",
 
-          isOpen ? "translate-x-0 shadow-[40px_0_80px_rgba(0,0,0,0.5)]" : "-translate-x-full lg:translate-x-0",
-          isCollapsed ? "w-16 lg:shadow-[20px_0_40px_rgba(0,0,0,0.3)]" : "w-64 lg:shadow-[30px_0_60px_rgba(0,0,0,0.4)]"
+          isOpen ? "translate-x-0 shadow-[40px_0_100px_rgba(0,0,0,0.4)]" : "-translate-x-full lg:translate-x-0",
+          isCollapsed ? "w-16 lg:shadow-[20px_0_50px_rgba(0,0,0,0.15)]" : "w-64 lg:shadow-[30px_0_80px_rgba(0,0,0,0.2)]"
 
 
         )}
