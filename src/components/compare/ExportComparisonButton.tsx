@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Download, FileText, Image as ImageIcon, FileSpreadsheet, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import type { Product } from "@/types/product-catalog";
 
 interface Props {
-  products: Record<string, unknown>[];
+  products: Product[];
   targetSelector?: string; // CSS selector for PNG capture
   formatCurrency: (v: number) => string;
 }

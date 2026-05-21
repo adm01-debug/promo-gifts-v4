@@ -3,14 +3,14 @@
  * Mesma categoria + faixa de preço ±20% dos produtos já em comparação.
  */
 import { useMemo } from "react";
-import { useProducts } from "@/hooks/products";
+import { useProducts, type Product } from "@/hooks/products";
 import { useComparisonStore } from "@/stores/useComparisonStore";
 import { Button } from "@/components/ui/button";
 import { Plus, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
-  products: Record<string, unknown>[];
+  products: Product[];
   formatCurrency: (v: number) => string;
 }
 
