@@ -3,7 +3,7 @@
  * Cache: sessionStorage por 30 min para combinação de IDs.
  */
 import { useState } from "react";
-import type { Product } from "@/types/product";
+import type { Product } from "@/types/product-catalog";
 import { Brain, Sparkles, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

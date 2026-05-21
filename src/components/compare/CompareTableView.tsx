@@ -19,7 +19,7 @@ import { PriceSparkline } from "./PriceSparkline";
 import { StockRiskBadge } from "./StockRiskBadge";
 import { OtherSuppliersRow } from "./OtherSuppliersRow";
 import type { CompareVariantInfo } from "@/stores/useComparisonStore";
-import type { Product } from "@/types/product";
+import type { Product } from "@/types/product-catalog";
 
 interface CompareEntry {
   product: Product;
