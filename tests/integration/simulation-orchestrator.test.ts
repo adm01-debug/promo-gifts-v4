@@ -1,23 +1,23 @@
-import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Integration test for the Simulation Orchestrator.
- * This ensures the bridge between frontend and simulation logic is intact.
+ * Valida o contrato de invocação (nome da função + payload) da ponte frontend→edge.
+ * NOTA: supabase.functions é um getter lazy; capturamos a instância uma única vez
+ * para que o spy e a chamada usem a MESMA referência (senão Number of calls = 0).
  */
 describe('Simulation Orchestrator Integration', () => {
-  // We mock the fetch for edge function calls if we are in a pure unit test env,
-  // but here we try to validate the invocation structure.
-  
+  const fns = supabase.functions;
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('should trigger a resilience simulation successfully', async () => {
-    // In CI, we might not have the actual deployed function available for fetch,
-    // but we can test the invoke payload validation.
-    const invokeSpy = vi.spyOn(supabase.functions, 'invoke');
-    
-    const mode = 'resilience';
-    await supabase.functions.invoke('simulation-orchestrator', {
-      body: { count: 10, mode }
-    });
+    const invokeSpy = vi.spyOn(fns, 'invoke').mockResolvedValue({ data: { ok: true }, error: null } as unknown as ReturnType<typeof fns.invoke>);
+
+    await fns.invoke('simulation-orchestrator', { body: { count: 10, mode: 'resilience' } });
 
     expect(invokeSpy).toHaveBeenCalledWith('simulation-orchestrator', expect.objectContaining({
       body: expect.objectContaining({ mode: 'resilience' })
@@ -25,11 +25,9 @@ describe('Simulation Orchestrator Integration', () => {
   });
 
   it('should trigger a load test with high count', async () => {
-    const invokeSpy = vi.spyOn(supabase.functions, 'invoke');
-    
-    await supabase.functions.invoke('simulation-orchestrator', {
-      body: { count: 500, mode: 'load' }
-    });
+    const invokeSpy = vi.spyOn(fns, 'invoke').mockResolvedValue({ data: { ok: true }, error: null } as unknown as ReturnType<typeof fns.invoke>);
+
+    await fns.invoke('simulation-orchestrator', { body: { count: 500, mode: 'load' } });
 
     expect(invokeSpy).toHaveBeenCalledWith('simulation-orchestrator', expect.objectContaining({
       body: expect.objectContaining({ count: 500, mode: 'load' })
@@ -37,11 +35,9 @@ describe('Simulation Orchestrator Integration', () => {
   });
 
   it('should trigger a fuzzing test', async () => {
-    const invokeSpy = vi.spyOn(supabase.functions, 'invoke');
-    
-    await supabase.functions.invoke('simulation-orchestrator', {
-      body: { count: 50, mode: 'fuzzing' }
-    });
+    const invokeSpy = vi.spyOn(fns, 'invoke').mockResolvedValue({ data: { ok: true }, error: null } as unknown as ReturnType<typeof fns.invoke>);
+
+    await fns.invoke('simulation-orchestrator', { body: { count: 50, mode: 'fuzzing' } });
 
     expect(invokeSpy).toHaveBeenCalledWith('simulation-orchestrator', expect.objectContaining({
       body: expect.objectContaining({ mode: 'fuzzing' })

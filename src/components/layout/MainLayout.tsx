@@ -91,6 +91,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           <Suspense fallback={<div style={{ height: 56 }} className="print:hidden" />}>
             <Header 
               onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
+              sidebarOpen={sidebarOpen}
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
             />

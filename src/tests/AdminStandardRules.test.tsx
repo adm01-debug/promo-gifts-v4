@@ -114,11 +114,10 @@ describe('Admin Module Programmatic Standard Rules', () => {
     });
 
     it(`${pageName} should use standard max-w classes in its layout container`, () => {
-      render(<PageComponent />, { wrapper });
-      const mainContent = screen.queryByRole('main');
-
-      // We look for the standardized container div
-      const container = mainContent?.querySelector('[class*="max-w-"]');
+      const { container: root } = render(<PageComponent />, { wrapper });
+      // Nova convenção: MainLayout (com <main>) vive no nível da rota, não dentro das páginas.
+      // O container padronizado max-w/mx-auto é renderizado diretamente pela página.
+      const container = root.querySelector('[class*="max-w-"]');
       expect(container, `Page ${pageName} missing standardized max-w container`).not.toBeNull();
       expect(container?.className).toContain('mx-auto');
     });

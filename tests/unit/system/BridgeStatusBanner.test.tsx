@@ -55,8 +55,10 @@ describe('BridgeStatusBanner', () => {
     expect(mockCloseUnavailable).toHaveBeenCalledTimes(1);
   });
 
-  it('should show different message for non-allowed users', () => {
-    (useDevGate as any).mockReturnValue({ isAllowed: false });
+  it('não renderiza nada para usuários sem gate (DevOnly bloqueia a mensagem técnica)', () => {
+    // Nova convenção: o banner é técnico e fica integralmente atrás de <DevOnly> (gate isAllowed).
+    // Usuário sem gate (isAllowed=false) não vê nenhuma mensagem — evita vazar detalhe técnico em prod.
+    (useDevGate as any).mockReturnValue({ isAllowed: false, isDev: false });
     (useBridgeStatusBanner as any).mockReturnValue({
       unavailable: true,
       reason: 'Critical Error',
@@ -64,9 +66,10 @@ describe('BridgeStatusBanner', () => {
       reload: mockReload,
     });
 
-    render(<BridgeStatusBanner />);
+    const { container } = render(<BridgeStatusBanner />);
 
-    expect(screen.getByText(/Catálogo temporariamente indisponível/i)).toBeDefined();
+    expect(container.firstChild).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.queryByText(/Catálogo externo indisponível/i)).toBeNull();
   });
 });

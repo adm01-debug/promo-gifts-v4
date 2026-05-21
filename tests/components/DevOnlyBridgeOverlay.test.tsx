@@ -4,8 +4,8 @@
  * Valida:
  *  - Não-dev: retorna null (sem montar o overlay, sem disparar o lazy import).
  *  - Dev: monta o overlay (via Suspense) — fallback null durante o load.
- *  - Gate desligado (env false) com isDev=true: retorna null.
- *  - Gate ligado por override (localStorage) com isDev=false: monta.
+ *  - Modo `strict` (gate por isDev): dev real (isDev=true) SEMPRE monta, ignorando override de env/localStorage.
+ *  - Modo `strict`: não-dev (isDev=false) NUNCA monta, mesmo com override (isAllowed=true).
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -41,15 +41,18 @@ describe('DevOnlyBridgeOverlay — gate por papel + SSOT', () => {
     expect(await screen.findByTestId('bridge-metrics-overlay-mock')).toBeInTheDocument();
   });
 
-  it('gate SSOT desligado (env=false) bloqueia mesmo dev', () => {
+  it('modo strict: dev real monta mesmo com SSOT/env off (gate por isDev)', async () => {
+    // <DevOnly strict> gateia por isDev, ignorando override de env/localStorage (isAllowed).
     vi.mocked(useDevGate).mockReturnValue({ isAllowed: false, isDev: true });
-    const { container } = render(<DevOnlyBridgeOverlay />);
-    expect(container).toBeEmptyDOMElement();
-  });
-
-  it('gate SSOT habilitado por override (localStorage) renderiza mesmo para não-dev', async () => {
-    vi.mocked(useDevGate).mockReturnValue({ isAllowed: true, isDev: false });
     render(<DevOnlyBridgeOverlay />);
     expect(await screen.findByTestId('bridge-metrics-overlay-mock')).toBeInTheDocument();
+  });
+
+  it('modo strict: override (isAllowed=true) NÃO habilita não-dev (gate por isDev)', () => {
+    // strict ignora override; não-dev (isDev=false) não monta o overlay.
+    vi.mocked(useDevGate).mockReturnValue({ isAllowed: true, isDev: false });
+    const { container } = render(<DevOnlyBridgeOverlay />);
+    expect(container).toBeEmptyDOMElement();
+    expect(screen.queryByTestId('bridge-metrics-overlay-mock')).not.toBeInTheDocument();
   });
 });

@@ -1,8 +1,11 @@
 /**
- * BridgeStatusBanner — gating dev-only vs crítico
+ * BridgeStatusBanner — gating dev-only (infra + crítico)
  *
- * Garante que toasts de infra ("Reconectando ao catálogo externo…") só aparecem para dev,
- * mas avisos críticos de indisponibilidade total aparecem para TODOS, com texto amigável.
+ * Nova convenção (re-import): TODO o banner fica atrás de <DevOnly> (gate isAllowed).
+ * Com o gate aberto (dev/override), o inner monta, registra o listener de bridge-status
+ * e exibe avisos de infra (toast) e críticos (alert técnico). Com o gate fechado
+ * (não-dev / PROD), o inner não monta: nenhum listener é registrado e nada é exibido.
+ * NB: a mensagem "amigável" para usuário final NÃO existe mais neste componente.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
@@ -76,21 +79,14 @@ beforeEach(() => {
 });
 
 describe('BridgeStatusBanner — visibilidade por papel e ambiente', () => {
-  it('usuário NÃO-dev: registra listener, oculta infra ("degraded") mas exibe crítico ("unavailable")', () => {
+  it('usuário NÃO-dev: gate fechado — não registra listener nem exibe banner (tudo dev-only)', () => {
     mockUseAuth.mockReturnValue({ isDev: false });
-    const { container } = render(<BridgeStatusBanner />);
+    render(<BridgeStatusBanner />);
 
-    expect(onBridgeStatusMock).toHaveBeenCalledTimes(1);
-    
-    // Degraded (infra) -> Ignora
-    emit({ type: 'degraded', attempt: 1, maxAttempts: 3 } as any);
+    // Gate fechado: o inner (que registra o listener) está atrás de <DevOnly> e não monta.
+    expect(onBridgeStatusMock).not.toHaveBeenCalled();
     expect(toastApi.loading).not.toHaveBeenCalled();
-
-    // Unavailable (crítico) -> Exibe com texto amigável
-    emit({ type: 'unavailable', reason: 'timeout' } as any);
-    expect(screen.getByRole('alert')).toBeInTheDocument();
-    expect(screen.getByText(/Catálogo temporariamente indisponível/i)).toBeInTheDocument();
-    expect(screen.getByText(/instabilidade momentânea/i)).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('usuário dev: exibe avisos de infra e avisos críticos com cópia técnica', () => {
@@ -107,18 +103,15 @@ describe('BridgeStatusBanner — visibilidade por papel e ambiente', () => {
     expect(screen.getByText(/Tentativas automáticas esgotadas/i)).toBeInTheDocument();
   });
 
-  it('Modo PROD (gate fechado) bloqueia avisos de infra mesmo para Dev, mas mantém críticos', () => {
+  it('Modo PROD (gate fechado) bloqueia TODO o banner mesmo para Dev (infra e crítico)', () => {
     mockUseAuth.mockReturnValue({ isDev: true });
-    mockShouldShow.mockReturnValue(false); // Override de PROD
+    mockShouldShow.mockReturnValue(false); // SSOT/PROD fecha o gate (isAllowed=false)
     render(<BridgeStatusBanner />);
 
-    // Degraded -> Bloqueado
-    emit({ type: 'degraded', attempt: 1, maxAttempts: 3 } as any);
+    // Gate fechado: inner não monta -> sem listener, sem toast, sem alert.
+    expect(onBridgeStatusMock).not.toHaveBeenCalled();
     expect(toastApi.loading).not.toHaveBeenCalled();
-
-    // Unavailable -> Exibe (texto amigável pois isAllowed=false)
-    emit({ type: 'unavailable', reason: 'error' } as any);
-    expect(screen.getByText(/Catálogo temporariamente indisponível/i)).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('limpa avisos ao receber evento "recovered"', () => {

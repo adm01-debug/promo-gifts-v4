@@ -19,11 +19,13 @@ describe('DevInfraGate Matrix — Parameterized Permission Tests', () => {
     vi.clearAllMocks();
   });
 
+  // DevOnlyBridgeOverlay usa <DevOnly strict>: o gate é o papel dev real (isDev),
+  // ignorando override de SSOT/env (isAllowed). Logo expectedVisible === isDev.
   const testCases = [
-    { isAllowed: true,  isDev: true,  expectedVisible: true,  desc: 'Usuário Dev com permissão aprovada' },
-    { isAllowed: true,  isDev: false, expectedVisible: true,  desc: 'Usuário não-Dev mas com permissão aprovada (ex: override ou Admin)' },
-    { isAllowed: false, isDev: true,  expectedVisible: false, desc: 'Usuário Dev mas com permissão negada (ex: env gate desligado)' },
-    { isAllowed: false, isDev: false, expectedVisible: false, desc: 'Usuário comum com permissão negada' },
+    { isAllowed: true,  isDev: true,  expectedVisible: true,  desc: 'Dev real (strict): monta' },
+    { isAllowed: true,  isDev: false, expectedVisible: false, desc: 'Não-dev com override isAllowed (strict ignora override): NÃO monta' },
+    { isAllowed: false, isDev: true,  expectedVisible: true,  desc: 'Dev real com SSOT/env off (strict gateia por isDev): monta' },
+    { isAllowed: false, isDev: false, expectedVisible: false, desc: 'Usuário comum: NÃO monta' },
   ];
 
   it.each(testCases)('$desc -> visível: $expectedVisible', async ({ isAllowed, isDev, expectedVisible }) => {

@@ -33,11 +33,13 @@ import { RoleBadge } from "@/components/RoleBadge";
 
 interface HeaderProps {
   onMenuToggle: () => void;
+  /** Estado de abertura do sidebar (mobile) — usado nos aria do botão de menu. */
+  sidebarOpen?: boolean;
   searchQuery: string;
   onSearchChange: (query: string) => void;
 }
 
-export const Header = React.memo(function Header({ onMenuToggle, searchQuery, onSearchChange }: HeaderProps) {
+export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen = false, searchQuery, onSearchChange }: HeaderProps) {
   const { theme, actualTheme, setTheme, toggleTheme, isFallback } = useTheme();
   const navigate = useNavigate();
   const { toast } = useToast();

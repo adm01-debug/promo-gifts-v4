@@ -137,8 +137,8 @@ describe('Cálculos de Orçamento (Unit Tests)', () => {
         quantity: 0.3333,
         unitPrice: 10.5555
       };
-      // 0.3333 * 10.5555 = 3.51814815
-      expect(calculateItemTotal(params)).toBeCloseTo(3.51814815, 8);
+      // item total e arredondado a 2 casas (round2 - centavos) por design financeiro: 3.51814815 -> 3.52
+      expect(calculateItemTotal(params)).toBeCloseTo(3.52, 2);
     });
   });
 });

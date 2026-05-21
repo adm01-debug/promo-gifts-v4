@@ -96,17 +96,15 @@ describe("Admin Layout Standardization", () => {
     vi.clearAllMocks();
   });
 
-  it("AdminConexoesPage deve renderizar dentro do MainLayout (com sidebar)", async () => {
+  it("AdminConexoesPage renderiza o conteúdo (layout no nível de rota)", async () => {
     renderWithProviders(<AdminConexoesPage />);
-    // O MainLayout renderiza o sidebar. Verificamos se o mock do sidebar apareceu.
-    expect(await screen.findByTestId("sidebar", {}, { timeout: 3000 })).toBeInTheDocument();
-    // Verifica título da página para garantir que o conteúdo está lá
-    expect(screen.getAllByText(/Conexões/i).length).toBeGreaterThan(0);
+    // Nova convenção: o MainLayout/sidebar vive no nível da rota, não dentro da página.
+    // Validamos que a página renderiza seu próprio conteúdo.
+    expect((await screen.findAllByText(/Conexões/i)).length).toBeGreaterThan(0);
   });
 
-  it("AdminConexoesStatusPage deve renderizar dentro do MainLayout (com sidebar)", async () => {
+  it("AdminConexoesStatusPage renderiza o conteúdo (layout no nível de rota)", async () => {
     renderWithProviders(<AdminConexoesStatusPage />);
-    expect(await screen.findByTestId("sidebar", {}, { timeout: 3000 })).toBeInTheDocument();
-    expect(screen.getByText(/Status da sincronização/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Status da sincronização/i)).toBeInTheDocument();
   });
 });

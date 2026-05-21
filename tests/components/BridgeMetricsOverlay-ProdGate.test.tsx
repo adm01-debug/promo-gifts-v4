@@ -42,8 +42,10 @@ describe('BridgeMetricsOverlay - Gating de Produção', () => {
     expect(container.textContent).toContain('bridge metrics');
   });
 
-  it('retorna null se o gate SSOT REJEITAR (mesmo que seja dev)', () => {
-    vi.mocked(useDevGate).mockReturnValue({ isAllowed: false, isDev: true });
+  it('retorna null quando não é dev real (gate de runtime por isDev); override isAllowed não habilita sozinho', () => {
+    // Nova convenção: o overlay de telemetria gateia por isDev (role dev real).
+    // O override de SSOT (isAllowed=true) NÃO basta para montar — endurece contra vazamento técnico.
+    vi.mocked(useDevGate).mockReturnValue({ isAllowed: true, isDev: false });
     const { container } = render(<BridgeMetricsOverlay />);
     expect(container).toBeEmptyDOMElement();
   });

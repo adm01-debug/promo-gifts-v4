@@ -37,14 +37,14 @@ const STORAGE_KEY = 'gifts-store-theme-config';
 // HSL canônico do Zapp Web. Manter sincronizado quando refazer port.
 const ZAPP_GX_HSL: Record<string, { h: number; s: number; l: number; gh: number }> = {
   'gx-classic': { h: 347, s: 96, l: 54, gh: 340 },
-  'gx-pink-addiction': { h: 330, s: 95, l: 60, gh: 340 },
+  'gx-pink-addiction': { h: 330, s: 95, l: 50, gh: 340 }, // L 60->50 (WCAG)
   'gx-purple-haze': { h: 265, s: 65, l: 50, gh: 275 },
-  'gx-rose-quartz': { h: 345, s: 75, l: 68, gh: 355 },
+  'gx-rose-quartz': { h: 345, s: 75, l: 54, gh: 355 }, // L 68->54 (WCAG)
   'gx-ultraviolet': { h: 271, s: 76, l: 53, gh: 280 },
-  'gx-hackerman': { h: 127, s: 65, l: 46, gh: 135 },
-  'gx-frutti-di-mare': { h: 182, s: 90, l: 42, gh: 190 },
+  'gx-hackerman': { h: 127, s: 65, l: 40, gh: 135 }, // L 46->40 (WCAG)
+  'gx-frutti-di-mare': { h: 182, s: 90, l: 35, gh: 190 }, // L 42->35 (WCAG)
   'gx-cyberpunk': { h: 55, s: 100, l: 51, gh: 180 },
-  'gx-razer': { h: 113, s: 70, l: 51, gh: 120 },
+  'gx-razer': { h: 113, s: 70, l: 35, gh: 120 }, // L 51->35 (WCAG)
 };
 
 const CLASSIC_IDS = [
@@ -188,7 +188,7 @@ describe('§3 Skins Opera GX (paridade Zapp Web)', () => {
   });
 
   it('gx-hackerman é verde Matrix (h=127)', () => {
-    expect(findPreset('gx-hackerman').dark.primary).toBe('127 65% 46%');
+    expect(findPreset('gx-hackerman').dark.primary).toBe('127 65% 40%'); // WCAG
   });
 
   it('gx-cyberpunk é amarelo neon (h=55)', () => {
@@ -605,7 +605,7 @@ describe('§11 Fluxo: reload da página com skin GX salva (ThemeInitializer)', (
     // Radius 10px (GX friendly)
     expect(document.documentElement.style.getPropertyValue('--radius')).toBe('0.625rem');
     // Primary do Hackerman (h=127)
-    expect(document.documentElement.style.getPropertyValue('--primary')).toBe('127 65% 46%');
+    expect(document.documentElement.style.getPropertyValue('--primary')).toBe('127 65% 40%'); // WCAG L 46->40
   });
 });
 

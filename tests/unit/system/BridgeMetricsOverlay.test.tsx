@@ -40,12 +40,13 @@ describe('BridgeMetricsOverlay', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useDevGate as any).mockReturnValue({ isAllowed: true });
+    (useDevGate as any).mockReturnValue({ isAllowed: true, isDev: true });
     (useBridgeMetrics as any).mockReturnValue(defaultMockValues);
   });
 
-  it('não deve renderizar nada se isAllowed for false', () => {
-    (useDevGate as any).mockReturnValue({ isAllowed: false });
+  it('não deve renderizar nada se isDev for false', () => {
+    // Nova convenção: o overlay gateia por isDev (role dev real), não por isAllowed.
+    (useDevGate as any).mockReturnValue({ isAllowed: false, isDev: false });
     const { container } = render(<BridgeMetricsOverlay />);
     expect(container.firstChild).toBeNull();
   });

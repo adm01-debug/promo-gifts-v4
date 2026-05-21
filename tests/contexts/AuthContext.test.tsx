@@ -12,7 +12,7 @@ vi.mock('@/integrations/supabase/client', () => {
     single: vi.fn().mockResolvedValue({ data: null, error: { message: 'not found' } }),
     update: vi.fn().mockReturnValue({
       eq: vi.fn().mockReturnValue({
-        then: vi.fn((cb: any) => cb({ error: null })),
+        then: vi.fn((cb?: any) => { if (typeof cb === 'function') cb({ error: null }); return Promise.resolve({ error: null }); }),
       }),
     }),
   }));
@@ -26,9 +26,14 @@ vi.mock('@/integrations/supabase/client', () => {
           return { data: { subscription: { unsubscribe: vi.fn() } } };
         }),
         getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
+        refreshSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
         signUp: vi.fn(),
         signInWithPassword: vi.fn(),
         signOut: vi.fn().mockResolvedValue({}),
+        mfa: {
+          getAuthenticatorAssuranceLevel: vi.fn().mockResolvedValue({ data: { currentLevel: "aal1", nextLevel: "aal1" }, error: null }),
+          listFactors: vi.fn().mockResolvedValue({ data: { all: [] }, error: null }),
+        },
       },
       from: mockFrom,
     },
@@ -108,7 +113,7 @@ describe('AuthContext', () => {
           }),
           update: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
-              then: vi.fn((cb: any) => { cb({ error: null }); return Promise.resolve(); }),
+              then: vi.fn((cb?: any) => { if (typeof cb === 'function') cb({ error: null }); return Promise.resolve({ error: null }); }),
             }),
           }),
         } as any;
@@ -164,7 +169,7 @@ describe('AuthContext', () => {
           }),
           update: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
-              then: vi.fn((cb: any) => { cb({ error: null }); return Promise.resolve(); }),
+              then: vi.fn((cb?: any) => { if (typeof cb === 'function') cb({ error: null }); return Promise.resolve({ error: null }); }),
             }),
           }),
         } as any;

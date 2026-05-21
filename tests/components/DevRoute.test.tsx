@@ -68,7 +68,7 @@ function renderProtected(initialPath: string) {
       >
         <PathProbe />
         <Routes>
-          <Route path="/login" element={<div>Login Page</div>} />
+          <Route path="/auth" element={<div>Login Page</div>} />
           <Route path="/" element={<div>Home Page</div>} />
           <Route path="/catalogo" element={<div>Catálogo</div>} />
           <Route path="/admin/usuarios" element={<div>Usuários Admin</div>} />
