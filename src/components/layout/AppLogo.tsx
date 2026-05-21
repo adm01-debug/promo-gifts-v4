@@ -48,7 +48,7 @@ export function AppLogo({
             Promo Gifts
           </span>
           <span className={cn(
-            "text-[10px] font-semibold uppercase tracking-widest text-primary/80 flex items-center gap-1",
+            "text-[9px] font-bold uppercase tracking-[0.2em] text-primary/70 flex items-center gap-1.5 mt-0.5",
           )}>
             Plataforma de Produtos
             <span className="inline-block w-1 h-1 rounded-full bg-primary animate-ping" />
