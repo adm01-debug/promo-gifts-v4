@@ -78,7 +78,7 @@ export function GlobalSearchPalette() {
       <div className="flex items-center gap-2 w-full md:w-auto">
         <button
           onClick={() => s.setOpen(true)}
-          className="group relative flex items-center gap-2.5 px-4 py-2.5 text-sm rounded-2xl border border-primary/20 hover:border-primary/40 bg-primary/5 backdrop-blur-md transition-all duration-300 flex-1 md:w-72 overflow-hidden shadow-[0_0_20px_rgba(var(--primary),0.05)]"
+          className="group relative flex items-center gap-3 px-4 py-2.5 text-sm rounded-2xl border border-border/40 hover:border-primary/40 bg-muted/40 backdrop-blur-md transition-all duration-300 flex-1 md:w-full overflow-hidden shadow-sm"
         >
           <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/[0.05] to-primary/0 group-hover:via-primary/[0.1] transition-all duration-500 pointer-events-none" />
           <div className="relative h-6 w-6 rounded-lg bg-primary/15 group-hover:bg-primary/25 flex items-center justify-center transition-colors duration-300 shrink-0">
