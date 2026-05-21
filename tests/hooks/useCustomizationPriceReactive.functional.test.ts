@@ -4,7 +4,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { act } from "@testing-library/react";
 import { renderHookWithProviders } from "./_helpers/render-hook-providers";
-import { useCustomizationPriceReactive } from "@/hooks/useCustomizationPrice";
+import { useCustomizationPriceReactive } from "@/hooks/simulation/useCustomizationPrice";
 import { PRICE_PAYLOAD_PT_V6 } from "../fixtures/personalization-payloads";
 
 vi.mock("@/lib/external-rpc", () => ({

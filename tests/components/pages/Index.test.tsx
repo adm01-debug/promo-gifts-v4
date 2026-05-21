@@ -10,7 +10,7 @@ vi.mock("@/components/layout/MainLayout", () => ({
   MainLayout: ({ children }: { children: React.ReactNode }) => <div data-testid="main-layout">{children}</div>,
 }));
 
-vi.mock("@/hooks/productss", () => ({
+vi.mock("@/hooks/products/useProducts", () => ({
   useProducts: vi.fn().mockReturnValue({
     products: [],
     loading: false,
@@ -36,7 +36,7 @@ vi.mock("@/stores/useComparisonStore", () => ({
   }),
 }));
 
-vi.mock("@/hooks/useSearch", () => ({
+vi.mock("@/hooks/common/useSearch", () => ({
   useSearch: vi.fn().mockReturnValue({ results: [], loading: false, search: vi.fn() }),
 }));
 
@@ -123,7 +123,7 @@ vi.mock("@/data/mockData", () => ({
   SUPPLIERS: [],
 }));
 
-vi.mock("@/hooks/useCatalogState", () => ({
+vi.mock("@/hooks/products/useCatalogState", () => ({
   useCatalogState: vi.fn().mockReturnValue({
     products: [],
     filteredProducts: [],
@@ -166,6 +166,6 @@ describe("Index Page", () => {
   it("renders without crashing", async () => {
     const { default: Index } = await import("@/pages/Index");
     renderWithProviders(<Index />);
-    expect(screen.getByTestId("main-layout")).toBeInTheDocument();
+    expect(screen.getByTestId("page-title-produtos")).toBeInTheDocument();
   });
 });

@@ -3,7 +3,7 @@
  */
 import { describe, it, expect } from "vitest";
 import { renderHook } from "@testing-library/react";
-import { useComparisonScore, DEFAULT_SCORE_WEIGHTS } from "@/hooks/useComparisonScore";
+import { useComparisonScore, DEFAULT_SCORE_WEIGHTS } from "@/hooks/comparison/useComparisonScore";
 
 const mk = (over: Record<string, unknown>) => ({
   id: "p" + Math.random(),

@@ -14,7 +14,7 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
-import { useComparison } from '@/hooks/useComparison';
+import { useComparison } from '@/hooks/comparison/useComparison';
 
 const createWrapper = () => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });

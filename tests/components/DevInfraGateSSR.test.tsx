@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { useDevGate } from '@/hooks/useDevGate';
+import { useDevGate } from '@/hooks/admin/useDevGate';
 import { useAuth } from '@/contexts/AuthContext';
 import { DevOnlyBridgeOverlay } from '@/components/dev/DevOnlyBridgeOverlay';
 import React from 'react';
@@ -11,7 +11,7 @@ vi.mock('@/contexts/AuthContext', () => ({
 }));
 
 // Mock do hook useDevGate (que queremos testar indiretamente ou mockar para testar o overlay)
-vi.mock('@/hooks/useDevGate', () => ({
+vi.mock('@/hooks/admin/useDevGate', () => ({
   useDevGate: vi.fn(),
 }));
 

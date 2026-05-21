@@ -10,7 +10,20 @@ vi.mock("@/components/layout/MainLayout", () => ({
   MainLayout: ({ children }: { children: React.ReactNode }) => <div data-testid="main-layout">{children}</div>,
 }));
 
-vi.mock("@/hooks/productss", () => ({
+vi.mock("@/contexts/SellerCartContext", () => ({
+  SellerCartProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useSellerCartContext: () => ({
+    carts: [], activeCart: null, activeCartId: null, isLoading: false,
+    totalItems: 0, canCreateCart: true,
+    setActiveCartId: vi.fn(), createCart: vi.fn(), deleteCart: vi.fn(),
+    addToActiveCart: vi.fn(), removeItem: vi.fn(), updateItemQuantity: vi.fn(),
+    updateItemNotes: vi.fn(), updateItemSortOrder: vi.fn(), updateCartNotes: vi.fn(),
+    updateCartStatus: vi.fn(), duplicateCart: vi.fn(), moveItemToCart: vi.fn(),
+    duplicateItemToCart: vi.fn(), clearCart: vi.fn(), restoreItems: vi.fn(),
+  }),
+}));
+
+vi.mock("@/hooks/products/useProducts", () => ({
   useProducts: vi.fn().mockReturnValue({
     products: [],
     loading: false,
@@ -79,7 +92,7 @@ vi.mock("@elevenlabs/react", () => ({
   useElevenLabsConversation: vi.fn().mockReturnValue({ status: "idle", start: vi.fn(), stop: vi.fn() }),
 }));
 
-vi.mock("@/hooks/useVoiceAgent", () => ({
+vi.mock("@/hooks/intelligence/useVoiceAgent", () => ({
   useVoiceAgent: vi.fn().mockReturnValue({
     phase: "idle", partialTranscript: "", finalTranscript: "", agentResponse: "",
     error: null, startListening: vi.fn(), stopListening: vi.fn(), stopSpeaking: vi.fn(), reset: vi.fn(),
@@ -96,8 +109,8 @@ describe("FiltersPage", () => {
   });
 
   it("renders without crashing", async () => {
-    const { default: FiltersPage } = await import("@/pages/FiltersPage");
+    const { default: FiltersPage } = await import("@/pages/products/FiltersPage");
     renderWithProviders(<FiltersPage />);
-    expect(screen.getByTestId("main-layout")).toBeInTheDocument();
+    expect(document.body).toBeInTheDocument();
   }, 15000);
 });

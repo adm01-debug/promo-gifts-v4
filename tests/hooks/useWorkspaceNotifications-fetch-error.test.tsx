@@ -76,7 +76,7 @@ function findErrorLogs() {
 
 async function loadHookAndMetrics() {
   vi.resetModules();
-  const hookMod = await import("@/hooks/useWorkspaceNotifications");
+  const hookMod = await import("@/hooks/ui/useWorkspaceNotifications");
   const metricsMod = await import("@/lib/notifications-metrics");
   metricsMod.notificationsMetrics.reset();
   return {

@@ -41,7 +41,7 @@ vi.mock("@/hooks/useMockupDraft", () => ({
   }),
 }));
 
-vi.mock("@/hooks/useMockupTechniques", () => ({
+vi.mock("@/hooks/mockup/useMockupTechniques", () => ({
   useFilteredTechniques: () => ({ techniques: [], isLoading: false }),
   useProductCustomizationOptionsForMockup: () => ({ data: null, isLoading: false }),
 }));
@@ -86,13 +86,13 @@ vi.mock("@/hooks/mockup/mockupGenerationService", () => ({
 
 describe("useMockupGenerator (smoke)", () => {
   it("exporta o hook como função", async () => {
-    const mod = await import("@/hooks/useMockupGenerator");
+    const mod = await import("@/hooks/mockup/useMockupGenerator");
     expect(typeof mod.useMockupGenerator).toBe("function");
   });
 
   it("monta sem crashar com providers padrão", async () => {
     const { renderHookWithProviders } = await import("./_helpers/render-hook-providers");
-    const { useMockupGenerator } = await import("@/hooks/useMockupGenerator");
+    const { useMockupGenerator } = await import("@/hooks/mockup/useMockupGenerator");
     const { result, unmount } = renderHookWithProviders(() => useMockupGenerator());
     expect(typeof result.current).toBe("object");
     unmount();

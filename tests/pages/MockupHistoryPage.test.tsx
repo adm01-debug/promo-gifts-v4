@@ -61,25 +61,25 @@ function renderWithProviders(ui: React.ReactElement) {
 
 describe("MockupHistoryPage", () => {
   it("renders the page title", async () => {
-    const { default: Page } = await import("@/pages/MockupHistoryPage");
+    const { default: Page } = await import("@/pages/mockups/MockupHistoryPage");
     renderWithProviders(<Page />);
     expect(screen.getByText("Histórico de Mockups")).toBeInTheDocument();
   }, 15000);
 
   it("renders page description", async () => {
-    const { default: Page } = await import("@/pages/MockupHistoryPage");
+    const { default: Page } = await import("@/pages/mockups/MockupHistoryPage");
     renderWithProviders(<Page />);
     expect(screen.getByText("Todos os mockups gerados por você")).toBeInTheDocument();
   });
 
   it("renders search input", async () => {
-    const { default: Page } = await import("@/pages/MockupHistoryPage");
+    const { default: Page } = await import("@/pages/mockups/MockupHistoryPage");
     renderWithProviders(<Page />);
     expect(screen.getByPlaceholderText("Buscar por produto, SKU ou cliente...")).toBeInTheDocument();
   });
 
   it("renders table headers", async () => {
-    const { default: Page } = await import("@/pages/MockupHistoryPage");
+    const { default: Page } = await import("@/pages/mockups/MockupHistoryPage");
     renderWithProviders(<Page />);
     expect(screen.getByText("Preview")).toBeInTheDocument();
     expect(screen.getByText("Produto")).toBeInTheDocument();
@@ -90,13 +90,13 @@ describe("MockupHistoryPage", () => {
   });
 
   it("renders total mockups card", async () => {
-    const { default: Page } = await import("@/pages/MockupHistoryPage");
+    const { default: Page } = await import("@/pages/mockups/MockupHistoryPage");
     renderWithProviders(<Page />);
     expect(screen.getByText("Total de Mockups")).toBeInTheDocument();
   });
 
   it("renders Mockups Gerados section", async () => {
-    const { default: Page } = await import("@/pages/MockupHistoryPage");
+    const { default: Page } = await import("@/pages/mockups/MockupHistoryPage");
     renderWithProviders(<Page />);
     expect(screen.getByText("Mockups Gerados")).toBeInTheDocument();
   });

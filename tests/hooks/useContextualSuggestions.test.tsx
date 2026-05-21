@@ -1,6 +1,6 @@
 import { renderHook } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
-import { useContextualSuggestions } from '@/hooks/useContextualSuggestions';
+import { useContextualSuggestions } from '@/hooks/intelligence/useContextualSuggestions';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 

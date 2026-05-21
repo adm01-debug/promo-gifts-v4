@@ -19,10 +19,10 @@ vi.mock('@/lib/external-rpc', () => ({
   invokeExternalRpc: (...args: unknown[]) => invokeExternalRpcMock(...args),
 }));
 
-vi.mock('@/hooks/useGravacaoPriceV2', async () => {
+vi.mock('@/hooks/simulation/useGravacaoPriceV2', async () => {
   const actual =
-    await vi.importActual<typeof import('@/hooks/useGravacaoPriceV2')>(
-      '@/hooks/useGravacaoPriceV2',
+    await vi.importActual<typeof import('@/hooks/simulation/useGravacaoPriceV2')>(
+      '@/hooks/simulation/useGravacaoPriceV2',
     );
   return {
     ...actual,

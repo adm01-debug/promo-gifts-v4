@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import ComparePage from '../../src/pages/ComparePage';
+import ComparePage from '../../src/pages/products/ComparePage';
 import { useComparisonStore } from '../../src/stores/useComparisonStore';
 import { TooltipProvider } from '../../src/components/ui/tooltip';
 import { HelmetProvider } from 'react-helmet-async';
@@ -155,7 +155,7 @@ vi.mock('../../src/contexts/ProductsContext', () => ({
 }));
 
 // Mock do hook useComparisonScore
-vi.mock('../../src/hooks/useComparisonScore', () => ({
+vi.mock('../../src/hooks/comparison/useComparisonScore', () => ({
   useComparisonScore: (products: any[]) => {
     if (!products || products.length === 0) return [];
     return products.map(p => ({

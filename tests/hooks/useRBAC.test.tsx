@@ -8,7 +8,7 @@ import "../components/render-helpers"; // ativa mocks globais (Supabase, Auth, s
 import { useAuth } from "@/contexts/AuthContext";
 import { renderHookWithProviders } from "./_helpers/render-hook-providers";
 import { mockFromOnce, resetSupabaseMocks } from "./_helpers/mock-supabase-builder";
-import { useRBAC } from "@/hooks/useRBAC";
+import { useRBAC } from "@/hooks/auth/useRBAC";
 import { waitFor } from "@testing-library/react";
 
 const mockedUseAuth = vi.mocked(useAuth);

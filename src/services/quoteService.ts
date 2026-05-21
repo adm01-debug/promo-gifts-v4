@@ -13,6 +13,7 @@ import { invokeExternalDb } from "@/lib/external-db";
 export const quoteService = {
   async fetchQuotes(userId: string, scope: string) {
     let query = supabase
+      // rls-allow: escopo aplicado condicionalmente abaixo (self → seller_id; admin scope=all sem filtro); RLS reforça
       .from('quotes')
       .select('*')
       .order('created_at', { ascending: false })
@@ -30,6 +31,7 @@ export const quoteService = {
 
   async fetchQuote(quoteId: string): Promise<Quote | null> {
     const { data: quoteData, error: qErr } = await supabase
+      // rls-allow: lookup por id; RLS (can_access_quote) valida ownership
       .from('quotes')
       .select('*')
       .eq('id', quoteId)
@@ -70,6 +72,7 @@ export const quoteService = {
     const insertPayload = buildInsertPayload(quote, userId, orgId, totals);
     
     const { data: inserted, error: insErr } = await supabase
+      // rls-allow: INSERT define seller_id no payload (buildInsertPayload com userId); RLS valida
       .from('quotes')
       .insert(insertPayload)
       .select('*')
@@ -88,6 +91,7 @@ export const quoteService = {
     const updatePayload = buildUpdatePayload(quote, totals);
     
     const { data: updated, error: updErr } = await supabase
+      // rls-allow: UPDATE por id; RLS (can_access_quote) valida ownership
       .from('quotes')
       .update(updatePayload)
       .eq('id', quoteId)
@@ -139,11 +143,13 @@ export const quoteService = {
   },
 
   async updateQuoteStatus(quoteId: string, status: Quote['status']) {
+    // rls-allow: UPDATE de status por id; RLS (can_access_quote) valida ownership
     const { error } = await supabase.from('quotes').update({ status }).eq('id', quoteId);
     if (error) throw error;
   },
 
   async deleteQuote(quoteId: string) {
+    // rls-allow: DELETE por id; RLS (can_access_quote) valida ownership
     const { error } = await supabase.from('quotes').delete().eq('id', quoteId);
     if (error) throw error;
   },

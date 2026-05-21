@@ -36,7 +36,7 @@ describe("Auth Page", () => {
   });
 
   it("renders without crashing", async () => {
-    const { default: Auth } = await import("@/pages/Auth");
+    const { default: Auth } = await import("@/pages/auth/Auth");
     renderWithProviders(<Auth />);
     expect(document.body).toBeTruthy();
   });

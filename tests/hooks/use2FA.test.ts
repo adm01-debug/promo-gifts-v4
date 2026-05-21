@@ -6,7 +6,7 @@ import "../components/render-helpers";
 import { act, waitFor } from "@testing-library/react";
 import { renderHookWithProviders } from "./_helpers/render-hook-providers";
 import { mockFromOnce, resetSupabaseMocks } from "./_helpers/mock-supabase-builder";
-import { use2FA } from "@/hooks/use2FA";
+import { use2FA } from "@/hooks/auth/use2FA";
 
 beforeEach(() => {
   resetSupabaseMocks();
