@@ -1,8 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
-import { invokeBatchBridge } from '@/lib/external-db';
-import { mapLightweightToProduct, PRODUCT_SELECT_LIGHTWEIGHT, CATALOG_PAGE_SIZE, CATALOG_BATCH_PAGES } from '@/hooks/products';
+import { invokeBatchBridge, fetchPromobrindCategories } from '@/lib/external-db';
+import {
+  mapLightweightToProduct,
+  PRODUCT_SELECT_LIGHTWEIGHT,
+  CATALOG_PAGE_SIZE,
+  CATALOG_BATCH_PAGES,
+} from '@/hooks/products';
 
 /**
  * Prefetch do catálogo SOMENTE após autenticação (#6).
@@ -15,7 +20,7 @@ export function useCatalogPrefetch() {
 
   useEffect(() => {
     if (isLoading || !isAuthenticated || prefetchedRef.current) return;
-    
+
     // Otimização: Delay de 400ms para prefetch não competir com o render inicial crítico (LCP),
     // mas rápido o suficiente para estar pronto antes que o usuário interaja.
     const timer = setTimeout(() => {
@@ -33,13 +38,24 @@ export function useCatalogPrefetch() {
             offset: i * CATALOG_PAGE_SIZE,
             ...(i === 0 ? { countMode: 'exact' } : {}),
           }));
-          const batchResults = await invokeBatchBridge(batchQueries);
+          const [batchResults, categoriesRaw] = await Promise.all([
+            invokeBatchBridge(batchQueries),
+            fetchPromobrindCategories().catch(() => [] as { id: string; name: string }[]),
+          ]);
+          const categoriesById = new Map(categoriesRaw.map((c) => [String(c.id), c.name]));
           const products: ReturnType<typeof mapLightweightToProduct>[] = [];
           let totalEstimate: number | null = null;
           let lastPageSize = 0;
           for (const result of batchResults) {
             if (result.success && result.data?.records) {
-              products.push(...(result.data.records as unknown[]).map(mapLightweightToProduct));
+              products.push(
+                ...(result.data.records as unknown[]).map((p) =>
+                  mapLightweightToProduct(
+                    p as Parameters<typeof mapLightweightToProduct>[0],
+                    categoriesById,
+                  ),
+                ),
+              );
               lastPageSize = result.data.records.length;
               if (result.data.count !== null && totalEstimate === null) {
                 totalEstimate = result.data.count as number;
@@ -48,7 +64,8 @@ export function useCatalogPrefetch() {
           }
           return {
             products,
-            nextOffset: lastPageSize === CATALOG_PAGE_SIZE ? CATALOG_BATCH_PAGES * CATALOG_PAGE_SIZE : null,
+            nextOffset:
+              lastPageSize === CATALOG_PAGE_SIZE ? CATALOG_BATCH_PAGES * CATALOG_PAGE_SIZE : null,
             totalEstimate,
           };
         },
