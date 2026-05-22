@@ -41,15 +41,19 @@ describe('DevOnlyBridgeOverlay — gate por papel + SSOT', () => {
     expect(await screen.findByTestId('bridge-metrics-overlay-mock')).toBeInTheDocument();
   });
 
-  it('gate SSOT desligado (env=false) bloqueia mesmo dev', () => {
+  // QA: DevOnlyBridgeOverlay foi endurecido com <DevOnly strict> — o gate
+  // efetivo passou a ser EXCLUSIVAMENTE `isDev`, ignorando `isAllowed`/
+  // overrides. Decisão de segurança: telemetria de bridge é só pra dev real.
+  // Os dois testes abaixo foram invertidos para refletir essa semântica.
+  it('strict: dev real vê overlay mesmo com env gate desligado (isAllowed=false)', async () => {
     vi.mocked(useDevGate).mockReturnValue({ isAllowed: false, isDev: true });
-    const { container } = render(<DevOnlyBridgeOverlay />);
-    expect(container).toBeEmptyDOMElement();
-  });
-
-  it('gate SSOT habilitado por override (localStorage) renderiza mesmo para não-dev', async () => {
-    vi.mocked(useDevGate).mockReturnValue({ isAllowed: true, isDev: false });
     render(<DevOnlyBridgeOverlay />);
     expect(await screen.findByTestId('bridge-metrics-overlay-mock')).toBeInTheDocument();
+  });
+
+  it('strict: override de localStorage NÃO basta sem isDev=true (admin/non-dev fica fora)', () => {
+    vi.mocked(useDevGate).mockReturnValue({ isAllowed: true, isDev: false });
+    const { container } = render(<DevOnlyBridgeOverlay />);
+    expect(container).toBeEmptyDOMElement();
   });
 });
