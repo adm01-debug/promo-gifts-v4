@@ -8,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 import type { KitState } from '@/lib/kit-builder';
 
 // ============================================
@@ -123,7 +124,7 @@ export function useCustomKitPersistence() {
       toast.success('Kit salvo com sucesso!');
     },
     onError: (err: Error) => {
-      toast.error(`Erro ao salvar kit: ${err.message}`);
+      toast.error('Erro ao salvar kit', { description: sanitizeError(err) });
     },
   });
 
@@ -143,7 +144,7 @@ export function useCustomKitPersistence() {
       toast.success('Kit removido');
     },
     onError: (err: Error) => {
-      toast.error(`Erro ao remover: ${err.message}`);
+      toast.error('Erro ao remover', { description: sanitizeError(err) });
     },
   });
 

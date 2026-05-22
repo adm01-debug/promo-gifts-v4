@@ -176,8 +176,8 @@ seria não-destrutivo.
 
 | # | Item | Onde | Impacto | Recomendação |
 |---|------|------|---------|--------------|
-| C1 | TypeScript baseline drift: **1380 atuais vs 1262 baseline** (+118 erros, 242 par(es) file:rule) | `npm run typecheck` | `npm run lint`/CI falham | Investigar com `npm run typecheck:full` — provável `tsc/typescript` upgrade trouxe novos errors latentes. Plano: corrigir top-25 ofensores ou regerar baseline via `typecheck:baseline:update` |
-| C2 | Toast-leaks: **73 novas ocorrências de toast com `.message` cru** (textos técnicos vazando ao usuário) | 1080 arquivos varridos vs `.toast-leaks-baseline.json` | UX/security (info disclosure) | Substituir por `sanitizeError(err)` (`src/lib/security/sanitize-error.ts`). Lista em `npm run check:toast-leaks` |
+| C1 | TypeScript baseline drift: **1378 atuais vs 1262 baseline** (+116 erros, 240+ par(es) file:rule) | `npm run typecheck` | `npm run lint`/CI falham | Drift estrutural (TS2305/TS2339 dominam). Top ofensores: `lib/personalization/adapters/price-response.adapter.ts` (61), `pages/admin/AdminProductFormPage.tsx` (60). Caminho documentado: corrigir top-25 ou regerar `typecheck:baseline:update` |
+| ~~C2~~ | ~~Toast-leaks: 73 novas ocorrências~~ | — | — | **✅ RESOLVIDO nesta auditoria.** `npm run check:toast-leaks` agora: `✅ Toast leaks: 106 legado(s), 0 novo(s)`. 30 arquivos migrados para `sanitizeError()` (hooks/quotes, hooks/intelligence, hooks/favorites, hooks/kit-builder, hooks/crm, hooks/common, hooks/auth, hooks/admin, hooks/collections, hooks/products, pages/admin, pages/auth, pages/system, components/auth) |
 
 ### Moderados
 
@@ -249,8 +249,8 @@ seria não-destrutivo.
 
 ### Curto prazo
 
-5. **`sanitizeError` rollout** — atacar os 73 toast leaks por sub-pacote:
-   começar por `src/hooks/admin/*` (5 ocorrências) e `src/hooks/collections/useExternalCollections.ts` (5).
+5. **~~`sanitizeError` rollout~~** — ✅ aplicado nesta auditoria. Gate
+   `check:toast-leaks` passa com 0 nova(s) ocorrência(s).
 6. **CI gate para contract/fuzz** — adicionar JWT de service-role em
    `SUPABASE_SERVICE_ROLE_KEY` (Vault GHA) para validação real.
 7. **Monitorar `category_name` em produção** — adicionar log/alerta em
@@ -326,6 +326,7 @@ npm run e2e:smoke-summary
 | `scripts/contract-testing.mjs` | EDIT | Fallback URL para projeto correto (#36) |
 | `scripts/massive-load-test.mjs` | EDIT | Fallback URL para projeto correto (#36) |
 | `docs/AUDITORIA_E2E_2026-05-22.md` | NEW | Este relatório |
+| `src/hooks/**/*.ts(x)` + `src/pages/**/*.tsx` + `src/components/**/*.tsx` (30 arquivos) | EDIT | Rollout do `sanitizeError()` — fecha gate `check:toast-leaks` (73 → 0 novos) |
 
 ### 9.4 Artefatos disponíveis
 

@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 
 export interface KitCollaboratorRow {
   id: string;
@@ -64,8 +65,11 @@ export function useKitCollaborators(kitId: string | undefined) {
       });
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: key }); toast.success('Colaborador convidado'); },
-    onError: (e: Error) => toast.error(e.message),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: key });
+      toast.success('Colaborador convidado');
+    },
+    onError: (e: Error) => toast.error('Operação falhou', { description: sanitizeError(e) }),
   });
 
   const remove = useMutation({
@@ -73,7 +77,9 @@ export function useKitCollaborators(kitId: string | undefined) {
       const { error } = await supabase.from('kit_collaborators').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: key }); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: key });
+    },
   });
 
   return { collaborators, isLoading, invite: invite.mutateAsync, remove: remove.mutateAsync };
@@ -104,14 +110,27 @@ export function useKitComments(kitId: string | undefined) {
     if (!kitId) return;
     const channel = supabase
       .channel(`kit-comments-${kitId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'kit_comments', filter: `kit_id=eq.${kitId}` },
-        () => qc.invalidateQueries({ queryKey: key }))
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'kit_comments', filter: `kit_id=eq.${kitId}` },
+        () => qc.invalidateQueries({ queryKey: key }),
+      )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [kitId, qc]);
 
   const post = useMutation({
-    mutationFn: async ({ body, parentId, anchor }: { body: string; parentId?: string; anchor?: string }) => {
+    mutationFn: async ({
+      body,
+      parentId,
+      anchor,
+    }: {
+      body: string;
+      parentId?: string;
+      anchor?: string;
+    }) => {
       if (!kitId || !user?.id) throw new Error('Kit ou usuário inválido');
       const { error } = await supabase.from('kit_comments').insert({
         kit_id: kitId,
@@ -122,7 +141,7 @@ export function useKitComments(kitId: string | undefined) {
       });
       if (error) throw error;
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error('Operação falhou', { description: sanitizeError(e) }),
   });
 
   const resolve = useMutation({
@@ -132,5 +151,10 @@ export function useKitComments(kitId: string | undefined) {
     },
   });
 
-  return { comments, isLoading, postComment: post.mutateAsync, resolveComment: resolve.mutateAsync };
+  return {
+    comments,
+    isLoading,
+    postComment: post.mutateAsync,
+    resolveComment: resolve.mutateAsync,
+  };
 }

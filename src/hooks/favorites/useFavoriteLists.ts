@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 
 export interface FavoriteList {
   id: string;
@@ -113,7 +114,7 @@ export function useFavoriteLists() {
       qc.invalidateQueries({ queryKey: LISTS_KEY });
       toast.success('Lista criada');
     },
-    onError: (e: Error) => toast.error(`Erro ao criar lista: ${e.message}`),
+    onError: (e: Error) => toast.error('Erro ao criar lista', { description: sanitizeError(e) }),
   });
 
   const updateList = useMutation({
@@ -128,7 +129,8 @@ export function useFavoriteLists() {
       return data as FavoriteList;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: LISTS_KEY }),
-    onError: (e: Error) => toast.error(`Erro ao atualizar lista: ${e.message}`),
+    onError: (e: Error) =>
+      toast.error('Erro ao atualizar lista', { description: sanitizeError(e) }),
   });
 
   const deleteList = useMutation({
@@ -143,7 +145,7 @@ export function useFavoriteLists() {
       qc.invalidateQueries({ queryKey: LISTS_KEY });
       toast.success('Lista excluída');
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error('Operação falhou', { description: sanitizeError(e) }),
   });
 
   const generateShareToken = useMutation({
@@ -265,7 +267,7 @@ export function useFavoriteListItems(listId: string | null) {
       qc.invalidateQueries({ queryKey: ITEMS_KEY(vars.listId) });
       qc.invalidateQueries({ queryKey: LISTS_KEY });
     },
-    onError: (e: Error) => toast.error(`Erro ao salvar: ${e.message}`),
+    onError: (e: Error) => toast.error('Erro ao salvar', { description: sanitizeError(e) }),
   });
 
   const updateItem = useMutation({
@@ -348,7 +350,7 @@ export function useFavoriteListItems(listId: string | null) {
       qc.invalidateQueries({ queryKey: LISTS_KEY });
       toast.success('Item movido');
     },
-    onError: (e: Error) => toast.error(`Erro ao mover: ${e.message}`),
+    onError: (e: Error) => toast.error('Erro ao mover', { description: sanitizeError(e) }),
   });
 
   return {
@@ -413,7 +415,7 @@ export function useFavoriteTrash() {
       qc.invalidateQueries({ queryKey: ['favorite-items'] });
       toast.success('Item restaurado');
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error('Operação falhou', { description: sanitizeError(e) }),
   });
 
   const purgeItem = useMutation({

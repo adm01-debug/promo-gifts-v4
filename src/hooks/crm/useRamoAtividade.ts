@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ramoAtividadeService } from '@/services/ramoAtividadeService';
 import type { RamoAtividade } from '@/types/ramo-atividade';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 
 // ============================================================
 // QUERY KEYS
@@ -67,7 +68,7 @@ export function useCreateRamoAtividade() {
       toast.success('Ramo de atividade criado com sucesso!');
     },
     onError: (error: Error) => {
-      toast.error(`Erro ao criar: ${error.message}`);
+      toast.error('Erro ao criar', { description: sanitizeError(error) });
     },
   });
 }
@@ -85,7 +86,7 @@ export function useUpdateRamoAtividade() {
       toast.success('Ramo de atividade atualizado!');
     },
     onError: (error: Error) => {
-      toast.error(`Erro ao atualizar: ${error.message}`);
+      toast.error('Erro ao atualizar', { description: sanitizeError(error) });
     },
   });
 }
@@ -103,7 +104,7 @@ export function useDeleteRamoAtividade() {
       toast.success('Ramo de atividade removido!');
     },
     onError: (error: Error) => {
-      toast.error(`Erro ao remover: ${error.message}`);
+      toast.error('Erro ao remover', { description: sanitizeError(error) });
     },
   });
 }
@@ -121,7 +122,7 @@ export function useToggleRamoAtividade() {
       toast.success(`Ramo ${data.ativo ? 'ativado' : 'desativado'}!`);
     },
     onError: (error: Error) => {
-      toast.error(`Erro ao atualizar: ${error.message}`);
+      toast.error('Erro ao atualizar', { description: sanitizeError(error) });
     },
   });
 }

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 import type { UseFormGetValues, UseFormSetValue } from 'react-hook-form';
 import type { ProductFormData } from '@/components/admin/products/ProductFormSchema';
 
@@ -14,7 +15,12 @@ interface SeoAIResult {
 }
 
 const SEO_FIELDS: (keyof SeoAIResult)[] = [
-  'meta_title', 'meta_description', 'meta_keywords', 'slug', 'key_benefits', 'use_cases',
+  'meta_title',
+  'meta_description',
+  'meta_keywords',
+  'slug',
+  'key_benefits',
+  'use_cases',
 ];
 
 export function useProductSeoAI(
@@ -63,7 +69,7 @@ export function useProductSeoAI(
       toast.success('Campos SEO e marketing preenchidos com IA!');
     } catch (err) {
       console.error('SEO AI error:', err);
-      toast.error(err instanceof Error ? err.message : 'Erro ao gerar conteúdo com IA');
+      toast.error('Erro ao gerar conteúdo com IA', { description: sanitizeError(err) });
     } finally {
       setIsGenerating(false);
     }
