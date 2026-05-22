@@ -41,6 +41,9 @@ jobs:
         with:
           # fetch-depth: 0 → histórico completo, para auditar todos os commits do push
           fetch-depth: 0
+          # Fix [5]: não persistir credenciais no runner (security best practice;
+          # este workflow só precisa de leitura, sem push)
+          persist-credentials: false
 
       - name: Make sentinel-check executable
         run: chmod +x scripts/sentinel-check.sh
