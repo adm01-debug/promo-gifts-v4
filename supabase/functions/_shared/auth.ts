@@ -3,6 +3,7 @@
 
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { isTokenRevoked } from "./token-revocation.ts";
+import { constantTimeEqual } from "./dispatcher-auth.ts";
 
 export interface AuthResult {
   userId: string;
@@ -32,11 +33,11 @@ export async function authenticateRequest(req: Request): Promise<AuthResult> {
   const rawToken = authHeader.slice(7).trim();
   const localServiceClient = createClient(supabaseUrl, serviceRoleKey);
 
-  // ⚡ FAST-PATH: Bypasse para chamadas do sistema (service_role ou simulation).
-  // IMPORTANTE: a chave de simulação DEVE vir da env `SIMULATION_BYPASS_KEY` —
-  // qualquer fallback hardcoded vira backdoor visível no repositório.
-  const isServiceRole = !!(serviceRoleKey && rawToken === serviceRoleKey.trim());
-  const isSimulation = !!(simulationKey && rawToken === simulationKey.trim());
+  // ⚡ FAST-PATH: bypass para chamadas do sistema (service_role ou simulação).
+  // Comparação em tempo constante para evitar timing-attacks de descoberta de
+  // prefixos. Ambos os tokens vivem em vault/env — NUNCA hardcoded.
+  const isServiceRole = !!serviceRoleKey && constantTimeEqual(rawToken, serviceRoleKey.trim());
+  const isSimulation = !!simulationKey && constantTimeEqual(rawToken, simulationKey.trim());
   
   if (isServiceRole || isSimulation) {
     return {
