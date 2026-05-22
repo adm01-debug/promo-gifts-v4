@@ -2,8 +2,8 @@
  * Left-side branding panel for Auth page — extracted for modularity
  */
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Gift, Package, Factory, SlidersHorizontal, Brain, Rocket } from "lucide-react";
+import { motion } from "framer-motion";
+import { Package, Factory, SlidersHorizontal, Brain, Rocket } from "lucide-react";
 import { AppLogo } from "@/components/layout/AppLogo";
 import astronautSvg from "@/assets/astronaut.svg";
 

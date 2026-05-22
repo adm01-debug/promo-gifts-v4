@@ -4,8 +4,7 @@
  */
 import React from "react";
 import { Badge } from "@/components/ui/badge";
-import {
-  CommandGroup, CommandItem,
+import { CommandItem,
 } from "@/components/ui/command";
 import {
   Clock, Flame, X, Sparkles, Eye, Zap, Compass,

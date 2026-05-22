@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { consumePostLoginRedirect } from '@/lib/auth/post-login-redirect';
 import { resolveRedirectTarget } from '@/lib/auth/resolve-redirect-target';
 import { resolveOAuthError, type OAuthErrorCopy } from '@/lib/auth/oauth-error-messages';
 
@@ -11,7 +10,6 @@ import {
   Eye,
   EyeOff,
   Loader2,
-  Gift,
   Mail,
   Lock,
   ShieldAlert,
@@ -27,7 +25,7 @@ import {
   Rocket,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AuthBrandingPanel, Starfield, SpaceScene } from "@/pages/auth/AuthBranding";
+import { AuthBrandingPanel, SpaceScene } from "@/pages/auth/AuthBranding";
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

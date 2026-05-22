@@ -4,7 +4,7 @@
 import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Sparkles, Target, TrendingUp } from "lucide-react";
+import { Sparkles, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Mapeamento de nichos/ramos para técnicas recomendadas

@@ -23,10 +23,8 @@ import {
   Palette,
   Move,
   ZoomIn,
-  ZoomOut,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
-import { cn } from "@/lib/utils";
 import type { SimulationOption, Product } from "@/types/simulation";
 
 interface MockupPreviewProps {

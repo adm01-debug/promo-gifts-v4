@@ -8,7 +8,6 @@
 import { useQuery, type UseQueryOptions } from '@tanstack/react-query';
 import { productService } from '@/services/productService';
 import type { Product, ProductFilters } from '@/types/product-catalog';
-import { mapPromobrindToProduct } from '@/utils/product-mapper';
 
 // Re-export types for backward compatibility
 export type { Product, ProductColor, ProductFilters } from '@/types/product-catalog';
