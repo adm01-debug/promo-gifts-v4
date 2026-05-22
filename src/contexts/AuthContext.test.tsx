@@ -2,6 +2,7 @@ import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AuthProvider, useAuth } from './AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import type * as AuthServiceModule from '@/services/authService';
 import { type ReactNode } from 'react';
 
 // Mock Supabase
@@ -35,11 +36,13 @@ vi.mock('@/integrations/supabase/client', () => ({
 
 // Mock services and utils
 vi.mock('@/services/authService', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/services/authService')>();
+  const actual = await importOriginal<typeof AuthServiceModule>();
   return {
     authService: {
       ...actual.authService,
-      fetchAAL: vi.fn().mockResolvedValue({ currentLevel: 'aal1', nextLevel: 'aal1', hasMFA: false }),
+      fetchAAL: vi
+        .fn()
+        .mockResolvedValue({ currentLevel: 'aal1', nextLevel: 'aal1', hasMFA: false }),
       fetchProfile: vi.fn().mockResolvedValue({ data: null, error: null }),
       queryRoles: vi.fn().mockResolvedValue({ data: [], error: null }),
     },
@@ -77,10 +80,10 @@ describe('AuthContext', () => {
 
       await act(async () => {
         try {
-        await result.current.signOut();
-      } catch {
-        /* falha remota tolerada */
-      }
+          await result.current.signOut();
+        } catch {
+          /* falha remota tolerada */
+        }
       });
 
       expect(result.current.user).toBeNull();
@@ -105,10 +108,10 @@ describe('AuthContext', () => {
 
       await act(async () => {
         try {
-        await result.current.signOut();
-      } catch {
-        /* falha remota tolerada */
-      }
+          await result.current.signOut();
+        } catch {
+          /* falha remota tolerada */
+        }
       });
 
       expect(supabase.rpc).toHaveBeenCalledWith('log_user_logout');

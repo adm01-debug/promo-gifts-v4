@@ -1,18 +1,18 @@
-import { render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
-import { vi, describe, it, expect, beforeEach } from "vitest";
-import AdminConexoesPage from "@/pages/admin/AdminConexoesPage";
-import AdminConexoesStatusPage from "@/pages/admin/AdminConexoesStatusPage";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { ThemeProvider } from "@/contexts/ThemeContext";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { HelmetProvider } from "react-helmet-async";
-import { AriaLiveProvider } from "@/components/a11y/AriaLive";
-import { MainLayout } from "@/components/layout/MainLayout";
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import AdminConexoesPage from '@/pages/admin/AdminConexoesPage';
+import AdminConexoesStatusPage from '@/pages/admin/AdminConexoesStatusPage';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { HelmetProvider } from 'react-helmet-async';
+import { AriaLiveProvider } from '@/components/a11y/AriaLive';
+import { MainLayout } from '@/components/layout/MainLayout';
 
 // Mock das hooks que dependem de rede/Supabase
-vi.mock("@/hooks/admin", () => ({
+vi.mock('@/hooks/admin', () => ({
   useSecretsManager: () => ({
     secrets: [],
     list: vi.fn(),
@@ -29,15 +29,17 @@ vi.mock("@/hooks/admin", () => ({
   RETEST_COOLDOWN_PRESETS_MS: [3000, 10000, 30000, 60000],
 }));
 
-vi.mock("@/components/admin/connections/useSeverityChangeNotifier", () => ({
+vi.mock('@/components/admin/connections/useSeverityChangeNotifier', () => ({
   useSeverityChangeNotifier: vi.fn(),
 }));
 
-vi.mock("@/integrations/supabase/client", () => ({
+vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     auth: {
       getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
-      onAuthStateChange: vi.fn().mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } }),
+      onAuthStateChange: vi
+        .fn()
+        .mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } }),
       getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
       refreshSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
     },
@@ -55,7 +57,10 @@ vi.mock("@/integrations/supabase/client", () => ({
       not: vi.fn().mockReturnThis(),
       maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
       single: vi.fn().mockResolvedValue({ data: null, error: null }),
-      then: vi.fn((cb?: any) => { cb?.({ data: [], error: null }); return Promise.resolve({ data: [], error: null }); }),
+      then: vi.fn((cb?: (value: { data: never[]; error: null }) => void) => {
+        cb?.({ data: [], error: null });
+        return Promise.resolve({ data: [], error: null });
+      }),
     }),
     functions: {
       invoke: vi.fn().mockResolvedValue({ data: null, error: null }),
@@ -75,7 +80,7 @@ vi.mock("@/integrations/supabase/client", () => ({
 // tests/components/layout/MainLayout.breadcrumbs.test.tsx. Aqui o contrato sob
 // teste é "a página Admin renderiza DENTRO de um layout com sidebar" — então
 // mockamos o MainLayout com um wrapper fiel e leve (sidebar + children).
-vi.mock("@/components/layout/MainLayout", () => ({
+vi.mock('@/components/layout/MainLayout', () => ({
   MainLayout: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="main-layout">
       <div data-testid="sidebar">Sidebar</div>
@@ -110,27 +115,26 @@ const renderWithProviders = (ui: React.ReactElement) => {
           </QueryClientProvider>
         </AriaLiveProvider>
       </TooltipProvider>
-    </HelmetProvider>
+    </HelmetProvider>,
   );
 };
 
-
-describe("Admin Layout Standardization", () => {
+describe('Admin Layout Standardization', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("AdminConexoesPage deve renderizar dentro do MainLayout (com sidebar)", async () => {
+  it('AdminConexoesPage deve renderizar dentro do MainLayout (com sidebar)', async () => {
     renderWithProviders(<AdminConexoesPage />);
     // O MainLayout renderiza o sidebar. Verificamos se o mock do sidebar apareceu.
-    expect(await screen.findByTestId("sidebar", {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(await screen.findByTestId('sidebar', {}, { timeout: 3000 })).toBeInTheDocument();
     // Verifica título da página para garantir que o conteúdo está lá
     expect(screen.getAllByText(/Conexões/i).length).toBeGreaterThan(0);
   });
 
-  it("AdminConexoesStatusPage deve renderizar dentro do MainLayout (com sidebar)", async () => {
+  it('AdminConexoesStatusPage deve renderizar dentro do MainLayout (com sidebar)', async () => {
     renderWithProviders(<AdminConexoesStatusPage />);
-    expect(await screen.findByTestId("sidebar", {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(await screen.findByTestId('sidebar', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.getByText(/Status da sincronização/i)).toBeInTheDocument();
   });
 });
