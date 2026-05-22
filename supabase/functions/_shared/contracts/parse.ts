@@ -33,9 +33,12 @@ import {
   type VersionConfig,
 } from "./versioning.ts";
 
-export interface ContractSchemas<V extends string = string> {
+export interface ContractSchemas<
+  V extends string = string,
+  S extends Record<V, z.ZodTypeAny> = Record<V, z.ZodTypeAny>,
+> {
   /** Map versão → schema Zod. As chaves viram a lista de versões suportadas. */
-  versions: Record<V, z.ZodTypeAny>;
+  versions: S;
   /** Versão default quando o client não pedir nenhuma. */
   defaultVersion: V;
   /** Lista de versões em depreciação com data de sunset. */
@@ -66,16 +69,16 @@ export type ParseResult<V extends string, S extends Record<V, z.ZodTypeAny>> =
  * Parseia, valida e versiona o body de uma requisição.
  */
 export async function parseContract<
-  V extends string,
-  S extends Record<V, z.ZodTypeAny>,
+  S extends Record<string, z.ZodTypeAny>,
 >(
   req: Request,
-  schemas: ContractSchemas<V> & { versions: S },
+  schemas: ContractSchemas<keyof S & string, S>,
   opts: ParseOptions = {},
-): Promise<ParseResult<V, S>> {
+): Promise<ParseResult<keyof S & string, S>> {
   const corsHeaders = opts.corsHeaders ?? {};
 
   // 1. Resolver versão
+  type V = keyof S & string;
   const supportedVersions = Object.keys(schemas.versions) as V[];
   const versionConfig: VersionConfig = {
     supported: supportedVersions,
