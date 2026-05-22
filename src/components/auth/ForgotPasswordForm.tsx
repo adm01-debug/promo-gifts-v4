@@ -28,6 +28,12 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
   const { createRequest } = usePasswordResetRequests();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // `requestSent` keeps the inline success UI available (the JSX renders an
+  // "approval pending" panel based on it). The submit handler currently
+  // navigates to /forgot-password-confirmation on success, so this branch is
+  // a fallback. Keep it false; flipping it to true presents the inline
+  // success state if/when navigation is short-circuited.
+  const [requestSent] = useState(false);
 
   const form = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
