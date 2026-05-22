@@ -1,0 +1,37 @@
+## .github/labels.yml — Source of truth para labels do repo
+##
+## Sincronizado automaticamente por .github/workflows/labels-sync.yml
+## sempre que este arquivo muda no branch `main`.
+##
+## Para adicionar/remover/mudar label: editar aqui, abrir PR.
+## NÃO criar/editar labels direto pelo GitHub UI — vira drift.
+
+# ─── area:* — qual parte do sistema ─────────────────────────────────────────
+- name: "area:contracts"
+  color: "5319e7"
+  description: "Pacote _shared/contracts + Edge Function migrations"
+
+# ─── priority:* — urgência ──────────────────────────────────────────────────
+- name: "priority:p0"
+  color: "b60205"
+  description: "Crítico — risco operacional, bloqueia merge"
+- name: "priority:p1"
+  color: "d93f0b"
+  description: "Alto — fazer em até 2 sprints"
+- name: "priority:p2"
+  color: "fbca04"
+  description: "Médio — backlog priorizado"
+
+# ─── type:* — natureza do trabalho ──────────────────────────────────────────
+- name: "type:refactor"
+  color: "0e8a16"
+  description: "Reescrita sem mudança comportamental"
+- name: "type:migration"
+  color: "c2e0c6"
+  description: "Migration de banco de dados"
+- name: "type:ci"
+  color: "006b75"
+  description: "Pipeline / GitHub Actions / automation"
+- name: "type:cleanup"
+  color: "bfd4f2"
+  description: "Remoção de código legado / dead code"
