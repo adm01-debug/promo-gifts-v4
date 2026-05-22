@@ -87,7 +87,7 @@ rm -f sentinel-smoke-test.md
 
 Resultado esperado:
 
-```
+```text
 remote: error: GH006: Protected branch update failed for refs/heads/main.
 remote: error: Required status check "..." is expected.
 To github.com:adm01-debug/promo-gifts-v4.git

@@ -127,7 +127,7 @@ O workflow `.github/workflows/branch-protection-sentinel.yml` audita cada push e
 
 Para emergências onde abrir PR é impraticável (rollback de produção, secret expirado, deploy quebrando):
 
-```
+```text
 fix: revert deploy quebrado [skip-sentinel: rollback emergencial INC-42]
 ```
 
