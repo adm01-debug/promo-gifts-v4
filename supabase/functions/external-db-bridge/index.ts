@@ -32,6 +32,7 @@ import { retrySupabaseCall } from "../_shared/retry-backoff.ts";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { getOrCreateRequestId, REQUEST_ID_HEADER } from "../_shared/request-id.ts";
 import { resolveCredential } from "../_shared/credentials.ts";
+import { constantTimeEqual } from "../_shared/dispatcher-auth.ts";
 
 const breaker = getBreaker("external-db");
 
@@ -828,7 +829,10 @@ async function handleCrud(body: any, req: Request, corsHeaders: Record<string, s
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')?.trim();
     const simulationKey = Deno.env.get('SIMULATION_BYPASS_KEY')?.trim();
 
-    const isBypass = (serviceRoleKey && token === serviceRoleKey) || (simulationKey && token === simulationKey);
+    // Comparação em tempo constante para evitar timing-attacks de descoberta de prefixos.
+    const isBypass =
+      (!!serviceRoleKey && constantTimeEqual(token, serviceRoleKey)) ||
+      (!!simulationKey && constantTimeEqual(token, simulationKey));
 
     if (isBypass) {
       userId = '00000000-0000-0000-0000-000000000000';

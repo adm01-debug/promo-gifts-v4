@@ -74,6 +74,12 @@ jobs:
       - name: SECURITY DEFINER hardening guard
         run: node scripts/check-security-definer-hardening.mjs
 
+      # Fail-fast: bloqueia qualquer reintrodução de chave de bypass hardcoded
+      # em código de auth/bridge (UUID literal ou const *BYPASS = "..."). Ver
+      # achado SEC-001 da auditoria back-end sênior 2026-05-22.
+      - name: Bypass-literal guard (auth/bridge — SEC-001)
+        run: node scripts/check-no-bypass-literals.mjs
+
       - name: Install dependencies
         run: npm ci
 

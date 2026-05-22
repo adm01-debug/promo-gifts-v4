@@ -3,6 +3,7 @@
 
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { isTokenRevoked } from "./token-revocation.ts";
+import { constantTimeEqual } from "./dispatcher-auth.ts";
 
 export interface AuthResult {
   userId: string;
@@ -28,15 +29,15 @@ export async function authenticateRequest(req: Request): Promise<AuthResult> {
   const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const simulationKey = Deno.env.get('SIMULATION_BYPASS_KEY');
-  // Fallback para chave de simulação de elite (hardcoded para ambiente de dev/teste)
-  const ELITE_SIM_KEY = "a46c3981-244a-4f81-9f57-bab5c45b5cde";
 
   const rawToken = authHeader.slice(7).trim();
   const localServiceClient = createClient(supabaseUrl, serviceRoleKey);
 
-  // ⚡ FAST-PATH: Bypasse para chamadas do sistema (service_role ou simulation)
-  const isServiceRole = (serviceRoleKey && rawToken === serviceRoleKey.trim());
-  const isSimulation = (simulationKey && rawToken === simulationKey.trim()) || (rawToken === ELITE_SIM_KEY);
+  // ⚡ FAST-PATH: bypass para chamadas do sistema (service_role ou simulação).
+  // Comparação em tempo constante para evitar timing-attacks de descoberta de
+  // prefixos. Ambos os tokens vivem em vault/env — NUNCA hardcoded.
+  const isServiceRole = !!serviceRoleKey && constantTimeEqual(rawToken, serviceRoleKey.trim());
+  const isSimulation = !!simulationKey && constantTimeEqual(rawToken, simulationKey.trim());
   
   if (isServiceRole || isSimulation) {
     return {
