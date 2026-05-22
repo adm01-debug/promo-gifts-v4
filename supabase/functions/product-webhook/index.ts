@@ -92,7 +92,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const parseResult = await parseVersionedBody(
+    const parseResult = await parseVersionedBody<"v1" | "v2">(
       req,
       {
         versions: { v1: WebhookPayloadSchemaV1, v2: WebhookPayloadSchemaV2 },
