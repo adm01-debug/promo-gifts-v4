@@ -5,7 +5,7 @@ dotenv.config();
 // scripts/contract-testing.mjs após SEC-001). Antes estava hardcoded
 // (UUID de simulação, mas gitleaks reclamava + risco de virar credencial real).
 // Set: export SUPABASE_TEST_BYPASS_TOKEN=<token-de-simulacao>
-const SUPABASE_URL = process.env.SUPABASE_URL || "https://pqpdolkaeqlyzpdpbizo.supabase.co";
+const SUPABASE_URL = process.env.SUPABASE_URL || "https://doufsxqlfjyuvxuezpln.supabase.co";
 const SERVICE_ROLE_KEY =
   process.env.SUPABASE_TEST_BYPASS_TOKEN ||
   process.env.SUPABASE_SERVICE_ROLE_KEY;
