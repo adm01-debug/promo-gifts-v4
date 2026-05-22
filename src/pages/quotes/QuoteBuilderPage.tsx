@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -28,15 +27,12 @@ import {
   Package,
   Loader2,
   BookTemplate,
-  ArrowLeft,
-  Edit,
   AlertTriangle,
   Calendar as CalendarIcon,
   Sparkles,
   ExternalLink,
   Info,
 } from 'lucide-react';
-import { toast } from 'sonner';
 import { format, addDays } from 'date-fns';
 
 import { QuoteTemplateSelector } from '@/components/quotes/QuoteTemplateSelector';

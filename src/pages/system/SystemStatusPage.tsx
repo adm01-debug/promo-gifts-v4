@@ -16,7 +16,6 @@ import {
   Server,
   Code,
   Clock,
-  Wifi,
   TableProperties,
   Download,
   ShieldCheck,
