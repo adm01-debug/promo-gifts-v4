@@ -99,6 +99,17 @@ jobs:
       - name: TypeScript type check
         run: npm run typecheck
 
+      # Gate P0: nenhum it.skip/test.skip pode existir em tests/p0/ (unit).
+      # e2e/flows/p0/ é WARN (Playwright; rastreado em e2e/flows/p0/README.md).
+      # ver scripts/check-no-skip-p0.mjs.
+      - name: 🚨 No-skip P0 gate (tests/p0/)
+        run: node scripts/check-no-skip-p0.mjs
+
+      # Gate P0: testes unitários cobrindo fronteiras de segurança/integridade.
+      # Falha = regressão em RLS, edge functions, webhooks, auth recovery.
+      - name: 🛡️ P0 unit tests (segurança/integridade)
+        run: npm run test:p0
+
       # hooks já cobertos pelo job dedicado hooks-tests (timeout-minutes: 10).
       # test:strict-ref e test:coverage omitidos aqui — rodam em ref-warning-suite
       # e integration-tests respectivamente, evitando tripla execução da suite.

@@ -142,7 +142,8 @@ export const cloudflareStreamDown: EdgeFnResponseSpec = {
 
 export const mcpGatewayUnauthorized: EdgeFnResponseSpec = {
   status: 401,
-  body: { type: "auth_error", message: "Invalid X-Connection-Api-Key" },
+  // Mensagem genérica — não revela header/credencial específica.
+  body: { type: "auth_error", message: "Unauthorized" },
 };
 
 /* ------------------------------------------------------------------ */

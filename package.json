@@ -11,6 +11,8 @@
     "build:dev": "node scripts/generate-health.mjs && vite build --mode development",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:p0": "vitest run tests/p0/",
+    "test:p0:no-skip": "node scripts/check-no-skip-p0.mjs",
     "test:quality": "vitest run --exclude 'tests/hooks/**'",
     "test:watch": "vitest",
     "test:run": "vitest run",
