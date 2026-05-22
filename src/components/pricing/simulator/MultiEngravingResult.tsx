@@ -52,7 +52,7 @@ export function MultiEngravingResult({
   quantity,
   onQuantityChange,
 }: MultiEngravingResultProps) {
-  const { calculatePrice, loading: priceLoading } = useCustomizationPriceLegacy();
+  const { calculatePrice } = useCustomizationPriceLegacy();
   const [calculations, setCalculations] = useState<EngravingCalculationV51[]>([]);
   const [isCalculating, setIsCalculating] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
@@ -127,9 +127,9 @@ export function MultiEngravingResult({
   const hasMinimumApplied = calculations.some((c) => c.priceData?.minimum_applied);
 
   // Coletar todos os códigos de orçamento
-  const allCodes = calculations
-    .filter((c) => c.priceData?.codigo_orcamento)
-    .map((c) => c.priceData!.codigo_orcamento);
+  const allCodes = calculations.flatMap((c) =>
+    c.priceData?.codigo_orcamento ? [c.priceData.codigo_orcamento] : [],
+  );
 
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
@@ -272,7 +272,7 @@ export function MultiEngravingResult({
                         <Badge 
                           variant="outline" 
                           className="font-mono text-xs cursor-pointer hover:bg-muted transition-colors"
-                          onClick={() => handleCopyCode(calc.priceData!.codigo_orcamento)}
+                          onClick={() => calc.priceData && handleCopyCode(calc.priceData.codigo_orcamento)}
                         >
                           {copied === calc.priceData.codigo_orcamento ? (
                             <CheckCircle2 className="w-3 h-3 mr-1 text-primary dark:text-primary" />

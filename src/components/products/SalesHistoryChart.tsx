@@ -42,7 +42,7 @@ interface SalesHistoryChartProps {
 
 // ---------- Main Component ----------
 
-export function SalesHistoryChart({ productId, productSku, productName }: SalesHistoryChartProps) {
+export function SalesHistoryChart({ productId, productSku, productName: _productName }: SalesHistoryChartProps) {
   const [period, setPeriod] = useState<string>('30');
   const days = Number(period);
 
@@ -52,18 +52,20 @@ export function SalesHistoryChart({ productId, productSku, productName }: SalesH
   const hasData = !!data?.daily?.length;
 
   const chartData = useMemo(() => {
-    if (!hasData) return [];
-    return data!.daily.reduce<Array<typeof data.daily[0] & { dateFormatted: string; fullDate: string }>>((acc, d) => {
+    if (!data?.daily?.length) return [];
+    return data.daily.reduce<Array<typeof data.daily[0] & { dateFormatted: string; fullDate: string }>>((acc, d) => {
       const parsed = safeParseDateForChart(d.date);
       if (parsed) acc.push({ ...d, ...parsed });
       return acc;
     }, []);
-  }, [data, hasData]);
+  }, [data]);
 
   const kpis = useMemo(() => {
-    if (!hasData) return { totalQuotedQty: 0, totalOrderedQty: 0, totalQuotedValue: 0, totalOrderedValue: 0, conversionRate: 0, uniqueSellers: 0, avgOrderValue: 0, topSellers: [] };
-    return data!.kpis;
-  }, [data, hasData]);
+    if (!data?.kpis) {
+      return { totalQuotedQty: 0, totalOrderedQty: 0, totalQuotedValue: 0, totalOrderedValue: 0, conversionRate: 0, uniqueSellers: 0, avgOrderValue: 0, topSellers: [] };
+    }
+    return data.kpis;
+  }, [data]);
 
   // Loading
   if (isLoading) {

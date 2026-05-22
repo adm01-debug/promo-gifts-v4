@@ -18,7 +18,6 @@ import {
   safeVelocityTrend,
   safeNumber,
   generateMockStockData,
-  generateMockVelocity,
   generateMockVelocities,
   generateMockIntelligence,
   generateMockSupplierNames,
@@ -63,8 +62,10 @@ export function useStockChartData(productId: string) {
 
   // Supplier names
   const supplierIds = useMemo(
-    () => hasData ? extractUniqueSupplierIds(summaries!) : (isDemo ? mockVelocities.map(v => v.supplier_id) : []),
-    [summaries, hasData, isDemo, mockVelocities]
+    () => summaries?.length
+      ? extractUniqueSupplierIds(summaries)
+      : isDemo ? mockVelocities.map(v => v.supplier_id) : [],
+    [summaries, isDemo, mockVelocities]
   );
   const { data: realSupplierNamesMap } = useSupplierNames(hasData ? supplierIds : []);
   const supplierNamesMap = hasData ? realSupplierNamesMap : (isDemo ? mockSupplierNames : undefined);
@@ -81,9 +82,9 @@ export function useStockChartData(productId: string) {
   const mockChartData = useMemo(() => generateMockStockData(productId, days), [days, productId]);
 
   const chartData = useMemo(() => {
-    if (!hasData) return mockChartData;
+    if (!summaries?.length) return mockChartData;
     const supplierId = selectedSupplier === 'all' ? undefined : selectedSupplier;
-    const aggregated = aggregateDailySummaryByDate(summaries!, supplierId);
+    const aggregated = aggregateDailySummaryByDate(summaries, supplierId);
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
     return aggregated
@@ -93,7 +94,7 @@ export function useStockChartData(productId: string) {
         if (parsed) acc.push({ ...d, ...parsed });
         return acc;
       }, []);
-  }, [summaries, days, hasData, mockChartData, selectedSupplier]);
+  }, [summaries, days, mockChartData, selectedSupplier]);
 
   // Effective data
   const effectiveIntelligence = intelligence ?? (isDemo ? mockIntel : null);
