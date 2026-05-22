@@ -6,16 +6,40 @@ compatibilidade retroativa entre versões.
 
 ## Endpoints sob contrato
 
+**Webhooks principais** (schema canônico + testes de contrato Vitest):
+
 | Endpoint              | Schema                              | Auth                                       |
 |-----------------------|-------------------------------------|--------------------------------------------|
 | `product-webhook`     | `ProductWebhookPayloadSchema`       | `x-webhook-secret`                         |
 | `webhook-dispatcher`  | `DispatcherBodySchema`              | `x-dispatcher-secret` ou JWT supervisor    |
 | `webhook-inbound`     | `InboundWebhookEnvelopeSchema`      | HMAC SHA-256 (`x-signature-256`)           |
 
-Os schemas vivem em `supabase/functions/_shared/webhook-schemas.ts` (Deno) e
-têm um mirror em `src/lib/webhook-schemas.ts` (Node) — usado pelos testes
-Vitest. A paridade é garantida por
-`tests/edge-functions/webhook-schemas-parity.test.ts`.
+**Demais Edge Functions** (35) — todas usam o helper unificado
+`buildValidationErrorResponse`. CI guard
+(`npm run check:unified-validation`) bloqueia novos endpoints que voltem ao
+padrão inline:
+
+```
+ai-recommendations, analyze-logo-colors, bitrix-sync, categories-api,
+cnpj-lookup, comparison-ai-advisor, commemorative-dates, crm-db-bridge,
+detect-new-device, dropbox-list, elevenlabs-tts, expert-chat,
+external-db-bridge, external-db-inspect, full-op-diagnostics,
+generate-ad-image, generate-ad-prompt, generate-mockup,
+generate-product-seo, kit-identity-suggest, log-login-attempt,
+magic-up-score, manage-users, materials-api, mcp-keys-issue,
+mcp-keys-revoke, mcp-keys-rotate, mcp-keys-update, quote-sync,
+rate-limit-check, secrets-manager, semantic-search, send-notification,
+sync-quote-bitrix, verify-email, visual-search, voice-agent
+```
+
+**Exempções intencionais:**
+- `validate-access` — schema com `passthrough()` que nunca rejeita; é um
+  fallback silencioso (security check defensive, não API endpoint).
+
+Os schemas dos 3 webhooks principais vivem em
+`supabase/functions/_shared/webhook-schemas.ts` (Deno) e têm um mirror em
+`src/lib/webhook-schemas.ts` (Node) — usado pelos testes Vitest. A paridade
+é garantida por `tests/edge-functions/webhook-schemas-parity.test.ts`.
 
 ## Formato unificado de erro 422
 
