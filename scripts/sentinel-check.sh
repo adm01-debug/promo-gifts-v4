@@ -14,6 +14,10 @@
 
 set -euo pipefail
 
+# Força locale UTF-8 para que contagem de chars (${#var}) seja correta em motivos
+# de bypass com caracteres multi-byte (acentos, emojis, etc).
+export LC_ALL="${LC_ALL:-C.UTF-8}"
+
 if [[ $# -lt 3 ]]; then
   echo "ERRO: uso: $0 \"<subject>\" \"<full-message>\" \"<author>\"" >&2
   exit 2
@@ -93,7 +97,9 @@ if [[ -n "$BYPASS_TAG" ]]; then
   # Trim
   REASON=$(echo "$REASON" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
   # Contar caracteres não-espaço
-  REASON_NONSPACE=$(echo -n "$REASON" | tr -d '[:space:]' | wc -c)
+  # Contar caracteres não-espaço (char-aware via ${#var}, requer LC_ALL UTF-8)
+  REASON_TRIMMED=$(echo -n "$REASON" | tr -d '[:space:]')
+  REASON_NONSPACE=${#REASON_TRIMMED}
   if [[ $REASON_NONSPACE -ge 5 ]]; then
     echo "bypass-explicito: $REASON"
     exit 0

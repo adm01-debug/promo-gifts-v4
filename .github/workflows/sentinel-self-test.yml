@@ -92,6 +92,15 @@ jobs:
 
           echo ""
           echo "═══════════════════════════════════════════════════════════"
+          echo "  REGRESSÃO v2.0.1 — Unicode bypass e edge cases"
+          echo "═══════════════════════════════════════════════════════════"
+          # Fix [13]: bypass com motivo Unicode 5 chars (10 bytes UTF-8) DEVE PASSAR
+          assert_pass "bypass Unicode 5 chars"        "fix: x"                      "fix: x [skip-sentinel: ãéçüñ]"          "alice"
+          # Fix [13]: bypass com motivo Unicode 4 chars (8 bytes UTF-8) DEVE FALHAR
+          assert_fail "bypass Unicode 4 chars"        "fix: x"                      "fix: x [skip-sentinel: ãéçü]"           "alice"
+
+          echo ""
+          echo "═══════════════════════════════════════════════════════════"
           echo "  $PASS passaram | $FAIL falharam"
           echo "═══════════════════════════════════════════════════════════"
 

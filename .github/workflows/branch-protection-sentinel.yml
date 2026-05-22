@@ -3,6 +3,13 @@ name: Branch Protection Sentinel
 # ============================================================================
 # CHANGELOG (resumo — detalhes em .github/SENTINEL_CHANGELOG.md):
 #
+# v2.0.1 (2026-05-22) — Bug fixes pós-review (PR #110 → PR seguinte)
+#   • [10] Merge commit PR: audita apenas HEAD em vez de range completo
+#   • [2/12/16] Comando de recovery: revert específico OU PUSH_BEFORE SHA (não FAIL_COUNT)
+#   • [15] Fallback fail-closed quando PUSH_BEFORE inacessível
+#   • [6] URLs absolutas no Step Summary (../blob não resolvia)
+#   • [13] Contagem char-aware (Unicode) no bypass via LC_ALL UTF-8
+#
 # v2.0.0 (2026-05-22) — Hardening híbrido (Opção C)
 #   • Audita TODOS os commits do push, não só o HEAD (fetch-depth: 0)
 #   • Normaliza CRLF (Git Bash / Windows)
@@ -65,12 +72,23 @@ jobs:
                 git fetch --depth=200 origin "$PUSH_BEFORE" || true
               fi
               if git cat-file -e "$PUSH_BEFORE" 2>/dev/null; then
-                COMMITS=$(git log --pretty=%H "${PUSH_BEFORE}..${PUSH_AFTER}")
-                MODE="push padrão (${PUSH_BEFORE:0:7}..${PUSH_AFTER:0:7})"
+                # Fix [10]: se HEAD é merge-commit de PR, audita apenas HEAD
+                # (commits feature da branch da PR já foram revisados na PR)
+                HEAD_SUBJECT=$(git log -1 --pretty=%s "$PUSH_AFTER")
+                if echo "$HEAD_SUBJECT" | grep -qE '^Merge pull request #[0-9]+'; then
+                  COMMITS=$(git rev-parse "$PUSH_AFTER")
+                  MODE="merge-commit PR (audita apenas HEAD ${PUSH_AFTER:0:7})"
+                else
+                  COMMITS=$(git log --pretty=%H "${PUSH_BEFORE}..${PUSH_AFTER}")
+                  MODE="push padrão (${PUSH_BEFORE:0:7}..${PUSH_AFTER:0:7})"
+                fi
               else
-                # Fallback: audita apenas HEAD
-                COMMITS=$(git log -1 --pretty=%H)
-                MODE="fallback (before SHA inacessível, auditando apenas HEAD)"
+                # Fix [15]: fail-closed — antes auditava só HEAD (fail-open).
+                # Agora falha defensivamente pedindo intervenção manual.
+                echo "::error::PUSH_BEFORE SHA ($PUSH_BEFORE) inacessível mesmo após fetch."
+                echo "::error::Não consigo auditar a push range completa — falhando defensivamente."
+                echo "::error::Investigue manualmente e re-execute via workflow_dispatch se necessário."
+                exit 1
               fi
             fi
           fi
@@ -140,19 +158,27 @@ jobs:
               echo "**Próximos passos para os commits ofensores (${FAILED_SHAS[*]}):**"
               echo ""
               echo '```bash'
-              echo "# 1) Reverter o(s) commit(s) localmente:"
-              echo "git reset --hard origin/main~$FAIL_COUNT"
+              echo "# OPÇÃO A — Reverter commits específicos (preserva histórico, seguro)"
+              echo "# Use os SHAs ofensores listados acima:"
+              for FSHA in "${FAILED_SHAS[@]}"; do
+                echo "git revert $FSHA"
+              done
+              echo "git push origin main  # (precisa estar no bypass list)"
               echo ""
-              echo "# 2) Criar branch + reaplicar mudanças:"
+              echo "# OPÇÃO B — Resetar para o estado anterior ao push (DESTRUTIVO)"
+              echo "# Use só se tiver certeza que nenhum commit do push deve permanecer:"
+              echo "git fetch origin"
+              echo "git reset --hard ${PUSH_BEFORE}"
+              echo "git push --force origin main  # (precisa bypass + force push permitido)"
+              echo ""
+              echo "# OPÇÃO C (RECOMENDADA) — Mover trabalho para branch e abrir PR"
               echo "git checkout -b chore/<seu-trabalho>"
-              echo "# (reaplica suas mudanças)"
               echo "git push -u origin chore/<seu-trabalho>"
-              echo ""
-              echo "# 3) Abrir PR via GitHub UI ou:"
-              echo "gh pr create"
+              echo "gh pr create  # ou via UI"
+              echo "# Depois, em main, opte por A ou B para limpar."
               echo '```'
               echo ""
-              echo "Mais detalhes em [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md)."
+              echo "Mais detalhes em [CONTRIBUTING.md](${{ github.server_url }}/${{ github.repository }}/blob/main/CONTRIBUTING.md)."
             } >> "$GITHUB_STEP_SUMMARY"
             echo "::error::$FAIL_COUNT commit(s) em push para main sem padrão aceito: ${FAILED_SHAS[*]}"
             exit 1
@@ -217,7 +243,7 @@ jobs:
               echo "qualquer push direto chega em \`main\` e só depois é detectado."
               echo ""
               echo "👉 **Configurar agora:** https://github.com/$REPO/settings/branches"
-              echo "📖 **Passo a passo:** [.github/BRANCH_PROTECTION_SETUP.md](../blob/main/.github/BRANCH_PROTECTION_SETUP.md)"
+              echo "📖 **Passo a passo:** [.github/BRANCH_PROTECTION_SETUP.md](${{ github.server_url }}/${{ github.repository }}/blob/main/.github/BRANCH_PROTECTION_SETUP.md)"
             } >> "$GITHUB_STEP_SUMMARY"
             echo "::warning::Branch Protection NÃO está ativa em main. Ative em $REPO/settings/branches"
           fi
