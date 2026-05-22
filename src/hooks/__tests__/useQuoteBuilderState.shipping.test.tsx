@@ -62,23 +62,6 @@ vi.mock('@/contexts/AuthContext', () => ({
   }),
 }));
 
-vi.mock('@/hooks/quotes', () => ({
-  useQuoteItems: () => ({
-    items: [],
-    setItems: vi.fn(),
-    activeItemIndex: null,
-    setActiveItemIndex: vi.fn(),
-    expandedItems: new Set(),
-    setExpandedItems: vi.fn(),
-    toggleExpanded: vi.fn(),
-    updateItemQuantity: vi.fn(),
-    updateItemPrice: vi.fn(),
-    removeItem: vi.fn(),
-    handlePersonalizationsChange: vi.fn(),
-    confirmItemPrice: vi.fn(),
-  }),
-}));
-
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
