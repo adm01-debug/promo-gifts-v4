@@ -8,7 +8,7 @@ import { getOrCreateRequestId, REQUEST_ID_HEADER } from "../_shared/request-id.t
 import { resolveCredential, buildCredentialsHealth } from "../_shared/credentials.ts";
 
 const breaker = getBreaker("crm-db");
-// redeploy marker: force isolate refresh after CRM secrets propagation (2026-05-22)
+// redeploy marker: force isolate refresh after CRM secrets synchronization (2026-05-22 12:45)
 
 // Contexto async por-request — garante isolamento mesmo com requisições concorrentes.
 // Cada handler.run() instala um requestId na chain; jsonResponse lê dele.
