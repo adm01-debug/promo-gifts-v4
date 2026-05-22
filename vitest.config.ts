@@ -56,8 +56,14 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
+    alias: [
+      { find: '@', replacement: path.resolve(__dirname, './src') },
+      // Permite que arquivos das Edge Functions (Deno) que importam
+      // `https://esm.sh/zod@<ver>` sejam carregados em Vitest (Node), reusando
+      // o pacote npm `zod` já instalado. Necessário para testes de contrato
+      // dos schemas em supabase/functions/_shared/contracts/.
+      { find: /^https:\/\/esm\.sh\/zod@[^/]+$/, replacement: 'zod' },
+      { find: /^https:\/\/deno\.land\/x\/zod@[^/]+\/mod\.ts$/, replacement: 'zod' },
+    ],
   },
 });
