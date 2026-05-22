@@ -1,0 +1,113 @@
+# Contract tests — roda em todo PR que toca contratos
+#
+# 2 jobs:
+#   - unit:  vitest contra schemas Zod (sem rede, rápido)
+#   - smoke: supabase functions serve + script HTTP real (precisa do repo, não
+#            roda em forks porque depende de secrets do próprio repositório)
+#
+# Política de bloqueio: unit é obrigatório (status check), smoke é advisory
+# até estabilizar (~2 sprints), depois vira required.
+
+name: Contract Tests
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/_shared/contracts/**'
+      - 'supabase/functions/**/index.ts'
+      - 'tests/contracts/**'
+      - 'scripts/contract-testing.mjs'
+      - 'vitest.config.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/contract-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: contract-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    name: Unit — Zod schemas
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci --no-audit --no-fund
+      - name: Run vitest contract tests
+        run: npm test -- tests/contracts/ --run
+      - name: Report coverage summary
+        if: always()
+        run: |
+          echo "### Contract test summary" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f tests/contracts ]; then
+            find tests/contracts -name '*.contract.test.ts' | wc -l \
+              | xargs -I{} echo "{} contract test files" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  smoke:
+    name: Smoke — HTTP against supabase functions serve
+    runs-on: ubuntu-latest
+    needs: unit
+    # Só roda em PRs do próprio repo (forks não têm acesso a secrets, e
+    # supabase CLI exige tokens válidos pra subir o stack)
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Start Supabase stack
+        run: |
+          supabase start
+          # captura anon key local
+          echo "SUPABASE_ANON_KEY=$(supabase status --output json | jq -r '.ANON_KEY // .API.anon_key')" >> "$GITHUB_ENV"
+          echo "SUPABASE_URL=$(supabase status --output json | jq -r '.API_URL // .API.url')" >> "$GITHUB_ENV"
+
+      - name: Serve Edge Functions
+        run: |
+          nohup supabase functions serve --no-verify-jwt > /tmp/functions.log 2>&1 &
+          echo $! > /tmp/functions.pid
+          # espera readiness
+          for i in $(seq 1 30); do
+            if curl -sf "$SUPABASE_URL/functions/v1/" -o /dev/null; then break; fi
+            sleep 1
+          done
+
+      - name: Run contract smoke tests
+        run: npm run test:contract
+        env:
+          SUPABASE_URL: ${{ env.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ env.SUPABASE_ANON_KEY }}
+
+      - name: Dump functions log on failure
+        if: failure()
+        run: |
+          echo "::group::supabase functions serve log"
+          cat /tmp/functions.log || true
+          echo "::endgroup::"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          [ -f /tmp/functions.pid ] && kill "$(cat /tmp/functions.pid)" || true
+          supabase stop || true
