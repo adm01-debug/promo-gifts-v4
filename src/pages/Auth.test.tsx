@@ -71,15 +71,16 @@ describe('Auth Page', () => {
     expect(passwordInput).toHaveAttribute('type', 'password');
   });
 
-  it('shows forgot password form when link is clicked', () => {
+  it('shows forgot password form when link is clicked', async () => {
     renderAuth();
     const forgotLink = screen.getByTestId('login-forgot-link');
 
     fireEvent.click(forgotLink);
 
-    // Check for forgot password form elements
-    expect(screen.getByText(/Esqueceu sua senha\?/i)).toBeInTheDocument();
-
+    // AnimatePresence mode="wait" with exit/enter transitions means the
+    // forgot panel mounts on a microtask boundary — use findByText so the
+    // assertion waits for the swap to commit.
+    expect(await screen.findByText(/Esqueceu sua senha\?/i)).toBeInTheDocument();
     expect(screen.queryByTestId('login-password-input')).not.toBeInTheDocument();
   });
 });

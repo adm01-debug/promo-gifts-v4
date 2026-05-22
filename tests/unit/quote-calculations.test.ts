@@ -132,13 +132,16 @@ describe('Cálculos de Orçamento (Unit Tests)', () => {
       expect(calculateRealDiscountPercent(33.33, 36.66, 5)).toBe(5.01);
     });
 
-    it('deve lidar com quantidades fracionadas com alta precisão', () => {
+    it('deve lidar com quantidades fracionadas arredondando para 2 casas (BRL)', () => {
       const params = {
         quantity: 0.3333,
-        unitPrice: 10.5555
+        unitPrice: 10.5555,
       };
-      // 0.3333 * 10.5555 = 3.51814815
-      expect(calculateItemTotal(params)).toBeCloseTo(3.51814815, 8);
+      // 0.3333 * 10.5555 = 3.51814815 → arredondado para 3.52 em BRL (2 dec).
+      // calculateItemTotal opera sobre dinheiro: precisão de centavo é o
+      // contrato (evita drift em descontos, totais e markup). Se o caso de
+      // uso precisar de precisão maior, deve usar uma função sem rounding.
+      expect(calculateItemTotal(params)).toBeCloseTo(3.52, 2);
     });
   });
 });
