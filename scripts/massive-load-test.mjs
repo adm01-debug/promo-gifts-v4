@@ -1,8 +1,21 @@
 import * as dotenv from 'dotenv';
 dotenv.config();
 
+// SEC-005: SERVICE_ROLE_KEY vem APENAS de env (mesma estratégia do
+// scripts/contract-testing.mjs após SEC-001). Antes estava hardcoded
+// (UUID de simulação, mas gitleaks reclamava + risco de virar credencial real).
+// Set: export SUPABASE_TEST_BYPASS_TOKEN=<token-de-simulacao>
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://pqpdolkaeqlyzpdpbizo.supabase.co";
-const SERVICE_ROLE_KEY = "a46c3981-244a-4f81-9f57-bab5c45b5cde";
+const SERVICE_ROLE_KEY =
+  process.env.SUPABASE_TEST_BYPASS_TOKEN ||
+  process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!SERVICE_ROLE_KEY) {
+  console.error(
+    '[massive-load-test] erro: defina SUPABASE_TEST_BYPASS_TOKEN ou SUPABASE_SERVICE_ROLE_KEY em .env',
+  );
+  process.exit(1);
+}
 
 const CONCURRENCY = 5;
 const TOTAL_REQUESTS = 25;
