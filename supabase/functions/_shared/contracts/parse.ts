@@ -51,12 +51,28 @@ export interface ParseOptions {
   prereadBody?: string;
 }
 
-export type ParseResult<V extends string, S extends Record<V, z.ZodTypeAny>> =
+/**
+ * Schema da versão default do contrato `C`.
+ *
+ * Indexação direta (sem interseção) — evita o bug de variância TS+Zod onde
+ * comparar `ZodObject` contra `ZodTypeAny & ZodObject<...>` faz o checker
+ * recursar no retorno de `deepPartial()` e falhar com TS2345
+ * (vide histórico: 15 edge functions de contratos quebravam o `deno check`).
+ */
+type DefaultSchema<C extends ContractSchemas> =
+  C["versions"][C["defaultVersion"] & keyof C["versions"]];
+
+/** Tipo dos dados parseados — inferido do schema da versão default. */
+type InferContractData<C extends ContractSchemas> = DefaultSchema<C> extends
+  z.ZodTypeAny ? z.infer<DefaultSchema<C>> : unknown;
+
+export type ParseResult<C extends ContractSchemas = ContractSchemas> =
   | {
     ok: true;
-    version: V;
-    /** Dados parseados; o tipo casa com o schema da versão resolvida. */
-    data: { [K in V]: z.infer<S[K]> }[V];
+    /** Versão resolvida (runtime). */
+    version: string;
+    /** Dados parseados; o tipo casa com o schema da versão default. */
+    data: InferContractData<C>;
     /** Headers que a resposta de sucesso deve incluir (versão, deprecation). */
     responseHeaders: Record<string, string>;
   }
@@ -65,18 +81,15 @@ export type ParseResult<V extends string, S extends Record<V, z.ZodTypeAny>> =
 /**
  * Parseia, valida e versiona o body de uma requisição.
  */
-export async function parseContract<
-  V extends string,
-  S extends Record<V, z.ZodTypeAny>,
->(
+export async function parseContract<C extends ContractSchemas>(
   req: Request,
-  schemas: ContractSchemas<V> & { versions: S },
+  schemas: C,
   opts: ParseOptions = {},
-): Promise<ParseResult<V, S>> {
+): Promise<ParseResult<C>> {
   const corsHeaders = opts.corsHeaders ?? {};
 
   // 1. Resolver versão
-  const supportedVersions = Object.keys(schemas.versions) as V[];
+  const supportedVersions = Object.keys(schemas.versions);
   const versionConfig: VersionConfig = {
     supported: supportedVersions,
     default: schemas.defaultVersion,
@@ -86,7 +99,8 @@ export async function parseContract<
   if (!vRes.ok) return { ok: false, response: vRes.response };
 
   const { version, responseHeaders } = vRes.resolved;
-  const schema = schemas.versions[version as V];
+  const schema =
+    (schemas.versions as Record<string, z.ZodTypeAny>)[version];
 
   // 2. Ler body (uma única vez)
   let rawText: string;
@@ -152,8 +166,8 @@ export async function parseContract<
 
   return {
     ok: true,
-    version: version as V,
-    data: result.data,
+    version,
+    data: result.data as InferContractData<C>,
     responseHeaders,
   };
 }
