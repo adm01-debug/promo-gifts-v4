@@ -5,6 +5,36 @@
 > sem ninguém perceber. Cada mudança aqui é uma decisão registrada para sobreviver
 > a trocas de sessão de chat, trocas de pessoa no plantão, etc.
 
+## v2.0.1 — 2026-05-22 — Bug fixes pós-review da v2.0.0
+
+**Contexto:** auditoria minuciosa dos review comments da PR #110 (4 bots: Copilot, CodeRabbit, codex, cubic) revelou 5 bugs reais na v2.0.0. Esta versão endereça os P1 e P2 mais críticos.
+
+**Mudanças no comportamento:**
+
+| # | ID | Mudança | Resolve |
+|---|---|---|---|
+| 1 | [10] | Detecta merge-commit no HEAD (`Merge pull request #N`) e audita apenas o HEAD, não o range completo. Commits feature da branch da PR não são mais auditados (já foram revisados na PR). | Sentinel falhava incorretamente quando PR era mergeada como "Create a merge commit" porque o range incluía commits feature (`fix:`, `feat:`) que não batem padrão. |
+| 2 | [2/12/16] | Comando de recovery agora oferece 3 opções: `git revert` específico (preserva histórico), `git reset --hard $PUSH_BEFORE` (destrutivo mas preciso), ou mover trabalho pra branch + PR (recomendado). | `git reset --hard origin/main~$FAIL_COUNT` era destrutivo e impreciso em mixed pushes (commits válidos + inválidos). |
+| 3 | [15] | Fallback fail-closed: se `PUSH_BEFORE` SHA inacessível após fetch, falha defensivamente em vez de auditar parcialmente. | Antes auditava só HEAD silenciosamente (fail-open), permitindo commits inválidos passarem despercebidos. |
+| 4 | [6] | URLs no `GITHUB_STEP_SUMMARY` agora são absolutas (`${{ github.server_url }}/${{ github.repository }}/blob/main/...`). | Links relativos `../blob/main/...` quebravam no Step Summary (renderizado fora do contexto do repo). |
+| 5 | [13] | Contagem de caracteres do motivo do bypass agora é char-aware (Unicode) via `${#var}` + `LC_ALL=C.UTF-8`, não byte-aware. | `wc -c` contava bytes — motivos UTF-8 com caracteres multi-byte (acentos) podiam passar com menos de 5 chars reais. |
+
+**Comentários de revisão NÃO endereçados nesta versão (postergados):**
+
+- [1/17] `sentinel-validate-history.sh` audita HEAD da branch atual em vez de `origin/main` — **ENDEREÇADO nesta v2.0.1** (script aceita `TARGET_REF` como segundo arg, default `origin/main`).
+- [8] Validar `N` antes de `git log` — **ENDEREÇADO nesta v2.0.1**.
+- [9/18] `chmod +x` em runtime — **ENDEREÇADO nesta v2.0.1** (substituído por check `-f`).
+- [3/14] Exemplo de teste prático com `/tmp/lixo.md` — **ENDEREÇADO nesta v2.0.1** (substituído por arquivo dentro do repo).
+- [4/5/7] Cosméticos (markdownlint MD040, `persist-credentials: false`) — postergados para PR separado de polimento.
+
+**Decisões técnicas adicionais:**
+
+- **Locale UTF-8 forçado** no `sentinel-check.sh` via `export LC_ALL="${LC_ALL:-C.UTF-8}"`. Necessário para que `${#var}` conte caracteres em vez de bytes. Não interfere em ambientes que já têm UTF-8 configurado.
+- **Fail-closed sobre fail-open**: filosofia geral do sentinel é "se não consigo afirmar que está OK, falho". Mudança no fallback reflete isso.
+- **Merge-commit detection** é via regex no HEAD subject. Outros formatos de merge commit (raros) não são cobertos — convenção do GitHub UI é `Merge pull request #N from x/y`.
+
+---
+
 ## v2.0.0 — 2026-05-22 — Hardening híbrido (Opção C)
 
 **Contexto:** push direto em `main` com commit `docs(redeploy): add README as index to redeploy folder` (SHA `8e9ef02`) disparou o sentinel v1 corretamente. Aprovada a Opção C do plano híbrido: ligar Branch Protection real + afinar o sentinel.
