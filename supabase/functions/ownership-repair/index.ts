@@ -10,9 +10,14 @@ import { getCorsHeaders } from "../_shared/cors.ts";
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { castRpcResult } from "../_shared/supabase-client-adapter.ts";
+import { parseContract } from "../_shared/contracts/index.ts";
+import {
+  OwnershipRepairSchemas,
+} from "../_shared/contracts/schemas/ownership-repair.ts";
 
 // Module-scope CORS headers — atribuído per-request no handler.
 let corsHeaders: Record<string, string> = {};
+let contractResponseHeaders: Record<string, string> = {};
 
 type RepairOrphansResult = {
   report_id?: string;
@@ -21,6 +26,7 @@ type RepairOrphansResult = {
 
 Deno.serve(async (req) => {
   corsHeaders = getCorsHeaders(req);
+  contractResponseHeaders = {};
   if (req.method === "OPTIONS") return new Response(null, { headers: getCorsHeaders(req) });
 
   try {
@@ -39,8 +45,12 @@ Deno.serve(async (req) => {
     const { data: userData, error: uErr } = await userClient.auth.getUser();
     if (uErr || !userData.user) return json({ error: "unauthorized" }, 401);
 
-    let body: { report_id?: string; dry_run?: boolean; triggered_by?: string } = {};
-    try { body = await req.json(); } catch { /* sem body */ }
+    const contractResult = await parseContract(req, OwnershipRepairSchemas, {
+      corsHeaders,
+    });
+    if (!contractResult.ok) return contractResult.response;
+    const body = contractResult.data;
+    contractResponseHeaders = contractResult.responseHeaders;
 
     const dryRun = body.dry_run !== false; // default true
     const triggeredBy = (body.triggered_by ?? "manual_admin").slice(0, 64);
@@ -84,6 +94,6 @@ Deno.serve(async (req) => {
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...corsHeaders, ...contractResponseHeaders, "Content-Type": "application/json" },
   });
 }

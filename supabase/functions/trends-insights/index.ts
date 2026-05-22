@@ -2,6 +2,10 @@ import { getCorsHeaders } from "../_shared/cors.ts";
 // Edge function: trends-insights
 // Agrega métricas de Tendências e gera narrativa via Lovable AI Gateway.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { parseContract } from "../_shared/contracts/index.ts";
+import {
+  TrendsInsightsSchemas,
+} from "../_shared/contracts/schemas/trends-insights.ts";
 
 interface Body {
   days?: number;
@@ -45,8 +49,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    const body = (await req.json().catch(() => ({}))) as Body;
-    const days = Math.max(1, Math.min(body.days ?? 30, 365));
+    const contractResult = await parseContract(req, TrendsInsightsSchemas, {
+      corsHeaders,
+    });
+    if (!contractResult.ok) return contractResult.response;
+    const { data: body, responseHeaders } = contractResult;
+    const days = body.days ?? 30;
 
     const sinceCurrent = new Date(Date.now() - days * 86400000).toISOString();
     const sincePrevious = new Date(Date.now() - days * 2 * 86400000).toISOString();
@@ -160,18 +168,18 @@ Retorne via tool call.`;
     if (!aiResp.ok) {
       if (aiResp.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 429, headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
         });
       }
       if (aiResp.status === 402) {
         return new Response(JSON.stringify({ error: "Payment required" }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 402, headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
         });
       }
       const errText = await aiResp.text();
       console.error("AI error:", aiResp.status, errText);
       return new Response(JSON.stringify({ error: "AI gateway error" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -183,12 +191,12 @@ Retorne via tool call.`;
         what_changed: "Aguardando mais atividade no catálogo.",
         why: "Volume baixo de eventos no período.",
         next_action: "Continue acompanhando — em breve haverá padrões claros.",
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }), { headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" } });
     }
     const parsed = JSON.parse(toolCall.function.arguments);
 
     return new Response(JSON.stringify(parsed), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("trends-insights error:", e);
