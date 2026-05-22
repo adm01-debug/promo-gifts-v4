@@ -107,6 +107,54 @@ Rodar `db push` destruiria o banco. Ver `supabase/migrations/README.md`.
 - `crm.item.get` com `entityTypeId=4` para Smart Companies (não usar `crm.company.get`)
 - OAuth2 sempre — webhook clássico está deprecado para nosso uso
 
+## 🛡️ Branch Protection Sentinel
+
+O workflow `.github/workflows/branch-protection-sentinel.yml` audita cada push em `main` e bloqueia padrões fora do esperado. Ele é defesa em profundidade — a prevenção real vem da Branch Protection nativa do GitHub (ver `.github/BRANCH_PROTECTION_SETUP.md`).
+
+### Padrões aceitos pelo sentinel
+
+| # | Padrão | Quando usar |
+|---|---|---|
+| 1 | **Squash merge** — subject termina em `(#NNN)` | PRs normais (recomendado) |
+| 2 | **Merge commit** — começa com `Merge pull request #NNN` | Quando se opta por merge commit |
+| 3 | **Bot oficial** — `github-actions[bot]`, `dependabot[bot]`, `renovate[bot]` | Automações GitHub |
+| 4 | **Família Lovable** — `lovable-*[bot]`, `gpt-engineer-*[bot]` | Builds Lovable Cloud |
+| 5 | **Release** — `chore(release): vX.Y.Z` | Tags de release |
+| 6 | **Allowlist estreita** — `docs(redeploy):`, `chore(workflows):`, `chore(docs):` | Push direto para casos documentados |
+| 7 | **Bypass de emergência** — `[skip-sentinel: motivo 5+ chars]` na mensagem | Hotfix / rollback urgente |
+
+### Bypass `[skip-sentinel]` — uso e abuso
+
+Para emergências onde abrir PR é impraticável (rollback de produção, secret expirado, deploy quebrando):
+
+```
+fix: revert deploy quebrado [skip-sentinel: rollback emergencial INC-42]
+```
+
+**Regras:**
+- Motivo obrigatório, mínimo 5 caracteres não-espaço
+- Cada uso fica registrado no Summary do workflow + history do Git (auditável)
+- Se virar prática rotineira, é sinal de processo quebrado — abra issue pra discutir
+
+Exemplos **rejeitados**:
+- `[skip-sentinel]` (sem motivo)
+- `[skip-sentinel: ok]` (motivo curto demais)
+
+### Alterando regras do sentinel
+
+Mudanças em `scripts/sentinel-check.sh` ou nos workflows do sentinel disparam automaticamente o `Sentinel Self-Test`, que valida contra matriz de fixtures. PR só passa se 100% verde.
+
+Registre toda mudança em `.github/SENTINEL_CHANGELOG.md` — sobrevive a trocas de sessão e auditorias.
+
+### Documentos relacionados
+
+- `.github/workflows/branch-protection-sentinel.yml` — workflow principal
+- `.github/workflows/sentinel-self-test.yml` — matriz de fixtures
+- `scripts/sentinel-check.sh` — lógica de validação (testável)
+- `scripts/sentinel-validate-history.sh` — auditoria retroativa contra histórico
+- `.github/BRANCH_PROTECTION_SETUP.md` — como ligar Branch Protection real
+- `.github/SENTINEL_CHANGELOG.md` — histórico de regras do sentinel
+
 ## 🔗 Cross-reference Issue ↔ PR (obrigatório)
 
 **Padrão do projeto**: toda issue de `tracking` / `tech-debt` / `discussion` deve ter referência bidirecional à PR que a originou (ou à PR que vai resolvê-la).
@@ -140,4 +188,3 @@ Com cross-reference automática, qualquer dev (ou Claude em sessão futura) tem 
 ### Workflow que faz isso
 
 `.github/workflows/cross-reference-issues.yml` — roda em `pull_request` e `issues` events. Idempotente (não duplica comentários).
-
