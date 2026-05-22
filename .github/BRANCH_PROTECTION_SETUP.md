@@ -76,10 +76,13 @@ Para confirmar que está funcionando, tente um push direto:
 
 ```bash
 git checkout main
-echo "teste" >> /tmp/lixo.md
-git add /tmp/lixo.md
+echo "teste" >> sentinel-smoke-test.md
+git add sentinel-smoke-test.md
 git commit -m "test: deve ser bloqueado"
 git push origin main
+# Depois de validar, limpar:
+git reset --hard HEAD~1
+rm -f sentinel-smoke-test.md
 ```
 
 Resultado esperado:
