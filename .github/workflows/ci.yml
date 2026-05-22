@@ -99,6 +99,9 @@ jobs:
       - name: TypeScript type check
         run: npm run typecheck
 
+      - name: 📑 Contract coverage gate (Edge Functions ↔ CONTRACTS registry)
+        run: node scripts/check-contract-coverage.mjs
+
       # hooks já cobertos pelo job dedicado hooks-tests (timeout-minutes: 10).
       # test:strict-ref e test:coverage omitidos aqui — rodam em ref-warning-suite
       # e integration-tests respectivamente, evitando tripla execução da suite.

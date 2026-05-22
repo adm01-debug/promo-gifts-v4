@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-import { z } from "../_shared/zod-validate.ts";
+import { z, parseVersionedBody } from "../_shared/zod-validate.ts";
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
 
 const corsHeaders = buildPublicCorsHeaders({ extraAllowHeaders: ["x-webhook-secret"] });
@@ -39,11 +39,29 @@ const ProductPayloadSchema = z.object({
   metadata: z.record(z.any()).optional(),
 });
 
-const WebhookPayloadSchema = z.object({
+// V1: legacy shape used by the n8n flow since 2025-Q3. Kept until 2026-12-31.
+const WebhookPayloadSchemaV1 = z.object({
   action: z.enum(["sync", "upsert", "delete", "batch_upsert"]),
   products: z.array(ProductPayloadSchema).max(500).optional(),
   product: ProductPayloadSchema.optional(),
   external_ids: z.array(z.string().max(255)).max(500).optional(),
+});
+
+// V2: introduces explicit version literal + ISO-4217 currency + richer
+// selectors[] (typed external_id/sku entries) replacing flat external_ids[].
+const ProductPayloadV2Schema = ProductPayloadSchema.extend({
+  currency: z.string().regex(/^[A-Z]{3}$/, "Currency must be ISO-4217").default("BRL"),
+});
+
+const WebhookPayloadSchemaV2 = z.object({
+  version: z.literal("v2"),
+  action: z.enum(["sync", "upsert", "delete", "batch_upsert"]),
+  products: z.array(ProductPayloadV2Schema).max(500).optional(),
+  product: ProductPayloadV2Schema.optional(),
+  selectors: z
+    .array(z.object({ type: z.enum(["external_id", "sku"]), value: z.string().min(1).max(255) }))
+    .max(500)
+    .optional(),
 });
 
 type ProductPayload = z.infer<typeof ProductPayloadSchema>;
@@ -74,21 +92,28 @@ Deno.serve(async (req) => {
       );
     }
 
-    let rawBody: unknown;
-    try { rawBody = await req.json(); } catch {
-      return new Response(JSON.stringify({ error: "Invalid webhook payload" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const parseResult = await parseVersionedBody(
+      req,
+      {
+        versions: { v1: WebhookPayloadSchemaV1, v2: WebhookPayloadSchemaV2 },
+        defaultVersion: "v1",
+      },
+      corsHeaders,
+    );
+    if ("error" in parseResult) return parseResult.error;
+    const contractVersion = parseResult.version;
+    // V2 carries `selectors[]` instead of `external_ids[]` and adds `currency`.
+    // Project v2 → v1 shape so the rest of the function (modeled around v1)
+    // keeps working without a rewrite. `contract_version` is logged for the
+    // deprecation tracker (sync_log).
+    const payload: WebhookPayload = parseResult.data as WebhookPayload;
+    if (contractVersion === "v2") {
+      const v2 = parseResult.data as z.infer<typeof WebhookPayloadSchemaV2>;
+      if (v2.selectors && !payload.external_ids) {
+        payload.external_ids = v2.selectors.map((s) => s.value);
+      }
     }
-
-    const parsed = WebhookPayloadSchema.safeParse(rawBody);
-    if (!parsed.success) {
-      return new Response(JSON.stringify({ error: "Validation failed", details: parsed.error.flatten().fieldErrors }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const payload: WebhookPayload = parsed.data;
-    console.log(`Product webhook action: ${payload.action}`);
+    console.log(`Product webhook action: ${payload.action} (contract=${contractVersion})`);
 
     // Create sync log
     const { data: syncLog, error: logError } = await supabase
@@ -97,6 +122,7 @@ Deno.serve(async (req) => {
         status: "processing",
         source: "n8n",
         products_received: payload.products?.length || (payload.product ? 1 : 0),
+        contract_version: contractVersion,
       })
       .select()
       .single();

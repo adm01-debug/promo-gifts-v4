@@ -97,8 +97,52 @@ Deno.serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ ok: true, received: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    // Post-HMAC schema validation per slug. Admin can register a JSON-schema-
+    // shaped `contract_schema` per `inbound_webhook_endpoints` row to enforce
+    // payload shape (subset of Zod: { fields: [{ name, type, required }] }).
+    // When `contract_schema` is null, payload acceptance stays as before
+    // (accept any JSON object). When present, missing required fields or
+    // type mismatches return 422 in the unified envelope.
+    const contractSchema = (endpoint as { contract_schema?: { fields?: Array<{ name: string; type: string; required?: boolean }> } | null }).contract_schema;
+    const contractVersion = (endpoint as { contract_version?: string }).contract_version ?? "v1";
+    if (contractSchema?.fields && parsedPayload && typeof parsedPayload === "object" && !Array.isArray(parsedPayload)) {
+      const obj = parsedPayload as Record<string, unknown>;
+      const issues: Array<{ path: string; code: string; message: string }> = [];
+      for (const f of contractSchema.fields) {
+        const v = obj[f.name];
+        if (v === undefined || v === null) {
+          if (f.required) issues.push({ path: f.name, code: "missing", message: `${f.name} is required` });
+          continue;
+        }
+        const actualType = Array.isArray(v) ? "array" : typeof v;
+        const expected = f.type;
+        if (expected && expected !== actualType && expected !== "any") {
+          issues.push({ path: f.name, code: "invalid_type", message: `${f.name} must be ${expected}, got ${actualType}` });
+        }
+      }
+      if (issues.length > 0) {
+        return new Response(
+          JSON.stringify({
+            code: "VALIDATION_FAILED",
+            message: "Validation failed",
+            error: "Validation failed",
+            fields: issues,
+          }),
+          {
+            status: 422,
+            headers: {
+              ...corsHeaders,
+              "Content-Type": "application/json",
+              "X-Error-Code": "VALIDATION_FAILED",
+              "X-Contract-Version": contractVersion,
+            },
+          },
+        );
+      }
+    }
+
+    return new Response(JSON.stringify({ ok: true, received: true, contract_version: contractVersion }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json", "X-Contract-Version": contractVersion },
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Erro";

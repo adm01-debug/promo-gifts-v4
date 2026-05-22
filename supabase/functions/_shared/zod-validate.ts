@@ -60,20 +60,29 @@ export function zodErrorToFields(error: z.ZodError): ValidationFieldError[] {
   }));
 }
 
-/** Build a JSON response with the unified validation error envelope. */
+/** Build a JSON response with the unified validation error envelope.
+ *
+ * NOTE on backwards-compat: clients written before the 422 migration parse
+ * `data.error` (literal string). We include `error: message` as an alias so
+ * those clients keep reading something sensible during the deprecation
+ * window. The canonical fields are `code`, `message`, `fields[]`.
+ */
 export function validationErrorResponse(
   body: ValidationErrorBody,
   corsHeaders: Record<string, string>,
   status = 422
 ): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      ...corsHeaders,
-      "Content-Type": "application/json",
-      "X-Error-Code": body.code,
-    },
-  });
+  return new Response(
+    JSON.stringify({ ...body, error: body.message }),
+    {
+      status,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+        "X-Error-Code": body.code,
+      },
+    }
+  );
 }
 
 /**
