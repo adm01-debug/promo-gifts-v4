@@ -14,7 +14,7 @@ import {
   formatCurrency as formatCurrencyHelper,
   calcPersTotal,
   formatCNPJ,
-} from "@/pages/quotes/quote-view/QuoteActionHandlers";
+} from '@/pages/quotes/quote-view/QuoteActionHandlers';
 
 export function useQuoteViewData(id: string | undefined) {
   const { fetchQuote, logQuoteHistory, duplicateQuote } = useQuotes();
@@ -69,10 +69,7 @@ export function useQuoteViewData(id: string | undefined) {
       ? Math.round(fullSubtotal * (quote.discount_percent / 100) * 100) / 100
       : quote.discount_amount || 0;
     // Apenas 'fob_pre' (FOB Pré-negociado) tem custo no total. 'fob' = cliente paga, sem cost.
-    const shipValue =
-      quote.shipping_type === 'fob_pre'
-        ? quote.shipping_cost || 0
-        : 0;
+    const shipValue = quote.shipping_type === 'fob_pre' ? quote.shipping_cost || 0 : 0;
     const computedTotal = fullSubtotal - discountValue + shipValue;
 
     return {
@@ -158,6 +155,19 @@ export function useQuoteViewData(id: string | undefined) {
     }
   };
 
+  const approvalLink = useMemo(
+    () => (quote ? `${window.location.origin}/orcamentos/${quote.id}` : null),
+    [quote],
+  );
+
+  const handleShareLink = () => {
+    if (!approvalLink) return;
+    void navigator.clipboard
+      .writeText(approvalLink)
+      .then(() => toast.success('Link copiado!'))
+      .catch(() => toast.error('Não foi possível copiar o link'));
+  };
+
   const handleWhatsAppShare = () => {
     const lines = [
       `📋 *Proposta Comercial ${quote?.quote_number || ''}*`,
@@ -214,9 +224,11 @@ export function useQuoteViewData(id: string | undefined) {
     showPresentation,
     setShowPresentation,
     proposalData,
+    approvalLink,
     // Actions
     handleDownloadPDF,
     handleWhatsAppShare,
+    handleShareLink,
     handleSyncBitrix,
     // Quotes
     fetchQuote,

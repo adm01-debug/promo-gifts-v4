@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-22T03:24:58.455Z",
-  "totalErrors": 1373,
+  "generatedAt": "2026-05-22T14:24:10.689Z",
+  "totalErrors": 1333,
   "counts": {
     "src/components/admin/DiscountApprovalQueue.tsx": {
       "TS18048": 1
@@ -30,36 +30,8 @@
     "src/components/admin/connections/N8nTab.tsx": {
       "TS2322": 1
     },
-    "src/components/admin/connections/SecretField.tsx": {
-      "TS2322": 4,
-      "TS2551": 1
-    },
-    "src/components/admin/connections/SupabaseConnectionsTab.tsx": {
-      "TS2322": 2,
-      "TS2339": 6
-    },
-    "src/components/admin/connections/useIncidentTimeline72h.ts": {
-      "TS2352": 1
-    },
-    "src/components/admin/connections/useRecentIncidents.ts": {
-      "TS2352": 1
-    },
     "src/components/admin/connections/useSeverityChangeNotifier.ts": {
       "TS2353": 1
-    },
-    "src/components/admin/personalization-manager/ComponentAccordionItem.tsx": {
-      "TS2305": 4
-    },
-    "src/components/admin/personalization-manager/GroupInheritanceSection.tsx": {
-      "TS2305": 1
-    },
-    "src/components/admin/personalization-manager/ProductSelector.tsx": {
-      "TS2305": 1,
-      "TS2459": 1
-    },
-    "src/components/admin/personalization-manager/usePersonalizationManager.ts": {
-      "TS2305": 6,
-      "TS2459": 1
     },
     "src/components/admin/products/BulkImportDialog.tsx": {
       "TS2322": 1
@@ -339,10 +311,6 @@
     "src/components/kit-builder/PersonalizationConfig.tsx": {
       "TS18048": 1,
       "TS2345": 4
-    },
-    "src/components/layout/Header.tsx": {
-      "TS2304": 2,
-      "TS2339": 1
     },
     "src/components/layout/sidebar/__tests__/SidebarNavGroup.a11y.test.tsx": {
       "TS2749": 3
@@ -1110,7 +1078,6 @@
     },
     "src/pages/quotes/QuoteViewPage.tsx": {
       "TS2322": 1,
-      "TS2339": 2,
       "TS2345": 3
     },
     "src/pages/quotes/QuotesKanbanPage.tsx": {
@@ -1144,10 +1111,6 @@
     "src/pages/quotes/useQuotesListPage.ts": {
       "TS7016": 1
     },
-    "src/pages/system/SystemStatusPage.tsx": {
-      "TS2322": 3,
-      "TS2339": 2
-    },
     "src/pages/trends/TrendsCharts.tsx": {
       "TS18046": 1,
       "TS18047": 2,
@@ -1160,9 +1123,6 @@
     },
     "src/services/materialService.ts": {
       "TS2322": 4
-    },
-    "src/services/productService.ts": {
-      "TS2367": 1
     },
     "src/services/quoteService.ts": {
       "TS2322": 1
