@@ -3,7 +3,7 @@
  * Utilitários para cálculo e validação de volume
  */
 
-import type { KitBox, KitItem, CompatibilityResult } from "@/pages/advanced-price-search/types";
+import type { KitBox, KitItem, CompatibilityResult } from './types';
 
 // ============================================
 // CONSTANTES
@@ -37,16 +37,13 @@ export function calculateUsableVolume(box: KitBox): number {
  * Calcula o volume total dos itens
  */
 export function calculateTotalItemsVolume(items: KitItem[]): number {
-  return items.reduce((total, item) => total + (item.volume * item.quantity), 0);
+  return items.reduce((total, item) => total + item.volume * item.quantity, 0);
 }
 
 /**
  * Calcula a porcentagem de volume utilizado
  */
-export function calculateVolumeUsagePercent(
-  itemsVolume: number,
-  boxVolume: number
-): number {
+export function calculateVolumeUsagePercent(itemsVolume: number, boxVolume: number): number {
   if (boxVolume === 0) return 0;
   const usableVolume = boxVolume * PACKING_EFFICIENCY;
   return (itemsVolume / usableVolume) * 100;
@@ -63,13 +60,13 @@ export function checkItemFits(
   item: KitItem,
   box: KitBox,
   existingItems: KitItem[],
-  quantity: number = 1
+  quantity: number = 1,
 ): CompatibilityResult {
   const currentVolume = calculateTotalItemsVolume(existingItems);
   const itemVolume = item.volume * quantity;
   const totalVolumeAfter = currentVolume + itemVolume;
   const usableVolume = calculateUsableVolume(box);
-  
+
   const percentAfterAdd = (totalVolumeAfter / usableVolume) * 100;
 
   // Verifica se o item cabe em alguma das 6 orientações possíveis
@@ -77,7 +74,8 @@ export function checkItemFits(
   const boxDims = [box.internalWidth, box.internalHeight, box.internalDepth].sort((a, b) => a - b);
 
   // Se as dimensões ordenadas do item excedem as da caixa, não cabe em nenhuma orientação
-  const fitsAnyOrientation = itemDims[0] <= boxDims[0] && itemDims[1] <= boxDims[1] && itemDims[2] <= boxDims[2];
+  const fitsAnyOrientation =
+    itemDims[0] <= boxDims[0] && itemDims[1] <= boxDims[1] && itemDims[2] <= boxDims[2];
 
   if (!fitsAnyOrientation) {
     return {
@@ -167,7 +165,7 @@ export function getVolumeStatusLabel(percent: number): string {
  * Formatos suportados: "10x20x5", "10 x 20 x 5", "10×20×5"
  */
 export function parseDimensionsString(
-  dimensionsStr: string | null | undefined
+  dimensionsStr: string | null | undefined,
 ): { width: number; height: number; depth: number } | null {
   if (!dimensionsStr) return null;
 
@@ -180,7 +178,7 @@ export function parseDimensionsString(
 
   // Tenta match com padrão NxNxN
   const match = normalized.match(/(\d+(?:\.\d+)?)[x×](\d+(?:\.\d+)?)[x×](\d+(?:\.\d+)?)/);
-  
+
   if (match) {
     return {
       width: parseFloat(match[1]),
@@ -195,26 +193,23 @@ export function parseDimensionsString(
 /**
  * Extrai dimensões de um produto externo
  */
-export function extractProductDimensions(
-  product: {
-    dimensions?: string | { width_cm?: number; height_cm?: number; length_cm?: number; diameter_cm?: number } | null;
-    width_cm?: number | null;
-    height_cm?: number | null;
-    length_cm?: number | null;
-    box_length_cm?: number | null;
-    box_width_cm?: number | null;
-    box_height_cm?: number | null;
-    internal_length_cm?: number | null;
-    internal_width_cm?: number | null;
-    internal_height_cm?: number | null;
-  }
-): { width: number; height: number; depth: number } | null {
+export function extractProductDimensions(product: {
+  dimensions?:
+    | string
+    | { width_cm?: number; height_cm?: number; length_cm?: number; diameter_cm?: number }
+    | null;
+  width_cm?: number | null;
+  height_cm?: number | null;
+  length_cm?: number | null;
+  box_length_cm?: number | null;
+  box_width_cm?: number | null;
+  box_height_cm?: number | null;
+  internal_length_cm?: number | null;
+  internal_width_cm?: number | null;
+  internal_height_cm?: number | null;
+}): { width: number; height: number; depth: number } | null {
   // Primeiro tenta campos específicos de dimensão interna (para caixas)
-  if (
-    product.internal_width_cm &&
-    product.internal_length_cm &&
-    product.internal_height_cm
-  ) {
+  if (product.internal_width_cm && product.internal_length_cm && product.internal_height_cm) {
     return {
       width: product.internal_width_cm,
       height: product.internal_height_cm,
@@ -223,11 +218,7 @@ export function extractProductDimensions(
   }
 
   // Depois tenta campos de dimensão externa
-  if (
-    product.box_width_cm &&
-    product.box_length_cm &&
-    product.box_height_cm
-  ) {
+  if (product.box_width_cm && product.box_length_cm && product.box_height_cm) {
     return {
       width: product.box_width_cm,
       height: product.box_height_cm,
@@ -236,11 +227,7 @@ export function extractProductDimensions(
   }
 
   // Depois tenta campos diretos em cm
-  if (
-    product.width_cm &&
-    product.length_cm &&
-    product.height_cm
-  ) {
+  if (product.width_cm && product.length_cm && product.height_cm) {
     return {
       width: product.width_cm,
       height: product.height_cm,
@@ -250,7 +237,11 @@ export function extractProductDimensions(
 
   // Tenta JSONB dimensions (formato do banco externo)
   if (product.dimensions && typeof product.dimensions === 'object') {
-    const dims = product.dimensions as { width_cm?: number; height_cm?: number; length_cm?: number };
+    const dims = product.dimensions as {
+      width_cm?: number;
+      height_cm?: number;
+      length_cm?: number;
+    };
     if (dims.width_cm && dims.height_cm && dims.length_cm) {
       return {
         width: dims.width_cm,
@@ -282,9 +273,11 @@ export function extractProductDimensions(
 /**
  * Estima dimensões padrão baseado na categoria do produto
  */
-export function estimateDefaultDimensions(
-  category?: string
-): { width: number; height: number; depth: number } {
+export function estimateDefaultDimensions(category?: string): {
+  width: number;
+  height: number;
+  depth: number;
+} {
   const categoryLower = (category || '').toLowerCase();
 
   // Estimativas baseadas em categorias comuns

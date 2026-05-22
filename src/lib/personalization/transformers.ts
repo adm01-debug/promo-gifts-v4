@@ -1,18 +1,14 @@
 /**
  * Domain Transformers: Personalização
- * 
+ *
  * Funções puras para transformação entre formatos de dados.
  * Converte entre tipos de infraestrutura (API/DB) e tipos de domínio.
- * 
+ *
  * SSOT: Este módulo é a única fonte de transformadores de dados.
  * Hooks devem importar daqui, não definir transformadores próprios.
  */
 
-import type {
-  PriceTableInput,
-  TechniqueInput,
-  PriceTier,
-} from "@/pages/advanced-price-search/types";
+import type { PriceTableInput, TechniqueInput, PriceTier } from './types';
 
 import type {
   TabelaPrecoTecnica,
@@ -76,7 +72,7 @@ export function rawToTabelaPrecoTecnica(raw: CustomizationPriceTableRaw): Tabela
     const minQty = raw[`min_qty_${i}` as keyof CustomizationPriceTableRaw] as number;
     const price = raw[`price_${i}` as keyof CustomizationPriceTableRaw] as number;
     const sla = raw[`sla_${i}` as keyof CustomizationPriceTableRaw] as number | null;
-    
+
     if (minQty !== null && price !== null) {
       faixas.push({
         faixa: i,
@@ -141,22 +137,22 @@ export function tabelaToPriceTableInput(tabela: TabelaPrecoTecnica): PriceTableI
     tableCode: tabela.codigoTabela,
     tableCodeOption: tabela.codigoTabelaOpcao,
     techniqueName: tabela.nomeTecnica,
-    
+
     maxColors: tabela.maxCores,
     maxWidthCm: tabela.larguraMaxCm,
     maxHeightCm: tabela.alturaMaxCm,
     minAreaCm2: tabela.areaMinCm2,
     maxAreaCm2: tabela.areaMaxCm2,
-    
+
     priceByColor: tabela.precoPorCor,
     priceByArea: tabela.precoPorArea,
     priceByStitches: tabela.precoPorPontos,
-    
+
     setupPrice: tabela.precoSetup,
     handlingPrice: tabela.precoManuseio,
-    
+
     tiers: tabela.faixas.map(faixaToPriceTier),
-    
+
     isActive: tabela.ativo,
   };
 }
@@ -164,9 +160,13 @@ export function tabelaToPriceTableInput(tabela: TabelaPrecoTecnica): PriceTableI
 /**
  * Transforma FaixaQuantidade para PriceTier
  */
-export function faixaToPriceTier(faixa: FaixaQuantidade, index?: number, arr?: FaixaQuantidade[]): PriceTier {
+export function faixaToPriceTier(
+  faixa: FaixaQuantidade,
+  index?: number,
+  arr?: FaixaQuantidade[],
+): PriceTier {
   const nextFaixa = arr && index !== undefined ? arr[index + 1] : undefined;
-  
+
   return {
     tier: faixa.faixa,
     minQuantity: faixa.quantidadeMinima,
@@ -185,24 +185,24 @@ export function tecnicaToTechniqueInput(tecnica: TecnicaUnificada): TechniqueInp
     code: tecnica.codigo,
     name: tecnica.nome,
     category: tecnica.categoria,
-    
+
     requiresColors: tecnica.permiteCores,
     minColors: tecnica.minCores,
     maxColors: tecnica.maxCores,
     priceByColor: tecnica.precoPorCor,
     extraColorPrice: tecnica.precoCorExtra,
-    
+
     priceByArea: tecnica.precoPorArea,
     priceByStitches: tecnica.precoPorPontos,
     minAreaCm2: tecnica.areaMinimaCm2,
     maxAreaCm2: tecnica.areaMaximaCm2,
-    
+
     setupPrice: tecnica.custoSetup,
     handlingPrice: tecnica.custoManuseio,
     costMultiplier: tecnica.multiplicadorCusto,
-    
+
     appliesToCurved: tecnica.aplicaSuperficieCurva,
-    
+
     isActive: tecnica.ativo,
   };
 }
@@ -216,28 +216,28 @@ export function tecnicaToTechniqueInput(tecnica: TecnicaUnificada): TechniqueInp
  */
 export function rawTableToPriceTableInput(raw: CustomizationPriceTableRaw): PriceTableInput {
   const tiers = extractTiersFromRaw(raw);
-  
+
   return {
     id: raw.id,
     tableCode: raw.table_code,
     tableCodeOption: raw.table_code_option,
     techniqueName: raw.customization_type_name,
-    
+
     maxColors: raw.max_colors,
     maxWidthCm: raw.max_area_width_cm,
     maxHeightCm: raw.max_area_height_cm,
     minAreaCm2: raw.area_min_cm2,
     maxAreaCm2: raw.area_max_cm2,
-    
+
     priceByColor: raw.price_by_color,
     priceByArea: raw.price_by_area,
     priceByStitches: raw.price_by_stitches,
-    
+
     setupPrice: raw.setup_price,
     handlingPrice: raw.handling_price,
-    
+
     tiers,
-    
+
     isActive: raw.is_active,
   };
 }
@@ -247,15 +247,17 @@ export function rawTableToPriceTableInput(raw: CustomizationPriceTableRaw): Pric
  */
 function extractTiersFromRaw(raw: CustomizationPriceTableRaw): PriceTier[] {
   const tiers: PriceTier[] = [];
-  
+
   for (let i = 1; i <= 15; i++) {
     const minQty = raw[`min_qty_${i}` as keyof CustomizationPriceTableRaw] as number;
     const price = raw[`price_${i}` as keyof CustomizationPriceTableRaw] as number;
     const sla = raw[`sla_${i}` as keyof CustomizationPriceTableRaw] as number | null;
-    
+
     if (minQty !== null && price !== null) {
-      const nextMinQty = raw[`min_qty_${i + 1}` as keyof CustomizationPriceTableRaw] as number | undefined;
-      
+      const nextMinQty = raw[`min_qty_${i + 1}` as keyof CustomizationPriceTableRaw] as
+        | number
+        | undefined;
+
       tiers.push({
         tier: i,
         minQuantity: minQty,
@@ -265,7 +267,7 @@ function extractTiersFromRaw(raw: CustomizationPriceTableRaw): PriceTier[] {
       });
     }
   }
-  
+
   return tiers;
 }
 
@@ -278,24 +280,24 @@ export function rawTechniqueToTechniqueInput(raw: PersonalizationTechniqueRaw): 
     code: raw.code,
     name: raw.name,
     category: raw.category,
-    
+
     requiresColors: raw.requires_color_count,
     minColors: raw.min_colors,
     maxColors: raw.max_colors,
     priceByColor: raw.price_by_color,
     extraColorPrice: raw.extra_color_price,
-    
+
     priceByArea: raw.price_by_area,
     priceByStitches: raw.price_by_stitches,
     minAreaCm2: raw.min_area_cm2,
     maxAreaCm2: raw.max_area_cm2,
-    
+
     setupPrice: raw.setup_price,
     handlingPrice: raw.handling_price,
     costMultiplier: raw.base_cost_multiplier,
-    
+
     appliesToCurved: raw.applies_to_curved,
-    
+
     isActive: raw.is_active,
   };
 }
