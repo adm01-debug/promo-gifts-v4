@@ -23,23 +23,36 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   const results = [];
-  const SIM_BYPASS = "a46c3981-244a-4f81-9f57-bab5c45b5cde";
+
+  // SIM_BYPASS é resolvido SEMPRE da env / cofre — nunca hardcoded.
+  // Sem chave, o teste de bridge é pulado em vez de expor um backdoor no repo.
+  let SIM_BYPASS: string | null = null;
+  try {
+    const secretRes = await resolveCredential("SIMULATION_BYPASS_KEY", supabase);
+    SIM_BYPASS = secretRes?.value ?? Deno.env.get("SIMULATION_BYPASS_KEY") ?? null;
+  } catch {
+    SIM_BYPASS = Deno.env.get("SIMULATION_BYPASS_KEY") ?? null;
+  }
 
   try {
     // 1. Testar external-db-bridge (Operação de Select Mocado ou Simples)
     const bridgeStart = performance.now();
     try {
+      if (!SIM_BYPASS) {
+        results.push({ name: "external-db-bridge", skipped: "SIMULATION_BYPASS_KEY ausente" });
+      } else {
       const bridgeRes = await fetch(`${supabaseUrl}/functions/v1/external-db-bridge`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${SIM_BYPASS}`, "Content-Type": "application/json" },
         body: JSON.stringify({ operation: "select", table: "products", limit: 1 })
       });
-      results.push({ 
-        name: "external-db-bridge", 
-        status: bridgeRes.status, 
-        ok: bridgeRes.ok, 
-        latency: performance.now() - bridgeStart 
+      results.push({
+        name: "external-db-bridge",
+        status: bridgeRes.status,
+        ok: bridgeRes.ok,
+        latency: performance.now() - bridgeStart
       });
+      }
     } catch (e) {
       results.push({ name: "external-db-bridge", error: String(e) });
     }
@@ -51,6 +64,12 @@ Deno.serve(async (req) => {
       // Usar o segredo que inserimos no DB via resolveCredential para assinar corretamente
       const secretRes = await resolveCredential("SIMULATION_BYPASS_KEY", supabase);
       const secret = secretRes.value || SIM_BYPASS;
+      if (!secret) {
+        results.push({ name: "webhook-inbound", skipped: "SIMULATION_BYPASS_KEY ausente" });
+        return new Response(JSON.stringify({ results }, null, 2), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       const signature = "sha256=" + await hmacSign(JSON.stringify(payload), secret);
 
       

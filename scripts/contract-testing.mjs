@@ -2,8 +2,12 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://pqpdolkaeqlyzpdpbizo.supabase.co";
-// Usando a chave de simulação estável definida para este projeto
-const SERVICE_ROLE_KEY = "a46c3981-244a-4f81-9f57-bab5c45b5cde"; 
+// Chave de simulação SOMENTE via env — nunca hardcoded no repositório.
+const SERVICE_ROLE_KEY = process.env.SIMULATION_BYPASS_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!SERVICE_ROLE_KEY) {
+  console.error("❌ Defina SIMULATION_BYPASS_KEY (ou SUPABASE_SERVICE_ROLE_KEY) no .env antes de rodar o contract-testing.");
+  process.exit(2);
+}
 
 const CONTRACTS = [
   {
