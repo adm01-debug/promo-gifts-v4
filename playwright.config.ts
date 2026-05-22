@@ -1,1 +1,238 @@
-LyoqCiAqIEUyRSBUZXN0IENvbmZpZ3VyYXRpb24g4oCUIFBsYXl3cmlnaHQKICoKICogRXN0cnV0dXJhOgogKiAgLSBwcm9qZWN0ICJzZXR1cCI6IHJvZGEgZTJlL2ZpeHR1cmVzL2F1dGguc2V0dXAudHMgVU1BIFZFWiBlIGdlcmEgc3RvcmFnZVN0YXRlLmpzb24KICogIC0gcHJvamVjdCAiY2hyb21pdW0tcHVibGljIjogc3BlY3Mgc2VtIGF1dGggKGxvZ2luLCBww7pibGljb3MpCiAqICAtIHByb2plY3QgImNocm9taXVtLWF1dGhlZCI6IHNwZWNzIGF1dGVudGljYWRvcyAoZGVwZW5kZSBkZSBzZXR1cCkKICoKICogSGFyZGVuaW5nIGFudGktZmxha2U6CiAqICAtIGhlYWRsZXNzIFBPUiBQQURSw4NPIChzb2JyZXNjcmV2w612ZWwgcG9yIC0taGVhZGVkIG91IEUyRV9IRUFETEVTUz1mYWxzZSkKICogIC0gcmV0cmllcyBjb250cm9sYWRvczogQ0k9MiwgbG9jYWw9MSAob3ZlcnJpZGUgcG9yIEUyRV9SRVRSSUVTPU4pCiAqICAtIGV4cGVjdC50aW1lb3V0IGVzY2Fsb25hZG86IDE1cyBsb2NhbCAvIDQ1cyBDSSAoYWJzb3J2ZSBoaWRyYXRhw6fDo28gU1BBIHBlc2FkYSkKICogIC0gcmVkdWNlZE1vdGlvbjogInJlZHVjZSIgcGFyYSBuZXV0cmFsaXphciBhbmltYcOnw7VlcyAoUmFkaXgvZnJhbWVyLW1vdGlvbikKICogIC0gdGVzdElkQXR0cmlidXRlIHBhZHJvbml6YWRvIGVtICJkYXRhLXRlc3RpZCIKICoKICogQ29tYW5kb3M6CiAqICAgbnBtIHJ1biB0ZXN0OmUyZSAgICAgICAgICAjIGhlYWRsZXNzIChkZWZhdWx0KQogKiAgIG5wbSBydW4gdGVzdDplMmU6dWkgICAgICAgIyBtb2RvIHZpc3VhbAogKiAgIG5wbSBydW4gdGVzdDplMmU6aGVhZGVkICAgIyBicm93c2VyIHZpc8OtdmVsCiAqICAgbnBtIHJ1biB0ZXN0OmUyZTpkZWJ1ZyAgICAjIGNvbSBpbnNwZWN0b3IKICogICBucG0gcnVuIHRlc3Q6ZTJlOnJlcG9ydCAgICMgYWJyZSBvIHJlbGF0w7NyaW8gSFRNTAogKgogKiBFbnZzOgogKiAgIEUyRV9CQVNFX1VSTCAgICBVUkwgZG8gc2Vydmlkb3IgasOhIHJvZGFuZG8gKHB1bGEgd2ViU2VydmVyKQogKiAgIEUyRV9IRUFETEVTUyAgICAiZmFsc2UiIHBhcmEgZm9yw6dhciBoZWFkZWQ7IGRlZmF1bHQgdHJ1ZQogKiAgIEUyRV9SRVRSSUVTICAgICBuw7ptZXJvIGFic29sdXRvIGRlIHJldHJpZXMgKHNvYnJlc2NyZXZlIENJL2xvY2FsKQogKi8KaW1wb3J0IHsgZGVmaW5lQ29uZmlnLCBkZXZpY2VzIH0gZnJvbSAiQHBsYXl3cmlnaHQvdGVzdCI7CmltcG9ydCBwYXRoIGZyb20gIm5vZGU6cGF0aCI7CmltcG9ydCB7IGZpbGVVUkxUb1BhdGggfSBmcm9tICJub2RlOnVybCI7Cgpjb25zdCBfX2ZpbGVuYW1lID0gZmlsZVVSTFRvUGF0aChpbXBvcnQubWV0YS51cmwpOwpjb25zdCBfX2Rpcm5hbWUgPSBwYXRoLmRpcm5hbWUoX19maWxlbmFtZSk7Cgpjb25zdCBTVE9SQUdFX1NUQVRFID0gcGF0aC5yZXNvbHZlKF9fZGlybmFtZSwgImUyZS8uYXV0aC9zdG9yYWdlU3RhdGUuanNvbiIpOwpjb25zdCBBUlRJRkFDVFNfRElSID0gcGF0aC5yZXNvbHZlKF9fZGlybmFtZSwgImUyZS1hcnRpZmFjdHMiKTsKCmNvbnN0IEhFQURMRVNTID0gcHJvY2Vzcy5lbnYuRTJFX0hFQURMRVNTCiAgPyBwcm9jZXNzLmVudi5FMkVfSEVBRExFU1MudG9Mb3dlckNhc2UoKSAhPT0gImZhbHNlIgogIDogdHJ1ZTsKCmNvbnN0IFJFVFJJRVMgPSBwcm9jZXNzLmVudi5FMkVfUkVUUklFUwogID8gTWF0aC5tYXgoMCwgTnVtYmVyLnBhcnNlSW50KHByb2Nlc3MuZW52LkUyRV9SRVRSSUVTLCAxMCkgfHwgMCkKICA6IHByb2Nlc3MuZW52LkNJCiAgICA/IDIKICAgIDogMTsKCmV4cG9ydCBkZWZhdWx0IGRlZmluZUNvbmZpZyh7CiAgdGVzdERpcjogIi4vZTJlIiwKICAvLyBSZXN0cmljdCB0byAqLnNwZWMudHMgb25seSDigJQgcHJldmVudHMgUGxheXdyaWdodCBmcm9tIGxvYWRpbmcgdml0ZXN0CiAgLy8gdW5pdCB0ZXN0cyAoKi50ZXN0LnRzKSB0aGF0IGxpdmUgaW5zaWRlIGUyZS9zY3JpcHRzL19fdGVzdHNfXy8gYW5kCiAgLy8gY2F1c2UgIkNhbm5vdCByZWRlZmluZSBwcm9wZXJ0eTogU3ltYm9sKCQkamVzdC1tYXRjaGVycy1vYmplY3QpIiB3aGVuCiAgLy8gQHZpdGVzdC9leHBlY3QgY29uZmxpY3RzIHdpdGggUGxheXdyaWdodCdzIGFscmVhZHktaW5pdGlhbGl6ZWQgbWF0Y2hlcnMuCiAgdGVzdE1hdGNoOiAvLipcLnNwZWNcLnRzLywKICBnbG9iYWxTZXR1cDogcGF0aC5yZXNvbHZlKF9fZGlybmFtZSwgImUyZS9nbG9iYWwtc2V0dXAudHMiKSwKICBnbG9iYWxUZWFyZG93bjogcGF0aC5yZXNvbHZlKF9fZGlybmFtZSwgImUyZS9nbG9iYWwtdGVhcmRvd24udHMiKSwKICBmdWxseVBhcmFsbGVsOiB0cnVlLAogIGZvcmJpZE9ubHk6ICEhcHJvY2Vzcy5lbnYuQ0ksCiAgcmV0cmllczogUkVUUklFUywKICB3b3JrZXJzOiBwcm9jZXNzLmVudi5DSSA/IDEgOiB1bmRlZmluZWQsCiAgLy8gQ0kgZG9icmEgbyB0aW1lb3V0IHBlci10ZXN0IHBhcmEgYWJzb3J2ZXIgdGVhcmRvd24gbGVudG8gZG8gYnJvd3NlciBjb250ZXh0CiAgLy8gZW0gcm90YXMgY29tIFByb3RlY3RlZFJvdXRlIChlZmZlY3RzIHBlbmRlbnRlcyBmYXplbSBjb250ZXh0LmNsb3NlIGFydHJhc2FyKS4KICAvLyBMb2NhbCBtYW50w6ltIDQ1cyBwYXJhIGRldGVjdGFyIHJlZ3Jlc3PDtWVzIGNlZG8uCiAgdGltZW91dDogcHJvY2Vzcy5lbnYuQ0kgPyA5MF8wMDAgOiA0NV8wMDAsCiAgLy8gQ0kgZG9icmErIHRvZG9zIG9zIHRpbWVvdXRzIHBhcmEgYWJzb3J2ZXIgaGlkcmF0YcOnw6NvIFNQQSBwZXNhZGEgKH4xMHMKICAvLyBkZSBwYXJzZS9ldmFsIEpTIG5vIHByaW1laXJvIGFjZXNzbyDDoCByb3RhLCBtZXNtbyBhcMOzcyBidW5kbGUgcHJvbnRvKS4KICAvLyBMb2NhbCBtYW50w6ltIHZhbG9yZXMgb3JpZ2luYWlzIHBhcmEgZGV0ZWN0YXIgcmVncmVzc8O1ZXMgcmVhaXMgY2Vkby4KICBleHBlY3Q6IHsgdGltZW91dDogcHJvY2Vzcy5lbnYuQ0kgPyA0NV8wMDAgOiAxNV8wMDAgfSwKICBvdXRwdXREaXI6IEFSVElGQUNUU19ESVIsCiAgLy8gSlNPTiByZXBvcnRlciBzZW1wcmUgZW1pdGlkbyBwYXJhIGFsaW1lbnRhciBgc2NyaXB0cy9lMmUtZmVhdHVyZS1zdW1tYXJ5Lm1qc2AKICAvLyAob3ZlcmhlYWQgZGVzcHJlesOtdmVsKS4gSFRNTCBhYmVydG8gb24tZGVtYW5kIHZpYSBgbnBtIHJ1biB0ZXN0OmUyZTpyZXBvcnRgLgogIHJlcG9ydGVyOiBwcm9jZXNzLmVudi5DSQogICAgPyBbCiAgICAgICAgWyJsaXN0Il0sCiAgICAgICAgWyJodG1sIiwgeyBvdXRwdXRGb2xkZXI6ICJwbGF5d3JpZ2h0LXJlcG9ydCIsIG9wZW46ICJuZXZlciIgfV0sCiAgICAgICAgWyJqc29uIiwgeyBvdXRwdXRGaWxlOiAicGxheXdyaWdodC1yZXBvcnQvcmVzdWx0cy5qc29uIiB9XSwKICAgICAgICBbImp1bml0IiwgeyBvdXRwdXRGaWxlOiAicGxheXdyaWdodC1yZXBvcnQvcmVzdWx0cy54bWwiIH1dLAogICAgICBdCiAgICA6IFsKICAgICAgICBbImxpc3QiXSwKICAgICAgICBbImh0bWwiLCB7IG91dHB1dEZvbGRlcjogInBsYXl3cmlnaHQtcmVwb3J0Iiwgb3BlbjogIm5ldmVyIiB9XSwKICAgICAgICBbImpzb24iLCB7IG91dHB1dEZpbGU6ICJwbGF5d3JpZ2h0LXJlcG9ydC9yZXN1bHRzLmpzb24iIH1dLAogICAgICBdLAogIHVzZTogewogICAgLy8gVml0ZSBkZXYgc2VydmVyIHJvZGEgZW0gOjgwODAgKHZpdGUuY29uZmlnLnRzIOKGkiBzZXJ2ZXIucG9ydCkuCiAgICAvLyBEZWZhdWx0IGFudGlnbyA1MTczIG7Do28gZm9pIHByb3BhZ2FkbyBxdWFuZG8gbyBwcm9qZXRvIG1pZ3JvdSBwYXJhIDgwODAKICAgIC8vIOKAlCBmYXppYSBvIHdlYlNlcnZlciB3YWl0IHRpbWVvdXRhciBhcMOzcyAxMjBzLiBSb290IGNhdXNlIGRhICMxNjcuCiAgICBiYXNlVVJMOiBwcm9jZXNzLmVudi5FMkVfQkFTRV9VUkwgPz8gImh0dHA6Ly9sb2NhbGhvc3Q6ODA4MCIsCiAgICBoZWFkbGVzczogSEVBRExFU1MsCiAgICB0ZXN0SWRBdHRyaWJ1dGU6ICJkYXRhLXRlc3RpZCIsCiAgICB0cmFjZTogInJldGFpbi1vbi1mYWlsdXJlIiwKICAgIHNjcmVlbnNob3Q6ICJvbmx5LW9uLWZhaWx1cmUiLAogICAgdmlkZW86ICJyZXRhaW4tb24tZmFpbHVyZSIsCiAgICBhY3Rpb25UaW1lb3V0OiBwcm9jZXNzLmVudi5DSSA/IDMwXzAwMCA6IDEwXzAwMCwKICAgIG5hdmlnYXRpb25UaW1lb3V0OiBwcm9jZXNzLmVudi5DSSA/IDQ1XzAwMCA6IDIwXzAwMCwKICAgIHJlZHVjZWRNb3Rpb246ICJyZWR1Y2UiLAogICAgbGF1bmNoT3B0aW9uczogewogICAgICBhcmdzOiBbIi0tZGlzYWJsZS1ibGluay1mZWF0dXJlcz1BdXRvbWF0aW9uQ29udHJvbGxlZCJdLAogICAgfSwKICB9LAogIC8vIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgAogIC8vIElTT0xBTUVOVE8gQHNtb2tlIChkZWZlc2EgZW0gcHJvZnVuZGlkYWRlKQogIC8vCiAgLy8gQXBlbmFzIG8gcHJvamVjdCBgY2hyb21pdW0tc21va2VgIGV4ZWN1dGEgdGVzdGVzIG1hcmNhZG9zIGBAc21va2VgLgogIC8vIERlbWFpcyBwcm9qZWN0cyBhcGxpY2FtIGBncmVwSW52ZXJ0OiAvQHNtb2tlL2AgcGFyYSBpZ25vcmFyIHF1YWxxdWVyCiAgLy8gYEBzbW9rZWAgcXVlIHZhemUgcGFyYSBvdXRybyBhcnF1aXZvIChleC46IGFsZ3XDqW0gYWRpY2lvbmFyCiAgLy8gYHRlc3QuZGVzY3JpYmUoIkBzbW9rZSAuLi4iKWAgbnVtIHNwZWMgZGUgcmVncmVzc2lvbiBwb3IgZW5nYW5vKS4KICAvLwogIC8vIENvbWJpbmFkbyBjb20gYHRlc3RNYXRjaGAvYHRlc3RJZ25vcmVgIHBvciBwYXRoLCBpc3NvIGdhcmFudGUgMyBjYW1hZGFzOgogIC8vICAgMS4gUGF0aC1iYXNlZDogc21va2Ugc3BlYyBzw7MgY2FzYSBlbSBgY2hyb21pdW0tc21va2VgLgogIC8vICAgMi4gVGFnLWJhc2VkOiAgcXVhbHF1ZXIgYEBzbW9rZWAgZW0gb3V0cm8gc3BlYyDDqSBzaWxlbmNpb3NhbWVudGUKICAvLyAgICAgICAgICAgICAgICAgIHB1bGFkbyBlbSB0b2RvcyBvcyBvdXRyb3MgcHJvamVjdHMuCiAgLy8gICAzLiBDb21hbmRvOiAgICBgbnBtIHJ1biB0ZXN0OmUyZWAgKGdlcmFsKSBOw4NPIGluY2x1aSBjaHJvbWl1bS1zbW9rZQogIC8vICAgICAgICAgICAgICAgICAgcG9yIHBhZHLDo28g4oCUIHZpZGUgYG5wbSBydW4gdGVzdDplMmU6YWxsYCBwYXJhIGVuY2FkZWFyLgogIC8vIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgAogIHByb2plY3RzOiBbCiAgICB7CiAgICAgIG5hbWU6ICJzZXR1cCIsCiAgICAgIHRlc3RNYXRjaDogL2ZpeHR1cmVzXC9hdXRoXC5zZXR1cFwudHMvLAogICAgfSwKICAgIHsKICAgICAgLy8gVGhlbWUgJiBBY2Nlc3NpYmlsaXR5IEdhdGUg4oCUIHZhbGlkYSBjb250cmFzdGUgV0NBRywgdGlwb2dyYWZpYSBlCiAgICAgIC8vIHZpc3VhbCByZWdyZXNzaW9uIHBhcmEgY2FkYSBwcmVzZXQgw5cgbW9kZSBlbSBgVEhFTUVfUFJFU0VUU2AuCiAgICAgIC8vIFByb2plY3QgZGVkaWNhZG8gcG9ycXVlIGBjaHJvbWl1bS1wdWJsaWNgIGlnbm9yYSBleHBsaWNpdGFtZW50ZQogICAgICAvLyBgdGhlbWUtdmFsaWRhdGlvbi5zcGVjLnRzYCBubyB0ZXN0SWdub3JlLiBTZW0gZXN0ZSBwcm9qZWN0LCBvCiAgICAgIC8vIGBucG0gcnVuIHRlc3Q6dGhlbWUtdmFsaWRhdGlvbmAgcmV0b3JuYXZhICJObyB0ZXN0cyBmb3VuZCIuCiAgICAgIG5hbWU6ICJ0aGVtZS12YWxpZGF0aW9uIiwKICAgICAgdXNlOiB7IC4uLmRldmljZXNbIkRlc2t0b3AgQ2hyb21lIl0gfSwKICAgICAgdGVzdE1hdGNoOiAvdGhlbWUtdmFsaWRhdGlvblwuc3BlY1wudHMvLAogICAgICBncmVwSW52ZXJ0OiAvQHNtb2tlLywKICAgIH0sCiAgICB7CiAgICAgIG5hbWU6ICJjaHJvbWl1bS1wdWJsaWMiLAogICAgICB1c2U6IHsgLi4uZGV2aWNlc1siRGVza3RvcCBDaHJvbWUiXSB9LAogICAgICB0ZXN0SWdub3JlOiBbL2ZpeHR1cmVzXC9hdXRoXC5zZXR1cFwudHMvLCAvZmxvd3NcLy8sIC9yb3V0ZXNcLy8sIC90aGVtZS12YWxpZGF0aW9uXC5zcGVjXC50cy9dLAogICAgICBncmVwSW52ZXJ0OiAvQHNtb2tlLywKICAgIH0sCiAgICB7CiAgICAgIG5hbWU6ICJjaHJvbWl1bS13aXphcmQiLAogICAgICB1c2U6IHsgLi4uZGV2aWNlc1siRGVza3RvcCBDaHJvbWUiXSB9LAogICAgICB0ZXN0TWF0Y2g6IFsKICAgICAgICAvcXVvdGUtYnVpbGRlci13aXphcmRcLnNwZWNcLnRzLywgCiAgICAgICAgL3F1b3RlLWJ1aWxkZXItc2hpcHBpbmctdmFsaWRhdGlvblwuc3BlY1wudHMvLAogICAgICAgIC9jb21wYW55LXNlYXJjaC1oaXN0b3J5XC5zcGVjXC50cy8sCiAgICAgICAgL3F1b3RlLWJ1aWxkZXItcGVyc29uYWxpemF0aW9uLXV4XC5zcGVjXC50cy8KICAgICAgXSwKICAgIH0sCiAgICB7CiAgICAgIG5hbWU6ICJjaHJvbWl1bS1hdXRoZWQiLAogICAgICB1c2U6IHsgLi4uZGV2aWNlc1siRGVza3RvcCBDaHJvbWUiXSwgc3RvcmFnZVN0YXRlOiBTVE9SQUdFX1NUQVRFIH0sCiAgICAgIGRlcGVuZGVuY2llczogWyJzZXR1cCJdLAogICAgICB0ZXN0TWF0Y2g6IC9mbG93c1wvLipcLnNwZWNcLnRzLywKICAgICAgLy8gU21va2Ugcm9kYSBubyBwcm9qZWN0IGRlZGljYWRvIGFiYWl4byAoY2hyb21pdW0tc21va2UpIHBhcmEgZXZpdGFyCiAgICAgIC8vIGV4ZWN1w6fDo28gZHVwbGljYWRhIGUgZ2FyYW50aXIgb3JkZW0gc2VxdWVuY2lhbCBkZXRlcm1pbsOtc3RpY2EuCiAgICAgIHRlc3RJZ25vcmU6IFsvZmxvd3NcLzIwLWFsbC1mZWF0dXJlcy1zbW9rZVwuc3BlY1wudHMvXSwKICAgICAgZ3JlcEludmVydDogL0BzbW9rZS8sCiAgICB9LAogICAgewogICAgICAvLyBTbW9rZSBnYXRlIOKAlCAxIHRlc3RlIHBvciBmdW5jaW9uYWxpZGFkZSwgb3JkZW0gZml4YSwgd29ya2Vycz0xLgogICAgICAvLyBTRU0gcmV0cmllczogZ2F0ZSBkZXRlcm1pbsOtc3RpY28g4oCUIGZsYWtpbmVzcyBkZXZlIGZhbGhhciB2aXPDrXZlbC4KICAgICAgLy8gRXhlY3V0YXIgaXNvbGFkYW1lbnRlOiBgbnBtIHJ1biB0ZXN0OmUyZTpzbW9rZWAgb3UKICAgICAgLy8gYG5weCBwbGF5d3JpZ2h0IHRlc3QgLS1wcm9qZWN0PWNocm9taXVtLXNtb2tlIC0tbWF4LWZhaWx1cmVzPTNgLgogICAgICBuYW1lOiAiY2hyb21pdW0tc21va2UiLAogICAgICB1c2U6IHsKICAgICAgICAuLi5kZXZpY2VzWyJEZXNrdG9wIENocm9tZSJdLAogICAgICAgIHN0b3JhZ2VTdGF0ZTogU1RPUkFHRV9TVEFURSwKICAgICAgICAvLyBDYXB0dXJhIGZvcsOnYWRhIHBvciB0ZXN0ZSBlbSBmYWxoYXMg4oCUIGluZGVwZW5kZW50ZSBkbyBkZWZhdWx0IGdsb2JhbC4KICAgICAgICAvLyBHYXJhbnRlIGRpYWduw7NzdGljbyB2aXN1YWwgY29tcGxldG8gbm8gQ0kgc2VtIGRlcGVuZGVyIGRlIHJldHJpZXMuCiAgICAgICAgc2NyZWVuc2hvdDogeyBtb2RlOiAib25seS1vbi1mYWlsdXJlIiwgZnVsbFBhZ2U6IHRydWUgfSwKICAgICAgICB2aWRlbzogeyBtb2RlOiAicmV0YWluLW9uLWZhaWx1cmUiLCBzaXplOiB7IHdpZHRoOiAxMjgwLCBoZWlnaHQ6IDcyMCB9IH0sCiAgICAgICAgdHJhY2U6ICJyZXRhaW4tb24tZmFpbHVyZSIsCiAgICAgIH0sCiAgICAgIGRlcGVuZGVuY2llczogWyJzZXR1cCJdLAogICAgICB0ZXN0TWF0Y2g6IC9mbG93c1wvKDIwLWFsbC1mZWF0dXJlcy1zbW9rZXwyMi1nb29nbGUtb2F1dGgtc21va2V8MjMtcm9ja2V0LWFuaW1hdGlvbi1zbmFwc2hvdHwyNC12aXN1YWwtcmVncmVzc2lvbi1zdGFycylcLnNwZWNcLnRzLywKICAgICAgLy8gRXhpZ2UgdGFnIEBzbW9rZSBleHBsw61jaXRhIOKAlCBxdWFscXVlciB0ZXN0KCkgc2VtIGEgdGFnIG5vCiAgICAgIC8vIGRlc2NyaWJlIMOpIGlnbm9yYWRvLCBtZXNtbyBubyBzcGVjIGRvIHNtb2tlLiBHYXJhbnRlIHF1ZSBhcGVuYXMKICAgICAgLy8gdGVzdGVzIGludGVuY2lvbmFsbWVudGUgbWFyY2Fkb3MgQHNtb2tlIHJvZGVtIGFxdWkuCiAgICAgIGdyZXA6IC9Ac21va2UvLAogICAgICBmdWxseVBhcmFsbGVsOiBmYWxzZSwKICAgICAgd29ya2VyczogMSwKICAgICAgcmV0cmllczogMCwKICAgIH0sCiAgICB7CiAgICAgIC8vIFNwZWNzIHBvciByb3RhIOKAlCDDoXJlYSBww7pibGljYSAoc2VtIGF1dGgpLiBFeC46IHJvdXRlcy9wdWJsaWMvKi5zcGVjLnRzCiAgICAgIG5hbWU6ICJyb3V0ZXMtcHVibGljIiwKICAgICAgdXNlOiB7IC4uLmRldmljZXNbIkRlc2t0b3AgQ2hyb21lIl0gfSwKICAgICAgdGVzdE1hdGNoOiAvcm91dGVzXC9wdWJsaWNcLy4qXC5zcGVjXC50cy8sCiAgICAgIGdyZXBJbnZlcnQ6IC9Ac21va2UvLAogICAgfSwKICAgIHsKICAgICAgLy8gU3BlY3MgcG9yIHJvdGEg4oCUIMOhcmVhcyBhdXRlbnRpY2FkYXMgKGFwcCwgcXVvdGVzLCBhZG1pbikuCiAgICAgIG5hbWU6ICJyb3V0ZXMtYXV0aGVkIiwKICAgICAgdXNlOiB7IC4uLmRldmljZXNbIkRlc2t0b3AgQ2hyb21lIl0sIHN0b3JhZ2VTdGF0ZTogU1RPUkFHRV9TVEFURSB9LAogICAgICBkZXBlbmRlbmNpZXM6IFsic2V0dXAiXSwKICAgICAgdGVzdE1hdGNoOiAvcm91dGVzXC8oYXBwfHF1b3Rlc3xhZG1pbilcLy4qXC5zcGVjXC50cy8sCiAgICAgIGdyZXBJbnZlcnQ6IC9Ac21va2UvLAogICAgfSwKICAgIHsKICAgICAgLy8gVmVyc8OjbyBtb2JpbGUgZG9zIG1lc21vcyBzcGVjcyAoYXBlbmFzIHRlc3RlcyBtYXJjYWRvcyBAbW9iaWxlIHJvZGFtIGFxdWkpLgogICAgICBuYW1lOiAicm91dGVzLW1vYmlsZSIsCiAgICAgIHVzZTogeyAuLi5kZXZpY2VzWyJpUGhvbmUgMTMiXSwgc3RvcmFnZVN0YXRlOiBTVE9SQUdFX1NUQVRFIH0sCiAgICAgIGRlcGVuZGVuY2llczogWyJzZXR1cCJdLAogICAgICB0ZXN0TWF0Y2g6IC9yb3V0ZXNcLyhhcHB8cXVvdGVzfGFkbWluKVwvLipcLnNwZWNcLnRzLywKICAgICAgZ3JlcDogL0Btb2JpbGUvLAogICAgICBncmVwSW52ZXJ0OiAvQHNtb2tlLywKICAgIH0sCiAgXSwKICB3ZWJTZXJ2ZXI6IHByb2Nlc3MuZW52LkUyRV9CQVNFX1VSTAogICAgPyB1bmRlZmluZWQKICAgIDogewogICAgICAgIGNvbW1hbmQ6IHByb2Nlc3MuZW52LkNJID8gIm5weCB2aXRlIiA6ICJucG0gcnVuIGRldiIsCiAgICAgICAgdXJsOiAiaHR0cDovL2xvY2FsaG9zdDo4MDgwIiwKICAgICAgICAvLyBBbHdheXMgcmV1c2UgYW4gZXhpc3Rpbmcgc2VydmVyIGlmIG9uZSBpcyBhbHJlYWR5IGxpc3RlbmluZy4KICAgICAgICAvLyBJbiBDSSwgbXVsdGlwbGUgYG5weCBwbGF5d3JpZ2h0IHRlc3RgIGludm9jYXRpb25zIChzbW9rZSwKICAgICAgICAvLyBoZWFkZXItc3RpY2t5LCByZWdyZXNzaW9uKSBydW4gc2VxdWVudGlhbGx5OyB3aXRob3V0IHRoaXMsIHRoZQogICAgICAgIC8vIHNlY29uZCBpbnZvY2F0aW9uIGZhaWxzIGltbWVkaWF0ZWx5IHdoZW4gcG9ydCA4MDgwIGlzIHN0aWxsIGhlbGQKICAgICAgICAvLyBieSB0aGUgcHJpb3Igc3RlcCdzIFZpdGUgcHJvY2VzcyBkdXJpbmcgaXRzIHNodXRkb3duIHdpbmRvdy4KICAgICAgICByZXVzZUV4aXN0aW5nU2VydmVyOiB0cnVlLAogICAgICAgIHRpbWVvdXQ6IDMwMF8wMDAsCiAgICAgICAgc3Rkb3V0OiAicGlwZSIsCiAgICAgICAgc3RkZXJyOiAicGlwZSIsCiAgICAgICAgLy8gU3VwYWJhc2UtanMgdjIgdGhyb3dzICJzdXBhYmFzZVVybCBpcyByZXF1aXJlZC4iIHdoZW4gZW52IHZhcnMgYXJlCiAgICAgICAgLy8gdW5kZWZpbmVkLiBJbiBDSSB3aXRob3V0IGEgLmVudiBmaWxlLCBpbmplY3QgcGxhY2Vob2xkZXIgdmFsdWVzIHNvCiAgICAgICAgLy8gdGhlIFZpdGUgc3VicHJvY2VzcyAoYW5kIHRoZSBidWlsdCBhcHApIGNhbiBpbml0aWFsaXplIHRoZSBjbGllbnQuCiAgICAgICAgLy8gVGhlc2UgdmFsdWVzIG9ubHkgcmVhY2ggdGhlIFZpdGUgcHJvY2VzcyDigJQgdGhlIFBsYXl3cmlnaHQgdGVzdAogICAgICAgIC8vIHJ1bm5lcidzIHByb2Nlc3MuZW52IGlzIHVuYWZmZWN0ZWQsIHNvIHRlc3QtOTQncyBza2lwIGd1YXJkCiAgICAgICAgLy8gKHByb2Nlc3MuZW52LlZJVEVfU1VQQUJBU0VfVVJMKSBzdGlsbCBmaXJlcyBjb3JyZWN0bHkuCiAgICAgICAgZW52OiBwcm9jZXNzLmVudi5DSQogICAgICAgICAgPyB7CiAgICAgICAgICAgICAgLi4ucHJvY2Vzcy5lbnYsCiAgICAgICAgICAgICAgVklURV9TVVBBQkFTRV9VUkw6CiAgICAgICAgICAgICAgICBwcm9jZXNzLmVudi5WSVRFX1NVUEFCQVNFX1VSTCA/PyAiaHR0cHM6Ly9wbGFjZWhvbGRlci5zdXBhYmFzZS5jbyIsCiAgICAgICAgICAgICAgVklURV9TVVBBQkFTRV9QVUJMSVNIQUJMRV9LRVk6CiAgICAgICAgICAgICAgICBwcm9jZXNzLmVudi5WSVRFX1NVUEFCQVNFX1BVQkxJU0hBQkxFX0tFWSA/PyAicGxhY2Vob2xkZXItYW5vbi1rZXkiLAogICAgICAgICAgICB9CiAgICAgICAgICA6IHVuZGVmaW5lZCwKICAgICAgfSwKfSk7Cg==
+/**
+ * E2E Test Configuration — Playwright
+ *
+ * Estrutura:
+ *  - project "setup": roda e2e/fixtures/auth.setup.ts UMA VEZ e gera storageState.json
+ *  - project "chromium-public": specs sem auth (login, públicos)
+ *  - project "chromium-authed": specs autenticados (depende de setup)
+ *
+ * Hardening anti-flake:
+ *  - headless POR PADRÃO (sobrescrevível por --headed ou E2E_HEADLESS=false)
+ *  - retries controlados: CI=2, local=1 (override por E2E_RETRIES=N)
+ *  - expect.timeout escalonado: 15s local / 45s CI (absorve hidratação SPA pesada)
+ *  - reducedMotion: "reduce" para neutralizar animações (Radix/framer-motion)
+ *  - testIdAttribute padronizado em "data-testid"
+ *
+ * Comandos:
+ *   npm run test:e2e          # headless (default)
+ *   npm run test:e2e:ui       # modo visual
+ *   npm run test:e2e:headed   # browser visível
+ *   npm run test:e2e:debug    # com inspector
+ *   npm run test:e2e:report   # abre o relatório HTML
+ *
+ * Envs:
+ *   E2E_BASE_URL    URL do servidor já rodando (pula webServer)
+ *   E2E_HEADLESS    "false" para forçar headed; default true
+ *   E2E_RETRIES     número absoluto de retries (sobrescreve CI/local)
+ */
+import { defineConfig, devices } from "@playwright/test";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const STORAGE_STATE = path.resolve(__dirname, "e2e/.auth/storageState.json");
+const ARTIFACTS_DIR = path.resolve(__dirname, "e2e-artifacts");
+
+const HEADLESS = process.env.E2E_HEADLESS
+  ? process.env.E2E_HEADLESS.toLowerCase() !== "false"
+  : true;
+
+const RETRIES = process.env.E2E_RETRIES
+  ? Math.max(0, Number.parseInt(process.env.E2E_RETRIES, 10) || 0)
+  : process.env.CI
+    ? 2
+    : 1;
+
+export default defineConfig({
+  testDir: "./e2e",
+  // Restrict to *.spec.ts only — prevents Playwright from loading vitest
+  // unit tests (*.test.ts) that live inside e2e/scripts/__tests__/ and
+  // cause "Cannot redefine property: Symbol($$jest-matchers-object)" when
+  // @vitest/expect conflicts with Playwright's already-initialized matchers.
+  testMatch: /.*\.spec\.ts/,
+  globalSetup: path.resolve(__dirname, "e2e/global-setup.ts"),
+  globalTeardown: path.resolve(__dirname, "e2e/global-teardown.ts"),
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  retries: RETRIES,
+  workers: process.env.CI ? 1 : undefined,
+  // CI dobra o per-test timeout para absorver teardown lento do browser context
+  // em rotas com ProtectedRoute (effects pendentes fazem context.close atrasar).
+  // Local mantém 45s para detectar regressões cedo.
+  timeout: process.env.CI ? 90_000 : 45_000,
+  // CI dobra+ todos os timeouts para absorver hidratação SPA pesada (~10s
+  // de parse/eval JS no primeiro acesso à rota, mesmo após bundle pronto).
+  // Local mantém valores originais para detectar regressões reais cedo.
+  expect: { timeout: process.env.CI ? 45_000 : 15_000 },
+  outputDir: ARTIFACTS_DIR,
+  // JSON reporter sempre emitido para alimentar `scripts/e2e-feature-summary.mjs`
+  // (overhead desprezível). HTML aberto on-demand via `npm run test:e2e:report`.
+  reporter: process.env.CI
+    ? [
+        ["list"],
+        ["html", { outputFolder: "playwright-report", open: "never" }],
+        ["json", { outputFile: "playwright-report/results.json" }],
+        ["junit", { outputFile: "playwright-report/results.xml" }],
+      ]
+    : [
+        ["list"],
+        ["html", { outputFolder: "playwright-report", open: "never" }],
+        ["json", { outputFile: "playwright-report/results.json" }],
+      ],
+  use: {
+    // Vite dev server roda em :8080 (vite.config.ts → server.port).
+    // Default antigo 5173 não foi propagado quando o projeto migrou para 8080
+    // — fazia o webServer wait timeoutar após 120s. Root cause da #167.
+    baseURL: process.env.E2E_BASE_URL ?? "http://localhost:8080",
+    headless: HEADLESS,
+    testIdAttribute: "data-testid",
+    trace: "retain-on-failure",
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
+    actionTimeout: process.env.CI ? 30_000 : 10_000,
+    navigationTimeout: process.env.CI ? 45_000 : 20_000,
+    reducedMotion: "reduce",
+    launchOptions: {
+      args: ["--disable-blink-features=AutomationControlled"],
+    },
+  },
+  // ───────────────────────────────────────────────────────────
+  // ISOLAMENTO @smoke (defesa em profundidade)
+  //
+  // Apenas o project `chromium-smoke` executa testes marcados `@smoke`.
+  // Demais projects aplicam `grepInvert: /@smoke/` para ignorar qualquer
+  // `@smoke` que vaze para outro arquivo (ex.: alguém adicionar
+  // `test.describe("@smoke ...")` num spec de regression por engano).
+  //
+  // Combinado com `testMatch`/`testIgnore` por path, isso garante 3 camadas:
+  //   1. Path-based: smoke spec só casa em `chromium-smoke`.
+  //   2. Tag-based:  qualquer `@smoke` em outro spec é silenciosamente
+  //                  pulado em todos os outros projects.
+  //   3. Comando:    `npm run test:e2e` (geral) NÃO inclui chromium-smoke
+  //                  por padrão — vide `npm run test:e2e:all` para encadear.
+  // ───────────────────────────────────────────────────────────
+  projects: [
+    {
+      name: "setup",
+      testMatch: /fixtures\/auth\.setup\.ts/,
+    },
+    {
+      // Theme & Accessibility Gate — valida contraste WCAG, tipografia e
+      // visual regression para cada preset × mode em `THEME_PRESETS`.
+      // Project dedicado porque `chromium-public` ignora explicitamente
+      // `theme-validation.spec.ts` no testIgnore. Sem este project, o
+      // `npm run test:theme-validation` retornava "No tests found".
+      name: "theme-validation",
+      use: { ...devices["Desktop Chrome"] },
+      testMatch: /theme-validation\.spec\.ts/,
+      grepInvert: /@smoke/,
+    },
+    {
+      name: "chromium-public",
+      use: { ...devices["Desktop Chrome"] },
+      testIgnore: [/fixtures\/auth\.setup\.ts/, /flows\//, /routes\//, /theme-validation\.spec\.ts/],
+      grepInvert: /@smoke/,
+    },
+    {
+      name: "chromium-wizard",
+      use: { ...devices["Desktop Chrome"] },
+      testMatch: [
+        /quote-builder-wizard\.spec\.ts/, 
+        /quote-builder-shipping-validation\.spec\.ts/,
+        /company-search-history\.spec\.ts/,
+        /quote-builder-personalization-ux\.spec\.ts/
+      ],
+    },
+    {
+      name: "chromium-authed",
+      use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
+      dependencies: ["setup"],
+      testMatch: /flows\/.*\.spec\.ts/,
+      // Smoke roda no project dedicado abaixo (chromium-smoke) para evitar
+      // execução duplicada e garantir ordem sequencial determinística.
+      testIgnore: [/flows\/20-all-features-smoke\.spec\.ts/],
+      grepInvert: /@smoke/,
+    },
+    {
+      // Smoke gate — 1 teste por funcionalidade, ordem fixa, workers=1.
+      // SEM retries: gate determinístico — flakiness deve falhar visível.
+      // Executar isoladamente: `npm run test:e2e:smoke` ou
+      // `npx playwright test --project=chromium-smoke --max-failures=3`.
+      name: "chromium-smoke",
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: STORAGE_STATE,
+        // Captura forçada por teste em falhas — independente do default global.
+        // Garante diagnóstico visual completo no CI sem depender de retries.
+        screenshot: { mode: "only-on-failure", fullPage: true },
+        video: { mode: "retain-on-failure", size: { width: 1280, height: 720 } },
+        trace: "retain-on-failure",
+      },
+      dependencies: ["setup"],
+      testMatch: /flows\/(20-all-features-smoke|22-google-oauth-smoke|23-rocket-animation-snapshot|24-visual-regression-stars)\.spec\.ts/,
+      // Exige tag @smoke explícita — qualquer test() sem a tag no
+      // describe é ignorado, mesmo no spec do smoke. Garante que apenas
+      // testes intencionalmente marcados @smoke rodem aqui.
+      grep: /@smoke/,
+      fullyParallel: false,
+      workers: 1,
+      retries: 0,
+    },
+    {
+      // Specs por rota — área pública (sem auth). Ex.: routes/public/*.spec.ts
+      name: "routes-public",
+      use: { ...devices["Desktop Chrome"] },
+      testMatch: /routes\/public\/.*\.spec\.ts/,
+      grepInvert: /@smoke/,
+    },
+    {
+      // Specs por rota — áreas autenticadas (app, quotes, admin).
+      name: "routes-authed",
+      use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
+      dependencies: ["setup"],
+      testMatch: /routes\/(app|quotes|admin)\/.*\.spec\.ts/,
+      grepInvert: /@smoke/,
+    },
+    {
+      // Versão mobile dos mesmos specs (apenas testes marcados @mobile rodam aqui).
+      name: "routes-mobile",
+      use: { ...devices["iPhone 13"], storageState: STORAGE_STATE },
+      dependencies: ["setup"],
+      testMatch: /routes\/(app|quotes|admin)\/.*\.spec\.ts/,
+      grep: /@mobile/,
+      grepInvert: /@smoke/,
+    },
+  ],
+  webServer: process.env.E2E_BASE_URL
+    ? undefined
+    : {
+        command: process.env.CI ? "npx vite" : "npm run dev",
+        url: "http://localhost:8080",
+        // Always reuse an existing server if one is already listening.
+        // In CI, multiple `npx playwright test` invocations (smoke,
+        // header-sticky, regression) run sequentially; without this, the
+        // second invocation fails immediately when port 8080 is still held
+        // by the prior step's Vite process during its shutdown window.
+        reuseExistingServer: true,
+        timeout: 300_000,
+        stdout: "pipe",
+        stderr: "pipe",
+        // Supabase-js v2 throws "supabaseUrl is required." when env vars are
+        // undefined. In CI without a .env file, inject placeholder values so
+        // the Vite subprocess (and the built app) can initialize the client.
+        // These values only reach the Vite process — the Playwright test
+        // runner's process.env is unaffected, so test-94's skip guard
+        // (process.env.VITE_SUPABASE_URL) still fires correctly.
+        env: process.env.CI
+          ? {
+              ...process.env,
+              VITE_SUPABASE_URL:
+                process.env.VITE_SUPABASE_URL ?? "https://placeholder.supabase.co",
+              VITE_SUPABASE_PUBLISHABLE_KEY:
+                process.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "placeholder-anon-key",
+            }
+          : undefined,
+      },
+});
