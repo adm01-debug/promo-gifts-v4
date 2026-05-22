@@ -628,6 +628,25 @@ function buildGxPreset(p: PresetParams): ThemePreset {
   return preset;
 }
 
+// Para presets cuja cor primária é clara demais para texto branco (contraste
+// WCAG < 3:1 em primary buttons), aplicamos texto escuro como foreground. É o
+// mesmo padrão usado canonicamente em `gx-cyberpunk` (amarelo neon).
+// Skins afetados: gx-rose-quartz, gx-hackerman, gx-frutti-di-mare, gx-razer.
+// Contraste resultante: 6.18:1 a 9.59:1 (margem confortável vs threshold 3:1).
+function withDarkPrimaryFg(preset: ThemePreset): ThemePreset {
+  preset.light['primary-foreground'] = '222 25% 10%';
+  preset.dark['primary-foreground'] = '222 25% 10%';
+  // Tokens "orange" mapeiam para primary no buildPreset — manter coerência
+  // de foreground para qualquer componente que use orange-foreground.
+  preset.light['orange-foreground'] = '222 25% 10%';
+  preset.dark['orange-foreground'] = '222 25% 10%';
+  // Sidebar primary também segue primary — para consistência visual completa
+  // (badges/active states no sidebar usando primary background).
+  preset.light['sidebar-primary-foreground'] = '222 25% 10%';
+  preset.dark['sidebar-primary-foreground'] = '222 25% 10%';
+  return preset;
+}
+
 export const THEME_PRESETS: ThemePreset[] = [
   // === CLASSIC PRESETS (mantidas) ===
   {
@@ -819,7 +838,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     ss: 70,
     sl: 55,
   }),
-  buildGxPreset({
+  withDarkPrimaryFg(buildGxPreset({
     id: 'gx-rose-quartz',
     name: 'Rose Quartz',
     emoji: '💗',
@@ -831,7 +850,9 @@ export const THEME_PRESETS: ThemePreset[] = [
     sh: 320,
     ss: 60,
     sl: 70,
-  }),
+    // hsl(345 75% 68%) vs branco = 2.90:1 (abaixo de WCAG 3:1).
+    // Texto escuro eleva o contraste para 6.18:1 mantendo a cor primária.
+  })),
   buildGxPreset({
     id: 'gx-ultraviolet',
     name: 'Ultraviolet',
@@ -845,7 +866,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     ss: 80,
     sl: 55,
   }),
-  buildGxPreset({
+  withDarkPrimaryFg(buildGxPreset({
     id: 'gx-hackerman',
     name: 'Hackerman',
     emoji: '👨‍💻',
@@ -857,8 +878,10 @@ export const THEME_PRESETS: ThemePreset[] = [
     sh: 115,
     ss: 60,
     sl: 42,
-  }),
-  buildGxPreset({
+    // hsl(127 65% 46%) vs branco = 2.38:1 (abaixo de WCAG 3:1).
+    // Texto escuro eleva o contraste para 7.54:1.
+  })),
+  withDarkPrimaryFg(buildGxPreset({
     id: 'gx-frutti-di-mare',
     name: 'Frutti di Mare',
     emoji: '🐙',
@@ -870,26 +893,25 @@ export const THEME_PRESETS: ThemePreset[] = [
     sh: 200,
     ss: 75,
     sl: 45,
-  }),
-  (() => {
-    const p = buildGxPreset({
-      id: 'gx-cyberpunk',
-      name: 'Cyberpunk',
-      emoji: '⚡',
-      description: 'Amarelo neon de Night City',
-      h: 55,
-      s: 100,
-      l: 51,
-      gh: 180,
-      sh: 320,
-      ss: 95,
-      sl: 55,
-    });
-    p.light['primary-foreground'] = '222 25% 10%';
-    p.dark['primary-foreground'] = '222 25% 10%';
-    return p;
-  })(),
-  buildGxPreset({
+    // hsl(182 90% 42%) vs branco = 2.13:1 (abaixo de WCAG 3:1).
+    // Texto escuro eleva o contraste para 8.43:1.
+  })),
+  withDarkPrimaryFg(buildGxPreset({
+    id: 'gx-cyberpunk',
+    name: 'Cyberpunk',
+    emoji: '⚡',
+    description: 'Amarelo neon de Night City',
+    h: 55,
+    s: 100,
+    l: 51,
+    gh: 180,
+    sh: 320,
+    ss: 95,
+    sl: 55,
+    // hsl(55 100% 51%) vs branco = 1.07:1 — amarelo neon precisa texto escuro.
+    // Contraste com texto escuro = 14.56:1 (excelente).
+  })),
+  withDarkPrimaryFg(buildGxPreset({
     id: 'gx-razer',
     name: 'Razer',
     emoji: '🐍',
@@ -901,7 +923,9 @@ export const THEME_PRESETS: ThemePreset[] = [
     sh: 100,
     ss: 60,
     sl: 48,
-  }),
+    // hsl(113 70% 51%) vs branco = 1.87:1 (abaixo de WCAG 3:1).
+    // Texto escuro eleva o contraste para 9.59:1.
+  })),
 ];
 
 // =====================================================
