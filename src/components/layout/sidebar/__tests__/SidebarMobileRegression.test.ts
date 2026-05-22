@@ -23,17 +23,24 @@ const ALL_SRC_FILES = (function getAllFiles(dir: string, fileList: string[] = []
 const FORBIDDEN_GLOW = /\b(?:shadow-glow|text-shadow|ambient-glow|drop-shadow-\[.*?primary.*?\]|drop-shadow-\[.*?orange.*?\])\b/g;
 
 describe("Global UI Regression — Zero Glow Policy", () => {
-  ALL_SRC_FILES.forEach(file => {
-    // Skip policy definition, index.css (where variables are defined), and specific theme files that manage tokens
-    if (
-      file.includes('design-policy.ts') || 
-      file.includes('index.css') || 
-      file.includes('theme-presets.ts') ||
-      file.includes('design-polish.css') ||
-      file.includes('animations.css')
-    ) return;
+  // T-FIX-4: refatorado de `forEach(...) { it(...) }` para `it.each`.
+  // Mais idiomático no Vitest e gera labels que mostram cada arquivo
+  // individualmente no reporter. O filtro de skip continua aplicado.
+  const SKIP_FILES = [
+    'design-policy.ts',
+    'index.css',
+    'theme-presets.ts',
+    'design-polish.css',
+    'animations.css',
+  ];
 
-    it(`should not contain orange glow or halos in ${file.replace(process.cwd(), '')}`, () => {
+  const filesToCheck = ALL_SRC_FILES.filter(
+    (file) => !SKIP_FILES.some((skip) => file.includes(skip))
+  );
+
+  it.each(filesToCheck)(
+    "should not contain orange glow or halos in %s",
+    (file) => {
       const content = readFileSync(file, "utf8");
       const lines = content.split('\n');
       
@@ -49,6 +56,6 @@ describe("Global UI Regression — Zero Glow Policy", () => {
       });
       
       expect(violations, `Found glow effects in ${file}:\n${violations.join('\n')}`).toHaveLength(0);
-    });
-  });
+    }
+  );
 });
