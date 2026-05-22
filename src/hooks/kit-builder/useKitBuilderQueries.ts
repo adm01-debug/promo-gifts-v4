@@ -127,7 +127,7 @@ export function useKitBuilderQueries() {
           .filter((box): box is KitBox => box !== null);
 
         if (boxes.length === 0) {
-          console.info('[KitBuilder] No boxes from external DB, using mock data');
+          logger.info('[KitBuilder] No boxes from external DB, using mock data');
           return filterBoxes(MOCK_BOXES, debouncedBoxSearch, boxDimFilters);
         }
 
@@ -165,7 +165,7 @@ export function useKitBuilderQueries() {
           .map((p) => transformToKitItem(p));
 
         if (items.length === 0) {
-          console.info('[KitBuilder] No items from external DB, using mock data');
+          logger.info('[KitBuilder] No items from external DB, using mock data');
           return filterItems(MOCK_ITEMS, debouncedItemSearch);
         }
 

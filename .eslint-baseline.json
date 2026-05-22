@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-21T16:35:02.858Z",
+  "generatedAt": "2026-05-22T03:12:40.396Z",
   "totalErrors": 473,
   "counts": {
     "src/components/access/DevAccessDeniedPage.tsx": {
@@ -868,9 +868,6 @@
     "src/components/ui/LoadingState.tsx": {
       "@typescript-eslint/no-unused-vars": 1
     },
-    "src/components/ui/OptimizedImage.tsx": {
-      "@typescript-eslint/no-explicit-any": 1
-    },
     "src/components/ui/ShortcutsHelpDialog.tsx": {
       "@typescript-eslint/naming-convention": 1,
       "@typescript-eslint/no-explicit-any": 2,
@@ -886,6 +883,9 @@
     },
     "src/components/ui/stat-card.tsx": {
       "@typescript-eslint/naming-convention": 2
+    },
+    "src/contexts/AuthContext.test.tsx": {
+      "@typescript-eslint/consistent-type-imports": 1
     },
     "src/contexts/AuthContext.tsx": {
       "@typescript-eslint/no-explicit-any": 2,
@@ -961,8 +961,7 @@
       "react-hooks/exhaustive-deps": 2
     },
     "src/hooks/kit-builder/useKitBuilderQueries.ts": {
-      "@typescript-eslint/no-non-null-assertion": 3,
-      "no-console": 2
+      "@typescript-eslint/no-non-null-assertion": 3
     },
     "src/hooks/kit-builder/useKitCollaboration.ts": {
       "react-hooks/exhaustive-deps": 1
@@ -1290,6 +1289,9 @@
       "@typescript-eslint/naming-convention": 1,
       "@typescript-eslint/no-explicit-any": 5,
       "no-console": 1
+    },
+    "src/tests/AdminLayout.test.tsx": {
+      "@typescript-eslint/no-explicit-any": 1
     },
     "src/tests/AdminMobileInteraction.test.tsx": {
       "@typescript-eslint/no-unused-vars": 1

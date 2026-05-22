@@ -8,7 +8,7 @@
     "e2e:watch-fixtures": "npx chokidar-cli \"e2e/fixtures/permissions-matrix.ts\" -c \"npm run e2e:generate-fixtures\"",
     "dev": "npm run e2e:generate-fixtures && vite",
     "build": "vite build",
-    "build:dev": "node scripts/generate-health.mjs && vite build --mode development",
+    "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "test": "vitest run",
     "test:quality": "vitest run --exclude 'tests/hooks/**'",
