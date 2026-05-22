@@ -11,23 +11,25 @@ export interface Product {
   stock_status: string | null;
   category_id: number | null;
   category_name: string | null;
+  category?: { name?: string | null; icon?: string | null } | null;
+  brand?: string | null;
   subcategory: string | null;
   supplier_id: string | null;
   supplier_name: string | null;
-  images: string[] | null;                 // Array de URLs
-  colors: ProductColor[] | null;           // JSONB array
-  materials: string[] | null;              // JSONB array
-  variations: ProductVariation[] | null;   // JSONB array
-  tags: Record<string, unknown> | null;    // JSONB
+  images: string[] | null; // Array de URLs
+  colors: ProductColor[] | null; // JSONB array
+  materials: string[] | null; // JSONB array
+  variations: ProductVariation[] | null; // JSONB array
+  tags: Record<string, unknown> | null; // JSONB
   featured: boolean | null;
   new_arrival: boolean | null;
   on_sale: boolean | null;
   is_kit: boolean | null;
-  kit_items: KitItem[] | null;             // JSONB array
+  kit_items: KitItem[] | null; // JSONB array
   is_active: boolean | null;
   min_quantity: number | null;
   external_id: string | null;
-  metadata: ProductMetadata | null;        // JSONB
+  metadata: ProductMetadata | null; // JSONB
   dimensions?: {
     height_cm?: number | null;
     width_cm?: number | null;
@@ -37,7 +39,7 @@ export interface Product {
     capacity_ml?: number | null;
   } | null;
   video_url: string | null;
-  search_vector: unknown;                  // tsvector (ignorar no frontend)
+  search_vector: unknown; // tsvector (ignorar no frontend)
   created_at: string;
   updated_at: string;
   synced_at: string;
@@ -47,9 +49,9 @@ export interface ProductColor {
   name: string;
   hex?: string;
   code?: string;
-  image?: string;           // Imagem principal da cor (retrocompatibilidade)
-  images?: string[];        // Múltiplas fotos por cor
-  videos?: string[];        // Vídeos por cor
+  image?: string; // Imagem principal da cor (retrocompatibilidade)
+  images?: string[]; // Múltiplas fotos por cor
+  videos?: string[]; // Vídeos por cor
   stock?: number;
 }
 
@@ -60,10 +62,10 @@ export interface ProductVariation {
   price?: number;
   stock?: number;
   attributes?: Record<string, string>;
-  color?: ProductColor;       // Cor da variação
-  image?: string;             // Imagem principal da variação
-  images?: string[];          // Múltiplas fotos da variação
-  videos?: string[];          // Vídeos da variação
+  color?: ProductColor; // Cor da variação
+  image?: string; // Imagem principal da variação
+  images?: string[]; // Múltiplas fotos da variação
+  videos?: string[]; // Vídeos da variação
 }
 
 export interface KitItem {
@@ -100,7 +102,16 @@ export interface ProductFilters {
 }
 
 // Produto simplificado para listagens
-export type ProductListItem = Pick<Product, 
-  'id' | 'sku' | 'name' | 'price' | 'images' | 'category_name' | 
-  'featured' | 'new_arrival' | 'stock_status' | 'colors'
+export type ProductListItem = Pick<
+  Product,
+  | 'id'
+  | 'sku'
+  | 'name'
+  | 'price'
+  | 'images'
+  | 'category_name'
+  | 'featured'
+  | 'new_arrival'
+  | 'stock_status'
+  | 'colors'
 >;
