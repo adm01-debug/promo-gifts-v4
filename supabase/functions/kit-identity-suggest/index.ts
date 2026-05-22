@@ -6,8 +6,9 @@ import { getCorsHeaders } from "../_shared/cors.ts";
 // com tool-calling para JSON estrito. Modelo barato e rápido.
 // Hardening: Zod validation + bot protection (rate limit).
 // ============================================================
-import { z } from '../_shared/zod-validate.ts';
+import { parseBodyWithSchema } from '../_shared/zod-validate.ts';
 import { runBotProtection } from '../_shared/bot-protection.ts';
+import { contracts as kitIdentityContracts } from '../_shared/contracts/kit-identity-suggest.contracts.ts';
 
 const PALETTE = [
   '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
@@ -20,19 +21,7 @@ const ICONS = [
   'Sun', 'Moon', 'Zap', 'Flame', 'Award',
 ];
 
-const BodySchema = z.object({
-  name: z.string().max(200).optional(),
-  description: z.string().max(500).nullable().optional(),
-  items: z
-    .array(
-      z.object({
-        name: z.string().max(200).optional(),
-        sku: z.string().max(100).optional(),
-      }),
-    )
-    .max(50)
-    .optional(),
-});
+const BodySchema = kitIdentityContracts.v1.schema;
 
 Deno.serve(async (req: Request) => {
   const corsHeaders = getCorsHeaders(req);
@@ -49,14 +38,8 @@ Deno.serve(async (req: Request) => {
     }, getCorsHeaders(req));
     if (!protection.allowed) return protection.blockResponse!;
 
-    const raw = await req.json().catch(() => ({}));
-    const parsed = BodySchema.safeParse(raw);
-    if (!parsed.success) {
-      return new Response(
-        JSON.stringify({ error: 'Parâmetros inválidos', details: parsed.error.flatten().fieldErrors }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-      );
-    }
+    const parsed = await parseBodyWithSchema(req, BodySchema, corsHeaders);
+    if ('error' in parsed) return parsed.error;
 
     const name = (parsed.data.name ?? '').trim();
     const items = parsed.data.items ?? [];

@@ -11,21 +11,13 @@
 // Ver: supabase/functions/_shared/dispatcher-auth.ts
 import { crypto } from "https://deno.land/std@0.224.0/crypto/mod.ts";
 import { encodeHex } from "https://deno.land/std@0.224.0/encoding/hex.ts";
-import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
 import { authorizeDispatcher } from "../_shared/dispatcher-auth.ts";
+import { parseBodyWithSchema } from "../_shared/zod-validate.ts";
+import { contracts as dispatcherContracts } from "../_shared/contracts/webhook-dispatcher.contracts.ts";
 
 const corsHeaders = buildPublicCorsHeaders({ allowMethods: "POST, OPTIONS" });
-
-const BodySchema = z.object({
-  event: z.string().min(1),
-  payload: z.unknown().optional(),
-  // Replay mode: re-deliver a single failed delivery by id
-  replay_delivery_id: z.string().uuid().optional(),
-  // Test mode (Onda 13 #9): dispatch to a specific webhook, no metrics, no breaker, no DB log
-  test_mode: z.boolean().optional(),
-  test_webhook_id: z.string().uuid().optional(),
-});
+const BodySchema = dispatcherContracts.v1.schema;
 
 // Circuit breaker: 5 falhas consecutivas → desativa o webhook
 const CIRCUIT_BREAKER_THRESHOLD = 5;
@@ -61,13 +53,9 @@ Deno.serve(async (req) => {
 
   try {
     // Body precisa ser parseado antes da auth pra saber se requer Modo B (test_mode/replay).
-    // Body parse falha → 400 antes da auth (não vaza info).
-    const parsed = BodySchema.safeParse(await req.json().catch(() => ({})));
-    if (!parsed.success) {
-      return new Response(JSON.stringify({ error: "Invalid body" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // Body parse falha → 422 antes da auth (não vaza info).
+    const parsed = await parseBodyWithSchema(req, BodySchema, corsHeaders);
+    if ("error" in parsed) return parsed.error;
     let { event, payload } = parsed.data;
     const { replay_delivery_id, test_mode, test_webhook_id } = parsed.data;
 

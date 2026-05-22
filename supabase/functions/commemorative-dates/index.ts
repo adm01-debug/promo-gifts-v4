@@ -1,17 +1,9 @@
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-import { z } from "https://esm.sh/zod@3.23.8";
 import { parseBodyWithSchema } from "../_shared/zod-validate.ts";
+import { contracts as commemorativeContracts } from "../_shared/contracts/commemorative-dates.contracts.ts";
 
-const ActionSchema = z.object({
-  action: z.enum(['get_active_dates', 'get_upcoming_dates', 'get_products_by_date', 'get_dates_with_colors']),
-  params: z.object({
-    days_ahead: z.number().int().min(1).max(365).optional(),
-    slug: z.string().trim().min(1).max(200).optional(),
-    limit: z.number().int().min(1).max(500).optional(),
-    include_all_colors: z.boolean().optional(),
-  }).optional(),
-});
+const ActionSchema = commemorativeContracts.v1.schema;
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);

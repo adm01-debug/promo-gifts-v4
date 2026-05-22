@@ -3,9 +3,10 @@ import { getCorsHeaders } from '../_shared/cors.ts';
 import { castRpcResult } from "../_shared/supabase-client-adapter.ts";
 import { authenticateRequest, authErrorResponse } from '../_shared/auth.ts';
 import { callAiWithTracking, QuotaExceededError } from '../_shared/ai-usage.ts';
-import { z } from '../_shared/zod-validate.ts';
+import { parseBodyWithSchema } from '../_shared/zod-validate.ts';
 import { rateLimiters, applyRateLimit } from '../_shared/rate-limiter.ts';
 import { runBotProtection } from '../_shared/bot-protection.ts';
+import { contracts as semanticSearchContracts } from '../_shared/contracts/semantic-search.contracts.ts';
 
 // ========================================
 // PG_TRGM RE-RANK via RPC search_products_semantic
@@ -173,37 +174,8 @@ Deno.serve(async (req) => {
       return new Response(rl.body, { status: rl.status, headers });
     }
 
-    const ProductForRankSchema = z.object({
-      id: z.string().min(1),
-      name: z.string().optional().default(''),
-      description: z.string().optional().default(''),
-      tags: z.array(z.string()).optional().default([]),
-      category: z.string().optional().default(''),
-    });
-
-    const SearchSchema = z.object({
-      query: z.string().trim().min(2, 'Query too short').max(500, 'Query too long'),
-      products: z.array(ProductForRankSchema).max(500).optional(),
-      limit: z.number().int().min(1).max(100).optional().default(20),
-    });
-
-    let rawBody: unknown;
-    try {
-      rawBody = await req.json();
-    } catch {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Invalid request body' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const parsed = SearchSchema.safeParse(rawBody);
-    if (!parsed.success) {
-      return new Response(
-        JSON.stringify({ success: false, error: parsed.error.issues[0]?.message || 'Invalid input' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    const parsed = await parseBodyWithSchema(req, semanticSearchContracts.v1.schema, corsHeaders);
+    if ('error' in parsed) return parsed.error;
     const { query, products: productsForRank, limit: rankLimit } = parsed.data;
 
     // Periodic cleanup

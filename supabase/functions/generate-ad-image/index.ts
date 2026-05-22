@@ -1,47 +1,14 @@
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors.ts';
 import { authenticateRequest, authErrorResponse } from '../_shared/auth.ts';
 import { callAiWithTracking, QuotaExceededError } from '../_shared/ai-usage.ts';
-import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+import { parseBodyWithSchema } from "../_shared/zod-validate.ts";
 import { runBotProtection } from '../_shared/bot-protection.ts';
+import { contracts as generateAdImageContracts } from "../_shared/contracts/generate-ad-image.contracts.ts";
 
-const BodySchema = z.object({
-  productImageUrl: z.string().url(),
-  logoBase64: z.string().optional(),
-  logoUrl: z.string().url().optional(),
-  productName: z.string().optional(),
-  productColor: z.string().optional(),
-  techniqueName: z.string().optional(),
-  locationName: z.string().optional(),
-  scenePrompt: z.string().min(1, "Scene prompt is required"),
-  sceneCategory: z.string().optional(),
-  brandColorHex: z.string().optional(),
-  brandColorName: z.string().optional(),
-  campaignBrief: z.record(z.unknown()).optional(),
-  outputChannel: z.string().optional(),
-  aspectRatio: z.string().optional(),
-  qualityMode: z.string().optional(),
-  compositionMode: z.string().optional(),
-  creativeMode: z.string().optional(),
-  negativePrompt: z.array(z.string()).optional(),
-  brandKit: z.object({
-    primaryColor: z.string().nullable().optional(),
-    secondaryColor: z.string().nullable().optional(),
-    toneOfVoice: z.string().optional(),
-    visualStyle: z.string().optional(),
-    requiredWords: z.array(z.string()).optional(),
-    forbiddenWords: z.array(z.string()).optional(),
-    notes: z.string().optional(),
-  }).optional(),
-  refinementInstruction: z.string().nullable().optional(),
-  batchVariant: z.record(z.unknown()).nullable().optional(),
-  // Magic Up "fast mode": quando 'fast', usa Gemini 2.5 Flash Image Preview
-  // ("nano-banana") em vez do Gemini 3 Pro Image. Permite previews/iterações
-  // mais baratas e rápidas. Default: 'pro' (qualidade máxima, comportamento
-  // legado preservado para chamadores que não setam o campo).
-  imageModel: z.enum(["pro", "fast"]).optional().default("pro"),
-}).refine(data => data.logoBase64 || data.logoUrl, {
-  message: "Either logoBase64 or logoUrl must be provided",
-});
+// Schema canônico em _shared/contracts/generate-ad-image.contracts.ts. Inclui
+// refine() exigindo logoBase64 || logoUrl. imageModel default 'pro' (Magic Up
+// "fast" usa Gemini 2.5 Flash Image Preview / "nano-banana").
+const BodySchema = generateAdImageContracts.v1.schema;
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -67,23 +34,8 @@ Deno.serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    let rawBody: unknown;
-    try {
-      rawBody = await req.json();
-    } catch {
-      return new Response(
-        JSON.stringify({ error: "Invalid JSON body" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const parsed = BodySchema.safeParse(rawBody);
-    if (!parsed.success) {
-      return new Response(
-        JSON.stringify({ error: "Validation failed", details: parsed.error.flatten().fieldErrors }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const parsed = await parseBodyWithSchema(req, BodySchema, corsHeaders);
+    if ('error' in parsed) return parsed.error;
 
     const {
       productImageUrl, logoBase64, logoUrl, productName, productColor,

@@ -18,13 +18,15 @@
     "scripts",
     "vite.config.ts",
     "playwright.config.ts",
-    "vitest.config.ts"
+    "vitest.config.ts",
+    "supabase/functions/_shared/contracts/error-response.ts",
+    "supabase/functions/_shared/contracts/versioning.ts",
+    "supabase/functions/_shared/contracts/*.contracts.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
     "build",
-    "coverage",
-    "supabase/functions"
+    "coverage"
   ]
 }

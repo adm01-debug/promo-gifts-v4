@@ -1,13 +1,10 @@
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { authenticateRequest, requireRole, authErrorResponse } from '../_shared/auth.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-import { z } from '../_shared/zod-validate.ts';
+import { parseBodyWithSchema } from '../_shared/zod-validate.ts';
+import { contracts as categoriesContracts } from '../_shared/contracts/categories-api.contracts.ts';
 
-const CategoriesRequestSchema = z.object({
-  action: z.enum(['tree', 'all', 'descendants', 'products_by_categories']),
-  categoryIds: z.array(z.string().uuid()).max(200).optional(),
-  includeDescendants: z.boolean().optional(),
-});
+const CategoriesRequestSchema = categoriesContracts.v1.schema;
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -33,13 +30,8 @@ Deno.serve(async (req) => {
 
     const externalClient = createClient(externalUrl, externalKey);
 
-    const rawBody = await req.json().catch(() => ({}));
-    const parsed = CategoriesRequestSchema.safeParse(rawBody);
-    if (!parsed.success) {
-      return new Response(JSON.stringify({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    const parsed = await parseBodyWithSchema(req, CategoriesRequestSchema, corsHeaders);
+    if ('error' in parsed) return parsed.error;
     const { action, categoryIds, includeDescendants } = parsed.data;
 
     switch (action) {

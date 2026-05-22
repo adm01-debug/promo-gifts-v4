@@ -1,57 +1,40 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-import { z } from "../_shared/zod-validate.ts";
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
+import { parseRequestWithContract } from "../_shared/zod-validate.ts";
+import {
+  contracts as productWebhookContracts,
+  type WebhookPayloadV1Type,
+  type WebhookPayloadV2Type,
+} from "../_shared/contracts/product-webhook.contracts.ts";
 
-const corsHeaders = buildPublicCorsHeaders({ extraAllowHeaders: ["x-webhook-secret"] });
+const corsHeaders = buildPublicCorsHeaders({
+  extraAllowHeaders: ["x-webhook-secret", "x-contract-version"],
+});
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const webhookSecret = Deno.env.get("N8N_PRODUCT_WEBHOOK_SECRET");
 
-const ProductPayloadSchema = z.object({
-  external_id: z.string().max(255).optional(),
-  sku: z.string().min(1).max(100),
-  name: z.string().min(1).max(500),
-  description: z.string().max(5000).optional(),
-  price: z.number().nonnegative(),
-  min_quantity: z.number().int().positive().optional(),
-  category_id: z.number().int().optional(),
-  category_name: z.string().max(255).optional(),
-  subcategory: z.string().max(255).optional(),
-  supplier_id: z.string().max(255).optional(),
-  supplier_name: z.string().max(255).optional(),
-  stock: z.number().int().nonnegative().optional(),
-  stock_status: z.string().max(50).optional(),
-  is_kit: z.boolean().optional(),
-  is_active: z.boolean().optional(),
-  featured: z.boolean().optional(),
-  new_arrival: z.boolean().optional(),
-  on_sale: z.boolean().optional(),
-  images: z.array(z.string().url().max(2000)).max(50).optional(),
-  video_url: z.string().url().max(2000).optional().nullable(),
-  colors: z.array(z.object({ name: z.string(), hex: z.string(), group: z.string().optional() })).max(100).optional(),
-  materials: z.array(z.string().max(100)).max(50).optional(),
-  tags: z.record(z.array(z.string())).optional(),
-  kit_items: z.array(z.object({
-    productId: z.string(), productName: z.string(), quantity: z.number(), sku: z.string()
-  })).max(50).optional(),
-  variations: z.array(z.any()).max(200).optional(),
-  metadata: z.record(z.any()).optional(),
-});
+type ProductV1 = NonNullable<WebhookPayloadV1Type["product"]>;
+type ProductV2 = NonNullable<WebhookPayloadV2Type["product"]>;
 
-const WebhookPayloadSchema = z.object({
-  action: z.enum(["sync", "upsert", "delete", "batch_upsert"]),
-  products: z.array(ProductPayloadSchema).max(500).optional(),
-  product: ProductPayloadSchema.optional(),
-  external_ids: z.array(z.string().max(255)).max(500).optional(),
-});
-
-type ProductPayload = z.infer<typeof ProductPayloadSchema>;
+/**
+ * Achata payload v2 ({price: {amount,currency}}) para o shape v1 (price number)
+ * que o resto do handler já entende. Currency vai para metadata.
+ */
+function normalizeV2Product(p: ProductV2): ProductV1 {
+  const { price, ...rest } = p;
+  return {
+    ...rest,
+    price: price.amount,
+    metadata: { ...(p.metadata ?? {}), currency: price.currency },
+  };
+}
 
 interface WebhookPayload {
   action: "sync" | "upsert" | "delete" | "batch_upsert";
-  products?: ProductPayload[];
-  product?: ProductPayload;
+  products?: ProductV1[];
+  product?: ProductV1;
   external_ids?: string[];
 }
 
@@ -74,21 +57,28 @@ Deno.serve(async (req) => {
       );
     }
 
-    let rawBody: unknown;
-    try { rawBody = await req.json(); } catch {
-      return new Response(JSON.stringify({ error: "Invalid webhook payload" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const parseResult = await parseRequestWithContract(
+      req,
+      productWebhookContracts,
+      corsHeaders,
+    );
+    if ("error" in parseResult) return parseResult.error;
 
-    const parsed = WebhookPayloadSchema.safeParse(rawBody);
-    if (!parsed.success) {
-      return new Response(JSON.stringify({ error: "Validation failed", details: parsed.error.flatten().fieldErrors }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const { data, version, responseHeaders: contractHeaders } = parseResult;
+
+    let payload: WebhookPayload;
+    if (version === "v2") {
+      const v2 = data as WebhookPayloadV2Type;
+      payload = {
+        action: v2.action,
+        product: v2.product ? normalizeV2Product(v2.product) : undefined,
+        products: v2.products ? v2.products.map(normalizeV2Product) : undefined,
+        external_ids: v2.external_ids,
+      };
+    } else {
+      payload = data as WebhookPayloadV1Type;
     }
-    const payload: WebhookPayload = parsed.data;
-    console.log(`Product webhook action: ${payload.action}`);
+    console.log(`Product webhook action: ${payload.action} (contract ${version})`);
 
     // Create sync log
     const { data: syncLog, error: logError } = await supabase
@@ -182,7 +172,13 @@ Deno.serve(async (req) => {
         errors: result.errors,
         sync_log_id: syncLogId,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      {
+        headers: {
+          ...corsHeaders,
+          ...contractHeaders,
+          "Content-Type": "application/json",
+        },
+      },
     );
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
@@ -196,7 +192,7 @@ Deno.serve(async (req) => {
 
 async function upsertProducts(
   supabase: any,
-  products: ProductPayload[]
+  products: ProductV1[]
 ): Promise<{ created: number; updated: number; failed: number; errors: string[] }> {
   let created = 0;
   let updated = 0;

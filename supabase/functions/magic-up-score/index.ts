@@ -2,7 +2,8 @@ import { getCorsHeaders } from '../_shared/cors.ts';
 import { authenticateRequest, authErrorResponse } from '../_shared/auth.ts';
 import { callAiWithTracking, QuotaExceededError } from '../_shared/ai-usage.ts';
 import { runBotProtection } from '../_shared/bot-protection.ts';
-import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+import { z, parseBodyWithSchema } from "../_shared/zod-validate.ts";
+import { contracts as magicUpContracts } from "../_shared/contracts/magic-up-score.contracts.ts";
 
 const CriterionSchema = z.object({
   id: z.string().min(1),
@@ -13,17 +14,7 @@ const CriterionSchema = z.object({
   recommendation: z.string().min(1),
 });
 
-const BodySchema = z.object({
-  imageUrl: z.string().min(10),
-  productName: z.string().optional().nullable(),
-  clientName: z.string().optional().nullable(),
-  campaignBrief: z.record(z.unknown()).optional().nullable(),
-  brandKit: z.record(z.unknown()).optional().nullable(),
-  creativeControls: z.record(z.unknown()).optional().nullable(),
-  promptText: z.string().optional().nullable(),
-  channel: z.string().optional().nullable(),
-  aspectRatio: z.string().optional().nullable(),
-});
+const BodySchema = magicUpContracts.v1.schema;
 
 const DiagnosisSchema = z.object({
   total: z.number().min(0).max(100),
@@ -58,10 +49,8 @@ Deno.serve(async (req) => {
     }, corsHeaders);
     if (!protection.allowed) return protection.blockResponse!;
 
-    const parsed = BodySchema.safeParse(await req.json().catch(() => null));
-    if (!parsed.success) {
-      return new Response(JSON.stringify({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
+    const parsed = await parseBodyWithSchema(req, BodySchema, corsHeaders);
+    if ('error' in parsed) return parsed.error;
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY is not configured');

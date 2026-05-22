@@ -1,17 +1,9 @@
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-import { z } from '../_shared/zod-validate.ts';
+import { parseBodyWithSchema } from '../_shared/zod-validate.ts';
+import { contracts as materialsContracts } from '../_shared/contracts/materials-api.contracts.ts';
 
-const MaterialsRequestSchema = z.object({
-  action: z.enum(['groups', 'types', 'types_by_group', 'product_materials', 'products_by_materials', 'stats', 'search', 'complete']),
-  groupId: z.string().max(255).optional(),
-  materialId: z.string().uuid().optional(),
-  productId: z.string().uuid().optional(),
-  materialTypeIds: z.array(z.string().uuid()).max(200).optional(),
-  materialGroupSlugs: z.array(z.string().max(100)).max(50).optional(),
-  limit: z.number().int().min(1).max(500).default(100),
-  search: z.string().max(200).optional(),
-});
+const MaterialsRequestSchema = materialsContracts.v1.schema;
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -35,13 +27,8 @@ Deno.serve(async (req) => {
       } catch (_) { /* ignora token inválido — segue como anônimo */ }
     }
 
-    const rawBody = await req.json().catch(() => ({}));
-    const parsed = MaterialsRequestSchema.safeParse(rawBody);
-    if (!parsed.success) {
-      return new Response(JSON.stringify({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    const parsed = await parseBodyWithSchema(req, MaterialsRequestSchema, corsHeaders);
+    if ('error' in parsed) return parsed.error;
     const { action, groupId, materialId, productId, materialTypeIds, materialGroupSlugs, limit } = parsed.data;
 
     // Conectar ao banco externo

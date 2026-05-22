@@ -1,10 +1,9 @@
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors.ts';
 import { logSecurityEvent } from '../_shared/security.ts';
-import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+import { parseBodyWithSchema } from "../_shared/zod-validate.ts";
+import { contracts as rateLimitCheckContracts } from "../_shared/contracts/rate-limit-check.contracts.ts";
 
-const BodySchema = z.object({
-  endpoint: z.enum(['login', 'api', 'ai', 'approval']).default('api'),
-}).partial();
+const BodySchema = rateLimitCheckContracts.v1.schema;
 
 // Rate limit configuration
 const RATE_LIMITS: Record<string, { maxRequests: number; windowMs: number }> = {
@@ -32,22 +31,15 @@ Deno.serve(async (req) => {
   }
 
   try {
-    let rawBody: unknown = {};
-    try {
-      rawBody = await req.json();
-    } catch {
-      // Empty body is fine — defaults apply
+    // Body vazio é aceitável: aplica default endpoint='api'.
+    const contentLength = req.headers.get('content-length');
+    const hasBody = contentLength !== null && contentLength !== '0';
+    let endpoint: 'login' | 'api' | 'ai' | 'approval' = 'api';
+    if (hasBody) {
+      const parsed = await parseBodyWithSchema(req, BodySchema, corsHeaders);
+      if ('error' in parsed) return parsed.error;
+      endpoint = parsed.data.endpoint ?? 'api';
     }
-
-    const parsed = BodySchema.safeParse(rawBody);
-    if (!parsed.success) {
-      return new Response(
-        JSON.stringify({ error: "Validation failed", details: parsed.error.flatten().fieldErrors }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const endpoint = parsed.data.endpoint || 'api';
     const clientIP = getClientIP(req);
     const config = RATE_LIMITS[endpoint] || RATE_LIMITS.api;
     

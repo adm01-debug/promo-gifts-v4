@@ -1,12 +1,10 @@
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-import { z } from "https://esm.sh/zod@3.23.8";
+import { parseBodyWithSchema } from "../_shared/zod-validate.ts";
 import { runBotProtection } from '../_shared/bot-protection.ts';
+import { contracts as externalDbInspectContracts } from '../_shared/contracts/external-db-inspect.contracts.ts';
 
-const BodySchema = z.object({
-  mode: z.enum(['tables', 'columns']).default('tables'),
-  tableName: z.string().trim().min(1).max(100).regex(/^[a-z_][a-z0-9_]*$/i, 'Invalid table name').optional(),
-});
+const BodySchema = externalDbInspectContracts.v1.schema;
 
 const corsHeadersRef: { current: Record<string, string> } = { current: {} };
 
@@ -62,16 +60,16 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Forbidden: admin role required' }, 403);
     }
 
-    // Validate body
-    let rawBody: unknown = {};
-    try { rawBody = await req.json(); } catch { /* empty body ok */ }
-
-    const parsed = BodySchema.safeParse(rawBody);
-    if (!parsed.success) {
-      return jsonResponse({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }, 400);
+    // Validate body (empty body → defaults: mode='tables').
+    const contentLength = req.headers.get('content-length');
+    const hasBody = contentLength !== null && contentLength !== '0';
+    let mode: 'tables' | 'columns' = 'tables';
+    let tableName: string | undefined;
+    if (hasBody) {
+      const parsed = await parseBodyWithSchema(req, BodySchema, corsHeadersRef.current);
+      if ('error' in parsed) return parsed.error;
+      ({ mode, tableName } = parsed.data);
     }
-
-    const { mode, tableName } = parsed.data;
     console.log(`[INSPECT] Mode: ${mode}, Table: ${tableName || 'all'}`);
 
     // External DB connection

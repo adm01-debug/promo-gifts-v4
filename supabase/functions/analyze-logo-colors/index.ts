@@ -1,8 +1,9 @@
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { authenticateRequest, authErrorResponse } from '../_shared/auth.ts';
 import { callAiWithTracking, QuotaExceededError } from '../_shared/ai-usage.ts';
-import { z } from '../_shared/zod-validate.ts';
+import { parseBodyWithSchema } from '../_shared/zod-validate.ts';
 import { runBotProtection } from '../_shared/bot-protection.ts';
+import { contracts as analyzeLogoContracts } from '../_shared/contracts/analyze-logo-colors.contracts.ts';
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -22,24 +23,8 @@ Deno.serve(async (req) => {
       customIdentifier: `user:${auth.userId}`,
     }, corsHeaders);
     if (!protection.allowed) return protection.blockResponse!;
-    const LogoSchema = z.object({
-      imageBase64: z.string().min(10, 'imageBase64 is required').max(10_000_000, 'Image too large'),
-    });
-
-    let rawBody: unknown;
-    try {
-      rawBody = await req.json();
-    } catch {
-      return new Response(JSON.stringify({ error: "Invalid request body" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const parsed = LogoSchema.safeParse(rawBody);
-    if (!parsed.success) {
-      return new Response(JSON.stringify({ error: parsed.error.issues[0]?.message || "Invalid input" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const parsed = await parseBodyWithSchema(req, analyzeLogoContracts.v1.schema, corsHeaders);
+    if ('error' in parsed) return parsed.error;
     const { imageBase64 } = parsed.data;
 
     // Handle HTTP URLs: fetch the image and convert to base64

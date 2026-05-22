@@ -1,12 +1,10 @@
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { authenticateRequest, requireRole, authErrorResponse } from '../_shared/auth.ts';
-import { z } from "https://esm.sh/zod@3.23.8";
+import { parseBodyWithSchema } from "../_shared/zod-validate.ts";
 import { fetchWithBreaker, CircuitOpenError, circuitOpenResponse } from '../_shared/external-fetch.ts';
+import { contracts as dropboxListContracts } from '../_shared/contracts/dropbox-list.contracts.ts';
 
-const BodySchema = z.object({
-  path: z.string().max(1000).default(''),
-  action: z.enum(['list', 'check']).default('list'),
-});
+const BodySchema = dropboxListContracts.v1.schema;
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -23,19 +21,15 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Parse & validate body (graceful fallback for empty body)
-    let body: z.infer<typeof BodySchema>;
-    try {
-      const raw = await req.json();
-      const parsed = BodySchema.safeParse(raw);
-      if (!parsed.success) {
-        return new Response(
-          JSON.stringify({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
+    // Parse & validate body (graceful fallback para body vazio: defaults do schema)
+    const contentLength = req.headers.get('content-length');
+    const hasBody = contentLength !== null && contentLength !== '0';
+    let body: { path: string; action: 'list' | 'check' };
+    if (hasBody) {
+      const parsed = await parseBodyWithSchema(req, BodySchema, corsHeaders);
+      if ('error' in parsed) return parsed.error;
       body = parsed.data;
-    } catch {
+    } else {
       body = { path: '', action: 'list' };
     }
 

@@ -2,33 +2,13 @@
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors.ts';
 import { authenticateRequest, authErrorResponse } from '../_shared/auth.ts';
 import { callAiWithTracking, QuotaExceededError } from '../_shared/ai-usage.ts';
-import { z } from '../_shared/zod-validate.ts';
+import { parseBodyWithSchema } from '../_shared/zod-validate.ts';
 import { rateLimiters, applyRateLimit } from '../_shared/rate-limiter.ts';
 import { runBotProtection } from '../_shared/bot-protection.ts';
-import { extractAndParseAIJSON, safeJson } from '../_shared/json-parser.ts';
+import { extractAndParseAIJSON } from '../_shared/json-parser.ts';
+import { contracts as recsContracts } from '../_shared/contracts/ai-recommendations.contracts.ts';
 
-const ClientSchema = z.object({
-  name: z.string().trim().min(1).max(255),
-  company: z.string().max(255).optional(),
-  industry: z.string().max(100).optional(),
-  preferences: z.array(z.string().max(100)).max(20).optional(),
-  purchaseHistory: z.array(z.string().max(200)).max(50).optional(),
-  budget: z.string().max(100).optional(),
-});
-
-const ProductSchema = z.object({
-  id: z.string().min(1).max(100),
-  name: z.string().min(1).max(255),
-  category: z.string().min(1).max(100),
-  description: z.string().max(1000).optional(),
-  priceRange: z.string().max(50).optional(),
-  tags: z.array(z.string().max(50)).max(20).optional(),
-});
-
-const RecommendationRequestSchema = z.object({
-  client: ClientSchema,
-  products: z.array(ProductSchema).min(1).max(100),
-});
+const RecommendationRequestSchema = recsContracts.v1.schema;
 
 /**
  * JSON robustness is now handled by _shared/json-parser.ts
@@ -62,19 +42,8 @@ Deno.serve(async (req) => {
       return new Response(rl.body, { status: rl.status, headers });
     }
 
-    const rawBody = await safeJson(req);
-    if (!rawBody) {
-      return new Response(JSON.stringify({ error: "Invalid or empty request body" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const parsed = RecommendationRequestSchema.safeParse(rawBody);
-    if (!parsed.success) {
-      return new Response(JSON.stringify({ error: "Validation failed", details: parsed.error.flatten().fieldErrors }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const parsed = await parseBodyWithSchema(req, RecommendationRequestSchema, corsHeaders);
+    if ('error' in parsed) return parsed.error;
     const { client, products } = parsed.data;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");

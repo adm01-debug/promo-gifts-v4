@@ -1,7 +1,8 @@
 import { getCorsHeaders } from '../_shared/cors.ts';
-import { z } from '../_shared/zod-validate.ts';
+import { parseBodyWithSchema } from '../_shared/zod-validate.ts';
 import { fetchWithBreaker, CircuitOpenError, circuitOpenResponse } from '../_shared/external-fetch.ts';
 import { authorize } from '../_shared/authorize.ts';
+import { contracts as syncQuoteBitrixContracts } from '../_shared/contracts/sync-quote-bitrix.contracts.ts';
 
 // Mapping: seller email → Bitrix24 numeric seller_id
 const SELLER_EMAIL_MAP: Record<string, number> = {
@@ -14,21 +15,12 @@ const SELLER_EMAIL_MAP: Record<string, number> = {
   "comercial07@promobrindes.com.br": 16558,
 };
 
-// Onda 10 (B-2): sellerEmail removido do schema. Agora vem do JWT autenticado
-// (auth.user.email) para impedir que um atacante com anon key forje requests
-// atribuindo deals a outros vendedores no Bitrix.
-const SyncQuoteBitrixSchema = z.object({
-  quote: z.record(z.any()).optional(),
-  proposalData: z.record(z.any()).optional(),
-  pdfUrl: z.string().url().max(2000).optional(),
-  filename: z.string().max(500).optional(),
-  bitrixCompanyId: z.string().max(50).optional(),
-  shippingType: z.string().max(50).optional(),
-  shippingCost: z.number().nonnegative().optional(),
-  // sellerEmail REMOVIDO — vem do JWT autenticado (Onda 10 B-2).
-  // Aceitamos no body por compat retroativa de clients antigos mas IGNORAMOS o valor.
-  sellerEmail: z.string().email().max(255).optional(),
-});
+// Onda 10 (B-2): sellerEmail removido do schema efetivo. Agora vem do JWT
+// autenticado (auth.user.email) para impedir que um atacante com anon key forje
+// requests atribuindo deals a outros vendedores no Bitrix.
+// O schema é mantido em _shared/contracts/sync-quote-bitrix.contracts.ts; aqui
+// apenas referenciamos a v1.
+const SyncQuoteBitrixSchema = syncQuoteBitrixContracts.v1.schema;
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -56,19 +48,8 @@ Deno.serve(async (req) => {
 
     const authenticatedEmail = auth.user.email ?? null;
 
-    let rawBody: unknown;
-    try { rawBody = await req.json(); } catch {
-      return new Response(JSON.stringify({ error: "Invalid request body" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const parsed = SyncQuoteBitrixSchema.safeParse(rawBody);
-    if (!parsed.success) {
-      return new Response(JSON.stringify({ error: "Validation failed", details: parsed.error.flatten().fieldErrors }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const parsed = await parseBodyWithSchema(req, SyncQuoteBitrixSchema, corsHeaders);
+    if ('error' in parsed) return parsed.error;
 
     const {
       quote,

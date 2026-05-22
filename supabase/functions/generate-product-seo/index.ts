@@ -1,8 +1,9 @@
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { authenticateRequest, authErrorResponse } from '../_shared/auth.ts';
 import { callAiWithTracking, QuotaExceededError } from '../_shared/ai-usage.ts';
-import { z } from '../_shared/zod-validate.ts';
+import { parseBodyWithSchema } from '../_shared/zod-validate.ts';
 import { runBotProtection } from '../_shared/bot-protection.ts';
+import { contracts as productSeoContracts } from '../_shared/contracts/generate-product-seo.contracts.ts';
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -20,34 +21,8 @@ Deno.serve(async (req) => {
       customIdentifier: `user:${auth.userId}`,
     }, corsHeaders);
     if (!protection.allowed) return protection.blockResponse!;
-    const ProductSeoSchema = z.object({
-      product: z.object({
-        name: z.string().trim().min(1, 'Nome do produto é obrigatório').max(255),
-        sku: z.string().max(100).optional(),
-        description: z.string().max(5000).optional(),
-        short_description: z.string().max(1000).optional(),
-        brand: z.string().max(200).optional(),
-        category_name: z.string().max(200).optional(),
-        country_of_origin: z.string().max(100).optional(),
-        materials: z.string().max(500).optional(),
-        sale_price: z.union([z.string(), z.number()]).optional(),
-      }),
-    });
-
-    let rawBody: unknown;
-    try {
-      rawBody = await req.json();
-    } catch {
-      return new Response(JSON.stringify({ error: "Invalid request body" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const parsed = ProductSeoSchema.safeParse(rawBody);
-    if (!parsed.success) {
-      return new Response(JSON.stringify({ error: "Validation failed", details: parsed.error.flatten().fieldErrors }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const parsed = await parseBodyWithSchema(req, productSeoContracts.v1.schema, corsHeaders);
+    if ('error' in parsed) return parsed.error;
     const { product } = parsed.data;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");

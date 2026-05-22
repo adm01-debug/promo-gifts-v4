@@ -1,8 +1,9 @@
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors.ts';
 import { authenticateRequest, authErrorResponse } from '../_shared/auth.ts';
 import { callAiWithTracking, QuotaExceededError } from '../_shared/ai-usage.ts';
-import { z } from '../_shared/zod-validate.ts';
+import { parseBodyWithSchema } from '../_shared/zod-validate.ts';
 import { runBotProtection } from '../_shared/bot-protection.ts';
+import { contracts as adPromptContracts } from '../_shared/contracts/generate-ad-prompt.contracts.ts';
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -25,42 +26,8 @@ Deno.serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const AdPromptSchema = z.object({
-      productName: z.string().trim().min(1, 'Product name is required').max(255),
-      productColor: z.string().max(100).optional(),
-      productCategory: z.string().max(100).optional(),
-      techniqueName: z.string().max(100).optional(),
-      locationName: z.string().max(100).optional(),
-      maxWidth: z.union([z.string(), z.number()]).optional(),
-      maxHeight: z.union([z.string(), z.number()]).optional(),
-      dimensionUnit: z.string().max(10).optional(),
-      isCurved: z.boolean().optional(),
-      clientSegment: z.string().max(200).optional(),
-      clientName: z.string().max(200).optional(),
-      brandColorName: z.string().max(100).optional(),
-      objective: z.string().max(500).optional(),
-      tone: z.string().max(100).optional(),
-      targetAudience: z.string().max(200).optional(),
-      season: z.string().max(100).optional(),
-      numberOfPrompts: z.number().int().min(1).max(6).optional(),
-    });
-
-    let rawBody: unknown;
-    try {
-      rawBody = await req.json();
-    } catch {
-      return new Response(JSON.stringify({ error: "Invalid request body" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const parsed = AdPromptSchema.safeParse(rawBody);
-    if (!parsed.success) {
-      return new Response(
-        JSON.stringify({ error: "Validation failed", details: parsed.error.flatten().fieldErrors }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const parsed = await parseBodyWithSchema(req, adPromptContracts.v1.schema, corsHeaders);
+    if ('error' in parsed) return parsed.error;
 
     const {
       productName, productColor, productCategory, techniqueName, locationName,

@@ -2,9 +2,9 @@ import { getCorsHeaders } from "../_shared/cors.ts";
 import { authenticateRequest, requireRole, authErrorResponse } from "../_shared/auth.ts";
 /// <reference lib="deno.ns" />
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
-import { z } from "https://esm.sh/zod@3.23.8";
 import { parseBodyWithSchema } from "../_shared/zod-validate.ts";
 import { resolveCredential } from "../_shared/credentials.ts";
+import { contracts as quoteSyncContracts } from "../_shared/contracts/quote-sync.contracts.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -26,29 +26,8 @@ async function getCrmCreds(): Promise<{ url: string | null; key: string | null }
 }
 
 // ===== Zod Schemas =====
-
-const SyncQuoteSchema = z.object({
-  action: z.literal('sync_quote'),
-  data: z.object({
-    quoteId: z.string().uuid('quoteId must be a valid UUID'),
-  }),
-});
-
-const SyncAllPendingSchema = z.object({
-  action: z.literal('sync_all_pending'),
-  data: z.object({}).optional(),
-});
-
-const TestWebhookSchema = z.object({
-  action: z.literal('test_webhook'),
-  data: z.object({}).optional(),
-});
-
-const RequestSchema = z.discriminatedUnion('action', [
-  SyncQuoteSchema,
-  SyncAllPendingSchema,
-  TestWebhookSchema,
-]);
+// Schema canônico extraído para _shared/contracts/quote-sync.contracts.ts
+const RequestSchema = quoteSyncContracts.v1.schema;
 
 // ===== Types =====
 

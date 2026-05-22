@@ -7,6 +7,40 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Unreleased]
 
+### 📜 Contratos de Webhook/Edge Functions — Schemas Zod + Testes 422 + Versionamento v1/v2 (2026-05-22)
+
+**Camada compartilhada (`supabase/functions/_shared/contracts/`)**
+- `error-response.ts`: shape único de erro `{ code, message, fields[] }` + helpers `validationErrorResponse` (422), `invalidJsonResponse` (400), `missingBodyResponse` (400), `unsupportedVersionResponse` (400)
+- `versioning.ts`: `resolveContractVersion` lê `X-Contract-Version` (header) com fallback `?v=` query; default = primeira versão do registry; versões `deprecated` propagam headers `Deprecation: true` + `Sunset: <ISO>` (RFC 8594)
+- `<endpoint>.contracts.ts` (×18): registry `{ v1: { schema, status, examples } }` extraído de cada handler com `examples.valid[]` + `examples.invalid[]` (fonte única usada por Vitest, Deno e runner live)
+
+**Helper `zod-validate.ts` evoluído**
+- ⚠️ **BREAKING**: respostas de validação agora são **422** com `{ code: "VALIDATION_FAILED", message, fields: [{ path, code, message }] }` em vez de `400 { error, details }`. Status 400 reservado para `INVALID_JSON` e `MISSING_BODY` (input malformado, não validação semântica)
+- Novo `parseRequestWithContract(req, registry, corsHeaders)` resolve versão + valida body + ecoa `X-Contract-Version` / `Deprecation` / `Sunset` na resposta
+
+**Versionamento real — `product-webhook` v1/v2**
+- v1 (deprecated, sunset `2026-08-22`): payload legado (`price: number`)
+- v2 (stable): `price: { amount, currency: 'BRL'|'USD'|'EUR' }`; handler ramifica internamente e mapeia v2→v1 antes de persistir
+- Headers `Deprecation: true` + `Sunset` retornados automaticamente para chamadores que não setam `X-Contract-Version` (default v1)
+
+**17 handlers refatorados** para usar `parseBodyWithSchema` / `parseRequestWithContract` (schemas extraídos para `_shared/contracts/`; lógica de negócio inalterada): product-webhook, webhook-dispatcher, webhook-inbound (envelope), ai-recommendations, visual-search, semantic-search, generate-ad-prompt, categories-api, commemorative-dates, analyze-logo-colors, sync-quote-bitrix, quote-sync, generate-product-seo, materials-api, kit-identity-suggest, dropbox-list, magic-up-score, external-db-inspect, generate-ad-image, rate-limit-check.
+
+**Testes de contrato (Vitest in-process)**
+- `tests/contract/edge-functions/error-response.test.ts`: helper de erro + shape único
+- `tests/contract/edge-functions/versioning.test.ts`: resolução + deprecation + compat v1↔v2
+- `tests/contract/edge-functions/all-contracts.test.ts`: parametrizado via `import.meta.glob` — para todo contrato, valida `examples.valid`, `examples.invalid` (com `expectedPath`) + matriz negativa auto-derivada (missing/wrong/empty) por introspecção do ZodObject
+- `tests/contract/edge-functions/inventory.test.ts`: **gate de cobertura** — falha o CI se uma Edge Function nova for adicionada sem `_shared/contracts/<name>.contracts.ts` nem entrada em `tests/contract/_allowlist/no-contract.json` (61 funções na allowlist hoje — dívida explícita)
+
+**Testes Deno colocados** para os 3 webhooks externos:
+- `supabase/functions/product-webhook/contract_test.ts` (versionamento end-to-end + 422 + Sunset)
+- `supabase/functions/webhook-inbound/contract_test.ts` (envelope HMAC)
+- `supabase/functions/webhook-dispatcher/contract_test.ts` (parseBodyWithSchema via Deno runtime, exercitando os URL imports reais do `zod-validate.ts`)
+
+**Runner live (`scripts/contract-testing.mjs`)** reescrito para enumerar todos os contratos via filesystem e usar os mesmos `examples.invalid[]` — bate em ambiente staging (configurado via `SUPABASE_URL` + `CONTRACT_TEST_TOKEN`).
+
+**Docs**
+- `docs/RUNBOOKS/contracts-and-versioning.md` (novo): como criar v2, política de Sunset, ciclo de promoção stable→deprecated, e fluxo do inventory gate.
+
 ### 🚀 Redeploy 2026-05 — Fase 2 (T19–T23) + Fase 3 (T24–T30)
 
 **Fase 2 — Segurança P1 (PR #166)**
