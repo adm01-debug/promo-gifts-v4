@@ -1,5 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { parseContract } from "../_shared/contracts/index.ts";
+import {
+  SyncExternalDbSchemas,
+} from "../_shared/contracts/schemas/sync-external-db.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,14 +16,14 @@ serve(async (req) => {
   }
 
   try {
-    const { table, direction = "to-external", since } = await req.json();
-
-    if (!table) {
-      return new Response(JSON.stringify({ error: "Table name is required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const contractResult = await parseContract(req, SyncExternalDbSchemas, {
+      corsHeaders,
+    });
+    if (!contractResult.ok) return contractResult.response;
+    const { data: body, responseHeaders } = contractResult;
+    const { table } = body;
+    const direction = body.direction ?? "to-external";
+    const since = body.since;
 
     // 1. Conexão com Supabase Interno (Lovable)
     const internalUrl = Deno.env.get("SUPABASE_URL")!;
@@ -33,7 +37,7 @@ serve(async (req) => {
     if (!externalUrl || !externalKey) {
        return new Response(JSON.stringify({ error: "External Supabase credentials not configured" }), {
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -58,7 +62,7 @@ serve(async (req) => {
 
     if (!sourceData || sourceData.length === 0) {
       return new Response(JSON.stringify({ message: "No data to sync", count: 0 }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -75,7 +79,7 @@ serve(async (req) => {
       count: sourceData.length,
       last_updated: sourceData.length > 0 ? sourceData.reduce((max, r) => (r.updated_at > max ? r.updated_at : max), sourceData[0].updated_at) : null
     }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
     });
 
   } catch (error) {

@@ -1,13 +1,18 @@
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { parseContract } from "../_shared/contracts/index.ts";
+import {
+  BlockIpTemporarilySchemas,
+} from "../_shared/contracts/schemas/block-ip-temporarily.ts";
 
 // Module-scope CORS headers — atribuído per-request no handler.
 let corsHeaders: Record<string, string> = {};
+let contractResponseHeaders: Record<string, string> = {};
 
 function jsonRes(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...corsHeaders, ...contractResponseHeaders, "Content-Type": "application/json" },
   });
 }
 
@@ -20,6 +25,7 @@ Deno.serve(async (req) => {
   }
 
   corsHeaders = getCorsHeaders(req);
+  contractResponseHeaders = {};
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -46,16 +52,16 @@ Deno.serve(async (req) => {
       return jsonRes({ error: "Apenas admins podem bloquear IPs" }, 403);
     }
 
-    let body: { ip?: string; reason?: string; hours?: number } = {};
-    try { body = await req.json(); } catch { return jsonRes({ error: "Body inválido" }, 400); }
+    const contractResult = await parseContract(req, BlockIpTemporarilySchemas, {
+      corsHeaders,
+    });
+    if (!contractResult.ok) return contractResult.response;
+    const body = contractResult.data;
+    contractResponseHeaders = contractResult.responseHeaders;
 
-    const ip = (body.ip || "").trim();
-    if (!ip || !IP_REGEX.test(ip) || ip.length > 45) {
-      return jsonRes({ error: "IP inválido (use IPv4, IPv6 ou CIDR)" }, 400);
-    }
-
-    const hours = Math.max(1, Math.min(720, Number(body.hours) || 24));
-    const reason = (body.reason || "Bloqueio temporário via Security Center").slice(0, 500);
+    const ip = body.ip.trim();
+    const hours = body.hours ?? 24;
+    const reason = (body.reason ?? "Bloqueio temporário via Security Center").slice(0, 500);
     const expiresAt = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
 
     const { error: insertErr } = await supabaseAdmin.from("ip_access_control").insert({
