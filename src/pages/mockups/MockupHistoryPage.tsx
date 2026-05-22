@@ -48,10 +48,11 @@ export default function MockupHistoryPage() {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['mockup-history', page, debouncedSearch],
     queryFn: async () => {
+      if (!user) throw new Error('MockupHistoryPage: user not authenticated');
       let query = supabase
         .from('generated_mockups')
         .select('*', { count: 'exact' })
-        .eq('seller_id', user!.id)
+        .eq('seller_id', user.id)
         .order('created_at', { ascending: false })
         .range((page - 1) * pageSize, page * pageSize - 1);
 
@@ -223,7 +224,7 @@ export default function MockupHistoryPage() {
                               variant="ghost"
                               size="icon"
                               aria-label="Download"
-                              onClick={() => window.open(m.mockup_url!, '_blank')}
+                              onClick={() => m.mockup_url && window.open(m.mockup_url, '_blank')}
                               data-testid="mockup-history-download-btn"
                             >
                               <Download className="h-4 w-4" />
