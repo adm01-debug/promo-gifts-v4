@@ -6,6 +6,7 @@ import { z } from '../_shared/zod-validate.ts';
 import { rateLimiters, applyRateLimit } from '../_shared/rate-limiter.ts';
 import { runBotProtection } from '../_shared/bot-protection.ts';
 import { extractAndParseAIJSON, safeJson } from '../_shared/json-parser.ts';
+import { buildValidationErrorResponse } from "../_shared/validation-errors.ts";
 
 const ClientSchema = z.object({
   name: z.string().trim().min(1).max(255),
@@ -71,9 +72,7 @@ Deno.serve(async (req) => {
 
     const parsed = RecommendationRequestSchema.safeParse(rawBody);
     if (!parsed.success) {
-      return new Response(JSON.stringify({ error: "Validation failed", details: parsed.error.flatten().fieldErrors }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return buildValidationErrorResponse(parsed.error, req, corsHeaders);
     }
     const { client, products } = parsed.data;
 

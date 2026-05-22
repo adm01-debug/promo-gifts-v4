@@ -1,6 +1,7 @@
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors.ts';
 import { logSecurityEvent } from '../_shared/security.ts';
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+import { buildValidationErrorResponse } from "../_shared/validation-errors.ts";
 
 const BodySchema = z.object({
   endpoint: z.enum(['login', 'api', 'ai', 'approval']).default('api'),
@@ -41,10 +42,7 @@ Deno.serve(async (req) => {
 
     const parsed = BodySchema.safeParse(rawBody);
     if (!parsed.success) {
-      return new Response(
-        JSON.stringify({ error: "Validation failed", details: parsed.error.flatten().fieldErrors }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return buildValidationErrorResponse(parsed.error, req, corsHeaders);
     }
 
     const endpoint = parsed.data.endpoint || 'api';

@@ -1,6 +1,7 @@
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+import { buildErrorResponse, buildValidationErrorResponse } from "../_shared/validation-errors.ts";
 
 const BodySchema = z.object({
   token: z.string().min(1, "Token não fornecido"),
@@ -21,18 +22,12 @@ Deno.serve(async (req) => {
     try {
       rawBody = await req.json();
     } catch {
-      return new Response(
-        JSON.stringify({ error: "Invalid JSON body" }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return buildErrorResponse("invalid_json", "Invalid JSON body", req, corsHeaders, { status: 400 });
     }
 
     const parsed = BodySchema.safeParse(rawBody);
     if (!parsed.success) {
-      return new Response(
-        JSON.stringify({ error: parsed.error.issues[0]?.message || "Validation failed" }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return buildValidationErrorResponse(parsed.error, req, corsHeaders);
     }
 
     const { token } = parsed.data;

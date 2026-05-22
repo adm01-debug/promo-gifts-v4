@@ -2,6 +2,7 @@ import { getCorsHeaders } from '../_shared/cors.ts';
 import { z } from "npm:zod@3.23.8";
 import { fetchWithBreaker, CircuitOpenError, circuitOpenResponse } from "../_shared/external-fetch.ts";
 import { authenticateRequest, authErrorResponse } from "../_shared/auth.ts";
+import { buildValidationErrorResponse } from "../_shared/validation-errors.ts";
 
 const CnpjBodySchema = z.object({
   cnpj: z.string().min(1, "CNPJ é obrigatório").transform(v => v.replace(/\D/g, "")).refine(v => v.length === 14, "CNPJ deve ter 14 dígitos"),
@@ -27,10 +28,7 @@ Deno.serve(async (req) => {
 
     const parsed = CnpjBodySchema.safeParse(await req.json());
     if (!parsed.success) {
-      return new Response(JSON.stringify({ error: parsed.error.flatten().fieldErrors }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return buildValidationErrorResponse(parsed.error, req, corsHeaders);
     }
     const cnpjDigits = parsed.data.cnpj;
 

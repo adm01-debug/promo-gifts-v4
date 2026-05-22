@@ -11,6 +11,7 @@ import { getOrCreateRequestId, REQUEST_ID_HEADER } from "../_shared/request-id.t
 import { writeAuditEntry, summarizePayload, extractRequestMeta } from "../_shared/audit-log.ts";
 import { recordMcpViolation, mapViolationReason } from "../_shared/mcp-violations.ts";
 import { castRpcResult } from "../_shared/supabase-client-adapter.ts";
+import { buildValidationErrorV2 } from "../_shared/validation-errors.ts";
 
 // Module-scope CORS headers — atribuído per-request no handler.
 let corsHeaders: Record<string, string> = {};
@@ -126,7 +127,7 @@ Deno.serve(async (req) => {
     if (!parsed.success) {
       const fields = parsed.error.flatten().fieldErrors;
       await auditFailure("denied", "mcp_key.revoke_denied", { reason: "validation_failed", fields });
-      return jsonResponse({ error: "validation_failed", fields }, 422, requestId);
+      return jsonResponse(buildValidationErrorV2(parsed.error), 422, requestId);
     }
     const { key_id, reason, step_up_token } = parsed.data;
 

@@ -15,6 +15,7 @@ import {
   buildValidationError,
   buildValidationErrorV1,
   buildValidationErrorV2,
+  buildValidationErrorV2FromFields,
   detectContractVersion,
   isValidationErrorV1,
   isValidationErrorV2,
@@ -128,6 +129,39 @@ describe("validation-errors / buildValidationError dispatch", () => {
     const out = buildValidationError(err, "v2");
     expect(isValidationErrorV2(out)).toBe(true);
     expect(isValidationErrorV1(out)).toBe(false);
+  });
+});
+
+describe("validation-errors / v2 from manual fieldErrors (business rules)", () => {
+  it("converts Record<path, string[]> to v2 fields[]", () => {
+    const payload = buildValidationErrorV2FromFields({
+      expires_at: ["Expiração precisa ser futura."],
+      scopes: ["Janela máxima 180 dias.", "Scope inválido para role atual."],
+    });
+    expect(isValidationErrorV2(payload)).toBe(true);
+    expect(payload.code).toBe(VALIDATION_ERROR_CODE);
+    expect(payload.fields).toHaveLength(3);
+    const paths = payload.fields.map((f) => f.path).sort();
+    expect(paths).toEqual(["expires_at", "scopes", "scopes"]);
+    for (const f of payload.fields) {
+      expect(f.code).toBe("business_rule"); // default code
+    }
+  });
+
+  it("accepts custom code + message", () => {
+    const payload = buildValidationErrorV2FromFields(
+      { confirmation_phrase: ["Digite EXATAMENTE a frase."] },
+      { code: "full_friction_failed", message: "Atrito adicional obrigatório" },
+    );
+    expect(payload.code).toBe(VALIDATION_ERROR_CODE);
+    expect(payload.message).toBe("Atrito adicional obrigatório");
+    expect(payload.fields[0].code).toBe("full_friction_failed");
+  });
+
+  it("returns empty fields[] for empty input", () => {
+    const payload = buildValidationErrorV2FromFields({});
+    expect(payload.fields).toEqual([]);
+    expect(payload.version).toBe("v2");
   });
 });
 

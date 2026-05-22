@@ -32,6 +32,7 @@ import { retrySupabaseCall } from "../_shared/retry-backoff.ts";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { getOrCreateRequestId, REQUEST_ID_HEADER } from "../_shared/request-id.ts";
 import { resolveCredential } from "../_shared/credentials.ts";
+import { buildValidationErrorResponse } from "../_shared/validation-errors.ts";
 
 const breaker = getBreaker("external-db");
 
@@ -453,7 +454,7 @@ Deno.serve((req) => {
 
     const parsed = TopLevelBodySchema.safeParse(rawBody);
     if (!parsed.success) {
-      return jsonResponse({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }, 400, corsHeaders);
+      return buildValidationErrorResponse(parsed.error, req, corsHeaders);
     }
 
     const body = parsed.data as Record<string, unknown>;

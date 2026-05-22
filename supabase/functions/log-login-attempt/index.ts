@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from "../_shared/cors.ts";
 import { RateLimiter, applyRateLimit } from "../_shared/rate-limiter.ts";
 import { z } from "npm:zod@3.23.8";
+import { buildValidationErrorResponse } from "../_shared/validation-errors.ts";
 
 const LoginAttemptSchema = z.object({
   email: z.string().email().max(255),
@@ -39,10 +40,7 @@ Deno.serve(async (req) => {
 
     const parsed = LoginAttemptSchema.safeParse(await req.json());
     if (!parsed.success) {
-      return new Response(
-        JSON.stringify({ error: parsed.error.flatten().fieldErrors }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return buildValidationErrorResponse(parsed.error, req, corsHeaders);
     }
     const { email, user_id, ip_address, success, failure_reason, user_agent } = parsed.data;
 

@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { z } from "npm:zod@3.23.8";
 import { castRpcResult } from "../_shared/supabase-client-adapter.ts";
 import { safeJson } from "../_shared/json-parser.ts";
+import { buildValidationErrorResponse } from "../_shared/validation-errors.ts";
 
 const uuidSchema = z.string().uuid();
 const emailSchema = z.string().email().max(255);
@@ -105,7 +106,7 @@ Deno.serve(async (req) => {
     const rawBody = await safeJson(req);
     const parsed = PayloadSchema.safeParse(rawBody);
     if (!parsed.success) {
-      return jsonRes(corsHeaders, { error: 'Dados inválidos', details: parsed.error.flatten().fieldErrors }, 400);
+      return buildValidationErrorResponse(parsed.error, req, corsHeaders);
     }
 
     const payload = parsed.data;

@@ -8,6 +8,7 @@ import { getCorsHeaders } from "../_shared/cors.ts";
 // ============================================================
 import { z } from '../_shared/zod-validate.ts';
 import { runBotProtection } from '../_shared/bot-protection.ts';
+import { buildValidationErrorResponse } from "../_shared/validation-errors.ts";
 
 const PALETTE = [
   '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
@@ -52,18 +53,7 @@ Deno.serve(async (req: Request) => {
     const raw = await req.json().catch(() => ({}));
     const parsed = BodySchema.safeParse(raw);
     if (!parsed.success) {
-      return new Response(
-        JSON.stringify({ error: 'Parâmetros inválidos', details: parsed.error.flatten().fieldErrors }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-      );
-    }
-
-    const name = (parsed.data.name ?? '').trim();
-    const items = parsed.data.items ?? [];
-    if (!name && items.length === 0) {
-      return new Response(JSON.stringify({ error: 'Forneça name ou items' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return buildValidationErrorResponse(parsed.error, req, corsHeaders);
     }
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');

@@ -2,6 +2,7 @@ import { getCorsHeaders } from '../_shared/cors.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { runBotProtection } from '../_shared/bot-protection.ts';
+import { buildValidationErrorResponse } from "../_shared/validation-errors.ts";
 
 const BodySchema = z.object({
   mode: z.enum(['tables', 'columns']).default('tables'),
@@ -68,7 +69,7 @@ Deno.serve(async (req) => {
 
     const parsed = BodySchema.safeParse(rawBody);
     if (!parsed.success) {
-      return jsonResponse({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }, 400);
+      return buildValidationErrorResponse(parsed.error, req, corsHeaders);
     }
 
     const { mode, tableName } = parsed.data;

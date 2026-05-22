@@ -6,6 +6,7 @@ import { callAiWithTracking, QuotaExceededError } from '../_shared/ai-usage.ts';
 import { runBotProtection } from '../_shared/bot-protection.ts';
 import { safeJson } from '../_shared/json-parser.ts';
 import { assertAllowedExternalUrl, ExternalUrlError } from '../_shared/url-allowlist.ts';
+import { buildValidationErrorResponse } from "../_shared/validation-errors.ts";
 
 const MockupBodySchema = z.object({
   productImageUrl: z.string().url().max(2000),
@@ -57,10 +58,7 @@ Deno.serve(async (req) => {
     }
     const parsed = MockupBodySchema.safeParse(rawBody);
     if (!parsed.success) {
-      return new Response(
-        JSON.stringify({ error: "Invalid input", details: parsed.error.flatten().fieldErrors }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return buildValidationErrorResponse(parsed.error, req, corsHeaders);
     }
 
     const { 

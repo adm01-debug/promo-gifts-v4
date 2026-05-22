@@ -1,6 +1,7 @@
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { z } from '../_shared/zod-validate.ts';
+import { buildValidationErrorResponse } from "../_shared/validation-errors.ts";
 
 const MaterialsRequestSchema = z.object({
   action: z.enum(['groups', 'types', 'types_by_group', 'product_materials', 'products_by_materials', 'stats', 'search', 'complete']),
@@ -38,9 +39,7 @@ Deno.serve(async (req) => {
     const rawBody = await req.json().catch(() => ({}));
     const parsed = MaterialsRequestSchema.safeParse(rawBody);
     if (!parsed.success) {
-      return new Response(JSON.stringify({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return buildValidationErrorResponse(parsed.error, req, corsHeaders);
     }
     const { action, groupId, materialId, productId, materialTypeIds, materialGroupSlugs, limit } = parsed.data;
 

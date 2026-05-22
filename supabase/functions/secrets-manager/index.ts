@@ -10,6 +10,7 @@ import {
 } from "../_shared/credentials.ts";
 import { writeAuditEntry, extractRequestMeta } from "../_shared/audit-log.ts";
 import { getOrCreateRequestId, REQUEST_ID_HEADER } from "../_shared/request-id.ts";
+import { buildValidationErrorResponse } from "../_shared/validation-errors.ts";
 
 const SOURCE = "secrets-manager";
 
@@ -144,29 +145,7 @@ Deno.serve(async (req) => {
 
     const parsed = BodySchema.safeParse(await req.json().catch(() => ({})));
     if (!parsed.success) {
-      return new Response(
-        JSON.stringify({ error: "Payload inválido", details: parsed.error.flatten() }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-    const { action, names, name, value, notes } = parsed.data;
-
-    // Helper: load DB rows for a list of names
-    async function loadFromDb(targets: string[]) {
-      type Row = { masked_suffix: string | null; length: number; updated_at: string; updated_by: string | null };
-      if (targets.length === 0) return new Map<string, Row>();
-      const { data } = await service
-        .from("integration_credentials")
-        .select("secret_name, masked_suffix, length, updated_at, updated_by")
-        .in("secret_name", targets);
-      const map = new Map<string, Row>();
-      for (const row of (data ?? []) as Array<{ secret_name: string } & Row>) {
-        map.set(row.secret_name, {
-          masked_suffix: row.masked_suffix,
-          length: row.length,
-          updated_at: row.updated_at,
-          updated_by: row.updated_by,
-        });
+      return buildValidationErrorResponse(parsed.error, req, corsHeaders);
       }
       return map;
     }

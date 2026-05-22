@@ -1,6 +1,7 @@
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { z } from "npm:zod@3.23.8";
+import { buildValidationErrorResponse } from "../_shared/validation-errors.ts";
 
 const DeviceInfoSchema = z.object({
   fingerprint: z.string().min(1).max(256),
@@ -41,7 +42,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const rawBody = await req.json();
     const parsed = BodySchema.safeParse(rawBody);
     if (!parsed.success) {
-      return jsonRes(corsHeaders, { error: "Invalid input", details: parsed.error.flatten().fieldErrors }, 400);
+      return buildValidationErrorResponse(parsed.error, req, corsHeaders);
     }
 
     const { userId, userEmail, deviceInfo } = parsed.data;

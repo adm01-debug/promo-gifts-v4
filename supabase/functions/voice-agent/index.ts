@@ -5,6 +5,7 @@ import { callAiWithTracking, QuotaExceededError } from '../_shared/ai-usage.ts';
 import { SYSTEM_PROMPT, VOICE_COMMAND_TOOL, TOOL_CHOICE } from './systemPrompt.ts';
 import { parseAiResponse } from './parseAiResponse.ts';
 import { runBotProtection } from '../_shared/bot-protection.ts';
+import { buildValidationErrorResponse } from "../_shared/validation-errors.ts";
 
 const TranscriptSchema = z.object({
   transcript: z.string().min(1, 'transcript cannot be empty').max(1000, 'transcript too long'),
@@ -52,10 +53,7 @@ Deno.serve(async (req) => {
 
     const parsed = TranscriptSchema.safeParse(body);
     if (!parsed.success) {
-      return new Response(
-        JSON.stringify({ error: parsed.error.flatten().fieldErrors }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return buildValidationErrorResponse(parsed.error, req, corsHeaders);
     }
 
     const { transcript } = parsed.data;

@@ -112,6 +112,32 @@ export function buildValidationErrorV2(error: ZodError, message?: string): Valid
   };
 }
 
+/**
+ * Build a v2 payload from a manually-constructed fieldErrors dict
+ * (Record<path, string[]>).  Use this when business-rule validation runs
+ * AFTER Zod has succeeded (e.g., cross-table checks, server-side TTL caps,
+ * "full" scope guards) and you want a single canonical response shape.
+ *
+ * Each entry becomes a FieldError with code="business_rule".
+ */
+export function buildValidationErrorV2FromFields(
+  fields: Record<string, string[]>,
+  opts: { message?: string; code?: string } = {},
+): ValidationErrorV2 {
+  const out: FieldError[] = [];
+  for (const [path, msgs] of Object.entries(fields)) {
+    for (const msg of msgs) {
+      out.push({ path, code: opts.code ?? "business_rule", message: msg });
+    }
+  }
+  return {
+    code: VALIDATION_ERROR_CODE,
+    message: opts.message ?? "Validation failed",
+    version: "v2",
+    fields: out,
+  };
+}
+
 /** Build either v1 or v2 according to the negotiated contract version. */
 export function buildValidationError(
   error: ZodError,

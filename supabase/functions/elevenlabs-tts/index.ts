@@ -3,6 +3,7 @@ import { authenticateRequest, authErrorResponse } from '../_shared/auth.ts';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { runBotProtection } from '../_shared/bot-protection.ts';
 import { fetchWithBreaker, CircuitOpenError, circuitOpenResponse } from '../_shared/external-fetch.ts';
+import { buildValidationErrorResponse } from "../_shared/validation-errors.ts";
 
 const VALID_VOICE_IDS = [
   '5lrBPYY4YvMbKHTo8kvZ', // Chosen voice (default)
@@ -61,10 +62,7 @@ Deno.serve(async (req) => {
 
     const parsed = TtsRequestSchema.safeParse(body);
     if (!parsed.success) {
-      return new Response(
-        JSON.stringify({ error: parsed.error.flatten().fieldErrors }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return buildValidationErrorResponse(parsed.error, req, corsHeaders);
     }
 
     const { text, voiceId } = parsed.data;

@@ -17,6 +17,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from "../_shared/cors.ts";
+import { buildValidationErrorResponse } from "../_shared/validation-errors.ts";
 
 type CheckStatus = "pass" | "fail" | "skipped" | "error";
 
@@ -85,7 +86,7 @@ Deno.serve(async (req: Request) => {
     try { raw = await req.json(); } catch { raw = {}; }
     const parsed = BodySchema.safeParse(raw ?? {});
     if (!parsed.success) {
-      return jsonResponse({ error: "validation_failed", fields: parsed.error.flatten().fieldErrors }, 422, req);
+      return buildValidationErrorResponse(parsed.error, req, getCorsHeaders(req));
     }
     body = parsed.data;
   }

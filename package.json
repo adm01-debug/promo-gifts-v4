@@ -75,7 +75,8 @@
     "check:toast-leaks": "node scripts/check-toast-leaks.mjs",
     "test:stress": "node scripts/massive-load-test.mjs",
     "test:fuzz:full": "node scripts/fuzz-testing.mjs",
-    "test:contract": "node scripts/contract-testing.mjs"
+    "test:contract": "node scripts/contract-testing.mjs",
+    "check:unified-validation": "node scripts/check-unified-validation-errors.mjs"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [

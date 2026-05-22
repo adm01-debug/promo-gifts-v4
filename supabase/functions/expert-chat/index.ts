@@ -7,6 +7,7 @@ import { rateLimiters, applyRateLimit } from '../_shared/rate-limiter.ts';
 import { runBotProtection } from '../_shared/bot-protection.ts';
 import { resolveCredential } from '../_shared/credentials.ts';
 import { extractAndParseAIJSON, safeJson } from '../_shared/json-parser.ts';
+import { buildValidationErrorResponse } from "../_shared/validation-errors.ts";
 
 // ============================================
 // SCHEMAS
@@ -551,10 +552,7 @@ Deno.serve(async (req) => {
     const parsed = ExpertChatBodySchema.safeParse(rawBody);
     if (!parsed.success) {
       console.error("Validation errors:", JSON.stringify(parsed.error.flatten()));
-      return new Response(
-        JSON.stringify({ error: "Dados inválidos", details: parsed.error.flatten().fieldErrors }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return buildValidationErrorResponse(parsed.error, req, corsHeaders);
     }
     const {
       messages, clientId,

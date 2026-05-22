@@ -5,6 +5,7 @@ import { authenticateRequest, requireRole, authErrorResponse } from "../_shared/
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { buildValidationErrorResponse } from "../_shared/validation-errors.ts";
 
 // Fallback CORS headers — sobrescritos per-request via getCorsHeaders(req).
 let corsHeaders: Record<string, string> = buildPublicCorsHeaders();
@@ -71,10 +72,7 @@ serve(async (req) => {
     const json = await req.json().catch(() => ({}));
     const parsed = BodySchema.safeParse(json);
     if (!parsed.success) {
-      return new Response(
-        JSON.stringify({ error: "invalid_input", details: parsed.error.flatten() }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return buildValidationErrorResponse(parsed.error, req, corsHeaders);
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");

@@ -3,6 +3,7 @@ import { authorize } from '../_shared/authorize.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { z } from "npm:zod@3.23.8";
 import { fetchWithBreaker, CircuitOpenError, circuitOpenResponse } from "../_shared/external-fetch.ts";
+import { buildValidationErrorResponse } from "../_shared/validation-errors.ts";
 
 const BitrixSyncSchema = z.object({
   action: z.enum([
@@ -44,10 +45,7 @@ Deno.serve(async (req) => {
 
     const parsed = BitrixSyncSchema.safeParse(await req.json());
     if (!parsed.success) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid request', details: parsed.error.flatten().fieldErrors }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return buildValidationErrorResponse(parsed.error, req, corsHeaders);
     }
     const { action, data } = parsed.data;
     // Helper para extrair número de `data?.<key>` (Zod tipa data como

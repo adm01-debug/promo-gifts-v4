@@ -6,6 +6,7 @@ import { getBreaker, circuitOpenResponse, getAllBreakerStatuses } from '../_shar
 import { AsyncLocalStorage } from "node:async_hooks";
 import { getOrCreateRequestId, REQUEST_ID_HEADER } from "../_shared/request-id.ts";
 import { resolveCredential, buildCredentialsHealth } from "../_shared/credentials.ts";
+import { buildValidationErrorResponse } from "../_shared/validation-errors.ts";
 
 const breaker = getBreaker("crm-db");
 
@@ -932,7 +933,7 @@ Deno.serve((req) => {
 
     const parsed = CrmRequestSchema.safeParse(rawBody);
     if (!parsed.success) {
-      return jsonResponse({ error: "Validation failed", details: parsed.error.flatten().fieldErrors }, 400);
+      return buildValidationErrorResponse(parsed.error, req, corsHeaders);
     }
 
     const body = parsed.data as CrmQuery;

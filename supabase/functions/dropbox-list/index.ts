@@ -2,6 +2,7 @@ import { getCorsHeaders } from '../_shared/cors.ts';
 import { authenticateRequest, requireRole, authErrorResponse } from '../_shared/auth.ts';
 import { z } from "https://esm.sh/zod@3.23.8";
 import { fetchWithBreaker, CircuitOpenError, circuitOpenResponse } from '../_shared/external-fetch.ts';
+import { buildValidationErrorResponse } from "../_shared/validation-errors.ts";
 
 const BodySchema = z.object({
   path: z.string().max(1000).default(''),
@@ -29,10 +30,7 @@ Deno.serve(async (req) => {
       const raw = await req.json();
       const parsed = BodySchema.safeParse(raw);
       if (!parsed.success) {
-        return new Response(
-          JSON.stringify({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return buildValidationErrorResponse(parsed.error, req, corsHeaders);
       }
       body = parsed.data;
     } catch {

@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { z } from "npm:zod@3.23.8";
 import { castRpcResult } from "../_shared/supabase-client-adapter.ts";
 import { authorizeCron } from "../_shared/dispatcher-auth.ts";
+import { buildValidationErrorResponse } from "../_shared/validation-errors.ts";
 
 const NotificationSchema = z.object({
   user_id: z.string().uuid(),
@@ -41,7 +42,7 @@ Deno.serve(async (req) => {
     const rawBody = await req.json();
     const parsed = NotificationSchema.safeParse(rawBody);
     if (!parsed.success) {
-      return jsonRes(corsHeaders, { error: 'Invalid payload', details: parsed.error.flatten().fieldErrors }, 400);
+      return buildValidationErrorResponse(parsed.error, req, corsHeaders);
     }
 
     const payload = parsed.data;
