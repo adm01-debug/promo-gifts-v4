@@ -40,6 +40,7 @@ function renderConexoesRoute() {
       future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
     >
       <Routes>
+        <Route path="/auth" element={<div>Login Page</div>} />
         <Route path="/login" element={<div>Login Page</div>} />
         <Route path="/" element={<div>Home Page</div>} />
         <Route element={<AdminRoute />}>

@@ -68,6 +68,8 @@ function renderProtected(initialPath: string) {
       >
         <PathProbe />
         <Routes>
+          {/* /auth é o destino real do redirect; /login mantido para legado. */}
+          <Route path="/auth" element={<div>Login Page</div>} />
           <Route path="/login" element={<div>Login Page</div>} />
           <Route path="/" element={<div>Home Page</div>} />
           <Route path="/catalogo" element={<div>Catálogo</div>} />

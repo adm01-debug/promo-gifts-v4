@@ -9,9 +9,13 @@ vi.mock('@/contexts/AuthContext', () => ({
 }));
 
 function renderWithRouter(ui: React.ReactElement, initialRoute = '/admin') {
+  // AdminRoute redireciona não-autenticados para /auth (não /login).
+  // Mantemos ambas as rotas com o mesmo elemento para que o assertion
+  // `getByText('Login Page')` cubra o caminho atual e o legado.
   return render(
     <MemoryRouter initialEntries={[initialRoute]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
+        <Route path="/auth" element={<div>Login Page</div>} />
         <Route path="/login" element={<div>Login Page</div>} />
         <Route path="/" element={<div>Home Page</div>} />
         <Route path="/admin" element={ui} />

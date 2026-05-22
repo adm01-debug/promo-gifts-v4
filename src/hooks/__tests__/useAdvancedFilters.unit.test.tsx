@@ -1,12 +1,18 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useAdvancedFilters } from "@/hooks/products/useAdvancedFilters";
-import * as useExternalDatabaseModule from "@/hooks/intelligence/useExternalDatabase";
+import { useAdvancedFilters } from '@/hooks/products/useAdvancedFilters';
+import * as useExternalDatabaseModule from '@/hooks/intelligence/useExternalDatabase';
 import { defaultAdvancedFilters } from '@/constants/filters';
 
-// Mocking useExternalDatabase and specific hooks
-vi.mock('./useExternalDatabase', async () => {
-  const actual = await vi.importActual('./useExternalDatabase');
+// Mocking useExternalDatabase and specific hooks.
+// The module lives at '@/hooks/intelligence/useExternalDatabase' — the
+// previous './useExternalDatabase' relative path resolved to nothing from
+// inside __tests__, so vi.mock silently no-op'd and vi.mocked(...) returned
+// the real function (= "mockReturnValue is not a function").
+vi.mock('@/hooks/intelligence/useExternalDatabase', async () => {
+  const actual = await vi.importActual<Record<string, unknown>>(
+    '@/hooks/intelligence/useExternalDatabase',
+  );
   return {
     ...actual,
     useExternalCategories: vi.fn(),

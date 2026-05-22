@@ -108,6 +108,7 @@ function ReducedApp({
         {onNavigateReady && <NavigationProbe onReady={onNavigateReady} />}
         <Routes>
           {/* Public */}
+          <Route path="/auth" element={<LoginStub />} />
           <Route path="/login" element={<LoginStub />} />
 
           {/* Protected layer */}

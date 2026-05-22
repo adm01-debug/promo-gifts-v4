@@ -17,7 +17,7 @@ import {
 
 const prefetchMock = vi.fn(() => Promise.resolve());
 
-vi.mock("@/hooks/useNotifications", () => ({
+vi.mock("@/hooks/ui", () => ({
   useNotifications: () => ({
     notifications: [],
     unreadCount: 0,

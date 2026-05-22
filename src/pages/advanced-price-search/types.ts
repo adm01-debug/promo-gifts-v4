@@ -1,5 +1,9 @@
-import type { Product } from '@/hooks/products';
+import type { Product as CatalogProduct } from '@/hooks/products';
 import type { PromobrindPriceTable } from '@/lib/external-db';
+
+// ============================================================================
+// Local types (originalmente declarados aqui)
+// ============================================================================
 
 export interface SearchFilters {
   searchQuery: string;
@@ -11,7 +15,7 @@ export interface SearchFilters {
   priceRange: [number, number];
 }
 
-export interface ProductWithCalculatedPrice extends Product {
+export interface ProductWithCalculatedPrice extends CatalogProduct {
   calculatedUnitPrice: number;
   priceBreakdown: {
     productPrice: number;
@@ -47,3 +51,73 @@ export const QUANTITY_OPTIONS = [
 
 export const formatCurrency = (value: number): string =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
+// ============================================================================
+// Re-exports compatíveis (35+ consumidores legados importam destes nomes deste
+// caminho). Cada nome aponta para sua fonte canônica. Novos consumidores devem
+// importar diretamente da fonte canônica em vez de roteá-los aqui.
+// ============================================================================
+
+// Personalization manager (ground truth: ../admin/personalization-manager/types)
+export type {
+  ProductGroup,
+  ProductGroupMember,
+  Component,
+  Location,
+  Technique,
+  LocationTechnique,
+} from '@/components/admin/personalization-manager/types';
+
+// Kit components admin (ground truth: ../admin/products/kit-components/types)
+export type {
+  KitComponent,
+  PrintArea,
+  BoxInternalDimensions,
+  ComponentFormData,
+  PrintAreaFormData,
+} from '@/components/admin/products/kit-components/types';
+
+// Bulk-import (ground truth: ../admin/products/bulk-import/types)
+export type {
+  ValidationResult,
+  ColumnMapping,
+} from '@/components/admin/products/bulk-import/types';
+
+// Suppliers manager
+export type { Supplier } from '@/components/admin/suppliers-manager/types';
+
+// Filter panel
+export type { FilterState, FilterPanelProps } from '@/components/filters/filter-panel/types';
+
+// Pricing simulator: Product + outros tipos usados pela página de busca
+// avançada e pelo simulador. O Product aqui é o do simulador (mais rico que
+// o do personalization-manager, que tem apenas {id, name, sku} — esse
+// subconjunto é compatível estruturalmente).
+export type {
+  Product,
+  ProductColor,
+  ProductTechnique,
+  ConfiguredEngraving,
+  SimulationResult,
+} from '@/components/pricing/simulator/types';
+
+// Component / Location / Technique data (estado interno do seletor de simulador)
+export type {
+  ComponentData,
+  LocationData,
+  TechniqueData,
+} from '@/components/pricing/simulator/types';
+
+// Pricing calculator
+export type { SelectedTechniqueConfig } from '@/components/pricing/calculator/types';
+
+// Kit builder lib
+export type {
+  KitItem,
+  KitBox,
+  KitPersonalization,
+  CompatibilityResult,
+} from '@/lib/kit-builder/types';
+
+// Voice agent
+export type { VoiceAgentAction, VoiceAgentPhase, UseVoiceAgentOptions } from '@/hooks/voice/types';

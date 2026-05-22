@@ -114,13 +114,17 @@ describe('Admin Module Programmatic Standard Rules', () => {
     });
 
     it(`${pageName} should use standard max-w classes in its layout container`, () => {
-      render(<PageComponent />, { wrapper });
+      const { container: renderRoot } = render(<PageComponent />, { wrapper });
       const mainContent = screen.queryByRole('main');
 
-      // We look for the standardized container div
-      const container = mainContent?.querySelector('[class*="max-w-"]');
+      // The page might or might not render its own <main>. When rendered
+      // standalone in tests (no MainLayout wrapper) we accept the max-w
+      // container anywhere in the render tree; in real usage MainLayout
+      // wraps it inside <main>.
+      const searchRoot: HTMLElement = mainContent ?? renderRoot;
+      const container = searchRoot.querySelector('[class*="max-w-"]');
       expect(container, `Page ${pageName} missing standardized max-w container`).not.toBeNull();
-      expect(container?.className).toContain('mx-auto');
+      expect(container?.className ?? '').toContain('mx-auto');
     });
   });
 });
