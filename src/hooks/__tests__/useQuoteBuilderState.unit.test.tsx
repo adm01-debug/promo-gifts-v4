@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useQuoteBuilderState } from "@/hooks/quotes/useQuoteBuilderState";
+import { useQuoteBuilderState } from '@/hooks/quotes/useQuoteBuilderState';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import React from 'react';
@@ -24,29 +24,23 @@ vi.mock('@/contexts/AuthContext', () => ({
   useAuth: vi.fn(() => ({ user: { id: 'test-user' } })),
 }));
 
-// Mock hooks that might trigger side effects or complex logic
+// Mock dos hooks customizados — consolidado num único vi.mock porque
+// vitest só honra a ÚLTIMA chamada vi.mock para o mesmo módulo.
 vi.mock('@/hooks/quotes', () => ({
   useSellerDiscountLimits: vi.fn(() => ({ myLimit: 10 })),
-}));
-
-vi.mock('@/hooks/quotes', () => ({
   useDiscountApproval: vi.fn(() => ({ requestApproval: vi.fn() })),
-}));
-
-vi.mock('@/hooks/quotes', () => ({
   useQuotes: vi.fn(() => ({
     createQuote: vi.fn(),
     updateQuote: vi.fn(),
     fetchQuote: vi.fn(),
     isLoading: false,
   })),
-}));
-
-vi.mock('@/hooks/quotes', () => ({
   useQuoteTemplates: vi.fn(() => ({ templates: [] })),
-}));
-
-vi.mock('@/hooks/quotes', () => ({
+  useQuoteHistory: vi.fn(() => ({ history: [], isLoading: false })),
+  useQuoteFunnel: vi.fn(() => ({ data: [], isLoading: false })),
+  useQuoteComments: vi.fn(() => ({ comments: [], addComment: vi.fn() })),
+  useQuoteVersions: vi.fn(() => ({ versions: [], isLoading: false })),
+  useProdutoPersonalizacao: vi.fn(() => ({})),
   useQuoteItems: vi.fn(() => ({
     items: [],
     setItems: vi.fn(),
@@ -62,9 +56,6 @@ vi.mock('@/hooks/quotes', () => ({
     handlePersonalizationsChange: vi.fn(),
     confirmItemPrice: vi.fn(),
   })),
-}));
-
-vi.mock('@/hooks/quotes', () => ({
   useAutoSaveQuote: vi.fn(() => ({ clearAutoSave: vi.fn() })),
 }));
 
@@ -94,7 +85,7 @@ describe('useQuoteBuilderState Navigation and Validation', () => {
 
   it('prevents nextStep if client/contact not selected', () => {
     const { result } = renderHook(() => useQuoteBuilderState(), { wrapper });
-    
+
     act(() => {
       result.current.nextStep();
     });
@@ -105,7 +96,7 @@ describe('useQuoteBuilderState Navigation and Validation', () => {
 
   it('allows nextStep if client/contact are selected', () => {
     const { result } = renderHook(() => useQuoteBuilderState(), { wrapper });
-    
+
     act(() => {
       result.current.setClientId('company-1');
       result.current.setContactId('contact-1');
@@ -120,7 +111,7 @@ describe('useQuoteBuilderState Navigation and Validation', () => {
 
   it('prevents moving to conditions if items are missing when skipping', () => {
     const { result } = renderHook(() => useQuoteBuilderState(), { wrapper });
-    
+
     act(() => {
       result.current.setClientId('company-1');
       result.current.setContactId('contact-1');
@@ -137,7 +128,7 @@ describe('useQuoteBuilderState Navigation and Validation', () => {
 
   it('allows jumping back to a previous step without validation', () => {
     const { result } = renderHook(() => useQuoteBuilderState(), { wrapper });
-    
+
     act(() => {
       result.current.setClientId('company-1');
       result.current.setContactId('contact-1');
@@ -148,7 +139,7 @@ describe('useQuoteBuilderState Navigation and Validation', () => {
     expect(result.current.contactId).toBe('contact-1');
 
     act(() => {
-      result.current.nextStep(); 
+      result.current.nextStep();
     });
 
     expect(result.current.currentStep).toBe('conditions');
@@ -162,7 +153,7 @@ describe('useQuoteBuilderState Navigation and Validation', () => {
 
   it('announces errors for screen readers', () => {
     const { result } = renderHook(() => useQuoteBuilderState(), { wrapper });
-    
+
     act(() => {
       result.current.nextStep();
     });

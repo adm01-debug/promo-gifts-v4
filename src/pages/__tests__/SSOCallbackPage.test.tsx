@@ -12,7 +12,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, waitFor } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import SSOCallbackPage from '../SSOCallbackPage';
+import SSOCallbackPage from '../auth/SSOCallbackPage';
 
 const navigateMock = vi.fn();
 const refreshSessionMock = vi.fn().mockResolvedValue(undefined);
@@ -23,7 +23,7 @@ const onAuthStateChangeMock = vi.fn();
 const unsubscribeMock = vi.fn();
 
 vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+  const actual = (await vi.importActual('react-router-dom')) as Record<string, unknown>;
   return { ...actual, useNavigate: () => navigateMock };
 });
 

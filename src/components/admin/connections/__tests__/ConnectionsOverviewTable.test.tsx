@@ -2,8 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ConnectionsOverviewTable } from '../ConnectionsOverviewTable';
 import { useAuth } from '@/contexts/AuthContext';
-import { useConnectionsOverview } from '@/hooks/intelligence';
-import { useConnectionTester } from '@/hooks/intelligence';
+import { useConnectionsOverview, useConnectionTester } from '@/hooks/intelligence';
 import { useConsecutiveFailures } from '@/hooks/common';
 import { useSecretsManager } from '@/hooks/admin';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -15,21 +14,8 @@ vi.mock('@/contexts/AuthContext', () => ({
 
 vi.mock('@/hooks/intelligence', () => ({
   useConnectionsOverview: vi.fn(),
-}));
-
-vi.mock('@/hooks/intelligence', () => ({
   useConnectionTester: vi.fn(),
-}));
-
-vi.mock('@/hooks/common', () => ({
-  useConsecutiveFailures: vi.fn(),
-}));
-
-vi.mock('@/hooks/admin', () => ({
-  useSecretsManager: vi.fn(),
-}));
-
-vi.mock('@/hooks/intelligence', () => ({
+  useSparklineData: vi.fn(() => ({ data: [], isLoading: false })),
   useConnectionsOverviewFilters: vi.fn(() => ({
     filters: { types: [], status: [], window: 'all', onlyConsecutiveFailures: false },
     activeCount: 0,
@@ -40,7 +26,15 @@ vi.mock('@/hooks/intelligence', () => ({
     removeType: vi.fn(),
     setOnlyConsecutiveFailures: vi.fn(),
   })),
-  applyFilters: vi.fn((rows) => rows),
+  applyFilters: vi.fn((rows: unknown[]) => rows),
+}));
+
+vi.mock('@/hooks/common', () => ({
+  useConsecutiveFailures: vi.fn(),
+}));
+
+vi.mock('@/hooks/admin', () => ({
+  useSecretsManager: vi.fn(),
 }));
 
 describe('ConnectionsOverviewTable Regression Tests', () => {
