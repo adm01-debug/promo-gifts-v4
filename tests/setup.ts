@@ -59,3 +59,34 @@ global.ResizeObserver = class ResizeObserver {
 // Sem este mock, testes de SidebarNavGroup.history/suspense falhavam em CI.
 window.scrollTo = vi.fn() as unknown as typeof window.scrollTo;
 Element.prototype.scrollTo = vi.fn() as unknown as Element['scrollTo'];
+
+// Fix: @remix-run/router cria objetos Request com AbortSignal durante navegação.
+// Em Node.js 20+, o construtor nativo de Request (undici) verifica
+// `signal instanceof AbortSignal` usando a classe interna do undici, enquanto
+// o jsdom fornece sua própria implementação de AbortController que produz sinais
+// incompatíveis. Fazemos um patch do construtor global de Request para ignorar
+// o signal (suficiente para testes de estado visual que não usam loaders).
+if (typeof globalThis.Request !== 'undefined') {
+  let needsPatch = false;
+  try {
+    new globalThis.Request('http://localhost/', { signal: new AbortController().signal });
+  } catch (e) {
+    if (e instanceof TypeError && String(e).includes('AbortSignal')) {
+      needsPatch = true;
+    }
+  }
+  if (needsPatch) {
+    const _NativeRequest = globalThis.Request;
+    const _PatchedRequest = new Proxy(_NativeRequest, {
+      construct(target, [input, init]: [RequestInfo | URL, RequestInit | undefined]) {
+        if (init?.signal) {
+          const { signal: _s, ...rest } = init;
+          return new target(input, rest as RequestInit);
+        }
+        return new target(input, init);
+      },
+    });
+    // @ts-expect-error Overriding Request to fix jsdom/undici AbortSignal incompatibility
+    globalThis.Request = _PatchedRequest;
+  }
+}
