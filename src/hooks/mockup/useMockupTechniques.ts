@@ -75,9 +75,10 @@ export function useProductCustomizationOptionsForMockup(productId: string | unde
   return useQuery({
     queryKey: ['mockup-customization-options', productId],
     queryFn: async () => {
+      if (!productId) throw new Error('useProductCustomizationOptionsForMockup: missing productId');
       const raw = await invokeExternalRpc<Record<string, unknown>>(
         'fn_get_product_customization_options',
-        { p_product_id: productId! },
+        { p_product_id: productId },
       );
       const adapted = adaptCustomizationOptions(raw);
       return adapted as unknown as CustomizationResponse | null;
@@ -128,8 +129,9 @@ function useAllTechniqueDimensions(techniques: Technique[], shouldFetch: boolean
       const faixasByTech = new Map<string, FaixaPreco[]>();
       for (const f of faixaResult.records) {
         const key = f.tabela_preco_gravacao_id;
-        if (!faixasByTech.has(key)) faixasByTech.set(key, []);
-        faixasByTech.get(key)!.push(f);
+        const arr = faixasByTech.get(key);
+        if (arr) arr.push(f);
+        else faixasByTech.set(key, [f]);
       }
 
       const codeMap = new Map<string, { maxWidth: number | null; maxHeight: number | null }>();
