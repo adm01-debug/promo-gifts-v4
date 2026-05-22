@@ -30,7 +30,7 @@ import { fileURLToPath } from "node:url";
 dotenv.config();
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const SUPABASE_URL = process.env.SUPABASE_URL || "https://pqpdolkaeqlyzpdpbizo.supabase.co";
+const SUPABASE_URL = process.env.SUPABASE_URL || "https://doufsxqlfjyuvxuezpln.supabase.co";
 const AUTH_TOKEN =
   process.env.SUPABASE_SERVICE_ROLE_KEY ||
   process.env.SUPABASE_ANON_KEY ||
