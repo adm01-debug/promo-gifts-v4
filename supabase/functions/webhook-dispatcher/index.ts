@@ -8,23 +8,29 @@
 //   - test_mode e replay_delivery_id exigem Modo B (operação sensível)
 //   - Retrocompat: se WEBHOOK_DISPATCHER_SECRET não estiver setado, aceita anônimo com warning
 //
+// VERSIONAMENTO (feat/contract-tests-zod-v1-v2):
+//   - v1 (default): schema atual { event, payload, replay_delivery_id, test_mode, test_webhook_id }
+//   - v2: adiciona priority, dedupe_window_ms, event_id e mutual-exclusion mais estrita
+//
 // Ver: supabase/functions/_shared/dispatcher-auth.ts
 import { crypto } from "https://deno.land/std@0.224.0/crypto/mod.ts";
 import { encodeHex } from "https://deno.land/std@0.224.0/encoding/hex.ts";
-import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
 import { authorizeDispatcher } from "../_shared/dispatcher-auth.ts";
+import {
+  WebhookDispatcherSchemaByVersion,
+  WebhookDispatcherVersions,
+  type WebhookDispatcherVersion,
+} from "../_shared/contracts/index.ts";
+import {
+  parseApiVersion,
+  withVersionHeaders,
+} from "../_shared/contract-versioning.ts";
+import { validationError422, invalidJsonError400 } from "../_shared/api-errors.ts";
 
-const corsHeaders = buildPublicCorsHeaders({ allowMethods: "POST, OPTIONS" });
-
-const BodySchema = z.object({
-  event: z.string().min(1),
-  payload: z.unknown().optional(),
-  // Replay mode: re-deliver a single failed delivery by id
-  replay_delivery_id: z.string().uuid().optional(),
-  // Test mode (Onda 13 #9): dispatch to a specific webhook, no metrics, no breaker, no DB log
-  test_mode: z.boolean().optional(),
-  test_webhook_id: z.string().uuid().optional(),
+const corsHeaders = buildPublicCorsHeaders({
+  allowMethods: "POST, OPTIONS",
+  extraAllowHeaders: ["x-dispatcher-secret", "x-api-version"],
 });
 
 // Circuit breaker: 5 falhas consecutivas → desativa o webhook
@@ -48,27 +54,51 @@ async function payloadHash(payload: string): Promise<string> {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  // Resolver versão da API antes de qualquer trabalho.
+  const versioned = parseApiVersion<WebhookDispatcherVersion>(req, WebhookDispatcherVersions, {
+    defaultVersion: "v1",
+    deprecated: {},
+    corsHeaders,
+  });
+  if ("error" in versioned) return versioned.error;
+
   // Guard: require X-Dispatcher-Secret to prevent unauthorized invocations
   const dispatcherSecret = Deno.env.get("WEBHOOK_DISPATCHER_SECRET");
   if (dispatcherSecret) {
     const incoming = req.headers.get("x-dispatcher-secret");
     if (!incoming || incoming !== dispatcherSecret) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return withVersionHeaders(
+        new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }),
+        versioned,
+      );
     }
   }
 
   try {
     // Body precisa ser parseado antes da auth pra saber se requer Modo B (test_mode/replay).
-    // Body parse falha → 400 antes da auth (não vaza info).
-    const parsed = BodySchema.safeParse(await req.json().catch(() => ({})));
-    if (!parsed.success) {
-      return new Response(JSON.stringify({ error: "Invalid body" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    // Body parse falha → 400 INVALID_JSON (não vaza info).
+    let raw: unknown;
+    try {
+      const text = await req.text();
+      raw = text ? JSON.parse(text) : {};
+    } catch {
+      return withVersionHeaders(
+        invalidJsonError400({ corsHeaders, apiVersion: versioned.version }),
+        versioned,
+      );
     }
-    let { event, payload } = parsed.data;
+
+    const schema = WebhookDispatcherSchemaByVersion[versioned.version];
+    const parsed = schema.safeParse(raw);
+    if (!parsed.success) {
+      return withVersionHeaders(
+        validationError422(parsed.error, { corsHeaders, apiVersion: versioned.version }),
+        versioned,
+      );
+    }
+    let { event, payload } = parsed.data as { event: string; payload?: unknown };
     const { replay_delivery_id, test_mode, test_webhook_id } = parsed.data;
 
     // Operações que mexem com webhook específico (test/replay) só por Modo B
@@ -269,13 +299,19 @@ Deno.serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify({ ok: true, dispatched: hooks.length, results }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return withVersionHeaders(
+      new Response(JSON.stringify({ ok: true, dispatched: hooks.length, results }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }),
+      versioned,
+    );
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Erro desconhecido";
-    return new Response(JSON.stringify({ error: msg }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return withVersionHeaders(
+      new Response(JSON.stringify({ error: msg }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }),
+      versioned,
+    );
   }
 });
