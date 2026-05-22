@@ -1,7 +1,5 @@
-import { Suspense, lazy } from "react";
+import { Suspense } from "react";
 import { lazyWithRetry } from "@/lib/lazyWithRetry";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
 
 // Lazy-loaded global components
 const OnboardingTour = lazyWithRetry(() => import("@/components/onboarding/OnboardingTour").then(m => ({ default: m.OnboardingTour })));

@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { format, parseISO, addDays, isAfter, isBefore } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarClock, Package, Truck, AlertTriangle, Calendar, Loader2, TrendingUp, ArrowUpDown, Filter, Clock } from "lucide-react";
+import { CalendarClock, Package, Truck, AlertTriangle, Calendar, TrendingUp, ArrowUpDown, Filter, Clock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";

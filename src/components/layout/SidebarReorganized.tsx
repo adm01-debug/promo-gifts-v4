@@ -4,7 +4,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
   Package,
   Users,
-  Filter,
   Heart,
   GitCompare,
   FolderOpen,
@@ -12,7 +11,6 @@ import {
   ChevronRight,
   ShieldCheck,
   Calculator,
-  Wand2,
   Sparkles,
   FileText,
   ShoppingCart,
@@ -33,9 +31,7 @@ import {
   ImagePlus,
   BarChart3,
   Crosshair,
-  ChevronsDownUp,
   Settings,
-  Percent,
   Plug,
   X,
 

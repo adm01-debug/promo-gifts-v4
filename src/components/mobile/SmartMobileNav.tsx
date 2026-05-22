@@ -9,20 +9,13 @@ import {
   Plus,
   Heart,
   Wand2,
-  BarChart3,
   ShoppingCart,
-  Settings,
-  Sparkles,
   Calculator,
   FolderOpen,
   X,
-  Sun,
-  Moon,
 } from "lucide-react";
-import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { VisuallyHidden } from "@/components/a11y/VisuallyHidden";
 
 interface NavItem {
   icon: typeof Home;

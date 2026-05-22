@@ -8,7 +8,6 @@ import { Building2, Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { getCdnUrl, getSrcSet } from "@/utils/image-utils";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useProductBounds, type ExternalVariantStock, type Product, usePrefetchProduct } from "@/hooks/products";
 import { toast } from "sonner";

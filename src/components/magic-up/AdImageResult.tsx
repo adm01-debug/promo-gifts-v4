@@ -8,9 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Download, Share2, RotateCcw, ImageIcon, Loader2,
-  Heart, Copy, FileImage, FileText, Star,
-  Clock, Trash2, ChevronLeft, ChevronRight,
+  Download, Share2, RotateCcw, ImageIcon,
+  Heart, Copy, FileImage, FileText,
+  Clock, Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {

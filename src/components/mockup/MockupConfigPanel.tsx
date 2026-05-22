@@ -11,7 +11,6 @@ import {
   RefreshCw,
   Info,
   ChevronDown,
-  FileText,
   Wand2,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,7 +19,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { cn } from "@/lib/utils";
 import { TechniqueTooltip } from "./TechniqueTooltip";
 import { MockupClientSelector } from "./MockupClientSelector";
 import { MockupProductSelector, type MockupProductSelection } from "./MockupProductSelector";

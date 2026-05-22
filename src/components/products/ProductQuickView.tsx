@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, forwardRef } from "react";
+import { useState, useMemo, useEffect, forwardRef } from "react";
 // framer-motion removido — transição via CSS animate-fade-in
 import {
   Heart,
@@ -7,26 +7,18 @@ import {
   ShoppingCart,
   Package,
   Truck,
-  ChevronLeft,
-  ChevronRight,
   ExternalLink,
-  Sparkles,
-  Layers,
   Plus,
   Minus,
-  Ruler,
-  Weight,
-  ImageOff,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { VisuallyHidden } from "@/components/a11y/VisuallyHidden";
 import { cn } from "@/lib/utils";
-import { useProductImages, type Product, type ProductImage } from "@/hooks/products";
+import { useProductImages, type Product } from "@/hooks/products";
 import { ProductCategoryBadges } from "./ProductCategoryBadges";
 import { QuickViewGallery } from "./quick-view/QuickViewGallery";
 import { ProductColorSelector, type ProductColor } from "./ProductColorSelector";

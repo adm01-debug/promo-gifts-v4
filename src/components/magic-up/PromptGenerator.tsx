@@ -15,7 +15,7 @@ import {
 import {
   Wand2, Loader2, Sparkles, Target,
   Users, CalendarDays, RefreshCw, Check,
-  Lightbulb, MapPin, Paintbrush, Ruler,
+  Lightbulb,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
