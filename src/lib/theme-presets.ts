@@ -800,7 +800,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     description: 'Rosa intenso e viciante',
     h: 330,
     s: 95,
-    l: 50, // Reduzido de 60 para 50 para contraste WCAG
+    l: 60, // zapp parity (gx-pink-addiction)
     gh: 340,
     sh: 300,
     ss: 90,
@@ -826,7 +826,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     description: 'Rosa quartzo cristalino',
     h: 345,
     s: 75,
-    l: 54, // Reduzido de 68 para 54 para contraste WCAG
+    l: 68, // zapp parity (gx-rose-quartz)
     gh: 355,
     sh: 320,
     ss: 60,
@@ -852,7 +852,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     description: 'Verde Matrix de hacker',
     h: 127,
     s: 65,
-    l: 40, // Reduzido de 46 para 40 para contraste WCAG
+    l: 46, // zapp parity (gx-hackerman)
     gh: 135,
     sh: 115,
     ss: 60,
@@ -865,7 +865,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     description: 'Azul-petróleo do fundo do mar',
     h: 182,
     s: 90,
-    l: 35, // Reduzido de 42 para 35 para contraste WCAG com texto branco
+    l: 42, // zapp parity (gx-frutti-di-mare)
     gh: 190,
     sh: 200,
     ss: 75,
@@ -896,7 +896,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     description: 'Verde RGB Razer Chroma',
     h: 113,
     s: 70,
-    l: 35, // Reduzido de 51 para 35 para contraste WCAG
+    l: 51, // zapp parity (gx-razer)
     gh: 120,
     sh: 100,
     ss: 60,

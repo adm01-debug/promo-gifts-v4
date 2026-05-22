@@ -26,6 +26,7 @@ vi.mock('@/integrations/supabase/client', () => {
           return { data: { subscription: { unsubscribe: vi.fn() } } };
         }),
         getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
+        refreshSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
         signUp: vi.fn(),
         signInWithPassword: vi.fn(),
         signOut: vi.fn().mockResolvedValue({}),
@@ -108,7 +109,7 @@ describe('AuthContext', () => {
           }),
           update: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
-              then: vi.fn((cb: any) => { cb({ error: null }); return Promise.resolve(); }),
+              then: vi.fn((cb?: any) => { cb?.({ error: null }); return Promise.resolve({ error: null }); }),
             }),
           }),
         } as any;
@@ -164,7 +165,7 @@ describe('AuthContext', () => {
           }),
           update: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
-              then: vi.fn((cb: any) => { cb({ error: null }); return Promise.resolve(); }),
+              then: vi.fn((cb?: any) => { cb?.({ error: null }); return Promise.resolve({ error: null }); }),
             }),
           }),
         } as any;

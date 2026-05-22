@@ -1,6 +1,6 @@
 # Deployment Guide — Promo_Gifts
 
-> **Última revisão:** 2026-05-12 (pós-redeploy Fase 2, T3 migrations audit)
+> **Última revisão:** 2026-05-22 (pós-auditoria back-end sênior, DOC-001 — números reais)
 > **Status do redeploy:** ver `docs/redeploy/REDEPLOY-FASE2-EXECUTION-LOG.md`
 
 ---
@@ -9,18 +9,18 @@
 
 ### 1. NÃO use `supabase db push`
 
-O diretório `supabase/migrations/` tem **332 arquivos**; o banco de produção registra **209 migrations**. **Interseção: zero.** As duas histórias divergiram há meses (várias ferramentas — Lovable, SQL Editor, scripts ad-hoc — gravaram em momentos diferentes).
+O diretório `supabase/migrations/` tem **~710 arquivos**; o banco de produção registra **~685 migrations** aplicadas (drift atual de ~25 arquivos, ~3.5%). A divergência maior foi reconciliada na onda de recovery de mai/2026 (ver `RECOVERY_PLAN.md`); o que sobra hoje são migrations recentes ainda não promovidas ao banco.
 
 **Consequência prática:**
 
 ```bash
 # ❌ NUNCA rode isso:
 supabase db push --project-ref doufsxqlfjyuvxuezpln
-# Vai tentar aplicar 332 migrations num banco que já tem schema diferente
-# → conflitos em cascata → corrupção potencial
+# Vai tentar aplicar todas as migrations do repo na ordem, podendo
+# conflitar com objetos já existentes no banco de produção.
 ```
 
-**Fonte da verdade do schema é o BANCO em produção**, não o repo.
+**Fonte da verdade do schema é o BANCO em produção**, não o repo. O repo é o **registro histórico** das intenções de mudança e o material para aplicar **uma migration nova de cada vez** via `apply_migration` MCP ou SQL Editor.
 
 Detalhes completos: [`docs/redeploy/REDEPLOY-T3-MIGRATIONS-AUDIT.md`](redeploy/REDEPLOY-T3-MIGRATIONS-AUDIT.md).
 

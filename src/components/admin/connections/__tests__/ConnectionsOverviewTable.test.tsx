@@ -13,14 +13,6 @@ vi.mock('@/contexts/AuthContext', () => ({
   useAuth: vi.fn(),
 }));
 
-vi.mock('@/hooks/intelligence', () => ({
-  useConnectionsOverview: vi.fn(),
-}));
-
-vi.mock('@/hooks/intelligence', () => ({
-  useConnectionTester: vi.fn(),
-}));
-
 vi.mock('@/hooks/common', () => ({
   useConsecutiveFailures: vi.fn(),
 }));
@@ -30,6 +22,8 @@ vi.mock('@/hooks/admin', () => ({
 }));
 
 vi.mock('@/hooks/intelligence', () => ({
+  useConnectionsOverview: vi.fn(),
+  useConnectionTester: vi.fn(),
   useConnectionsOverviewFilters: vi.fn(() => ({
     filters: { types: [], status: [], window: 'all', onlyConsecutiveFailures: false },
     activeCount: 0,

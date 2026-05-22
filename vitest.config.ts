@@ -56,8 +56,13 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
+    alias: [
+      { find: '@', replacement: path.resolve(__dirname, './src') },
+      // Edge Functions (Deno) importam Zod via URL esm.sh. Vitest (Node) usa o pacote npm.
+      // Aliases permitem que os mesmos arquivos rodem nos dois runtimes sem duplicação.
+      // Pattern abrange qualquer pin de versão (3.22.x, 3.23.x, 4.x).
+      { find: /^https:\/\/esm\.sh\/zod@.*$/, replacement: 'zod' },
+      { find: /^https:\/\/deno\.land\/x\/zod@.*\/mod\.ts$/, replacement: 'zod' },
+    ],
   },
 });

@@ -311,9 +311,16 @@ test.describe("@smoke Rotas públicas (gate de CI)", () => {
     await page.goto("/login");
     await page.fill(Sel.login.email, "smoke-fake@example.com");
     await page.fill(Sel.login.password, "SenhaErrada@2025!");
-    await page.locator(Sel.login.submit).first().click();
-    await expect(page).toHaveURL(/\/login/, { timeout: 8_000 });
-    await expect(page.locator(Sel.login.submit).first()).toBeEnabled({ timeout: 15_000 });
+    // Issue #61: o click default tinha timeout de 10s e flutava em CI quando o
+    // form ficava no estado "submitting" por mais que ~10s (Vite cold start +
+    // SPA hydration + Supabase auth real). Garante estado-final-clicável e
+    // amplia timeout de click p/ alinhar com toBeEnabled abaixo.
+    const submit = page.locator(Sel.login.submit).first();
+    await expect(submit).toBeVisible({ timeout: 15_000 });
+    await expect(submit).toBeEnabled({ timeout: 15_000 });
+    await submit.click({ timeout: 15_000 });
+    await expect(page).toHaveURL(/\/login/, { timeout: 10_000 });
+    await expect(submit).toBeEnabled({ timeout: 15_000 });
   });
 
   // 95 · Negativo de recovery: /reset-password sem token NÃO habilita reset.

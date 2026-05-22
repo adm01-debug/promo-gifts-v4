@@ -24,8 +24,8 @@ const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 export type AppRole = "dev" | "supervisor" | "agente";
 const ROLE_RANK: Record<AppRole, number> = { agente: 1, supervisor: 2, dev: 3 };
 
-export type DispatcherAuthMode = "secret" | "user_jwt" | "legacy_no_auth";
-export type CronAuthMode = "secret" | "secret_vault" | "legacy_no_auth";
+export type DispatcherAuthMode = "secret" | "user_jwt";
+export type CronAuthMode = "secret" | "secret_vault";
 
 export interface DispatcherAuthOk {
   ok: true;
@@ -236,19 +236,27 @@ export async function authorizeDispatcher(
     };
   }
 
-  // Retrocompat: nenhum env setado → aceita anônimo com warning
+  // Fail-closed: secret obrigatório em produção (auditoria SEC-003).
+  // Antes aceitávamos chamada anônima como retrocompat ("legacy_no_auth"),
+  // o que abria webhook-dispatcher para qualquer caller quando o secret
+  // não estava configurado (clones de staging/dev, vault revogado, etc.).
+  // Agora devolvemos 503 explícito — exige configuração para operar.
   if (!expectedSecret) {
     logAuthEvent({
-      outcome: "allowed",
-      mode: "legacy_no_auth",
-      warning: "WEBHOOK_DISPATCHER_SECRET nao configurado — aceitando chamada anonima. Configure secret para hardening.",
+      outcome: "denied",
+      reason: "secret_not_configured",
+      env: "WEBHOOK_DISPATCHER_SECRET",
     });
     return {
-      ok: true,
-      mode: "legacy_no_auth",
-      supabaseAdmin: createClient(SUPABASE_URL, SERVICE_KEY, {
-        auth: { persistSession: false, autoRefreshToken: false },
-      }),
+      ok: false,
+      response: jsonResponse(
+        {
+          error: "service_misconfigured",
+          message: "WEBHOOK_DISPATCHER_SECRET não configurado. Configure no vault (integration_credentials) ou env antes de invocar.",
+        },
+        503,
+        corsHeaders,
+      ),
     };
   }
 
@@ -283,14 +291,26 @@ export async function authorizeCron(
 
   const providedSecret = req.headers.get(headerName) ?? "";
 
+  // Fail-closed: secret obrigatório (auditoria SEC-003). Antes aceitávamos
+  // crons anônimos como retrocompat — risco de qualquer caller acionar jobs
+  // quando o secret não estivesse setado no vault E no env. Agora 503.
   if (!expectedSecret) {
     logAuthEvent({
-      outcome: "allowed",
-      mode: "legacy_no_auth",
+      outcome: "denied",
+      reason: "secret_not_configured",
       env: secretEnvName,
-      warning: `${secretEnvName} nao configurado em vault nem env — aceitando chamada anonima. Configure para hardening.`,
     });
-    return { ok: true, mode: "legacy_no_auth" };
+    return {
+      ok: false,
+      response: jsonResponse(
+        {
+          error: "service_misconfigured",
+          message: `${secretEnvName} não configurado em vault nem env. Configure antes de invocar este cron.`,
+        },
+        503,
+        corsHeaders,
+      ),
+    };
   }
 
   if (!providedSecret) {
