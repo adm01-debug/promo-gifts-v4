@@ -11,20 +11,17 @@
 // Ver: supabase/functions/_shared/dispatcher-auth.ts
 import { crypto } from "https://deno.land/std@0.224.0/crypto/mod.ts";
 import { encodeHex } from "https://deno.land/std@0.224.0/encoding/hex.ts";
-import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
 import { authorizeDispatcher } from "../_shared/dispatcher-auth.ts";
+import { DispatcherBodySchema } from "../_shared/webhook-schemas.ts";
+import {
+  buildErrorResponse,
+  buildValidationErrorResponse,
+} from "../_shared/validation-errors.ts";
 
-const corsHeaders = buildPublicCorsHeaders({ allowMethods: "POST, OPTIONS" });
-
-const BodySchema = z.object({
-  event: z.string().min(1),
-  payload: z.unknown().optional(),
-  // Replay mode: re-deliver a single failed delivery by id
-  replay_delivery_id: z.string().uuid().optional(),
-  // Test mode (Onda 13 #9): dispatch to a specific webhook, no metrics, no breaker, no DB log
-  test_mode: z.boolean().optional(),
-  test_webhook_id: z.string().uuid().optional(),
+const corsHeaders = buildPublicCorsHeaders({
+  allowMethods: "POST, OPTIONS",
+  extraAllowHeaders: ["x-api-version", "x-dispatcher-secret"],
 });
 
 // Circuit breaker: 5 falhas consecutivas → desativa o webhook
@@ -53,20 +50,23 @@ Deno.serve(async (req) => {
   if (dispatcherSecret) {
     const incoming = req.headers.get("x-dispatcher-secret");
     if (!incoming || incoming !== dispatcherSecret) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return buildErrorResponse("unauthorized", "Unauthorized", req, corsHeaders, { status: 401 });
     }
   }
 
   try {
     // Body precisa ser parseado antes da auth pra saber se requer Modo B (test_mode/replay).
-    // Body parse falha → 400 antes da auth (não vaza info).
-    const parsed = BodySchema.safeParse(await req.json().catch(() => ({})));
+    // Body parse falha → 422 antes da auth (não vaza info).
+    let rawJson: unknown;
+    try {
+      const text = await req.text();
+      rawJson = text ? JSON.parse(text) : {};
+    } catch {
+      return buildErrorResponse("invalid_json", "Invalid JSON in request body", req, corsHeaders, { status: 400 });
+    }
+    const parsed = DispatcherBodySchema.safeParse(rawJson);
     if (!parsed.success) {
-      return new Response(JSON.stringify({ error: "Invalid body" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return buildValidationErrorResponse(parsed.error, req, corsHeaders);
     }
     let { event, payload } = parsed.data;
     const { replay_delivery_id, test_mode, test_webhook_id } = parsed.data;
@@ -85,10 +85,15 @@ Deno.serve(async (req) => {
 
     // Test mode (Onda 13 #9): single-shot, no retries, no DB write, no breaker
     if (test_mode) {
+      // Schema cross-field rule already guards this; redundant safety check.
       if (!test_webhook_id) {
-        return new Response(JSON.stringify({ error: "test_webhook_id obrigatório em test_mode" }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return buildErrorResponse(
+          "test_webhook_id_required",
+          "test_webhook_id obrigatório em test_mode",
+          req,
+          corsHeaders,
+          { status: 422 },
+        );
       }
       const { data: hook, error: hookErr } = await supabase
         .from("outbound_webhooks")
@@ -96,9 +101,7 @@ Deno.serve(async (req) => {
         .eq("id", test_webhook_id)
         .maybeSingle();
       if (hookErr || !hook) {
-        return new Response(JSON.stringify({ error: "Webhook não encontrado" }), {
-          status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return buildErrorResponse("not_found", "Webhook não encontrado", req, corsHeaders, { status: 404 });
       }
       const bodyJson = JSON.stringify({
         event,
@@ -150,9 +153,7 @@ Deno.serve(async (req) => {
         .eq("id", replay_delivery_id)
         .maybeSingle();
       if (origErr || !orig) {
-        return new Response(JSON.stringify({ error: "Delivery não encontrada" }), {
-          status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return buildErrorResponse("not_found", "Delivery não encontrada", req, corsHeaders, { status: 404 });
       }
       event = orig.event;
       payload = orig.payload;
@@ -274,8 +275,6 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Erro desconhecido";
-    return new Response(JSON.stringify({ error: msg }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return buildErrorResponse("internal_error", msg, req, corsHeaders, { status: 500 });
   }
 });

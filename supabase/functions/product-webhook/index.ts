@@ -1,59 +1,19 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-import { z } from "../_shared/zod-validate.ts";
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
+import {
+  ProductWebhookPayloadSchema,
+  type ProductPayload,
+} from "../_shared/webhook-schemas.ts";
+import {
+  buildErrorResponse,
+  buildValidationErrorResponse,
+} from "../_shared/validation-errors.ts";
 
-const corsHeaders = buildPublicCorsHeaders({ extraAllowHeaders: ["x-webhook-secret"] });
+const corsHeaders = buildPublicCorsHeaders({ extraAllowHeaders: ["x-webhook-secret", "x-api-version"] });
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const webhookSecret = Deno.env.get("N8N_PRODUCT_WEBHOOK_SECRET");
-
-const ProductPayloadSchema = z.object({
-  external_id: z.string().max(255).optional(),
-  sku: z.string().min(1).max(100),
-  name: z.string().min(1).max(500),
-  description: z.string().max(5000).optional(),
-  price: z.number().nonnegative(),
-  min_quantity: z.number().int().positive().optional(),
-  category_id: z.number().int().optional(),
-  category_name: z.string().max(255).optional(),
-  subcategory: z.string().max(255).optional(),
-  supplier_id: z.string().max(255).optional(),
-  supplier_name: z.string().max(255).optional(),
-  stock: z.number().int().nonnegative().optional(),
-  stock_status: z.string().max(50).optional(),
-  is_kit: z.boolean().optional(),
-  is_active: z.boolean().optional(),
-  featured: z.boolean().optional(),
-  new_arrival: z.boolean().optional(),
-  on_sale: z.boolean().optional(),
-  images: z.array(z.string().url().max(2000)).max(50).optional(),
-  video_url: z.string().url().max(2000).optional().nullable(),
-  colors: z.array(z.object({ name: z.string(), hex: z.string(), group: z.string().optional() })).max(100).optional(),
-  materials: z.array(z.string().max(100)).max(50).optional(),
-  tags: z.record(z.array(z.string())).optional(),
-  kit_items: z.array(z.object({
-    productId: z.string(), productName: z.string(), quantity: z.number(), sku: z.string()
-  })).max(50).optional(),
-  variations: z.array(z.any()).max(200).optional(),
-  metadata: z.record(z.any()).optional(),
-});
-
-const WebhookPayloadSchema = z.object({
-  action: z.enum(["sync", "upsert", "delete", "batch_upsert"]),
-  products: z.array(ProductPayloadSchema).max(500).optional(),
-  product: ProductPayloadSchema.optional(),
-  external_ids: z.array(z.string().max(255)).max(500).optional(),
-});
-
-type ProductPayload = z.infer<typeof ProductPayloadSchema>;
-
-interface WebhookPayload {
-  action: "sync" | "upsert" | "delete" | "batch_upsert";
-  products?: ProductPayload[];
-  product?: ProductPayload;
-  external_ids?: string[];
-}
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
@@ -68,26 +28,25 @@ Deno.serve(async (req) => {
     const providedSecret = req.headers.get("x-webhook-secret");
     if (webhookSecret && providedSecret !== webhookSecret) {
       console.error("Invalid webhook secret");
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return buildErrorResponse("unauthorized", "Unauthorized", req, corsHeaders, { status: 401 });
     }
 
     let rawBody: unknown;
-    try { rawBody = await req.json(); } catch {
-      return new Response(JSON.stringify({ error: "Invalid webhook payload" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    try {
+      const text = await req.text();
+      if (!text || text.trim() === "") {
+        return buildErrorResponse("empty_body", "Request body is required", req, corsHeaders, { status: 400 });
+      }
+      rawBody = JSON.parse(text);
+    } catch {
+      return buildErrorResponse("invalid_json", "Invalid JSON in request body", req, corsHeaders, { status: 400 });
     }
 
-    const parsed = WebhookPayloadSchema.safeParse(rawBody);
+    const parsed = ProductWebhookPayloadSchema.safeParse(rawBody);
     if (!parsed.success) {
-      return new Response(JSON.stringify({ error: "Validation failed", details: parsed.error.flatten().fieldErrors }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return buildValidationErrorResponse(parsed.error, req, corsHeaders);
     }
-    const payload: WebhookPayload = parsed.data;
+    const payload = parsed.data;
     console.log(`Product webhook action: ${payload.action}`);
 
     // Create sync log

@@ -5,8 +5,16 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { crypto } from "https://deno.land/std@0.224.0/crypto/mod.ts";
 import { encodeHex } from "https://deno.land/std@0.224.0/encoding/hex.ts";
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
+import { InboundWebhookEnvelopeSchema } from "../_shared/webhook-schemas.ts";
+import {
+  buildErrorResponse,
+  buildValidationErrorResponse,
+} from "../_shared/validation-errors.ts";
 
-const corsHeaders = buildPublicCorsHeaders({ extraAllowHeaders: ["x-signature-256","x-event"], allowMethods: "POST, OPTIONS" });
+const corsHeaders = buildPublicCorsHeaders({
+  extraAllowHeaders: ["x-signature-256", "x-event", "x-webhook-signature", "x-api-version"],
+  allowMethods: "POST, OPTIONS",
+});
 
 async function hmacSign(payload: string, secret: string): Promise<string> {
   const enc = new TextEncoder();
@@ -37,10 +45,20 @@ Deno.serve(async (req) => {
     const slug = url.searchParams.get("slug")
       || url.pathname.split("/").filter(Boolean).pop()
       || "";
-    if (!slug) {
-      return new Response(JSON.stringify({ error: "slug ausente" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const signatureHeader = req.headers.get("x-signature-256")
+      || req.headers.get("x-webhook-signature")
+      || "";
+    const eventTypeHeader = req.headers.get("x-event") || "unknown";
+
+    // Envelope validation: slug shape, event_type, optional signature format.
+    // Persisted body itself is intentionally untyped (3rd-party payloads).
+    const envelopeParse = InboundWebhookEnvelopeSchema.safeParse({
+      slug,
+      event_type: eventTypeHeader,
+      signature: signatureHeader || undefined,
+    });
+    if (!envelopeParse.success) {
+      return buildValidationErrorResponse(envelopeParse.error, req, corsHeaders);
     }
 
     const { data: endpoint } = await supabase
@@ -50,16 +68,11 @@ Deno.serve(async (req) => {
       .eq("active", true)
       .maybeSingle();
     if (!endpoint) {
-      return new Response(JSON.stringify({ error: "endpoint não encontrado" }), {
-        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return buildErrorResponse("not_found", "endpoint não encontrado", req, corsHeaders, { status: 404 });
     }
 
     const rawBody = await req.text();
-    const signatureHeader = req.headers.get("x-signature-256")
-      || req.headers.get("x-webhook-signature")
-      || "";
-    const eventType = req.headers.get("x-event") || "unknown";
+    const eventType = envelopeParse.data.event_type;
     const sourceIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
 
     const secretRes = await supabase.from('integration_credentials').select('secret_value').eq('secret_name', endpoint.hmac_secret_ref).maybeSingle();
@@ -92,9 +105,7 @@ Deno.serve(async (req) => {
     }).eq("id", endpoint.id);
 
     if (!signatureValid) {
-      return new Response(JSON.stringify({ error: "Assinatura inválida" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return buildErrorResponse("invalid_signature", "Assinatura inválida", req, corsHeaders, { status: 401 });
     }
 
     return new Response(JSON.stringify({ ok: true, received: true }), {
