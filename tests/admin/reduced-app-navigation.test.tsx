@@ -107,8 +107,10 @@ function ReducedApp({
       <Suspense fallback={<div>loading…</div>}>
         {onNavigateReady && <NavigationProbe onReady={onNavigateReady} />}
         <Routes>
-          {/* Public */}
+          {/* Public — ProtectedRoute redireciona para /auth (não /login).
+             Mantemos ambas as rotas com o mesmo stub para compatibilidade. */}
           <Route path="/login" element={<LoginStub />} />
+          <Route path="/auth" element={<LoginStub />} />
 
           {/* Protected layer */}
           <Route element={<ProtectedRoute />}>
