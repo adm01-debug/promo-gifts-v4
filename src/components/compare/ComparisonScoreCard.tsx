@@ -15,9 +15,10 @@ import {
   DEFAULT_SCORE_WEIGHTS,
   type ComparisonScoreWeights,
 } from '@/hooks/comparison';
+import type { Product } from '@/types/product-catalog';
 
 interface ComparisonScoreCardProps {
-  products: Record<string, unknown>[];
+  products: Product[];
   className?: string;
 }
 
