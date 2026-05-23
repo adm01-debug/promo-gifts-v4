@@ -32,7 +32,7 @@ export function useSkuValidation(currentSku: string, isEdit: boolean, originalSk
         );
         if (dup) {
           setStatus('duplicate');
-          setDuplicateName(dup.name || '');
+          setDuplicateName((dup.name as string) || '');
         } else {
           setStatus('valid');
           setDuplicateName('');

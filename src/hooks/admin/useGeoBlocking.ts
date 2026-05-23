@@ -53,10 +53,11 @@ export function useGeoBlocking() {
       ]);
 
       if (countriesRes.error) throw countriesRes.error;
-      setCountries(countriesRes.data || []);
+      setCountries((countriesRes.data || []) as unknown as AllowedCountry[]);
 
       if (settingsRes.data) {
-        const value = settingsRes.data.setting_value as GeoBlockingSettings;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const value = (settingsRes.data as any).setting_value as GeoBlockingSettings;
         setSettings(value);
       }
     } catch (error) {

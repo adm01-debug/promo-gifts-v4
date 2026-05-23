@@ -42,12 +42,23 @@ export interface UserProfile {
 }
 
 const defaultMetrics: SecurityMetrics = {
-  score: 0, mfaEnabled: false, ipRestrictionsActive: false,
-  knownDevicesCount: 0, recentLoginAttempts: 0, failedLoginAttempts: 0, securityAlerts: 0,
+  score: 0,
+  mfaEnabled: false,
+  ipRestrictionsActive: false,
+  knownDevicesCount: 0,
+  recentLoginAttempts: 0,
+  failedLoginAttempts: 0,
+  securityAlerts: 0,
 };
 
-export function useSecurityData(effectiveUserId: string | undefined, isManagingOther: boolean, selectedUserId: string | null) {
-  const { is2FAEnabled, isLoading: is2FALoading } = use2FA(isManagingOther ? selectedUserId! : undefined);
+export function useSecurityData(
+  effectiveUserId: string | undefined,
+  isManagingOther: boolean,
+  selectedUserId: string | null,
+) {
+  const { is2FAEnabled, isLoading: is2FALoading } = use2FA(
+    isManagingOther ? selectedUserId! : undefined,
+  );
   const { allowedIPs } = useAllowedIPs();
   const [metrics, setMetrics] = useState<SecurityMetrics>(defaultMetrics);
   const [loginAttempts, setLoginAttempts] = useState<LoginAttempt[]>([]);
@@ -59,25 +70,33 @@ export function useSecurityData(effectiveUserId: string | undefined, isManagingO
     setIsLoading(true);
     try {
       const { data: attempts } = await supabase
-        .from('login_attempts').select('*')
+        .from('login_attempts')
+        .select('*')
         .eq('user_id', effectiveUserId)
-        .order('created_at', { ascending: false }).limit(20);
+        .order('created_at', { ascending: false })
+        .limit(20);
 
       setLoginAttempts((attempts as LoginAttempt[]) || []);
 
       const { count: devicesCount } = await supabase
-        .from('user_known_devices').select('*', { count: 'exact', head: true })
+        .from('user_known_devices')
+        .select('*', { count: 'exact', head: true })
         .eq('user_id', effectiveUserId);
 
       const { data: notifs } = await supabase
-        .from('notifications').select('*')
-        .eq('user_id', effectiveUserId).eq('type', 'security')
-        .order('created_at', { ascending: false }).limit(10);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from('notifications' as any)
+        .select('*')
+        .eq('user_id', effectiveUserId)
+        .eq('type', 'security')
+        .order('created_at', { ascending: false })
+        .limit(10);
 
-      setNotifications((notifs as SecurityNotification[]) || []);
+      const safeNotifs = notifs as unknown as SecurityNotification[] | null;
+      setNotifications(safeNotifs || []);
 
-      const failedAttempts = attempts?.filter(a => !a.success).length || 0;
-      const unreadAlerts = notifs?.filter(n => !n.is_read).length || 0;
+      const failedAttempts = attempts?.filter((a) => !a.success).length || 0;
+      const unreadAlerts = safeNotifs?.filter((n) => !n.is_read).length || 0;
 
       let score = 40;
       if (is2FAEnabled) score += 30;
@@ -101,9 +120,19 @@ export function useSecurityData(effectiveUserId: string | undefined, isManagingO
     }
   }, [effectiveUserId, is2FAEnabled, allowedIPs]);
 
-  useEffect(() => { if (effectiveUserId) loadSecurityData(); }, [effectiveUserId, loadSecurityData]);
+  useEffect(() => {
+    if (effectiveUserId) loadSecurityData();
+  }, [effectiveUserId, loadSecurityData]);
 
-  return { metrics, loginAttempts, notifications, isLoading, is2FAEnabled, is2FALoading, allowedIPs };
+  return {
+    metrics,
+    loginAttempts,
+    notifications,
+    isLoading,
+    is2FAEnabled,
+    is2FALoading,
+    allowedIPs,
+  };
 }
 
 // Score helpers

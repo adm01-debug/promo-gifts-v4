@@ -215,7 +215,7 @@ export function CompareTableView({
                           {/* Hover swatches → swap header image */}
                           {(entry.product.colors?.length ?? 0) > 1 && (
                             <div className="flex flex-wrap justify-center gap-0.5">
-                              {entry.product.colors
+                              {(entry.product.colors ?? [])
                                 .slice(0, 6)
                                 .map((c: { name: string; hex?: string }, i: number) => (
                                   <button
@@ -279,7 +279,7 @@ export function CompareTableView({
               <HighlightedNumberRow
                 label="Quantidade mínima"
                 products={products}
-                valueFn={(p) => p.min_quantity}
+                valueFn={(p) => p.min_quantity ?? 0}
                 renderFn={(v) => `${v} un.`}
                 mode="lower-is-better"
               />
@@ -301,7 +301,7 @@ export function CompareTableView({
               <HighlightedNumberRow
                 label="Lead time"
                 products={products}
-                valueFn={(p) => leadTimeProxy(p.stock_status)}
+                valueFn={(p) => leadTimeProxy(p.stock_status ?? undefined)}
                 renderFn={(v) =>
                   leadTimeLabel(v === 1 ? 'in-stock' : v === 2 ? 'low-stock' : 'out-of-stock')
                 }
@@ -344,7 +344,7 @@ export function CompareTableView({
                 label="Estoque (status)"
                 products={products}
                 render={(p) => {
-                  const s = getStockStatusLabel(p.stock_status);
+                  const s = getStockStatusLabel(p.stock_status ?? '');
                   return <span className={cn('font-medium', s.color)}>{s.label}</span>;
                 }}
               />

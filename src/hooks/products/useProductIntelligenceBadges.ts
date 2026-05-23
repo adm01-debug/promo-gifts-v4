@@ -135,7 +135,7 @@ export function useProductIntelligenceBadges(
         )
       : null;
     const trend = bestVel?.velocity_trend;
-    if (trend !== null && trend > 1.3) {
+    if (trend !== null && trend !== undefined && trend > 1.3) {
       badges.push({
         type: 'emergente',
         label: 'Emergente',

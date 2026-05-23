@@ -447,8 +447,8 @@ export default function AdminProductFormPage() {
                       exportProductPdf({
                         formData,
                         productImages: getProductImages(product),
-                        categoryName: product.category_name || product.category || '',
-                        supplierName: product.supplier_name || product.supplier || '',
+                        categoryName: product.category_name || '',
+                        supplierName: product.supplier_name || '',
                       });
                       toast.success('PDF gerado com sucesso!');
                     }}

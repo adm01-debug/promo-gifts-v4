@@ -193,10 +193,11 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
       }
 
       if (data) {
-        const areas = Array.isArray(data.personalization_areas)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const row = data as any;
+        const areas = Array.isArray(row.personalization_areas)
           ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (data.personalization_areas as any[]).map((a: any) => ({
-               
+            (row.personalization_areas as any[]).map((a: any) => ({
               id: a.id || crypto.randomUUID(),
               name: a.name || 'Frente',
               positionX: a.positionX ?? 50,
@@ -210,19 +211,19 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
           : [];
 
         // Restaurar logo do campo logo_data se não estiver nas áreas
-        if (data.logo_data && areas.length > 0 && !areas[0].logoPreview) {
-          areas[0].logoPreview = data.logo_data;
+        if (row.logo_data && areas.length > 0 && !areas[0].logoPreview) {
+          areas[0].logoPreview = row.logo_data;
         }
 
         return {
-          productId: data.product_id,
-          productName: data.product_name,
-          techniqueId: data.technique_id,
-          techniqueName: data.technique_name,
-          clientId: data.client_id,
-          clientName: data.client_name,
+          productId: row.product_id,
+          productName: row.product_name,
+          techniqueId: row.technique_id,
+          techniqueName: row.technique_name,
+          clientId: row.client_id,
+          clientName: row.client_name,
           personalizationAreas: areas,
-          updatedAt: data.updated_at,
+          updatedAt: row.updated_at,
         };
       }
     } catch (err) {

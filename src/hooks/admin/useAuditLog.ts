@@ -226,7 +226,7 @@ export async function fetchAuditHistory(
     return [];
   }
 
-  return (data || []) as AuditLogEntry[];
+  return (data || []) as unknown as AuditLogEntry[];
 }
 
 /**
@@ -279,5 +279,5 @@ export async function fetchAllAuditLogs(
     return [];
   }
 
-  return (data || []) as AuditLogEntry[];
+  return (data || []) as unknown as AuditLogEntry[];
 }

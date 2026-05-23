@@ -206,5 +206,5 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
         personalizationNotes: c.personalization_notes ?? null,
         color: c.color ?? null,
       })) || undefined,
-  };
+  } as unknown as Product;
 }

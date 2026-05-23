@@ -193,9 +193,16 @@ export function ProductRiskDetail({
   }
 
   const daysToStockout = bestVelocity?.days_to_stockout;
-  const isUrgent = daysToStockout !== null && Number.isFinite(daysToStockout) && daysToStockout < 7;
+  const isUrgent =
+    daysToStockout !== null &&
+    daysToStockout !== undefined &&
+    Number.isFinite(daysToStockout) &&
+    daysToStockout < 7;
   const isWarning =
-    daysToStockout !== null && Number.isFinite(daysToStockout) && daysToStockout < 15;
+    daysToStockout !== null &&
+    daysToStockout !== undefined &&
+    Number.isFinite(daysToStockout) &&
+    daysToStockout < 15;
   const trend = safeVelocityTrend(bestVelocity?.velocity_trend);
   const trendDisplay = formatVelocityTrendOperational(trend);
 
@@ -287,7 +294,9 @@ export function ProductRiskDetail({
           icon={Clock}
           label="Dias até acabar"
           value={
-            daysToStockout !== null && Number.isFinite(daysToStockout)
+            daysToStockout !== null &&
+            daysToStockout !== undefined &&
+            Number.isFinite(daysToStockout)
               ? String(Math.round(daysToStockout))
               : '∞'
           }
