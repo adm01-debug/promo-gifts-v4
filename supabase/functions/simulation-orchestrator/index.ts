@@ -5,11 +5,9 @@ import { parseContract } from "../_shared/contracts/index.ts";
 import {
   SimulationOrchestratorSchemas,
 } from "../_shared/contracts/schemas/simulation-orchestrator.ts";
+import { buildPublicCorsHeaders } from "../_shared/cors.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const corsHeaders = buildPublicCorsHeaders();
 
 async function hmacSign(payload: string, secret: string): Promise<string> {
   const enc = new TextEncoder();
