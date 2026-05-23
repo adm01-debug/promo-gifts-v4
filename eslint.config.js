@@ -116,6 +116,36 @@ export default [
       '@typescript-eslint/no-non-null-assertion': 'off',
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       'no-console': 'off',
+
+      // ──────────────────────────────────────────────────────────────
+      // T-FIX-5 (follow-up de T-FIX-4 + bug do "Rose Quartz visível,
+      // 3 idênticos escondidos" no CI run 26303752735).
+      //
+      // Anti-padrão A: forEach() declarando casos de teste
+      //   data.forEach(item => it(item.name, () => { ... }))
+      //
+      // Funciona no Vitest (cada it() é registrado individualmente),
+      // mas é menos idiomático que it.each / describe.each, e variações
+      // próximas (forEach com asserts dentro de it) MASCARAM falhas:
+      // a primeira asserção falha aborta o forEach silenciosamente,
+      // escondendo todas as iterações seguintes. Foi assim que 3 bugs
+      // de contraste WCAG idênticos a Rose Quartz (Hackerman, Frutti di
+      // Mare, Razer) ficaram invisíveis no CI até o T-FIX-4.
+      //
+      // Preferir it.each() / test.each() / describe.each(), que registram
+      // cada caso como teste isolado — todas as falhas surfaceiam na
+      // mesma execução.
+      //
+      // Documentação completa: docs/redeploy/T-FIX-5-LINT-GUARDRAIL.md
+      // ──────────────────────────────────────────────────────────────
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "CallExpression[callee.property.name='forEach'] CallExpression[callee.name=/^(it|test|describe)$/]",
+          message:
+            'Anti-padrão T-FIX-4: forEach() declarando it()/test()/describe() — use it.each(), test.each() ou describe.each() para registrar cada caso como teste isolado e evitar que falhas mascarem umas às outras. Veja docs/redeploy/T-FIX-5-LINT-GUARDRAIL.md',
+        },
+      ],
     },
   },
 
@@ -205,6 +235,17 @@ export default [
       'no-console': 'off',
       // Tests podem usar mocks/stubs com nomes não convencionais
       '@typescript-eslint/naming-convention': 'off',
+
+      // T-FIX-5: mesmo guard de src/ — aplicado também em tests/** para
+      // cobertura completa. Veja docs/redeploy/T-FIX-5-LINT-GUARDRAIL.md
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "CallExpression[callee.property.name='forEach'] CallExpression[callee.name=/^(it|test|describe)$/]",
+          message:
+            'Anti-padrão T-FIX-4: forEach() declarando it()/test()/describe() — use it.each(), test.each() ou describe.each() para registrar cada caso como teste isolado e evitar que falhas mascarem umas às outras. Veja docs/redeploy/T-FIX-5-LINT-GUARDRAIL.md',
+        },
+      ],
     },
     settings: {
       react: { version: 'detect' },

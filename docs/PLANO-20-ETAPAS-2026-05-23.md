@@ -13,7 +13,7 @@
 - [x] **Etapa 2** — Fix 3 empty catches: `ShortcutsHelpDialog.tsx:20`, `EnhancedSpotlight.tsx:25`, `SidebarBrandHeader.tsx:16`
 - [x] **Etapa 3** — Atualizar `.eslint-baseline.json` (capitalizou 31 erros eliminados: 473→442 erros, 409→404 arquivos)
 - [x] **Etapa 4** — T-FIX-3: bump GH Actions (`checkout@v4→v5`, `setup-node@v4→v6`, `upload-artifact@v4→v5`) — 60 usos atualizados em 12 workflows
-- [ ] **Etapa 5** — T-FIX-5: apply `eslint.config.t-fix-5.proposed.js` → `eslint.config.js` + `check:proposed-configs` script
+- [x] **Etapa 5** — T-FIX-5: apply `eslint.config.t-fix-5.proposed.js` → `eslint.config.js` + `check:proposed-configs` script
 
 ### Post-mortem CRM bridge (6-8)
 - [ ] **Etapa 6** — Issue 1: criar `docs/operations/cadastro-secrets-supabase.md` (POP)
