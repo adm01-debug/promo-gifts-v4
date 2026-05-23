@@ -80,13 +80,13 @@ jobs:
       - name: Wait for dev server to be ready
         run: timeout 120 bash -c 'until curl -sf http://localhost:8080 > /dev/null 2>&1; do sleep 1; done'
 
-      # Auditoria: garante que docs/E2E_SMOKE_COVERAGE.md está em dia com
+      # Auditoria: garantes que docs/E2E_SMOKE_COVERAGE.md está em dia com
       # _catalog.ts + SMOKE_COVERAGE. Falha se alguém alterou a suíte sem
       # regenerar o doc (`npm run e2e:smoke-coverage-doc`).
       - name: Validar doc de auditoria do smoke (drift check)
         run: node scripts/e2e-smoke-coverage-doc.mjs --check
 
-      # Garante que TODO test() no spec do smoke está sob describe @smoke.
+      # Garantes que TODO test() no spec do smoke está sob describe @smoke.
       # Tests fora de describe @smoke seriam silenciosamente IGNORADOS pelo
       # gate (project chromium-smoke usa `grep: /@smoke/`). Falha CI cedo.
       - name: 🏷  Validar tags @smoke no spec do gate
@@ -103,10 +103,11 @@ jobs:
       # — sem nenhum job dispatched. Mantida apenas a versão completa abaixo.
       # T14 UPDATE 3 (2026-05-22): adicionado `&& touch playwright-report/.smoke-passed`
       # para criar marker file SOMENTE quando `npx playwright test` retorna
-      # exit 0 explícito. Gate determinístico via hashFiles() em vez de
-      # `outcome` (que era afetado por exit codes ruidosos do Playwright
+      # exit 0 explícito. Gate determinístico via [ -f file ] em vez de
+      # `hashFiles()` (que era afetado por exit codes ruidosos do Playwright
       # mesmo com testes passando — visto no run 26311927286, sha 1fa53507,
       # onde smoke step rodou 2m54s success na API mas gate disparou false-positive).
+      # T14 UPDATE 12: substituído `hashFiles()` por `test -f` que é determinístico.
       - name: Run E2E smoke (gate — para na 1ª falha)
         id: e2e_smoke
         run: |
@@ -130,7 +131,7 @@ jobs:
         run: node scripts/e2e-smoke-summary.mjs || true
 
       - name: 📤 Append SMOKE summary to GitHub UI
-        if: always() && hashFiles('playwright-report/smoke-summary.md') != ''
+        if: always() && test -f playwright-report/smoke-summary.md
         run: |
           {
             echo "## 🚦 E2E Smoke Summary"
@@ -160,7 +161,7 @@ jobs:
           exec > >(tee playwright-report/T14-step-log.txt) 2>&1
 
           echo "================================================================"
-          echo "🔍 SMOKE GATE DIAGNOSTIC (T14 UPDATE 7)"
+          echo "🔍 SMOKE GATE DIAGNOSTIC (T14 UPDATE 12)"
           echo "================================================================"
           echo "Run:        #${{ github.run_number }} (id ${{ github.run_id }})"
           echo "SHA:        ${{ github.sha }}"
@@ -297,14 +298,14 @@ jobs:
           echo "Done."
 
       - name: 🛑 Fail-fast se smoke falhou (gate)
-        if: hashFiles('playwright-report/.smoke-passed') == ''
+        if: "! test -f playwright-report/.smoke-passed"
         run: |
           echo "::error title=Smoke gate failed::Smoke parou na 1ª falha — veja '🚦 E2E Smoke Summary' acima e o artifact 'playwright-report' (screenshots+vídeos+trace)."
           exit 1
 
       # ─── HEADER STICKY GATE ─────────────────────────────────────────────
       # Spec dedicado `e2e/flows/22-header-sticky.spec.ts` que valida que o
-      # `<header data-testid="app-header">` permanece `position: sticky` em
+      # `<header data-testid="app-header\">` permanece `position: sticky` em
       # y≈0 ao rolar — em todas as rotas autenticadas estáticas do catálogo,
       # × 3 viewports (mobile/tablet/desktop), + cenários de pós-login e
       # navegação encadeada entre módulos.
@@ -316,7 +317,7 @@ jobs:
       # do gate acima). Cria próprio marker `.header-sticky-passed` ao passar.
       - name: 🧲 Run E2E header-sticky gate (fail-fast por rota/viewport)
         id: e2e_header_sticky
-        if: hashFiles('playwright-report/.smoke-passed') != ''
+        if: test -f playwright-report/.smoke-passed
         run: |
           npx playwright test \
             e2e/flows/22-header-sticky.spec.ts \
@@ -330,7 +331,7 @@ jobs:
       # T14 UPDATE 3: dispara se o header-sticky rodou (marker do smoke existe)
       # mas não criou o próprio marker — coerente com o gate do smoke.
       - name: 🛑 Fail-fast se header sticky falhou
-        if: hashFiles('playwright-report/.smoke-passed') != '' && hashFiles('playwright-report/.header-sticky-passed') == ''
+        if: test -f playwright-report/.smoke-passed && ! test -f playwright-report/.header-sticky-passed
         run: |
           echo "::error title=Header sticky regression::O Header global deixou de ser sticky em alguma rota/viewport. Spec: e2e/flows/22-header-sticky.spec.ts. Causa raiz típica: 'overflow' / 'transform' / 'filter' em ancestral do <header> em src/components/layout/MainLayout.tsx criando scroll container ou stacking context indevido. Veja o artifact 'playwright-report' (screenshot + vídeo + trace) para a rota específica."
           exit 1
@@ -345,7 +346,7 @@ jobs:
       # credenciais. Quando ausente, step é skipped e o job passa normalmente.
       # T14 UPDATE 3: condicional usa markers do smoke + header-sticky.
       - name: Run E2E regression (cobertura completa — registra todas as falhas)
-        if: hashFiles('playwright-report/.smoke-passed') != '' && hashFiles('playwright-report/.header-sticky-passed') != '' && env.E2E_USER_EMAIL != ''
+        if: test -f playwright-report/.smoke-passed && test -f playwright-report/.header-sticky-passed && env.E2E_USER_EMAIL != ''
         run: |
           # Sem credenciais de autenticação, limita à suíte pública (routes-public)
           # para evitar que centenas de testes autenticados falhem com redirect para
@@ -375,7 +376,7 @@ jobs:
         run: node scripts/e2e-feature-summary.mjs || true
 
       - name: 📤 Append feature summary to GitHub UI
-        if: always() && hashFiles('playwright-report/feature-summary.md') != ''
+        if: always() && test -f playwright-report/feature-summary.md
         run: |
           {
             echo "## 🧪 E2E Feature Summary (regression)"
