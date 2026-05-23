@@ -13,7 +13,7 @@ import {
   createEmptyContact,
   createEmptyPixKey,
   ORGANIZATION_ID,
-} from "./types";
+} from './types';
 
 export function useNewSupplierForm(onCreated: (id: string) => void) {
   const [open, setOpen] = useState(false);
@@ -578,6 +578,13 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
     handleCreate,
   };
 }
+
+/**
+ * Tipo do objeto retornado por `useNewSupplierForm`, derivado diretamente do
+ * hook para permanecer sempre em sincronia. As tabs (`AddressTab`,
+ * `BasicDataTab`, ...) recebem este tipo em vez de `Record<string, unknown>`.
+ */
+export type NewSupplierForm = ReturnType<typeof useNewSupplierForm>;
 
 function buildNotesField(
   notes: string,

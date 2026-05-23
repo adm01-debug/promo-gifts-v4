@@ -189,9 +189,9 @@ export default function AdminProductFormPage() {
       if (!isEdit || skuChanged) {
         const { fetchPromobrindProducts } = await import('@/lib/external-db');
         const existing = await fetchPromobrindProducts({ search: data.sku, limit: 5 });
-        const products = Array.isArray(existing)
+        const products: PromobrindProduct[] = Array.isArray(existing)
           ? existing
-          : (existing as Record<string, unknown>).products || [];
+          : ((existing as { products?: PromobrindProduct[] }).products ?? []);
         const duplicate = products.find(
           (p: PromobrindProduct) => p.sku?.toLowerCase() === data.sku.toLowerCase(),
         );

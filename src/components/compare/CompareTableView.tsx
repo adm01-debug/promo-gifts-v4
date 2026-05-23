@@ -60,6 +60,12 @@ function allEqual<T>(arr: T[]): boolean {
   return arr.every(v => JSON.stringify(v) === first);
 }
 
+/** Lê com segurança um array de strings de um campo do JSONB `tags`. */
+function tagArray(tags: Product["tags"], key: string): string[] {
+  const v = tags?.[key];
+  return Array.isArray(v) ? (v as string[]) : [];
+}
+
 export function CompareTableView({
   entries,
   products,
@@ -89,10 +95,10 @@ export function CompareTableView({
     sku: allEqual(products.map(p => p.sku)),
     category: allEqual(products.map(p => p.category?.name)),
     supplier: allEqual(products.map(p => p.supplier?.name)),
-    isKit: allEqual(products.map(p => p.isKit)),
+    isKit: allEqual(products.map(p => p.is_kit)),
     materials: allEqual(products.map(p => (p.materials ?? []).slice().sort().join("|"))),
-    publico: allEqual(products.map(p => (p.tags?.publicoAlvo ?? []).slice().sort().join("|"))),
-    datas: allEqual(products.map(p => (p.tags?.datasComemorativas ?? []).slice().sort().join("|"))),
+    publico: allEqual(products.map(p => tagArray(p.tags, "publicoAlvo").slice().sort().join("|"))),
+    datas: allEqual(products.map(p => tagArray(p.tags, "datasComemorativas").slice().sort().join("|"))),
     description: allEqual(products.map(p => p.description ?? "")),
     weight: allEqual(products.map(p => p.dimensions?.weight_g ?? null)),
     dims: allEqual(products.map(p => `${p.dimensions?.height_cm ?? ""}x${p.dimensions?.width_cm ?? ""}x${p.dimensions?.length_cm ?? ""}`)),
@@ -121,7 +127,7 @@ export function CompareTableView({
                   className="flex items-center gap-2 px-2 py-1 rounded-lg bg-card border border-border shrink-0 min-w-[180px]"
                 >
                   <img
-                    src={hoveredVariant[entry.index] ?? entry.product.images[0]}
+                    src={hoveredVariant[entry.index] ?? entry.product.images?.[0]}
                     alt={entry.product.name}
                     className="w-8 h-8 rounded object-cover"
                     loading="lazy"
@@ -159,7 +165,7 @@ export function CompareTableView({
                         </button>
                         <div className="flex flex-col items-center gap-2">
                           <img
-                            src={hoveredVariant[entry.index] ?? entry.product.images[0]}
+                            src={hoveredVariant[entry.index] ?? entry.product.images?.[0]}
                             alt={entry.product.name}
                             className="w-24 h-24 rounded-lg object-cover cursor-pointer hover:ring-2 hover:ring-primary transition-all"
                             onClick={() => navigate(`/produto/${entry.product.id}`)}
@@ -175,7 +181,7 @@ export function CompareTableView({
                           {/* Hover swatches → swap header image */}
                           {(entry.product.colors?.length ?? 0) > 1 && (
                             <div className="flex gap-0.5 flex-wrap justify-center">
-                              {entry.product.colors.slice(0, 6).map((c: { name: string; hex?: string }, i: number) => (
+                              {(entry.product.colors ?? []).slice(0, 6).map((c: { name: string; hex?: string }, i: number) => (
                                 <button
                                   key={i}
                                   type="button"
@@ -183,7 +189,7 @@ export function CompareTableView({
                                   style={{ backgroundColor: c.hex }}
                                   title={c.name}
                                   onMouseEnter={() => {
-                                    const altImg = entry.product.images[i] ?? entry.product.images[0];
+                                    const altImg = entry.product.images?.[i] ?? entry.product.images?.[0] ?? null;
                                     setHoveredVariant(prev => ({ ...prev, [entry.index]: altImg }));
                                   }}
                                   onMouseLeave={() => setHoveredVariant(prev => ({ ...prev, [entry.index]: null }))}
@@ -191,7 +197,7 @@ export function CompareTableView({
                               ))}
                             </div>
                           )}
-                          <StockRiskBadge product={entry.product} />
+                          <StockRiskBadge product={entry.product as unknown as Record<string, unknown>} />
                         </div>
                       </div>
                     </motion.th>
@@ -215,10 +221,10 @@ export function CompareTableView({
                 ))}
               </TableRow>
 
-              <HighlightedNumberRow label="Quantidade mínima" products={products} valueFn={(p) => p.minQuantity} renderFn={(v) => `${v} un.`} mode="lower-is-better" />
-              <HighlightedNumberRow label="Custo total (qtd. mín.)" products={products} valueFn={(p) => Number(p.price ?? 0) * Number(p.minQuantity ?? 1)} renderFn={(v) => formatCurrency(v)} mode="lower-is-better" subtitle="TCO" />
+              <HighlightedNumberRow label="Quantidade mínima" products={products} valueFn={(p) => p.min_quantity ?? 0} renderFn={(v) => `${v} un.`} mode="lower-is-better" />
+              <HighlightedNumberRow label="Custo total (qtd. mín.)" products={products} valueFn={(p) => Number(p.price ?? 0) * Number(p.min_quantity ?? 1)} renderFn={(v) => formatCurrency(v)} mode="lower-is-better" subtitle="TCO" />
               <HighlightedNumberRow label="Estoque" products={products} valueFn={(p) => p.stock ?? 0} renderFn={(v) => `${v.toLocaleString("pt-BR")} un.`} mode="higher-is-better" />
-              <HighlightedNumberRow label="Lead time" products={products} valueFn={(p) => leadTimeProxy(p.stockStatus)} renderFn={(v) => leadTimeLabel(v === 1 ? "in-stock" : v === 2 ? "low-stock" : "out-of-stock")} mode="lower-is-better" />
+              <HighlightedNumberRow label="Lead time" products={products} valueFn={(p) => leadTimeProxy(p.stock_status ?? undefined)} renderFn={(v) => leadTimeLabel(v === 1 ? "in-stock" : v === 2 ? "low-stock" : "out-of-stock")} mode="lower-is-better" />
               <HighlightedNumberRow label="Variedade de cores" products={products} valueFn={(p) => (p.colors?.length ?? 0)} renderFn={(v) => `${v} cores`} mode="higher-is-better" />
 
               {showRow("sku") && <SimpleRow label="SKU" products={products} render={(p) => <span className="font-mono text-sm">{p.sku}</span>} />}
@@ -232,14 +238,14 @@ export function CompareTableView({
                 )} />
               )}
               <SimpleRow label="Estoque (status)" products={products} render={(p) => {
-                const s = getStockStatusLabel(p.stockStatus);
+                const s = getStockStatusLabel(p.stock_status ?? "");
                 return (<span className={cn("font-medium", s.color)}>{s.label}</span>);
               }} />
-              {showRow("isKit") && <SimpleRow label="É Kit?" products={products} render={(p) => p.isKit ? <Check className="h-5 w-5 text-success mx-auto" /> : <Minus className="h-5 w-5 text-muted-foreground mx-auto" />} />}
+              {showRow("isKit") && <SimpleRow label="É Kit?" products={products} render={(p) => p.is_kit ? <Check className="h-5 w-5 text-success mx-auto" /> : <Minus className="h-5 w-5 text-muted-foreground mx-auto" />} />}
               <SimpleRow label="Cores disponíveis" products={products} render={(p) => (
                 <div className="flex flex-wrap justify-center gap-1">
-                  {p.colors?.slice(0, 6).map((c: { name: string; hex?: string }, i: number) => <div key={i} className="w-5 h-5 rounded-full border border-border" style={{ backgroundColor: c.hex }} title={c.name} />)}
-                  {(p.colors?.length ?? 0) > 6 && <span className="text-xs text-muted-foreground">+{p.colors.length - 6}</span>}
+                  {(p.colors ?? []).slice(0, 6).map((c: { name: string; hex?: string }, i: number) => <div key={i} className="w-5 h-5 rounded-full border border-border" style={{ backgroundColor: c.hex }} title={c.name} />)}
+                  {(p.colors?.length ?? 0) > 6 && <span className="text-xs text-muted-foreground">+{(p.colors?.length ?? 0) - 6}</span>}
                 </div>
               )} />
               {showRow("materials") && (
@@ -261,16 +267,17 @@ export function CompareTableView({
               {showRow("publico") && (
                 <SimpleRow label="Público-alvo" products={products} render={(p) => (
                   <div className="flex flex-wrap justify-center gap-1">
-                    {(p.tags?.publicoAlvo ?? []).slice(0, 3).map((t: string) => <Badge key={t} variant="outline" className="text-xs">{t}</Badge>)}
+                    {tagArray(p.tags, "publicoAlvo").slice(0, 3).map((t: string) => <Badge key={t} variant="outline" className="text-xs">{t}</Badge>)}
                   </div>
                 )} />
               )}
               {showRow("datas") && (
-                <SimpleRow label="Datas comemorativas" products={products} render={(p) =>
-                  (p.tags?.datasComemorativas ?? []).length > 0
-                    ? <div className="flex flex-wrap justify-center gap-1">{p.tags.datasComemorativas.slice(0, 2).map((d: string) => <Badge key={d} variant="outline" className="text-xs">{d}</Badge>)}</div>
-                    : <Minus className="h-4 w-4 text-muted-foreground mx-auto" />
-                } />
+                <SimpleRow label="Datas comemorativas" products={products} render={(p) => {
+                  const datas = tagArray(p.tags, "datasComemorativas");
+                  return datas.length > 0
+                    ? <div className="flex flex-wrap justify-center gap-1">{datas.slice(0, 2).map((d: string) => <Badge key={d} variant="outline" className="text-xs">{d}</Badge>)}</div>
+                    : <Minus className="h-4 w-4 text-muted-foreground mx-auto" />;
+                }} />
               )}
               {showRow("description") && <SimpleRow label="Descrição" products={products} render={(p) => <p className="text-sm text-muted-foreground line-clamp-3">{p.description}</p>} />}
 
@@ -279,7 +286,7 @@ export function CompareTableView({
                 <TableCell className="font-medium bg-muted/50 sticky left-0">Alternativas</TableCell>
                 {products.map((p, idx) => (
                   <TableCell key={`alt-${idx}`} className="align-top">
-                    <OtherSuppliersRow product={p} formatCurrency={formatCurrency} />
+                    <OtherSuppliersRow product={p as unknown as Record<string, unknown>} formatCurrency={formatCurrency} />
                   </TableCell>
                 ))}
               </TableRow>
