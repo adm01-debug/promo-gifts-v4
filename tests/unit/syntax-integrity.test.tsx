@@ -9,6 +9,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { OnboardingProvider } from "@/contexts/OnboardingContext";
+import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import { SellerCartProvider } from "@/contexts/SellerCartContext";
 import { AriaLiveProvider } from "@/components/a11y";
 
@@ -58,15 +59,17 @@ const AllProviders = ({ children }: { children: React.ReactNode }) => (
     <MemoryRouter>
       <ThemeProvider>
         <AuthProvider>
-          <OnboardingProvider>
-            <SellerCartProvider>
-              <AriaLiveProvider>
-                <TooltipProvider>
-                  {children}
-                </TooltipProvider>
-              </AriaLiveProvider>
-            </SellerCartProvider>
-          </OnboardingProvider>
+          <OrganizationProvider>
+            <OnboardingProvider>
+              <SellerCartProvider>
+                <AriaLiveProvider>
+                  <TooltipProvider>
+                    {children}
+                  </TooltipProvider>
+                </AriaLiveProvider>
+              </SellerCartProvider>
+            </OnboardingProvider>
+          </OrganizationProvider>
         </AuthProvider>
       </ThemeProvider>
 
