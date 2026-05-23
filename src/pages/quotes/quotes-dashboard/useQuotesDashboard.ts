@@ -130,10 +130,10 @@ export function useQuotesDashboard() {
     let averageResponseTime = 0;
     if (withResponse.length > 0) {
       averageResponseTime =
-        withResponse.reduce(
-          (s, q) => s + differenceInHours(new Date(q.client_response_at!), new Date(q.created_at)),
-          0,
-        ) / withResponse.length;
+        withResponse.reduce((s, q) => {
+          if (!q.client_response_at) return s;
+          return s + differenceInHours(new Date(q.client_response_at), new Date(q.created_at));
+        }, 0) / withResponse.length;
     }
 
     const statusCounts = filtered.reduce(
@@ -259,10 +259,11 @@ export function useQuotesDashboard() {
 
     const recentResponses = quotes
       .filter((q) => q.client_response_at)
-      .sort(
-        (a, b) =>
-          new Date(b.client_response_at!).getTime() - new Date(a.client_response_at!).getTime(),
-      )
+      .sort((a, b) => {
+        const bResponseAt = b.client_response_at ?? '';
+        const aResponseAt = a.client_response_at ?? '';
+        return new Date(bResponseAt).getTime() - new Date(aResponseAt).getTime();
+      })
       .slice(0, 10);
 
     if (recentResponses.length > 0) {

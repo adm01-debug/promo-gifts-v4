@@ -31,7 +31,12 @@ export function useKitBuilderQuote() {
         : kitLabel;
 
       const { calculateTotalKitPrice } = await import('@/lib/kit-builder');
-      const { total: kitTotal } = calculateTotalKitPrice(kitState.box, kitState.items, kitState.personalization, kitQuantity);
+      const { total: kitTotal } = calculateTotalKitPrice(
+        kitState.box,
+        kitState.items,
+        kitState.personalization,
+        kitQuantity,
+      );
 
       // Create quote
       const { data: quote, error: quoteError } = await supabase
@@ -43,12 +48,17 @@ export function useKitBuilderQuote() {
           subtotal: kitTotal,
           total: kitTotal,
           notes: `Kit "${kitMetadataNote}" (${kitQuantity}x) — tipo: ${kitState.kitType}`,
-          internal_notes: [
-            kitState.box ? `Caixa: ${kitState.box.name} | Volume: ${kitState.volumeUsagePercent.toFixed(0)}%` : null,
-            kitState.identity?.color || kitState.identity?.icon || kitState.identity?.tag
-              ? `Identidade: cor=${kitState.identity?.color ?? '-'} | ícone=${kitState.identity?.icon ?? '-'} | tag=${kitState.identity?.tag ?? '-'}`
-              : null,
-          ].filter(Boolean).join('\n') || undefined,
+          internal_notes:
+            [
+              kitState.box
+                ? `Caixa: ${kitState.box.name} | Volume: ${kitState.volumeUsagePercent.toFixed(0)}%`
+                : null,
+              kitState.identity?.color || kitState.identity?.icon || kitState.identity?.tag
+                ? `Identidade: cor=${kitState.identity?.color ?? '-'} | ícone=${kitState.identity?.icon ?? '-'} | tag=${kitState.identity?.tag ?? '-'}`
+                : null,
+            ]
+              .filter(Boolean)
+              .join('\n') || undefined,
         })
         .select('id, quote_number')
         .single();
@@ -69,8 +79,10 @@ export function useKitBuilderQuote() {
           unit_price: kitState.box.price,
           sort_order: 0,
           notes: `Dimensões internas: ${kitState.box.internalWidth}×${kitState.box.internalHeight}×${kitState.box.internalDepth}cm`,
-          color_name: null, color_hex: null,
-          kit_group_id: kitGroupId, kit_name: kitLabel,
+          color_name: null,
+          color_hex: null,
+          kit_group_id: kitGroupId,
+          kit_name: kitLabel,
         });
       }
 
@@ -87,7 +99,8 @@ export function useKitBuilderQuote() {
           notes: item.isOptional ? 'Item opcional' : null,
           color_name: item.selectedColor?.name || null,
           color_hex: item.selectedColor?.hex || null,
-          kit_group_id: kitGroupId, kit_name: kitLabel,
+          kit_group_id: kitGroupId,
+          kit_name: kitLabel,
         });
       });
 
@@ -103,7 +116,8 @@ export function useKitBuilderQuote() {
           const personalizations: Array<Record<string, unknown>> = [];
 
           if (kitState.personalization.box.enabled && kitState.box) {
-            const boxQuoteItem = insertedItems.find(i => i.product_id === kitState.box!.id);
+            const boxId = kitState.box.id;
+            const boxQuoteItem = insertedItems.find((i) => i.product_id === boxId);
             if (boxQuoteItem) {
               const bp = kitState.personalization.box;
               personalizations.push({
@@ -121,10 +135,10 @@ export function useKitBuilderQuote() {
             }
           }
 
-          kitState.items.forEach(item => {
+          kitState.items.forEach((item) => {
             const itemP = kitState.personalization.items[item.id];
             if (itemP?.enabled) {
-              const itemQuoteItem = insertedItems.find(i => i.product_id === item.id);
+              const itemQuoteItem = insertedItems.find((i) => i.product_id === item.id);
               if (itemQuoteItem) {
                 const totalQty = item.quantity * kitQuantity;
                 personalizations.push({

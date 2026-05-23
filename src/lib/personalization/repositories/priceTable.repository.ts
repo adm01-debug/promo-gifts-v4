@@ -1,6 +1,6 @@
 /**
  * Repository: Tabelas de Preço
- * 
+ *
  * Abstrai acesso a dados de tabelas de preço.
  * Único ponto de acesso ao BD externo para tabelas.
  */
@@ -8,7 +8,7 @@
 import { invokeExternalDb } from '@/lib/external-db';
 import { transformRawToTabelas, rawToTabelaPrecoTecnica } from '../transformers';
 import type { TabelaPrecoTecnica, CustomizationPriceTableRaw } from '@/types/tecnica-unificada';
-import { logger } from "@/lib/logger";
+import { logger } from '@/lib/logger';
 
 // ============================================
 // TYPES
@@ -25,7 +25,12 @@ export interface PriceTableFilters {
 }
 
 export interface PriceTableOrderBy {
-  column: 'table_code' | 'table_code_option' | 'max_colors' | 'customization_type_name' | 'created_at';
+  column:
+    | 'table_code'
+    | 'table_code_option'
+    | 'max_colors'
+    | 'customization_type_name'
+    | 'created_at';
   ascending?: boolean;
 }
 
@@ -48,7 +53,7 @@ export async function findAll(options: PriceTableQueryOptions = {}): Promise<Tab
 
   // Construir filtros para o BD
   const dbFilters: Record<string, unknown> = {};
-  
+
   if (filters?.isActive !== undefined) {
     dbFilters.is_active = filters.isActive;
   }
@@ -69,10 +74,12 @@ export async function findAll(options: PriceTableQueryOptions = {}): Promise<Tab
     table: 'customization_price_tables',
     operation: 'select',
     filters: Object.keys(dbFilters).length > 0 ? dbFilters : undefined,
-    orderBy: orderBy ? {
-      column: orderBy.column,
-      ascending: orderBy.ascending ?? true,
-    } : { column: 'table_code_option', ascending: true },
+    orderBy: orderBy
+      ? {
+          column: orderBy.column,
+          ascending: orderBy.ascending ?? true,
+        }
+      : { column: 'table_code_option', ascending: true },
     limit,
     offset,
   });
@@ -81,10 +88,12 @@ export async function findAll(options: PriceTableQueryOptions = {}): Promise<Tab
 
   // Filtros pós-query (não suportados diretamente)
   if (filters?.maxColors !== undefined) {
-    tabelas = tabelas.filter(t => t.maxCores !== null && t.maxCores <= filters.maxColors!);
+    const maxColors = filters.maxColors;
+    tabelas = tabelas.filter((t) => t.maxCores !== null && t.maxCores <= maxColors);
   }
   if (filters?.minColors !== undefined) {
-    tabelas = tabelas.filter(t => t.maxCores !== null && t.maxCores >= filters.minColors!);
+    const minColors = filters.minColors;
+    tabelas = tabelas.filter((t) => t.maxCores !== null && t.maxCores >= minColors);
   }
 
   return tabelas;
@@ -142,16 +151,14 @@ export async function findBestMatch(params: {
   const { techniqueName, colors, widthCm, heightCm } = params;
 
   const tabelas = await findByTechniqueName(techniqueName);
-  
+
   if (tabelas.length === 0) return null;
 
   // Encontrar tabela que comporta o número de cores
   let tabelaAdequada: TabelaPrecoTecnica | null = null;
-  
+
   if (colors) {
-    tabelaAdequada = tabelas.find(t => 
-      t.maxCores !== null && t.maxCores >= colors
-    ) || null;
+    tabelaAdequada = tabelas.find((t) => t.maxCores !== null && t.maxCores >= colors) || null;
   }
 
   // Se não encontrou por cores, pegar a com mais cores disponível
@@ -183,7 +190,7 @@ export async function findTechniqueNames(): Promise<string[]> {
     filters: { is_active: true },
   });
 
-  const nomes = [...new Set(result.records.map(r => r.customization_type_name))];
+  const nomes = [...new Set(result.records.map((r) => r.customization_type_name))];
   return nomes.sort();
 }
 
@@ -198,7 +205,7 @@ export async function findTableCodes(): Promise<string[]> {
     filters: { is_active: true },
   });
 
-  const codes = [...new Set(result.records.map(r => r.table_code))];
+  const codes = [...new Set(result.records.map((r) => r.table_code))];
   return codes.sort();
 }
 
@@ -207,13 +214,13 @@ export async function findTableCodes(): Promise<string[]> {
  */
 export async function countByTechnique(): Promise<Map<string, number>> {
   const tabelas = await findAll({ filters: { isActive: true } });
-  
+
   const countMap = new Map<string, number>();
   for (const tabela of tabelas) {
     const count = countMap.get(tabela.nomeTecnica) || 0;
     countMap.set(tabela.nomeTecnica, count + 1);
   }
-  
+
   return countMap;
 }
 
