@@ -37,7 +37,7 @@ jobs:
     name: Verify push to main matches accepted patterns
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           # fetch-depth: 0 → histórico completo, para auditar todos os commits do push
           fetch-depth: 0
