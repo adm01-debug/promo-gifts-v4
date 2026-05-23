@@ -7,16 +7,29 @@ import { axe } from "../../a11y/axe-helper";
 const setSecretMock = vi.fn();
 const rotateSecretMock = vi.fn();
 const getRotationHistoryMock = vi.fn().mockResolvedValue([]);
-vi.mock("@/hooks/useSecretsManager", () => ({
-  useSecretsManager: () => ({
-    setSecret: setSecretMock,
-    rotateSecret: rotateSecretMock,
-    getRotationHistory: getRotationHistoryMock,
-  }),
-}));
-vi.mock("@/hooks/useConnectionTestDetails", () => ({
-  useConnectionTestDetails: () => ({ details: null, loading: false, error: null, refresh: vi.fn() }),
-}));
+vi.mock("@/hooks/admin", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/hooks/admin")>();
+  return {
+    ...actual,
+    useSecretsManager: () => ({
+      setSecret: setSecretMock,
+      rotateSecret: rotateSecretMock,
+      getRotationHistory: getRotationHistoryMock,
+      isLoading: false,
+      secrets: [],
+      listError: null,
+      list: vi.fn(),
+      refreshCache: vi.fn(),
+    }),
+  };
+});
+vi.mock("@/hooks/intelligence", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/hooks/intelligence")>();
+  return {
+    ...actual,
+    useConnectionTestDetails: () => ({ details: null, loading: false, error: null, refetch: vi.fn() }),
+  };
+});
 vi.mock("@/components/admin/connections/CredentialsSourceFilterContext", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/components/admin/connections/CredentialsSourceFilterContext")>();
   return {
