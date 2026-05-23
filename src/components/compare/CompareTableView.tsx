@@ -11,7 +11,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { X, Check, Minus, Crown, AlertTriangle, ShieldCheck } from "lucide-react";
+import { X, Check, Minus, Crown, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useComparisonHighlight, highlightClasses } from "./ComparisonHighlights";
@@ -19,9 +19,9 @@ import { PriceSparkline } from "./PriceSparkline";
 import { StockRiskBadge } from "./StockRiskBadge";
 import { OtherSuppliersRow } from "./OtherSuppliersRow";
 import type { CompareVariantInfo } from "@/stores/useComparisonStore";
-import type { Product } from "@/types/product";
+import type { Product } from "@/types/product-catalog";
 
-interface CompareEntry {
+export interface CompareEntry {
   product: Product;
   variant?: CompareVariantInfo;
   index: number;
@@ -60,12 +60,6 @@ function allEqual<T>(arr: T[]): boolean {
   return arr.every(v => JSON.stringify(v) === first);
 }
 
-/** Lê com segurança um array de strings de um campo do JSONB `tags`. */
-function tagArray(tags: Product["tags"], key: string): string[] {
-  const v = tags?.[key];
-  return Array.isArray(v) ? (v as string[]) : [];
-}
-
 export function CompareTableView({
   entries,
   products,
@@ -95,10 +89,10 @@ export function CompareTableView({
     sku: allEqual(products.map(p => p.sku)),
     category: allEqual(products.map(p => p.category?.name)),
     supplier: allEqual(products.map(p => p.supplier?.name)),
-    isKit: allEqual(products.map(p => p.is_kit)),
+    isKit: allEqual(products.map(p => p.isKit)),
     materials: allEqual(products.map(p => (p.materials ?? []).slice().sort().join("|"))),
-    publico: allEqual(products.map(p => tagArray(p.tags, "publicoAlvo").slice().sort().join("|"))),
-    datas: allEqual(products.map(p => tagArray(p.tags, "datasComemorativas").slice().sort().join("|"))),
+    publico: allEqual(products.map(p => (p.tags?.publicoAlvo ?? []).slice().sort().join("|"))),
+    datas: allEqual(products.map(p => (p.tags?.datasComemorativas ?? []).slice().sort().join("|"))),
     description: allEqual(products.map(p => p.description ?? "")),
     weight: allEqual(products.map(p => p.dimensions?.weight_g ?? null)),
     dims: allEqual(products.map(p => `${p.dimensions?.height_cm ?? ""}x${p.dimensions?.width_cm ?? ""}x${p.dimensions?.length_cm ?? ""}`)),
@@ -197,7 +191,7 @@ export function CompareTableView({
                               ))}
                             </div>
                           )}
-                          <StockRiskBadge product={entry.product as unknown as Record<string, unknown>} />
+                          <StockRiskBadge product={entry.product} />
                         </div>
                       </div>
                     </motion.th>
@@ -221,27 +215,26 @@ export function CompareTableView({
                 ))}
               </TableRow>
 
-              <HighlightedNumberRow label="Quantidade mínima" products={products} valueFn={(p) => p.min_quantity ?? 0} renderFn={(v) => `${v} un.`} mode="lower-is-better" />
-              <HighlightedNumberRow label="Custo total (qtd. mín.)" products={products} valueFn={(p) => Number(p.price ?? 0) * Number(p.min_quantity ?? 1)} renderFn={(v) => formatCurrency(v)} mode="lower-is-better" subtitle="TCO" />
+              <HighlightedNumberRow label="Quantidade mínima" products={products} valueFn={(p) => p.minQuantity ?? 0} renderFn={(v) => `${v} un.`} mode="lower-is-better" />
+              <HighlightedNumberRow label="Custo total (qtd. mín.)" products={products} valueFn={(p) => Number(p.price ?? 0) * Number(p.minQuantity ?? 1)} renderFn={(v) => formatCurrency(v)} mode="lower-is-better" subtitle="TCO" />
               <HighlightedNumberRow label="Estoque" products={products} valueFn={(p) => p.stock ?? 0} renderFn={(v) => `${v.toLocaleString("pt-BR")} un.`} mode="higher-is-better" />
-              <HighlightedNumberRow label="Lead time" products={products} valueFn={(p) => leadTimeProxy(p.stock_status ?? undefined)} renderFn={(v) => leadTimeLabel(v === 1 ? "in-stock" : v === 2 ? "low-stock" : "out-of-stock")} mode="lower-is-better" />
+              <HighlightedNumberRow label="Lead time" products={products} valueFn={(p) => leadTimeProxy(p.stockStatus ?? undefined)} renderFn={(v) => leadTimeLabel(v === 1 ? "in-stock" : v === 2 ? "low-stock" : "out-of-stock")} mode="lower-is-better" />
               <HighlightedNumberRow label="Variedade de cores" products={products} valueFn={(p) => (p.colors?.length ?? 0)} renderFn={(v) => `${v} cores`} mode="higher-is-better" />
 
               {showRow("sku") && <SimpleRow label="SKU" products={products} render={(p) => <span className="font-mono text-sm">{p.sku}</span>} />}
-              {showRow("category") && <SimpleRow label="Categoria" products={products} render={(p) => <Badge variant="outline">{p.category?.icon} {p.category?.name}</Badge>} />}
+              {showRow("category") && <SimpleRow label="Categoria" products={products} render={(p) => <Badge variant="outline">{p.category?.name}</Badge>} />}
               {showRow("supplier") && (
                 <SimpleRow label="Fornecedor" products={products} render={(p) => (
                   <div className="flex items-center justify-center gap-1.5">
-                    {p.supplier?.verified && <ShieldCheck className="h-3.5 w-3.5 text-success" />}
                     <span>{p.supplier?.name}</span>
                   </div>
                 )} />
               )}
               <SimpleRow label="Estoque (status)" products={products} render={(p) => {
-                const s = getStockStatusLabel(p.stock_status ?? "");
+                const s = getStockStatusLabel(p.stockStatus ?? "");
                 return (<span className={cn("font-medium", s.color)}>{s.label}</span>);
               }} />
-              {showRow("isKit") && <SimpleRow label="É Kit?" products={products} render={(p) => p.is_kit ? <Check className="h-5 w-5 text-success mx-auto" /> : <Minus className="h-5 w-5 text-muted-foreground mx-auto" />} />}
+              {showRow("isKit") && <SimpleRow label="É Kit?" products={products} render={(p) => p.isKit ? <Check className="h-5 w-5 text-success mx-auto" /> : <Minus className="h-5 w-5 text-muted-foreground mx-auto" />} />}
               <SimpleRow label="Cores disponíveis" products={products} render={(p) => (
                 <div className="flex flex-wrap justify-center gap-1">
                   {(p.colors ?? []).slice(0, 6).map((c: { name: string; hex?: string }, i: number) => <div key={i} className="w-5 h-5 rounded-full border border-border" style={{ backgroundColor: c.hex }} title={c.name} />)}
@@ -267,13 +260,13 @@ export function CompareTableView({
               {showRow("publico") && (
                 <SimpleRow label="Público-alvo" products={products} render={(p) => (
                   <div className="flex flex-wrap justify-center gap-1">
-                    {tagArray(p.tags, "publicoAlvo").slice(0, 3).map((t: string) => <Badge key={t} variant="outline" className="text-xs">{t}</Badge>)}
+                    {(p.tags?.publicoAlvo ?? []).slice(0, 3).map((t: string) => <Badge key={t} variant="outline" className="text-xs">{t}</Badge>)}
                   </div>
                 )} />
               )}
               {showRow("datas") && (
                 <SimpleRow label="Datas comemorativas" products={products} render={(p) => {
-                  const datas = tagArray(p.tags, "datasComemorativas");
+                  const datas = p.tags?.datasComemorativas ?? [];
                   return datas.length > 0
                     ? <div className="flex flex-wrap justify-center gap-1">{datas.slice(0, 2).map((d: string) => <Badge key={d} variant="outline" className="text-xs">{d}</Badge>)}</div>
                     : <Minus className="h-4 w-4 text-muted-foreground mx-auto" />;
@@ -286,7 +279,7 @@ export function CompareTableView({
                 <TableCell className="font-medium bg-muted/50 sticky left-0">Alternativas</TableCell>
                 {products.map((p, idx) => (
                   <TableCell key={`alt-${idx}`} className="align-top">
-                    <OtherSuppliersRow product={p as unknown as Record<string, unknown>} formatCurrency={formatCurrency} />
+                    <OtherSuppliersRow product={p} formatCurrency={formatCurrency} />
                   </TableCell>
                 ))}
               </TableRow>
