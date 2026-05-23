@@ -205,8 +205,8 @@ export default function QuoteViewPage() {
                   <DropdownMenuItem
                     onClick={async () => {
                       try {
-                        // rls-allow: lookup por id; RLS valida ownership
                         await supabase
+                          // rls-allow: lookup por id; RLS valida ownership
                           .from('quotes')
                           .update({ status: 'pending' } as Record<string, unknown>)
                           .eq('id', quote.id);
