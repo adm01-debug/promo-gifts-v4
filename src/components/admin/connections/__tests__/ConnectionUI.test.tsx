@@ -3,8 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ConnectionsOverviewTable } from '../ConnectionsOverviewTable';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/AuthContext';
-import { useConnectionsOverview } from '@/hooks/intelligence';
-import { useConnectionTester } from '@/hooks/intelligence';
+import { useConnectionTester, useConnectionsOverview } from '@/hooks/intelligence';
 
 // Mocks
 vi.mock('@/contexts/AuthContext', () => ({
@@ -43,6 +42,10 @@ vi.mock('@/hooks/intelligence', () => ({
 }));
 
 describe('ConnectionsOverviewTable Interações e Acessibilidade', () => {
+  const useAuthMock = vi.mocked(useAuth);
+  const useConnectionsOverviewMock = vi.mocked(useConnectionsOverview);
+  const useConnectionTesterMock = vi.mocked(useConnectionTester);
+
   const mockRows = [
     {
       id: '1',
@@ -57,13 +60,13 @@ describe('ConnectionsOverviewTable Interações e Acessibilidade', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useAuth as any).mockReturnValue({ isAdmin: true });
-    (useConnectionsOverview as any).mockReturnValue({
+    useAuthMock.mockReturnValue({ isAdmin: true });
+    useConnectionsOverviewMock.mockReturnValue({
       rows: mockRows,
       loading: false,
       refresh: vi.fn(),
     });
-    (useConnectionTester as any).mockReturnValue({ test: vi.fn(), testing: false });
+    useConnectionTesterMock.mockReturnValue({ test: vi.fn(), testing: false });
   });
 
   it('deve permitir focar e navegar nos botões de ação via teclado', () => {

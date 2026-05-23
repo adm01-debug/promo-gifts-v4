@@ -2,8 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ConnectionsOverviewTable } from '../ConnectionsOverviewTable';
 import { useAuth } from '@/contexts/AuthContext';
-import { useConnectionsOverview } from '@/hooks/intelligence';
-import { useConnectionTester } from '@/hooks/intelligence';
+import { useConnectionTester, useConnectionsOverview } from '@/hooks/intelligence';
 import { useConsecutiveFailures } from '@/hooks/common';
 import { useSecretsManager } from '@/hooks/admin';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -38,6 +37,12 @@ vi.mock('@/hooks/intelligence', () => ({
 }));
 
 describe('ConnectionsOverviewTable Regression Tests', () => {
+  const useAuthMock = vi.mocked(useAuth);
+  const useConnectionsOverviewMock = vi.mocked(useConnectionsOverview);
+  const useConnectionTesterMock = vi.mocked(useConnectionTester);
+  const useConsecutiveFailuresMock = vi.mocked(useConsecutiveFailures);
+  const useSecretsManagerMock = vi.mocked(useSecretsManager);
+
   const mockRows = [
     {
       key: 'conn-1',
@@ -69,23 +74,23 @@ describe('ConnectionsOverviewTable Regression Tests', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useAuth as any).mockReturnValue({ isAdmin: true });
-    (useConnectionsOverview as any).mockReturnValue({
+    useAuthMock.mockReturnValue({ isAdmin: true });
+    useConnectionsOverviewMock.mockReturnValue({
       rows: mockRows,
       loading: false,
       refreshing: false,
       refresh: vi.fn(),
       patchRow: vi.fn(),
     });
-    (useConnectionTester as any).mockReturnValue({
+    useConnectionTesterMock.mockReturnValue({
       test: vi.fn(),
       testing: false,
     });
-    (useConsecutiveFailures as any).mockReturnValue({
+    useConsecutiveFailuresMock.mockReturnValue({
       map: new Map(),
       loading: false,
     });
-    (useSecretsManager as any).mockReturnValue({
+    useSecretsManagerMock.mockReturnValue({
       secrets: [],
       list: vi.fn(),
     });
@@ -118,7 +123,7 @@ describe('ConnectionsOverviewTable Regression Tests', () => {
 
   it('should trigger refresh when button is clicked', async () => {
     const refreshMock = vi.fn();
-    (useConnectionsOverview as any).mockReturnValue({
+    useConnectionsOverviewMock.mockReturnValue({
       rows: mockRows,
       loading: false,
       refreshing: false,
@@ -139,7 +144,7 @@ describe('ConnectionsOverviewTable Regression Tests', () => {
   });
 
   it('should handle empty state', async () => {
-    (useConnectionsOverview as any).mockReturnValue({
+    useConnectionsOverviewMock.mockReturnValue({
       rows: [],
       loading: false,
       refreshing: false,
