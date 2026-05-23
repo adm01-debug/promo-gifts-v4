@@ -147,18 +147,16 @@ Trabalho mecânico mas precisa varredura em 28 arquivos. **Estimativa: 1-2h.**
 
 ---
 
-#### B-4 · GitHub Actions em `@v4` (T-FIX-3) — **CORRIGIDO NESTE PR**
+#### B-4 · GitHub Actions em versões deprecadas (T-FIX-3) — **JÁ CORRIGIDO no código atual** ✅
 
 **Origem:** STATUS.md "Cutoff iminente 2026-06-02".
 
-**Verificado:** todos os 13 workflows usavam:
-- `actions/checkout@v4` (26 ocorrências)
-- `actions/setup-node@v4` (19 ocorrências)
-- `actions/upload-artifact@v4` (15 ocorrências)
+**Status atual (verificado via grep em `.github/workflows/`):**
+- `actions/checkout@v5`
+- `actions/setup-node@v6`
+- `actions/upload-artifact@v5`
 
-**Fix aplicado (este PR):** sed mass replace para `@v5/@v6/@v5` respectivamente, conforme spec do T-FIX-3 (`SESSIONS.md`).
-Não mexi em `actions/cache@v4` e `actions/github-script@v8` que já estão em versões correntes.
-
+**Observação:** `actions/cache@v4` e `actions/github-script@v8` permanecem em uso (já estão em versões correntes no projeto).
 **Verificação local:**
 ```
 26 actions/checkout@v5
