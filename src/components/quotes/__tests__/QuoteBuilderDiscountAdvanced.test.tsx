@@ -1,13 +1,14 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 import { QuoteBuilderSummaryColumn } from '../QuoteBuilderSummaryColumn';
+import type { QuoteItem } from '@/hooks/quotes';
 
 describe('QuoteBuilderSummaryColumn Advanced Discount Scenarios', () => {
   const formatCurrency = (v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
   
   const defaultProps = {
-    items: [{ id: '1', product_name: 'Item 1', quantity: 1, unit_price: 1000, product_sku: 'SKU-1' } as any],
+    items: [{ id: '1', product_name: 'Item 1', quantity: 1, unit_price: 1000, product_sku: 'SKU-1' } as unknown as QuoteItem],
     activeItemIndex: null,
     setActiveItemIndex: vi.fn(),
     removeItem: vi.fn(),
@@ -34,7 +35,7 @@ describe('QuoteBuilderSummaryColumn Advanced Discount Scenarios', () => {
     const setDiscountValue = vi.fn();
     render(<QuoteBuilderSummaryColumn {...defaultProps} setDiscountValue={setDiscountValue} />);
     
-    const input = screen.getByPlaceholderText('0%');
+    const input = screen.getByTestId('quote-discount-input');
     fireEvent.change(input, { target: { value: '110' } });
     
     // CurrencyInput should show range error
@@ -51,7 +52,7 @@ describe('QuoteBuilderSummaryColumn Advanced Discount Scenarios', () => {
       />
     );
     
-    const input = screen.getByPlaceholderText('R$ 0,00');
+    const input = screen.getByTestId('quote-discount-input');
     fireEvent.change(input, { target: { value: '1500' } });
     
     expect(await screen.findByText(/Valor máximo é/)).toBeInTheDocument();
@@ -72,7 +73,7 @@ describe('QuoteBuilderSummaryColumn Advanced Discount Scenarios', () => {
       />
     );
     
-    const input = screen.getByPlaceholderText('R$ 0,00');
+    const input = screen.getByTestId('quote-discount-input');
     
     // Should allow 1100
     fireEvent.change(input, { target: { value: '1100' } });
