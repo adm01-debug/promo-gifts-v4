@@ -16,7 +16,7 @@
 - [x] **Etapa 5** — T-FIX-5: apply `eslint.config.t-fix-5.proposed.js` → `eslint.config.js` + `check:proposed-configs` script
 
 ### Post-mortem CRM bridge (6-8)
-- [ ] **Etapa 6** — Issue 1: criar `docs/operations/cadastro-secrets-supabase.md` (POP)
+- [x] **Etapa 6** — Issue 1: criar `docs/operations/cadastro-secrets-supabase.md` (POP)
 - [ ] **Etapa 7** — Issue 2: adicionar `validateUrlFormat` em `supabase/functions/_shared/connection-test-runner.ts`
 - [ ] **Etapa 8** — Issue 2: testes de `validateUrlFormat` (URL válida, dashboard, trailing slash, path, vazia, sem https)
 
