@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import type { KitState } from '@/lib/kit-builder';
+import { sanitizeMessage } from '@/lib/security/sanitize-message';
 
 // ============================================
 // TYPES
@@ -123,7 +124,7 @@ export function useCustomKitPersistence() {
       toast.success('Kit salvo com sucesso!');
     },
     onError: (err: Error) => {
-      toast.error(`Erro ao salvar kit: ${err.message}`);
+      toast.error('Erro ao salvar kit', { description: sanitizeMessage(err) });
     },
   });
 
@@ -143,7 +144,7 @@ export function useCustomKitPersistence() {
       toast.success('Kit removido');
     },
     onError: (err: Error) => {
-      toast.error(`Erro ao remover: ${err.message}`);
+      toast.error('Erro ao remover', { description: sanitizeMessage(err) });
     },
   });
 

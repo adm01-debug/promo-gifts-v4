@@ -5,6 +5,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { sanitizeMessage } from '@/lib/security/sanitize-message';
 
 export interface IdentitySuggestion {
   tag: string;
@@ -38,7 +39,7 @@ export function useKitIdentitySuggestion() {
       setSuggestion(s);
       return s;
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Falha ao sugerir identidade');
+      toast.error('Falha ao sugerir identidade', { description: sanitizeMessage(e) });
       return null;
     } finally {
       setIsLoading(false);
