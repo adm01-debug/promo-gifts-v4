@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Verification completed for authenticated user');
+    console.log('Verification completed');
 
     return new Response(
       JSON.stringify({ success: true, message: 'Email verificado com sucesso' }),
