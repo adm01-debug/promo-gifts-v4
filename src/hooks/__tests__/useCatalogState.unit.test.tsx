@@ -7,13 +7,17 @@ import { ProductsProvider } from '@/contexts/ProductsContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import React from 'react';
+import type * as ProductsBarrel from '@/hooks/products';
 
 // useCatalogState imports its internal hooks from the @/hooks/products barrel.
 // We must mock the barrel as a SINGLE module replacement (multiple vi.mock calls
 // for the same path overwrite each other — only the last one survives).
 // importOriginal() preserves any re-exports we don't override.
+// Type parameter is required so TS sees `actual` as an object (TS2698 otherwise).
+// Use `import type * as` (top of file) instead of inline `import()` to satisfy
+// @typescript-eslint/consistent-type-imports.
 vi.mock('@/hooks/products', async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = await importOriginal<typeof ProductsBarrel>();
   return {
     ...actual,
     useProductsCatalog: vi.fn(() => ({
