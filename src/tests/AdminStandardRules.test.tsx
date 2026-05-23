@@ -100,17 +100,18 @@ describe('Admin Module Programmatic Standard Rules', () => {
   // reporter ("Page X > renders PageSEO" em vez de "X renders PageSEO").
   const adminPages = Object.entries(adminPageModules)
     .map(([path, mod]: [string, unknown]) => {
-      const Component = (mod as Record<string, unknown>).default;
+      const component = (mod as Record<string, unknown>).default;
       const pageName = path.split('/').pop()?.replace('.tsx', '') ?? 'unknown';
-      return { pageName, Component };
+      return { pageName, component };
     })
-    .filter(({ Component }) => typeof Component === 'function')
-    .map(({ pageName, Component }) => ({
+    .filter(({ component }) => typeof component === 'function')
+    .map(({ pageName, component }) => ({
       pageName,
-      PageComponent: Component as React.ComponentType,
+      pageComponent: component as React.ComponentType,
     }));
 
-  describe.each(adminPages)('Page $pageName', ({ pageName, PageComponent }) => {
+  describe.each(adminPages)('Page $pageName', (page) => {
+    const { pageName, pageComponent: PageComponent } = page;
     it('should render with correct PageSEO config', async () => {
       render(<PageComponent />, { wrapper });
 
@@ -134,7 +135,7 @@ describe('Admin Module Programmatic Standard Rules', () => {
       const container = renderRoot.querySelector('[class*="max-w-"][class*="mx-auto"]');
       expect(
         container,
-        `Page ${pageName} está faltando um container padronizado com 'max-w-*' e 'mx-auto' juntos no mesmo elemento.`
+        `Page ${pageName} está faltando um container padronizado com 'max-w-*' e 'mx-auto' juntos no mesmo elemento.`,
       ).not.toBeNull();
     });
   });
