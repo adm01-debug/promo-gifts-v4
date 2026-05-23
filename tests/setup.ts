@@ -53,6 +53,40 @@ global.ResizeObserver = class ResizeObserver {
   unobserve() {}
 } as any;
 
+// Stub de WebSocket: o Supabase Realtime (.channel()) abre uma conexão real
+// via undici quando componentes/hooks com realtime são montados em testes.
+// O undici tenta dispatchEvent com um Event incompatível com o jsdom, lançando
+// "TypeError: The 'event' argument must be an instance of Event" como uncaught
+// exception (vitest reporta como unhandled error e pode causar falso-positivo).
+// Substituímos por um stub no-op que nunca conecta — testes não dependem de
+// realtime; quem precisar pode mockar explicitamente.
+global.WebSocket = class WebSocket {
+  static readonly CONNECTING = 0;
+  static readonly OPEN = 1;
+  static readonly CLOSING = 2;
+  static readonly CLOSED = 3;
+  readonly CONNECTING = 0;
+  readonly OPEN = 1;
+  readonly CLOSING = 2;
+  readonly CLOSED = 3;
+  readyState = 3; // CLOSED — nunca "conecta"
+  url = '';
+  onopen: ((ev: unknown) => void) | null = null;
+  onclose: ((ev: unknown) => void) | null = null;
+  onerror: ((ev: unknown) => void) | null = null;
+  onmessage: ((ev: unknown) => void) | null = null;
+  constructor(url?: string | URL) {
+    this.url = url ? String(url) : '';
+  }
+  send() {}
+  close() {}
+  addEventListener() {}
+  removeEventListener() {}
+  dispatchEvent() {
+    return true;
+  }
+} as unknown as typeof WebSocket;
+
 // Mock do window.scrollTo (jsdom não implementa)
 // Necessário para testes que usam createMemoryRouter + back/forward navigation
 // (React Router chama scrollTo internamente para restaurar scroll position).
