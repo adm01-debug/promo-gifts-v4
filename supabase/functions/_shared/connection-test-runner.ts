@@ -172,6 +172,34 @@ async function pingWebhook(url: string, timeoutMs: number) {
   } finally { cancel(); }
 }
 
+// Fail-fast format validation. Catches the incident-2026-05-22 footgun where a
+// Supabase Dashboard URL (https://supabase.com/dashboard/project/<ref>) was
+// pasted instead of the REST URL (https://<ref>.supabase.co). Without this,
+// the call only fails inside the actual fetch — turning a config typo into a
+// generic 5xx in production logs.
+export function validateUrlFormat(url: string, type: ConnectionType): string | null {
+  if (!url) return null;
+  if (type === "supabase") {
+    if (!/^https:\/\/[a-z0-9]{20}\.supabase\.co$/.test(url)) {
+      return `URL_MALFORMED: esperado https://<project_ref>.supabase.co, recebido "${url.slice(0, 40)}${url.length > 40 ? "..." : ""}"`;
+    }
+    return null;
+  }
+  if (type === "bitrix24") {
+    if (!url.startsWith("https://")) {
+      return "URL_MALFORMED: webhook Bitrix24 deve começar com https://";
+    }
+    return null;
+  }
+  if (type === "n8n" || type === "webhook_outbound") {
+    if (!/^https?:\/\//.test(url)) {
+      return `URL_MALFORMED: ${type} URL deve começar com http(s)://`;
+    }
+    return null;
+  }
+  return null;
+}
+
 export async function runConnectionTest(opts: RunOptions): Promise<RunResult> {
   const { type, config = {}, env_key, service, created_by } = opts;
   const triggered_by: TriggeredBy = opts.triggered_by ?? "manual";
@@ -193,20 +221,40 @@ export async function runConnectionTest(opts: RunOptions): Promise<RunResult> {
       const url = config.url || (await getCredential(`${prefix}_URL`, service)) || "";
       const key = config.key || (await getCredential(`${prefix}_SERVICE_ROLE_KEY`, service)) || "";
       if (!url || !key) throw new Error("URL/key ausente — configure as credenciais primeiro");
-      result = await pingSupabase(url, key, timeoutMs);
+      const urlErr = validateUrlFormat(url, type);
+      if (urlErr) {
+        result = { ok: false, error: urlErr, error_kind: "config" };
+      } else {
+        result = await pingSupabase(url, key, timeoutMs);
+      }
     } else if (type === "bitrix24") {
       const url = config.webhook_url || (await getCredential("BITRIX24_WEBHOOK_URL", service)) || "";
       if (!url) throw new Error("Webhook URL ausente");
-      result = await pingBitrix(url, timeoutMs);
+      const urlErr = validateUrlFormat(url, type);
+      if (urlErr) {
+        result = { ok: false, error: urlErr, error_kind: "config" };
+      } else {
+        result = await pingBitrix(url, timeoutMs);
+      }
     } else if (type === "n8n") {
       const base = config.base_url || (await getCredential("N8N_BASE_URL", service)) || "";
       const key = config.api_key || (await getCredential("N8N_API_KEY", service)) || undefined;
       if (!base) throw new Error("Base URL ausente");
-      result = await pingN8n(base, key ?? undefined, timeoutMs);
+      const urlErr = validateUrlFormat(base, type);
+      if (urlErr) {
+        result = { ok: false, error: urlErr, error_kind: "config" };
+      } else {
+        result = await pingN8n(base, key ?? undefined, timeoutMs);
+      }
     } else if (type === "webhook_outbound") {
       const url = config.url || "";
       if (!url) throw new Error("URL ausente");
-      result = await pingWebhook(url, timeoutMs);
+      const urlErr = validateUrlFormat(url, type);
+      if (urlErr) {
+        result = { ok: false, error: urlErr, error_kind: "config" };
+      } else {
+        result = await pingWebhook(url, timeoutMs);
+      }
     } else if (type === "mcp") {
       const { count } = await service
         .from("mcp_api_keys")
