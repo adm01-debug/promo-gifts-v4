@@ -44,8 +44,8 @@ export interface RouteEntry {
  * Públicas (sem auth)
  * ============================================================ */
 export const PUBLIC_ROUTES: RouteEntry[] = [
-  { path: "/login", area: "public", feature: "login", smoke: true, description: "Tela de login" },
-  { path: "/reset-password", area: "public", feature: "reset-password", smoke: true, description: "Recuperação de senha" },
+  { path: "/login", area: "public", feature: "login", description: "Tela de login" },
+  { path: "/reset-password", area: "public", feature: "reset-password", description: "Recuperação de senha" },
   { path: `/approve/${SAMPLE_TOKEN}`, area: "public", feature: "quote-public-approval" },
   { path: `/proposta/${SAMPLE_TOKEN}`, area: "public", feature: "quote-public-proposal" },
   { path: `/kit/${SAMPLE_TOKEN}`, area: "public", feature: "kit-public" },
