@@ -59,7 +59,7 @@
 
 ### 1.1 P0 — Segurança e integridade
 
-#### B-1 · `validateUrlFormat` ausente em `connection-test-runner.ts` (Issue 2 do post-mortem 2026-05-22) — **CORRIGIDO NESTE PR**
+#### B-1 · `validateUrlFormat` ausente em `connection-test-runner.ts` (Issue 2 do post-mortem 2026-05-22) — **JÁ CORRIGIDO NO CÓDIGO ATUAL** ✅
 
 **Arquivo:** `supabase/functions/_shared/connection-test-runner.ts`
 **Origem:** post-mortem `docs/incidents/2026-05-22-crm-db-bridge-url-malformada.md` + `docs/issues-pendentes-2026-05-22.md` Issue 2.
