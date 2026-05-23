@@ -95,7 +95,7 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
         let safeTechniqueId: string | null = null;
         if (data.techniqueId) {
           const { data: techRow } = await supabase
-            .from('personalization_techniques')
+            .from('personalization_techniques' as any) // eslint-disable-line @typescript-eslint/no-explicit-any
             .select('id')
             .eq('id', data.techniqueId)
             .maybeSingle();
@@ -108,7 +108,7 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
         let safeClientId: string | null = null;
         if (data.clientId) {
           const { data: clientRow } = await supabase
-            .from('bitrix_clients')
+            .from('bitrix_clients' as any) // eslint-disable-line @typescript-eslint/no-explicit-any
             .select('id')
             .eq('id', data.clientId)
             .maybeSingle();
@@ -133,7 +133,7 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
 
         // Try upsert first
         const { error: upsertError } = await supabase
-          .from('mockup_drafts')
+          .from('mockup_drafts' as any) // eslint-disable-line @typescript-eslint/no-explicit-any
           .upsert(payload, { onConflict: 'user_id,draft_key' });
 
         if (upsertError) {
@@ -146,7 +146,7 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
               ...safePayload
             } = payload as Record<string, unknown>;
             const { error: updateError } = await supabase
-              .from('mockup_drafts')
+              .from('mockup_drafts' as any) // eslint-disable-line @typescript-eslint/no-explicit-any
               .update({
                 ...safePayload,
                 product_id: null,
@@ -182,7 +182,7 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
 
     try {
       const { data, error: fetchError } = await supabase
-        .from('mockup_drafts')
+        .from('mockup_drafts' as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .select('*')
         .eq('user_id', user.id)
         .eq('draft_key', draftKey)
@@ -194,7 +194,9 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
 
       if (data) {
         const areas = Array.isArray(data.personalization_areas)
-          ? (data.personalization_areas as unknown[]).map((a) => ({
+          ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (data.personalization_areas as any[]).map((a: any) => ({
+               
               id: a.id || crypto.randomUUID(),
               name: a.name || 'Frente',
               positionX: a.positionX ?? 50,
@@ -290,7 +292,7 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
     if (user) {
       try {
         await supabase
-          .from('mockup_drafts')
+          .from('mockup_drafts' as any) // eslint-disable-line @typescript-eslint/no-explicit-any
           .delete()
           .eq('user_id', user.id)
           .eq('draft_key', draftKey);

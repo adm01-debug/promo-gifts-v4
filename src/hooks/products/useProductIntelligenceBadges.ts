@@ -5,7 +5,12 @@
  * Also incorporates catalog flags (featured, newArrival, onSale) from product data.
  */
 import { useMemo } from 'react';
-import { useProductIntelligenceData, useStockVelocity } from '@/hooks/intelligence';
+import {
+  useProductIntelligenceData,
+  useStockVelocity,
+  type ProductIntelligenceData,
+  type StockVelocity,
+} from '@/hooks/intelligence';
 import { generateMockIntelligence, generateMockVelocities } from '@/lib/stock-chart-utils';
 
 export type IntelligenceBadgeType =
@@ -46,8 +51,10 @@ export function useProductIntelligenceBadges(
   productId?: string,
   catalogFlags?: CatalogFlags,
 ): ProductIntelligenceBadgesResult {
-  const { data: intelligence, isLoading: loadingIntel } = useProductIntelligenceData(productId);
-  const { data: velocity, isLoading: loadingVel } = useStockVelocity(productId);
+  const { data: intelligenceRaw, isLoading: loadingIntel } = useProductIntelligenceData(productId);
+  const { data: velocityRaw, isLoading: loadingVel } = useStockVelocity(productId);
+  const intelligence = intelligenceRaw as ProductIntelligenceData | null | undefined;
+  const velocity = velocityRaw as StockVelocity[] | undefined;
 
   return useMemo(() => {
     const isDemo = !intelligence;

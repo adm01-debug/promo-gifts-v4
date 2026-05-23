@@ -9,7 +9,8 @@ import { maskCep, ESTADOS_BR } from '@/utils/masks';
 const fieldClass = 'mt-1.5 h-9';
 
 interface AddressTabProps {
-  form: Record<string, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  form: Record<string, any>;
 }
 
 export function AddressTab({ form }: AddressTabProps) {

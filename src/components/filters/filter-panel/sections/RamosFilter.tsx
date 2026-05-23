@@ -12,12 +12,15 @@ interface RamosFilterProps {
   onFilterChange: (filters: FilterState) => void;
   ramoSearch: string;
   setRamoSearch: (v: string) => void;
-  ramoGroups: Record<string, unknown>[];
-  allSegmentos: Record<string, unknown>[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ramoGroups: Record<string, any>[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  allSegmentos: Record<string, any>[];
   ramosLoading: boolean;
   totalRamoGroups: number;
   totalRamoSegmentos: number;
-  getSegmentosForRamo: (slug: string) => unknown[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getSegmentosForRamo: (slug: string) => any[];
   productCountsByRamo: { ramoCounts: Map<string, number>; segmentoCounts: Map<string, number> };
 }
 

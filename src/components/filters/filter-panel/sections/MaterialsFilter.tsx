@@ -12,8 +12,10 @@ import { cn } from '@/lib/utils';
 interface MaterialsFilterProps {
   materialSearch: string;
   setMaterialSearch: (v: string) => void;
-  materialGroups: Record<string, unknown>[];
-  allMaterials: Record<string, unknown>[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  materialGroups: Record<string, any>[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  allMaterials: Record<string, any>[];
   materialsLoading: boolean;
   materialFilterState: { selectedGroups: string[]; selectedTypes: string[] };
   toggleMaterialGroup: (slug: string) => void;

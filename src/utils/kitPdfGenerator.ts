@@ -194,14 +194,14 @@ function drawCompositionTable(doc: jsPDF, kitState: KitState, y: number): number
     body: rows,
     theme: 'striped',
     headStyles: {
-      fillColor: PRIMARY as unknown as number[],
-      textColor: WHITE as unknown as number[],
+      fillColor: PRIMARY as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+      textColor: WHITE as any, // eslint-disable-line @typescript-eslint/no-explicit-any
       fontSize: 8,
       fontStyle: 'bold',
     },
     bodyStyles: {
       fontSize: 7.5,
-      textColor: GRAY_800 as unknown as number[],
+      textColor: GRAY_800 as any, // eslint-disable-line @typescript-eslint/no-explicit-any
     },
     alternateRowStyles: {
       fillColor: [248, 250, 252],
@@ -268,13 +268,13 @@ function drawPersonalizationDetails(doc: jsPDF, kitState: KitState, y: number): 
     theme: 'grid',
     headStyles: {
       fillColor: [99, 102, 241] as number[],
-      textColor: WHITE as unknown as number[],
+      textColor: WHITE as any, // eslint-disable-line @typescript-eslint/no-explicit-any
       fontSize: 8,
       fontStyle: 'bold',
     },
     bodyStyles: {
       fontSize: 7.5,
-      textColor: GRAY_800 as unknown as number[],
+      textColor: GRAY_800 as any, // eslint-disable-line @typescript-eslint/no-explicit-any
     },
     margin: { left: 14, right: 14 },
   });
@@ -307,14 +307,14 @@ function drawPriceBreakdown(
     body: rows,
     theme: 'striped',
     headStyles: {
-      fillColor: GRAY_800 as unknown as number[],
-      textColor: WHITE as unknown as number[],
+      fillColor: GRAY_800 as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+      textColor: WHITE as any, // eslint-disable-line @typescript-eslint/no-explicit-any
       fontSize: 8,
       fontStyle: 'bold',
     },
     bodyStyles: {
       fontSize: 7.5,
-      textColor: GRAY_800 as unknown as number[],
+      textColor: GRAY_800 as any, // eslint-disable-line @typescript-eslint/no-explicit-any
     },
     columnStyles: {
       1: { halign: 'center', cellWidth: 18 },

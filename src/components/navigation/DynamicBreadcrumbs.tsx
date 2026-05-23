@@ -1,10 +1,10 @@
-import { useMemo, Fragment } from "react";
-import { Link, useLocation, useParams } from "react-router-dom";
-import { Home } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
-import { useAuth } from "@/contexts/AuthContext";
-import { canNavigateTo, isDevOnlyPath } from "@/lib/navigation/restricted-routes";
+import { useMemo, Fragment } from 'react';
+import { Link, useLocation, useParams } from 'react-router-dom';
+import { Home, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
+import { canNavigateTo, isDevOnlyPath } from '@/lib/navigation/restricted-routes';
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -12,7 +12,7 @@ import {
   BreadcrumbLink,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+} from '@/components/ui/breadcrumb';
 
 interface BreadcrumbItem {
   label: string;
@@ -27,89 +27,93 @@ interface DynamicBreadcrumbsProps {
 
 // Route label mappings
 const routeLabels: Record<string, string> = {
-  "": "Início",
-  "dashboard": "Dashboard",
-  "catalogo": "Catálogo",
-  "produto": "Detalhe do Produto",
-  "produtos": "Produtos",
-  "orcamentos": "Orçamentos",
-  "novo": "Novo",
-  "editar": "Editar",
-  "detalhes": "Detalhes",
-  "pedidos": "Pedidos",
-  "clientes": "Clientes",
-  "empresas": "Empresas",
-  "contatos": "Contatos",
-  "simulador": "Simulador",
-  "mockup": "Mockup",
-  "personalizacao": "Personalização",
-  "colecoes": "Coleções",
-  "favoritos": "Favoritos",
-  "carrinhos": "Carrinhos",
-  "configuracoes": "Configurações",
-  "perfil": "Perfil",
-  "seguranca": "Segurança",
-  "relatorios": "Relatórios",
-  "analytics": "Analytics",
-  
-  "admin": "Administração",
-  "usuarios": "Usuários",
-  "permissoes": "Permissões",
-  "tecnicas": "Técnicas",
-  "historico": "Histórico",
-  "templates": "Templates",
-  "aprovar": "Aprovar",
-  "login": "Login",
-  "registro": "Registro",
+  '': 'Início',
+  dashboard: 'Dashboard',
+  catalogo: 'Catálogo',
+  produto: 'Detalhe do Produto',
+  produtos: 'Produtos',
+  orcamentos: 'Orçamentos',
+  novo: 'Novo',
+  editar: 'Editar',
+  detalhes: 'Detalhes',
+  pedidos: 'Pedidos',
+  clientes: 'Clientes',
+  empresas: 'Empresas',
+  contatos: 'Contatos',
+  simulador: 'Simulador',
+  mockup: 'Mockup',
+  personalizacao: 'Personalização',
+  colecoes: 'Coleções',
+  favoritos: 'Favoritos',
+  carrinhos: 'Carrinhos',
+  configuracoes: 'Configurações',
+  perfil: 'Perfil',
+  seguranca: 'Segurança',
+  relatorios: 'Relatórios',
+  analytics: 'Analytics',
+
+  admin: 'Administração',
+  usuarios: 'Usuários',
+  permissoes: 'Permissões',
+  tecnicas: 'Técnicas',
+  historico: 'Histórico',
+  templates: 'Templates',
+  aprovar: 'Aprovar',
+  login: 'Login',
+  registro: 'Registro',
 };
 
 export function DynamicBreadcrumbs({ customItems, className }: DynamicBreadcrumbsProps) {
   const location = useLocation();
-  const params = useParams();
+  const _params = useParams();
   const { isDev, isAdmin } = useAuth();
 
   const breadcrumbs = useMemo(() => {
     if (customItems) return customItems;
-    
-    const pathSegments = location.pathname.split("/").filter(Boolean);
-    
+
+    const pathSegments = location.pathname.split('/').filter(Boolean);
+
     // Always start with Home
     const items: BreadcrumbItem[] = [
-      { label: "Início", href: "/", icon: <Home className="h-4 w-4" /> }
+      { label: 'Início', href: '/', icon: <Home className="h-4 w-4" /> },
     ];
-    
-    let currentPath = "";
-    
+
+    let currentPath = '';
+
     pathSegments.forEach((segment, index) => {
       currentPath += `/${segment}`;
-      
+
       // Check if segment is a dynamic param (UUID or ID)
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(segment);
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        segment,
+      );
       const isNumericId = /^\d+$/.test(segment);
-      
+
       if (isUuid || isNumericId) {
         const prevSegment = pathSegments[index - 1];
-        
-        if (prevSegment === "produto" || prevSegment === "produtos") {
+
+        if (prevSegment === 'produto' || prevSegment === 'produtos') {
           return; // Pular — não adicionar UUID ao breadcrumb
         }
-        
-        let label = "Detalhes";
-        if (prevSegment === "orcamentos") label = `#${segment.slice(0, 8)}...`;
-        else if (prevSegment === "pedidos") label = `Pedido`;
-        else if (prevSegment === "clientes" || prevSegment === "empresas") label = `Cliente`;
-        
+
+        let label = 'Detalhes';
+        if (prevSegment === 'orcamentos') label = `#${segment.slice(0, 8)}...`;
+        else if (prevSegment === 'pedidos') label = `Pedido`;
+        else if (prevSegment === 'clientes' || prevSegment === 'empresas') label = `Cliente`;
+
         items.push({ label, href: currentPath });
       } else {
-        const label = routeLabels[segment] || 
-          segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, " ");
-        
+        const label =
+          routeLabels[segment] ||
+          segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' ');
+
         const nextSegment = pathSegments[index + 1];
-        const nextIsSkippedId = nextSegment && (
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(nextSegment) ||
-          /^\d+$/.test(nextSegment)
-        ) && (segment === "produto" || segment === "produtos");
-        
+        const nextIsSkippedId =
+          nextSegment &&
+          (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(nextSegment) ||
+            /^\d+$/.test(nextSegment)) &&
+          (segment === 'produto' || segment === 'produtos');
+
         const isLastVisible = index >= pathSegments.length - 1 || nextIsSkippedId;
 
         if (!isDev && isDevOnlyPath(currentPath)) {
@@ -127,17 +131,17 @@ export function DynamicBreadcrumbs({ customItems, className }: DynamicBreadcrumb
 
     return items;
   }, [location.pathname, customItems, isDev, isAdmin]);
-  
-  if (location.pathname === "/" || location.pathname === "/login") {
+
+  if (location.pathname === '/' || location.pathname === '/login') {
     return null;
   }
-  
+
   return (
-    <Breadcrumb className={cn("text-sm", className)}>
+    <Breadcrumb className={cn('text-sm', className)}>
       <BreadcrumbList>
         {breadcrumbs.map((item, index) => {
           const isLast = index === breadcrumbs.length - 1;
-          
+
           return (
             <Fragment key={index}>
               <motion.div
@@ -174,21 +178,21 @@ export function DynamicBreadcrumbs({ customItems, className }: DynamicBreadcrumb
 // Compact version for mobile
 export function CompactBreadcrumbs({ className }: { className?: string }) {
   const location = useLocation();
-  const pathSegments = location.pathname.split("/").filter(Boolean);
-  
+  const pathSegments = location.pathname.split('/').filter(Boolean);
+
   if (pathSegments.length <= 1) return null;
-  
-  const parentPath = "/" + pathSegments.slice(0, -1).join("/");
-  const parentLabel = routeLabels[pathSegments[pathSegments.length - 2]] || 
-    pathSegments[pathSegments.length - 2];
-  
+
+  const parentPath = '/' + pathSegments.slice(0, -1).join('/');
+  const parentLabel =
+    routeLabels[pathSegments[pathSegments.length - 2]] || pathSegments[pathSegments.length - 2];
+
   return (
     <Link
       to={parentPath}
       className={cn(
-        "inline-flex items-center gap-1 text-sm text-muted-foreground",
-        "hover:text-foreground transition-colors",
-        className
+        'inline-flex items-center gap-1 text-sm text-muted-foreground',
+        'transition-colors hover:text-foreground',
+        className,
       )}
     >
       <ChevronRight className="h-4 w-4 rotate-180" />

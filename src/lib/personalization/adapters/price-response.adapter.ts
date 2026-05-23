@@ -13,7 +13,11 @@
  */
 
 import type { CustomizationPriceFlat } from '@/hooks/simulation';
-import { detectPriceSchema, warnUnknownSchemaOnce, type PriceSchemaVersion } from './schema-detection';
+import {
+  detectPriceSchema,
+  warnUnknownSchemaOnce,
+  type PriceSchemaVersion,
+} from './schema-detection';
 import { validateRpcPayload } from '@/lib/personalization/rpc-validator';
 import { PRICE_CONTRACT } from '@/lib/personalization/rpc-contracts';
 
@@ -50,22 +54,28 @@ function normalizeV7Aliases(resp: Record<string, unknown>): Record<string, unkno
   // Markup nested object — também aceita renomeação
   const markup = out.markup as Record<string, unknown> | undefined;
   if (markup && typeof markup === 'object') {
-    if ('unit_cost' in markup && !('custo_unitario' in markup)) markup.custo_unitario = markup.unit_cost;
-    if ('setup_cost_table' in markup && !('custo_setup_tabela' in markup)) markup.custo_setup_tabela = markup.setup_cost_table;
-    if ('markup_percent' in markup && !('markup_pct' in markup)) markup.markup_pct = markup.markup_percent;
+    if ('unit_cost' in markup && !('custo_unitario' in markup))
+      markup.custo_unitario = markup.unit_cost;
+    if ('setup_cost_table' in markup && !('custo_setup_tabela' in markup))
+      markup.custo_setup_tabela = markup.setup_cost_table;
+    if ('markup_percent' in markup && !('markup_pct' in markup))
+      markup.markup_pct = markup.markup_percent;
   }
   // Detalhes nested
   const detalhes = out.detalhes as Record<string, unknown> | undefined;
   if (detalhes && typeof detalhes === 'object') {
-    if ('charges_per_color' in detalhes && !('cobra_por_cor' in detalhes)) detalhes.cobra_por_cor = detalhes.charges_per_color;
-    if ('max_colors' in detalhes && !('max_cores' in detalhes)) detalhes.max_cores = detalhes.max_colors;
+    if ('charges_per_color' in detalhes && !('cobra_por_cor' in detalhes))
+      detalhes.cobra_por_cor = detalhes.charges_per_color;
+    if ('max_colors' in detalhes && !('max_cores' in detalhes))
+      detalhes.max_cores = detalhes.max_colors;
   }
   // Faixa nested
   const faixa = out.faixa as Record<string, unknown> | undefined;
   if (faixa && typeof faixa === 'object') {
     if ('min_qty' in faixa && !('qtd_min' in faixa)) faixa.qtd_min = faixa.min_qty;
     if ('max_qty' in faixa && !('qtd_max' in faixa)) faixa.qtd_max = faixa.max_qty;
-    if ('production_days' in faixa && !('prazo_dias' in faixa)) faixa.prazo_dias = faixa.production_days;
+    if ('production_days' in faixa && !('prazo_dias' in faixa))
+      faixa.prazo_dias = faixa.production_days;
   }
   return out;
 }
@@ -74,7 +84,8 @@ function normalizeV7Aliases(resp: Record<string, unknown>): Record<string, unkno
 // PARSERS POR FORMATO
 // ============================================
 
-type AnyRec = Record<string, unknown>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyRec = Record<string, any>;
 
 function parseNested(resp: AnyRec): CustomizationPriceFlat {
   return {

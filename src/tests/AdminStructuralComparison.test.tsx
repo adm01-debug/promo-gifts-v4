@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -20,9 +20,7 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
         <ThemeProvider>
           <AuthProvider>
             <TooltipProvider>
-              <AriaLiveProvider>
-                {children}
-              </AriaLiveProvider>
+              <AriaLiveProvider>{children}</AriaLiveProvider>
             </TooltipProvider>
           </AuthProvider>
         </ThemeProvider>
@@ -30,7 +28,6 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
     </HelmetProvider>
   </QueryClientProvider>
 );
-
 
 // Mock hooks that use network/Supabase to avoid async leaks during tests
 vi.mock('@/hooks/admin', () => ({
@@ -87,10 +84,10 @@ describe('Admin Module Structural Comparison', () => {
   it('Conexoes and Usuarios should share matching container hierarchy', async () => {
     const { container: conexoes } = render(<AdminConexoesPage />, { wrapper });
     const { container: usuarios } = render(<AdminUsuariosPage />, { wrapper });
-    
+
     // Select the standardized inner container (div with max-w inside main)
-    const findContainer = (root: HTMLElement) => 
-      Array.from(root.querySelectorAll('div')).find(d => d.className.includes('max-w-'));
+    const findContainer = (root: HTMLElement) =>
+      Array.from(root.querySelectorAll('div')).find((d) => d.className.includes('max-w-'));
 
     const conexoesInner = findContainer(conexoes);
     const usuariosInner = findContainer(usuarios);

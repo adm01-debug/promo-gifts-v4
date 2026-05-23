@@ -51,6 +51,64 @@ export interface PromobrindProduct {
   box_weight_kg?: number | null;
   box_quantity?: number | null;
   box_volume_cm3?: number | null;
+  cost_price?: number | null;
+  suggested_price?: number | null;
+  stock_unit?: string | null;
+  product_type?: string | null;
+  min_order_quantity?: number | null;
+  internal_height_cm?: number | null;
+  internal_width_cm?: number | null;
+  internal_length_cm?: number | null;
+  internal_diameter_cm?: number | null;
+  packaging_material?: string | null;
+  packaging_color?: string | null;
+  packaging_finish?: string | null;
+  is_featured_expires_at?: string | null;
+  is_bestseller_expires_at?: string | null;
+  is_new_expires_at?: string | null;
+  novelty_expires_at?: string | null;
+  is_on_sale_expires_at?: string | null;
+  is_imported?: boolean | null;
+  is_textil?: boolean | null;
+  is_thermal?: boolean | null;
+  allows_personalization?: boolean | null;
+  has_gift_box?: boolean | null;
+  has_optional_packaging?: boolean | null;
+  ncm_code?: string | null;
+  ean?: string | null;
+  gtin?: string | null;
+  ipi_rate?: number | null;
+  country_of_origin?: string | null;
+  origin_country?: string | null;
+  cfop?: string | null;
+  csosn?: string | null;
+  icms_rate?: number | null;
+  pis_rate?: number | null;
+  cofins_rate?: number | null;
+  tax_regime?: string | null;
+  cest?: string | null;
+  freight_class?: string | null;
+  default_carrier?: string | null;
+  shipping_weight_kg?: number | null;
+  shipping_width_cm?: number | null;
+  shipping_height_cm?: number | null;
+  shipping_length_cm?: number | null;
+  cubic_weight?: number | null;
+  requires_special_shipping?: boolean | null;
+  shipping_notes?: string | null;
+  lead_time_days?: number | null;
+  supply_mode?: string | null;
+  warranty_months?: number | null;
+  meta_title?: string | null;
+  meta_keywords?: string[] | null;
+  slug?: string | null;
+  canonical_url?: string | null;
+  videos?: string[] | null;
+  video_url?: string | null;
+  key_benefits?: string | null;
+  use_cases?: string | null;
+  category?: Record<string, unknown> | null;
+  supplier?: Record<string, unknown> | null;
   product_videos?: Array<{
     id: string;
     url_stream: string | null;
@@ -74,14 +132,24 @@ export interface PromobrindProduct {
   price_updated_at?: string | null;
   price_freshness_threshold_days?: number | null;
   kit_components?: Array<{
-    id: string; component_name: string | null; component_code: string | null;
-    component_product_id: string | null; component_sku: string | null;
-    quantity: number | null; display_order: number | null;
-    is_optional: boolean | null; is_packaging: boolean | null;
-    is_replaceable: boolean | null; allows_personalization: boolean | null;
-    material: string | null; primary_image_url: string | null;
-    height_mm: number | null; width_mm: number | null; length_mm: number | null;
-    weight_g: number | null; notes: string | null;
+    id: string;
+    component_name: string | null;
+    component_code: string | null;
+    component_product_id: string | null;
+    component_sku: string | null;
+    quantity: number | null;
+    display_order: number | null;
+    is_optional: boolean | null;
+    is_packaging: boolean | null;
+    is_replaceable: boolean | null;
+    allows_personalization: boolean | null;
+    material: string | null;
+    primary_image_url: string | null;
+    height_mm: number | null;
+    width_mm: number | null;
+    length_mm: number | null;
+    weight_g: number | null;
+    notes: string | null;
   }> | null;
 }
 
@@ -135,5 +203,7 @@ export const PRODUCT_SELECT_FIELDS_DETAIL =
 // #2: also trigger fallback when orderBy hits a missing column
 export function shouldFallbackSelect(err: unknown) {
   const msg = err instanceof Error ? err.message : String(err);
-  return /(sale_price|base_price|image_url|supplier_name|category_name|product_videos|selected_images|gender|price_updated_at|price_freshness_threshold_days|does not exist|não existe|undefined column|column .+ does not exist|could not identify an ordering operator|order by)/i.test(msg);
+  return /(sale_price|base_price|image_url|supplier_name|category_name|product_videos|selected_images|gender|price_updated_at|price_freshness_threshold_days|does not exist|não existe|undefined column|column .+ does not exist|could not identify an ordering operator|order by)/i.test(
+    msg,
+  );
 }

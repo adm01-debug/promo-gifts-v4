@@ -3,7 +3,7 @@
  * Permite reordenar itens arrastando e soltando
  */
 
-import { useState } from "react";
+import { useState } from 'react';
 import {
   DndContext,
   type DragEndEvent,
@@ -14,26 +14,26 @@ import {
   closestCenter,
   useSensor,
   useSensors,
-} from "@dnd-kit/core";
+} from '@dnd-kit/core';
 import {
   SortableContext,
   arrayMove,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Package, Trash2, ChevronDown, ChevronUp, Palette } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { CurrencyInput } from "@/components/ui/currency-input";
-import { Badge } from "@/components/ui/badge";
-import { PriceFreshnessBadge } from "@/components/products/PriceFreshnessBadge";
-import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { GripVertical, Package, Trash2, ChevronDown, ChevronUp, Palette } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { CurrencyInput } from '@/components/ui/currency-input';
+import { Badge } from '@/components/ui/badge';
+import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
+import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
-import { type QuoteItem } from "@/hooks/quotes/quoteTypes";
+import { type QuoteItem } from '@/hooks/quotes/quoteTypes';
 
 interface DraggableQuoteItemsProps {
   items: QuoteItem[];
@@ -73,14 +73,9 @@ function SortableItem({
   renderPersonalization,
   formatCurrency,
 }: SortableItemProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: item.id || `item-${index}` });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: item.id || `item-${index}`,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -91,7 +86,7 @@ function SortableItem({
   const hasPersonalizations = item.personalizations && item.personalizations.length > 0;
   const personalizationTotal = (item.personalizations || []).reduce(
     (sum, p) => sum + (p.total_cost || 0),
-    0
+    0,
   );
   const itemTotal = item.quantity * item.unit_price + personalizationTotal;
 
@@ -108,26 +103,28 @@ function SortableItem({
     >
       <Card
         className={cn(
-          "transition-all duration-200 overflow-hidden",
-          isDragging && "opacity-50 shadow-2xl ring-2 ring-primary",
-          "hover:shadow-md",
-          isExpanded && "max-h-[calc(100vh-12rem)] flex flex-col"
+          'overflow-hidden transition-all duration-200',
+          isDragging && 'opacity-50 shadow-2xl ring-2 ring-primary',
+          'hover:shadow-md',
+          isExpanded && 'flex max-h-[calc(100vh-12rem)] flex-col',
         )}
       >
         {/* Product header — sticky when personalization is open */}
-        <div className={cn(
-          "p-4 bg-card z-10",
-          isExpanded && "sticky top-0 border-b border-border/50 shadow-sm"
-        )}>
+        <div
+          className={cn(
+            'z-10 bg-card p-4',
+            isExpanded && 'sticky top-0 border-b border-border/50 shadow-sm',
+          )}
+        >
           <div className="flex items-start gap-3">
             {/* Drag Handle */}
             <button
               {...attributes}
               {...listeners}
               className={cn(
-                "mt-2 p-1 rounded hover:bg-muted cursor-grab active:cursor-grabbing",
-                "touch-none select-none focus:outline-none focus:ring-2 focus:ring-primary",
-                "transition-colors"
+                'mt-2 cursor-grab rounded p-1 hover:bg-muted active:cursor-grabbing',
+                'touch-none select-none focus:outline-none focus:ring-2 focus:ring-primary',
+                'transition-colors',
               )}
               aria-label="Arrastar para reordenar"
             >
@@ -135,76 +132,82 @@ function SortableItem({
             </button>
 
             {/* Product Image */}
-            <div className="shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-muted">
+            <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-muted">
               {item.product_image_url ? (
                 <img
                   src={item.product_image_url}
                   alt={item.product_name}
-                  className="w-full h-full object-cover" loading="lazy" />
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                />
               ) : (
-                <div className="w-full h-full flex items-center justify-center">
+                <div className="flex h-full w-full items-center justify-center">
                   <Package className="h-6 w-6 text-muted-foreground" />
                 </div>
               )}
             </div>
 
             {/* Product Info */}
-            <div className="flex-1 min-w-0 space-y-2">
+            <div className="min-w-0 flex-1 space-y-2">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <h4 className="font-medium text-sm truncate">{item.product_name}</h4>
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    <Badge variant="outline" className="text-[10px] font-mono">
+                  <h4 className="truncate text-sm font-medium">{item.product_name}</h4>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <Badge variant="outline" className="font-mono text-[10px]">
                       {item.product_sku}
                     </Badge>
                     {item.color_name && (
                       <Badge
                         variant="secondary"
-                        className="text-[10px] gap-1"
+                        className="gap-1 text-[10px]"
                         style={{
                           backgroundColor: item.color_hex ? `${item.color_hex}20` : undefined,
                           borderColor: item.color_hex,
                         }}
                       >
                         <div
-                          className="w-2 h-2 rounded-full border"
+                          className="h-2 w-2 rounded-full border"
                           style={{ backgroundColor: item.color_hex }}
                         />
                         {item.color_name}
                       </Badge>
                     )}
                     {hasPersonalizations && (
-                      <Badge variant="secondary" className="text-[10px] gap-1 bg-primary/10">
+                      <Badge variant="secondary" className="gap-1 bg-primary/10 text-[10px]">
                         <Palette className="h-2.5 w-2.5" />
                         {item.personalizations?.length} gravação(ões)
                       </Badge>
                     )}
                   </div>
                 </div>
-                
+
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  className="h-8 w-8 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
                   onClick={onRemove}
-                 aria-label="Excluir"><Trash2 className="h-4 w-4" />
+                  aria-label="Excluir"
+                >
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
 
               {/* Inputs Row */}
-              <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground">Qtd:</span>
-                   <Input
+                  <Input
                     type="number"
                     min={1}
                     value={item.quantity}
-                    onKeyDown={(e) => { if (e.key === "-" || e.key === "+" || e.key === "e") e.preventDefault(); }}
+                    onKeyDown={(e) => {
+                      if (e.key === '-' || e.key === '+' || e.key === 'e') e.preventDefault();
+                    }}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                       const v = parseInt(e.target.value);
                       onUpdateQuantity(Math.max(1, v || 1));
                     }}
-                    className="w-20 h-8 text-sm"
+                    className="h-8 w-20 text-sm"
                   />
                 </div>
                 <div className="flex items-center gap-2">
@@ -213,9 +216,9 @@ function SortableItem({
                     <CurrencyInput
                       value={item.unit_price}
                       onChange={(n) => onUpdatePrice(n)}
-                      className="w-28 h-8 text-sm"
+                      className="h-8 w-28 text-sm"
                     />
-                    <PriceFreshnessBadge 
+                    <PriceFreshnessBadge
                       updatedAt={item.price_updated_at}
                       confirmedAt={item.price_confirmed_at}
                       thresholdDays={item.price_freshness_threshold_days}
@@ -226,7 +229,7 @@ function SortableItem({
                 </div>
                 <div className="ml-auto text-right">
                   <p className="text-xs text-muted-foreground">Subtotal</p>
-                  <p className="font-semibold text-sm">{formatCurrency(itemTotal)}</p>
+                  <p className="text-sm font-semibold">{formatCurrency(itemTotal)}</p>
                 </div>
               </div>
             </div>
@@ -239,10 +242,10 @@ function SortableItem({
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  "w-full justify-between text-sm font-medium rounded-lg border transition-all",
+                  'w-full justify-between rounded-lg border text-sm font-medium transition-all',
                   isExpanded
-                    ? "bg-primary/10 border-primary/30 text-primary hover:bg-primary/15"
-                    : "bg-accent/50 border-border hover:bg-accent hover:border-primary/20"
+                    ? 'border-primary/30 bg-primary/10 text-primary hover:bg-primary/15'
+                    : 'border-border bg-accent/50 hover:border-primary/20 hover:bg-accent',
                 )}
                 onClick={onTogglePersonalization}
               >
@@ -262,9 +265,9 @@ function SortableItem({
 
         {/* Personalization content — scrollable area */}
         {isExpanded && renderPersonalization && (
-          <div className="overflow-y-auto flex-1 min-h-0">
-            <div className="px-4 pb-4 pt-3 border-t border-primary/20">
-            {renderPersonalization()}
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="border-t border-primary/20 px-4 pb-4 pt-3">
+              {renderPersonalization()}
             </div>
           </div>
         )}
@@ -280,12 +283,13 @@ export function DraggableQuoteItems({
   onUpdatePrice,
   onRemove,
   onTogglePersonalization,
+  onConfirmPrice,
   expandedItems = new Set(),
   renderPersonalization,
   formatCurrency,
 }: DraggableQuoteItemsProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
-  
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -294,7 +298,7 @@ export function DraggableQuoteItems({
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   // Gerar IDs únicos para items sem ID
@@ -314,7 +318,7 @@ export function DraggableQuoteItems({
     if (over && active.id !== over.id) {
       const oldIndex = itemsWithIds.findIndex((item) => item.id === active.id);
       const newIndex = itemsWithIds.findIndex((item) => item.id === over.id);
-      
+
       const reordered = arrayMove(itemsWithIds, oldIndex, newIndex);
       onReorder(reordered);
     }
@@ -324,10 +328,10 @@ export function DraggableQuoteItems({
 
   if (items.length === 0) {
     return (
-      <div className="text-center py-12 border-2 border-dashed rounded-xl">
-        <Package className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-        <p className="text-muted-foreground font-medium">Nenhum item adicionado</p>
-        <p className="text-sm text-muted-foreground/70 mt-1">
+      <div className="rounded-xl border-2 border-dashed py-12 text-center">
+        <Package className="mx-auto mb-4 h-12 w-12 text-muted-foreground/50" />
+        <p className="font-medium text-muted-foreground">Nenhum item adicionado</p>
+        <p className="mt-1 text-sm text-muted-foreground/70">
           Pesquise e adicione produtos ao orçamento
         </p>
       </div>
@@ -359,9 +363,7 @@ export function DraggableQuoteItems({
                 onTogglePersonalization={
                   onTogglePersonalization ? () => onTogglePersonalization(index) : undefined
                 }
-                onConfirmPrice={
-                  onConfirmPrice ? () => onConfirmPrice(index) : undefined
-                }
+                onConfirmPrice={onConfirmPrice ? () => onConfirmPrice(index) : undefined}
                 renderPersonalization={
                   renderPersonalization ? () => renderPersonalization(item, index) : undefined
                 }
@@ -374,22 +376,24 @@ export function DraggableQuoteItems({
 
       <DragOverlay>
         {activeItem && (
-          <Card className="shadow-2xl ring-2 ring-primary opacity-90">
+          <Card className="opacity-90 shadow-2xl ring-2 ring-primary">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <GripVertical className="h-5 w-5 text-muted-foreground" />
-                <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
                   {activeItem.product_image_url ? (
                     <img
                       src={activeItem.product_image_url}
                       alt={activeItem.product_name}
-                      className="w-full h-full object-cover rounded-lg" loading="lazy" />
+                      className="h-full w-full rounded-lg object-cover"
+                      loading="lazy"
+                    />
                   ) : (
                     <Package className="h-5 w-5 text-muted-foreground" />
                   )}
                 </div>
                 <div>
-                  <p className="font-medium text-sm">{activeItem.product_name}</p>
+                  <p className="text-sm font-medium">{activeItem.product_name}</p>
                   <p className="text-xs text-muted-foreground">{activeItem.product_sku}</p>
                 </div>
               </div>
