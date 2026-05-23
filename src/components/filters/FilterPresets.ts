@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
-import type { FilterState } from "./FilterPanel";
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+import type { FilterState } from './FilterPanel';
+import type { Json } from '@/integrations/supabase/types';
 
 export interface FilterPreset {
   id: string;
@@ -20,8 +21,13 @@ export interface FilterPreset {
 /**
  * Hook para gerenciar presets de filtros persistidos no banco de dados.
  * Cada vendedor tem seus próprios presets isolados por RLS.
+ *
+ * DB schema: saved_filters(id, user_id, name, description, filter_config, category,
+ *             is_default, icon, color, created_at, updated_at)
+ * Note: DB column "filter_config" maps to FilterPreset.filters
+ *       DB column "category"     maps to FilterPreset.context
  */
-export function useFilterPresets(context: string = "catalog") {
+export function useFilterPresets(context: string = 'catalog') {
   const { user } = useAuth();
   const [presets, setPresets] = useState<FilterPreset[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -31,10 +37,10 @@ export function useFilterPresets(context: string = "catalog") {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from("saved_filters")
-        .select("*")
-        .eq("context", context)
-        .order("created_at", { ascending: false });
+        .from('saved_filters')
+        .select('*')
+        .eq('category', context) // DB column is "category", not "context"
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
@@ -43,17 +49,17 @@ export function useFilterPresets(context: string = "catalog") {
           id: row.id,
           name: row.name,
           description: row.description ?? undefined,
-          filters: row.filters as unknown as FilterState,
-          context: row.context,
+          filters: row.filter_config as unknown as FilterState, // DB column is "filter_config"
+          context: row.category, // map category → context
           is_default: row.is_default,
           icon: row.icon ?? undefined,
           color: row.color ?? undefined,
           created_at: row.created_at,
           updated_at: row.updated_at,
-        }))
+        })),
       );
     } catch (err) {
-      console.error("Error fetching filter presets:", err);
+      console.error('Error fetching filter presets:', err);
     } finally {
       setIsLoading(false);
     }
@@ -74,22 +80,22 @@ export function useFilterPresets(context: string = "catalog") {
 
   const savePreset = useCallback(
     async (
-      preset: Omit<FilterPreset, "id" | "created_at" | "updated_at" | "context" | "is_default">
+      preset: Omit<FilterPreset, 'id' | 'created_at' | 'updated_at' | 'context' | 'is_default'>,
     ): Promise<FilterPreset | null> => {
       if (!user) {
-        toast.error("Faça login para salvar presets");
+        toast.error('Faça login para salvar presets');
         return null;
       }
 
       try {
         const { data, error } = await supabase
-          .from("saved_filters")
+          .from('saved_filters')
           .insert({
             user_id: user.id,
             name: preset.name,
             description: preset.description || null,
-            filters: preset.filters as unknown as Record<string, unknown>,
-            context,
+            filter_config: preset.filters as unknown as Json, // DB column
+            category: context, // DB column
             icon: preset.icon || null,
             color: preset.color || null,
           })
@@ -102,8 +108,8 @@ export function useFilterPresets(context: string = "catalog") {
           id: data.id,
           name: data.name,
           description: data.description ?? undefined,
-          filters: data.filters as unknown as FilterState,
-          context: data.context,
+          filters: data.filter_config as unknown as FilterState,
+          context: data.category,
           is_default: data.is_default,
           icon: data.icon ?? undefined,
           color: data.color ?? undefined,
@@ -114,30 +120,43 @@ export function useFilterPresets(context: string = "catalog") {
         setPresets((prev) => [newPreset, ...prev]);
         return newPreset;
       } catch (err) {
-        console.error("Error saving preset:", err);
-        toast.error("Erro ao salvar preset");
+        console.error('Error saving preset:', err);
+        toast.error('Erro ao salvar preset');
         return null;
       }
     },
-    [user, context]
+    [user, context],
   );
 
   const updatePreset = useCallback(
-    async (id: string, updates: Partial<Pick<FilterPreset, "name" | "description" | "icon" | "color" | "filters">>): Promise<FilterPreset | null> => {
+    async (
+      id: string,
+      updates: Partial<Pick<FilterPreset, 'name' | 'description' | 'icon' | 'color' | 'filters'>>,
+    ): Promise<FilterPreset | null> => {
       try {
-        const payload: Record<string, unknown> = {
-          ...updates,
+        // Build payload using DB column names (typed for Supabase schema)
+        const payload: {
+          updated_at: string;
+          name?: string;
+          description?: string | null;
+          icon?: string | null;
+          color?: string | null;
+          filter_config?: Json;
+        } = {
           updated_at: new Date().toISOString(),
         };
-        // Cast filters to Json-compatible type for Supabase
-        if (updates.filters) {
-          payload.filters = updates.filters as unknown as Record<string, unknown>;
+        if (updates.name !== undefined) payload.name = updates.name;
+        if (updates.description !== undefined) payload.description = updates.description ?? null;
+        if (updates.icon !== undefined) payload.icon = updates.icon ?? null;
+        if (updates.color !== undefined) payload.color = updates.color ?? null;
+        if (updates.filters !== undefined) {
+          payload.filter_config = updates.filters as unknown as Json;
         }
 
         const { data, error } = await supabase
-          .from("saved_filters")
+          .from('saved_filters')
           .update(payload)
-          .eq("id", id)
+          .eq('id', id)
           .select()
           .single();
 
@@ -147,8 +166,8 @@ export function useFilterPresets(context: string = "catalog") {
           id: data.id,
           name: data.name,
           description: data.description ?? undefined,
-          filters: data.filters as unknown as FilterState,
-          context: data.context,
+          filters: data.filter_config as unknown as FilterState,
+          context: data.category,
           is_default: data.is_default,
           icon: data.icon ?? undefined,
           color: data.color ?? undefined,
@@ -159,61 +178,47 @@ export function useFilterPresets(context: string = "catalog") {
         setPresets((prev) => prev.map((p) => (p.id === id ? updated : p)));
         return updated;
       } catch (err) {
-        console.error("Error updating preset:", err);
-        toast.error("Erro ao atualizar preset");
+        console.error('Error updating preset:', err);
+        toast.error('Erro ao atualizar preset');
         return null;
       }
     },
-    []
+    [],
   );
 
-  const deletePreset = useCallback(
-    async (id: string): Promise<boolean> => {
-      try {
-        const { error } = await supabase
-          .from("saved_filters")
-          .delete()
-          .eq("id", id);
+  const deletePreset = useCallback(async (id: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase.from('saved_filters').delete().eq('id', id);
 
-        if (error) throw error;
+      if (error) throw error;
 
-        setPresets((prev) => prev.filter((p) => p.id !== id));
-        return true;
-      } catch (err) {
-        console.error("Error deleting preset:", err);
-        toast.error("Erro ao excluir preset");
-        return false;
-      }
-    },
-    []
-  );
+      setPresets((prev) => prev.filter((p) => p.id !== id));
+      return true;
+    } catch (err) {
+      console.error('Error deleting preset:', err);
+      toast.error('Erro ao excluir preset');
+      return false;
+    }
+  }, []);
 
   const setDefault = useCallback(
     async (id: string) => {
       if (!user) return;
       try {
         // Remove default from all presets of this context
-        await supabase
-          .from("saved_filters")
-          .update({ is_default: false })
-          .eq("context", context);
+        await supabase.from('saved_filters').update({ is_default: false }).eq('category', context); // DB column is "category"
 
         // Set selected as default
         if (id) {
-          await supabase
-            .from("saved_filters")
-            .update({ is_default: true })
-            .eq("id", id);
+          await supabase.from('saved_filters').update({ is_default: true }).eq('id', id);
         }
 
-        setPresets((prev) =>
-          prev.map((p) => ({ ...p, is_default: p.id === id }))
-        );
+        setPresets((prev) => prev.map((p) => ({ ...p, is_default: p.id === id })));
       } catch (err) {
-        console.error("Error setting default preset:", err);
+        console.error('Error setting default preset:', err);
       }
     },
-    [user, context]
+    [user, context],
   );
 
   const getDefaultPreset = useCallback((): FilterPreset | undefined => {
