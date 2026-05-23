@@ -150,14 +150,17 @@ jobs:
         if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # T14 UPDATE 6: adiciona heartbeat commit FORA do commit_file() para
-          # provar que gh api funciona, independente dos arquivos do Playwright.
-          # Cada operação loga seu status na linha do step (visível em github_actions UI).
+          # T14 UPDATE 7: tee output para playwright-report/T14-step-log.txt
+          # (uploaded como artifact mesmo se gh api falhar) + curl direto em
+          # vez de gh api (para isolar se o problema é gh CLI ou auth/perm).
           set +e
+          mkdir -p playwright-report
+          exec > >(tee playwright-report/T14-step-log.txt) 2>&1
 
           echo "================================================================"
-          echo "🔍 SMOKE GATE DIAGNOSTIC"
+          echo "🔍 SMOKE GATE DIAGNOSTIC (T14 UPDATE 7)"
           echo "================================================================"
           echo "Run:        #${{ github.run_number }} (id ${{ github.run_id }})"
           echo "SHA:        ${{ github.sha }}"
@@ -170,8 +173,12 @@ jobs:
             echo "Marker:     absent (smoke exit != 0)"
           fi
           echo ""
-          echo "--- pwd ---"
-          pwd
+          echo "--- Environment ---"
+          echo "  pwd: $(pwd)"
+          echo "  GH_TOKEN length: ${#GH_TOKEN}"
+          echo "  GITHUB_TOKEN length: ${#GITHUB_TOKEN}"
+          echo "  which gh: $(which gh 2>&1)"
+          echo "  which curl: $(which curl 2>&1)"
           echo ""
           echo "--- ls -la playwright-report/ ---"
           ls -la playwright-report/ 2>/dev/null | head -50
@@ -183,7 +190,6 @@ jobs:
           head -100 playwright-report/smoke-summary.md 2>/dev/null
           echo "================================================================"
 
-          # Auto-commit somente em push event
           if [ "${{ github.event_name }}" != "push" ]; then
             echo "(skipping auto-commit — event is ${{ github.event_name }}, not push)"
             exit 0
@@ -193,76 +199,101 @@ jobs:
           RUN_NUM="${{ github.run_number }}"
           MSG="auto-diag: run #$RUN_NUM [skip ci]"
 
-          # PROBE 1: heartbeat — proves gh api works
+          # ============================================================
+          # PROBE A: curl direto (não depende do gh CLI)
+          # ============================================================
           echo ""
-          echo "=== PROBE 1: Heartbeat commit (proves gh api works) ==="
+          echo "=== PROBE A: curl direct heartbeat ==="
           HEARTBEAT_PATH="docs/redeploy/auto-debug/T14-heartbeat-latest.md"
-          HEARTBEAT_CONTENT="# T14 heartbeat\n\nRun #$RUN_NUM at $(date -u +%Y-%m-%dT%H:%M:%SZ)\nSHA: ${{ github.sha }}\nSmoke marker: $([ -f playwright-report/.smoke-passed ] && echo present || echo absent)\n"
-          HEARTBEAT_B64=$(printf "%b" "$HEARTBEAT_CONTENT" | base64 -w0)
-          HEARTBEAT_SHA=$(gh api "repos/$REPO/contents/$HEARTBEAT_PATH" 2>/dev/null | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('sha','') if isinstance(d, dict) else '')" 2>/dev/null || echo "")
+          printf "# T14 heartbeat\n\nRun #%s at %s\nSHA: %s\n" "$RUN_NUM" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${{ github.sha }}" > /tmp/heartbeat.md
+          HEARTBEAT_B64=$(base64 -w0 /tmp/heartbeat.md)
 
-          echo "Heartbeat existing sha: '$HEARTBEAT_SHA'"
+          echo "Heartbeat content (cat):"
+          cat /tmp/heartbeat.md
+          echo "---"
+          echo "Base64 length: ${#HEARTBEAT_B64}"
 
-          if [ -n "$HEARTBEAT_SHA" ]; then
-            echo "Calling gh api PUT (update) ..."
-            HEARTBEAT_RESULT=$(gh api -X PUT "repos/$REPO/contents/$HEARTBEAT_PATH" -f "message=$MSG" -f "content=$HEARTBEAT_B64" -f "sha=$HEARTBEAT_SHA" 2>&1)
-            HEARTBEAT_EXIT=$?
+          # GET sha via curl
+          GET_HTTP=$(curl -sS -o /tmp/heartbeat_get.json -w "%{http_code}" -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO/contents/$HEARTBEAT_PATH")
+          echo "GET HTTP: $GET_HTTP"
+          echo "GET response (first 200 chars): $(head -c 200 /tmp/heartbeat_get.json)"
+
+          EXISTING_SHA=$(python3 -c "import json; d=json.load(open('/tmp/heartbeat_get.json'));  print(d.get('sha','') if isinstance(d, dict) else '')" 2>/dev/null || echo "")
+          echo "Existing SHA: '$EXISTING_SHA'"
+
+          # Build PUT body via python (one-liner)
+          if [ -n "$EXISTING_SHA" ]; then
+            python3 -c "import json; print(json.dumps({'message':'$MSG','content':'$HEARTBEAT_B64','sha':'$EXISTING_SHA'}))" > /tmp/put_body.json
           else
-            echo "Calling gh api PUT (create) ..."
-            HEARTBEAT_RESULT=$(gh api -X PUT "repos/$REPO/contents/$HEARTBEAT_PATH" -f "message=$MSG" -f "content=$HEARTBEAT_B64" 2>&1)
-            HEARTBEAT_EXIT=$?
+            python3 -c "import json; print(json.dumps({'message':'$MSG','content':'$HEARTBEAT_B64'}))" > /tmp/put_body.json
+          fi
+          echo "PUT body size: $(wc -c < /tmp/put_body.json) bytes"
+
+          PUT_HTTP=$(curl -sS -X PUT -o /tmp/heartbeat_put.json -w "%{http_code}" -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" --data-binary @/tmp/put_body.json "https://api.github.com/repos/$REPO/contents/$HEARTBEAT_PATH")
+          echo "PUT HTTP: $PUT_HTTP"
+          echo "PUT response (first 500 chars): $(head -c 500 /tmp/heartbeat_put.json)"
+
+          if [ "$PUT_HTTP" = "200" ] || [ "$PUT_HTTP" = "201" ]; then
+            echo "✓ Heartbeat committed successfully (HTTP $PUT_HTTP)"
+          else
+            echo "✗ Heartbeat FAILED (HTTP $PUT_HTTP)"
           fi
 
-          echo "Heartbeat gh api exit: $HEARTBEAT_EXIT"
-          if [ $HEARTBEAT_EXIT -ne 0 ]; then
-            echo "Heartbeat FAILED. Error output:"
-            echo "$HEARTBEAT_RESULT" | head -20
-          else
-            echo "Heartbeat OK: $HEARTBEAT_PATH"
-          fi
-
-          # PROBE 2: commitar os arquivos do Playwright
+          # ============================================================
+          # PROBE B: diagnostic files via curl
+          # ============================================================
           echo ""
-          echo "=== PROBE 2: Diagnostic file commits ==="
-          commit_file() {
+          echo "=== PROBE B: Diagnostic file commits via curl ==="
+          commit_via_curl() {
             local local_path="$1"
             local repo_path="$2"
 
             if [ ! -f "$local_path" ]; then
-              echo "  [$local_path] file does not exist locally — skipped"
+              echo "  [$local_path] does not exist locally — skipped"
               return 0
             fi
 
             local file_size
-            file_size=$(stat -c%s "$local_path" 2>/dev/null || echo "?")
-            echo "  [$local_path] exists, size=$file_size bytes — committing..."
+            file_size=$(stat -c%s "$local_path" 2>/dev/null || echo "0")
+            echo "  [$local_path] exists, size=$file_size bytes"
+
+            if [ "$file_size" -gt 5000000 ]; then
+              echo "    skipping — file > 5 MB"
+              return 0
+            fi
 
             local content_b64
             content_b64=$(base64 -w0 "$local_path")
 
-            local existing_sha
-            existing_sha=$(gh api "repos/$REPO/contents/$repo_path" 2>/dev/null | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('sha','') if isinstance(d, dict) else '')" 2>/dev/null || echo "")
+            local get_http
+            get_http=$(curl -sS -o /tmp/get.json -w "%{http_code}" -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO/contents/$repo_path")
+            local existing_sha=""
+            if [ "$get_http" = "200" ]; then
+              existing_sha=$(python3 -c "import json; print(json.load(open('/tmp/get.json')).get('sha',''))" 2>/dev/null || echo "")
+            fi
+            echo "    existing SHA: '$existing_sha' (GET HTTP $get_http)"
 
-            local result
-            local rc
             if [ -n "$existing_sha" ]; then
-              result=$(gh api -X PUT "repos/$REPO/contents/$repo_path" -f "message=$MSG" -f "content=$content_b64" -f "sha=$existing_sha" 2>&1)
-              rc=$?
+              python3 -c "import json; print(json.dumps({'message':'$MSG','content':'$content_b64','sha':'$existing_sha'}))" > /tmp/put_body.json
             else
-              result=$(gh api -X PUT "repos/$REPO/contents/$repo_path" -f "message=$MSG" -f "content=$content_b64" 2>&1)
-              rc=$?
+              python3 -c "import json; print(json.dumps({'message':'$MSG','content':'$content_b64'}))" > /tmp/put_body.json
             fi
 
-            if [ $rc -eq 0 ]; then
-              echo "    ✓ committed to $repo_path"
+            local put_http
+            put_http=$(curl -sS -X PUT -o /tmp/put.json -w "%{http_code}" -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" --data-binary @/tmp/put_body.json "https://api.github.com/repos/$REPO/contents/$repo_path")
+
+            if [ "$put_http" = "200" ] || [ "$put_http" = "201" ]; then
+              echo "    ✓ committed (HTTP $put_http) to $repo_path"
             else
-              echo "    ✗ failed (rc=$rc): $(echo "$result" | head -3)"
+              echo "    ✗ failed (HTTP $put_http): $(head -c 300 /tmp/put.json)"
             fi
           }
 
-          commit_file playwright-report/results.json        "docs/redeploy/auto-debug/T14-results-latest.json"
-          commit_file playwright-report/smoke-summary.md    "docs/redeploy/auto-debug/T14-smoke-summary-latest.md"
-          commit_file playwright-report/smoke-summary.json  "docs/redeploy/auto-debug/T14-smoke-summary-latest.json"
+          commit_via_curl playwright-report/results.json       "docs/redeploy/auto-debug/T14-results-latest.json"
+          commit_via_curl playwright-report/smoke-summary.md   "docs/redeploy/auto-debug/T14-smoke-summary-latest.md"
+          commit_via_curl playwright-report/smoke-summary.json "docs/redeploy/auto-debug/T14-smoke-summary-latest.json"
+
+          echo ""
           echo "Done."
 
       - name: 🛑 Fail-fast se smoke falhou (gate)
