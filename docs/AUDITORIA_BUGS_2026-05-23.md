@@ -29,10 +29,10 @@
 
 | # | Item | Severidade | Onde |
 |---|------|-----------:|------|
-| 1 | `validateUrlFormat` ausente em `connection-test-runner.ts` (Issue 2 do post-mortem CRM) | P0 | **FIX APLICADO neste PR** ✅ |
+| 1 | `validateUrlFormat` ausente em `connection-test-runner.ts` (Issue 2 do post-mortem CRM) | P0 | **JÁ CORRIGIDO no código atual** ✅ |
 | 2 | `simulation-orchestrator` e `sync-external-db` declaram CORS inline sem `x-request-id` (4 + 2 violações) | P1 | `supabase/functions/{simulation-orchestrator,sync-external-db}/index.ts` |
 | 3 | **73 toast.error com mensagem técnica** vazando `error.message` para a UI | P1 | 28 arquivos em `src/hooks/**` e `src/components/**` |
-| 4 | T-FIX-3 — GitHub Actions em `@v4` (deprecation 2026-06-02) | P1 | **FIX APLICADO neste PR** ✅ (26 checkout, 19 setup-node, 15 upload-artifact) |
+| 4 | T-FIX-3 — GitHub Actions em `@v4` (deprecation 2026-06-02) | P1 | **JÁ CORRIGIDO no código atual** ✅ (checkout@v5, setup-node@v6, upload-artifact@v5) |
 | 5 | 3 novos warnings ESLint em `src/tests/AdminStandardRules.test.tsx` (PascalCase params) | P2 | bug #5 do plano "10/10" |
 | 5b | 1 novo erro TS em `PriceFreshnessBadge.snapshots.test.tsx` (regressão pós T-FIX-4) | P2 | `typecheck` gate vermelho |
 | 6 | 48 `it.skip` em `tests/p0/` cobrindo RLS, webhooks, integrations externas | P0 (cobertura) | 5 arquivos `tests/p0/*.test.ts` |
