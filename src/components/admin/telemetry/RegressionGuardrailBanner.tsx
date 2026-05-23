@@ -20,19 +20,32 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { AlertOctagon, AlertTriangle, CheckCircle2, Info, RefreshCw, ShieldAlert } from 'lucide-react';
-import { useRegressionGuardrail, type GuardrailStatus } from '@/pages/admin/telemetry/useRegressionGuardrail';
+import {
+  AlertOctagon,
+  AlertTriangle,
+  CheckCircle2,
+  Info,
+  RefreshCw,
+  ShieldAlert,
+} from 'lucide-react';
+import {
+  useRegressionGuardrail,
+  type GuardrailStatus,
+} from '@/pages/admin/telemetry/useRegressionGuardrail';
 
-const STATUS_META: Record<GuardrailStatus, {
-  tone: 'destructive' | 'warning' | 'success' | 'muted';
-  icon: typeof AlertOctagon;
-  label: string;
-}> = {
-  regression:        { tone: 'destructive', icon: AlertOctagon,   label: 'Regressão crítica detectada' },
-  warning:           { tone: 'warning',     icon: AlertTriangle,  label: 'Aviso de degradação' },
-  ok:                { tone: 'success',     icon: CheckCircle2,   label: 'KPIs dentro do esperado' },
-  insufficient_data: { tone: 'muted',       icon: Info,           label: 'Aguardando amostras suficientes' },
-  error:             { tone: 'muted',       icon: Info,           label: 'Falha ao consultar guardrail' },
+const STATUS_META: Record<
+  GuardrailStatus,
+  {
+    tone: 'destructive' | 'warning' | 'success' | 'muted';
+    icon: typeof AlertOctagon;
+    label: string;
+  }
+> = {
+  regression: { tone: 'destructive', icon: AlertOctagon, label: 'Regressão crítica detectada' },
+  warning: { tone: 'warning', icon: AlertTriangle, label: 'Aviso de degradação' },
+  ok: { tone: 'success', icon: CheckCircle2, label: 'KPIs dentro do esperado' },
+  insufficient_data: { tone: 'muted', icon: Info, label: 'Aguardando amostras suficientes' },
+  error: { tone: 'muted', icon: Info, label: 'Falha ao consultar guardrail' },
 };
 
 export function RegressionGuardrailBanner() {
@@ -57,7 +70,8 @@ export function RegressionGuardrailBanner() {
     <Card
       className={cn(
         'border-[1.5px] transition-colors',
-        meta.tone === 'destructive' && 'border-destructive/50 bg-destructive/5 ring-1 ring-destructive/20',
+        meta.tone === 'destructive' &&
+          'border-destructive/50 bg-destructive/5 ring-1 ring-destructive/20',
         meta.tone === 'warning' && 'border-warning/50 bg-warning/5',
         meta.tone === 'success' && 'border-success/40 bg-success/5',
         meta.tone === 'muted' && 'border-border bg-muted/20',
@@ -67,7 +81,7 @@ export function RegressionGuardrailBanner() {
         <div className="flex items-start gap-3">
           <div
             className={cn(
-              'p-2.5 rounded-lg shrink-0',
+              'shrink-0 rounded-lg p-2.5',
               meta.tone === 'destructive' && 'bg-destructive/15 text-destructive',
               meta.tone === 'warning' && 'bg-warning/15 text-warning',
               meta.tone === 'success' && 'bg-success/15 text-success',
@@ -77,8 +91,8 @@ export function RegressionGuardrailBanner() {
             <Icon className="h-5 w-5" />
           </div>
 
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
               <h3 className="font-display text-base font-semibold">{meta.label}</h3>
               <Badge
                 variant="outline"
@@ -89,7 +103,7 @@ export function RegressionGuardrailBanner() {
                   meta.tone === 'success' && 'border-success/40 text-success',
                 )}
               >
-                <ShieldAlert className="h-3 w-3 mr-1" />
+                <ShieldAlert className="mr-1 h-3 w-3" />
                 Guardrail automático
               </Badge>
               {lastCheckedAt > 0 && (
@@ -105,12 +119,12 @@ export function RegressionGuardrailBanner() {
                   <li
                     key={i}
                     className={cn(
-                      'text-sm flex items-start gap-2',
+                      'flex items-start gap-2 text-sm',
                       meta.tone === 'destructive' && 'text-destructive/90',
                       meta.tone === 'warning' && 'text-warning-foreground',
                     )}
                   >
-                    <span className="mt-1.5 h-1 w-1 rounded-full bg-current shrink-0" />
+                    <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-current" />
                     <span>{reason}</span>
                   </li>
                 ))}
@@ -138,9 +152,11 @@ export function RegressionGuardrailBanner() {
                   label="Queries >8s"
                   current={String(report.current.very_slow)}
                   baseline={String(report.baseline.very_slow)}
-                  deltaPct={report.deltas?.very_slow_ratio
-                    ? Math.round((report.deltas.very_slow_ratio - 1) * 100)
-                    : undefined}
+                  deltaPct={
+                    report.deltas?.very_slow_ratio
+                      ? Math.round((report.deltas.very_slow_ratio - 1) * 100)
+                      : undefined
+                  }
                   inverted
                 />
               </div>
@@ -166,10 +182,18 @@ interface MetricDeltaProps {
   inverted?: boolean;
 }
 
-function MetricDelta({ label, current, baseline, deltaPct, unit = '%', inverted }: MetricDeltaProps) {
+function MetricDelta({
+  label,
+  current,
+  baseline,
+  deltaPct,
+  unit = '%',
+  inverted,
+}: MetricDeltaProps) {
   const hasDelta = deltaPct !== undefined && deltaPct !== null && !Number.isNaN(deltaPct);
-  const isBad = hasDelta && (inverted ? deltaPct! > 0 : deltaPct! < 0);
-  const isGood = hasDelta && (inverted ? deltaPct! < 0 : deltaPct! > 0);
+  const delta = hasDelta ? deltaPct : 0;
+  const isBad = hasDelta && (inverted ? delta > 0 : delta < 0);
+  const isGood = hasDelta && (inverted ? delta < 0 : delta > 0);
 
   return (
     <div className="rounded-md border border-border/40 bg-background/50 p-2">
@@ -181,13 +205,15 @@ function MetricDelta({ label, current, baseline, deltaPct, unit = '%', inverted 
       {hasDelta && (
         <p
           className={cn(
-            'text-[10px] font-mono tabular-nums mt-0.5',
+            'mt-0.5 font-mono text-[10px] tabular-nums',
             isBad && 'text-destructive',
             isGood && 'text-success',
             !isBad && !isGood && 'text-muted-foreground',
           )}
         >
-          {deltaPct! > 0 ? '+' : ''}{deltaPct}{unit}
+          {delta > 0 ? '+' : ''}
+          {delta}
+          {unit}
         </p>
       )}
     </div>
