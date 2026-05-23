@@ -1,6 +1,6 @@
 /**
  * LocationCard — Card colapsável por local físico do produto
- * 
+ *
  * FLUXO DE SELEÇÃO EM 4 ETAPAS:
  * 1. Área (este card = local físico)
  * 2. Técnica (grupo: Laser, UV Digital, Serigrafia…) — só nome
@@ -8,19 +8,14 @@
  * 4. Configurar (tamanho + cores + quantidade) → Preço
  */
 
-import { useState, useMemo, useCallback } from "react";
-import { ChevronDown, ChevronUp, Sparkles, Maximize2 } from "lucide-react";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { TechniqueOption } from "./TechniqueOption";
-import { VariationSelector } from "./VariationSelector";
-import { ConfigurationPanel } from "./ConfigurationPanel";
-import { type PrintAreaV2, type CustomizationPriceFlat } from "@/hooks/simulation";
+import { useState, useMemo, useCallback } from 'react';
+import { ChevronDown, ChevronUp, Sparkles, Maximize2 } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { cn } from '@/lib/utils';
+import { TechniqueOption } from './TechniqueOption';
+import { VariationSelector } from './VariationSelector';
+import { ConfigurationPanel } from './ConfigurationPanel';
+import { type PrintAreaV2, type CustomizationPriceFlat } from '@/hooks/simulation';
 
 export interface LocationGroupData {
   groupKey: string;
@@ -72,7 +67,7 @@ function groupAreasByTechnique(areas: PrintAreaV2[]): TechniqueGroup[] {
         areas: [],
       });
     }
-    groups.get(groupCode)!.areas.push(area);
+    groups.get(groupCode)?.areas.push(area);
   }
 
   return [...groups.values()];
@@ -108,35 +103,35 @@ export function LocationCard({
   const [selectedVariationId, setSelectedVariationId] = useState<string | null>(selectedAreaId);
 
   // Group areas by technique
-  const techniqueGroups = useMemo(
-    () => groupAreasByTechnique(group.areas),
-    [group.areas]
-  );
+  const techniqueGroups = useMemo(() => groupAreasByTechnique(group.areas), [group.areas]);
 
   // Get areas for the currently selected technique group
   const selectedTechGroup = useMemo(() => {
     if (!selectedGroupCode) return null;
-    return techniqueGroups.find(g => g.groupCode === selectedGroupCode) || null;
+    return techniqueGroups.find((g) => g.groupCode === selectedGroupCode) || null;
   }, [techniqueGroups, selectedGroupCode]);
 
   // Get the selected area object for ConfigurationPanel
   const selectedArea = useMemo(() => {
     if (!selectedVariationId) return null;
-    return group.areas.find(a => a.area_id === selectedVariationId) || null;
+    return group.areas.find((a) => a.area_id === selectedVariationId) || null;
   }, [group.areas, selectedVariationId]);
 
   // Step 2: Select technique group
-  const handleSelectTechnique = useCallback((groupCode: string) => {
-    if (selectedGroupCode === groupCode) {
-      // Deselect
-      setSelectedGroupCode(null);
-      setSelectedVariationId(null);
-      onSelectArea(selectedAreaId || '', null);
-      return;
-    }
-    setSelectedGroupCode(groupCode);
-    setSelectedVariationId(null); // Reset variation when technique changes
-  }, [selectedGroupCode, selectedAreaId, onSelectArea]);
+  const handleSelectTechnique = useCallback(
+    (groupCode: string) => {
+      if (selectedGroupCode === groupCode) {
+        // Deselect
+        setSelectedGroupCode(null);
+        setSelectedVariationId(null);
+        onSelectArea(selectedAreaId || '', null);
+        return;
+      }
+      setSelectedGroupCode(groupCode);
+      setSelectedVariationId(null); // Reset variation when technique changes
+    },
+    [selectedGroupCode, selectedAreaId, onSelectArea],
+  );
 
   // Step 3: Select variation (area_id)
   const handleSelectVariation = useCallback((areaId: string) => {
@@ -144,34 +139,37 @@ export function LocationCard({
   }, []);
 
   // Step 4: Price calculated
-  const handlePriceCalculated = useCallback((areaId: string, priceData: CustomizationPriceFlat | null) => {
-    onSelectArea(areaId, priceData);
-  }, [onSelectArea]);
+  const handlePriceCalculated = useCallback(
+    (areaId: string, priceData: CustomizationPriceFlat | null) => {
+      onSelectArea(areaId, priceData);
+    },
+    [onSelectArea],
+  );
 
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggle}>
       <div
         className={cn(
-          "rounded-xl border transition-all duration-200",
+          'rounded-xl border transition-all duration-200',
           hasSelection
-            ? "bg-card border-primary/40 shadow-lg shadow-primary/5"
+            ? 'border-primary/40 bg-card shadow-lg shadow-primary/5'
             : isExpanded
-              ? "bg-card border-primary/20 shadow-md shadow-primary/5"
-              : "bg-card/50 border-border hover:border-primary/20 hover:bg-card"
+              ? 'border-primary/20 bg-card shadow-md shadow-primary/5'
+              : 'border-border bg-card/50 hover:border-primary/20 hover:bg-card',
         )}
       >
         {/* Etapa 1: Header do local */}
         <CollapsibleTrigger asChild>
-          <button className="w-full p-4 flex items-center justify-between text-left">
+          <button className="flex w-full items-center justify-between p-4 text-left">
             <div className="flex items-center gap-3">
               <div
                 className={cn(
-                  "w-10 h-10 rounded-lg flex items-center justify-center transition-colors",
+                  'flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
                   hasSelection
-                    ? "bg-primary text-primary-foreground"
+                    ? 'bg-primary text-primary-foreground'
                     : isExpanded
-                      ? "bg-primary/20 text-primary"
-                      : "bg-secondary text-secondary-foreground"
+                      ? 'bg-primary/20 text-primary'
+                      : 'bg-secondary text-secondary-foreground',
                 )}
               >
                 <Sparkles className="h-4 w-4" />
@@ -180,13 +178,13 @@ export function LocationCard({
                 <p className="font-medium text-foreground">
                   {group.componentName} — {group.locationName}
                 </p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-sm text-muted-foreground flex items-center gap-1">
+                <div className="mt-0.5 flex items-center gap-2">
+                  <span className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Maximize2 className="h-3 w-3" />
                     até {group.maxWidth}×{group.maxHeight}cm
                   </span>
                   <span className="text-sm text-muted-foreground">
-                    · {techniqueCount} técnica{techniqueCount !== 1 ? "s" : ""}
+                    · {techniqueCount} técnica{techniqueCount !== 1 ? 's' : ''}
                   </span>
                 </div>
               </div>
@@ -200,12 +198,9 @@ export function LocationCard({
         </CollapsibleTrigger>
 
         <CollapsibleContent forceMount>
-          <div className={cn(
-            "px-4 pb-4 space-y-3",
-            !isExpanded && "hidden"
-          )}>
+          <div className={cn('space-y-3 px-4 pb-4', !isExpanded && 'hidden')}>
             {/* Etapa 2: Escolha a técnica */}
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Etapa 2 · Escolha a técnica
             </p>
             <div className="space-y-1.5">
