@@ -1,5 +1,9 @@
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { authenticateRequest, requireRole, authErrorResponse } from "../_shared/auth.ts";
+import { parseContract } from "../_shared/contracts/index.ts";
+import {
+  BiCopilotSchemas,
+} from "../_shared/contracts/schemas/bi-copilot.ts";
 /**
  * Edge function `bi-copilot` — responde perguntas do vendedor sobre um cliente
  * com base no contexto BI (score, sazonalidade, afinidade, tendências, benchmarks).
@@ -40,13 +44,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    const body = (await req.json()) as RequestBody;
-    if (!body.question || body.question.length > 500) {
-      return new Response(JSON.stringify({ error: "Pergunta inválida." }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const contractResult = await parseContract(req, BiCopilotSchemas, {
+      corsHeaders,
+    });
+    if (!contractResult.ok) return contractResult.response;
+    const { data: body, responseHeaders } = contractResult;
 
     const systemPrompt = `Você é um copiloto de Business Intelligence comercial para vendedores B2B de brindes corporativos.
 Você analisa dados reais de UM cliente específico e responde perguntas estratégicas com clareza, brevidade e ação.
@@ -108,7 +110,7 @@ ${JSON.stringify(body.context, null, 2)}`;
 
     return new Response(JSON.stringify({ answer }), {
       status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("bi-copilot error:", e);

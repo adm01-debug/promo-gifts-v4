@@ -17,11 +17,15 @@ import { expect, type Locator, type Page } from "@playwright/test";
 
 import { TID, TID_PREFIX } from "../fixtures/selectors";
 
-const DEFAULT_TIMEOUT = 10_000;
+// CI dobra o timeout para alinhar com `expect.timeout`/`actionTimeout` do
+// playwright.config.ts (45s/30s no CI), que absorvem a hidratação SPA pesada
+// (~10s de parse/eval JS no primeiro acesso). Local mantém 10s para detectar
+// regressões reais cedo. Fonte: REDEPLOY-T14-E2E-FIX (2026-05-22).
+const DEFAULT_TIMEOUT = process.env.CI ? 30_000 : 10_000;
 const DEFAULT_POLL_INTERVAL = 200;
 
 export interface WaitOpts {
-  /** Timeout total em ms. Default: 10_000. */
+  /** Timeout total em ms. Default: 10_000 (local) / 30_000 (CI). */
   timeout?: number;
   /** Mensagem extra para diagnóstico no erro. */
   message?: string;

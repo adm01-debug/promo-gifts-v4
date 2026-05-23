@@ -88,13 +88,15 @@ Deno.serve(async (req) => {
         });
 
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Bitrix24 API error:', errorText);
+          await response.text();
+          console.error('Bitrix24 API error:', { status: response.status });
           throw new Error(`Bitrix24 API error: ${response.status}`);
         }
 
         const bitrixData = await response.json();
-        console.log('Bitrix24 response:', JSON.stringify(bitrixData).slice(0, 500));
+        console.log('Bitrix24 response received:', {
+          records: Array.isArray(bitrixData.result) ? bitrixData.result.length : 0,
+        });
 
         // Transform Bitrix24 data to our client format
         const clients = (bitrixData.result || []).map((company: any) => ({
@@ -216,13 +218,15 @@ Deno.serve(async (req) => {
         });
 
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Bitrix24 deals error:', errorText);
+          await response.text();
+          console.error('Bitrix24 deals error:', { status: response.status });
           throw new Error(`Bitrix24 API error: ${response.status}`);
         }
 
         const bitrixData = await response.json();
-        console.log('Bitrix24 deals response:', JSON.stringify(bitrixData).slice(0, 500));
+        console.log('Bitrix24 deals response received:', {
+          records: Array.isArray(bitrixData.result) ? bitrixData.result.length : 0,
+        });
 
         const deals = (bitrixData.result || []).map((deal: any) => ({
           id: deal.ID,

@@ -29,7 +29,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn } from '@/lib/utils';
 import { useCustomizationPriceLegacy, type CustomizationPriceV2 } from '@/hooks/simulation';
 import { formatCurrency, formatNumber } from './utils';
-import type { Product, ConfiguredEngraving } from "@/pages/advanced-price-search/types";
+import type { Product, ConfiguredEngraving } from "./types";
 import { toast } from 'sonner';
 
 interface MultiEngravingResultProps {

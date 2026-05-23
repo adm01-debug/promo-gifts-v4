@@ -30,6 +30,7 @@ vi.mock('../../src/contexts/AuthContext', () => ({
 vi.mock('../../src/contexts/OnboardingContext', () => ({
   useOnboarding: () => ({ isTourOpen: false }),
   useOnboardingContext: () => ({ isTourOpen: false }),
+  useOptionalOnboardingContext: () => null,
   OnboardingProvider: ({ children }: any) => <div>{children}</div>,
 }));
 

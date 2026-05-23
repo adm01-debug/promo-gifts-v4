@@ -39,10 +39,9 @@ interface DiagSnapshot {
   };
 }
 
-const PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID as string;
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
-const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
-const FN_URL = `${SUPABASE_URL ?? `https://${PROJECT_ID}.supabase.co`}/functions/v1/crm-db-bridge?op=diag`;
+const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.replace(/\/+$/, '');
+const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+const FN_URL = SUPABASE_URL ? `${SUPABASE_URL}/functions/v1/crm-db-bridge?op=diag` : null;
 const POLL_MS = 30_000;
 
 function fmtMs(v: number | null | undefined): string {
@@ -72,6 +71,12 @@ export function ColdVsWarmCrmCard() {
   const [lastFetched, setLastFetched] = useState<number | null>(null);
 
   const fetchDiag = useCallback(async () => {
+    if (!FN_URL || !ANON_KEY) {
+      setError('VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY precisam estar configuradas.');
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -91,6 +96,11 @@ export function ColdVsWarmCrmCard() {
   }, []);
 
   useEffect(() => {
+    if (!FN_URL || !ANON_KEY) {
+      setError('VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY precisam estar configuradas.');
+      return;
+    }
+
     fetchDiag();
     const id = setInterval(fetchDiag, POLL_MS);
     return () => clearInterval(id);

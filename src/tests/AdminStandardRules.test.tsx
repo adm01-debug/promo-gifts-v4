@@ -94,14 +94,25 @@ describe('Admin Module Programmatic Standard Rules', () => {
     console.error = originalError;
   });
 
-  Object.entries(adminPageModules).forEach(([path, module]: [string, unknown]) => {
-    const Component = (module as Record<string, unknown>).default;
-    if (typeof Component !== 'function') return;
-    const PageComponent = Component as React.ComponentType;
+  // T-FIX-4: refatorado de `forEach(...) { it(...) }` para `describe.each`.
+  // O padrão anterior funcionava (cada it era registrado individualmente),
+  // mas describe.each é mais idiomático no Vitest e gera labels limpos no
+  // reporter ("Page X > renders PageSEO" em vez de "X renders PageSEO").
+  const adminPages = Object.entries(adminPageModules)
+    .map(([path, mod]: [string, unknown]) => {
+      const component = (mod as Record<string, unknown>).default;
+      const pageName = path.split('/').pop()?.replace('.tsx', '') ?? 'unknown';
+      return { pageName, component };
+    })
+    .filter(({ component }) => typeof component === 'function')
+    .map(({ pageName, component }) => ({
+      pageName,
+      pageComponent: component as React.ComponentType,
+    }));
 
-    const pageName = path.split('/').pop()?.replace('.tsx', '');
-
-    it(`${pageName} should render with correct PageSEO config`, async () => {
+  describe.each(adminPages)('Page $pageName', (page) => {
+    const { pageName, pageComponent: PageComponent } = page;
+    it('should render with correct PageSEO config', async () => {
       render(<PageComponent />, { wrapper });
 
       // We look for the SEO marker. Since it's often conditional or inside MainLayout,
@@ -113,14 +124,19 @@ describe('Admin Module Programmatic Standard Rules', () => {
       expect(seo?.getAttribute('data-title')).not.toBe('');
     });
 
-    it(`${pageName} should use standard max-w classes in its layout container`, () => {
-      render(<PageComponent />, { wrapper });
-      const mainContent = screen.queryByRole('main');
+    it('should use standard max-w classes in its layout container', () => {
+      const { container: renderRoot } = render(<PageComponent />, { wrapper });
 
-      // We look for the standardized container div
-      const container = mainContent?.querySelector('[class*="max-w-"]');
-      expect(container, `Page ${pageName} missing standardized max-w container`).not.toBeNull();
-      expect(container?.className).toContain('mx-auto');
+      // Admin pages são fragmentos de conteúdo wrapped pela MainLayout
+      // externamente (no router). Por isso buscamos o container padronizado
+      // em todo o output renderizado, não apenas dentro de <main>.
+      // O seletor composto [class*="max-w-"][class*="mx-auto"] garante que
+      // ambas as classes estão no MESMO elemento (single source of truth).
+      const container = renderRoot.querySelector('[class*="max-w-"][class*="mx-auto"]');
+      expect(
+        container,
+        `Page ${pageName} está faltando um container padronizado com 'max-w-*' e 'mx-auto' juntos no mesmo elemento.`,
+      ).not.toBeNull();
     });
   });
 });

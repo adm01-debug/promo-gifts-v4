@@ -1,6 +1,7 @@
 # Edge Functions — Catálogo Completo
 
-> Última atualização: 2026-04-17 · 50 funções ativas
+> Última atualização: 2026-05-22 · **81 funções ativas** (24 com `verify_jwt = false`, todas com defesa interna validada — ver auditoria back-end sênior de 2026-05-22)
+> A tabela abaixo é histórica e cobre as ~50 funções originais — o inventário completo de 81 está em `audit/ANALISE_BACKEND_SENIOR_2026-05-22.md` (Seção 1).
 
 ## Convenções
 

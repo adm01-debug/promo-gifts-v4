@@ -1,5 +1,5 @@
-import { ShieldAlert } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { ShieldAlert, KeyRound, Lock } from "lucide-react";
+import { useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   isDevOnlyPath,
@@ -12,6 +12,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 interface RestrictedRouteNoticeProps {
   isCollapsed: boolean;
@@ -46,10 +47,13 @@ export function RestrictedRouteNotice({
   if (!blocked) return null;
 
   const requiredRole = isDevRoute ? "dev" : "admin";
-  const title = "Rota restrita";
+  const title = "Acesso Restrito";
   const description = isDevRoute
-    ? "Esta área é exclusiva da equipe técnica (dev). Você não tem permissão para abri-la."
-    : "Esta área exige perfil administrativo. Você não tem permissão para abri-la.";
+    ? "Esta funcionalidade é exclusiva para a equipe técnica de engenharia."
+    : "Esta funcionalidade exige permissões de supervisão ou administração.";
+  
+  const icon = isDevRoute ? KeyRound : Lock;
+  const Icon = icon;
 
   if (isCollapsed) {
     return (
@@ -61,21 +65,29 @@ export function RestrictedRouteNotice({
               aria-label={`${title}: ${description}`}
               className={cn(
                 "mx-auto my-2 flex h-8 w-8 items-center justify-center rounded-md",
-                "bg-destructive/10 text-destructive border border-destructive/30"
+                "bg-amber-500/10 text-amber-500 border border-amber-500/30 transition-all duration-300",
+                "hover:bg-amber-500/20 hover:border-amber-500/50"
               )}
             >
-              <ShieldAlert className="h-4 w-4" aria-hidden="true" />
+              <Icon className="h-4 w-4" aria-hidden="true" />
             </div>
           </TooltipTrigger>
-          <TooltipContent side="right" className="max-w-xs">
-            <p className="font-semibold text-xs">{title}</p>
-            <p className="text-[11px] mt-0.5 text-muted-foreground">
+          <TooltipContent side="right" className="max-w-xs border-amber-500/20 bg-background/95 backdrop-blur-md">
+            <p className="font-bold text-amber-500 text-xs flex items-center gap-1.5">
+              <ShieldAlert className="h-3 w-3" />
+              {title}
+            </p>
+            <p className="text-[11px] mt-1 text-muted-foreground leading-relaxed">
               {description}
             </p>
-            <p className="text-[11px] mt-1">
-              Papel exigido:{" "}
-              <span className="font-mono font-semibold">{requiredRole}</span>
-            </p>
+            <div className="mt-2 pt-2 border-t border-border/40 flex items-center justify-between gap-4">
+              <span className="text-[10px] text-muted-foreground">
+                Nível: <span className="font-mono font-bold text-amber-600/80 uppercase">{requiredRole}</span>
+              </span>
+              <Button asChild size="xs" variant="ghost" className="h-6 text-[10px] px-2 hover:bg-amber-500/10 hover:text-amber-600">
+                <Link to="/">Sair</Link>
+              </Button>
+            </div>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -87,26 +99,35 @@ export function RestrictedRouteNotice({
       role="status"
       aria-live="polite"
       data-testid="sidebar-restricted-notice"
-      className="mx-2 my-2 rounded-md border border-destructive/30 bg-destructive/10 p-2.5 text-xs"
+      className="mx-2 my-2 rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 to-transparent p-3 shadow-sm ring-1 ring-white/5"
     >
-      <div className="flex items-start gap-2">
-        <ShieldAlert
-          className="h-4 w-4 text-destructive flex-shrink-0 mt-0.5"
-          aria-hidden="true"
-        />
+      <div className="flex items-start gap-3">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-500/20 text-amber-500 shadow-inner">
+          <Icon className="h-4 w-4" aria-hidden="true" />
+        </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-destructive leading-tight">
-            {title}
-          </p>
-          <p className="text-destructive/80 mt-0.5 leading-snug">
+          <div className="flex items-center justify-between gap-2">
+            <p className="font-bold text-amber-500 text-[11px] uppercase tracking-wider">
+              {title}
+            </p>
+            <span className="rounded bg-amber-500/20 px-1.5 py-0.5 font-mono text-[9px] font-bold text-amber-600 uppercase">
+              {requiredRole}
+            </span>
+          </div>
+          <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
             {description}
           </p>
-          <p className="text-destructive/70 mt-1">
-            Papel exigido:{" "}
-            <span className="font-mono font-semibold">{requiredRole}</span>
-          </p>
+          <div className="mt-2.5 flex items-center gap-2">
+            <Button asChild size="xs" className="h-7 px-3 bg-amber-500 hover:bg-amber-600 text-white font-bold text-[10px] rounded-lg transition-all duration-300">
+              <Link to="/">Voltar ao Início</Link>
+            </Button>
+            <Button variant="ghost" size="xs" className="h-7 px-2 text-[10px] text-muted-foreground hover:text-foreground">
+              Solicitar Acesso
+            </Button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
+

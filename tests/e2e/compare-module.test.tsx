@@ -54,6 +54,7 @@ vi.mock('../../src/contexts/OnboardingContext', () => ({
   useOnboardingContext: () => ({
     isTourOpen: false,
     startTour: vi.fn(),
+  useOptionalOnboardingContext: () => null,
     completeTour: vi.fn(),
   }),
   useOnboardingHook: () => ({

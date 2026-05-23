@@ -18,10 +18,8 @@ Deno.serve(async (req) => {
     try {
       await authenticateRequest(req);
     } catch (authErr) {
-      const authHeader = req.headers.get("Authorization");
-      const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
       const simKey = Deno.env.get('SIMULATION_BYPASS_KEY');
-      console.log(`[cnpj-lookup] Auth Debug: token_len=${authHeader?.length}, has_sim_key=${!!simKey}, sim_key_len=${simKey?.length}`);
+      console.warn(`[cnpj-lookup] Auth failed; simulation_key_configured=${!!simKey}`);
       return authErrorResponse(authErr, corsHeaders);
     }
 
@@ -68,8 +66,8 @@ Deno.serve(async (req) => {
     );
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`CNPJá API error [${response.status}]:`, errorText);
+      await response.text();
+      console.error(`CNPJá API error [${response.status}]`);
       return new Response(
         JSON.stringify({ error: `Erro ao consultar CNPJ: ${response.status}` }),
         {

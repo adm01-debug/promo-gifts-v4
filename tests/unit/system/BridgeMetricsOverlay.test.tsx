@@ -40,12 +40,12 @@ describe('BridgeMetricsOverlay', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useDevGate as any).mockReturnValue({ isAllowed: true });
+    (useDevGate as any).mockReturnValue({ isAllowed: true, isDev: true });
     (useBridgeMetrics as any).mockReturnValue(defaultMockValues);
   });
 
   it('não deve renderizar nada se isAllowed for false', () => {
-    (useDevGate as any).mockReturnValue({ isAllowed: false });
+    (useDevGate as any).mockReturnValue({ isAllowed: false, isDev: true });
     const { container } = render(<BridgeMetricsOverlay />);
     expect(container.firstChild).toBeNull();
   });

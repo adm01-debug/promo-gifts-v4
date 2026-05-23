@@ -15,7 +15,7 @@ import {
   AlertCircle,
   Sparkles,
 } from 'lucide-react';
-import type { ProductTechnique, ComponentData, LocationData, TechniqueData } from "@/pages/advanced-price-search/types";
+import type { ProductTechnique, ComponentData, LocationData, TechniqueData } from "./types";
 
 interface TechniqueSelectorProps {
   productId: string;

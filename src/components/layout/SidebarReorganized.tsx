@@ -333,32 +333,39 @@ export const SidebarReorganized = React.memo(
         <FocusTrap active={isOpen && isMobile} className="h-full" autoFocus={false}>
           <div className={cn("flex flex-col h-full pt-16 lg:pt-0 min-h-0", isCollapsed && "overflow-visible")}>
             {/* Brand Header */}
-            <div className="relative group/brand border-b border-white/5 bg-gradient-to-b from-white/[0.04] to-transparent mb-2">
-            <SidebarBrandHeader isCollapsed={isCollapsed} />
-            <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover/brand:opacity-100 transition-opacity duration-500 pointer-events-none blur-2xl rounded-full" />
-          </div>
+            <div className="relative group/brand border-b border-white/[0.05] bg-gradient-to-b from-white/[0.02] to-transparent">
+              <SidebarBrandHeader isCollapsed={isCollapsed} />
+              <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover/brand:opacity-100 transition-opacity duration-500 pointer-events-none blur-2xl rounded-full" />
+            </div>
 
 
           {/* Collapse controls (desktop) */}
-          <div className="hidden lg:flex items-center justify-between px-3 mb-2">
-            {!isCollapsed && hasAnyGroupOpen && (
+          <div className="hidden lg:flex items-center justify-between px-3 mt-4 mb-3 gap-2">
+            {!isCollapsed && (
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="h-8 gap-2 text-[10px] border-sidebar-border/30 hover:bg-primary/10 hover:text-primary text-sidebar-foreground/40 focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-1 rounded-xl transition-all duration-300"
+                className={cn(
+                  "h-8 flex-1 gap-2 text-[10px] uppercase font-bold tracking-wider",
+                  "text-sidebar-foreground/40 hover:text-primary hover:bg-primary/10",
+                  "rounded-xl transition-all duration-300 opacity-60 hover:opacity-100",
+                  !hasAnyGroupOpen && "invisible"
+                )}
                 onClick={collapseAllGroups}
                 aria-label="Recolher todos os grupos de navegação"
-
               >
-                <X className="h-3 w-3" />
-                Fechar
+                <ChevronsDownUp className="h-3 w-3" />
+                Recolher
               </Button>
             )}
-            {!isCollapsed && !hasAnyGroupOpen && <div />}
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 hover:bg-sidebar-accent/50 hover:text-primary ml-auto text-sidebar-foreground/30 focus-visible:ring-1 focus-visible:ring-primary rounded-xl transition-all duration-300"
+              className={cn(
+                "h-8 w-8 shrink-0 hover:bg-sidebar-accent/50 hover:text-primary text-sidebar-foreground/30",
+                "focus-visible:ring-1 focus-visible:ring-primary rounded-xl transition-all duration-300",
+                isCollapsed && "mx-auto"
+              )}
               onClick={toggleCollapse}
               aria-label={isCollapsed ? "Expandir menu" : "Recolher menu"}
               title={isCollapsed ? "Expandir menu" : "Recolher menu"}

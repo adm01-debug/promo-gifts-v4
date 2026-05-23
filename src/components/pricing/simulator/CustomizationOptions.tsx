@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/select';
 import { Palette, Ruler, Loader2, AlertCircle } from 'lucide-react';
 import { useTechniquePricing } from '@/hooks/simulation';
-import type { ProductTechnique } from "@/pages/advanced-price-search/types";
+import type { ProductTechnique } from "./types";
 
 interface CustomizationOptionsProps {
   technique: ProductTechnique;

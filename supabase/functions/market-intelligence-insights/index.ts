@@ -4,6 +4,10 @@ import { getCorsHeaders } from "../_shared/cors.ts";
 // v2: server-side cache, structured logging, telemetry, quota check, smart empty state.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { authenticateRequest, authErrorResponse } from "../_shared/auth.ts";
+import { parseContract } from "../_shared/contracts/index.ts";
+import {
+  MarketIntelligenceInsightsSchemas,
+} from "../_shared/contracts/schemas/market-intelligence-insights.ts";
 
 const FUNCTION_NAME = "market-intelligence-insights";
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h
@@ -214,10 +218,16 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: getCorsHeaders(req) });
 
   let userId: string | null = null;
+  let responseHeaders: Record<string, string> = {};
   try {
     const auth = await authenticateRequest(req);
     userId = auth.userId;
-    const body = (await req.json().catch(() => ({}))) as RequestBody;
+    const contractResult = await parseContract(req, MarketIntelligenceInsightsSchemas, {
+      corsHeaders,
+    });
+    if (!contractResult.ok) return contractResult.response;
+    const body = contractResult.data as RequestBody;
+    responseHeaders = contractResult.responseHeaders;
     const cacheKey = await buildCacheKey(body);
 
     // 1) Cache lookup (skip if forceRefresh)
@@ -240,7 +250,7 @@ Deno.serve(async (req) => {
         });
         return new Response(
           JSON.stringify({ ...(cached.payload as object), cached: true, generated_at: cached.created_at }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          { headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" } },
         );
       }
     }
@@ -254,7 +264,7 @@ Deno.serve(async (req) => {
           error: "quota_exceeded",
           message: `Limite mensal de IA atingido (${quota.used}/${quota.limit}).`,
         }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 429, headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" } },
       );
     }
 
@@ -266,7 +276,7 @@ Deno.serve(async (req) => {
       const empty = buildEmptyState(summary);
       log("info", "empty_state", { user_id: userId, period_days: summary.period_days });
       return new Response(JSON.stringify(empty), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -274,7 +284,7 @@ Deno.serve(async (req) => {
     if (!LOVABLE_API_KEY) {
       log("warn", "missing_api_key", { user_id: userId });
       return new Response(JSON.stringify(buildFallback(summary)), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -321,21 +331,21 @@ Deno.serve(async (req) => {
       log("warn", "ai_rate_limited", { user_id: userId, ai_duration_ms: aiDuration });
       return new Response(JSON.stringify({ error: "rate_limited", ...buildFallback(summary) }), {
         status: 429,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
       });
     }
     if (aiResp.status === 402) {
       log("warn", "ai_no_credits", { user_id: userId });
       return new Response(JSON.stringify({ error: "no_credits", ...buildFallback(summary) }), {
         status: 402,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
       });
     }
     if (!aiResp.ok) {
       const txt = await aiResp.text();
       log("error", "ai_error", { user_id: userId, status: aiResp.status, body: txt.slice(0, 300) });
       return new Response(JSON.stringify(buildFallback(summary)), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -352,7 +362,7 @@ Deno.serve(async (req) => {
     if (!parsed || !parsed.summary) {
       log("warn", "ai_parse_failed", { user_id: userId });
       return new Response(JSON.stringify(buildFallback(summary)), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -399,7 +409,7 @@ Deno.serve(async (req) => {
     });
 
     return new Response(JSON.stringify({ ...parsed, cached: false, generated_at: new Date().toISOString() }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
     });
   } catch (e: any) {
     if (e?.status) return authErrorResponse(e, getCorsHeaders(req));

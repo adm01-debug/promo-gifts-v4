@@ -48,6 +48,7 @@ vi.mock("@/hooks/intelligence/useAIRecommendations", () => ({
 
 import { useAIRecommendations } from "@/hooks/intelligence/useAIRecommendations";
 import type { ProductForRecommendation } from "@/hooks/intelligence/useAIRecommendations";
+import { AIRecommendationsPanel } from "@/components/ai/AIRecommendationsPanel";
 
 const PRODUCTS: ProductForRecommendation[] = [
   { id: "prod-1", name: "Caneta Esferográfica", category: "Escritório", description: "Caneta azul" },
@@ -64,7 +65,6 @@ describe("AIRecommendationsPanel", () => {
   // ── Form rendering ─────────────────────────────────────────────
 
   it("renders client form fields in default state", async () => {
-    const { AIRecommendationsPanel } = await import("@/components/ai/AIRecommendationsPanel");
     renderWithProviders(<AIRecommendationsPanel products={PRODUCTS} />);
 
     expect(screen.getByRole("textbox", { name: /nome do cliente/i })).toBeInTheDocument();
@@ -74,14 +74,12 @@ describe("AIRecommendationsPanel", () => {
   });
 
   it("shows product count in the action area", async () => {
-    const { AIRecommendationsPanel } = await import("@/components/ai/AIRecommendationsPanel");
     renderWithProviders(<AIRecommendationsPanel products={PRODUCTS} />);
 
     expect(screen.getByText(/3 produtos disponíveis/i)).toBeInTheDocument();
   });
 
   it("shows singular 'produto disponível' when exactly 1 product", async () => {
-    const { AIRecommendationsPanel } = await import("@/components/ai/AIRecommendationsPanel");
     renderWithProviders(<AIRecommendationsPanel products={[PRODUCTS[0]]} />);
 
     expect(screen.getByText(/1 produto disponível/i)).toBeInTheDocument();
@@ -90,21 +88,18 @@ describe("AIRecommendationsPanel", () => {
   // ── Button disabled/enabled ────────────────────────────────────
 
   it("button is disabled when no client name and no products", async () => {
-    const { AIRecommendationsPanel } = await import("@/components/ai/AIRecommendationsPanel");
     renderWithProviders(<AIRecommendationsPanel />);
 
     expect(screen.getByRole("button", { name: /gerar recomendações/i })).toBeDisabled();
   });
 
   it("button is disabled when products provided but client name is empty", async () => {
-    const { AIRecommendationsPanel } = await import("@/components/ai/AIRecommendationsPanel");
     renderWithProviders(<AIRecommendationsPanel products={PRODUCTS} />);
 
     expect(screen.getByRole("button", { name: /gerar recomendações/i })).toBeDisabled();
   });
 
   it("button is disabled when client name set but products array is empty", async () => {
-    const { AIRecommendationsPanel } = await import("@/components/ai/AIRecommendationsPanel");
     renderWithProviders(
       <AIRecommendationsPanel products={[]} initialClient={{ name: "Corp ACME" }} />
     );
@@ -113,7 +108,6 @@ describe("AIRecommendationsPanel", () => {
   });
 
   it("button is enabled when both client name and products are provided", async () => {
-    const { AIRecommendationsPanel } = await import("@/components/ai/AIRecommendationsPanel");
     renderWithProviders(
       <AIRecommendationsPanel products={PRODUCTS} initialClient={{ name: "Corp ACME" }} />
     );
@@ -129,7 +123,6 @@ describe("AIRecommendationsPanel", () => {
       isLoading: true,
     });
 
-    const { AIRecommendationsPanel } = await import("@/components/ai/AIRecommendationsPanel");
     renderWithProviders(
       <AIRecommendationsPanel products={PRODUCTS} initialClient={{ name: "Corp" }} />
     );
@@ -146,7 +139,6 @@ describe("AIRecommendationsPanel", () => {
       error: "Falha na conexão com a IA",
     });
 
-    const { AIRecommendationsPanel } = await import("@/components/ai/AIRecommendationsPanel");
     renderWithProviders(<AIRecommendationsPanel products={PRODUCTS} initialClient={{ name: "Corp" }} />);
 
     const alert = screen.getByRole("alert");
@@ -167,7 +159,6 @@ describe("AIRecommendationsPanel", () => {
       ],
     });
 
-    const { AIRecommendationsPanel } = await import("@/components/ai/AIRecommendationsPanel");
     renderWithProviders(<AIRecommendationsPanel products={PRODUCTS} />);
 
     expect(screen.getByText("Caneta Esferográfica")).toBeInTheDocument();
@@ -189,7 +180,6 @@ describe("AIRecommendationsPanel", () => {
       insights: "Cliente prefere itens premium e sustentáveis.",
     });
 
-    const { AIRecommendationsPanel } = await import("@/components/ai/AIRecommendationsPanel");
     renderWithProviders(<AIRecommendationsPanel products={PRODUCTS} />);
 
     expect(screen.getByText("Insights da IA")).toBeInTheDocument();
@@ -205,7 +195,6 @@ describe("AIRecommendationsPanel", () => {
       insights: "",
     });
 
-    const { AIRecommendationsPanel } = await import("@/components/ai/AIRecommendationsPanel");
     renderWithProviders(<AIRecommendationsPanel products={PRODUCTS} />);
 
     expect(screen.queryByText("Insights da IA")).not.toBeInTheDocument();
@@ -214,7 +203,6 @@ describe("AIRecommendationsPanel", () => {
   // ── Empty state ────────────────────────────────────────────────
 
   it("shows empty state prompt when data is null and no recommendations", async () => {
-    const { AIRecommendationsPanel } = await import("@/components/ai/AIRecommendationsPanel");
     renderWithProviders(<AIRecommendationsPanel products={PRODUCTS} />);
 
     expect(
@@ -234,7 +222,6 @@ describe("AIRecommendationsPanel", () => {
       recommendations: [{ productId: "prod-1", score: 0.9, reason: "Ideal" }],
     });
 
-    const { AIRecommendationsPanel } = await import("@/components/ai/AIRecommendationsPanel");
     renderWithProviders(
       <AIRecommendationsPanel products={PRODUCTS} onProductClick={onProductClick} />
     );
@@ -247,7 +234,6 @@ describe("AIRecommendationsPanel", () => {
   // ── hideClientForm ─────────────────────────────────────────────
 
   it("hides the client form when hideClientForm prop is true", async () => {
-    const { AIRecommendationsPanel } = await import("@/components/ai/AIRecommendationsPanel");
     renderWithProviders(
       <AIRecommendationsPanel products={PRODUCTS} hideClientForm initialClient={{ name: "Corp" }} />
     );
@@ -265,7 +251,6 @@ describe("AIRecommendationsPanel", () => {
       recommendations: [{ productId: "prod-1", score: 0.8, reason: "Boa escolha" }],
     });
 
-    const { AIRecommendationsPanel } = await import("@/components/ai/AIRecommendationsPanel");
     renderWithProviders(<AIRecommendationsPanel products={PRODUCTS} initialClient={{ name: "Corp" }} />);
 
     const limparBtn = screen.getByRole("button", { name: /limpar resultados/i });

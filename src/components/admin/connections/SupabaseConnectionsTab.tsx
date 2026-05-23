@@ -1,48 +1,56 @@
-import { useEffect, useState, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Database, ExternalLink, Eye } from "lucide-react";
-import { Link } from "react-router-dom";
-import { ConnectionStatusBadge } from "./ConnectionStatusBadge";
-import { resolveSupabaseConnectionStatus } from "./connectionStatus";
-import { CardSourceDiagnostic } from "./CardSourceDiagnostic";
-import { SecretField } from "./SecretField";
-import { useSecretsManager } from "@/hooks/admin";
-import { useConnectionTester } from "@/hooks/intelligence";
-import { ConnectionTimelineDrawer } from "./ConnectionTimelineDrawer";
-import { LastTestLine, type LastTestInfo } from "./LastTestLine";
-import { ConnectionTestHistoryPanel } from "./ConnectionTestHistoryPanel";
-import { RetestButton } from "./RetestButton";
-import { ConnectionTestDetailsDialog } from "./ConnectionTestDetailsDialog";
-import { RefreshFromDbButton } from "./RefreshFromDbButton";
-import { hasSuspiciousLength, getPreflightIssues } from "./secretValidators";
-import { ConnectionPreflightAlert } from "./ConnectionPreflightAlert";
-import { TestProgressIndicator, type TestProgressPhase } from "./TestProgressIndicator";
-import { RetestCooldownSelector } from "./RetestCooldownSelector";
-import { ConnectionDetailsDialog } from "./ConnectionDetailsDialog";
+import { useEffect, useState, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Database, ExternalLink, Eye } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ConnectionStatusBadge } from './ConnectionStatusBadge';
+import { resolveSupabaseConnectionStatus } from './connectionStatus';
+import { CardSourceDiagnostic } from './CardSourceDiagnostic';
+import { SecretField } from './SecretField';
+import { useSecretsManager } from '@/hooks/admin';
+import { useConnectionTester } from '@/hooks/intelligence';
+import { ConnectionTimelineDrawer } from './ConnectionTimelineDrawer';
+import { LastTestLine, type LastTestInfo } from './LastTestLine';
+import { ConnectionTestHistoryPanel } from './ConnectionTestHistoryPanel';
+import { RetestButton } from './RetestButton';
+import { ConnectionTestDetailsDialog } from './ConnectionTestDetailsDialog';
+import { RefreshFromDbButton } from './RefreshFromDbButton';
+import { hasSuspiciousLength, getPreflightIssues } from './secretValidators';
+import { ConnectionPreflightAlert } from './ConnectionPreflightAlert';
+import { TestProgressIndicator, type TestProgressPhase } from './TestProgressIndicator';
+import { RetestCooldownSelector } from './RetestCooldownSelector';
+import { ConnectionDetailsDialog } from './ConnectionDetailsDialog';
 
 const ENVS = [
   {
-    key: "local", name: "Lovable Cloud (Local)", readOnly: true,
+    key: 'local',
+    name: 'Lovable Cloud (Local)',
+    readOnly: true,
     envKey: null,
-    urlSecret: null, anonSecret: null, serviceSecret: null,
-    description: "Banco principal do sistema. Gerenciado automaticamente pelo Lovable.",
+    urlSecret: null,
+    anonSecret: null,
+    serviceSecret: null,
+    description: 'Banco principal do sistema. Gerenciado automaticamente pelo Lovable.',
   },
   {
-    key: "promobrind", name: "Catálogo Promobrind",
-    envKey: "promobrind" as const,
-    urlSecret: "EXTERNAL_PROMOBRIND_URL",
-    anonSecret: "EXTERNAL_PROMOBRIND_ANON_KEY",
-    serviceSecret: "EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY",
-    description: "Banco SSOT de produtos, fornecedores e categorias.",
+    key: 'promobrind',
+    name: 'Catálogo Promobrind',
+    readOnly: false,
+    envKey: 'promobrind' as const,
+    urlSecret: 'EXTERNAL_PROMOBRIND_URL',
+    anonSecret: 'EXTERNAL_PROMOBRIND_ANON_KEY',
+    serviceSecret: 'EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY',
+    description: 'Banco SSOT de produtos, fornecedores e categorias.',
   },
   {
-    key: "crm", name: "CRM Promobrind",
-    envKey: "crm" as const,
-    urlSecret: "EXTERNAL_CRM_URL",
-    anonSecret: "EXTERNAL_CRM_ANON_KEY",
-    serviceSecret: "EXTERNAL_CRM_SERVICE_ROLE_KEY",
-    description: "Banco do CRM externo (empresas, contatos, agendas).",
+    key: 'crm',
+    name: 'CRM Promobrind',
+    readOnly: false,
+    envKey: 'crm' as const,
+    urlSecret: 'EXTERNAL_CRM_URL',
+    anonSecret: 'EXTERNAL_CRM_ANON_KEY',
+    serviceSecret: 'EXTERNAL_CRM_SERVICE_ROLE_KEY',
+    description: 'Banco do CRM externo (empresas, contatos, agendas).',
   },
 ] as const;
 
@@ -57,31 +65,40 @@ export function SupabaseConnectionsTab() {
   const [timelineOpenByEnv, setTimelineOpenByEnv] = useState<Record<string, boolean>>({});
   const [overviewOpenByEnv, setOverviewOpenByEnv] = useState<Record<string, boolean>>({});
 
-  useEffect(() => { list(); }, [list]);
+  useEffect(() => {
+    list();
+  }, [list]);
 
   const hydrate = useCallback(async () => {
     const entries = await Promise.all(
       ENVS.filter((e) => e.envKey).map(async (e) => {
-        const last = await fetchLastTest("supabase", { env_key: e.envKey! });
-        return [e.key, last ? {
-          ok: last.ok,
-          tested_at: last.tested_at,
-          latency_ms: last.latency_ms,
-          message: last.message,
-        } as LastTestInfo : null] as const;
+        const last = await fetchLastTest('supabase', { env_key: e.envKey! });
+        return [
+          e.key,
+          last
+            ? ({
+                ok: last.ok,
+                tested_at: last.tested_at,
+                latency_ms: last.latency_ms,
+                message: last.message,
+              } as LastTestInfo)
+            : null,
+        ] as const;
       }),
     );
     setLastByEnv(Object.fromEntries(entries));
   }, [fetchLastTest]);
 
-  useEffect(() => { hydrate(); }, [hydrate]);
+  useEffect(() => {
+    hydrate();
+  }, [hydrate]);
 
   const get = (n: string) => secrets.find((s) => s.name === n);
 
-  const handleTest = async (envKey: "promobrind" | "crm", localKey: string) => {
-    setPhaseByEnv((cur) => ({ ...cur, [localKey]: "running" }));
+  const handleTest = async (envKey: 'promobrind' | 'crm', localKey: string) => {
+    setPhaseByEnv((cur) => ({ ...cur, [localKey]: 'running' }));
     setPendingByEnv((cur) => ({ ...cur, [localKey]: new Date().toISOString() }));
-    const r = await test("supabase", { env_key: envKey });
+    const r = await test('supabase', { env_key: envKey });
     setLastByEnv((cur) => ({
       ...cur,
       [localKey]: {
@@ -95,7 +112,7 @@ export function SupabaseConnectionsTab() {
     }));
     setHistoryKeyByEnv((cur) => ({ ...cur, [localKey]: (cur[localKey] ?? 0) + 1 }));
     setPendingByEnv((cur) => ({ ...cur, [localKey]: null }));
-    setPhaseByEnv((cur) => ({ ...cur, [localKey]: r.ok ? "completed" : "failed" }));
+    setPhaseByEnv((cur) => ({ ...cur, [localKey]: r.ok ? 'completed' : 'failed' }));
   };
 
   return (
@@ -104,7 +121,7 @@ export function SupabaseConnectionsTab() {
         const url = env.urlSecret ? get(env.urlSecret) : undefined;
         const anon = env.anonSecret ? get(env.anonSecret) : undefined;
         const svc = env.serviceSecret ? get(env.serviceSecret) : undefined;
-        const last = env.readOnly ? null : lastByEnv[env.key] ?? null;
+        const last = env.readOnly ? null : (lastByEnv[env.key] ?? null);
         const credsConfigured = !!url?.has_value && !!svc?.has_value;
         const suspicious = !env.readOnly
           ? hasSuspiciousLength(secrets, [env.urlSecret!, env.anonSecret!, env.serviceSecret!])
@@ -112,8 +129,8 @@ export function SupabaseConnectionsTab() {
         const credsLooksValid = credsConfigured && !suspicious;
         const preflightIssues = !env.readOnly
           ? getPreflightIssues(secrets, [
-              { name: env.urlSecret!, label: "URL do projeto" },
-              { name: env.serviceSecret!, label: "Service Role Key" },
+              { name: env.urlSecret!, label: 'URL do projeto' },
+              { name: env.serviceSecret!, label: 'Service Role Key' },
             ])
           : [];
         const status = resolveSupabaseConnectionStatus({
@@ -124,7 +141,12 @@ export function SupabaseConnectionsTab() {
         });
         const canTest = !env.readOnly && credsLooksValid && preflightIssues.length === 0;
         return (
-          <Card key={env.key} data-retest-scope tabIndex={0} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+          <Card
+            key={env.key}
+            data-retest-scope
+            tabIndex={0}
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
             <CardHeader>
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2">
@@ -144,73 +166,108 @@ export function SupabaseConnectionsTab() {
                 <>
                   <CardSourceDiagnostic
                     fields={[
-                      { label: "URL do projeto", status: url },
-                      { label: "Anon Key", status: anon },
-                      { label: "Service Role Key", status: svc },
+                      { label: 'URL do projeto', status: url },
+                      { label: 'Anon Key', status: anon },
+                      { label: 'Service Role Key', status: svc },
                     ]}
                     loadError={listError}
                   />
-                  <SecretField label="URL do projeto" secretName={env.urlSecret!} status={url} onSaved={list} connectionId={env.key} />
-                  <SecretField label="Anon Key" secretName={env.anonSecret!} status={anon} onSaved={list} connectionId={env.key} />
-                  <SecretField label="Service Role Key" secretName={env.serviceSecret!} status={svc} onSaved={list} connectionId={env.key}
-                    helperText="Nunca exposto ao frontend. Usado apenas em edge functions admin." />
+                  <SecretField
+                    label="URL do projeto"
+                    secretName={env.urlSecret!}
+                    status={url}
+                    onSaved={list}
+                    connectionId={env.key}
+                  />
+                  <SecretField
+                    label="Anon Key"
+                    secretName={env.anonSecret!}
+                    status={anon}
+                    onSaved={list}
+                    connectionId={env.key}
+                  />
+                  <SecretField
+                    label="Service Role Key"
+                    secretName={env.serviceSecret!}
+                    status={svc}
+                    onSaved={list}
+                    connectionId={env.key}
+                    helperText="Nunca exposto ao frontend. Usado apenas em edge functions admin."
+                  />
                   <ConnectionPreflightAlert issues={preflightIssues} />
                   <div className="flex flex-wrap gap-2 pt-2">
                     <Button
                       size="sm"
                       variant="outline"
                       disabled={isTesting || !canTest}
-                      title={preflightIssues.length > 0
-                        ? `Corrija ${preflightIssues.length === 1 ? "o campo" : "os campos"} acima antes de testar`
-                        : !credsConfigured ? "Configure URL e Service Role Key primeiro"
-                        : !credsLooksValid ? "Credenciais com formato suspeito (comprimento curto) — re-salve antes de testar"
-                        : "Testar conexão real"}
+                      title={
+                        preflightIssues.length > 0
+                          ? `Corrija ${preflightIssues.length === 1 ? 'o campo' : 'os campos'} acima antes de testar`
+                          : !credsConfigured
+                            ? 'Configure URL e Service Role Key primeiro'
+                            : !credsLooksValid
+                              ? 'Credenciais com formato suspeito (comprimento curto) — re-salve antes de testar'
+                              : 'Testar conexão real'
+                      }
                       onClick={() => handleTest(env.envKey!, env.key)}
                     >
-                      {isTesting ? "Testando…" : "Testar conexão"}
+                      {isTesting ? 'Testando…' : 'Testar conexão'}
                     </Button>
                     <ConnectionTimelineDrawer
                       type="supabase"
                       label={env.name}
                       triggerVariant="ghost"
                       open={!!timelineOpenByEnv[env.key]}
-                      onOpenChange={(v) => setTimelineOpenByEnv((cur) => ({ ...cur, [env.key]: v }))}
+                      onOpenChange={(v) =>
+                        setTimelineOpenByEnv((cur) => ({ ...cur, [env.key]: v }))
+                      }
                     />
-                    <RefreshFromDbButton onRefreshed={list} />
+                    <RefreshFromDbButton
+                      onRefreshed={() => {
+                        void list();
+                      }}
+                    />
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => setOverviewOpenByEnv((cur) => ({ ...cur, [env.key]: true }))}
                       title="Ver status, máscara e última rotação sem expor segredos"
                     >
-                      <Eye className="h-4 w-4 mr-1" /> Ver detalhes
+                      <Eye className="mr-1 h-4 w-4" /> Ver detalhes
                     </Button>
                     <Button size="sm" variant="ghost" asChild>
                       <Link to="/admin/external-db">
-                        <ExternalLink className="h-4 w-4 mr-1" /> Ver schema
+                        <ExternalLink className="mr-1 h-4 w-4" /> Ver schema
                       </Link>
                     </Button>
                     <RetestCooldownSelector className="ml-auto" />
                   </div>
                   <TestProgressIndicator
-                    phase={phaseByEnv[env.key] ?? "idle"}
+                    phase={phaseByEnv[env.key] ?? 'idle'}
                     latencyMs={last?.latency_ms ?? null}
                     message={last?.ok ? `HTTP ${last?.status ?? 200}` : (last?.message ?? null)}
-                    onDismiss={() => setPhaseByEnv((cur) => ({ ...cur, [env.key]: "idle" }))}
+                    onDismiss={() => setPhaseByEnv((cur) => ({ ...cur, [env.key]: 'idle' }))}
                   />
                   <LastTestLine
                     info={last}
                     autoFocusOnFailure
-                    onClick={last?.tested_at ? () => setDetailsDialogByEnv((cur) => ({ ...cur, [env.key]: true })) : undefined}
+                    onClick={
+                      last?.tested_at
+                        ? () => setDetailsDialogByEnv((cur) => ({ ...cur, [env.key]: true }))
+                        : undefined
+                    }
                     action={
                       <RetestButton
                         onRetest={() => handleTest(env.envKey!, env.key)}
                         disabled={!canTest}
                         cooldownKey={`supabase:${env.envKey}`}
-                        disabledReason={preflightIssues.length > 0
-                          ? "Corrija os campos sinalizados acima antes de testar"
-                          : !credsConfigured ? "Configure URL e Service Role Key primeiro"
-                          : "Credenciais com formato suspeito — re-salve antes de testar"}
+                        disabledReason={
+                          preflightIssues.length > 0
+                            ? 'Corrija os campos sinalizados acima antes de testar'
+                            : !credsConfigured
+                              ? 'Configure URL e Service Role Key primeiro'
+                              : 'Credenciais com formato suspeito — re-salve antes de testar'
+                        }
                       />
                     }
                   />
@@ -219,7 +276,9 @@ export function SupabaseConnectionsTab() {
                     envKey={env.envKey!}
                     label={env.name}
                     refreshKey={historyKeyByEnv[env.key] ?? 0}
-                    pendingTest={pendingByEnv[env.key] ? { startedAt: pendingByEnv[env.key]! } : null}
+                    pendingTest={
+                      pendingByEnv[env.key] ? { startedAt: pendingByEnv[env.key]! } : null
+                    }
                   />
                   <ConnectionTestDetailsDialog
                     open={!!detailsDialogByEnv[env.key]}
@@ -227,7 +286,9 @@ export function SupabaseConnectionsTab() {
                     connectionType="supabase"
                     connectionLabel={env.name}
                     envKey={env.envKey!}
-                    onViewFullHistory={() => setTimelineOpenByEnv((cur) => ({ ...cur, [env.key]: true }))}
+                    onViewFullHistory={() =>
+                      setTimelineOpenByEnv((cur) => ({ ...cur, [env.key]: true }))
+                    }
                   />
                   <ConnectionDetailsDialog
                     open={!!overviewOpenByEnv[env.key]}
@@ -237,11 +298,18 @@ export function SupabaseConnectionsTab() {
                     status={status}
                     last={last}
                     fields={[
-                      { label: "URL do projeto", secretName: env.urlSecret!, status: url },
-                      { label: "Anon Key", secretName: env.anonSecret!, status: anon },
-                      { label: "Service Role Key", secretName: env.serviceSecret!, status: svc, sensitive: true },
+                      { label: 'URL do projeto', secretName: env.urlSecret!, status: url },
+                      { label: 'Anon Key', secretName: env.anonSecret!, status: anon },
+                      {
+                        label: 'Service Role Key',
+                        secretName: env.serviceSecret!,
+                        status: svc,
+                        sensitive: true,
+                      },
                     ]}
-                    onOpenFullHistory={() => setTimelineOpenByEnv((cur) => ({ ...cur, [env.key]: true }))}
+                    onOpenFullHistory={() =>
+                      setTimelineOpenByEnv((cur) => ({ ...cur, [env.key]: true }))
+                    }
                   />
                 </>
               )}

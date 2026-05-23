@@ -13,7 +13,14 @@ export default defineConfig({
     env: { TZ: 'America/Sao_Paulo' },
     environment: 'jsdom',
     setupFiles: ['./tests/setup.ts', './tests/setup-ref-warning-capture.ts'],
-    include: ['tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}', 'src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}', 'e2e/scripts/__tests__/*.test.ts'],
+    include: [
+      'tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
+      'src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
+      'e2e/scripts/__tests__/*.test.ts',
+      // T-FIX-5: descobre a suite vitest do script anti-órfão.
+      // Ver docs/redeploy/T-FIX-5-CHECKLIST.md (Passo 3).
+      'scripts/__tests__/**/*.{test,spec}.{ts,mts,cts}',
+    ],
     typecheck: {
       enabled: false,
     },
@@ -56,8 +63,13 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
+    alias: [
+      { find: '@', replacement: path.resolve(__dirname, './src') },
+      // Edge Functions (Deno) importam Zod via URL esm.sh. Vitest (Node) usa o pacote npm.
+      // Aliases permitem que os mesmos arquivos rodem nos dois runtimes sem duplicação.
+      // Pattern abrange qualquer pin de versão (3.22.x, 3.23.x, 4.x).
+      { find: /^https:\/\/esm\.sh\/zod@.*$/, replacement: 'zod' },
+      { find: /^https:\/\/deno\.land\/x\/zod@.*\/mod\.ts$/, replacement: 'zod' },
+    ],
   },
 });

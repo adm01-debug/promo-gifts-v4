@@ -31,7 +31,7 @@ import {
   type CustomizationPriceV2 
 } from '@/hooks/simulation';
 import { formatCurrency, formatNumber } from './utils';
-import type { Product, ProductTechnique } from "@/pages/advanced-price-search/types";
+import type { Product, ProductTechnique } from "./types";
 import { toast } from 'sonner';
 
 interface QuantityAndResultProps {

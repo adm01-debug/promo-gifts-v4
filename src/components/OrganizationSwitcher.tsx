@@ -56,10 +56,10 @@ export function OrganizationSwitcher() {
             role="combobox"
             aria-expanded={open}
             aria-label="Selecionar organização"
-            className="w-[200px] justify-between font-medium hover:bg-muted/50 transition-colors"
+            className="w-[200px] h-9 justify-between font-bold hover:bg-muted/50 transition-all duration-300 rounded-xl border border-white/5 bg-white/[0.02]"
           >
             <div className="flex items-center gap-2 truncate">
-              <div className="flex h-6 w-6 items-center justify-center rounded-md border bg-background shrink-0">
+              <div className="flex h-6 w-6 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary shrink-0">
                 <Building2 className="h-4 w-4" />
               </div>
               <span className="truncate">{currentOrg?.name || "Selecionar Org"}</span>

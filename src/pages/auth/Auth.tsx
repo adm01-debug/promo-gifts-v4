@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { consumePostLoginRedirect } from '@/lib/auth/post-login-redirect';
 import { resolveRedirectTarget } from '@/lib/auth/resolve-redirect-target';
 import { resolveOAuthError, type OAuthErrorCopy } from '@/lib/auth/oauth-error-messages';
 
@@ -11,7 +10,6 @@ import {
   Eye,
   EyeOff,
   Loader2,
-  Gift,
   Mail,
   Lock,
   ShieldAlert,
@@ -27,7 +25,7 @@ import {
   Rocket,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AuthBrandingPanel, Starfield, SpaceScene } from "@/pages/auth/AuthBranding";
+import { AuthBrandingPanel, SpaceScene } from "@/pages/auth/AuthBranding";
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -139,17 +137,25 @@ export default function Auth() {
 
   // Fetch IP, geolocation and backend status
   useEffect(() => {
+    // Guarda de cancelamento: evita setState após o unmount do componente.
+    // Sem isso, os awaits de loadInfo podem resolver depois do teardown e
+    // disparar setDbStatus/setCurrentIP fora do ciclo de vida do React
+    // (em testes, isso vaza como "ReferenceError: window is not defined").
+    let cancelled = false;
+
     const loadInfo = async () => {
       // 1. IP Info
       try {
         const { data, error } = await supabase.functions.invoke('get-visitor-info');
-        if (!error && data) {
+        if (!cancelled && !error && data) {
           if (data.ip) setCurrentIP(data.ip);
           if (data.city) setGeoLocation(`${data.city}, ${data.country_code}`);
         }
       } catch {
         // silent fail
       }
+
+      if (cancelled) return;
 
       // 2. Principal Backend (Directly from env or client)
       const principalUrl = import.meta.env.VITE_EXTERNAL_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
@@ -171,6 +177,8 @@ export default function Auth() {
           body: { operation: 'ping' }
         });
 
+        if (cancelled) return;
+
         if (!error && data?.ok) {
           setDbStatus(prev => ({
             ...prev,
@@ -184,12 +192,18 @@ export default function Auth() {
         } else {
           setDbStatus(prev => ({ ...prev, external: { ok: false, loading: false } }));
         }
-      } catch (err) {
-        setDbStatus(prev => ({ ...prev, external: { ok: false, loading: false } }));
+      } catch {
+        if (!cancelled) {
+          setDbStatus(prev => ({ ...prev, external: { ok: false, loading: false } }));
+        }
       }
     };
     
     loadInfo();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Redirect if already logged in (only on initial load)
@@ -240,8 +254,8 @@ export default function Auth() {
         navigate(resolveRedirectTargetCb(), { replace: true });
       }, 600);
       return true;
-    } catch (error) {
-      console.error('Validation error:', error);
+    } catch {
+      console.warn('Validation failed during post-login access checks; continuing with fail-open redirect');
       navigate(resolveRedirectTargetCb(), { replace: true }); // Fail-open
       return true;
     }
@@ -252,11 +266,10 @@ export default function Auth() {
     setIpBlocked(false);
 
     try {
-      console.log(`[AUTH_START] Tentativa de login para: ${data.email}`);
-      const { error, data: signInData } = await signIn(data.email, data.password);
+      const { error } = await signIn(data.email, data.password);
 
       if (error) {
-        console.error(`[AUTH_FAILED] Erro de autenticação para ${data.email}:`, error);
+        console.warn('[AUTH_FAILED] Authentication failed', { status: error.status ?? 'unknown' });
         await logLoginAttempt(data.email, null, false, error.message);
 
         let description = error.message;
@@ -307,8 +320,6 @@ export default function Auth() {
         return;
       }
 
-      console.log(`[AUTH_OK] Login bem-sucedido para ${data.email}. Validando sessão...`);
-
       // Credential Management API — pede ao navegador para salvar email/senha
       // após login bem-sucedido (Chrome/Edge/Brave). Silencioso se não suportado.
       try {
@@ -319,8 +330,8 @@ export default function Auth() {
           const cred = new CredCtor({ id: data.email, password: data.password, name: data.email });
           await navigator.credentials.store(cred);
         }
-      } catch (credErr) {
-        console.warn('[AUTH_CRED_STORE] Não foi possível salvar credenciais:', credErr);
+      } catch {
+        console.warn('[AUTH_CRED_STORE] Credential store failed');
       }
 
 
@@ -340,7 +351,6 @@ export default function Auth() {
       }
 
       // 1. Verificação detalhada de Perfil (is_active)
-      console.log(`[AUTH_SESSION] Sessão iniciada para ${userId}. Carregando perfil...`);
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('is_active, role')
@@ -348,7 +358,9 @@ export default function Auth() {
         .single();
 
       if (profileError) {
-        console.error(`[AUTH_PROFILE_FAILED] Erro ao buscar perfil para ${userId}:`, profileError);
+        console.error('[AUTH_PROFILE_FAILED] Failed to load authenticated profile', {
+          code: profileError.code ?? 'unknown',
+        });
         const isRLSError = profileError.code === 'PGRST301' || profileError.code === '42501';
         toast({
           variant: 'destructive',
@@ -382,17 +394,15 @@ export default function Auth() {
         .eq('user_id', userId);
 
       if (rolesError || !rolesData || rolesData.length === 0) {
-        console.warn(`[AUTH_RBAC_WARN] Usuário ${userId} sem papéis (roles) atribuídos.`);
-      } else {
-        console.log(`[AUTH_RBAC_OK] Usuário ${userId} possui ${rolesData.length} roles.`);
+        console.warn('[AUTH_RBAC_WARN] Authenticated user has no assigned roles');
       }
 
 
       // 3. Validação final de IP e Redirecionamento
       await validateAndRedirect(userId, data.email);
       
-    } catch (err) {
-      console.error('Login exception:', err);
+    } catch {
+      console.error('Login exception');
       toast({
         variant: 'destructive',
         title: 'Erro inesperado',

@@ -1,5 +1,9 @@
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { authenticateRequest, requireRole, authErrorResponse } from "../_shared/auth.ts";
+import { parseContract } from "../_shared/contracts/index.ts";
+import {
+  KitAiBuilderSchemas,
+} from "../_shared/contracts/schemas/kit-ai-builder.ts";
 // ============================================================
 // EDGE FUNCTION: kit-ai-builder
 // Recebe um prompt natural e devolve uma sugestão estruturada de kit
@@ -27,14 +31,12 @@ Deno.serve(async (req: Request) => {
 
 
   try {
-    const body = (await req.json().catch(() => ({}))) as RequestBody;
-    const prompt = (body.prompt ?? '').trim();
-    if (!prompt || prompt.length < 6 || prompt.length > 2000) {
-      return new Response(
-        JSON.stringify({ error: 'prompt inválido (6–2000 chars)' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    const contractResult = await parseContract(req, KitAiBuilderSchemas, {
+      corsHeaders,
+    });
+    if (!contractResult.ok) return contractResult.response;
+    const { data: body, responseHeaders } = contractResult;
+    const prompt = body.prompt.trim();
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -131,7 +133,7 @@ Use português do Brasil. Seja conciso e prático.`;
 
     return new Response(
       JSON.stringify({ suggestion }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 200, headers: { ...corsHeaders, ...responseHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (e) {
     console.error('kit-ai-builder error:', e);

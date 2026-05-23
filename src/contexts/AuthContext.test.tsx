@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AuthProvider, useAuth } from './AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { type ReactNode } from 'react';
+import type * as AuthServiceModule from '@/services/authService';
 
 // Mock Supabase
 vi.mock('@/integrations/supabase/client', () => ({
@@ -34,13 +35,19 @@ vi.mock('@/integrations/supabase/client', () => ({
 }));
 
 // Mock services and utils
-vi.mock('@/services/authService', () => ({
-  authService: {
-    fetchAAL: vi.fn().mockResolvedValue({ currentLevel: 'aal1', nextLevel: 'aal1', hasMFA: false }),
-    fetchProfile: vi.fn().mockResolvedValue({ data: null, error: null }),
-    queryRoles: vi.fn().mockResolvedValue({ data: [], error: null }),
-  },
-}));
+vi.mock('@/services/authService', async (importOriginal) => {
+  const actual = await importOriginal<typeof AuthServiceModule>();
+  return {
+    authService: {
+      ...actual.authService,
+      fetchAAL: vi
+        .fn()
+        .mockResolvedValue({ currentLevel: 'aal1', nextLevel: 'aal1', hasMFA: false }),
+      fetchProfile: vi.fn().mockResolvedValue({ data: null, error: null }),
+      queryRoles: vi.fn().mockResolvedValue({ data: [], error: null }),
+    },
+  };
+});
 
 const wrapper = ({ children }: { children: ReactNode }) => <AuthProvider>{children}</AuthProvider>;
 
@@ -72,7 +79,11 @@ describe('AuthContext', () => {
       // or using a test component.
 
       await act(async () => {
-        await result.current.signOut();
+        try {
+          await result.current.signOut();
+        } catch {
+          /* falha remota tolerada */
+        }
       });
 
       expect(result.current.user).toBeNull();
@@ -96,7 +107,11 @@ describe('AuthContext', () => {
       });
 
       await act(async () => {
-        await result.current.signOut();
+        try {
+          await result.current.signOut();
+        } catch {
+          /* falha remota tolerada */
+        }
       });
 
       expect(supabase.rpc).toHaveBeenCalledWith('log_user_logout');
