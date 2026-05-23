@@ -62,9 +62,14 @@ describe('AuthBrandingPanel Visual Classes', () => {
     // risco residual é aceitável.
     //
     // Se algum dia este forEach mascarar bug real, refatorar nesse momento
-    // com motivo concreto. Decisão registrada em docs/redeploy/T-FIX-5-LINT-GUARDRAIL.md
+    // com motivo concreto. Decisão registrada em docs/redeploy/T-FIX-5-LINT-GUARDRAIL.md.
     //
-    // eslint-disable-next-line no-restricted-syntax
+    // Update 2026-05-23: o eslint-disable original tornou-se órfão após
+    // refinamento da regra no(s) commit(s) e0f1315/73c2efa — a `no-restricted-syntax`
+    // atual só flagga forEach que contém it/test/describe (anti-padrão A),
+    // não forEach+expect (anti-padrão B, não ativado). Diretiva removida
+    // para zerar o WARN "Unused eslint-disable directive" no gate
+    // lint:baseline. Se T-FIX-5b for ativado depois, reintroduzir.
     cards.forEach(card => {
       expect(card.className).toContain('px-5');
       expect(card.className).toContain('h-[88px]');
