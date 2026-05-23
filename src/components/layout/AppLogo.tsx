@@ -23,7 +23,7 @@ export function AppLogo({
   const iconColor = usesBrandIcon ? 'text-primary-foreground' : 'text-background';
 
   return (
-    <div className={cn("flex items-center gap-3 select-none", className, onClick && "cursor-pointer active:scale-95 transition-transform duration-200")} onClick={onClick}>
+    <div className={cn("group flex items-center gap-3 select-none", className, onClick && "cursor-pointer active:scale-95 transition-transform duration-200")} onClick={onClick}>
       <div className={cn(
         "relative inline-flex items-center justify-center rounded-[12px] shadow-[0_4px_12px_rgba(0,0,0,0.1)] transition-all duration-500 shrink-0 overflow-hidden border border-white/5",
         !iconClassName?.includes('h-') && (variant === 'sidebar' ? "h-9 w-9" : "h-11 w-11"),
