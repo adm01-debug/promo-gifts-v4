@@ -1,21 +1,23 @@
 # Migration Sync Log
 
-## 2026-05-23 — Reconciliação completa
+## 2026-05-23 — Root cause confirmado e corrigido
 
-| Banco | Versões | Arquivos repo | Diff |
+### Bug: sort-order mismatch versao 20250103
+
+Versao `20250103` (8 digitos) no DB ordena ANTES de `20250103010000`
+por comparacao de strings. O arquivo `20250103_*.sql` na filesystem
+ordena DEPOIS porque `_` (ASCII 95) > `0` (ASCII 48).
+O CLI via como remote-only e disparava:
+> Remote migration versions not found in local migrations directory
+
+**Fix aplicado:** `supabase migration repair --status reverted 20250103`
+Executado via Supabase CLI + PAT no VPS em 2026-05-23.
+Remote-only count = 0 confirmado via `supabase migration list --linked`.
+
+| Banco | Versoes | Repo | Orphans |
 |---|---|---|---|
-| `doufsxqlfjyuvxuezpln` | 775 | 775 | 0 |
+| `doufsxqlfjyuvxuezpln` | 774 | 775 | 0 |
 | `pqp` | 775 | 775 | 0 |
 
-### Trabalho realizado
-
-1. 37 arquivos órfãos adicionados ao repo (SQL de `schema_migrations.statements`)
-2. 1 duplicata `20260515120000` removida do repo
-3. 40 marker rows inseridos em `doufsxqlfjyuvxuezpln` (versões repo-only)
-4. 760 marker rows inseridos em `pqp` (versões repo-only)
-5. 15 stubs pqp alias adicionados ao repo (`SELECT 1;` no-ops)
-6. 15 marker rows inseridos em `doufsxqlfjyuvxuezpln` para os stubs pqp
-
-### Fix durável (Fase 3)
-
-Trocar conexão Lovable de `pqp` → `doufsxqlfjyuvxuezpln` no painel Lovable.
+### Fix duravel (Fase 3)
+Trocar conexao Lovable de `pqp` para `doufsxqlfjyuvxuezpln` nos settings do Lovable.
