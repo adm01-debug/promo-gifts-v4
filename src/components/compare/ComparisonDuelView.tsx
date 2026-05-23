@@ -17,6 +17,32 @@ interface Props {
   onProductClick?: (id: string) => void;
 }
 
+function leadTimeProxy(status: Product['stockStatus'] | undefined): number {
+  switch (status) {
+    case 'in-stock':
+      return 1;
+    case 'low-stock':
+      return 2;
+    case 'out-of-stock':
+      return 4;
+    default:
+      return 2;
+  }
+}
+
+function leadTimeLabel(status: Product['stockStatus'] | undefined): string {
+  switch (status) {
+    case 'in-stock':
+      return '1-3 dias';
+    case 'low-stock':
+      return '5-10 dias';
+    case 'out-of-stock':
+      return 'Sob consulta';
+    default:
+      return '—';
+  }
+}
+
 const ROWS: Array<{
   key: string;
   label: string;
@@ -55,8 +81,8 @@ const ROWS: Array<{
   {
     key: 'leadTime',
     label: 'Lead time (dias)',
-    format: (p) => (p.leadTimeDays ? `${p.leadTimeDays}d` : '—'),
-    raw: (p) => p.leadTimeDays ?? 999,
+    format: (p) => (p.stockStatus === 'out-of-stock' ? 'Sob consulta' : leadTimeLabel(p.stockStatus)),
+    raw: (p) => leadTimeProxy(p.stockStatus),
     better: 'lower',
   },
 ];

@@ -96,7 +96,7 @@ export function AIComparisonAdvisor({ products }: AIComparisonAdvisorProps) {
       writeCache(key, advice);
       setResult(advice);
     } catch (e: unknown) {
-      const msg = e?.message ?? 'Falha ao consultar IA';
+      const msg = e instanceof Error ? e.message : 'Falha ao consultar IA';
       if (msg.includes('429') || msg.toLowerCase().includes('rate')) {
         toast.error('Muitas requisições. Tente novamente em 1 minuto.');
       } else if (msg.includes('402')) {

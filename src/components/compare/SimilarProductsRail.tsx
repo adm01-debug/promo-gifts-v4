@@ -18,10 +18,13 @@ interface Props {
 export function SimilarProductsRail({ products, formatCurrency }: Props) {
   const { addToCompare, isInCompare, canAddMore } = useComparisonStore();
   const primaryCategory = products[0]?.category?.name;
-  const { data: pool = [] } = useProducts(
+  const { data } = useProducts(
     primaryCategory ? { category: primaryCategory } : undefined,
     { enabled: !!primaryCategory, staleTime: 10 * 60 * 1000 },
   );
+  const pool = useMemo((): Product[] => {
+    return Array.isArray(data) ? (data as Product[]) : [];
+  }, [data]);
 
   const suggestions = useMemo(() => {
     if (!pool.length || !products.length) return [];

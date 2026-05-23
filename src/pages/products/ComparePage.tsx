@@ -42,7 +42,7 @@ import { SimilarProductsRail } from '@/components/compare/SimilarProductsRail';
 import { CompareEmptyStateSmart } from '@/components/compare/CompareEmptyStateSmart';
 import { RecentComparisonsSidebar } from '@/components/compare/RecentComparisonsSidebar';
 import { FavoritesClientPicker } from '@/components/favorites/FavoritesClientPicker';
-import { useComparisonShortcuts, useComparisonSync } from "@/hooks/comparison";
+import { useComparisonShortcuts, useComparisonSync } from '@/hooks/comparison';
 
 export default function ComparePage() {
   useComparisonSync();
@@ -120,274 +120,274 @@ export default function ComparePage() {
   // Empty state with smart suggestions
   if (compareCount < 2) {
     return (
-        <>
-          <PageSEO
-            title="Comparar Produtos"
-            description="Compare brindes lado a lado."
-            path="/comparar"
-            jsonLd={{
-              '@context': 'https://schema.org',
-              '@type': 'WebPage',
-              name: 'Comparar Produtos',
-              url: 'https://criar-together-now.lovable.app/comparar',
-            }}
-          />
-          <CompareEmptyStateSmart />
-        </>
+      <>
+        <PageSEO
+          title="Comparar Produtos"
+          description="Compare brindes lado a lado."
+          path="/comparar"
+          jsonLd={{
+            '@context': 'https://schema.org',
+            '@type': 'WebPage',
+            name: 'Comparar Produtos',
+            url: 'https://criar-together-now.lovable.app/comparar',
+          }}
+        />
+        <CompareEmptyStateSmart />
+      </>
     );
   }
 
   return (
-      <>
-        {/* ARIA-live region for accessibility announcements */}
-        <div aria-live="polite" aria-atomic="true" className="sr-only">
-          {ariaMessage}
-        </div>
+    <>
+      {/* ARIA-live region for accessibility announcements */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {ariaMessage}
+      </div>
 
-        <ShareComparisonDialog
-          open={shareOpen}
-          onOpenChange={setShareOpen}
-          compareItems={compareItems}
-          clientId={client?.id ?? null}
-          clientName={client?.name ?? null}
-        />
-        <div
-          id="compare-export-area"
-          className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in"
-        >
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" aria-label="Voltar" onClick={() => navigate(-1)}>
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div>
-                <h1
-                  data-testid="page-title-comparador"
-                  className="font-display text-2xl font-bold text-foreground lg:text-3xl"
-                >
-                  Comparador de Produtos
-                </h1>
-                <p className="text-muted-foreground">
-                  Comparando {compareCount} produtos
-                  {client && (
-                    <>
-                      {' '}
-                      · <span className="font-medium text-primary">{client.name}</span>
-                    </>
-                  )}
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant={client ? 'default' : 'outline'} size="sm">
-                    <Building2 className="mr-2 h-4 w-4" />
-                    {client ? client.name.slice(0, 22) : 'Cliente CRM'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent align="end" className="w-80 p-3">
-                  <FavoritesClientPicker
-                    selectedClientId={client?.id ?? null}
-                    selectedClientName={client?.name ?? null}
-                    onSelect={setClient}
-                  />
-                </PopoverContent>
-              </Popover>
-              <RecentComparisonsSidebar />
-              <Button
-                variant={differencesOnly ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setDifferencesOnly((v) => !v)}
-                aria-pressed={differencesOnly}
-                title="Atalho: D"
+      <ShareComparisonDialog
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        compareItems={compareItems}
+        clientId={client?.id ?? null}
+        clientName={client?.name ?? null}
+      />
+      <div
+        id="compare-export-area"
+        className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8"
+      >
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" aria-label="Voltar" onClick={() => navigate(-1)}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1
+                data-testid="page-title-comparador"
+                className="font-display text-2xl font-bold text-foreground lg:text-3xl"
               >
-                <Filter className="mr-2 h-4 w-4" />
-                {differencesOnly ? 'Mostrando diferenças' : 'Só diferenças'}
-              </Button>
-              <Button variant="default" size="sm" onClick={handleCreateQuote}>
-                <FileText className="mr-2 h-4 w-4" />
-                Criar orçamento
-              </Button>
-              <ComparisonPresentationLauncher products={products} formatCurrency={formatCurrency} />
-              <ExportComparisonButton products={products} formatCurrency={formatCurrency} />
-              <Button variant="outline" size="sm" onClick={() => setShareOpen(true)}>
-                <Share2 className="mr-2 h-4 w-4" />
-                Compartilhar
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  clearCompare();
-                  navigate('/');
-                }}
-              >
-                Limpar
-              </Button>
+                Comparador de Produtos
+              </h1>
+              <p className="text-muted-foreground">
+                Comparando {compareCount} produtos
+                {client && (
+                  <>
+                    {' '}
+                    · <span className="font-medium text-primary">{client.name}</span>
+                  </>
+                )}
+              </p>
             </div>
           </div>
-
-          {/* Mobile carousel view (<768px) */}
-          <ComparisonMobileView
-            products={products}
-            formatCurrency={formatCurrency}
-            onRemove={removeByIndex}
-            onProductClick={(id) => navigate(`/produto/${id}`)}
-          />
-
-          {/* Desktop view (>=768px) */}
-          <div className="hidden space-y-4 md:block">
-            {/* Score + Radar */}
-            <div className={cn('grid grid-cols-1 gap-4', showRadar && 'lg:grid-cols-2')}>
-              <ComparisonScoreCard products={products} />
-              {showRadar && <ComparisonRadarChart products={products} />}
-            </div>
-            <AIComparisonAdvisor products={products} />
-
-            {/* Duel mode toggle (only visible when 2 products) */}
-            {compareCount === 2 && (
-              <div className="flex items-center justify-center">
-                <Button
-                  size="sm"
-                  variant={duelMode ? 'default' : 'outline'}
-                  onClick={() => setDuelMode((v) => !v)}
-                >
-                  <Swords className="mr-2 h-4 w-4" />
-                  {duelMode ? 'Modo Duelo ativo' : 'Ativar Modo Duelo'}
+          <div className="flex flex-wrap gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant={client ? 'default' : 'outline'} size="sm">
+                  <Building2 className="mr-2 h-4 w-4" />
+                  {client ? client.name.slice(0, 22) : 'Cliente CRM'}
                 </Button>
-              </div>
-            )}
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-80 p-3">
+                <FavoritesClientPicker
+                  selectedClientId={client?.id ?? null}
+                  selectedClientName={client?.name ?? null}
+                  onSelect={setClient}
+                />
+              </PopoverContent>
+            </Popover>
+            <RecentComparisonsSidebar />
+            <Button
+              variant={differencesOnly ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setDifferencesOnly((v) => !v)}
+              aria-pressed={differencesOnly}
+              title="Atalho: D"
+            >
+              <Filter className="mr-2 h-4 w-4" />
+              {differencesOnly ? 'Mostrando diferenças' : 'Só diferenças'}
+            </Button>
+            <Button variant="default" size="sm" onClick={handleCreateQuote}>
+              <FileText className="mr-2 h-4 w-4" />
+              Criar orçamento
+            </Button>
+            <ComparisonPresentationLauncher products={products} formatCurrency={formatCurrency} />
+            <ExportComparisonButton products={products} formatCurrency={formatCurrency} />
+            <Button variant="outline" size="sm" onClick={() => setShareOpen(true)}>
+              <Share2 className="mr-2 h-4 w-4" />
+              Compartilhar
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                clearCompare();
+                navigate('/');
+              }}
+            >
+              Limpar
+            </Button>
+          </div>
+        </div>
 
-            {compareCount === 2 && duelMode ? (
-              <ComparisonDuelView
-                products={products}
-                formatCurrency={formatCurrency}
-                onRemove={removeByIndex}
-                onProductClick={(id) => navigate(`/produto/${id}`)}
-              />
-            ) : (
-              <Tabs defaultValue="gallery" className="w-full">
-                <TabsList className="mx-auto mb-6 grid w-full max-w-md grid-cols-2">
-                  <TabsTrigger value="gallery" className="flex items-center gap-2">
-                    <ImageIcon className="h-4 w-4" />
-                    Galeria Visual
-                  </TabsTrigger>
-                  <TabsTrigger value="table" className="flex items-center gap-2">
-                    <List className="h-4 w-4" />
-                    Tabela Detalhada
-                  </TabsTrigger>
-                </TabsList>
+        {/* Mobile carousel view (<768px) */}
+        <ComparisonMobileView
+          products={products}
+          formatCurrency={formatCurrency}
+          onRemove={removeByIndex}
+          onProductClick={(id) => navigate(`/produto/${id}`)}
+        />
 
-                <TabsContent value="gallery" className="space-y-6">
-                  <SyncedZoomGallery
-                    products={products}
-                    onProductClick={(id) => navigate(`/produto/${id}`)}
-                  />
-                  <div
-                    className={cn(
-                      'grid gap-4',
-                      products.length === 2 && 'grid-cols-2',
-                      products.length === 3 && 'grid-cols-3',
-                      products.length >= 4 && 'grid-cols-2 lg:grid-cols-4',
-                    )}
-                  >
-                    {compareEntries.map((entry) => {
-                      const status = getStockStatusLabel(entry.product.stockStatus);
-                      return (
-                        <div
-                          key={`card-${entry.index}`}
-                          data-compare-product={entry.index}
-                          tabIndex={-1}
-                          className="card-lift space-y-3 rounded-xl border-[1.5px] border-primary/20 bg-card p-4 transition-all duration-300 hover:border-primary/50 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary"
-                        >
+        {/* Desktop view (>=768px) */}
+        <div className="hidden space-y-4 md:block">
+          {/* Score + Radar */}
+          <div className={cn('grid grid-cols-1 gap-4', showRadar && 'lg:grid-cols-2')}>
+            <ComparisonScoreCard products={products} />
+            {showRadar && <ComparisonRadarChart products={products} />}
+          </div>
+          <AIComparisonAdvisor products={products} />
+
+          {/* Duel mode toggle (only visible when 2 products) */}
+          {compareCount === 2 && (
+            <div className="flex items-center justify-center">
+              <Button
+                size="sm"
+                variant={duelMode ? 'default' : 'outline'}
+                onClick={() => setDuelMode((v) => !v)}
+              >
+                <Swords className="mr-2 h-4 w-4" />
+                {duelMode ? 'Modo Duelo ativo' : 'Ativar Modo Duelo'}
+              </Button>
+            </div>
+          )}
+
+          {compareCount === 2 && duelMode ? (
+            <ComparisonDuelView
+              products={products}
+              formatCurrency={formatCurrency}
+              onRemove={removeByIndex}
+              onProductClick={(id) => navigate(`/produto/${id}`)}
+            />
+          ) : (
+            <Tabs defaultValue="gallery" className="w-full">
+              <TabsList className="mx-auto mb-6 grid w-full max-w-md grid-cols-2">
+                <TabsTrigger value="gallery" className="flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4" />
+                  Galeria Visual
+                </TabsTrigger>
+                <TabsTrigger value="table" className="flex items-center gap-2">
+                  <List className="h-4 w-4" />
+                  Tabela Detalhada
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="gallery" className="space-y-6">
+                <SyncedZoomGallery
+                  products={products}
+                  onProductClick={(id) => navigate(`/produto/${id}`)}
+                />
+                <div
+                  className={cn(
+                    'grid gap-4',
+                    products.length === 2 && 'grid-cols-2',
+                    products.length === 3 && 'grid-cols-3',
+                    products.length >= 4 && 'grid-cols-2 lg:grid-cols-4',
+                  )}
+                >
+                  {compareEntries.map((entry) => {
+                    const status = getStockStatusLabel(entry.product.stockStatus);
+                    return (
+                      <div
+                        key={`card-${entry.index}`}
+                        data-compare-product={entry.index}
+                        tabIndex={-1}
+                        className="card-lift space-y-3 rounded-xl border-[1.5px] border-primary/20 bg-card p-4 transition-all duration-300 hover:border-primary/50 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-bold text-primary">
+                              {formatCurrency(entry.product.price)}
+                            </span>
+                            {entry.variant?.color_name && (
+                              <Badge
+                                variant="secondary"
+                                className="gap-1 px-1.5 py-0.5 text-[10px]"
+                              >
+                                {entry.variant.color_hex && (
+                                  <span
+                                    className="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-border/50"
+                                    style={{ backgroundColor: entry.variant.color_hex }}
+                                  />
+                                )}
+                                {entry.variant.color_name}
+                              </Badge>
+                            )}
+                          </div>
+                          <button
+                            aria-label="Remover"
+                            onClick={() => removeByIndex(entry.index)}
+                            className="rounded-full p-1 transition-colors hover:bg-destructive/20"
+                          >
+                            <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                          </button>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Mín:</span>
+                            <span>{entry.product.minQuantity} un.</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Estoque:</span>
+                            <span className={status.color}>{status.label}</span>
+                          </div>
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="text-lg font-bold text-primary">
-                                {formatCurrency(entry.product.price)}
-                              </span>
-                              {entry.variant?.color_name && (
-                                <Badge
-                                  variant="secondary"
-                                  className="gap-1 px-1.5 py-0.5 text-[10px]"
-                                >
-                                  {entry.variant.color_hex && (
-                                    <span
-                                      className="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-border/50"
-                                      style={{ backgroundColor: entry.variant.color_hex }}
-                                    />
-                                  )}
-                                  {entry.variant.color_name}
-                                </Badge>
+                            <span className="text-muted-foreground">Cores:</span>
+                            <div className="flex gap-0.5">
+                              {entry.product.colors
+                                .slice(0, 4)
+                                .map((c: ProductColor, i: number) => (
+                                  <div
+                                    key={i}
+                                    className="h-4 w-4 rounded-full border border-border"
+                                    style={{ backgroundColor: c.hex }}
+                                  />
+                                ))}
+                              {entry.product.colors.length > 4 && (
+                                <span className="ml-1 text-xs text-muted-foreground">
+                                  +{entry.product.colors.length - 4}
+                                </span>
                               )}
                             </div>
-                            <button
-                              aria-label="Remover"
-                              onClick={() => removeByIndex(entry.index)}
-                              className="rounded-full p-1 transition-colors hover:bg-destructive/20"
-                            >
-                              <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                            </button>
                           </div>
-                          <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Mín:</span>
-                              <span>{entry.product.minQuantity} un.</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Estoque:</span>
-                              <span className={status.color}>{status.label}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-muted-foreground">Cores:</span>
-                              <div className="flex gap-0.5">
-                                {entry.product.colors
-                                  .slice(0, 4)
-                                  .map((c: ProductColor, i: number) => (
-                                    <div
-                                      key={i}
-                                      className="h-4 w-4 rounded-full border border-border"
-                                      style={{ backgroundColor: c.hex }}
-                                    />
-                                  ))}
-                                {entry.product.colors.length > 4 && (
-                                  <span className="ml-1 text-xs text-muted-foreground">
-                                    +{entry.product.colors.length - 4}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          <Button
-                            size="sm"
-                            className="w-full"
-                            onClick={() => navigate(`/produto/${entry.product.id}`)}
-                          >
-                            Ver Detalhes
-                          </Button>
                         </div>
-                      );
-                    })}
-                  </div>
-                </TabsContent>
+                        <Button
+                          size="sm"
+                          className="w-full"
+                          onClick={() => navigate(`/produto/${entry.product.id}`)}
+                        >
+                          Ver Detalhes
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </TabsContent>
 
-                <TabsContent value="table">
-                  <CompareTableView
-                    entries={compareEntries}
-                    products={products}
-                    formatCurrency={formatCurrency}
-                    getStockStatusLabel={getStockStatusLabel}
-                    onRemove={removeByIndex}
-                    differencesOnly={differencesOnly}
-                  />
-                </TabsContent>
-              </Tabs>
-            )}
+              <TabsContent value="table">
+                <CompareTableView
+                  entries={compareEntries}
+                  products={products}
+                  formatCurrency={formatCurrency}
+                  getStockStatusLabel={getStockStatusLabel}
+                  onRemove={removeByIndex}
+                  differencesOnly={differencesOnly}
+                />
+              </TabsContent>
+            </Tabs>
+          )}
 
-            {/* Bottom rail — Compare também com... */}
-            <SimilarProductsRail products={products} formatCurrency={formatCurrency} />
-          </div>
+          {/* Bottom rail — Compare também com... */}
+          <SimilarProductsRail products={products} formatCurrency={formatCurrency} />
         </div>
-      </>
+      </div>
+    </>
   );
 }
