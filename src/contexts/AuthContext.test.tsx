@@ -4,7 +4,6 @@ import { AuthProvider, useAuth } from './AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import type * as AuthServiceModule from '@/services/authService';
 import { type ReactNode } from 'react';
-import type * as AuthServiceModule from '@/services/authService';
 
 // Mock Supabase
 vi.mock('@/integrations/supabase/client', () => ({
