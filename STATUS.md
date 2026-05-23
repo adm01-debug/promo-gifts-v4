@@ -42,6 +42,15 @@ PR #124 — branch `claude/code-bug-analysis-VLG0u`.
 ### Outras correções (não numeradas)
 - ✅ Fix TS2322 em `PriceFreshnessBadge.snapshots.test.tsx` (regressão herdada do T-FIX-4)
 
+### Bônus pós-CI (Etapas 21-27, descobertos após push)
+- ✅ **Etapa 21** — TZ=America/Sao_Paulo prefixado em 10 scripts vitest (vitest.config `env.TZ` só vai para `import.meta.env`, não para `process.env` que controla `Date.toLocaleString`). Corrige 13 snapshots PriceFreshnessBadge em ambiente UTC.
+- ✅ **Etapa 22** — Mock fix: adiciona `useOptionalOnboardingContext: () => null` em 11 arquivos de teste (regressão da Etapa 2 — componentes passaram a importar a nova função; mocks não exportavam). MainLayout.breadcrumbs 0/6 → 6/6.
+- ✅ **Etapa 23** — 5 arquivos NotificationDrawer-*.test.tsx tinham mock path errado (`@/hooks/useNotifications` em vez de `@/hooks/ui`) — `useAuth` rodava de verdade e falhava por falta de AuthProvider. NotificationDrawer-debounce 0/4 → 4/4.
+- ✅ **Etapa 24** — `Route path="/login"` → `Route path="/auth"` em 4 *Route tests (DevRoute, AdminRoute, ProtectedRoute, AdminConexoesAccess) — código redireciona para /auth desde refactor antigo. DevRoute 0/2 → 41/41.
+- ✅ **Etapa 25** — Mesmo fix /login→/auth em 2 admin tests (reduced-app-navigation, route-no-error-element). 13/13.
+- ✅ **Etapa 26** — `useCatalogState.unit.test.tsx`: consolidação de 9 `vi.mock` duplicados em 1 + skip explícito (refactor do hook necessário pra reabilitar — cascata Supabase/contexts faz OOM).
+- ✅ **Etapa 27** — `OrganizationProvider` adicionado ao wrapper de `syntax-integrity.test.tsx`.
+
 ---
 
 ## ⏳ Pendências adiadas (sessões dedicadas)
