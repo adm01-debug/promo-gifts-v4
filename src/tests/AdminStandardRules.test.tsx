@@ -104,13 +104,14 @@ describe('Admin Module Programmatic Standard Rules', () => {
       const pageName = path.split('/').pop()?.replace('.tsx', '') ?? 'unknown';
       return { pageName, Component };
     })
-    .filter(({ Component }) => typeof Component === 'function')
-    .map(({ pageName, Component }) => ({
-      pageName,
-      PageComponent: Component as React.ComponentType,
+    .filter((entry) => typeof entry.Component === 'function')
+    .map((entry) => ({
+      pageName: entry.pageName,
+      PageComponent: entry.Component as React.ComponentType,
     }));
 
-  describe.each(adminPages)('Page $pageName', ({ pageName, PageComponent }) => {
+  describe.each(adminPages)('Page $pageName', (pageEntry) => {
+    const { pageName, PageComponent } = pageEntry;
     it('should render with correct PageSEO config', async () => {
       render(<PageComponent />, { wrapper });
 
@@ -134,7 +135,7 @@ describe('Admin Module Programmatic Standard Rules', () => {
       const container = renderRoot.querySelector('[class*="max-w-"][class*="mx-auto"]');
       expect(
         container,
-        `Page ${pageName} está faltando um container padronizado com 'max-w-*' e 'mx-auto' juntos no mesmo elemento.`
+        `Page ${pageName} está faltando um container padronizado com 'max-w-*' e 'mx-auto' juntos no mesmo elemento.`,
       ).not.toBeNull();
     });
   });
