@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-23T00:33:24.495Z",
-  "totalErrors": 442,
+  "generatedAt": "2026-05-23T16:34:44.783Z",
+  "totalErrors": 405,
   "counts": {
     "src/components/access/DevAccessDeniedPage.tsx": {
       "react-hooks/exhaustive-deps": 1
@@ -31,9 +31,6 @@
     },
     "src/components/admin/connections/SecretsManagerHealthPanel.tsx": {
       "@typescript-eslint/no-non-null-assertion": 2
-    },
-    "src/components/admin/connections/SupabaseConnectionsTab.tsx": {
-      "@typescript-eslint/no-non-null-assertion": 17
     },
     "src/components/admin/connections/ZoneSection.tsx": {
       "@typescript-eslint/naming-convention": 1
@@ -161,9 +158,6 @@
     "src/components/catalog/BulkVariantWizard.tsx": {
       "@typescript-eslint/no-explicit-any": 1,
       "@typescript-eslint/no-non-null-assertion": 1
-    },
-    "src/components/catalog/CatalogContent.tsx": {
-      "@typescript-eslint/no-unused-vars": 16
     },
     "src/components/catalog/CatalogHeader.tsx": {
       "@typescript-eslint/no-unused-vars": 1
@@ -552,7 +546,7 @@
       "@typescript-eslint/no-unused-vars": 1
     },
     "src/components/products/ProductQuickView.tsx": {
-      "@typescript-eslint/no-unused-vars": 16
+      "@typescript-eslint/no-unused-vars": 4
     },
     "src/components/products/ProductSparkline.tsx": {
       "@typescript-eslint/no-unused-vars": 2,
@@ -714,13 +708,8 @@
     "src/components/quotes/__tests__/QuoteBuilderDiscount.test.tsx": {
       "@typescript-eslint/no-explicit-any": 1
     },
-    "src/components/quotes/__tests__/QuoteBuilderDiscountAdvanced.test.tsx": {
-      "@typescript-eslint/no-explicit-any": 1,
-      "@typescript-eslint/no-unused-vars": 1
-    },
     "src/components/quotes/__tests__/QuoteBuilderStepper.test.tsx": {
-      "@typescript-eslint/consistent-type-imports": 1,
-      "@typescript-eslint/no-unused-vars": 1
+      "no-restricted-syntax": 1
     },
     "src/components/quotes/company-contact/CompanySearchDropdown.tsx": {
       "@typescript-eslint/no-explicit-any": 3
@@ -777,11 +766,6 @@
     },
     "src/components/search/VoiceSearchOverlayConnected.tsx": {
       "react-hooks/exhaustive-deps": 1
-    },
-    "src/components/search/useGlobalSearch.ts": {
-      "@typescript-eslint/no-non-null-assertion": 2,
-      "@typescript-eslint/no-unused-vars": 5,
-      "react-hooks/exhaustive-deps": 5
     },
     "src/components/search/voice/VoiceOverlaySections.tsx": {
       "@typescript-eslint/no-unused-vars": 3
@@ -1036,9 +1020,6 @@
       "@typescript-eslint/no-non-null-assertion": 8,
       "react-hooks/exhaustive-deps": 2
     },
-    "src/hooks/simulator/useSimulatorWizard.ts": {
-      "react-hooks/exhaustive-deps": 15
-    },
     "src/hooks/simulator/useWizardPersistence.ts": {
       "react-hooks/exhaustive-deps": 1
     },
@@ -1151,15 +1132,11 @@
     "src/pages/admin/telemetry/useOptimizationQueue.ts": {
       "react-hooks/exhaustive-deps": 5
     },
-    "src/pages/auth/Auth.tsx": {
-      "@typescript-eslint/no-unused-vars": 5,
-      "no-console": 4
-    },
     "src/pages/auth/AuthBranding.tsx": {
       "@typescript-eslint/no-unused-vars": 3
     },
     "src/pages/auth/AuthBranding.visual.test.tsx": {
-      "@typescript-eslint/no-explicit-any": 1
+      "no-restricted-syntax": 1
     },
     "src/pages/auth/ResetPassword.tsx": {
       "@typescript-eslint/no-unused-vars": 4
@@ -1243,17 +1220,11 @@
     "src/routes/RoutePrefetcher.tsx": {
       "@typescript-eslint/no-explicit-any": 1
     },
-    "src/services/__tests__/productService.test.ts": {
-      "@typescript-eslint/no-explicit-any": 2
-    },
     "src/services/__tests__/quoteService.test.ts": {
       "@typescript-eslint/no-explicit-any": 3
     },
     "src/services/authService.ts": {
       "@typescript-eslint/no-unused-vars": 4
-    },
-    "src/services/productService.ts": {
-      "@typescript-eslint/no-non-null-assertion": 3
     },
     "src/services/quoteService.ts": {
       "@typescript-eslint/no-explicit-any": 2

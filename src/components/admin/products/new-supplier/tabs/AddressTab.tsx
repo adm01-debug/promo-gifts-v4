@@ -8,8 +8,60 @@ import { maskCep, ESTADOS_BR } from '@/utils/masks';
 
 const fieldClass = 'mt-1.5 h-9';
 
+interface CarrierResult {
+  id: string;
+  nome_fantasia?: string | null;
+  razao_social?: string | null;
+}
+
+interface AddressTabForm {
+  cep: string;
+  handleCepLookup: (v: string) => void;
+  tipoLogradouro: string;
+  setTipoLogradouro: (v: string) => void;
+  logradouro: string;
+  setLogradouro: (v: string) => void;
+  numero: string;
+  setNumero: (v: string) => void;
+  complemento: string;
+  setComplemento: (v: string) => void;
+  bairro: string;
+  setBairro: (v: string) => void;
+  cidade: string;
+  setCidade: (v: string) => void;
+  estado: string;
+  setEstado: (v: string) => void;
+  pais: string;
+  setPais: (v: string) => void;
+  pontoReferencia: string;
+  setPontoReferencia: (v: string) => void;
+  latitude: string | number;
+  setLatitude: (v: string) => void;
+  longitude: string | number;
+  setLongitude: (v: string) => void;
+  googleMapsUrl: string;
+  setGoogleMapsUrl: (v: string) => void;
+  googlePlaceId: string;
+  setGooglePlaceId: (v: string) => void;
+  horarioFuncionamento: string;
+  setHorarioFuncionamento: (v: string) => void;
+  transportadoraPadrao: string;
+  setTransportadoraPadrao: (v: string) => void;
+  setTransportadoraId: (v: string) => void;
+  carrierSearch: string;
+  setCarrierSearch: (v: string) => void;
+  carrierSearchTimeout: { current: ReturnType<typeof setTimeout> | undefined };
+  searchCarriers: (v: string) => void;
+  carrierResults: CarrierResult[];
+  setShowCarrierDropdown: (v: boolean) => void;
+  searchingCarriers: boolean;
+  showCarrierDropdown: boolean;
+  instrucoesEntrega: string;
+  setInstrucoesEntrega: (v: string) => void;
+}
+
 interface AddressTabProps {
-  form: Record<string, unknown>;
+  form: AddressTabForm;
 }
 
 export function AddressTab({ form }: AddressTabProps) {
@@ -242,14 +294,14 @@ export function AddressTab({ form }: AddressTabProps) {
             )}
             {form.showCarrierDropdown && form.carrierResults.length > 0 && (
               <div className="absolute z-50 mt-1 max-h-48 w-full overflow-y-auto rounded-md border bg-popover shadow-lg">
-                {form.carrierResults.map((c: Record<string, unknown>) => (
+                {form.carrierResults.map((c: CarrierResult) => (
                   <button
                     key={c.id}
                     type="button"
                     className="w-full px-3 py-2 text-left text-sm transition-colors hover:bg-accent/50"
                     onMouseDown={(e) => {
                       e.preventDefault();
-                      form.setTransportadoraPadrao(c.nome_fantasia || c.razao_social);
+                      form.setTransportadoraPadrao(c.nome_fantasia || c.razao_social || '');
                       form.setTransportadoraId(c.id);
                       form.setCarrierSearch('');
                       form.setShowCarrierDropdown(false);

@@ -71,8 +71,9 @@ export function SupabaseConnectionsTab() {
 
   const hydrate = useCallback(async () => {
     const entries = await Promise.all(
-      ENVS.filter((e) => e.envKey).map(async (e) => {
-        const last = await fetchLastTest('supabase', { env_key: e.envKey! });
+      ENVS.filter((e) => e.envKey !== null).map(async (e) => {
+        const envK = e.envKey as NonNullable<typeof e.envKey>;
+        const last = await fetchLastTest('supabase', { env_key: envK });
         return [
           e.key,
           last
@@ -118,19 +119,23 @@ export function SupabaseConnectionsTab() {
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       {ENVS.map((env) => {
-        const url = env.urlSecret ? get(env.urlSecret) : undefined;
-        const anon = env.anonSecret ? get(env.anonSecret) : undefined;
-        const svc = env.serviceSecret ? get(env.serviceSecret) : undefined;
+        const urlSecretName = env.urlSecret ?? '';
+        const anonSecretName = env.anonSecret ?? '';
+        const serviceSecretName = env.serviceSecret ?? '';
+        const envKeyName = (env.envKey ?? 'promobrind') as 'promobrind' | 'crm';
+        const url = urlSecretName ? get(urlSecretName) : undefined;
+        const anon = anonSecretName ? get(anonSecretName) : undefined;
+        const svc = serviceSecretName ? get(serviceSecretName) : undefined;
         const last = env.readOnly ? null : (lastByEnv[env.key] ?? null);
         const credsConfigured = !!url?.has_value && !!svc?.has_value;
         const suspicious = !env.readOnly
-          ? hasSuspiciousLength(secrets, [env.urlSecret!, env.anonSecret!, env.serviceSecret!])
+          ? hasSuspiciousLength(secrets, [urlSecretName, anonSecretName, serviceSecretName])
           : false;
         const credsLooksValid = credsConfigured && !suspicious;
         const preflightIssues = !env.readOnly
           ? getPreflightIssues(secrets, [
-              { name: env.urlSecret!, label: 'URL do projeto' },
-              { name: env.serviceSecret!, label: 'Service Role Key' },
+              { name: urlSecretName, label: 'URL do projeto' },
+              { name: serviceSecretName, label: 'Service Role Key' },
             ])
           : [];
         const status = resolveSupabaseConnectionStatus({
@@ -174,21 +179,21 @@ export function SupabaseConnectionsTab() {
                   />
                   <SecretField
                     label="URL do projeto"
-                    secretName={env.urlSecret!}
+                    secretName={urlSecretName}
                     status={url}
                     onSaved={list}
                     connectionId={env.key}
                   />
                   <SecretField
                     label="Anon Key"
-                    secretName={env.anonSecret!}
+                    secretName={anonSecretName}
                     status={anon}
                     onSaved={list}
                     connectionId={env.key}
                   />
                   <SecretField
                     label="Service Role Key"
-                    secretName={env.serviceSecret!}
+                    secretName={serviceSecretName}
                     status={svc}
                     onSaved={list}
                     connectionId={env.key}
@@ -209,7 +214,7 @@ export function SupabaseConnectionsTab() {
                               ? 'Credenciais com formato suspeito (comprimento curto) — re-salve antes de testar'
                               : 'Testar conexão real'
                       }
-                      onClick={() => handleTest(env.envKey!, env.key)}
+                      onClick={() => handleTest(envKeyName, env.key)}
                     >
                       {isTesting ? 'Testando…' : 'Testar conexão'}
                     </Button>
@@ -258,9 +263,9 @@ export function SupabaseConnectionsTab() {
                     }
                     action={
                       <RetestButton
-                        onRetest={() => handleTest(env.envKey!, env.key)}
+                        onRetest={() => handleTest(envKeyName, env.key)}
                         disabled={!canTest}
-                        cooldownKey={`supabase:${env.envKey}`}
+                        cooldownKey={`supabase:${envKeyName}`}
                         disabledReason={
                           preflightIssues.length > 0
                             ? 'Corrija os campos sinalizados acima antes de testar'
@@ -273,11 +278,11 @@ export function SupabaseConnectionsTab() {
                   />
                   <ConnectionTestHistoryPanel
                     type="supabase"
-                    envKey={env.envKey!}
+                    envKey={envKeyName}
                     label={env.name}
                     refreshKey={historyKeyByEnv[env.key] ?? 0}
                     pendingTest={
-                      pendingByEnv[env.key] ? { startedAt: pendingByEnv[env.key]! } : null
+                      pendingByEnv[env.key] ? { startedAt: pendingByEnv[env.key] ?? '' } : null
                     }
                   />
                   <ConnectionTestDetailsDialog
@@ -285,7 +290,7 @@ export function SupabaseConnectionsTab() {
                     onOpenChange={(v) => setDetailsDialogByEnv((cur) => ({ ...cur, [env.key]: v }))}
                     connectionType="supabase"
                     connectionLabel={env.name}
-                    envKey={env.envKey!}
+                    envKey={envKeyName}
                     onViewFullHistory={() =>
                       setTimelineOpenByEnv((cur) => ({ ...cur, [env.key]: true }))
                     }
@@ -298,11 +303,11 @@ export function SupabaseConnectionsTab() {
                     status={status}
                     last={last}
                     fields={[
-                      { label: 'URL do projeto', secretName: env.urlSecret!, status: url },
-                      { label: 'Anon Key', secretName: env.anonSecret!, status: anon },
+                      { label: 'URL do projeto', secretName: urlSecretName, status: url },
+                      { label: 'Anon Key', secretName: anonSecretName, status: anon },
                       {
                         label: 'Service Role Key',
-                        secretName: env.serviceSecret!,
+                        secretName: serviceSecretName,
                         status: svc,
                         sensitive: true,
                       },
