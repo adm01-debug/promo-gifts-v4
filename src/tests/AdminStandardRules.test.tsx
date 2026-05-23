@@ -104,12 +104,15 @@ describe('Admin Module Programmatic Standard Rules', () => {
       const pageName = path.split('/').pop()?.replace('.tsx', '') ?? 'unknown';
       return { pageName, Component };
     })
+    // eslint-disable-next-line @typescript-eslint/naming-convention -- Component e componente React (PascalCase exigido)
     .filter(({ Component }) => typeof Component === 'function')
+    // eslint-disable-next-line @typescript-eslint/naming-convention -- Component e componente React (PascalCase exigido)
     .map(({ pageName, Component }) => ({
       pageName,
       PageComponent: Component as React.ComponentType,
     }));
 
+  // eslint-disable-next-line @typescript-eslint/naming-convention -- PageComponent e componente React (PascalCase exigido pelo JSX)
   describe.each(adminPages)('Page $pageName', ({ pageName, PageComponent }) => {
     it('should render with correct PageSEO config', async () => {
       render(<PageComponent />, { wrapper });

@@ -20,14 +20,6 @@ vi.mock('@/components/layout/AppLogo', () => ({
   AppLogo: () => <div data-testid="app-logo" />,
 }));
 
-vi.mock('./AuthBranding', async () => {
-  const actual = await vi.importActual('./AuthBranding') as any;
-  return {
-    ...actual,
-    ContinuousRockets: () => <div data-testid="rockets" />,
-  };
-});
-
 describe('AuthBrandingPanel Visual Classes', () => {
   it('has correct responsive width and margin classes on the grid container', () => {
     const { container } = render(

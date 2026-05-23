@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { loginSchema, signupSchema } from '../lib/validations/authSchema';
+import { loginSchema } from '../lib/validations/authSchema';
 import { quoteFormSchema } from '../lib/validations/quoteSchema';
 
 describe('Real-World Scenario: Security & Validation Layer', () => {
