@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
     );
 
     if (!response.ok) {
-      await response.text();
+      await response.body?.cancel();
       console.error('ElevenLabs scribe credential request failed:', { status: response.status });
       return new Response(
         JSON.stringify({ error: `ElevenLabs API error: ${response.status}` }),
