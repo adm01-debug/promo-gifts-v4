@@ -88,8 +88,8 @@ Deno.serve(async (req) => {
         });
 
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Bitrix24 API error:', errorText);
+          await response.text();
+          console.error('Bitrix24 API error:', { status: response.status });
           throw new Error(`Bitrix24 API error: ${response.status}`);
         }
 
@@ -216,8 +216,8 @@ Deno.serve(async (req) => {
         });
 
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Bitrix24 deals error:', errorText);
+          await response.text();
+          console.error('Bitrix24 deals error:', { status: response.status });
           throw new Error(`Bitrix24 API error: ${response.status}`);
         }
 

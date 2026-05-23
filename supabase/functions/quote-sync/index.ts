@@ -323,8 +323,8 @@ async function sendToN8N(quoteData: QuoteData): Promise<Record<string, unknown>>
     body: JSON.stringify({ action: "create_or_update_quote", quote: quoteData, timestamp: new Date().toISOString() }),
   });
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`N8N webhook failed: ${response.status} - ${errorText}`);
+    await response.text();
+    throw new Error(`N8N webhook failed: ${response.status}`);
   }
   try { return await response.json(); } catch { return { success: true }; }
 }
@@ -341,8 +341,8 @@ async function sendToSalesPro(quoteData: QuoteData): Promise<void> {
       body: JSON.stringify({ action: "create_or_update_quote", quote: quoteData, source: "gifts-store", timestamp: new Date().toISOString() }),
     });
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("SalesPro webhook error:", response.status, errorText);
+      await response.text();
+      console.error("SalesPro webhook error:", { status: response.status });
     } else {
       console.log("SalesPro sync successful for quote:", quoteData.quote_number);
     }

@@ -249,8 +249,8 @@ Output the final image maintaining the exact same dimensions and aspect ratio as
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI Gateway error:", response.status, errorText);
+      await response.text();
+      console.error("AI Gateway error:", { status: response.status });
       
       if (response.status === 429) {
         return new Response(

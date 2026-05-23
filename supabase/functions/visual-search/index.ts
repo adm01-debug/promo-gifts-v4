@@ -104,8 +104,8 @@ Responda APENAS em JSON com este formato:
     });
 
     if (!analysisResponse.ok) {
-      const errorText = await analysisResponse.text();
-      console.error("AI analysis error:", analysisResponse.status, errorText);
+      await analysisResponse.text();
+      console.error("AI analysis error:", { status: analysisResponse.status });
       
       if (analysisResponse.status === 429) {
         return new Response(
@@ -120,7 +120,7 @@ Responda APENAS em JSON com este formato:
         );
       }
       
-      throw new Error(`AI analysis failed: ${errorText}`);
+      throw new Error(`AI analysis failed: ${analysisResponse.status}`);
     }
 
     const analysisData = await analysisResponse.json();
