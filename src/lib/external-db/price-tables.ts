@@ -37,12 +37,15 @@ export async function fetchPromobrindPriceTables(options?: {
   if (options?.techniqueCode) filters.table_code = options.techniqueCode;
 
   const result = await invokeExternalDb<Record<string, unknown>>({
-    table: 'customization_price_tables', operation: 'select',
-    filters, select: '*', limit: 500,
+    table: 'customization_price_tables',
+    operation: 'select',
+    filters,
+    select: '*',
+    limit: 500,
     orderBy: { column: 'tier_1_min_qty', ascending: true },
   });
 
-  let tables: PromobrindPriceTable[] = result.records.map(r => ({
+  let tables: PromobrindPriceTable[] = result.records.map((r) => ({
     id: r.id as string,
     table_code: r.table_code as string,
     table_code_option: r.table_code_option as string,
@@ -63,10 +66,21 @@ export async function fetchPromobrindPriceTables(options?: {
     technique_name: r.customization_type_name as string,
   }));
 
-  if (options?.quantity) tables = tables.filter(t => t.min_quantity <= options.quantity! && (t.max_quantity === null || t.max_quantity >= options.quantity!));
-  if (options?.colors) tables = tables.filter(t => (t.min_colors === null || t.min_colors <= options.colors!) && (t.max_colors === null || t.max_colors >= options.colors!));
-  if (options?.width) tables = tables.filter(t => t.max_area_width_cm === null || t.max_area_width_cm >= options.width!);
-  if (options?.height) tables = tables.filter(t => t.max_area_height_cm === null || t.max_area_height_cm >= options.height!);
+  const { quantity, colors, width, height } = options ?? {};
+  if (quantity)
+    tables = tables.filter(
+      (t) => t.min_quantity <= quantity && (t.max_quantity === null || t.max_quantity >= quantity),
+    );
+  if (colors)
+    tables = tables.filter(
+      (t) =>
+        (t.min_colors === null || t.min_colors <= colors) &&
+        (t.max_colors === null || t.max_colors >= colors),
+    );
+  if (width)
+    tables = tables.filter((t) => t.max_area_width_cm === null || t.max_area_width_cm >= width);
+  if (height)
+    tables = tables.filter((t) => t.max_area_height_cm === null || t.max_area_height_cm >= height);
 
   return tables;
 }
