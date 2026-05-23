@@ -21,24 +21,32 @@
 - [x] **Etapa 8** — Issue 2: testes de `validateUrlFormat` (15 testes cobrindo os 6 cenários da spec + bitrix24/n8n/webhook_outbound/mcp)
 
 ### Redução tsc-baseline — top 5 arquivos (9-13)
-- [ ] **Etapa 9** — Refatorar `src/lib/personalization/adapters/price-response.adapter.ts` (61 erros)
-- [ ] **Etapa 10** — Refatorar `src/pages/admin/AdminProductFormPage.tsx` (60)
-- [ ] **Etapa 11** — Refatorar `src/components/admin/products/new-supplier/tabs/AddressTab.tsx` (56)
-- [ ] **Etapa 12** — Refatorar `src/components/admin/products/new-supplier/tabs/BasicDataTab.tsx` (32)
-- [ ] **Etapa 13** — Refatorar `src/components/compare/CompareTableView.tsx` (26)
+- [ ] **Etapa 9** — Refatorar `src/lib/personalization/adapters/price-response.adapter.ts` (61 erros) — **ADIADA** — sessão dedicada (~4h)
+- [ ] **Etapa 10** — Refatorar `src/pages/admin/AdminProductFormPage.tsx` (60) — **ADIADA** — sessão dedicada (~4h)
+- [ ] **Etapa 11** — Refatorar `src/components/admin/products/new-supplier/tabs/AddressTab.tsx` (56) — **ADIADA** (~3h)
+- [ ] **Etapa 12** — Refatorar `src/components/admin/products/new-supplier/tabs/BasicDataTab.tsx` (32) — **ADIADA** (~2h)
+- [ ] **Etapa 13** — Refatorar `src/components/compare/CompareTableView.tsx` (26) — **ADIADA** (~2h, ver §26 erros catalogados)
 
-### Redução eslint-baseline — top arquivos (14-16)
-- [ ] **Etapa 14** — Reduzir `src/components/admin/connections/SupabaseConnectionsTab.tsx` (17 warnings)
-- [ ] **Etapa 15** — Reduzir `src/components/catalog/CatalogContent.tsx` (16) + `ProductQuickView.tsx` (16)
-- [ ] **Etapa 16** — Reduzir `src/hooks/simulator/useSimulatorWizard.ts` (15) + `useGlobalSearch.ts` (12)
+### Redução eslint-baseline — top arquivos (14-16) — **TODAS ADIADAS**
+- [ ] **Etapa 14** — Reduzir `src/components/admin/connections/SupabaseConnectionsTab.tsx` (17 warnings) — **ADIADA**
+- [ ] **Etapa 15** — Reduzir `src/components/catalog/CatalogContent.tsx` (16) + `ProductQuickView.tsx` (16) — **ADIADA**
+- [ ] **Etapa 16** — Reduzir `src/hooks/simulator/useSimulatorWizard.ts` (15) + `useGlobalSearch.ts` (12) — **ADIADA**
 
 ### Pendências menores (17-19)
-- [ ] **Etapa 17** — T-FIX-5b: antipadrão B residual em testes
+- [ ] **Etapa 17** — T-FIX-5b: antipadrão B residual em testes — **ADIADA** — evolução do guard-rail ESLint
 - [x] **Etapa 18** — `QuoteBuilderStepper.test.tsx:68` forEach vazio — removido it() no-op (ícones mockados não testam classes do real)
 - [x] **Etapa 19** — `ScenarioSimulation.test.ts` Scenario 2 CIF/FOB — teste desatualizado vs schema real, agora cobre fob_pre + cif corretamente (2 passing)
 
 ### Conclusão (20)
-- [ ] **Etapa 20** — Atualizar `STATUS.md`, `SESSIONS.md`, `AUDITORIA-EXAUSTIVA-2026-05-23.md` + marcar PR #124 ready for review
+- [x] **Etapa 20** — Atualizar `STATUS.md`, `SESSIONS.md`, `AUDITORIA-EXAUSTIVA-2026-05-23.md` + marcar PR #124 ready for review
+
+---
+
+## Resumo final
+
+**11/20 etapas fechadas** + **1 fix bônus** (TS2322 herdado do T-FIX-4).
+
+**9 etapas adiadas** — todas exigem refactor arquitetural não-trivial, documentadas em `STATUS.md` → *Pendências adiadas* com esforço estimado de ~23h totais. Devem rodar em sessões dedicadas, uma por vez.
 
 ## Notas de execução
 

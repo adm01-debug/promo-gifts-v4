@@ -4,7 +4,7 @@
 
 **Repo**: `adm01-debug/promo-gifts-v4`
 **Sponsor**: Joaquim (`adm01@promobrindes.com.br`)
-**Atualizado em**: 2026-05-22
+**Atualizado em**: 2026-05-23
 
 ---
 
@@ -12,7 +12,8 @@
 
 | Data | Sessão | Commits | Estado | Checklist |
 |------|--------|---------|--------|-----------|
-| 2026-05-22 | **T-FIX-5** — Lint guard-rail contra `forEach()` em tests | 5 | 🟡 code complete + 3 passos manuais | `T-FIX-5-CHECKLIST.md` |
+| 2026-05-23 | **Auditoria exaustiva + Plano de 20 etapas** (PR #124) | 12 | 🟡 11 etapas fechadas, 9 adiadas | `docs/PLANO-20-ETAPAS-2026-05-23.md` |
+| 2026-05-22 | **T-FIX-5** — Lint guard-rail contra `forEach()` em tests | 5 | ✅ fechado em 2026-05-23 (Etapa 5) | `T-FIX-5-CHECKLIST.md` |
 | 2026-05-22 | **T-FIX-4** — Refactor `forEach()` → `it.each` em 5 arquivos | 5 | ✅ fechado | — |
 | 2026-05-22 | **Bugs #1 e #2** do plano "10/10" (migrations sync + parseContract generics) | 2 (squash) | ✅ mergeados | — |
 | 2026-05-22 | **Redeploy de schemas** — Fases 2+3+3.5+4+1.1 (Lovable Cloud sync) | 10 | ✅ fechado | — |
@@ -24,6 +25,48 @@
 ---
 
 ## 🗂️ Sessões detalhadas (mais recente primeiro)
+
+### 2026-05-23 — Auditoria exaustiva + Plano de 20 etapas (PR #124)
+
+**Foco**: Sponsor pediu "análise exaustiva e minuciosa no código verificando se todos os bugs e falhas foram corrigidos". Resposta veio em duas partes:
+
+1. **Relatório** `docs/AUDITORIA-EXAUSTIVA-2026-05-23.md` — auditoria cobrindo dívida em baselines (1.333 erros TS + 409 ESLint + 176 toast leaks), status do hardening (16 sessões fechadas, 9 pendências), code smells (175 type escapes, 73 eslint-disable, 3 empty catches, 0 TODOs reais) e post-mortems abertos (3 issues do incidente CRM bridge).
+2. **Plano de execução** `docs/PLANO-20-ETAPAS-2026-05-23.md` — 20 etapas sequenciais com commits individuais.
+
+**Commits** (12 em sequência):
+
+| # | SHA | Etapa | Descrição |
+|---|---|---|---|
+| 1 | `1160f3b` | 1 | Fix P5 — PascalCase params em `AdminStandardRules.test.tsx` |
+| 2 | `94577a9` | 2 | `useOptionalOnboardingContext` elimina 3 empty catches + 3 rules-of-hooks + 3 any |
+| 3 | `964518e` | — | Fix TS2322 em `PriceFreshnessBadge.snapshots.test.tsx` (regressão herdada T-FIX-4) |
+| 4 | `285cd22` | 3 | Regenera baseline ESLint (473→442 erros, -31) |
+| 5 | `c9ab4a2` | 4 | T-FIX-3: bump 60 usos GH Actions em 12 workflows |
+| 6 | `5876bfc` | 5 | T-FIX-5: apply proposed config + `check:proposed-configs` script |
+| 7 | `fab293b` | 6 | Issue 1 do post-mortem: POP `docs/operations/cadastro-secrets-supabase.md` |
+| 8 | `e5632a1` | 7 | Issue 2: `validateUrlFormat` em `connection-test-runner.ts` |
+| 9 | `307ddfd` | 8 | Issue 2: 15 testes Deno para `validateUrlFormat` |
+| 10 | `6250622` | 18 | Remove forEach no-op em `QuoteBuilderStepper.test.tsx` |
+| 11 | `17a16d3` | 19 | Corrige Scenario 2 CIF/FOB em `ScenarioSimulation.test.ts` (3 cenários) |
+| 12 | (este) | 20 | Atualiza `STATUS.md`, `SESSIONS.md`, `AUDITORIA-EXAUSTIVA-*.md` + marcar PR ready |
+
+**Impacto mensurável**:
+- ESLint baseline: 473→442 erros (-31), 409→404 arquivos (-5)
+- Empty catches: 3→0
+- `rules-of-hooks` violations: 3→0
+- `any` em produção: -3
+- T-FIX-3 cutoff (era 2026-06-02): ✅ fechado
+- T-FIX-5 (3 passos manuais sponsor): ✅ fechado
+- Post-mortem CRM bridge: 2/3 issues fechadas (Issue 3 bloqueada por sponsor fornecer chaves)
+
+**Etapas adiadas** (9): refatoração arquitetural dos top arquivos do TSC/ESLint baseline + T-FIX-5b. Documentadas em `STATUS.md` → *Pendências adiadas*. ~23h de trabalho estimado, dividir em sessões dedicadas.
+
+**Estado entregue**:
+- 🟡 11/20 etapas fechadas no PR #124
+- 🟡 9 etapas adiadas com plano explícito
+- ✅ CI desbloqueado (ESLint baseline gate passa, TSC baseline gate passa, novo gate `check:proposed-configs` ativo)
+
+---
 
 ### 2026-05-22 — T-FIX-5: Lint guard-rail contra `forEach()` em testes
 
