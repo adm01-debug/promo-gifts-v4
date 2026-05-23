@@ -115,7 +115,7 @@ Isso satisfaz `check:edge-cors` + `check:no-inline-cors`.
 ❌ 73 nova(s) ocorrência(s) de toast com texto técnico
 ```
 
-**Baseline (.toast-leaks-baseline.json):** 0 ocorrências. Esta é uma **regressão pós-baseline** — entre 2026-05-22 (data do baseline) e hoje (2026-05-23), 73 novos call sites apareceram.
+**Baseline (.toast-leaks-baseline.json):** 176 ocorrências legadas. O check atual reporta 73 novas ocorrências acima do baseline, caracterizando regressão incremental.
 
 **Top 10 arquivos com mais leaks:**
 
