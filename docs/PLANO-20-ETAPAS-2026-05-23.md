@@ -35,7 +35,7 @@
 ### Pendências menores (17-19)
 - [ ] **Etapa 17** — T-FIX-5b: antipadrão B residual em testes
 - [x] **Etapa 18** — `QuoteBuilderStepper.test.tsx:68` forEach vazio — removido it() no-op (ícones mockados não testam classes do real)
-- [ ] **Etapa 19** — `ScenarioSimulation.test.ts` Scenario 2 CIF/FOB
+- [x] **Etapa 19** — `ScenarioSimulation.test.ts` Scenario 2 CIF/FOB — teste desatualizado vs schema real, agora cobre fob_pre + cif corretamente (2 passing)
 
 ### Conclusão (20)
 - [ ] **Etapa 20** — Atualizar `STATUS.md`, `SESSIONS.md`, `AUDITORIA-EXAUSTIVA-2026-05-23.md` + marcar PR #124 ready for review
