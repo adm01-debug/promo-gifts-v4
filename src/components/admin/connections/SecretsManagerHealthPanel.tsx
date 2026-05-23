@@ -275,7 +275,7 @@ export function SecretsManagerHealthPanel({ className }: { className?: string })
           {boot?.requestId && (
             <button
               type="button"
-              onClick={() => copyToClipboard(boot.requestId, 'request_id copiado')}
+              onClick={() => copyToClipboard(boot.requestId ?? '', 'request_id copiado')}
               className="ml-auto inline-flex items-center gap-1 font-mono text-[11px] text-muted-foreground hover:text-foreground"
               title="Copiar request_id para correlacionar com edge logs"
             >

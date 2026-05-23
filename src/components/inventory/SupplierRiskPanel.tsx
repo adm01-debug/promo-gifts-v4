@@ -330,7 +330,6 @@ export function SupplierRiskPanel({ products }: SupplierRiskPanelProps) {
               <ProductRiskDetail
                 productId={selected.id}
                 productName={selected.name}
-                productSku={selected.sku}
               />
             ) : (
               <div className="flex items-center justify-center h-full text-sm text-muted-foreground py-8">
