@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.49.8";
+import { buildPublicCorsHeaders } from "../_shared/cors.ts";
 
 type RunMode = "dry_run" | "apply";
 
@@ -21,11 +22,15 @@ interface UpdatedUser {
   password: string;
 }
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-admin-token",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+// Use the SSOT helper instead of inline CORS literal.
+// extraAllowHeaders: this endpoint needs x-admin-token for auth.
+// allowMethods: restrict to POST + OPTIONS (admin-only mutation).
+// The SSOT helper automatically includes x-request-id in both Allow-Headers
+// and Expose-Headers, which satisfies the edge-cors gate.
+const corsHeaders = buildPublicCorsHeaders({
+  extraAllowHeaders: ["x-admin-token"],
+  allowMethods: "POST, OPTIONS",
+});
 
 function pick(chars: string): string {
   const arr = new Uint32Array(1);
