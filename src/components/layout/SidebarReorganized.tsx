@@ -333,10 +333,10 @@ export const SidebarReorganized = React.memo(
         <FocusTrap active={isOpen && isMobile} className="h-full" autoFocus={false}>
           <div className={cn("flex flex-col h-full pt-16 lg:pt-0 min-h-0", isCollapsed && "overflow-visible")}>
             {/* Brand Header */}
-            <div className="relative group/brand border-b border-white/5 bg-gradient-to-b from-white/[0.04] to-transparent mb-2">
-            <SidebarBrandHeader isCollapsed={isCollapsed} />
-            <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover/brand:opacity-100 transition-opacity duration-500 pointer-events-none blur-2xl rounded-full" />
-          </div>
+            <div className="relative group/brand border-b border-white/5 bg-gradient-to-b from-white/[0.04] to-transparent">
+              <SidebarBrandHeader isCollapsed={isCollapsed} />
+              <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover/brand:opacity-100 transition-opacity duration-500 pointer-events-none blur-2xl rounded-full" />
+            </div>
 
 
           {/* Collapse controls (desktop) */}
