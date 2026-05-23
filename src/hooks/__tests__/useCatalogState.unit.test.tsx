@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import { useCatalogState } from "@/hooks/products";
+import { useCatalogState } from "@/hooks/products/useCatalogState";
 import { BrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ProductsProvider } from "@/contexts/ProductsContext";
@@ -8,98 +8,112 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import React from "react";
 
-// Mock all internal hooks used by useCatalogState to avoid side effects and hangs
+// Mocks com REFERENCIAS ESTAVEIS (vi.hoisted): retornar new Map()/vi.fn() a cada render faz
+// o useEffect [realProducts, registerProducts] do SUT re-disparar em loop -> re-render infinito
+// -> JS heap out of memory. Por isso fixamos as referencias uma unica vez.
+const H = vi.hoisted(() => {
+  const emptyMap = new Map();
+  const noop = () => {};
+  return {
+    emptyMap,
+    registerProducts: noop,
+    catalog: {
+      data: { pages: [{ products: [], totalEstimate: 0 }] },
+      isLoading: false, isFetching: false, isFetchingNextPage: false,
+      hasNextPage: false, fetchNextPage: noop, refetch: noop,
+    },
+    noFilter: { productIds: [] as string[], hasFilter: false, isLoading: false },
+    search: { suggestions: [], quickSuggestions: [], history: [], addToHistory: noop, clearHistory: noop },
+    favQuickAdd: { handleFavoriteClick: noop, defaultList: null, addToList: noop },
+    favStore: { favorites: [], toggleFavorite: noop, isFavorite: () => false },
+    compStore: { items: [], toggleComparison: noop, isInComparison: () => false, clearComparison: noop },
+    toast: { toast: noop },
+    fuzzy: { results: [], hasSearch: false },
+  };
+});
+
 vi.mock("@/hooks/products", () => ({
-  useProductsCatalog: vi.fn(() => ({
-    data: { pages: [{ products: [], totalEstimate: 0 }] },
-    isLoading: false,
-    isFetching: false,
-    isFetchingNextPage: false,
-    hasNextPage: false,
-    fetchNextPage: vi.fn(),
-    refetch: vi.fn(),
-  })),
+  useProductsCatalog: () => H.catalog,
+  useProductsByMaterial: () => H.noFilter,
+  useProductsByCategory: () => H.noFilter,
+  useExternalCategoriesQuery: () => ({ data: [] }),
+  useCatalogRealStats: () => ({ data: null }),
+  useSupplierSalesRanking: () => ({ data: H.emptyMap }),
+  useColorEnrichment: () => ({ data: H.emptyMap }),
+  useProductFuzzySearch: () => H.fuzzy,
 }));
 
 vi.mock("@/hooks/common", () => ({
-  useSearch: vi.fn(() => ({
-    suggestions: [],
-    quickSuggestions: [],
-    history: [],
-    addToHistory: vi.fn(),
-    clearHistory: vi.fn(),
-  })),
-}));
-
-vi.mock("@/hooks/products", () => ({
-  useProductsByMaterial: vi.fn(() => ({
-    productIds: [],
-    hasFilter: false,
-    isLoading: false,
-  })),
-}));
-
-vi.mock("@/hooks/products", () => ({
-  useProductsByCategory: vi.fn(() => ({
-    productIds: [],
-    hasFilter: false,
-    isLoading: false,
-  })),
-}));
-
-vi.mock("@/hooks/products", () => ({
-  useExternalCategoriesQuery: vi.fn(() => ({ data: [] })),
-}));
-
-vi.mock("@/hooks/products", () => ({
-  useCatalogRealStats: vi.fn(() => ({ data: null })),
+  useSearch: () => H.search,
+  useDebounce: (value: unknown) => value,
 }));
 
 vi.mock("@/hooks/intelligence", () => ({
-  usePromoSalesRanking: vi.fn(() => ({ data: new Map() })),
-}));
-
-vi.mock("@/hooks/products", () => ({
-  useSupplierSalesRanking: vi.fn(() => ({ data: new Map() })),
-}));
-
-vi.mock("@/hooks/products", () => ({
-  useColorEnrichment: vi.fn(() => ({ data: new Map() })),
-}));
-
-vi.mock("@/hooks/products", () => ({
-  useProductFuzzySearch: vi.fn(() => ({ results: [], hasSearch: false })),
-}));
-
-vi.mock("@/hooks/products", () => ({
-  useCatalogFiltering: vi.fn((args) => args.realProducts || []),
+  usePromoSalesRanking: () => ({ data: H.emptyMap }),
 }));
 
 vi.mock("@/hooks/favorites", () => ({
-  useFavoriteQuickAdd: vi.fn(() => ({
-    handleFavoriteClick: vi.fn(),
-    defaultList: null,
-    addToList: vi.fn(),
-  })),
+  useFavoriteQuickAdd: () => H.favQuickAdd,
 }));
 
-// Mock Supabase
+vi.mock("@/stores/useFavoritesStore", () => ({
+  useFavoritesStore: () => H.favStore,
+}));
+
+vi.mock("@/stores/useComparisonStore", () => ({
+  useComparisonStore: () => H.compStore,
+}));
+
+vi.mock("@/hooks/ui", () => ({
+  useToast: () => H.toast,
+}));
+
+vi.mock("@/hooks/products/useCatalogFiltering", () => ({
+  useCatalogFiltering: (args: { realProducts?: unknown[] }) => args?.realProducts ?? [],
+}));
+
+vi.mock("@/components/filters/FilterPanel", () => ({
+  defaultFilters: {
+    search: "", colorGroups: [], colorVariations: [], colorNuances: [], colors: [],
+    categories: [], suppliers: [], publicoAlvo: [], datasComemorativas: [], endomarketing: [],
+    ramosAtividade: [], segmentosAtividade: [], materialGroups: [], materialTypes: [], materiais: [],
+    techniques: [], tags: [], priceRange: [0, 9999], minStock: 0, inStock: false, isKit: false,
+    featured: false, isNew: false, hasPersonalization: false, hasCommercialPackaging: false,
+    gender: [], sizes: [], sortBy: "name",
+  },
+  FilterPanel: () => null,
+}));
+
+vi.mock("@/components/products/ColumnSelector", () => ({
+  getDefaultColumns: () => 4,
+  STORAGE_KEY: "catalog-grid-columns",
+  ColumnSelector: () => null,
+}));
+
+// Contexts: passthrough leve com referencia estavel de registerProducts (quebra loop do useEffect)
+vi.mock("@/contexts/AuthContext", () => ({
+  AuthProvider: ({ children }: { children: React.ReactNode }) => children,
+  useAuth: () => ({ user: null, session: null, loading: false, refreshSession: () => {} }),
+}));
+
+vi.mock("@/contexts/ProductsContext", () => ({
+  ProductsProvider: ({ children }: { children: React.ReactNode }) => children,
+  useProductsContext: () => ({ registerProducts: H.registerProducts }),
+}));
+
+vi.mock("@/contexts/ThemeContext", () => ({
+  ThemeProvider: ({ children }: { children: React.ReactNode }) => children,
+  useTheme: () => ({ theme: "light", setTheme: () => {} }),
+}));
+
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     auth: {
-      onAuthStateChange: vi.fn(() => ({
-        data: { subscription: { unsubscribe: vi.fn() } },
-      })),
-      getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      getSession: () => Promise.resolve({ data: { session: null } }),
     },
-    from: vi.fn(() => ({
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      single: vi.fn(),
-    })),
-    functions: {
-      invoke: vi.fn(),
-    },
+    from: () => ({ select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null }) }) }) }),
+    functions: { invoke: () => Promise.resolve({ data: null }) },
   },
 }));
 

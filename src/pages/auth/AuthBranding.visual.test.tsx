@@ -40,11 +40,8 @@ describe('AuthBrandingPanel Visual Classes', () => {
     expect(grid).toBeInTheDocument();
     
     const classes = grid?.className || '';
+    // Layout atual do painel: grid full-width, sem overflow lateral (-mx) do design antigo.
     expect(classes).toContain('w-full');
-    expect(classes).toContain('lg:w-[105%]');
-    expect(classes).toContain('xl:w-[110%]');
-    expect(classes).toContain('lg:-mx-[2.5%]');
-    expect(classes).toContain('xl:-mx-[5%]');
   });
 
   it('has correct padding and gap classes', () => {
@@ -58,11 +55,11 @@ describe('AuthBrandingPanel Visual Classes', () => {
     expect(grid?.className).toContain('gap-3');
     expect(grid?.className).toContain('sm:gap-5');
     
-    const cards = container.querySelectorAll('.rounded-2xl');
+    const cards = container.querySelectorAll('.rounded-3xl');
+    expect(cards.length).toBeGreaterThan(0);
     cards.forEach(card => {
-      expect(card.className).toContain('px-4');
-      expect(card.className).toContain('sm:px-6');
-      expect(card.className).toContain('h-[99px]');
+      expect(card.className).toContain('px-5');
+      expect(card.className).toContain('h-[88px]');
     });
   });
 

@@ -34,7 +34,7 @@ describe('QuoteBuilderSummaryColumn Advanced Discount Scenarios', () => {
     const setDiscountValue = vi.fn();
     render(<QuoteBuilderSummaryColumn {...defaultProps} setDiscountValue={setDiscountValue} />);
     
-    const input = screen.getByPlaceholderText('0%');
+    const input = screen.getByTestId('quote-discount-input');
     fireEvent.change(input, { target: { value: '110' } });
     
     // CurrencyInput should show range error
@@ -51,7 +51,7 @@ describe('QuoteBuilderSummaryColumn Advanced Discount Scenarios', () => {
       />
     );
     
-    const input = screen.getByPlaceholderText('R$ 0,00');
+    const input = screen.getByTestId('quote-discount-input');
     fireEvent.change(input, { target: { value: '1500' } });
     
     expect(await screen.findByText(/Valor máximo é/)).toBeInTheDocument();
@@ -72,7 +72,7 @@ describe('QuoteBuilderSummaryColumn Advanced Discount Scenarios', () => {
       />
     );
     
-    const input = screen.getByPlaceholderText('R$ 0,00');
+    const input = screen.getByTestId('quote-discount-input');
     
     // Should allow 1100
     fireEvent.change(input, { target: { value: '1100' } });
