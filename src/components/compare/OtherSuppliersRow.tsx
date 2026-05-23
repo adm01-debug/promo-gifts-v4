@@ -8,16 +8,17 @@ import { cn } from "@/lib/utils";
 import { useSupplierComparison } from "@/hooks/products";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import type { Product } from "@/types/product-catalog";
 
 interface Props {
-  product: Record<string, unknown>;
+  product: Product;
   formatCurrency: (v: number) => string;
   onAddToCompare?: (productId: string) => void;
 }
 
 export function OtherSuppliersRow({ product, formatCurrency, onAddToCompare }: Props) {
   const [open, setOpen] = useState(false);
-  const { data: result, isLoading } = useSupplierComparison(open ? (product as any) : null);
+  const { data: result, isLoading } = useSupplierComparison(open ? product : null);
 
   return (
     <div className="rounded-lg border border-border bg-muted/20">
