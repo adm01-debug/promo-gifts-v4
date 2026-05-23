@@ -94,7 +94,9 @@ Deno.serve(async (req) => {
         }
 
         const bitrixData = await response.json();
-        console.log('Bitrix24 response:', JSON.stringify(bitrixData).slice(0, 500));
+        console.log('Bitrix24 response received:', {
+          records: Array.isArray(bitrixData.result) ? bitrixData.result.length : 0,
+        });
 
         // Transform Bitrix24 data to our client format
         const clients = (bitrixData.result || []).map((company: any) => ({
@@ -222,7 +224,9 @@ Deno.serve(async (req) => {
         }
 
         const bitrixData = await response.json();
-        console.log('Bitrix24 deals response:', JSON.stringify(bitrixData).slice(0, 500));
+        console.log('Bitrix24 deals response received:', {
+          records: Array.isArray(bitrixData.result) ? bitrixData.result.length : 0,
+        });
 
         const deals = (bitrixData.result || []).map((deal: any) => ({
           id: deal.ID,

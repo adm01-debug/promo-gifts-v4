@@ -125,8 +125,9 @@ Responda APENAS em JSON com este formato:
 
     const analysisData = await analysisResponse.json();
     const analysisContent = analysisData.choices?.[0]?.message?.content || "";
+    const hasAnalysisContent = analysisContent.length > 0;
     
-    console.log("AI analysis result:", analysisContent);
+    console.log("AI analysis completed:", { hasContent: hasAnalysisContent });
 
     // Parse JSON from response
     let productAnalysis;

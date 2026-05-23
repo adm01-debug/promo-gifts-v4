@@ -122,7 +122,10 @@ Deno.serve(async (req) => {
     if ('error' in parsed) return parsed.error;
 
     const { action, data } = parsed.data;
-    console.log(`Quote sync action: ${action}`, data);
+    console.log("Quote sync request received:", {
+      action,
+      hasData: Boolean(data),
+    });
 
     switch (action) {
       case "sync_quote": {
@@ -344,7 +347,7 @@ async function sendToSalesPro(quoteData: QuoteData): Promise<void> {
       await response.text();
       console.error("SalesPro webhook error:", { status: response.status });
     } else {
-      console.log("SalesPro sync successful for quote:", quoteData.quote_number);
+      console.log("SalesPro sync successful");
     }
   } catch (err) {
     console.error("SalesPro sync failed:", err);
