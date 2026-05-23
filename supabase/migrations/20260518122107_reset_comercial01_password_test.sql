@@ -1,4 +1,4 @@
--- Reset cirurgico: comercial01 para teste
-UPDATE auth.users
-SET encrypted_password = crypt('@Promobrindes2021', gen_salt('bf')), updated_at = now()
-WHERE email = 'comercial01@promobrindes.com.br';
+-- Security note:
+-- This migration intentionally performs no user-password updates.
+-- Account credential resets must be executed via operational runbooks
+-- (outside versioned schema migrations) using environment-scoped secrets.
