@@ -84,7 +84,7 @@ export function RestrictedRouteNotice({
               <span className="text-[10px] text-muted-foreground">
                 Nível: <span className="font-mono font-bold text-amber-600/80 uppercase">{requiredRole}</span>
               </span>
-              <Button asChild size="xs" variant="ghost" className="h-6 text-[10px] px-2 hover:bg-amber-500/10 hover:text-amber-600">
+              <Button asChild size="sm" variant="ghost" className="h-6 text-[10px] px-2 hover:bg-amber-500/10 hover:text-amber-600">
                 <Link to="/">Sair</Link>
               </Button>
             </div>
@@ -118,10 +118,10 @@ export function RestrictedRouteNotice({
             {description}
           </p>
           <div className="mt-2.5 flex items-center gap-2">
-            <Button asChild size="xs" className="h-7 px-3 bg-amber-500 hover:bg-amber-600 text-white font-bold text-[10px] rounded-lg transition-all duration-300">
+            <Button asChild size="sm" className="h-7 px-3 bg-amber-500 hover:bg-amber-600 text-white font-bold text-[10px] rounded-lg transition-all duration-300">
               <Link to="/">Voltar ao Início</Link>
             </Button>
-            <Button variant="ghost" size="xs" className="h-7 px-2 text-[10px] text-muted-foreground hover:text-foreground">
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-[10px] text-muted-foreground hover:text-foreground">
               Solicitar Acesso
             </Button>
           </div>

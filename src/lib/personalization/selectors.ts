@@ -34,27 +34,30 @@ export function selectBestTable(
 
   // Filtrar por nome da técnica
   if (criteria.techniqueName) {
+    const techniqueName = criteria.techniqueName.toLowerCase();
     const byName = candidates.filter((t) =>
-      t.techniqueName.toLowerCase().includes(criteria.techniqueName.toLowerCase()),
+      t.techniqueName.toLowerCase().includes(techniqueName),
     );
     if (byName.length > 0) candidates = byName;
   }
 
   // Filtrar por código da técnica
   if (criteria.techniqueCode) {
+    const techniqueCode = criteria.techniqueCode.toLowerCase();
     const byCode = candidates.filter(
       (t) =>
-        t.tableCode.toLowerCase().includes(criteria.techniqueCode.toLowerCase()) ||
-        criteria.techniqueCode.toLowerCase().includes(t.tableCode.toLowerCase()),
+        t.tableCode.toLowerCase().includes(techniqueCode) ||
+        techniqueCode.includes(t.tableCode.toLowerCase()),
     );
     if (byCode.length > 0) candidates = byCode;
   }
 
   // Ordenar por número de cores (preferir a que atende exatamente)
   if (criteria.colors) {
+    const colors = criteria.colors;
     candidates.sort((a, b) => {
-      const aFits = a.maxColors !== null && a.maxColors >= criteria.colors;
-      const bFits = b.maxColors !== null && b.maxColors >= criteria.colors;
+      const aFits = a.maxColors !== null && a.maxColors >= colors;
+      const bFits = b.maxColors !== null && b.maxColors >= colors;
 
       if (aFits && !bFits) return -1;
       if (!aFits && bFits) return 1;
@@ -71,10 +74,12 @@ export function selectBestTable(
 
   // Filtrar por dimensões
   if (criteria.widthCm && criteria.heightCm) {
+    const widthCm = criteria.widthCm;
+    const heightCm = criteria.heightCm;
     const byDimensions = candidates.filter(
       (t) =>
-        (t.maxWidthCm === null || t.maxWidthCm >= criteria.widthCm) &&
-        (t.maxHeightCm === null || t.maxHeightCm >= criteria.heightCm),
+        (t.maxWidthCm === null || t.maxWidthCm >= widthCm) &&
+        (t.maxHeightCm === null || t.maxHeightCm >= heightCm),
     );
     if (byDimensions.length > 0) candidates = byDimensions;
   }
