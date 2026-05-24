@@ -9,6 +9,6 @@ export * from "@/hooks/simulation/usePrintAreas";
 export * from "@/hooks/simulation/useSimulation";
 export * from "@/hooks/simulation/useSimulatorPreferences";
 export * from "@/hooks/simulation/useTechniquePricing";
-export * from "@/hooks/simulation/useTechniquePricingOptions";
+export { useTechniquePricingOptions, type SizeOption } from "@/hooks/simulation/useTechniquePricingOptions";
 export * from "@/hooks/simulation/useTechniqueRecommendations";
 export * from "@/hooks/simulation/useTecnicasUnificadas";
