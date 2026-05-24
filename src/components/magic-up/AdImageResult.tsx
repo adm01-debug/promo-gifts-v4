@@ -308,7 +308,7 @@ export function AdImageResult({
         <div className="group relative">
           <img
             src={imageUrl}
-            alt={`Imagem publicitária - ${productName}`}
+            alt={productName ? `Imagem publicitária - ${productName}` : 'Imagem publicitária'}
             className="aspect-square w-full object-cover"
             loading="lazy"
           />
