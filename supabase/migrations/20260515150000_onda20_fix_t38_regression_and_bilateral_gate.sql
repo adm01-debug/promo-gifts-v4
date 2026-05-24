@@ -50,6 +50,39 @@ GRANT EXECUTE ON FUNCTION public.is_coord_or_above(_user_id uuid) TO authenticat
 REVOKE EXECUTE ON FUNCTION public.org_has_any_members(_org_id uuid) FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION public.org_has_any_members(_org_id uuid) FROM anon;
 
+-- -----------------------------------------------------------------
+-- 2.1. REVOKE excesso em helpers sensiveis criados por reconcile prod
+--      antes do gate fail-fast. Migrations posteriores tambem endurecem
+--      parte desses helpers, mas Onda 20 precisa validar o estado aqui.
+-- -----------------------------------------------------------------
+DO $$
+BEGIN
+  IF to_regprocedure('public.vault_delete_secret(text)') IS NOT NULL THEN
+    REVOKE ALL ON FUNCTION public.vault_delete_secret(text) FROM PUBLIC, anon, authenticated;
+    GRANT EXECUTE ON FUNCTION public.vault_delete_secret(text) TO service_role, postgres;
+  END IF;
+
+  IF to_regprocedure('public.vault_get_secret(text)') IS NOT NULL THEN
+    REVOKE ALL ON FUNCTION public.vault_get_secret(text) FROM PUBLIC, anon, authenticated;
+    GRANT EXECUTE ON FUNCTION public.vault_get_secret(text) TO service_role, postgres;
+  END IF;
+
+  IF to_regprocedure('public.vault_list_secret_names()') IS NOT NULL THEN
+    REVOKE ALL ON FUNCTION public.vault_list_secret_names() FROM PUBLIC, anon, authenticated;
+    GRANT EXECUTE ON FUNCTION public.vault_list_secret_names() TO service_role, postgres;
+  END IF;
+
+  IF to_regprocedure('public.vault_set_secret(text,text,text)') IS NOT NULL THEN
+    REVOKE ALL ON FUNCTION public.vault_set_secret(text, text, text) FROM PUBLIC, anon, authenticated;
+    GRANT EXECUTE ON FUNCTION public.vault_set_secret(text, text, text) TO service_role, postgres;
+  END IF;
+
+  IF to_regprocedure('public.verify_step_up_password(uuid,text)') IS NOT NULL THEN
+    REVOKE EXECUTE ON FUNCTION public.verify_step_up_password(uuid, text) FROM PUBLIC, anon;
+    GRANT EXECUTE ON FUNCTION public.verify_step_up_password(uuid, text) TO authenticated;
+  END IF;
+END $$;
+
 -- ─────────────────────────────────────────────────────────────────
 -- 3. Gate bilateral: reescreve audit_security_definer_acl()
 --    para também reportar funções em policy sem EXECUTE pra
