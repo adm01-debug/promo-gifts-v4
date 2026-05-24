@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { TrendingUp, TrendingDown, Minus, Package } from "lucide-react";
 import type { StockVelocity } from "@/hooks/intelligence";
-import { formatCurrency } from "@/lib/format";
 
 interface SupplierComparisonCardsProps {
   velocities: StockVelocity[];
@@ -41,7 +40,7 @@ export function SupplierComparisonCards({ velocities, supplierNames }: SupplierC
           const name = supplierNames.get(v.supplier_id) ?? `Fornecedor ${v.supplier_id.slice(0, 6)}`;
           const trend = v.velocity_trend;
           const isBest = idx === 0 && sorted.length > 1;
-          const sharePercent = bestVelocity > 0
+          const _sharePercent = bestVelocity > 0
             ? Math.round((v.avg_daily_depletion_7d / bestVelocity) * 100)
             : 0;
 

@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import { Palette, Send, Check, X, Eye, Pencil } from "lucide-react";
+import { Palette, Send, Check, Eye, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
