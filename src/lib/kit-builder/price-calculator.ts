@@ -3,7 +3,11 @@
  * Cálculos de preço para kits
  */
 
+<<<<<<< HEAD
+import type { KitItem, KitBox, KitPersonalization } from './types';
+=======
 import type { KitItem, KitBox, KitPersonalization } from "./types";
+>>>>>>> origin/main
 
 // ============================================
 // CÁLCULOS DE PREÇO

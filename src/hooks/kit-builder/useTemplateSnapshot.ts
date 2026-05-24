@@ -5,6 +5,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 import type { KitState } from '@/lib/kit-builder';
 
 export interface SnapshotInput {
@@ -59,7 +60,8 @@ export function useTemplateSnapshot() {
       queryClient.invalidateQueries({ queryKey: ['kit-templates'] });
       toast.success('Template do sistema salvo!');
     },
-    onError: (err: Error) => toast.error(`Erro ao salvar template: ${err.message}`),
+    onError: (err: Error) =>
+      toast.error('Erro ao salvar template', { description: sanitizeError(err) }),
   });
 
   return {

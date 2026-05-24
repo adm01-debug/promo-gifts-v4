@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 import { newRequestId, REQUEST_ID_HEADER } from '@/lib/telemetry/requestId';
 import { recordSecretsManagerCall } from '@/lib/telemetry/secretsManagerCallMetrics';
 
@@ -75,16 +76,6 @@ type InvokeBody = {
   name?: string;
   [key: string]: unknown;
 };
-
-interface SecretsMutationResponse {
-  ok?: boolean;
-  was_update?: boolean;
-  previous_suffix?: string | null;
-  masked_suffix?: string | null;
-  length?: number;
-  secret?: SecretStatus;
-  error?: SecretError;
-}
 
 async function invokeSecretsManager(body: InvokeBody): Promise<{
   data: {
@@ -186,7 +177,7 @@ export function useSecretsManager() {
         ) {
           setSecrets([]);
         }
-        toast.error('Erro ao listar credenciais', { description: normalized.message });
+        toast.error('Erro ao listar credenciais', { description: sanitizeError(normalized) });
         return [];
       }
       setListError(null);
@@ -198,7 +189,7 @@ export function useSecretsManager() {
         'Falha de rede ao carregar credenciais.',
       );
       setListError(normalized);
-      toast.error('Erro ao listar credenciais', { description: normalized.message });
+      toast.error('Erro ao listar credenciais', { description: sanitizeError(normalized) });
       return [];
     } finally {
       setIsLoading(false);
@@ -227,14 +218,13 @@ export function useSecretsManager() {
       if (data && data.ok === false) {
         return { ok: false, error: normalizeError(data) };
       }
-      const setData = data as SecretsMutationResponse | null;
       return {
         ok: true,
-        was_update: !!setData?.was_update,
-        previous_suffix: setData?.previous_suffix ?? null,
-        masked_suffix: setData?.masked_suffix ?? null,
-        length: setData?.length ?? value.length,
-        secret: setData?.secret,
+        was_update: !!data?.was_update,
+        previous_suffix: data?.previous_suffix ?? null,
+        masked_suffix: data?.masked_suffix ?? null,
+        length: data?.length ?? value.length,
+        secret: data?.secret as SecretStatus | undefined,
       };
     },
     [],
@@ -261,14 +251,13 @@ export function useSecretsManager() {
       if (data && data.ok === false) {
         return { ok: false, error: normalizeError(data) };
       }
-      const rotateData = data as SecretsMutationResponse | null;
       return {
         ok: true,
         was_update: true,
-        previous_suffix: rotateData?.previous_suffix ?? null,
-        masked_suffix: rotateData?.masked_suffix ?? null,
-        length: rotateData?.length ?? value.length,
-        secret: rotateData?.secret,
+        previous_suffix: data?.previous_suffix ?? null,
+        masked_suffix: data?.masked_suffix ?? null,
+        length: data?.length ?? value.length,
+        secret: data?.secret as SecretStatus | undefined,
       };
     },
     [],
@@ -277,7 +266,7 @@ export function useSecretsManager() {
   const getRotationHistory = useCallback(async (name?: string): Promise<RotationHistoryEntry[]> => {
     const { data, error } = await invokeSecretsManager({ action: 'rotation_history', name });
     if (error) {
-      toast.error('Falha ao carregar histórico', { description: error.message });
+      toast.error('Falha ao carregar histórico', { description: sanitizeError(error) });
       return [];
     }
     return (data?.history ?? []) as RotationHistoryEntry[];

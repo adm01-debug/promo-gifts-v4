@@ -77,14 +77,16 @@ export async function syncQuoteToBitrix({
     });
   }
 
-  logQuoteHistory(quote.id ?? "", 'sync_started', 'Sincronização com Bitrix24 iniciada').catch(() => {});
+  logQuoteHistory(quote.id, 'sync_started', 'Sincronização com Bitrix24 iniciada').catch((err) => {
+    logger.warn('logQuoteHistory(sync_started) failed', { err, quoteId: quote.id });
+  });
 
   // Generate PDF and upload
   let pdfStorageUrl: string | undefined;
   let filename: string | undefined;
   try {
     const blob = await generateProposalPDFv2(proposalData, { isDraft: quote.status === 'draft' });
-    filename = `proposta-${(quote.quote_number || quote.id || 'draft').replace(/\s+/g, '')}.pdf`;
+    filename = `proposta-${(quote.quote_number || quote.id).replace(/\s+/g, '')}.pdf`;
     const storagePath = `quotes/${quote.id}/${filename}`;
     const { error: uploadError } = await supabase.storage
       .from('art-files')
@@ -115,7 +117,7 @@ export async function syncQuoteToBitrix({
 
   if (error || !data?.success) {
     const msg = data?.error || error?.message || 'Erro desconhecido';
-    await logQuoteHistory(quote.id ?? "", 'sync_error', `Falha: ${msg}`);
+    await logQuoteHistory(quote.id, 'sync_error', `Falha: ${msg}`);
     throw new Error(msg);
   }
 
@@ -129,16 +131,13 @@ export async function syncQuoteToBitrix({
 
   try {
     // rls-allow: update por id; RLS valida ownership
-    await supabase
-      .from('quotes')
-      .update(crmUpdates as never)
-      .eq('id', quote.id ?? "");
+    await supabase.from('quotes').update(crmUpdates).eq('id', quote.id);
   } catch {
     /* ignore */
   }
 
   await logQuoteHistory(
-    quote.id ?? "",
+    quote.id,
     'sync_success',
     `Sincronizado com Bitrix24${bitrixQuoteIdFromResponse ? ` — ID Bitrix: ${bitrixQuoteIdFromResponse}` : ''}`,
     { newValue: bitrixQuoteIdFromResponse ? String(bitrixQuoteIdFromResponse) : undefined },
@@ -149,8 +148,8 @@ export async function syncQuoteToBitrix({
   return {
     success: true,
     updatedQuote: {
-      status: 'sent' as const,
-      ...(bitrixQuoteIdFromResponse ? { bitrix_quote_id: String(bitrixQuoteIdFromResponse) } : {}),
-    } as Partial<Quote>,
+      status: 'sent',
+      ...(bitrixQuoteIdFromResponse ? { bitrix_quote_id: bitrixQuoteIdFromResponse } : {}),
+    },
   };
 }

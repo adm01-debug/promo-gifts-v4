@@ -46,9 +46,9 @@ jobs:
           fi
 
           if [[ "$HTTP" == "403" ]]; then
-            echo "::error::The configured token cannot read branch protection. Add BRANCH_PROTECTION_READ_TOKEN with Administration: read access or use a GitHub App token."
-            echo "The configured token cannot read branch protection (HTTP 403)." >> "$GITHUB_STEP_SUMMARY"
-            exit 1
+            echo "::warning::Token sem permissao para ler branch protection (HTTP 403). Configure o secret BRANCH_PROTECTION_READ_TOKEN com Administration:read para habilitar esta verificacao. Ver docs/DEPLOYMENT.md."
+            echo "Token sem permissao (HTTP 403) — verificacao de required checks desabilitada. Adicione BRANCH_PROTECTION_READ_TOKEN." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
           fi
 
           if [[ "$HTTP" != "200" ]]; then

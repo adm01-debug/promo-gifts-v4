@@ -13,6 +13,25 @@ import { SellerCartProvider } from "@/contexts/SellerCartContext";
 import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import { AriaLiveProvider } from "@/components/a11y";
 
+// Mock OrganizationContext para evitar fetchOrganizations real (que dispara
+// queries internas que travam o jsdom em CI). Usa React.createElement em
+// vez de JSX para evitar problemas de hoisting do vi.mock.
+vi.mock('@/contexts/OrganizationContext', async () => {
+  const ReactMod = await import('react');
+  return {
+    OrganizationProvider: ({ children }: { children: React.ReactNode }) =>
+      ReactMod.createElement(ReactMod.Fragment, null, children),
+    useOrganization: () => ({
+      organizations: [],
+      currentOrg: null,
+      currentRole: null,
+      isLoading: false,
+      switchOrganization: vi.fn(),
+      createOrganization: vi.fn(),
+    }),
+  };
+});
+
 
 // Mock das dependências que poderiam causar efeitos colaterais ou erros de contexto
 vi.mock("@/integrations/supabase/client", () => ({

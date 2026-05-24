@@ -92,6 +92,14 @@ export interface PromobrindProduct {
     length_mm: number | null;
     weight_g: number | null;
     notes: string | null;
+    // Campos provenientes do join `product_kit_components` × `products`
+    // (vide JSON_BUILD_OBJECT em supabase/migrations/20250103070000…).
+    // Podem vir ausentes em produtos mais antigos sem catálogo completo.
+    component_type_code?: string | null;
+    supplier_component_code?: string | null;
+    component_description?: string | null;
+    personalization_notes?: string | null;
+    color?: string | null;
   }> | null;
 
   // ------------------------------------------------------------------

@@ -59,33 +59,67 @@
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     
-    <!-- Theme Color & PWA -->
-    <meta name="theme-color" content="#fb923c" />
+    <!-- Theme Color & PWA — adaptativo light/dark, theme azul brand -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#1e40af" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#020617" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png" />
 
-    <!-- JSON-LD Structured Data -->
+    <!-- JSON-LD Structured Data
+         WebApplication + Organization em um unico @graph (recomendado pelo Google).
+         Removido "offers/price: 0" - era enganoso (nao e SaaS gratuito).
+         Substituido por audience B2B + potentialAction ContactAction. -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "Promo Gifts",
-      "url": "https://www.promogifts.com.br",
-      "description": "Plataforma completa para vendedores de produtos promocionais. Catálogo inteligente, orçamentos rápidos e mockups personalizados.",
-      "applicationCategory": "BusinessApplication",
-      "operatingSystem": "Web",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "BRL"
-      },
-      "author": {
-        "@type": "Organization",
-        "name": "Promo Gifts"
-      }
+      "@graph": [
+        {
+          "@type": "WebApplication",
+          "@id": "https://www.promogifts.com.br/#webapp",
+          "name": "Promo Gifts",
+          "url": "https://www.promogifts.com.br",
+          "description": "Plataforma completa para vendedores de produtos promocionais. Catálogo inteligente, orçamentos rápidos e mockups personalizados.",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "inLanguage": "pt-BR",
+          "audience": {
+            "@type": "BusinessAudience",
+            "audienceType": "Vendedores B2B de brindes corporativos e produtos promocionais"
+          },
+          "potentialAction": {
+            "@type": "ContactAction",
+            "name": "Solicitar acesso",
+            "target": "https://www.promogifts.com.br/auth"
+          },
+          "publisher": {
+            "@id": "https://www.promogifts.com.br/#organization"
+          }
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://www.promogifts.com.br/#organization",
+          "name": "Promo Gifts",
+          "legalName": "Brasil Marcas Indústria e Comércio de Brindes Ltda",
+          "url": "https://www.promogifts.com.br",
+          "logo": "https://www.promogifts.com.br/favicon.svg",
+          "email": "ti@promobrindes.com.br",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "São Paulo",
+            "addressRegion": "SP",
+            "postalCode": "03377-000",
+            "addressCountry": "BR"
+          },
+          "sameAs": [
+            "https://www.instagram.com/promobrindes",
+            "https://www.linkedin.com/company/promobrindes"
+          ]
+        }
+      ]
     }
     </script>
   </head>

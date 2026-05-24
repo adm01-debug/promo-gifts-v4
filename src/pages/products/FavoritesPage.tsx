@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { Product } from '@/types/product-catalog';
 import { useNavigate } from 'react-router-dom';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { useFavoritesStore, type FavoriteVariantInfo } from '@/stores/useFavoritesStore';
 import {
+  useEnrichedFavoriteItems,
   useFavoriteLists,
+  useFavoritesGlobalShortcuts,
   useFavoriteTrash,
   useLegacyFavoritesMigration,
-  useEnrichedFavoriteItems,
-  useFavoritesGlobalShortcuts,
 } from '@/hooks/favorites';
 import { useProductsContext } from '@/contexts/ProductsContext';
 import { ProductCard } from '@/components/products/ProductCard';
@@ -146,8 +145,6 @@ export default function FavoritesPage() {
   const [gridColumns, setGridColumns] = useState<ColumnCount>(() => loadGridColumns());
   const [sort, setSort] = useState<FavoritesSort>(() => loadSort());
   const [selectionMode, setSelectionMode] = useState(false);
-  const [clearAllOpen, setClearAllOpen] = useState(false);
-  const [removeSelectedOpen, setRemoveSelectedOpen] = useState(false);
   const [onlyPriceDrops, setOnlyPriceDrops] = useState<boolean>(() => {
     try {
       return localStorage.getItem(PRICE_DROP_FILTER_KEY) === '1';
@@ -236,7 +233,7 @@ export default function FavoritesPage() {
     return m;
   }, [rawItems, isRemoteListView]);
 
-  const productsWithVariant = useMemo((): Product[] => {
+  const productsWithVariant = useMemo(() => {
     const base = isRemoteListView
       ? enriched.map((e) => e.productWithVariant).filter((p): p is NonNullable<typeof p> => !!p)
       : legacyFavoriteProducts.map((product) => {
@@ -246,7 +243,7 @@ export default function FavoritesPage() {
           }
           return product;
         });
-    return base as unknown as Product[];
+    return base;
   }, [enriched, legacyFavoriteProducts, variantMap, isRemoteListView]);
 
   const filteredProducts = useMemo(() => {
@@ -472,24 +469,22 @@ export default function FavoritesPage() {
             {headerTotalCount > 0 && !showTrash && (
               <>
                 {!isRemoteListView && (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => setClearAllOpen(true)}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Limpar Tudo
-                    </Button>
-                    <DeleteConfirmDialog
-                      open={clearAllOpen}
-                      onOpenChange={setClearAllOpen}
-                      entityName="favoritos"
-                      itemName={`todos os ${favoriteCount} produtos`}
-                      onConfirm={handleClearAll}
-                    />
-                  </>
+                  <DeleteConfirmDialog
+                    trigger={
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Limpar Tudo
+                      </Button>
+                    }
+                    title="Limpar todos os favoritos?"
+                    description={`Esta ação irá remover todos os ${favoriteCount} produtos.`}
+                    onConfirm={handleClearAll}
+                    itemName="favoritos"
+                  />
                 )}
                 <Button
                   variant={selectionMode ? 'default' : 'outline'}
@@ -656,21 +651,17 @@ export default function FavoritesPage() {
                         <X className="mr-1 h-3.5 w-3.5" />
                         Limpar
                       </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        disabled={selectedIds.size === 0}
-                        onClick={() => setRemoveSelectedOpen(true)}
-                      >
-                        <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                        Remover ({selectedIds.size})
-                      </Button>
                       <DeleteConfirmDialog
-                        open={removeSelectedOpen}
-                        onOpenChange={setRemoveSelectedOpen}
-                        entityName="itens selecionados"
-                        itemName={`${selectedIds.size} ${selectedIds.size === 1 ? 'item' : 'itens'}`}
+                        trigger={
+                          <Button variant="destructive" size="sm" disabled={selectedIds.size === 0}>
+                            <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                            Remover ({selectedIds.size})
+                          </Button>
+                        }
+                        title="Remover selecionados?"
+                        description={`Esta ação irá remover ${selectedIds.size} ${selectedIds.size === 1 ? 'item' : 'itens'}.`}
                         onConfirm={handleRemoveSelected}
+                        itemName="itens selecionados"
                       />
                     </div>
                   </div>

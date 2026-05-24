@@ -107,16 +107,24 @@ export function ProductSearchCombobox({
             <div className="flex items-center gap-3 flex-1 min-w-0">
               {/* Product thumbnail */}
               <div className="flex-shrink-0 w-8 h-8 rounded-md bg-muted overflow-hidden">
-                {getProductImage(selectedProduct) ? (
-                  <img
-                    src={getProductImage(selectedProduct)!}
-                    alt={selectedProduct.name}
-                    className="w-full h-full object-cover" loading="lazy" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Package className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                )}
+                {(() => {
+                  const img = getProductImage(selectedProduct);
+                  if (img) {
+                    return (
+                      <img
+                        src={img}
+                        alt={selectedProduct.name}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    );
+                  }
+                  return (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Package className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  );
+                })()}
               </div>
               
               {/* Product info */}
@@ -208,16 +216,24 @@ export function ProductSearchCombobox({
 
                   {/* Product thumbnail */}
                   <div className="flex-shrink-0 w-10 h-10 rounded-md bg-muted overflow-hidden">
-                    {getProductImage(product) ? (
-                      <img
-                        src={getProductImage(product)!}
-                        alt={product.name}
-                        className="w-full h-full object-cover" loading="lazy" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Package className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                    )}
+                    {(() => {
+                      const img = getProductImage(product);
+                      if (img) {
+                        return (
+                          <img
+                            src={img}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        );
+                      }
+                      return (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Package className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Product info */}

@@ -47,6 +47,61 @@ vi.mock('@/components/layout/MainLayout', async (importOriginal) => {
   };
 });
 
+// Prevent StorageTestPage and other admin pages from making real Supabase
+// network calls during render — these cause unhandled rejections in jsdom
+// CI with no live server. Uses a Proxy-based chainable mock so every
+// .select().eq().maybeSingle() (and any other builder combo) resolves safely.
+vi.mock('@/integrations/supabase/client', () => {
+  const resolved = { data: null, error: null };
+
+  function makeChainable(): object {
+    const p = Promise.resolve(resolved);
+    const handler: ProxyHandler<object> = {
+      get(_t, prop) {
+        if (prop === 'then') return p.then.bind(p);
+        if (prop === 'catch') return p.catch.bind(p);
+        if (prop === 'finally') return p.finally.bind(p);
+        return () => makeChainable();
+      },
+    };
+    return new Proxy({}, handler);
+  }
+
+  const channelMock = {
+    on: vi.fn().mockReturnThis(),
+    subscribe: vi.fn().mockReturnThis(),
+    unsubscribe: vi.fn().mockResolvedValue(undefined),
+  };
+
+  return {
+    supabase: {
+      from: () => makeChainable(),
+      rpc: vi.fn().mockResolvedValue(resolved),
+      storage: {
+        from: () => ({
+          list: vi.fn().mockResolvedValue({ data: [], error: null }),
+          upload: vi.fn().mockResolvedValue({ data: null, error: null }),
+          download: vi.fn().mockResolvedValue({ data: null, error: null }),
+          remove: vi.fn().mockResolvedValue({ data: null, error: null }),
+          getPublicUrl: vi.fn().mockReturnValue({ data: { publicUrl: '' } }),
+        }),
+      },
+      functions: { invoke: vi.fn().mockResolvedValue({ data: null, error: null }) },
+      channel: vi.fn().mockReturnValue(channelMock),
+      removeChannel: vi.fn().mockResolvedValue(undefined),
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
+        getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+        onAuthStateChange: vi.fn().mockReturnValue({
+          data: { subscription: { unsubscribe: vi.fn() } },
+        }),
+        signInWithPassword: vi.fn().mockResolvedValue({ data: null, error: null }),
+        signOut: vi.fn().mockResolvedValue({ error: null }),
+      },
+    },
+  };
+});
+
 // Capture PageSEO props
 const seoCaptures: Record<string, Record<string, unknown>> = {};
 vi.mock('@/components/seo/PageSEO', () => ({

@@ -3,7 +3,7 @@ import { buildPublicCorsHeaders, getCorsHeaders } from "../_shared/cors.ts";
 // Authenticates via X-MCP-Key header (validated in DB against mcp_api_keys.key_hash).
 // Each tool declares { scope, mode } and is gated centrally before running.
 // Every tool invocation is audited (granted, denied, error) with consistent error codes.
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
 import { McpServer, StreamableHttpTransport } from "mcp-lite";
 import { createClient } from "@supabase/supabase-js";
 import { getOrCreateRequestId, REQUEST_ID_HEADER } from "../_shared/request-id.ts";
@@ -369,11 +369,11 @@ mcpServer.tool("ping", {
 const transport = new StreamableHttpTransport();
 const app = new Hono();
 
-app.options("/*", (c) => new Response(null, { headers: getCorsHeaders(c.req.raw) }));
+app.options("/*", (c: Context) => new Response(null, { headers: getCorsHeaders(c.req.raw) }));
 
 const httpHandler = transport.bind(mcpServer);
 
-app.all("/*", async (c) => {
+app.all("/*", async (c: Context) => {
   const auth = await authenticate(c.req.raw);
   const reqId = getOrCreateRequestId(c.req.raw);
   const ip =

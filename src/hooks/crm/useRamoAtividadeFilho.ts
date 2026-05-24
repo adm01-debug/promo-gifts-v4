@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ramoAtividadeService } from '@/services/ramoAtividadeService';
 import type { RamoAtividadeFilho, SegmentoComplete } from '@/types/ramo-atividade';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 
 // ============================================================
 // QUERY KEYS
@@ -42,10 +43,10 @@ export function useSegmentosCompletos() {
     queryKey: [...QUERY_KEY, 'completos'],
     queryFn: async () => {
       const { segmentos, count } = await ramoAtividadeService.getSegmentosCompletos();
-      
+
       // Agrupar por ramo
       const byRamo = new Map<string, SegmentoComplete[]>();
-      segmentos.forEach(seg => {
+      segmentos.forEach((seg) => {
         const list = byRamo.get(seg.ramo_slug) || [];
         list.push(seg);
         byRamo.set(seg.ramo_slug, list);
@@ -86,7 +87,7 @@ export function useCreateSegmento() {
       toast.success('Segmento criado com sucesso!');
     },
     onError: (error: Error) => {
-      toast.error(`Erro ao criar: ${error.message}`);
+      toast.error('Erro ao criar', { description: sanitizeError(error) });
     },
   });
 }
@@ -104,7 +105,7 @@ export function useUpdateSegmento() {
       toast.success('Segmento atualizado!');
     },
     onError: (error: Error) => {
-      toast.error(`Erro ao atualizar: ${error.message}`);
+      toast.error('Erro ao atualizar', { description: sanitizeError(error) });
     },
   });
 }
@@ -123,7 +124,7 @@ export function useDeleteSegmento() {
       toast.success('Segmento removido!');
     },
     onError: (error: Error) => {
-      toast.error(`Erro ao remover: ${error.message}`);
+      toast.error('Erro ao remover', { description: sanitizeError(error) });
     },
   });
 }
@@ -141,7 +142,7 @@ export function useToggleSegmento() {
       toast.success(`Segmento ${data.ativo ? 'ativado' : 'desativado'}!`);
     },
     onError: (error: Error) => {
-      toast.error(`Erro ao atualizar: ${error.message}`);
+      toast.error('Erro ao atualizar', { description: sanitizeError(error) });
     },
   });
 }

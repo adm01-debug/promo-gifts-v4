@@ -79,6 +79,7 @@ const FORBIDDEN_FOCUS_RING_RE = /(?<!focus-visible:)focus:ring-/;
 /** Asserção fundamental: elemento aplica o bloco de focus-visible esperado. */
 function expectFocusVisible(el: HTMLElement, level: "base" | "full" = "base"): void {
   const required = level === "full" ? FOCUS_VISIBLE_FULL_CLASSES : FOCUS_VISIBLE_BASE_CLASSES;
+  // eslint-disable-next-line no-restricted-syntax
   required.forEach((cls) => {
     expect(el.className).toContain(cls);
   });
@@ -563,6 +564,7 @@ describe("Magic Up Onda 5 components", () => {
 
       // Em todas as variações, o botão "Marcar vencedora" existe e seu aria-label
       // bate exatamente com o produzido por winnerButtonLabel(n).
+      // eslint-disable-next-line no-restricted-syntax
       [1, 2, 3].forEach((n) => {
         const btn = expectWinnerButton(n);
         expect(btn.getAttribute("aria-label")).toBe(winnerButtonLabel(n));
@@ -573,9 +575,11 @@ describe("Magic Up Onda 5 components", () => {
       renderComparator({ variations: buildVariations() });
       expect(select.allCards()).toHaveLength(3);
       expect(select.allMarcar()).toHaveLength(3);
+      // eslint-disable-next-line no-restricted-syntax
       select.allCards().forEach((c) => {
         expect(c.getAttribute("aria-label")).toMatch(labelPatterns.anyCard);
       });
+      // eslint-disable-next-line no-restricted-syntax
       select.allMarcar().forEach((b) => {
         expect(b.getAttribute("aria-label")).toMatch(labelPatterns.anyWinner);
       });
@@ -637,6 +641,7 @@ describe("Magic Up Onda 5 components", () => {
       renderComparator({ variations: buildVariations() });
       expect(screen.getByTestId(testIds.comparator)).toBeInTheDocument();
       expect(select.listByTid()).toBeInTheDocument();
+      // eslint-disable-next-line no-restricted-syntax
       [1, 2, 3].forEach((n) => {
         expect(select.cardByTid(n)).toBeInTheDocument();
         expect(select.marcarByTid(n)).toBeInTheDocument();
@@ -645,6 +650,7 @@ describe("Magic Up Onda 5 components", () => {
 
     it("select.cardByTid e select.marcarByTid retornam os MESMOS nós que os helpers ARIA", () => {
       renderComparator({ variations: buildVariations() });
+      // eslint-disable-next-line no-restricted-syntax
       [1, 2, 3].forEach((n) => {
         expect(select.cardByTid(n)).toBe(select.card(n));
         expect(select.marcarByTid(n)).toBe(select.marcar(n));
@@ -1219,6 +1225,7 @@ describe("MagicUpVariationComparator keyboard navigation", () => {
 
       const cards = [select.card(1), select.card(2), select.card(3)];
 
+      // eslint-disable-next-line no-restricted-syntax
       cards.forEach((card, i) => {
         if (i === activeIdx) {
           expect(card).toHaveAttribute("aria-pressed", "true");
@@ -1731,6 +1738,7 @@ describe("MagicUpVariationComparator keyboard navigation", () => {
       expect(winner3).not.toBe(card3);
 
       // 7) Pareamento card↔winner por listitem
+      // eslint-disable-next-line no-restricted-syntax
       listitems.forEach((item, idx) => {
         const buttonsInItem = within(item).getAllByRole("button");
         expect(buttonsInItem).toHaveLength(2);
@@ -1769,8 +1777,10 @@ describe("MagicUpVariationComparator keyboard navigation", () => {
       expect(card3.getAttribute("aria-label")).toBe(cardNames[2]);
 
       // 11) Sem roles indevidos dentro dos listitems
+      // eslint-disable-next-line no-restricted-syntax
       listitems.forEach((item) => {
         const interactiveRoles = ["link", "checkbox", "radio", "tab", "menuitem"];
+        // eslint-disable-next-line no-restricted-syntax
         interactiveRoles.forEach((role) => {
           expect(within(item).queryAllByRole(role)).toHaveLength(0);
         });
@@ -1855,6 +1865,7 @@ describe("MagicUpVariationComparator keyboard navigation", () => {
       expect(label4).toBe("Selecionar variação 4, score 85");
 
       // ── 10) Sem espaços duplos, vírgulas órfãs ou sufixos vazios ──
+      // eslint-disable-next-line no-restricted-syntax
       [label1, label2, label3, label4].forEach((label) => {
         expect(label).not.toMatch(/\s{2,}/);
         expect(label).not.toMatch(/,\s*,/);
@@ -2183,6 +2194,8 @@ describe("MagicUpVariationComparator keyboard navigation", () => {
       expect(getActiveCardIndex()).toBe(total);
 
       const winnerButtons = screen.queryAllByRole("button", { name: /vencedora/i });
+      expect(winnerButtons).not.toHaveLength(0);
+      // eslint-disable-next-line no-restricted-syntax
       winnerButtons.forEach((btn) => {
         const labelStartsWithSelecionar = btn.getAttribute("aria-label")?.startsWith("Selecionar");
         if (!labelStartsWithSelecionar) {
@@ -2240,6 +2253,7 @@ describe("MagicUpVariationComparator keyboard navigation", () => {
       const expectedClassesFor = (el: Element) =>
         winnerSet.has(el as HTMLElement) ? REQUIRED_FOCUS_CLASSES_WINNER : REQUIRED_FOCUS_CLASSES_BASE;
 
+      // eslint-disable-next-line no-restricted-syntax
       expectedClassesFor(last).forEach((cls) => {
         expect(last.className).toContain(cls);
       });
@@ -2249,6 +2263,7 @@ describe("MagicUpVariationComparator keyboard navigation", () => {
         const expected = allFocusables[i];
         expect(expected).toHaveFocus();
 
+        // eslint-disable-next-line no-restricted-syntax
         expectedClassesFor(expected).forEach((cls) => {
           expect(expected.className).toContain(cls);
         });
@@ -2469,6 +2484,7 @@ describe("MagicUpVariationComparator — empate total de scores (determinismo)",
     // Nenhuma badge "Melhor score" nos cards
     const cards = screen.getAllByRole("listitem");
     expect(cards).toHaveLength(3);
+    // eslint-disable-next-line no-restricted-syntax
     cards.forEach((card) => {
       expect(within(card).queryByLabelText("Melhor score")).toBeNull();
     });
@@ -2623,6 +2639,7 @@ describe("MagicUpVariationComparator — empate total de scores (determinismo)",
     // 2. Cada card individualmente: nenhuma badge
     const cards = screen.getAllByRole("listitem");
     expect(cards).toHaveLength(4);
+    // eslint-disable-next-line no-restricted-syntax
     cards.forEach((card) => {
       expect(within(card).queryByLabelText("Melhor score")).toBeNull();
     });
@@ -2641,6 +2658,7 @@ describe("MagicUpVariationComparator — empate total de scores (determinismo)",
     expect(headerBadge.getAttribute("aria-label")).toContain("indisponível");
 
     // 5. Cada card mostra "Score indisponível" no span de score
+    // eslint-disable-next-line no-restricted-syntax
     cards.forEach((card) => {
       expect(within(card).getByLabelText("Score indisponível")).toBeInTheDocument();
     });
@@ -2791,6 +2809,7 @@ describe("MagicUpVariationComparator — empate total de scores (determinismo)",
       !(btn.getAttribute("aria-label") ?? "").includes(", melhor score")
     );
     expect(withoutWinnerSuffix).toHaveLength(2);
+    // eslint-disable-next-line no-restricted-syntax
     withoutWinnerSuffix.forEach((btn) => {
       const label = btn.getAttribute("aria-label") ?? "";
       expect(label).not.toContain("melhor score");
@@ -2807,6 +2826,7 @@ describe("MagicUpVariationComparator — empate total de scores (determinismo)",
       buildVariation({ id: "var-Y", qualityScore: 88 }, 1),
       buildVariation({ id: "var-Z", qualityScore: 88 }, 2),
     ];
+    // eslint-disable-next-line no-restricted-syntax
     baseVariations.forEach((v) => {
       expect(v.isWinner).toBeFalsy();
     });
@@ -2825,6 +2845,7 @@ describe("MagicUpVariationComparator — empate total de scores (determinismo)",
       buildVariation({ id: "var-X", qualityScore: 88 }, 1),
       buildVariation({ id: "var-Y", qualityScore: 88 }, 2),
     ];
+    // eslint-disable-next-line no-restricted-syntax
     reordered.forEach((v) => {
       expect(v.isWinner).toBeFalsy();
     });
@@ -2859,6 +2880,7 @@ describe("MagicUpVariationComparator — empate total de scores (determinismo)",
       buildVariation({ id: "var-3", qualityScore: 75 }, 2),
     ];
 
+    // eslint-disable-next-line no-restricted-syntax
     variations.forEach((v) => {
       expect(v.isWinner).toBeFalsy();
     });
@@ -3088,6 +3110,7 @@ describe("MagicUpVariationComparator — empate total de scores (determinismo)",
 
       // 8.2 Validação literal por card — cada button deve ter EXATAMENTE o aria-label
       //     definido no contrato, sem caracteres extras, sem espaços a mais.
+      // eslint-disable-next-line no-restricted-syntax
       cards.forEach((card, index) => {
         const button = within(card).getByRole("button", { name: /^Selecionar variação/ });
         const ariaLabel = button.getAttribute("aria-label");
@@ -3102,6 +3125,7 @@ describe("MagicUpVariationComparator — empate total de scores (determinismo)",
       expect(winnerLabel?.split(", ")).toHaveLength(3);
       expect(winnerLabel?.split(", ")[2]).toBe("melhor score");
 
+      // eslint-disable-next-line no-restricted-syntax
       [cards[1], cards[2]].forEach((card) => {
         const label = within(card)
           .getByRole("button", { name: /^Selecionar variação/ })
@@ -3158,11 +3182,13 @@ describe("MagicUpVariationComparator — empate total de scores (determinismo)",
       expect(screen.getAllByText("Melhor score", { exact: true })).toHaveLength(1);
 
       // 3. Outros cards sem badge
+      // eslint-disable-next-line no-restricted-syntax
       [0, 1, 2].filter((i) => i !== winnerIndex).forEach((i) => {
         expect(within(cards[i]).queryByLabelText("Melhor score")).toBeNull();
       });
 
       // 4. aria-pressed/aria-current refletem activeIndex
+      // eslint-disable-next-line no-restricted-syntax
       cards.forEach((card, i) => {
         const button = within(card).getByRole("button", { name: /^Selecionar variação/ });
         const isActive = i === currentActive;
@@ -3407,6 +3433,7 @@ describe("MagicUpVariationComparator — empate total de scores (determinismo)",
 
       // 3. aria-pressed reflete activeIndex; badge é independente
       const buttons = [buttonA, buttonB, buttonC];
+      // eslint-disable-next-line no-restricted-syntax
       buttons.forEach((btn, idx) => {
         expect(btn).toHaveAttribute("aria-pressed", idx === currentActive ? "true" : "false");
       });
@@ -3491,6 +3518,7 @@ describe("MagicUpVariationComparator — empate total de scores (determinismo)",
       const zeros = tabIndices.filter((t) => t === 0);
       expect(zeros).toHaveLength(1);
       expect(tabIndices[oneBasedActiveIndex - 1]).toBe(0);
+      // eslint-disable-next-line no-restricted-syntax
       tabIndices.forEach((t, i) => {
         if (i !== oneBasedActiveIndex - 1) {
           expect(t).toBe(-1);
@@ -3512,6 +3540,7 @@ describe("MagicUpVariationComparator — empate total de scores (determinismo)",
     // Tab a partir do card ativo SAI do grupo (não cicla para outro card de seleção)
     await user.tab();
     const cardsAfterTab = screen.getAllByRole("button", { name: /^Selecionar variação/ });
+    // eslint-disable-next-line no-restricted-syntax
     cardsAfterTab.forEach((c) => {
       expect(c).not.toHaveFocus();
     });
@@ -4901,6 +4930,7 @@ describe("MagicUpVariationComparator — empate total de scores (determinismo)",
       ];
 
       const expectFocusVisible = (el: HTMLElement) => {
+        // eslint-disable-next-line no-restricted-syntax
         REQUIRED_FOCUS_CLASSES.forEach((cls) => {
           expect(el.className).toContain(cls);
         });

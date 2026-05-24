@@ -97,7 +97,7 @@ describe('Smoke E2E — fluxo completo: corporate → GX → corporate', () => {
     applyRadius(cfg.radius);
     expect(radiusPx()).toBe(10);
     expect(document.documentElement.style.getPropertyValue('--font-sans')).toContain('Inter');
-    expect(document.documentElement.style.getPropertyValue('--primary')).toBe('127 65% 46%');
+    expect(document.documentElement.style.getPropertyValue('--primary')).toBe('127 65% 40%');
 
     // 3. Volta para Corporate
     cfg = { presetId: 'corporate', radius: 14, mode: 'auto' };

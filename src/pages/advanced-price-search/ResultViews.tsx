@@ -2,10 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Package } from 'lucide-react';
 import { motion } from 'framer-motion';
-import {
-  type ProductWithCalculatedPrice,
-  formatCurrency,
-} from '@/pages/advanced-price-search/types';
+import { type ProductWithCalculatedPrice, formatCurrency } from './types';
 
 export function ProductCardResult({
   product,
@@ -19,9 +16,9 @@ export function ProductCardResult({
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="group">
       <Card className="overflow-hidden border-border/50 transition-all duration-300 hover:border-primary/30 hover:shadow-lg">
         <div className="relative aspect-square bg-muted/30">
-          {product.images?.[0] ? (
+          {product.image ? (
             <img
-              src={product.images?.[0]}
+              src={product.image}
               alt={product.name}
               className="h-full w-full object-contain p-4"
               loading="lazy"
@@ -136,9 +133,9 @@ export function ProductTableResult({
               >
                 <td className="p-3">
                   <div className="flex items-center gap-3">
-                    {product.images?.[0] && (
+                    {product.image && (
                       <img
-                        src={product.images?.[0]}
+                        src={product.image}
                         alt={product.name}
                         className="h-10 w-10 rounded object-contain"
                         loading="lazy"
@@ -207,9 +204,9 @@ export function ProductListResult({
                   <span className="text-sm font-bold text-primary">{index + 1}</span>
                 </div>
                 <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-muted/50">
-                  {product.images?.[0] ? (
+                  {product.image ? (
                     <img
-                      src={product.images?.[0]}
+                      src={product.image}
                       alt={product.name}
                       className="h-full w-full object-contain p-1"
                       loading="lazy"

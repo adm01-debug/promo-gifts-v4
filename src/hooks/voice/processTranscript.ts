@@ -1,5 +1,10 @@
+<<<<<<< HEAD
+import { supabase } from '@/integrations/supabase/client';
+import type { VoiceAgentAction } from './types';
+=======
 import { supabase } from "@/integrations/supabase/client";
 import type { VoiceAgentAction } from "./types";
+>>>>>>> origin/main
 
 /**
  * processVoiceTranscript — Sends transcript to AI and returns structured action.
@@ -10,33 +15,32 @@ export async function processVoiceTranscript(transcript: string): Promise<VoiceA
   const timeout = setTimeout(() => controller.abort(), 15000);
 
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     const authToken = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-    const response = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/voice-agent`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({ transcript }),
-        signal: controller.signal,
-      }
-    );
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/voice-agent`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({ transcript }),
+      signal: controller.signal,
+    });
 
     if (!response.ok) {
-      const errorBody = await response.text().catch(() => "");
+      const errorBody = await response.text().catch(() => '');
       throw new Error(`AI processing failed: ${response.status} ${errorBody}`);
     }
 
     const data = await response.json();
     return validateAction(data as VoiceAgentAction);
   } catch (err) {
-    if (err instanceof DOMException && err.name === "AbortError") {
-      throw new Error("timeout");
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new Error('timeout');
     }
     throw err;
   } finally {
@@ -47,8 +51,8 @@ export async function processVoiceTranscript(transcript: string): Promise<VoiceA
 function validateAction(action: VoiceAgentAction): VoiceAgentAction {
   if (!action?.action || !action?.response) {
     return {
-      action: "answer",
-      response: action?.response || "Desculpe, não entendi. Pode repetir?",
+      action: 'answer',
+      response: action?.response || 'Desculpe, não entendi. Pode repetir?',
       data: {},
     };
   }

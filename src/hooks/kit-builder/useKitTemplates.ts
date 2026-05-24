@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 
 export interface KitTemplateRow {
   id: string;
@@ -78,8 +79,11 @@ export function useKitTemplates() {
 
       // Increment usage_count (best-effort)
       try {
-        await (supabase as unknown as { rpc: (name: string, args: Record<string, unknown>) => Promise<unknown> })
-          .rpc('increment_kit_template_usage', { _template_id: template.id });
+        await (
+          supabase as unknown as {
+            rpc: (name: string, args: Record<string, unknown>) => Promise<unknown>;
+          }
+        ).rpc('increment_kit_template_usage', { _template_id: template.id });
       } catch {
         /* best-effort */
       }
@@ -90,7 +94,7 @@ export function useKitTemplates() {
       queryClient.invalidateQueries({ queryKey: ['custom-kits'] });
       toast.success('Template clonado para os seus kits!');
     },
-    onError: (err: Error) => toast.error(`Erro ao clonar: ${err.message}`),
+    onError: (err: Error) => toast.error('Erro ao clonar', { description: sanitizeError(err) }),
   });
 
   return {
