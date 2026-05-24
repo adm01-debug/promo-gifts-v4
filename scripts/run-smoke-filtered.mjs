@@ -16,29 +16,26 @@
  *
  * Sai com o exit code do Playwright.
  */
-import { spawn } from "node:child_process";
+import { spawn } from 'node:child_process';
+import { join } from 'node:path';
 
 const argv = process.argv.slice(2);
 const passthrough = [];
 let tag = null;
+const PLAYWRIGHT_BIN = join(process.cwd(), 'node_modules', '@playwright', 'test', 'cli.js');
 
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
-  if (a === "--tag" || a === "-t") {
+  if (a === '--tag' || a === '-t') {
     tag = argv[++i];
-  } else if (a.startsWith("--tag=")) {
-    tag = a.slice("--tag=".length);
+  } else if (a.startsWith('--tag=')) {
+    tag = a.slice('--tag='.length);
   } else {
     passthrough.push(a);
   }
 }
 
-const args = [
-  "playwright",
-  "test",
-  "--project=chromium-smoke",
-  "--workers=1",
-];
+const args = [PLAYWRIGHT_BIN, 'test', '--project=chromium-smoke', '--workers=1'];
 
 if (tag && tag.trim()) {
   // combina via AND com o grep do project (`/@smoke/`)
@@ -50,9 +47,9 @@ if (tag && tag.trim()) {
 
 args.push(...passthrough);
 
-const child = spawn("npx", args, { stdio: "inherit", shell: false });
-child.on("exit", (code) => process.exit(code ?? 1));
-child.on("error", (err) => {
-  console.error("❌ Falha ao iniciar Playwright:", err.message);
+const child = spawn(process.execPath, args, { stdio: 'inherit', shell: false });
+child.on('exit', (code) => process.exit(code ?? 1));
+child.on('error', (err) => {
+  console.error('❌ Falha ao iniciar Playwright:', err.message);
   process.exit(1);
 });

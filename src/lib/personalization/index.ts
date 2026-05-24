@@ -14,11 +14,13 @@ export * from './repositories';
 export * from './services';
 
 export {
-  fetchTechniquesList,
-  fetchTechniqueById,
-  fetchPriceTables,
-  fetchPriceTablesByTechnique,
+  findAll as fetchTechniquesList,
+  findById as fetchTechniqueById,
 } from './repositories/technique.repository';
+export {
+  findAll as fetchPriceTables,
+  findByTechniqueName as fetchPriceTablesByTechnique,
+} from './repositories/priceTable.repository';
 
 export { transformRawToTecnicas, transformRawToTabelas } from './transformers';
 

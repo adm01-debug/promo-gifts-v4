@@ -106,9 +106,17 @@ export default function Auth() {
   useEffect(() => {
     const err = searchParams.get('error');
     if (err) {
-      setSocialError(resolveOAuthError(err));
+      const nextError = resolveOAuthError(err);
+      setSocialError({
+        ...nextError,
+        code: nextError.code ?? err,
+        description: searchParams.get('error_description') ?? nextError.description,
+        hint: searchParams.get('hint') ?? nextError.hint,
+      });
       const next = new URLSearchParams(searchParams);
       next.delete('error');
+      next.delete('error_description');
+      next.delete('hint');
       setSearchParams(next, { replace: true });
     }
   }, [searchParams, setSearchParams]);
@@ -630,6 +638,14 @@ export default function Auth() {
                             >
                               {socialError.description}
                             </p>
+                            {socialError.code && (
+                              <p
+                                className="font-mono text-[10px] uppercase tracking-wide text-amber-100/40"
+                                data-testid="social-login-error-code"
+                              >
+                                Código: {socialError.code}
+                              </p>
+                            )}
                             {socialError.hint && (
                               <div
                                 className="mt-3 rounded-xl border border-white/5 bg-black/40 p-3"
