@@ -1,9 +1,8 @@
-import { getCorsHeaders } from "../_shared/cors.ts";
-import { authenticateRequest, requireRole, authErrorResponse } from "../_shared/auth.ts";
-import { parseContract } from "../_shared/contracts/index.ts";
-import {
-  KitAiBuilderSchemas,
-} from "../_shared/contracts/schemas/kit-ai-builder.ts";
+import { getCorsHeaders } from '../_shared/cors.ts';
+import { authenticateRequest, requireRole, authErrorResponse } from '../_shared/auth.ts';
+import { parseContract } from '../_shared/contracts/index.ts';
+import { KitAiBuilderSchemas } from '../_shared/contracts/schemas/kit-ai-builder.ts';
+import { safeErrorFields } from '../_shared/log-safety.ts';
 // ============================================================
 // EDGE FUNCTION: kit-ai-builder
 // Recebe um prompt natural e devolve uma sugestão estruturada de kit
@@ -24,11 +23,10 @@ Deno.serve(async (req: Request) => {
   // Auth: exige vendedor autenticado (agente ou acima)
   try {
     const authCtx = await authenticateRequest(req);
-    requireRole(authCtx, "agente");
+    requireRole(authCtx, 'agente');
   } catch (authErr) {
     return authErrorResponse(authErr, corsHeaders);
   }
-
 
   try {
     const contractResult = await parseContract(req, KitAiBuilderSchemas, {
@@ -40,10 +38,10 @@ Deno.serve(async (req: Request) => {
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: 'LOVABLE_API_KEY não configurado' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'LOVABLE_API_KEY não configurado' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const systemPrompt = `Você é especialista em montagem de kits corporativos de brindes promocionais brasileiros.
@@ -78,7 +76,12 @@ Use português do Brasil. Seja conciso e prático.`;
                 properties: {
                   kit_type: { type: 'string', enum: ['montado', 'original', 'simples'] },
                   box_keywords: { type: 'array', items: { type: 'string' }, maxItems: 4 },
-                  item_keywords: { type: 'array', items: { type: 'string' }, minItems: 3, maxItems: 6 },
+                  item_keywords: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    minItems: 3,
+                    maxItems: 6,
+                  },
                   target_price_brl: {
                     type: 'object',
                     properties: {
@@ -89,7 +92,13 @@ Use português do Brasil. Seja conciso e prático.`;
                   },
                   narrative: { type: 'string' },
                 },
-                required: ['kit_type', 'box_keywords', 'item_keywords', 'target_price_brl', 'narrative'],
+                required: [
+                  'kit_type',
+                  'box_keywords',
+                  'item_keywords',
+                  'target_price_brl',
+                  'narrative',
+                ],
                 additionalProperties: false,
               },
             },
@@ -102,44 +111,46 @@ Use português do Brasil. Seja conciso e prático.`;
     if (!aiRes.ok) {
       if (aiRes.status === 429) {
         return new Response(
-          JSON.stringify({ error: 'Limite de uso temporariamente excedido. Tente novamente em alguns instantes.' }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({
+            error: 'Limite de uso temporariamente excedido. Tente novamente em alguns instantes.',
+          }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         );
       }
       if (aiRes.status === 402) {
         return new Response(
           JSON.stringify({ error: 'Créditos de IA esgotados. Adicione créditos ao workspace.' }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         );
       }
-      const errText = await aiRes.text();
-      console.error('AI gateway error', aiRes.status, errText);
-      return new Response(
-        JSON.stringify({ error: 'Erro ao consultar IA' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      await aiRes.text();
+      console.error('AI gateway error', { status: aiRes.status });
+      return new Response(JSON.stringify({ error: 'Erro ao consultar IA' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const aiJson = await aiRes.json();
     const toolCall = aiJson?.choices?.[0]?.message?.tool_calls?.[0];
     const argsStr = toolCall?.function?.arguments;
     if (!argsStr) {
-      return new Response(
-        JSON.stringify({ error: 'Resposta vazia da IA' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Resposta vazia da IA' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
     const suggestion = JSON.parse(argsStr);
 
-    return new Response(
-      JSON.stringify({ suggestion }),
-      { status: 200, headers: { ...corsHeaders, ...responseHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ suggestion }), {
+      status: 200,
+      headers: { ...corsHeaders, ...responseHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (e) {
-    console.error('kit-ai-builder error:', e);
+    console.error('kit-ai-builder error:', safeErrorFields(e));
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : 'Erro desconhecido' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   }
 });

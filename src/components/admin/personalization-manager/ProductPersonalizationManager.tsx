@@ -153,7 +153,7 @@ export function ProductPersonalizationManager() {
                         <ComponentAccordionItem
                           key={component.id}
                           component={component}
-                          selectedProduct={m.selectedProduct!}
+                          selectedProduct={m.selectedProduct ?? ''}
                           locations={m.getLocationsForComponent(component.id)}
                           techniques={m.techniques}
                           locationTechniques={m.locationTechniques || []}

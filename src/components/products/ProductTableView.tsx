@@ -289,7 +289,7 @@ export const ProductTableView = memo(function ProductTableView({
                 <div className="w-40 px-3 hidden lg:block text-xs text-muted-foreground truncate">{product.supplier?.name}</div>
                 
                 <div className="w-32 px-3 hidden sm:flex items-center gap-0.5">
-                  {product.colors.slice(0, 5).map((c, i) => (
+                  {product.colors.slice(0, 5).map((c: NonNullable<typeof product.colors>[number], i: number) => (
                     <Tooltip key={i}>
                       <TooltipTrigger asChild><div className="w-3.5 h-3.5 rounded-full border border-border/50" style={{ backgroundColor: c.hex }} /></TooltipTrigger>
                       <TooltipContent side="top" className="text-[10px]">{c.name}</TooltipContent>

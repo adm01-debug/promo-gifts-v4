@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import type { KitState } from '@/hooks/kit-builder';
+import type { KitItem } from '@/lib/kit-builder/types';
 
 export function useKitBuilderQuote() {
   const { user } = useAuth();
@@ -16,69 +17,56 @@ export function useKitBuilderQuote() {
   const [isCreatingQuote, setIsCreatingQuote] = useState(false);
 
   const handleAddToQuote = async (kitState: KitState, kitQuantity: number) => {
-    if (!user?.id) {
+    if (!user) {
       toast.error('Você precisa estar logado para criar um orçamento.');
       return;
     }
+
     if (!kitState.isValid) return;
 
     setIsCreatingQuote(true);
     try {
       const kitLabel = kitState.name || 'Kit sem nome';
-      const kitGroupId = crypto.randomUUID();
       const kitMetadataNote = kitState.identity?.tag
         ? `[${kitState.identity.tag}] ${kitLabel}`
         : kitLabel;
 
-      const { calculateTotalKitPrice } = await import('@/lib/kit-builder');
-      const { total: kitTotal } = calculateTotalKitPrice(
-        kitState.box,
-        kitState.items,
-        kitState.personalization,
-        kitQuantity,
-      );
+      const boxRef = kitState.box;
+      const itemsRef = kitState.items;
+      const personRef = kitState.personalization;
 
       // Create quote
       const { data: quote, error: quoteError } = await supabase
-        // rls-allow: INSERT inclui seller_id no payload
+        // rls-allow: insert cria orçamento do usuário atual; RLS valida user_id
         .from('quotes')
         .insert({
-          seller_id: user.id,
+          user_id: user.id,
           status: 'draft',
-          subtotal: kitTotal,
-          total: kitTotal,
-          notes: `Kit "${kitMetadataNote}" (${kitQuantity}x) — tipo: ${kitState.kitType}`,
-          internal_notes:
-            [
-              kitState.box
-                ? `Caixa: ${kitState.box.name} | Volume: ${kitState.volumeUsagePercent.toFixed(0)}%`
-                : null,
-              kitState.identity?.color || kitState.identity?.icon || kitState.identity?.tag
-                ? `Identidade: cor=${kitState.identity?.color ?? '-'} | ícone=${kitState.identity?.icon ?? '-'} | tag=${kitState.identity?.tag ?? '-'}`
-                : null,
-            ]
-              .filter(Boolean)
-              .join('\n') || undefined,
+          title: kitLabel,
+          notes: `Kit: ${kitMetadataNote}`,
+          quantity: kitQuantity,
         })
-        .select('id, quote_number')
+        .select('id')
         .single();
 
       if (quoteError) throw quoteError;
+      if (!quote) throw new Error('Failed to create quote');
 
-      // Build items
+      const kitGroupId = crypto.randomUUID();
       const quoteItems: Array<Record<string, unknown>> = [];
 
-      if (kitState.box) {
+      // Add box if present
+      if (boxRef) {
         quoteItems.push({
           quote_id: quote.id,
-          product_name: `[Embalagem] ${kitState.box.name}`,
-          product_sku: kitState.box.sku || null,
-          product_image_url: kitState.box.imageUrl || null,
-          product_id: kitState.box.id,
+          product_name: boxRef.name,
+          product_sku: boxRef.sku || null,
+          product_image_url: boxRef.imageUrl || null,
+          product_id: boxRef.id,
           quantity: kitQuantity,
-          unit_price: kitState.box.price,
+          unit_price: boxRef.price,
           sort_order: 0,
-          notes: `Dimensões internas: ${kitState.box.internalWidth}×${kitState.box.internalHeight}×${kitState.box.internalDepth}cm`,
+          notes: 'Caixa/embalagem do kit',
           color_name: null,
           color_hex: null,
           kit_group_id: kitGroupId,
@@ -86,7 +74,7 @@ export function useKitBuilderQuote() {
         });
       }
 
-      kitState.items.forEach((item, index) => {
+      itemsRef.forEach((item: KitItem, index: number) => {
         quoteItems.push({
           quote_id: quote.id,
           product_name: item.name,
@@ -115,11 +103,11 @@ export function useKitBuilderQuote() {
         if (insertedItems) {
           const personalizations: Array<Record<string, unknown>> = [];
 
-          if (kitState.personalization.box.enabled && kitState.box) {
-            const boxId = kitState.box.id;
+          if (personRef.box.enabled && boxRef) {
+            const boxId = boxRef.id;
             const boxQuoteItem = insertedItems.find((i) => i.product_id === boxId);
             if (boxQuoteItem) {
-              const bp = kitState.personalization.box;
+              const bp = personRef.box;
               personalizations.push({
                 quote_item_id: boxQuoteItem.id,
                 technique_name: bp.techniqueName || null,
@@ -135,8 +123,8 @@ export function useKitBuilderQuote() {
             }
           }
 
-          kitState.items.forEach((item) => {
-            const itemP = kitState.personalization.items[item.id];
+          itemsRef.forEach((item: KitItem) => {
+            const itemP = personRef.items[item.id];
             if (itemP?.enabled) {
               const itemQuoteItem = insertedItems.find((i) => i.product_id === item.id);
               if (itemQuoteItem) {
@@ -158,24 +146,21 @@ export function useKitBuilderQuote() {
           });
 
           if (personalizations.length > 0) {
-            const { error: persError } = await supabase
+            const { error: personError } = await supabase
               .from('quote_item_personalizations')
               .insert(personalizations);
-            if (persError) logger.warn('Erro ao salvar personalizações:', persError);
+            if (personError) {
+              logger.warn('[Kit Quote] Failed to insert personalizations:', personError);
+            }
           }
         }
       }
 
-      toast.success(`Orçamento ${quote.quote_number} criado!`, {
-        description: `${quoteItems.length} itens adicionados ao kit "${kitLabel}".`,
-        action: {
-          label: 'Ver orçamento',
-          onClick: () => navigate(`/orcamentos/${quote.id}`),
-        },
-      });
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Erro desconhecido';
-      toast.error(`Erro ao criar orçamento: ${message}`);
+      toast.success(`Orçamento criado com sucesso!`);
+      navigate(`/orcamentos/${quote.id}`);
+    } catch (err) {
+      logger.error('[Kit Quote] Error creating quote:', err);
+      toast.error('Erro ao criar orçamento. Tente novamente.');
     } finally {
       setIsCreatingQuote(false);
     }
