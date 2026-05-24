@@ -12,9 +12,13 @@ Se sua função:
 - Não usa `parseContract`,
 
 então ela é candidata. Auditoria 2026-05-21 listou 14 candidatas; abaixo a
-lista priorizada:
+lista priorizada.
 
-### P0 (próximas a migrar)
+Status 2026-05-24: os lotes P0, P1 e P2 abaixo já estão migrados para
+`parseContract`. A lista fica como histórico de escopo e referência para
+novos endpoints.
+
+### P0 (migradas)
 
 1. `send-transactional-email` — sem nenhuma validação runtime
 2. `kit-ai-builder` — payload livre vai direto pro modelo
@@ -22,7 +26,7 @@ lista priorizada:
 4. `bi-copilot` — query SQL aceita string livre
 5. `step-up-verify` — fluxo de autenticação sensível
 
-### P1
+### P1 (migradas)
 
 6. `ownership-audit`
 7. `ownership-repair`
@@ -30,7 +34,7 @@ lista priorizada:
 9. `sync-external-db`
 10. `trends-insights`
 
-### P2 (já têm guarda mas merecem schema explícito)
+### P2 (migradas; já tinham guarda parcial)
 
 11. `force-global-logout`
 12. `e2e-cleanup`
@@ -222,7 +226,7 @@ return [
 | Body      | qualquer JSON        | envelope `{event, occurred_at, data, idempotency_key?}` |
 | Validação | nenhuma (lixo no DB) | `event` slug-like, `occurred_at` ISO, `data` objeto     |
 
-Sunset v1: **2026-09-30**.
+Sunset v1: **2026-06-30**.
 
 ### webhook-dispatcher v1 → v2
 
