@@ -47,7 +47,7 @@ const emptyForm = {
 
 export function ProductSupplierSection({
   supplierId, onSupplierChange, setValue, errors,
-  productId, _isEdit, _primarySupplierName,
+  productId, isEdit: _isEdit, primarySupplierName: _primarySupplierName,
 }: Props) {
   const { sources, isLoading, addSource, removeSource, setPreferred } = useProductSupplierSources(productId);
   const [pendingSources, setPendingSources] = useState<Array<SupplierSourceInput & { _localId: string }>>([]);

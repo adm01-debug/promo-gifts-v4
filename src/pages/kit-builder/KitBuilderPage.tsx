@@ -51,6 +51,7 @@ export default function KitBuilderPage() {
           onRedo={actions.redo}
           onReset={actions.resetKit}
           kitState={state.kitState}
+          onAIApply={() => {}}
         />
 
         <div className="border-b bg-card/40 backdrop-blur-sm">
@@ -77,27 +78,34 @@ export default function KitBuilderPage() {
                       boxes={state.availableBoxes}
                       isLoading={state.isLoadingBoxes}
                       filters={state.boxFilters}
-                      onFiltersChange={state.setBoxFilters}
+                      onFiltersChange={state.setBoxFilters as (f: typeof state.boxFilters) => void}
                     />
                   )}
                   {state.wizardState.currentStep === 'items' && (
                     <ItemSelector
                       selectedItems={state.kitState.items}
-                      onAdd={actions.addItem}
-                      onRemove={actions.removeItem}
+                      onAddItem={actions.addItem}
+                      onRemoveItem={actions.removeItem}
                       onUpdateQuantity={actions.updateItemQuantity}
+                      onUpdateVariant={actions.updateItemVariant}
                       items={state.availableItems}
                       isLoading={state.isLoadingItems}
                       filters={state.itemFilters}
-                      onFiltersChange={state.setItemFilters}
+                      onFiltersChange={state.setItemFilters as (f: typeof state.itemFilters) => void}
+                      boxSelected={!!state.kitState.box}
                     />
                   )}
                   {state.wizardState.currentStep === 'summary' && (
                     <KitSummary
                       kitState={state.kitState}
                       kitQuantity={state.kitQuantity}
+                      kitName={state.kitState.name}
+                      onKitNameChange={actions.setKitName}
+                      onKitQuantityChange={actions.setKitQuantity}
                       onExportPDF={() => {}}
-                      onAddToQuote={actions.handleAddToQuote}
+                      onAddToQuote={() => { void actions.handleAddToQuote(state.kitState, state.kitQuantity); }}
+                      isAddingToQuote={meta.isCreatingQuote}
+                      currentKitId={state.currentKitId}
                     />
                   )}
                 </CardContent>
@@ -105,7 +113,13 @@ export default function KitBuilderPage() {
             </div>
 
             <div className="space-y-6 lg:col-span-1">
-              <KitHeroPricingCard pricing={meta.pricing} kitQuantity={state.kitQuantity} />
+              <KitHeroPricingCard
+                unitPrice={meta.pricing.unitPrice}
+                total={meta.pricing.total}
+                kitQuantity={state.kitQuantity}
+                isValid={state.kitState.isValid}
+                hasContent={!!state.kitState.box || state.kitState.items.length > 0}
+              />
               <Suspense
                 fallback={<div className="aspect-square animate-pulse rounded-2xl bg-muted" />}
               >

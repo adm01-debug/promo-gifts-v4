@@ -44,7 +44,7 @@ export function WebhooksTab() {
       supabase.from("inbound_webhook_endpoints").select("*").order("created_at", { ascending: false }),
     ]);
     setOutbound((o ?? []) as OutboundHook[]);
-    setInbound((i ?? []) as InboundEp[]);
+    setInbound((i ?? []) as unknown as InboundEp[]);
   };
   useEffect(() => { load(); }, []);
 

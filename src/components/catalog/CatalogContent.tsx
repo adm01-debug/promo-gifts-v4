@@ -135,7 +135,7 @@ export const CatalogContent = memo(function CatalogContent({
         }
         action={{
           label: "Limpar todos os filtros",
-          onClick: onResetFilters,
+          onClick: onResetFilters || (() => {}),
         }}
       />
     );
@@ -143,7 +143,7 @@ export const CatalogContent = memo(function CatalogContent({
 
   return (
     <div className="space-y-8 pb-12 relative animate-in fade-in duration-500">
-      <SparklineSalesProvider>
+      <SparklineSalesProvider productIds={paginatedProducts.map(p => p.id)}>
         {viewMode === "grid" && (
           <ProductGrid
             products={paginatedProducts}

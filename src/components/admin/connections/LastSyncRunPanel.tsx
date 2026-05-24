@@ -52,7 +52,7 @@ export function LastSyncRunPanel() {
       setLast(null);
       return;
     }
-    setLast(((data ?? [])[0] as SyncLogRow | undefined) ?? null);
+    setLast(((data ?? [])[0] as unknown as SyncLogRow | undefined) ?? null);
   }, []);
 
   useEffect(() => {

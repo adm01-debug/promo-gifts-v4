@@ -12,7 +12,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { selectCrm, searchCrm } from "@/lib/crm-db";
 import { getCompanyDisplayName, type CrmCompany } from "@/types/crm";
-import { useSellerCartContext, type CreateCartInput } from "@/contexts/SellerCartContext";
+import { useSellerCartContext } from "@/contexts/SellerCartContext";
+import type { CreateCartInput } from "@/hooks/products";
 import { useSearchHistory } from "@/hooks/common";
 
 interface CompanyItem {

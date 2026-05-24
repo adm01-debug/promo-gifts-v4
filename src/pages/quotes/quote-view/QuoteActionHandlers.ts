@@ -94,14 +94,14 @@ export async function handleSyncBitrix(params: {
     toast.warning(`${itemsSemBitrixId.length} produto(s) excluído(s) da sincronização`, { description: `Sem ID Bitrix24: ${nomes}`, duration: 7000 });
   }
 
-  logQuoteHistory(quote.id, "sync_started", "Sincronização com Bitrix24 iniciada").catch(() => {});
+  logQuoteHistory(quote.id ?? '', "sync_started", "Sincronização com Bitrix24 iniciada").catch(() => {});
 
   // Generate and upload PDF
   let pdfStorageUrl: string | undefined;
   let filename: string | undefined;
   try {
     const blob = await generateProposalPDFv2(proposalData, { isDraft: quote.status === "draft" });
-    filename = `proposta-${(quote.quote_number || quote.id).replace(/\s+/g, "")}.pdf`;
+    filename = `proposta-${(quote.quote_number || quote.id || 'sem-numero').replace(/\s+/g, "")}.pdf`;
     const storagePath = `quotes/${quote.id}/${filename}`;
     const { error: uploadError } = await supabase.storage
       .from("art-files")
@@ -132,13 +132,14 @@ export async function handleSyncBitrix(params: {
   if (bitrixQuoteIdFromResponse) crmUpdates.bitrix_quote_id = bitrixQuoteIdFromResponse;
 
   // rls-allow: update por id; RLS valida ownership
-  try { await supabase.from("quotes").update(crmUpdates).eq("id", quote.id); } catch { /* ignore */ }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  try { await (supabase as any).from("quotes").update(crmUpdates).eq("id", quote.id ?? ''); } catch { /* ignore */ }
 
-  await logQuoteHistory(quote.id, "sync_success",
+  await logQuoteHistory(quote.id ?? '', "sync_success",
     `Sincronizado com Bitrix24${bitrixQuoteIdFromResponse ? ` — ID Bitrix: ${bitrixQuoteIdFromResponse}` : ""}`,
     { newValue: bitrixQuoteIdFromResponse ? String(bitrixQuoteIdFromResponse) : undefined }
   );
 
-  setQuote((prev) => prev ? { ...prev, status: "sent", ...(bitrixQuoteIdFromResponse ? { bitrix_quote_id: bitrixQuoteIdFromResponse } : {}) } : prev);
+  setQuote((prev) => prev ? { ...prev, status: "sent" as const, ...(bitrixQuoteIdFromResponse ? { bitrix_quote_id: String(bitrixQuoteIdFromResponse) } : {}) } : prev);
   toast.success(result?.message || "Orçamento sincronizado com Bitrix24!");
 }

@@ -8,6 +8,7 @@ import {
 import { useEnrichedFavoriteItems, useFavoritesGlobalShortcuts } from "@/hooks/favorites";
 import { useProductsContext } from '@/contexts/ProductsContext';
 import { useCatalogSelection } from '@/components/catalog/useCatalogSelection';
+import type { Product } from '@/hooks/products';
 import { useUndoStack } from '@/hooks/common';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
 import type { FavoritesSort } from '@/components/favorites/FavoritesSortBar';
@@ -76,7 +77,6 @@ export function useFavoritesPageState() {
     deleteList,
     generateShareToken,
     revokeShareToken,
-    moveItem,
   } = useFavoriteLists();
   const { items: trashItems } = useFavoriteTrash();
   const { getProductsByIds, products: _cacheSignal } = useProductsContext();
@@ -112,6 +112,7 @@ export function useFavoritesPageState() {
     enriched,
     rawItems,
     removeItem,
+    moveItem,
     updateItem: _updateItem,
   } = useEnrichedFavoriteItems(selectedListId);
 
@@ -177,7 +178,7 @@ export function useFavoritesPageState() {
     }
     const legacyProducts = getProductsByIds(favorites.map((f) => f.productId));
     return legacyProducts.map((product) => {
-      const variant = variantMap.get(product.id);
+      const variant = variantMap.get(product.id) as { thumbnail?: string } | undefined;
       if (variant?.thumbnail) {
         return { ...product, images: [variant.thumbnail, ...(product.images || [])] };
       }
@@ -193,7 +194,7 @@ export function useFavoritesPageState() {
         (p) =>
           p.name.toLowerCase().includes(q) ||
           p.sku?.toLowerCase().includes(q) ||
-          p.brand?.toLowerCase().includes(q),
+          (p as { brand?: string }).brand?.toLowerCase().includes(q),
       );
     }
     // Sorting and drops logic... (Simplified for brevity as per instructions)
@@ -202,7 +203,7 @@ export function useFavoritesPageState() {
   }, [productsWithVariant, searchQuery, sort, onlyPriceDrops, isRemoteListView]);
 
   // Bulk selection
-  const selection = useCatalogSelection(filteredProducts, selectionMode);
+  const selection = useCatalogSelection(filteredProducts as Product[], selectionMode);
 
   // Handlers
   const handleClearAll = () => {

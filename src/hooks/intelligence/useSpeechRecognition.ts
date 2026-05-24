@@ -6,7 +6,7 @@ interface UseSpeechRecognitionOptions {
   language?: string;
 }
 
-interface SpeechRecognitionResult {
+interface UseSpeechRecognitionReturn {
   isListening: boolean;
   isSupported: boolean;
   transcript: string;
@@ -15,51 +15,26 @@ interface SpeechRecognitionResult {
   error: string | null;
 }
 
-// TypeScript declarations for Web Speech API
-interface SpeechRecognitionEvent extends Event {
+// TypeScript declarations for Web Speech API (not in all DOM lib versions)
+interface LocalSpeechRecognitionEvent extends Event {
   results: SpeechRecognitionResultList;
   resultIndex: number;
 }
 
-interface SpeechRecognitionResultList {
-  length: number;
-  item(index: number): SpeechRecognitionResultItem;
-  [index: number]: SpeechRecognitionResultItem;
-}
-
-interface SpeechRecognitionResultItem {
-  isFinal: boolean;
-  length: number;
-  item(index: number): SpeechRecognitionAlternative;
-  [index: number]: SpeechRecognitionAlternative;
-}
-
-interface SpeechRecognitionAlternative {
-  transcript: string;
-  confidence: number;
-}
-
-interface SpeechRecognitionErrorEvent extends Event {
+interface LocalSpeechRecognitionErrorEvent extends Event {
   error: string;
   message: string;
 }
 
-declare global {
-  interface Window {
-    SpeechRecognition: new () => SpeechRecognition;
-    webkitSpeechRecognition: new () => SpeechRecognition;
-  }
-}
-
-interface SpeechRecognition extends EventTarget {
+interface LocalSpeechRecognition extends EventTarget {
   continuous: boolean;
   interimResults: boolean;
   lang: string;
   start(): void;
   stop(): void;
   abort(): void;
-  onresult: ((event: SpeechRecognitionEvent) => void) | null;
-  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onresult: ((event: LocalSpeechRecognitionEvent) => void) | null;
+  onerror: ((event: LocalSpeechRecognitionErrorEvent) => void) | null;
   onend: (() => void) | null;
   onstart: (() => void) | null;
 }
@@ -68,11 +43,11 @@ export function useSpeechRecognition({
   onResult,
   onError,
   language = "pt-BR",
-}: UseSpeechRecognitionOptions = {}): SpeechRecognitionResult {
+}: UseSpeechRecognitionOptions = {}): UseSpeechRecognitionReturn {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
+  const [recognition, setRecognition] = useState<LocalSpeechRecognition | null>(null);
 
   const isSupported = typeof window !== "undefined" && 
     ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
@@ -81,7 +56,7 @@ export function useSpeechRecognition({
     if (!isSupported) return;
 
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognitionInstance = new SpeechRecognitionAPI();
+    const recognitionInstance = new SpeechRecognitionAPI() as LocalSpeechRecognition;
     
     recognitionInstance.continuous = false;
     recognitionInstance.interimResults = true;
@@ -92,7 +67,7 @@ export function useSpeechRecognition({
       setError(null);
     };
 
-    recognitionInstance.onresult = (event: SpeechRecognitionEvent) => {
+    recognitionInstance.onresult = (event: LocalSpeechRecognitionEvent) => {
       let finalTranscript = "";
       let interimTranscript = "";
 
@@ -113,7 +88,7 @@ export function useSpeechRecognition({
       }
     };
 
-    recognitionInstance.onerror = (event: SpeechRecognitionErrorEvent) => {
+    recognitionInstance.onerror = (event: LocalSpeechRecognitionErrorEvent) => {
       const errorMessages: Record<string, string> = {
         "not-allowed": "Permissão de microfone negada",
         "no-speech": "Nenhuma fala detectada",

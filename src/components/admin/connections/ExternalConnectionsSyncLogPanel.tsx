@@ -76,7 +76,7 @@ export function ExternalConnectionsSyncLogPanel() {
       setError(err.message ?? "Falha ao ler auditoria");
       setRows(null);
     } else {
-      setRows((data ?? []) as SyncLogRow[]);
+      setRows((data ?? []) as unknown as SyncLogRow[]);
     }
     setLoading(false);
   }, []);

@@ -5,7 +5,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
-import { useAutoSaveQuote, useDiscountApproval, useQuoteItems, useQuotes, useSellerDiscountLimits, type QuoteItem, type QuoteItemPersonalization } from "@/hooks/quotes";
+import { useAutoSaveQuote, useDiscountApproval, useQuoteItems, useQuotes, useSellerDiscountLimits, type Quote, type QuoteItem, type QuoteItemPersonalization } from "@/hooks/quotes";
 import { useQuery } from '@tanstack/react-query';
 import Fuse from 'fuse.js';
 import { format, addDays } from 'date-fns';
@@ -19,6 +19,7 @@ import {
 } from '@/hooks/quotes';
 import { useAuth } from '@/contexts/AuthContext';
 import { findKnownHex, type ExternalVariantStock } from "@/hooks/products";
+import type { PromobrindProduct } from "@/lib/external-db";
 import { useDebounce } from '@/hooks/common';
 import type {
   SelectedCompanyInfo,
@@ -847,7 +848,7 @@ export function useQuoteBuilderState() {
         }
       }
 
-      const effectiveStatus = status === 'pending_approval' ? 'pending_approval' : status;
+      const effectiveStatus = (status === 'pending_approval' ? 'pending_approval' : status) as Quote['status'];
 
       const quoteData = {
         client_id: clientId || undefined,
@@ -878,7 +879,7 @@ export function useQuoteBuilderState() {
       }
 
       // If pending_approval, create approval request usando desconto REAL (não aparente)
-      if (result && status === 'pending_approval' && maxDiscountPercent !== null) {
+      if (result && result.id && status === 'pending_approval' && maxDiscountPercent !== null) {
         await requestApproval(result.id, realDiscountPercent, maxDiscountPercent, sellerNotes);
       }
 

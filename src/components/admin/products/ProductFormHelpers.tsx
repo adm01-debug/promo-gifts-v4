@@ -39,7 +39,7 @@ export interface FormSectionProps {
 // CONSTANTS
 // ============================================
 
-export { default as RulerIcon } from 'lucide-react/dist/esm/icons/ruler';
+export { Ruler as RulerIcon } from 'lucide-react';
 
 export const SECTIONS: SectionDef[] = [
   { id: 'info', label: 'Informações', icon: Info, group: 'Básico' },

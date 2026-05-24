@@ -8,7 +8,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
-import type { KitState } from '@/hooks/kit-builder';
+import type { KitState, KitItem } from '@/lib/kit-builder';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const anySupabase = supabase as any;
 
 export function useKitBuilderQuote() {
   const { user } = useAuth();
@@ -86,7 +88,7 @@ export function useKitBuilderQuote() {
         });
       }
 
-      kitState.items.forEach((item, index) => {
+      kitState.items.forEach((item: KitItem, index: number) => {
         quoteItems.push({
           quote_id: quote.id,
           product_name: item.name,
@@ -105,7 +107,7 @@ export function useKitBuilderQuote() {
       });
 
       if (quoteItems.length > 0) {
-        const { data: insertedItems, error: itemsError } = await supabase
+        const { data: insertedItems, error: itemsError } = await anySupabase
           .from('quote_items')
           .insert(quoteItems)
           .select('id, product_id');
@@ -117,7 +119,7 @@ export function useKitBuilderQuote() {
 
           if (kitState.personalization.box.enabled && kitState.box) {
             const boxId = kitState.box.id;
-            const boxQuoteItem = insertedItems.find((i) => i.product_id === boxId);
+            const boxQuoteItem = (insertedItems as Array<{ id: string; product_id: string }>).find((i: { id: string; product_id: string }) => i.product_id === boxId);
             if (boxQuoteItem) {
               const bp = kitState.personalization.box;
               personalizations.push({
@@ -135,10 +137,10 @@ export function useKitBuilderQuote() {
             }
           }
 
-          kitState.items.forEach((item) => {
+          kitState.items.forEach((item: KitItem) => {
             const itemP = kitState.personalization.items[item.id];
             if (itemP?.enabled) {
-              const itemQuoteItem = insertedItems.find((i) => i.product_id === item.id);
+              const itemQuoteItem = (insertedItems as Array<{ id: string; product_id: string }>).find((i: { id: string; product_id: string }) => i.product_id === item.id);
               if (itemQuoteItem) {
                 const totalQty = item.quantity * kitQuantity;
                 personalizations.push({
@@ -158,7 +160,7 @@ export function useKitBuilderQuote() {
           });
 
           if (personalizations.length > 0) {
-            const { error: persError } = await supabase
+            const { error: persError } = await anySupabase
               .from('quote_item_personalizations')
               .insert(personalizations);
             if (persError) logger.warn('Erro ao salvar personalizações:', persError);

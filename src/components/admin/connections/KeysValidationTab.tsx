@@ -205,7 +205,7 @@ const STATUS_META: Record<
 };
 
 export function KeysValidationTab() {
-  const { secrets, list, loading } = useSecretsManager();
+  const { secrets, list, isLoading: loading } = useSecretsManager();
   const [filter, setFilter] = useState('');
   const [onlyIssues, setOnlyIssues] = useState(false);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());

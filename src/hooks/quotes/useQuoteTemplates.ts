@@ -2,7 +2,9 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/ui";
-import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import type { Tables } from "@/integrations/supabase/types";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const anySupabase = supabase as any;
 
 // ============================================
 // Types
@@ -62,12 +64,13 @@ export interface CreateTemplateInput {
   validity_days?: number;
 }
 
-function transformTemplates(data: QuoteTemplateRow[]): QuoteTemplate[] {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function transformTemplates(data: any[]): QuoteTemplate[] {
   return (data || []).map((item) => ({
     ...item,
     is_default: item.is_default ?? false,
     items_data: Array.isArray(item.items_data)
-      ? item.items_data as unknown as QuoteTemplateItem[]
+      ? item.items_data as QuoteTemplateItem[]
       : [],
     template_data: typeof item.template_data === 'object' && item.template_data !== null
       ? item.template_data as Record<string, unknown>
@@ -75,7 +78,7 @@ function transformTemplates(data: QuoteTemplateRow[]): QuoteTemplate[] {
     discount_percent: item.discount_percent ?? 0,
     discount_amount: item.discount_amount ?? 0,
     validity_days: item.validity_days ?? 30,
-  }));
+  })) as QuoteTemplate[];
 }
 
 // ============================================
@@ -102,7 +105,7 @@ export function useQuoteTemplates() {
       setLoading(true);
       setError(null);
 
-      const { data, error: qErr } = await supabase
+      const { data, error: qErr } = await anySupabase
         .from("quote_templates")
         .select("*")
         .order("updated_at", { ascending: false })
@@ -125,7 +128,7 @@ export function useQuoteTemplates() {
     }
 
     try {
-      const { data, error: qErr } = await supabase
+      const { data, error: qErr } = await anySupabase
         .from("quote_templates")
         .select("*")
         .order("updated_at", { ascending: false })
@@ -172,15 +175,14 @@ export function useQuoteTemplates() {
 
     try {
       if (input.is_default) {
-        const resetPayload: TablesUpdate<"quote_templates"> = { is_default: false };
-        await supabase
+        await anySupabase
           .from("quote_templates")
-          .update(resetPayload)
+          .update({ is_default: false })
           .eq("seller_id", user.id)
           .eq("is_default", true);
       }
 
-      const insertPayload: TablesInsert<"quote_templates"> = {
+      const insertPayload: Record<string, unknown> = {
         seller_id: user.id,
         name: input.name,
         description: input.description || null,
@@ -196,7 +198,7 @@ export function useQuoteTemplates() {
         validity_days: input.validity_days || 30,
       };
 
-      const { data: inserted, error: insErr } = await supabase
+      const { data: inserted, error: insErr } = await anySupabase
         .from("quote_templates")
         .insert(insertPayload)
         .select("*");
@@ -218,15 +220,14 @@ export function useQuoteTemplates() {
 
     try {
       if (updates.is_default) {
-        const resetPayload: TablesUpdate<"quote_templates"> = { is_default: false };
-        await supabase
+        await anySupabase
           .from("quote_templates")
-          .update(resetPayload)
+          .update({ is_default: false })
           .eq("seller_id", user.id)
           .eq("is_default", true);
       }
 
-      const updatePayload: TablesUpdate<"quote_templates"> = {
+      const updatePayload: Record<string, unknown> = {
         ...updates,
         updated_at: new Date().toISOString(),
       };
@@ -234,7 +235,7 @@ export function useQuoteTemplates() {
         updatePayload.items_data = JSON.parse(JSON.stringify(updates.items_data));
       }
 
-      const { data: result, error: updErr } = await supabase
+      const { data: result, error: updErr } = await anySupabase
         .from("quote_templates")
         .update(updatePayload)
         .eq("id", id)
@@ -256,7 +257,7 @@ export function useQuoteTemplates() {
     if (!user) return false;
 
     try {
-      const { error: delErr } = await supabase.from("quote_templates").delete().eq("id", id);
+      const { error: delErr } = await anySupabase.from("quote_templates").delete().eq("id", id);
       if (delErr) throw new Error(delErr.message);
 
       toast({ title: "Template excluído", description: "Template removido com sucesso" });
@@ -305,7 +306,7 @@ export function useQuoteTemplates() {
     }
 
     try {
-      const insertPayload: TablesInsert<"quote_templates"> = {
+      const insertPayload: Record<string, unknown> = {
         seller_id: targetSellerId,
         name: `${template.name} (Clonado)`,
         description: template.description || null,
@@ -321,7 +322,7 @@ export function useQuoteTemplates() {
         validity_days: template.validity_days || 30,
       };
 
-      const { data: inserted, error: insErr } = await supabase
+      const { data: inserted, error: insErr } = await anySupabase
         .from("quote_templates")
         .insert(insertPayload)
         .select("*");

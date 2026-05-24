@@ -45,6 +45,9 @@ const mockItem: SellerCartItem = {
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
   sort_order: 0,
+  color_name: null,
+  color_hex: null,
+  notes: null,
 };
 
 const renderComponent = (item = mockItem) => {

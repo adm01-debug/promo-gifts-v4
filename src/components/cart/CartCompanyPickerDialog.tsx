@@ -21,7 +21,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { selectCrm, searchCrm } from '@/lib/crm-db';
 import { getCompanyDisplayName, type CrmCompany } from '@/types/crm';
-import { useSellerCartContext, type CreateCartInput } from '@/contexts/SellerCartContext';
+import { useSellerCartContext } from '@/contexts/SellerCartContext';
+import type { CreateCartInput } from '@/hooks/products';
 
 interface CompanyItem {
   id: string;
