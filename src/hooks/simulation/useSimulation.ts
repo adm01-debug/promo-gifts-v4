@@ -14,10 +14,13 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
-import { useMultipleTechniquePricing } from "@/hooks/simulation/useTechniquePricingOptions";
-import { useSimulatorPreferences } from "@/hooks/simulation/useSimulatorPreferences";
-import { fetchAllOptions } from "@/hooks/simulation/simulationPriceFetcher";
-import { copyOptionToClipboard, copyAllOptionsToClipboard } from "@/hooks/simulation/simulationClipboard";
+import { useMultipleTechniquePricing } from '@/hooks/simulation/useTechniquePricingOptions';
+import { useSimulatorPreferences } from '@/hooks/simulation/useSimulatorPreferences';
+import { fetchAllOptions } from '@/hooks/simulation/simulationPriceFetcher';
+import {
+  copyOptionToClipboard,
+  copyAllOptionsToClipboard,
+} from '@/hooks/simulation/simulationClipboard';
 import type {
   Product,
   Client,
@@ -171,11 +174,14 @@ export function useSimulation() {
         orderBy: { column: 'name', ascending: true },
         limit: 100,
       });
-      return result.records.map((t) => ({
-        ...t,
-        setup_cost: (t as ExternalTechnique).setup_price ?? t.setup_cost,
-        unit_cost: (t as ExternalTechnique).handling_price ?? t.unit_cost,
-      }));
+      return result.records.map((t) => {
+        const ext = t as unknown as ExternalTechnique;
+        return {
+          ...t,
+          setup_cost: ext.setup_price ?? t.setup_cost,
+          unit_cost: ext.handling_price ?? t.unit_cost,
+        };
+      });
     },
   });
 
@@ -185,7 +191,7 @@ export function useSimulation() {
   );
   const { isLoading: pricingLoading, getPricingInfo } = useMultipleTechniquePricing(techniqueCodes);
 
-  const { data: savedSimulations, isLoading: savedSimulationsLoading } = useQuery({
+  const { data: _savedSimulations, isLoading: savedSimulationsLoading } = useQuery({
     queryKey: ['saved-simulations'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -197,9 +203,10 @@ export function useSimulation() {
       return (data || []).map((item) => ({
         ...item,
         simulation_data: item.simulation_data as unknown as SimulationOption[],
-      })) as SavedSimulation[];
+      }));
     },
   });
+  const savedSimulations = (_savedSimulations ?? []) as SavedSimulation[];
 
   // ─── Derived ──────────────────────────────────────────────
   const selectedProduct = useMemo(
@@ -453,7 +460,7 @@ export function useSimulation() {
   }, []);
 
   // ─── Mutations ────────────────────────────────────────────
-  const saveSimulationMutation = useMutation({
+  const saveSimulationMutation = useMutation<void, Error, void>({
     mutationFn: async () => {
       if (!user || !selectedProduct || simulationOptions.length === 0)
         throw new Error('Dados incompletos');
@@ -484,7 +491,7 @@ export function useSimulation() {
     },
   });
 
-  const deleteSimulationMutation = useMutation({
+  const deleteSimulationMutation = useMutation<void, Error, string>({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from('personalization_simulations').delete().eq('id', id);
       if (error) throw error;
@@ -597,4 +604,4 @@ export function useSimulation() {
 // Re-export for backward compatibility with legacy simulator imports.
 // Keep the source of truth in the shared formatter module to avoid runtime
 // module-export errors during Vite ESM loading.
-export { formatCurrency } from "@/lib/format";
+export { formatCurrency } from '@/lib/format';

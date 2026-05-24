@@ -645,5 +645,11 @@ export function useCatalogState() {
     quickSuggestions,
     searchHistory: history,
     clearHistory,
+    // Navigation & pagination
+    navigate,
+    isTransitioning: deferredIsTransitioning,
+    hasMoreProducts,
+    ITEMS_PER_PAGE,
+    loadMore,
   };
 }

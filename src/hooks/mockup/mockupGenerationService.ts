@@ -3,6 +3,8 @@
  * Extracted from useMockupGenerator to reduce hook complexity.
  */
 import { supabase } from '@/integrations/supabase/client';
+import { type createClient } from '@supabase/supabase-js';
+const db = supabase as unknown as ReturnType<typeof createClient>;
 import { uploadLogoToStorage, downloadImageAsPdfFromUrl } from '@/lib/mockup-storage';
 import { toast } from 'sonner';
 import type { PersonalizationArea } from '@/components/mockup/MultiAreaManager';
@@ -66,7 +68,7 @@ export function getTechniquePrompt(technique: Technique): string {
 // ─── History fetching ────────────────────────────────────────────────
 
 export async function fetchMockupHistory(userId?: string): Promise<GeneratedMockup[]> {
-  let query = supabase
+  let query = db
     .from('generated_mockups')
     .select(
       `id, product_id, product_name, product_sku, technique_id, technique_name, mockup_url, layout_url, logo_url, position_x, position_y, logo_width_cm, logo_height_cm, location_name, colors_count, created_at, client_id, client_name, annotations`,
@@ -75,7 +77,7 @@ export async function fetchMockupHistory(userId?: string): Promise<GeneratedMock
   if (userId) query = query.eq('seller_id', userId);
   const { data, error } = await query;
   if (error) throw error;
-  return data || [];
+  return (data || []) as GeneratedMockup[];
 }
 
 // ─── Save to history ─────────────────────────────────────────────────
@@ -129,7 +131,7 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
     const clientId = client?.id || null;
     const clientName = client?.nome_fantasia || client?.razao_social || client?.name || null;
 
-    const { data: insertedRow, error } = await supabase
+    const { data: insertedRow, error } = await db
       .from('generated_mockups')
       .insert({
         seller_id: userId,
@@ -155,7 +157,7 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
       .single();
 
     if (error) throw error;
-    return insertedRow?.id || null;
+    return (insertedRow as { id?: string } | null)?.id || null;
   } catch (error) {
     console.error('Error saving to history:', error);
     return null;
@@ -282,7 +284,7 @@ export async function downloadMockupAsPdf(mockupUrl: string, sku?: string, techn
 // ─── Delete ──────────────────────────────────────────────────────────
 
 export async function deleteMockupFromDb(id: string, userId?: string): Promise<void> {
-  let query = supabase.from('generated_mockups').delete().eq('id', id);
+  let query = db.from('generated_mockups').delete().eq('id', id);
   if (userId) query = query.eq('seller_id', userId);
   const { error } = await query;
   if (error) throw error;
