@@ -479,7 +479,7 @@ export default function Auth() {
       <PageSEO
         title="Login | Promo Gifts"
         description="Acesse a plataforma Promo Gifts. Entre com suas credenciais para gerenciar seus produtos e orÃ§amentos com a melhor IA das GalÃ¡xias!"
-        path="/login"
+        path="/auth"
       />
       {/* Left side - Branding */}
       <AuthBrandingPanel onLogoClick={() => window.location.reload()} />

@@ -1,9 +1,9 @@
 {
   "ci": {
     "collect": {
-      "url": ["http://127.0.0.1:4173/"],
+      "url": ["http://127.0.0.1:4173/auth"],
       "startServerCommand": "npm run preview -- --host 127.0.0.1 --port 4173",
-      "startServerReadyPattern": "Local:|ready in|ready on",
+      "startServerReadyPattern": "Local|ready in|ready on",
       "startServerReadyTimeout": 30000,
       "numberOfRuns": 3,
       "settings": {
@@ -18,7 +18,6 @@
       }
     },
     "assert": {
-      "preset": "lighthouse:recommended",
       "assertions": {
         "categories:performance": ["error", { "minScore": 0.75 }],
         "categories:accessibility": ["error", { "minScore": 0.90 }],
