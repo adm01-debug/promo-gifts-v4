@@ -12,7 +12,5 @@ CREATE TABLE IF NOT EXISTS public.user_known_devices (
 CREATE INDEX IF NOT EXISTS idx_user_known_devices_fingerprint ON public.user_known_devices USING btree (fingerprint);
 CREATE INDEX IF NOT EXISTS idx_user_known_devices_user_id ON public.user_known_devices USING btree (user_id);
 ALTER TABLE public.user_known_devices ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Users can manage their own devices" ON public.user_known_devices;
-CREATE POLICY "Users can manage their own devices" ON public.user_known_devices FOR ALL TO public USING (auth.uid() = user_id);
-DROP POLICY IF EXISTS "Users can view their own devices" ON public.user_known_devices;
-CREATE POLICY "Users can view their own devices" ON public.user_known_devices FOR SELECT TO public USING (auth.uid() = user_id);
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname ='public' AND tablename ='user_known_devices' AND policyname ='Users can manage their own devices') THEN CREATE POLICY "Users can manage their own devices" ON public.user_known_devices FOR ALL TO public USING (auth.uid() = user_id); END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname ='public' AND tablename ='user_known_devices' AND policyname ='Users can view their own devices') THEN CREATE POLICY "Users can view their own devices" ON public.user_known_devices FOR SELECT TO public USING (auth.uid() = user_id); END IF; END $$;

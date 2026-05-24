@@ -40,11 +40,7 @@ import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLogo } from '@/components/layout/AppLogo';
 import { loginSchema, type LoginFormData } from '@/lib/validations';
-<<<<<<< HEAD
-import { authDebug, authDebugError } from '@/lib/auth/auth-debug';
-=======
 import { logger } from '@/lib/logger';
->>>>>>> origin/main
 
 type LoginForm = LoginFormData;
 
@@ -198,17 +194,11 @@ export default function Auth() {
           }));
         } else {
           setDbStatus((prev) => ({ ...prev, external: { ok: false, loading: false } }));
-<<<<<<< HEAD
-        }
-      } catch {
-        setDbStatus((prev) => ({ ...prev, external: { ok: false, loading: false } }));
-=======
         }
       } catch {
         if (!cancelled) {
           setDbStatus((prev) => ({ ...prev, external: { ok: false, loading: false } }));
         }
->>>>>>> origin/main
       }
     };
 
@@ -279,18 +269,10 @@ export default function Auth() {
     setIpBlocked(false);
 
     try {
-<<<<<<< HEAD
-      authDebug('login:start', 'Tentativa de login', { email: data.email });
-      const { error } = await signIn(data.email, data.password);
-
-      if (error) {
-        authDebugError('login:failed', 'Erro de autenticação', error);
-=======
       const { error } = await signIn(data.email, data.password);
 
       if (error) {
         logger.warn('[AUTH_FAILED] Authentication failed', { status: error.status ?? 'unknown' });
->>>>>>> origin/main
         await logLoginAttempt(data.email, null, false, error.message);
 
         let description = error.message;
@@ -345,11 +327,6 @@ export default function Auth() {
         return;
       }
 
-<<<<<<< HEAD
-      authDebug('login:ok', 'Login bem-sucedido, validando sessão', { email: data.email });
-
-=======
->>>>>>> origin/main
       // Credential Management API — pede ao navegador para salvar email/senha
       // após login bem-sucedido (Chrome/Edge/Brave). Silencioso se não suportado.
       try {
@@ -366,13 +343,8 @@ export default function Auth() {
           const cred = new CredCtor({ id: data.email, password: data.password, name: data.email });
           await navigator.credentials.store(cred);
         }
-<<<<<<< HEAD
-      } catch (credErr) {
-        authDebugError('login:cred-store', 'Não foi possível salvar credenciais', credErr);
-=======
       } catch {
         logger.warn('[AUTH_CRED_STORE] Credential store failed');
->>>>>>> origin/main
       }
 
       const { data: sessionData } = await supabase.auth.getSession();
@@ -389,10 +361,6 @@ export default function Auth() {
       }
 
       // 1. Verificação detalhada de Perfil (is_active)
-<<<<<<< HEAD
-      authDebug('login:session', 'Sessão iniciada, carregando perfil', { userId });
-=======
->>>>>>> origin/main
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('is_active, role')
@@ -400,17 +368,9 @@ export default function Auth() {
         .single();
 
       if (profileError) {
-<<<<<<< HEAD
-        authDebugError(
-          'login:profile-failed',
-          `Erro ao buscar perfil para ${userId}`,
-          profileError,
-        );
-=======
         logger.error('[AUTH_PROFILE_FAILED] Failed to load authenticated profile', {
           code: profileError.code ?? 'unknown',
         });
->>>>>>> origin/main
         const isRLSError = profileError.code === 'PGRST301' || profileError.code === '42501';
         toast({
           variant: 'destructive',
@@ -444,29 +404,15 @@ export default function Auth() {
         .eq('user_id', userId);
 
       if (rolesError || !rolesData || rolesData.length === 0) {
-<<<<<<< HEAD
-        authDebug('login:rbac-warn', 'Usuário sem papéis (roles) atribuídos', {
-          userId,
-          rolesError,
-        });
-      } else {
-        authDebug('login:rbac-ok', `Usuário possui ${rolesData.length} roles`, { userId });
-=======
         logger.warn('[AUTH_RBAC_WARN] Authenticated user has no assigned roles', {
           code: rolesError?.code ?? 'none',
         });
->>>>>>> origin/main
       }
 
       // 3. Validação final de IP e Redirecionamento
       await validateAndRedirect(userId, data.email);
-<<<<<<< HEAD
-    } catch (err) {
-      console.error('Login exception:', err);
-=======
     } catch {
       logger.error('[AUTH_LOGIN_EXCEPTION] Unexpected login exception');
->>>>>>> origin/main
       toast({
         variant: 'destructive',
         title: 'Erro inesperado',
@@ -737,9 +683,8 @@ export default function Auth() {
                       onSubmit={loginForm.handleSubmit(handleLogin)}
                       className="space-y-4"
                       data-testid="login-form"
-                      method="post"
-                      action="/auth"
                       name="login"
+                      noValidate
                     >
                       <div className="space-y-2">
                         <Label htmlFor="login-email" className="text-foreground">
@@ -801,6 +746,7 @@ export default function Auth() {
                             onClick={() => setShowPassword(!showPassword)}
                             className="absolute right-3 top-1/2 -mr-2 flex min-h-[44px] min-w-[44px] -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors hover:text-blue-500"
                             aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                            aria-pressed={showPassword}
                           >
                             {showPassword ? (
                               <EyeOff className="h-4 w-4" />

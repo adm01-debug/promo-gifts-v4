@@ -16,11 +16,6 @@ CREATE TABLE IF NOT EXISTS public.password_reset_requests (
 CREATE INDEX IF NOT EXISTS idx_password_reset_requests_email ON public.password_reset_requests USING btree (email);
 CREATE INDEX IF NOT EXISTS idx_password_reset_requests_status ON public.password_reset_requests USING btree (status);
 ALTER TABLE public.password_reset_requests ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Anyone can request a password reset" ON public.password_reset_requests;
-CREATE POLICY "Anyone can request a password reset" ON public.password_reset_requests FOR INSERT TO public WITH CHECK (true);
-DROP POLICY IF EXISTS "Admins can view password reset requests" ON public.password_reset_requests;
-CREATE POLICY "Admins can view password reset requests" ON public.password_reset_requests FOR SELECT TO public
-  USING (EXISTS (SELECT 1 FROM public.user_roles WHERE user_roles.user_id = auth.uid() AND user_roles.role = ANY (ARRAY['dev'::app_role,'supervisor'::app_role,'admin'::app_role])));
-DROP POLICY IF EXISTS "Admins can update password reset requests" ON public.password_reset_requests;
-CREATE POLICY "Admins can update password reset requests" ON public.password_reset_requests FOR UPDATE TO public
-  USING (EXISTS (SELECT 1 FROM public.user_roles WHERE user_roles.user_id = auth.uid() AND user_roles.role = ANY (ARRAY['dev'::app_role,'supervisor'::app_role,'admin'::app_role])));
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='password_reset_requests' AND policyname='Anyone can request a password reset') THEN CREATE POLICY "Anyone can request a password reset" ON public.password_reset_requests FOR INSERT TO public WITH CHECK (true); END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='password_reset_requests' AND policyname='Admins can view password reset requests') THEN CREATE POLICY "Admins can view password reset requests" ON public.password_reset_requests FOR SELECT TO public USING (EXISTS (SELECT 1 FROM public.user_roles WHERE user_roles.user_id = auth.uid() AND user_roles.role = ANY (ARRAY['dev'::app_role,'supervisor'::app_role,'admin'::app_role]))); END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='password_reset_requests' AND policyname='Admins can update password reset requests') THEN CREATE POLICY "Admins can update password reset requests" ON public.password_reset_requests FOR UPDATE TO public USING (EXISTS (SELECT 1 FROM public.user_roles WHERE user_roles.user_id = auth.uid() AND user_roles.role = ANY (ARRAY['dev'::app_role,'supervisor'::app_role,'admin'::app_role]))); END IF; END $$;

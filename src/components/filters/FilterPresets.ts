@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import type { FilterState } from './FilterPanel';
-import type { Json } from '@/integrations/supabase/types';
 
 export interface FilterPreset {
   id: string;
@@ -21,11 +20,6 @@ export interface FilterPreset {
 /**
  * Hook para gerenciar presets de filtros persistidos no banco de dados.
  * Cada vendedor tem seus próprios presets isolados por RLS.
- *
- * DB schema: saved_filters(id, user_id, name, description, filter_config, category,
- *             is_default, icon, color, created_at, updated_at)
- * Note: DB column "filter_config" maps to FilterPreset.filters
- *       DB column "category"     maps to FilterPreset.context
  */
 export function useFilterPresets(context: string = 'catalog') {
   const { user } = useAuth();
@@ -39,7 +33,7 @@ export function useFilterPresets(context: string = 'catalog') {
       const { data, error } = await supabase
         .from('saved_filters')
         .select('*')
-        .eq('category', context) // DB column is "category", not "context"
+        .eq('category', context)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -49,8 +43,8 @@ export function useFilterPresets(context: string = 'catalog') {
           id: row.id,
           name: row.name,
           description: row.description ?? undefined,
-          filters: row.filter_config as unknown as FilterState, // DB column is "filter_config"
-          context: row.category, // map category → context
+          filters: row.filter_config as unknown as FilterState,
+          context: row.category,
           is_default: row.is_default,
           icon: row.icon ?? undefined,
           color: row.color ?? undefined,
@@ -94,8 +88,8 @@ export function useFilterPresets(context: string = 'catalog') {
             user_id: user.id,
             name: preset.name,
             description: preset.description || null,
-            filter_config: preset.filters as unknown as Json, // DB column
-            category: context, // DB column
+            filter_config: preset.filters as unknown as Record<string, unknown>,
+            category: context,
             icon: preset.icon || null,
             color: preset.color || null,
           })
@@ -134,28 +128,14 @@ export function useFilterPresets(context: string = 'catalog') {
       updates: Partial<Pick<FilterPreset, 'name' | 'description' | 'icon' | 'color' | 'filters'>>,
     ): Promise<FilterPreset | null> => {
       try {
-        // Build payload using DB column names (typed for Supabase schema)
-        const payload: {
-          updated_at: string;
-          name?: string;
-          description?: string | null;
-          icon?: string | null;
-          color?: string | null;
-          filter_config?: Json;
-        } = {
-          updated_at: new Date().toISOString(),
-        };
-        if (updates.name !== undefined) payload.name = updates.name;
-        if (updates.description !== undefined) payload.description = updates.description ?? null;
-        if (updates.icon !== undefined) payload.icon = updates.icon ?? null;
-        if (updates.color !== undefined) payload.color = updates.color ?? null;
-        if (updates.filters !== undefined) {
-          payload.filter_config = updates.filters as unknown as Json;
-        }
-
+        const { filters: filterState, ...restUpdates } = updates;
         const { data, error } = await supabase
           .from('saved_filters')
-          .update(payload)
+          .update({
+            ...restUpdates,
+            updated_at: new Date().toISOString(),
+            ...(filterState !== undefined ? { filter_config: filterState as unknown } : {}),
+          })
           .eq('id', id)
           .select()
           .single();
@@ -206,7 +186,7 @@ export function useFilterPresets(context: string = 'catalog') {
       if (!user) return;
       try {
         // Remove default from all presets of this context
-        await supabase.from('saved_filters').update({ is_default: false }).eq('category', context); // DB column is "category"
+        await supabase.from('saved_filters').update({ is_default: false }).eq('category', context);
 
         // Set selected as default
         if (id) {

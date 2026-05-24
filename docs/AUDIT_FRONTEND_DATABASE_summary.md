@@ -12,7 +12,7 @@
 
 ## Ação imediata necessária
 
-1. **Migração urgente:** Criar migration que execute `DROP POLICY "Allow all"` nas tabelas `products`, `categories`, `suppliers` e `quotes`. Essas 4 tabelas têm policy `FOR ALL USING (true)` ativa desde `20250102000000_gifts_production.sql` que **nunca foi removida**, permitindo acesso anônimo total (leitura e escrita) — incluindo PII de clientes em `quotes`.
+1. ✅ **RESOLVIDO em 2026-05-22** (rodada QA `claude/code-qa-review-UUabl`) — migration `supabase/migrations/20260522001500_drop_allow_all_policies.sql` dropa `Allow all` em `products`, `categories`, `suppliers`, `quotes`. As policies restritivas org-based/role-based pré-existentes (criadas em `20250103020000_rls_organizations.sql` e `20250103100000_rls_no_gamification.sql`) assumem o controle de acesso. Detalhes em `docs/QA_REPORT_2026-05-22.md`.
 
 2. **Regenerar types.ts:** Executar `supabase gen types typescript --project-id nmojwpihnslkssljowjh` para cobrir as 12 tabelas sem tipos.
 
