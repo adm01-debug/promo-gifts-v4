@@ -38,6 +38,35 @@ describe('contract: kit-ai-builder', () => {
     );
     expect(r.ok).toBe(false);
   });
+  it('v2 aceita prompt com idempotency_key', async () => {
+    const r = await parseContract(
+      makeRequest({
+        headers: { 'accept-version': '2' },
+        body: { prompt: 'x'.repeat(50), idempotency_key: UUID },
+      }),
+      KitAiBuilderSchemas,
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.version).toBe('2');
+      expect(r.responseHeaders['x-contract-version']).toBe('2');
+      expect(r.responseHeaders.Deprecation).toBeUndefined();
+    }
+  });
+  it('v1 default anuncia Deprecation/Sunset', async () => {
+    const r = await parseContract(makeRequest({ body: { prompt: 'x'.repeat(50) } }), KitAiBuilderSchemas);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.version).toBe('1');
+      expect(r.responseHeaders.Deprecation).toBe('true');
+      expect(r.responseHeaders.Sunset).toContain('31 Oct 2026');
+    }
+  });
+  it('body vazio -> 400 missing_body', async () => {
+    const r = await parseContract(makeRequest({}), KitAiBuilderSchemas);
+    expect(r.ok).toBe(false);
+    if (!r.ok) await expectContractError(r.response, { status: 400, code: 'missing_body' });
+  });
 });
 
 describe('contract: bi-copilot', () => {
@@ -62,6 +91,33 @@ describe('contract: bi-copilot', () => {
     const r = await parseContract(makeRequest({ body: { question: '' } }), BiCopilotSchemas);
     expect(r.ok).toBe(false);
   });
+  it('v2 exige context', async () => {
+    const r = await parseContract(
+      makeRequest({ headers: { 'accept-version': '2' }, body: { question: 'Como melhorar margem?' } }),
+      BiCopilotSchemas,
+    );
+    expect(r.ok).toBe(false);
+    if (!r.ok) await expectContractError(r.response, { status: 422, code: 'validation_failed', fieldPaths: ['context'] });
+  });
+  it('v2 aceita question com context obrigatorio', async () => {
+    const r = await parseContract(
+      makeRequest({
+        headers: { 'accept-version': '2' },
+        body: { question: 'Como melhorar margem?', context: { tenant_id: 'tenant-1' } },
+      }),
+      BiCopilotSchemas,
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.responseHeaders['x-contract-version']).toBe('2');
+  });
+  it('versao nao suportada -> 406 unsupported_version', async () => {
+    const r = await parseContract(
+      makeRequest({ headers: { 'accept-version': '99' }, body: { question: 'Qual ticket medio?' } }),
+      BiCopilotSchemas,
+    );
+    expect(r.ok).toBe(false);
+    if (!r.ok) await expectContractError(r.response, { status: 406, code: 'unsupported_version' });
+  });
 });
 
 describe('contract: market-intelligence-insights', () => {
@@ -79,6 +135,37 @@ describe('contract: market-intelligence-insights', () => {
       MarketIntelligenceInsightsSchemas,
     );
     expect(r.ok).toBe(false);
+  });
+  it('v2 aceita UUIDs e defaults estritos', async () => {
+    const r = await parseContract(
+      makeRequest({
+        headers: { 'accept-version': '2' },
+        body: { categoryId: UUID, supplierId: null, productId: UUID },
+      }),
+      MarketIntelligenceInsightsSchemas,
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.data.days).toBe(30);
+      expect(r.data.forceRefresh).toBe(false);
+      expect(r.responseHeaders['x-contract-version']).toBe('2');
+    }
+  });
+  it('v2 strict rejeita campos extras', async () => {
+    const r = await parseContract(
+      makeRequest({ headers: { 'accept-version': '2' }, body: { extra: true } }),
+      MarketIntelligenceInsightsSchemas,
+    );
+    expect(r.ok).toBe(false);
+    if (!r.ok) await expectContractError(r.response, { status: 422, code: 'validation_failed' });
+  });
+  it('JSON malformado -> 400 invalid_json', async () => {
+    const r = await parseContract(
+      makeRequest({ body: '{"days":', headers: { 'content-type': 'application/json' } }),
+      MarketIntelligenceInsightsSchemas,
+    );
+    expect(r.ok).toBe(false);
+    if (!r.ok) await expectContractError(r.response, { status: 400, code: 'invalid_json' });
   });
 });
 
