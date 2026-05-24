@@ -6,7 +6,6 @@ import { useNavigate } from 'react-router-dom';
 import * as Lucide from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSimilarKits } from '@/hooks/kit-builder';
 import { formatCurrency } from '@/lib/kit-builder';

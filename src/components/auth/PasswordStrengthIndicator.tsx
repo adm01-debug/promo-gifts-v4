@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState, useCallback } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Check, X, AlertTriangle, Loader2, Shield } from 'lucide-react';
 import { usePasswordBreachCheck } from '@/hooks/auth';

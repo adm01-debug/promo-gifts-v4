@@ -14,10 +14,26 @@ if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+type SupabaseStorage = {
+  getItem: Storage['getItem'];
+  setItem: Storage['setItem'];
+  removeItem: Storage['removeItem'];
+};
+
+const getStorageOrUndefined = (): SupabaseStorage | undefined => {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return undefined;
+  }
+
+  return window.localStorage;
+};
+
+const storage = getStorageOrUndefined();
+
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    storage: localStorage,
-    persistSession: true,
+    storage,
+    persistSession: Boolean(storage),
     autoRefreshToken: true,
   }
 });

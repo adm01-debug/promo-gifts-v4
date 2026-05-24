@@ -5,7 +5,7 @@ DECLARE _row record; _admin record; _blocked_count int:=0; _system_uid uuid; _ex
 BEGIN
   SELECT user_id INTO _system_uid
   FROM public.user_roles
-  WHERE role IN ('dev','supervisor','admin')
+  WHERE role IN ('dev','supervisor')
   ORDER BY CASE role
     WHEN 'dev' THEN 1
     WHEN 'supervisor' THEN 2
@@ -31,7 +31,7 @@ BEGIN
     FOR _admin IN
       SELECT user_id
       FROM public.user_roles
-      WHERE role IN ('dev','supervisor','admin')
+      WHERE role IN ('dev','supervisor')
     LOOP
       IF NOT EXISTS (SELECT 1 FROM public.workspace_notifications WHERE user_id=_admin.user_id AND category='security' AND title='IP auto-bloqueado' AND metadata->>'ip'=_row.ip_address AND created_at>now()-interval '1 hour') THEN
         INSERT INTO public.workspace_notifications (user_id,title,message,type,category,action_url,metadata)

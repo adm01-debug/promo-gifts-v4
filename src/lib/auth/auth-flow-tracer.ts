@@ -1,12 +1,12 @@
 /**
  * Auth flow tracer — agrupa todos os eventos de um único round-trip OAuth
- * sob um `flowId` único, emite uma timeline final no console e persiste um
- * snapshot enxuto em `sessionStorage` para inspeção pós-falha em `/login`.
+ * sob um `flowId` único, persiste um snapshot enxuto em `sessionStorage` para
+ * inspeção pós-falha em `/login` e só emite console quando o debug de auth está
+ * habilitado.
  *
- * Como usar em produção:
- *   1. Abra o DevTools → Console e filtre por `[AUTH-FLOW]`.
- *   2. Cada callback emite `flowId=xxxxxxxx` no início e um `console.group`
- *      no fim com a timeline completa.
+ * Como usar em diagnóstico:
+ *   1. Habilite `VITE_AUTH_DEBUG=true` ou rode em DEV.
+ *   2. Abra o DevTools → Console e filtre por `[AUTH-FLOW]`.
  *   3. Se foi redirecionado pra `/login`, abra o console e rode:
  *        copy(JSON.parse(sessionStorage.getItem('__sso_last_flow')))
  *      e me mande o JSON.
@@ -14,9 +14,11 @@
 
 import { authDebug, authDebugError, summarizeSession } from './auth-debug';
 import type { Session } from '@supabase/supabase-js';
+import { maskSensitiveText } from '@/lib/sensitive-masking';
 
 const STORAGE_KEY = '__sso_last_flow';
 const FLOW_PREFIX = '[AUTH-FLOW]';
+const AUTH_FLOW_DEBUG_ENABLED = import.meta.env.DEV || import.meta.env.VITE_AUTH_DEBUG === 'true';
 
 export type FlowPhase =
   | 'mount'
@@ -101,11 +103,12 @@ export class AuthFlowTracer {
       failureReason: null,
       steps: [],
     };
-    // eslint-disable-next-line no-console
-    console.log(
-      `${FLOW_PREFIX} flow=${this.flowId} START path=${this.snapshot.url.pathname} ` +
-        `query=${this.snapshot.url.hasQuery} hash=${this.snapshot.url.hasHash}`,
-    );
+    if (AUTH_FLOW_DEBUG_ENABLED) {
+      console.warn(
+        `${FLOW_PREFIX} flow=${this.flowId} START path=${this.snapshot.url.pathname} ` +
+          `query=${this.snapshot.url.hasQuery} hash=${this.snapshot.url.hasHash}`,
+      );
+    }
   }
 
   /** Marca uma fase do fluxo. Sempre acompanhada de log auth-debug detalhado. */
@@ -141,8 +144,7 @@ export class AuthFlowTracer {
       summary && typeof summary === 'object' && 'user' in summary
         ? ((summary as { user?: { email?: string } }).user?.email ?? null)
         : null;
-    this.snapshot.finalProvider =
-      session.user?.app_metadata?.provider ?? null;
+    this.snapshot.finalProvider = session.user?.app_metadata?.provider ?? null;
     this.snapshot.finalIssuer =
       summary && typeof summary === 'object' && 'claims' in summary
         ? ((summary as { claims?: { iss?: string } }).claims?.iss ?? null)
@@ -166,24 +168,13 @@ export class AuthFlowTracer {
       `flow=${this.snapshot.flow} duration=${t}ms target=${target ?? '-'}` +
       (failureReason ? ` reason="${failureReason}"` : '');
 
-    /* eslint-disable no-console */
-    if (console.groupCollapsed) {
-      console.groupCollapsed(title);
-      console.table(
-        this.snapshot.steps.map((s) => ({
-          'Δms': s.t,
-          phase: s.phase,
-        })),
-      );
-      console.log('snapshot:', this.snapshot);
-      console.log(
-        'tip: copy full snapshot →  copy(JSON.parse(sessionStorage.getItem("__sso_last_flow")))',
-      );
-      console.groupEnd();
-    } else {
-      console.log(title, this.snapshot);
+    if (AUTH_FLOW_DEBUG_ENABLED) {
+      const safeSnapshot = this.safeSnapshot();
+      console.warn(title, {
+        ...safeSnapshot,
+        steps: safeSnapshot.steps.map((s) => ({ t: s.t, phase: s.phase })),
+      });
     }
-    /* eslint-enable no-console */
   }
 
   /** Última snapshot disponível (estática) — útil em `/login` pós-falha. */
@@ -208,14 +199,27 @@ export class AuthFlowTracer {
 
   /** Remove campos potencialmente sensíveis antes de salvar no detail. */
   private safeDetail(detail: unknown): unknown {
-    if (detail == null) return detail;
-    if (typeof detail !== 'object') return detail;
+    if (detail === null || detail === undefined) return detail;
+    if (typeof detail !== 'object')
+      return typeof detail === 'string' ? maskSensitiveText(detail) : detail;
     try {
       // serialize → parse para garantir que é JSON-safe
-      return JSON.parse(JSON.stringify(detail));
+      const masked = maskSensitiveText(JSON.stringify(detail));
+      return masked ? JSON.parse(masked) : null;
     } catch {
       return { unserializable: true };
     }
+  }
+
+  private safeSnapshot(): FlowSnapshot {
+    return {
+      ...this.snapshot,
+      finalSessionUser: this.snapshot.finalSessionUser ? '<masked-email>' : null,
+      steps: this.snapshot.steps.map((step) => ({
+        ...step,
+        detail: this.safeDetail(step.detail),
+      })),
+    };
   }
 }
 

@@ -26,7 +26,6 @@ import {
   QuickOptionsFilter,
 } from "./filter-panel/sections/SimpleFilters";
 import { SizeFilter } from "./filter-panel/sections/SizeFilter";
-import { GenderBadge } from "@/components/products/GenderBadge";
 
 export function FilterPanel({
   filters, onFilterChange, onReset, activeFiltersCount,

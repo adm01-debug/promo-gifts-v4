@@ -38,7 +38,7 @@ const PROBE_TIMEOUT_MS = 5000; // Increased from 2.5s to 5s to avoid false posit
 
 let cached: CloudStatusSnapshot | null = null;
 let inFlight: Promise<CloudStatusSnapshot> | null = null;
-let consecutiveFailures = 0; 
+let consecutiveFailures = 0;
 
 export interface StatusHistoryEntry {
   status: CloudStatus;
@@ -61,9 +61,16 @@ function getStatusHistory(): StatusHistoryEntry[] {
 }
 
 function saveStatusHistory(entry: StatusHistoryEntry) {
-  const history = getStatusHistory();
-  history.push(entry);
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(-100))); // Keep last 100
+  try {
+    const history = getStatusHistory();
+    history.push(entry);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(-100))); // Keep last 100
+  } catch (error) {
+    logger.warn('[CloudStatus] failed to persist status history', {
+      HISTORY_KEY,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 export function getStatusTimeline() {
@@ -72,11 +79,16 @@ export function getStatusTimeline() {
 
 const FAILURE_THRESHOLD = 2; // Need 2 consecutive full failures to go 'down'
 
-const target: EventTarget = typeof EventTarget !== 'undefined' ? new EventTarget() : ({
-  addEventListener() {},
-  removeEventListener() {},
-  dispatchEvent() { return true; },
-} as unknown as EventTarget);
+const target: EventTarget =
+  typeof EventTarget !== 'undefined'
+    ? new EventTarget()
+    : ({
+        addEventListener() {},
+        removeEventListener() {},
+        dispatchEvent() {
+          return true;
+        },
+      } as unknown as EventTarget);
 
 const EVENT_NAME = 'cloud-status-change';
 
@@ -94,8 +106,14 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const t = setTimeout(() => reject(new Error(`timeout ${ms}ms`)), ms);
     p.then(
-      (v) => { clearTimeout(t); resolve(v); },
-      (e) => { clearTimeout(t); reject(e); },
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(t);
+        reject(e);
+      },
     );
   });
 }
@@ -125,7 +143,10 @@ async function checkRest(): Promise<{ ok: boolean; ms: number }> {
       PROBE_TIMEOUT_MS,
     );
     // PostgREST typically returns 200/404 for HEAD /
-    return { ok: res.ok || res.status === 404 || res.status === 401, ms: Math.round(performance.now() - t0) };
+    return {
+      ok: res.ok || res.status === 404 || res.status === 401,
+      ms: Math.round(performance.now() - t0),
+    };
   } catch {
     return { ok: false, ms: Math.round(performance.now() - t0) };
   }
@@ -134,17 +155,17 @@ async function checkRest(): Promise<{ ok: boolean; ms: number }> {
 function deriveStatus(signals: CloudStatusSnapshot['signals']): CloudStatus {
   const okSignals = [signals.auth.ok, signals.bridge.ok, signals.rest.ok];
   const okCount = okSignals.filter(Boolean).length;
-  
+
   if (okCount === 3) {
     consecutiveFailures = 0;
     return 'healthy';
   }
-  
+
   if (okCount === 2) {
     consecutiveFailures = 0;
     return 'warming';
   }
-  
+
   if (okCount === 1) {
     consecutiveFailures = 0;
     return 'degraded';
@@ -152,12 +173,12 @@ function deriveStatus(signals: CloudStatusSnapshot['signals']): CloudStatus {
 
   // okCount === 0: Full failure detected
   consecutiveFailures++;
-  
+
   // If we don't have enough consecutive failures yet, return 'degraded' instead of 'down'
   if (consecutiveFailures < FAILURE_THRESHOLD) {
     return 'degraded';
   }
-  
+
   return 'down';
 }
 
@@ -183,17 +204,20 @@ export async function probeCloudStatus(force = false): Promise<CloudStatusSnapsh
       signals,
       checkedAt: Date.now(),
     };
-    
+
     saveStatusHistory({
       status: snapshot.status,
       timestamp: snapshot.checkedAt,
-      consecutiveFailures
+      consecutiveFailures,
     });
 
     const previous = cached?.status;
     cached = snapshot;
     if (previous !== snapshot.status) {
-      logger.warn(`[CloudStatus] state change ${previous ?? 'unknown'} → ${snapshot.status}`, signals);
+      logger.warn(
+        `[CloudStatus] state change ${previous ?? 'unknown'} → ${snapshot.status}`,
+        signals,
+      );
       target.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: snapshot }));
     }
     return snapshot;
@@ -210,9 +234,7 @@ export function getCachedCloudStatus(): CloudStatusSnapshot | null {
   return cached;
 }
 
-export function onCloudStatusChange(
-  cb: (snapshot: CloudStatusSnapshot) => void,
-): () => void {
+export function onCloudStatusChange(cb: (snapshot: CloudStatusSnapshot) => void): () => void {
   const handler = (e: Event) => cb((e as CustomEvent<CloudStatusSnapshot>).detail);
   target.addEventListener(EVENT_NAME, handler);
   return () => target.removeEventListener(EVENT_NAME, handler);
@@ -237,8 +259,7 @@ export async function ensureCloudReady(
   let attempt = 0;
   let snap = await probeCloudStatus(false);
 
-  const isReady = (s: CloudStatus) =>
-    s === 'healthy' || (acceptWarming && s === 'warming');
+  const isReady = (s: CloudStatus) => s === 'healthy' || (acceptWarming && s === 'warming');
 
   while (!isReady(snap.status) && performance.now() - start < totalTimeoutMs) {
     attempt++;

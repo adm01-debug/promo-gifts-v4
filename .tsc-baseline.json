@@ -1,6 +1,4 @@
 {
-  "generatedAt": "2026-05-23T19:03:16.446Z",
-  "totalErrors": 1060,
   "counts": {
     "src/components/admin/DiscountApprovalQueue.tsx": {
       "TS18048": 1
@@ -50,9 +48,6 @@
     },
     "src/components/admin/products/ProductFormFullscreen.tsx": {
       "TS2352": 1
-    },
-    "src/components/admin/products/ProductFormHelpers.tsx": {
-      "TS7016": 1
     },
     "src/components/admin/products/ProductFormStepContent.tsx": {
       "TS2322": 7
@@ -151,40 +146,20 @@
       "TS18048": 3
     },
     "src/components/compare/AIComparisonAdvisor.tsx": {
-      "TS2339": 3,
-      "TS2551": 2
+      "TS2339": 1
     },
     "src/components/compare/ComparisonDuelView.tsx": {
-      "TS2339": 5,
-      "TS2345": 1,
-      "TS2551": 2
-    },
-    "src/components/compare/ComparisonMobileView.tsx": {
-      "TS18047": 1,
-      "TS18048": 1,
-      "TS2339": 1,
-      "TS2345": 1,
-      "TS2551": 1
+      "TS2339": 3
     },
     "src/components/compare/ComparisonPresentationLauncher.tsx": {
-      "TS2339": 2,
-      "TS2345": 1,
-      "TS2551": 2,
+      "TS2339": 1,
       "TS7006": 4
-    },
-    "src/components/compare/ComparisonRadarChart.tsx": {
-      "TS2551": 2
     },
     "src/components/compare/ComparisonScoreCard.tsx": {
       "TS2322": 2
     },
     "src/components/compare/ExportComparisonButton.tsx": {
       "TS2339": 2
-    },
-    "src/components/compare/FloatingCompareBar.tsx": {
-      "TS18047": 1,
-      "TS2345": 1,
-      "TS2488": 1
     },
     "src/components/compare/HistoricalPriceOverlay.tsx": {
       "TS2345": 1,
@@ -208,8 +183,7 @@
       "TS2345": 1
     },
     "src/components/expert/chat/ChatInputBar.tsx": {
-      "TS2322": 1,
-      "TS2552": 1
+      "TS2322": 1
     },
     "src/components/expert/chat/ChatMessageList.tsx": {
       "TS2322": 1
@@ -332,9 +306,6 @@
     },
     "src/components/mockup/MockupProductSelector.tsx": {
       "TS2345": 2
-    },
-    "src/components/mockup/MockupResultCard.tsx": {
-      "TS7016": 1
     },
     "src/components/mockup/TechniqueColorConfigDialog.tsx": {
       "TS2304": 3
@@ -492,9 +463,6 @@
     "src/components/quotes/QuoteItemsTable.tsx": {
       "TS2719": 1
     },
-    "src/components/quotes/QuoteKanbanBoard.tsx": {
-      "TS7016": 1
-    },
     "src/components/quotes/QuoteRowQuickActions.tsx": {
       "TS2367": 1
     },
@@ -516,22 +484,13 @@
       "TS2339": 1
     },
     "src/components/search/AdvancedSearch.tsx": {
-      "TS2304": 6,
       "TS2345": 1
     },
     "src/components/search/GlobalSearch.tsx": {
       "TS2322": 1
     },
-    "src/components/search/GlobalSearchIdleState.tsx": {
-      "TS2322": 1
-    },
     "src/components/search/GlobalSearchPalette.tsx": {
       "TS2339": 1
-    },
-    "src/components/search/SearchWithSuggestions.tsx": {
-      "TS2304": 1,
-      "TS2552": 1,
-      "TS2687": 1
     },
     "src/components/search/useGlobalSearch.ts": {
       "TS2322": 2,
@@ -623,9 +582,6 @@
     "src/hooks/common/useGenericFuzzySearch.ts": {
       "TS2322": 1
     },
-    "src/hooks/common/useOrgData.ts": {
-      "TS2589": 1
-    },
     "src/hooks/comparison/useComparisonWeights.ts": {
       "TS2352": 1
     },
@@ -675,10 +631,6 @@
     "src/hooks/intelligence/useScheduledReports.ts": {
       "TS2322": 1
     },
-    "src/hooks/intelligence/useSpeechRecognition.ts": {
-      "TS2687": 2,
-      "TS2717": 2
-    },
     "src/hooks/intelligence/useStockHistory.ts": {
       "TS2769": 2
     },
@@ -689,8 +641,7 @@
       "TS2769": 1
     },
     "src/hooks/kit-builder/useKitBuilderPageState.ts": {
-      "TS2345": 1,
-      "TS7016": 1
+      "TS2345": 1
     },
     "src/hooks/kit-builder/useKitBuilderTransformers.ts": {
       "TS2345": 4
@@ -893,9 +844,6 @@
     "src/pages/SidebarQAPage.tsx": {
       "TS2322": 1
     },
-    "src/pages/admin/AdminClientPerformancePage.tsx": {
-      "TS2322": 1
-    },
     "src/pages/admin/DevChallengeExamplesPage.tsx": {
       "TS2322": 1
     },
@@ -935,9 +883,6 @@
       "TS2339": 1,
       "TS2345": 2
     },
-    "src/pages/collections/CollectionsPage.tsx": {
-      "TS2304": 2
-    },
     "src/pages/filters/useFiltersPageState.ts": {
       "TS2339": 1,
       "TS2345": 3
@@ -964,14 +909,11 @@
       "TS2352": 1
     },
     "src/pages/products/ComparePage.tsx": {
-      "TS18047": 3,
-      "TS2322": 4,
-      "TS2345": 1,
-      "TS2551": 2
+      "TS2322": 3
     },
     "src/pages/products/FavoritesPage.tsx": {
       "TS2322": 9,
-      "TS2339": 2,
+      "TS2339": 1,
       "TS2345": 1
     },
     "src/pages/products/FiltersPage.tsx": {
@@ -1000,18 +942,13 @@
     "src/pages/quotes/QuoteBuilderPage.tsx": {
       "TS2339": 1
     },
-    "src/pages/quotes/QuoteViewPage.tsx": {
-      "TS2322": 1,
-      "TS2345": 3
-    },
     "src/pages/quotes/QuotesKanbanPage.tsx": {
       "TS2345": 1,
       "TS2769": 1
     },
     "src/pages/quotes/QuotesListPage.tsx": {
       "TS2345": 1,
-      "TS2554": 1,
-      "TS7016": 1
+      "TS2554": 1
     },
     "src/pages/quotes/quote-view/QuoteActionHandlers.ts": {
       "TS2345": 5,
@@ -1032,9 +969,6 @@
       "TS2339": 1,
       "TS2769": 3
     },
-    "src/pages/quotes/useQuotesListPage.ts": {
-      "TS7016": 1
-    },
     "src/pages/trends/TrendsCharts.tsx": {
       "TS18046": 1,
       "TS18047": 2,
@@ -1054,9 +988,6 @@
     "src/services/quoteService.ts": {
       "TS2322": 1
     },
-    "src/tests/AdminStructuralComparison.test.tsx": {
-      "TS2304": 19
-    },
     "src/tests/MockupDeletion.test.tsx": {
       "TS2769": 1
     },
@@ -1066,9 +997,6 @@
     "src/utils/color-image-resolver.ts": {
       "TS2305": 1
     },
-    "src/utils/kitPdfGenerator.ts": {
-      "TS2322": 10
-    },
     "src/utils/personalizationExport.ts": {
       "TS2322": 2
     },
@@ -1077,12 +1005,14 @@
     },
     "src/utils/product-mapper.ts": {
       "TS2322": 3,
-      "TS2339": 6,
+      "TS2339": 5,
       "TS2345": 1,
       "TS2551": 1
     },
     "src/utils/productPdfExport.ts": {
       "TS18048": 1
     }
-  }
+  },
+  "generatedAt": "2026-05-24T14:12:18.000Z",
+  "totalErrors": 970
 }

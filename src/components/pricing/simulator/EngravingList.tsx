@@ -4,7 +4,6 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Paintbrush, Palette, Ruler, GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ConfiguredEngraving } from "./types";
-import { formatCurrency } from './utils';
 
 interface EngravingListProps {
   engravings: ConfiguredEngraving[];

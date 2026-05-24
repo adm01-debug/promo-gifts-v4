@@ -7,28 +7,25 @@
  * - Código de orçamento automático
  */
 
-import { useMemo, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Calculator, 
-  Clock, 
-  TrendingDown, 
-  AlertCircle, 
-  Copy, 
+import {
+  Calculator,
+  Clock,
+  TrendingDown,
+  AlertCircle,
+  Copy,
   CheckCircle2,
   Info,
   Loader2
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { 
-  useCustomizationPriceLegacy, 
-  useFaixasPrecoOficial, 
-  type CustomizationPriceV2 
+import {
+  useCustomizationPriceLegacy, type CustomizationPriceV2
 } from '@/hooks/simulation';
 import { formatCurrency, formatNumber } from './utils';
 import type { Product, ProductTechnique } from "./types";

@@ -1,11 +1,9 @@
-import { Suspense, lazy } from "react";
+import { Suspense } from "react";
 import { lazyWithRetry } from "@/lib/lazyWithRetry";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
 
 // Lazy-loaded global components
 const OnboardingTour = lazyWithRetry(() => import("@/components/onboarding/OnboardingTour").then(m => ({ default: m.OnboardingTour })));
-const ExpertChatButton = lazyWithRetry(() => import("@/components/expert/ExpertChatButton").then(m => ({ default: m.ExpertChatButton })));
+const _ExpertChatButton = lazyWithRetry(() => import("@/components/expert/ExpertChatButton").then(m => ({ default: m.ExpertChatButton })));
 const EnhancedSpotlight = lazyWithRetry(() => import("@/components/common/EnhancedSpotlight").then(m => ({ default: m.EnhancedSpotlight })));
 const SmartMobileNav = lazyWithRetry(() => import("@/components/mobile/SmartMobileNav").then(m => ({ default: m.SmartMobileNav })));
 const QuickQuoteFAB = lazyWithRetry(() => import("@/components/quotes/QuickQuoteFAB").then(m => ({ default: m.QuickQuoteFAB })));
