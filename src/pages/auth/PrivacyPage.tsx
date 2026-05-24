@@ -1,7 +1,8 @@
 import { PageSEO } from "@/components/seo/PageSEO";
 import { Link } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default function PrivacyPage() {
   return (
@@ -9,12 +10,17 @@ export default function PrivacyPage() {
       <PageSEO title="Política de Privacidade" path="/privacidade" />
       <div className="mx-auto max-w-3xl space-y-8">
         <header className="space-y-4">
-          <Button variant="ghost" asChild className="-ml-2 gap-2 text-muted-foreground">
-            <Link to="/auth">
-              <ChevronLeft className="h-4 w-4" />
-              Voltar
-            </Link>
-          </Button>
+          <Link
+            to="/auth"
+            data-testid="privacy-back-link"
+            className={cn(
+              buttonVariants({ variant: "ghost" }),
+              "-ml-2 gap-2 text-muted-foreground"
+            )}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Voltar
+          </Link>
           <h1 data-testid="page-title-privacidade" className="font-display text-4xl font-bold tracking-tight">Política de Privacidade</h1>
           <p className="text-muted-foreground">Última atualização: 16 de maio de 2026</p>
         </header>
