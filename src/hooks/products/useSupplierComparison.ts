@@ -82,7 +82,7 @@ export function useSupplierComparison(product: Product | null | undefined) {
   return { result, isLoading };
 }
 
-/** Agrupa produtos de uma categoria por supplier (utilitário auxiliar). */
+/** Agrupa produtos de uma categoria por supplier (utilitario auxiliar). */
 export function getSupplierProductsInCategory(
   products: Product[],
   categoryId: string | number,
@@ -91,18 +91,28 @@ export function getSupplierProductsInCategory(
   products.forEach((product) => {
     if (product.category.id !== categoryId) return;
     const supplierId = product.supplier.id;
-    if (!supplierMap.has(supplierId)) {
-      supplierMap.set(supplierId, []);
+    let supplierProducts = supplierMap.get(supplierId);
+    if (!supplierProducts) {
+      supplierProducts = [];
+      supplierMap.set(supplierId, supplierProducts);
     }
-    supplierMap.get(supplierId)!.push(product);
+    supplierProducts.push(product);
   });
   return supplierMap;
 }
 
 function calculateNameSimilarity(a: string, b: string): number {
-  const wordsA = a.toLowerCase().split(/\s+/).filter(w => w.length > 2);
-  const wordsB = new Set(b.toLowerCase().split(/\s+/).filter(w => w.length > 2));
+  const wordsA = a
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((w) => w.length > 2);
+  const wordsB = new Set(
+    b
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 2),
+  );
   if (!wordsA.length || !wordsB.size) return 0;
-  const matches = wordsA.filter(w => wordsB.has(w)).length;
+  const matches = wordsA.filter((w) => wordsB.has(w)).length;
   return matches / Math.max(wordsA.length, wordsB.size);
 }
