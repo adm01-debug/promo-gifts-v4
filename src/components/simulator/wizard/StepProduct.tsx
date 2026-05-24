@@ -9,15 +9,15 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { 
-  Package, 
-  Search, 
-  X, 
+import {
+  Package,
+  Search,
+  X,
   ChevronRight,
   Sparkles,
   Clock,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useExternalProductSearch } from '@/hooks/simulation';
