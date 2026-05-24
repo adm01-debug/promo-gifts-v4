@@ -1,5 +1,5 @@
-/**
- * TechniqueMultiSelector — Grid of available techniques to toggle.
+﻿/**
+ * TechniqueMultiSelector â€” Grid of available techniques to toggle.
  */
 import { useQuery } from '@tanstack/react-query';
 import { invokeExternalRpc } from '@/lib/external-rpc';
@@ -9,11 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { AlertCircle, Package, Paintbrush, Palette, Ruler, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
-<<<<<<< HEAD
 import type { ProductTechnique, SelectedTechniqueConfig } from './types';
-=======
-import type { ProductTechnique, SelectedTechniqueConfig } from "./types";
->>>>>>> origin/main
 
 interface Props {
   productId: string;
@@ -44,7 +40,7 @@ export function TechniqueMultiSelector({
             techList.push({
               id: opt.technique_id,
               techniqueId: opt.technique_id,
-              techniqueName: opt.tecnica_nome || 'Técnica',
+              techniqueName: opt.tecnica_nome || 'TÃ©cnica',
               techniqueCode: opt.codigo_tabela || '',
               componentName: loc.location_name,
               locationName: loc.location_name,
@@ -79,14 +75,14 @@ export function TechniqueMultiSelector({
     return (
       <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-destructive">
         <AlertCircle className="mb-2 h-5 w-5" />
-        <p>Erro ao carregar técnicas</p>
+        <p>Erro ao carregar tÃ©cnicas</p>
       </div>
     );
   if (!techniques?.length)
     return (
       <div className="py-8 text-center text-muted-foreground">
         <Paintbrush className="mx-auto mb-2 h-8 w-8 opacity-50" />
-        <p>Este produto não possui técnicas de personalização cadastradas</p>
+        <p>Este produto nÃ£o possui tÃ©cnicas de personalizaÃ§Ã£o cadastradas</p>
       </div>
     );
 
@@ -103,7 +99,7 @@ export function TechniqueMultiSelector({
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Selecione uma ou mais técnicas de gravação para comparar
+        Selecione uma ou mais tÃ©cnicas de gravaÃ§Ã£o para comparar
       </p>
       {Object.entries(grouped).map(([componentName, techs]) => (
         <div key={componentName} className="space-y-2">
@@ -133,7 +129,7 @@ export function TechniqueMultiSelector({
                     {tech.isDefault && (
                       <Badge variant="secondary" className="text-xs">
                         <Sparkles className="mr-1 h-3 w-3" />
-                        Padrão
+                        PadrÃ£o
                       </Badge>
                     )}
                   </div>

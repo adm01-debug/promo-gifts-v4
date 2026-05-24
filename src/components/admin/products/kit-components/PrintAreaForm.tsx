@@ -1,14 +1,10 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Target, Save, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-<<<<<<< HEAD
 import type { PrintAreaFormData } from './types';
-=======
-import type { PrintAreaFormData } from "./types";
->>>>>>> origin/main
 
 interface Props {
   initial: PrintAreaFormData;
@@ -25,24 +21,24 @@ export function PrintAreaForm({ initial, onSave, onCancel, isSaving }: Props) {
 
   const handleSave = () => {
     if (!form.location_name.trim()) {
-      toast.error('Nome do local é obrigatório');
+      toast.error('Nome do local Ã© obrigatÃ³rio');
       return;
     }
     onSave(form);
   };
 
-  const areaNamePreview = [form.location_name, form.technique_name].filter(Boolean).join(' — ');
+  const areaNamePreview = [form.location_name, form.technique_name].filter(Boolean).join(' â€” ');
 
   return (
     <div className="ml-6 space-y-2.5 rounded-md border border-primary/20 bg-primary/5 p-2.5">
       <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
         <Target className="h-3 w-3" />
-        Área de Gravação
+        Ãrea de GravaÃ§Ã£o
       </div>
 
       <div className="grid grid-cols-3 gap-2">
         <div className="space-y-1">
-          <Label className="text-[10px]">Código Local</Label>
+          <Label className="text-[10px]">CÃ³digo Local</Label>
           <Input
             value={form.location_code}
             onChange={(e) => set('location_code', e.target.value)}
@@ -55,12 +51,12 @@ export function PrintAreaForm({ initial, onSave, onCancel, isSaving }: Props) {
           <Input
             value={form.location_name}
             onChange={(e) => set('location_name', e.target.value)}
-            placeholder="Ex: Cabo, Frente, 360°"
+            placeholder="Ex: Cabo, Frente, 360Â°"
             className="h-7 text-xs"
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-[10px]">Técnica</Label>
+          <Label className="text-[10px]">TÃ©cnica</Label>
           <Input
             value={form.technique_name}
             onChange={(e) => set('technique_name', e.target.value)}
@@ -78,7 +74,7 @@ export function PrintAreaForm({ initial, onSave, onCancel, isSaving }: Props) {
 
       <div className="grid grid-cols-5 gap-2">
         <div className="space-y-1">
-          <Label className="text-[10px]">Larg. Máx (mm)</Label>
+          <Label className="text-[10px]">Larg. MÃ¡x (mm)</Label>
           <Input
             type="number"
             value={form.max_width_mm ?? ''}
@@ -89,7 +85,7 @@ export function PrintAreaForm({ initial, onSave, onCancel, isSaving }: Props) {
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-[10px]">Alt. Máx (mm)</Label>
+          <Label className="text-[10px]">Alt. MÃ¡x (mm)</Label>
           <Input
             type="number"
             value={form.max_height_mm ?? ''}
@@ -100,7 +96,7 @@ export function PrintAreaForm({ initial, onSave, onCancel, isSaving }: Props) {
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-[10px]">ID Técnica</Label>
+          <Label className="text-[10px]">ID TÃ©cnica</Label>
           <Input
             value={form.technique_id}
             onChange={(e) => set('technique_id', e.target.value)}
@@ -109,7 +105,7 @@ export function PrintAreaForm({ initial, onSave, onCancel, isSaving }: Props) {
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-[10px]">ID Tabela Preço</Label>
+          <Label className="text-[10px]">ID Tabela PreÃ§o</Label>
           <Input
             value={form.tabela_preco_id}
             onChange={(e) => set('tabela_preco_id', e.target.value)}
@@ -130,11 +126,11 @@ export function PrintAreaForm({ initial, onSave, onCancel, isSaving }: Props) {
       </div>
 
       <div className="space-y-1">
-        <Label className="text-[10px]">Observações</Label>
+        <Label className="text-[10px]">ObservaÃ§Ãµes</Label>
         <Input
           value={form.notes}
           onChange={(e) => set('notes', e.target.value)}
-          placeholder="Observações sobre a área de gravação"
+          placeholder="ObservaÃ§Ãµes sobre a Ã¡rea de gravaÃ§Ã£o"
           className="h-7 text-xs"
         />
       </div>

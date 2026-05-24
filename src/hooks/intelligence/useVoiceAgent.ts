@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+﻿import { useState, useCallback, useRef, useEffect } from 'react';
 import { useScribe } from '@elevenlabs/react';
 
 import { playTtsAudio } from '@/hooks/voice/playTtsAudio';
@@ -11,19 +11,11 @@ import {
   stopWebSpeech,
   isWebSpeechSupported,
   isWebSpeechActive,
-<<<<<<< HEAD
 } from '@/hooks/voice/webSpeechFallback';
 import type { VoiceAgentAction, VoiceAgentPhase, UseVoiceAgentOptions } from '@/hooks/voice/types';
 import { logger } from '@/lib/logger';
 
 export type { VoiceAgentAction, VoiceAgentPhase } from '@/hooks/voice/types';
-=======
-} from "@/hooks/voice/webSpeechFallback";
-import type { VoiceAgentAction, VoiceAgentPhase, UseVoiceAgentOptions } from "@/hooks/voice/types";
-import { logger } from '@/lib/logger';
-
-export type { VoiceAgentAction, VoiceAgentPhase } from "@/hooks/voice/types";
->>>>>>> origin/main
 
 const ERROR_RESET_DELAY_MS = 5000;
 const PROCESSING_ERROR_RESET_DELAY_MS = 3000;
@@ -249,12 +241,12 @@ export function useVoiceAgent({ onAction, onError }: UseVoiceAgentOptions = {}) 
     });
   }, [clearResetPhaseTimer, clearSessionStartTimer, scheduleIdleReset]);
 
-  // === Handle Scribe errors — try fallback ===
+  // === Handle Scribe errors â€” try fallback ===
   const handleScribeError = useCallback(
     (_err: unknown) => {
       // Invalidate cached token since connection failed
       invalidateScribeTokenCache();
-      // Only log at debug level — this is expected when ElevenLabs is unavailable
+      // Only log at debug level â€” this is expected when ElevenLabs is unavailable
       logger.log('[Voice] Scribe unavailable, switching to browser speech recognition...');
       isStartingRef.current = false;
       clearResetPhaseTimer();
@@ -262,18 +254,18 @@ export function useVoiceAgent({ onAction, onError }: UseVoiceAgentOptions = {}) 
       forceDisconnectScribe();
       setPartialTranscript('');
 
-      // Immediately try Web Speech API fallback — no error state shown to user
+      // Immediately try Web Speech API fallback â€” no error state shown to user
       const fallbackStarted = startFallbackSTT();
       if (fallbackStarted) {
         isStartingRef.current = true;
-        // Don't set error — the user doesn't need to know about the internal switch
+        // Don't set error â€” the user doesn't need to know about the internal switch
         setError(null);
         setPhase('idle'); // Will transition to listening when fallback starts
         return;
       }
 
-      // No fallback available — show error
-      const message = 'Reconhecimento de voz não disponível neste navegador.';
+      // No fallback available â€” show error
+      const message = 'Reconhecimento de voz nÃ£o disponÃ­vel neste navegador.';
       setError(message);
       setPhase('error');
       onErrorRef.current?.(message);
@@ -296,7 +288,7 @@ export function useVoiceAgent({ onAction, onError }: UseVoiceAgentOptions = {}) 
   const requestMicPermission = useCallback(async (): Promise<boolean> => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // Stop all tracks immediately — we just needed permission
+      // Stop all tracks immediately â€” we just needed permission
       stream.getTracks().forEach((t) => t.stop());
       return true;
     } catch (err) {
@@ -334,7 +326,7 @@ export function useVoiceAgent({ onAction, onError }: UseVoiceAgentOptions = {}) 
     if (!hasMic) {
       isStartingRef.current = false;
       const message =
-        'Permissão do microfone negada. Habilite o microfone nas configurações do navegador.';
+        'PermissÃ£o do microfone negada. Habilite o microfone nas configuraÃ§Ãµes do navegador.';
       setError(message);
       setPhase('error');
       onErrorRef.current?.(message);
@@ -349,7 +341,7 @@ export function useVoiceAgent({ onAction, onError }: UseVoiceAgentOptions = {}) 
 
       sessionStartTimerRef.current = setTimeout(() => {
         if (!isStartingRef.current) return;
-        // Timeout → try fallback
+        // Timeout â†’ try fallback
         handleScribeError(new Error('Scribe session start timeout'));
       }, SESSION_START_TIMEOUT_MS);
 
@@ -363,7 +355,7 @@ export function useVoiceAgent({ onAction, onError }: UseVoiceAgentOptions = {}) 
       });
 
       logger.log('[Voice] Scribe connection initiated');
-      // If Scribe fails, onError → handleScribeError → fallback kicks in automatically
+      // If Scribe fails, onError â†’ handleScribeError â†’ fallback kicks in automatically
     } catch (err) {
       logger.log('[Voice] Scribe connection failed, trying fallback...');
       clearSessionStartTimer();

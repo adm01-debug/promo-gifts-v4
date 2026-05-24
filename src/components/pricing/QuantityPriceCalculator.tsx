@@ -1,5 +1,5 @@
-/**
- * QuantityPriceCalculator — Main orchestrator.
+﻿/**
+ * QuantityPriceCalculator â€” Main orchestrator.
  * Sub-components extracted to calculator/ folder.
  */
 import { useState, useCallback } from 'react';
@@ -16,7 +16,6 @@ import { ProductSearch as UnifiedProductSearch } from './simulator/ProductSearch
 import { TechniqueMultiSelector } from './calculator/TechniqueMultiSelector';
 import { TechniqueConfigCard } from './calculator/TechniqueConfigCard';
 import { QuantityComparisonTable } from './calculator/QuantityComparisonTable';
-<<<<<<< HEAD
 import {
   type CalcProduct,
   type ProductTechnique,
@@ -24,10 +23,6 @@ import {
   formatNumber,
 } from './calculator/types';
 import type { Product as SimulatorProduct } from './simulator/types';
-=======
-import { type CalcProduct, type ProductTechnique, type SelectedTechniqueConfig, formatNumber } from "./calculator/types";
-import type { Product as SimulatorProduct } from "./simulator/types";
->>>>>>> origin/main
 
 interface QuantityPriceCalculatorProps {
   productBasePrice?: number;
@@ -133,7 +128,7 @@ export function QuantityPriceCalculator({ className }: QuantityPriceCalculatorPr
             <CardTitle className="font-display text-lg">1. Selecione o Produto</CardTitle>
           </div>
           <CardDescription>
-            Escolha o produto base para simular preços de gravação em diferentes tiragens
+            Escolha o produto base para simular preÃ§os de gravaÃ§Ã£o em diferentes tiragens
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -151,10 +146,10 @@ export function QuantityPriceCalculator({ className }: QuantityPriceCalculatorPr
             <div className="flex items-center gap-2">
               <Paintbrush className="h-5 w-5 text-primary" />
               <CardTitle className="font-display text-lg">
-                2. Selecione as Técnicas de Gravação
+                2. Selecione as TÃ©cnicas de GravaÃ§Ã£o
               </CardTitle>
             </div>
-            <CardDescription>Escolha uma ou mais técnicas para comparar preços</CardDescription>
+            <CardDescription>Escolha uma ou mais tÃ©cnicas para comparar preÃ§os</CardDescription>
           </CardHeader>
           <CardContent>
             <TechniqueMultiSelector
@@ -172,9 +167,9 @@ export function QuantityPriceCalculator({ className }: QuantityPriceCalculatorPr
           <CardHeader>
             <div className="flex items-center gap-2">
               <Palette className="h-5 w-5 text-primary" />
-              <CardTitle className="font-display text-lg">3. Configure as Opções</CardTitle>
+              <CardTitle className="font-display text-lg">3. Configure as OpÃ§Ãµes</CardTitle>
             </div>
-            <CardDescription>Defina cores e tamanho para cada técnica selecionada</CardDescription>
+            <CardDescription>Defina cores e tamanho para cada tÃ©cnica selecionada</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -197,11 +192,11 @@ export function QuantityPriceCalculator({ className }: QuantityPriceCalculatorPr
           <CardHeader>
             <div className="flex items-center gap-2">
               <Calculator className="h-5 w-5 text-primary" />
-              <CardTitle className="font-display text-lg">4. Compare Preços por Tiragem</CardTitle>
+              <CardTitle className="font-display text-lg">4. Compare PreÃ§os por Tiragem</CardTitle>
             </div>
             <CardDescription>
-              Veja como o preço por unidade muda conforme a quantidade.{' '}
-              <Trophy className="inline h-3 w-3 text-success" /> = melhor preço.
+              Veja como o preÃ§o por unidade muda conforme a quantidade.{' '}
+              <Trophy className="inline h-3 w-3 text-success" /> = melhor preÃ§o.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -253,7 +248,7 @@ export function QuantityPriceCalculator({ className }: QuantityPriceCalculatorPr
               onClick={handleCreateQuote}
             >
               <FileText className="h-5 w-5" />
-              Criar Orçamento a partir desta Simulação
+              Criar OrÃ§amento a partir desta SimulaÃ§Ã£o
             </Button>
           </CardContent>
         </Card>

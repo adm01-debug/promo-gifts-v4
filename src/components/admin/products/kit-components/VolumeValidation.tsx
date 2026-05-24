@@ -1,12 +1,8 @@
-import { Box, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
+﻿import { Box, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-<<<<<<< HEAD
 import type { KitComponent, BoxInternalDimensions } from './types';
-=======
-import type { KitComponent, BoxInternalDimensions } from "./types";
->>>>>>> origin/main
 
 export function VolumeValidation({
   components,
@@ -49,7 +45,7 @@ export function VolumeValidation({
       <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
         <Box className="h-4 w-4 shrink-0" />
         <span>
-          Preencha as <strong>dimensões internas</strong> na aba Detalhes para validar volume dos
+          Preencha as <strong>dimensÃµes internas</strong> na aba Detalhes para validar volume dos
           componentes.
         </span>
       </div>
@@ -76,7 +72,7 @@ export function VolumeValidation({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Box className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium text-foreground">Validação de Volume</span>
+          <span className="font-medium text-foreground">ValidaÃ§Ã£o de Volume</span>
         </div>
         <div className="flex items-center gap-1.5">
           {fits ? (
@@ -91,7 +87,7 @@ export function VolumeValidation({
               variant="outline"
               className="gap-1 border-destructive/50 bg-destructive/10 px-1.5 py-0 text-[10px] text-destructive"
             >
-              <XCircle className="h-3 w-3" /> NÃO CABE
+              <XCircle className="h-3 w-3" /> NÃƒO CABE
             </Badge>
           )}
         </div>
@@ -102,9 +98,9 @@ export function VolumeValidation({
           <span>
             Volume usado:{' '}
             <strong className="text-foreground">
-              {(totalComponentsVolume / 1000).toFixed(0)} cm³
+              {(totalComponentsVolume / 1000).toFixed(0)} cmÂ³
             </strong>{' '}
-            / {(boxVolumeMm3! / 1000).toFixed(0)} cm³
+            / {(boxVolumeMm3! / 1000).toFixed(0)} cmÂ³
           </span>
           <span className={cn('font-bold', fits ? 'text-success' : 'text-destructive')}>
             {usagePercent}%
@@ -118,9 +114,9 @@ export function VolumeValidation({
 
       <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
         <span>
-          Caixa interna: {boxW?.toFixed(0)}×{boxL?.toFixed(0)}×{boxH?.toFixed(0)} mm
+          Caixa interna: {boxW?.toFixed(0)}Ã—{boxL?.toFixed(0)}Ã—{boxH?.toFixed(0)} mm
         </span>
-        {totalWeight > 0 && <span>• Peso total: {(totalWeight / 1000).toFixed(2)} kg</span>}
+        {totalWeight > 0 && <span>â€¢ Peso total: {(totalWeight / 1000).toFixed(2)} kg</span>}
       </div>
 
       {componentVolumes.length > 0 && (
@@ -132,12 +128,12 @@ export function VolumeValidation({
             return (
               <div key={c.id} className="flex items-center justify-between text-[10px]">
                 <span className="flex-1 truncate text-muted-foreground">
-                  {c.component_name || 'Sem nome'} {(c.quantity ?? 1) > 1 ? `×${c.quantity}` : ''}
+                  {c.component_name || 'Sem nome'} {(c.quantity ?? 1) > 1 ? `Ã—${c.quantity}` : ''}
                 </span>
                 {c.hasDimensions ? (
                   <div className="flex shrink-0 items-center gap-2">
                     <span className="font-mono text-muted-foreground">
-                      {c.width_mm}×{c.length_mm}×{c.height_mm} mm
+                      {c.width_mm}Ã—{c.length_mm}Ã—{c.height_mm} mm
                     </span>
                     {itemFits ? (
                       <CheckCircle2 className="h-3 w-3 text-success" />
@@ -146,7 +142,7 @@ export function VolumeValidation({
                     )}
                   </div>
                 ) : (
-                  <span className="italic text-warning">sem dimensões</span>
+                  <span className="italic text-warning">sem dimensÃµes</span>
                 )}
               </div>
             );
@@ -157,7 +153,7 @@ export function VolumeValidation({
       {missingDimensions.length > 0 && (
         <div className="flex items-center gap-1.5 pt-0.5 text-[10px] text-warning">
           <AlertCircle className="h-3 w-3 shrink-0" />
-          {missingDimensions.length} componente(s) sem dimensões — o cálculo pode ser impreciso.
+          {missingDimensions.length} componente(s) sem dimensÃµes â€” o cÃ¡lculo pode ser impreciso.
         </div>
       )}
     </div>
