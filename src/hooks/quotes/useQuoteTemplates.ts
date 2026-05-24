@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/ui";
-import type { Tables } from "@/integrations/supabase/types";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const anySupabase = supabase as any;
 
@@ -10,7 +10,7 @@ const anySupabase = supabase as any;
 // Types
 // ============================================
 
-type _QuoteTemplateRow = Tables<"quote_templates">;
+// Tables<"quote_templates"> type used internally via anySupabase
 
 export interface QuoteTemplateItem {
   productId?: string;
