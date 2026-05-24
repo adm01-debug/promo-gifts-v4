@@ -60,6 +60,7 @@ GRANT EXECUTE ON FUNCTION public.can_access_quote(uuid) TO authenticated, servic
 
 -- 2. QUOTES - SELECT + UPDATE
 DROP POLICY IF EXISTS "org_members_view_quotes" ON public.quotes;
+DROP POLICY IF EXISTS "quotes_select_scope" ON public.quotes;
 CREATE POLICY "quotes_select_scope" ON public.quotes FOR SELECT
 USING (
   user_is_org_member(organization_id) AND (
@@ -71,6 +72,7 @@ USING (
 );
 
 DROP POLICY IF EXISTS "org_members_update_own_quotes" ON public.quotes;
+DROP POLICY IF EXISTS "quotes_update_scope" ON public.quotes;
 CREATE POLICY "quotes_update_scope" ON public.quotes FOR UPDATE
 USING (
   user_is_org_member(organization_id) AND (
@@ -109,5 +111,6 @@ USING (public.can_access_quote(quote_id));
 
 -- 5. QUOTE_VERSIONS - SELECT (INSERT mantem qv_insert_service para service_role)
 DROP POLICY IF EXISTS "org_members_view_quote_versions" ON public.quote_versions;
+DROP POLICY IF EXISTS "quote_versions_select_scope" ON public.quote_versions;
 CREATE POLICY "quote_versions_select_scope" ON public.quote_versions FOR SELECT
 USING (public.can_access_quote(quote_id));
