@@ -21,19 +21,16 @@ on:
 permissions:
   contents: read
 
-env:
-  NODE_VERSION: '20'
-
 jobs:
   lint-typecheck:
     name: Gate 1 - Lint + TypeScript
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: '.nvmrc'
           cache: 'npm'
       - run: npm ci
       - run: npm run typecheck
@@ -44,10 +41,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: '.nvmrc'
           cache: 'npm'
       - run: npm ci
       - run: npm test -- --run 2>/dev/null || npm test --if-present || echo "::warning::test script not defined"
@@ -57,10 +54,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: '.nvmrc'
           cache: 'npm'
       - run: npm ci
       - name: Install Playwright browsers
@@ -88,10 +85,10 @@ jobs:
       VITE_SUPABASE_URL: https://placeholder.supabase.co
       VITE_SUPABASE_PUBLISHABLE_KEY: lighthouse-placeholder-key
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: '.nvmrc'
           cache: 'npm'
       - run: npm ci
       - run: npm run build
@@ -107,10 +104,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: '.nvmrc'
       - name: Run SEO sanity check
         run: node scripts/seo-sanity-check.mjs
 
@@ -120,10 +117,10 @@ jobs:
     timeout-minutes: 10
     needs: [lint-typecheck, seo-sanity]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: '.nvmrc'
           cache: 'npm'
       - run: npm ci
       - run: npm run build
