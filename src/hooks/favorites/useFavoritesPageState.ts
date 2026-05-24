@@ -1,11 +1,12 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import {
+  useEnrichedFavoriteItems,
   useFavoriteLists,
+  useFavoritesGlobalShortcuts,
   useFavoriteTrash,
   useLegacyFavoritesMigration,
 } from '@/hooks/favorites';
-import { useEnrichedFavoriteItems, useFavoritesGlobalShortcuts } from "@/hooks/favorites";
 import { useProductsContext } from '@/contexts/ProductsContext';
 import { useCatalogSelection } from '@/components/catalog/useCatalogSelection';
 import { useUndoStack } from '@/hooks/common';

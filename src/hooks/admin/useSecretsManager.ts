@@ -1,8 +1,9 @@
-import { useState, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { newRequestId, REQUEST_ID_HEADER } from "@/lib/telemetry/requestId";
-import { recordSecretsManagerCall } from "@/lib/telemetry/secretsManagerCallMetrics";
+import { useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
+import { newRequestId, REQUEST_ID_HEADER } from '@/lib/telemetry/requestId';
+import { recordSecretsManagerCall } from '@/lib/telemetry/secretsManagerCallMetrics';
 
 export interface SecretStatus {
   name: string;
@@ -14,7 +15,7 @@ export interface SecretStatus {
   updated_by?: string | null;
   /** E-mail resolvido do `updated_by` (null se não foi possível resolver). */
   updated_by_email?: string | null;
-  source?: "db" | "env" | "none";
+  source?: 'db' | 'env' | 'none';
   env_fallback_active?: boolean;
 }
 
@@ -32,7 +33,7 @@ export interface RotationHistoryEntry {
   previous_suffix: string | null;
   new_suffix: string | null;
   notes: string | null;
-  action_type?: "set" | "rotate";
+  action_type?: 'set' | 'rotate';
 }
 
 export interface SecretMutationResult {
@@ -45,19 +46,19 @@ export interface SecretMutationResult {
   error?: SecretError;
 }
 
-function normalizeError(raw: unknown, fallback = "Erro desconhecido"): SecretError {
-  if (raw && typeof raw === "object") {
+function normalizeError(raw: unknown, fallback = 'Erro desconhecido'): SecretError {
+  if (raw && typeof raw === 'object') {
     const r = raw as Record<string, unknown>;
-    if (r.error && typeof r.error === "object") {
+    if (r.error && typeof r.error === 'object') {
       const e = r.error as Record<string, unknown>;
       return {
-        code: typeof e.code === "string" ? e.code : "unexpected",
-        message: typeof e.message === "string" ? e.message : fallback,
+        code: typeof e.code === 'string' ? e.code : 'unexpected',
+        message: typeof e.message === 'string' ? e.message : fallback,
       };
     }
-    if (typeof r.message === "string") return { code: "unexpected", message: r.message };
+    if (typeof r.message === 'string') return { code: 'unexpected', message: r.message };
   }
-  return { code: "unexpected", message: fallback };
+  return { code: 'unexpected', message: fallback };
 }
 
 /**
@@ -77,14 +78,20 @@ type InvokeBody = {
 };
 
 async function invokeSecretsManager(body: InvokeBody): Promise<{
-  data: { ok?: boolean; secrets?: unknown; history?: unknown; message?: string; [k: string]: unknown } | null;
+  data: {
+    ok?: boolean;
+    secrets?: unknown;
+    history?: unknown;
+    message?: string;
+    [k: string]: unknown;
+  } | null;
   error: { message: string; context?: Response } | null;
   requestId: string;
   status?: number;
 }> {
   const requestId = newRequestId();
   const startedAt = performance.now();
-  const { data, error } = await supabase.functions.invoke("secrets-manager", {
+  const { data, error } = await supabase.functions.invoke('secrets-manager', {
     body,
     headers: { [REQUEST_ID_HEADER]: requestId },
   });
@@ -98,16 +105,19 @@ async function invokeSecretsManager(body: InvokeBody): Promise<{
     durationMs,
     ok: !error && !(data && (data as { ok?: boolean }).ok === false),
     status,
-    errorMessage: error?.message ?? (data && (data as { ok?: boolean }).ok === false
-      ? (typeof (data as { error?: { message?: string } }).error?.message === "string"
+    errorMessage:
+      error?.message ??
+      (data && (data as { ok?: boolean }).ok === false
+        ? typeof (data as { error?: { message?: string } }).error?.message === 'string'
           ? (data as { error: { message: string } }).error.message
-          : undefined)
-      : undefined),
-    errorCode: data && (data as { ok?: boolean }).ok === false
-      ? (typeof (data as { error?: { code?: string } }).error?.code === "string"
+          : undefined
+        : undefined),
+    errorCode:
+      data && (data as { ok?: boolean }).ok === false
+        ? typeof (data as { error?: { code?: string } }).error?.code === 'string'
           ? (data as { error: { code: string } }).error.code
-          : undefined)
-      : undefined,
+          : undefined
+        : undefined,
     requestId,
   });
 
@@ -127,31 +137,47 @@ export function useSecretsManager() {
   const list = useCallback(async (names?: string[]) => {
     setIsLoading(true);
     try {
-      const { data, error, status: httpStatus } = await invokeSecretsManager({ action: "list", names });
+      const {
+        data,
+        error,
+        status: httpStatus,
+      } = await invokeSecretsManager({ action: 'list', names });
       if (error) {
         // Tenta extrair payload estruturado (ex.: { error: { code, message } }) do FunctionsHttpError.
         const ctx = (error as { context?: Response }).context;
         let payload: unknown = null;
-        if (ctx && typeof ctx.json === "function") {
-          try { payload = await ctx.json(); } catch { /* ignore */ }
+        if (ctx && typeof ctx.json === 'function') {
+          try {
+            payload = await ctx.json();
+          } catch {
+            /* ignore */
+          }
         }
         const normalized = normalizeError(payload ?? { message: error.message }, error.message);
         // Mapeia 401/403 para um code amigável quando o backend não enviou um.
-        if ((!payload || normalized.code === "unexpected") && (httpStatus === 401 || httpStatus === 403)) {
-          normalized.code = httpStatus === 401 ? "unauthenticated" : "forbidden";
-          normalized.message = httpStatus === 401
-            ? "Sessão expirada — faça login novamente para ver as credenciais."
-            : "Sem permissão para acessar credenciais (apenas administradores).";
+        if (
+          (!payload || normalized.code === 'unexpected') &&
+          (httpStatus === 401 || httpStatus === 403)
+        ) {
+          normalized.code = httpStatus === 401 ? 'unauthenticated' : 'forbidden';
+          normalized.message =
+            httpStatus === 401
+              ? 'Sessão expirada — faça login novamente para ver as credenciais.'
+              : 'Sem permissão para acessar credenciais (apenas administradores).';
         }
         setListError(normalized);
         // Preserva o snapshot anterior em erros transientes (rede, 5xx, timeout)
         // para que filtros (DB/ENV/AUSENTE) e zonas selecionadas permaneçam
         // visíveis em vez de "resetar" a UI durante um refresh manual.
         // Apenas erros de auth/permissão limpam (estado real desconhecido).
-        if (normalized.code === "unauthenticated" || normalized.code === "forbidden" || normalized.code === "permission_denied") {
+        if (
+          normalized.code === 'unauthenticated' ||
+          normalized.code === 'forbidden' ||
+          normalized.code === 'permission_denied'
+        ) {
           setSecrets([]);
         }
-        toast.error("Erro ao listar credenciais", { description: normalized.message });
+        toast.error('Erro ao listar credenciais', { description: sanitizeError(normalized) });
         return [];
       }
       setListError(null);
@@ -160,82 +186,114 @@ export function useSecretsManager() {
     } catch (err) {
       const normalized = normalizeError(
         err instanceof Error ? { message: err.message } : err,
-        "Falha de rede ao carregar credenciais.",
+        'Falha de rede ao carregar credenciais.',
       );
       setListError(normalized);
-      toast.error("Erro ao listar credenciais", { description: normalized.message });
+      toast.error('Erro ao listar credenciais', { description: sanitizeError(normalized) });
       return [];
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const setSecret = useCallback(async (name: string, value: string): Promise<SecretMutationResult> => {
-    const { data, error } = await invokeSecretsManager({ action: "set", name, value });
-    if (error) {
-      // Try to read structured payload from FunctionsHttpError context
-      const ctx = (error as { context?: Response }).context;
-      let payload: unknown = null;
-      if (ctx && typeof ctx.json === "function") {
-        try { payload = await ctx.json(); } catch { /* ignore */ }
+  const setSecret = useCallback(
+    async (name: string, value: string): Promise<SecretMutationResult> => {
+      const { data, error } = await invokeSecretsManager({ action: 'set', name, value });
+      if (error) {
+        // Try to read structured payload from FunctionsHttpError context
+        const ctx = (error as { context?: Response }).context;
+        let payload: unknown = null;
+        if (ctx && typeof ctx.json === 'function') {
+          try {
+            payload = await ctx.json();
+          } catch {
+            /* ignore */
+          }
+        }
+        return {
+          ok: false,
+          error: normalizeError(payload ?? { message: error.message }, error.message),
+        };
       }
-      return { ok: false, error: normalizeError(payload ?? { message: error.message }, error.message) };
-    }
-    if (data && data.ok === false) {
-      return { ok: false, error: normalizeError(data) };
-    }
-    return {
-      ok: true,
-      was_update: !!data?.was_update,
-      previous_suffix: data?.previous_suffix ?? null,
-      masked_suffix: data?.masked_suffix ?? null,
-      length: data?.length ?? value.length,
-      secret: data?.secret as SecretStatus | undefined,
-    };
-  }, []);
+      if (data && data.ok === false) {
+        return { ok: false, error: normalizeError(data) };
+      }
+      return {
+        ok: true,
+        was_update: !!data?.was_update,
+        previous_suffix: data?.previous_suffix ?? null,
+        masked_suffix: data?.masked_suffix ?? null,
+        length: data?.length ?? value.length,
+        secret: data?.secret as SecretStatus | undefined,
+      };
+    },
+    [],
+  );
 
-  const rotateSecret = useCallback(async (name: string, value: string, notes?: string): Promise<SecretMutationResult> => {
-    const { data, error } = await invokeSecretsManager({ action: "rotate", name, value, notes });
-    if (error) {
-      const ctx = (error as { context?: Response }).context;
-      let payload: unknown = null;
-      if (ctx && typeof ctx.json === "function") {
-        try { payload = await ctx.json(); } catch { /* ignore */ }
+  const rotateSecret = useCallback(
+    async (name: string, value: string, notes?: string): Promise<SecretMutationResult> => {
+      const { data, error } = await invokeSecretsManager({ action: 'rotate', name, value, notes });
+      if (error) {
+        const ctx = (error as { context?: Response }).context;
+        let payload: unknown = null;
+        if (ctx && typeof ctx.json === 'function') {
+          try {
+            payload = await ctx.json();
+          } catch {
+            /* ignore */
+          }
+        }
+        return {
+          ok: false,
+          error: normalizeError(payload ?? { message: error.message }, error.message),
+        };
       }
-      return { ok: false, error: normalizeError(payload ?? { message: error.message }, error.message) };
-    }
-    if (data && data.ok === false) {
-      return { ok: false, error: normalizeError(data) };
-    }
-    return {
-      ok: true,
-      was_update: true,
-      previous_suffix: data?.previous_suffix ?? null,
-      masked_suffix: data?.masked_suffix ?? null,
-      length: data?.length ?? value.length,
-      secret: data?.secret as SecretStatus | undefined,
-    };
-  }, []);
+      if (data && data.ok === false) {
+        return { ok: false, error: normalizeError(data) };
+      }
+      return {
+        ok: true,
+        was_update: true,
+        previous_suffix: data?.previous_suffix ?? null,
+        masked_suffix: data?.masked_suffix ?? null,
+        length: data?.length ?? value.length,
+        secret: data?.secret as SecretStatus | undefined,
+      };
+    },
+    [],
+  );
 
   const getRotationHistory = useCallback(async (name?: string): Promise<RotationHistoryEntry[]> => {
-    const { data, error } = await invokeSecretsManager({ action: "rotation_history", name });
+    const { data, error } = await invokeSecretsManager({ action: 'rotation_history', name });
     if (error) {
-      toast.error("Falha ao carregar histórico", { description: error.message });
+      toast.error('Falha ao carregar histórico', { description: sanitizeError(error) });
       return [];
     }
     return (data?.history ?? []) as RotationHistoryEntry[];
   }, []);
 
-  const refreshCache = useCallback(async (name?: string): Promise<{ ok: boolean; message?: string; error?: SecretError }> => {
-    const { data, error } = await invokeSecretsManager({ action: "refresh_cache", name });
-    if (error) {
-      return { ok: false, error: normalizeError({ message: error.message }, error.message) };
-    }
-    if (data && data.ok === false) {
-      return { ok: false, error: normalizeError(data) };
-    }
-    return { ok: true, message: data?.message };
-  }, []);
+  const refreshCache = useCallback(
+    async (name?: string): Promise<{ ok: boolean; message?: string; error?: SecretError }> => {
+      const { data, error } = await invokeSecretsManager({ action: 'refresh_cache', name });
+      if (error) {
+        return { ok: false, error: normalizeError({ message: error.message }, error.message) };
+      }
+      if (data && data.ok === false) {
+        return { ok: false, error: normalizeError(data) };
+      }
+      return { ok: true, message: data?.message };
+    },
+    [],
+  );
 
-  return { secrets, isLoading, listError, list, setSecret, rotateSecret, getRotationHistory, refreshCache };
+  return {
+    secrets,
+    isLoading,
+    listError,
+    list,
+    setSecret,
+    rotateSecret,
+    getRotationHistory,
+    refreshCache,
+  };
 }

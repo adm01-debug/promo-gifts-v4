@@ -20,7 +20,6 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import type { QuickAction } from './GlobalSearchHelpers';
 
 /* ── Shared ── */
 const paletteItemStateClass =
@@ -97,6 +96,17 @@ function RankBadge({ index }: { index: number }) {
   );
 }
 
+/* ── Quick Action type ── */
+interface QuickAction {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  href: string;
+  shortcut?: string;
+  highlight?: boolean;
+}
+
 /* ── NavCard ── */
 function NavCard({
   action,
@@ -166,7 +176,7 @@ interface GlobalSearchIdleStateProps {
   contextualSuggestions: Array<{ id: string; text: string; icon: string; type: string }>;
   quickSuggestions: Array<{ label: string; icon: string }>;
   routeContext: { section: string };
-  quickActionsData: QuickAction[];
+  quickActionsData: Array<QuickAction>;
   onSuggestionClick: (text: string) => void;
   onSelect: (href: string, addToHistory?: boolean) => void;
   onRemoveFromHistory: (e: React.MouseEvent, term: string) => void;

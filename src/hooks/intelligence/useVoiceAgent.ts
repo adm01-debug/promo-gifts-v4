@@ -1,21 +1,29 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useScribe } from '@elevenlabs/react';
 
-import { playTtsAudio } from "@/hooks/voice/playTtsAudio";
-import { processVoiceTranscript } from "@/hooks/voice/processTranscript";
-import { getScribeToken, invalidateScribeTokenCache } from "@/hooks/voice/scribeTokenCache";
-import { withRetry, friendlyErrorMessage } from "@/hooks/voice/retry";
-import { logVoiceCommand } from "@/hooks/voice/logVoiceCommand";
+import { playTtsAudio } from '@/hooks/voice/playTtsAudio';
+import { processVoiceTranscript } from '@/hooks/voice/processTranscript';
+import { getScribeToken, invalidateScribeTokenCache } from '@/hooks/voice/scribeTokenCache';
+import { withRetry, friendlyErrorMessage } from '@/hooks/voice/retry';
+import { logVoiceCommand } from '@/hooks/voice/logVoiceCommand';
 import {
   startWebSpeech,
   stopWebSpeech,
   isWebSpeechSupported,
   isWebSpeechActive,
+<<<<<<< HEAD
+} from '@/hooks/voice/webSpeechFallback';
+import type { VoiceAgentAction, VoiceAgentPhase, UseVoiceAgentOptions } from '@/hooks/voice/types';
+import { logger } from '@/lib/logger';
+
+export type { VoiceAgentAction, VoiceAgentPhase } from '@/hooks/voice/types';
+=======
 } from "@/hooks/voice/webSpeechFallback";
 import type { VoiceAgentAction, VoiceAgentPhase, UseVoiceAgentOptions } from "@/hooks/voice/types";
 import { logger } from '@/lib/logger';
 
 export type { VoiceAgentAction, VoiceAgentPhase } from "@/hooks/voice/types";
+>>>>>>> origin/main
 
 const ERROR_RESET_DELAY_MS = 5000;
 const PROCESSING_ERROR_RESET_DELAY_MS = 3000;

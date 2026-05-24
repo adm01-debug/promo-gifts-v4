@@ -10,13 +10,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { 
   MapPin, 
   Ruler, 
-  Maximize2, 
   Palette,
   ChevronRight,
   ChevronLeft,
   CheckCircle2,
   Layers,
-  AlertTriangle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';

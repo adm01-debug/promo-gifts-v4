@@ -55,12 +55,11 @@ function shouldLoadSentry(): boolean {
   if (!dsn) return false;
   if (!isValidSentryDsn(dsn)) {
     if (import.meta.env.DEV) {
-      // eslint-disable-next-line no-console
       console.warn(
         '[sentry] VITE_SENTRY_DSN tem formato inválido — Sentry não será inicializado. ' +
           'Formato esperado: https://<public_key>@<host>/<project_id> ' +
           '(public_key sem hífens — UUIDs do GlitchTip não são compatíveis com SDK Sentry 8.x). ' +
-          'Regenere a Client Key no GlitchTip para obter uma chave alfanumérica compatível.'
+          'Regenere a Client Key no GlitchTip para obter uma chave alfanumérica compatível.',
       );
     }
     return false;

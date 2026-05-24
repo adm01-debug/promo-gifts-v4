@@ -3,8 +3,7 @@
  * Extracted from CollectionsPage for maintainability.
  */
 import { motion } from "framer-motion";
-import {
-  FolderOpen, MoreVertical, Pencil, Copy, Star,
+import { MoreVertical, Pencil, Copy, Star,
   Trash2, Package, Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";

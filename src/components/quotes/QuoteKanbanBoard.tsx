@@ -177,8 +177,12 @@ interface SortableQuoteCardProps {
   quote: Quote;
 }
 
+function getSortableQuoteId(quote: Quote) {
+  return quote.id ?? `quote-${quote.quote_number}`;
+}
+
 function SortableQuoteCard({ quote }: SortableQuoteCardProps) {
-  const sortableId = quote.id ?? `quote-${quote.quote_number}`;
+  const sortableId = getSortableQuoteId(quote);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: sortableId,
   });
@@ -203,7 +207,7 @@ interface KanbanColumnProps {
 
 function KanbanColumn({ column, quotes, totalValue }: KanbanColumnProps) {
   const Icon = column.icon;
-  const sortableQuoteIds = quotes.map((q) => q.id).filter((id): id is string => Boolean(id));
+  const sortableQuoteIds = quotes.map(getSortableQuoteId);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -235,7 +239,7 @@ function KanbanColumn({ column, quotes, totalValue }: KanbanColumnProps) {
         <SortableContext items={sortableQuoteIds} strategy={verticalListSortingStrategy}>
           <div className="space-y-2 p-1">
             {quotes.map((quote) => (
-              <SortableQuoteCard key={quote.id} quote={quote} />
+              <SortableQuoteCard key={getSortableQuoteId(quote)} quote={quote} />
             ))}
             {quotes.length === 0 && (
               <div className="rounded-lg border border-dashed border-border/50 py-8 text-center text-sm text-muted-foreground">

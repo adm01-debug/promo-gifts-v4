@@ -1,2 +1,2 @@
--- Segurança: migrations não devem conter reset de senha hardcoded.
--- Mantido intencionalmente sem operações para preservar a ordem de versões.
+-- Historical one-off password reset removed to keep migration replay safe.
+-- No-op migration intentionally left in place for history consistency.

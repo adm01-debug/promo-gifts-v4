@@ -9,7 +9,11 @@ import {
 } from '@/components/ui/select';
 import { Palette, Ruler, Loader2, AlertCircle } from 'lucide-react';
 import { useTechniquePricing } from '@/hooks/simulation';
+<<<<<<< HEAD
+import type { ProductTechnique } from './types';
+=======
 import type { ProductTechnique } from "./types";
+>>>>>>> origin/main
 
 interface CustomizationOptionsProps {
   technique: ProductTechnique;
@@ -28,15 +32,8 @@ export function CustomizationOptions({
   onSizeChange,
   onTableCodeChange,
 }: CustomizationOptionsProps) {
-  const {
-    colorOptions,
-    sizeOptions,
-    hasPriceByColor,
-    hasPriceByArea,
-    isLoading,
-    error,
-    findMatchingTable,
-  } = useTechniquePricing(technique.techniqueCode);
+  const { colorOptions, sizeOptions, hasPriceByColor, isLoading, error, findMatchingTable } =
+    useTechniquePricing(technique.techniqueCode);
 
   // Atualizar tabela de preços quando muda cores ou tamanho
   useEffect(() => {
@@ -59,7 +56,7 @@ export function CustomizationOptions({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8 text-muted-foreground">
-        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
         Carregando opções...
       </div>
     );
@@ -67,8 +64,8 @@ export function CustomizationOptions({
 
   if (error) {
     return (
-      <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive">
-        <AlertCircle className="w-5 h-5 mb-2" />
+      <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-destructive">
+        <AlertCircle className="mb-2 h-5 w-5" />
         <p className="text-sm">{error}</p>
       </div>
     );
@@ -77,13 +74,16 @@ export function CustomizationOptions({
   // Se não há opções configuráveis, mostrar mensagem
   if (!hasPriceByColor && sizeOptions.length === 0) {
     return (
-      <div className="p-4 rounded-lg bg-muted/50 text-center">
+      <div className="rounded-lg bg-muted/50 p-4 text-center">
         <p className="text-sm text-muted-foreground">
           Esta técnica não possui opções configuráveis de cores ou tamanho.
         </p>
         {technique.maxWidth && technique.maxHeight && (
-          <p className="text-sm mt-2">
-            Área de gravação: <strong>{technique.maxWidth} x {technique.maxHeight} mm</strong>
+          <p className="mt-2 text-sm">
+            Área de gravação:{' '}
+            <strong>
+              {technique.maxWidth} x {technique.maxHeight} mm
+            </strong>
           </p>
         )}
       </div>
@@ -95,8 +95,8 @@ export function CustomizationOptions({
       {/* Colors - Condicional */}
       {hasPriceByColor && colorOptions.length > 0 && (
         <div className="space-y-3">
-          <label className="text-sm font-medium flex items-center gap-2">
-            <Palette className="w-4 h-4 text-primary" />
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <Palette className="h-4 w-4 text-primary" />
             Número de Cores
           </label>
           <div className="flex flex-wrap gap-2">
@@ -123,8 +123,8 @@ export function CustomizationOptions({
       {/* Size - Condicional */}
       {sizeOptions.length > 1 && (
         <div className="space-y-3">
-          <label className="text-sm font-medium flex items-center gap-2">
-            <Ruler className="w-4 h-4 text-primary" />
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <Ruler className="h-4 w-4 text-primary" />
             Tamanho da Gravação
           </label>
           <Select value={sizeOption || ''} onValueChange={onSizeChange}>
@@ -135,9 +135,7 @@ export function CustomizationOptions({
               {sizeOptions.map((size) => (
                 <SelectItem key={size.value} value={size.value}>
                   {size.label}
-                  <span className="text-muted-foreground ml-2">
-                    ({size.areaCm2} cm²)
-                  </span>
+                  <span className="ml-2 text-muted-foreground">({size.areaCm2} cm²)</span>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -147,9 +145,9 @@ export function CustomizationOptions({
 
       {/* Size único - mostrar informação */}
       {sizeOptions.length === 1 && (
-        <div className="p-3 rounded-lg bg-muted/50 text-sm">
-          <p className="text-muted-foreground flex items-center gap-2">
-            <Ruler className="w-4 h-4" />
+        <div className="rounded-lg bg-muted/50 p-3 text-sm">
+          <p className="flex items-center gap-2 text-muted-foreground">
+            <Ruler className="h-4 w-4" />
             Tamanho da gravação:{' '}
             <strong>
               {sizeOptions[0].label} ({sizeOptions[0].areaCm2} cm²)
@@ -160,7 +158,7 @@ export function CustomizationOptions({
 
       {/* Area info from technique if no size options */}
       {sizeOptions.length === 0 && technique.maxWidth && technique.maxHeight && (
-        <div className="p-3 rounded-lg bg-muted/50 text-sm">
+        <div className="rounded-lg bg-muted/50 p-3 text-sm">
           <p className="text-muted-foreground">
             Área máxima de gravação:{' '}
             <strong>

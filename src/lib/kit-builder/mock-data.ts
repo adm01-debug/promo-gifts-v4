@@ -3,7 +3,11 @@
  * Used when external DB is unavailable
  */
 
+<<<<<<< HEAD
+import type { KitBox, KitItem } from './types';
+=======
 import type { KitBox, KitItem } from "./types";
+>>>>>>> origin/main
 
 export const MOCK_BOXES: KitBox[] = [
   {

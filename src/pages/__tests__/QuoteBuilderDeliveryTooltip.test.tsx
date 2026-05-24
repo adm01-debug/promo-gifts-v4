@@ -7,6 +7,17 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 
 // Mock complex hooks
 vi.mock('@/hooks/quotes', () => ({
+  useQuotes: vi.fn(() => ({ quotes: [], isLoading: false, refetch: vi.fn() })),
+  useQuoteHistory: vi.fn(() => ({ history: [], isLoading: false })),
+  useQuoteFunnel: vi.fn(() => ({ data: [], isLoading: false })),
+  useDiscountApproval: vi.fn(() => ({ requestApproval: vi.fn() })),
+  useAutoSaveQuote: vi.fn(() => ({ saving: false })),
+  useQuoteItems: vi.fn(() => ({ items: [], setItems: vi.fn() })),
+  useQuoteComments: vi.fn(() => ({ comments: [], addComment: vi.fn() })),
+  useQuoteTemplates: vi.fn(() => ({ templates: [], isLoading: false })),
+  useQuoteVersions: vi.fn(() => ({ versions: [], isLoading: false })),
+  useProdutoPersonalizacao: vi.fn(() => ({})),
+  useSellerDiscountLimits: vi.fn(() => ({ limit: 0, isLoading: false })),
   useQuoteBuilderState: vi.fn(() => ({
     loadingQuote: false,
     hasUnsavedData: false,
@@ -131,24 +142,24 @@ const renderPage = () => {
       <TooltipProvider delayDuration={0}>
         <QuoteBuilderPage />
       </TooltipProvider>
-    </BrowserRouter>
+    </BrowserRouter>,
   );
 };
 
 describe('QuoteBuilderPage Delivery Tooltip', () => {
   it('should have the info icon aligned with the label', () => {
     renderPage();
-    
+
     // Check alignment container
     const container = screen.getByTestId('delivery-label-container');
     expect(container).toHaveClass('flex');
     expect(container).toHaveClass('items-center');
     expect(container).toHaveClass('gap-1.5');
-    
+
     // Check label and trigger are present
     const label = screen.getByTestId('delivery-label');
     const trigger = screen.getByTestId('delivery-info-tooltip-trigger');
-    
+
     expect(container).toContainElement(label);
     expect(container).toContainElement(trigger);
   });
@@ -156,12 +167,12 @@ describe('QuoteBuilderPage Delivery Tooltip', () => {
   it('should show the tooltip content on hover', async () => {
     const user = userEvent.setup();
     renderPage();
-    
+
     const trigger = screen.getByTestId('delivery-info-tooltip-trigger');
-    
+
     // Hover over the trigger
     await user.hover(trigger);
-    
+
     // Check if tooltip content appears
     // We use findByTestId since tooltips are often in portals and might take a tick
     const tooltipContent = await screen.findByTestId('delivery-info-tooltip-content');
@@ -172,13 +183,13 @@ describe('QuoteBuilderPage Delivery Tooltip', () => {
   it('should hide the tooltip content when unhovering', async () => {
     const user = userEvent.setup();
     renderPage();
-    
+
     const trigger = screen.getByTestId('delivery-info-tooltip-trigger');
-    
+
     // Hover to show
     await user.hover(trigger);
     expect(await screen.findByTestId('delivery-info-tooltip-content')).toBeInTheDocument();
-    
+
     // Unhover to hide - simulate moving away
     await user.unhover(trigger);
     expect(trigger).toBeInTheDocument();
@@ -187,16 +198,16 @@ describe('QuoteBuilderPage Delivery Tooltip', () => {
   it('should hide the tooltip content when pressing Escape', async () => {
     const user = userEvent.setup();
     renderPage();
-    
+
     const trigger = screen.getByTestId('delivery-info-tooltip-trigger');
-    
+
     // Hover to show
     await user.hover(trigger);
     expect(await screen.findByTestId('delivery-info-tooltip-content')).toBeInTheDocument();
-    
+
     // Press Escape
     await user.keyboard('{Escape}');
-    
+
     // In unit tests with Radix, Escape usually triggers immediate closure
     expect(screen.queryByTestId('delivery-info-tooltip-content')).not.toBeInTheDocument();
   });

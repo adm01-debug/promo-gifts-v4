@@ -17,7 +17,6 @@ import {
   FileText,
   Copy,
   Trash2,
-  MoreHorizontal,
 } from 'lucide-react';
 import {
   AlertDialog,
