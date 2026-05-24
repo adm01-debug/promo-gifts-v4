@@ -37,6 +37,7 @@ export function useKitBuilderQuote() {
 
       // Create quote
       const { data: quote, error: quoteError } = await supabase
+        // rls-allow: INSERT do proprio usuario; nao precisa de seller_scope
         .from('quotes')
         .insert({
           user_id: user.id,
