@@ -1,4 +1,4 @@
-import { type QuoteTemplate } from "@/hooks/quotes";
+import { type QuoteTemplate } from '@/hooks/quotes';
 
 export interface ExportedTemplate {
   version: string;
@@ -9,19 +9,16 @@ export interface ExportedTemplate {
 /**
  * Exports templates to a downloadable JSON file
  */
-export function exportTemplatesToJson(
-  templates: QuoteTemplate[], 
-  filename?: string
-): void {
+export function exportTemplatesToJson(templates: QuoteTemplate[], filename?: string): void {
   const exportData: ExportedTemplate = {
-    version: "1.0",
+    version: '1.0',
     exportedAt: new Date().toISOString(),
-    templates: templates.map(template => ({
+    templates: templates.map((template) => ({
       name: template.name,
       description: template.description,
       is_default: template.is_default,
       template_data: template.template_data,
-      items_data: template.items_data,
+      items: template.items,
       discount_percent: template.discount_percent,
       discount_amount: template.discount_amount,
       notes: template.notes,
@@ -33,13 +30,13 @@ export function exportTemplatesToJson(
   };
 
   const jsonString = JSON.stringify(exportData, null, 2);
-  const blob = new Blob([jsonString], { type: "application/json" });
+  const blob = new Blob([jsonString], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
 
-  const defaultFilename = filename || 
-    `templates-export-${new Date().toISOString().split('T')[0]}.json`;
+  const defaultFilename =
+    filename || `templates-export-${new Date().toISOString().split('T')[0]}.json`;
 
-  const link = document.createElement("a");
+  const link = document.createElement('a');
   link.href = url;
   link.download = defaultFilename;
   document.body.appendChild(link);
@@ -56,7 +53,7 @@ export function exportSingleTemplate(template: QuoteTemplate): void {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
-  
+
   exportTemplatesToJson([template], `template-${sanitizedName}.json`);
 }
 
@@ -65,9 +62,9 @@ export function exportSingleTemplate(template: QuoteTemplate): void {
  */
 export function validateImportedTemplates(data: unknown): ExportedTemplate | null {
   if (!data || typeof data !== 'object') return null;
-  
+
   const obj = data as Record<string, unknown>;
-  
+
   if (!obj.version || !obj.templates || !Array.isArray(obj.templates)) {
     return null;
   }
@@ -88,7 +85,7 @@ export function validateImportedTemplates(data: unknown): ExportedTemplate | nul
 export function readTemplateFile(file: File): Promise<ExportedTemplate | null> {
   return new Promise((resolve) => {
     const reader = new FileReader();
-    
+
     reader.onload = (e) => {
       try {
         const content = e.target?.result as string;
@@ -99,7 +96,7 @@ export function readTemplateFile(file: File): Promise<ExportedTemplate | null> {
         resolve(null);
       }
     };
-    
+
     reader.onerror = () => resolve(null);
     reader.readAsText(file);
   });

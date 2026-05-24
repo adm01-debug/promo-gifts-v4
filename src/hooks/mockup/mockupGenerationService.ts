@@ -69,13 +69,13 @@ export async function fetchMockupHistory(userId?: string): Promise<GeneratedMock
   let query = supabase
     .from('generated_mockups')
     .select(
-      `id, product_id, product_name, product_sku, technique_id, technique_name, mockup_url, layout_url, logo_url, position_x, position_y, logo_width_cm, logo_height_cm, location_name, colors_count, created_at, client_id, client_name, annotations`,
+      'id, product_id, product_name, product_sku, technique_id, technique_name, mockup_url, created_at',
     )
     .order('created_at', { ascending: false });
-  if (userId) query = query.eq('seller_id', userId);
+  if (userId) query = query.eq('user_id', userId);
   const { data, error } = await query;
   if (error) throw error;
-  return data || [];
+  return (data || []) as unknown as GeneratedMockup[];
 }
 
 // ─── Save to history ─────────────────────────────────────────────────
@@ -116,41 +116,34 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
       if (productRow) safeProductId = product.id;
     }
 
-    let safeTechniqueId: string | null = null;
-    if (technique.id) {
-      const { data: techRow } = await supabase
-        .from('personalization_techniques')
-        .select('id')
-        .eq('id', technique.id)
-        .maybeSingle();
-      if (techRow) safeTechniqueId = technique.id;
-    }
+    const safeTechniqueId: string | null = technique.id || null;
 
-    const clientId = client?.id || null;
     const clientName = client?.nome_fantasia || client?.razao_social || client?.name || null;
 
     const { data: insertedRow, error } = await supabase
       .from('generated_mockups')
       .insert({
-        seller_id: userId,
-        client_id: clientId,
-        client_name: clientName,
+        user_id: userId,
         product_id: safeProductId,
         product_name: product.name,
-        product_sku: product.sku,
+        product_sku: product.sku || null,
         technique_id: safeTechniqueId,
         technique_name: technique.name,
-        logo_url: logoUrl,
         mockup_url: mockupUrl,
-        layout_url: extra?.layoutUrl || null,
-        position_x: area.positionX,
-        position_y: area.positionY,
-        logo_width_cm: area.logoWidth,
-        logo_height_cm: area.logoHeight,
-        location_name: extra?.locationName || area.name || null,
-        colors_count: extra?.colorsCount || null,
-        annotations: annotations && annotations.length > 0 ? annotations : null,
-      } as Record<string, unknown>)
+        thumbnail_url: logoUrl || null,
+        area_name: extra?.locationName || area.name || 'Frente',
+        ai_model_used: technique.code || technique.name || 'custom',
+        area_config: {
+          positionX: area.positionX,
+          positionY: area.positionY,
+          logoWidth: area.logoWidth,
+          logoHeight: area.logoHeight,
+          logoUrl,
+          clientName,
+          colorsCount: extra?.colorsCount || null,
+          annotations: annotations && annotations.length > 0 ? annotations : null,
+        },
+      })
       .select('id')
       .single();
 
@@ -283,7 +276,7 @@ export async function downloadMockupAsPdf(mockupUrl: string, sku?: string, techn
 
 export async function deleteMockupFromDb(id: string, userId?: string): Promise<void> {
   let query = supabase.from('generated_mockups').delete().eq('id', id);
-  if (userId) query = query.eq('seller_id', userId);
+  if (userId) query = query.eq('user_id', userId);
   const { error } = await query;
   if (error) throw error;
 }
