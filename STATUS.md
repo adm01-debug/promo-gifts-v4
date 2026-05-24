@@ -99,6 +99,8 @@ Refatoração dos 5 arquivos com mais erros no `.tsc-baseline.json` — **235 er
 **Total estimado**: ~5h de trabalho cuidadoso.
 
 > 💡 Sugestão: rodar essas etapas **uma por sessão dedicada**, sem misturar com novas features.
+>
+> 💡 Lição da Etapa 13: a causa real no compare folder era import errado entre dois tipos `Product` distintos (`@/types/product` DB-oriented vs `@/types/product-catalog` runtime). Antes de atacar um componente por suposto problema snake_case/camelCase, primeiro confirme se ele importa o tipo runtime correto.
 
 ---
 
