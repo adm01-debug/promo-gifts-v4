@@ -21,7 +21,6 @@ import {
   TrendingDown,
   TrendingUp,
   Package,
-  Check,
   Crown,
   ArrowRight,
   Minus,
