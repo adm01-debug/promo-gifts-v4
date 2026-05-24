@@ -8,8 +8,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
+import { calculateTotalKitPrice } from '@/lib/kit-builder';
 import type { KitState } from '@/hooks/kit-builder';
 import type { KitItem } from '@/lib/kit-builder/types';
+import type { TablesInsert } from '@/integrations/supabase/types';
 
 export function useKitBuilderQuote() {
   const { user } = useAuth();
@@ -34,18 +36,30 @@ export function useKitBuilderQuote() {
       const boxRef = kitState.box;
       const itemsRef = kitState.items;
       const personRef = kitState.personalization;
+      const pricing = calculateTotalKitPrice(boxRef, itemsRef, personRef, kitQuantity);
+      const quotePayload = {
+        seller_id: user.id,
+        status: 'draft',
+        subtotal: pricing.subtotal,
+        discount_percent: 0,
+        discount_amount: 0,
+        total: pricing.total,
+        negotiation_markup_percent: 0,
+        notes: `Kit: ${kitMetadataNote}`,
+        internal_notes: `Criado pelo Kit Builder. Quantidade de kits: ${kitQuantity}.`,
+        tags: {
+          source: 'kit-builder',
+          kit_name: kitLabel,
+          kit_quantity: kitQuantity,
+          kit_identity_tag: kitState.identity?.tag ?? null,
+        },
+      } satisfies TablesInsert<'quotes'>;
 
       // Create quote
       const { data: quote, error: quoteError } = await supabase
-        // rls-allow: insert cria orçamento do usuário atual; RLS valida user_id
+        // rls-allow: insert cria orçamento do usuário atual; RLS valida seller_id
         .from('quotes')
-        .insert({
-          user_id: user.id,
-          status: 'draft',
-          title: kitLabel,
-          notes: `Kit: ${kitMetadataNote}`,
-          quantity: kitQuantity,
-        })
+        .insert(quotePayload)
         .select('id')
         .single();
 

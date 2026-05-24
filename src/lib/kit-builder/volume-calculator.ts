@@ -80,7 +80,7 @@ export function checkItemFits(
   if (!fitsAnyOrientation) {
     return {
       fits: false,
-      reason: `Dimensões do item (${item.width}Ã—${item.height}Ã—${item.depth}cm) não cabem na caixa (${box.internalWidth}Ã—${box.internalHeight}Ã—${box.internalDepth}cm) em nenhuma orientação`,
+      reason: `Dimens\u00f5es do item (${item.width}\u00d7${item.height}\u00d7${item.depth}cm) n\u00e3o cabem na caixa (${box.internalWidth}\u00d7${box.internalHeight}\u00d7${box.internalDepth}cm) em nenhuma orienta\u00e7\u00e3o`,
     };
   }
 
@@ -126,14 +126,14 @@ export function formatVolume(volumeCm3: number): string {
   if (volumeCm3 >= 1000) {
     return `${(volumeCm3 / 1000).toFixed(1)}L`;
   }
-  return `${Math.round(volumeCm3)}cm³`;
+  return `${Math.round(volumeCm3)}cm\u00b3`;
 }
 
 /**
  * Formata dimensões para exibição
  */
 export function formatDimensions(width: number, height: number, depth: number): string {
-  return `${width} Ã— ${height} Ã— ${depth} cm`;
+  return `${width} \u00d7 ${height} \u00d7 ${depth} cm`;
 }
 
 /**
@@ -152,7 +152,7 @@ export function getVolumeStatusLabel(percent: number): string {
   if (percent >= 100) return 'Cheio';
   if (percent >= 85) return 'Quase cheio';
   if (percent >= 50) return 'Bom uso';
-  if (percent > 0) return 'Espaço disponível';
+  if (percent > 0) return 'Espa\u00e7o dispon\u00edvel';
   return 'Vazio';
 }
 
@@ -173,11 +173,12 @@ export function parseDimensionsString(
   const normalized = dimensionsStr
     .toLowerCase()
     .replace(/\s+/g, '')
+    .replace(/\u00d7/g, 'x')
     .replace(/Ã—/g, 'x')
     .replace(/cm/g, '');
 
   // Tenta match com padrão NxNxN
-  const match = normalized.match(/(\d+(?:\.\d+)?)[xÃ—](\d+(?:\.\d+)?)[xÃ—](\d+(?:\.\d+)?)/);
+  const match = normalized.match(/(\d+(?:\.\d+)?)[x\u00d7](\d+(?:\.\d+)?)[x\u00d7](\d+(?:\.\d+)?)/);
 
   if (match) {
     return {

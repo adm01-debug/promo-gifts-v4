@@ -6,6 +6,10 @@ vi.mock('react-router-dom', () => ({
   useLocation: () => ({ pathname: '/rota-sem-prefetch' }),
 }));
 
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ user: null }),
+}));
+
 describe('RoutePrefetcher', () => {
   const originalNavigatorDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
 
