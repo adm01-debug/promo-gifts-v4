@@ -84,6 +84,9 @@ jobs:
     name: Gate 4 - Lighthouse CI
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      VITE_SUPABASE_URL: https://placeholder.supabase.co
+      VITE_SUPABASE_PUBLISHABLE_KEY: lighthouse-placeholder-key
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

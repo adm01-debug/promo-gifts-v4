@@ -48,6 +48,8 @@ export function useAdvancedFilters() {
 
   // Buscar dados iniciais
   useEffect(() => {
+    let isMounted = true;
+
     const loadFilterOptions = async () => {
       setIsLoading(true);
       try {
@@ -61,11 +63,17 @@ export function useAdvancedFilters() {
       } catch (error) {
         console.error('Erro ao carregar opções de filtros:', error);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     loadFilterOptions();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Transformar categorias em árvore hierárquica
