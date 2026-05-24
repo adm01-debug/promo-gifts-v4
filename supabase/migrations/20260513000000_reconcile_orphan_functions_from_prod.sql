@@ -1,16 +1,18 @@
 -- ============================================================================
--- Reconcile orphan functions from production (drift fix for clean replay)
+-- Reconcile out-of-band functions from production (clean migration replay)
 -- ============================================================================
--- These functions exist in production but were created out-of-band (never
--- captured by a migration). Later hardening batches (t37a/t37b1/t37b2,
--- 20260513000001+) run ALTER FUNCTION ... SECURITY INVOKER on them, which fails
--- on a fresh replay (Supabase Preview branch / `supabase start`) because the
--- functions do not exist yet. This migration recreates them verbatim from prod
--- so the replay matches production and the subsequent ALTERs succeed.
+-- ~80% of production's public functions were created out-of-band (Lovable /
+-- dashboard) and never captured by a migration. On a fresh replay (Supabase
+-- Preview branch / `supabase start`) the t-series hardening batches and later
+-- migrations reference them via ALTER / REVOKE / GRANT / policies / triggers
+-- and fail with "function ... does not exist".
 --
--- check_function_bodies is disabled so SQL-language functions with forward
--- references (other functions / tables created in later migrations) load
--- without create-time validation, exactly as pg_dump does.
+-- This migration recreates, verbatim from production, every public function
+-- that is NOT already created by an earlier migration (matched by name +
+-- argument count), placed just before the first hardening batch. Functions the
+-- repo already creates are left untouched to avoid 42P13/return-type conflicts.
+-- check_function_bodies is disabled so functions with forward references load
+-- like pg_dump.
 -- ============================================================================
 
 SET check_function_bodies = false;
@@ -37,10 +39,7 @@ BEGIN
   LIMIT 1;
   RETURN COALESCE(v_role, 'agente');
 END;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.apply_transform(p_value text, p_transform_type character varying, p_transform_config jsonb DEFAULT NULL::jsonb)
  RETURNS text
  LANGUAGE plpgsql
@@ -133,10 +132,22 @@ EXCEPTION WHEN OTHERS THEN
     RAISE WARNING 'Erro em apply_transform: %', SQLERRM;
     RETURN p_value;
 END;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
+CREATE OR REPLACE FUNCTION public.auto_increment_display_order()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    IF NEW.display_order IS NULL THEN
+        SELECT COALESCE(MAX(display_order), 0) + 1
+        INTO NEW.display_order
+        FROM product_kit_components
+        WHERE kit_product_id = NEW.kit_product_id;
+    END IF;
+    RETURN NEW;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.block_ip_temp(_ip text, _reason text, _duration_minutes integer DEFAULT 60)
  RETURNS uuid
  LANGUAGE plpgsql
@@ -149,10 +160,297 @@ BEGIN
   VALUES (_ip::inet, 'blocklist', _reason, now() + (_duration_minutes || ' minutes')::interval, auth.uid())
   RETURNING id INTO v_id;
   RETURN v_id;
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
+CREATE OR REPLACE FUNCTION public.buscar_equivalencia_spot(p_spot_sigla text DEFAULT NULL::text, p_spot_nome text DEFAULT NULL::text)
+ RETURNS TABLE(spot_tecnica_nome text, spot_sigla text, tecnica_gravacao_nome text, tecnica_variante_nome text, tecnica_variante_codigo text, tecnica_variante_id uuid, confianca text)
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        ste.spot_tecnica_nome::TEXT,
+        ste.spot_sigla::TEXT,
+        tg.nome::TEXT AS tecnica_gravacao_nome,
+        tgv.nome::TEXT AS tecnica_variante_nome,
+        tgv.codigo::TEXT AS tecnica_variante_codigo,
+        tgv.id AS tecnica_variante_id,
+        ste.confianca::TEXT
+    FROM spot_tecnica_equivalencia ste
+    JOIN tecnica_gravacao_variante tgv ON tgv.id = ste.tecnica_variante_id
+    JOIN tecnica_gravacao tg ON tg.id = ste.tecnica_gravacao_id
+    WHERE (p_spot_sigla IS NULL OR ste.spot_sigla = p_spot_sigla)
+      AND (p_spot_nome IS NULL OR ste.spot_tecnica_nome ILIKE '%' || p_spot_nome || '%')
+    ORDER BY ste.confianca DESC, ste.spot_tecnica_nome;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.calculate_category_hierarchy()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_parent_level INTEGER;
+  v_parent_path TEXT;
+BEGIN
+  IF NEW.parent_id IS NULL THEN
+    -- Categoria raiz
+    NEW.level := 1;
+    NEW.path := '/' || NEW.id::TEXT || '/';
+  ELSE
+    -- Subcategoria: buscar level e path do parent
+    SELECT level, path 
+    INTO v_parent_level, v_parent_path
+    FROM categories
+    WHERE id = NEW.parent_id;
+    
+    IF v_parent_level IS NULL THEN
+      RAISE EXCEPTION 'Parent category % not found', NEW.parent_id;
+    END IF;
+    
+    NEW.level := v_parent_level + 1;
+    NEW.path := v_parent_path || NEW.id::TEXT || '/';
+  END IF;
+  
+  RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.calculate_mockup_job_estimated_cost()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'pg_catalog', 'public'
+AS $function$
+DECLARE
+  base_cost       numeric(10,4);
+  color_count     integer;
+  area_count      integer;
+  tech_multiplier numeric(4,2);
+BEGIN
+  IF NEW.ai_model = 'pro' THEN base_cost := 0.60;
+  ELSE base_cost := 0.10;
+  END IF;
+  
+  color_count := jsonb_array_length(NEW.product_colors);
+  area_count  := jsonb_array_length(NEW.areas_config);
+  
+  SELECT COALESCE(base_cost_multiplier, 1.0) INTO tech_multiplier
+  FROM public.personalization_techniques WHERE id = NEW.technique_id;
+  
+  NEW.total_mockups   := color_count * area_count;
+  NEW.estimated_cost  := base_cost * color_count * area_count * COALESCE(tech_multiplier, 1.0);
+  RETURN NEW;
+END $function$;
+CREATE OR REPLACE FUNCTION public.calculate_quote_item_pricing(p_variant_id uuid, p_quantity integer, p_organization_id uuid)
+ RETURNS TABLE(unit_cost numeric, unit_price numeric, total_cost numeric, total_price numeric, margin_percent numeric, total_profit numeric, cost_tier integer, price_tier integer)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_cost DECIMAL(10,4);
+    v_price DECIMAL(10,2);
+    v_cost_tier INT;
+    v_price_tier INT;
+BEGIN
+    SELECT gcfq.cost_per_unit, gcfq.tier_number 
+    INTO v_cost, v_cost_tier
+    FROM get_cost_for_quantity(p_variant_id, p_quantity) gcfq;
+    
+    SELECT gspfq.price_per_unit, gspfq.tier_number
+    INTO v_price, v_price_tier
+    FROM get_sale_price_for_quantity(p_variant_id, p_quantity, p_organization_id) gspfq;
+    
+    RETURN QUERY
+    SELECT 
+        COALESCE(v_cost, 0::DECIMAL(10,4)) AS unit_cost,
+        COALESCE(v_price, 0::DECIMAL(10,2)) AS unit_price,
+        ROUND(COALESCE(v_cost, 0) * p_quantity, 2)::DECIMAL(12,2) AS total_cost,
+        ROUND(COALESCE(v_price, 0) * p_quantity, 2)::DECIMAL(12,2) AS total_price,
+        CASE 
+            WHEN v_cost > 0 THEN ROUND(((v_price - v_cost) / v_cost) * 100, 2)
+            ELSE 0::DECIMAL(8,2)
+        END AS margin_percent,
+        ROUND((COALESCE(v_price, 0) - COALESCE(v_cost, 0)) * p_quantity, 2)::DECIMAL(12,2) AS total_profit,
+        COALESCE(v_cost_tier, 1) AS cost_tier,
+        COALESCE(v_price_tier, 1) AS price_tier;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.calculate_seo_score(p_product_id uuid)
+ RETURNS TABLE(score integer, issues jsonb)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_product RECORD;
+  v_score INTEGER := 0;
+  v_issues JSONB := '[]'::jsonb;
+  v_image_count INTEGER;
+  v_faq_count INTEGER;
+  v_spec_count INTEGER;
+BEGIN
+  -- Buscar produto
+  SELECT * INTO v_product FROM products WHERE id = p_product_id;
+  
+  IF NOT FOUND THEN
+    RETURN QUERY SELECT 0, '["Produto não encontrado"]'::jsonb;
+    RETURN;
+  END IF;
+  
+  -- === AVALIAÇÃO (máximo 100 pontos) ===
+  
+  -- Nome (10 pontos)
+  IF v_product.name IS NOT NULL AND LENGTH(v_product.name) >= 10 THEN
+    v_score := v_score + 10;
+  ELSE
+    v_issues := v_issues || '["Nome muito curto (mínimo 10 caracteres)"]'::jsonb;
+  END IF;
+  
+  -- Slug (10 pontos)
+  IF v_product.slug IS NOT NULL AND LENGTH(v_product.slug) >= 5 THEN
+    v_score := v_score + 10;
+  ELSE
+    v_issues := v_issues || '["Slug não definido"]'::jsonb;
+  END IF;
+  
+  -- Meta Title (15 pontos)
+  IF v_product.meta_title IS NOT NULL THEN
+    v_score := v_score + 10;
+    IF LENGTH(v_product.meta_title) BETWEEN 30 AND 60 THEN
+      v_score := v_score + 5;
+    ELSE
+      v_issues := v_issues || '["Meta title fora do tamanho ideal (30-60 chars)"]'::jsonb;
+    END IF;
+  ELSE
+    v_issues := v_issues || '["Meta title não definido"]'::jsonb;
+  END IF;
+  
+  -- Meta Description (15 pontos)
+  IF v_product.meta_description IS NOT NULL THEN
+    v_score := v_score + 10;
+    IF LENGTH(v_product.meta_description) BETWEEN 120 AND 160 THEN
+      v_score := v_score + 5;
+    ELSE
+      v_issues := v_issues || '["Meta description fora do tamanho ideal (120-160 chars)"]'::jsonb;
+    END IF;
+  ELSE
+    v_issues := v_issues || '["Meta description não definida"]'::jsonb;
+  END IF;
+  
+  -- Description (15 pontos)
+  IF v_product.description IS NOT NULL THEN
+    IF LENGTH(v_product.description) >= 300 THEN
+      v_score := v_score + 15;
+    ELSIF LENGTH(v_product.description) >= 100 THEN
+      v_score := v_score + 10;
+      v_issues := v_issues || '["Descrição poderia ser mais detalhada (ideal 300+ chars)"]'::jsonb;
+    ELSE
+      v_score := v_score + 5;
+      v_issues := v_issues || '["Descrição muito curta"]'::jsonb;
+    END IF;
+  ELSE
+    v_issues := v_issues || '["Descrição não definida"]'::jsonb;
+  END IF;
+  
+  -- Short Description (5 pontos)
+  IF v_product.short_description IS NOT NULL AND LENGTH(v_product.short_description) >= 50 THEN
+    v_score := v_score + 5;
+  ELSE
+    v_issues := v_issues || '["Descrição curta não definida ou muito breve"]'::jsonb;
+  END IF;
+  
+  -- AI Summary GEO (5 pontos)
+  IF v_product.ai_summary IS NOT NULL AND LENGTH(v_product.ai_summary) >= 100 THEN
+    v_score := v_score + 5;
+  END IF;
+  
+  -- Imagens (15 pontos)
+  SELECT COUNT(*) INTO v_image_count 
+  FROM product_images 
+  WHERE product_id = p_product_id AND is_active = true;
+  
+  IF v_image_count >= 5 THEN
+    v_score := v_score + 15;
+  ELSIF v_image_count >= 3 THEN
+    v_score := v_score + 10;
+    v_issues := v_issues || '["Adicionar mais imagens (ideal 5+)"]'::jsonb;
+  ELSIF v_image_count >= 1 THEN
+    v_score := v_score + 5;
+    v_issues := v_issues || '["Poucas imagens (ideal 5+)"]'::jsonb;
+  ELSE
+    v_issues := v_issues || '["Sem imagens cadastradas"]'::jsonb;
+  END IF;
+  
+  -- FAQs (5 pontos)
+  SELECT COUNT(*) INTO v_faq_count 
+  FROM product_faqs 
+  WHERE product_id = p_product_id AND is_active = true;
+  
+  IF v_faq_count >= 3 THEN
+    v_score := v_score + 5;
+  ELSIF v_faq_count >= 1 THEN
+    v_score := v_score + 3;
+  END IF;
+  
+  -- Especificações (5 pontos)
+  SELECT COUNT(*) INTO v_spec_count 
+  FROM product_specifications 
+  WHERE product_id = p_product_id AND is_active = true;
+  
+  IF v_spec_count >= 5 THEN
+    v_score := v_score + 5;
+  ELSIF v_spec_count >= 1 THEN
+    v_score := v_score + 3;
+  END IF;
+  
+  -- Garantir limites
+  v_score := LEAST(v_score, 100);
+  v_score := GREATEST(v_score, 0);
+  
+  RETURN QUERY SELECT v_score, v_issues;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.charge_mockup_credits_for_job()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_balance   numeric(10,2);
+  v_credit_id uuid;
+BEGIN
+  IF NEW.status = 'processing' AND (OLD.status IS NULL OR OLD.status != 'processing') THEN
+    SELECT id, balance INTO v_credit_id, v_balance
+    FROM public.mockup_credits
+    WHERE user_id = NEW.user_id
+    FOR UPDATE;
+    
+    IF v_credit_id IS NULL THEN
+      RAISE EXCEPTION 'Conta de créditos não encontrada pro user %', NEW.user_id;
+    END IF;
+    
+    IF v_balance < NEW.estimated_cost THEN
+      RAISE EXCEPTION 'Saldo insuficiente: necessário R$ %, disponível R$ %', 
+        NEW.estimated_cost, v_balance;
+    END IF;
+    
+    UPDATE public.mockup_credits SET 
+      balance             = balance - NEW.estimated_cost,
+      lifetime_spent      = lifetime_spent + NEW.estimated_cost,
+      current_month_spent = current_month_spent + NEW.estimated_cost,
+      current_day_spent   = current_day_spent + NEW.estimated_cost
+    WHERE user_id = NEW.user_id;
+    
+    INSERT INTO public.mockup_credit_transactions (
+      user_id, credit_account_id, type, amount, balance_before, balance_after, job_id, description
+    ) VALUES (
+      NEW.user_id, v_credit_id, 'charge', NEW.estimated_cost, v_balance, 
+      v_balance - NEW.estimated_cost, NEW.id, 
+      format('Geração de %s mockups - Job %s', NEW.total_mockups, NEW.id)
+    );
+  END IF;
+  RETURN NEW;
+END $function$;
 CREATE OR REPLACE FUNCTION public.check_auth_throttling(_email text, _ip text)
  RETURNS TABLE(allowed boolean, remaining_seconds integer)
  LANGUAGE plpgsql
@@ -189,10 +487,4771 @@ BEGIN
         RETURN QUERY SELECT false, (lockout_duration - elapsed_since_last);
     END IF;
 END;
-$function$
-;
+$function$;
+CREATE OR REPLACE FUNCTION public.check_edge_rate_limit(p_key text, p_window_ms integer, p_max_requests integer)
+ RETURNS TABLE(allowed boolean, remaining integer, reset_at timestamp with time zone)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+    v_now TIMESTAMP WITH TIME ZONE := now();
+    v_reset_at TIMESTAMP WITH TIME ZONE;
+    v_count INTEGER;
+BEGIN
+    -- Busca ou cria o registro
+    INSERT INTO public.edge_rate_limits (key, count, reset_at)
+    VALUES (p_key, 1, v_now + (p_window_ms || ' milliseconds')::interval)
+    ON CONFLICT (key) DO UPDATE
+    SET 
+        count = CASE 
+            WHEN public.edge_rate_limits.reset_at < v_now THEN 1 
+            ELSE public.edge_rate_limits.count + 1 
+        END,
+        reset_at = CASE 
+            WHEN public.edge_rate_limits.reset_at < v_now THEN v_now + (p_window_ms || ' milliseconds')::interval 
+            ELSE public.edge_rate_limits.reset_at 
+        END,
+        updated_at = v_now
+    RETURNING public.edge_rate_limits.count, public.edge_rate_limits.reset_at INTO v_count, v_reset_at;
 
--- ----------------------------------------------------------------------------
+    RETURN QUERY SELECT 
+        v_count <= p_max_requests,
+        GREATEST(0, p_max_requests - v_count),
+        v_reset_at;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.check_image_quality_report()
+ RETURNS TABLE(check_name text, status text, details text)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    -- Check 1: Imagens sem dimensões
+    RETURN QUERY
+    SELECT 
+        'Imagens sem dimensões registradas'::TEXT,
+        CASE WHEN COUNT(*) = 0 THEN '✅ OK' ELSE '⚠️ ATENÇÃO' END::TEXT,
+        COUNT(*)::TEXT || ' imagens sem width_px/height_px'
+    FROM product_images
+    WHERE is_active = true 
+      AND (width_px IS NULL OR height_px IS NULL);
+
+    -- Check 2: Imagens abaixo do mínimo (800px)
+    RETURN QUERY
+    SELECT 
+        'Imagens abaixo do mínimo (800px)'::TEXT,
+        CASE WHEN COUNT(*) = 0 THEN '✅ OK' ELSE '❌ PROBLEMA' END::TEXT,
+        COUNT(*)::TEXT || ' imagens com resolução insuficiente'
+    FROM product_images
+    WHERE is_active = true 
+      AND width_px IS NOT NULL
+      AND (width_px < 800 OR height_px < 800);
+
+    -- Check 3: Imagens abaixo do ideal (1200px)
+    RETURN QUERY
+    SELECT 
+        'Imagens abaixo do ideal (1200px)'::TEXT,
+        CASE WHEN COUNT(*) = 0 THEN '✅ OK' ELSE '⚠️ REVISAR' END::TEXT,
+        COUNT(*)::TEXT || ' imagens podem pixelar no zoom'
+    FROM product_images
+    WHERE is_active = true 
+      AND width_px IS NOT NULL
+      AND (width_px < 1200 OR height_px < 1200)
+      AND width_px >= 800 AND height_px >= 800;
+
+    -- Check 4: Imagens muito grandes (>10MB)
+    RETURN QUERY
+    SELECT 
+        'Imagens muito grandes (>10MB)'::TEXT,
+        CASE WHEN COUNT(*) = 0 THEN '✅ OK' ELSE '⚠️ OTIMIZAR' END::TEXT,
+        COUNT(*)::TEXT || ' imagens grandes demais'
+    FROM product_images
+    WHERE is_active = true 
+      AND file_size_bytes > 10485760;  -- 10MB
+
+    -- Check 5: Imagens de alta qualidade (>=1200px)
+    RETURN QUERY
+    SELECT 
+        'Imagens de alta qualidade (>=1200px)'::TEXT,
+        '📊 INFO'::TEXT,
+        COUNT(*)::TEXT || ' imagens em qualidade ideal'
+    FROM product_images
+    WHERE is_active = true 
+      AND width_px >= 1200 
+      AND height_px >= 1200;
+
+    RETURN;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.check_login_rate_limit(_email text, _ip text DEFAULT NULL::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  _max_failures int := 5;
+  _window_minutes int := 15;
+  _lockout_minutes int := 5;
+  _failed_count int := 0;
+  _last_failure timestamptz;
+  _last_success timestamptz;
+  _lockout_until timestamptz;
+BEGIN
+  -- Sanitiza input
+  IF _email IS NULL OR length(trim(_email)) = 0 THEN
+    -- Fail-CLOSED em input inválido (Onda 20)
+    RETURN jsonb_build_object(
+      'allowed', false,
+      'reason', 'invalid_email',
+      'remaining_seconds', 0
+    );
+  END IF;
+
+  _email := lower(trim(_email));
+
+  -- Último sucesso por este email (delimita janela de falhas)
+  SELECT max(created_at) INTO _last_success
+  FROM public.login_attempts
+  WHERE email = _email AND success = true;
+
+  -- Conta falhas POR EMAIL na janela, ignorando as anteriores ao último sucesso
+  SELECT count(*), max(created_at)
+    INTO _failed_count, _last_failure
+  FROM public.login_attempts
+  WHERE email = _email
+    AND success = false
+    AND created_at > now() - (_window_minutes || ' minutes')::interval
+    AND (_last_success IS NULL OR created_at > _last_success);
+
+  -- Se atingiu o limite por EMAIL → lockout 5 min após última falha
+  IF _failed_count >= _max_failures THEN
+    _lockout_until := _last_failure + (_lockout_minutes || ' minutes')::interval;
+    IF _lockout_until > now() THEN
+      RETURN jsonb_build_object(
+        'allowed', false,
+        'reason', 'rate_limited_email',
+        'failed_count', _failed_count,
+        'remaining_seconds', ceil(extract(epoch FROM (_lockout_until - now())))::int,
+        'lockout_until', _lockout_until
+      );
+    END IF;
+  END IF;
+
+  -- Adicional: se _ip fornecido, verifica também por IP (mais agressivo: 20 falhas / 15min)
+  IF _ip IS NOT NULL AND length(trim(_ip)) > 0 AND _ip <> 'unknown' AND _ip <> 'client' THEN
+    SELECT count(*), max(created_at)
+      INTO _failed_count, _last_failure
+    FROM public.login_attempts
+    WHERE ip_address = _ip
+      AND success = false
+      AND created_at > now() - (_window_minutes || ' minutes')::interval;
+
+    IF _failed_count >= 20 THEN
+      _lockout_until := _last_failure + (_lockout_minutes || ' minutes')::interval;
+      IF _lockout_until > now() THEN
+        RETURN jsonb_build_object(
+          'allowed', false,
+          'reason', 'rate_limited_ip',
+          'failed_count', _failed_count,
+          'remaining_seconds', ceil(extract(epoch FROM (_lockout_until - now())))::int,
+          'lockout_until', _lockout_until
+        );
+      END IF;
+    END IF;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'allowed', true,
+    'failed_count', _failed_count,
+    'remaining_seconds', 0
+  );
+EXCEPTION WHEN OTHERS THEN
+  -- Fail-CLOSED em erro (padrão das Ondas 6/7/B-7)
+  RETURN jsonb_build_object(
+    'allowed', false,
+    'reason', 'rate_limit_check_error',
+    'error', SQLERRM,
+    'remaining_seconds', 0
+  );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.check_media_coverage()
+ RETURNS TABLE(check_name text, status text, details text)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    -- Check 1: Imagens sem tipo
+    RETURN QUERY
+    SELECT 
+        'Imagens sem tipo definido'::TEXT,
+        CASE WHEN COUNT(*) = 0 THEN '✅ OK' ELSE '⚠️ ATENÇÃO' END::TEXT,
+        COUNT(*)::TEXT || ' imagens sem image_type_id'
+    FROM product_images
+    WHERE is_active = true AND image_type_id IS NULL;
+
+    -- Check 2: Imagens tipo 'other'
+    RETURN QUERY
+    SELECT 
+        'Imagens classificadas como other'::TEXT,
+        CASE WHEN COUNT(*) = 0 THEN '✅ OK' ELSE '⚠️ REVISAR' END::TEXT,
+        COUNT(*)::TEXT || ' imagens como "other"'
+    FROM product_images pi
+    JOIN image_types it ON pi.image_type_id = it.id
+    WHERE pi.is_active = true AND it.code = 'other';
+
+    -- Check 3: Produtos sem imagem principal
+    RETURN QUERY
+    SELECT 
+        'Produtos sem imagem principal'::TEXT,
+        CASE WHEN COUNT(*) = 0 THEN '✅ OK' ELSE '⚠️ ATENÇÃO' END::TEXT,
+        COUNT(*)::TEXT || ' produtos sem is_primary=true'
+    FROM products p
+    WHERE p.is_active = true
+      AND NOT EXISTS (
+        SELECT 1 FROM product_images pi
+        WHERE pi.product_id = p.id AND pi.is_primary = true AND pi.is_active = true
+      );
+
+    -- Check 4: Mapeamentos SPOT
+    RETURN QUERY
+    SELECT 
+        'Mapeamentos SPOT configurados'::TEXT,
+        CASE WHEN COUNT(*) >= 17 THEN '✅ OK' ELSE '⚠️ INCOMPLETO' END::TEXT,
+        COUNT(*)::TEXT || ' mapeamentos ativos'
+    FROM supplier_image_suffix_mappings
+    WHERE supplier_code = 'SPOT' AND is_active = true;
+
+    -- Check 5: Tipos de imagem ativos
+    RETURN QUERY
+    SELECT 
+        'Tipos de imagem configurados'::TEXT,
+        CASE WHEN COUNT(*) >= 18 THEN '✅ OK' ELSE '⚠️ VERIFICAR' END::TEXT,
+        COUNT(*)::TEXT || ' tipos ativos'
+    FROM image_types
+    WHERE is_active = true;
+
+    -- Check 6: Imagens com URL CDN
+    RETURN QUERY
+    SELECT 
+        'Imagens com URL CDN preenchida'::TEXT,
+        CASE 
+            WHEN COUNT(*) FILTER (WHERE url_cdn IS NOT NULL) = COUNT(*) THEN '✅ OK'
+            ELSE '⚠️ VERIFICAR'
+        END::TEXT,
+        COUNT(*) FILTER (WHERE url_cdn IS NOT NULL)::TEXT || '/' || COUNT(*)::TEXT || ' com URL'
+    FROM product_images
+    WHERE is_active = true;
+
+    RETURN;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.check_video_health()
+ RETURNS TABLE(categoria text, metrica text, valor text, status text)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    -- Total de vídeos
+    RETURN QUERY
+    SELECT 'GERAL'::TEXT, 'Total de vídeos'::TEXT,
+           COUNT(*)::TEXT, '📊'::TEXT
+    FROM product_videos WHERE is_active = true;
+    
+    -- Vídeos prontos no Cloudflare
+    RETURN QUERY
+    SELECT 'CLOUDFLARE'::TEXT, 'Vídeos prontos (ready)'::TEXT,
+           COUNT(*)::TEXT,
+           CASE WHEN COUNT(*) > 0 THEN '✅' ELSE '⚠️' END::TEXT
+    FROM product_videos 
+    WHERE is_active = true AND cloudflare_status = 'ready';
+    
+    -- Vídeos com erro
+    RETURN QUERY
+    SELECT 'CLOUDFLARE'::TEXT, 'Vídeos com erro'::TEXT,
+           COUNT(*)::TEXT,
+           CASE WHEN COUNT(*) = 0 THEN '✅' ELSE '❌' END::TEXT
+    FROM product_videos 
+    WHERE is_active = true AND cloudflare_status = 'error';
+    
+    -- Vídeos pendentes
+    RETURN QUERY
+    SELECT 'CLOUDFLARE'::TEXT, 'Vídeos pendentes'::TEXT,
+           COUNT(*)::TEXT,
+           CASE WHEN COUNT(*) = 0 THEN '✅' ELSE '⏳' END::TEXT
+    FROM product_videos 
+    WHERE is_active = true AND cloudflare_status IN ('pending', 'uploading', 'processing');
+    
+    -- Produtos com vídeo
+    RETURN QUERY
+    SELECT 'COBERTURA'::TEXT, 'Produtos com vídeo'::TEXT,
+           COUNT(DISTINCT product_id)::TEXT, '📹'::TEXT
+    FROM product_videos 
+    WHERE is_active = true AND cloudflare_status = 'ready';
+    
+    -- Produtos sem vídeo
+    RETURN QUERY
+    SELECT 'COBERTURA'::TEXT, 'Produtos SEM vídeo'::TEXT,
+           COUNT(*)::TEXT,
+           CASE WHEN COUNT(*) = 0 THEN '✅' ELSE '📋' END::TEXT
+    FROM products p
+    WHERE p.is_active = true
+      AND NOT EXISTS (
+        SELECT 1 FROM product_videos pv 
+        WHERE pv.product_id = p.id AND pv.is_active = true
+      );
+    
+    -- Vídeos sem duração
+    RETURN QUERY
+    SELECT 'QUALIDADE'::TEXT, 'Vídeos sem duração'::TEXT,
+           COUNT(*)::TEXT,
+           CASE WHEN COUNT(*) = 0 THEN '✅' ELSE '⚠️' END::TEXT
+    FROM product_videos 
+    WHERE is_active = true AND duration_seconds IS NULL;
+    
+    -- Vídeos Full HD
+    RETURN QUERY
+    SELECT 'QUALIDADE'::TEXT, 'Vídeos Full HD (1080p+)'::TEXT,
+           COUNT(*)::TEXT, '🎬'::TEXT
+    FROM product_videos 
+    WHERE is_active = true AND width_px >= 1920;
+    
+    -- Tipos configurados
+    RETURN QUERY
+    SELECT 'CONFIG'::TEXT, 'Tipos de vídeo'::TEXT,
+           COUNT(*)::TEXT,
+           CASE WHEN COUNT(*) >= 10 THEN '✅' ELSE '⚠️' END::TEXT
+    FROM video_types WHERE is_active = true;
+    
+    RETURN;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_balde_gelo(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_is_balde_gelo BOOLEAN := FALSE;
+    v_material TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_attributes JSONB;
+BEGIN
+    -- 1. NORMALIZAÇÃO
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    -- ========================================================================
+    -- 2. VALIDAÇÃO: É BALDE DE GELO?
+    -- ========================================================================
+    -- Padrões: BALDE + (GELO ou contexto bar/bebidas)
+    -- ========================================================================
+    
+    IF v_name ~ 'BALDE.*(GELO|ICE)' OR v_name ~ '(GELO|ICE).*BALDE' THEN
+        v_is_balde_gelo := TRUE;
+    ELSIF v_name ~ 'BALDE' AND v_name ~ '(CERVEJA|BEBIDA|BAR|CHAMPAGNE|VINHO|GARRAFA)' THEN
+        v_is_balde_gelo := TRUE;
+    ELSIF v_name ~ 'ICE.?BUCKET|CHAMPANHEIRA|COOLER.*BALDE' THEN
+        v_is_balde_gelo := TRUE;
+    END IF;
+    
+    -- Se NÃO é balde de gelo, retornar imediatamente
+    IF NOT v_is_balde_gelo THEN
+        RETURN jsonb_build_object(
+            'is_balde_gelo', FALSE,
+            'category_id', NULL,
+            'category_slug', NULL,
+            'material', NULL,
+            'attributes', NULL
+        );
+    END IF;
+    
+    -- ========================================================================
+    -- 3. IDENTIFICAÇÃO DO MATERIAL
+    -- ========================================================================
+    
+    IF v_name ~ 'INOX|ACO|AÇO|METAL' THEN
+        v_material := 'INOX';
+        v_category_slug := 'baldes_gelo_inox_metal';
+    ELSIF v_name ~ 'ALUMIN' THEN
+        v_material := 'ALUMINIO';
+        v_category_slug := 'baldes_gelo_aluminio';
+    ELSIF v_name ~ 'PLASTIC|ACRILIC|PS|PP|ABS' THEN
+        v_material := 'PLASTICO';
+        v_category_slug := 'baldes_gelo_plastico';
+    ELSE
+        v_material := 'GENERICO';
+        v_category_slug := 'baldes_gelo';
+    END IF;
+    
+    -- Busca UUID da categoria
+    SELECT id INTO v_category_id 
+    FROM categories WHERE slug = v_category_slug LIMIT 1;
+    
+    -- Fallback para categoria pai
+    IF v_category_id IS NULL THEN
+        SELECT id INTO v_category_id 
+        FROM categories WHERE slug = 'baldes_gelo' LIMIT 1;
+        v_category_slug := 'baldes_gelo';
+    END IF;
+    
+    -- 4. ATRIBUTOS
+    v_attributes := jsonb_build_object(
+        'has_alca',    v_name ~ 'ALCA|ALÇA|HANDLE',
+        'has_tampa',   v_name ~ 'TAMPA|COVER|LID',
+        'has_pegador', v_name ~ 'PEGADOR|PINCA|PINÇA',
+        'capacidade_litros', CASE 
+                                WHEN v_name ~ '(\d+)\s*L' THEN (regexp_match(v_name, '(\d+)\s*L'))[1]
+                                ELSE NULL
+                             END
+    );
+    
+    -- 5. RETORNO
+    RETURN jsonb_build_object(
+        'is_balde_gelo', TRUE,
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'material', v_material,
+        'attributes', v_attributes
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_bolsa_termica(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_id UUID;
+    v_litros INT;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    SELECT id INTO v_id FROM categories WHERE slug = 'bolsa_termica' LIMIT 1;
+    
+    v_litros := (regexp_match(v_name, '(\d+)\s*L(?:ITROS?)?'))[1]::INT;
+    
+    RETURN jsonb_build_object(
+        'category_id', v_id,
+        'category_slug', 'bolsa_termica',
+        'capacidade_litros', v_litros,
+        'tamanho', CASE
+            WHEN v_name ~ 'GG|EXTRA.?GRANDE' THEN 'GG'
+            WHEN v_name ~ 'GRANDE|\bG\b' THEN 'G'
+            WHEN v_name ~ 'MEDIO|MEDIA|\bM\b' THEN 'M'
+            WHEN v_name ~ 'PEQUENO|PEQUENA|\bP\b' THEN 'P'
+            ELSE NULL
+        END,
+        'has_alca', v_name ~ 'ALCA|ALCAS',
+        'has_bolso', v_name ~ 'BOLSO',
+        'is_dobravel', v_name ~ 'DOBRA'
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_bone(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_id UUID;
+    v_slug TEXT;
+    v_tipo TEXT;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    IF v_name ~ 'BUCKET|PESCADOR|CHAPEU' THEN
+        v_tipo := 'BUCKET'; v_slug := 'chapeu-bucket';
+    ELSIF v_name ~ 'TRUCKER|TELA|REDINHA' THEN
+        v_tipo := 'TRUCKER'; v_slug := 'bone-trucker';
+    ELSIF v_name ~ 'ABA.?RETA|SNAPBACK|FLAT' THEN
+        v_tipo := 'ABA_RETA'; v_slug := 'bone-aba-reta';
+    ELSIF v_name ~ 'DAD|BASEBALL|CURVO' THEN
+        v_tipo := 'DAD_HAT'; v_slug := 'bone-dad-hat';
+    ELSE
+        v_tipo := 'AMERICANO'; v_slug := 'bone-americano';
+    END IF;
+    
+    SELECT id INTO v_id FROM categories WHERE slug = v_slug LIMIT 1;
+    
+    RETURN jsonb_build_object(
+        'category_id', v_id, 'category_slug', v_slug, 'tipo', v_tipo,
+        'material', CASE
+            WHEN v_name ~ 'ALGODAO|COTTON' THEN 'algodao'
+            WHEN v_name ~ 'POLIESTER|NYLON|TACTEL' THEN 'poliester'
+            WHEN v_name ~ 'JEANS|DENIM' THEN 'jeans'
+            ELSE 'poliester'
+        END,
+        'has_regulagem', v_name ~ 'REGULAGEM|AJUST|FIVELA|SNAPBACK',
+        'is_sublimado', v_name ~ 'SUBLIMA'
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_bowl(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_material TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_attributes JSONB;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    IF v_name ~ 'BAMBU|BAMBOO' THEN
+        v_material := 'BAMBU';
+        v_category_slug := 'bowl_bambu';
+        v_category_id := '8262d731-5727-4d2d-be6b-27842d41caab'::uuid;
+    ELSIF v_name ~ 'CERAMICA|CERÂMICA|PORCELANA|LOUÇA|LOUCA' THEN
+        v_material := 'CERAMICA';
+        v_category_slug := 'bowl_ceramica_porcelana';
+        v_category_id := '6c5fa651-f478-406e-a6db-46cbac9e3298'::uuid;
+    ELSIF v_name ~ 'MELANINA|MELAMINA' THEN
+        v_material := 'MELANINA';
+        v_category_slug := 'bowl_melanina';
+        v_category_id := '5117732f-6bad-487f-8577-df48b608619d'::uuid;
+    ELSIF v_name ~ 'VIDRO|GLASS' THEN
+        v_material := 'VIDRO';
+        v_category_slug := 'bowl_vidro';
+        v_category_id := 'd9127ba5-a035-48d9-a30a-8dd712f277aa'::uuid;
+    ELSIF v_name ~ 'PLASTIC|ACRILIC|ACRÍLICO|PP|PS|PET' THEN
+        v_material := 'PLASTICO';
+        v_category_slug := 'bowl_plastico';
+        v_category_id := '8058007b-9481-45cf-8a56-7b3743546788'::uuid;
+    ELSE
+        v_material := 'INDEFINIDO';
+        v_category_slug := 'bowl';
+        v_category_id := '45f5509a-1935-4c24-b7e8-c8bdc5720dcc'::uuid;
+    END IF;
+    
+    v_attributes := jsonb_build_object(
+        'has_tampa',        v_name ~ 'TAMPA|COVER|LID|COM.?TAMPA',
+        'has_divisorias',   v_name ~ 'DIVIS|COMPARTIMENTO',
+        'is_salada',        v_name ~ 'SALADA|SALAD',
+        'is_acai',          v_name ~ 'ACAI|AÇAI',
+        'capacidade_ml',    (regexp_match(v_name, '(\d+)\s*ML'))[1]
+    );
+    
+    RETURN jsonb_build_object(
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'material', v_material,
+        'attributes', v_attributes
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_camiseta(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_tecido TEXT;
+    v_modelo TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_attributes JSONB;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    IF v_name ~ 'PIQUET|PIQUE' THEN
+        v_tecido := 'PIQUET';
+    ELSIF v_name ~ 'DRY\s*FIT|DRYFIT|DRI\s*FIT' THEN
+        v_tecido := 'DRY FIT';
+    ELSIF v_name ~ 'ALGODAO|ALGODÃO|COTTON|MEIA\s*MALHA|PENTEADO' THEN
+        v_tecido := 'ALGODAO';
+    ELSE
+        v_tecido := 'INDEFINIDO';
+    END IF;
+    
+    IF v_name ~ 'POLO|GOLA\s*POLO' THEN
+        v_modelo := 'POLO';
+    ELSIF v_name ~ 'MANGA\s*LONGA|M\.\s*LONGA|ML' THEN
+        v_modelo := 'MANGA LONGA';
+    ELSE
+        v_modelo := 'MANGA CURTA';
+    END IF;
+    
+    CASE 
+        WHEN v_tecido = 'PIQUET' THEN
+            v_category_slug := 'camiseta-piquet-polo';
+            v_modelo := 'POLO';
+        WHEN v_tecido = 'DRY FIT' AND v_modelo = 'MANGA LONGA' THEN
+            v_category_slug := 'camiseta-dry-fit-manga-longa';
+        WHEN v_tecido = 'DRY FIT' THEN
+            v_category_slug := 'camiseta-dry-fit-manga-curta';
+        WHEN v_tecido = 'ALGODAO' AND v_modelo = 'MANGA LONGA' THEN
+            v_category_slug := 'camiseta-algodao-manga-longa';
+        WHEN v_tecido = 'ALGODAO' THEN
+            v_category_slug := 'camiseta-algodao-manga-curta';
+        ELSE
+            v_category_slug := 'camisetas';
+            v_tecido := 'INDEFINIDO';
+    END CASE;
+    
+    SELECT id INTO v_category_id 
+    FROM categories 
+    WHERE slug = v_category_slug 
+    LIMIT 1;
+    
+    IF v_category_id IS NULL THEN
+        SELECT id INTO v_category_id 
+        FROM categories 
+        WHERE slug = 'camisetas' 
+        LIMIT 1;
+        v_category_slug := 'camisetas';
+    END IF;
+    
+    v_attributes := jsonb_build_object(
+        'tecido', v_tecido,
+        'modelo', v_modelo,
+        'genero', CASE 
+            WHEN v_name ~ 'MASCULIN|MASC|HOMEM|MEN' THEN 'masculino'
+            WHEN v_name ~ 'FEMININ|FEM|MULHER|WOMEN|BABY\s*LOOK' THEN 'feminino'
+            WHEN v_name ~ 'INFANTIL|KIDS|CRIANCA' THEN 'infantil'
+            ELSE 'unissex'
+        END,
+        'gola', CASE 
+            WHEN v_name ~ 'GOLA\s*V|DECOTE\s*V' THEN 'v'
+            WHEN v_name ~ 'POLO|GOLA\s*POLO' THEN 'polo'
+            ELSE 'redonda'
+        END,
+        'has_uv_protection', v_name ~ 'UV|PROTECAO\s*SOLAR|FPS',
+        'is_babylook', v_name ~ 'BABY\s*LOOK|BABYLOOK'
+    );
+    
+    RETURN jsonb_build_object(
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'tecido', v_tecido,
+        'modelo', v_modelo,
+        'attributes', v_attributes
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_caneca(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_material TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_attributes JSONB;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    IF v_name ~ 'COBRE' THEN
+        v_material := 'COBRE';
+        v_category_slug := 'canecas_cobre';
+        v_category_id := 'ce04ea09-ac08-4903-bf04-f663c2f0a5c9'::uuid;
+    ELSIF v_name ~ 'ESMALTAD|AGATA' THEN
+        v_material := 'ESMALTADA';
+        v_category_slug := 'canecas_esmaltada';
+        v_category_id := 'c0dd07c8-8ef2-44fd-962f-b2628072fa5a'::uuid;
+    ELSIF v_name ~ 'ECO.?FIBRA|FIBRA.?DE.?BAMBU|FIBRA.?NATURAL' THEN
+        v_material := 'ECO_FIBRA';
+        v_category_slug := 'canecas_plastico_eco_fibra';
+        v_category_id := '26878f45-9cf3-4167-98ac-2c307b4f0319'::uuid;
+    ELSIF v_name ~ 'PORCELANA|CERAMICA|CERÂMICA|LOUÇA|LOUCA' THEN
+        v_material := 'PORCELANA';
+        v_category_slug := 'canecas_porcelana';
+        v_category_id := '54d43b9e-be84-4e3a-9fd7-5812ca0db5eb'::uuid;
+    ELSIF v_name ~ 'VIDRO|GLASS|BOROSSILICATO' THEN
+        v_material := 'VIDRO';
+        v_category_slug := 'canecas_vidro';
+        v_category_id := '11eeea74-dcee-4feb-95a1-bd494fa3099d'::uuid;
+    ELSIF v_name ~ 'INOX|ACO.?INOX|AÇO.?INOX' THEN
+        v_material := 'INOX';
+        v_category_slug := 'canecas_inox';
+        v_category_id := '8b14feda-0b61-4eed-a61f-0f5089a6fd21'::uuid;
+    ELSIF v_name ~ 'ALUMINIO|ALUMÍNIO' THEN
+        v_material := 'ALUMINIO';
+        v_category_slug := 'canecas_aluminio';
+        v_category_id := 'eebd2546-b510-4ec7-bc1a-1329d198ac16'::uuid;
+    ELSIF v_name ~ 'PLASTIC|ACRILIC|ACRÍLICO|POLIPROPILENO|PP|PS|PET|ABS' THEN
+        v_material := 'PLASTICO';
+        v_category_slug := 'canecas_plastico';
+        v_category_id := 'ae3521c2-b4e8-4915-b775-94a5b60bb983'::uuid;
+    ELSE
+        v_material := 'INDEFINIDO';
+        v_category_slug := 'canecas';
+        v_category_id := '05bfe651-78c7-4a26-8a62-aba0d72ca2af'::uuid;
+    END IF;
+    
+    v_attributes := jsonb_build_object(
+        'has_tampa',        v_name ~ 'TAMPA|COVER|LID|COM.?TAMPA',
+        'has_alca',         v_name ~ 'ALÇA|ALCA|HANDLE|COM.?ALÇA',
+        'is_termica',       v_name ~ 'TERMIC|THERMAL|DUPLA.?PAREDE|ISOTERM',
+        'has_infusor',      v_name ~ 'INFUSOR|INFUSER|CHA|CHÁ',
+        'is_personalizada', v_name ~ 'SUBLIM|TRANSFER|PERSONAL',
+        'capacidade_ml',    (regexp_match(v_name, '(\d+)\s*ML'))[1]
+    );
+    
+    RETURN jsonb_build_object(
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'material', v_material,
+        'attributes', v_attributes
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_chaveiro(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_tipo TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_attributes JSONB;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    -- Detectar tipo (prioridade: mais específico primeiro)
+    IF v_name ~ 'COURO.?LEGITIMO|COURO.?GENUINO|COURO.?NATURAL' THEN
+        v_tipo := 'COURO_LEGITIMO';
+        v_category_slug := 'chaveiros-couro-legitimo';
+        v_category_id := 'a5bdeb99-9f6e-4195-9c27-71c69126a0eb'::uuid;
+    ELSIF v_name ~ 'COURO|LEATHER|COURINO|SINTETICO' THEN
+        v_tipo := 'COURO_ECOLOGICO';
+        v_category_slug := 'chaveiros-couro-ecologico';
+        v_category_id := '87700df0-afa4-4308-b644-b827c8e6e35d'::uuid;
+    ELSIF v_name ~ 'BAMBU|MADEIRA|CORTICA|ECOLOGIC|RECICLAD' THEN
+        v_tipo := 'ECOLOGICO';
+        v_category_slug := 'chaveiros-ecologico';
+        v_category_id := '3c537a60-8ac6-4e17-8f6c-be3e2b3201e3'::uuid;
+    ELSIF v_name ~ 'PREMIUM|LUXO|EXECUTIVO|CRISTAL|SWAROVSKI' THEN
+        v_tipo := 'PREMIUM';
+        v_category_slug := 'chaveiros-premium';
+        v_category_id := '68cdcf1b-42cd-4179-881c-d800244334e4'::uuid;
+    ELSIF v_name ~ 'MULTI.?FUNC|CANIVETE|FERRAMENTA|[234].?EM.?1|ABRIDOR|LANTERNA' THEN
+        v_tipo := 'MULTIFUNCIONAL';
+        v_category_slug := 'chaveiros-multi-funcional';
+        v_category_id := 'b43c1651-5657-4202-ba27-64a85ef702ba'::uuid;
+    ELSIF v_name ~ 'METAL|INOX|ALUMINIO|ZINCO|NIQUEL' THEN
+        v_tipo := 'METAL';
+        v_category_slug := 'chaveiros-metal';
+        v_category_id := '46839394-6eca-4eb2-9052-15a8ab55b4e9'::uuid;
+    ELSIF v_name ~ 'PROMOCIONAL|BARATO|SIMPLES|BASICO|PLASTICO' THEN
+        v_tipo := 'PROMOCIONAL';
+        v_category_slug := 'chaveiros-promocional';
+        v_category_id := '3af351ea-46bf-433b-842f-c3a7d646262d'::uuid;
+    ELSE
+        v_tipo := 'INDEFINIDO';
+        v_category_slug := 'chaveiros';
+        v_category_id := '75948028-29b5-4751-bf89-c0bfbb927d39'::uuid;
+    END IF;
+    
+    v_attributes := jsonb_build_object(
+        'is_abridor',       v_name ~ 'ABRIDOR|OPENER|SACA.?ROLHA',
+        'has_lanterna',     v_name ~ 'LANTERNA|LED|LUZ|LIGHT',
+        'is_pen_drive',     v_name ~ 'PEN.?DRIVE|USB|PENDRIVE',
+        'is_canivete',      v_name ~ 'CANIVETE|FACA|KNIFE',
+        'has_mosquetao',    v_name ~ 'MOSQUETAO|MOSQUETÃO|CARABINER',
+        'is_personalizavel',v_name ~ 'GRAV|LASER|PERSONAL'
+    );
+    
+    RETURN jsonb_build_object(
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'tipo', v_tipo,
+        'attributes', v_attributes
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_copo(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_material TEXT;
+    v_subtipo TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_attributes JSONB;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    -- =========================================================================
+    -- PASSO 1: Detectar material
+    -- =========================================================================
+    IF v_name ~ 'ALUMINIO|ALUMÍNIO' THEN
+        v_material := 'ALUMINIO';
+    ELSIF v_name ~ 'INOX|ACO.?INOX|AÇO.?INOX' THEN
+        v_material := 'INOX';
+    ELSIF v_name ~ 'VIDRO|GLASS|CRISTAL' THEN
+        v_material := 'VIDRO';
+    ELSIF v_name ~ 'PLASTIC|ACRILIC|ACRÍLICO|PP|PS|PET' THEN
+        v_material := 'PLASTICO';
+    ELSE
+        v_material := 'INDEFINIDO';
+    END IF;
+    
+    -- =========================================================================
+    -- PASSO 2: Detectar subtipo
+    -- =========================================================================
+    IF v_name ~ 'LONG.?DRINK' THEN
+        v_subtipo := 'LONG_DRINK';
+    ELSIF v_name ~ 'WHISKY|WHISKEY|THE.?ROCK|ROCKS' THEN
+        v_subtipo := 'WHISKY';
+    ELSIF v_name ~ 'SHOT|DOSE|TEQUILA|TEQUILEIRO' THEN
+        v_subtipo := 'SHOT';
+    ELSIF v_name ~ 'CALDERETA|CALDEIRETA' THEN
+        v_subtipo := 'CALDERETA';
+    ELSIF v_name ~ 'TWISTER|ESPIRAL' THEN
+        v_subtipo := 'TWISTER';
+    ELSIF v_name ~ 'BUCKS|STARBUCKS|CAFE|CAFÉ' THEN
+        v_subtipo := 'BUCKS';
+    ELSIF v_name ~ 'AMERICANO' THEN
+        v_subtipo := 'AMERICANO';
+    ELSE
+        v_subtipo := NULL;
+    END IF;
+    
+    -- =========================================================================
+    -- PASSO 3: Determinar categoria final (material + subtipo)
+    -- =========================================================================
+    
+    -- VIDRO com subtipos
+    IF v_material = 'VIDRO' THEN
+        IF v_subtipo = 'LONG_DRINK' THEN
+            v_category_slug := 'copos-vidro-long-drink';
+            v_category_id := 'cc4d570d-606c-4d54-95fc-46c3824570b1'::uuid;
+        ELSIF v_subtipo = 'WHISKY' THEN
+            v_category_slug := 'copos-vidro-whisky-the-rock';
+            v_category_id := '713fb666-08d1-4e0c-86f2-16f5500d1660'::uuid;
+        ELSIF v_subtipo = 'SHOT' THEN
+            v_category_slug := 'copos-vidro-shot-dose';
+            v_category_id := '19fb176b-1ff5-4e1d-aeed-9afef1e6f17e'::uuid;
+        ELSIF v_subtipo = 'CALDERETA' THEN
+            v_category_slug := 'copos-vidro-caldereta';
+            v_category_id := '7425c467-0f35-4da0-8d40-42079bef5f7c'::uuid;
+        ELSIF v_subtipo = 'AMERICANO' THEN
+            v_category_slug := 'copos-vidro-americano';
+            v_category_id := 'd4ffaf0a-8f4f-4420-b346-235335101884'::uuid;
+        ELSE
+            v_category_slug := 'copos-vidro';
+            v_category_id := 'e47e57e6-98e0-42ef-a076-57e82d6c5974'::uuid;
+        END IF;
+    
+    -- PLÁSTICO com subtipos
+    ELSIF v_material = 'PLASTICO' THEN
+        IF v_subtipo = 'LONG_DRINK' THEN
+            v_category_slug := 'copos-plastico-long-drink';
+            v_category_id := '445ef462-e426-44b7-aa6c-17bf5747eac5'::uuid;
+        ELSIF v_subtipo = 'TWISTER' THEN
+            v_category_slug := 'copos-plastico-twister';
+            v_category_id := '7ecf7ec7-fdf5-4220-9f72-36dd486a86c2'::uuid;
+        ELSIF v_subtipo = 'CALDERETA' THEN
+            v_category_slug := 'copos-plastico-caldereta';
+            v_category_id := 'e1c7d941-8e4f-42bd-ae06-fbb625f22a20'::uuid;
+        ELSIF v_subtipo = 'BUCKS' THEN
+            v_category_slug := 'copos-plastico-bucks-cafe';
+            v_category_id := '16354438-75c8-4767-9ad7-2aeb178e7fac'::uuid;
+        ELSE
+            v_category_slug := 'copos-plastico';
+            v_category_id := '964ae8d7-e621-4cc0-b4dd-928236ed9aed'::uuid;
+        END IF;
+    
+    -- ALUMÍNIO com subtipos
+    ELSIF v_material = 'ALUMINIO' THEN
+        IF v_subtipo = 'CALDERETA' THEN
+            v_category_slug := 'copos-aluminio-caldereta';
+            v_category_id := '9b4068f3-d5cf-4985-b220-51b50d60b70f'::uuid;
+        ELSE
+            v_category_slug := 'copos-aluminio';
+            v_category_id := '2397293c-7b27-49da-9d9f-2e5ea92a18a2'::uuid;
+        END IF;
+    
+    -- INOX (sem subtipos no banco)
+    ELSIF v_material = 'INOX' THEN
+        v_category_slug := 'copos-inox';
+        v_category_id := '6405e1b8-eb12-41ec-b1e4-8d4631a6e53d'::uuid;
+    
+    -- FALLBACK
+    ELSE
+        v_category_slug := 'copos';
+        v_category_id := 'c1f4d633-7fd7-40f5-8fdc-fbc35daac8a2'::uuid;
+    END IF;
+    
+    -- =========================================================================
+    -- PASSO 4: Atributos
+    -- =========================================================================
+    v_attributes := jsonb_build_object(
+        'subtipo',          v_subtipo,
+        'has_tampa',        v_name ~ 'TAMPA|COVER|LID|COM.?TAMPA',
+        'has_canudo',       v_name ~ 'CANUDO|STRAW',
+        'is_termico',       v_name ~ 'TERMIC|THERMAL|DUPLA.?PAREDE',
+        'is_dobravel',      v_name ~ 'DOBRAVEL|RETRATIL|SILICONE',
+        'capacidade_ml',    (regexp_match(v_name, '(\d+)\s*ML'))[1]
+    );
+    
+    RETURN jsonb_build_object(
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'material', v_material,
+        'attributes', v_attributes
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_coqueteleira(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_id UUID;
+    v_slug TEXT;
+    v_tipo TEXT;
+    v_capacidade INT;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    v_capacidade := (regexp_match(v_name, '(\d+)\s*ML'))[1]::INT;
+    
+    -- Lógica de classificação cautelosa
+    IF v_name ~ 'SHAKEIRA' THEN
+        v_tipo := 'SHAKEIRA'; v_slug := 'shakeira_coqueteleira';
+    ELSIF v_name ~ 'WHEY|PROTEINA|SUPLEMENTO|FITNESS|ACADEMIA|TREINO|ESPORTIV' THEN
+        v_tipo := 'SHAKEIRA'; v_slug := 'shakeira_coqueteleira';
+    ELSIF v_name ~ 'KIT.*(DRINK|BAR|COQUETEL|CAIPIRINHA|GIN)' THEN
+        v_tipo := 'KIT_DRINK'; v_slug := 'kit-drink';
+    ELSIF v_name ~ 'BOSTON|BARTENDER|DRINK|COCKTAIL|COQUETEL' THEN
+        v_tipo := 'BAR'; v_slug := 'coqueteleira_bar';
+    ELSIF v_name ~ 'INOX|ACO|METAL' THEN
+        v_tipo := 'BAR'; v_slug := 'coqueteleira_bar';
+    ELSE
+        v_tipo := 'BAR'; v_slug := 'coqueteleira_bar';
+    END IF;
+    
+    SELECT id INTO v_id FROM categories WHERE slug = v_slug LIMIT 1;
+    
+    RETURN jsonb_build_object(
+        'category_id', v_id,
+        'category_slug', v_slug,
+        'tipo', v_tipo,
+        'capacidade_ml', v_capacidade,
+        'material', CASE
+            WHEN v_name ~ 'INOX|ACO' THEN 'inox'
+            WHEN v_name ~ 'PLASTICO|ABS' THEN 'plastico'
+            WHEN v_name ~ 'VIDRO' THEN 'vidro'
+            ELSE NULL
+        END
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_espelho(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_is_espelho BOOLEAN := FALSE;
+    v_type TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_attributes JSONB;
+BEGIN
+    -- 1. NORMALIZAÇÃO
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    -- ========================================================================
+    -- 2. VALIDAÇÃO: É ESPELHO?
+    -- ========================================================================
+    
+    IF v_name ~ 'ESPELHO|MIRROR' THEN
+        v_is_espelho := TRUE;
+    END IF;
+    
+    -- Se NÃO é espelho, retornar imediatamente
+    IF NOT v_is_espelho THEN
+        RETURN jsonb_build_object(
+            'is_espelho', FALSE,
+            'category_id', NULL,
+            'category_slug', NULL,
+            'type', NULL,
+            'attributes', NULL
+        );
+    END IF;
+    
+    -- ========================================================================
+    -- 3. IDENTIFICAÇÃO DO TIPO
+    -- ========================================================================
+    
+    IF v_name ~ 'MESA|BANCADA|APOIO|PEDESTAL|VERTICAL' THEN
+        v_type := 'MESA';
+        v_category_slug := 'espelho-mesa';
+    ELSE
+        -- Default: bolsa (mais comum em brindes promocionais)
+        v_type := 'BOLSA';
+        v_category_slug := 'espelho-bolsa';
+    END IF;
+    
+    -- Busca UUID da categoria
+    SELECT id INTO v_category_id 
+    FROM categories WHERE slug = v_category_slug LIMIT 1;
+    
+    -- Fallback para categoria pai
+    IF v_category_id IS NULL THEN
+        SELECT id INTO v_category_id 
+        FROM categories WHERE slug = 'espelhos' LIMIT 1;
+        v_category_slug := 'espelhos';
+    END IF;
+    
+    -- 4. ATRIBUTOS
+    v_attributes := jsonb_build_object(
+        'has_led',        v_name ~ 'LED|LUZ|ILUMINAD|LUMINOSO',
+        'has_aumento',    v_name ~ 'AUMENTO|AMPLIA|ZOOM|\dX',
+        'has_dupla_face', v_name ~ 'DUPLA.?FACE|DUAS.?FACES|FRENTE.*VERSO',
+        'is_dobravel',    v_name ~ 'DOBRA|COMPACTO|PORTATIL|VIAGEM'
+    );
+    
+    -- 5. RETORNO
+    RETURN jsonb_build_object(
+        'is_espelho', TRUE,
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'type', v_type,
+        'attributes', v_attributes
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_fone_ouvido(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_is_fone BOOLEAN;
+BEGIN
+    -- 1. NORMALIZAR NOME (maiúsculas, sem acentos)
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    -- 2. VERIFICAR SE É FONE DE OUVIDO
+    -- Padrões identificadores:
+    --   • FONE (DE OUVIDO)
+    --   • HEADPHONE, HEADSET, EARPHONE, EARBUDS, EARPODS
+    --   • AURICULAR, AUSCULTADOR
+    --   • TWS (True Wireless Stereo)
+    --   • INTRA-AURICULAR, OVER-EAR, ON-EAR
+    
+    IF v_name ~ 'FONE|HEADPHONE|HEADSET|EARPHONE|EARBUD|EARPOD|AURICULAR|AUSCULTADOR|TWS|INTRA.?AURICULAR|OVER.?EAR|ON.?EAR' THEN
+        v_is_fone := TRUE;
+        SELECT id, slug INTO v_category_id, v_category_slug
+        FROM categories WHERE slug = 'fone-de-ouvido' LIMIT 1;
+    ELSE
+        v_is_fone := FALSE;
+        v_category_id := NULL;
+        v_category_slug := NULL;
+    END IF;
+    
+    -- 3. RETORNO
+    RETURN jsonb_build_object(
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'is_fone_ouvido', v_is_fone
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_guarda_chuva(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_attributes JSONB;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    v_category_slug := 'guarda-chuva';
+    
+    SELECT id INTO v_category_id 
+    FROM categories 
+    WHERE slug = v_category_slug 
+    LIMIT 1;
+    
+    v_attributes := jsonb_build_object(
+        'abertura', CASE
+            WHEN v_name ~ 'AUTOMATICO|AUTOMATIC|AUTO' THEN 'automatico'
+            WHEN v_name ~ 'MANUAL' THEN 'manual'
+            WHEN v_name ~ 'INVERTIDO|INVERTED|INVERSO' THEN 'invertido'
+            ELSE NULL
+        END,
+        'tamanho', CASE
+            WHEN v_name ~ 'GOLFE|GOLF|GRANDE|GIGANTE|XXL' THEN 'golfe'
+            WHEN v_name ~ 'MINI|COMPACTO|COMPACT|PORTATIL|PEQUENO|BOLSA' THEN 'portatil'
+            ELSE 'padrao'
+        END,
+        'varetas', (regexp_match(v_name, '(\d+)\s*VARETAS'))[1],
+        'diametro_cm', (regexp_match(v_name, '(\d+)\s*CM'))[1],
+        'is_dobravel', v_name ~ 'DOBRAVEL|DOBRA|FOLDING',
+        'is_personalizado', v_name ~ 'PERSONALIZA|SUBLIMA|ESTAMPA',
+        'material_cabo', CASE
+            WHEN v_name ~ 'MADEIRA|WOOD' THEN 'madeira'
+            WHEN v_name ~ 'PLASTICO|PLASTIC' THEN 'plastico'
+            WHEN v_name ~ 'METAL|ALUMINIO' THEN 'metal'
+            WHEN v_name ~ 'BORRACHA|EMBORRACHADO' THEN 'emborrachado'
+            ELSE NULL
+        END
+    );
+    
+    RETURN jsonb_build_object(
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'attributes', v_attributes
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_headphone(p_product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_type TEXT;
+    v_style TEXT;
+    v_material TEXT;
+    v_attributes JSONB;
+BEGIN
+    v_name := UPPER(COALESCE(unaccent(p_product_name), ''));
+    
+    v_category_id := 'a1b2c3d4-2222-4000-8000-000000000002';
+    v_category_slug := 'fone-de-ouvido';
+    v_type := 'STANDARD';
+    v_style := 'IN-EAR';
+    v_material := 'PLÁSTICO';
+    
+    IF v_name ~* 'HEADPHONE|HEADSET|ARCO|OVER.?EAR|CIRCUM.?AURAL' THEN
+        v_style := 'OVER-EAR';
+    ELSIF v_name ~* 'ON.?EAR|SUPRA.?AURAL' THEN
+        v_style := 'ON-EAR';
+    ELSIF v_name ~* 'EAR.?BUD|EARBUDS|TWS|INTRA.?AURICULAR' THEN
+        v_style := 'EARBUDS';
+    ELSIF v_name ~* 'NECKBAND|PESCOCO' THEN
+        v_style := 'NECKBAND';
+    END IF;
+    
+    IF v_name ~* 'BLUETOOTH|BT|WIRELESS|SEM.?FIO|TWS' THEN
+        v_type := 'BLUETOOTH';
+    ELSIF v_name ~* 'P2|P3|AUX|CABO|COM.?FIO' THEN
+        v_type := 'COM FIO';
+    ELSIF v_name ~* 'USB' THEN
+        v_type := 'USB';
+    END IF;
+    
+    IF v_name ~* 'METAL|ALUMIN' THEN
+        v_material := 'METAL';
+    ELSIF v_name ~* 'COURO|LEATHER' THEN
+        v_material := 'COURO';
+    END IF;
+    
+    v_attributes := jsonb_build_object(
+        'has_bluetooth', v_name ~* 'BLUETOOTH|BT|WIRELESS|SEM.?FIO|TWS',
+        'has_microphone', v_name ~* 'MICROFONE|MIC|HEADSET|CALL|LIGACAO',
+        'has_noise_cancel', v_name ~* 'NOISE.?CANCEL|ANC|CANCELAMENTO|ISOLAMENTO',
+        'has_touch_control', v_name ~* 'TOUCH|TOQUE|SENSOR',
+        'has_volume_control', v_name ~* 'VOLUME|CONTROLE',
+        'has_led', v_name ~* 'LED|LUZ|RGB',
+        'has_case', v_name ~* 'CASE|ESTOJO|CAIXA|BOX',
+        'is_foldable', v_name ~* 'DOBRAVEL|FOLDABLE|ARTICULADO',
+        'is_sports', v_name ~* 'ESPORTE|SPORT|CORRIDA|ACADEMIA|FITNESS',
+        'is_gamer', v_name ~* 'GAMER|GAMING|GAME'
+    );
+    
+    RETURN jsonb_build_object(
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'type', v_type,
+        'style', v_style,
+        'material', v_material,
+        'attributes', v_attributes
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_kit_banho(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_is_kit_banho BOOLEAN;
+BEGIN
+    -- 1. NORMALIZAR NOME (maiúsculas, sem acentos)
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    -- 2. VERIFICAR SE É KIT BANHO/SPA
+    -- Padrões identificadores de Kit Banho/Spa:
+    --   • KIT + (BANHO|SPA|RELAXANTE|AROMATERAPIA|WELLNESS|BEM-ESTAR)
+    --   • Combinações com produtos típicos: SABONETE, SHAMPOO, SAIS, ÓLEO, ESPUMA, HIDRATANTE
+    --   • Termos específicos: BATH SET, BODY CARE, SKIN CARE (em kits)
+    
+    IF v_name ~ 'KIT.*(BANHO|SPA|RELAXA|AROMAT|WELLNESS|BEM.?ESTAR|BODY.?CARE|SKIN.?CARE|BATH)' OR
+       v_name ~ '(BANHO|SPA).*(KIT|SET|CONJUNTO)' OR
+       v_name ~ 'KIT.*(SABONETE|SHAMPOO|SAIS|OLEO|ESPUMA|HIDRATANTE|ESFOLIANTE|LOCAO|CREME)' OR
+       v_name ~ 'SET.*(BANHO|SPA|BATH|RELAXA)' THEN
+        
+        v_is_kit_banho := TRUE;
+        SELECT id, slug INTO v_category_id, v_category_slug
+        FROM categories WHERE slug = 'kit_banho_kit_spa' LIMIT 1;
+    ELSE
+        v_is_kit_banho := FALSE;
+        v_category_id := NULL;
+        v_category_slug := NULL;
+    END IF;
+    
+    -- 3. RETORNO
+    RETURN jsonb_build_object(
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'is_kit_banho', v_is_kit_banho
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_kit_churrasco(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_is_kit_churrasco BOOLEAN := FALSE;
+    v_embalagem TEXT := 'INDEFINIDO';
+    v_quantidade_pecas INTEGER := NULL;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_slug_embalagem TEXT;
+    v_slug_pecas TEXT;
+    v_slug_tentativa TEXT;
+    v_fallback_level INTEGER := 0;  -- 0=direto, 1=emb, 2=pai
+BEGIN
+    -- ========================================================================
+    -- 1. NORMALIZAÇÃO
+    -- ========================================================================
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    -- ========================================================================
+    -- 2. VERIFICAR SE É KIT CHURRASCO
+    -- ========================================================================
+    IF v_name ~ 'KIT.*CHURRASCO' OR v_name ~ 'CHURRASCO.*KIT' THEN
+        v_is_kit_churrasco := TRUE;
+    ELSE
+        -- Não é kit churrasco, retorna NULL
+        RETURN jsonb_build_object(
+            'is_kit_churrasco', FALSE,
+            'embalagem', NULL,
+            'quantidade_pecas', NULL,
+            'category_id', NULL,
+            'category_slug', NULL,
+            'fallback_level', 0
+        );
+    END IF;
+    
+    -- ========================================================================
+    -- 3. DETECTAR TIPO DE EMBALAGEM (pelo CONTEXTO, não material dos utensílios)
+    -- ========================================================================
+    -- IMPORTANTE: A ordem importa! Mais específico primeiro.
+    -- Detectamos apenas "estojo de/em X" ou "caixa X", NÃO "utensílios em X"
+    
+    -- COURO ECOLÓGICO (PU) - PRIORIDADE MÁXIMA
+    -- Ex: "estojo de PU e 210D" → é COURO, não NYLON
+    IF v_name ~ 'ESTOJO\s+DE\s+PU' THEN
+        v_embalagem := 'COURO_ECOLOGICO';
+        v_slug_embalagem := 'kit_churrasco_emb_couro_ecologico';
+    
+    -- ALUMÍNIO
+    -- Ex: "estojo de alumínio"
+    ELSIF v_name ~ 'ESTOJO\s+DE\s+ALUMINIO' THEN
+        v_embalagem := 'ALUMINIO';
+        v_slug_embalagem := 'kit_churrasco_emb_aluminio';
+    
+    -- NYLON/210D
+    -- Ex: "estojo de 210D", "estojo em 210D", "estojo de nylon"
+    ELSIF v_name ~ 'ESTOJO\s+(DE\s+)?210D' OR 
+          v_name ~ 'ESTOJO\s+EM\s+210D' OR
+          v_name ~ 'ESTOJO\s+DE\s+NYLON' THEN
+        v_embalagem := 'NYLON';
+        v_slug_embalagem := 'kit_churrasco_emb_nylon';
+    
+    -- MADEIRA/BAMBU (apenas embalagem, não utensílios)
+    -- Ex: "estojo de bambu", "caixa bambu"
+    ELSIF v_name ~ 'ESTOJO\s+DE\s+BAMBU' OR 
+          v_name ~ 'CAIXA\s+BAMBU' THEN
+        v_embalagem := 'MADEIRA';
+        v_slug_embalagem := 'kit_churrasco_emb_madeira';
+    
+    -- PAPEL/KRAFT
+    -- Ex: "caixa kraft", "caixa papel"
+    ELSIF v_name ~ 'CAIXA\s+KRAFT' OR 
+          v_name ~ 'CAIXA\s+PAPEL' THEN
+        v_embalagem := 'PAPEL';
+        v_slug_embalagem := 'kit_churrasco_emb_papel';
+    
+    -- INDEFINIDO - usar categoria PAI
+    ELSE
+        v_embalagem := 'INDEFINIDO';
+        v_slug_embalagem := 'kit_churrasco';
+    END IF;
+    
+    -- ========================================================================
+    -- 4. EXTRAIR QUANTIDADE DE PEÇAS
+    -- ========================================================================
+    
+    -- Padrão: "X peças" ou "X utensílios" ou "X peça"
+    v_quantidade_pecas := (
+        SELECT (regexp_match(v_name, '(\d+)\s*(PECAS?|UTENSILIOS?|PCS?)'))[1]::INTEGER
+    );
+    
+    -- Se não encontrou, tentar "com X utensílios"
+    IF v_quantidade_pecas IS NULL THEN
+        v_quantidade_pecas := (
+            SELECT (regexp_match(v_name, 'COM\s+(\d+)\s+UTENSILIO'))[1]::INTEGER
+        );
+    END IF;
+    
+    -- ========================================================================
+    -- 5. MONTAR SLUG E BUSCAR CATEGORIA (com fallback em cascata)
+    -- ========================================================================
+    
+    -- NÍVEL 1: Tentar categoria específica (embalagem + peças)
+    IF v_quantidade_pecas IS NOT NULL AND v_embalagem != 'INDEFINIDO' THEN
+        -- Mapear quantidade para sufixo do slug
+        CASE 
+            WHEN v_quantidade_pecas = 2 THEN v_slug_pecas := '02_pecas';
+            WHEN v_quantidade_pecas = 3 THEN v_slug_pecas := '03_pecas';
+            WHEN v_quantidade_pecas = 4 THEN v_slug_pecas := '04_pecas';
+            WHEN v_quantidade_pecas = 5 THEN v_slug_pecas := '05_pecas';
+            WHEN v_quantidade_pecas = 6 THEN v_slug_pecas := '06_pecas';
+            WHEN v_quantidade_pecas = 7 THEN v_slug_pecas := '07_pecas';
+            WHEN v_quantidade_pecas = 9 THEN v_slug_pecas := '09_pecas';
+            WHEN v_quantidade_pecas = 10 THEN v_slug_pecas := '10_pecas';
+            WHEN v_quantidade_pecas > 10 THEN v_slug_pecas := '10_mais_pecas';
+            ELSE v_slug_pecas := NULL;
+        END CASE;
+        
+        IF v_slug_pecas IS NOT NULL THEN
+            v_slug_tentativa := v_slug_embalagem || '_' || v_slug_pecas;
+            
+            SELECT id INTO v_category_id 
+            FROM categories 
+            WHERE slug = v_slug_tentativa 
+            LIMIT 1;
+            
+            IF v_category_id IS NOT NULL THEN
+                v_category_slug := v_slug_tentativa;
+                v_fallback_level := 0;  -- Encontrou diretamente
+            END IF;
+        END IF;
+    END IF;
+    
+    -- NÍVEL 2: Fallback para categoria de embalagem (sem peças)
+    IF v_category_id IS NULL AND v_embalagem != 'INDEFINIDO' THEN
+        SELECT id INTO v_category_id 
+        FROM categories 
+        WHERE slug = v_slug_embalagem 
+        LIMIT 1;
+        
+        IF v_category_id IS NOT NULL THEN
+            v_category_slug := v_slug_embalagem;
+            v_fallback_level := 1;  -- Fallback para embalagem
+        END IF;
+    END IF;
+    
+    -- NÍVEL 3: Fallback para categoria PAI (kit_churrasco)
+    IF v_category_id IS NULL THEN
+        SELECT id INTO v_category_id 
+        FROM categories 
+        WHERE slug = 'kit_churrasco' 
+        LIMIT 1;
+        
+        v_category_slug := 'kit_churrasco';
+        v_fallback_level := 2;  -- Fallback para pai
+    END IF;
+    
+    -- ========================================================================
+    -- 6. RETORNAR RESULTADO
+    -- ========================================================================
+    
+    RETURN jsonb_build_object(
+        'is_kit_churrasco', v_is_kit_churrasco,
+        'embalagem', v_embalagem,
+        'quantidade_pecas', v_quantidade_pecas,
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'fallback_level', v_fallback_level
+    );
+    
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_kit_executivo(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_qtd_pecas INTEGER;
+    v_attributes JSONB;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    -- Categoria fixa (sem subcategorias)
+    v_category_slug := 'kit_executivo';
+    
+    SELECT id INTO v_category_id 
+    FROM categories 
+    WHERE slug = v_category_slug 
+    LIMIT 1;
+    
+    -- Detectar quantidade de pecas
+    IF v_name ~ '(\d+)\s*(PECAS|PCS|PC|PEC)' THEN
+        v_qtd_pecas := (regexp_match(v_name, '(\d+)\s*(PECAS|PCS|PC|PEC)'))[1]::INTEGER;
+    ELSIF v_name ~ '2\s*(EM|IN)\s*1|DUPLO' THEN
+        v_qtd_pecas := 2;
+    ELSIF v_name ~ '3\s*(EM|IN)\s*1|TRIPLO' THEN
+        v_qtd_pecas := 3;
+    ELSE
+        v_qtd_pecas := NULL;
+    END IF;
+    
+    -- Atributos - detectar componentes
+    v_attributes := jsonb_build_object(
+        'qtd_pecas', v_qtd_pecas,
+        'inclui_caneta', v_name ~ 'CANETA|ESFEROGRAFICA|ESFERO|PEN\b',
+        'inclui_lapiseira', v_name ~ 'LAPISEIRA|LAPISEIRO',
+        'inclui_caderneta', v_name ~ 'CADERNETA|CADERNO|BLOCO|MOLESKINE',
+        'inclui_agenda', v_name ~ 'AGENDA|PLANNER',
+        'inclui_porta_cartao', v_name ~ 'PORTA.?CARTAO|PORTA.?CARTOES|CARTEIRA',
+        'inclui_chaveiro', v_name ~ 'CHAVEIRO',
+        'inclui_estojo', v_name ~ 'ESTOJO|CAIXA|BOX|MALETA|EMBALAGEM',
+        'material_estojo', CASE
+            WHEN v_name ~ 'COURO|LEATHER|PU\b' THEN 'couro'
+            WHEN v_name ~ 'MADEIRA|WOOD|MDF' THEN 'madeira'
+            WHEN v_name ~ 'METAL|ALUMINIO|INOX' THEN 'metal'
+            WHEN v_name ~ 'PAPEL|KRAFT|PAPELAO' THEN 'papel'
+            WHEN v_name ~ 'PLASTICO|ACRILICO' THEN 'plastico'
+            ELSE NULL
+        END
+    );
+    
+    RETURN jsonb_build_object(
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'qtd_pecas', v_qtd_pecas,
+        'attributes', v_attributes
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_kit_ferramentas(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_id UUID;
+    v_pecas INT;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    SELECT id INTO v_id FROM categories WHERE slug = 'kit-ferramentas' LIMIT 1;
+    
+    v_pecas := (regexp_match(v_name, '(\d+)\s*(?:PC|PCS|PECAS?|PÇS?)'))[1]::INT;
+    IF v_pecas IS NULL THEN
+        v_pecas := (regexp_match(v_name, '(\d+)'))[1]::INT;
+    END IF;
+    
+    RETURN jsonb_build_object(
+        'category_id', v_id,
+        'category_slug', 'kit-ferramentas',
+        'qtd_pecas', v_pecas,
+        'has_maleta', v_name ~ 'MALETA|ESTOJO|CASE',
+        'has_lanterna', v_name ~ 'LANTERNA',
+        'has_trena', v_name ~ 'TRENA'
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_kit_queijo(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_is_kit_queijo BOOLEAN := FALSE;
+    v_quantidade_pecas INTEGER := NULL;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_fallback_level INTEGER := 0;  -- 0=direto, 1=pai
+BEGIN
+    -- ========================================================================
+    -- 1. NORMALIZAÇÃO
+    -- ========================================================================
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    -- ========================================================================
+    -- 2. VERIFICAR SE É KIT DE QUEIJO
+    -- ========================================================================
+    -- Critérios:
+    -- A) Contém (KIT ou CONJUNTO) E QUEIJO
+    -- B) Contém TÁBUA + QUEIJO + (utensílios ou talheres ou faca)
+    
+    IF (v_name ~ 'KIT' OR v_name ~ 'CONJUNTO') AND v_name ~ 'QUEIJO' THEN
+        v_is_kit_queijo := TRUE;
+    ELSIF v_name ~ 'TABUA' AND v_name ~ 'QUEIJO' AND 
+          (v_name ~ 'UTENSILIOS?' OR v_name ~ 'TALHERES?' OR v_name ~ 'FACA') THEN
+        v_is_kit_queijo := TRUE;
+    ELSE
+        -- Não é kit de queijo (pode ser acessório avulso)
+        RETURN jsonb_build_object(
+            'is_kit_queijo', FALSE,
+            'quantidade_pecas', NULL,
+            'category_id', NULL,
+            'category_slug', NULL,
+            'fallback_level', 0
+        );
+    END IF;
+    
+    -- ========================================================================
+    -- 3. CALCULAR QUANTIDADE DE PEÇAS
+    -- ========================================================================
+    
+    -- Padrão: "X utensílios" ou "X talheres" ou "X peças"
+    v_quantidade_pecas := (
+        SELECT (regexp_match(v_name, '(\d+)\s*(UTENSILIOS?|TALHERES?|PECAS?)'))[1]::INTEGER
+    );
+    
+    -- Se encontrou utensílios/talheres E tem tábua, adicionar a tábua
+    IF v_quantidade_pecas IS NOT NULL AND v_name ~ 'TABUA' THEN
+        v_quantidade_pecas := v_quantidade_pecas + 1;  -- tábua + utensílios
+    END IF;
+    
+    -- Se não encontrou quantidade mas tem "faca inclusa" = 2 peças
+    IF v_quantidade_pecas IS NULL AND v_name ~ 'FACA' AND v_name ~ 'TABUA' THEN
+        v_quantidade_pecas := 2;  -- tábua + faca
+    END IF;
+    
+    -- Se "conjunto de tábua e faca" = 2 peças
+    IF v_quantidade_pecas IS NULL AND v_name ~ 'TABUA' AND v_name ~ 'FACA' THEN
+        v_quantidade_pecas := 2;
+    END IF;
+    
+    -- ========================================================================
+    -- 4. MAPEAR PARA SLUG DA CATEGORIA
+    -- ========================================================================
+    
+    IF v_quantidade_pecas IS NOT NULL THEN
+        CASE 
+            WHEN v_quantidade_pecas = 2 THEN v_category_slug := 'kit_queijo_02_pecas';
+            WHEN v_quantidade_pecas = 3 THEN v_category_slug := 'kit_queijo_03_pecas';
+            WHEN v_quantidade_pecas = 4 THEN v_category_slug := 'kit_queijo_04_pecas';
+            WHEN v_quantidade_pecas = 5 THEN v_category_slug := 'kit_queijo_05_pecas';
+            WHEN v_quantidade_pecas >= 6 THEN v_category_slug := 'kit_queijo_06_plus_pecas';
+            ELSE v_category_slug := 'kit_queijo';
+        END CASE;
+    ELSE
+        -- Sem quantidade detectada, usar categoria pai
+        v_category_slug := 'kit_queijo';
+        v_fallback_level := 1;
+    END IF;
+    
+    -- ========================================================================
+    -- 5. BUSCAR UUID DA CATEGORIA
+    -- ========================================================================
+    
+    SELECT id INTO v_category_id 
+    FROM categories 
+    WHERE slug = v_category_slug 
+    LIMIT 1;
+    
+    -- ========================================================================
+    -- 6. FALLBACK: Se categoria específica não existe, usar pai
+    -- ========================================================================
+    
+    IF v_category_id IS NULL THEN
+        v_fallback_level := 1;
+        v_category_slug := 'kit_queijo';
+        
+        SELECT id INTO v_category_id 
+        FROM categories 
+        WHERE slug = 'kit_queijo' 
+        LIMIT 1;
+    END IF;
+    
+    -- ========================================================================
+    -- 7. RETORNAR RESULTADO
+    -- ========================================================================
+    
+    RETURN jsonb_build_object(
+        'is_kit_queijo', v_is_kit_queijo,
+        'quantidade_pecas', v_quantidade_pecas,
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'fallback_level', v_fallback_level
+    );
+    
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_kit_vinho(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_name_lower TEXT;
+    v_is_kit_vinho BOOLEAN := FALSE;
+    v_quantidade_pecas INTEGER := NULL;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_fallback_level INTEGER := 0;  -- 0=direto, 1=pai
+BEGIN
+    -- ========================================================================
+    -- 1. NORMALIZAÇÃO
+    -- ========================================================================
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    v_name_lower := LOWER(unaccent(COALESCE(product_name, '')));
+    
+    -- ========================================================================
+    -- 2. VERIFICAR SE É KIT/CONJUNTO DE VINHO
+    -- ========================================================================
+    -- Deve conter (CONJUNTO ou KIT) E VINHO
+    -- Exclui acessórios avulsos como "Rolha de vinho", "Abridor de vinho"
+    
+    IF (v_name ~ 'CONJUNTO' OR v_name ~ 'KIT') AND v_name ~ 'VINHO' THEN
+        v_is_kit_vinho := TRUE;
+    ELSE
+        -- Não é kit vinho, retorna NULL
+        RETURN jsonb_build_object(
+            'is_kit_vinho', FALSE,
+            'quantidade_pecas', NULL,
+            'category_id', NULL,
+            'category_slug', NULL,
+            'fallback_level', 0
+        );
+    END IF;
+    
+    -- ========================================================================
+    -- 3. EXTRAIR QUANTIDADE DE PEÇAS
+    -- ========================================================================
+    
+    -- Padrão numérico: "4 peças", "2 componentes", "3 itens"
+    v_quantidade_pecas := (
+        SELECT (regexp_match(v_name, '(\d+)\s*(PECAS?|COMPONENTES?|ITENS?|PCS?)'))[1]::INTEGER
+    );
+    
+    -- Se não encontrou, tentar números por extenso
+    IF v_quantidade_pecas IS NULL THEN
+        -- "dois/duas componentes/peças"
+        IF v_name_lower ~ '(dois|duas)\s+(componentes?|pecas?)' OR
+           v_name_lower ~ 'com\s+(dois|duas)\s+(componentes?|pecas?)' THEN
+            v_quantidade_pecas := 2;
+        -- "três componentes/peças" (com ou sem acento)
+        ELSIF v_name_lower ~ '(tres|três)\s+(componentes?|pecas?)' OR
+              v_name_lower ~ 'com\s+(tres|três)\s+(componentes?|pecas?)' THEN
+            v_quantidade_pecas := 3;
+        -- "quatro componentes/peças"
+        ELSIF v_name_lower ~ 'quatro\s+(componentes?|pecas?)' OR
+              v_name_lower ~ 'com\s+quatro\s+(componentes?|pecas?)' THEN
+            v_quantidade_pecas := 4;
+        -- "cinco componentes/peças"
+        ELSIF v_name_lower ~ 'cinco\s+(componentes?|pecas?)' OR
+              v_name_lower ~ 'com\s+cinco\s+(componentes?|pecas?)' THEN
+            v_quantidade_pecas := 5;
+        -- "seis componentes/peças"
+        ELSIF v_name_lower ~ 'seis\s+(componentes?|pecas?)' OR
+              v_name_lower ~ 'com\s+seis\s+(componentes?|pecas?)' THEN
+            v_quantidade_pecas := 6;
+        END IF;
+    END IF;
+    
+    -- ========================================================================
+    -- 4. MAPEAR PARA SLUG DA CATEGORIA
+    -- ========================================================================
+    
+    IF v_quantidade_pecas IS NOT NULL THEN
+        CASE 
+            WHEN v_quantidade_pecas = 2 THEN v_category_slug := 'kit_vinho_02_pecas';
+            WHEN v_quantidade_pecas = 3 THEN v_category_slug := 'kit_vinho_03_pecas';
+            WHEN v_quantidade_pecas = 4 THEN v_category_slug := 'kit_vinho_04_pecas';
+            WHEN v_quantidade_pecas = 5 THEN v_category_slug := 'kit_vinho_05_pecas';
+            WHEN v_quantidade_pecas >= 6 THEN v_category_slug := 'kit_vinho_06_plus_pecas';
+            ELSE v_category_slug := 'kit_vinho';
+        END CASE;
+    ELSE
+        -- Sem quantidade detectada, usar categoria pai
+        v_category_slug := 'kit_vinho';
+        v_fallback_level := 1;
+    END IF;
+    
+    -- ========================================================================
+    -- 5. BUSCAR UUID DA CATEGORIA
+    -- ========================================================================
+    
+    SELECT id INTO v_category_id 
+    FROM categories 
+    WHERE slug = v_category_slug 
+    LIMIT 1;
+    
+    -- ========================================================================
+    -- 6. FALLBACK: Se categoria específica não existe, usar pai
+    -- ========================================================================
+    
+    IF v_category_id IS NULL THEN
+        v_fallback_level := 1;
+        v_category_slug := 'kit_vinho';
+        
+        SELECT id INTO v_category_id 
+        FROM categories 
+        WHERE slug = 'kit_vinho' 
+        LIMIT 1;
+    END IF;
+    
+    -- ========================================================================
+    -- 7. RETORNAR RESULTADO
+    -- ========================================================================
+    
+    RETURN jsonb_build_object(
+        'is_kit_vinho', v_is_kit_vinho,
+        'quantidade_pecas', v_quantidade_pecas,
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'fallback_level', v_fallback_level
+    );
+    
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_lanterna(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_id UUID;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    SELECT id INTO v_id FROM categories WHERE slug = 'lanternas' LIMIT 1;
+    
+    RETURN jsonb_build_object(
+        'category_id', v_id,
+        'category_slug', 'lanternas',
+        'tipo', CASE
+            WHEN v_name ~ 'CABECA|HEAD' THEN 'cabeca'
+            WHEN v_name ~ 'CHAVEIRO|MINI' THEN 'chaveiro'
+            WHEN v_name ~ 'DINAMO|MANUAL' THEN 'dinamo'
+            ELSE 'mao'
+        END,
+        'is_led', v_name ~ 'LED',
+        'is_recarregavel', v_name ~ 'RECARREG|USB|BATERIA',
+        'is_solar', v_name ~ 'SOLAR',
+        'has_ima', v_name ~ 'IMA|MAGNETICO'
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_marmita(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_id UUID;
+    v_slug TEXT;
+    v_material TEXT;
+    v_tipo TEXT;
+    v_capacidade_ml INTEGER;
+    v_capacidade_litros NUMERIC(5,2);
+    v_compartimentos INTEGER;
+    v_termica BOOLEAN DEFAULT FALSE;
+    v_hermetica BOOLEAN DEFAULT FALSE;
+    v_com_talher BOOLEAN DEFAULT FALSE;
+    v_com_alca BOOLEAN DEFAULT FALSE;
+BEGIN
+    -- Normaliza nome do produto
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    -- ============================================
+    -- DETECÇÃO DE MATERIAL
+    -- ============================================
+    CASE
+        WHEN v_name ~ 'INOX|INOXIDAVEL' THEN v_material := 'Inox';
+        WHEN v_name ~ 'ALUMINIO' THEN v_material := 'Alumínio';
+        WHEN v_name ~ 'VIDRO' THEN v_material := 'Vidro';
+        WHEN v_name ~ 'PLASTICO|PP|POLIPROPILENO' THEN v_material := 'Plástico';
+        WHEN v_name ~ 'BAMBU' THEN v_material := 'Bambu';
+        ELSE v_material := 'Plástico'; -- Default mais comum
+    END CASE;
+    
+    -- ============================================
+    -- DETECÇÃO DE TIPO
+    -- ============================================
+    CASE
+        WHEN v_name ~ 'BENTO\s*BOX' THEN 
+            v_tipo := 'Bento Box';
+        WHEN v_name ~ 'LUNCH\s*BOX' THEN 
+            v_tipo := 'Lunch Box';
+        WHEN v_name ~ 'LANCHEIRA' THEN 
+            v_tipo := 'Lancheira';
+        WHEN v_name ~ 'MARMITA' THEN 
+            v_tipo := 'Marmita';
+        ELSE 
+            v_tipo := 'Marmita';
+    END CASE;
+    
+    -- ============================================
+    -- CARACTERÍSTICAS ESPECIAIS
+    -- ============================================
+    v_termica := (v_name ~ 'TERMICA|THERMAL|ISOLADA');
+    v_hermetica := (v_name ~ 'HERMETICA|HERMETICO|VEDACAO');
+    v_com_talher := (v_name ~ 'TALHER|GARFO|COLHER|KIT');
+    v_com_alca := (v_name ~ 'ALCA|HANDLE|STRAP');
+    
+    -- ============================================
+    -- DETECÇÃO DE COMPARTIMENTOS
+    -- ============================================
+    IF v_name ~ '(\d+)\s*COMPARTIMENTO' THEN
+        v_compartimentos := (regexp_match(v_name, '(\d+)\s*COMPARTIMENTO'))[1]::INTEGER;
+    ELSIF v_name ~ '(\d+)\s*ANDARES?' THEN
+        v_compartimentos := (regexp_match(v_name, '(\d+)\s*ANDARES?'))[1]::INTEGER;
+    ELSIF v_name ~ 'EMPILHAVEL|STACKABLE' THEN
+        v_compartimentos := 2; -- Assume 2 se é empilhável
+    ELSE
+        v_compartimentos := 1; -- Default 1 compartimento
+    END IF;
+    
+    -- ============================================
+    -- DETECÇÃO DE CAPACIDADE (ML)
+    -- ============================================
+    IF v_name ~ '(\d+)\s*ML' THEN
+        v_capacidade_ml := (regexp_match(v_name, '(\d+)\s*ML'))[1]::INTEGER;
+    END IF;
+    
+    -- ============================================
+    -- DETECÇÃO DE CAPACIDADE (LITROS)
+    -- ============================================
+    IF v_name ~ '(\d+(?:\.\d+)?)\s*L(?:ITROS?)?' AND v_capacidade_ml IS NULL THEN
+        v_capacidade_litros := (regexp_match(v_name, '(\d+(?:\.\d+)?)\s*L(?:ITROS?)?'))[1]::NUMERIC;
+        v_capacidade_ml := (v_capacidade_litros * 1000)::INTEGER;
+    END IF;
+    
+    -- ============================================
+    -- DEFINE CATEGORIA (sempre Marmitas | Lancheiras)
+    -- ============================================
+    v_slug := 'marmitas_lancheiras';
+    
+    -- Busca ID da categoria
+    SELECT id INTO v_id 
+    FROM categories 
+    WHERE slug = v_slug 
+    LIMIT 1;
+    
+    -- ============================================
+    -- RETORNA JSONB COM CLASSIFICAÇÃO
+    -- ============================================
+    RETURN jsonb_build_object(
+        'category_id', v_id,
+        'category_slug', v_slug,
+        'material', v_material,
+        'tipo', v_tipo,
+        'capacidade_ml', v_capacidade_ml,
+        'compartimentos', v_compartimentos,
+        'termica', v_termica,
+        'hermetica', v_hermetica,
+        'com_talher', v_com_talher,
+        'com_alca', v_com_alca
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_massageador(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_is_massageador BOOLEAN := FALSE;
+    v_tipo TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+BEGIN
+    -- 1. NORMALIZAÇÃO
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    -- ========================================================================
+    -- 2. VALIDAÇÃO: É MASSAGEADOR?
+    -- ========================================================================
+    
+    IF v_name ~ 'MASSAGEADOR|MASSAGEM|MASSAGER' THEN
+        v_is_massageador := TRUE;
+    END IF;
+    
+    -- Se NÃO é massageador, retornar imediatamente
+    IF NOT v_is_massageador THEN
+        RETURN jsonb_build_object(
+            'is_massageador', FALSE,
+            'category_id', NULL,
+            'category_slug', NULL,
+            'tipo', NULL
+        );
+    END IF;
+    
+    -- ========================================================================
+    -- 3. IDENTIFICAÇÃO DO TIPO
+    -- ========================================================================
+    
+    IF v_name ~ 'ELETRIC|ELECTRIC|USB|BATERIA|PILHA|RECARREG|VIBRA' THEN
+        v_tipo := 'ELETRICO';
+        v_category_slug := 'massageador-eletrico';
+    ELSIF v_name ~ 'MANUAL|ROLO|MADEIRA|BAMBU|BOLA|ROLLER' THEN
+        v_tipo := 'MANUAL';
+        v_category_slug := 'massageador-manual';
+    ELSE
+        -- Default: manual (mais comum em brindes)
+        v_tipo := 'GENERICO';
+        v_category_slug := 'massageadores';
+    END IF;
+    
+    -- Busca UUID da categoria
+    SELECT id INTO v_category_id 
+    FROM categories WHERE slug = v_category_slug LIMIT 1;
+    
+    -- Fallback para categoria pai
+    IF v_category_id IS NULL THEN
+        SELECT id INTO v_category_id 
+        FROM categories WHERE slug = 'massageadores' LIMIT 1;
+        v_category_slug := 'massageadores';
+    END IF;
+    
+    -- 4. RETORNO
+    RETURN jsonb_build_object(
+        'is_massageador', TRUE,
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'tipo', v_tipo
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_mochila(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_tipo TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_attributes JSONB;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    IF v_name ~ 'ANTI.?FURTO|ANTI.?THEFT|SEGURANCA|SEGURANÇA' THEN
+        v_tipo := 'ANTI_FURTO';
+        v_category_slug := 'mochila_anti_furto';
+        v_category_id := 'b1000000-0000-0000-0000-000000000004'::uuid;
+    ELSIF v_name ~ 'DOBRAVEL|DOBRÁVEL|FOLD|COMPACT' THEN
+        v_tipo := 'DOBRAVEL';
+        v_category_slug := 'mochila_dobravel';
+        v_category_id := 'b1000000-0000-0000-0000-000000000003'::uuid;
+    ELSIF v_name ~ 'SPORT|ESPORT|ACADEMIA|FITNESS|CICLISMO|BIKE|CORRIDA' THEN
+        v_tipo := 'ESPORTIVA';
+        v_category_slug := 'mochila_esportiva';
+        v_category_id := 'b1000000-0000-0000-0000-000000000002'::uuid;
+    ELSIF v_name ~ 'EXECUTIV|BUSINESS|CORPORATIV|TRABALHO|OFFICE' THEN
+        v_tipo := 'EXECUTIVA';
+        v_category_slug := 'mochila_executiva';
+        v_category_id := 'b1000000-0000-0000-0000-000000000001'::uuid;
+    ELSIF v_name ~ 'NOTEBOOK|LAPTOP|COMPUTADOR|PC|15|17|POLEGADA' THEN
+        v_tipo := 'NOTEBOOK';
+        v_category_slug := 'mochila_notebook';
+        v_category_id := 'b1000000-0000-0000-0000-000000000006'::uuid;
+    ELSIF v_name ~ 'PROMOCIONAL|BASICA|SIMPLES|BARATA|ESCOLAR' THEN
+        v_tipo := 'PROMOCIONAL';
+        v_category_slug := 'mochila_promocional';
+        v_category_id := 'b1000000-0000-0000-0000-000000000005'::uuid;
+    ELSE
+        v_tipo := 'INDEFINIDO';
+        v_category_slug := 'mochilas';
+        v_category_id := 'f285c7c7-f143-4ed8-b33d-6b899d517ee3'::uuid;
+    END IF;
+    
+    v_attributes := jsonb_build_object(
+        'has_notebook',     v_name ~ 'NOTEBOOK|LAPTOP',
+        'has_usb',          v_name ~ 'USB|CARREGADOR',
+        'has_bolso_furto',  v_name ~ 'ANTI.?FURTO|ESCONDID|SEGREDO',
+        'has_trolley',      v_name ~ 'TROLLEY|CARRINHO|RODINHA',
+        'is_impermeavel',   v_name ~ 'IMPERMEAVEL|IMPERMEÁVEL|WATER.?PROOF',
+        'tamanho_notebook', (regexp_match(v_name, '(\d{2})\s*(?:POL|POLEGADA|\")'))[1]
+    );
+    
+    RETURN jsonb_build_object(
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'tipo', v_tipo,
+        'attributes', v_attributes
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_necessaire(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_tipo TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_attributes JSONB;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    IF v_name ~ 'COURO.?LEGITIMO|COURO.?GENUINO|COURO.?NATURAL' THEN
+        v_tipo := 'COURO_LEGITIMO';
+        v_category_slug := 'necessaire-couro-legitimo';
+        v_category_id := 'a9e3e762-3fc1-4dd4-a879-584c82e60e32'::uuid;
+    ELSIF v_name ~ 'COURO|LEATHER|COURINO' THEN
+        v_tipo := 'COURO_ECOLOGICO';
+        v_category_slug := 'necessaire-couro-ecologico';
+        v_category_id := '77f08143-700e-4b73-a2a6-415a658c3fda'::uuid;
+    ELSIF v_name ~ 'PVC|VINIL|CRISTAL|TRANSPARENT' THEN
+        v_tipo := 'PVC';
+        v_category_slug := 'necessaire-pvc';
+        v_category_id := 'b4840892-abae-4b32-bfc6-2e6be8c229fe'::uuid;
+    ELSIF v_name ~ 'COSMETICO|MAQUIAGEM|MAKEUP|BEAUTY' THEN
+        v_tipo := 'BOLSA_COSMETICOS';
+        v_category_slug := 'necessaire-bolsa-cosmeticos';
+        v_category_id := 'de165104-638a-4f6f-a9e9-1ece1aeefa61'::uuid;
+    ELSIF v_name ~ 'TECIDO|NYLON|POLIESTER|ALGODAO|LONA|OXFORD' THEN
+        v_tipo := 'TECIDO';
+        v_category_slug := 'necessaire-tecido';
+        v_category_id := '980541dc-224b-4684-be3e-b1af7ebd9052'::uuid;
+    ELSE
+        v_tipo := 'INDEFINIDO';
+        v_category_slug := 'necessaire';
+        v_category_id := '543052cb-4a70-4695-9776-79cc30f48208'::uuid;
+    END IF;
+    
+    v_attributes := jsonb_build_object(
+        'has_ziper',        v_name ~ 'ZIPER|ZIPPER|ZIP',
+        'has_espelho',      v_name ~ 'ESPELHO|MIRROR',
+        'has_divisorias',   v_name ~ 'DIVIS|COMPARTIMENTO|BOLSO',
+        'is_impermeavel',   v_name ~ 'IMPERMEAVEL|IMPERMEÁVEL|WATER.?PROOF',
+        'is_viagem',        v_name ~ 'VIAGEM|TRAVEL|AVIAO',
+        'tamanho',          CASE 
+                              WHEN v_name ~ 'GRANDE|LARGE|G\b' THEN 'G'
+                              WHEN v_name ~ 'MEDIO|MEDIUM|M\b' THEN 'M'
+                              WHEN v_name ~ 'PEQUEN|SMALL|P\b' THEN 'P'
+                              ELSE NULL
+                            END
+    );
+    
+    RETURN jsonb_build_object(
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'tipo', v_tipo,
+        'attributes', v_attributes
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_oculos(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_id UUID;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    SELECT id INTO v_id FROM categories WHERE slug = 'oculos-de-sol' LIMIT 1;
+    
+    RETURN jsonb_build_object(
+        'category_id', v_id,
+        'category_slug', 'oculos-de-sol',
+        'material', CASE
+            WHEN v_name ~ 'METAL|INOX' THEN 'metal'
+            WHEN v_name ~ 'MADEIRA|BAMBU' THEN 'madeira'
+            ELSE 'plastico'
+        END,
+        'has_uv', v_name ~ 'UV|PROTECAO',
+        'is_espelhado', v_name ~ 'ESPELHAD'
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_pasta(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_tipo TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    IF v_name ~ 'NOTEBOOK|LAPTOP|COMPUTADOR|TABLET' THEN
+        v_tipo := 'NOTEBOOK';
+        v_category_slug := 'pasta-notebook';
+    ELSIF v_name ~ 'EVENTO|CONGRESSO|SEMINARIO|FEIRA' THEN
+        v_tipo := 'EVENTOS';
+        v_category_slug := 'pasta-eventos';
+    ELSIF v_name ~ 'EXECUTIVA|CONVENCAO|CONVENÇÃO|PORTFOLIO|PORTEFOLIO|PORTIFOLIO' THEN
+        v_tipo := 'EXECUTIVA';
+        v_category_slug := 'pasta-executiva';
+    ELSE
+        v_tipo := 'EXECUTIVA';
+        v_category_slug := 'pasta-executiva';
+    END IF;
+    
+    SELECT id INTO v_category_id 
+    FROM categories 
+    WHERE slug = v_category_slug 
+    LIMIT 1;
+    
+    IF v_category_id IS NULL THEN
+        SELECT id INTO v_category_id 
+        FROM categories 
+        WHERE slug = 'pastas' 
+        LIMIT 1;
+        v_category_slug := 'pastas';
+    END IF;
+    
+    RETURN jsonb_build_object(
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'tipo', v_tipo
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_pen(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_is_pen BOOLEAN := FALSE;
+    v_material TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_attributes JSONB;
+BEGIN
+    -- 1. NORMALIZAÇÃO
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    -- ========================================================================
+    -- 2. VALIDAÇÃO: É CANETA?
+    -- ========================================================================
+    -- Padrões que identificam canetas:
+    -- CANETA, ESFEROGRAF*, ROLLER, LAPISEIRA, STYLUS, MARCA-TEXTO
+    -- ========================================================================
+    
+    IF v_name ~ 'CANETA|ESFEROGRAF|ROLLER|LAPISEIRA|STYLUS|MARCA.?TEXTO' THEN
+        v_is_pen := TRUE;
+    END IF;
+    
+    -- Se NÃO é caneta, retornar imediatamente
+    IF NOT v_is_pen THEN
+        RETURN jsonb_build_object(
+            'is_pen', FALSE,
+            'category_id', NULL,
+            'category_slug', NULL,
+            'material', NULL,
+            'attributes', NULL
+        );
+    END IF;
+    
+    -- ========================================================================
+    -- 3. IDENTIFICAÇÃO DO MATERIAL (só se for caneta)
+    -- ========================================================================
+    
+    IF v_name ~ 'BAMBU|BAMBOO' THEN
+        v_material := 'BAMBU';
+        v_category_slug := 'canetas-bambu';
+    ELSIF v_name ~ 'CORTICA|CORTIÇA' THEN
+        v_material := 'CORTIÇA';
+        v_category_slug := 'canetas-ecologicas';
+    ELSIF v_name ~ 'RECICLAD|RECICLAV|ECOLOGIC|ECO\.|ECO[^A-Z]|PAPEL|KRAFT' THEN
+        v_material := 'ECOLÓGICA';
+        v_category_slug := 'canetas-ecologicas';
+    ELSIF v_name ~ 'ROLLER|ROLLERBALL' THEN
+        v_material := 'METAL';
+        v_category_slug := 'canetas-roller';
+    ELSIF v_name ~ 'METAL|METALIC|INOX|ALUMIN|SEMI.?METAL' THEN
+        v_material := 'METAL';
+        v_category_slug := 'canetas_metal';
+    ELSIF v_name ~ 'PLASTIC|ACRILIC|ABS|EMBORRACHAD|SILICONE|TRANSPARENTE|TRANSLUCID' THEN
+        v_material := 'PLÁSTICO';
+        v_category_slug := 'canetas_plastico';
+    ELSE
+        v_material := 'INDEFINIDO';
+        v_category_slug := 'canetas';
+    END IF;
+    
+    -- Busca UUID da categoria
+    SELECT id INTO v_category_id 
+    FROM categories WHERE slug = v_category_slug LIMIT 1;
+    
+    -- Fallback para categoria pai se não encontrar
+    IF v_category_id IS NULL THEN
+        SELECT id INTO v_category_id 
+        FROM categories WHERE slug = 'canetas' LIMIT 1;
+        v_category_slug := 'canetas';
+    END IF;
+    
+    -- 4. ATRIBUTOS
+    v_attributes := jsonb_build_object(
+        'has_touch',        v_name ~ 'TOUCH|STYLUS',
+        'has_roller',       v_name ~ 'ROLLER|ROLLERBALL',
+        'has_marca_texto',  v_name ~ 'MARCA.?TEXTO|MARCADOR|DESTAQUE',
+        'has_multifuncao',  v_name ~ 'MULTIFUNC|[234].?EM.?1',
+        'has_laser',        v_name ~ 'LASER|APONTADOR',
+        'has_lanterna',     v_name ~ 'LANTERNA|LED|LUZ',
+        'has_pen_drive',    v_name ~ 'PEN.?DRIVE|USB|PENDRIVE',
+        'has_porta_celular',v_name ~ 'PORTA.?CELULAR|SUPORTE|BASE'
+    );
+    
+    -- 5. RETORNO
+    RETURN jsonb_build_object(
+        'is_pen', TRUE,
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'material', v_material,
+        'attributes', v_attributes
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_pendrive(p_product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_type TEXT;
+    v_capacity TEXT;
+    v_material TEXT;
+    v_attributes JSONB;
+BEGIN
+    v_name := UPPER(COALESCE(unaccent(p_product_name), ''));
+    
+    v_category_id := 'a1b2c3d4-2222-4000-8000-000000000003';
+    v_category_slug := 'pen-drive';
+    v_type := 'USB 2.0';
+    v_capacity := 'UNKNOWN';
+    v_material := 'PLÁSTICO';
+    
+    IF v_name ~* '256.?GB|256GB' THEN
+        v_capacity := '256GB';
+    ELSIF v_name ~* '128.?GB|128GB' THEN
+        v_capacity := '128GB';
+    ELSIF v_name ~* '64.?GB|64GB' THEN
+        v_capacity := '64GB';
+    ELSIF v_name ~* '32.?GB|32GB' THEN
+        v_capacity := '32GB';
+    ELSIF v_name ~* '16.?GB|16GB' THEN
+        v_capacity := '16GB';
+    ELSIF v_name ~* '8.?GB|8GB' THEN
+        v_capacity := '8GB';
+    ELSIF v_name ~* '4.?GB|4GB' THEN
+        v_capacity := '4GB';
+    END IF;
+    
+    IF v_name ~* 'USB.?3\.1|3\.1' THEN
+        v_type := 'USB 3.1';
+    ELSIF v_name ~* 'USB.?3\.0|3\.0|USB.?3' THEN
+        v_type := 'USB 3.0';
+    ELSIF v_name ~* 'USB.?C|TYPE.?C|TIPO.?C' THEN
+        v_type := 'USB-C';
+    ELSIF v_name ~* 'OTG' THEN
+        v_type := 'OTG';
+    END IF;
+    
+    IF v_name ~* 'METAL|ALUMIN|INOX' THEN
+        v_material := 'METAL';
+    ELSIF v_name ~* 'BAMBU|BAMBOO' THEN
+        v_material := 'BAMBU';
+    ELSIF v_name ~* 'MADEIRA|WOOD' THEN
+        v_material := 'MADEIRA';
+    ELSIF v_name ~* 'COURO|LEATHER' THEN
+        v_material := 'COURO';
+    ELSIF v_name ~* 'SILICONE|BORRACHA' THEN
+        v_material := 'SILICONE';
+    ELSIF v_name ~* 'CRISTAL|VIDRO|GLASS' THEN
+        v_material := 'CRISTAL';
+    ELSIF v_name ~* 'RECICLAD|ECOLOGIC' THEN
+        v_material := 'ECOLÓGICO';
+    END IF;
+    
+    v_attributes := jsonb_build_object(
+        'has_otg', v_name ~* 'OTG|CELULAR|SMARTPHONE|ANDROID',
+        'has_usb_c', v_name ~* 'USB.?C|TYPE.?C|TIPO.?C',
+        'has_lightning', v_name ~* 'LIGHTNING|IPHONE|APPLE',
+        'has_keychain', v_name ~* 'CHAVEIRO|ARGOLA|KEYCHAIN',
+        'has_cap', v_name ~* 'TAMPA|CAP',
+        'has_led', v_name ~* 'LED|LUZ',
+        'is_retractable', v_name ~* 'RETRATIL|GIRAT|TWIST|SLIDE',
+        'is_mini', v_name ~* 'MINI|NANO|MICRO|PEQUENO',
+        'is_waterproof', v_name ~* 'PROVA.?DAGUA|WATERPROOF|RESISTENTE.?AGUA',
+        'has_dual_connector', v_name ~* 'DUPLO|DUAL|2.?EM.?1'
+    );
+    
+    RETURN jsonb_build_object(
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'type', v_type,
+        'capacity', v_capacity,
+        'material', v_material,
+        'attributes', v_attributes
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_petisqueira(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_material TEXT;
+BEGIN
+    -- 1. NORMALIZAR NOME (maiúsculas, sem acentos)
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    -- 2. CLASSIFICAR POR MATERIAL (ordem: mais específico primeiro)
+    CASE
+        -- BAMBU: materiais de bambu (mais específico)
+        WHEN v_name ~ 'BAMBU|BAMBOO' THEN
+            v_material := 'BAMBU';
+            SELECT id, slug INTO v_category_id, v_category_slug
+            FROM categories WHERE slug = 'petisqueira-bambu' LIMIT 1;
+            
+        -- VIDRO: materiais de vidro/cristal
+        WHEN v_name ~ 'VIDRO|CRISTAL|GLASS' THEN
+            v_material := 'VIDRO';
+            SELECT id, slug INTO v_category_id, v_category_slug
+            FROM categories WHERE slug = 'petisqueira-vidro' LIMIT 1;
+            
+        -- CERÂMICA: materiais cerâmicos
+        WHEN v_name ~ 'CERAMIC|CERAMICA|PORCELANA|GRES|FAIANCA|LOUÇA|LOUCA' THEN
+            v_material := 'CERAMICA';
+            SELECT id, slug INTO v_category_id, v_category_slug
+            FROM categories WHERE slug = 'petisqueira-ceramica' LIMIT 1;
+            
+        -- PLÁSTICO: materiais plásticos
+        WHEN v_name ~ 'PLASTIC|PLASTICO|PVC|POLIPROPILENO|PP|ACRILIC|MELAMINA|SILICONE' THEN
+            v_material := 'PLASTICO';
+            SELECT id, slug INTO v_category_id, v_category_slug
+            FROM categories WHERE slug = 'petisqueira-plastico' LIMIT 1;
+            
+        -- MADEIRA: materiais de madeira (avaliar após bambu)
+        WHEN v_name ~ 'MADEIRA|WOOD|MDF|PINUS|EUCALIPTO|CARVALHO|TECA|MOGNO' THEN
+            v_material := 'MADEIRA';
+            SELECT id, slug INTO v_category_id, v_category_slug
+            FROM categories WHERE slug = 'petisqueira-madeira' LIMIT 1;
+            
+        -- GENÉRICO: sem material especificado → vai para categoria PAI
+        ELSE
+            v_material := 'GENERICO';
+            SELECT id, slug INTO v_category_id, v_category_slug
+            FROM categories WHERE slug = 'petisqueiras' LIMIT 1;
+    END CASE;
+    
+    -- 3. FALLBACK se categoria não encontrada
+    IF v_category_id IS NULL THEN
+        SELECT id, slug INTO v_category_id, v_category_slug
+        FROM categories WHERE slug = 'petisqueiras' LIMIT 1;
+        v_material := 'GENERICO';
+    END IF;
+    
+    -- 4. RETORNO
+    RETURN jsonb_build_object(
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'material', v_material
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_porta_caneta(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_attributes JSONB;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    v_category_slug := 'porta-caneta-organizador';
+    
+    SELECT id INTO v_category_id 
+    FROM categories 
+    WHERE slug = v_category_slug 
+    LIMIT 1;
+    
+    v_attributes := jsonb_build_object(
+        'material', CASE
+            WHEN v_name ~ 'MADEIRA|WOOD|MDF|BAMBU|BAMBOO' THEN 'madeira'
+            WHEN v_name ~ 'METAL|ALUMINIO|INOX|ZINCO' THEN 'metal'
+            WHEN v_name ~ 'ACRILICO|ACRYLIC' THEN 'acrilico'
+            WHEN v_name ~ 'PLASTICO|PLASTIC|PP|PS|ABS' THEN 'plastico'
+            WHEN v_name ~ 'COURO|LEATHER|PU' THEN 'couro'
+            WHEN v_name ~ 'CERAMICA|PORCELANA' THEN 'ceramica'
+            WHEN v_name ~ 'VIDRO|GLASS' THEN 'vidro'
+            ELSE NULL
+        END,
+        'formato', CASE
+            WHEN v_name ~ 'CILINDRO|CILINDRICO|REDONDO|TUBO' THEN 'cilindrico'
+            WHEN v_name ~ 'QUADRADO|CUBO' THEN 'quadrado'
+            WHEN v_name ~ 'RETANGULAR' THEN 'retangular'
+            WHEN v_name ~ 'TRIANGULAR' THEN 'triangular'
+            ELSE NULL
+        END,
+        'tem_relogio', v_name ~ 'RELOGIO|CLOCK|HORA',
+        'tem_calculadora', v_name ~ 'CALCULADORA|CALCULATOR',
+        'tem_bloco', v_name ~ 'BLOCO|NOTA|POST.?IT|LEMBRETE',
+        'tem_calendario', v_name ~ 'CALENDARIO|CALENDAR',
+        'tem_porta_clip', v_name ~ 'CLIP|CLIPE',
+        'tem_gaveta', v_name ~ 'GAVETA|COMPARTIMENTO',
+        'is_giratorio', v_name ~ 'GIRATORIO|GIRATORIA|ROTATIVO',
+        'is_dobravel', v_name ~ 'DOBRAVEL|RETRATIL'
+    );
+    
+    RETURN jsonb_build_object(
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'attributes', v_attributes
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_porta_copo(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_material TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_attributes JSONB;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    IF v_name ~ 'CORTICA|CORTIÇA' THEN
+        v_material := 'CORTICA';
+        v_category_slug := 'porta-copo-cortica';
+        v_category_id := '97b2114b-a243-4233-a59b-067e7c1986ab'::uuid;
+    ELSIF v_name ~ 'COURO.?GENUINO|COURO.?LEGITIMO|COURO.?NATURAL' THEN
+        v_material := 'COURO_GENUINO';
+        v_category_slug := 'porta-copo-couro-genuino';
+        v_category_id := 'a96cfdf3-2eff-41b7-876e-d1d66c696816'::uuid;
+    ELSIF v_name ~ 'COURO|LEATHER|COURINO' THEN
+        v_material := 'COURO_ECOLOGICO';
+        v_category_slug := 'porta-copo-couro-ecologico';
+        v_category_id := 'd5b5454b-df45-4290-a4e2-62dc042fca73'::uuid;
+    ELSIF v_name ~ 'NEOPRENE' THEN
+        v_material := 'NEOPRENE';
+        v_category_slug := 'porta-copo-neoprene';
+        v_category_id := 'a6f00ac0-782d-4277-90ee-99030ba8a83d'::uuid;
+    ELSIF v_name ~ 'EMBORRACHAD|BORRACHA|EVA|PVC|RUBBER' THEN
+        v_material := 'EMBORRACHADO';
+        v_category_slug := 'porta-copo-emborrachado';
+        v_category_id := 'f420d0f0-c84e-421f-8ed9-d38e51431ebd'::uuid;
+    ELSIF v_name ~ 'SILICONE' THEN
+        v_material := 'SILICONE';
+        v_category_slug := 'porta-copo-silicone';
+        v_category_id := 'c2fab1fc-55de-4eb8-a092-baf216c28d7c'::uuid;
+    ELSIF v_name ~ 'MDF|MADEIRA|WOOD' THEN
+        v_material := 'MDF';
+        v_category_slug := 'porta-copo-mdf';
+        v_category_id := 'ae2b289d-b687-4754-873f-32cda2678564'::uuid;
+    ELSIF v_name ~ 'PAPEL|ABSORVENTE|DESCARTAVEL' THEN
+        v_material := 'PAPEL';
+        v_category_slug := 'porta-copo-papel-absorvente';
+        v_category_id := 'ab81a799-1c8c-4f04-90f4-5bb5ba4ba89b'::uuid;
+    ELSE
+        v_material := 'INDEFINIDO';
+        v_category_slug := 'porta_copo';
+        v_category_id := '968d68f9-ccd0-4357-89dc-3bc9ba33a0ad'::uuid;
+    END IF;
+    
+    v_attributes := jsonb_build_object(
+        'is_kit',           v_name ~ 'KIT|CONJUNTO|SET|\d+\s*UN',
+        'qtd_unidades',     (regexp_match(v_name, '(\d+)\s*(?:UN|UNID|PC|PCS|PECAS)'))[1],
+        'is_personalizavel',v_name ~ 'GRAV|LASER|PERSONAL|SUBLIM'
+    );
+    
+    RETURN jsonb_build_object(
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'material', v_material,
+        'attributes', v_attributes
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_porta_garrafa(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_id UUID;
+    v_slug TEXT;
+    v_tipo TEXT;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    IF v_name ~ 'VINHO|WINE' THEN
+        v_tipo := 'VINHO'; v_slug := 'porta-garrafa-vinho';
+    ELSIF v_name ~ 'CERVEJA|BEER|LONG.?NECK' THEN
+        v_tipo := 'CERVEJA'; v_slug := 'porta-garrafa-cerveja';
+    ELSE
+        v_tipo := 'VINHO'; v_slug := 'porta-garrafa-vinho';
+    END IF;
+    
+    SELECT id INTO v_id FROM categories WHERE slug = v_slug LIMIT 1;
+    
+    RETURN jsonb_build_object(
+        'category_id', v_id,
+        'category_slug', v_slug,
+        'tipo', v_tipo,
+        'material', CASE
+            WHEN v_name ~ 'COURO' THEN 'couro'
+            WHEN v_name ~ 'NEOPRENE' THEN 'neoprene'
+            WHEN v_name ~ 'TNT' THEN 'tnt'
+            WHEN v_name ~ 'MDF|MADEIRA' THEN 'mdf'
+            ELSE NULL
+        END,
+        'qtd_garrafas', (regexp_match(v_name, '(\d+)\s*(?:GARRAFA|UNID)'))[1]::INT
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_porta_retrato(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_attributes JSONB;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    v_category_slug := 'porta_retrato';
+    
+    SELECT id INTO v_category_id 
+    FROM categories 
+    WHERE slug = v_category_slug 
+    LIMIT 1;
+    
+    v_attributes := jsonb_build_object(
+        'material', CASE
+            WHEN v_name ~ 'MADEIRA|WOOD|MDF|BAMBU|BAMBOO' THEN 'madeira'
+            WHEN v_name ~ 'METAL|ALUMINIO|INOX' THEN 'metal'
+            WHEN v_name ~ 'VIDRO|GLASS' THEN 'vidro'
+            WHEN v_name ~ 'ACRILICO|ACRYLIC' THEN 'acrilico'
+            WHEN v_name ~ 'PLASTICO|PLASTIC' THEN 'plastico'
+            WHEN v_name ~ 'COURO|LEATHER|PU' THEN 'couro'
+            ELSE NULL
+        END,
+        'tamanho_foto', CASE
+            WHEN v_name ~ '10.?X.?15|10X15' THEN '10x15'
+            WHEN v_name ~ '15.?X.?21|15X21' THEN '15x21'
+            WHEN v_name ~ '20.?X.?25|20X25' THEN '20x25'
+            WHEN v_name ~ '13.?X.?18|13X18' THEN '13x18'
+            WHEN v_name ~ '3.?X.?4|3X4' THEN '3x4'
+            ELSE NULL
+        END,
+        'tipo', CASE
+            WHEN v_name ~ 'DIGITAL|LED|LCD|ELETRONICO' THEN 'digital'
+            WHEN v_name ~ 'PAREDE|WALL' THEN 'parede'
+            ELSE 'mesa'
+        END,
+        'formato', CASE
+            WHEN v_name ~ 'HORIZONTAL|PAISAGEM' THEN 'horizontal'
+            WHEN v_name ~ 'VERTICAL|RETRATO' THEN 'vertical'
+            WHEN v_name ~ 'QUADRADO|SQUARE' THEN 'quadrado'
+            ELSE NULL
+        END,
+        'qtd_fotos', (regexp_match(v_name, '([0-9]+).?FOTOS'))[1],
+        'is_giratoria', v_name ~ 'GIRATORIA|GIRATORIO|ROTATIVO'
+    );
+    
+    RETURN jsonb_build_object(
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'attributes', v_attributes
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_porta_whisky(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_id UUID;
+    v_slug TEXT;
+    v_material TEXT;
+    v_capacidade_ml INTEGER;
+    v_tipo TEXT;
+    v_tem_kit BOOLEAN DEFAULT FALSE;
+BEGIN
+    -- Normaliza nome do produto
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    -- ============================================
+    -- DETECÇÃO DE MATERIAL
+    -- ============================================
+    CASE
+        WHEN v_name ~ 'INOX|INOXIDAVEL' THEN v_material := 'Inox';
+        WHEN v_name ~ 'ACO' THEN v_material := 'Aço';
+        WHEN v_name ~ 'COURO' THEN v_material := 'Couro';
+        WHEN v_name ~ 'METAL' THEN v_material := 'Metal';
+        WHEN v_name ~ 'PLASTICO' THEN v_material := 'Plástico';
+        ELSE v_material := 'Inox'; -- Default mais comum
+    END CASE;
+    
+    -- ============================================
+    -- DETECÇÃO DE CAPACIDADE (ML)
+    -- ============================================
+    v_capacidade_ml := (regexp_match(v_name, '(\d+)\s*ML'))[1]::INTEGER;
+    
+    -- Se não encontrou ML, tenta OZ (onças) -> converte para ML
+    IF v_capacidade_ml IS NULL THEN
+        DECLARE
+            v_oz INTEGER;
+        BEGIN
+            v_oz := (regexp_match(v_name, '(\d+)\s*OZ'))[1]::INTEGER;
+            IF v_oz IS NOT NULL THEN
+                v_capacidade_ml := (v_oz * 29.5735)::INTEGER; -- 1 oz = 29.5735 ml
+            END IF;
+        END;
+    END IF;
+    
+    -- ============================================
+    -- DETECÇÃO DE TIPO/VARIAÇÃO
+    -- ============================================
+    CASE
+        WHEN v_name ~ 'KIT' THEN 
+            v_tipo := 'Kit (com copos)';
+            v_tem_kit := TRUE;
+        WHEN v_name ~ 'EXECUTIVO|ELEGANTE|PREMIUM' THEN 
+            v_tipo := 'Executivo';
+        WHEN v_name ~ 'CLASSICO|TRADICIONAL' THEN 
+            v_tipo := 'Clássico';
+        WHEN v_name ~ 'PERSONALIZADO|GRAVACAO' THEN 
+            v_tipo := 'Personalizável';
+        ELSE 
+            v_tipo := 'Padrão';
+    END CASE;
+    
+    -- ============================================
+    -- DEFINE CATEGORIA (sempre Cantil | Porta Whisky)
+    -- ============================================
+    v_slug := 'cantil_porta_whisky';
+    
+    -- Busca ID da categoria
+    SELECT id INTO v_id 
+    FROM categories 
+    WHERE slug = v_slug 
+    LIMIT 1;
+    
+    -- ============================================
+    -- RETORNA JSONB COM CLASSIFICAÇÃO
+    -- ============================================
+    RETURN jsonb_build_object(
+        'category_id', v_id,
+        'category_slug', v_slug,
+        'material', v_material,
+        'capacidade_ml', v_capacidade_ml,
+        'tipo', v_tipo,
+        'tem_kit', v_tem_kit
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_powerbank(p_product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_type TEXT;
+    v_capacity TEXT;
+    v_material TEXT;
+    v_attributes JSONB;
+BEGIN
+    v_name := UPPER(COALESCE(unaccent(p_product_name), ''));
+    
+    v_category_id := 'a1b2c3d4-2222-4000-8000-000000000001';
+    v_category_slug := 'carregador-portatil-powerbank';
+    v_type := 'STANDARD';
+    v_capacity := 'UNKNOWN';
+    v_material := 'PLÁSTICO';
+    
+    IF v_name ~* '20000|20\.000|20K' THEN
+        v_capacity := '20000mAh';
+    ELSIF v_name ~* '15000|15\.000|15K' THEN
+        v_capacity := '15000mAh';
+    ELSIF v_name ~* '10000|10\.000|10K' THEN
+        v_capacity := '10000mAh';
+    ELSIF v_name ~* '5000|5\.000|5K' THEN
+        v_capacity := '5000mAh';
+    ELSIF v_name ~* '3000|3\.000|3K' THEN
+        v_capacity := '3000mAh';
+    ELSIF v_name ~* '2000|2\.000|2K' THEN
+        v_capacity := '2000mAh';
+    END IF;
+    
+    IF v_name ~* 'SOLAR|ENERGIA.?SOLAR' THEN
+        v_type := 'SOLAR';
+    ELSIF v_name ~* 'WIRELESS|SEM.?FIO|INDUCAO' THEN
+        v_type := 'WIRELESS';
+    ELSIF v_name ~* 'SLIM|FINO|ULTRAFINO|ULTRA.?SLIM' THEN
+        v_type := 'SLIM';
+    ELSIF v_name ~* 'MINI|COMPACTO|PEQUENO' THEN
+        v_type := 'MINI';
+    END IF;
+    
+    IF v_name ~* 'METAL|ALUMIN' THEN
+        v_material := 'METAL';
+    ELSIF v_name ~* 'BAMBU|BAMBOO|MADEIRA' THEN
+        v_material := 'MADEIRA';
+    ELSIF v_name ~* 'COURO|LEATHER' THEN
+        v_material := 'COURO';
+    END IF;
+    
+    v_attributes := jsonb_build_object(
+        'has_usb_c', v_name ~* 'USB.?C|TYPE.?C|TIPO.?C',
+        'has_usb_a', v_name ~* 'USB.?A|USB(?!.?C)',
+        'has_micro_usb', v_name ~* 'MICRO.?USB',
+        'has_lightning', v_name ~* 'LIGHTNING|IPHONE|APPLE',
+        'has_wireless', v_name ~* 'WIRELESS|SEM.?FIO|INDUCAO',
+        'has_fast_charge', v_name ~* 'FAST|RAPIDO|TURBO|QC|QUICK.?CHARGE|PD',
+        'has_led_display', v_name ~* 'DISPLAY|VISOR|LED|LCD',
+        'has_lantern', v_name ~* 'LANTERNA|FLASH|LUZ',
+        'has_solar', v_name ~* 'SOLAR',
+        'has_multiple_ports', v_name ~* 'DUPLO|DUPLA|[234].?PORTA|MULTIPLO'
+    );
+    
+    RETURN jsonb_build_object(
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'type', v_type,
+        'capacity', v_capacity,
+        'material', v_material,
+        'attributes', v_attributes
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_product_origin(p_update_records boolean DEFAULT false, p_product_id uuid DEFAULT NULL::uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_result JSONB;
+    v_total INTEGER := 0;
+    v_nacionais INTEGER := 0;
+    v_importados INTEGER := 0;
+    v_sem_origem INTEGER := 0;
+    v_atualizados INTEGER := 0;
+    v_paises JSONB;
+    v_por_fornecedor JSONB;
+    
+    v_stricker_id UUID := 'bcfc0d02-44c6-48ae-8472-12b1a3f3d8e0';
+BEGIN
+    SELECT jsonb_object_agg(
+        COALESCE(origin_country, 'NÃO DEFINIDO'),
+        cnt
+    )
+    INTO v_paises
+    FROM (
+        SELECT origin_country, COUNT(*) as cnt
+        FROM products
+        WHERE (p_product_id IS NULL OR id = p_product_id)
+          AND is_deleted = FALSE
+          AND (supplier_id = v_stricker_id OR supplier_id IS NULL)
+        GROUP BY origin_country
+        ORDER BY cnt DESC
+    ) sub;
+
+    SELECT jsonb_object_agg(
+        COALESCE(s.code, 'SEM_FORNECEDOR'),
+        jsonb_build_object(
+            'total', sub.cnt,
+            'regra', CASE 
+                WHEN sub.supplier_id = v_stricker_id OR sub.supplier_id IS NULL THEN 'origin_country'
+                ELSE 'sempre_importado'
+            END
+        )
+    )
+    INTO v_por_fornecedor
+    FROM (
+        SELECT supplier_id, COUNT(*) as cnt
+        FROM products
+        WHERE (p_product_id IS NULL OR id = p_product_id)
+          AND is_deleted = FALSE
+        GROUP BY supplier_id
+    ) sub
+    LEFT JOIN suppliers s ON s.id = sub.supplier_id;
+
+    SELECT COUNT(*)
+    INTO v_nacionais
+    FROM products
+    WHERE (p_product_id IS NULL OR id = p_product_id)
+      AND is_deleted = FALSE
+      AND (supplier_id = v_stricker_id OR supplier_id IS NULL)
+      AND UPPER(TRIM(origin_country)) IN ('BRASIL', 'BR', 'BRAZIL');
+
+    SELECT COUNT(*)
+    INTO v_importados
+    FROM products
+    WHERE (p_product_id IS NULL OR id = p_product_id)
+      AND is_deleted = FALSE
+      AND (
+          ((supplier_id = v_stricker_id OR supplier_id IS NULL)
+           AND origin_country IS NOT NULL 
+           AND TRIM(origin_country) != ''
+           AND UPPER(TRIM(origin_country)) NOT IN ('BRASIL', 'BR', 'BRAZIL'))
+          OR
+          (supplier_id IS NOT NULL AND supplier_id != v_stricker_id)
+      );
+
+    SELECT COUNT(*)
+    INTO v_sem_origem
+    FROM products
+    WHERE (p_product_id IS NULL OR id = p_product_id)
+      AND is_deleted = FALSE
+      AND (supplier_id = v_stricker_id OR supplier_id IS NULL)
+      AND (origin_country IS NULL OR TRIM(origin_country) = '');
+
+    SELECT COUNT(*)
+    INTO v_total
+    FROM products
+    WHERE (p_product_id IS NULL OR id = p_product_id)
+      AND is_deleted = FALSE;
+
+    IF p_update_records THEN
+        UPDATE products
+        SET 
+            is_imported = CASE 
+                WHEN supplier_id = v_stricker_id OR supplier_id IS NULL THEN
+                    CASE 
+                        WHEN origin_country IS NULL OR TRIM(origin_country) = '' THEN NULL
+                        WHEN UPPER(TRIM(origin_country)) IN ('BRASIL', 'BR', 'BRAZIL') THEN FALSE
+                        ELSE TRUE
+                    END
+                ELSE TRUE
+            END,
+            updated_at = NOW()
+        WHERE (p_product_id IS NULL OR id = p_product_id)
+          AND is_deleted = FALSE
+          AND (
+              is_imported IS DISTINCT FROM (
+                  CASE 
+                      WHEN supplier_id = v_stricker_id OR supplier_id IS NULL THEN
+                          CASE 
+                              WHEN origin_country IS NULL OR TRIM(origin_country) = '' THEN NULL
+                              WHEN UPPER(TRIM(origin_country)) IN ('BRASIL', 'BR', 'BRAZIL') THEN FALSE
+                              ELSE TRUE
+                          END
+                      ELSE TRUE
+                  END
+              )
+          );
+        
+        GET DIAGNOSTICS v_atualizados = ROW_COUNT;
+    END IF;
+
+    v_result := jsonb_build_object(
+        'success', TRUE,
+        'statistics', jsonb_build_object(
+            'total_products', v_total,
+            'nacionais', v_nacionais,
+            'nacionais_pct', ROUND((v_nacionais::NUMERIC / NULLIF(v_total, 0) * 100), 1),
+            'importados', v_importados,
+            'importados_pct', ROUND((v_importados::NUMERIC / NULLIF(v_total, 0) * 100), 1),
+            'sem_origem_definida', v_sem_origem
+        ),
+        'by_country', COALESCE(v_paises, '{}'::jsonb),
+        'by_supplier', COALESCE(v_por_fornecedor, '{}'::jsonb),
+        'rules', jsonb_build_object(
+            'STRICKER', 'origin_country: Brasil/BR/Brazil = Nacional',
+            'SEM_FORNECEDOR', 'origin_country: Brasil/BR/Brazil = Nacional',
+            'XBZ', 'Sempre Importado',
+            'ASIA', 'Sempre Importado',
+            'OUTROS', 'Sempre Importado'
+        ),
+        'update_mode', p_update_records,
+        'records_updated', v_atualizados,
+        'generated_at', NOW()
+    );
+
+    RETURN v_result;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_product_universal(product_name text)
+ RETURNS TABLE(category_id uuid, category_name text, category_slug text, category_level integer, category_path text, confidence text, detected_type text, detected_material text, attributes jsonb)
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_name_original TEXT;
+    v_type TEXT := 'INDEFINIDO';
+    v_material TEXT := 'INDEFINIDO';
+    v_confidence TEXT := 'low';
+    v_target_slug TEXT;
+    v_fallback_slug TEXT;
+    v_attributes JSONB := '{}'::JSONB;
+    v_capacity_ml INTEGER;
+    v_capacity_mah INTEGER;
+    v_capacity_gb INTEGER;
+    v_org_id UUID;
+    v_cat_id UUID;
+    v_cat_name TEXT;
+    v_cat_slug TEXT;
+    v_cat_level INTEGER;
+    v_cat_path TEXT;
+BEGIN
+    -- Buscar organization_id
+    SELECT id INTO v_org_id FROM organizations LIMIT 1;
+    
+    -- ========================================================================
+    -- ETAPA 1: NORMALIZAÇÃO
+    -- ========================================================================
+    v_name_original := COALESCE(TRIM(product_name), '');
+    v_name := UPPER(unaccent(v_name_original));
+    v_name := REGEXP_REPLACE(v_name, '\s+', ' ', 'g');
+    
+    IF v_name = '' OR v_name IS NULL THEN
+        RETURN QUERY SELECT NULL::UUID, NULL::TEXT, NULL::TEXT, NULL::INTEGER, 
+            NULL::TEXT, 'none'::TEXT, 'VAZIO'::TEXT, NULL::TEXT, '{}'::JSONB;
+        RETURN;
+    END IF;
+
+    -- ========================================================================
+    -- ETAPA 2: EXTRAÇÃO DE CAPACIDADES
+    -- ========================================================================
+    IF v_name ~ '(\d+)\s*(ML|MILILITRO)' THEN
+        v_capacity_ml := (REGEXP_MATCH(v_name, '(\d+)\s*(ML|MILILITRO)'))[1]::INTEGER;
+    ELSIF v_name ~ '(\d+)\s*(L|LITRO)' AND v_name !~ '(\d+)\s*(LED|LUZ)' THEN
+        v_capacity_ml := (REGEXP_MATCH(v_name, '(\d+)\s*(L|LITRO)'))[1]::INTEGER * 1000;
+    END IF;
+    IF v_name ~ '(\d+)\s*MAH' THEN
+        v_capacity_mah := (REGEXP_MATCH(v_name, '(\d+)\s*MAH'))[1]::INTEGER;
+    END IF;
+    IF v_name ~ '(\d+)\s*GB' THEN
+        v_capacity_gb := (REGEXP_MATCH(v_name, '(\d+)\s*GB'))[1]::INTEGER;
+    END IF;
+
+    -- ========================================================================
+    -- ETAPA 3: DETECÇÃO (ordem de prioridade)
+    -- ========================================================================
+    
+    -- PRIORIDADE 100: TECNOLOGIA
+    IF v_name ~ '(POWER\s*BANK|BATERIA\s*(EXTERNA|PORTATIL)|CARREGADOR\s*(PORTATIL|EXTERNO))' THEN
+        v_type := 'POWER_BANK'; v_confidence := 'high';
+        v_target_slug := 'tecnologia-eletronicos'; v_fallback_slug := 'tecnologia-eletronicos';
+        v_attributes := jsonb_build_object('capacity_mah', v_capacity_mah, 
+            'is_wireless', v_name ~ '(WIRELESS|SEM\s*FIO)', 'has_led', v_name ~ 'LED');
+            
+    ELSIF v_name ~ '(FONE|HEADPHONE|EARPHONE|EARBUDS|HEADSET|AURICULAR)' THEN
+        v_type := 'FONE'; v_confidence := 'high';
+        v_target_slug := 'tecnologia-eletronicos'; v_fallback_slug := 'tecnologia-eletronicos';
+        v_attributes := jsonb_build_object('is_bluetooth', v_name ~ '(BLUETOOTH|TWS|SEM\s*FIO)', 'is_tws', v_name ~ 'TWS');
+        
+    ELSIF v_name ~ '(PEN[\s\-]?DRIVE|PENDRIVE|USB\s*FLASH|MEMORIA\s*USB)' THEN
+        v_type := 'PEN_DRIVE'; v_confidence := 'high';
+        v_target_slug := 'tecnologia-eletronicos'; v_fallback_slug := 'tecnologia-eletronicos';
+        v_attributes := jsonb_build_object('capacity_gb', v_capacity_gb);
+        
+    ELSIF v_name ~ '(CAIXA\s*(DE\s*)?SOM|SPEAKER|ALTO[\s\-]?FALANTE)' THEN
+        v_type := 'CAIXA_SOM'; v_confidence := 'high';
+        v_target_slug := 'tecnologia-eletronicos'; v_fallback_slug := 'tecnologia-eletronicos';
+        
+    ELSIF v_name ~ 'MOUSE[\s\-]?PAD' THEN
+        v_type := 'MOUSE_PAD'; v_confidence := 'high';
+        v_target_slug := 'mouse_pad'; v_fallback_slug := 'papelaria_e_escritorio';
+        
+    ELSIF v_name ~ 'DESK[\s\-]?PAD' THEN
+        v_type := 'DESK_PAD'; v_confidence := 'high';
+        v_target_slug := 'desk_pad'; v_fallback_slug := 'papelaria_e_escritorio';
+        
+    ELSIF v_name ~ '(^|[^A-Z])MOUSE([^A-Z]|$)' AND NOT v_name ~ 'PAD' THEN
+        v_type := 'MOUSE'; v_confidence := 'high';
+        v_target_slug := 'tecnologia-eletronicos'; v_fallback_slug := 'tecnologia-eletronicos';
+        
+    ELSIF v_name ~ '(^|[^A-Z])TECLADO([^A-Z]|$)' THEN
+        v_type := 'TECLADO'; v_confidence := 'high';
+        v_target_slug := 'tecnologia-eletronicos'; v_fallback_slug := 'tecnologia-eletronicos';
+
+    -- PRIORIDADE 95: CANETAS E ESCRITA
+    ELSIF v_name ~ '(CANETA|ESFERO|ESFEROG|ROLLER|LAPISEIRA|MARCA[\s\-]?TEXTO)' THEN
+        v_type := 'CANETA'; v_confidence := 'high';
+        
+        IF v_name ~ 'LAPISEIRA' THEN
+            v_type := 'LAPISEIRA'; 
+            v_target_slug := 'lapiseiras'; 
+            v_fallback_slug := 'papelaria_e_escritorio';
+            v_material := CASE WHEN v_name ~ '(METAL|INOX|ALUM)' THEN 'METAL' ELSE 'PLÁSTICO' END;
+            
+        ELSIF v_name ~ 'MARCA[\s\-]?TEXTO' THEN
+            v_type := 'MARCA_TEXTO'; 
+            v_target_slug := 'papelaria_e_escritorio'; 
+            v_fallback_slug := 'papelaria_e_escritorio';
+            v_material := 'PLÁSTICO';
+            
+        ELSIF v_name ~ '(ROLLER|ROLLERBALL)' THEN
+            v_material := 'ROLLER'; 
+            v_target_slug := 'canetas-roller'; 
+            v_fallback_slug := 'canetas_metal';
+            
+        ELSIF v_name ~ '(SEMI[\s\-]?METAL|SEMIMETAL)' AND NOT v_name ~ 'SEMI\s*TRANSPAR' THEN
+            v_material := 'SEMI METAL'; 
+            v_target_slug := 'canetas_semi_metal'; 
+            v_fallback_slug := 'canetas';
+            
+        ELSIF v_name ~ '(BAMBU|BAMBOO)' THEN
+            v_material := 'BAMBU'; 
+            v_target_slug := 'canetas-bambu'; 
+            v_fallback_slug := 'canetas-ecologicas';
+            
+        ELSIF v_name ~ '(CORTI[CÇ]A|CORK)' THEN
+            v_material := 'CORTIÇA'; 
+            v_target_slug := 'canetas-ecologicas'; 
+            v_fallback_slug := 'canetas';
+            
+        ELSIF v_name ~ '(ECOL[OÓ]GIC|RECICL|MADEIRA|FIBRA|SUSTENTAV)' THEN
+            v_material := 'ECOLÓGICA'; 
+            v_target_slug := 'canetas-ecologicas'; 
+            v_fallback_slug := 'canetas';
+            
+        ELSIF v_name ~ '(METAL|INOX|ALUM[IÍ]N|A[CÇ]O|BRONZE|COBRE)' THEN
+            v_material := 'METAL'; 
+            v_target_slug := 'canetas_metal'; 
+            v_fallback_slug := 'canetas';
+            
+        ELSIF v_name ~ '(PL[AÁ]STIC|ABS|ACR[IÍ]LIC|TRANSPAR|TRANSLUC)' THEN
+            v_material := 'PLÁSTICO'; 
+            v_target_slug := 'canetas_plastico'; 
+            v_fallback_slug := 'canetas';
+            
+        ELSE
+            v_material := 'INDEFINIDO'; 
+            v_target_slug := 'canetas'; 
+            v_fallback_slug := 'papelaria_e_escritorio';
+            v_confidence := 'medium';
+        END IF;
+        
+        v_attributes := jsonb_build_object(
+            'has_touch', v_name ~ '(TOUCH|STYLUS)', 
+            'has_laser', v_name ~ 'LASER',
+            'has_lanterna', v_name ~ '(LANTERNA|LED|LUZ)',
+            'ink_color', CASE 
+                WHEN v_name ~ 'AZUL' THEN 'AZUL'
+                WHEN v_name ~ 'PRET[AO]' THEN 'PRETO'
+                WHEN v_name ~ 'VERMELH[AO]' THEN 'VERMELHO'
+                ELSE NULL END
+        );
+
+    -- PRIORIDADE 90: GARRAFAS E SQUEEZES
+    ELSIF v_name ~ '(GARRAFA|SQUEEZE|SQUEEZY|CANTIL)' THEN
+        v_type := 'GARRAFA'; v_confidence := 'high';
+        
+        IF v_name ~ '(T[EÉ]RMIC|ISOTERM|VACUUM|ISOLANTE|PAREDE\s*DUPLA)' THEN
+            v_type := 'GARRAFA_TERMICA'; 
+            v_target_slug := 'garrafa_termica'; 
+            v_fallback_slug := 'bar_e_cozinha';
+            v_material := CASE WHEN v_name ~ '(INOX|A[CÇ]O)' THEN 'INOX' ELSE 'PLÁSTICO' END;
+            
+        ELSIF v_name ~ '(SQUEEZE|SQUEEZY)' THEN
+            v_type := 'SQUEEZE'; 
+            v_target_slug := 'bar_e_cozinha'; 
+            v_fallback_slug := 'bar_e_cozinha';
+            v_confidence := 'medium';
+            v_material := CASE 
+                WHEN v_name ~ 'ALUM' THEN 'ALUMÍNIO' 
+                WHEN v_name ~ 'INOX' THEN 'INOX' 
+                ELSE 'PLÁSTICO' END;
+                
+        ELSIF v_name ~ 'CANTIL' THEN
+            v_type := 'CANTIL'; 
+            v_target_slug := 'cantil_porta_whisky'; 
+            v_fallback_slug := 'bar_e_cozinha';
+            v_material := 'INOX';
+            
+        ELSE
+            v_target_slug := 'bar_e_cozinha'; 
+            v_fallback_slug := 'bar_e_cozinha';
+            v_confidence := 'medium';
+            v_material := CASE 
+                WHEN v_name ~ '(VIDRO|GLASS)' THEN 'VIDRO'
+                WHEN v_name ~ '(INOX|A[CÇ]O)' THEN 'INOX'
+                WHEN v_name ~ 'ALUM' THEN 'ALUMÍNIO'
+                ELSE 'PLÁSTICO' END;
+        END IF;
+        
+        v_attributes := jsonb_build_object(
+            'capacity_ml', v_capacity_ml, 
+            'is_thermal', v_name ~ '(T[EÉ]RMIC|ISOTERM|VACUUM)',
+            'has_alca', v_name ~ '(AL[CÇ]A|ALCA)',
+            'has_canudo', v_name ~ '(CANUDO|STRAW)'
+        );
+
+    -- PRIORIDADE 90: COPOS E CANECAS (com boundary manual para COPO)
+    ELSIF v_name ~ '((^|[^A-Z])COPO([^A-Z]|$)|CANECA|MUG|TUMBLER|LONG\s*DRINK)' THEN
+        v_confidence := 'high';
+        
+        IF v_name ~ '(CANECA|MUG)' THEN
+            v_type := 'CANECA';
+            IF v_name ~ '(CER[AÂ]MIC|PORCELANA)' THEN 
+                v_material := 'CERÂMICA'; v_target_slug := 'canecas_porcelana';
+            ELSIF v_name ~ '(INOX|A[CÇ]O)' THEN 
+                v_material := 'INOX'; v_target_slug := 'canecas_inox';
+            ELSIF v_name ~ '(VIDRO|GLASS)' THEN 
+                v_material := 'VIDRO'; v_target_slug := 'canecas_vidro';
+            ELSIF v_name ~ '(PL[AÁ]STIC|POL[IÍ]MERO)' THEN 
+                v_material := 'PLÁSTICO'; v_target_slug := 'canecas_plastico';
+            ELSIF v_name ~ '(ESMALT)' THEN 
+                v_material := 'ESMALTADA'; v_target_slug := 'canecas_esmaltada';
+            ELSIF v_name ~ '(ALUM[IÍ]N)' THEN 
+                v_material := 'ALUMÍNIO'; v_target_slug := 'canecas_aluminio';
+            ELSIF v_name ~ '(ECO\s*FIBRA|FIBRA)' THEN 
+                v_material := 'ECO FIBRA'; v_target_slug := 'canecas_plastico_eco_fibra';
+            ELSE 
+                v_material := 'CERÂMICA'; v_target_slug := 'canecas';
+            END IF;
+            v_fallback_slug := 'canecas';
+            
+        ELSIF v_name ~ '(T[EÉ]RMIC|ISOTERM|VACUUM|TUMBLER)' THEN
+            v_type := 'COPO_TERMICO';
+            v_material := 'INOX';
+            v_target_slug := 'copos-inox';
+            v_fallback_slug := 'copos';
+            
+        ELSE
+            v_type := 'COPO';
+            IF v_name ~ '(VIDRO|GLASS)' THEN 
+                v_material := 'VIDRO'; v_target_slug := 'copos-vidro';
+            ELSIF v_name ~ '(INOX|A[CÇ]O)' THEN 
+                v_material := 'INOX'; v_target_slug := 'copos-inox';
+            ELSIF v_name ~ 'LONG\s*DRINK' THEN 
+                v_material := 'PLÁSTICO'; v_target_slug := 'copos-plastico-long-drink';
+            ELSIF v_name ~ '(BUCKS|CAFE)' THEN 
+                v_material := 'PLÁSTICO'; v_target_slug := 'copos-plastico-bucks-cafe';
+            ELSIF v_name ~ 'TWISTER' THEN 
+                v_material := 'PLÁSTICO'; v_target_slug := 'copos-plastico-twister';
+            ELSIF v_name ~ 'ALUM' THEN 
+                v_material := 'ALUMÍNIO'; v_target_slug := 'copos-aluminio';
+            ELSE 
+                v_material := 'PLÁSTICO'; v_target_slug := 'copos-plastico';
+            END IF;
+            v_fallback_slug := 'copos';
+        END IF;
+        
+        v_attributes := jsonb_build_object(
+            'capacity_ml', v_capacity_ml, 
+            'is_thermal', v_name ~ '(T[EÉ]RMIC|ISOTERM|VACUUM)',
+            'has_tampa', v_name ~ '(TAMPA|LID)',
+            'has_canudo', v_name ~ '(CANUDO|STRAW)'
+        );
+
+    -- PRIORIDADE 85: MOCHILAS E BOLSAS (com boundary manual para BOLSA)
+    ELSIF v_name ~ '(MOCHILA|(^|[^A-Z])BOLSA([^A-Z]|$)|SACOLA|NECESSAIRE|ECOBAG|POCHETE|ESTOJO)' THEN
+        v_confidence := 'high';
+        
+        IF v_name ~ 'MOCHILA' THEN
+            v_type := 'MOCHILA'; 
+            v_target_slug := 'mochilas'; 
+            v_fallback_slug := 'papelaria_e_escritorio';
+            IF v_name ~ '(NOTEBOOK|PC|LAPTOP)' THEN
+                v_attributes := jsonb_set(v_attributes, '{has_notebook_pocket}', 'true');
+            END IF;
+            
+        ELSIF v_name ~ '(SACOLA|ECOBAG)' THEN
+            v_type := 'SACOLA'; 
+            v_target_slug := 'ecologia'; 
+            v_fallback_slug := 'ecologia';
+            IF v_name ~ 'ALGOD' THEN v_material := 'ALGODÃO';
+            ELSIF v_name ~ 'TNT' THEN v_material := 'TNT';
+            ELSIF v_name ~ 'JUTA' THEN v_material := 'JUTA';
+            END IF;
+            
+        ELSIF v_name ~ 'NECESSAIRE' THEN
+            v_type := 'NECESSAIRE'; 
+            v_target_slug := 'saude_beleza_bem_estar'; 
+            v_fallback_slug := 'saude_beleza_bem_estar';
+            
+        ELSIF v_name ~ 'POCHETE' THEN
+            v_type := 'POCHETE'; 
+            v_target_slug := 'esportes_aventura_lazer_viagem'; 
+            v_fallback_slug := 'esportes_aventura_lazer_viagem';
+            
+        ELSIF v_name ~ 'ESTOJO' THEN
+            v_type := 'ESTOJO'; 
+            v_target_slug := 'papelaria_e_escritorio'; 
+            v_fallback_slug := 'papelaria_e_escritorio';
+            
+        ELSE
+            v_type := 'BOLSA'; 
+            v_target_slug := 'esportes_aventura_lazer_viagem'; 
+            v_fallback_slug := 'esportes_aventura_lazer_viagem';
+            IF v_name ~ '(T[EÉ]RMIC|COOLER)' THEN v_material := 'TÉRMICA'; END IF;
+        END IF;
+        
+        v_attributes := v_attributes || jsonb_build_object(
+            'is_thermal', v_name ~ '(T[EÉ]RMIC|COOLER)',
+            'is_waterproof', v_name ~ '(PROVA\s*D.?AGUA|IMPERME[AÁ]VEL)'
+        );
+
+    -- PRIORIDADE 80: GUARDA-CHUVA
+    ELSIF v_name ~ '(GUARDA[\s\-]?CHUVA|GUARDACHUVA|SOMBRINHA|UMBRELLA)' THEN
+        v_type := 'GUARDA_CHUVA'; v_confidence := 'high';
+        v_target_slug := 'guarda-chuva'; v_fallback_slug := 'guarda-chuva';
+        v_attributes := jsonb_build_object(
+            'is_automatic', v_name ~ 'AUTOM',
+            'is_inverted', v_name ~ 'INVERTID',
+            'is_compact', v_name ~ '(COMPACTO|MINI|DOBR)'
+        );
+
+    -- PRIORIDADE 75: PAPELARIA
+    ELSIF v_name ~ '(CADERNO|CADERNETA|BLOCO|AGENDA|PLANNER|CALEND[AÁ]RIO|CALCULADORA)' THEN
+        v_confidence := 'high';
+        
+        IF v_name ~ '(AGENDA|PLANNER)' THEN
+            v_type := 'AGENDA'; v_target_slug := 'agendas';
+        ELSIF v_name ~ '(CADERNO|CADERNETA|BLOCO)' THEN
+            v_type := 'CADERNO'; v_target_slug := 'blocos';
+        ELSIF v_name ~ 'CALEND' THEN
+            v_type := 'CALENDARIO'; v_target_slug := 'calendarios';
+        ELSIF v_name ~ 'CALCULADORA' THEN
+            v_type := 'CALCULADORA'; v_target_slug := 'calculadoras';
+        END IF;
+        v_fallback_slug := 'papelaria_e_escritorio';
+        
+        v_attributes := jsonb_build_object(
+            'has_capa_dura', v_name ~ '(CAPA[\s\-]?DURA|HARD)',
+            'is_ecologico', v_name ~ '(ECOL|RECICL|KRAFT)',
+            'has_espiral', v_name ~ '(ESPIRAL|WIRE)'
+        );
+
+    -- PRIORIDADE 70: CHAVEIROS (boundary manual)
+    ELSIF v_name ~ '(^|[^A-Z])CHAVEIRO([^A-Z]|$)' THEN
+        v_type := 'CHAVEIRO'; v_confidence := 'high';
+        v_target_slug := 'chaveiros'; v_fallback_slug := 'chaveiros';
+        
+        IF v_name ~ '(METAL|INOX|ALUM)' THEN v_material := 'METAL';
+        ELSIF v_name ~ '(COURO|LEATHER)' THEN v_material := 'COURO';
+        ELSIF v_name ~ '(ECOL|MADEIRA|BAMBU)' THEN v_material := 'ECOLÓGICO';
+        ELSIF v_name ~ 'ACRIL' THEN v_material := 'ACRÍLICO';
+        END IF;
+        
+        v_attributes := jsonb_build_object(
+            'has_abridor', v_name ~ 'ABRIDOR', 
+            'has_lanterna', v_name ~ '(LANTERNA|LED)'
+        );
+
+    -- PRIORIDADE 60: KITS (boundary manual)
+    ELSIF v_name ~ '(^|[^A-Z])KIT([^A-Z]|$)' THEN
+        v_type := 'KIT'; v_confidence := 'high';
+        
+        IF v_name ~ '(CHURRASCO|BBQ|BARBECUE)' THEN
+            v_type := 'KIT_CHURRASCO'; v_target_slug := 'kit_churrasco';
+        ELSIF v_name ~ '(CAF[EÉ]|COFFEE)' THEN
+            v_type := 'KIT_CAFE'; v_target_slug := 'kit_cafe';
+        ELSIF v_name ~ '(CAIPIRINHA|DRINK|BAR|BEBIDA)' THEN
+            v_type := 'KIT_BAR'; v_target_slug := 'kit_caipirinha';
+        ELSIF v_name ~ 'FONDUE' THEN
+            v_type := 'KIT_FONDUE'; v_target_slug := 'kit_fondue';
+        ELSIF v_name ~ 'GOURMET' THEN
+            v_type := 'KIT_GOURMET'; v_target_slug := 'kit_gourmet';
+        ELSIF v_name ~ 'CHIMAR' THEN
+            v_type := 'KIT_CHIMARRAO'; v_target_slug := 'kit_chimarrao';
+        ELSIF v_name ~ '(ESCRIT|EXECUTIV)' THEN
+            v_type := 'KIT_ESCRITORIO'; v_target_slug := 'kit_executivo';
+        ELSIF v_name ~ '(MANICURE|PEDICURE|UNHA)' THEN
+            v_type := 'KIT_MANICURE'; 
+            v_target_slug := 'kit_manicure';
+            v_fallback_slug := 'saude_beleza_bem_estar';
+        ELSIF v_name ~ '(HIGIENE|BANHO)' THEN
+            v_type := 'KIT_HIGIENE'; v_target_slug := 'saude_beleza_bem_estar';
+        ELSIF v_name ~ '(FERRAMENT|TOOL)' THEN
+            v_type := 'KIT_FERRAMENTAS'; v_target_slug := 'Ferramentas e Utilidades';
+        ELSE
+            v_target_slug := 'bar_e_cozinha'; v_confidence := 'medium';
+        END IF;
+        v_fallback_slug := COALESCE(v_fallback_slug, 'bar_e_cozinha');
+
+    -- PRIORIDADE 55: FERRAMENTAS
+    ELSIF v_name ~ '(LANTERNA|CANIVETE|MULTIFERRAMENTA|FITA\s*M[EÉ]TRICA|CHAVE\s*(FENDA|PHILIPS))' THEN
+        v_type := 'FERRAMENTA'; v_confidence := 'high';
+        v_target_slug := 'Ferramentas e Utilidades'; 
+        v_fallback_slug := 'Ferramentas e Utilidades';
+        
+        IF v_name ~ 'LANTERNA' THEN v_type := 'LANTERNA';
+        ELSIF v_name ~ '(CANIVETE|MULTIFERRAMENTA)' THEN v_type := 'CANIVETE';
+        ELSIF v_name ~ 'FITA' THEN v_type := 'FITA_METRICA';
+        END IF;
+
+    -- PRIORIDADE 50: VESTUÁRIO
+    ELSIF v_name ~ '(CAMISETA|CAMISA|POLO|BON[EÉ]|CHAP[EÉ]U|VISEIRA|TOCA|GORRO)' THEN
+        v_type := 'VESTUARIO'; v_confidence := 'high';
+        v_target_slug := 'roupas_calcados_acessorios'; 
+        v_fallback_slug := 'roupas_calcados_acessorios';
+        
+        IF v_name ~ '(CAMISETA|T[\s\-]?SHIRT)' THEN v_type := 'CAMISETA';
+        ELSIF v_name ~ '(CAMISA|POLO)' THEN v_type := 'CAMISA';
+        ELSIF v_name ~ 'BON[EÉ]' THEN v_type := 'BONE';
+        ELSIF v_name ~ 'CHAP[EÉ]U' THEN v_type := 'CHAPEU';
+        ELSIF v_name ~ 'VISEIRA' THEN v_type := 'VISEIRA';
+        END IF;
+
+    -- PRIORIDADE 48: PORTA COMPRIMIDO
+    -- Categoria: 9d6f5d5a-79b6-477e-9951-7e078d720d23
+    -- Parent: Saúde | Beleza | Bem Estar (e27d77ff-4acd-4daf-ab7d-2c4f769950df)
+    ELSIF v_name ~ 'PORTA[\s\-]?(COMPRIMIDO|P[IÍ]LULA|REM[EÉ]DIO|MEDICAMENTO)' THEN
+        v_type := 'PORTA_COMPRIMIDO'; v_confidence := 'high';
+        v_target_slug := 'porta-comprimido'; 
+        v_fallback_slug := 'saude_beleza_bem_estar';
+
+    -- PRIORIDADE 47: PENTES E ESCOVAS
+    -- Categoria: a49b9e19-9fcb-40ca-a281-5a15cba9a4b5
+    -- Parent: Saúde | Beleza | Bem Estar (e27d77ff-4acd-4daf-ab7d-2c4f769950df)
+    ELSIF v_name ~ '(PENTE|ESCOVA\s*(DE\s*)?(CABELO|HAIR)?|RASQUEAD)' AND NOT v_name ~ 'ESCOVA\s*(DE\s*)?(DENTE|DENTAL)' THEN
+        v_type := 'PENTE_ESCOVA'; v_confidence := 'high';
+        v_target_slug := 'pentes-e-escovas'; 
+        v_fallback_slug := 'saude_beleza_bem_estar';
+        
+        IF v_name ~ 'PENTE' THEN v_type := 'PENTE';
+        ELSIF v_name ~ 'ESCOVA' THEN v_type := 'ESCOVA_CABELO';
+        ELSIF v_name ~ 'RASQUEAD' THEN v_type := 'RASQUEADEIRA';
+        END IF;
+        
+        v_attributes := jsonb_build_object(
+            'is_dobravel', v_name ~ '(DOBR|VIAGEM|POCKET)',
+            'has_espelho', v_name ~ 'ESPELHO'
+        );
+
+    -- PRIORIDADE 45: TOALHAS
+    ELSIF v_name ~ '(^|[^A-Z])TOALHA([^A-Z]|$)' THEN
+        v_type := 'TOALHA'; v_confidence := 'high';
+        v_target_slug := 'esportes_aventura_lazer_viagem'; 
+        v_fallback_slug := 'esportes_aventura_lazer_viagem';
+
+    -- PRIORIDADE 40: RELÓGIOS
+    ELSIF v_name ~ 'REL[OÓ]GIO' THEN
+        v_type := 'RELOGIO'; v_confidence := 'high';
+        v_target_slug := 'utensilios_decoracao'; 
+        v_fallback_slug := 'utensilios_decoracao';
+
+    -- PRIORIDADE 35: ÓCULOS
+    ELSIF v_name ~ '[OÓ]CULOS' THEN
+        v_type := 'OCULOS'; v_confidence := 'high';
+        v_target_slug := 'roupas_calcados_acessorios'; 
+        v_fallback_slug := 'roupas_calcados_acessorios';
+
+    -- PRIORIDADE 30: PORTA-OBJETOS (boundary manual)
+    ELSIF v_name ~ '(^|[^A-Z])PORTA[\s\-]?' THEN
+        v_type := 'PORTA_OBJETOS'; v_confidence := 'high';
+        
+        IF v_name ~ 'PORTA[\s\-]?(CART[AÃ]O|CART[OÕ]ES|CARD)' THEN
+            v_target_slug := 'roupas_calcados_acessorios';
+        ELSIF v_name ~ 'PORTA[\s\-]?(CANETA|LAPIS)' THEN
+            v_target_slug := 'porta_caneta'; v_fallback_slug := 'papelaria_e_escritorio';
+        ELSIF v_name ~ 'PORTA[\s\-]?CRACH[AÁ]' THEN
+            v_target_slug := 'porta_cracha_roller_clip'; v_fallback_slug := 'identificacao';
+        ELSIF v_name ~ 'PORTA[\s\-]?(RETRATO|FOTO)' THEN
+            v_target_slug := 'utensilios_decoracao';
+        ELSIF v_name ~ 'PORTA[\s\-]?(CHAVE|CELULAR|MOEDA)' THEN
+            v_target_slug := 'roupas_calcados_acessorios';
+        ELSE
+            v_target_slug := 'utensilios_decoracao';
+        END IF;
+        v_fallback_slug := COALESCE(v_fallback_slug, 'utensilios_decoracao');
+
+    -- PRIORIDADE 25: JOGOS
+    ELSIF v_name ~ '(JOGO|BARALHO|DOMIN[OÓ]|XADREZ|DAMA|BOLA\s*(ANTI)?[\s\-]?STRESS)' THEN
+        v_type := 'JOGO'; v_confidence := 'high';
+        v_target_slug := 'jogos_e_brinquedos'; 
+        v_fallback_slug := 'jogos_e_brinquedos';
+
+    -- PRIORIDADE 20: CORDÃO DE CRACHÁ
+    ELSIF v_name ~ '(CORD[AÃ]O|LANYARD)' OR v_name ~ '(^|[^A-Z])CRACH[AÁ]([^A-Z]|$)' THEN
+        v_type := 'CORDAO_CRACHA'; v_confidence := 'high';
+        v_target_slug := 'cordao-de-cracha'; 
+        v_fallback_slug := 'cordao-de-cracha';
+
+    -- PRIORIDADE 15: ARTIGOS REGIONAIS
+    ELSIF v_name ~ '(CUIA|BOMBA|CHIMAR|TERERE|MATEIRA|PORONGO)' THEN
+        v_type := 'ARTIGO_REGIONAL'; v_confidence := 'high';
+        
+        IF v_name ~ '(CUIA.*CHIMAR|CHIMAR.*CUIA|CUIA.*PORONGO)' THEN
+            v_target_slug := 'cuia_chimarrao';
+        ELSIF v_name ~ '(CUIA.*TERERE|TERERE.*CUIA)' THEN
+            v_target_slug := 'cuia_terere';
+        ELSIF v_name ~ 'BOMBA' THEN
+            v_target_slug := 'bomba_chimarrao';
+        ELSIF v_name ~ 'MATEIRA' THEN
+            v_target_slug := 'mateiras';
+        ELSE
+            v_target_slug := 'artigos_regionais';
+        END IF;
+        v_fallback_slug := 'artigos_regionais';
+
+    -- FALLBACK
+    ELSE
+        v_type := 'INDEFINIDO'; 
+        v_target_slug := NULL; 
+        v_fallback_slug := NULL; 
+        v_confidence := 'low';
+    END IF;
+
+    -- ========================================================================
+    -- ETAPA 4: BUSCA NO BANCO
+    -- ========================================================================
+    IF v_target_slug IS NOT NULL THEN
+        SELECT c.id, c.name, c.slug, c.level, COALESCE(c.full_path_readable, c.name)
+        INTO v_cat_id, v_cat_name, v_cat_slug, v_cat_level, v_cat_path
+        FROM categories c
+        WHERE c.slug = v_target_slug 
+          AND c.is_active = true 
+          AND c.organization_id = v_org_id
+        LIMIT 1;
+    END IF;
+    
+    -- Fallback se não encontrou
+    IF v_cat_id IS NULL AND v_fallback_slug IS NOT NULL AND v_fallback_slug != v_target_slug THEN
+        SELECT c.id, c.name, c.slug, c.level, COALESCE(c.full_path_readable, c.name)
+        INTO v_cat_id, v_cat_name, v_cat_slug, v_cat_level, v_cat_path
+        FROM categories c
+        WHERE c.slug = v_fallback_slug 
+          AND c.is_active = true 
+          AND c.organization_id = v_org_id
+        LIMIT 1;
+        
+        IF v_cat_id IS NOT NULL AND v_confidence = 'high' THEN 
+            v_confidence := 'medium'; 
+        END IF;
+    END IF;
+
+    -- ========================================================================
+    -- ETAPA 5: RETORNO
+    -- ========================================================================
+    RETURN QUERY SELECT 
+        v_cat_id, v_cat_name, v_cat_slug, v_cat_level, v_cat_path,
+        v_confidence, v_type, v_material, v_attributes;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_regua(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_is_regua BOOLEAN := FALSE;
+    v_material TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_attributes JSONB;
+BEGIN
+    -- 1. NORMALIZAÇÃO
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    -- ========================================================================
+    -- 2. VALIDAÇÃO: É RÉGUA?
+    -- ========================================================================
+    
+    IF v_name ~ 'REGUA|RÉGUA' THEN
+        v_is_regua := TRUE;
+    END IF;
+    
+    -- Se NÃO é régua, retornar imediatamente
+    IF NOT v_is_regua THEN
+        RETURN jsonb_build_object(
+            'is_regua', FALSE,
+            'category_id', NULL,
+            'category_slug', NULL,
+            'material', NULL,
+            'attributes', NULL
+        );
+    END IF;
+    
+    -- ========================================================================
+    -- 3. IDENTIFICAÇÃO DO MATERIAL
+    -- ========================================================================
+    
+    IF v_name ~ 'BAMBU|BAMBOO|MADEIRA|WOOD|MDF' THEN
+        v_material := 'ECOLOGICA';
+        v_category_slug := 'regua-ecologica';
+    ELSIF v_name ~ 'METAL|ALUMIN|INOX|ACO|AÇO' THEN
+        v_material := 'METAL';
+        v_category_slug := 'regua-metal';
+    ELSIF v_name ~ 'CALCULADORA|LUPA|MULTIFUNC|CLIP|CLIPS' THEN
+        v_material := 'MULTIFUNCIONAL';
+        v_category_slug := 'regua-multifuncional';
+    ELSIF v_name ~ 'PLASTIC|PVC|PS|PP|ABS|ACRILIC' THEN
+        v_material := 'PLASTICO';
+        v_category_slug := 'regua-plastico';
+    ELSE
+        v_material := 'PLASTICO';
+        v_category_slug := 'reguas';
+    END IF;
+    
+    -- Busca UUID da categoria
+    SELECT id INTO v_category_id 
+    FROM categories WHERE slug = v_category_slug LIMIT 1;
+    
+    -- Fallback para categoria pai
+    IF v_category_id IS NULL THEN
+        SELECT id INTO v_category_id 
+        FROM categories WHERE slug = 'reguas' LIMIT 1;
+        v_category_slug := 'reguas';
+    END IF;
+    
+    -- 4. ATRIBUTOS
+    v_attributes := jsonb_build_object(
+        'has_lupa',         v_name ~ 'LUPA|AMPLIA',
+        'has_calculadora',  v_name ~ 'CALCULADORA|CALC',
+        'is_flexivel',      v_name ~ 'FLEXIVEL|FLEX',
+        'tamanho_cm',       CASE 
+                                WHEN v_name ~ '30\s*(CM)?' THEN '30'
+                                WHEN v_name ~ '20\s*(CM)?' THEN '20'
+                                WHEN v_name ~ '15\s*(CM)?' THEN '15'
+                                ELSE NULL
+                            END
+    );
+    
+    -- 5. RETORNO
+    RETURN jsonb_build_object(
+        'is_regua', TRUE,
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'material', v_material,
+        'attributes', v_attributes
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_relogio(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_category_id UUID;
+    v_slug TEXT;
+    v_tipo TEXT;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    IF v_name ~ 'PULSO|SMARTWATCH|PULSEIRA' THEN
+        v_tipo := 'PULSO';
+        IF v_name ~ 'DIGITAL|LED|LCD|SMART' THEN
+            v_slug := 'relogio-pulso-digital';
+        ELSE
+            v_slug := 'relogio-pulso-analogico';
+        END IF;
+    ELSIF v_name ~ 'PAREDE|WALL' THEN
+        v_tipo := 'PAREDE';
+        v_slug := 'relogios_parede';
+    ELSE
+        v_tipo := 'MESA';
+        v_slug := 'relogios-mesa';
+    END IF;
+    
+    SELECT id INTO v_category_id FROM categories WHERE slug = v_slug LIMIT 1;
+    
+    RETURN jsonb_build_object(
+        'category_id', v_category_id,
+        'category_slug', v_slug,
+        'tipo', v_tipo,
+        'is_smartwatch', v_name ~ 'SMART|FITNESS',
+        'display', CASE WHEN v_name ~ 'DIGITAL|LED' THEN 'digital' ELSE 'analogico' END
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_sacochila(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_id UUID;
+    v_slug TEXT;
+    v_mat TEXT;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    IF v_name ~ 'ALGODAO|COTTON' THEN
+        v_mat := 'ALGODAO'; v_slug := 'sacochila-algodao';
+    ELSIF v_name ~ 'TNT|NON.?WOVEN' THEN
+        v_mat := 'TNT'; v_slug := 'sacochila-tnt-non-woven';
+    ELSIF v_name ~ 'SUBLIMA' THEN
+        v_mat := 'SUBLIMATICA'; v_slug := 'sacochila-sublimatica';
+    ELSE
+        v_mat := 'NYLON'; v_slug := 'sacochila-nylon-poliester';
+    END IF;
+    
+    SELECT id INTO v_id FROM categories WHERE slug = v_slug LIMIT 1;
+    
+    RETURN jsonb_build_object(
+        'category_id', v_id, 'category_slug', v_slug, 'material', v_mat,
+        'has_bolso', v_name ~ 'BOLSO', 'has_ziper', v_name ~ 'ZIPER'
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_sacola(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_material TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_attributes JSONB;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    IF v_name ~ 'ALGODAO|ALGODÃO|COTTON|CANVAS' THEN
+        v_material := 'ALGODAO';
+        v_category_slug := 'sacola-ecobag-algodao';
+        v_category_id := 'e1111111-1111-1111-1111-111111111111'::uuid;
+    ELSIF v_name ~ 'JUTA|SISAL' THEN
+        v_material := 'JUTA';
+        v_category_slug := 'sacola-ecobag-juta';
+        v_category_id := 'e6666666-6666-6666-6666-666666666666'::uuid;
+    ELSIF v_name ~ 'LONA' THEN
+        v_material := 'LONA';
+        v_category_slug := 'sacola-ecobag-lona';
+        v_category_id := 'e5555555-5555-5555-5555-555555555555'::uuid;
+    ELSIF v_name ~ 'SUBLIM' THEN
+        v_material := 'SUBLIMATICA';
+        v_category_slug := 'sacola-ecobag-sublimatica';
+        v_category_id := 'e7777777-7777-7777-7777-777777777777'::uuid;
+    ELSIF v_name ~ 'TNT.?METALIZ|METALIZ' THEN
+        v_material := 'TNT_METALIZADO';
+        v_category_slug := 'sacola-ecobag-tnt-metalizado';
+        v_category_id := 'e4444444-4444-4444-4444-444444444444'::uuid;
+    ELSIF v_name ~ 'TNT|NON.?WOVEN' THEN
+        v_material := 'TNT';
+        v_category_slug := 'sacola-ecobag-tnt-non-woven';
+        v_category_id := 'e3333333-3333-3333-3333-333333333333'::uuid;
+    ELSIF v_name ~ 'NYLON|POLIESTER|POLIÉSTER|OXFORD' THEN
+        v_material := 'NYLON';
+        v_category_slug := 'sacola-ecobag-nylon-poliester';
+        v_category_id := 'e2222222-2222-2222-2222-222222222222'::uuid;
+    ELSE
+        v_material := 'INDEFINIDO';
+        v_category_slug := 'sacola-ecobag';
+        v_category_id := 'e0000000-0000-0000-0000-000000000000'::uuid;
+    END IF;
+    
+    v_attributes := jsonb_build_object(
+        'has_ziper',        v_name ~ 'ZIPER|ZIPPER|ZIP',
+        'has_bolso',        v_name ~ 'BOLSO|POCKET',
+        'is_dobravel',      v_name ~ 'DOBRAVEL|DOBRÁVEL|FOLD',
+        'is_retornavel',    v_name ~ 'RETORNAVEL|RETORNÁVEL|REUTILIZAVEL',
+        'is_termica',       v_name ~ 'TERMIC|THERMAL',
+        'tamanho',          CASE 
+                              WHEN v_name ~ 'GRANDE|LARGE|G\b' THEN 'G'
+                              WHEN v_name ~ 'MEDIO|MEDIUM|M\b' THEN 'M'
+                              WHEN v_name ~ 'PEQUEN|SMALL|P\b' THEN 'P'
+                              ELSE NULL
+                            END
+    );
+    
+    RETURN jsonb_build_object(
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'material', v_material,
+        'attributes', v_attributes
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_speaker(p_product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_type TEXT;
+    v_material TEXT;
+    v_attributes JSONB;
+BEGIN
+    v_name := UPPER(COALESCE(unaccent(p_product_name), ''));
+    
+    v_category_id := 'd053c0ed-9885-47e6-87b8-6bb07e7e6f8b';
+    v_category_slug := 'caixa-de-som';
+    v_type := 'STANDARD';
+    v_material := 'PLÁSTICO';
+    
+    IF v_name ~* 'BLUETOOTH|BT|WIRELESS|SEM.?FIO' THEN
+        v_type := 'BLUETOOTH';
+    ELSIF v_name ~* 'PORTATIL|PORTABLE|MINI|COMPACTA' THEN
+        v_type := 'PORTÁTIL';
+    ELSIF v_name ~* 'SMART|INTELIGENTE|ALEXA|GOOGLE|ASSISTENTE' THEN
+        v_type := 'SMART';
+    ELSIF v_name ~* 'SOUNDBAR|SOUND.?BAR' THEN
+        v_type := 'SOUNDBAR';
+    ELSIF v_name ~* 'SUBWOOFER|SUB.?WOOFER|GRAVE' THEN
+        v_type := 'SUBWOOFER';
+    END IF;
+    
+    IF v_name ~* 'METAL|ALUMIN' THEN
+        v_material := 'METAL';
+    ELSIF v_name ~* 'BAMBU|BAMBOO|MADEIRA|WOOD' THEN
+        v_material := 'MADEIRA';
+    ELSIF v_name ~* 'TECIDO|FABRIC|MESH' THEN
+        v_material := 'TECIDO';
+    END IF;
+    
+    v_attributes := jsonb_build_object(
+        'has_bluetooth', v_name ~* 'BLUETOOTH|BT|WIRELESS|SEM.?FIO',
+        'has_usb', v_name ~* 'USB|PENDRIVE',
+        'has_sd_card', v_name ~* 'SD|CARTAO|CARD|MEMORIA',
+        'has_radio', v_name ~* 'RADIO|FM|AM',
+        'has_aux', v_name ~* 'AUX|P2|AUXILIAR',
+        'has_microphone', v_name ~* 'MICROFONE|MIC|KARAOKE',
+        'has_led', v_name ~* 'LED|LUZ|RGB|ILUMINAD',
+        'has_battery', v_name ~* 'BATERIA|RECARREGAVEL|PILHA',
+        'is_waterproof', v_name ~* 'PROVA.?DAGUA|WATERPROOF|IPX|RESISTENTE.?AGUA',
+        'has_tws', v_name ~* 'TWS|PAREAMENTO|STEREO.?PAIR'
+    );
+    
+    RETURN jsonb_build_object(
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'type', v_type,
+        'material', v_material,
+        'attributes', v_attributes
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_squeeze(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_material TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_capacidade_ml TEXT;
+    v_attributes JSONB;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    -- Detectar material
+    IF v_name ~ 'INOX|ACO.?INOX|AÇO.?INOX' THEN
+        v_material := 'INOX';
+        v_category_slug := 'squeeze-garrafas-inox';
+        v_category_id := '0ef00ae9-87d4-4671-b841-3671008055ec'::uuid;
+    ELSIF v_name ~ 'ALUMINIO|ALUMÍNIO|METAL' THEN
+        v_material := 'METAL';
+        v_category_slug := 'squeeze-garrafas-metal';
+        v_category_id := '3480963c-946d-4c2e-b856-02fe9593d720'::uuid;
+    ELSIF v_name ~ 'VIDRO|GLASS|BOROSSILICATO' THEN
+        v_material := 'VIDRO';
+        v_category_slug := 'squeeze-garrafas-vidro';
+        v_category_id := '3a0aec05-79fe-47f7-a8fd-af77b78fadaa'::uuid;
+    ELSIF v_name ~ 'PLASTIC|ACRILIC|ACRÍLICO|TRITAN|PP|PET|BPA' THEN
+        v_material := 'PLASTICO';
+        v_category_slug := 'squeeze-garrafas-plastico';
+        v_category_id := '939ffda9-1b64-43d5-877e-ef3bc64abe78'::uuid;
+    ELSE
+        v_material := 'INDEFINIDO';
+        v_category_slug := 'squeeze_garrafas';
+        v_category_id := '9b763494-a404-40a4-b5cd-f8888595046f'::uuid;
+    END IF;
+    
+    -- Detectar capacidade (ML ou LITROS)
+    v_capacidade_ml := (regexp_match(v_name, '(\d+)\s*ML'))[1];
+    
+    -- Se não encontrou ML, tentar LITROS e converter
+    IF v_capacidade_ml IS NULL THEN
+        DECLARE
+            v_litros TEXT;
+        BEGIN
+            v_litros := (regexp_match(v_name, '(\d+(?:[.,]\d+)?)\s*(?:L|LITRO)'))[1];
+            IF v_litros IS NOT NULL THEN
+                -- Converter para ML (multiplicar por 1000)
+                v_capacidade_ml := (REPLACE(v_litros, ',', '.')::NUMERIC * 1000)::INTEGER::TEXT;
+            END IF;
+        END;
+    END IF;
+    
+    v_attributes := jsonb_build_object(
+        'is_termica',       v_name ~ 'TERMIC|THERMAL|DUPLA.?PAREDE|ISOTERM',
+        'has_infusor',      v_name ~ 'INFUSOR|INFUSER',
+        'has_canudo',       v_name ~ 'CANUDO|STRAW',
+        'has_alca',         v_name ~ 'ALÇA|ALCA|HANDLE',
+        'is_dobravel',      v_name ~ 'DOBRAVEL|SILICONE|RETRATIL',
+        'is_esportiva',     v_name ~ 'SPORT|ACADEMIA|FITNESS|BIKE',
+        'livre_bpa',        v_name ~ 'BPA.?FREE|LIVRE.?(?:DE.?)?BPA|SEM.?BPA',
+        'capacidade_ml',    v_capacidade_ml
+    );
+    
+    RETURN jsonb_build_object(
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'material', v_material,
+        'attributes', v_attributes
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_tabua(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_is_tabua BOOLEAN := FALSE;
+    v_material TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+BEGIN
+    -- 1. NORMALIZAÇÃO
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    -- ========================================================================
+    -- 2. VALIDAÇÃO: É TÁBUA?
+    -- ========================================================================
+    -- EXCLUSÃO: Tábuas que são parte de kits (têm funções próprias)
+    -- - Tábua de queijos COM utensílios = kit_queijo
+    -- - Tábua para churrasco COM utensílios = kit_churrasco
+    -- ========================================================================
+    
+    -- Primeiro verificar se é tábua
+    IF v_name ~ 'TABUA|TÁBUA' THEN
+        v_is_tabua := TRUE;
+    END IF;
+    
+    -- EXCLUSÃO: Se for kit de queijo (tábua + utensílios)
+    IF v_is_tabua AND v_name ~ 'QUEIJO' AND v_name ~ '(UTENSILIOS|UTENSÍLIOS|FACA|TALHERES|PECAS|PEÇAS|\d+\s*(PCS|PÇS))' THEN
+        v_is_tabua := FALSE;  -- Será classificado por classify_kit_queijo()
+    END IF;
+    
+    -- EXCLUSÃO: Se for kit de churrasco (tábua + utensílios)
+    IF v_is_tabua AND v_name ~ 'CHURRASCO' AND v_name ~ '(UTENSILIOS|UTENSÍLIOS|FACA|GARFO|PECAS|PEÇAS|KIT|CONJUNTO|\d+\s*(PCS|PÇS))' THEN
+        v_is_tabua := FALSE;  -- Será classificado por classify_kit_churrasco()
+    END IF;
+    
+    -- Se NÃO é tábua (ou foi excluído), retornar imediatamente
+    IF NOT v_is_tabua THEN
+        RETURN jsonb_build_object(
+            'is_tabua', FALSE,
+            'category_id', NULL,
+            'category_slug', NULL,
+            'material', NULL
+        );
+    END IF;
+    
+    -- ========================================================================
+    -- 3. IDENTIFICAÇÃO DO MATERIAL
+    -- ========================================================================
+    
+    IF v_name ~ 'BAMBU|BAMBOO' THEN
+        v_material := 'BAMBU';
+        v_category_slug := 'tabua-cozinha-bambu';
+    ELSIF v_name ~ 'MADEIRA|WOOD|MDF|PINUS|TECA' THEN
+        v_material := 'MADEIRA';
+        v_category_slug := 'tabua-cozinha-madeira';
+    ELSIF v_name ~ 'PLASTIC|PVC|POLIETILENO|PP|SILICONE' THEN
+        v_material := 'PLASTICO';
+        v_category_slug := 'tabua-cozinha-plastico';
+    ELSE
+        v_material := 'GENERICO';
+        v_category_slug := 'tabua-cozinha';
+    END IF;
+    
+    -- Busca UUID da categoria
+    SELECT id INTO v_category_id 
+    FROM categories WHERE slug = v_category_slug LIMIT 1;
+    
+    -- Fallback para categoria pai
+    IF v_category_id IS NULL THEN
+        SELECT id INTO v_category_id 
+        FROM categories WHERE slug = 'tabua-cozinha' LIMIT 1;
+        v_category_slug := 'tabua-cozinha';
+    END IF;
+    
+    -- 4. RETORNO
+    RETURN jsonb_build_object(
+        'is_tabua', TRUE,
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'material', v_material
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_taca(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_material TEXT;
+    v_subtipo TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_attributes JSONB;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    -- =========================================================================
+    -- PASSO 1: Detectar material
+    -- =========================================================================
+    IF v_name ~ 'CRISTAL' THEN
+        v_material := 'CRISTAL';
+    ELSIF v_name ~ 'VIDRO|GLASS' THEN
+        v_material := 'VIDRO';
+    ELSIF v_name ~ 'PLASTIC|ACRILIC|ACRÍLICO|PP|PS' THEN
+        v_material := 'PLASTICO';
+    ELSE
+        v_material := 'INDEFINIDO';
+    END IF;
+    
+    -- =========================================================================
+    -- PASSO 2: Detectar subtipo por bebida
+    -- =========================================================================
+    IF v_name ~ 'VINHO|WINE|BORDEAUX|BURGUNDY|TINTO|BRANCO' THEN
+        v_subtipo := 'VINHO';
+    ELSIF v_name ~ 'CHAMPAGNE|CHAMPANHE|ESPUMANTE|PROSECCO|FLUTE' THEN
+        v_subtipo := 'CHAMPANHE';
+    ELSIF v_name ~ 'GIN|TONICA|BALAO|BALLOON' THEN
+        v_subtipo := 'GIN';
+    ELSIF v_name ~ 'CERVEJA|BEER|CHOPP|CHOPE' THEN
+        v_subtipo := 'CERVEJA';
+    ELSIF v_name ~ 'MARTINI|COCKTAIL|COQUETEL' THEN
+        v_subtipo := 'MARTINI';
+    ELSE
+        v_subtipo := NULL;
+    END IF;
+    
+    -- =========================================================================
+    -- PASSO 3: Determinar categoria final (material + subtipo)
+    -- =========================================================================
+    
+    -- CRISTAL com subtipos
+    IF v_material = 'CRISTAL' THEN
+        IF v_subtipo = 'VINHO' THEN
+            v_category_slug := 'tacas-cristal-vinho';
+            v_category_id := 'ff56b934-2d6d-4180-bbf5-7052cffc1840'::uuid;
+        ELSIF v_subtipo = 'CHAMPANHE' THEN
+            v_category_slug := 'tacas-cristal-champanhe';
+            v_category_id := '9fc2f762-fdc1-460a-9b2a-12455bf5b51e'::uuid;
+        ELSE
+            v_category_slug := 'tacas-cristal';
+            v_category_id := '20c1be9e-39de-4a0a-becd-3e92a859a4ae'::uuid;
+        END IF;
+    
+    -- VIDRO com subtipos
+    ELSIF v_material = 'VIDRO' THEN
+        IF v_subtipo = 'VINHO' THEN
+            v_category_slug := 'tacas-vidro-vinho';
+            v_category_id := 'c9a608cb-8f4f-44f3-97bf-8614bcc55e0b'::uuid;
+        ELSIF v_subtipo = 'CHAMPANHE' THEN
+            v_category_slug := 'tacas-vidro-champanhe';
+            v_category_id := 'b3e46446-42ab-4cd2-8835-3d7c9c3de2c6'::uuid;
+        ELSIF v_subtipo = 'GIN' THEN
+            v_category_slug := 'tacas-vidro-gin';
+            v_category_id := '306aa39b-2e7b-4b04-a861-60c99db92791'::uuid;
+        ELSIF v_subtipo = 'CERVEJA' THEN
+            v_category_slug := 'tacas-vidro-cerveja';
+            v_category_id := '3c843408-a2fd-4dbc-9f5e-7cd1b7eead8e'::uuid;
+        ELSE
+            v_category_slug := 'tacas-vidro';
+            v_category_id := '76bd33ee-46ed-4260-aea7-57daac6c5e4f'::uuid;
+        END IF;
+    
+    -- PLÁSTICO com subtipos
+    ELSIF v_material = 'PLASTICO' THEN
+        IF v_subtipo = 'VINHO' THEN
+            v_category_slug := 'tacas-plastico-vinho';
+            v_category_id := 'bfa5fc7f-63b6-43f0-8fc7-284e8df125cc'::uuid;
+        ELSIF v_subtipo = 'CHAMPANHE' THEN
+            v_category_slug := 'tacas-plastico-champanhe';
+            v_category_id := 'debba104-adc8-4936-91c7-fe11645700a5'::uuid;
+        ELSIF v_subtipo = 'GIN' THEN
+            v_category_slug := 'tacas-plastico-gin';
+            v_category_id := '86b2a4f1-c32f-48d5-af03-550af7a66ddf'::uuid;
+        ELSIF v_subtipo = 'CERVEJA' THEN
+            v_category_slug := 'tacas-plastico-cerveja';
+            v_category_id := 'f149dff3-e5af-4702-9a02-2d3f4fdef23b'::uuid;
+        ELSE
+            v_category_slug := 'tacas-plastico';
+            v_category_id := '56e0adab-9a19-4577-a5aa-972bd6eee2f3'::uuid;
+        END IF;
+    
+    -- FALLBACK
+    ELSE
+        v_category_slug := 'tacas';
+        v_category_id := '2a63cab7-317d-46ac-a119-7ced9e41427a'::uuid;
+    END IF;
+    
+    -- =========================================================================
+    -- PASSO 4: Atributos
+    -- =========================================================================
+    v_attributes := jsonb_build_object(
+        'subtipo',          v_subtipo,
+        'has_pe',           NOT (v_name ~ 'SEM.?PE|SEM.?PÉ'),
+        'is_personalizada', v_name ~ 'SUBLIM|TRANSFER|PERSONAL',
+        'capacidade_ml',    (regexp_match(v_name, '(\d+)\s*ML'))[1]
+    );
+    
+    RETURN jsonb_build_object(
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'material', v_material,
+        'attributes', v_attributes
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_tech_product(p_product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+BEGIN
+    v_name := UPPER(COALESCE(unaccent(p_product_name), ''));
+    
+    -- CAIXA DE SOM (sem marcas)
+    IF v_name ~* 'CAIXA.?DE.?SOM|CAIXA.?SOM|SPEAKER|ALTO.?FALANTE|SOUNDBOX|SOUND.?BOX|CAIXINHA.?DE.?SOM|CAIXINHA.?SOM' THEN
+        RETURN classify_speaker(p_product_name);
+        
+    -- POWERBANK (sem marcas)
+    ELSIF v_name ~* 'POWER.?BANK|POWERBANK|CARREGADOR.?PORTATIL|CARREGADOR.*PORTATIL|BATERIA.?EXTERNA|BATERIA.?PORTATIL|CARREGADOR.*(CELULAR|SMARTPHONE).*PORTATIL|BATERIA.?(RESERVA|BACKUP)' THEN
+        RETURN classify_powerbank(p_product_name);
+        
+    -- FONE DE OUVIDO (sem marcas)
+    ELSIF v_name ~* 'FONE|HEADPHONE|HEADSET|EARPHONE|EARBUD|AURICULAR|EARBUDS' THEN
+        RETURN classify_headphone(p_product_name);
+        
+    -- PEN DRIVE (sem marcas)
+    ELSIF v_name ~* 'PEN.?DRIVE|PENDRIVE|USB.?DRIVE|FLASH.?DRIVE|MEMORIA.?USB' THEN
+        RETURN classify_pendrive(p_product_name);
+        
+    ELSE
+        -- Fallback: Tecnologia
+        RETURN jsonb_build_object(
+            'category_id', 'a1b2c3d4-1111-4000-8000-000000000001',
+            'category_slug', 'tecnologia-eletronicos',
+            'type', 'UNKNOWN',
+            'material', NULL,
+            'attributes', '{}'::jsonb
+        );
+    END IF;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_tulipa(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_material TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_attributes JSONB;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    IF v_name ~ 'ALUMINIO|ALUMÍNIO' THEN
+        v_material := 'ALUMINIO';
+        v_category_slug := 'tulipa-aluminio';
+        v_category_id := '0d73e6f8-719e-4dde-8a27-4098a7b76ff8'::uuid;
+    ELSIF v_name ~ 'VIDRO|GLASS|CRISTAL' THEN
+        v_material := 'VIDRO';
+        v_category_slug := 'tulipa-vidro';
+        v_category_id := '9621c744-7410-436e-9b2c-b407c3961cf0'::uuid;
+    ELSIF v_name ~ 'PLASTIC|ACRILIC|ACRÍLICO|PP|PS' THEN
+        v_material := 'PLASTICO';
+        v_category_slug := 'tulipa-plastico';
+        v_category_id := 'd5a532de-ac31-4aa8-bf5a-21fa81dd43bf'::uuid;
+    ELSE
+        v_material := 'INDEFINIDO';
+        v_category_slug := 'tulipa';
+        v_category_id := 'cc7890f8-ee8d-47ea-9817-3a3f4f6a5530'::uuid;
+    END IF;
+    
+    v_attributes := jsonb_build_object(
+        'is_cerveja',       v_name ~ 'CERVEJA|BEER|CHOPP|CHOPE',
+        'is_brahma',        v_name ~ 'BRAHMA',
+        'capacidade_ml',    (regexp_match(v_name, '(\d+)\s*ML'))[1]
+    );
+    
+    RETURN jsonb_build_object(
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'material', v_material,
+        'attributes', v_attributes
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_umidificador(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_category_id UUID;
+    v_slug TEXT;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    v_slug := 'difusor_aromatizador';
+    
+    SELECT id INTO v_category_id FROM categories WHERE slug = v_slug LIMIT 1;
+    
+    RETURN jsonb_build_object(
+        'category_id', v_category_id,
+        'category_slug', v_slug,
+        'tipo', CASE
+            WHEN v_name ~ 'UMIDIFICADOR' THEN 'umidificador'
+            WHEN v_name ~ 'DIFUSOR' THEN 'difusor'
+            WHEN v_name ~ 'AROMATIZADOR' THEN 'aromatizador'
+            ELSE 'difusor'
+        END,
+        'capacidade_ml', (regexp_match(v_name, '([0-9]+)\s*ML'))[1],
+        'material', CASE
+            WHEN v_name ~ 'MADEIRA|WOOD|BAMBU' THEN 'madeira'
+            WHEN v_name ~ 'CERAMICA|PORCELANA' THEN 'ceramica'
+            WHEN v_name ~ 'VIDRO|GLASS' THEN 'vidro'
+            WHEN v_name ~ 'PLASTICO|ABS' THEN 'plastico'
+            ELSE NULL
+        END,
+        'tem_led', v_name ~ 'LED|LUZ|RGB|LUMINOSO',
+        'tem_timer', v_name ~ 'TIMER|TEMPORIZADOR',
+        'is_portatil', v_name ~ 'PORTATIL|MINI|COMPACTO|VIAGEM',
+        'is_usb', v_name ~ 'USB'
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_xbz_category(p_raw_data jsonb)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_nome TEXT;
+    v_web_tipo TEXT;
+    v_web_sub_tipo TEXT;
+    v_category_id UUID;
+BEGIN
+    v_nome := p_raw_data->>'nome';
+    v_web_tipo := p_raw_data->>'web_tipo';
+    v_web_sub_tipo := p_raw_data->>'web_sub_tipo';
+    
+    -- Lógica de classificação (simplificada)
+    -- Adaptar conforme necessário
+    
+    SELECT id INTO v_category_id
+    FROM categories
+    WHERE name ILIKE '%' || v_web_tipo || '%'
+    LIMIT 1;
+    
+    RETURN v_category_id;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_xbz_category(p_product_name text)
+ RETURNS TABLE(category_id uuid, category_name text, category_slug text, category_level integer, confidence text)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_name_upper TEXT;
+    v_org_id UUID := '5db5aee1-064b-4ef4-9193-345dcd8274ea';
+BEGIN
+    v_name_upper := UPPER(TRIM(p_product_name));
+
+    -- =================================================================
+    -- PRIORIDADE 100: TECNOLOGIA
+    -- =================================================================
+
+    IF v_name_upper ~* '(POWER.?BANK|CARREGADOR.?PORT|BATERIA.?EXTERNA|POWERBANK|BATERIA.?PORT)' THEN
+        RETURN QUERY
+        SELECT c.id, c.name, c.slug, c.level, 'high'::TEXT
+        FROM categories c
+        WHERE c.organization_id = v_org_id
+          AND c.slug = 'carregador-portatil-powerbank'
+        LIMIT 1;
+        IF FOUND THEN RETURN; END IF;
+
+        RETURN QUERY
+        SELECT c.id, c.name, c.slug, c.level, 'medium'::TEXT
+        FROM categories c
+        WHERE c.organization_id = v_org_id
+          AND c.slug = 'tecnologia-eletronicos'
+        LIMIT 1;
+        IF FOUND THEN RETURN; END IF;
+    END IF;
+
+    IF v_name_upper ~* '(FONE|AUSCULTADOR|HEADPHONE|EARPHONE|EARBUDS|HEADSET)' THEN
+        RETURN QUERY
+        SELECT c.id, c.name, c.slug, c.level, 'high'::TEXT
+        FROM categories c
+        WHERE c.organization_id = v_org_id
+          AND c.slug = 'fone-de-ouvido'
+        LIMIT 1;
+        IF FOUND THEN RETURN; END IF;
+
+        RETURN QUERY
+        SELECT c.id, c.name, c.slug, c.level, 'medium'::TEXT
+        FROM categories c
+        WHERE c.organization_id = v_org_id
+          AND c.slug = 'tecnologia-eletronicos'
+        LIMIT 1;
+        IF FOUND THEN RETURN; END IF;
+    END IF;
+
+    IF v_name_upper ~* '(PEN.?DRIVE|PENDRIVE|USB.?FLASH|FLASH.?DRIVE)' THEN
+        RETURN QUERY
+        SELECT c.id, c.name, c.slug, c.level, 'high'::TEXT
+        FROM categories c
+        WHERE c.organization_id = v_org_id
+          AND c.slug = 'pen-drive'
+        LIMIT 1;
+        IF FOUND THEN RETURN; END IF;
+
+        RETURN QUERY
+        SELECT c.id, c.name, c.slug, c.level, 'medium'::TEXT
+        FROM categories c
+        WHERE c.organization_id = v_org_id
+          AND c.slug = 'tecnologia-eletronicos'
+        LIMIT 1;
+        IF FOUND THEN RETURN; END IF;
+    END IF;
+
+    -- =================================================================
+    -- PRIORIDADE 95: CANETAS (ORDEM CORRIGIDA!)
+    -- =================================================================
+
+    IF v_name_upper ~* '(CANETA|ESFERO|ROLLER|LAPISEIRA|MARCA.?TEXTO)' THEN
+        
+        -- 1. SEMI METAL (DEVE VIR PRIMEIRO - antes de METAL!)
+        IF v_name_upper ~* '(SEMI.?METAL|SEMIMETAL)' THEN
+            RETURN QUERY
+            SELECT c.id, c.name, c.slug, c.level, 'high'::TEXT
+            FROM categories c
+            WHERE c.organization_id = v_org_id
+              AND c.id = '069cdd2f-1a52-43ff-8ba0-bdcda8ac13c7'
+            LIMIT 1;
+            IF FOUND THEN RETURN; END IF;
+        END IF;
+        
+        -- 2. METAL (após Semi Metal)
+        IF v_name_upper ~* '(METAL|INOX|A[CÇ]O|ALUM[IÍ]NIO|BRONZE|COBRE|LATAO|LAT[ÃA]O)' THEN
+            RETURN QUERY
+            SELECT c.id, c.name, c.slug, c.level, 'high'::TEXT
+            FROM categories c
+            WHERE c.organization_id = v_org_id
+              AND c.id = 'cad28bda-dc4b-4938-b88b-8653ee4e6c1f'
+            LIMIT 1;
+            IF FOUND THEN RETURN; END IF;
+        END IF;
+        
+        -- 3. ECOLÓGICA
+        IF v_name_upper ~* '(ECOL[OÓ]GIC|BAMBU|BAMBOO|PAPEL|RECICLAD|KRAFT|CORTI[CÇ]A|MADEIRA|FIBRA)' THEN
+            RETURN QUERY
+            SELECT c.id, c.name, c.slug, c.level, 'high'::TEXT
+            FROM categories c
+            WHERE c.organization_id = v_org_id
+              AND c.id = 'a1b2c3d4-e5f6-4789-abcd-111111111111'
+            LIMIT 1;
+            IF FOUND THEN RETURN; END IF;
+        END IF;
+        
+        -- 4. PLÁSTICO
+        IF v_name_upper ~* '(PL[AÁ]STIC|ABS|ACRILICO|ACR[IÍ]LICO|POLIPROPILENO|PP\y|PS\y|PET\y)' THEN
+            RETURN QUERY
+            SELECT c.id, c.name, c.slug, c.level, 'high'::TEXT
+            FROM categories c
+            WHERE c.organization_id = v_org_id
+              AND c.id = 'f284e79d-f0df-475a-bd75-e1da970f3718'
+            LIMIT 1;
+            IF FOUND THEN RETURN; END IF;
+        END IF;
+        
+        -- 5. FALLBACK: Canetas (L2)
+        RETURN QUERY
+        SELECT c.id, c.name, c.slug, c.level, 'medium'::TEXT
+        FROM categories c
+        WHERE c.organization_id = v_org_id
+          AND c.id = 'f11f091d-abfa-4019-89a6-8a1645cc342c'
+        LIMIT 1;
+        IF FOUND THEN RETURN; END IF;
+
+    END IF;
+
+    -- =================================================================
+    -- DEMAIS CATEGORIAS (mantido igual)
+    -- =================================================================
+
+    IF v_name_upper ~* '(GUARDA.?CHUVA|SOMBRINHA|UMBRELLA)' THEN
+        RETURN QUERY
+        SELECT c.id, c.name, c.slug, c.level, 'high'::TEXT
+        FROM categories c
+        WHERE c.organization_id = v_org_id
+          AND (c.slug ILIKE '%guarda%chuva%' OR c.name ILIKE '%guarda%chuva%')
+        ORDER BY c.level DESC
+        LIMIT 1;
+        IF FOUND THEN RETURN; END IF;
+    END IF;
+
+    IF v_name_upper ~* '\mSQUEEZE\M' THEN
+        RETURN QUERY
+        SELECT c.id, c.name, c.slug, c.level, 'high'::TEXT
+        FROM categories c
+        WHERE c.organization_id = v_org_id
+          AND (c.slug ILIKE '%squeeze%' OR c.name ILIKE '%squeeze%')
+        ORDER BY c.level DESC
+        LIMIT 1;
+        IF FOUND THEN RETURN; END IF;
+    END IF;
+
+    IF v_name_upper ~* '(NECESSAIRE|ESTOJO|NÉCESSAIRE)' THEN
+        RETURN QUERY
+        SELECT c.id, c.name, c.slug, c.level, 'high'::TEXT
+        FROM categories c
+        WHERE c.organization_id = v_org_id
+          AND (c.slug ILIKE '%necessaire%' OR c.name ILIKE '%necessaire%'
+               OR c.slug ILIKE '%cosmetico%' OR c.name ILIKE '%cosmético%')
+        ORDER BY c.level DESC
+        LIMIT 1;
+        IF FOUND THEN RETURN; END IF;
+    END IF;
+
+    IF v_name_upper ~* '(MOCHILA|BOLSA|PASTA|MALETA)' THEN
+        IF v_name_upper ~* '(NOTEBOOK|PC|TABLET|LAPTOP)' THEN
+            RETURN QUERY
+            SELECT c.id, c.name, c.slug, c.level, 'high'::TEXT
+            FROM categories c
+            WHERE c.organization_id = v_org_id
+              AND (c.slug ILIKE '%notebook%' OR c.name ILIKE '%notebook%'
+                   OR c.name ILIKE '%pc%' OR c.name ILIKE '%tablet%')
+              AND c.level >= 1
+            ORDER BY c.level DESC
+            LIMIT 1;
+            IF FOUND THEN RETURN; END IF;
+        END IF;
+
+        RETURN QUERY
+        SELECT c.id, c.name, c.slug, c.level, 'medium'::TEXT
+        FROM categories c
+        WHERE c.organization_id = v_org_id
+          AND (c.slug ILIKE '%mochila%' OR c.name ILIKE '%mochila%')
+        ORDER BY c.level DESC
+        LIMIT 1;
+        IF FOUND THEN RETURN; END IF;
+    END IF;
+
+    IF v_name_upper ~* 'GARRAFA' AND v_name_upper ~* 'T[EÉ]RMIC' THEN
+        RETURN QUERY
+        SELECT c.id, c.name, c.slug, c.level, 'high'::TEXT
+        FROM categories c
+        WHERE c.organization_id = v_org_id
+          AND (c.slug ILIKE '%garrafa%termica%' OR c.slug ILIKE '%isotermica%'
+               OR c.name ILIKE '%garrafa%térmica%' OR c.name ILIKE '%isotérmica%')
+        ORDER BY c.level DESC
+        LIMIT 1;
+        IF FOUND THEN RETURN; END IF;
+    END IF;
+
+    IF v_name_upper ~* '\mGARRAFA\M' THEN
+        RETURN QUERY
+        SELECT c.id, c.name, c.slug, c.level, 'high'::TEXT
+        FROM categories c
+        WHERE c.organization_id = v_org_id
+          AND (c.slug ILIKE '%garrafa%' OR c.name ILIKE '%garrafa%')
+        ORDER BY c.level DESC
+        LIMIT 1;
+        IF FOUND THEN RETURN; END IF;
+    END IF;
+
+    IF v_name_upper ~* '(COPO|CANECA|MUG)' THEN
+        RETURN QUERY
+        SELECT c.id, c.name, c.slug, c.level, 'high'::TEXT
+        FROM categories c
+        WHERE c.organization_id = v_org_id
+          AND (c.slug ILIKE '%copo%' OR c.slug ILIKE '%caneca%'
+               OR c.name ILIKE '%copo%' OR c.name ILIKE '%caneca%')
+        ORDER BY c.level DESC
+        LIMIT 1;
+        IF FOUND THEN RETURN; END IF;
+    END IF;
+
+    IF v_name_upper ~* '(CADERNO|CADERNETA|BLOCO|AGENDA)' THEN
+        RETURN QUERY
+        SELECT c.id, c.name, c.slug, c.level, 'high'::TEXT
+        FROM categories c
+        WHERE c.organization_id = v_org_id
+          AND (c.slug ILIKE '%caderno%' OR c.slug ILIKE '%bloco%' OR c.slug ILIKE '%agenda%'
+               OR c.name ILIKE '%caderno%' OR c.name ILIKE '%bloco%' OR c.name ILIKE '%agenda%')
+        ORDER BY c.level DESC
+        LIMIT 1;
+        IF FOUND THEN RETURN; END IF;
+    END IF;
+
+    IF v_name_upper ~* '\mCHAVEIRO\M' THEN
+        RETURN QUERY
+        SELECT c.id, c.name, c.slug, c.level, 'high'::TEXT
+        FROM categories c
+        WHERE c.organization_id = v_org_id
+          AND (c.slug ILIKE '%chaveiro%' OR c.name ILIKE '%chaveiro%')
+        ORDER BY c.level DESC
+        LIMIT 1;
+        IF FOUND THEN RETURN; END IF;
+    END IF;
+
+    IF v_name_upper ~* '\mSACOLA\M' THEN
+        RETURN QUERY
+        SELECT c.id, c.name, c.slug, c.level, 'high'::TEXT
+        FROM categories c
+        WHERE c.organization_id = v_org_id
+          AND (c.slug ILIKE '%sacola%' OR c.name ILIKE '%sacola%')
+        ORDER BY c.level DESC
+        LIMIT 1;
+        IF FOUND THEN RETURN; END IF;
+    END IF;
+
+    IF v_name_upper ~* '\mKIT\M' THEN
+        IF v_name_upper ~* 'CHURRASCO' THEN
+            RETURN QUERY
+            SELECT c.id, c.name, c.slug, c.level, 'medium'::TEXT
+            FROM categories c
+            WHERE c.organization_id = v_org_id
+              AND (c.slug ILIKE '%churrasco%' OR c.name ILIKE '%churrasco%')
+            ORDER BY c.level DESC
+            LIMIT 1;
+            IF FOUND THEN RETURN; END IF;
+        END IF;
+    END IF;
+
+    -- FALLBACK
+    RETURN QUERY
+    SELECT NULL::UUID, 'NÃO CLASSIFICADO'::TEXT, NULL::TEXT, NULL::INTEGER, 'none'::TEXT;
+
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.classify_xicara(product_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_material TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_attributes JSONB;
+BEGIN
+    v_name := UPPER(unaccent(COALESCE(product_name, '')));
+    
+    IF v_name ~ 'COBRE' THEN
+        v_material := 'COBRE';
+        v_category_slug := 'xicaras_cobre';
+        v_category_id := '8914813f-5f6e-4477-8baa-ef4b0d82a088'::uuid;
+    ELSIF v_name ~ 'ESMALTAD|AGATA' THEN
+        v_material := 'ESMALTADA';
+        v_category_slug := 'xicaras_esmaltada';
+        v_category_id := 'b85bc481-b07a-425c-b11d-843b23b0010f'::uuid;
+    ELSIF v_name ~ 'ECO.?FIBRA|FIBRA.?DE.?BAMBU' THEN
+        v_material := 'ECO_FIBRA';
+        v_category_slug := 'xicaras_plastico_eco_fibra';
+        v_category_id := '7a90a726-2b62-471b-82e3-b8daaa99acab'::uuid;
+    ELSIF v_name ~ 'PORCELANA|CERAMICA|CERÂMICA|LOUÇA|LOUCA' THEN
+        v_material := 'PORCELANA';
+        v_category_slug := 'xicaras_porcelana_ceramica';
+        v_category_id := '2ffae405-e67d-4745-9edb-275da9061963'::uuid;
+    ELSIF v_name ~ 'VIDRO|GLASS' THEN
+        v_material := 'VIDRO';
+        v_category_slug := 'xicaras_vidro';
+        v_category_id := '0403efc5-d215-4ccc-88ac-8f8b4cd239a5'::uuid;
+    ELSIF v_name ~ 'INOX|ACO.?INOX|AÇO.?INOX' THEN
+        v_material := 'INOX';
+        v_category_slug := 'xicaras_inox_metal';
+        v_category_id := '7058a649-c50d-4439-b4fd-178f38d46712'::uuid;
+    ELSIF v_name ~ 'ALUMINIO|ALUMÍNIO' THEN
+        v_material := 'ALUMINIO';
+        v_category_slug := 'xicaras_aluminio';
+        v_category_id := '9f0e177b-b46d-48ab-9db5-650a8d55baae'::uuid;
+    ELSIF v_name ~ 'PLASTIC|ACRILIC|ACRÍLICO' THEN
+        v_material := 'PLASTICO';
+        v_category_slug := 'xicaras_plastico';
+        v_category_id := '31f4ac6d-62fb-4092-bc14-86d901c3dd2d'::uuid;
+    ELSE
+        v_material := 'INDEFINIDO';
+        v_category_slug := 'xicaras';
+        v_category_id := '06a042ce-461e-428c-823b-5d6a3af193d2'::uuid;
+    END IF;
+    
+    v_attributes := jsonb_build_object(
+        'has_pires',        v_name ~ 'PIRES|PRATO|SAUCER|COM.?PIRES',
+        'has_colher',       v_name ~ 'COLHER|SPOON',
+        'is_cafe',          v_name ~ 'CAFE|CAFÉ|EXPRESSO|ESPRESSO',
+        'is_cha',           v_name ~ 'CHA|CHÁ|TEA',
+        'capacidade_ml',    (regexp_match(v_name, '(\d+)\s*ML'))[1]
+    );
+    
+    RETURN jsonb_build_object(
+        'category_id', v_category_id,
+        'category_slug', v_category_slug,
+        'material', v_material,
+        'attributes', v_attributes
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.clean_old_audit_logs(_days integer DEFAULT 365)
+ RETURNS integer
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE v_deleted int;
+BEGIN
+  IF NOT public.is_admin(auth.uid()) THEN RAISE EXCEPTION 'Permission denied'; END IF;
+  DELETE FROM public.admin_audit_log WHERE created_at < now() - (_days || ' days')::interval;
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  RETURN v_deleted;
+END $function$;
+CREATE OR REPLACE FUNCTION public.clean_old_rate_limits()
+ RETURNS integer
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE v_deleted int;
+BEGIN
+  DELETE FROM public.request_rate_limits 
+  WHERE window_start < now() - interval '1 day' AND (blocked_until IS NULL OR blocked_until < now());
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  RETURN v_deleted;
+END $function$;
+CREATE OR REPLACE FUNCTION public.cleanup_expired_edge_rate_limits()
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+BEGIN
+    DELETE FROM public.edge_rate_limits WHERE reset_at < now();
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.cleanup_expired_step_up_tokens()
+ RETURNS integer
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE v_deleted int;
+BEGIN
+  DELETE FROM public.step_up_tokens WHERE expires_at < now() OR (consumed = true AND consumed_at < now() - interval '7 days');
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  RETURN v_deleted;
+END $function$;
+CREATE OR REPLACE FUNCTION public.cleanup_expired_webhook_request_nonces()
+ RETURNS integer
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  deleted_count integer;
+BEGIN
+  DELETE FROM public.webhook_request_nonces
+  WHERE expires_at < now();
+
+  GET DIAGNOSTICS deleted_count = ROW_COUNT;
+  RETURN deleted_count;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.cleanup_old_login_attempts()
+ RETURNS integer
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE v_deleted int;
+BEGIN
+  DELETE FROM public.login_attempts WHERE created_at < now() - interval '90 days';
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  RETURN v_deleted;
+END $function$;
+CREATE OR REPLACE FUNCTION public.cleanup_old_logs(p_days_to_keep integer DEFAULT 90)
+ RETURNS integer
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_deleted_count INTEGER;
+BEGIN
+    DELETE FROM public.system_logs
+    WHERE created_at < NOW() - (p_days_to_keep || ' days')::INTERVAL;
+    
+    GET DIAGNOSTICS v_deleted_count = ROW_COUNT;
+    
+    RETURN v_deleted_count;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.cleanup_old_telemetry()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+BEGIN
+    DELETE FROM public.frontend_telemetry WHERE created_at < now() - interval '15 days';
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.cleanup_orphan_step_up_artifacts()
+ RETURNS integer
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE v_deleted int;
+BEGIN
+  DELETE FROM public.step_up_challenges WHERE expires_at < now() AND consumed = false;
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  RETURN v_deleted;
+END $function$;
+CREATE OR REPLACE FUNCTION public.cleanup_user_search_history()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  -- Mantém apenas os 100 últimos searches por usuário (preserva is_pinned)
+  DELETE FROM public.user_search_history
+  WHERE user_id = NEW.user_id
+    AND is_pinned = false
+    AND id NOT IN (
+      SELECT id FROM public.user_search_history
+      WHERE user_id = NEW.user_id AND is_pinned = false
+      ORDER BY created_at DESC
+      LIMIT 100
+    );
+  RETURN NEW;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.clear_user_token_revocations(_user_id uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -201,10 +5260,225 @@ AS $function$
 BEGIN
   IF NOT public.is_supervisor_or_above(auth.uid()) THEN RAISE EXCEPTION 'Permission denied'; END IF;
   DELETE FROM public.user_token_revocations WHERE user_id = _user_id;
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
+CREATE OR REPLACE FUNCTION public.comparar_precos_spot(p_dados_api jsonb)
+ RETURNS TABLE(out_table_code character varying, out_table_code_option character varying, out_tecnica_nome character varying, out_area_descricao character varying, out_faixa_preco character varying, out_spot_anterior numeric, out_spot_novo numeric, out_spot_variacao_pct numeric, out_nosso_preco numeric, out_margem_anterior_pct numeric, out_margem_nova_pct numeric, out_margem_variacao_pp numeric, out_nivel_alerta character varying, out_tipo_mudanca character varying)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_item JSONB;
+    v_table_code VARCHAR;
+    v_table_code_option VARCHAR;
+    v_spot_atual RECORD;
+    v_nosso_preco_rec RECORD;
+    v_faixa INTEGER;
+    v_preco_novo NUMERIC;
+    v_preco_anterior NUMERIC;
+    v_nosso NUMERIC;
+    v_variacao_spot NUMERIC;
+    v_margem_ant NUMERIC;
+    v_margem_nova NUMERIC;
+    v_margem_var NUMERIC;
+    v_nivel VARCHAR;
+    v_tipo VARCHAR;
+    v_tecnica_nome VARCHAR;
+BEGIN
+    FOR v_item IN SELECT * FROM jsonb_array_elements(p_dados_api)
+    LOOP
+        v_table_code := v_item->>'TableCode';
+        v_table_code_option := v_item->>'TableCodeOption';
+        
+        -- Buscar registro atual no banco (usando alias para evitar ambiguidade)
+        SELECT s.* INTO v_spot_atual
+        FROM spot_customization_tables s
+        WHERE s.table_code_option = v_table_code_option;
+        
+        -- Buscar nosso preço de venda
+        SELECT p.* INTO v_nosso_preco_rec
+        FROM personalizacao_precos p
+        WHERE p.spot_table_code_option = v_table_code_option
+        AND p.is_active = true;
+        
+        -- Buscar nome da técnica
+        SELECT e.spot_tecnica_nome INTO v_tecnica_nome
+        FROM spot_tecnica_equivalencia e
+        WHERE v_table_code LIKE e.spot_sigla || '%'
+        LIMIT 1;
+        
+        -- Comparar cada faixa de preço (1, 5, 10)
+        FOR v_faixa IN SELECT unnest(ARRAY[1, 5, 10])
+        LOOP
+            -- Extrair preço novo da API
+            v_preco_novo := (v_item->>format('Price%s', v_faixa))::NUMERIC;
+            
+            IF v_preco_novo IS NULL OR v_preco_novo = 0 THEN
+                CONTINUE;
+            END IF;
+            
+            -- Extrair preço anterior do banco
+            EXECUTE format('SELECT s.price_%s FROM spot_customization_tables s WHERE s.table_code_option = $1', v_faixa)
+            INTO v_preco_anterior
+            USING v_table_code_option;
+            
+            -- Extrair nosso preço
+            IF v_nosso_preco_rec IS NOT NULL THEN
+                EXECUTE format('SELECT p.price_%s FROM personalizacao_precos p WHERE p.spot_table_code_option = $1 AND p.is_active = true', v_faixa)
+                INTO v_nosso
+                USING v_table_code_option;
+            ELSE
+                v_nosso := NULL;
+            END IF;
+            
+            -- Verificar se houve mudança
+            IF v_preco_anterior IS NOT NULL AND v_preco_novo != v_preco_anterior THEN
+                
+                -- Calcular variação SPOT
+                IF v_preco_anterior > 0 THEN
+                    v_variacao_spot := ((v_preco_novo - v_preco_anterior) / v_preco_anterior) * 100;
+                ELSE
+                    v_variacao_spot := 100;
+                END IF;
+                
+                -- Tipo de mudança
+                IF v_preco_novo > v_preco_anterior THEN
+                    v_tipo := 'AUMENTO';
+                ELSE
+                    v_tipo := 'REDUCAO';
+                END IF;
+                
+                -- Calcular margens
+                IF v_nosso IS NOT NULL AND v_nosso > 0 THEN
+                    IF v_preco_anterior > 0 THEN
+                        v_margem_ant := ((v_nosso - v_preco_anterior) / v_preco_anterior) * 100;
+                    ELSE
+                        v_margem_ant := NULL;
+                    END IF;
+                    
+                    IF v_preco_novo > 0 THEN
+                        v_margem_nova := ((v_nosso - v_preco_novo) / v_preco_novo) * 100;
+                    ELSE
+                        v_margem_nova := NULL;
+                    END IF;
+                    
+                    IF v_margem_ant IS NOT NULL AND v_margem_nova IS NOT NULL THEN
+                        v_margem_var := v_margem_nova - v_margem_ant;
+                    ELSE
+                        v_margem_var := NULL;
+                    END IF;
+                ELSE
+                    v_margem_ant := NULL;
+                    v_margem_nova := NULL;
+                    v_margem_var := NULL;
+                END IF;
+                
+                -- Determinar nível do alerta
+                IF v_margem_nova IS NOT NULL AND v_margem_nova < 0 THEN
+                    v_nivel := 'CRITICO';
+                ELSIF v_margem_var IS NOT NULL THEN
+                    IF v_margem_var < -15 THEN
+                        v_nivel := 'URGENTE';
+                    ELSIF v_margem_var < -5 THEN
+                        v_nivel := 'ATENCAO';
+                    ELSE
+                        v_nivel := 'INFO';
+                    END IF;
+                ELSE
+                    IF ABS(v_variacao_spot) > 15 THEN
+                        v_nivel := 'ATENCAO';
+                    ELSE
+                        v_nivel := 'INFO';
+                    END IF;
+                END IF;
+                
+                -- Retornar resultado
+                RETURN QUERY SELECT
+                    v_table_code::VARCHAR,
+                    v_table_code_option::VARCHAR,
+                    COALESCE(v_tecnica_nome, v_spot_atual.customization_type_name)::VARCHAR,
+                    v_spot_atual.max_area_cm::VARCHAR,
+                    format('price_%s', v_faixa)::VARCHAR,
+                    v_preco_anterior,
+                    v_preco_novo,
+                    ROUND(v_variacao_spot, 2),
+                    v_nosso,
+                    ROUND(v_margem_ant, 2),
+                    ROUND(v_margem_nova, 2),
+                    ROUND(v_margem_var, 2),
+                    v_nivel::VARCHAR,
+                    v_tipo::VARCHAR;
+            END IF;
+        END LOOP;
+    END LOOP;
+    RETURN;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.complete_xbz_image_import(p_staging_id uuid, p_cloudflare_id character varying, p_product_id uuid DEFAULT NULL::uuid, p_variant_id uuid DEFAULT NULL::uuid)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_staging RECORD;
+    v_image_id UUID;
+    v_cloudflare_url TEXT;
+BEGIN
+    SELECT * INTO v_staging 
+    FROM xbz_image_import_staging 
+    WHERE id = p_staging_id;
+    
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Staging record not found: %', p_staging_id;
+    END IF;
+    
+    v_cloudflare_url := format(
+        'https://imagedelivery.net/vKMs9Ow8bA_enuhLXZ2HAw/%s/public',
+        p_cloudflare_id
+    );
+    
+    INSERT INTO product_images (
+        product_id,
+        variant_id,
+        cloudflare_image_id,
+        url_cdn,
+        url_original,
+        filename,
+        format,
+        image_type,
+        is_primary,
+        is_active,
+        source_supplier,
+        supplier_code,
+        created_at
+    ) VALUES (
+        COALESCE(p_product_id, v_staging.product_id),
+        COALESCE(p_variant_id, v_staging.variant_id),
+        p_cloudflare_id,
+        v_cloudflare_url,
+        v_staging.original_url,
+        v_staging.filename,
+        'jpg',
+        v_staging.image_type,
+        (v_staging.image_type = 'main'),
+        true,
+        'XBZ',
+        v_staging.xbz_variant_code,
+        NOW()
+    ) RETURNING id INTO v_image_id;
+    
+    UPDATE xbz_image_import_staging SET
+        cloudflare_id = p_cloudflare_id,
+        cloudflare_url = v_cloudflare_url,
+        product_id = COALESCE(p_product_id, product_id),
+        variant_id = COALESCE(p_variant_id, variant_id),
+        product_image_id = v_image_id,
+        status = 'completed',
+        processed_at = NOW()
+    WHERE id = p_staging_id;
+    
+    RETURN v_image_id;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.compute_quote_snapshot_hash(_quote_id uuid)
  RETURNS text
  LANGUAGE plpgsql
@@ -258,10 +5532,74 @@ BEGIN
   
   RETURN encode(extensions.digest(_hash_input, 'sha1'), 'hex');
 END;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
+CREATE OR REPLACE FUNCTION public.consolidate_variant_stock(p_variant_id uuid)
+ RETURNS TABLE(variant_id uuid, previous_stock integer, new_stock integer, supplier_count bigint, suppliers_detail jsonb)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_previous INTEGER;
+    v_new INTEGER;
+    v_supplier_count BIGINT;
+    v_detail JSONB;
+    v_product_id UUID;
+BEGIN
+    -- Obter estoque anterior e product_id
+    SELECT pv.stock_quantity, pv.product_id INTO v_previous, v_product_id
+    FROM product_variants pv
+    WHERE pv.id = p_variant_id;
+    
+    -- Calcular novo estoque agregado
+    SELECT 
+        COALESCE(SUM(vss.quantity), 0)::INTEGER,
+        COUNT(*)::BIGINT,
+        COALESCE(jsonb_agg(
+            jsonb_build_object(
+                'supplier_id', vss.supplier_id,
+                'quantity', vss.quantity,
+                'is_active', vss.is_active
+            )
+        ), '[]'::jsonb)
+    INTO v_new, v_supplier_count, v_detail
+    FROM variant_supplier_sources vss
+    WHERE vss.variant_id = p_variant_id
+      AND vss.is_active = true;
+    
+    -- Atualizar product_variants
+    UPDATE product_variants pv
+    SET 
+        stock_quantity = v_new,
+        updated_at = NOW()
+    WHERE pv.id = p_variant_id;
+    
+    -- Também atualizar o produto pai se existir
+    IF v_product_id IS NOT NULL THEN
+        UPDATE products p
+        SET 
+            stock_quantity = (
+                SELECT COALESCE(SUM(pv2.stock_quantity), 0)
+                FROM product_variants pv2
+                WHERE pv2.product_id = v_product_id AND pv2.is_active = true
+            ),
+            is_stockout = (
+                SELECT COALESCE(SUM(pv2.stock_quantity), 0) = 0
+                FROM product_variants pv2
+                WHERE pv2.product_id = v_product_id AND pv2.is_active = true
+            ),
+            last_stock_update_at = NOW(),
+            updated_at = NOW()
+        WHERE p.id = v_product_id;
+    END IF;
+    
+    RETURN QUERY SELECT 
+        p_variant_id,
+        COALESCE(v_previous, 0),
+        COALESCE(v_new, 0),
+        COALESCE(v_supplier_count, 0),
+        COALESCE(v_detail, '[]'::jsonb);
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.convert_quote_to_order(p_quote_id uuid, p_seller_id uuid, p_organization_id uuid DEFAULT NULL::uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -324,10 +5662,583 @@ BEGIN
 
     RETURN jsonb_build_object('id', v_order_id, 'order_number', v_order_number, 'status', 'confirmed');
 END;
-$function$
-;
+$function$;
+CREATE OR REPLACE FUNCTION public.convert_string_to_unit(p_input text, p_target_unit text)
+ RETURNS numeric
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_parsed RECORD;
+BEGIN
+    SELECT * INTO v_parsed FROM parse_unit_from_string(p_input);
+    
+    IF v_parsed.valor IS NULL THEN
+        RETURN NULL;
+    END IF;
+    
+    RETURN normalize_unit(v_parsed.valor, v_parsed.unidade, p_target_unit);
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.create_material_with_equivalence(p_supplier_id uuid, p_material_key text, p_material_name text, p_material_group text DEFAULT NULL::text, p_force_type_slug text DEFAULT NULL::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_supplier_material_id UUID;
+    v_material_type_id UUID;
+    v_material_group_id UUID;
+    v_matched_slug TEXT;
+    v_confidence NUMERIC;
+    v_normalized_name TEXT;
+    v_result JSONB;
+    v_supplier_code TEXT;
+BEGIN
+    -- Buscar código do fornecedor
+    SELECT code INTO v_supplier_code FROM suppliers WHERE id = p_supplier_id;
+    
+    IF v_supplier_code IS NULL THEN
+        RETURN jsonb_build_object(
+            'success', false,
+            'error', 'Fornecedor não encontrado',
+            'supplier_id', p_supplier_id
+        );
+    END IF;
 
--- ----------------------------------------------------------------------------
+    -- ========================================================================
+    -- PASSO 1: Criar ou buscar supplier_material
+    -- ========================================================================
+    SELECT id INTO v_supplier_material_id
+    FROM supplier_materials
+    WHERE supplier_id = p_supplier_id AND api_material_key = p_material_key;
+    
+    IF v_supplier_material_id IS NULL THEN
+        INSERT INTO supplier_materials (
+            id, supplier_id, api_material_key, api_material_name, 
+            api_material_group, created_at, updated_at
+        ) VALUES (
+            gen_random_uuid(), p_supplier_id, p_material_key, p_material_name,
+            p_material_group, NOW(), NOW()
+        )
+        RETURNING id INTO v_supplier_material_id;
+    END IF;
+
+    -- ========================================================================
+    -- PASSO 2: Verificar se já existe equivalência
+    -- ========================================================================
+    IF EXISTS (SELECT 1 FROM material_equivalences WHERE supplier_material_id = v_supplier_material_id) THEN
+        SELECT jsonb_build_object(
+            'success', true,
+            'action', 'already_exists',
+            'supplier_material_id', v_supplier_material_id,
+            'message', 'Equivalência já existe'
+        ) INTO v_result;
+        RETURN v_result;
+    END IF;
+
+    -- ========================================================================
+    -- PASSO 3: Encontrar material_type correspondente
+    -- ========================================================================
+    
+    -- Normalizar nome para busca
+    v_normalized_name := LOWER(unaccent(p_material_name));
+    
+    -- Se foi forçado um slug específico, usar ele
+    IF p_force_type_slug IS NOT NULL THEN
+        SELECT id, group_id, slug INTO v_material_type_id, v_material_group_id, v_matched_slug
+        FROM material_types
+        WHERE slug = p_force_type_slug;
+        
+        v_confidence := 1.0;
+    ELSE
+        -- Busca inteligente por similaridade
+        
+        -- Tentativa 1: Match exato por slug normalizado
+        SELECT id, group_id, slug INTO v_material_type_id, v_material_group_id, v_matched_slug
+        FROM material_types
+        WHERE LOWER(unaccent(slug)) = REPLACE(REPLACE(v_normalized_name, ' ', '-'), '|', '-')
+           OR LOWER(unaccent(slug)) = REPLACE(v_normalized_name, ' ', '|')
+        LIMIT 1;
+        
+        IF v_material_type_id IS NOT NULL THEN
+            v_confidence := 1.0;
+        END IF;
+        
+        -- Tentativa 2: Match por nome contém
+        IF v_material_type_id IS NULL THEN
+            SELECT id, group_id, slug INTO v_material_type_id, v_material_group_id, v_matched_slug
+            FROM material_types
+            WHERE LOWER(unaccent(name)) = v_normalized_name
+            LIMIT 1;
+            
+            IF v_material_type_id IS NOT NULL THEN
+                v_confidence := 1.0;
+            END IF;
+        END IF;
+        
+        -- Tentativa 3: Match parcial (nome contém a palavra principal)
+        IF v_material_type_id IS NULL THEN
+            SELECT id, group_id, slug INTO v_material_type_id, v_material_group_id, v_matched_slug
+            FROM material_types
+            WHERE LOWER(unaccent(name)) ILIKE '%' || v_normalized_name || '%'
+               OR v_normalized_name ILIKE '%' || LOWER(unaccent(name)) || '%'
+            ORDER BY 
+                CASE WHEN LOWER(unaccent(name)) = v_normalized_name THEN 0 ELSE 1 END,
+                LENGTH(name)
+            LIMIT 1;
+            
+            IF v_material_type_id IS NOT NULL THEN
+                v_confidence := 0.90;
+            END IF;
+        END IF;
+        
+        -- Tentativa 4: Match por slug parcial
+        IF v_material_type_id IS NULL THEN
+            SELECT id, group_id, slug INTO v_material_type_id, v_material_group_id, v_matched_slug
+            FROM material_types
+            WHERE slug ILIKE '%' || SPLIT_PART(v_normalized_name, ' ', 1) || '%'
+            ORDER BY LENGTH(slug)
+            LIMIT 1;
+            
+            IF v_material_type_id IS NOT NULL THEN
+                v_confidence := 0.80;
+            END IF;
+        END IF;
+        
+        -- Tentativa 5: Mapeamentos específicos conhecidos
+        IF v_material_type_id IS NULL THEN
+            v_matched_slug := CASE 
+                WHEN v_normalized_name ILIKE '%pu%' OR v_normalized_name ILIKE '%couro sint%' THEN 'couro|sintetico|ecologico'
+                WHEN v_normalized_name ILIKE '%tnt%' THEN 'tnt-nowen'
+                WHEN v_normalized_name ILIKE '%canvas%' OR v_normalized_name ILIKE '%lona%' THEN 'lona-nao-resinada'
+                WHEN v_normalized_name ILIKE '%papel%' AND v_normalized_name NOT ILIKE '%kraft%' THEN 'offset'
+                WHEN v_normalized_name ILIKE '%papelao%' OR v_normalized_name ILIKE '%cartao%' THEN 'cartao'
+                WHEN v_normalized_name ILIKE '%plastico%' AND v_normalized_name NOT ILIKE '%pet%' THEN 'plastico|generico'
+                WHEN v_normalized_name ILIKE '%pet%' THEN 'plastico-pet'
+                WHEN v_normalized_name ILIKE '%metal%' THEN 'metal|generico'
+                WHEN v_normalized_name ILIKE '%palha%' OR v_normalized_name ILIKE '%fibra%' THEN 'fibras|naturais'
+                WHEN v_normalized_name ILIKE '%inox%' OR v_normalized_name ILIKE '%aco%' THEN 'aco-inox'
+                WHEN v_normalized_name ILIKE '%eva%' THEN 'eva-acetato-de-vinila'
+                WHEN v_normalized_name ILIKE '%abs%' THEN 'abs-acrilonitrila-butadieno-estireno'
+                ELSE NULL
+            END;
+            
+            IF v_matched_slug IS NOT NULL THEN
+                SELECT id, group_id INTO v_material_type_id, v_material_group_id
+                FROM material_types WHERE slug = v_matched_slug;
+                
+                v_confidence := 0.85;
+            END IF;
+        END IF;
+    END IF;
+
+    -- ========================================================================
+    -- PASSO 4: Criar material_equivalence
+    -- ========================================================================
+    IF v_material_type_id IS NOT NULL THEN
+        INSERT INTO material_equivalences (
+            id, supplier_material_id, promo_type_id, promo_group_id,
+            match_level, match_quality, confidence_score, notes,
+            created_at, updated_at
+        ) VALUES (
+            gen_random_uuid(), v_supplier_material_id, v_material_type_id, v_material_group_id,
+            'type', 'manual', v_confidence,
+            v_supplier_code || ' ''' || p_material_name || ''' → ''' || v_matched_slug || '''',
+            NOW(), NOW()
+        );
+        
+        v_result := jsonb_build_object(
+            'success', true,
+            'action', 'created',
+            'supplier_material_id', v_supplier_material_id,
+            'material_type_id', v_material_type_id,
+            'matched_slug', v_matched_slug,
+            'confidence', v_confidence,
+            'message', 'Material e equivalência criados com sucesso'
+        );
+    ELSE
+        v_result := jsonb_build_object(
+            'success', true,
+            'action', 'partial',
+            'supplier_material_id', v_supplier_material_id,
+            'material_type_id', NULL,
+            'warning', 'supplier_material criado, mas não foi possível encontrar material_type correspondente',
+            'suggestion', 'Use p_force_type_slug para especificar manualmente'
+        );
+    END IF;
+    
+    RETURN v_result;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.create_materials_batch(p_supplier_id uuid, p_materials jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_material JSONB;
+    v_result JSONB;
+    v_results JSONB := '[]'::JSONB;
+    v_success_count INT := 0;
+    v_error_count INT := 0;
+BEGIN
+    FOR v_material IN SELECT * FROM jsonb_array_elements(p_materials)
+    LOOP
+        v_result := create_material_with_equivalence(
+            p_supplier_id,
+            v_material->>'key',
+            v_material->>'name',
+            v_material->>'group',
+            v_material->>'force_slug'
+        );
+        
+        v_results := v_results || jsonb_build_array(v_result);
+        
+        IF (v_result->>'success')::BOOLEAN THEN
+            v_success_count := v_success_count + 1;
+        ELSE
+            v_error_count := v_error_count + 1;
+        END IF;
+    END LOOP;
+    
+    RETURN jsonb_build_object(
+        'total', jsonb_array_length(p_materials),
+        'success_count', v_success_count,
+        'error_count', v_error_count,
+        'results', v_results
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.cron_invoke_edge(p_url_secret_name text, p_body jsonb DEFAULT '{}'::jsonb, p_timeout_ms integer DEFAULT 30000)
+ RETURNS bigint
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_url      text;
+  v_anon     text;
+  v_request  bigint;
+BEGIN
+  SELECT decrypted_secret INTO v_url
+    FROM vault.decrypted_secrets WHERE name = p_url_secret_name;
+  SELECT decrypted_secret INTO v_anon
+    FROM vault.decrypted_secrets WHERE name = 'edge_anon_key';
+
+  IF v_url IS NULL THEN
+    RAISE EXCEPTION 'Vault secret % not found', p_url_secret_name;
+  END IF;
+  IF v_anon IS NULL THEN
+    RAISE EXCEPTION 'Vault secret edge_anon_key not found';
+  END IF;
+
+  SELECT extensions.net_http_post(
+    url     := v_url,
+    headers := jsonb_build_object(
+      'Content-Type',  'application/json',
+      'Authorization', 'Bearer ' || v_anon
+    ),
+    body    := p_body,
+    timeout_milliseconds := p_timeout_ms
+  ) INTO v_request;
+
+  RETURN v_request;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.debug_automations(p_product_id uuid)
+ RETURNS TABLE(check_name text, check_result text)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_raw_data JSONB;
+    v_materials TEXT;
+    v_colors TEXT;
+BEGIN
+    -- Buscar raw_data
+    SELECT raw_data INTO v_raw_data
+    FROM supplier_products_raw
+    WHERE product_id = p_product_id
+    LIMIT 1;
+    
+    check_name := '1. raw_data encontrado';
+    check_result := CASE WHEN v_raw_data IS NOT NULL THEN 'SIM' ELSE 'NÃO' END;
+    RETURN NEXT;
+    
+    v_materials := v_raw_data->>'Materials';
+    check_name := '2. Materials';
+    check_result := COALESCE(v_materials, 'NULL');
+    RETURN NEXT;
+    
+    v_colors := v_raw_data->>'Colors';
+    check_name := '3. Colors';
+    check_result := COALESCE(LEFT(v_colors, 100), 'NULL');
+    RETURN NEXT;
+    
+    check_name := '4. Tag Sustentável existe';
+    IF EXISTS (SELECT 1 FROM tags WHERE slug = 'sustentavel') THEN
+        check_result := 'SIM';
+    ELSE
+        check_result := 'NÃO - CRIAR!';
+    END IF;
+    RETURN NEXT;
+    
+    check_name := '5. Tag Feminino existe';
+    IF EXISTS (SELECT 1 FROM tags WHERE slug = 'feminino') THEN
+        check_result := 'SIM';
+    ELSE
+        check_result := 'NÃO - CRIAR!';
+    END IF;
+    RETURN NEXT;
+    
+    check_name := '6. Material é ECO?';
+    IF v_materials ILIKE '%bambu%' OR v_materials ILIKE '%cortiça%' OR 
+       v_materials ILIKE '%reciclado%' OR v_materials ILIKE '%rpet%' THEN
+        check_result := 'SIM - ' || v_materials;
+    ELSE
+        check_result := 'NÃO - ' || COALESCE(v_materials, 'null');
+    END IF;
+    RETURN NEXT;
+    
+    check_name := '7. Cor é feminina?';
+    IF v_colors ILIKE '%rosa%' OR v_colors ILIKE '%roxo%' OR v_colors ILIKE '%lilás%' THEN
+        check_result := 'SIM - encontrada';
+    ELSE
+        check_result := 'NÃO - ' || COALESCE(LEFT(v_colors, 50), 'null');
+    END IF;
+    RETURN NEXT;
+    
+    RETURN;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.debug_image_type(p_filename text, p_supplier_code character varying DEFAULT 'SPOT'::character varying)
+ RETURNS TABLE(filename text, supplier_code character varying, detected_suffix text, mapped_type text, type_category text)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_suffix TEXT;
+    v_type_code TEXT;
+    v_category TEXT;
+BEGIN
+    v_suffix := regexp_replace(
+        regexp_replace(p_filename, '\.[^.]+$', ''),
+        '^[0-9_]+',
+        ''
+    );
+    
+    IF v_suffix = '' OR v_suffix IS NULL THEN
+        v_suffix := '(sem sufixo)';
+    END IF;
+    
+    SELECT m.image_type_code, it.category
+    INTO v_type_code, v_category
+    FROM supplier_image_suffix_mappings m
+    JOIN image_types it ON m.image_type_id = it.id
+    WHERE m.supplier_code = p_supplier_code
+      AND m.suffix_pattern = v_suffix
+      AND m.is_active = true
+    LIMIT 1;
+    
+    RETURN QUERY
+    SELECT 
+        p_filename,
+        p_supplier_code,
+        v_suffix,
+        COALESCE(v_type_code, 'other'),
+        COALESCE(v_category, 'other');
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.debug_link_material(p_product_id uuid, p_supplier_id uuid DEFAULT 'bcfc0d02-44c6-48ae-8472-12b1a3f3d8e0'::uuid)
+ RETURNS TABLE(step text, result text)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_raw_materials TEXT;
+    v_material_name TEXT;
+    v_material_names TEXT[];
+    v_supplier_material_id UUID;
+    v_promo_type_id UUID;
+BEGIN
+    -- Passo 1: Buscar Materials do raw_data
+    SELECT raw_data->>'Materials'
+    INTO v_raw_materials
+    FROM supplier_products_raw
+    WHERE product_id = p_product_id
+      AND supplier_id = p_supplier_id
+    LIMIT 1;
+    
+    step := '1. raw_data->Materials';
+    result := COALESCE(v_raw_materials, 'NULL');
+    RETURN NEXT;
+    
+    IF v_raw_materials IS NULL OR v_raw_materials = '' THEN
+        step := 'ERRO';
+        result := 'Materials está NULL ou vazio';
+        RETURN NEXT;
+        RETURN;
+    END IF;
+    
+    -- Passo 2: Normalizar e separar
+    v_raw_materials := REPLACE(v_raw_materials, ' e ', ', ');
+    v_raw_materials := REPLACE(v_raw_materials, '. ', ', ');
+    v_material_names := string_to_array(v_raw_materials, ', ');
+    
+    step := '2. Array de materiais';
+    result := array_to_string(v_material_names, ' | ');
+    RETURN NEXT;
+    
+    -- Passo 3: Primeiro material
+    v_material_name := TRIM(v_material_names[1]);
+    
+    step := '3. Primeiro material (trimmed)';
+    result := v_material_name;
+    RETURN NEXT;
+    
+    -- Passo 4: Buscar em supplier_materials
+    SELECT id INTO v_supplier_material_id
+    FROM supplier_materials
+    WHERE LOWER(api_material_name) = LOWER(v_material_name)
+      AND supplier_id = p_supplier_id
+    LIMIT 1;
+    
+    step := '4. supplier_material_id';
+    result := COALESCE(v_supplier_material_id::TEXT, 'NULL - NÃO ENCONTRADO');
+    RETURN NEXT;
+    
+    IF v_supplier_material_id IS NULL THEN
+        -- Tentar busca parcial
+        SELECT id INTO v_supplier_material_id
+        FROM supplier_materials
+        WHERE LOWER(api_material_name) ILIKE '%' || LOWER(v_material_name) || '%'
+          AND supplier_id = p_supplier_id
+        LIMIT 1;
+        
+        step := '4b. supplier_material_id (busca parcial)';
+        result := COALESCE(v_supplier_material_id::TEXT, 'NULL - AINDA NÃO ENCONTRADO');
+        RETURN NEXT;
+    END IF;
+    
+    IF v_supplier_material_id IS NULL THEN
+        step := 'ERRO';
+        result := 'Material "' || v_material_name || '" não encontrado em supplier_materials';
+        RETURN NEXT;
+        RETURN;
+    END IF;
+    
+    -- Passo 5: Buscar em material_equivalences
+    SELECT me.promo_type_id INTO v_promo_type_id
+    FROM material_equivalences me
+    WHERE me.supplier_material_id = v_supplier_material_id
+    LIMIT 1;
+    
+    step := '5. promo_type_id (de material_equivalences)';
+    result := COALESCE(v_promo_type_id::TEXT, 'NULL - NÃO ENCONTRADO');
+    RETURN NEXT;
+    
+    IF v_promo_type_id IS NULL THEN
+        step := 'ERRO';
+        result := 'Equivalência não encontrada para supplier_material_id ' || v_supplier_material_id;
+        RETURN NEXT;
+        RETURN;
+    END IF;
+    
+    -- Passo 6: Verificar se material_types existe
+    step := '6. Verificando material_types';
+    IF EXISTS (SELECT 1 FROM material_types WHERE id = v_promo_type_id) THEN
+        result := 'EXISTS - OK';
+    ELSE
+        result := 'NÃO EXISTE! promo_type_id inválido';
+    END IF;
+    RETURN NEXT;
+    
+    -- Passo 7: Tentar inserir
+    step := '7. Tentando INSERT em product_materials';
+    BEGIN
+        INSERT INTO product_materials (
+            product_id,
+            material_id,
+            part,
+            percentage,
+            sort_order,
+            is_active,
+            organization_id,
+            created_at
+        )
+        VALUES (
+            p_product_id,
+            v_promo_type_id,
+            'corpo',
+            100.00,
+            1,
+            true,
+            '5db5aee1-064b-4ef4-9193-345dcd8274ea',
+            NOW()
+        )
+        ON CONFLICT (product_id, material_id) DO UPDATE SET
+            percentage = 100.00,
+            updated_at = NOW();
+        
+        result := 'SUCESSO - INSERT/UPDATE OK';
+    EXCEPTION WHEN OTHERS THEN
+        result := 'ERRO INSERT: ' || SQLERRM;
+    END;
+    RETURN NEXT;
+    
+    RETURN;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.disable_classify_function(p_function_name character varying)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    UPDATE classify_functions_registry
+    SET is_active = FALSE
+    WHERE function_name = p_function_name;
+    
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object(
+            'success', FALSE,
+            'error', format('Função %s não encontrada no registro', p_function_name)
+        );
+    END IF;
+    
+    RETURN jsonb_build_object(
+        'success', TRUE,
+        'function_name', p_function_name,
+        'message', 'Função desativada. Não será mais chamada pelo trigger.'
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.enable_classify_function(p_function_name character varying)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    UPDATE classify_functions_registry
+    SET is_active = TRUE
+    WHERE function_name = p_function_name;
+    
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object(
+            'success', FALSE,
+            'error', format('Função %s não encontrada no registro', p_function_name)
+        );
+    END IF;
+    
+    RETURN jsonb_build_object(
+        'success', TRUE,
+        'function_name', p_function_name,
+        'message', 'Função reativada. Será chamada pelo trigger.'
+    );
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.enable_step_up_for_user(_user_id uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -336,10 +6247,39 @@ AS $function$
 BEGIN
   IF NOT public.is_supervisor_or_above(auth.uid()) THEN RAISE EXCEPTION 'Permission denied'; END IF;
   PERFORM public.step_up_user_settings_set('{"enabled": true}'::jsonb, _user_id);
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
+CREATE OR REPLACE FUNCTION public.ensure_single_primary_image()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    IF NEW.is_primary = true THEN
+        UPDATE product_images
+        SET is_primary = false
+        WHERE product_id = NEW.product_id
+          AND id != NEW.id
+          AND is_primary = true;
+    END IF;
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.ensure_single_primary_video()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    IF NEW.is_primary = true THEN
+        UPDATE product_videos
+        SET is_primary = false
+        WHERE product_id = NEW.product_id
+          AND id != NEW.id
+          AND is_primary = true;
+    END IF;
+    RETURN NEW;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.expert_chat_create_conversation(_title text DEFAULT 'Nova Conversa'::text, _client_id text DEFAULT NULL::text)
  RETURNS uuid
  LANGUAGE plpgsql
@@ -350,10 +6290,7 @@ BEGIN
   INSERT INTO public.expert_conversations (seller_id, title, client_id)
   VALUES (auth.uid(), _title, _client_id) RETURNING id INTO v_id;
   RETURN v_id;
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
 CREATE OR REPLACE FUNCTION public.expert_chat_log_event(_conv_id uuid, _event_type text, _role text, _content text DEFAULT NULL::text, _media_url text DEFAULT NULL::text, _tokens integer DEFAULT 0)
  RETURNS uuid
  LANGUAGE plpgsql
@@ -367,10 +6304,7 @@ BEGIN
     _conv_id, _role, _event_type::public.conversation_event_type, _content, _media_url, _tokens
   ) RETURNING id INTO v_id;
   RETURN v_id;
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
 CREATE OR REPLACE FUNCTION public.expert_chat_send_message(_conv_id uuid, _role text, _content text)
  RETURNS uuid
  LANGUAGE plpgsql
@@ -385,10 +6319,7 @@ BEGIN
   VALUES (_conv_id, _role, _content) RETURNING id INTO v_id;
   UPDATE public.expert_conversations SET updated_at = now() WHERE id = _conv_id;
   RETURN v_id;
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
 CREATE OR REPLACE FUNCTION public.expert_chat_update_status(_session_id text, _status text)
  RETURNS void
  LANGUAGE plpgsql
@@ -398,10 +6329,36 @@ BEGIN
   UPDATE public.conversation_audit_logs SET status = _status,
     ended_at = CASE WHEN _status IN ('completed','failed') THEN now() ELSE ended_at END
   WHERE session_id = _session_id AND user_id = auth.uid();
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
+CREATE OR REPLACE FUNCTION public.extract_capacity_ml(p_name text)
+ RETURNS integer
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_match TEXT[];
+    v_value NUMERIC;
+BEGIN
+    -- 1. Match mL pattern (word boundary \M prevents false positives)
+    v_match := regexp_match(p_name, '(\d+(?:[.,]\d+)?)\s*(ml)\M', 'i');
+    IF v_match IS NOT NULL THEN
+        v_value := REPLACE(v_match[1], ',', '.')::NUMERIC;
+        RETURN v_value::INTEGER;
+    END IF;
+    
+    -- 2. Match L/litro/litros with word boundary
+    --    Supports apostrophe as decimal separator (SPOT pattern: 2'5 L → 2500 mL)
+    v_match := regexp_match(p_name, '(\d+[''.,]?\d*)\s*(litros?|l)\M', 'i');
+    IF v_match IS NOT NULL THEN
+        v_value := REPLACE(REPLACE(v_match[1], '''', '.'), ',', '.')::NUMERIC;
+        v_value := v_value * 1000;
+        RETURN v_value::INTEGER;
+    END IF;
+    
+    RETURN NULL;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.extract_json_value(p_data jsonb, p_path character varying)
  RETURNS text
  LANGUAGE plpgsql
@@ -446,18 +6403,3046 @@ EXCEPTION WHEN OTHERS THEN
     RAISE WARNING 'Erro em extract_json_value: %', SQLERRM;
     RETURN NULL;
 END;
-$function$
-;
+$function$;
+CREATE OR REPLACE FUNCTION public.extract_keywords(input_text text, max_keywords integer DEFAULT 10)
+ RETURNS text[]
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  words TEXT[];
+  stopwords TEXT[] := ARRAY[
+    'de', 'da', 'do', 'das', 'dos', 'em', 'na', 'no', 'nas', 'nos',
+    'para', 'por', 'com', 'sem', 'sob', 'sobre', 'entre', 'ate',
+    'um', 'uma', 'uns', 'umas', 'o', 'a', 'os', 'as',
+    'e', 'ou', 'mas', 'que', 'se', 'ao', 'aos',
+    'seu', 'sua', 'seus', 'suas', 'este', 'esta', 'esse', 'essa',
+    'isso', 'isto', 'aquilo', 'qual', 'quais', 'como', 'mais', 'menos',
+    'the', 'and', 'or', 'is', 'are', 'was', 'were', 'be', 'been',
+    'being', 'have', 'has', 'had', 'does', 'did', 'will',
+    'would', 'could', 'should', 'may', 'might', 'must', 'shall'
+  ];
+  filtered_words TEXT[] := ARRAY[]::TEXT[];
+  word TEXT;
+  clean_text TEXT;
+BEGIN
+  IF input_text IS NULL OR LENGTH(TRIM(input_text)) = 0 THEN
+    RETURN NULL;
+  END IF;
+  
+  clean_text := LOWER(REGEXP_REPLACE(input_text, '[^a-zA-Z0-9\s]', ' ', 'gi'));
+  words := STRING_TO_ARRAY(clean_text, ' ');
+  
+  FOREACH word IN ARRAY words LOOP
+    word := TRIM(word);
+    IF LENGTH(word) >= 3 AND NOT (word = ANY(stopwords)) THEN
+      filtered_words := ARRAY_APPEND(filtered_words, word);
+    END IF;
+  END LOOP;
+  
+  SELECT ARRAY_AGG(DISTINCT w ORDER BY w) INTO filtered_words
+  FROM UNNEST(filtered_words) AS w
+  WHERE w IS NOT NULL AND w != '';
+  
+  IF filtered_words IS NOT NULL AND ARRAY_LENGTH(filtered_words, 1) > max_keywords THEN
+    filtered_words := filtered_words[1:max_keywords];
+  END IF;
+  
+  RETURN filtered_words;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.extract_product_material(product_name text, product_description text DEFAULT ''::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_text TEXT;
+    v_materials TEXT[] := '{}';
+    v_primary_material TEXT;
+    v_material_group TEXT;
+    v_material_type_id UUID;
+    v_material_type_slug TEXT;
+BEGIN
+    -- Normaliza e combina nome + descrição
+    v_text := UPPER(unaccent(COALESCE(product_name, '') || ' ' || COALESCE(product_description, '')));
+    
+    -- ========================================================================
+    -- DETECÇÃO DE MATERIAIS (ordem de prioridade)
+    -- ========================================================================
+    
+    -- METAIS
+    IF v_text ~ 'INOX|A[CÇ]O\s*INOX|STAINLESS' THEN
+        v_materials := array_append(v_materials, 'ACO_INOX');
+    END IF;
+    
+    IF v_text ~ 'ALUMIN' THEN
+        v_materials := array_append(v_materials, 'ALUMINIO');
+    END IF;
+    
+    IF v_text ~ 'COBRE|COPPER' THEN
+        v_materials := array_append(v_materials, 'COBRE');
+    END IF;
+    
+    IF v_text ~ 'ZINCO|ZINC' THEN
+        v_materials := array_append(v_materials, 'ZINCO');
+    END IF;
+    
+    IF v_text ~ 'LAT[AÃ]O|BRASS' THEN
+        v_materials := array_append(v_materials, 'LATAO');
+    END IF;
+    
+    IF v_text ~ 'METAL|METALIC' AND NOT v_text ~ 'SEMI.?METAL' THEN
+        v_materials := array_append(v_materials, 'METAL');
+    END IF;
+    
+    -- PLÁSTICOS
+    IF v_text ~ '\mABS\M|ACRILONITRILA' THEN
+        v_materials := array_append(v_materials, 'ABS');
+    END IF;
+    
+    IF v_text ~ '\mPP\M|POLIPROPILENO' THEN
+        v_materials := array_append(v_materials, 'POLIPROPILENO');
+    END IF;
+    
+    IF v_text ~ '\mPET\M|TEREFTALATO' THEN
+        v_materials := array_append(v_materials, 'PET');
+    END IF;
+    
+    IF v_text ~ '\mPVC\M|VINIL' THEN
+        v_materials := array_append(v_materials, 'PVC');
+    END IF;
+    
+    IF v_text ~ 'ACRILIC' THEN
+        v_materials := array_append(v_materials, 'ACRILICO');
+    END IF;
+    
+    IF v_text ~ 'TRITAN' THEN
+        v_materials := array_append(v_materials, 'TRITAN');
+    END IF;
+    
+    IF v_text ~ 'SILICONE' THEN
+        v_materials := array_append(v_materials, 'SILICONE');
+    END IF;
+    
+    IF v_text ~ 'PLASTICO|PLASTIC' AND NOT v_text ~ 'RECICLAD' THEN
+        v_materials := array_append(v_materials, 'PLASTICO');
+    END IF;
+    
+    -- TECIDOS E FIBRAS
+    IF v_text ~ 'POLIESTER|POLYESTER|600D|300D|1680D' THEN
+        v_materials := array_append(v_materials, 'POLIESTER');
+    END IF;
+    
+    IF v_text ~ 'NYLON|NAILON' THEN
+        v_materials := array_append(v_materials, 'NYLON');
+    END IF;
+    
+    IF v_text ~ 'ALGOD[AÃ]O|COTTON' THEN
+        v_materials := array_append(v_materials, 'ALGODAO');
+    END IF;
+    
+    IF v_text ~ 'CANVAS|LONA' THEN
+        v_materials := array_append(v_materials, 'CANVAS');
+    END IF;
+    
+    IF v_text ~ 'JUTA|JUTE' THEN
+        v_materials := array_append(v_materials, 'JUTA');
+    END IF;
+    
+    IF v_text ~ '\mTNT\M' THEN
+        v_materials := array_append(v_materials, 'TNT');
+    END IF;
+    
+    IF v_text ~ 'BRIM' THEN
+        v_materials := array_append(v_materials, 'BRIM');
+    END IF;
+    
+    -- COUROS
+    IF v_text ~ '\mPU\M|COURO\s*SINT|COURINO|SINTETICO' THEN
+        v_materials := array_append(v_materials, 'PU');
+    END IF;
+    
+    IF v_text ~ 'COURO' AND NOT v_text ~ 'SINT|COURINO|\mPU\M' THEN
+        v_materials := array_append(v_materials, 'COURO');
+    END IF;
+    
+    -- NATURAIS/ECOLÓGICOS
+    IF v_text ~ 'BAMBU|BAMBOO' THEN
+        v_materials := array_append(v_materials, 'BAMBU');
+    END IF;
+    
+    IF v_text ~ 'CORTI[CÇ]A|CORK' THEN
+        v_materials := array_append(v_materials, 'CORTICA');
+    END IF;
+    
+    IF v_text ~ 'MADEIRA|WOOD|\mMDF\M' THEN
+        v_materials := array_append(v_materials, 'MADEIRA');
+    END IF;
+    
+    IF v_text ~ 'PALHA|STRAW|FIBRA\s*DE\s*TRIGO|WHEAT' THEN
+        v_materials := array_append(v_materials, 'PALHA');
+    END IF;
+    
+    -- PAPÉIS
+    IF v_text ~ 'KRAFT' THEN
+        v_materials := array_append(v_materials, 'KRAFT');
+    END IF;
+    
+    IF v_text ~ 'PAPEL[AÃ]O|CARDBOARD' THEN
+        v_materials := array_append(v_materials, 'PAPELAO');
+    END IF;
+    
+    IF v_text ~ 'PAPEL' AND NOT v_text ~ 'PAPEL[AÃ]O' THEN
+        v_materials := array_append(v_materials, 'PAPEL');
+    END IF;
+    
+    -- VIDROS E CERÂMICAS
+    IF v_text ~ 'VIDRO|GLASS|BOROSSILICATO|BOROSILICATE' THEN
+        v_materials := array_append(v_materials, 'VIDRO');
+    END IF;
+    
+    IF v_text ~ 'CER[AÂ]MICA|CERAMIC' THEN
+        v_materials := array_append(v_materials, 'CERAMICA');
+    END IF;
+    
+    IF v_text ~ 'PORCELANA|PORCELAIN' THEN
+        v_materials := array_append(v_materials, 'PORCELANA');
+    END IF;
+    
+    -- BORRACHAS E ESPUMAS
+    IF v_text ~ '\mEVA\M' THEN
+        v_materials := array_append(v_materials, 'EVA');
+    END IF;
+    
+    IF v_text ~ 'NEOPRENE' THEN
+        v_materials := array_append(v_materials, 'NEOPRENE');
+    END IF;
+    
+    IF v_text ~ 'BORRACHA|RUBBER' THEN
+        v_materials := array_append(v_materials, 'BORRACHA');
+    END IF;
+    
+    -- ECOLÓGICOS/RECICLADOS
+    IF v_text ~ 'RECICLAD|RECICLAV|RECYCLED' THEN
+        v_materials := array_append(v_materials, 'RECICLADO');
+    END IF;
+    
+    -- ========================================================================
+    -- DETERMINAR MATERIAL PRIMÁRIO (primeiro da lista ou indefinido)
+    -- ========================================================================
+    
+    IF array_length(v_materials, 1) > 0 THEN
+        v_primary_material := v_materials[1];
+    ELSE
+        v_primary_material := 'INDEFINIDO';
+        v_materials := array_append(v_materials, 'INDEFINIDO');
+    END IF;
+    
+    -- ========================================================================
+    -- DETERMINAR GRUPO DO MATERIAL
+    -- ========================================================================
+    
+    v_material_group := CASE
+        WHEN v_primary_material IN ('ACO_INOX', 'ALUMINIO', 'COBRE', 'ZINCO', 'LATAO', 'METAL') 
+            THEN 'METAIS'
+        WHEN v_primary_material IN ('ABS', 'POLIPROPILENO', 'PET', 'PVC', 'ACRILICO', 'TRITAN', 'SILICONE', 'PLASTICO') 
+            THEN 'PLASTICOS'
+        WHEN v_primary_material IN ('POLIESTER', 'NYLON', 'ALGODAO', 'CANVAS', 'JUTA', 'TNT', 'BRIM') 
+            THEN 'TECIDOS'
+        WHEN v_primary_material IN ('PU', 'COURO') 
+            THEN 'COUROS'
+        WHEN v_primary_material IN ('BAMBU', 'CORTICA', 'MADEIRA', 'PALHA') 
+            THEN 'NATURAIS'
+        WHEN v_primary_material IN ('KRAFT', 'PAPELAO', 'PAPEL') 
+            THEN 'PAPEIS'
+        WHEN v_primary_material IN ('VIDRO', 'CERAMICA', 'PORCELANA') 
+            THEN 'VIDROS_CERAMICAS'
+        WHEN v_primary_material IN ('EVA', 'NEOPRENE', 'BORRACHA') 
+            THEN 'BORRACHAS'
+        WHEN v_primary_material = 'RECICLADO' 
+            THEN 'ECOLOGICOS'
+        ELSE 'OUTROS'
+    END;
+    
+    -- ========================================================================
+    -- BUSCAR material_type_id NO BANCO (se existir)
+    -- ========================================================================
+    
+    -- Mapear para slug do material_types
+    v_material_type_slug := CASE v_primary_material
+        WHEN 'ACO_INOX' THEN 'aco-inox'
+        WHEN 'ALUMINIO' THEN 'aluminio'
+        WHEN 'COBRE' THEN 'cobre'
+        WHEN 'METAL' THEN 'metal'
+        WHEN 'ABS' THEN 'abs-acrilonitrila-butadieno-estireno'
+        WHEN 'POLIPROPILENO' THEN 'polipropileno'
+        WHEN 'PET' THEN 'pet'
+        WHEN 'ACRILICO' THEN 'acrilico'
+        WHEN 'TRITAN' THEN 'tritan'
+        WHEN 'SILICONE' THEN 'silicone'
+        WHEN 'PLASTICO' THEN 'plastico'
+        WHEN 'POLIESTER' THEN 'poliester'
+        WHEN 'NYLON' THEN 'nylon'
+        WHEN 'ALGODAO' THEN 'algodao'
+        WHEN 'CANVAS' THEN 'canvas'
+        WHEN 'JUTA' THEN 'juta'
+        WHEN 'TNT' THEN 'tnt'
+        WHEN 'PU' THEN 'pu-poliuretano'
+        WHEN 'COURO' THEN 'couro'
+        WHEN 'BAMBU' THEN 'bambu'
+        WHEN 'CORTICA' THEN 'cortica'
+        WHEN 'MADEIRA' THEN 'madeira'
+        WHEN 'KRAFT' THEN 'kraft'
+        WHEN 'PAPELAO' THEN 'papelao'
+        WHEN 'PAPEL' THEN 'papel'
+        WHEN 'VIDRO' THEN 'vidro'
+        WHEN 'CERAMICA' THEN 'ceramica'
+        WHEN 'PORCELANA' THEN 'porcelana'
+        WHEN 'EVA' THEN 'eva'
+        WHEN 'NEOPRENE' THEN 'neoprene'
+        WHEN 'BORRACHA' THEN 'borracha'
+        ELSE NULL
+    END;
+    
+    -- Buscar ID no banco
+    IF v_material_type_slug IS NOT NULL THEN
+        SELECT id INTO v_material_type_id 
+        FROM material_types 
+        WHERE slug = v_material_type_slug 
+        LIMIT 1;
+    END IF;
+    
+    -- ========================================================================
+    -- RETORNAR RESULTADO
+    -- ========================================================================
+    
+    RETURN jsonb_build_object(
+        'primary_material', v_primary_material,
+        'all_materials', to_jsonb(v_materials),
+        'material_group', v_material_group,
+        'material_type_id', v_material_type_id,
+        'material_type_slug', v_material_type_slug,
+        'material_count', array_length(v_materials, 1),
+        'attributes', jsonb_build_object(
+            'is_eco', v_text ~ 'ECOLOGIC|RECICLAD|SUSTENTA|BIODEGRADA',
+            'is_thermal', v_text ~ 'TERMIC|THERMAL|ISOLA',
+            'is_waterproof', v_text ~ 'IMPERMEA|WATERPROOF|PROVA.*AGUA',
+            'is_recycled', v_text ~ 'RECICLAD|RECYCLED',
+            'is_premium', v_text ~ 'PREMIUM|LUXO|EXECUTIVE|EXECUTIV'
+        )
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.extract_xbz_color_code(p_codigo_composto text)
+ RETURNS text
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN UPPER(SUBSTRING(p_codigo_composto FROM '-([A-Za-z0-9]+)$'));
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.extract_xbz_image_metadata(p_url text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_filename TEXT;
+    v_parts TEXT[];
+    v_color_name TEXT;
+    v_item_id TEXT;
+    v_timestamp TEXT;
+    v_gallery_suffix TEXT;
+    v_image_type TEXT;
+BEGIN
+    -- Extrair filename da URL
+    v_filename := regexp_replace(p_url, '^.*/([^/]+)$', '\1');
+    
+    -- Verificar se é imagem de galeria (contém d1, d2, etc.)
+    IF v_filename ~ '-[0-9]+d[0-9]+-' THEN
+        v_gallery_suffix := regexp_replace(v_filename, '.*-[0-9]+(d[0-9]+)-.*', '\1');
+        v_item_id := regexp_replace(v_filename, '.*-([0-9]+)d[0-9]+-.*', '\1');
+        v_color_name := NULL;
+        
+        v_image_type := CASE v_gallery_suffix
+            WHEN 'd1' THEN 'ambient'
+            WHEN 'd2' THEN 'set'
+            WHEN 'd3' THEN 'detail'
+            ELSE 'gallery'
+        END;
+        
+    ELSIF v_filename ~ '-[A-Z][A-Z\-\s]+-[0-9]+-' THEN
+        -- Com cor: Garrafa-Termica-600ml-AZUL-25722-1760987347.jpg
+        v_parts := regexp_matches(v_filename, '-([A-Z][A-Z\-\s]+)-([0-9]+)-([0-9]+)\.jpg$');
+        v_color_name := v_parts[1];
+        v_item_id := v_parts[2];
+        v_timestamp := v_parts[3];
+        v_gallery_suffix := NULL;
+        v_image_type := 'main';
+        
+    ELSE
+        -- Principal sem cor
+        v_parts := regexp_matches(v_filename, '-([0-9]+)-([0-9]+)\.jpg$');
+        v_item_id := v_parts[1];
+        v_timestamp := v_parts[2];
+        v_color_name := NULL;
+        v_gallery_suffix := NULL;
+        v_image_type := 'main';
+    END IF;
+    
+    RETURN jsonb_build_object(
+        'filename', v_filename,
+        'item_id', v_item_id::INTEGER,
+        'color_name', v_color_name,
+        'gallery_suffix', v_gallery_suffix,
+        'image_type', v_image_type,
+        'original_url', p_url
+    );
+    
+EXCEPTION WHEN OTHERS THEN
+    RETURN jsonb_build_object(
+        'filename', v_filename,
+        'error', SQLERRM,
+        'original_url', p_url
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.extract_xbz_material(p_nome text, p_descricao text DEFAULT NULL::text)
+ RETURNS TABLE(material_name text, material_group text, confidence text)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_texto TEXT;
+    v_texto_lower TEXT;
+BEGIN
+    -- Combinar nome e descrição
+    v_texto := COALESCE(p_nome, '') || ' ' || COALESCE(p_descricao, '');
+    v_texto_lower := LOWER(v_texto);
+    
+    -- =============================================
+    -- METAIS
+    -- =============================================
+    
+    -- Aço Inoxidável / Inox
+    IF v_texto_lower ~* '\m(inox|inoxid[aá]vel|a[çc]o\s*inox)\M' THEN
+        RETURN QUERY SELECT 'Aço Inoxidável'::TEXT, 'METAIS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- Aço (genérico)
+    IF v_texto_lower ~* '\ma[çc]o\M' AND NOT v_texto_lower ~* 'inox' THEN
+        RETURN QUERY SELECT 'Aço'::TEXT, 'METAIS'::TEXT, 'média'::TEXT;
+    END IF;
+    
+    -- Alumínio
+    IF v_texto_lower ~* '\m(alum[íi]nio|aluminum)\M' THEN
+        RETURN QUERY SELECT 'Alumínio'::TEXT, 'METAIS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- Metal (genérico)
+    IF v_texto_lower ~* '\mmetal\M' AND NOT v_texto_lower ~* '(inox|alum|a[çc]o)' THEN
+        RETURN QUERY SELECT 'Metal'::TEXT, 'METAIS'::TEXT, 'média'::TEXT;
+    END IF;
+    
+    -- Cobre
+    IF v_texto_lower ~* '\mcobre\M' THEN
+        RETURN QUERY SELECT 'Cobre'::TEXT, 'METAIS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- Latão
+    IF v_texto_lower ~* '\mlat[ãa]o\M' THEN
+        RETURN QUERY SELECT 'Latão'::TEXT, 'METAIS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- Zinco
+    IF v_texto_lower ~* '\mzinco\M' THEN
+        RETURN QUERY SELECT 'Zinco'::TEXT, 'METAIS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- =============================================
+    -- PLÁSTICOS
+    -- =============================================
+    
+    -- ABS
+    IF v_texto_lower ~* '\mabs\M' THEN
+        RETURN QUERY SELECT 'ABS'::TEXT, 'PLÁSTICOS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- PP (Polipropileno)
+    IF v_texto_lower ~* '\m(pp|polipropileno)\M' THEN
+        RETURN QUERY SELECT 'Polipropileno (PP)'::TEXT, 'PLÁSTICOS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- PE (Polietileno)
+    IF v_texto_lower ~* '\m(pe|polietileno)\M' THEN
+        RETURN QUERY SELECT 'Polietileno (PE)'::TEXT, 'PLÁSTICOS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- PET
+    IF v_texto_lower ~* '\m(pet|tereftalato)\M' THEN
+        RETURN QUERY SELECT 'PET'::TEXT, 'PLÁSTICOS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- PS (Poliestireno)
+    IF v_texto_lower ~* '\m(ps|poliestireno)\M' THEN
+        RETURN QUERY SELECT 'Poliestireno (PS)'::TEXT, 'PLÁSTICOS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- Acrílico
+    IF v_texto_lower ~* '\macr[íi]lico\M' THEN
+        RETURN QUERY SELECT 'Acrílico'::TEXT, 'PLÁSTICOS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- PVC
+    IF v_texto_lower ~* '\mpvc\M' THEN
+        RETURN QUERY SELECT 'PVC'::TEXT, 'PLÁSTICOS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- Tritan
+    IF v_texto_lower ~* '\mtritan\M' THEN
+        RETURN QUERY SELECT 'Tritan'::TEXT, 'PLÁSTICOS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- Plástico (genérico) - só se não encontrou específico
+    IF v_texto_lower ~* '\mpl[áa]stico\M' THEN
+        RETURN QUERY SELECT 'Plástico'::TEXT, 'PLÁSTICOS'::TEXT, 'média'::TEXT;
+    END IF;
+    
+    -- =============================================
+    -- BORRACHAS E SILICONES
+    -- =============================================
+    
+    -- Silicone
+    IF v_texto_lower ~* '\msilicone\M' THEN
+        RETURN QUERY SELECT 'Silicone'::TEXT, 'BORRACHAS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- Borracha
+    IF v_texto_lower ~* '\mborracha\M' THEN
+        RETURN QUERY SELECT 'Borracha'::TEXT, 'BORRACHAS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- EVA
+    IF v_texto_lower ~* '\meva\M' THEN
+        RETURN QUERY SELECT 'EVA'::TEXT, 'BORRACHAS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- Neoprene
+    IF v_texto_lower ~* '\mneoprene\M' THEN
+        RETURN QUERY SELECT 'Neoprene'::TEXT, 'BORRACHAS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- =============================================
+    -- VIDROS E CERÂMICAS
+    -- =============================================
+    
+    -- Vidro
+    IF v_texto_lower ~* '\mvidro\M' THEN
+        RETURN QUERY SELECT 'Vidro'::TEXT, 'VIDROS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- Borossilicato
+    IF v_texto_lower ~* '\mborossilicato\M' THEN
+        RETURN QUERY SELECT 'Vidro Borossilicato'::TEXT, 'VIDROS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- Cerâmica
+    IF v_texto_lower ~* '\mcer[âa]mica\M' THEN
+        RETURN QUERY SELECT 'Cerâmica'::TEXT, 'CERÂMICAS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- Porcelana
+    IF v_texto_lower ~* '\mporcelana\M' THEN
+        RETURN QUERY SELECT 'Porcelana'::TEXT, 'CERÂMICAS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- =============================================
+    -- MADEIRAS E NATURAIS
+    -- =============================================
+    
+    -- Bambu
+    IF v_texto_lower ~* '\mbambu\M' THEN
+        RETURN QUERY SELECT 'Bambu'::TEXT, 'NATURAIS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- Madeira
+    IF v_texto_lower ~* '\mmadeira\M' THEN
+        RETURN QUERY SELECT 'Madeira'::TEXT, 'NATURAIS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- MDF
+    IF v_texto_lower ~* '\mmdf\M' THEN
+        RETURN QUERY SELECT 'MDF'::TEXT, 'NATURAIS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- Cortiça
+    IF v_texto_lower ~* '\mcorti[çc]a\M' THEN
+        RETURN QUERY SELECT 'Cortiça'::TEXT, 'NATURAIS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- Palha / Fibra Natural
+    IF v_texto_lower ~* '\m(palha|fibra\s*natural)\M' THEN
+        RETURN QUERY SELECT 'Fibra Natural'::TEXT, 'NATURAIS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- =============================================
+    -- TÊXTEIS
+    -- =============================================
+    
+    -- Algodão
+    IF v_texto_lower ~* '\malgod[ãa]o\M' THEN
+        RETURN QUERY SELECT 'Algodão'::TEXT, 'TÊXTEIS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- Poliéster
+    IF v_texto_lower ~* '\mpoli[ée]ster\M' THEN
+        RETURN QUERY SELECT 'Poliéster'::TEXT, 'TÊXTEIS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- Nylon
+    IF v_texto_lower ~* '\m(nylon|n[áa]ilon)\M' THEN
+        RETURN QUERY SELECT 'Nylon'::TEXT, 'TÊXTEIS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- Lona
+    IF v_texto_lower ~* '\mlona\M' THEN
+        RETURN QUERY SELECT 'Lona'::TEXT, 'TÊXTEIS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- Juta
+    IF v_texto_lower ~* '\mjuta\M' THEN
+        RETURN QUERY SELECT 'Juta'::TEXT, 'TÊXTEIS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- Non-woven / TNT
+    IF v_texto_lower ~* '\m(non[\s-]?woven|tnt)\M' THEN
+        RETURN QUERY SELECT 'Non-woven (TNT)'::TEXT, 'TÊXTEIS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- Oxford
+    IF v_texto_lower ~* '\moxford\M' THEN
+        RETURN QUERY SELECT 'Oxford'::TEXT, 'TÊXTEIS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- Microfibra
+    IF v_texto_lower ~* '\mmicrofibra\M' THEN
+        RETURN QUERY SELECT 'Microfibra'::TEXT, 'TÊXTEIS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- =============================================
+    -- COUROS
+    -- =============================================
+    
+    -- Couro Legítimo
+    IF v_texto_lower ~* '\mcouro\s*(leg[íi]timo|natural|genu[íi]no)\M' THEN
+        RETURN QUERY SELECT 'Couro Legítimo'::TEXT, 'COUROS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- Couro Sintético / Ecológico
+    IF v_texto_lower ~* '\mcouro\s*(sint[ée]tico|ecol[óo]gico|pu)\M' THEN
+        RETURN QUERY SELECT 'Couro Sintético'::TEXT, 'COUROS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- Couro (genérico)
+    IF v_texto_lower ~* '\mcouro\M' AND NOT v_texto_lower ~* '(leg[íi]timo|sint[ée]tico|ecol[óo]gico)' THEN
+        RETURN QUERY SELECT 'Couro'::TEXT, 'COUROS'::TEXT, 'média'::TEXT;
+    END IF;
+    
+    -- =============================================
+    -- PAPÉIS
+    -- =============================================
+    
+    -- Papel
+    IF v_texto_lower ~* '\mpapel\M' THEN
+        RETURN QUERY SELECT 'Papel'::TEXT, 'PAPÉIS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- Papelão
+    IF v_texto_lower ~* '\mpapel[ãa]o\M' THEN
+        RETURN QUERY SELECT 'Papelão'::TEXT, 'PAPÉIS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- Kraft
+    IF v_texto_lower ~* '\mkraft\M' THEN
+        RETURN QUERY SELECT 'Papel Kraft'::TEXT, 'PAPÉIS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    -- Reciclado
+    IF v_texto_lower ~* '\m(papel\s*)?reciclado\M' THEN
+        RETURN QUERY SELECT 'Material Reciclado'::TEXT, 'ECOLÓGICOS'::TEXT, 'alta'::TEXT;
+    END IF;
+    
+    RETURN;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.extract_xbz_material_group(p_nome text, p_descricao text DEFAULT NULL::text)
+ RETURNS text
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_group TEXT;
+BEGIN
+    SELECT material_group INTO v_group
+    FROM extract_xbz_material(p_nome, p_descricao)
+    ORDER BY 
+        CASE confidence 
+            WHEN 'alta' THEN 1 
+            WHEN 'média' THEN 2 
+            ELSE 3 
+        END
+    LIMIT 1;
+    
+    RETURN v_group;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.extract_xbz_material_primary(p_nome text, p_descricao text DEFAULT NULL::text)
+ RETURNS text
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_material TEXT;
+BEGIN
+    SELECT material_name INTO v_material
+    FROM extract_xbz_material(p_nome, p_descricao)
+    ORDER BY 
+        CASE confidence 
+            WHEN 'alta' THEN 1 
+            WHEN 'média' THEN 2 
+            ELSE 3 
+        END
+    LIMIT 1;
+    
+    RETURN v_material;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.extract_xbz_materials_array(p_nome text, p_descricao text DEFAULT NULL::text)
+ RETURNS text[]
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN ARRAY(
+        SELECT DISTINCT material_name
+        FROM extract_xbz_material(p_nome, p_descricao)
+        ORDER BY material_name
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.extract_xbz_product_code(p_codigo_composto text)
+ RETURNS text
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN SUBSTRING(p_codigo_composto FROM '^([^-]+)');
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.extract_youtube_id(p_url text)
+ RETURNS character varying
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_id VARCHAR(20);
+BEGIN
+    IF p_url IS NULL OR p_url = '' THEN
+        RETURN NULL;
+    END IF;
+    
+    -- Formato: https://youtu.be/VIDEO_ID
+    IF p_url LIKE '%youtu.be/%' THEN
+        v_id := SUBSTRING(p_url FROM 'youtu\.be/([a-zA-Z0-9_-]+)');
+    -- Formato: https://www.youtube.com/watch?v=VIDEO_ID
+    ELSIF p_url LIKE '%youtube.com/watch%' THEN
+        v_id := SUBSTRING(p_url FROM '[?&]v=([a-zA-Z0-9_-]+)');
+    -- Formato: https://www.youtube.com/embed/VIDEO_ID
+    ELSIF p_url LIKE '%youtube.com/embed/%' THEN
+        v_id := SUBSTRING(p_url FROM 'youtube\.com/embed/([a-zA-Z0-9_-]+)');
+    ELSE
+        v_id := NULL;
+    END IF;
+    
+    -- Validar que extraiu corretamente (11 caracteres é o padrão do YouTube)
+    IF v_id IS NOT NULL AND LENGTH(v_id) != 11 THEN
+        v_id := LEFT(v_id, 11);
+    END IF;
+    
+    RETURN v_id;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_add_packaging_compatibility(p_product_id uuid, p_packaging_id uuid, p_source character varying DEFAULT 'manual'::character varying, p_recommended boolean DEFAULT false)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_fit JSONB; v_id UUID;
+    v_same_supplier BOOLEAN;
+BEGIN
+    v_fit := fn_calculate_packaging_fit(p_product_id, p_packaging_id);
+    IF v_fit ? 'error' THEN RETURN jsonb_build_object('success', FALSE, 'error', v_fit->>'error'); END IF;
+    IF NOT (v_fit->>'compatible')::BOOLEAN THEN 
+        RETURN jsonb_build_object('success', FALSE, 'error', 'Não cabe', 'fit', v_fit); 
+    END IF;
+    
+    SELECT (p1.supplier_id = p2.supplier_id) INTO v_same_supplier
+    FROM products p1, products p2 WHERE p1.id = p_product_id AND p2.id = p_packaging_id;
+    
+    INSERT INTO product_packaging_compatibility (
+        product_id, packaging_id, compatibility_source,
+        fit_gap_height_mm, fit_gap_width_mm, fit_gap_length_mm, fit_gap_diameter_mm,
+        fit_gap_min_mm, fit_gap_avg_mm, fit_rating, is_recommended, is_same_supplier
+    ) VALUES (
+        p_product_id, p_packaging_id, p_source,
+        (v_fit->>'gap_height_mm')::DECIMAL, (v_fit->>'gap_width_mm')::DECIMAL,
+        (v_fit->>'gap_length_mm')::DECIMAL, (v_fit->>'gap_diameter_mm')::DECIMAL,
+        (v_fit->>'gap_min_mm')::DECIMAL, (v_fit->>'gap_avg_mm')::DECIMAL,
+        v_fit->>'fit_rating', p_recommended, COALESCE(v_same_supplier, FALSE)
+    )
+    ON CONFLICT (product_id, packaging_id) DO UPDATE SET
+        fit_gap_min_mm = EXCLUDED.fit_gap_min_mm,
+        fit_rating = EXCLUDED.fit_rating,
+        updated_at = NOW()
+    RETURNING id INTO v_id;
+    
+    RETURN jsonb_build_object('success', TRUE, 'id', v_id, 'fit', v_fit);
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_add_supplier_mapping(p_supplier_code text, p_raw_pattern text, p_property_code text, p_priority integer DEFAULT 80, p_notes text DEFAULT NULL::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_id UUID;
+BEGIN
+    INSERT INTO supplier_property_mappings (
+        supplier_code,
+        raw_pattern,
+        property_code,
+        priority,
+        notes
+    ) VALUES (
+        p_supplier_code,
+        p_raw_pattern,
+        p_property_code,
+        p_priority,
+        p_notes
+    )
+    ON CONFLICT (supplier_code, raw_pattern)
+    DO UPDATE SET
+        property_code = EXCLUDED.property_code,
+        priority = EXCLUDED.priority,
+        notes = EXCLUDED.notes,
+        updated_at = NOW()
+    RETURNING id INTO v_id;
+    
+    RETURN jsonb_build_object(
+        'success', TRUE,
+        'id', v_id,
+        'supplier_code', p_supplier_code,
+        'pattern', p_raw_pattern,
+        'property_code', p_property_code
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_adicionar_mapeamento_fornecedor(p_supplier_id uuid, p_nome_fornecedor character varying, p_tecnica_variante_codigo character varying, p_table_code character varying DEFAULT NULL::character varying, p_regra_formato character varying DEFAULT 'qualquer'::character varying, p_observacao text DEFAULT NULL::text)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_variante_id UUID;
+    v_mapeamento_id UUID;
+BEGIN
+    -- Buscar ID da variante pelo código
+    SELECT id INTO v_variante_id
+    FROM tecnica_gravacao_variante
+    WHERE codigo = p_tecnica_variante_codigo;
+    
+    IF v_variante_id IS NULL THEN
+        RAISE EXCEPTION 'Variante de técnica não encontrada: %', p_tecnica_variante_codigo;
+    END IF;
+    
+    -- Inserir mapeamento
+    INSERT INTO supplier_tecnica_mapeamento (
+        supplier_id,
+        supplier_customization_type,
+        supplier_table_code,
+        tecnica_variante_id,
+        regra_formato,
+        regra_observacao,
+        mapeamento_automatico,
+        ativo
+    ) VALUES (
+        p_supplier_id,
+        p_nome_fornecedor,
+        p_table_code,
+        v_variante_id,
+        p_regra_formato,
+        p_observacao,
+        true,
+        true
+    )
+    RETURNING id INTO v_mapeamento_id;
+    
+    RETURN v_mapeamento_id;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_aggregate_stock_daily(p_date date DEFAULT CURRENT_DATE)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_upserted integer;
+  v_purged integer;
+BEGIN
+  -- PASSO 1: Agregar snapshots de estoque via UPSERT (idempotente)
+  WITH open_close AS (
+    -- Primeiro snapshot do dia por VSS (abertura)
+    SELECT DISTINCT ON (variant_supplier_source_id)
+      variant_supplier_source_id,
+      supplier_id,
+      supplier_branch_id,
+      variant_id,
+      product_id,
+      COALESCE(stock_main_new, 0) + COALESCE(stock_other_new, 0) AS stock_open_val,
+      cost_price_new AS price_open_val
+    FROM stock_snapshots
+    WHERE captured_at::date = p_date
+      AND change_type IN ('stock', 'both')
+    ORDER BY variant_supplier_source_id, captured_at ASC
+  ),
+  close_vals AS (
+    -- Último snapshot do dia por VSS (fechamento)
+    SELECT DISTINCT ON (variant_supplier_source_id)
+      variant_supplier_source_id,
+      COALESCE(stock_main_new, 0) + COALESCE(stock_other_new, 0) AS stock_close_val,
+      cost_price_new AS price_close_val
+    FROM stock_snapshots
+    WHERE captured_at::date = p_date
+      AND change_type IN ('stock', 'both')
+    ORDER BY variant_supplier_source_id, captured_at DESC
+  ),
+  agg_deltas AS (
+    -- Agregar deltas do dia
+    SELECT
+      variant_supplier_source_id,
+      MIN(COALESCE(stock_main_new, 0) + COALESCE(stock_other_new, 0)) AS stock_min,
+      MAX(COALESCE(stock_main_new, 0) + COALESCE(stock_other_new, 0)) AS stock_max,
+      SUM(CASE WHEN (COALESCE(stock_main_delta, 0) + COALESCE(stock_other_delta, 0)) < 0 
+          THEN ABS(COALESCE(stock_main_delta, 0) + COALESCE(stock_other_delta, 0)) ELSE 0 END) AS units_depleted,
+      SUM(CASE WHEN (COALESCE(stock_main_delta, 0) + COALESCE(stock_other_delta, 0)) > 0 
+          THEN (COALESCE(stock_main_delta, 0) + COALESCE(stock_other_delta, 0)) ELSE 0 END) AS units_restocked,
+      bool_or((COALESCE(stock_main_delta, 0) + COALESCE(stock_other_delta, 0)) 
+        > GREATEST((COALESCE(stock_main_new, 0) + COALESCE(stock_other_new, 0)) * 0.1, 5)) AS restock_detected,
+      SUM(CASE WHEN (COALESCE(stock_main_delta, 0) + COALESCE(stock_other_delta, 0)) 
+        > GREATEST((COALESCE(stock_main_new, 0) + COALESCE(stock_other_new, 0)) * 0.1, 5) 
+          THEN (COALESCE(stock_main_delta, 0) + COALESCE(stock_other_delta, 0)) ELSE 0 END)::integer AS restock_quantity,
+      COUNT(*) FILTER (WHERE (COALESCE(stock_main_delta, 0) + COALESCE(stock_other_delta, 0)) 
+        > GREATEST((COALESCE(stock_main_new, 0) + COALESCE(stock_other_new, 0)) * 0.1, 5))::smallint AS restock_count,
+      COUNT(*)::smallint AS sync_count
+    FROM stock_snapshots
+    WHERE captured_at::date = p_date
+      AND change_type IN ('stock', 'both')
+    GROUP BY variant_supplier_source_id
+  )
+  INSERT INTO stock_daily_summary (
+    variant_supplier_source_id, supplier_id, supplier_branch_id,
+    variant_id, product_id, summary_date,
+    stock_open, stock_close, stock_min, stock_max, net_change,
+    units_depleted, units_restocked,
+    restock_detected, restock_quantity, restock_count,
+    cost_price_open, cost_price_close, price_changed,
+    sync_count
+  )
+  SELECT
+    oc.variant_supplier_source_id,
+    oc.supplier_id,
+    oc.supplier_branch_id,
+    oc.variant_id,
+    oc.product_id,
+    p_date,
+    oc.stock_open_val,
+    cv.stock_close_val,
+    ad.stock_min,
+    ad.stock_max,
+    cv.stock_close_val - oc.stock_open_val,
+    COALESCE(ad.units_depleted, 0),
+    COALESCE(ad.units_restocked, 0),
+    COALESCE(ad.restock_detected, false),
+    COALESCE(ad.restock_quantity, 0),
+    COALESCE(ad.restock_count, 0),
+    oc.price_open_val,
+    cv.price_close_val,
+    (oc.price_open_val IS DISTINCT FROM cv.price_close_val),
+    COALESCE(ad.sync_count, 0)
+  FROM open_close oc
+  JOIN close_vals cv ON cv.variant_supplier_source_id = oc.variant_supplier_source_id
+  JOIN agg_deltas ad ON ad.variant_supplier_source_id = oc.variant_supplier_source_id
+  ON CONFLICT (variant_supplier_source_id, summary_date)
+  DO UPDATE SET
+    stock_open = EXCLUDED.stock_open,
+    stock_close = EXCLUDED.stock_close,
+    stock_min = EXCLUDED.stock_min,
+    stock_max = EXCLUDED.stock_max,
+    net_change = EXCLUDED.net_change,
+    units_depleted = EXCLUDED.units_depleted,
+    units_restocked = EXCLUDED.units_restocked,
+    restock_detected = EXCLUDED.restock_detected,
+    restock_quantity = EXCLUDED.restock_quantity,
+    restock_count = EXCLUDED.restock_count,
+    cost_price_open = EXCLUDED.cost_price_open,
+    cost_price_close = EXCLUDED.cost_price_close,
+    price_changed = EXCLUDED.price_changed,
+    sync_count = EXCLUDED.sync_count;
+  
+  GET DIAGNOSTICS v_upserted = ROW_COUNT;
+  
+  -- PASSO 2: Capturar snapshots de preço puro (sem mudança de estoque)
+  INSERT INTO stock_daily_summary (
+    variant_supplier_source_id, supplier_id, supplier_branch_id,
+    variant_id, product_id, summary_date,
+    cost_price_open, cost_price_close, price_changed, sync_count
+  )
+  SELECT DISTINCT ON (s.variant_supplier_source_id)
+    s.variant_supplier_source_id,
+    s.supplier_id,
+    s.supplier_branch_id,
+    s.variant_id,
+    s.product_id,
+    p_date,
+    (SELECT ss.cost_price_new FROM stock_snapshots ss 
+     WHERE ss.variant_supplier_source_id = s.variant_supplier_source_id 
+       AND ss.captured_at::date = p_date AND ss.change_type = 'price' 
+     ORDER BY ss.captured_at ASC LIMIT 1),
+    (SELECT ss.cost_price_new FROM stock_snapshots ss 
+     WHERE ss.variant_supplier_source_id = s.variant_supplier_source_id 
+       AND ss.captured_at::date = p_date AND ss.change_type = 'price' 
+     ORDER BY ss.captured_at DESC LIMIT 1),
+    true,
+    COUNT(*) OVER (PARTITION BY s.variant_supplier_source_id)::smallint
+  FROM stock_snapshots s
+  WHERE s.captured_at::date = p_date
+    AND s.change_type = 'price'
+    AND NOT EXISTS (
+      SELECT 1 FROM stock_daily_summary sd
+      WHERE sd.variant_supplier_source_id = s.variant_supplier_source_id
+        AND sd.summary_date = p_date
+    )
+  ORDER BY s.variant_supplier_source_id, s.captured_at ASC
+  ON CONFLICT (variant_supplier_source_id, summary_date) DO NOTHING;
+  
+  -- PASSO 3: Purgar snapshots antigos (manter 14 dias)
+  DELETE FROM stock_snapshots
+  WHERE captured_at < (now() - INTERVAL '14 days');
+  
+  GET DIAGNOSTICS v_purged = ROW_COUNT;
+  
+  RETURN jsonb_build_object(
+    'date', p_date,
+    'summaries_upserted', v_upserted,
+    'snapshots_purged', v_purged,
+    'executed_at', now()
+  );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_apply_asia_properties_to_product(p_sku text, p_propriedades jsonb, p_api_altura numeric DEFAULT 0, p_api_largura numeric DEFAULT 0, p_api_comprimento numeric DEFAULT 0, p_api_peso numeric DEFAULT 0, p_origem_faturamento text DEFAULT NULL::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_parsed JSONB;
+    v_product_id UUID;
+    v_rows_updated INTEGER;
+BEGIN
+    -- 1. Buscar produto
+    SELECT id INTO v_product_id
+    FROM products
+    WHERE sku = p_sku
+      AND supplier_id = 'd2734e23-d633-4819-bb15-e51aa44e2118'
+    LIMIT 1;
+    
+    IF v_product_id IS NULL THEN
+        RETURN jsonb_build_object('error', 'product_not_found', 'sku', p_sku);
+    END IF;
+    
+    -- 2. Parsear propriedades
+    v_parsed := fn_parse_asia_properties(
+        p_propriedades, p_api_altura, p_api_largura, 
+        p_api_comprimento, p_api_peso, p_origem_faturamento
+    );
+    
+    -- 3. Aplicar UPDATE (COALESCE para não sobrescrever com NULL)
+    UPDATE products SET
+        height_cm = COALESCE((v_parsed->>'height_cm')::NUMERIC, height_cm),
+        width_cm = COALESCE((v_parsed->>'width_cm')::NUMERIC, width_cm),
+        length_cm = COALESCE((v_parsed->>'length_cm')::NUMERIC, length_cm),
+        weight_g = COALESCE((v_parsed->>'weight_g')::INTEGER, weight_g),
+        box_weight_kg = COALESCE((v_parsed->>'box_weight_kg')::NUMERIC, box_weight_kg),
+        box_quantity = COALESCE((v_parsed->>'box_quantity')::INTEGER, box_quantity),
+        box_length_cm = COALESCE((v_parsed->>'box_length_cm')::NUMERIC, box_length_cm),
+        box_width_cm = COALESCE((v_parsed->>'box_width_cm')::NUMERIC, box_width_cm),
+        box_height_cm = COALESCE((v_parsed->>'box_height_cm')::NUMERIC, box_height_cm),
+        packing_type = COALESCE(v_parsed->>'packing_type', packing_type),
+        tax_reference_state = COALESCE(v_parsed->>'tax_reference_state', tax_reference_state),
+        updated_at = NOW()
+    WHERE id = v_product_id;
+    
+    GET DIAGNOSTICS v_rows_updated = ROW_COUNT;
+    
+    RETURN jsonb_build_object(
+        'success', v_rows_updated > 0,
+        'sku', p_sku,
+        'product_id', v_product_id,
+        'parsed', v_parsed
+    );
+    
+EXCEPTION WHEN OTHERS THEN
+    RETURN jsonb_build_object(
+        'error', SQLERRM,
+        'sku', p_sku
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_apply_transform(p_value text, p_transform_type text, p_transform_config jsonb DEFAULT NULL::jsonb, p_supplier_id uuid DEFAULT NULL::uuid)
+ RETURNS text
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    -- NULL in = NULL out
+    IF p_value IS NULL OR p_value = '' THEN
+        RETURN p_value;
+    END IF;
 
--- ----------------------------------------------------------------------------
+    CASE p_transform_type
+
+        WHEN 'direct' THEN
+            RETURN p_value;
+
+        WHEN 'custom' THEN
+            -- Aplica prefix e/ou suffix da config
+            IF p_transform_config IS NOT NULL THEN
+                IF p_transform_config->>'prefix' IS NOT NULL THEN
+                    p_value := (p_transform_config->>'prefix') || p_value;
+                END IF;
+                IF p_transform_config->>'suffix' IS NOT NULL THEN
+                    p_value := p_value || (p_transform_config->>'suffix');
+                END IF;
+            END IF;
+            RETURN p_value;
+
+        WHEN 'multiply' THEN
+            -- Multiplica valor numérico pelo factor
+            IF p_transform_config IS NOT NULL AND p_transform_config->>'factor' IS NOT NULL THEN
+                RETURN (p_value::NUMERIC * (p_transform_config->>'factor')::NUMERIC)::TEXT;
+            END IF;
+            RETURN p_value;
+
+        WHEN 'cast' THEN
+            -- Cast simples, tipo inferido no destino
+            RETURN p_value;
+
+        WHEN 'jsonpath' THEN
+            -- Valor já extraído pelo source_field flattenado
+            RETURN p_value;
+
+        WHEN 'lookup' THEN
+            -- Placeholder para lookups futuros
+            RETURN p_value;
+
+        WHEN 'prefix' THEN
+            -- Tipo alternativo de prefix
+            IF p_transform_config IS NOT NULL AND p_transform_config->>'prefix' IS NOT NULL THEN
+                RETURN (p_transform_config->>'prefix') || p_value;
+            END IF;
+            RETURN p_value;
+
+        ELSE
+            -- Tipo desconhecido, retorna valor original
+            RETURN p_value;
+
+    END CASE;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_apply_transform(p_value text, p_transform_type character varying, p_transform_config jsonb, p_source_unit character varying, p_target_unit character varying, p_supplier_id uuid)
+ RETURNS text
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_result TEXT;
+    v_numeric DECIMAL;
+    v_multiplier DECIMAL;
+    v_function_name VARCHAR;
+BEGIN
+    IF p_value IS NULL OR TRIM(p_value) = '' THEN
+        RETURN NULL;
+    END IF;
+    
+    CASE p_transform_type
+        
+        WHEN 'direct' THEN
+            v_result := p_value;
+        
+        WHEN 'multiply' THEN
+            BEGIN
+                v_numeric := p_value::DECIMAL;
+                v_multiplier := (p_transform_config->>'multiplier')::DECIMAL;
+                -- CORREÇÃO: remove zeros decimais desnecessários
+                -- Antes: 510.0000  Depois: 510
+                v_result := TRIM(TRAILING '.' FROM TRIM(TRAILING '0' FROM ROUND(v_numeric * v_multiplier, 4)::TEXT));
+            EXCEPTION WHEN OTHERS THEN
+                v_result := p_value;
+            END;
+        
+        WHEN 'divide' THEN
+            BEGIN
+                v_numeric := p_value::DECIMAL;
+                v_multiplier := (p_transform_config->>'divisor')::DECIMAL;
+                IF v_multiplier != 0 THEN
+                    v_result := TRIM(TRAILING '.' FROM TRIM(TRAILING '0' FROM ROUND(v_numeric / v_multiplier, 4)::TEXT));
+                ELSE
+                    v_result := p_value;
+                END IF;
+            EXCEPTION WHEN OTHERS THEN
+                v_result := p_value;
+            END;
+        
+        WHEN 'convert_unit' THEN
+            BEGIN
+                v_numeric := p_value::DECIMAL;
+                v_result := fn_convert_unit(v_numeric, p_source_unit, p_target_unit, p_supplier_id)::TEXT;
+            EXCEPTION WHEN OTHERS THEN
+                v_result := p_value;
+            END;
+        
+        WHEN 'lookup' THEN
+            v_result := fn_map_value(
+                p_supplier_id,
+                p_transform_config->>'lookup_type',
+                p_value
+            );
+        
+        WHEN 'custom' THEN
+            BEGIN
+                v_function_name := p_transform_config->>'function';
+                CASE v_function_name
+                    WHEN 'fn_parse_capacity_ml' THEN
+                        v_result := fn_parse_capacity_ml(p_value)::TEXT;
+                    WHEN 'fn_convert_box_dimension_to_cm' THEN
+                        v_result := fn_convert_box_dimension_to_cm(p_value)::TEXT;
+                    ELSE
+                        v_result := p_value;
+                END CASE;
+            EXCEPTION WHEN OTHERS THEN
+                v_result := p_value;
+            END;
+        
+        ELSE
+            v_result := p_value;
+            
+    END CASE;
+    
+    RETURN v_result;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_audit_gravacao_changes()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_codigo TEXT;
+  v_tab_id UUID;
+BEGIN
+  -- Identificar codigo_tabela conforme origem
+  IF TG_TABLE_NAME = 'tabela_preco_gravacao_oficial' THEN
+    v_codigo := COALESCE(NEW.codigo_tabela, OLD.codigo_tabela);
+    v_tab_id := COALESCE(NEW.id, OLD.id);
+  ELSIF TG_TABLE_NAME = 'tabela_preco_gravacao_oficial_faixa' THEN
+    v_tab_id := COALESCE(NEW.id, OLD.id);
+    SELECT codigo_tabela INTO v_codigo
+    FROM tabela_preco_gravacao_oficial
+    WHERE id = COALESCE(NEW.tabela_preco_gravacao_id, OLD.tabela_preco_gravacao_id);
+  END IF;
+
+  IF TG_OP = 'INSERT' THEN
+    INSERT INTO audit_log_gravacao (tabela_origem, operacao, registro_id, codigo_tabela, valor_depois)
+    VALUES (TG_TABLE_NAME, 'INSERT', v_tab_id, v_codigo, to_jsonb(NEW));
+  ELSIF TG_OP = 'UPDATE' THEN
+    INSERT INTO audit_log_gravacao (tabela_origem, operacao, registro_id, codigo_tabela, valor_antes, valor_depois)
+    VALUES (TG_TABLE_NAME, 'UPDATE', v_tab_id, v_codigo, to_jsonb(OLD), to_jsonb(NEW));
+  ELSIF TG_OP = 'DELETE' THEN
+    INSERT INTO audit_log_gravacao (tabela_origem, operacao, registro_id, codigo_tabela, valor_antes)
+    VALUES (TG_TABLE_NAME, 'DELETE', v_tab_id, v_codigo, to_jsonb(OLD));
+  END IF;
+
+  RETURN COALESCE(NEW, OLD);
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.fn_audit_role_changes()
  RETURNS trigger
  LANGUAGE plpgsql
  SET search_path TO 'public'
-AS $function$ BEGIN RETURN COALESCE(NEW, OLD); END; $function$
-;
-
--- ----------------------------------------------------------------------------
+AS $function$ BEGIN RETURN COALESCE(NEW, OLD); END; $function$;
+CREATE OR REPLACE FUNCTION public.fn_auto_classify_packing()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_classification TEXT;
+    v_packing_result JSONB;
+    v_extract_result JSONB;
+BEGIN
+    IF NEW.packing_classification IS NOT NULL THEN
+        RETURN NEW;
+    END IF;
+    
+    -- PRIORIDADE 1: packing_type
+    IF NEW.packing_type IS NOT NULL AND TRIM(NEW.packing_type) != '' THEN
+        v_packing_result := fn_classify_packing_type(NEW.packing_type);
+        v_classification := v_packing_result->>'classification';
+        IF v_classification IS NOT NULL THEN
+            NEW.packing_classification := v_classification;
+            RETURN NEW;
+        END IF;
+    END IF;
+    
+    -- PRIORIDADE 2: descrição
+    IF NEW.description IS NOT NULL AND TRIM(NEW.description) != '' THEN
+        v_extract_result := fn_extract_packaging_from_description(NEW.description);
+        IF (v_extract_result->>'found')::BOOLEAN = TRUE THEN
+            v_packing_result := fn_classify_packing_type(v_extract_result->>'packaging_text');
+            v_classification := v_packing_result->>'classification';
+            IF v_classification IS NOT NULL THEN
+                NEW.packing_classification := v_classification;
+                RETURN NEW;
+            END IF;
+        END IF;
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_auto_classify_product_image()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_filename TEXT;
+    v_image_type TEXT;
+    v_image_type_id UUID;
+    v_is_primary BOOLEAN := FALSE;
+    v_display_order INTEGER;
+    v_existing_primary_count INTEGER;
+    v_existing_images_count INTEGER;
+BEGIN
+    -- Extrair nome do arquivo da URL original
+    v_filename := LOWER(COALESCE(
+        SUBSTRING(NEW.url_original FROM '[^/]+$'),
+        SUBSTRING(NEW.url_cdn FROM '[^/]+$'),
+        ''
+    ));
+    
+    -- ========================================
+    -- REGRA 1: Classificar por padrão da URL
+    -- ========================================
+    
+    -- Padrão _set.jpg ou _set_ → Todas as cores
+    IF v_filename ~ '_set[._-]' OR v_filename ~ '_set$' THEN
+        v_image_type := 'set';
+        v_image_type_id := 'c305d8b3-9af8-469e-aea5-88208def353f';
+    
+    -- Padrão -c.jpg ou _c.jpg → Com logo/gravação
+    ELSIF v_filename ~ '[-_]c\.' THEN
+        v_image_type := 'logo';
+        v_image_type_id := '2d5aca72-6eb9-4b16-906d-8e0f91c9bf40';
+    
+    -- Padrão _box.jpg → Embalagem
+    ELSIF v_filename ~ '_box[._-]' OR v_filename ~ '_box$' THEN
+        v_image_type := 'box';
+        v_image_type_id := 'f980378d-3ac5-4525-8941-52715f3e320f';
+    
+    -- Padrão _pouch ou _estojo → Estojo/Case
+    ELSIF v_filename ~ '_pouch[._-]' OR v_filename ~ '_estojo[._-]' THEN
+        v_image_type := 'pouch';
+        v_image_type_id := '9da408a0-21bd-4b45-b7f5-4ad5f29822da';
+    
+    -- Padrão _bag ou _sacola → Sacola
+    ELSIF v_filename ~ '_bag[._-]' OR v_filename ~ '_sacola[._-]' THEN
+        v_image_type := 'bag';
+        v_image_type_id := '196e69a9-6962-4494-8919-ee1d2737e6e7';
+    
+    -- Padrão _amb ou _ambiente ou _lifestyle → Ambiente
+    ELSIF v_filename ~ '_amb[._-]' OR v_filename ~ '_ambiente[._-]' OR v_filename ~ '_lifestyle[._-]' THEN
+        v_image_type := 'ambient';
+        v_image_type_id := 'e8bf8d1f-b6f5-47c1-953b-616d354318a6';
+    
+    -- Padrão _det ou _detalhe ou _detail → Detalhe/Close-up
+    ELSIF v_filename ~ '_det[._-]' OR v_filename ~ '_detalhe[._-]' OR v_filename ~ '_detail[._-]' THEN
+        v_image_type := 'detail';
+        v_image_type_id := '055e7e81-61c5-4546-a43c-3256a581966e';
+    
+    -- Padrão -d.jpg ou -e.jpg (variações SPOT) → Gallery
+    ELSIF v_filename ~ '[-_][de]\.' THEN
+        v_image_type := 'gallery';
+        v_image_type_id := '1590e144-e3f8-41e6-98f9-f4a25bae496d';
+    
+    -- Padrão _XXX.jpg (3 dígitos = código de cor) → Potencial Main ou Gallery
+    ELSIF v_filename ~ '_\d{3}\.' THEN
+        -- Verificar se já existe imagem principal para este produto
+        SELECT COUNT(*) INTO v_existing_primary_count
+        FROM product_images 
+        WHERE product_id = NEW.product_id 
+          AND is_primary = TRUE
+          AND is_active = TRUE;
+        
+        IF v_existing_primary_count = 0 THEN
+            -- Primeira imagem com código de cor vira a principal
+            v_image_type := 'main';
+            v_image_type_id := '7ea182ff-edcc-4c4c-b7a1-443b07500f6c';
+            v_is_primary := TRUE;
+        ELSE
+            -- Demais viram gallery
+            v_image_type := 'gallery';
+            v_image_type_id := '1590e144-e3f8-41e6-98f9-f4a25bae496d';
+        END IF;
+    
+    -- Padrão _a.jpg (imagem adicional) → Gallery
+    ELSIF v_filename ~ '_[a-z]\.' AND v_filename !~ '[-_]c\.' THEN
+        v_image_type := 'gallery';
+        v_image_type_id := '1590e144-e3f8-41e6-98f9-f4a25bae496d';
+    
+    -- Se já veio classificado corretamente, manter
+    ELSIF NEW.image_type IS NOT NULL AND NEW.image_type != 'other' AND NEW.image_type != '' THEN
+        v_image_type := NEW.image_type;
+        v_image_type_id := NEW.image_type_id;
+    
+    -- Default: other (não classificado)
+    ELSE
+        v_image_type := 'other';
+        v_image_type_id := '953d054a-3bbc-4954-a319-b3c806ac596f';
+    END IF;
+    
+    -- ========================================
+    -- REGRA 2: Verificar se deve ser primary
+    -- ========================================
+    
+    -- Se ainda não definiu como primary, verificar
+    IF NOT v_is_primary THEN
+        -- Contar imagens existentes do produto
+        SELECT COUNT(*) INTO v_existing_primary_count
+        FROM product_images 
+        WHERE product_id = NEW.product_id 
+          AND is_primary = TRUE
+          AND is_active = TRUE;
+        
+        -- Se não existe primary E esta é tipo 'main', definir como primary
+        IF v_existing_primary_count = 0 AND v_image_type = 'main' THEN
+            v_is_primary := TRUE;
+        END IF;
+    END IF;
+    
+    -- ========================================
+    -- REGRA 3: Calcular display_order
+    -- ========================================
+    
+    -- Se não veio definido ou é 0, calcular automaticamente
+    IF NEW.display_order IS NULL OR NEW.display_order = 0 THEN
+        SELECT COALESCE(MAX(display_order), 0) + 1 INTO v_display_order
+        FROM product_images 
+        WHERE product_id = NEW.product_id
+          AND is_active = TRUE;
+    ELSE
+        v_display_order := NEW.display_order;
+    END IF;
+    
+    -- ========================================
+    -- REGRA 4: Aplicar valores calculados
+    -- ========================================
+    
+    NEW.image_type := v_image_type;
+    NEW.image_type_id := v_image_type_id;
+    NEW.is_primary := v_is_primary;
+    NEW.display_order := v_display_order;
+    
+    -- Se é primary, também marcar como og_image
+    IF v_is_primary THEN
+        NEW.is_og_image := TRUE;
+    END IF;
+    
+    -- Garantir is_active = true se não definido
+    IF NEW.is_active IS NULL THEN
+        NEW.is_active := TRUE;
+    END IF;
+    
+    -- Registrar no log (opcional - para debug)
+    RAISE NOTICE 'Auto-classify: % -> type=%, primary=%, order=%', 
+                 v_filename, v_image_type, v_is_primary, v_display_order;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_auto_criar_equivalencia_spot()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_variation_id UUID;
+    v_confidence INT;
+    v_note TEXT;
+BEGIN
+    -- Verificar se já existe equivalência
+    IF EXISTS (
+        SELECT 1 FROM color_equivalences 
+        WHERE supplier_color_id = NEW.id
+    ) THEN
+        RETURN NEW;
+    END IF;
+    
+    -- Buscar melhor match por nome
+    SELECT 
+        cv.id,
+        CASE 
+            WHEN LOWER(TRIM(cv.name)) = LOWER(TRIM(NEW.name)) THEN 100
+            WHEN LOWER(cv.name) LIKE LOWER(TRIM(NEW.name)) || '%' THEN 95
+            WHEN LOWER(TRIM(NEW.name)) LIKE LOWER(cv.name) || '%' THEN 90
+            ELSE 80
+        END,
+        CASE 
+            WHEN LOWER(TRIM(cv.name)) = LOWER(TRIM(NEW.name)) THEN 'Match exato automático'
+            ELSE 'Match por similaridade automático'
+        END
+    INTO v_variation_id, v_confidence, v_note
+    FROM color_variations cv
+    WHERE cv.is_active = true
+      AND (
+          LOWER(TRIM(cv.name)) = LOWER(TRIM(NEW.name))
+          OR LOWER(cv.name) LIKE LOWER(TRIM(NEW.name)) || '%'
+          OR LOWER(TRIM(NEW.name)) LIKE LOWER(cv.name) || '%'
+      )
+    ORDER BY 
+        CASE WHEN LOWER(TRIM(cv.name)) = LOWER(TRIM(NEW.name)) THEN 1 ELSE 2 END,
+        LENGTH(cv.name)
+    LIMIT 1;
+    
+    -- Se encontrou match, criar equivalência
+    IF v_variation_id IS NOT NULL THEN
+        INSERT INTO color_equivalences (
+            organization_id,
+            supplier_color_id,
+            promo_variation_id,
+            confidence_score,
+            verified,
+            source,
+            notes,
+            is_active
+        ) VALUES (
+            NEW.organization_id,
+            NEW.id,
+            v_variation_id,
+            v_confidence,
+            false,  -- Não verificado (automático)
+            'automatic_trigger',
+            v_note,
+            true
+        );
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_auto_discover_compatible_packagings(p_product_id uuid, p_min_fit_rating character varying DEFAULT 'good'::character varying)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_count_discovered INT := 0;
+    v_count_existing INT := 0;
+    v_count_incompatible INT := 0;
+    v_packaging RECORD;
+    v_fit JSONB;
+    v_valid_ratings TEXT[];
+BEGIN
+    -- Determinar ratings válidos baseado no mínimo solicitado
+    IF p_min_fit_rating = 'tight' THEN
+        v_valid_ratings := ARRAY['tight', 'good', 'loose'];
+    ELSIF p_min_fit_rating = 'good' THEN
+        v_valid_ratings := ARRAY['good', 'loose'];
+    ELSIF p_min_fit_rating = 'loose' THEN
+        v_valid_ratings := ARRAY['loose'];
+    ELSE
+        v_valid_ratings := ARRAY['good', 'loose'];  -- Default
+    END IF;
+    
+    -- Verificar se produto existe
+    IF NOT EXISTS (SELECT 1 FROM products WHERE id = p_product_id) THEN
+        RETURN jsonb_build_object(
+            'success', FALSE,
+            'error', 'Produto não encontrado'
+        );
+    END IF;
+    
+    -- Iterar sobre todas as embalagens ativas com dimensões
+    FOR v_packaging IN 
+        SELECT id, name 
+        FROM products 
+        WHERE product_type = 'packaging' 
+          AND active = TRUE
+          AND internal_height_cm IS NOT NULL
+    LOOP
+        -- Verificar se já existe compatibilidade
+        IF EXISTS (
+            SELECT 1 FROM product_packaging_compatibility 
+            WHERE product_id = p_product_id AND packaging_id = v_packaging.id
+        ) THEN
+            v_count_existing := v_count_existing + 1;
+            CONTINUE;
+        END IF;
+        
+        -- Calcular fit usando função existente
+        v_fit := fn_calculate_packaging_fit(p_product_id, v_packaging.id);
+        
+        -- Verificar se é compatível e atende o rating mínimo
+        IF (v_fit->>'compatible')::BOOLEAN AND (v_fit->>'fit_rating') = ANY(v_valid_ratings) THEN
+            -- Inserir compatibilidade
+            INSERT INTO product_packaging_compatibility (
+                product_id,
+                packaging_id,
+                compatibility_source,
+                fit_gap_height_mm,
+                fit_gap_width_mm,
+                fit_gap_length_mm,
+                fit_gap_diameter_mm,
+                fit_gap_min_mm,
+                fit_gap_avg_mm,
+                fit_rating
+            ) VALUES (
+                p_product_id,
+                v_packaging.id,
+                'dimension_calculated',
+                (v_fit->>'gap_height_mm')::DECIMAL,
+                (v_fit->>'gap_width_mm')::DECIMAL,
+                (v_fit->>'gap_length_mm')::DECIMAL,
+                (v_fit->>'gap_diameter_mm')::DECIMAL,
+                (v_fit->>'gap_min_mm')::DECIMAL,
+                (v_fit->>'gap_avg_mm')::DECIMAL,
+                v_fit->>'fit_rating'
+            );
+            
+            v_count_discovered := v_count_discovered + 1;
+        ELSE
+            v_count_incompatible := v_count_incompatible + 1;
+        END IF;
+    END LOOP;
+    
+    RETURN jsonb_build_object(
+        'success', TRUE,
+        'product_id', p_product_id,
+        'min_fit_rating', p_min_fit_rating,
+        'discovered', v_count_discovered,
+        'already_existed', v_count_existing,
+        'incompatible', v_count_incompatible,
+        'total_checked', v_count_discovered + v_count_existing + v_count_incompatible
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_auto_link_commemorative_dates(p_product_id uuid)
+ RETURNS integer
+ LANGUAGE plpgsql
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_category_id UUID;
+    v_category_name TEXT;
+    v_date_record RECORD;
+    v_linked_count INTEGER := 0;
+    
+    -- Mapeamento de categorias → datas comemorativas
+    v_category_date_map JSONB := '{
+        "dia das maes": ["dia-das-maes"],
+        "dia dos pais": ["dia-dos-pais"],
+        "natal": ["natal", "ano-novo"],
+        "pascoa": ["pascoa"],
+        "dia das criancas": ["dia-das-criancas"],
+        "dia dos namorados": ["dia-dos-namorados"],
+        "saude": ["dia-do-medico", "dia-do-enfermeiro", "dia-da-saude"],
+        "tecnologia": ["dia-do-programador", "dia-da-informatica"],
+        "escritorio": ["dia-do-contador", "dia-da-secretaria", "dia-do-advogado"],
+        "esporte": ["dia-do-esportista", "olimpiadas"],
+        "pet": ["dia-dos-animais", "dia-do-veterinario"],
+        "veiculos": ["dia-do-motorista", "dia-do-caminhoneiro"],
+        "bar cozinha": ["dia-do-chef", "dia-do-barman"],
+        "jardim": ["dia-do-jardineiro", "dia-da-arvore"],
+        "beleza": ["dia-da-mulher", "dia-do-esteticista"],
+        "professor": ["dia-do-professor"],
+        "engenheiro": ["dia-do-engenheiro"],
+        "arquiteto": ["dia-do-arquiteto"],
+        "agro": ["dia-do-agricultor", "dia-do-fazendeiro"]
+    }'::JSONB;
+BEGIN
+    -- 1. Buscar categoria do produto
+    SELECT c.id, LOWER(unaccent(c.name))
+    INTO v_category_id, v_category_name
+    FROM products p
+    JOIN categories c ON c.id = p.category_id
+    WHERE p.id = p_product_id;
+    
+    IF v_category_id IS NULL THEN
+        RETURN 0;
+    END IF;
+    
+    -- 2. Buscar datas relacionadas à categoria
+    FOR v_date_record IN (
+        SELECT cd.id AS date_id, cd.name AS date_name
+        FROM commemorative_dates cd
+        WHERE (
+            -- Match por nome da categoria
+            v_category_name ILIKE '%' || LOWER(cd.target_audience) || '%'
+            OR LOWER(cd.target_audience) ILIKE '%' || v_category_name || '%'
+            -- Match por categoria genérica
+            OR cd.target_audience = 'todos'
+        )
+    )
+    LOOP
+        -- Inserir vínculo
+        INSERT INTO product_commemorative_dates (
+            product_id,
+            commemorative_date_id,
+            relevance_score,
+            source,
+            created_at
+        )
+        VALUES (
+            p_product_id,
+            v_date_record.date_id,
+            CASE 
+                WHEN v_date_record.date_name ILIKE '%' || v_category_name || '%' THEN 10
+                ELSE 5
+            END,
+            'auto',
+            NOW()
+        )
+        ON CONFLICT (product_id, commemorative_date_id) DO NOTHING;
+        
+        IF FOUND THEN
+            v_linked_count := v_linked_count + 1;
+        END IF;
+    END LOOP;
+    
+    -- 3. Verificar mapeamento específico
+    FOR v_date_record IN (
+        SELECT cd.id AS date_id
+        FROM commemorative_dates cd
+        WHERE cd.slug = ANY(
+            SELECT jsonb_array_elements_text(
+                v_category_date_map->(
+                    SELECT key FROM jsonb_each_text(v_category_date_map)
+                    WHERE v_category_name ILIKE '%' || key || '%'
+                    LIMIT 1
+                )
+            )
+        )
+    )
+    LOOP
+        INSERT INTO product_commemorative_dates (
+            product_id,
+            commemorative_date_id,
+            relevance_score,
+            source,
+            created_at
+        )
+        VALUES (
+            p_product_id,
+            v_date_record.date_id,
+            8,
+            'auto_mapped',
+            NOW()
+        )
+        ON CONFLICT (product_id, commemorative_date_id) DO UPDATE SET
+            relevance_score = GREATEST(product_commemorative_dates.relevance_score, 8);
+        
+        v_linked_count := v_linked_count + 1;
+    END LOOP;
+    
+    RETURN v_linked_count;
+    
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Erro vinculando datas comemorativas do produto %: %', p_product_id, SQLERRM;
+    RETURN 0;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_auto_link_eco(p_product_id uuid)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_material_name TEXT;
+    v_is_eco BOOLEAN := FALSE;
+    v_eco_tag_id UUID;
+    v_eco_materials TEXT[] := ARRAY[
+        'bambu', 'bamboo', 'cortiça', 'cork', 'juta', 'juco',
+        'algodão orgânico', 'organic cotton', 'reciclado', 'recycled',
+        'rpet', 'pet reciclado', 'kraft', 'palha de trigo', 'wheat straw',
+        'fibra de bambu', 'bamboo fiber', 'madeira', 'wood', 'algodão reciclado'
+    ];
+    i INTEGER;
+BEGIN
+    -- 1. Buscar material do produto (primeiro de product_materials)
+    SELECT LOWER(mt.name) INTO v_material_name
+    FROM product_materials pm
+    JOIN material_types mt ON mt.id = pm.material_id
+    WHERE pm.product_id = p_product_id
+    LIMIT 1;
+    
+    -- Se não encontrou em product_materials, tentar em supplier_products_raw
+    IF v_material_name IS NULL THEN
+        SELECT LOWER(raw_data->>'Materials')
+        INTO v_material_name
+        FROM supplier_products_raw
+        WHERE product_id = p_product_id
+        LIMIT 1;
+    END IF;
+    
+    IF v_material_name IS NULL OR v_material_name = '' THEN
+        RETURN FALSE;
+    END IF;
+    
+    -- 2. Verificar se é material ECO
+    FOR i IN 1..array_length(v_eco_materials, 1)
+    LOOP
+        IF v_material_name ILIKE '%' || v_eco_materials[i] || '%' THEN
+            v_is_eco := TRUE;
+            EXIT;
+        END IF;
+    END LOOP;
+    
+    -- 3. Se é ECO, vincular tag
+    IF v_is_eco THEN
+        -- Buscar tag ECO (pode ter vários nomes)
+        SELECT id INTO v_eco_tag_id
+        FROM tags
+        WHERE LOWER(name) IN ('eco-friendly', 'ecológico', 'sustentável', 'eco', 'sustentavel')
+           OR LOWER(slug) IN ('eco-friendly', 'ecologico', 'sustentavel', 'eco')
+        LIMIT 1;
+        
+        IF v_eco_tag_id IS NOT NULL THEN
+            INSERT INTO product_tags (product_id, tag_id, created_at)
+            VALUES (p_product_id, v_eco_tag_id, NOW())
+            ON CONFLICT (product_id, tag_id) DO NOTHING;
+            
+            RAISE NOTICE 'ECO tag vinculada para produto %', p_product_id;
+        ELSE
+            RAISE NOTICE 'Tag ECO não encontrada no banco';
+        END IF;
+    END IF;
+    
+    RETURN v_is_eco;
+    
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Erro vinculando ECO do produto %: %', p_product_id, SQLERRM;
+    RETURN FALSE;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_auto_link_eco_material()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    -- IDs fixos das entidades eco
+    v_ecologia_category_id UUID := '896277ce-50ee-4bf5-9e5f-c118e6b4a36a';  -- Categoria Ecologia (L1)
+    v_meio_ambiente_date_id UUID := '11b59fa3-14f1-4f5b-8c92-2e9bcb03e216'; -- Dia do Meio Ambiente (5/jun)
+    v_is_eco BOOLEAN;
+BEGIN
+    -- Verifica se material é ecológico (e está ativo)
+    SELECT EXISTS(
+        SELECT 1 FROM eco_material_config 
+        WHERE material_id = NEW.material_id
+          AND is_active = TRUE
+    ) INTO v_is_eco;
+    
+    IF v_is_eco THEN
+        
+        -- ═══════════════════════════════════════════════════════════════════
+        -- LINK 1: Categoria ECOLOGIA
+        -- ═══════════════════════════════════════════════════════════════════
+        INSERT INTO product_category_assignments (
+            product_id,
+            category_id,
+            is_primary,
+            created_at
+        )
+        VALUES (
+            NEW.product_id,
+            v_ecologia_category_id,
+            FALSE,  -- Nunca é categoria primária (é transversal)
+            NOW()
+        )
+        ON CONFLICT (product_id, category_id) DO NOTHING;
+        
+        -- ═══════════════════════════════════════════════════════════════════
+        -- LINK 2: Data Comemorativa DIA DO MEIO AMBIENTE
+        -- ═══════════════════════════════════════════════════════════════════
+        INSERT INTO product_commemorative_dates (
+            product_id,
+            commemorative_date_id,
+            created_at
+        )
+        VALUES (
+            NEW.product_id,
+            v_meio_ambiente_date_id,
+            NOW()
+        )
+        ON CONFLICT (product_id, commemorative_date_id) DO NOTHING;
+        
+        -- Log opcional (pode comentar em produção)
+        RAISE NOTICE 'Auto-link ECO: Produto % vinculado a Ecologia e Dia do Meio Ambiente', NEW.product_id;
+        
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_auto_link_feminine_color()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    -- IDs fixos das datas comemorativas
+    v_dia_mulher_id UUID := 'ba801bb8-b48f-4b02-be72-4670584d92c0';   -- Dia Internacional da Mulher (8/mar)
+    v_dia_maes_id UUID := 'cdecfcac-e4f4-43a3-8839-196acf05ee5b';     -- Dia das Mães (maio)
+    v_is_feminine BOOLEAN := FALSE;
+    v_color_group_id UUID;
+BEGIN
+    -- Verifica se a variante tem cor definida
+    IF NEW.color_id IS NULL THEN
+        RETURN NEW;
+    END IF;
+    
+    -- Busca o group_id da cor na tabela color_variations
+    SELECT cv.group_id INTO v_color_group_id
+    FROM color_variations cv
+    WHERE cv.id = NEW.color_id;
+    
+    -- Se não encontrou em color_variations, tenta em supplier_colors via color_equivalences
+    IF v_color_group_id IS NULL THEN
+        -- Busca via mapeamento supplier_colors → color_variations → group_id
+        SELECT cv.group_id INTO v_color_group_id
+        FROM color_equivalences ce
+        JOIN color_variations cv ON cv.id = ce.promo_variation_id
+        WHERE ce.supplier_color_id = NEW.color_id;
+    END IF;
+    
+    -- Verifica se o grupo de cor é feminino
+    IF v_color_group_id IS NOT NULL THEN
+        SELECT EXISTS(
+            SELECT 1 FROM feminine_color_config 
+            WHERE color_group_id = v_color_group_id
+              AND is_active = TRUE
+        ) INTO v_is_feminine;
+    END IF;
+    
+    IF v_is_feminine THEN
+        
+        -- ═══════════════════════════════════════════════════════════════════
+        -- LINK 1: Atualizar target_audience do PRODUTO pai
+        -- CORREÇÃO: Usar ARRAY em vez de TEXT simples
+        -- ═══════════════════════════════════════════════════════════════════
+        UPDATE products
+        SET target_audience = CASE 
+                WHEN target_audience IS NULL THEN ARRAY['feminino']
+                WHEN NOT ('feminino' = ANY(target_audience)) THEN array_append(target_audience, 'feminino')
+                ELSE target_audience
+            END,
+            updated_at = NOW()
+        WHERE id = NEW.product_id;
+        
+        -- ═══════════════════════════════════════════════════════════════════
+        -- LINK 2: Data Comemorativa DIA INTERNACIONAL DA MULHER
+        -- ═══════════════════════════════════════════════════════════════════
+        INSERT INTO product_commemorative_dates (
+            product_id,
+            commemorative_date_id,
+            created_at
+        )
+        VALUES (
+            NEW.product_id,
+            v_dia_mulher_id,
+            NOW()
+        )
+        ON CONFLICT (product_id, commemorative_date_id) DO NOTHING;
+        
+        -- ═══════════════════════════════════════════════════════════════════
+        -- LINK 3: Data Comemorativa DIA DAS MÃES
+        -- ═══════════════════════════════════════════════════════════════════
+        INSERT INTO product_commemorative_dates (
+            product_id,
+            commemorative_date_id,
+            created_at
+        )
+        VALUES (
+            NEW.product_id,
+            v_dia_maes_id,
+            NOW()
+        )
+        ON CONFLICT (product_id, commemorative_date_id) DO NOTHING;
+        
+        -- Log opcional (pode comentar em produção)
+        RAISE NOTICE 'Auto-link FEMININO: Produto % vinculado a target_audience=feminino, Dia da Mulher e Dia das Mães', NEW.product_id;
+        
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_auto_link_feminino(p_product_id uuid)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_color_name TEXT;
+    v_is_feminine BOOLEAN := FALSE;
+    v_feminine_tag_id UUID;
+    v_feminine_colors TEXT[] := ARRAY[
+        'rosa', 'pink', 'roxo', 'purple', 'lilás', 'lilac', 'violeta', 'violet',
+        'rose', 'magenta', 'fuchsia', 'lavanda', 'lavender'
+    ];
+    i INTEGER;
+BEGIN
+    -- 1. Primeiro tentar em raw_data (mais confiável para produtos novos)
+    SELECT LOWER(raw_data->>'Colors')
+    INTO v_color_name
+    FROM supplier_products_raw
+    WHERE product_id = p_product_id
+    LIMIT 1;
+    
+    -- Se não encontrou, tentar em product_variants
+    IF v_color_name IS NULL OR v_color_name = '' THEN
+        SELECT LOWER(pv.color_name) INTO v_color_name
+        FROM product_variants pv
+        WHERE pv.product_id = p_product_id
+          AND pv.color_name IS NOT NULL
+        LIMIT 1;
+    END IF;
+    
+    IF v_color_name IS NULL OR v_color_name = '' THEN
+        RETURN FALSE;
+    END IF;
+    
+    -- 2. Verificar se tem cor feminina
+    FOR i IN 1..array_length(v_feminine_colors, 1)
+    LOOP
+        IF v_color_name ILIKE '%' || v_feminine_colors[i] || '%' THEN
+            v_is_feminine := TRUE;
+            EXIT;
+        END IF;
+    END LOOP;
+    
+    -- 3. Se é feminino, vincular tag
+    IF v_is_feminine THEN
+        -- Buscar tag Feminino
+        SELECT id INTO v_feminine_tag_id
+        FROM tags
+        WHERE LOWER(name) IN ('feminino', 'feminine', 'mulher', 'women', 'para ela', 'for her')
+           OR LOWER(slug) IN ('feminino', 'feminine', 'mulher', 'women')
+        LIMIT 1;
+        
+        IF v_feminine_tag_id IS NOT NULL THEN
+            INSERT INTO product_tags (product_id, tag_id, created_at)
+            VALUES (p_product_id, v_feminine_tag_id, NOW())
+            ON CONFLICT (product_id, tag_id) DO NOTHING;
+            
+            RAISE NOTICE 'FEMININO tag vinculada para produto %', p_product_id;
+        ELSE
+            RAISE NOTICE 'Tag FEMININO não encontrada no banco';
+        END IF;
+        
+        -- Atualizar target_audience do produto (se campo existir)
+        BEGIN
+            UPDATE products SET 
+                target_audience = COALESCE(target_audience, 'feminino'),
+                updated_at = NOW()
+            WHERE id = p_product_id
+              AND (target_audience IS NULL OR target_audience = '');
+        EXCEPTION WHEN OTHERS THEN
+            -- Campo pode não existir, ignorar
+            NULL;
+        END;
+    END IF;
+    
+    RETURN v_is_feminine;
+    
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Erro vinculando FEMININO do produto %: %', p_product_id, SQLERRM;
+    RETURN FALSE;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_auto_link_product_to_color_categories(p_product_id uuid, p_color_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_group_id UUID;
+    v_category RECORD;
+    v_count_inserted INTEGER := 0;
+    v_count_existing INTEGER := 0;
+    v_categories_linked TEXT[] := '{}';
+BEGIN
+    IF p_product_id IS NULL OR p_color_id IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', 'NULL params', 'inserted', 0);
+    END IF;
+    
+    -- BUSCAR group_id na color_variations
+    SELECT cv.group_id INTO v_group_id
+    FROM color_variations cv
+    WHERE cv.id = p_color_id;
+    
+    IF v_group_id IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Sem group_id', 'inserted', 0);
+    END IF;
+    
+    -- LOOP pelas categorias que usam esse GRUPO
+    FOR v_category IN 
+        SELECT cc.category_id, c.name AS category_name
+        FROM category_colors cc
+        JOIN categories c ON c.id = cc.category_id
+        WHERE cc.color_group_id = v_group_id
+          AND cc.is_active = true
+          AND c.is_active = true
+    LOOP
+        BEGIN
+            INSERT INTO product_category_assignments (product_id, category_id, is_primary, display_order, created_at)
+            VALUES (p_product_id, v_category.category_id, false, 99, NOW());
+            
+            v_count_inserted := v_count_inserted + 1;
+            v_categories_linked := array_append(v_categories_linked, v_category.category_name);
+        EXCEPTION WHEN unique_violation THEN
+            v_count_existing := v_count_existing + 1;
+        END;
+    END LOOP;
+    
+    RETURN jsonb_build_object(
+        'success', true,
+        'product_id', p_product_id,
+        'color_id', p_color_id,
+        'group_id', v_group_id,
+        'inserted', v_count_inserted,
+        'existing', v_count_existing,
+        'categories_linked', v_categories_linked
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_auto_link_properties(p_product_id uuid, p_supplier_id uuid DEFAULT 'bcfc0d02-44c6-48ae-8472-12b1a3f3d8e0'::uuid)
+ RETURNS integer
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_raw_data JSONB;
+    v_name TEXT;
+    v_description TEXT;
+    v_properties TEXT;
+    v_certificates TEXT;
+    v_property_id UUID;
+    v_property_code TEXT;
+    v_linked_count INTEGER := 0;
+    v_prop_item TEXT;
+    v_prop_array TEXT[];
+BEGIN
+    -- 1. Buscar raw_data completo
+    SELECT raw_data
+    INTO v_raw_data
+    FROM supplier_products_raw
+    WHERE product_id = p_product_id
+      AND supplier_id = p_supplier_id
+    LIMIT 1;
+    
+    IF v_raw_data IS NULL THEN
+        RETURN 0;
+    END IF;
+    
+    v_name := LOWER(COALESCE(v_raw_data->>'Name', ''));
+    v_description := LOWER(COALESCE(v_raw_data->>'Description', ''));
+    v_properties := COALESCE(v_raw_data->>'Properties', '');
+    v_certificates := COALESCE(v_raw_data->>'Certificates', '');
+    
+    -- ═══════════════════════════════════════════════════════════════════════
+    -- 2. EXTRAIR DO CAMPO Properties (ex: "Apropriado para comida, BPA free")
+    -- ═══════════════════════════════════════════════════════════════════════
+    
+    IF v_properties != '' THEN
+        v_prop_array := string_to_array(v_properties, ',');
+        
+        FOREACH v_prop_item IN ARRAY v_prop_array
+        LOOP
+            v_prop_item := LOWER(TRIM(v_prop_item));
+            
+            -- FOOD_SAFE
+            IF v_prop_item ILIKE '%apropriado para comida%' OR v_prop_item ILIKE '%food safe%' THEN
+                SELECT id, code INTO v_property_id, v_property_code
+                FROM property_definitions WHERE code = 'FOOD_SAFE' LIMIT 1;
+                IF v_property_id IS NOT NULL THEN
+                    INSERT INTO product_properties (product_id, property_definition_id, property_code, property_value, source)
+                    VALUES (p_product_id, v_property_id, v_property_code, 'true', 'api_spot')
+                    ON CONFLICT (product_id, property_definition_id) DO NOTHING;
+                    IF FOUND THEN v_linked_count := v_linked_count + 1; END IF;
+                END IF;
+            END IF;
+            
+            -- BPA_FREE
+            IF v_prop_item ILIKE '%bpa free%' OR v_prop_item ILIKE '%bpa%' THEN
+                SELECT id, code INTO v_property_id, v_property_code
+                FROM property_definitions WHERE code = 'BPA_FREE' LIMIT 1;
+                IF v_property_id IS NOT NULL THEN
+                    INSERT INTO product_properties (product_id, property_definition_id, property_code, property_value, source)
+                    VALUES (p_product_id, v_property_id, v_property_code, 'true', 'api_spot')
+                    ON CONFLICT (product_id, property_definition_id) DO NOTHING;
+                    IF FOUND THEN v_linked_count := v_linked_count + 1; END IF;
+                END IF;
+            END IF;
+            
+            -- THERMAL_COLD
+            IF v_prop_item ILIKE '%bebidas frias%' OR v_prop_item ILIKE '%cold%' THEN
+                SELECT id, code INTO v_property_id, v_property_code
+                FROM property_definitions WHERE code = 'THERMAL_COLD' LIMIT 1;
+                IF v_property_id IS NOT NULL THEN
+                    INSERT INTO product_properties (product_id, property_definition_id, property_code, property_value, source)
+                    VALUES (p_product_id, v_property_id, v_property_code, 'true', 'api_spot')
+                    ON CONFLICT (product_id, property_definition_id) DO NOTHING;
+                    IF FOUND THEN v_linked_count := v_linked_count + 1; END IF;
+                END IF;
+            END IF;
+            
+            -- THERMAL_HOT
+            IF v_prop_item ILIKE '%bebidas quentes%' OR v_prop_item ILIKE '%hot%' THEN
+                SELECT id, code INTO v_property_id, v_property_code
+                FROM property_definitions WHERE code = 'THERMAL_HOT' LIMIT 1;
+                IF v_property_id IS NOT NULL THEN
+                    INSERT INTO product_properties (product_id, property_definition_id, property_code, property_value, source)
+                    VALUES (p_product_id, v_property_id, v_property_code, 'true', 'api_spot')
+                    ON CONFLICT (product_id, property_definition_id) DO NOTHING;
+                    IF FOUND THEN v_linked_count := v_linked_count + 1; END IF;
+                END IF;
+            END IF;
+            
+            -- DOUBLE_WALL (parede dupla)
+            IF v_prop_item ILIKE '%parede dupla%' OR v_prop_item ILIKE '%double wall%' THEN
+                SELECT id, code INTO v_property_id, v_property_code
+                FROM property_definitions WHERE code = 'DOUBLE_WALL' LIMIT 1;
+                IF v_property_id IS NOT NULL THEN
+                    INSERT INTO product_properties (product_id, property_definition_id, property_code, property_value, source)
+                    VALUES (p_product_id, v_property_id, v_property_code, 'true', 'api_spot')
+                    ON CONFLICT (product_id, property_definition_id) DO NOTHING;
+                    IF FOUND THEN v_linked_count := v_linked_count + 1; END IF;
+                END IF;
+            END IF;
+            
+            -- STAINLESS_STEEL (aço inox)
+            IF v_prop_item ILIKE '%aço inox%' OR v_prop_item ILIKE '%stainless%' THEN
+                SELECT id, code INTO v_property_id, v_property_code
+                FROM property_definitions WHERE code = 'STAINLESS_STEEL' LIMIT 1;
+                IF v_property_id IS NOT NULL THEN
+                    INSERT INTO product_properties (product_id, property_definition_id, property_code, property_value, source)
+                    VALUES (p_product_id, v_property_id, v_property_code, 'true', 'api_spot')
+                    ON CONFLICT (product_id, property_definition_id) DO NOTHING;
+                    IF FOUND THEN v_linked_count := v_linked_count + 1; END IF;
+                END IF;
+            END IF;
+            
+            -- GIFT_BOX (caixa de oferta)
+            IF v_prop_item ILIKE '%caixa de oferta%' OR v_prop_item ILIKE '%gift box%' THEN
+                SELECT id, code INTO v_property_id, v_property_code
+                FROM property_definitions WHERE code = 'GIFT_BOX' LIMIT 1;
+                IF v_property_id IS NOT NULL THEN
+                    INSERT INTO product_properties (product_id, property_definition_id, property_code, property_value, source)
+                    VALUES (p_product_id, v_property_id, v_property_code, 'true', 'api_spot')
+                    ON CONFLICT (product_id, property_definition_id) DO NOTHING;
+                    IF FOUND THEN v_linked_count := v_linked_count + 1; END IF;
+                END IF;
+            END IF;
+            
+            -- ECO_FRIENDLY (our nature)
+            IF v_prop_item ILIKE '%our nature%' OR v_prop_item ILIKE '%eco%' THEN
+                SELECT id, code INTO v_property_id, v_property_code
+                FROM property_definitions WHERE code = 'ECO_FRIENDLY' OR code = 'OUR_NATURE' LIMIT 1;
+                IF v_property_id IS NOT NULL THEN
+                    INSERT INTO product_properties (product_id, property_definition_id, property_code, property_value, source)
+                    VALUES (p_product_id, v_property_id, v_property_code, 'true', 'api_spot')
+                    ON CONFLICT (product_id, property_definition_id) DO NOTHING;
+                    IF FOUND THEN v_linked_count := v_linked_count + 1; END IF;
+                END IF;
+            END IF;
+            
+            -- MADE_IN_BRAZIL (fabricado no Brasil)
+            IF v_prop_item ILIKE '%fabricado no brasil%' OR v_prop_item ILIKE '%made in brazil%' THEN
+                SELECT id, code INTO v_property_id, v_property_code
+                FROM property_definitions WHERE code = 'MADE_IN_BRAZIL' LIMIT 1;
+                IF v_property_id IS NOT NULL THEN
+                    INSERT INTO product_properties (product_id, property_definition_id, property_code, property_value, source)
+                    VALUES (p_product_id, v_property_id, v_property_code, 'true', 'api_spot')
+                    ON CONFLICT (product_id, property_definition_id) DO NOTHING;
+                    IF FOUND THEN v_linked_count := v_linked_count + 1; END IF;
+                END IF;
+            END IF;
+            
+            -- BLUE_INK (escrita a azul)
+            IF v_prop_item ILIKE '%escrita a azul%' OR v_prop_item ILIKE '%blue ink%' THEN
+                SELECT id, code INTO v_property_id, v_property_code
+                FROM property_definitions WHERE code = 'BLUE_INK' LIMIT 1;
+                IF v_property_id IS NOT NULL THEN
+                    INSERT INTO product_properties (product_id, property_definition_id, property_code, property_value, source)
+                    VALUES (p_product_id, v_property_id, v_property_code, 'true', 'api_spot')
+                    ON CONFLICT (product_id, property_definition_id) DO NOTHING;
+                    IF FOUND THEN v_linked_count := v_linked_count + 1; END IF;
+                END IF;
+            END IF;
+            
+            -- BLACK_INK (escrita a preto)
+            IF v_prop_item ILIKE '%escrita a preto%' OR v_prop_item ILIKE '%black ink%' THEN
+                SELECT id, code INTO v_property_id, v_property_code
+                FROM property_definitions WHERE code = 'BLACK_INK' LIMIT 1;
+                IF v_property_id IS NOT NULL THEN
+                    INSERT INTO product_properties (product_id, property_definition_id, property_code, property_value, source)
+                    VALUES (p_product_id, v_property_id, v_property_code, 'true', 'api_spot')
+                    ON CONFLICT (product_id, property_definition_id) DO NOTHING;
+                    IF FOUND THEN v_linked_count := v_linked_count + 1; END IF;
+                END IF;
+            END IF;
+            
+        END LOOP;
+    END IF;
+    
+    -- ═══════════════════════════════════════════════════════════════════════
+    -- 3. EXTRAIR DO CAMPO Certificates (ex: "Food Safety, BPA Free, REACH")
+    -- ═══════════════════════════════════════════════════════════════════════
+    
+    IF v_certificates != '' THEN
+        v_prop_array := string_to_array(v_certificates, ',');
+        
+        FOREACH v_prop_item IN ARRAY v_prop_array
+        LOOP
+            v_prop_item := LOWER(TRIM(v_prop_item));
+            
+            -- FOOD_SAFE (Food Safety certificate)
+            IF v_prop_item ILIKE '%food safety%' THEN
+                SELECT id, code INTO v_property_id, v_property_code
+                FROM property_definitions WHERE code = 'FOOD_SAFE' LIMIT 1;
+                IF v_property_id IS NOT NULL THEN
+                    INSERT INTO product_properties (product_id, property_definition_id, property_code, property_value, source)
+                    VALUES (p_product_id, v_property_id, v_property_code, 'true', 'api_spot')
+                    ON CONFLICT (product_id, property_definition_id) DO NOTHING;
+                    IF FOUND THEN v_linked_count := v_linked_count + 1; END IF;
+                END IF;
+            END IF;
+            
+            -- BPA_FREE (certificate)
+            IF v_prop_item ILIKE '%bpa free%' THEN
+                SELECT id, code INTO v_property_id, v_property_code
+                FROM property_definitions WHERE code = 'BPA_FREE' LIMIT 1;
+                IF v_property_id IS NOT NULL THEN
+                    INSERT INTO product_properties (product_id, property_definition_id, property_code, property_value, source)
+                    VALUES (p_product_id, v_property_id, v_property_code, 'true', 'api_spot')
+                    ON CONFLICT (product_id, property_definition_id) DO NOTHING;
+                    IF FOUND THEN v_linked_count := v_linked_count + 1; END IF;
+                END IF;
+            END IF;
+            
+        END LOOP;
+    END IF;
+    
+    -- ═══════════════════════════════════════════════════════════════════════
+    -- 4. DETECTAR NO NOME/DESCRIÇÃO (features especiais)
+    -- ═══════════════════════════════════════════════════════════════════════
+    
+    -- LED
+    IF v_name ILIKE '%led%' OR v_description ILIKE '%led%' THEN
+        SELECT id, code INTO v_property_id, v_property_code
+        FROM property_definitions WHERE code = 'LED' LIMIT 1;
+        IF v_property_id IS NOT NULL THEN
+            INSERT INTO product_properties (product_id, property_definition_id, property_code, property_value, source)
+            VALUES (p_product_id, v_property_id, v_property_code, 'true', 'api_spot')
+            ON CONFLICT (product_id, property_definition_id) DO NOTHING;
+            IF FOUND THEN v_linked_count := v_linked_count + 1; END IF;
+        END IF;
+    END IF;
+    
+    -- BLUETOOTH
+    IF v_name ILIKE '%bluetooth%' OR v_description ILIKE '%bluetooth%' THEN
+        SELECT id, code INTO v_property_id, v_property_code
+        FROM property_definitions WHERE code = 'BLUETOOTH' LIMIT 1;
+        IF v_property_id IS NOT NULL THEN
+            INSERT INTO product_properties (product_id, property_definition_id, property_code, property_value, source)
+            VALUES (p_product_id, v_property_id, v_property_code, 'true', 'api_spot')
+            ON CONFLICT (product_id, property_definition_id) DO NOTHING;
+            IF FOUND THEN v_linked_count := v_linked_count + 1; END IF;
+        END IF;
+    END IF;
+    
+    -- WIRELESS_CHARGER
+    IF v_name ILIKE '%wireless%' OR v_name ILIKE '%indução%' OR v_description ILIKE '%wireless%' THEN
+        SELECT id, code INTO v_property_id, v_property_code
+        FROM property_definitions WHERE code = 'WIRELESS_CHARGER' LIMIT 1;
+        IF v_property_id IS NOT NULL THEN
+            INSERT INTO product_properties (product_id, property_definition_id, property_code, property_value, source)
+            VALUES (p_product_id, v_property_id, v_property_code, 'true', 'api_spot')
+            ON CONFLICT (product_id, property_definition_id) DO NOTHING;
+            IF FOUND THEN v_linked_count := v_linked_count + 1; END IF;
+        END IF;
+    END IF;
+    
+    -- DOUBLE_WALL (térmico no nome)
+    IF v_name ILIKE '%térmic%' OR v_name ILIKE '%therm%' OR v_name ILIKE '%parede dupla%' THEN
+        SELECT id, code INTO v_property_id, v_property_code
+        FROM property_definitions WHERE code = 'DOUBLE_WALL' LIMIT 1;
+        IF v_property_id IS NOT NULL THEN
+            INSERT INTO product_properties (product_id, property_definition_id, property_code, property_value, source)
+            VALUES (p_product_id, v_property_id, v_property_code, 'true', 'api_spot')
+            ON CONFLICT (product_id, property_definition_id) DO NOTHING;
+            IF FOUND THEN v_linked_count := v_linked_count + 1; END IF;
+        END IF;
+    END IF;
+    
+    -- AUTO_OPEN (abertura automática)
+    IF v_name ILIKE '%abertura automática%' OR v_name ILIKE '%auto open%' THEN
+        SELECT id, code INTO v_property_id, v_property_code
+        FROM property_definitions WHERE code = 'AUTO_OPEN' LIMIT 1;
+        IF v_property_id IS NOT NULL THEN
+            INSERT INTO product_properties (product_id, property_definition_id, property_code, property_value, source)
+            VALUES (p_product_id, v_property_id, v_property_code, 'true', 'api_spot')
+            ON CONFLICT (product_id, property_definition_id) DO NOTHING;
+            IF FOUND THEN v_linked_count := v_linked_count + 1; END IF;
+        END IF;
+    END IF;
+    
+    -- COLLAPSIBLE (dobrável/retrátil)
+    IF v_name ILIKE '%dobrável%' OR v_name ILIKE '%retrátil%' OR v_name ILIKE '%collapsible%' THEN
+        SELECT id, code INTO v_property_id, v_property_code
+        FROM property_definitions WHERE code = 'COLLAPSIBLE' LIMIT 1;
+        IF v_property_id IS NOT NULL THEN
+            INSERT INTO product_properties (product_id, property_definition_id, property_code, property_value, source)
+            VALUES (p_product_id, v_property_id, v_property_code, 'true', 'api_spot')
+            ON CONFLICT (product_id, property_definition_id) DO NOTHING;
+            IF FOUND THEN v_linked_count := v_linked_count + 1; END IF;
+        END IF;
+    END IF;
+    
+    -- WATERPROOF (à prova d'água)
+    IF v_name ILIKE '%prova de água%' OR v_name ILIKE '%prova d%água%' OR v_name ILIKE '%waterproof%' OR v_name ILIKE '%ipx%' THEN
+        SELECT id, code INTO v_property_id, v_property_code
+        FROM property_definitions WHERE code = 'WATERPROOF' LIMIT 1;
+        IF v_property_id IS NOT NULL THEN
+            INSERT INTO product_properties (product_id, property_definition_id, property_code, property_value, source)
+            VALUES (p_product_id, v_property_id, v_property_code, 'true', 'api_spot')
+            ON CONFLICT (product_id, property_definition_id) DO NOTHING;
+            IF FOUND THEN v_linked_count := v_linked_count + 1; END IF;
+        END IF;
+    END IF;
+    
+    -- TOUCH_TIP (ponteira touch)
+    IF v_name ILIKE '%touch%' OR v_description ILIKE '%ponteira touch%' THEN
+        SELECT id, code INTO v_property_id, v_property_code
+        FROM property_definitions WHERE code = 'TOUCH_TIP' LIMIT 1;
+        IF v_property_id IS NOT NULL THEN
+            INSERT INTO product_properties (product_id, property_definition_id, property_code, property_value, source)
+            VALUES (p_product_id, v_property_id, v_property_code, 'true', 'api_spot')
+            ON CONFLICT (product_id, property_definition_id) DO NOTHING;
+            IF FOUND THEN v_linked_count := v_linked_count + 1; END IF;
+        END IF;
+    END IF;
+    
+    -- LASER (ponteira laser)
+    IF v_name ILIKE '%laser%' AND v_name NOT ILIKE '%gravação%' THEN
+        SELECT id, code INTO v_property_id, v_property_code
+        FROM property_definitions WHERE code = 'LASER' LIMIT 1;
+        IF v_property_id IS NOT NULL THEN
+            INSERT INTO product_properties (product_id, property_definition_id, property_code, property_value, source)
+            VALUES (p_product_id, v_property_id, v_property_code, 'true', 'api_spot')
+            ON CONFLICT (product_id, property_definition_id) DO NOTHING;
+            IF FOUND THEN v_linked_count := v_linked_count + 1; END IF;
+        END IF;
+    END IF;
+    
+    -- REFLECTIVE (elementos refletores)
+    IF v_name ILIKE '%reflet%' OR v_description ILIKE '%reflet%' THEN
+        SELECT id, code INTO v_property_id, v_property_code
+        FROM property_definitions WHERE code = 'REFLECTIVE' LIMIT 1;
+        IF v_property_id IS NOT NULL THEN
+            INSERT INTO product_properties (product_id, property_definition_id, property_code, property_value, source)
+            VALUES (p_product_id, v_property_id, v_property_code, 'true', 'api_spot')
+            ON CONFLICT (product_id, property_definition_id) DO NOTHING;
+            IF FOUND THEN v_linked_count := v_linked_count + 1; END IF;
+        END IF;
+    END IF;
+    
+    RETURN v_linked_count;
+    
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Erro vinculando properties do produto %: %', p_product_id, SQLERRM;
+    RETURN 0;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_auto_link_tags(p_product_id uuid, p_supplier_id uuid DEFAULT 'bcfc0d02-44c6-48ae-8472-12b1a3f3d8e0'::uuid)
+ RETURNS integer
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_raw_keywords TEXT;
+    v_keyword TEXT;
+    v_keywords TEXT[];
+    v_tag_id UUID;
+    v_linked_count INTEGER := 0;
+BEGIN
+    -- 1. Buscar Keywords do raw_data
+    SELECT raw_data->>'KeyWords'
+    INTO v_raw_keywords
+    FROM supplier_products_raw
+    WHERE product_id = p_product_id
+      AND supplier_id = p_supplier_id
+    LIMIT 1;
+    
+    IF v_raw_keywords IS NULL OR v_raw_keywords = '' THEN
+        RETURN 0;
+    END IF;
+    
+    -- 2. Separar keywords (vírgula)
+    v_keywords := string_to_array(v_raw_keywords, ',');
+    
+    -- 3. Para cada keyword, tentar encontrar tag correspondente
+    FOREACH v_keyword IN ARRAY v_keywords
+    LOOP
+        v_keyword := TRIM(v_keyword);
+        
+        IF v_keyword = '' THEN
+            CONTINUE;
+        END IF;
+        
+        -- Buscar tag pelo nome (case insensitive)
+        SELECT id INTO v_tag_id
+        FROM tags
+        WHERE LOWER(name) = LOWER(v_keyword)
+           OR LOWER(slug) = LOWER(REPLACE(v_keyword, ' ', '-'))
+        LIMIT 1;
+        
+        -- Se encontrou, vincular
+        IF v_tag_id IS NOT NULL THEN
+            INSERT INTO product_tags (
+                product_id,
+                tag_id,
+                created_at
+            )
+            VALUES (
+                p_product_id,
+                v_tag_id,
+                NOW()
+            )
+            ON CONFLICT (product_id, tag_id) DO NOTHING;
+            
+            IF FOUND THEN
+                v_linked_count := v_linked_count + 1;
+            END IF;
+        END IF;
+    END LOOP;
+    
+    RETURN v_linked_count;
+    
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Erro vinculando tags do produto %: %', p_product_id, SQLERRM;
+    RETURN 0;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_auto_set_same_supplier()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_product_supplier_id UUID;
+    v_packaging_supplier_id UUID;
+BEGIN
+    -- Buscar supplier_id do produto
+    SELECT supplier_id INTO v_product_supplier_id
+    FROM products WHERE id = NEW.product_id;
+    
+    -- Buscar supplier_id da embalagem
+    SELECT supplier_id INTO v_packaging_supplier_id
+    FROM products WHERE id = NEW.packaging_id;
+    
+    -- Definir is_same_supplier automaticamente
+    -- Só é TRUE se ambos têm supplier_id e são iguais
+    NEW.is_same_supplier := (
+        v_product_supplier_id IS NOT NULL 
+        AND v_packaging_supplier_id IS NOT NULL 
+        AND v_product_supplier_id = v_packaging_supplier_id
+    );
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_auto_vincular_cor_variante()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_codigo_cor TEXT;
+    v_nome_cor TEXT;
+    v_variation_id UUID;
+    v_variation_name TEXT;
+    v_variation_hex TEXT;
+BEGIN
+    -- Extrair codigo_cor do JSON attributes
+    v_codigo_cor := NEW.attributes->>'codigo_cor';
+    v_nome_cor := NEW.attributes->>'cor';
+    
+    -- Se já tem color_id preenchido, não faz nada
+    IF NEW.color_id IS NOT NULL THEN
+        RETURN NEW;
+    END IF;
+    
+    -- ESTRATÉGIA 1: Buscar por código SPOT via equivalência
+    IF v_codigo_cor IS NOT NULL THEN
+        SELECT 
+            cv.id, cv.name, cv.hex_code
+        INTO v_variation_id, v_variation_name, v_variation_hex
+        FROM supplier_colors sc
+        JOIN color_equivalences ce ON ce.supplier_color_id = sc.id
+        JOIN color_variations cv ON cv.id = ce.promo_variation_id
+        WHERE sc.code = v_codigo_cor
+          AND ce.is_active = true
+        LIMIT 1;
+        
+        IF v_variation_id IS NOT NULL THEN
+            NEW.color_id := v_variation_id;
+            NEW.color_name := v_variation_name;
+            NEW.color_hex := v_variation_hex;
+            RETURN NEW;
+        END IF;
+    END IF;
+    
+    -- ESTRATÉGIA 2: Buscar por nome da cor (fallback)
+    IF v_nome_cor IS NOT NULL AND NEW.color_id IS NULL THEN
+        SELECT 
+            cv.id, cv.name, cv.hex_code
+        INTO v_variation_id, v_variation_name, v_variation_hex
+        FROM color_variations cv
+        WHERE cv.is_active = true
+          AND (
+              -- Match exato (case insensitive)
+              LOWER(TRIM(cv.name)) = LOWER(TRIM(v_nome_cor))
+              -- OU nome da variação começa com nome da cor
+              OR LOWER(cv.name) LIKE LOWER(TRIM(v_nome_cor)) || '%'
+          )
+        ORDER BY 
+            CASE WHEN LOWER(TRIM(cv.name)) = LOWER(TRIM(v_nome_cor)) THEN 1 ELSE 2 END,
+            LENGTH(cv.name)
+        LIMIT 1;
+        
+        IF v_variation_id IS NOT NULL THEN
+            NEW.color_id := v_variation_id;
+            NEW.color_name := v_variation_name;
+            NEW.color_hex := v_variation_hex;
+        END IF;
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_backfill_eco_links()
+ RETURNS TABLE(produtos_processados integer, links_categoria_criados integer, links_data_criados integer)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_ecologia_category_id UUID := '896277ce-50ee-4bf5-9e5f-c118e6b4a36a';
+    v_meio_ambiente_date_id UUID := '11b59fa3-14f1-4f5b-8c92-2e9bcb03e216';
+    v_produtos INTEGER;
+    v_cat_links INTEGER;
+    v_date_links INTEGER;
+BEGIN
+    -- Contar produtos com materiais eco
+    SELECT COUNT(DISTINCT pm.product_id)
+    INTO v_produtos
+    FROM product_materials pm
+    JOIN eco_material_config emc ON pm.material_id = emc.material_id
+    WHERE emc.is_active = TRUE;
+    
+    -- Inserir links de categoria
+    WITH inserted AS (
+        INSERT INTO product_category_assignments (product_id, category_id, is_primary, created_at)
+        SELECT DISTINCT pm.product_id, v_ecologia_category_id, FALSE, NOW()
+        FROM product_materials pm
+        JOIN eco_material_config emc ON pm.material_id = emc.material_id
+        WHERE emc.is_active = TRUE
+        ON CONFLICT (product_id, category_id) DO NOTHING
+        RETURNING 1
+    )
+    SELECT COUNT(*) INTO v_cat_links FROM inserted;
+    
+    -- Inserir links de data comemorativa
+    WITH inserted AS (
+        INSERT INTO product_commemorative_dates (product_id, commemorative_date_id, created_at)
+        SELECT DISTINCT pm.product_id, v_meio_ambiente_date_id, NOW()
+        FROM product_materials pm
+        JOIN eco_material_config emc ON pm.material_id = emc.material_id
+        WHERE emc.is_active = TRUE
+        ON CONFLICT (product_id, commemorative_date_id) DO NOTHING
+        RETURNING 1
+    )
+    SELECT COUNT(*) INTO v_date_links FROM inserted;
+    
+    RETURN QUERY SELECT v_produtos, v_cat_links, v_date_links;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_backfill_feminine_links()
+ RETURNS TABLE(variantes_processadas integer, produtos_atualizados integer, links_dia_mulher_criados integer, links_dia_maes_criados integer)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_dia_mulher_id UUID := 'ba801bb8-b48f-4b02-be72-4670584d92c0';
+    v_dia_maes_id UUID := 'cdecfcac-e4f4-43a3-8839-196acf05ee5b';
+    v_variantes INTEGER;
+    v_produtos INTEGER;
+    v_mulher_links INTEGER;
+    v_maes_links INTEGER;
+BEGIN
+    -- Contar variantes com cores femininas
+    SELECT COUNT(DISTINCT pv.id)
+    INTO v_variantes
+    FROM product_variants pv
+    JOIN color_variations cv ON cv.id = pv.color_id
+    JOIN feminine_color_config fcc ON fcc.color_group_id = cv.group_id
+    WHERE fcc.is_active = TRUE;
+    
+    -- Atualizar target_audience dos produtos (CORREÇÃO: usar ARRAY)
+    WITH updated AS (
+        UPDATE products p
+        SET target_audience = CASE 
+                WHEN p.target_audience IS NULL THEN ARRAY['feminino']
+                WHEN NOT ('feminino' = ANY(p.target_audience)) THEN array_append(p.target_audience, 'feminino')
+                ELSE p.target_audience
+            END,
+            updated_at = NOW()
+        FROM product_variants pv
+        JOIN color_variations cv ON cv.id = pv.color_id
+        JOIN feminine_color_config fcc ON fcc.color_group_id = cv.group_id
+        WHERE p.id = pv.product_id
+          AND fcc.is_active = TRUE
+          AND (p.target_audience IS NULL OR NOT ('feminino' = ANY(p.target_audience)))
+        RETURNING p.id
+    )
+    SELECT COUNT(DISTINCT id) INTO v_produtos FROM updated;
+    
+    -- Inserir links Dia da Mulher
+    WITH inserted AS (
+        INSERT INTO product_commemorative_dates (product_id, commemorative_date_id, created_at)
+        SELECT DISTINCT pv.product_id, v_dia_mulher_id, NOW()
+        FROM product_variants pv
+        JOIN color_variations cv ON cv.id = pv.color_id
+        JOIN feminine_color_config fcc ON fcc.color_group_id = cv.group_id
+        WHERE fcc.is_active = TRUE
+        ON CONFLICT (product_id, commemorative_date_id) DO NOTHING
+        RETURNING 1
+    )
+    SELECT COUNT(*) INTO v_mulher_links FROM inserted;
+    
+    -- Inserir links Dia das Mães
+    WITH inserted AS (
+        INSERT INTO product_commemorative_dates (product_id, commemorative_date_id, created_at)
+        SELECT DISTINCT pv.product_id, v_dia_maes_id, NOW()
+        FROM product_variants pv
+        JOIN color_variations cv ON cv.id = pv.color_id
+        JOIN feminine_color_config fcc ON fcc.color_group_id = cv.group_id
+        WHERE fcc.is_active = TRUE
+        ON CONFLICT (product_id, commemorative_date_id) DO NOTHING
+        RETURNING 1
+    )
+    SELECT COUNT(*) INTO v_maes_links FROM inserted;
+    
+    RETURN QUERY SELECT v_variantes, v_produtos, v_mulher_links, v_maes_links;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_backfill_product_attributes_safe(p_batch_size integer DEFAULT 100, p_dry_run boolean DEFAULT true)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_product RECORD;
+    v_colors TEXT[];
+    v_capacity INTEGER;
+    v_dimensions JSONB;
+    v_weight INTEGER;
+    v_processed INTEGER := 0;
+    v_updated INTEGER := 0;
+    v_sample JSONB[] := '{}';
+BEGIN
+    FOR v_product IN (
+        SELECT id, name
+        FROM products
+        WHERE name IS NOT NULL
+          AND (
+            (colors IS NULL OR jsonb_array_length(colors) = 0)
+            OR capacity_ml IS NULL
+          )
+        ORDER BY created_at DESC
+        LIMIT p_batch_size
+    ) LOOP
+        v_processed := v_processed + 1;
+        
+        -- Extrair atributos do nome
+        v_colors := fn_extract_color_from_name(v_product.name);
+        v_capacity := fn_extract_capacity_from_name(v_product.name);
+        v_dimensions := fn_extract_dimensions_from_name(v_product.name);
+        v_weight := fn_extract_weight_from_name(v_product.name);
+        
+        -- Verificar se tem algo para atualizar
+        IF array_length(v_colors, 1) > 0 OR 
+           v_capacity IS NOT NULL OR
+           v_weight IS NOT NULL OR
+           v_dimensions IS NOT NULL THEN
+            
+            IF NOT p_dry_run THEN
+                -- ⚠️ NÃO ATUALIZA materials (evita erro de trigger)
+                UPDATE products SET
+                    colors = CASE WHEN array_length(v_colors, 1) > 0 THEN to_jsonb(v_colors) ELSE colors END,
+                    has_colors = CASE WHEN array_length(v_colors, 1) > 0 THEN true ELSE has_colors END,
+                    capacity_ml = COALESCE(v_capacity, capacity_ml),
+                    has_capacity = CASE WHEN v_capacity IS NOT NULL THEN true ELSE has_capacity END,
+                    length_cm = COALESCE((v_dimensions->>'length_cm')::NUMERIC, length_cm),
+                    width_cm = COALESCE((v_dimensions->>'width_cm')::NUMERIC, width_cm),
+                    height_cm = COALESCE((v_dimensions->>'height_cm')::NUMERIC, height_cm),
+                    weight_g = COALESCE(v_weight, weight_g)
+                WHERE id = v_product.id;
+            END IF;
+            
+            v_updated := v_updated + 1;
+            
+            IF v_updated <= 5 THEN
+                v_sample := array_append(v_sample, jsonb_build_object(
+                    'name', LEFT(v_product.name, 50),
+                    'colors', v_colors,
+                    'capacity_ml', v_capacity,
+                    'weight_g', v_weight
+                ));
+            END IF;
+        END IF;
+    END LOOP;
+    
+    RETURN jsonb_build_object(
+        'processed', v_processed,
+        'updated', v_updated,
+        'dry_run', p_dry_run,
+        'sample', to_jsonb(v_sample)
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_backfill_product_categories(p_batch_size integer DEFAULT 100, p_dry_run boolean DEFAULT true)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_product RECORD;
+    v_result JSONB;
+    v_category_id UUID;
+    v_processed INTEGER := 0;
+    v_success INTEGER := 0;
+    v_failed INTEGER := 0;
+    v_skipped INTEGER := 0;
+    v_results JSONB[] := '{}';
+BEGIN
+    -- Buscar produtos sem categoria
+    FOR v_product IN (
+        SELECT id, name
+        FROM products
+        WHERE category_id IS NULL
+          AND name IS NOT NULL
+          AND TRIM(name) != ''
+        ORDER BY created_at DESC
+        LIMIT p_batch_size
+    ) LOOP
+        v_processed := v_processed + 1;
+        
+        BEGIN
+            -- Classificar produto
+            SELECT fn_master_classify_product(v_product.name, v_product.id) INTO v_result;
+            
+            IF v_result IS NOT NULL AND v_result->>'category_id' IS NOT NULL THEN
+                v_category_id := (v_result->>'category_id')::UUID;
+                
+                IF NOT p_dry_run THEN
+                    -- Atualizar produto (desabilitar trigger temporariamente para evitar loop)
+                    UPDATE products 
+                    SET category_id = v_category_id,
+                        updated_at = NOW()
+                    WHERE id = v_product.id;
+                END IF;
+                
+                v_success := v_success + 1;
+                
+                -- Guardar amostra dos resultados
+                IF v_success <= 10 THEN
+                    v_results := array_append(v_results, jsonb_build_object(
+                        'product_id', v_product.id,
+                        'name', v_product.name,
+                        'category_slug', v_result->>'category_slug',
+                        'detected_type', v_result->>'detected_type'
+                    ));
+                END IF;
+            ELSE
+                v_skipped := v_skipped + 1;
+            END IF;
+            
+        EXCEPTION WHEN OTHERS THEN
+            v_failed := v_failed + 1;
+            RAISE WARNING 'Erro ao processar %: %', v_product.id, SQLERRM;
+        END;
+    END LOOP;
+    
+    RETURN jsonb_build_object(
+        'processed', v_processed,
+        'success', v_success,
+        'failed', v_failed,
+        'skipped', v_skipped,
+        'dry_run', p_dry_run,
+        'sample_results', to_jsonb(v_results)
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_batch_extract_materials_from_name(p_limit integer DEFAULT 100)
+ RETURNS TABLE(processed integer, total_materials integer)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_product RECORD;
+    v_processed INTEGER := 0;
+    v_total_materials INTEGER := 0;
+    v_materials INTEGER;
+BEGIN
+    -- Processar produtos sem vínculos em product_materials
+    FOR v_product IN 
+        SELECT p.id, p.name
+        FROM products p
+        LEFT JOIN product_materials pm ON pm.product_id = p.id
+        WHERE pm.id IS NULL
+          AND p.name IS NOT NULL
+        LIMIT p_limit
+    LOOP
+        v_materials := fn_extract_materials_from_name(v_product.id, FALSE);
+        v_total_materials := v_total_materials + v_materials;
+        v_processed := v_processed + 1;
+    END LOOP;
+    
+    RETURN QUERY SELECT v_processed, v_total_materials;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_batch_populate_packing(p_limit integer DEFAULT 100)
+ RETURNS TABLE(processed integer, updated integer, commercial integer, protective integer)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_processed INTEGER := 0;
+    v_updated INTEGER := 0;
+    v_commercial INTEGER := 0;
+    v_protective INTEGER := 0;
+    v_product RECORD;
+    v_packing TEXT;
+    v_classification JSONB;
+BEGIN
+    FOR v_product IN 
+        SELECT p.id, p.sku
+        FROM products p
+        WHERE p.packing_classification IS NULL
+          AND p.sku LIKE 'SPOT-%'
+        LIMIT p_limit
+    LOOP
+        v_processed := v_processed + 1;
+        
+        -- CORRIGIDO: Usar product_id diretamente
+        SELECT DISTINCT raw_data->>'Packing' INTO v_packing
+        FROM supplier_products_raw spr
+        WHERE spr.product_id = v_product.id
+          AND raw_data->>'Packing' IS NOT NULL
+          AND raw_data->>'Packing' <> ''
+        LIMIT 1;
+        
+        IF v_packing IS NOT NULL AND v_packing <> '' THEN
+            v_classification := fn_classify_packing_type(v_packing);
+            
+            IF v_classification IS NOT NULL THEN
+                UPDATE products
+                SET packing_type = v_packing,
+                    packing_classification = (v_classification->>'classification')::VARCHAR
+                WHERE id = v_product.id;
+                
+                v_updated := v_updated + 1;
+                
+                IF (v_classification->>'classification') = 'commercial' THEN
+                    v_commercial := v_commercial + 1;
+                ELSIF (v_classification->>'classification') = 'protective' THEN
+                    v_protective := v_protective + 1;
+                END IF;
+            END IF;
+        END IF;
+    END LOOP;
+    
+    RETURN QUERY SELECT v_processed, v_updated, v_commercial, v_protective;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_best_packaging_price(p_packaging_id uuid, p_quantity integer DEFAULT 1)
+ RETURNS TABLE(supplier_id uuid, supplier_name character varying, unit_price numeric, total_price numeric, lead_time_days integer)
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        sp.supplier_id,
+        s.name as supplier_name,
+        sp.unit_price,
+        (sp.unit_price * p_quantity) as total_price,
+        sp.lead_time_days
+    FROM supplier_packagings sp
+    JOIN suppliers s ON s.id = sp.supplier_id
+    WHERE sp.packaging_id = p_packaging_id
+      AND sp.active = TRUE
+      AND sp.is_available = TRUE
+      AND sp.min_order_quantity <= p_quantity
+    ORDER BY sp.unit_price ASC
+    LIMIT 5;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.fn_calculate_health_score()
  RETURNS TABLE(score numeric, grade text, pontos_positivos jsonb, pontos_atencao jsonb, calculated_at timestamp with time zone)
  LANGUAGE plpgsql
@@ -632,10 +9617,145 @@ BEGIN
     v_atencao,
     now();
 END;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_calculate_kit_dimensions(p_kit_id uuid)
+ RETURNS TABLE(total_components integer, total_pieces integer, total_weight_g integer, packaging_length_mm integer, packaging_width_mm integer, packaging_height_mm integer, packaging_type character varying, materials_list text[])
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        COUNT(*)::INTEGER AS total_components,
+        SUM(pkc.quantity)::INTEGER AS total_pieces,
+        SUM(COALESCE(pkc.weight_g, 0) * pkc.quantity)::INTEGER AS total_weight_g,
+        MAX(CASE WHEN pkc.is_packaging THEN pkc.length_mm END)::INTEGER AS packaging_length_mm,
+        MAX(CASE WHEN pkc.is_packaging THEN pkc.width_mm END)::INTEGER AS packaging_width_mm,
+        MAX(CASE WHEN pkc.is_packaging THEN pkc.height_mm END)::INTEGER AS packaging_height_mm,
+        MAX(CASE WHEN pkc.is_packaging THEN pkc.component_name END)::VARCHAR AS packaging_type,
+        ARRAY_AGG(DISTINCT mt.name)::TEXT[] AS materials_list
+    FROM product_kit_components pkc
+    LEFT JOIN material_types mt ON pkc.material_type_id = mt.id
+    WHERE pkc.kit_product_id = p_kit_id
+    GROUP BY pkc.kit_product_id;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_calculate_packaging_fit(p_product_id uuid, p_packaging_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_product RECORD;
+    v_packaging RECORD;
+    v_gap_h DECIMAL; v_gap_w DECIMAL; v_gap_l DECIMAL; v_gap_d DECIMAL;
+    v_gap_min DECIMAL; v_gap_avg DECIMAL;
+    v_rating VARCHAR(20);
+    v_min DECIMAL := 2; v_tight DECIMAL := 5; v_good DECIMAL := 10;
+BEGIN
+    SELECT config_value::DECIMAL INTO v_min FROM packaging_compatibility_config WHERE config_key = 'min_gap_mm';
+    SELECT config_value::DECIMAL INTO v_tight FROM packaging_compatibility_config WHERE config_key = 'tight_gap_max_mm';
+    SELECT config_value::DECIMAL INTO v_good FROM packaging_compatibility_config WHERE config_key = 'good_gap_max_mm';
+    
+    SELECT height_cm, width_cm, length_cm, diameter_cm, shape_type INTO v_product FROM products WHERE id = p_product_id;
+    IF v_product IS NULL THEN RETURN '{"error": "Produto não encontrado"}'::JSONB; END IF;
+    
+    SELECT internal_height_cm, internal_width_cm, internal_length_cm, internal_diameter_cm, product_type
+    INTO v_packaging FROM products WHERE id = p_packaging_id;
+    IF v_packaging IS NULL OR v_packaging.product_type != 'packaging' THEN 
+        RETURN '{"error": "Embalagem não encontrada ou inválida"}'::JSONB; 
+    END IF;
+    
+    IF v_product.shape_type = 'cylindrical' THEN
+        v_gap_d := (COALESCE(v_packaging.internal_width_cm, v_packaging.internal_diameter_cm) - COALESCE(v_product.diameter_cm, v_product.width_cm)) * 10;
+        v_gap_h := (v_packaging.internal_height_cm - v_product.height_cm) * 10;
+        v_gap_min := LEAST(COALESCE(v_gap_d, 999), COALESCE(v_gap_h, 999));
+        v_gap_avg := (COALESCE(v_gap_d, 0) + COALESCE(v_gap_h, 0)) / 2;
+    ELSE
+        v_gap_h := (v_packaging.internal_height_cm - v_product.height_cm) * 10;
+        v_gap_w := (v_packaging.internal_width_cm - v_product.width_cm) * 10;
+        v_gap_l := (v_packaging.internal_length_cm - v_product.length_cm) * 10;
+        v_gap_min := LEAST(COALESCE(v_gap_h, 999), COALESCE(v_gap_w, 999), COALESCE(v_gap_l, 999));
+        v_gap_avg := (COALESCE(v_gap_h, 0) + COALESCE(v_gap_w, 0) + COALESCE(v_gap_l, 0)) / 3;
+    END IF;
+    
+    IF v_gap_min IS NULL OR v_gap_min >= 900 OR v_gap_min < 0 THEN v_rating := 'incompatible';
+    ELSIF v_gap_min < v_min THEN v_rating := 'too_tight';
+    ELSIF v_gap_min <= v_tight THEN v_rating := 'tight';
+    ELSIF v_gap_min <= v_good THEN v_rating := 'good';
+    ELSE v_rating := 'loose'; END IF;
+    
+    RETURN jsonb_build_object(
+        'compatible', v_rating NOT IN ('incompatible'),
+        'fit_rating', v_rating,
+        'gap_height_mm', ROUND(v_gap_h, 2),
+        'gap_width_mm', ROUND(v_gap_w, 2),
+        'gap_length_mm', ROUND(v_gap_l, 2),
+        'gap_diameter_mm', ROUND(v_gap_d, 2),
+        'gap_min_mm', CASE WHEN v_gap_min < 900 THEN ROUND(v_gap_min, 2) ELSE NULL END,
+        'gap_avg_mm', ROUND(v_gap_avg, 2),
+        'shape', v_product.shape_type
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_calculate_sale_price(p_product_id uuid, p_quantity integer DEFAULT 1, p_price_list_id uuid DEFAULT NULL::uuid)
+ RETURNS numeric
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_cost_price NUMERIC;
+    v_fallback_cost NUMERIC;
+    v_markup_percent NUMERIC;
+    v_supplier_id UUID;
+    v_category_id UUID;
+BEGIN
+    SELECT cost_price, category_id INTO v_fallback_cost, v_category_id
+    FROM products WHERE id = p_product_id;
+    
+    IF v_fallback_cost IS NULL OR v_fallback_cost = 0 THEN RETURN NULL; END IF;
+    
+    SELECT 
+        CASE 
+            WHEN p_quantity >= COALESCE(vss.min_qty_5, 999999) AND vss.cost_price_5 IS NOT NULL THEN vss.cost_price_5
+            WHEN p_quantity >= COALESCE(vss.min_qty_4, 999999) AND vss.cost_price_4 IS NOT NULL THEN vss.cost_price_4
+            WHEN p_quantity >= COALESCE(vss.min_qty_3, 999999) AND vss.cost_price_3 IS NOT NULL THEN vss.cost_price_3
+            WHEN p_quantity >= COALESCE(vss.min_qty_2, 999999) AND vss.cost_price_2 IS NOT NULL THEN vss.cost_price_2
+            WHEN vss.cost_price_1 IS NOT NULL THEN vss.cost_price_1
+            ELSE vss.cost_price
+        END,
+        vss.supplier_id
+    INTO v_cost_price, v_supplier_id
+    FROM product_variants pv
+    JOIN variant_supplier_sources vss ON vss.variant_id = pv.id AND vss.is_preferred = true
+    WHERE pv.product_id = p_product_id
+    LIMIT 1;
+    
+    v_cost_price := COALESCE(v_cost_price, v_fallback_cost);
+    
+    SELECT markup_percent INTO v_markup_percent
+    FROM markup_configurations
+    WHERE category_id = v_category_id AND product_id IS NULL AND variant_id IS NULL AND is_active = true
+    LIMIT 1;
+    
+    IF v_markup_percent IS NULL AND v_supplier_id IS NOT NULL THEN
+        SELECT default_markup_percent INTO v_markup_percent
+        FROM suppliers WHERE id = v_supplier_id;
+    END IF;
+    
+    IF v_markup_percent IS NULL THEN
+        SELECT markup_percent INTO v_markup_percent
+        FROM markup_configurations
+        WHERE category_id IS NULL AND product_id IS NULL AND variant_id IS NULL AND is_active = true
+        ORDER BY priority DESC LIMIT 1;
+    END IF;
+    
+    v_markup_percent := COALESCE(v_markup_percent, 115.0);
+    
+    RETURN ROUND(v_cost_price * (1 + v_markup_percent / 100), 2);
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.fn_capacity_forecast(p_days_ahead integer DEFAULT 90)
  RETURNS TABLE(metric text, current_value bigint, growth_per_day numeric, projected_value bigint, projection_date date, status text)
  LANGUAGE plpgsql
@@ -686,10 +9806,97 @@ BEGIN
   RETURN QUERY SELECT 'database_size_mb'::text, (v_db_size / 1024 / 1024)::bigint, 0.0::numeric, 0::bigint,
     CURRENT_DATE, '💾 ' || pg_size_pretty(v_db_size);
 END;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_capture_stock_snapshot()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_product_id uuid;
+  v_stock_changed boolean;
+  v_price_changed boolean;
+  v_change_type varchar(20);
+BEGIN
+  -- Detectar o que mudou
+  v_stock_changed := (
+    OLD.stock_main_warehouse IS DISTINCT FROM NEW.stock_main_warehouse
+    OR OLD.stock_other_warehouses IS DISTINCT FROM NEW.stock_other_warehouses
+  );
+  
+  v_price_changed := (
+    OLD.cost_price IS DISTINCT FROM NEW.cost_price
+  );
+  
+  -- Se nada relevante mudou, sai sem fazer nada
+  IF NOT v_stock_changed AND NOT v_price_changed THEN
+    RETURN NEW;
+  END IF;
+  
+  -- Determinar tipo de mudança
+  IF v_stock_changed AND v_price_changed THEN
+    v_change_type := 'both';
+  ELSIF v_price_changed THEN
+    v_change_type := 'price';
+  ELSE
+    v_change_type := 'stock';
+  END IF;
+  
+  -- Buscar product_id via product_variants (desnormalização)
+  SELECT pv.product_id INTO v_product_id
+  FROM product_variants pv
+  WHERE pv.id = NEW.variant_id;
+  
+  -- Se não encontrou product_id, ignora (variante órfã)
+  IF v_product_id IS NULL THEN
+    RETURN NEW;
+  END IF;
+  
+  -- Inserir snapshot
+  INSERT INTO stock_snapshots (
+    variant_supplier_source_id,
+    supplier_id,
+    supplier_branch_id,
+    variant_id,
+    product_id,
+    stock_main_old,
+    stock_main_new,
+    stock_other_old,
+    stock_other_new,
+    cost_price_old,
+    cost_price_new,
+    change_type,
+    captured_at
+  ) VALUES (
+    NEW.id,
+    NEW.supplier_id,
+    NEW.supplier_branch_id,
+    NEW.variant_id,
+    v_product_id,
+    CASE WHEN v_stock_changed THEN OLD.stock_main_warehouse ELSE NULL END,
+    CASE WHEN v_stock_changed THEN NEW.stock_main_warehouse ELSE NULL END,
+    CASE WHEN v_stock_changed THEN OLD.stock_other_warehouses ELSE NULL END,
+    CASE WHEN v_stock_changed THEN NEW.stock_other_warehouses ELSE NULL END,
+    CASE WHEN v_price_changed THEN OLD.cost_price ELSE NULL END,
+    CASE WHEN v_price_changed THEN NEW.cost_price ELSE NULL END,
+    v_change_type,
+    now()
+  );
+  
+  RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_category_copywriting_updated()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.fn_check_geo_access(p_country_code text)
  RETURNS boolean
  LANGUAGE plpgsql
@@ -707,10 +9914,889 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
     RETURN true;
 END;
-$function$
-;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_check_item_fits(p_packaging_id uuid, p_product_id uuid, p_current_used_liters numeric DEFAULT 0)
+ RETURNS TABLE(fits boolean, packaging_volume numeric, product_volume numeric, used_volume numeric, available_volume numeric, percentage_used numeric)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_packaging_volume NUMERIC;
+    v_product_volume NUMERIC;
+    v_available NUMERIC;
+BEGIN
+    -- Volume da embalagem (interno)
+    SELECT 
+        ROUND((COALESCE(internal_length_cm, 0) * COALESCE(internal_width_cm, 0) * COALESCE(internal_height_cm, 0)) / 1000, 2)
+    INTO v_packaging_volume
+    FROM products 
+    WHERE id = p_packaging_id AND product_type = 'packaging';
+    
+    -- Volume do produto
+    SELECT 
+        ROUND((COALESCE(length_cm, 0) * COALESCE(width_cm, 0) * COALESCE(height_cm, 0)) / 1000, 2)
+    INTO v_product_volume
+    FROM products 
+    WHERE id = p_product_id;
+    
+    -- Disponível
+    v_available := v_packaging_volume - p_current_used_liters;
+    
+    RETURN QUERY SELECT 
+        (v_product_volume <= v_available) AS fits,
+        v_packaging_volume AS packaging_volume,
+        v_product_volume AS product_volume,
+        p_current_used_liters AS used_volume,
+        v_available AS available_volume,
+        ROUND((p_current_used_liters / NULLIF(v_packaging_volume, 0)) * 100, 1) AS percentage_used;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_check_preco_minimo_faixa()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_minimo NUMERIC;
+  v_codigo TEXT;
+BEGIN
+  SELECT preco_minimo_unitario, codigo_tabela 
+  INTO v_minimo, v_codigo
+  FROM tabela_preco_gravacao_oficial
+  WHERE id = NEW.tabela_preco_gravacao_id;
 
--- ----------------------------------------------------------------------------
+  -- Se mínimo é NULL, ignorar check (compatibilidade com tabelas antigas)
+  IF v_minimo IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  IF NEW.preco_unitario < v_minimo THEN
+    RAISE EXCEPTION 
+      'Preço unitário (R$ %) abaixo do mínimo da tabela % (R$ %). Para cadastrar este valor, ajuste preco_minimo_unitario na tabela-mãe primeiro ou revise se este preço está correto.',
+      NEW.preco_unitario, v_codigo, v_minimo
+      USING HINT = 'UPDATE tabela_preco_gravacao_oficial SET preco_minimo_unitario = ' || NEW.preco_unitario || ' WHERE codigo_tabela = ' || quote_literal(v_codigo);
+  END IF;
+
+  RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_claim_ai_description_batch(p_batch_size integer DEFAULT 10)
+ RETURNS TABLE(queue_id uuid, product_id uuid, product_name text, product_sku text, product_description text, category_path text, material_names text[], color_names text[])
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  RETURN QUERY
+  WITH claimed AS (
+    UPDATE ai_description_queue q
+    SET status = 'processing',
+        started_at = now(),
+        attempts = attempts + 1
+    WHERE q.id IN (
+      SELECT id FROM ai_description_queue
+      WHERE status IN ('pending','failed')
+        AND attempts < max_attempts
+      ORDER BY priority DESC, queued_at ASC
+      LIMIT p_batch_size
+      FOR UPDATE SKIP LOCKED
+    )
+    RETURNING q.id, q.product_id
+  )
+  SELECT 
+    c.id,
+    p.id,
+    p.name,
+    p.sku,
+    p.description,
+    cat.full_path_readable,
+    ARRAY(SELECT mt.name FROM product_materials pm 
+          JOIN material_types mt ON mt.id = pm.material_id 
+          WHERE pm.product_id = p.id) AS materials,
+    ARRAY(SELECT DISTINCT cv.name FROM product_variants pv 
+          JOIN color_variations cv ON cv.id = pv.color_id 
+          WHERE pv.product_id = p.id) AS colors
+  FROM claimed c
+  JOIN products p ON p.id = c.product_id
+  LEFT JOIN categories cat ON cat.id = p.category_id;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_classify_packing_type(p_packing_type text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_classification VARCHAR(20);
+    v_is_commercial BOOLEAN := FALSE;
+    v_is_protective BOOLEAN := FALSE;
+    v_can_be_customized BOOLEAN := FALSE;
+    v_has_image_expected BOOLEAN := FALSE;
+    v_normalized TEXT;
+BEGIN
+    -- NULL ou vazio = none
+    IF p_packing_type IS NULL OR TRIM(p_packing_type) = '' THEN
+        RETURN jsonb_build_object(
+            'raw', p_packing_type,
+            'classification', 'none',
+            'is_commercial', FALSE,
+            'is_protective', FALSE,
+            'can_be_customized', FALSE,
+            'has_image_expected', FALSE
+        );
+    END IF;
+    
+    v_normalized := LOWER(TRIM(p_packing_type));
+    
+    -- PROTECTIVE: Polybag, película, etc (NÃO agrega valor)
+    IF 
+        v_normalized ~ '(polybag|poly bag|poly-bag|saquinho)' OR
+        v_normalized ~ '(película|pelicula|plastico bolha|plástico bolha)' OR
+        v_normalized ~ '(filme|shrink|stretch)' OR
+        v_normalized ~ '(bolha|bubble)' OR
+        v_normalized ~ '(celofane|cello|cellophane)' OR
+        v_normalized ~ '^sem ' OR
+        v_normalized = 'sem' OR
+        v_normalized = 'nenhum' OR
+        v_normalized = 'nenhuma' OR
+        v_normalized = 'n/a' OR
+        v_normalized ~ 'aderente' OR
+        v_normalized = 'individual'
+    THEN
+        v_classification := 'protective';
+        v_is_protective := TRUE;
+        
+    -- COMMERCIAL: Caixa, bolsa, estojo, etc (AGREGA valor)
+    ELSIF 
+        v_normalized ~ '(caixa|box|caixinha)' OR
+        v_normalized ~ '(bolsa|bag|sacola)' OR
+        v_normalized ~ '(tnt|non-woven|non woven)' OR
+        v_normalized ~ '(estojo|case|pouch|pochete)' OR
+        v_normalized ~ '(kraft|cartonagem|cartuch|cartão)' OR
+        v_normalized ~ '(sleeve|luva)' OR
+        v_normalized ~ '(presente|gift|oferta|luxo|premium)' OR
+        v_normalized ~ '(veludo|velvet)' OR
+        v_normalized ~ '(madeira|wood|bambu|bamboo)' OR
+        v_normalized ~ '(lata|tin|metal|alumínio|aluminio)' OR
+        v_normalized ~ '(acrílico|acrilico|acrylic)' OR
+        v_normalized ~ '(couro|leather|pu|courino)' OR
+        v_normalized ~ '(berço|berco|espuma|eva)'
+    THEN
+        v_classification := 'commercial';
+        v_is_commercial := TRUE;
+        v_can_be_customized := TRUE;
+        v_has_image_expected := TRUE;
+        
+    -- UNKNOWN: Não classificado
+    ELSE
+        v_classification := 'unknown';
+    END IF;
+    
+    RETURN jsonb_build_object(
+        'raw', p_packing_type,
+        'classification', v_classification,
+        'is_commercial', v_is_commercial,
+        'is_protective', v_is_protective,
+        'can_be_customized', v_can_be_customized,
+        'has_image_expected', v_has_image_expected
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_classify_spot_image(p_filename text)
+ RETURNS TABLE(image_type text, image_type_id uuid, is_color_specific boolean, is_primary_image boolean, display_order_hint integer, color_code text, prod_reference text)
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_base TEXT;
+    v_color TEXT;
+    v_suffix TEXT;
+BEGIN
+    -- Remove extensão
+    v_base := SPLIT_PART(p_filename, '.', 1);
+    
+    -- Detectar padrões de vitrine (sem cor): {ref}-vp, {ref}-va, {ref}-vp-#, {ref}-va-#
+    IF v_base ~ '^[0-9]+-v[pa]' THEN
+        prod_reference := SPLIT_PART(v_base, '-', 1);
+        color_code := NULL;
+        is_color_specific := false;
+        is_primary_image := false;
+        
+        IF v_base ~ '-vp' THEN
+            image_type := 'vitrine_pessoa';
+            image_type_id := '03426962-2d59-483a-a157-3f6a4a5c6a77';
+            display_order_hint := 80;
+        ELSE
+            image_type := 'vitrine_ambiente';
+            image_type_id := '57780389-64ce-4945-b7ca-ed22ef73caa9';
+            display_order_hint := 81;
+        END IF;
+        RETURN NEXT;
+        RETURN;
+    END IF;
+    
+    -- Padrões com cor: {ref}_{cor}[-sufixo]
+    IF v_base ~ '^[0-9]+_[0-9]+' THEN
+        prod_reference := SPLIT_PART(v_base, '_', 1);
+        -- Extrair cor (parte após _ e antes do primeiro -)
+        v_color := SPLIT_PART(SPLIT_PART(v_base, '_', 2), '-', 1);
+        color_code := v_color;
+        
+        -- Extrair sufixo (parte após {ref}_{cor})
+        v_suffix := SUBSTRING(v_base FROM '^[0-9]+_[0-9]+(.*)$');
+        
+        CASE v_suffix
+            -- Sem sufixo = imagem principal
+            WHEN '' THEN
+                image_type := 'main';
+                image_type_id := '7ea182ff-edcc-4c4c-b7a1-443b07500f6c';
+                is_color_specific := true;
+                is_primary_image := true;
+                display_order_hint := 1;
+            
+            -- Vistas alternativas
+            WHEN '-b' THEN
+                image_type := 'gallery';
+                image_type_id := '1590e144-e3f8-41e6-98f9-f4a25bae496d';
+                is_color_specific := true;
+                is_primary_image := false;
+                display_order_hint := 10;
+            WHEN '-c' THEN
+                image_type := 'gallery';
+                image_type_id := '1590e144-e3f8-41e6-98f9-f4a25bae496d';
+                is_color_specific := true;
+                is_primary_image := false;
+                display_order_hint := 11;
+            WHEN '-d' THEN
+                image_type := 'gallery';
+                image_type_id := '1590e144-e3f8-41e6-98f9-f4a25bae496d';
+                is_color_specific := true;
+                is_primary_image := false;
+                display_order_hint := 12;
+            WHEN '-e' THEN
+                image_type := 'gallery';
+                image_type_id := '1590e144-e3f8-41e6-98f9-f4a25bae496d';
+                is_color_specific := true;
+                is_primary_image := false;
+                display_order_hint := 13;
+            
+            -- Logo/gravação
+            WHEN '-logo' THEN
+                image_type := 'logo';
+                image_type_id := '2d5aca72-6eb9-4b16-906d-8e0f91c9bf40';
+                is_color_specific := true;
+                is_primary_image := false;
+                display_order_hint := 30;
+            
+            -- SET (todas as cores)
+            WHEN '-set' THEN
+                image_type := 'set';
+                image_type_id := 'c305d8b3-9af8-469e-aea5-88208def353f';
+                is_color_specific := true;  -- vinculado à cor na URL
+                is_primary_image := false;
+                display_order_hint := 50;
+            
+            -- Embalagem
+            WHEN '-box' THEN
+                image_type := 'box';
+                image_type_id := 'f980378d-3ac5-4525-8941-52715f3e320f';
+                is_color_specific := false;
+                is_primary_image := false;
+                display_order_hint := 60;
+            WHEN '-pouch' THEN
+                image_type := 'pouch';
+                image_type_id := '9da408a0-21bd-4b45-b7f5-4ad5f29822da';
+                is_color_specific := false;
+                is_primary_image := false;
+                display_order_hint := 61;
+            WHEN '-bag' THEN
+                image_type := 'bag';
+                image_type_id := '196e69a9-6962-4494-8919-ee1d2737e6e7';
+                is_color_specific := false;
+                is_primary_image := false;
+                display_order_hint := 62;
+            
+            -- Vitrines por cor
+            WHEN '-vp' THEN
+                image_type := 'vitrine_pessoa';
+                image_type_id := '03426962-2d59-483a-a157-3f6a4a5c6a77';
+                is_color_specific := true;
+                is_primary_image := false;
+                display_order_hint := 80;
+            WHEN '-va' THEN
+                image_type := 'vitrine_ambiente';
+                image_type_id := '57780389-64ce-4945-b7ca-ed22ef73caa9';
+                is_color_specific := true;
+                is_primary_image := false;
+                display_order_hint := 81;
+            
+            -- Sufixo desconhecido → gallery
+            ELSE
+                image_type := 'gallery';
+                image_type_id := '1590e144-e3f8-41e6-98f9-f4a25bae496d';
+                is_color_specific := true;
+                is_primary_image := false;
+                display_order_hint := 20;
+        END CASE;
+        
+        RETURN NEXT;
+        RETURN;
+    END IF;
+    
+    -- Fallback: não reconhecido
+    prod_reference := NULL;
+    color_code := NULL;
+    image_type := 'other';
+    image_type_id := '953d054a-3bbc-4954-a319-b3c806ac596f';
+    is_color_specific := false;
+    is_primary_image := false;
+    display_order_hint := 99;
+    RETURN NEXT;
+    RETURN;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_classify_spot_image_v3(p_filename text, p_main_image text DEFAULT NULL::text)
+ RETURNS TABLE(image_type text, color_code text, is_primary boolean, display_order integer, is_color_specific boolean, spot_ref text, image_type_id uuid)
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_base TEXT;
+  v_ext TEXT;
+  v_is_primary BOOLEAN;
+  v_parts TEXT[];
+  v_ref TEXT;
+  v_cor TEXT;
+  v_suffix TEXT;
+  v_suffix_lower TEXT;
+  v_suffix_parts TEXT[];
+  v_angle TEXT;
+  v_order_map JSONB := '{"a":10,"b":11,"c":12,"d":13,"e":14,"f":15,"g":16}'::jsonb;
+  v_letter TEXT;
+  -- UUIDs
+  UUID_MAIN     UUID := '7ea182ff-edcc-4c4c-b7a1-443b07500f6c';
+  UUID_GALLERY  UUID := '1590e144-e3f8-41e6-98f9-f4a25bae496d';
+  UUID_SET      UUID := 'c305d8b3-9af8-469e-aea5-88208def353f';
+  UUID_LOGO     UUID := '2d5aca72-6eb9-4b16-906d-8e0f91c9bf40';
+  UUID_AMBIENT  UUID := 'e8bf8d1f-b6f5-47c1-953b-616d354318a6';
+  UUID_VP       UUID := '03426962-2d59-483a-a157-3f6a4a5c6a77';
+  UUID_VA       UUID := '57780389-64ce-4945-b7ca-ed22ef73caa9';
+  UUID_BOX      UUID := 'f980378d-3ac5-4525-8941-52715f3e320f';
+  UUID_POUCH    UUID := '9da408a0-21bd-4b45-b7f5-4ad5f29822da';
+  UUID_BAG      UUID := '196e69a9-6962-4494-8919-ee1d2737e6e7';
+BEGIN
+  -- Preparar
+  v_base := regexp_replace(p_filename, '\.[^.]+$', '');
+  v_ext  := lower(regexp_replace(p_filename, '.*\.', ''));
+  v_is_primary := (p_filename = p_main_image);
+
+  -- ══════════════════════════════════════════════
+  -- GRUPO A: Padrões genéricos (sem cor numérica)
+  -- ══════════════════════════════════════════════
+
+  -- A1: REF_set.jpg (1.163 ocorrências)
+  IF v_base ~ '^\d+_set$' THEN
+    v_ref := regexp_replace(v_base, '_set$', '');
+    RETURN QUERY SELECT 'set'::TEXT, NULL::TEXT, v_is_primary, 5, FALSE, v_ref, UUID_SET;
+    RETURN;
+  END IF;
+
+  -- A2: REF_amb.jpg (526 ocorrências)
+  IF v_base ~ '^\d+_amb$' THEN
+    v_ref := regexp_replace(v_base, '_amb$', '');
+    RETURN QUERY SELECT 'ambient'::TEXT, NULL::TEXT, v_is_primary, 6, FALSE, v_ref, UUID_AMBIENT;
+    RETURN;
+  END IF;
+
+  -- A3: REF_box.jpg (148 ocorrências)
+  IF v_base ~ '^\d+_box$' THEN
+    v_ref := regexp_replace(v_base, '_box$', '');
+    RETURN QUERY SELECT 'box'::TEXT, NULL::TEXT, v_is_primary, 40, FALSE, v_ref, UUID_BOX;
+    RETURN;
+  END IF;
+
+  -- A4: REF_pouch.jpg (14 ocorrências)
+  IF v_base ~ '^\d+_pouch$' THEN
+    v_ref := regexp_replace(v_base, '_pouch$', '');
+    RETURN QUERY SELECT 'pouch'::TEXT, NULL::TEXT, v_is_primary, 41, FALSE, v_ref, UUID_POUCH;
+    RETURN;
+  END IF;
+
+  -- A5: REF_logo.jpg (1 ocorrência)
+  IF v_base ~ '^\d+_logo$' THEN
+    v_ref := regexp_replace(v_base, '_logo$', '');
+    RETURN QUERY SELECT 'logo'::TEXT, NULL::TEXT, v_is_primary, 30, FALSE, v_ref, UUID_LOGO;
+    RETURN;
+  END IF;
+
+  -- A6: REF.jpg (só referência - 10 ocorrências)
+  IF v_base ~ '^\d+$' THEN
+    RETURN QUERY SELECT 'gallery'::TEXT, NULL::TEXT, v_is_primary, 20, FALSE, v_base, UUID_GALLERY;
+    RETURN;
+  END IF;
+
+  -- A7: REF_LETRA.jpg (42058_a.jpg - 102 ocorrências)
+  IF v_base ~ '^\d+_[a-zA-Z]$' THEN
+    v_ref := split_part(v_base, '_', 1);
+    v_letter := lower(split_part(v_base, '_', 2));
+    RETURN QUERY SELECT 'gallery'::TEXT, NULL::TEXT, v_is_primary,
+      COALESCE((v_order_map->>v_letter)::int, 20), FALSE, v_ref, UUID_GALLERY;
+    RETURN;
+  END IF;
+
+  -- ══════════════════════════════════════════════
+  -- GRUPO B: REF_COR com sufixo
+  -- ══════════════════════════════════════════════
+
+  -- B0: REF_COR_SUFIXO com underscore (28040_119_logo.jpg)
+  IF v_base ~ '^\d+_\d+_.+$' THEN
+    v_parts := regexp_match(v_base, '^(\d+)_(\d+)_(.+)$');
+    v_ref := v_parts[1];
+    v_cor := v_parts[2];
+
+    -- Terceiro segmento numérico = multi-ref
+    IF v_parts[3] ~ '^\d+$' THEN
+      RETURN QUERY SELECT 'gallery'::TEXT, v_parts[3], v_is_primary, 20, TRUE, v_ref, UUID_GALLERY;
+      RETURN;
+    END IF;
+
+    -- Sufixo com underscore → normalizar
+    v_suffix := '-' || v_parts[3];
+    -- Fall through para classificação de sufixo
+  END IF;
+
+  -- B1: REF_COR.jpg ou REF_COR-SUFIXO.jpg
+  IF v_suffix IS NULL AND v_base ~ '^\d+_\d+(-.*)?$' THEN
+    v_parts := regexp_match(v_base, '^(\d+)_(\d+)(-.*)?$');
+    v_ref := v_parts[1];
+    v_cor := v_parts[2];
+    v_suffix := COALESCE(v_parts[3], '');
+  END IF;
+
+  -- Classificar sufixo se temos ref + cor
+  IF v_ref IS NOT NULL AND v_cor IS NOT NULL THEN
+    -- Sem sufixo = imagem principal da cor
+    IF v_suffix IS NULL OR v_suffix = '' THEN
+      RETURN QUERY SELECT 'main'::TEXT, v_cor, v_is_primary, 1, TRUE, v_ref, UUID_MAIN;
+      RETURN;
+    END IF;
+
+    v_suffix_lower := lower(ltrim(v_suffix, '-'));
+    v_suffix_parts := string_to_array(v_suffix_lower, '-');
+
+    -- PACKAGING (prioridade máxima)
+    IF 'box' = ANY(v_suffix_parts) THEN
+      IF 'logo' = ANY(v_suffix_parts) THEN
+        RETURN QUERY SELECT 'box'::TEXT, v_cor, v_is_primary, 43, TRUE, v_ref, UUID_BOX;
+      ELSE
+        RETURN QUERY SELECT 'box'::TEXT, v_cor, v_is_primary, 40, TRUE, v_ref, UUID_BOX;
+      END IF;
+      RETURN;
+    END IF;
+
+    IF 'pouch' = ANY(v_suffix_parts) THEN
+      IF 'logo' = ANY(v_suffix_parts) THEN
+        RETURN QUERY SELECT 'pouch'::TEXT, v_cor, v_is_primary, 44, TRUE, v_ref, UUID_POUCH;
+      ELSE
+        RETURN QUERY SELECT 'pouch'::TEXT, v_cor, v_is_primary, 41, TRUE, v_ref, UUID_POUCH;
+      END IF;
+      RETURN;
+    END IF;
+
+    IF 'bag' = ANY(v_suffix_parts) THEN
+      IF 'logo' = ANY(v_suffix_parts) THEN
+        RETURN QUERY SELECT 'bag'::TEXT, v_cor, v_is_primary, 45, TRUE, v_ref, UUID_BAG;
+      ELSE
+        RETURN QUERY SELECT 'bag'::TEXT, v_cor, v_is_primary, 42, TRUE, v_ref, UUID_BAG;
+      END IF;
+      RETURN;
+    END IF;
+
+    -- LOGO
+    IF 'logo' = ANY(v_suffix_parts) THEN
+      v_angle := NULL;
+      FOR i IN 1..array_length(v_suffix_parts, 1) LOOP
+        IF v_suffix_parts[i] ~ '^[a-g]$' THEN
+          v_angle := v_suffix_parts[i];
+          EXIT;
+        END IF;
+      END LOOP;
+      RETURN QUERY SELECT 'logo'::TEXT, v_cor, v_is_primary,
+        30 + COALESCE((v_order_map->>v_angle)::int, 0), TRUE, v_ref, UUID_LOGO;
+      RETURN;
+    END IF;
+
+    -- SET cor-específico
+    IF 'set' = ANY(v_suffix_parts) THEN
+      RETURN QUERY SELECT 'set'::TEXT, v_cor, v_is_primary, 5, TRUE, v_ref, UUID_SET;
+      RETURN;
+    END IF;
+
+    -- AMBIENTE
+    IF 'amb' = ANY(v_suffix_parts) THEN
+      RETURN QUERY SELECT 'ambient'::TEXT, v_cor, v_is_primary, 25, TRUE, v_ref, UUID_AMBIENT;
+      RETURN;
+    END IF;
+
+    -- VITRINE
+    IF 'vp' = ANY(v_suffix_parts) THEN
+      RETURN QUERY SELECT 'vitrine_pessoa'::TEXT, v_cor, v_is_primary, 12, TRUE, v_ref, UUID_VP;
+      RETURN;
+    END IF;
+    IF 'va' = ANY(v_suffix_parts) THEN
+      RETURN QUERY SELECT 'vitrine_ambiente'::TEXT, v_cor, v_is_primary, 13, TRUE, v_ref, UUID_VA;
+      RETURN;
+    END IF;
+
+    -- GALLERY (ângulos simples)
+    FOR i IN 1..array_length(v_suffix_parts, 1) LOOP
+      IF v_suffix_parts[i] ~ '^[a-g]$' THEN
+        RETURN QUERY SELECT 'gallery'::TEXT, v_cor, v_is_primary,
+          COALESCE((v_order_map->>v_suffix_parts[i])::int, 20), TRUE, v_ref, UUID_GALLERY;
+        RETURN;
+      END IF;
+    END LOOP;
+
+    -- Fallback: sufixo não reconhecido
+    RETURN QUERY SELECT 'gallery'::TEXT, v_cor, v_is_primary, 20, TRUE, v_ref, UUID_GALLERY;
+    RETURN;
+  END IF;
+
+  -- ══════════════════════════════════════════════
+  -- GRUPO C: Multi-referência
+  -- ══════════════════════════════════════════════
+
+  IF v_base ~ '^\d+_\d+_\d+' THEN
+    v_parts := regexp_match(v_base, '^(\d+)');
+    RETURN QUERY SELECT 'gallery'::TEXT, NULL::TEXT, v_is_primary, 20, FALSE,
+      COALESCE(v_parts[1], NULL), UUID_GALLERY;
+    RETURN;
+  END IF;
+
+  -- ══════════════════════════════════════════════
+  -- FALLBACK ABSOLUTO — NUNCA CRASH
+  -- ══════════════════════════════════════════════
+
+  v_parts := regexp_match(v_base, '^(\d+)');
+  RETURN QUERY SELECT 'gallery'::TEXT, NULL::TEXT, v_is_primary, 99, FALSE,
+    COALESCE(v_parts[1], NULL), UUID_GALLERY;
+  RETURN;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_complete_ai_description(p_queue_id uuid, p_success boolean, p_ai_title text DEFAULT NULL::text, p_ai_description text DEFAULT NULL::text, p_ai_summary text DEFAULT NULL::text, p_ai_model text DEFAULT NULL::text, p_error_message text DEFAULT NULL::text)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_product_id uuid;
+BEGIN
+  SELECT product_id INTO v_product_id
+  FROM ai_description_queue WHERE id = p_queue_id;
+
+  IF v_product_id IS NULL THEN
+    RETURN false;
+  END IF;
+
+  IF p_success THEN
+    UPDATE products
+    SET ai_title = p_ai_title,
+        ai_description = p_ai_description,
+        ai_summary = p_ai_summary,
+        ai_model = p_ai_model,
+        ai_generated_at = now(),
+        ai_version = COALESCE(ai_version, 0) + 1
+    WHERE id = v_product_id;
+
+    UPDATE ai_description_queue
+    SET status = 'completed',
+        completed_at = now(),
+        ai_model = p_ai_model,
+        error_message = NULL
+    WHERE id = p_queue_id;
+  ELSE
+    UPDATE ai_description_queue
+    SET status = CASE WHEN attempts >= max_attempts THEN 'failed' ELSE 'pending' END,
+        error_message = p_error_message,
+        started_at = NULL
+    WHERE id = p_queue_id;
+  END IF;
+
+  RETURN true;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_compute_and_record_drift(p_lovable_signatures jsonb)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'pg_catalog', 'public'
+AS $function$
+DECLARE
+  v_oficial_sigs  jsonb;
+  v_only_oficial  text[];
+  v_only_lovable  text[];
+  v_diff          jsonb := '{}'::jsonb;
+  v_has_drift     boolean;
+  v_tab_oficial   int;
+  v_tab_lovable   int;
+  v_log_payload   jsonb;
+  v_allowed       text[];
+BEGIN
+  SELECT array_agg(table_name) INTO v_allowed FROM public.schema_drift_allowlist;
+  v_allowed := COALESCE(v_allowed, ARRAY[]::text[]);
+
+  v_oficial_sigs := public.get_public_schema_signatures();
+
+  SELECT array_agg(k ORDER BY k) INTO v_only_oficial
+    FROM jsonb_object_keys(v_oficial_sigs) k
+   WHERE NOT (p_lovable_signatures ? k) AND k != ALL(v_allowed);
+
+  SELECT array_agg(k ORDER BY k) INTO v_only_lovable
+    FROM jsonb_object_keys(p_lovable_signatures) k
+   WHERE NOT (v_oficial_sigs ? k) AND k != ALL(v_allowed);
+
+  SELECT jsonb_object_agg(k, jsonb_build_object('oficial', v_oficial_sigs -> k,
+                                                'lovable', p_lovable_signatures -> k))
+    INTO v_diff
+    FROM jsonb_object_keys(v_oficial_sigs) k
+   WHERE p_lovable_signatures ? k
+     AND (v_oficial_sigs -> k) <> (p_lovable_signatures -> k)
+     AND k != ALL(v_allowed);
+
+  v_diff := COALESCE(v_diff, '{}'::jsonb);
+  v_tab_oficial := (SELECT COUNT(*) FROM jsonb_object_keys(v_oficial_sigs));
+  v_tab_lovable := (SELECT COUNT(*) FROM jsonb_object_keys(p_lovable_signatures));
+
+  -- has_drift CORRIGIDO: só considera divergências que importam (Lovable é subset esperado)
+  v_has_drift := (COALESCE(array_length(v_only_lovable, 1), 0) > 0
+                  OR (SELECT COUNT(*) FROM jsonb_object_keys(v_diff)) > 0);
+
+  v_log_payload := jsonb_build_object(
+    'has_drift',         v_has_drift,
+    'tables_oficial',    v_tab_oficial,
+    'tables_lovable',    v_tab_lovable,
+    'only_oficial',      COALESCE(to_jsonb(v_only_oficial), '[]'::jsonb),
+    'only_lovable',      COALESCE(to_jsonb(v_only_lovable), '[]'::jsonb),
+    'schema_diff',       v_diff,
+    'allowlist_applied', to_jsonb(v_allowed)
+  );
+
+  RETURN public.record_schema_drift_result(v_log_payload);
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_convert_box_dimension_to_cm(p_value text)
+ RETURNS numeric
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_num DECIMAL;
+BEGIN
+    IF p_value IS NULL OR TRIM(p_value) = '' THEN
+        RETURN NULL;
+    END IF;
+    
+    v_num := p_value::DECIMAL;
+    
+    -- Detectar automaticamente:
+    -- Se valor < 10, provavelmente está em METROS (ex: 0.42)
+    -- Se valor >= 10, provavelmente está em MILÍMETROS (ex: 420)
+    
+    IF v_num < 10 THEN
+        -- Valor em METROS → multiplicar por 100 para cm
+        RETURN ROUND(v_num * 100, 2);
+    ELSE
+        -- Valor em MILÍMETROS → dividir por 10 para cm
+        RETURN ROUND(v_num / 10, 2);
+    END IF;
+    
+EXCEPTION WHEN OTHERS THEN
+    RETURN NULL;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_convert_unit(p_value numeric, p_source_unit character varying, p_target_unit character varying, p_supplier_id uuid DEFAULT NULL::uuid)
+ RETURNS numeric
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_multiplier DECIMAL;
+BEGIN
+    -- Se valor nulo, retorna nulo
+    IF p_value IS NULL THEN
+        RETURN NULL;
+    END IF;
+    
+    -- Se unidades iguais, retorna valor original
+    IF LOWER(TRIM(p_source_unit)) = LOWER(TRIM(p_target_unit)) THEN
+        RETURN p_value;
+    END IF;
+    
+    -- Buscar conversão (primeiro específica do fornecedor, depois global)
+    SELECT multiplier INTO v_multiplier
+    FROM supplier_unit_conversions
+    WHERE LOWER(source_unit) = LOWER(TRIM(p_source_unit))
+      AND LOWER(target_unit) = LOWER(TRIM(p_target_unit))
+      AND (supplier_id = p_supplier_id OR supplier_id IS NULL)
+      AND is_active = TRUE
+    ORDER BY supplier_id NULLS LAST
+    LIMIT 1;
+    
+    IF v_multiplier IS NULL THEN
+        RAISE WARNING 'Conversão não encontrada: % → %', p_source_unit, p_target_unit;
+        RETURN p_value;
+    END IF;
+    
+    RETURN ROUND(p_value * v_multiplier, 4);
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_cor_generate_slug()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    IF NEW.slug IS NULL OR NEW.slug = '' THEN
+        NEW.slug := lower(regexp_replace(NEW.codigo, '[^a-zA-Z0-9]+', '-', 'g'));
+        NEW.slug := trim(BOTH '-' FROM NEW.slug);
+    END IF;
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_cor_updated_at()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    NEW.updated_at := NOW();
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_count_products_by_packing()
+ RETURNS TABLE(packing_type character varying, total bigint, percentage numeric)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_total BIGINT;
+BEGIN
+    SELECT COUNT(*) INTO v_total FROM products WHERE is_active = TRUE;
+    
+    RETURN QUERY
+    SELECT 
+        COALESCE(p.packing_classification, 'unknown')::VARCHAR AS packing_type,
+        COUNT(*) AS total,
+        ROUND(COUNT(*) * 100.0 / NULLIF(v_total, 0), 1) AS percentage
+    FROM products p
+    WHERE p.is_active = TRUE
+    GROUP BY p.packing_classification
+    ORDER BY total DESC;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_create_import_batch(p_supplier_id uuid, p_notes text DEFAULT NULL::text)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_batch_id UUID;
+BEGIN
+    INSERT INTO supplier_import_batches (
+        supplier_id, notes, status, started_at, created_at,
+        products_imported, products_updated, products_errors,
+        variants_imported, variants_updated, variants_errors
+    ) VALUES (
+        p_supplier_id, p_notes, 'running', NOW(), NOW(),
+        0, 0, 0, 0, 0, 0
+    )
+    RETURNING id INTO v_batch_id;
+    
+    RETURN v_batch_id;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_create_multiple_equivalences(p_supplier_material_id uuid, p_organization_id uuid DEFAULT '4f2f91ed-beec-4fa4-867d-5f20c8a4ef00'::uuid)
+ RETURNS TABLE(material_part text, promo_type_id uuid, promo_type_name text, created boolean, status text)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_api_name TEXT;
+    v_part RECORD;
+    v_type_id UUID;
+    v_type_name TEXT;
+BEGIN
+    SELECT api_material_name INTO v_api_name
+    FROM supplier_materials
+    WHERE id = p_supplier_material_id;
+    
+    IF v_api_name IS NULL THEN
+        material_part := NULL;
+        promo_type_id := NULL;
+        promo_type_name := NULL;
+        created := FALSE;
+        status := 'ERRO: supplier_material_id não encontrado';
+        RETURN NEXT;
+        RETURN;
+    END IF;
+    
+    FOR v_part IN SELECT * FROM fn_parse_composite_material(v_api_name)
+    LOOP
+        material_part := v_part.material_part;
+        v_type_id := fn_find_material_type_id(v_part.material_part);
+        promo_type_id := v_type_id;
+        
+        IF v_type_id IS NOT NULL THEN
+            SELECT name INTO v_type_name FROM material_types WHERE id = v_type_id;
+            promo_type_name := v_type_name;
+            
+            IF NOT EXISTS (
+                SELECT 1 FROM material_equivalences
+                WHERE supplier_material_id = p_supplier_material_id
+                  AND promo_type_id = v_type_id
+            ) THEN
+                INSERT INTO material_equivalences (
+                    supplier_material_id,
+                    promo_type_id,
+                    match_level,
+                    match_quality,
+                    confidence_score,
+                    notes,
+                    created_at,
+                    updated_at
+                ) VALUES (
+                    p_supplier_material_id,
+                    v_type_id,
+                    'type',
+                    'automatic',
+                    0.85,
+                    'Gerado por fn_create_multiple_equivalences',
+                    now(),
+                    now()
+                );
+                created := TRUE;
+                status := 'CRIADO';
+            ELSE
+                created := FALSE;
+                status := 'JÁ EXISTE';
+            END IF;
+        ELSE
+            promo_type_name := '(não encontrado)';
+            created := FALSE;
+            status := 'TIPO NÃO ENCONTRADO';
+        END IF;
+        
+        RETURN NEXT;
+    END LOOP;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.fn_create_quote_v3(p_quote_data jsonb, p_items_data jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -807,10 +10893,20 @@ BEGIN
 
     RETURN jsonb_build_object('id', v_quote_id, 'quote_number', v_quote_number);
 END;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_custom_kits_sync_user_id()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'pg_catalog', 'public'
+AS $function$
+BEGIN
+  IF NEW.user_id IS NULL AND NEW.created_by IS NOT NULL THEN
+    NEW.user_id := NEW.created_by;
+  ELSIF NEW.created_by IS NULL AND NEW.user_id IS NOT NULL THEN
+    NEW.created_by := NEW.user_id;
+  END IF;
+  RETURN NEW;
+END $function$;
 CREATE OR REPLACE FUNCTION public.fn_dar_set_snapshot_hash()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -822,18 +10918,1366 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$function$
-;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_deploy_readiness_check()
+ RETURNS TABLE(check_name text, check_status text, severity text, details text, recommendation text)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  RETURN QUERY
+  SELECT 'cron_jobs_healthy'::text,
+    (CASE WHEN COALESCE(failures, 0) = 0 THEN '✅ OK' ELSE '❌ FAIL' END)::text,
+    'critical'::text,
+    ('Falhas última hora: ' || COALESCE(failures, 0)::text)::text,
+    (CASE WHEN COALESCE(failures, 0) > 0 THEN 'Investigar cron.job_run_details' ELSE 'OK' END)::text
+  FROM (
+    SELECT COUNT(*) AS failures FROM cron.job_run_details d
+    WHERE d.start_time > now() - interval '1 hour' AND d.status='failed'
+  ) t;
 
--- ----------------------------------------------------------------------------
+  RETURN QUERY
+  SELECT 'no_orphan_variants'::text,
+    (CASE WHEN orphans = 0 THEN '✅ OK' ELSE '❌ FAIL' END)::text,
+    'critical'::text,
+    ('Variants órfãs: ' || orphans::text)::text,
+    (CASE WHEN orphans > 0 THEN 'DELETE órfãs' ELSE 'OK' END)::text
+  FROM (
+    SELECT COUNT(*) AS orphans FROM product_variants pv
+    WHERE NOT EXISTS (SELECT 1 FROM products p WHERE p.id = pv.product_id)
+  ) t;
+
+  RETURN QUERY
+  SELECT 'stock_cache_positive'::text,
+    (CASE WHEN negativos = 0 THEN '✅ OK' ELSE '❌ FAIL' END)::text,
+    'critical'::text,
+    ('Produtos com stock negativo: ' || negativos::text)::text,
+    (CASE WHEN negativos > 0 THEN 'Rodar fn_sync_product_stock_cache' ELSE 'OK' END)::text
+  FROM (SELECT COUNT(*) AS negativos FROM products WHERE stock_quantity < 0) t;
+
+  RETURN QUERY
+  SELECT 'rls_coverage'::text,
+    (CASE WHEN sem_rls = 0 THEN '✅ OK' ELSE '⚠️ ATENÇÃO' END)::text,
+    'critical'::text,
+    ('Tabelas sem RLS: ' || sem_rls::text)::text,
+    (CASE WHEN sem_rls > 0 THEN 'ALTER TABLE ENABLE RLS' ELSE 'OK' END)::text
+  FROM (
+    SELECT COUNT(*) AS sem_rls
+    FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public' AND c.relkind = 'r' AND NOT c.relrowsecurity
+  ) t;
+
+  RETURN QUERY
+  SELECT 'users_have_profile'::text,
+    (CASE WHEN orfaos = 0 THEN '✅ OK' ELSE '⚠️ ATENÇÃO' END)::text,
+    'high'::text,
+    ('Users sem profile: ' || orfaos::text)::text,
+    (CASE WHEN orfaos > 0 THEN 'Verificar handle_new_user' ELSE 'OK' END)::text
+  FROM (
+    SELECT COUNT(*) AS orfaos FROM auth.users u
+    WHERE NOT EXISTS (SELECT 1 FROM profiles p WHERE p.id = u.id)
+  ) t;
+
+  RETURN QUERY
+  SELECT 'seo_redirects_unique_index'::text,
+    (CASE WHEN existe = 1 THEN '✅ OK' ELSE '❌ FAIL' END)::text,
+    'critical'::text,
+    (CASE WHEN existe = 1 THEN 'uq_seo_redirects_source_active presente'
+          ELSE 'AUSENTE - trigger quebra' END)::text,
+    (CASE WHEN existe = 0 
+      THEN 'CREATE UNIQUE INDEX uq_seo_redirects_source_active'
+      ELSE 'OK' END)::text
+  FROM (
+    SELECT COUNT(*) AS existe FROM pg_indexes
+    WHERE indexname = 'uq_seo_redirects_source_active' AND tablename='seo_redirects'
+  ) t;
+
+  RETURN QUERY
+  SELECT 'fiscal_ncm_coverage'::text,
+    (CASE WHEN sem_ncm = 0 THEN '✅ OK' ELSE '❌ FAIL' END)::text,
+    'critical'::text,
+    ('Produtos ativos sem NCM: ' || sem_ncm::text)::text,
+    (CASE WHEN sem_ncm > 0 THEN 'UPDATE ncm_code' ELSE 'OK' END)::text
+  FROM (
+    SELECT COUNT(*) AS sem_ncm FROM products p
+    WHERE p.is_active AND (p.ncm_code IS NULL OR p.ncm_id IS NULL)
+  ) t;
+
+  RETURN QUERY
+  SELECT 'health_score_min'::text,
+    (CASE WHEN score::numeric >= 90 THEN '✅ OK' ELSE '⚠️ ATENÇÃO' END)::text,
+    'high'::text,
+    ('Score: ' || score || ' - ' || grade)::text,
+    (CASE WHEN score::numeric >= 90 THEN 'OK' ELSE 'fn_calculate_health_score' END)::text
+  FROM fn_calculate_health_score();
+
+  RETURN QUERY
+  SELECT 'smoke_tests_pass'::text,
+    (CASE WHEN falhas = 0 THEN '✅ OK' ELSE '❌ FAIL' END)::text,
+    'critical'::text,
+    ('Smoke tests falhando: ' || falhas::text || '/12')::text,
+    (CASE WHEN falhas > 0 THEN 'fn_run_smoke_tests' ELSE 'OK' END)::text
+  FROM (
+    SELECT COUNT(*) AS falhas FROM fn_run_smoke_tests() s WHERE s.result NOT LIKE '%PASS%'
+  ) t;
+
+  RETURN QUERY
+  SELECT 'zero_critical_alerts'::text,
+    (CASE WHEN criticos = 0 THEN '✅ OK' ELSE '❌ FAIL' END)::text,
+    'critical'::text,
+    ('Alertas críticos ativos: ' || criticos::text)::text,
+    (CASE WHEN criticos > 0 THEN 'v_system_alerts' ELSE 'OK' END)::text
+  FROM (
+    SELECT COUNT(*) AS criticos FROM v_system_alerts a WHERE a.severidade = 'critical'
+  ) t;
+
+  RETURN QUERY
+  SELECT 'audit_recency'::text,
+    (CASE WHEN ultima IS NULL THEN '⚠️ SEM AUDIT'
+         WHEN now() - ultima < interval '30 days' THEN '✅ OK'
+         ELSE '⚠️ DESATUALIZADA' END)::text,
+    'medium'::text,
+    ('Última auditoria: ' || COALESCE(ultima::text, 'nunca'))::text,
+    (CASE WHEN ultima IS NULL OR now() - ultima > interval '30 days'
+      THEN 'Rodar nova bateria' ELSE 'OK' END)::text
+  FROM (
+    SELECT MAX(r.executed_at) AS ultima FROM prod_audit.test_results r
+  ) t;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_derive_similarity_pairs_on_insert()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM product_similarity_groups
+    WHERE id = NEW.group_id AND is_active = true
+  ) THEN
+    RETURN NEW;
+  END IF;
+
+  INSERT INTO product_relationships
+    (product_id, related_product_id, relationship_type, is_bidirectional, is_active, display_order)
+  SELECT NEW.product_id, m.product_id, 'similar', true, true, 0
+  FROM product_similarity_group_members m
+  WHERE m.group_id = NEW.group_id
+    AND m.product_id != NEW.product_id
+    AND m.supplier_id != NEW.supplier_id
+  ON CONFLICT (product_id, related_product_id, relationship_type) DO NOTHING;
+
+  INSERT INTO product_relationships
+    (product_id, related_product_id, relationship_type, is_bidirectional, is_active, display_order)
+  SELECT m.product_id, NEW.product_id, 'similar', true, true, 0
+  FROM product_similarity_group_members m
+  WHERE m.group_id = NEW.group_id
+    AND m.product_id != NEW.product_id
+    AND m.supplier_id != NEW.supplier_id
+  ON CONFLICT (product_id, related_product_id, relationship_type) DO NOTHING;
+
+  RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_detecta_familia_cor(p_r integer, p_g integer, p_b integer)
+ RETURNS character varying
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_familia VARCHAR(20);
+    v_max INTEGER;
+    v_min INTEGER;
+    v_hue FLOAT;
+    v_saturation FLOAT;
+    v_lightness FLOAT;
+BEGIN
+    -- Calcular valores para determinar a cor
+    v_max := GREATEST(p_r, p_g, p_b);
+    v_min := LEAST(p_r, p_g, p_b);
+    v_lightness := (v_max + v_min) / 2.0 / 255.0;
+    
+    -- Se muito claro ou escuro, neutro
+    IF v_max - v_min < 20 THEN
+        RETURN 'neutro';
+    END IF;
+    
+    -- Calcular saturação
+    IF v_lightness <= 0.5 THEN
+        v_saturation := (v_max - v_min)::FLOAT / (v_max + v_min)::FLOAT;
+    ELSE
+        v_saturation := (v_max - v_min)::FLOAT / (510 - v_max - v_min)::FLOAT;
+    END IF;
+    
+    -- Se baixa saturação, neutro ou marrom/bege
+    IF v_saturation < 0.15 THEN
+        IF v_lightness > 0.6 THEN
+            RETURN 'bege';
+        ELSIF v_lightness < 0.3 THEN
+            RETURN 'neutro';
+        ELSE
+            RETURN 'marrom';
+        END IF;
+    END IF;
+    
+    -- Calcular matiz (hue)
+    IF v_max = v_min THEN
+        v_hue := 0;
+    ELSIF v_max = p_r THEN
+        v_hue := 60 * ((p_g - p_b)::FLOAT / (v_max - v_min)::FLOAT);
+    ELSIF v_max = p_g THEN
+        v_hue := 60 * (2 + (p_b - p_r)::FLOAT / (v_max - v_min)::FLOAT);
+    ELSE
+        v_hue := 60 * (4 + (p_r - p_g)::FLOAT / (v_max - v_min)::FLOAT);
+    END IF;
+    
+    IF v_hue < 0 THEN
+        v_hue := v_hue + 360;
+    END IF;
+    
+    -- Classificar por matiz
+    IF v_hue >= 0 AND v_hue < 20 THEN
+        v_familia := 'vermelho';
+    ELSIF v_hue >= 20 AND v_hue < 45 THEN
+        v_familia := 'laranja';
+    ELSIF v_hue >= 45 AND v_hue < 70 THEN
+        v_familia := 'amarelo';
+    ELSIF v_hue >= 70 AND v_hue < 150 THEN
+        v_familia := 'verde';
+    ELSIF v_hue >= 150 AND v_hue < 200 THEN
+        v_familia := 'ciano';
+    ELSIF v_hue >= 200 AND v_hue < 260 THEN
+        v_familia := 'azul';
+    ELSIF v_hue >= 260 AND v_hue < 290 THEN
+        v_familia := 'roxo';
+    ELSIF v_hue >= 290 AND v_hue < 330 THEN
+        IF v_saturation > 0.5 THEN
+            v_familia := 'magenta';
+        ELSE
+            v_familia := 'rosa';
+        END IF;
+    ELSE
+        v_familia := 'vermelho';
+    END IF;
+    
+    RETURN v_familia;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_distribute_percentage(p_total numeric DEFAULT 100.0, p_count integer DEFAULT 1)
+ RETURNS numeric[]
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_base NUMERIC;
+    v_result NUMERIC[] := '{}';
+    v_sum NUMERIC := 0;
+    i INTEGER;
+BEGIN
+    IF p_count <= 0 THEN RETURN ARRAY[p_total]; END IF;
+    IF p_count = 1 THEN RETURN ARRAY[p_total]; END IF;
+    v_base := FLOOR(p_total / p_count * 100) / 100;
+    FOR i IN 1..(p_count - 1) LOOP
+        v_result := array_append(v_result, v_base);
+        v_sum := v_sum + v_base;
+    END LOOP;
+    v_result := array_append(v_result, ROUND(p_total - v_sum, 2));
+    RETURN v_result;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_enqueue_products_for_ai_description(p_priority integer DEFAULT 100, p_limit integer DEFAULT NULL::integer, p_only_active boolean DEFAULT true)
+ RETURNS TABLE(enqueued integer, already_queued integer, skipped integer)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_enqueued integer := 0;
+  v_already integer := 0;
+  v_skipped integer := 0;
+BEGIN
+  WITH candidatos AS (
+    SELECT p.id, p.organization_id
+    FROM products p
+    WHERE p.ai_description IS NULL
+      AND p.name IS NOT NULL
+      AND (NOT p_only_active OR p.is_active = true)
+      AND COALESCE(p.is_deleted, false) = false
+    ORDER BY 
+      p.view_count DESC NULLS LAST,   -- produtos mais vistos primeiro
+      p.is_featured DESC NULLS LAST,
+      p.created_at DESC
+    LIMIT COALESCE(p_limit, 1000000)
+  ),
+  inserts AS (
+    INSERT INTO ai_description_queue (product_id, organization_id, priority, status)
+    SELECT id, organization_id, p_priority, 'pending'
+    FROM candidatos
+    ON CONFLICT (product_id) DO NOTHING
+    RETURNING 1
+  )
+  SELECT COUNT(*)::int INTO v_enqueued FROM inserts;
+
+  SELECT COUNT(*)::int INTO v_already
+  FROM ai_description_queue q
+  JOIN products p ON p.id = q.product_id
+  WHERE p.ai_description IS NULL;
+
+  v_already := v_already - v_enqueued;
+
+  RETURN QUERY SELECT v_enqueued, v_already, v_skipped;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_ensure_seller_discount_limit()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  IF NEW.role = 'vendedor'::public.app_role THEN
+    INSERT INTO public.seller_discount_limits (user_id, max_discount_percent, set_by, notes)
+    VALUES (
+      NEW.user_id, 
+      0,
+      COALESCE(NEW.granted_by, NEW.user_id),
+      'Limite criado automaticamente quando user virou vendedor (A1-2). Admin deve configurar valor real.'
+    )
+    ON CONFLICT (user_id) DO NOTHING;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_ensure_single_primary_image()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    IF NEW.is_primary = true THEN
+        -- Desmarcar outras imagens primary do mesmo produto
+        UPDATE product_images 
+        SET is_primary = false, updated_at = NOW()
+        WHERE product_id = NEW.product_id 
+          AND id != NEW.id 
+          AND is_primary = true;
+    END IF;
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_expire_novelties_with_stats()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_expired INTEGER;
+    v_before_count INTEGER;
+    v_after_count INTEGER;
+BEGIN
+    -- Contar antes
+    SELECT COUNT(*) INTO v_before_count
+    FROM product_novelties WHERE is_active = TRUE;
+    
+    -- Expirar novidades onde expires_at já passou
+    UPDATE product_novelties
+    SET is_active = FALSE
+    WHERE is_active = TRUE
+      AND expires_at IS NOT NULL
+      AND expires_at < NOW();
+    
+    GET DIAGNOSTICS v_expired = ROW_COUNT;
+    
+    -- Contar depois
+    SELECT COUNT(*) INTO v_after_count
+    FROM product_novelties WHERE is_active = TRUE;
+    
+    -- Log para debug
+    RAISE NOTICE 'Novidades expiradas: % | Ativas antes: % | Ativas depois: %', 
+                 v_expired, v_before_count, v_after_count;
+    
+    RETURN jsonb_build_object(
+        'expired_count', v_expired,
+        'active_before', v_before_count,
+        'active_after', v_after_count,
+        'executed_at', NOW(),
+        'next_expiring', (
+            SELECT MIN(expires_at) 
+            FROM product_novelties 
+            WHERE is_active = TRUE AND expires_at > NOW()
+        )
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_expire_product_novelties()
+ RETURNS integer
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_count INTEGER;
+BEGIN
+    UPDATE products
+    SET is_new = false
+    WHERE is_new = true
+      AND created_at < NOW() - INTERVAL '30 days';
+    
+    GET DIAGNOSTICS v_count = ROW_COUNT;
+    RETURN v_count;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_extract_asia_variants(p_supplier_id uuid DEFAULT 'd2734e23-d633-4819-bb15-e51aa44e2118'::uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_raw RECORD;
+    v_var JSONB;
+    v_flat_data JSONB;
+    v_extracted INT := 0;
+    v_skipped INT := 0;
+    v_errors INT := 0;
+    v_batch_id UUID;
+    v_var_ref TEXT;
+    v_prod_ref TEXT;
+BEGIN
+    SELECT id INTO v_batch_id
+    FROM supplier_import_batches
+    WHERE supplier_id = p_supplier_id
+    ORDER BY created_at DESC
+    LIMIT 1;
+
+    FOR v_raw IN
+        SELECT id, supplier_reference, raw_data, import_batch_id
+        FROM supplier_products_raw
+        WHERE supplier_id = p_supplier_id
+          AND raw_data->'variacoes' IS NOT NULL
+          AND jsonb_array_length(raw_data->'variacoes') > 0
+    LOOP
+        v_prod_ref := v_raw.supplier_reference;
+
+        FOR v_var IN
+            SELECT value FROM jsonb_array_elements(v_raw.raw_data->'variacoes')
+        LOOP
+            BEGIN
+                v_var_ref := v_var->>'referencia';
+
+                IF EXISTS (
+                    SELECT 1 FROM supplier_variants_raw
+                    WHERE supplier_id = p_supplier_id
+                      AND supplier_sku = v_var_ref
+                ) THEN
+                    v_skipped := v_skipped + 1;
+                    CONTINUE;
+                END IF;
+
+                v_flat_data := v_var || jsonb_build_object(
+                    'var_referencia', v_var->>'referencia',
+                    'var_cor_nome',   v_var#>>'{atributos,cor,value}',
+                    'var_cor_hex',    v_var#>>'{atributos,cor,hexadecimal}',
+                    'var_estoque',    v_var->>'qtd_estoque'
+                );
+
+                INSERT INTO supplier_variants_raw (
+                    supplier_id,
+                    supplier_reference,
+                    supplier_sku,
+                    raw_data,
+                    import_batch_id,
+                    processed,
+                    imported_at,
+                    created_at,
+                    updated_at
+                ) VALUES (
+                    p_supplier_id,
+                    v_prod_ref,
+                    v_var_ref,
+                    v_flat_data,
+                    COALESCE(v_raw.import_batch_id, v_batch_id),
+                    FALSE,
+                    NOW(),
+                    NOW(),
+                    NOW()
+                );
+
+                v_extracted := v_extracted + 1;
+
+            EXCEPTION WHEN OTHERS THEN
+                v_errors := v_errors + 1;
+            END;
+        END LOOP;
+    END LOOP;
+
+    RETURN jsonb_build_object(
+        'extracted', v_extracted,
+        'skipped', v_skipped,
+        'errors', v_errors,
+        'supplier_id', p_supplier_id
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_extract_capacity_from_name(p_name text)
+ RETURNS integer
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_match TEXT[];
+    v_value INTEGER;
+BEGIN
+    -- 1. Match mL pattern with word boundary
+    v_match := regexp_match(p_name, '(\d+)\s*(ml)\M', 'i');
+    IF v_match IS NOT NULL THEN
+        v_value := v_match[1]::INTEGER;
+        IF v_value > 0 AND v_value <= 10000 THEN
+            RETURN v_value;
+        END IF;
+    END IF;
+    
+    -- 2. Match L/litro/litros with word boundary + apostrophe decimal
+    v_match := regexp_match(p_name, '(\d+[''.,]?\d*)\s*(litros?|l)\M', 'i');
+    IF v_match IS NOT NULL THEN
+        v_value := (REPLACE(REPLACE(v_match[1], '''', '.'), ',', '.')::NUMERIC * 1000)::INTEGER;
+        IF v_value > 0 AND v_value <= 10000 THEN
+            RETURN v_value;
+        END IF;
+    END IF;
+    
+    RETURN NULL;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_extract_color_from_name(p_name text)
+ RETURNS text[]
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name_lower TEXT;
+    v_colors TEXT[] := '{}';
+BEGIN
+    v_name_lower := LOWER(unaccent(COALESCE(p_name, '')));
+    
+    IF v_name_lower ~ '\m(preto|preta|black)\M' THEN v_colors := array_append(v_colors, 'Preto'); END IF;
+    IF v_name_lower ~ '\m(branco|branca|white)\M' THEN v_colors := array_append(v_colors, 'Branco'); END IF;
+    IF v_name_lower ~ '\m(azul|blue)\M' THEN v_colors := array_append(v_colors, 'Azul'); END IF;
+    IF v_name_lower ~ '\m(vermelho|vermelha|red)\M' THEN v_colors := array_append(v_colors, 'Vermelho'); END IF;
+    IF v_name_lower ~ '\m(verde|green)\M' THEN v_colors := array_append(v_colors, 'Verde'); END IF;
+    IF v_name_lower ~ '\m(amarelo|amarela|yellow)\M' THEN v_colors := array_append(v_colors, 'Amarelo'); END IF;
+    IF v_name_lower ~ '\m(laranja|orange)\M' THEN v_colors := array_append(v_colors, 'Laranja'); END IF;
+    IF v_name_lower ~ '\m(rosa|pink)\M' THEN v_colors := array_append(v_colors, 'Rosa'); END IF;
+    IF v_name_lower ~ '\m(roxo|roxa|purple|violeta)\M' THEN v_colors := array_append(v_colors, 'Roxo'); END IF;
+    IF v_name_lower ~ '\m(cinza|cinzento|grey|gray)\M' THEN v_colors := array_append(v_colors, 'Cinza'); END IF;
+    IF v_name_lower ~ '\m(marrom|marron|brown)\M' THEN v_colors := array_append(v_colors, 'Marrom'); END IF;
+    IF v_name_lower ~ '\m(bege|beige)\M' THEN v_colors := array_append(v_colors, 'Bege'); END IF;
+    IF v_name_lower ~ '\m(dourado|dourada|gold)\M' THEN v_colors := array_append(v_colors, 'Dourado'); END IF;
+    IF v_name_lower ~ '\m(prata|prateado|prateada|silver)\M' THEN v_colors := array_append(v_colors, 'Prata'); END IF;
+    IF v_name_lower ~ '\m(cromado|cromada|chrome)\M' THEN v_colors := array_append(v_colors, 'Cromado'); END IF;
+    IF v_name_lower ~ '\m(transparente|cristal|clear)\M' THEN v_colors := array_append(v_colors, 'Transparente'); END IF;
+    IF v_name_lower ~ '\m(natural|cru)\M' THEN v_colors := array_append(v_colors, 'Natural'); END IF;
+    
+    RETURN v_colors;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_extract_dimensions_from_name(p_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_match TEXT[];
+    v_result JSONB := '{}';
+BEGIN
+    -- Padrão: 30x20x10 cm
+    v_match := regexp_match(p_name, '(\d+[,.]?\d*)\s*[xX×]\s*(\d+[,.]?\d*)\s*[xX×]\s*(\d+[,.]?\d*)\s*(cm|mm)?', 'i');
+    IF v_match IS NOT NULL THEN
+        v_result := jsonb_build_object(
+            'length_cm', REPLACE(v_match[1], ',', '.')::NUMERIC,
+            'width_cm', REPLACE(v_match[2], ',', '.')::NUMERIC,
+            'height_cm', REPLACE(v_match[3], ',', '.')::NUMERIC
+        );
+        IF v_match[4] = 'mm' THEN
+            v_result := jsonb_build_object(
+                'length_cm', (REPLACE(v_match[1], ',', '.')::NUMERIC / 10),
+                'width_cm', (REPLACE(v_match[2], ',', '.')::NUMERIC / 10),
+                'height_cm', (REPLACE(v_match[3], ',', '.')::NUMERIC / 10)
+            );
+        END IF;
+        RETURN v_result;
+    END IF;
+    
+    -- Padrão: 30x20 cm (2 dimensões)
+    v_match := regexp_match(p_name, '(\d+[,.]?\d*)\s*[xX×]\s*(\d+[,.]?\d*)\s*(cm|mm)?', 'i');
+    IF v_match IS NOT NULL THEN
+        v_result := jsonb_build_object(
+            'length_cm', REPLACE(v_match[1], ',', '.')::NUMERIC,
+            'width_cm', REPLACE(v_match[2], ',', '.')::NUMERIC
+        );
+        RETURN v_result;
+    END IF;
+    
+    RETURN NULL;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_extract_keywords_from_name(p_name text)
+ RETURNS text[]
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name_clean TEXT;
+    v_words TEXT[];
+    v_keywords TEXT[] := '{}';
+    v_word TEXT;
+    v_stopwords TEXT[] := ARRAY['em', 'de', 'da', 'do', 'para', 'com', 'por', 'a', 'o', 'e', 'ou', 'que', 'um', 'uma', 'os', 'as', 'na', 'no', 'ao', 'aos', 'pela', 'pelo'];
+BEGIN
+    v_name_clean := LOWER(unaccent(COALESCE(p_name, '')));
+    v_name_clean := regexp_replace(v_name_clean, '[^a-z0-9\s]', ' ', 'g');
+    v_name_clean := regexp_replace(v_name_clean, '\s+', ' ', 'g');
+    
+    v_words := string_to_array(TRIM(v_name_clean), ' ');
+    
+    FOREACH v_word IN ARRAY v_words LOOP
+        IF LENGTH(v_word) >= 3 AND NOT v_word = ANY(v_stopwords) THEN
+            v_keywords := array_append(v_keywords, v_word);
+        END IF;
+    END LOOP;
+    
+    SELECT array_agg(DISTINCT x) INTO v_keywords FROM unnest(v_keywords) x;
+    
+    RETURN COALESCE(v_keywords, '{}');
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_extract_material_from_name(p_name text)
+ RETURNS text[]
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_name_lower TEXT;
+    v_materials TEXT[] := '{}';
+BEGIN
+    v_name_lower := LOWER(unaccent(COALESCE(p_name, '')));
+    
+    -- Metais
+    IF v_name_lower ~ '\m(aco\s*inox|inox|stainless)\M' THEN v_materials := array_append(v_materials, 'Aço Inox'); END IF;
+    IF v_name_lower ~ '\m(aluminio|aluminum)\M' THEN v_materials := array_append(v_materials, 'Alumínio'); END IF;
+    IF v_name_lower ~ '\m(metal)\M' AND NOT v_name_lower ~ '\m(inox|aluminio)\M' THEN v_materials := array_append(v_materials, 'Metal'); END IF;
+    IF v_name_lower ~ '\m(latao|brass)\M' THEN v_materials := array_append(v_materials, 'Latão'); END IF;
+    IF v_name_lower ~ '\m(zinco|zinc)\M' THEN v_materials := array_append(v_materials, 'Zinco'); END IF;
+    
+    -- Plásticos
+    IF v_name_lower ~ '\m(plastico|plastic)\M' THEN v_materials := array_append(v_materials, 'Plástico'); END IF;
+    IF v_name_lower ~ '\m(abs)\M' THEN v_materials := array_append(v_materials, 'ABS'); END IF;
+    IF v_name_lower ~ '\m(pp|polipropileno)\M' THEN v_materials := array_append(v_materials, 'Polipropileno'); END IF;
+    IF v_name_lower ~ '\m(pet)\M' THEN v_materials := array_append(v_materials, 'PET'); END IF;
+    IF v_name_lower ~ '\m(pc|policarbonato)\M' THEN v_materials := array_append(v_materials, 'Policarbonato'); END IF;
+    IF v_name_lower ~ '\m(ps|poliestireno)\M' THEN v_materials := array_append(v_materials, 'Poliestireno'); END IF;
+    IF v_name_lower ~ '\m(pvc)\M' THEN v_materials := array_append(v_materials, 'PVC'); END IF;
+    IF v_name_lower ~ '\m(silicone)\M' THEN v_materials := array_append(v_materials, 'Silicone'); END IF;
+    IF v_name_lower ~ '\m(tritan)\M' THEN v_materials := array_append(v_materials, 'Tritan'); END IF;
+    IF v_name_lower ~ '\m(acrilico)\M' THEN v_materials := array_append(v_materials, 'Acrílico'); END IF;
+    
+    -- Vidro
+    IF v_name_lower ~ '\m(vidro|glass|borossilicato)\M' THEN v_materials := array_append(v_materials, 'Vidro'); END IF;
+    
+    -- Madeira
+    IF v_name_lower ~ '\m(madeira|wood|mdf)\M' THEN v_materials := array_append(v_materials, 'Madeira'); END IF;
+    IF v_name_lower ~ '\m(bambu|bamboo)\M' THEN v_materials := array_append(v_materials, 'Bambu'); END IF;
+    IF v_name_lower ~ '\m(cortica|cork)\M' THEN v_materials := array_append(v_materials, 'Cortiça'); END IF;
+    
+    -- Tecidos
+    IF v_name_lower ~ '\m(algodao|cotton)\M' THEN v_materials := array_append(v_materials, 'Algodão'); END IF;
+    IF v_name_lower ~ '\m(poliester|polyester)\M' THEN v_materials := array_append(v_materials, 'Poliéster'); END IF;
+    IF v_name_lower ~ '\m(nylon|nailon)\M' THEN v_materials := array_append(v_materials, 'Nylon'); END IF;
+    IF v_name_lower ~ '\m(tnt|non.?woven)\M' THEN v_materials := array_append(v_materials, 'TNT'); END IF;
+    IF v_name_lower ~ '\m(lona|canvas)\M' THEN v_materials := array_append(v_materials, 'Lona'); END IF;
+    IF v_name_lower ~ '\m(juta|jute)\M' THEN v_materials := array_append(v_materials, 'Juta'); END IF;
+    IF v_name_lower ~ '\m(couro|leather)\M' THEN v_materials := array_append(v_materials, 'Couro'); END IF;
+    IF v_name_lower ~ '\m(sintetico|courino|pu)\M' THEN v_materials := array_append(v_materials, 'Couro Sintético'); END IF;
+    
+    -- Papel/Cartão
+    IF v_name_lower ~ '\m(papel|paper)\M' THEN v_materials := array_append(v_materials, 'Papel'); END IF;
+    IF v_name_lower ~ '\m(cartao|cardboard)\M' THEN v_materials := array_append(v_materials, 'Cartão'); END IF;
+    IF v_name_lower ~ '\m(reciclado|recycled)\M' THEN v_materials := array_append(v_materials, 'Reciclado'); END IF;
+    
+    -- Cerâmica
+    IF v_name_lower ~ '\m(ceramica|ceramic|porcelana)\M' THEN v_materials := array_append(v_materials, 'Cerâmica'); END IF;
+    
+    RETURN v_materials;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_extract_materials_from_name(p_product_id uuid, p_replace_existing boolean DEFAULT false)
+ RETURNS integer
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_product RECORD;
+    v_material RECORD;
+    v_count INTEGER := 0;
+    v_search_text TEXT;
+    v_org_id UUID := '5db5aee1-064b-4ef4-9193-345dcd8274ea';
+    v_found_materials UUID[] := '{}';
+    v_material_id UUID;
+    v_percentage NUMERIC;
+BEGIN
+    SELECT id, name, description, short_description, organization_id
+    INTO v_product FROM products WHERE id = p_product_id;
+    
+    IF v_product.id IS NULL THEN RETURN 0; END IF;
+    IF v_product.organization_id IS NOT NULL THEN v_org_id := v_product.organization_id; END IF;
+    
+    v_search_text := LOWER(COALESCE(v_product.name, '') || ' ' || 
+                          COALESCE(v_product.description, '') || ' ' ||
+                          COALESCE(v_product.short_description, ''));
+    
+    IF p_replace_existing THEN
+        DELETE FROM product_materials WHERE product_id = p_product_id;
+    ELSE
+        IF EXISTS (SELECT 1 FROM product_materials WHERE product_id = p_product_id) THEN
+            RETURN 0;
+        END IF;
+    END IF;
+    
+    FOR v_material IN SELECT mt.id, mt.name FROM material_types mt WHERE mt.is_active = true
+    LOOP
+        IF (
+            -- METAIS
+            (v_material.name = 'Alumínio' AND (v_search_text ILIKE '%alumínio%' OR v_search_text ILIKE '%aluminio%'))
+            OR (v_material.name = 'Aço Inox' AND (v_search_text ILIKE '%aço inox%' OR v_search_text ILIKE '%inox%'))
+            OR (v_material.name = 'Metal Genérico' AND (v_search_text ILIKE '%em metal%' OR v_search_text ILIKE '%e metal%' OR v_search_text ILIKE '% metal %'))
+            OR (v_material.name = 'Zinco' AND v_search_text ILIKE '%zinco%')
+            OR (v_material.name = 'Cobre' AND v_search_text ILIKE '%cobre%')
+            OR (v_material.name = 'Bronze' AND v_search_text ILIKE '%bronze%')
+            -- PLÁSTICOS
+            OR (v_material.name ILIKE '%ABS%' AND (v_search_text ILIKE '% abs %' OR v_search_text ILIKE '%e abs%' OR v_search_text ILIKE '%em abs%' OR v_search_text ILIKE '%rabs%'))
+            OR (v_material.name ILIKE '%PVC%' AND (v_search_text ILIKE '%pvc%' OR v_search_text ILIKE '% pu %' OR v_search_text ILIKE '%em pu%'))
+            OR (v_material.name = 'Policarbonato' AND (v_search_text ILIKE '%policarbonato%' OR v_search_text ILIKE '% pc %' OR v_search_text ILIKE '%em pc%'))
+            OR (v_material.name = 'Polipropileno (PP)' AND (v_search_text ILIKE '%polipropileno%' OR v_search_text ILIKE '% pp %' OR v_search_text ILIKE '%em pp%'))
+            OR (v_material.name = 'Poliestireno - PS' AND (v_search_text ILIKE '%poliestireno%' OR v_search_text ILIKE '% ps %' OR v_search_text ILIKE '%e ps%'))
+            OR (v_material.name = 'Plástico - PET' AND (v_search_text ILIKE '% pet %' OR v_search_text ILIKE '%em pet%' OR v_search_text ILIKE '%rpet%'))
+            OR (v_material.name = 'Plástico - rPET' AND v_search_text ILIKE '%rpet%')
+            OR (v_material.name = 'Acrílico' AND (v_search_text ILIKE '%acrílico%' OR v_search_text ILIKE '%acrilico%'))
+            OR (v_material.name = 'Silicone' AND v_search_text ILIKE '%silicone%')
+            OR (v_material.name = 'Tritan' AND v_search_text ILIKE '%tritan%')
+            OR (v_material.name = 'EVA (Acetato de Vinila)' AND v_search_text ILIKE '%eva%')
+            OR (v_material.name = 'POE (Poliolefina Elastomérica)' AND (v_search_text ILIKE '% poe %' OR v_search_text ILIKE '%em poe%'))
+            -- TECIDOS
+            OR (v_material.name = 'Poliéster' AND (v_search_text ILIKE '%poliéster%' OR v_search_text ILIKE '%poliester%' OR v_search_text ILIKE '%300d%' OR v_search_text ILIKE '%600d%' OR v_search_text ILIKE '%1680d%'))
+            OR (v_material.name = 'Algodão' AND (v_search_text ILIKE '%algodão%' OR v_search_text ILIKE '%algodao%' OR v_search_text ILIKE '%canvas%' OR v_search_text ILIKE '%camiseta%'))
+            OR (v_material.name = 'Nylon' AND v_search_text ILIKE '%nylon%')
+            OR (v_material.name = 'Pongee' AND v_search_text ILIKE '%pongee%')
+            OR (v_material.name = 'Oxford' AND v_search_text ILIKE '%oxford%')
+            OR (v_material.name = 'Ripstop' AND (v_search_text ILIKE '%ripstop%' OR v_search_text ILIKE '%210d%'))
+            OR (v_material.name = 'Jacquard' AND (v_search_text ILIKE '%jacquard%' OR v_search_text ILIKE '%840d%'))
+            OR (v_material.name = 'Polar' AND v_search_text ILIKE '%polar%')
+            OR (v_material.name = 'Microfibra' AND v_search_text ILIKE '%microfibra%')
+            OR (v_material.name = 'Feltro' AND v_search_text ILIKE '%feltro%')
+            OR (v_material.name = 'TNT (Nowen)' AND (v_search_text ILIKE '%tnt%' OR v_search_text ILIKE '%non-woven%' OR v_search_text ILIKE '%nonwoven%'))
+            OR (v_material.name = 'Neoprene' AND v_search_text ILIKE '%neoprene%')
+            OR (v_material.name = 'Fibras Naturais' AND (v_search_text ILIKE '%palha%' OR v_search_text ILIKE '%juta%' OR v_search_text ILIKE '%fibras naturais%'))
+            -- MADEIRAS E NATURAIS
+            OR (v_material.name = 'Bambu' AND v_search_text ILIKE '%bambu%')
+            OR (v_material.name = 'Madeira' AND v_search_text ILIKE '%madeira%')
+            OR (v_material.name = 'MDF' AND v_search_text ILIKE '%mdf%')
+            OR (v_material.name = 'Cortiça' AND (v_search_text ILIKE '%cortiça%' OR v_search_text ILIKE '%cortica%'))
+            -- VIDRO E CERÂMICA
+            OR (v_material.name = 'Vidro Borossilicado' AND v_search_text ILIKE '%borossilicato%')
+            OR (v_material.name = 'Vidro' AND v_search_text ILIKE '%vidro%' AND NOT v_search_text ILIKE '%borossilicato%')
+            OR (v_material.name = 'Cerâmica' AND (v_search_text ILIKE '%cerâmica%' OR v_search_text ILIKE '%ceramica%'))
+            OR (v_material.name = 'Porcelana' AND v_search_text ILIKE '%porcelana%')
+            -- COURO
+            OR (v_material.name ILIKE '%Couro%' AND (v_search_text ILIKE '%couro%' OR v_search_text ILIKE '%pele%' OR v_search_text ILIKE '%c.sintético%'))
+            -- PAPEL E CARTÃO
+            OR (v_material.name = 'Cartão' AND (v_search_text ILIKE '%cartão%' OR v_search_text ILIKE '%cartao%' OR v_search_text ILIKE '%papel pedra%' OR v_search_text ILIKE '%em papel%'))
+            OR (v_material.name = 'Kraft' AND v_search_text ILIKE '%kraft%')
+            -- OUTROS
+            OR (v_material.name = 'Borracha' AND v_search_text ILIKE '%borracha%')
+            OR (v_material.name = 'Espuma' AND v_search_text ILIKE '%espuma%')
+        )
+        THEN
+            v_found_materials := array_append(v_found_materials, v_material.id);
+        END IF;
+    END LOOP;
+    
+    IF array_length(v_found_materials, 1) > 0 THEN
+        v_percentage := ROUND(100.0 / array_length(v_found_materials, 1), 2);
+        FOREACH v_material_id IN ARRAY v_found_materials LOOP
+            INSERT INTO product_materials (organization_id, product_id, material_id, part, percentage, sort_order, is_active)
+            VALUES (v_org_id, p_product_id, v_material_id, 'corpo', v_percentage, v_count + 1, true);
+            v_count := v_count + 1;
+        END LOOP;
+    END IF;
+    
+    RETURN v_count;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_extract_numeric(p_value text)
+ RETURNS numeric
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_clean TEXT;
+    v_result DECIMAL;
+BEGIN
+    IF p_value IS NULL THEN
+        RETURN NULL;
+    END IF;
+    
+    -- Remove tudo exceto números, ponto e vírgula
+    v_clean := REGEXP_REPLACE(p_value, '[^0-9.,]', '', 'g');
+    
+    -- Troca vírgula por ponto
+    v_clean := REPLACE(v_clean, ',', '.');
+    
+    -- Se tiver múltiplos pontos, mantém apenas o último como decimal
+    IF LENGTH(v_clean) - LENGTH(REPLACE(v_clean, '.', '')) > 1 THEN
+        v_clean := REPLACE(v_clean, '.', '', LENGTH(v_clean) - POSITION('.' IN REVERSE(v_clean)));
+    END IF;
+    
+    BEGIN
+        v_result := v_clean::DECIMAL;
+    EXCEPTION WHEN OTHERS THEN
+        v_result := NULL;
+    END;
+    
+    RETURN v_result;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_extract_optional_packaging_ref(p_description text)
+ RETURNS text
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_match TEXT[];
+BEGIN
+    IF p_description IS NULL THEN
+        RETURN NULL;
+    END IF;
+    
+    -- Padrão: "Caixa branca 94651 vendida opcionalmente"
+    v_match := regexp_match(p_description, '[Cc]aixa\s+\w*\s*(\d{5})\s+vendida?\s+opcionalmente', 'i');
+    IF v_match IS NOT NULL AND v_match[1] IS NOT NULL THEN
+        RETURN v_match[1];
+    END IF;
+    
+    -- Padrão alternativo
+    v_match := regexp_match(p_description, 'embalagem\s+opcional[:\s]+(\d{5})', 'i');
+    IF v_match IS NOT NULL AND v_match[1] IS NOT NULL THEN
+        RETURN v_match[1];
+    END IF;
+    
+    RETURN NULL;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_extract_packaging_from_description(p_description text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_description TEXT;
+    v_packaging_type TEXT := NULL;
+    v_packaging_text TEXT := NULL;
+    v_is_gift_packaging BOOLEAN := FALSE;
+    v_match TEXT[];
+BEGIN
+    -- Retorno para NULL ou vazio
+    IF p_description IS NULL OR TRIM(p_description) = '' THEN
+        RETURN jsonb_build_object(
+            'found', FALSE,
+            'packaging_type', NULL,
+            'packaging_text', NULL,
+            'is_gift_packaging', FALSE,
+            'source', 'description'
+        );
+    END IF;
+    
+    v_description := LOWER(TRIM(p_description));
+    
+    -- ====================================
+    -- PADRÃO 1: "Fornecido em [tipo de embalagem]"
+    -- ====================================
+    
+    -- Caixa presente / caixa de oferta / caixa gift
+    v_match := regexp_match(v_description, 'fornecido\s+em\s+(caixa\s+(?:presente|de\s+oferta|gift|kraft|preta|branca|individual))', 'i');
+    IF v_match IS NOT NULL AND v_match[1] IS NOT NULL THEN
+        v_packaging_type := 'box';
+        v_packaging_text := v_match[1];
+        v_is_gift_packaging := TRUE;
+    END IF;
+    
+    -- Estojo
+    IF v_packaging_type IS NULL THEN
+        v_match := regexp_match(v_description, 'fornecido\s+em\s+(estojo(?:\s+(?:de\s+)?(?:veludo|couro|eva|madeira|plástico|acrílico|metal))?)', 'i');
+        IF v_match IS NOT NULL AND v_match[1] IS NOT NULL THEN
+            v_packaging_type := 'pouch';
+            v_packaging_text := v_match[1];
+            v_is_gift_packaging := TRUE;
+        END IF;
+    END IF;
+    
+    -- Bolsa / Saco TNT / Non-woven
+    IF v_packaging_type IS NULL THEN
+        v_match := regexp_match(v_description, 'fornecido\s+em\s+((?:bolsa|saco|sacola)(?:\s+(?:de\s+)?(?:tnt|non.?woven|algodão|tecido|papel))?)', 'i');
+        IF v_match IS NOT NULL AND v_match[1] IS NOT NULL THEN
+            v_packaging_type := 'bag';
+            v_packaging_text := v_match[1];
+            v_is_gift_packaging := TRUE;
+        END IF;
+    END IF;
+    
+    -- ====================================
+    -- PADRÃO 2: "Inclui [tipo de embalagem]"
+    -- ====================================
+    IF v_packaging_type IS NULL THEN
+        v_match := regexp_match(v_description, 'inclui\s+(caixa(?:\s+(?:de\s+)?(?:presente|oferta|gift))?)', 'i');
+        IF v_match IS NOT NULL AND v_match[1] IS NOT NULL THEN
+            v_packaging_type := 'box';
+            v_packaging_text := v_match[1];
+            v_is_gift_packaging := TRUE;
+        END IF;
+    END IF;
+    
+    IF v_packaging_type IS NULL THEN
+        v_match := regexp_match(v_description, 'inclui\s+(estojo(?:\s+\w+)?)', 'i');
+        IF v_match IS NOT NULL AND v_match[1] IS NOT NULL THEN
+            v_packaging_type := 'pouch';
+            v_packaging_text := v_match[1];
+            v_is_gift_packaging := TRUE;
+        END IF;
+    END IF;
+    
+    -- ====================================
+    -- PADRÃO 3: "Apresentado em [tipo]"
+    -- ====================================
+    IF v_packaging_type IS NULL THEN
+        v_match := regexp_match(v_description, 'apresentado\s+em\s+(caixa(?:\s+(?:de\s+)?(?:presente|oferta|gift|kraft))?)', 'i');
+        IF v_match IS NOT NULL AND v_match[1] IS NOT NULL THEN
+            v_packaging_type := 'box';
+            v_packaging_text := v_match[1];
+            v_is_gift_packaging := TRUE;
+        END IF;
+    END IF;
+    
+    -- ====================================
+    -- PADRÃO 4: "Embalagem: [tipo]"
+    -- ====================================
+    IF v_packaging_type IS NULL THEN
+        v_match := regexp_match(v_description, 'embalagem[:\s]+(\w+(?:\s+\w+)?)', 'i');
+        IF v_match IS NOT NULL AND v_match[1] IS NOT NULL THEN
+            IF v_match[1] ~* '(caixa|box)' THEN
+                v_packaging_type := 'box';
+                v_packaging_text := v_match[1];
+                v_is_gift_packaging := v_match[1] ~* '(presente|oferta|gift)';
+            ELSIF v_match[1] ~* '(estojo|case)' THEN
+                v_packaging_type := 'pouch';
+                v_packaging_text := v_match[1];
+                v_is_gift_packaging := TRUE;
+            ELSIF v_match[1] ~* '(bolsa|saco|bag)' THEN
+                v_packaging_type := 'bag';
+                v_packaging_text := v_match[1];
+                v_is_gift_packaging := v_match[1] !~* '(plástico|polybag)';
+            END IF;
+        END IF;
+    END IF;
+    
+    -- ====================================
+    -- PADRÃO 5: "Com caixa" / "Com estojo"
+    -- ====================================
+    IF v_packaging_type IS NULL THEN
+        IF v_description ~* '\bcom\s+caixa\s+(?:de\s+)?(?:presente|oferta|gift)\b' THEN
+            v_packaging_type := 'box';
+            v_packaging_text := 'caixa presente';
+            v_is_gift_packaging := TRUE;
+        ELSIF v_description ~* '\bcom\s+estojo\b' THEN
+            v_packaging_type := 'pouch';
+            v_packaging_text := 'estojo';
+            v_is_gift_packaging := TRUE;
+        END IF;
+    END IF;
+    
+    -- Retorno final
+    IF v_packaging_type IS NOT NULL THEN
+        RETURN jsonb_build_object(
+            'found', TRUE,
+            'packaging_type', v_packaging_type,
+            'packaging_text', INITCAP(v_packaging_text),
+            'is_gift_packaging', v_is_gift_packaging,
+            'source', 'description'
+        );
+    ELSE
+        RETURN jsonb_build_object(
+            'found', FALSE,
+            'packaging_type', NULL,
+            'packaging_text', NULL,
+            'is_gift_packaging', FALSE,
+            'source', 'description'
+        );
+    END IF;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_extract_properties_by_supplier(p_raw_properties text, p_supplier_code text DEFAULT 'spot'::text)
+ RETURNS TABLE(property_code text, property_value text, raw_value text, matched_pattern text)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_prop TEXT;
+    v_mapping RECORD;
+    v_found BOOLEAN;
+BEGIN
+    IF p_raw_properties IS NULL OR TRIM(p_raw_properties) = '' THEN
+        RETURN;
+    END IF;
+
+    -- Para cada property na string
+    FOR v_prop IN 
+        SELECT TRIM(unnest(string_to_array(p_raw_properties, ',')))
+    LOOP
+        IF v_prop IS NULL OR TRIM(v_prop) = '' THEN
+            CONTINUE;
+        END IF;
+        
+        v_found := FALSE;
+        
+        -- Buscar mapeamento na tabela (ordenado por prioridade DESC)
+        FOR v_mapping IN 
+            SELECT spm.property_code, spm.raw_pattern
+            FROM supplier_property_mappings spm
+            WHERE spm.supplier_code = p_supplier_code
+              AND spm.active = TRUE
+              AND v_prop ILIKE spm.raw_pattern
+            ORDER BY spm.priority DESC
+            LIMIT 1
+        LOOP
+            property_code := v_mapping.property_code;
+            property_value := NULL;
+            raw_value := v_prop;
+            matched_pattern := v_mapping.raw_pattern;
+            v_found := TRUE;
+            RETURN NEXT;
+        END LOOP;
+        
+        -- Se não encontrou mapeamento, criar código genérico
+        IF NOT v_found THEN
+            property_code := 'OTHER_' || UPPER(REGEXP_REPLACE(SUBSTRING(v_prop, 1, 30), '[^a-zA-Z0-9]', '_', 'g'));
+            property_value := NULL;
+            raw_value := v_prop;
+            matched_pattern := NULL;
+            RETURN NEXT;
+        END IF;
+    END LOOP;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_extract_properties_from_api(p_raw_properties text, p_supplier_code text DEFAULT 'spot'::text)
+ RETURNS TABLE(property_code text, property_value text, raw_value text)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    IF p_raw_properties IS NULL OR TRIM(p_raw_properties) = '' THEN
+        RETURN;
+    END IF;
+
+    -- Usar a função multi-fornecedor
+    RETURN QUERY
+    SELECT 
+        e.property_code,
+        e.property_value,
+        e.raw_value
+    FROM fn_extract_properties_by_supplier(p_raw_properties, p_supplier_code) e;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_extract_weight_from_name(p_name text)
+ RETURNS integer
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_match TEXT[];
+    v_value INTEGER;
+BEGIN
+    -- Padrão: 500g
+    v_match := regexp_match(p_name, '(\d+)\s*(g|gr|gramas)\M', 'i');
+    IF v_match IS NOT NULL THEN
+        v_value := v_match[1]::INTEGER;
+        IF v_value > 0 AND v_value <= 50000 THEN
+            RETURN v_value;
+        END IF;
+    END IF;
+    
+    -- Padrão: 1.5kg
+    v_match := regexp_match(p_name, '(\d+[,.]?\d*)\s*(kg|quilos)', 'i');
+    IF v_match IS NOT NULL THEN
+        v_value := (REPLACE(v_match[1], ',', '.')::NUMERIC * 1000)::INTEGER;
+        IF v_value > 0 AND v_value <= 50000 THEN
+            RETURN v_value;
+        END IF;
+    END IF;
+    
+    RETURN NULL;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_favorite_items_soft_delete()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'pg_catalog', 'public'
+AS $function$
+BEGIN
+  INSERT INTO public.favorite_items_trash (
+    original_id, list_id, user_id, product_id, variant_id,
+    variant_info, note, price_at_save, position, added_at, deleted_at
+  ) VALUES (
+    OLD.id, OLD.list_id, OLD.user_id, OLD.product_id, OLD.variant_id,
+    OLD.variant_info, OLD.note, OLD.price_at_save, OLD.position, OLD.added_at, now()
+  );
+  RETURN OLD;
+END $function$;
+CREATE OR REPLACE FUNCTION public.fn_find_compatible_packagings(p_product_id uuid, p_limit integer DEFAULT 20)
+ RETURNS TABLE(packaging_id uuid, sku character varying, name character varying, price numeric, fit_rating character varying, gap_min_mm numeric, same_supplier boolean, recommended boolean)
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT pkg.id, pkg.sku::VARCHAR, pkg.name::VARCHAR, pkg.base_price,
+           ppc.fit_rating::VARCHAR, ppc.fit_gap_min_mm, ppc.is_same_supplier, ppc.is_recommended
+    FROM product_packaging_compatibility ppc
+    JOIN products pkg ON pkg.id = ppc.packaging_id AND pkg.active = TRUE
+    WHERE ppc.product_id = p_product_id AND ppc.active = TRUE
+      AND ppc.fit_rating IN ('tight', 'good', 'loose')
+    ORDER BY ppc.is_recommended DESC, ppc.is_same_supplier DESC,
+             CASE ppc.fit_rating WHEN 'tight' THEN 1 WHEN 'good' THEN 2 ELSE 3 END,
+             pkg.base_price ASC NULLS LAST
+    LIMIT p_limit;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_find_material_type_id(material_name text)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_type_id UUID;
+    v_search TEXT;
+BEGIN
+    IF material_name IS NULL OR trim(material_name) = '' THEN
+        RETURN NULL;
+    END IF;
+    
+    v_search := lower(trim(material_name));
+    
+    -- Remover gramatura para busca
+    v_search := regexp_replace(v_search, ':\s*\d+\s*g/m²', '', 'gi');
+    v_search := regexp_replace(v_search, '\d+\s*g/m²', '', 'gi');
+    v_search := trim(v_search);
+    
+    -- ESTRATÉGIA 1: Match exato por nome
+    SELECT id INTO v_type_id
+    FROM material_types
+    WHERE lower(name) = v_search
+    LIMIT 1;
+    
+    IF v_type_id IS NOT NULL THEN RETURN v_type_id; END IF;
+    
+    -- ESTRATÉGIA 2: Match exato por slug
+    SELECT id INTO v_type_id
+    FROM material_types
+    WHERE lower(slug) = v_search
+       OR lower(slug) = regexp_replace(v_search, '\s+', '-', 'g')
+    LIMIT 1;
+    
+    IF v_type_id IS NOT NULL THEN RETURN v_type_id; END IF;
+    
+    -- ESTRATÉGIA 3: Nome contém a busca
+    SELECT id INTO v_type_id
+    FROM material_types
+    WHERE lower(name) LIKE '%' || v_search || '%'
+    ORDER BY length(name) ASC
+    LIMIT 1;
+    
+    IF v_type_id IS NOT NULL THEN RETURN v_type_id; END IF;
+    
+    -- ESTRATÉGIA 4: Busca contém o nome
+    SELECT id INTO v_type_id
+    FROM material_types
+    WHERE v_search LIKE '%' || lower(name) || '%'
+    ORDER BY length(name) DESC
+    LIMIT 1;
+    
+    IF v_type_id IS NOT NULL THEN RETURN v_type_id; END IF;
+    
+    -- ESTRATÉGIA 5: Mapeamentos especiais
+    v_type_id := CASE 
+        WHEN v_search ~ '^\d+d' THEN 
+            (SELECT id FROM material_types WHERE lower(name) LIKE '%poliéster%' OR lower(name) LIKE '%poliester%' LIMIT 1)
+        WHEN v_search = 'pp' THEN
+            (SELECT id FROM material_types WHERE lower(name) LIKE '%polipropileno%' LIMIT 1)
+        WHEN v_search = 'pet' THEN
+            (SELECT id FROM material_types WHERE lower(slug) LIKE '%pet%' LIMIT 1)
+        WHEN v_search = 'rpet' OR v_search = 'r-pet' THEN
+            (SELECT id FROM material_types WHERE lower(name) LIKE '%rpet%' OR lower(slug) LIKE '%rpet%' LIMIT 1)
+        WHEN v_search LIKE '%aço inox%' OR v_search LIKE '%aco inox%' THEN
+            (SELECT id FROM material_types WHERE lower(slug) = 'aco-inox' LIMIT 1)
+        WHEN v_search LIKE '%couro sintético%' OR v_search LIKE '%couro sintetico%' THEN
+            (SELECT id FROM material_types WHERE lower(name) LIKE '%couro sintético%' OR lower(name) LIKE '%couro sintetico%' LIMIT 1)
+        WHEN v_search LIKE '%eva%' THEN
+            (SELECT id FROM material_types WHERE lower(name) LIKE '%eva%' LIMIT 1)
+        WHEN v_search LIKE '%pongee%' THEN
+            (SELECT id FROM material_types WHERE lower(name) LIKE '%pongee%' LIMIT 1)
+        WHEN v_search LIKE '%tarpaulin%' THEN
+            (SELECT id FROM material_types WHERE lower(name) LIKE '%lona%' LIMIT 1)
+        WHEN v_search LIKE '%non-woven%' OR v_search LIKE '%nonwoven%' THEN
+            (SELECT id FROM material_types WHERE lower(name) LIKE '%tnt%' LIMIT 1)
+        WHEN v_search LIKE '%microfibra%' THEN
+            (SELECT id FROM material_types WHERE lower(name) LIKE '%microfibra%' LIMIT 1)
+        WHEN v_search LIKE '%polar%' THEN
+            (SELECT id FROM material_types WHERE lower(name) LIKE '%polar%' LIMIT 1)
+        WHEN v_search LIKE '%feltro%' THEN
+            (SELECT id FROM material_types WHERE lower(name) LIKE '%feltro%' LIMIT 1)
+        WHEN v_search LIKE '%poliamida%' THEN
+            (SELECT id FROM material_types WHERE lower(name) LIKE '%poliamida%' LIMIT 1)
+        WHEN v_search LIKE '%denim%' THEN
+            (SELECT id FROM material_types WHERE lower(name) LIKE '%indigo%' LIMIT 1)
+        WHEN v_search LIKE '%juco%' THEN
+            (SELECT id FROM material_types WHERE lower(name) LIKE '%juta%' LIMIT 1)
+        WHEN v_search LIKE '%linho%' THEN
+            (SELECT id FROM material_types WHERE lower(name) LIKE '%fibras naturais%' LIMIT 1)
+        WHEN v_search LIKE '%palha%' THEN
+            (SELECT id FROM material_types WHERE lower(name) LIKE '%fibras naturais%' LIMIT 1)
+        WHEN v_search LIKE '%canvas%' THEN
+            (SELECT id FROM material_types WHERE lower(name) LIKE '%lona%' LIMIT 1)
+        WHEN v_search LIKE '%vidro%' THEN
+            (SELECT id FROM material_types WHERE lower(name) = 'vidro' LIMIT 1)
+        WHEN v_search LIKE '%madeira%' THEN
+            (SELECT id FROM material_types WHERE lower(name) = 'madeira' LIMIT 1)
+        WHEN v_search = 'abs' THEN
+            (SELECT id FROM material_types WHERE lower(name) LIKE '%abs%' LIMIT 1)
+        WHEN v_search = 'pu' THEN
+            (SELECT id FROM material_types WHERE lower(name) LIKE '%couro sintético%' OR lower(name) LIKE '%couro sintetico%' LIMIT 1)
+        WHEN v_search LIKE '%peva%' THEN
+            (SELECT id FROM material_types WHERE lower(name) LIKE '%pvc%' LIMIT 1)
+        WHEN v_search LIKE '%jacquard%' THEN
+            (SELECT id FROM material_types WHERE lower(name) LIKE '%jacquard%' LIMIT 1)
+        WHEN v_search LIKE '%rede%' OR v_search LIKE '%tela%' THEN
+            (SELECT id FROM material_types WHERE lower(name) LIKE '%nylon%' LIMIT 1)
+        WHEN v_search LIKE '%tecido em poli%' OR v_search LIKE '%tecido poli%' THEN
+            (SELECT id FROM material_types WHERE lower(name) LIKE '%poliéster%' OR lower(name) LIKE '%poliester%' LIMIT 1)
+        ELSE NULL
+    END;
+    
+    RETURN v_type_id;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_finish_import_batch(p_batch_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_products_total INT;
+    v_products_processed INT;
+    v_products_errors INT;
+    v_variants_total INT;
+    v_variants_processed INT;
+    v_variants_errors INT;
+BEGIN
+    SELECT COUNT(*), COUNT(*) FILTER (WHERE processed = TRUE), COUNT(*) FILTER (WHERE process_errors IS NOT NULL)
+    INTO v_products_total, v_products_processed, v_products_errors
+    FROM supplier_products_raw WHERE import_batch_id = p_batch_id;
+    
+    SELECT COUNT(*), COUNT(*) FILTER (WHERE processed = TRUE), COUNT(*) FILTER (WHERE process_errors IS NOT NULL)
+    INTO v_variants_total, v_variants_processed, v_variants_errors
+    FROM supplier_variants_raw WHERE import_batch_id = p_batch_id;
+    
+    UPDATE supplier_import_batches SET 
+        status = CASE WHEN v_products_errors > 0 OR v_variants_errors > 0 THEN 'completed_with_errors' ELSE 'completed' END,
+        finished_at = NOW(),
+        products_imported = v_products_processed - v_products_errors,
+        products_errors = v_products_errors,
+        variants_imported = v_variants_processed - v_variants_errors,
+        variants_errors = v_variants_errors
+    WHERE id = p_batch_id;
+    
+    RETURN jsonb_build_object(
+        'success', true,
+        'batch_id', p_batch_id,
+        'products', jsonb_build_object('total', v_products_total, 'processed', v_products_processed, 'errors', v_products_errors),
+        'variants', jsonb_build_object('total', v_variants_total, 'processed', v_variants_processed, 'errors', v_variants_errors)
+    );
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.fn_force_user_logout()
  RETURNS trigger
  LANGUAGE plpgsql
  SET search_path TO 'public'
-AS $function$ BEGIN RETURN NEW; END; $function$
-;
-
--- ----------------------------------------------------------------------------
+AS $function$ BEGIN RETURN NEW; END; $function$;
+CREATE OR REPLACE FUNCTION public.fn_format_capacity_display(p_capacity_ml integer)
+ RETURNS character varying
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    IF p_capacity_ml IS NULL THEN
+        RETURN NULL;
+    END IF;
+    
+    IF p_capacity_ml >= 1000 THEN
+        IF p_capacity_ml % 1000 = 0 THEN
+            RETURN (p_capacity_ml / 1000)::TEXT || ' L';
+        ELSE
+            RETURN REPLACE((p_capacity_ml / 1000.0)::DECIMAL(10,1)::TEXT, '.', ',') || ' L';
+        END IF;
+    ELSE
+        RETURN p_capacity_ml::TEXT || ' mL';
+    END IF;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_format_dimensions_display(p_length_cm numeric, p_width_cm numeric, p_height_cm numeric DEFAULT NULL::numeric)
+ RETURNS character varying
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_result TEXT;
+BEGIN
+    IF p_length_cm IS NULL AND p_width_cm IS NULL THEN
+        RETURN NULL;
+    END IF;
+    
+    -- Formatar com vírgula como separador decimal
+    v_result := REPLACE(COALESCE(p_length_cm, 0)::DECIMAL(10,1)::TEXT, '.', ',');
+    
+    IF p_width_cm IS NOT NULL THEN
+        v_result := v_result || ' x ' || REPLACE(p_width_cm::DECIMAL(10,1)::TEXT, '.', ',');
+    END IF;
+    
+    IF p_height_cm IS NOT NULL THEN
+        v_result := v_result || ' x ' || REPLACE(p_height_cm::DECIMAL(10,1)::TEXT, '.', ',');
+    END IF;
+    
+    RETURN v_result || ' cm';
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.fn_get_customization_price(p_area_id uuid, p_quantidade integer, p_num_cores integer DEFAULT 1, p_largura_cm numeric DEFAULT NULL::numeric, p_altura_cm numeric DEFAULT NULL::numeric, p_num_pontos integer DEFAULT 0)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -1072,10 +12516,139 @@ BEGIN
     'bugfix_version', '2026-04-25-BUGFIX-01'
   );
 END;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_get_ncm_id(raw_ncm text)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    normalized VARCHAR(8);
+    result_id UUID;
+BEGIN
+    normalized := fn_normalize_ncm(raw_ncm);
+    IF normalized IS NULL THEN
+        RETURN NULL;
+    END IF;
+    
+    SELECT id INTO result_id
+    FROM ncm_codes
+    WHERE code = normalized AND is_active = true;
+    
+    RETURN result_id;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_get_price_by_quantity(p_variant_id uuid, p_quantity integer DEFAULT 1, p_price_list_id uuid DEFAULT NULL::uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_cost NUMERIC;
+    v_markup NUMERIC := 115.0;
+    v_tier INTEGER := 1;
+    v_result JSONB;
+    v_vss RECORD;
+BEGIN
+    -- Buscar dados da variante
+    SELECT 
+        vss.*,
+        s.default_markup_percent
+    INTO v_vss
+    FROM variant_supplier_sources vss
+    LEFT JOIN suppliers s ON s.id = vss.supplier_id
+    WHERE vss.variant_id = p_variant_id
+      AND vss.is_preferred = true
+    LIMIT 1;
+    
+    IF v_vss IS NULL THEN
+        RETURN jsonb_build_object('error', 'Variante não encontrada');
+    END IF;
+    
+    -- Determinar faixa e custo
+    IF p_quantity >= COALESCE(v_vss.min_qty_5, 999999) AND v_vss.cost_price_5 IS NOT NULL THEN
+        v_cost := v_vss.cost_price_5;
+        v_tier := 5;
+    ELSIF p_quantity >= COALESCE(v_vss.min_qty_4, 999999) AND v_vss.cost_price_4 IS NOT NULL THEN
+        v_cost := v_vss.cost_price_4;
+        v_tier := 4;
+    ELSIF p_quantity >= COALESCE(v_vss.min_qty_3, 999999) AND v_vss.cost_price_3 IS NOT NULL THEN
+        v_cost := v_vss.cost_price_3;
+        v_tier := 3;
+    ELSIF p_quantity >= COALESCE(v_vss.min_qty_2, 999999) AND v_vss.cost_price_2 IS NOT NULL THEN
+        v_cost := v_vss.cost_price_2;
+        v_tier := 2;
+    ELSE
+        v_cost := COALESCE(v_vss.cost_price_1, v_vss.cost_price);
+        v_tier := 1;
+    END IF;
+    
+    -- Obter markup
+    IF p_price_list_id IS NOT NULL THEN
+        SELECT base_markup_percent INTO v_markup
+        FROM price_lists WHERE id = p_price_list_id;
+    ELSE
+        v_markup := COALESCE(v_vss.default_markup_percent, 115.0);
+    END IF;
+    
+    -- Retornar resultado
+    RETURN jsonb_build_object(
+        'variant_id', p_variant_id,
+        'quantity', p_quantity,
+        'tier', v_tier,
+        'cost_price', v_cost,
+        'markup_percent', v_markup,
+        'sale_price', ROUND(v_cost * (1 + v_markup / 100), 2),
+        'unit_price', ROUND(v_cost * (1 + v_markup / 100), 2),
+        'total_price', ROUND(v_cost * (1 + v_markup / 100) * p_quantity, 2),
+        'price_tiers', jsonb_build_object(
+            'tier_1', jsonb_build_object('min_qty', COALESCE(v_vss.min_qty_1, 1), 'cost', v_vss.cost_price_1),
+            'tier_2', jsonb_build_object('min_qty', v_vss.min_qty_2, 'cost', v_vss.cost_price_2),
+            'tier_3', jsonb_build_object('min_qty', v_vss.min_qty_3, 'cost', v_vss.cost_price_3),
+            'tier_4', jsonb_build_object('min_qty', v_vss.min_qty_4, 'cost', v_vss.cost_price_4),
+            'tier_5', jsonb_build_object('min_qty', v_vss.min_qty_5, 'cost', v_vss.cost_price_5)
+        )
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_get_product_accessories(p_product_id uuid)
+ RETURNS TABLE(accessory_category_id uuid, accessory_category_name text, relationship_type character varying, display_label character varying, is_required boolean)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT DISTINCT
+        c_acc.id,
+        c_acc.name::TEXT,
+        cac.relationship_type,
+        cac.display_label,
+        cac.is_required
+    FROM products p
+    JOIN category_accessory_categories cac ON cac.category_id = p.category_id AND cac.is_active = TRUE
+    JOIN categories c_acc ON c_acc.id = cac.accessory_category_id
+    WHERE p.id = p_product_id
+    
+    UNION
+    
+    -- Incluir subcategorias se include_children = TRUE
+    SELECT DISTINCT
+        c_child.id,
+        c_child.name::TEXT,
+        cac.relationship_type,
+        cac.display_label,
+        cac.is_required
+    FROM products p
+    JOIN category_accessory_categories cac ON cac.category_id = p.category_id 
+        AND cac.is_active = TRUE 
+        AND cac.include_children = TRUE
+    JOIN categories c_child ON c_child.parent_id = cac.accessory_category_id AND c_child.is_active = TRUE
+    WHERE p.id = p_product_id
+    
+    ORDER BY display_label, accessory_category_name;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.fn_get_product_customization_options(p_product_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -1140,26 +12713,3041 @@ BEGIN
 
     RETURN v_result;
 END;
-$function$
-;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_get_product_dates(p_product_id uuid)
+ RETURNS TABLE(date_id uuid, date_name text, date_day integer, date_month integer, target_audience text, is_featured boolean, source character varying)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        cd.id,
+        cd.name::TEXT,
+        cd.date_day,
+        cd.date_month,
+        cd.target_audience::TEXT,
+        pcd.is_featured,
+        pcd.source
+    FROM product_commemorative_dates pcd
+    JOIN commemorative_dates cd ON cd.id = pcd.commemorative_date_id
+    WHERE pcd.product_id = p_product_id AND pcd.is_active = TRUE
+    ORDER BY cd.date_month, cd.date_day;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_get_product_packaging_summary(p_product_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE v_incl JSONB; v_compat JSONB;
+BEGIN
+    SELECT COALESCE(jsonb_agg(jsonb_build_object(
+        'id', pip.id, 'name', pip.name, 'material', pip.material, 'color', pip.color,
+        'weight_g', pip.weight_g, 'can_disable', pip.can_be_disabled, 'can_customize', pip.can_be_customized
+    )), '[]'::JSONB) INTO v_incl
+    FROM product_included_packagings pip WHERE pip.product_id = p_product_id AND pip.active = TRUE;
+    
+    SELECT COALESCE(jsonb_agg(jsonb_build_object(
+        'id', pkg.id, 'sku', pkg.sku, 'name', pkg.name, 'price', pkg.base_price,
+        'fit_rating', ppc.fit_rating, 'recommended', ppc.is_recommended
+    ) ORDER BY ppc.is_recommended DESC, pkg.base_price), '[]'::JSONB) INTO v_compat
+    FROM product_packaging_compatibility ppc
+    JOIN products pkg ON pkg.id = ppc.packaging_id AND pkg.active = TRUE
+    WHERE ppc.product_id = p_product_id AND ppc.active = TRUE;
+    
+    RETURN jsonb_build_object(
+        'product_id', p_product_id,
+        'has_included', jsonb_array_length(v_incl) > 0,
+        'included_count', jsonb_array_length(v_incl),
+        'included', v_incl,
+        'compatible_count', jsonb_array_length(v_compat),
+        'compatible', v_compat
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_get_product_properties(p_product_id uuid)
+ RETURNS TABLE(property_code text, property_name text, property_category text, property_value text, icon_code text, is_thermal boolean)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        pp.property_code,
+        COALESCE(pd.name_pt, pp.raw_value) AS property_name,
+        pd.category AS property_category,
+        pp.property_value,
+        pd.icon_code,
+        pd.is_thermal_indicator AS is_thermal
+    FROM product_properties pp
+    LEFT JOIN property_definitions pd ON pp.property_code = pd.code
+    WHERE pp.product_id = p_product_id
+    ORDER BY pd.display_order, pd.name_pt;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_get_products_with_gift_box(p_limit integer DEFAULT 100, p_offset integer DEFAULT 0, p_category_id uuid DEFAULT NULL::uuid, p_supplier_id uuid DEFAULT NULL::uuid)
+ RETURNS TABLE(id uuid, sku character varying, name character varying, packing_type character varying, packing_classification character varying, sale_price numeric, category_id uuid, supplier_id uuid, image_url text)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        p.id,
+        p.sku,
+        p.name,
+        p.packing_type,
+        p.packing_classification,
+        p.sale_price,
+        p.category_id,
+        p.supplier_id,
+        p.image_url
+    FROM products p
+    WHERE p.has_gift_box = TRUE
+      AND (p_category_id IS NULL OR p.category_id = p_category_id)
+      AND (p_supplier_id IS NULL OR p.supplier_id = p_supplier_id)
+    ORDER BY p.name
+    LIMIT p_limit
+    OFFSET p_offset;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_get_supplier_mappings(p_supplier_code text)
+ RETURNS TABLE(id uuid, raw_pattern text, property_code text, property_name text, category text, priority integer, is_thermal boolean)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        spm.id,
+        spm.raw_pattern,
+        spm.property_code,
+        pd.name_pt AS property_name,
+        pd.category,
+        spm.priority,
+        pd.is_thermal_indicator AS is_thermal
+    FROM supplier_property_mappings spm
+    LEFT JOIN property_definitions pd ON spm.property_code = pd.code
+    WHERE spm.supplier_code = p_supplier_code
+      AND spm.active = TRUE
+    ORDER BY spm.priority DESC, pd.name_pt;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_grant_default_role_on_profile()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = NEW.id) THEN
+    INSERT INTO public.user_roles (user_id, role, granted_by)
+    VALUES (
+      NEW.id,
+      CASE 
+        WHEN NEW.role = 'admin'             THEN 'admin'::public.app_role
+        WHEN NEW.role = 'manager'           THEN 'coordenador'::public.app_role
+        WHEN NEW.role IN ('sales','seller') THEN 'vendedor'::public.app_role
+        WHEN NEW.role = 'dev'               THEN 'dev'::public.app_role
+        ELSE 'vendedor'::public.app_role
+      END,
+      NEW.id  -- self-granted; trigger only fires on first INSERT
+    );
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_handle_new_user()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  INSERT INTO public.user_roles (user_id, role)
+  VALUES (NEW.id, 'vendedor'::public.app_role)
+  ON CONFLICT DO NOTHING;
+  RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
+  RAISE NOTICE 'fn_handle_new_user falhou para user_id=%: %', NEW.id, SQLERRM;
+  RETURN NEW;
+END
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_hex_to_rgb()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    IF NEW.hex_color IS NOT NULL AND NEW.hex_color ~ '^#[0-9A-Fa-f]{6}$' THEN
+        -- Converter HEX para RGB
+        NEW.rgb_r := ('x' || substring(NEW.hex_color from 2 for 2))::bit(8)::int;
+        NEW.rgb_g := ('x' || substring(NEW.hex_color from 4 for 2))::bit(8)::int;
+        NEW.rgb_b := ('x' || substring(NEW.hex_color from 6 for 2))::bit(8)::int;
+    END IF;
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_import_product_properties(p_product_id uuid, p_raw_properties text, p_source text DEFAULT 'api_spot'::text, p_supplier_code text DEFAULT 'spot'::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_count INTEGER := 0;
+    v_prop RECORD;
+    v_is_thermal BOOLEAN;
+    v_def_id UUID;
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM products WHERE id = p_product_id) THEN
+        RETURN jsonb_build_object('success', FALSE, 'error', 'Product not found', 'product_id', p_product_id);
+    END IF;
+    
+    DELETE FROM product_properties WHERE product_id = p_product_id AND source = p_source;
+    
+    IF p_raw_properties IS NULL OR TRIM(p_raw_properties) = '' THEN
+        RETURN jsonb_build_object('success', TRUE, 'product_id', p_product_id, 'properties_imported', 0, 'is_thermal', fn_is_thermal_product(p_product_id), 'supplier_code', p_supplier_code);
+    END IF;
+    
+    FOR v_prop IN SELECT * FROM fn_extract_properties_from_api(p_raw_properties, p_supplier_code)
+    LOOP
+        SELECT id INTO v_def_id FROM property_definitions WHERE code = v_prop.property_code LIMIT 1;
+        
+        INSERT INTO product_properties (product_id, property_definition_id, property_code, property_value, raw_value, source)
+        VALUES (p_product_id, v_def_id, v_prop.property_code, v_prop.property_value, v_prop.raw_value, p_source)
+        ON CONFLICT (product_id, property_code) 
+        DO UPDATE SET property_definition_id = EXCLUDED.property_definition_id, property_value = EXCLUDED.property_value, raw_value = EXCLUDED.raw_value, source = EXCLUDED.source, updated_at = NOW();
+        
+        v_count := v_count + 1;
+    END LOOP;
+    
+    v_is_thermal := fn_is_thermal_product(p_product_id);
+    
+    RETURN jsonb_build_object('success', TRUE, 'product_id', p_product_id, 'properties_imported', v_count, 'is_thermal', v_is_thermal, 'supplier_code', p_supplier_code);
+    
+EXCEPTION WHEN OTHERS THEN
+    RETURN jsonb_build_object('success', FALSE, 'error', SQLERRM, 'product_id', p_product_id);
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_import_spot_image(p_filename text, p_cloudflare_id text, p_url_original text, p_width integer DEFAULT NULL::integer, p_height integer DEFAULT NULL::integer, p_file_size integer DEFAULT NULL::integer)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_class RECORD;
+    v_product_id UUID;
+    v_new_id UUID;
+    v_cf_url TEXT;
+BEGIN
+    SELECT * INTO v_class FROM fn_classify_spot_image(p_filename) LIMIT 1;
+    
+    IF v_class.prod_reference IS NULL THEN
+        RAISE EXCEPTION 'Filename não reconhecido: %', p_filename;
+    END IF;
+    
+    SELECT p.id INTO v_product_id
+    FROM products p
+    WHERE p.supplier_reference = v_class.prod_reference
+      AND p.supplier_id = 'bcfc0d02-44c6-48ae-8472-12b1a3f3d8e0'::uuid
+    LIMIT 1;
+    
+    IF v_product_id IS NULL THEN
+        RAISE WARNING 'Produto não encontrado para ref: %', v_class.prod_reference;
+        RETURN NULL;
+    END IF;
+    
+    v_cf_url := 'https://imagedelivery.net/vKMs9Ow8bA_enuhLXZ2HAw/' || p_cloudflare_id || '/public';
+    
+    INSERT INTO product_images (
+        id, product_id, 
+        image_type, image_type_id,
+        cloudflare_image_id, url_cdn, url_original,
+        filename, format,
+        width_px, height_px, file_size_bytes,
+        is_primary, is_active, is_og_image,
+        applies_to_color, display_order,
+        source_supplier, supplier_code,
+        organization_id,
+        alt_text, title_text,
+        created_at, updated_at
+    ) VALUES (
+        gen_random_uuid(), v_product_id,
+        v_class.image_type, v_class.image_type_id,
+        p_cloudflare_id, v_cf_url, p_url_original,
+        p_filename, LOWER(SPLIT_PART(p_filename, '.', 2)),
+        p_width, p_height, p_file_size,
+        v_class.is_primary_image, true, v_class.is_primary_image,
+        v_class.is_color_specific, v_class.display_order_hint,
+        'SPOT', 'SPOT',
+        '5db5aee1-064b-4ef4-9193-345dcd8274ea',
+        NULL, NULL,
+        NOW(), NOW()
+    )
+    ON CONFLICT (cloudflare_image_id) WHERE cloudflare_image_id IS NOT NULL
+    DO NOTHING
+    RETURNING id INTO v_new_id;
+    
+    IF v_new_id IS NULL THEN
+        RAISE WARNING 'Imagem já existe (duplicata): %', p_filename;
+    END IF;
+    
+    RETURN v_new_id;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_import_stock_from_spot(p_stocks jsonb)
+ RETURNS TABLE(total_processed integer, total_updated integer, total_created integer, total_skipped integer, total_errors integer, details jsonb)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_stock JSONB;
+    v_processed INTEGER := 0;
+    v_updated INTEGER := 0;
+    v_created INTEGER := 0;
+    v_skipped INTEGER := 0;
+    v_errors INTEGER := 0;
+    v_supplier_id UUID;
+    v_variant_id UUID;
+    v_sku TEXT;
+    v_error_skus TEXT[] := '{}';
+    v_skipped_skus TEXT[] := '{}';
+BEGIN
+    -- Buscar supplier_id da SPOT
+    SELECT id INTO v_supplier_id
+    FROM suppliers 
+    WHERE code = 'STRICKER' 
+       OR code = 'SPOT' 
+       OR name ILIKE '%spot%' 
+       OR name ILIKE '%stricker%'
+    LIMIT 1;
+    
+    IF v_supplier_id IS NULL THEN
+        RAISE EXCEPTION 'Fornecedor SPOT/Stricker não encontrado na tabela suppliers';
+    END IF;
+    
+    -- Processar cada item do array
+    FOR v_stock IN SELECT * FROM jsonb_array_elements(p_stocks)
+    LOOP
+        v_processed := v_processed + 1;
+        v_sku := v_stock->>'Sku';
+        
+        BEGIN
+            -- Tentar atualizar registro existente
+            UPDATE variant_supplier_sources
+            SET 
+                quantity = COALESCE((v_stock->>'Quantity')::INTEGER, 0),
+                next_quantity_1 = NULLIF((v_stock->>'NextQuantity1')::INTEGER, 0),
+                next_date_1 = NULLIF(v_stock->>'NextDate1', '')::DATE,
+                next_quantity_2 = NULLIF((v_stock->>'NextQuantity2')::INTEGER, 0),
+                next_date_2 = NULLIF(v_stock->>'NextDate2', '')::DATE,
+                next_quantity_3 = NULLIF((v_stock->>'NextQuantity3')::INTEGER, 0),
+                next_date_3 = NULLIF(v_stock->>'NextDate3', '')::DATE,
+                last_synced_at = NOW(),
+                sync_status = 'synced',
+                sync_error = NULL,
+                source = 'spot_api',
+                raw_data = v_stock,
+                updated_at = NOW()
+            WHERE supplier_sku = v_sku
+              AND supplier_id = v_supplier_id;
+            
+            IF FOUND THEN
+                v_updated := v_updated + 1;
+            ELSE
+                -- Registro não existe, verificar se podemos criar
+                -- Buscar variant_id pelo SKU
+                SELECT id INTO v_variant_id
+                FROM product_variants
+                WHERE sku = v_sku OR supplier_sku = v_sku
+                LIMIT 1;
+                
+                IF v_variant_id IS NOT NULL THEN
+                    -- Criar novo registro
+                    INSERT INTO variant_supplier_sources (
+                        organization_id,
+                        variant_id,
+                        supplier_id,
+                        supplier_sku,
+                        quantity,
+                        next_quantity_1,
+                        next_date_1,
+                        next_quantity_2,
+                        next_date_2,
+                        next_quantity_3,
+                        next_date_3,
+                        reserved_quantity,
+                        pack_quantity,
+                        min_qty_1,
+                        min_order_qty,
+                        is_active,
+                        is_preferred,
+                        priority,
+                        source,
+                        sync_status,
+                        last_synced_at,
+                        raw_data,
+                        sale_multiplier
+                    ) VALUES (
+                        '5db5aee1-064b-4ef4-9193-345dcd8274ea',
+                        v_variant_id,
+                        v_supplier_id,
+                        v_sku,
+                        COALESCE((v_stock->>'Quantity')::INTEGER, 0),
+                        NULLIF((v_stock->>'NextQuantity1')::INTEGER, 0),
+                        NULLIF(v_stock->>'NextDate1', '')::DATE,
+                        NULLIF((v_stock->>'NextQuantity2')::INTEGER, 0),
+                        NULLIF(v_stock->>'NextDate2', '')::DATE,
+                        NULLIF((v_stock->>'NextQuantity3')::INTEGER, 0),
+                        NULLIF(v_stock->>'NextDate3', '')::DATE,
+                        0,
+                        1,
+                        1,
+                        1,
+                        true,
+                        true,
+                        1,
+                        'spot_api',
+                        'synced',
+                        NOW(),
+                        v_stock,
+                        1
+                    )
+                    ON CONFLICT (organization_id, variant_id, supplier_id) 
+                    DO UPDATE SET
+                        quantity = EXCLUDED.quantity,
+                        next_quantity_1 = EXCLUDED.next_quantity_1,
+                        next_date_1 = EXCLUDED.next_date_1,
+                        next_quantity_2 = EXCLUDED.next_quantity_2,
+                        next_date_2 = EXCLUDED.next_date_2,
+                        next_quantity_3 = EXCLUDED.next_quantity_3,
+                        next_date_3 = EXCLUDED.next_date_3,
+                        last_synced_at = NOW(),
+                        sync_status = 'synced',
+                        raw_data = EXCLUDED.raw_data,
+                        updated_at = NOW();
+                    
+                    v_created := v_created + 1;
+                ELSE
+                    -- SKU não existe em product_variants
+                    v_skipped := v_skipped + 1;
+                    v_skipped_skus := array_append(v_skipped_skus, v_sku);
+                END IF;
+            END IF;
+            
+        EXCEPTION WHEN OTHERS THEN
+            v_errors := v_errors + 1;
+            v_error_skus := array_append(v_error_skus, v_sku || ': ' || SQLERRM);
+            CONTINUE;
+        END;
+    END LOOP;
+    
+    RETURN QUERY SELECT 
+        v_processed, 
+        v_updated, 
+        v_created, 
+        v_skipped, 
+        v_errors,
+        jsonb_build_object(
+            'error_skus', to_jsonb(v_error_skus[1:10]),
+            'skipped_skus_sample', to_jsonb(v_skipped_skus[1:10]),
+            'supplier_id', v_supplier_id
+        );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_import_xbz_image(p_product_id uuid, p_cloudflare_id text, p_url_original text, p_filename text DEFAULT NULL::text, p_width integer DEFAULT NULL::integer, p_height integer DEFAULT NULL::integer, p_file_size integer DEFAULT NULL::integer)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_new_id UUID;
+    v_cf_url TEXT;
+    v_fn TEXT;
+BEGIN
+    v_cf_url := 'https://imagedelivery.net/vKMs9Ow8bA_enuhLXZ2HAw/' || p_cloudflare_id || '/public';
+    v_fn := COALESCE(p_filename, REVERSE(SPLIT_PART(REVERSE(p_url_original), '/', 1)));
+    
+    INSERT INTO product_images (
+        id, product_id,
+        image_type, image_type_id,
+        cloudflare_image_id, url_cdn, url_original,
+        filename, format,
+        width_px, height_px, file_size_bytes,
+        is_primary, is_active, is_og_image,
+        applies_to_color, display_order,
+        source_supplier, supplier_code,
+        organization_id,
+        created_at, updated_at
+    ) VALUES (
+        gen_random_uuid(), p_product_id,
+        'main', '7ea182ff-edcc-4c4c-b7a1-443b07500f6c',
+        p_cloudflare_id, v_cf_url, p_url_original,
+        v_fn, 'jpg',
+        p_width, p_height, p_file_size,
+        true, true, true,
+        true, 1,
+        'XBZ', 'XBZ',
+        '5db5aee1-064b-4ef4-9193-345dcd8274ea',
+        NOW(), NOW()
+    )
+    ON CONFLICT (cloudflare_image_id) WHERE cloudflare_image_id IS NOT NULL
+    DO NOTHING
+    RETURNING id INTO v_new_id;
+    
+    IF v_new_id IS NULL THEN
+        RAISE WARNING 'Imagem XBZ já existe (duplicata): %', v_fn;
+    END IF;
+    
+    RETURN v_new_id;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_inherit_techniques_from_material()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_material_id UUID;
+    v_component_id UUID;
+    v_compat RECORD;
+BEGIN
+    -- Buscar material do componente vinculado à área
+    SELECT pkc.material_type_id, pkc.id
+    INTO v_material_id, v_component_id
+    FROM product_print_areas ppa
+    JOIN product_kit_components pkc ON ppa.kit_component_id = pkc.id
+    WHERE ppa.id = NEW.id;
+    
+    -- Se não tem material definido, sair
+    IF v_material_id IS NULL THEN
+        RETURN NEW;
+    END IF;
+    
+    -- Inserir técnicas compatíveis com o material
+    FOR v_compat IN 
+        SELECT 
+            mtc.tecnica_gravacao_id,
+            mtc.tecnica_gravacao_variante_id,
+            mtc.is_primary_technique,
+            mtc.max_colors
+        FROM material_technique_compatibility mtc
+        WHERE mtc.material_type_id = v_material_id
+          AND mtc.is_active = true
+    LOOP
+        INSERT INTO kit_component_area_techniques (
+            print_area_id,
+            tecnica_gravacao_id,
+            tecnica_gravacao_variante_id,
+            is_inherited,
+            inherited_from_material_id,
+            is_primary,
+            max_colors
+        ) VALUES (
+            NEW.id,
+            v_compat.tecnica_gravacao_id,
+            v_compat.tecnica_gravacao_variante_id,
+            true,
+            v_material_id,
+            v_compat.is_primary_technique,
+            v_compat.max_colors
+        )
+        ON CONFLICT (print_area_id, tecnica_gravacao_id, tecnica_gravacao_variante_id) 
+        DO NOTHING;
+    END LOOP;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_is_thermal_product(p_product_id uuid)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_is_thermal BOOLEAN;
+BEGIN
+    SELECT EXISTS (
+        SELECT 1 
+        FROM product_properties pp
+        JOIN property_definitions pd ON pp.property_code = pd.code
+        WHERE pp.product_id = p_product_id
+          AND pd.is_thermal_indicator = TRUE
+    ) INTO v_is_thermal;
+    
+    RETURN COALESCE(v_is_thermal, FALSE);
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_kit_component_inherit_personalization()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'pg_catalog', 'public'
+AS $function$
+BEGIN
+  -- Só atua se o INSERT veio com allows_personalization NULL
+  IF NEW.allows_personalization IS NULL AND NEW.component_type_code IS NOT NULL THEN
+    SELECT kct.is_personalizable_by_default 
+      INTO NEW.allows_personalization
+    FROM public.kit_component_types kct 
+    WHERE kct.code = NEW.component_type_code;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_kit_print_area_normalizar_eixos()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'pg_catalog', 'public'
+AS $function$
+DECLARE
+  v_temp numeric;
+BEGIN
+  IF NEW.max_width IS NOT NULL THEN
+    NEW.max_width := ROUND(NEW.max_width::numeric, 2);
+  END IF;
+  IF NEW.max_height IS NOT NULL THEN
+    NEW.max_height := ROUND(NEW.max_height::numeric, 2);
+  END IF;
 
--- ----------------------------------------------------------------------------
+  IF NEW.max_height IS NOT NULL AND NEW.max_width IS NOT NULL
+     AND NEW.max_height > NEW.max_width THEN
+    v_temp        := NEW.max_width;
+    NEW.max_width  := NEW.max_height;
+    NEW.max_height := v_temp;
+  END IF;
+
+  RETURN NEW;
+END
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_link_product_materials(p_product_id uuid, p_supplier_id uuid DEFAULT 'bcfc0d02-44c6-48ae-8472-12b1a3f3d8e0'::uuid)
+ RETURNS integer
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_raw_materials TEXT;
+    v_material_name TEXT;
+    v_material_names TEXT[];
+    v_supplier_material_id UUID;
+    v_promo_type_id UUID;
+    v_linked_count INTEGER := 0;
+    v_total_materials INTEGER;
+    v_percentage DECIMAL(5,2);
+BEGIN
+    -- ═══════════════════════════════════════════════════════════════════
+    -- 1. BUSCAR MATERIALS DO RAW_DATA
+    -- ═══════════════════════════════════════════════════════════════════
+    SELECT raw_data->>'Materials'
+    INTO v_raw_materials
+    FROM supplier_products_raw
+    WHERE product_id = p_product_id
+      AND supplier_id = p_supplier_id
+    LIMIT 1;
+    
+    IF v_raw_materials IS NULL OR v_raw_materials = '' OR v_raw_materials = '-' THEN
+        RETURN 0;
+    END IF;
+    
+    -- ═══════════════════════════════════════════════════════════════════
+    -- 2. NORMALIZAR SEPARADORES E SEPARAR MATERIAIS
+    --    Converte " e " e ". " para ", " (exceto ":")
+    -- ═══════════════════════════════════════════════════════════════════
+    v_raw_materials := REPLACE(v_raw_materials, ' e ', ', ');
+    v_raw_materials := REPLACE(v_raw_materials, '. ', ', ');
+    
+    -- Separar em array
+    v_material_names := string_to_array(v_raw_materials, ', ');
+    v_total_materials := array_length(v_material_names, 1);
+    
+    IF v_total_materials IS NULL OR v_total_materials = 0 THEN
+        RETURN 0;
+    END IF;
+    
+    -- Calcular percentual (100% / quantidade de materiais)
+    v_percentage := ROUND(100.0 / v_total_materials, 2);
+    
+    -- ═══════════════════════════════════════════════════════════════════
+    -- 3. PARA CADA MATERIAL, BUSCAR E VINCULAR
+    -- ═══════════════════════════════════════════════════════════════════
+    FOREACH v_material_name IN ARRAY v_material_names
+    LOOP
+        v_material_name := TRIM(v_material_name);
+        
+        IF v_material_name = '' THEN
+            CONTINUE;
+        END IF;
+        
+        -- Buscar supplier_material_id pelo nome EXATO
+        SELECT id INTO v_supplier_material_id
+        FROM supplier_materials
+        WHERE LOWER(api_material_name) = LOWER(v_material_name)
+          AND supplier_id = p_supplier_id
+        LIMIT 1;
+        
+        -- Se não encontrou exato, tentar busca parcial
+        IF v_supplier_material_id IS NULL THEN
+            SELECT id INTO v_supplier_material_id
+            FROM supplier_materials
+            WHERE LOWER(api_material_name) ILIKE '%' || LOWER(v_material_name) || '%'
+              AND supplier_id = p_supplier_id
+            LIMIT 1;
+        END IF;
+        
+        IF v_supplier_material_id IS NOT NULL THEN
+            -- Buscar material equivalente interno (material_types)
+            SELECT me.promo_type_id INTO v_promo_type_id
+            FROM material_equivalences me
+            WHERE me.supplier_material_id = v_supplier_material_id
+            LIMIT 1;
+            
+            -- Inserir vínculo em product_materials
+            IF v_promo_type_id IS NOT NULL THEN
+                INSERT INTO product_materials (
+                    product_id,
+                    material_id,       -- ✅ CORRIGIDO: era material_type_id
+                    part,
+                    percentage,
+                    sort_order,
+                    is_active,
+                    organization_id,
+                    created_at
+                )
+                VALUES (
+                    p_product_id,
+                    v_promo_type_id,
+                    'corpo',           -- Parte padrão
+                    v_percentage,      -- Percentual calculado
+                    v_linked_count + 1,
+                    true,
+                    '5db5aee1-064b-4ef4-9193-345dcd8274ea',  -- organization_id fixo
+                    NOW()
+                )
+                ON CONFLICT (product_id, material_id) DO UPDATE SET
+                    percentage = v_percentage,
+                    updated_at = NOW();
+                
+                v_linked_count := v_linked_count + 1;
+            END IF;
+        END IF;
+    END LOOP;
+    
+    RETURN v_linked_count;
+    
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Erro vinculando materiais do produto %: %', p_product_id, SQLERRM;
+    RETURN 0;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.fn_log_login_attempt()
  RETURNS trigger
  LANGUAGE plpgsql
  SET search_path TO 'public'
-AS $function$ BEGIN RETURN NEW; END; $function$
-;
-
--- ----------------------------------------------------------------------------
+AS $function$ BEGIN RETURN NEW; END; $function$;
+CREATE OR REPLACE FUNCTION public.fn_log_price_change()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_old_values JSONB;
+    v_new_values JSONB;
+    v_has_change BOOLEAN := false;
+BEGIN
+    -- Montar JSON com valores antigos
+    v_old_values := jsonb_build_object(
+        'price_1', OLD.price_1,
+        'price_2', OLD.price_2,
+        'price_3', OLD.price_3,
+        'price_4', OLD.price_4,
+        'price_5', OLD.price_5,
+        'min_qty_1', OLD.min_qty_1,
+        'min_qty_2', OLD.min_qty_2,
+        'min_qty_3', OLD.min_qty_3,
+        'min_qty_4', OLD.min_qty_4,
+        'min_qty_5', OLD.min_qty_5
+    );
+    
+    -- Montar JSON com valores novos
+    v_new_values := jsonb_build_object(
+        'price_1', NEW.price_1,
+        'price_2', NEW.price_2,
+        'price_3', NEW.price_3,
+        'price_4', NEW.price_4,
+        'price_5', NEW.price_5,
+        'min_qty_1', NEW.min_qty_1,
+        'min_qty_2', NEW.min_qty_2,
+        'min_qty_3', NEW.min_qty_3,
+        'min_qty_4', NEW.min_qty_4,
+        'min_qty_5', NEW.min_qty_5
+    );
+    
+    -- Verificar se houve alteração nos preços
+    IF OLD.price_1 IS DISTINCT FROM NEW.price_1 OR
+       OLD.price_2 IS DISTINCT FROM NEW.price_2 OR
+       OLD.price_3 IS DISTINCT FROM NEW.price_3 OR
+       OLD.price_4 IS DISTINCT FROM NEW.price_4 OR
+       OLD.price_5 IS DISTINCT FROM NEW.price_5 THEN
+        v_has_change := true;
+    END IF;
+    
+    -- Se houve alteração, registrar no histórico
+    IF v_has_change THEN
+        INSERT INTO price_history (
+            variant_id,
+            change_type,
+            old_values,
+            new_values,
+            source
+        ) VALUES (
+            NEW.id,
+            'cost_update',
+            v_old_values,
+            v_new_values,
+            'trigger'
+        );
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.fn_log_step_up_event()
  RETURNS trigger
  LANGUAGE plpgsql
  SET search_path TO 'public'
-AS $function$ BEGIN RETURN NEW; END; $function$
-;
+AS $function$ BEGIN RETURN NEW; END; $function$;
+CREATE OR REPLACE FUNCTION public.fn_map_value(p_supplier_id uuid, p_field_type character varying, p_source_value character varying)
+ RETURNS character varying
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_target_value VARCHAR;
+BEGIN
+    IF p_source_value IS NULL OR TRIM(p_source_value) = '' THEN
+        RETURN NULL;
+    END IF;
+    
+    SELECT target_value INTO v_target_value
+    FROM supplier_value_mappings
+    WHERE supplier_id = p_supplier_id
+      AND field_type = p_field_type
+      AND LOWER(TRIM(source_value)) = LOWER(TRIM(p_source_value))
+      AND is_active = TRUE
+    LIMIT 1;
+    
+    RETURN COALESCE(v_target_value, p_source_value);
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_mapear_oficial_para_staging(p_codigo_oficial character varying)
+ RETURNS character varying
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_partes TEXT[];
+    v_prefixo_letras VARCHAR;
+    v_grupo VARCHAR;
+    v_faixa VARCHAR;
+    v_faixa_int INTEGER;
+    v_codigo_staging VARCHAR;
+BEGIN
+    v_partes := string_to_array(p_codigo_oficial, '-');
+    v_prefixo_letras := regexp_replace(v_partes[1], '[0-9]+', '', 'g');
+    
+    IF array_length(v_partes, 1) = 4 THEN
+        v_grupo := v_partes[2];
+        v_faixa := v_partes[3];
+    ELSIF array_length(v_partes, 1) = 3 THEN
+        v_grupo := '1';
+        v_faixa := v_partes[2];
+    ELSE
+        RETURN NULL;
+    END IF;
+    
+    v_faixa_int := v_faixa::INTEGER;
+    
+    v_codigo_staging := CASE v_prefixo_letras
+        WHEN 'DV' THEN 'DUV' || v_grupo || '-' || LPAD(v_faixa_int::TEXT, 2, '0')
+        WHEN 'DVL' THEN 'DUV' || v_grupo || '-' || LPAD(v_faixa_int::TEXT, 2, '0')
+        WHEN 'DVC' THEN 'UVC' || v_grupo || '-' || LPAD(v_faixa_int::TEXT, 2, '0')
+        WHEN 'FB' THEN 'LSR' || v_grupo || '-' || LPAD(v_faixa_int::TEXT, 2, '0')
+        WHEN 'FBC' THEN 'LAS' || v_grupo || '-' || LPAD(v_faixa_int::TEXT, 2, '0')
+        WHEN 'TP' THEN 'PDP' || v_grupo || '-' || LPAD(v_faixa_int::TEXT, 2, '0')
+        WHEN 'ST' THEN 'TXP' || v_grupo || '-' || LPAD(v_faixa_int::TEXT, 2, '0')
+        WHEN 'STA' THEN 'TXP' || v_grupo || '-' || LPAD(v_faixa_int::TEXT, 2, '0')
+        WHEN 'SVP' THEN 'SCR' || v_grupo || '-' || LPAD(v_faixa_int::TEXT, 2, '0')
+        WHEN 'SVR' THEN 'SRC' || v_grupo || '-' || LPAD(v_faixa_int::TEXT, 2, '0')
+        WHEN 'TT' THEN 'TRS' || v_grupo || '-' || LPAD(v_faixa_int::TEXT, 2, '0')
+        WHEN 'TDV' THEN 'TRS' || v_grupo || '-' || LPAD(v_faixa_int::TEXT, 2, '0')
+        WHEN 'ETB' THEN 'STI1-' || LPAD(v_faixa_int::TEXT, 2, '0')
+        WHEN 'ETT' THEN 'STI2-' || LPAD(v_faixa_int::TEXT, 2, '0')
+        WHEN 'HS' THEN 'HTS' || v_grupo || '-' || LPAD(v_faixa_int::TEXT, 2, '0')
+        WHEN 'HSS' THEN 'HTS' || v_grupo || '-' || LPAD(v_faixa_int::TEXT, 2, '0')
+        ELSE NULL
+    END;
+    
+    RETURN v_codigo_staging;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_mark_removed_from_spot(p_current_skus text[])
+ RETURNS TABLE(marked_as_removed integer)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_marked INTEGER;
+    v_supplier_id UUID;
+BEGIN
+    -- Buscar supplier_id da SPOT
+    SELECT id INTO v_supplier_id
+    FROM suppliers 
+    WHERE code = 'STRICKER' OR code = 'SPOT' 
+    LIMIT 1;
+    
+    -- Marcar como removidos os SKUs que não estão mais na API
+    UPDATE variant_supplier_sources
+    SET 
+        removed_from_api = true,
+        removed_at = NOW(),
+        sync_status = 'removed',
+        updated_at = NOW()
+    WHERE supplier_id = v_supplier_id
+      AND supplier_sku != ALL(p_current_skus)
+      AND removed_from_api = false;
+    
+    GET DIAGNOSTICS v_marked = ROW_COUNT;
+    
+    RETURN QUERY SELECT v_marked;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_master_classify_product(p_name text, p_product_id uuid DEFAULT NULL::uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_result JSONB;
+    v_name_lower TEXT;
+    v_category_id UUID;
+    v_category_slug TEXT;
+    v_detected_type TEXT := 'NAO_CLASSIFICADO';
+    v_material TEXT;
+    v_attributes JSONB;
+BEGIN
+    -- Normalizar nome
+    p_name := COALESCE(TRIM(p_name), '');
+    v_name_lower := LOWER(unaccent(p_name));
+    
+    IF p_name = '' THEN
+        RETURN jsonb_build_object(
+            'detected_type', 'NAO_CLASSIFICADO',
+            'category_id', NULL,
+            'category_slug', NULL,
+            'classified_at', NOW()
+        );
+    END IF;
 
--- ----------------------------------------------------------------------------
+    -- ========================================
+    -- DETECÇÃO POR PALAVRAS-CHAVE NO NOME
+    -- Ordem de prioridade (mais específico primeiro)
+    -- ========================================
+    
+    -- 1. KITS (verificar primeiro - mais específicos)
+    IF v_name_lower ~ '(kit|conjunto).*(churrasco|churrasqueira|espeto)' OR
+       v_name_lower ~ '(churrasco|churrasqueira).*(kit|conjunto)' THEN
+        SELECT * INTO v_result FROM classify_kit_churrasco(p_name);
+        v_detected_type := 'KIT_CHURRASCO';
+        
+    ELSIF v_name_lower ~ '(kit|conjunto).*(vinho|saca.?rolha|abridor)' OR
+          v_name_lower ~ '(vinho).*(kit|conjunto)' THEN
+        SELECT * INTO v_result FROM classify_kit_vinho(p_name);
+        v_detected_type := 'KIT_VINHO';
+        
+    ELSIF v_name_lower ~ '(kit|conjunto|tabua).*(queijo|faca|garfo)' OR
+          v_name_lower ~ '(queijo).*(kit|conjunto)' THEN
+        SELECT * INTO v_result FROM classify_kit_queijo(p_name);
+        v_detected_type := 'KIT_QUEIJO';
+        
+    ELSIF v_name_lower ~ '(kit|conjunto).*(banho|spa|higiene|sabonete|toalha)' OR
+          v_name_lower ~ '(banho|spa).*(kit|conjunto)' THEN
+        SELECT * INTO v_result FROM classify_kit_banho(p_name);
+        v_detected_type := 'KIT_BANHO';
+
+    -- 2. CANETAS
+    ELSIF v_name_lower ~ '(caneta|esferograf|roller|marca.?texto|lapiseira|lapis)' THEN
+        SELECT * INTO v_result FROM classify_pen(p_name);
+        IF (v_result->>'is_pen')::BOOLEAN = true THEN
+            v_detected_type := 'CANETA';
+        ELSE
+            v_result := NULL;
+        END IF;
+
+    -- 3. SQUEEZE / GARRAFAS (incluindo garrafa térmica)
+    ELSIF v_name_lower ~ '(squeeze|garrafa|garrafinha|cantil|caramanhola)' THEN
+        SELECT * INTO v_result FROM classify_squeeze(p_name);
+        v_detected_type := 'SQUEEZE';
+
+    -- 4. COPOS
+    ELSIF v_name_lower ~ '(copo|caneca|tumbler)' AND NOT v_name_lower ~ '(garrafa|squeeze)' THEN
+        SELECT * INTO v_result FROM classify_copo(p_name);
+        v_detected_type := 'COPO';
+
+    -- 5. CANECAS (específico)
+    ELSIF v_name_lower ~ '(caneca|xicara|xicar)' THEN
+        SELECT * INTO v_result FROM classify_caneca(p_name);
+        v_detected_type := 'CANECA';
+
+    -- 6. MOCHILAS
+    ELSIF v_name_lower ~ '(mochila|backpack)' THEN
+        SELECT * INTO v_result FROM classify_mochila(p_name);
+        v_detected_type := 'MOCHILA';
+
+    -- 7. BOLSAS TÉRMICAS
+    ELSIF v_name_lower ~ '(bolsa|sacola|bag).*(termic|cooler|isot)' OR
+          v_name_lower ~ '(termic|cooler|isot).*(bolsa|sacola|bag)' THEN
+        SELECT * INTO v_result FROM classify_bolsa_termica(p_name);
+        v_detected_type := 'BOLSA_TERMICA';
+
+    -- 8. SACOLAS
+    ELSIF v_name_lower ~ '(sacola|ecobag|eco.?bag|tote|shopper)' THEN
+        SELECT * INTO v_result FROM classify_sacola(p_name);
+        v_detected_type := 'SACOLA';
+
+    -- 9. NECESSAIRES
+    ELSIF v_name_lower ~ '(necessaire|estojo|pochete|porta.?cosmetico)' AND
+          NOT v_name_lower ~ '(caneta|lapis)' THEN
+        SELECT * INTO v_result FROM classify_necessaire(p_name);
+        v_detected_type := 'NECESSAIRE';
+
+    -- 10. PASTAS
+    ELSIF v_name_lower ~ '(pasta|portfolio|port.?folio|briefcase|maleta)' AND
+          NOT v_name_lower ~ '(dente|dental)' THEN
+        SELECT * INTO v_result FROM classify_pasta(p_name);
+        v_detected_type := 'PASTA';
+
+    -- 11. CHAVEIROS
+    ELSIF v_name_lower ~ '(chaveiro|porta.?chave)' THEN
+        SELECT * INTO v_result FROM classify_chaveiro(p_name);
+        v_detected_type := 'CHAVEIRO';
+
+    -- 12. LANTERNAS
+    ELSIF v_name_lower ~ '(lanterna|flashlight|led.?light)' AND
+          NOT v_name_lower ~ '(chaveiro|caneta)' THEN
+        SELECT * INTO v_result FROM classify_lanterna(p_name);
+        v_detected_type := 'LANTERNA';
+
+    -- 13. FONES DE OUVIDO
+    ELSIF v_name_lower ~ '(fone|headphone|headset|earphone|earbud|auricular)' THEN
+        SELECT * INTO v_result FROM classify_fone_ouvido(p_name);
+        v_detected_type := 'FONE_OUVIDO';
+
+    -- 14. PENDRIVES
+    ELSIF v_name_lower ~ '(pendrive|pen.?drive|flash.?drive|usb.?drive|memoria.?usb)' OR
+          v_name_lower ~ '(\d+\s*gb|\d+\s*mb)' THEN
+        SELECT * INTO v_result FROM classify_pendrive(p_name);
+        v_detected_type := 'PENDRIVE';
+
+    -- 15. RELÓGIOS
+    ELSIF v_name_lower ~ '(relogio|watch|smartwatch|smart.?watch)' THEN
+        SELECT * INTO v_result FROM classify_relogio(p_name);
+        v_detected_type := 'RELOGIO';
+
+    -- 16. ÓCULOS
+    ELSIF v_name_lower ~ '(oculos|oculus|sunglasses|lentes)' THEN
+        SELECT * INTO v_result FROM classify_oculos(p_name);
+        v_detected_type := 'OCULOS';
+
+    -- 17. TAÇAS
+    ELSIF v_name_lower ~ '(taca|calice|champagne|espumante|vinho)' AND
+          NOT v_name_lower ~ '(kit|conjunto|abridor)' THEN
+        SELECT * INTO v_result FROM classify_taca(p_name);
+        v_detected_type := 'TACA';
+
+    -- 18. ESPELHOS
+    ELSIF v_name_lower ~ '(espelho|mirror)' THEN
+        SELECT * INTO v_result FROM classify_espelho(p_name);
+        v_detected_type := 'ESPELHO';
+
+    -- 19. RÉGUAS
+    ELSIF v_name_lower ~ '(regua|ruler|escala)' THEN
+        SELECT * INTO v_result FROM classify_regua(p_name);
+        v_detected_type := 'REGUA';
+
+    -- 20. TÁBUAS
+    ELSIF v_name_lower ~ '(tabua|taboas|cutting.?board)' AND
+          NOT v_name_lower ~ '(kit|conjunto|queijo)' THEN
+        SELECT * INTO v_result FROM classify_tabua(p_name);
+        v_detected_type := 'TABUA';
+
+    -- 21. BALDES DE GELO
+    ELSIF v_name_lower ~ '(balde|ice.?bucket|champanheira)' AND
+          v_name_lower ~ '(gelo|ice|champanhe|bebida)' THEN
+        SELECT * INTO v_result FROM classify_balde_gelo(p_name);
+        v_detected_type := 'BALDE_GELO';
+
+    -- 22. MASSAGEADORES
+    ELSIF v_name_lower ~ '(massageador|massager|massagem)' THEN
+        SELECT * INTO v_result FROM classify_massageador(p_name);
+        v_detected_type := 'MASSAGEADOR';
+
+    END IF;
+
+    -- ========================================
+    -- RETORNAR RESULTADO
+    -- ========================================
+    
+    IF v_result IS NOT NULL AND v_result->>'category_id' IS NOT NULL THEN
+        RETURN jsonb_build_object(
+            'detected_type', v_detected_type,
+            'category_id', v_result->>'category_id',
+            'category_slug', v_result->>'category_slug',
+            'material', v_result->>'material',
+            'attributes', v_result->'attributes',
+            'classified_at', NOW()
+        );
+    END IF;
+    
+    -- Nenhuma classificação encontrada
+    RETURN jsonb_build_object(
+        'detected_type', 'NAO_CLASSIFICADO',
+        'category_id', NULL,
+        'category_slug', NULL,
+        'classified_at', NOW()
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_normalize_ncm(raw_ncm text)
+ RETURNS character varying
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    clean TEXT;
+BEGIN
+    IF raw_ncm IS NULL OR TRIM(raw_ncm) = '' THEN
+        RETURN NULL;
+    END IF;
+    
+    -- Remove pontos, hífens, espaços
+    clean := REPLACE(REPLACE(REPLACE(TRIM(raw_ncm), '.', ''), '-', ''), ' ', '');
+    
+    -- Corrige letras O/o → 0 (erro XBZ)
+    clean := REPLACE(REPLACE(clean, 'O', '0'), 'o', '0');
+    
+    -- Corrige letra Z → 0 (erro detectado)
+    clean := REPLACE(clean, 'Z', '0');
+    
+    -- Valida: exatamente 8 dígitos numéricos
+    IF clean !~ '^\d{8}$' THEN
+        RETURN NULL;
+    END IF;
+    
+    -- Rejeita placeholder de zeros
+    IF clean = '00000000' THEN
+        RETURN NULL;
+    END IF;
+    
+    RETURN clean;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_normalize_product_dimensions(p_product_id uuid DEFAULT NULL::uuid, p_supplier_id uuid DEFAULT NULL::uuid, p_dry_run boolean DEFAULT false)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_updated INTEGER := 0;
+    v_length_fixed INTEGER := 0;
+    v_skipped INTEGER := 0;
+    v_product RECORD;
+BEGIN
+    FOR v_product IN (
+        SELECT id, sku, height_cm, width_cm, length_cm, weight_g
+        FROM products
+        WHERE 
+            -- Filtro: produto específico OU todos de um fornecedor
+            (p_product_id IS NOT NULL AND id = p_product_id)
+            OR (p_supplier_id IS NOT NULL AND supplier_id = p_supplier_id)
+        ORDER BY sku
+    )
+    LOOP
+        -- REGRA 1: length_cm NULL → copiar width_cm
+        IF v_product.length_cm IS NULL AND v_product.width_cm IS NOT NULL AND v_product.width_cm > 0 THEN
+            IF NOT p_dry_run THEN
+                UPDATE products SET
+                    length_cm = width_cm,
+                    updated_at = NOW()
+                WHERE id = v_product.id;
+            END IF;
+            v_length_fixed := v_length_fixed + 1;
+            v_updated := v_updated + 1;
+        ELSE
+            v_skipped := v_skipped + 1;
+        END IF;
+    END LOOP;
+    
+    RETURN jsonb_build_object(
+        'total_checked', v_updated + v_skipped,
+        'updated', v_updated,
+        'length_null_fixed', v_length_fixed,
+        'skipped', v_skipped,
+        'dry_run', p_dry_run
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_order_items_calc_subtotal()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'pg_catalog', 'public'
+AS $function$
+BEGIN
+  NEW.subtotal := COALESCE(NEW.quantity, 0) * COALESCE(NEW.unit_price, 0)
+                + COALESCE(NEW.personalization_cost, 0)
+                - COALESCE(NEW.discount_amount, 0);
+  RETURN NEW;
+END $function$;
+CREATE OR REPLACE FUNCTION public.fn_orders_sync_seller()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'pg_catalog', 'public'
+AS $function$
+BEGIN
+  IF NEW.seller_id IS NULL AND NEW.created_by IS NOT NULL THEN
+    NEW.seller_id := NEW.created_by;
+  ELSIF NEW.created_by IS NULL AND NEW.seller_id IS NOT NULL THEN
+    NEW.created_by := NEW.seller_id;
+  END IF;
+  RETURN NEW;
+END $function$;
+CREATE OR REPLACE FUNCTION public.fn_parse_asia_properties(p_propriedades jsonb, p_api_altura numeric DEFAULT 0, p_api_largura numeric DEFAULT 0, p_api_comprimento numeric DEFAULT 0, p_api_peso numeric DEFAULT 0, p_origem_faturamento text DEFAULT NULL::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_result JSONB;
+    v_height_cm NUMERIC;
+    v_width_cm NUMERIC;
+    v_length_cm NUMERIC;
+    v_weight_g INTEGER;
+    v_box_weight_kg NUMERIC;
+    v_box_quantity INTEGER;
+    v_box_length_cm NUMERIC;
+    v_box_width_cm NUMERIC;
+    v_box_height_cm NUMERIC;
+    v_packing_type TEXT;
+    v_capacity_ml INTEGER;
+    v_raw TEXT;
+    v_match TEXT[];
+    v_num_str TEXT;
+BEGIN
+    -- ========================================
+    -- 1. DIMENSÕES DO PRODUTO
+    -- ========================================
+    IF p_api_altura > 0 AND p_api_largura > 0 THEN
+        v_height_cm := p_api_altura;
+        v_width_cm := p_api_largura;
+        v_length_cm := NULLIF(p_api_comprimento, 0);
+    ELSE
+        v_raw := COALESCE(
+            NULLIF(TRIM(p_propriedades->>'dimensao-produto'), ''),
+            NULLIF(TRIM(p_propriedades->>'dimensao-do-produto'), ''),
+            NULLIF(TRIM(p_propriedades->>'medidas-do-produto'), ''),
+            NULLIF(TRIM(p_propriedades->>'dimensao'), '')
+        );
+        IF v_raw IS NOT NULL THEN
+            v_raw := REGEXP_REPLACE(v_raw, '\s*\(.*?\)', '', 'g');
+            v_raw := REGEXP_REPLACE(v_raw, 'cm$', '', 'i');
+            v_raw := TRIM(v_raw);
+            IF v_raw ~ '[øØ]' THEN
+                v_match := REGEXP_MATCH(v_raw, '^([\d.,]+)\s*[xX×]\s*[øØ]?\s*([\d.,]+)');
+                IF v_match IS NOT NULL THEN
+                    v_height_cm := REPLACE(v_match[1], ',', '.')::NUMERIC;
+                    v_width_cm := REPLACE(v_match[2], ',', '.')::NUMERIC;
+                    v_length_cm := v_width_cm;
+                END IF;
+            ELSE
+                v_match := REGEXP_MATCH(v_raw, '^([\d.,]+)\s*[xX×]\s*([\d.,]+)\s*[xX×]\s*([\d.,]+)');
+                IF v_match IS NOT NULL THEN
+                    v_height_cm := REPLACE(v_match[1], ',', '.')::NUMERIC;
+                    v_width_cm := REPLACE(v_match[2], ',', '.')::NUMERIC;
+                    v_length_cm := REPLACE(v_match[3], ',', '.')::NUMERIC;
+                ELSE
+                    v_match := REGEXP_MATCH(v_raw, '^([\d.,]+)\s*[xX×]\s*([\d.,]+)');
+                    IF v_match IS NOT NULL THEN
+                        v_height_cm := REPLACE(v_match[1], ',', '.')::NUMERIC;
+                        v_width_cm := REPLACE(v_match[2], ',', '.')::NUMERIC;
+                    END IF;
+                END IF;
+            END IF;
+        END IF;
+    END IF;
+    IF v_height_cm IS NOT NULL AND v_width_cm IS NOT NULL AND v_length_cm IS NULL THEN
+        v_length_cm := v_width_cm;
+    END IF;
+
+    -- ========================================
+    -- 2. PESO DO PRODUTO
+    -- FIX v3: Detecta "g" vs "kg" via POSIX regex
+    -- Regra: se contém "kg" → quilos | se contém "g" sem "k" → gramas | senão → assume kg
+    -- ========================================
+    IF p_api_peso > 0 THEN
+        v_weight_g := ROUND(p_api_peso * 1000)::INTEGER;
+    ELSE
+        v_raw := COALESCE(
+            NULLIF(TRIM(p_propriedades->>'peso-do-produto'), ''),
+            NULLIF(TRIM(p_propriedades->>'peso-produto'), ''),
+            NULLIF(TRIM(p_propriedades->>'peso'), ''),
+            NULLIF(TRIM(p_propriedades->>'peso-caneta'), ''),
+            NULLIF(TRIM(p_propriedades->>'peso-do-chaveiro'), '')
+        );
+        IF v_raw IS NOT NULL THEN
+            v_raw := LOWER(TRIM(v_raw));
+            v_raw := REGEXP_REPLACE(v_raw, '\s*\(.*?\)', '', 'g');
+            v_match := REGEXP_MATCH(v_raw, '^([\d.,]+)');
+            IF v_match IS NOT NULL THEN
+                v_num_str := REPLACE(v_match[1], ',', '.');
+                BEGIN
+                    IF v_raw ~ 'kg' THEN
+                        -- Explicitamente kg → converter para gramas
+                        v_weight_g := ROUND(v_num_str::NUMERIC * 1000)::INTEGER;
+                    ELSIF v_raw ~ 'g' THEN
+                        -- Só "g" (sem k) → já está em gramas
+                        v_weight_g := ROUND(v_num_str::NUMERIC)::INTEGER;
+                    ELSE
+                        -- Sem unidade → assume kg (padrão Asia)
+                        v_weight_g := ROUND(v_num_str::NUMERIC * 1000)::INTEGER;
+                    END IF;
+                EXCEPTION WHEN OTHERS THEN
+                    v_weight_g := NULL;
+                END;
+            END IF;
+        END IF;
+    END IF;
+
+    -- ========================================
+    -- 3. BOX WEIGHT
+    -- FIX v3: Detecta "g" vs "kg" via POSIX regex
+    -- "885g" → 0.885kg | "8.85kg" → 8.85kg | "9,5kgs" → 9.5kg
+    -- ========================================
+    v_raw := COALESCE(
+        NULLIF(TRIM(p_propriedades->>'peso-da-caixa'), ''),
+        NULLIF(TRIM(p_propriedades->>'peso-caixa'), '')
+    );
+    IF v_raw IS NOT NULL THEN
+        v_raw := LOWER(TRIM(v_raw));
+        v_raw := REGEXP_REPLACE(v_raw, '\s*\(.*?\)', '', 'g');
+        v_raw := REGEXP_REPLACE(v_raw, '\s*\*.*', '', 'g');
+        v_match := REGEXP_MATCH(v_raw, '^([\d.,]+)');
+        IF v_match IS NOT NULL THEN
+            v_num_str := v_match[1];
+            
+            -- Parse do número (vírgula/ponto)
+            IF v_num_str ~ '\.' AND v_num_str ~ ',' THEN
+                v_num_str := REPLACE(REPLACE(v_num_str, '.', ''), ',', '.');
+            ELSIF v_num_str ~ ',' THEN
+                v_num_str := REPLACE(v_num_str, ',', '.');
+            END IF;
+            
+            BEGIN
+                IF v_raw ~ 'kg' THEN
+                    -- Explicitamente kg
+                    v_box_weight_kg := ROUND(v_num_str::NUMERIC, 3);
+                ELSIF v_raw ~ 'g' THEN
+                    -- Só "g" (sem k) → converter gramas para kg
+                    v_box_weight_kg := ROUND(v_num_str::NUMERIC / 1000, 3);
+                ELSE
+                    -- Sem unidade → assume kg
+                    v_box_weight_kg := ROUND(v_num_str::NUMERIC, 3);
+                END IF;
+            EXCEPTION WHEN OTHERS THEN
+                v_box_weight_kg := NULL;
+            END;
+        END IF;
+    END IF;
+
+    -- ========================================
+    -- 4. BOX QUANTITY
+    -- ========================================
+    v_raw := COALESCE(
+        NULLIF(TRIM(p_propriedades->>'quant-por-caixa'), ''),
+        NULLIF(TRIM(p_propriedades->>'quantidade-por-caixa'), ''),
+        NULLIF(TRIM(p_propriedades->>'qtde-por-caixa'), ''),
+        NULLIF(TRIM(p_propriedades->>'quant-da-caixa'), ''),
+        NULLIF(TRIM(p_propriedades->>'qtde-caixa'), '')
+    );
+    IF v_raw IS NOT NULL THEN
+        v_raw := REGEXP_REPLACE(v_raw, '\s*\(.*?\)', '', 'g');
+        v_match := REGEXP_MATCH(v_raw, '^([\d.]+)');
+        IF v_match IS NOT NULL THEN
+            BEGIN
+                v_box_quantity := REPLACE(v_match[1], '.', '')::INTEGER;
+            EXCEPTION WHEN OTHERS THEN
+                v_box_quantity := NULL;
+            END;
+        END IF;
+    END IF;
+
+    -- ========================================
+    -- 5. BOX DIMENSIONS
+    -- ========================================
+    v_raw := COALESCE(
+        NULLIF(TRIM(p_propriedades->>'dimensao-da-caixa'), ''),
+        NULLIF(TRIM(p_propriedades->>'dimensao-caixa'), ''),
+        NULLIF(TRIM(p_propriedades->>'tamanho-da-caixa'), ''),
+        NULLIF(TRIM(p_propriedades->>'medidas-da-caixa'), ''),
+        NULLIF(TRIM(p_propriedades->>'dimensao-por-caixa'), '')
+    );
+    IF v_raw IS NOT NULL THEN
+        v_raw := REGEXP_REPLACE(LOWER(TRIM(v_raw)), 'cm', '', 'gi');
+        v_raw := REGEXP_REPLACE(v_raw, '\s*\(.*?\)', '', 'g');
+        v_match := REGEXP_MATCH(v_raw, '^([\d.,]+)\s*[xX×]\s*([\d.,]+)\s*[xX×]\s*([\d.,]+)');
+        IF v_match IS NOT NULL THEN
+            BEGIN
+                v_box_length_cm := ROUND(REPLACE(v_match[1], ',', '.')::NUMERIC, 2);
+                v_box_width_cm := ROUND(REPLACE(v_match[2], ',', '.')::NUMERIC, 2);
+                v_box_height_cm := ROUND(REPLACE(v_match[3], ',', '.')::NUMERIC, 2);
+            EXCEPTION WHEN OTHERS THEN
+                v_box_length_cm := NULL; v_box_width_cm := NULL; v_box_height_cm := NULL;
+            END;
+        END IF;
+    END IF;
+
+    -- ========================================
+    -- 6. PACKING TYPE
+    -- ========================================
+    v_packing_type := NULLIF(TRIM(p_propriedades->>'embalagem'), '');
+
+    -- ========================================
+    -- 7. CAPACITY ML
+    -- ========================================
+    v_raw := NULLIF(TRIM(p_propriedades->>'capacidade'), '');
+    IF v_raw IS NOT NULL THEN
+        v_match := REGEXP_MATCH(LOWER(v_raw), '^(\d+)\s*ml');
+        IF v_match IS NOT NULL THEN
+            v_capacity_ml := v_match[1]::INTEGER;
+        END IF;
+    END IF;
+
+    -- ========================================
+    -- 8. RESULTADO
+    -- ========================================
+    RETURN jsonb_build_object(
+        'height_cm', v_height_cm, 'width_cm', v_width_cm, 'length_cm', v_length_cm,
+        'weight_g', v_weight_g,
+        'box_weight_kg', v_box_weight_kg, 'box_quantity', v_box_quantity,
+        'box_length_cm', v_box_length_cm, 'box_width_cm', v_box_width_cm, 'box_height_cm', v_box_height_cm,
+        'packing_type', v_packing_type, 'tax_reference_state', p_origem_faturamento,
+        'capacity_ml', v_capacity_ml,
+        'source', CASE 
+            WHEN p_api_altura > 0 THEN 'api_root' 
+            WHEN v_height_cm IS NOT NULL THEN 'propriedades_fallback'
+            ELSE 'no_data'
+        END
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_parse_capacity_ml(p_capacity text)
+ RETURNS integer
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_part TEXT;
+    v_parts TEXT[];
+    v_value DECIMAL;
+    v_unit TEXT;
+    v_result INT;
+    v_max_result INT := NULL;
+BEGIN
+    IF p_capacity IS NULL OR TRIM(p_capacity) = '' THEN
+        RETURN NULL;
+    END IF;
+    
+    -- Split by comma for multi-value ("480 mL, 760mL" → ["480 mL", "760mL"])
+    v_parts := string_to_array(p_capacity, ',');
+    
+    FOREACH v_part IN ARRAY v_parts
+    LOOP
+        v_part := TRIM(v_part);
+        IF v_part = '' THEN CONTINUE; END IF;
+        
+        -- Extract numeric value
+        v_value := fn_extract_numeric(v_part);
+        IF v_value IS NULL THEN CONTINUE; END IF;
+        
+        -- Detect unit (check mL BEFORE L to avoid false match)
+        v_unit := LOWER(v_part);
+        
+        IF v_unit LIKE '%ml%' OR v_unit LIKE '%mililitro%' THEN
+            v_result := v_value::INT;
+        ELSIF v_unit ~ '(litros?|\dl\s*$|\dl$|\d\s+l\s*$|\d\s+l\s)' THEN
+            v_result := (v_value * 1000)::INT;
+        ELSIF v_unit LIKE '%gal%' THEN
+            v_result := (v_value * 3785.41)::INT;
+        ELSE
+            -- Assume mL if no unit specified
+            v_result := v_value::INT;
+        END IF;
+        
+        -- MAIOR VALOR rule: keep the maximum
+        IF v_max_result IS NULL OR v_result > v_max_result THEN
+            v_max_result := v_result;
+        END IF;
+    END LOOP;
+    
+    RETURN v_max_result;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_parse_composite_material(material_string text)
+ RETURNS TABLE(material_part text, sort_order integer)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_working_string TEXT;
+    v_parts TEXT[];
+    v_part TEXT;
+    v_counter INT := 0;
+BEGIN
+    IF material_string IS NULL OR trim(material_string) = '' THEN
+        RETURN;
+    END IF;
+    
+    v_working_string := trim(material_string);
+    
+    -- Proteger "C. sintético" (é unidade única, não separar)
+    v_working_string := regexp_replace(v_working_string, 'C\.\s*sint[ée]tico', '@@COURO_SINTETICO@@', 'gi');
+    v_working_string := regexp_replace(v_working_string, 'c\.\s*sint[ée]tico', '@@COURO_SINTETICO@@', 'gi');
+    
+    -- Proteger gramaturas (não são separadores)
+    v_working_string := regexp_replace(v_working_string, '(\d+)\s*g/m²', '\1@@GRAMATURA@@', 'g');
+    v_working_string := regexp_replace(v_working_string, '(\d+)\s*g/m2', '\1@@GRAMATURA@@', 'gi');
+    
+    -- Normalizar separadores: ". " e " e " viram @@SEP@@
+    v_working_string := regexp_replace(v_working_string, '\.\s+', '@@SEP@@', 'g');
+    v_working_string := regexp_replace(v_working_string, '\s+e\s+', '@@SEP@@', 'gi');
+    
+    -- Dividir em partes
+    v_parts := string_to_array(v_working_string, '@@SEP@@');
+    
+    FOREACH v_part IN ARRAY v_parts
+    LOOP
+        v_part := trim(v_part);
+        
+        IF v_part = '' OR v_part IS NULL THEN
+            CONTINUE;
+        END IF;
+        
+        -- Ignorar se for só gramatura isolada
+        IF v_part ~ '^[\d\s]+@@GRAMATURA@@$' THEN
+            CONTINUE;
+        END IF;
+        
+        IF length(v_part) < 2 THEN
+            CONTINUE;
+        END IF;
+        
+        -- Restaurar padrões protegidos
+        v_part := regexp_replace(v_part, '@@COURO_SINTETICO@@', 'Couro Sintético', 'g');
+        v_part := regexp_replace(v_part, '@@GRAMATURA@@', ' g/m²', 'g');
+        
+        -- Remover percentuais no início (ex: "100% algodão" → "algodão")
+        v_part := regexp_replace(v_part, '^\d+%\s*', '', 'g');
+        
+        -- Limpar espaços extras
+        v_part := trim(regexp_replace(v_part, '\s+', ' ', 'g'));
+        
+        IF v_part = '' OR v_part IS NULL THEN
+            CONTINUE;
+        END IF;
+        
+        v_counter := v_counter + 1;
+        material_part := v_part;
+        sort_order := v_counter;
+        RETURN NEXT;
+    END LOOP;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_parse_product_dimensions(p_dimensions_text text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_original TEXT;
+    v_work_text TEXT;
+    v_unit TEXT;
+    v_unit_factor NUMERIC;
+    v_is_diameter BOOLEAN;
+    v_is_axlxp BOOLEAN;
+    v_numbers TEXT[];
+    v_nums NUMERIC[];
+    v_result JSONB;
+    v_i INT;
+    v_num NUMERIC;
+BEGIN
+    -- ========================================
+    -- 1. VALIDAÇÃO DE ENTRADA
+    -- ========================================
+    IF p_dimensions_text IS NULL OR TRIM(p_dimensions_text) = '' THEN
+        RETURN jsonb_build_object(
+            'error', 'empty_input',
+            'original', p_dimensions_text
+        );
+    END IF;
+    
+    v_original := TRIM(p_dimensions_text);
+    
+    -- ========================================
+    -- 2. PRÉ-PROCESSAMENTO
+    -- ========================================
+    
+    -- Pegar apenas primeira parte se tiver pipe |
+    IF POSITION('|' IN v_original) > 0 THEN
+        v_work_text := TRIM(SPLIT_PART(v_original, '|', 1));
+    ELSE
+        v_work_text := v_original;
+    END IF;
+    
+    -- Normalizar vírgula BR para ponto decimal
+    v_work_text := REPLACE(v_work_text, ',', '.');
+    
+    -- ========================================
+    -- 3. DETECTAR UNIDADE
+    -- ========================================
+    IF v_work_text ~* 'cm' THEN
+        v_unit := 'cm';
+        v_unit_factor := 1.0;
+    ELSIF v_work_text ~* 'mm' THEN
+        v_unit := 'mm';
+        v_unit_factor := 0.1;
+    ELSIF v_work_text ~ '(?<![c])\bm\b(?!m)' THEN
+        v_unit := 'm';
+        v_unit_factor := 100.0;
+    ELSE
+        v_unit := 'mm';
+        v_unit_factor := 0.1;
+    END IF;
+    
+    -- ========================================
+    -- 4. DETECTAR TIPO DE FORMATO
+    -- ========================================
+    
+    -- Diâmetro: detectar ø/Ø em QUALQUER posição
+    v_is_diameter := (v_work_text ~ '[øØ]');
+    
+    -- Formato AxLxP (XBZ)?
+    v_is_axlxp := (v_work_text ~* '\(\s*[AH]\s*[x×]\s*[LW]\s*[x×]\s*[PD]\s*\)');
+    
+    -- ========================================
+    -- 5. EXTRAIR NÚMEROS
+    -- ========================================
+    
+    SELECT ARRAY_AGG(m[1])
+    INTO v_numbers
+    FROM REGEXP_MATCHES(v_work_text, '(\d+\.?\d*)', 'g') AS m;
+    
+    IF v_numbers IS NULL OR ARRAY_LENGTH(v_numbers, 1) IS NULL THEN
+        RETURN jsonb_build_object(
+            'error', 'no_numbers',
+            'original', v_original
+        );
+    END IF;
+    
+    -- Converter para numeric e filtrar zeros
+    v_nums := ARRAY[]::NUMERIC[];
+    FOR v_i IN 1..ARRAY_LENGTH(v_numbers, 1) LOOP
+        v_num := v_numbers[v_i]::NUMERIC;
+        IF v_num > 0 THEN
+            v_nums := ARRAY_APPEND(v_nums, v_num);
+        END IF;
+    END LOOP;
+    
+    IF ARRAY_LENGTH(v_nums, 1) IS NULL THEN
+        RETURN jsonb_build_object(
+            'error', 'no_valid_numbers',
+            'original', v_original
+        );
+    END IF;
+    
+    -- ========================================
+    -- 6. MONTAR RESULTADO
+    -- ========================================
+    
+    v_result := jsonb_build_object(
+        'original', v_original,
+        'unit_detected', v_unit,
+        'shape_type', CASE WHEN v_is_diameter THEN 'cylindrical' ELSE 'rectangular' END,
+        'length_cm', NULL,
+        'width_cm', NULL,
+        'height_cm', NULL,
+        'diameter_cm', NULL
+    );
+    
+    IF v_is_diameter THEN
+        -- ========================================
+        -- CILINDRO: ø DIÂMETRO x ALTURA
+        -- Mantém igual (já estava correto)
+        -- ========================================
+        IF ARRAY_LENGTH(v_nums, 1) >= 2 THEN
+            v_result := v_result || jsonb_build_object(
+                'diameter_cm', ROUND(v_nums[1] * v_unit_factor, 2),
+                'height_cm', ROUND(v_nums[2] * v_unit_factor, 2),
+                'length_cm', ROUND(v_nums[1] * v_unit_factor, 2),
+                'width_cm', ROUND(v_nums[1] * v_unit_factor, 2)
+            );
+        ELSIF ARRAY_LENGTH(v_nums, 1) = 1 THEN
+            v_result := v_result || jsonb_build_object(
+                'diameter_cm', ROUND(v_nums[1] * v_unit_factor, 2),
+                'length_cm', ROUND(v_nums[1] * v_unit_factor, 2),
+                'width_cm', ROUND(v_nums[1] * v_unit_factor, 2)
+            );
+        END IF;
+    
+    ELSIF v_is_axlxp THEN
+        -- ========================================
+        -- FORMATO XBZ: AxLxP = Altura x Largura x Profundidade
+        -- Mantém igual (específico XBZ)
+        -- ========================================
+        IF ARRAY_LENGTH(v_nums, 1) >= 3 THEN
+            v_result := v_result || jsonb_build_object(
+                'height_cm', ROUND(v_nums[1] * v_unit_factor, 2),
+                'width_cm', ROUND(v_nums[2] * v_unit_factor, 2),
+                'length_cm', ROUND(v_nums[3] * v_unit_factor, 2)
+            );
+        ELSIF ARRAY_LENGTH(v_nums, 1) >= 2 THEN
+            v_result := v_result || jsonb_build_object(
+                'height_cm', ROUND(v_nums[1] * v_unit_factor, 2),
+                'width_cm', ROUND(v_nums[2] * v_unit_factor, 2)
+            );
+        END IF;
+    
+    ELSE
+        -- ========================================
+        -- FORMATO PADRÃO: L x A x P (SPOT e outros)
+        -- ========================================
+        -- CORREÇÃO v3.2: 
+        --   ANTES:  v1=length, v2=width, v3=height
+        --   DEPOIS: v1=width, v2=height, v3=length
+        -- ========================================
+        IF ARRAY_LENGTH(v_nums, 1) >= 3 THEN
+            -- 3 valores: Largura x Altura x Profundidade
+            v_result := v_result || jsonb_build_object(
+                'width_cm', ROUND(v_nums[1] * v_unit_factor, 2),
+                'height_cm', ROUND(v_nums[2] * v_unit_factor, 2),
+                'length_cm', ROUND(v_nums[3] * v_unit_factor, 2)
+            );
+        ELSIF ARRAY_LENGTH(v_nums, 1) >= 2 THEN
+            -- 2 valores: Largura x Altura
+            v_result := v_result || jsonb_build_object(
+                'width_cm', ROUND(v_nums[1] * v_unit_factor, 2),
+                'height_cm', ROUND(v_nums[2] * v_unit_factor, 2)
+            );
+        ELSIF ARRAY_LENGTH(v_nums, 1) = 1 THEN
+            -- 1 valor: assume largura (dimensão única)
+            v_result := v_result || jsonb_build_object(
+                'width_cm', ROUND(v_nums[1] * v_unit_factor, 2)
+            );
+        END IF;
+    END IF;
+    
+    RETURN v_result;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_parse_product_weight(p_weight numeric, p_weight_unit text DEFAULT NULL::text, p_box_weight_kg numeric DEFAULT NULL::numeric, p_box_quantity integer DEFAULT NULL::integer, p_product_name text DEFAULT NULL::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_weight_g NUMERIC;
+    v_weight_kg NUMERIC;
+    v_source TEXT;
+    v_confidence TEXT;
+    v_unit_used TEXT;
+    v_detection_reason TEXT;
+    v_calculation_details TEXT;
+    v_extracted_weight NUMERIC;
+BEGIN
+    -- ========================================
+    -- 1. VALIDAÇÃO DE ENTRADA
+    -- ========================================
+    
+    -- Se peso é NULL ou zero, tentar fallbacks
+    IF p_weight IS NULL OR p_weight = 0 THEN
+        -- Tentar calcular via caixa
+        IF p_box_weight_kg IS NOT NULL AND p_box_weight_kg > 0 
+           AND p_box_quantity IS NOT NULL AND p_box_quantity > 0 THEN
+            v_weight_g := ROUND((p_box_weight_kg * 1000) / p_box_quantity, 2);
+            v_weight_kg := ROUND(v_weight_g / 1000, 4);
+            v_source := 'calculated';
+            v_confidence := 'high';
+            v_calculation_details := FORMAT('BoxWeightKG(%s) * 1000 / BoxQuantity(%s) = %sg', 
+                                            p_box_weight_kg, p_box_quantity, v_weight_g);
+            
+            RETURN jsonb_build_object(
+                'weight_g', v_weight_g,
+                'weight_kg', v_weight_kg,
+                'source', v_source,
+                'confidence', v_confidence,
+                'original_value', p_weight,
+                'original_unit', COALESCE(p_weight_unit, 'unknown'),
+                'detection_reason', 'weight was null/zero, calculated from box',
+                'calculation_details', v_calculation_details
+            );
+        END IF;
+        
+        -- Tentar extrair do nome
+        IF p_product_name IS NOT NULL AND p_product_name != '' THEN
+            BEGIN
+                SELECT fn_extract_weight_from_name(p_product_name) INTO v_extracted_weight;
+                
+                IF v_extracted_weight IS NOT NULL AND v_extracted_weight > 0 THEN
+                    RETURN jsonb_build_object(
+                        'weight_g', v_extracted_weight,
+                        'weight_kg', ROUND(v_extracted_weight / 1000, 4),
+                        'source', 'extracted',
+                        'confidence', 'medium',
+                        'original_value', p_weight,
+                        'original_unit', COALESCE(p_weight_unit, 'unknown'),
+                        'detection_reason', 'extracted from product name',
+                        'calculation_details', FORMAT('Extracted %sg from name: %s', 
+                                                      v_extracted_weight, LEFT(p_product_name, 50))
+                    );
+                END IF;
+            EXCEPTION WHEN OTHERS THEN
+                -- Função de extração não existe ou falhou, continuar
+                NULL;
+            END;
+        END IF;
+        
+        -- Sem dados suficientes
+        RETURN jsonb_build_object(
+            'weight_g', NULL,
+            'weight_kg', NULL,
+            'source', 'none',
+            'confidence', 'none',
+            'original_value', p_weight,
+            'original_unit', COALESCE(p_weight_unit, 'unknown'),
+            'error', 'no_weight_data',
+            'detection_reason', 'weight is null/zero and no fallback available'
+        );
+    END IF;
+    
+    -- ========================================
+    -- 2. DETERMINAR UNIDADE
+    -- ========================================
+    
+    IF p_weight_unit IS NOT NULL AND LOWER(p_weight_unit) IN ('g', 'gram', 'grams', 'gramas') THEN
+        -- Unidade informada: GRAMAS
+        v_unit_used := 'g';
+        v_detection_reason := 'unit provided as grams';
+        
+    ELSIF p_weight_unit IS NOT NULL AND LOWER(p_weight_unit) IN ('kg', 'kilo', 'kilos', 'quilos', 'quilogramas') THEN
+        -- Unidade informada: QUILOGRAMAS
+        v_unit_used := 'kg';
+        v_detection_reason := 'unit provided as kilograms';
+        
+    ELSE
+        -- AUTO-DETECTAR baseado no valor
+        -- Regra: produtos promocionais típicos pesam entre 10g e 5kg
+        -- Se valor > 50, provavelmente está em gramas
+        -- Se valor < 10, provavelmente está em kg
+        -- Zona cinza (10-50): assumir kg por segurança (mais comum em APIs)
+        
+        IF p_weight > 50 THEN
+            v_unit_used := 'g';
+            v_detection_reason := FORMAT('auto-detected as grams (value %s > 50)', p_weight);
+        ELSIF p_weight < 10 THEN
+            v_unit_used := 'kg';
+            v_detection_reason := FORMAT('auto-detected as kg (value %s < 10)', p_weight);
+        ELSE
+            -- Zona cinza: assumir kg (padrão de mercado)
+            v_unit_used := 'kg';
+            v_detection_reason := FORMAT('auto-detected as kg (value %s in gray zone 10-50, defaulting to kg)', p_weight);
+        END IF;
+    END IF;
+    
+    -- ========================================
+    -- 3. CONVERTER PARA GRAMAS
+    -- ========================================
+    
+    IF v_unit_used = 'kg' THEN
+        v_weight_g := ROUND(p_weight * 1000, 2);
+    ELSE
+        v_weight_g := ROUND(p_weight, 2);
+    END IF;
+    
+    v_weight_kg := ROUND(v_weight_g / 1000, 4);
+    
+    -- ========================================
+    -- 4. VERIFICAR SE PESO É PLACEHOLDER
+    -- ========================================
+    
+    -- Se peso convertido for <= 1g, provavelmente é placeholder (comum na SPOT)
+    IF v_weight_g <= 1 THEN
+        -- Tentar calcular via caixa
+        IF p_box_weight_kg IS NOT NULL AND p_box_weight_kg > 0 
+           AND p_box_quantity IS NOT NULL AND p_box_quantity > 0 THEN
+            v_weight_g := ROUND((p_box_weight_kg * 1000) / p_box_quantity, 2);
+            v_weight_kg := ROUND(v_weight_g / 1000, 4);
+            v_source := 'calculated';
+            v_confidence := 'high';
+            v_calculation_details := FORMAT('BoxWeightKG(%s) * 1000 / BoxQuantity(%s) = %sg (original weight was placeholder: %s%s)', 
+                                            p_box_weight_kg, p_box_quantity, v_weight_g, p_weight, v_unit_used);
+            
+            RETURN jsonb_build_object(
+                'weight_g', v_weight_g,
+                'weight_kg', v_weight_kg,
+                'source', v_source,
+                'confidence', v_confidence,
+                'original_value', p_weight,
+                'original_unit', v_unit_used,
+                'detection_reason', 'original weight was placeholder (<=1g), calculated from box',
+                'calculation_details', v_calculation_details
+            );
+        END IF;
+        
+        -- Tentar extrair do nome
+        IF p_product_name IS NOT NULL AND p_product_name != '' THEN
+            BEGIN
+                SELECT fn_extract_weight_from_name(p_product_name) INTO v_extracted_weight;
+                
+                IF v_extracted_weight IS NOT NULL AND v_extracted_weight > 1 THEN
+                    RETURN jsonb_build_object(
+                        'weight_g', v_extracted_weight,
+                        'weight_kg', ROUND(v_extracted_weight / 1000, 4),
+                        'source', 'extracted',
+                        'confidence', 'medium',
+                        'original_value', p_weight,
+                        'original_unit', v_unit_used,
+                        'detection_reason', 'original weight was placeholder, extracted from product name',
+                        'calculation_details', FORMAT('Extracted %sg from name: %s', 
+                                                      v_extracted_weight, LEFT(p_product_name, 50))
+                    );
+                END IF;
+            EXCEPTION WHEN OTHERS THEN
+                NULL;
+            END;
+        END IF;
+        
+        -- Retornar o placeholder com aviso
+        RETURN jsonb_build_object(
+            'weight_g', v_weight_g,
+            'weight_kg', v_weight_kg,
+            'source', 'api',
+            'confidence', 'low',
+            'original_value', p_weight,
+            'original_unit', v_unit_used,
+            'detection_reason', v_detection_reason,
+            'warning', 'weight seems to be a placeholder (<=1g), no fallback available'
+        );
+    END IF;
+    
+    -- ========================================
+    -- 5. VALIDAR PESO RAZOÁVEL
+    -- ========================================
+    
+    -- Produtos promocionais típicos: 5g a 10kg
+    IF v_weight_g < 5 THEN
+        v_confidence := 'low';
+    ELSIF v_weight_g > 10000 THEN
+        v_confidence := 'medium'; -- Peso alto mas possível (ex: caixa de som grande)
+    ELSE
+        v_confidence := 'high';
+    END IF;
+    
+    -- ========================================
+    -- 6. RETORNAR RESULTADO
+    -- ========================================
+    
+    RETURN jsonb_build_object(
+        'weight_g', v_weight_g,
+        'weight_kg', v_weight_kg,
+        'source', 'api',
+        'confidence', v_confidence,
+        'original_value', p_weight,
+        'original_unit', v_unit_used,
+        'detection_reason', v_detection_reason,
+        'calculation_details', NULL
+    );
+    
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_pipeline_complete_step(p_etapa integer, p_resultado jsonb DEFAULT '{}'::jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    UPDATE import_pipeline_steps 
+    SET status = 'done', completed_at = now(), resultado = p_resultado
+    WHERE etapa = p_etapa;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_pipeline_error_step(p_etapa integer, p_error text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    UPDATE import_pipeline_steps 
+    SET status = 'error', error_message = p_error
+    WHERE etapa = p_etapa;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_pipeline_start_step(p_etapa integer)
+ RETURNS void
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    UPDATE import_pipeline_steps 
+    SET status = 'running', started_at = now()
+    WHERE etapa = p_etapa AND status IN ('pending', 'error');
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_pipeline_status()
+ RETURNS TABLE(total_etapas bigint, concluidas bigint, em_andamento bigint, com_erro bigint, pendentes bigint, pct_completo numeric, proxima_etapa integer, proxima_titulo character varying)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        COUNT(*)::BIGINT,
+        COUNT(*) FILTER (WHERE s.status = 'done')::BIGINT,
+        COUNT(*) FILTER (WHERE s.status = 'running')::BIGINT,
+        COUNT(*) FILTER (WHERE s.status = 'error')::BIGINT,
+        COUNT(*) FILTER (WHERE s.status = 'pending')::BIGINT,
+        ROUND(100.0 * COUNT(*) FILTER (WHERE s.status = 'done') / COUNT(*), 1),
+        (SELECT MIN(s2.etapa) FROM import_pipeline_steps s2 WHERE s2.status IN ('pending', 'error')),
+        (SELECT s3.titulo FROM import_pipeline_steps s3 WHERE s3.status IN ('pending', 'error') ORDER BY s3.etapa LIMIT 1)
+    FROM import_pipeline_steps s;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_pipeline_steps_updated_at()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_populate_all_products_seo()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_products_updated INTEGER := 0;
+  v_images_updated INTEGER := 0;
+  v_categories_updated INTEGER := 0;
+  v_start_time TIMESTAMPTZ := clock_timestamp();
+BEGIN
+  -- ========================================
+  -- 1. POPULAR SEO EM PRODUCTS
+  -- ========================================
+  
+  -- Atualizar slug
+  UPDATE products p
+  SET slug = generate_product_slug(p.name, p.id)
+  WHERE (p.slug IS NULL OR LENGTH(TRIM(COALESCE(p.slug, ''))) = 0)
+    AND p.name IS NOT NULL
+    AND p.is_deleted = false;
+  
+  -- Atualizar meta_title
+  UPDATE products p
+  SET meta_title = generate_product_meta_title(
+    p.name, 
+    (SELECT c.name FROM categories c WHERE c.id = COALESCE(p.main_category_id, p.category_id) LIMIT 1)
+  )
+  WHERE (p.meta_title IS NULL OR LENGTH(TRIM(COALESCE(p.meta_title, ''))) = 0)
+    AND p.name IS NOT NULL
+    AND p.is_deleted = false;
+  
+  -- Atualizar meta_description
+  UPDATE products p
+  SET meta_description = generate_product_meta_description(
+    p.name,
+    p.short_description,
+    p.description,
+    COALESCE(p.allows_personalization, false)
+  )
+  WHERE (p.meta_description IS NULL OR LENGTH(TRIM(COALESCE(p.meta_description, ''))) = 0)
+    AND p.name IS NOT NULL
+    AND p.is_deleted = false;
+  
+  -- Atualizar meta_keywords
+  UPDATE products p
+  SET meta_keywords = extract_keywords(
+    COALESCE(p.name, '') || ' ' || 
+    COALESCE(p.short_description, '') || ' ' || 
+    COALESCE(p.description, '') || ' ' ||
+    'brinde promocional brinde corporativo brinde personalizado',
+    15
+  )
+  WHERE (p.meta_keywords IS NULL OR LENGTH(TRIM(COALESCE(p.meta_keywords, ''))) = 0)
+    AND p.name IS NOT NULL
+    AND p.is_deleted = false;
+  
+  -- Atualizar canonical_url
+  UPDATE products p
+  SET canonical_url = '/produto/' || p.slug
+  WHERE p.canonical_url IS NULL
+    AND p.slug IS NOT NULL
+    AND p.is_deleted = false;
+  
+  -- Atualizar og_title (herda de meta_title)
+  UPDATE products p
+  SET og_title = p.meta_title
+  WHERE p.og_title IS NULL
+    AND p.meta_title IS NOT NULL
+    AND p.is_deleted = false;
+  
+  -- Atualizar og_description (herda de meta_description)
+  UPDATE products p
+  SET og_description = p.meta_description
+  WHERE p.og_description IS NULL
+    AND p.meta_description IS NOT NULL
+    AND p.is_deleted = false;
+  
+  -- Contar produtos atualizados
+  SELECT COUNT(*) INTO v_products_updated
+  FROM products
+  WHERE slug IS NOT NULL
+    AND is_deleted = false;
+  
+  -- ========================================
+  -- 2. POPULAR ALT_TEXT EM PRODUCT_IMAGES
+  -- ========================================
+  
+  UPDATE product_images pi
+  SET 
+    alt_text = generate_image_alt_text(
+      (SELECT p.name FROM products p WHERE p.id = pi.product_id),
+      COALESCE(pi.image_type, 'gallery'),
+      (SELECT cv.name FROM color_variations cv WHERE cv.id = pi.color_id),
+      COALESCE(pi.display_order, 1)
+    ),
+    title_text = (SELECT p.name FROM products p WHERE p.id = pi.product_id) || 
+      COALESCE(' - ' || (SELECT cv.name FROM color_variations cv WHERE cv.id = pi.color_id), '')
+  WHERE (pi.alt_text IS NULL OR LENGTH(TRIM(COALESCE(pi.alt_text, ''))) = 0)
+    AND pi.product_id IS NOT NULL;
+  
+  GET DIAGNOSTICS v_images_updated = ROW_COUNT;
+  
+  -- ========================================
+  -- 3. POPULAR SEO EM CATEGORIES
+  -- ========================================
+  
+  UPDATE categories c
+  SET 
+    meta_title = COALESCE(c.meta_title, c.name || ' - Brindes Promocionais | Promo Brindes'),
+    meta_description = COALESCE(c.meta_description, 
+      'Encontre os melhores ' || LOWER(c.name) || ' para brindes corporativos e eventos. Personalização com sua marca. Solicite orçamento!')
+  WHERE (c.meta_title IS NULL OR c.meta_description IS NULL)
+    AND c.is_active = true;
+  
+  GET DIAGNOSTICS v_categories_updated = ROW_COUNT;
+  
+  -- ========================================
+  -- RETORNO
+  -- ========================================
+  
+  RETURN jsonb_build_object(
+    'success', true,
+    'products_with_seo', v_products_updated,
+    'images_updated', v_images_updated,
+    'categories_updated', v_categories_updated,
+    'duration_ms', EXTRACT(MILLISECONDS FROM (clock_timestamp() - v_start_time))::INTEGER
+  );
+  
+EXCEPTION WHEN OTHERS THEN
+  RETURN jsonb_build_object(
+    'success', false,
+    'error', SQLERRM,
+    'error_detail', SQLSTATE
+  );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_populate_novelties_from_supplier()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_inserted INTEGER := 0;
+    v_expired INTEGER := 0;
+    v_skipped INTEGER := 0;
+    rec RECORD;
+    v_update_date TIMESTAMPTZ;
+    v_expires_at TIMESTAMPTZ;
+    v_is_active BOOLEAN;
+BEGIN
+    -- Iterar sobre produtos DISTINTOS que NÃO estão em product_novelties
+    FOR rec IN 
+        SELECT DISTINCT ON (p.id)
+            p.id AS product_id,
+            p.sku,
+            spr.raw_data->>'UpdateDate' AS update_date_str
+        FROM products p
+        LEFT JOIN supplier_products_raw spr ON spr.product_id = p.id
+        WHERE NOT EXISTS (
+            SELECT 1 FROM product_novelties pn WHERE pn.product_id = p.id
+        )
+        ORDER BY p.id, spr.created_at DESC
+    LOOP
+        BEGIN
+            IF rec.update_date_str IS NOT NULL AND rec.update_date_str != '' THEN
+                v_update_date := TO_TIMESTAMP(rec.update_date_str, 'MM/DD/YYYY HH24:MI:SS');
+            ELSE
+                v_update_date := NOW();
+            END IF;
+        EXCEPTION WHEN OTHERS THEN
+            v_update_date := NOW();
+        END;
+        
+        v_expires_at := v_update_date + INTERVAL '30 days';
+        v_is_active := v_expires_at > NOW();
+        
+        BEGIN
+            INSERT INTO product_novelties (
+                product_id, detected_at, expires_at, is_active, source, notes
+            ) VALUES (
+                rec.product_id, v_update_date, v_expires_at, v_is_active,
+                'migration_from_supplier', 'Migrado via UpdateDate do fornecedor'
+            );
+            
+            IF v_is_active THEN
+                v_inserted := v_inserted + 1;
+            ELSE
+                v_expired := v_expired + 1;
+            END IF;
+        EXCEPTION WHEN unique_violation THEN
+            v_skipped := v_skipped + 1;
+        END;
+    END LOOP;
+    
+    RETURN jsonb_build_object(
+        'total_processed', v_inserted + v_expired,
+        'active_novelties', v_inserted,
+        'already_expired', v_expired,
+        'skipped_duplicates', v_skipped,
+        'executed_at', NOW()
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_process_all_composite_materials(p_organization_id uuid DEFAULT '4f2f91ed-beec-4fa4-867d-5f20c8a4ef00'::uuid)
+ RETURNS TABLE(supplier_material_id uuid, api_material_name text, parts_found integer, equivalences_created integer, equivalences_existing integer, parts_not_matched integer)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_sm RECORD;
+    v_result RECORD;
+    v_created_count INT;
+    v_existing_count INT;
+    v_not_matched_count INT;
+    v_parts_count INT;
+BEGIN
+    FOR v_sm IN 
+        SELECT id, api_material_name
+        FROM supplier_materials
+        WHERE api_material_name ~ '\.\s+' OR api_material_name ~ '\s+e\s+'
+        ORDER BY api_material_name
+    LOOP
+        supplier_material_id := v_sm.id;
+        api_material_name := v_sm.api_material_name;
+        
+        SELECT COUNT(*) INTO v_parts_count
+        FROM fn_parse_composite_material(v_sm.api_material_name);
+        
+        parts_found := v_parts_count;
+        
+        IF v_parts_count > 1 THEN
+            v_created_count := 0;
+            v_existing_count := 0;
+            v_not_matched_count := 0;
+            
+            FOR v_result IN 
+                SELECT * FROM fn_create_multiple_equivalences(v_sm.id, p_organization_id)
+            LOOP
+                IF v_result.status = 'CRIADO' THEN
+                    v_created_count := v_created_count + 1;
+                ELSIF v_result.status = 'JÁ EXISTE' THEN
+                    v_existing_count := v_existing_count + 1;
+                ELSIF v_result.status = 'TIPO NÃO ENCONTRADO' THEN
+                    v_not_matched_count := v_not_matched_count + 1;
+                END IF;
+            END LOOP;
+            
+            equivalences_created := v_created_count;
+            equivalences_existing := v_existing_count;
+            parts_not_matched := v_not_matched_count;
+            
+            RETURN NEXT;
+        END IF;
+    END LOOP;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_process_all_products_materials(p_organization_id uuid DEFAULT '5db5aee1-064b-4ef4-9193-345dcd8274ea'::uuid, p_limit integer DEFAULT 100, p_replace_existing boolean DEFAULT false)
+ RETURNS TABLE(product_id uuid, product_name text, materials_array text, materials_processed integer, materials_found integer, materials_missing integer)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_product RECORD;
+    v_result RECORD;
+    v_processed INTEGER;
+    v_found INTEGER;
+    v_missing INTEGER;
+    v_materials_text TEXT;
+BEGIN
+    -- Processar produtos que têm campo materials preenchido (JSONB)
+    FOR v_product IN 
+        SELECT p.id, p.name, p.materials
+        FROM products p
+        WHERE p.organization_id = p_organization_id
+          AND p.materials IS NOT NULL
+          AND p.materials != '[]'::jsonb
+          AND jsonb_array_length(p.materials) > 0
+          AND p.is_active = true
+        ORDER BY p.name
+        LIMIT p_limit
+    LOOP
+        v_processed := 0;
+        v_found := 0;
+        v_missing := 0;
+        
+        -- Converter JSONB para texto legível
+        SELECT string_agg(elem #>> '{}', ' | ')
+        INTO v_materials_text
+        FROM jsonb_array_elements(v_product.materials) AS elem;
+        
+        -- Processar cada material do produto
+        FOR v_result IN 
+            SELECT * FROM fn_process_product_materials_auto(v_product.id, p_replace_existing)
+        LOOP
+            IF v_result.status NOT LIKE 'AVISO%' AND v_result.status NOT LIKE 'INFO%' THEN
+                v_processed := v_processed + 1;
+                IF v_result.material_type_id IS NOT NULL THEN
+                    v_found := v_found + 1;
+                ELSE
+                    v_missing := v_missing + 1;
+                END IF;
+            END IF;
+        END LOOP;
+        
+        -- Retornar resultado do produto
+        product_id := v_product.id;
+        product_name := v_product.name;
+        materials_array := v_materials_text;
+        materials_processed := v_processed;
+        materials_found := v_found;
+        materials_missing := v_missing;
+        RETURN NEXT;
+    END LOOP;
+    
+    RETURN;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_process_all_staged_products(p_supplier_id uuid DEFAULT NULL::uuid, p_limit integer DEFAULT 100)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_staging RECORD;
+    v_result JSONB;
+    v_processed INT := 0;
+    v_success INT := 0;
+    v_errors INT := 0;
+    v_results JSONB := '[]'::JSONB;
+BEGIN
+    -- Processar produtos pendentes
+    FOR v_staging IN
+        SELECT id, supplier_reference
+        FROM supplier_products_raw
+        WHERE processed = FALSE
+          AND (p_supplier_id IS NULL OR supplier_id = p_supplier_id)
+        ORDER BY imported_at
+        LIMIT p_limit
+    LOOP
+        -- Processar cada produto
+        v_result := fn_process_staged_product(v_staging.id);
+        v_processed := v_processed + 1;
+        
+        IF (v_result->>'success')::BOOLEAN THEN
+            v_success := v_success + 1;
+        ELSE
+            v_errors := v_errors + 1;
+            v_results := v_results || jsonb_build_object(
+                'reference', v_staging.supplier_reference,
+                'error', v_result->>'error'
+            );
+        END IF;
+    END LOOP;
+    
+    RETURN jsonb_build_object(
+        'processed', v_processed,
+        'success', v_success,
+        'errors', v_errors,
+        'error_details', v_results
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_process_all_staged_variants(p_supplier_id uuid DEFAULT NULL::uuid, p_limit integer DEFAULT 500)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_staging RECORD;
+    v_result JSONB;
+    v_processed INT := 0;
+    v_success INT := 0;
+    v_errors INT := 0;
+    v_results JSONB := '[]'::JSONB;
+BEGIN
+    -- Processar variantes pendentes
+    FOR v_staging IN
+        SELECT id, supplier_sku
+        FROM supplier_variants_raw
+        WHERE processed = FALSE
+          AND (p_supplier_id IS NULL OR supplier_id = p_supplier_id)
+        ORDER BY imported_at
+        LIMIT p_limit
+    LOOP
+        -- Processar cada variante
+        v_result := fn_process_staged_variant(v_staging.id);
+        v_processed := v_processed + 1;
+        
+        IF (v_result->>'success')::BOOLEAN THEN
+            v_success := v_success + 1;
+        ELSE
+            v_errors := v_errors + 1;
+            v_results := v_results || jsonb_build_object(
+                'sku', v_staging.supplier_sku,
+                'error', v_result->>'error'
+            );
+        END IF;
+    END LOOP;
+    
+    RETURN jsonb_build_object(
+        'processed', v_processed,
+        'success', v_success,
+        'errors', v_errors,
+        'error_details', v_results
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_process_composite_materials(p_product_id uuid, p_materials_string text, p_organization_id uuid DEFAULT NULL::uuid, p_replace_existing boolean DEFAULT false)
+ RETURNS TABLE(material_name text, material_type_id uuid, status text)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_part RECORD;
+    v_type_id UUID;
+    v_total_parts INTEGER;
+    v_percentages NUMERIC[];
+    v_idx INTEGER := 1;
+    v_existing_count INTEGER;
+    v_org_id UUID;
+BEGIN
+    v_org_id := COALESCE(p_organization_id, '5db5aee1-064b-4ef4-9193-345dcd8274ea'::UUID);
+    
+    SELECT COUNT(*) INTO v_existing_count
+    FROM product_materials
+    WHERE product_id = p_product_id AND is_active = true;
+    
+    IF v_existing_count > 0 AND NOT p_replace_existing THEN
+        material_name := 'AVISO';
+        material_type_id := NULL;
+        status := 'Produto ja tem materiais';
+        RETURN NEXT;
+        RETURN;
+    END IF;
+    
+    IF p_replace_existing AND v_existing_count > 0 THEN
+        UPDATE product_materials 
+        SET is_active = false, updated_at = NOW()
+        WHERE product_id = p_product_id;
+    END IF;
+    
+    -- Contar APENAS materiais que serão encontrados (têm type_id)
+    SELECT COUNT(*) INTO v_total_parts
+    FROM fn_split_materials(p_materials_string) s
+    WHERE fn_find_material_type_id(s.material_part) IS NOT NULL;
+    
+    IF v_total_parts = 0 THEN
+        material_name := 'AVISO';
+        material_type_id := NULL;
+        status := 'Nenhum material encontrado';
+        RETURN NEXT;
+        RETURN;
+    END IF;
+    
+    -- ═══ FIX: Distribuir com FLOOR + último-leva-resto ═══
+    v_percentages := fn_distribute_percentage(100.0, v_total_parts);
+    v_idx := 1;
+    
+    FOR v_part IN SELECT * FROM fn_split_materials(p_materials_string)
+    LOOP
+        v_type_id := fn_find_material_type_id(v_part.material_part);
+        
+        IF v_type_id IS NOT NULL THEN
+            INSERT INTO product_materials (
+                organization_id, product_id, material_id, part,
+                percentage, sort_order, notes, is_active
+            ) VALUES (
+                v_org_id, p_product_id, v_type_id, 'corpo',
+                v_percentages[v_idx], v_part.sort_order, 'Auto', true
+            );
+            
+            material_name := v_part.material_part;
+            material_type_id := v_type_id;
+            status := 'OK (' || v_percentages[v_idx] || '%)';
+            v_idx := v_idx + 1;
+        ELSE
+            material_name := v_part.material_part;
+            material_type_id := NULL;
+            status := 'NAO ENCONTRADO';
+        END IF;
+        
+        RETURN NEXT;
+    END LOOP;
+    
+    RETURN;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_process_product_materials_auto(p_product_id uuid, p_replace_existing boolean DEFAULT false)
+ RETURNS TABLE(material_name text, material_type_id uuid, status text)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_product RECORD;
+    v_mat_element JSONB;
+    v_mat_string TEXT;
+    v_org_id UUID;
+BEGIN
+    -- Buscar produto e seu JSONB de materials
+    SELECT id, name, organization_id, materials
+    INTO v_product
+    FROM products
+    WHERE id = p_product_id;
+    
+    IF v_product IS NULL THEN
+        material_name := 'ERRO';
+        material_type_id := NULL;
+        status := 'Produto não encontrado: ' || p_product_id;
+        RETURN NEXT;
+        RETURN;
+    END IF;
+    
+    v_org_id := v_product.organization_id;
+    
+    -- Verificar se tem materials (JSONB array)
+    IF v_product.materials IS NULL 
+       OR v_product.materials = '[]'::jsonb
+       OR jsonb_array_length(v_product.materials) = 0 THEN
+        material_name := 'AVISO';
+        material_type_id := NULL;
+        status := 'Produto "' || v_product.name || '" não tem materials preenchido';
+        RETURN NEXT;
+        RETURN;
+    END IF;
+    
+    -- Processar cada elemento do JSONB array
+    FOR v_mat_element IN SELECT * FROM jsonb_array_elements(v_product.materials)
+    LOOP
+        -- Extrair texto do elemento JSONB
+        v_mat_string := v_mat_element #>> '{}';  -- Remove aspas do JSON
+        
+        IF v_mat_string IS NOT NULL AND v_mat_string != '' THEN
+            -- Chamar a função principal de processamento
+            RETURN QUERY 
+            SELECT * FROM fn_process_composite_materials(
+                p_product_id,
+                v_mat_string,
+                v_org_id,
+                p_replace_existing
+            );
+            
+            -- Após primeira iteração, não substituir mais (já foi feito)
+            p_replace_existing := FALSE;
+        END IF;
+    END LOOP;
+    
+    RETURN;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_process_staged_product(p_staging_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_staging RECORD;
+    v_mapping RECORD;
+    v_product_id UUID;
+    v_field_value TEXT;
+    v_transformed_value TEXT;
+    v_sql TEXT;
+    v_update_parts TEXT[] := ARRAY[]::TEXT[];
+    v_fields_processed INT := 0;
+    v_errors JSONB := '[]'::JSONB;
+    v_org_id UUID;
+BEGIN
+    -- ========================================
+    -- 1. Buscar registro do staging
+    -- ========================================
+    SELECT * INTO v_staging
+    FROM supplier_products_raw
+    WHERE id = p_staging_id;
+    
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object(
+            'success', false,
+            'error', 'Registro de staging não encontrado: ' || p_staging_id
+        );
+    END IF;
+    
+    -- Já foi processado?
+    IF v_staging.processed = TRUE AND v_staging.product_id IS NOT NULL THEN
+        RETURN jsonb_build_object(
+            'success', true,
+            'message', 'Já processado anteriormente',
+            'product_id', v_staging.product_id
+        );
+    END IF;
+    
+    -- ========================================
+    -- 2. Buscar organization_id do fornecedor
+    -- ========================================
+    SELECT organization_id INTO v_org_id
+    FROM suppliers
+    WHERE id = v_staging.supplier_id;
+    
+    -- ========================================
+    -- 3. Buscar ou criar produto
+    -- ========================================
+    SELECT id INTO v_product_id
+    FROM products
+    WHERE supplier_id = v_staging.supplier_id
+      AND supplier_reference = v_staging.supplier_reference;
+    
+    IF v_product_id IS NULL THEN
+        -- Criar novo produto
+        INSERT INTO products (
+            organization_id,
+            supplier_id,
+            supplier_reference,
+            sku,
+            name,
+            active,
+            sync_status,
+            created_at
+        )
+        VALUES (
+            v_org_id,
+            v_staging.supplier_id,
+            v_staging.supplier_reference,
+            v_staging.supplier_reference,  -- SKU inicial = referência
+            COALESCE(v_staging.raw_data->>'Name', 'Produto ' || v_staging.supplier_reference),
+            TRUE,
+            'processing',
+            NOW()
+        )
+        RETURNING id INTO v_product_id;
+    END IF;
+    
+    -- ========================================
+    -- 4. Processar cada mapeamento de campo
+    -- ========================================
+    FOR v_mapping IN
+        SELECT * 
+        FROM supplier_field_mappings
+        WHERE supplier_id = v_staging.supplier_id
+          AND target_table = 'products'
+          AND is_active = TRUE
+        ORDER BY priority
+    LOOP
+        BEGIN
+            -- Extrair valor do JSON bruto
+            IF v_mapping.source_path IS NOT NULL THEN
+                -- Caminho aninhado (ex: "dimensions.length")
+                v_field_value := v_staging.raw_data #>> string_to_array(v_mapping.source_path, '.');
+            ELSE
+                -- Campo direto
+                v_field_value := v_staging.raw_data ->> v_mapping.source_field;
+            END IF;
+            
+            -- Pular se valor vazio
+            IF v_field_value IS NULL OR TRIM(v_field_value) = '' THEN
+                CONTINUE;
+            END IF;
+            
+            -- Aplicar transformação
+            v_transformed_value := fn_apply_transform(
+                v_field_value,
+                v_mapping.transform_type,
+                v_mapping.transform_config,
+                v_mapping.source_unit,
+                v_mapping.target_unit,
+                v_staging.supplier_id
+            );
+            
+            -- Adicionar ao array de updates
+            IF v_transformed_value IS NOT NULL THEN
+                v_update_parts := array_append(
+                    v_update_parts,
+                    format('%I = %L', v_mapping.target_field, v_transformed_value)
+                );
+                v_fields_processed := v_fields_processed + 1;
+            END IF;
+            
+        EXCEPTION WHEN OTHERS THEN
+            v_errors := v_errors || jsonb_build_object(
+                'field', v_mapping.source_field,
+                'error', SQLERRM
+            );
+        END;
+    END LOOP;
+    
+    -- ========================================
+    -- 5. Executar UPDATE se houver campos
+    -- ========================================
+    IF array_length(v_update_parts, 1) > 0 THEN
+        v_sql := format(
+            'UPDATE products SET %s, updated_at = NOW(), sync_status = ''synced'', last_sync_at = NOW(), last_sync_supplier_id = %L WHERE id = %L',
+            array_to_string(v_update_parts, ', '),
+            v_staging.supplier_id,
+            v_product_id
+        );
+        
+        BEGIN
+            EXECUTE v_sql;
+        EXCEPTION WHEN OTHERS THEN
+            v_errors := v_errors || jsonb_build_object(
+                'stage', 'update_product',
+                'sql', v_sql,
+                'error', SQLERRM
+            );
+        END;
+    END IF;
+    
+    -- ========================================
+    -- 6. Atualizar campos calculados
+    -- ========================================
+    
+    -- Calcular dimensões formatadas se temos length/width/height
+    UPDATE products
+    SET dimensions_display = fn_format_dimensions_display(length_cm, width_cm, height_cm)
+    WHERE id = v_product_id
+      AND length_cm IS NOT NULL;
+    
+    -- ========================================
+    -- 7. Marcar staging como processado
+    -- ========================================
+    UPDATE supplier_products_raw
+    SET processed = TRUE,
+        processed_at = NOW(),
+        product_id = v_product_id,
+        process_errors = CASE WHEN v_errors = '[]'::JSONB THEN NULL ELSE v_errors END
+    WHERE id = p_staging_id;
+    
+    -- ========================================
+    -- 8. Retornar resultado
+    -- ========================================
+    RETURN jsonb_build_object(
+        'success', true,
+        'product_id', v_product_id,
+        'supplier_reference', v_staging.supplier_reference,
+        'fields_processed', v_fields_processed,
+        'errors', v_errors
+    );
+    
+EXCEPTION WHEN OTHERS THEN
+    -- Marcar erro no staging
+    UPDATE supplier_products_raw
+    SET process_errors = jsonb_build_object('fatal_error', SQLERRM)
+    WHERE id = p_staging_id;
+    
+    RETURN jsonb_build_object(
+        'success', false,
+        'error', SQLERRM,
+        'staging_id', p_staging_id
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_process_staged_variant(p_staging_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_staged RECORD;
+    v_mapping RECORD;
+    v_product RECORD;
+    v_product_id UUID;
+    v_variant_id UUID;
+    v_field_value TEXT;
+    v_update_fields JSONB := '{}'::JSONB;
+    v_errors TEXT[] := '{}';
+    v_sku TEXT;
+    v_name TEXT;
+BEGIN
+    -- 1. Buscar registro staged
+    SELECT * INTO v_staged FROM supplier_variants_raw WHERE id = p_staging_id;
+    
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object('success', false, 'error', 'Variante não encontrada');
+    END IF;
+    
+    IF v_staged.processed = TRUE THEN
+        RETURN jsonb_build_object('success', false, 'error', 'Já processada', 'variant_id', v_staged.variant_id);
+    END IF;
+    
+    -- 2. Buscar produto pai
+    SELECT id, name INTO v_product_id, v_name FROM products
+    WHERE supplier_reference = v_staged.supplier_reference AND supplier_id = v_staged.supplier_id
+    LIMIT 1;
+    
+    IF v_product_id IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'error', 'Produto pai não encontrado');
+    END IF;
+    
+    -- 3. Processar mappings → v_update_fields
+    FOR v_mapping IN 
+        SELECT * FROM supplier_field_mappings
+        WHERE supplier_id = v_staged.supplier_id 
+          AND target_table = 'product_variants' 
+          AND is_active = TRUE
+    LOOP
+        BEGIN
+            v_field_value := v_staged.raw_data ->> v_mapping.source_field;
+            IF v_field_value IS NOT NULL AND v_field_value != '' THEN
+                v_field_value := fn_apply_transform(
+                    v_field_value, 
+                    v_mapping.transform_type, 
+                    v_mapping.transform_config, 
+                    v_staged.supplier_id
+                );
+                v_update_fields := v_update_fields || jsonb_build_object(v_mapping.target_field, v_field_value);
+            END IF;
+        EXCEPTION WHEN OTHERS THEN
+            v_errors := array_append(v_errors, v_mapping.source_field || ': ' || SQLERRM);
+        END;
+    END LOOP;
+    
+    -- 4. Resolver SKU: mapeado (com prefix) ou fallback supplier_sku
+    v_sku := COALESCE(
+        v_update_fields ->> 'sku',           -- mapping custom com prefix ASIA-
+        v_staged.supplier_sku                 -- fallback
+    );
+    
+    -- 5. Resolver NAME: raw_data.nome ou nome do produto pai
+    v_name := COALESCE(
+        v_staged.raw_data ->> 'nome',        -- nome da variação (ex: "Caderno B5 - Azul")
+        v_name,                               -- nome do produto pai
+        'Sem nome'                            -- último fallback
+    );
+    
+    -- 6. Verificar se variante já existe (UPSERT)
+    SELECT id INTO v_variant_id FROM product_variants
+    WHERE product_id = v_product_id AND supplier_sku = v_staged.supplier_sku
+    LIMIT 1;
+    
+    IF v_variant_id IS NOT NULL THEN
+        -- UPDATE existente
+        UPDATE product_variants SET updated_at = NOW() WHERE id = v_variant_id;
+    ELSE
+        -- INSERT nova (Bug #6: attributes + Bug #7: name)
+        INSERT INTO product_variants (
+            product_id, 
+            sku, 
+            supplier_sku, 
+            name,
+            is_active, 
+            attributes, 
+            created_at, 
+            updated_at
+        ) VALUES (
+            v_product_id, 
+            v_sku,
+            v_staged.supplier_sku,
+            v_name,
+            TRUE, 
+            COALESCE(v_staged.raw_data -> 'atributos', '{}'::jsonb),
+            NOW(), 
+            NOW()
+        )
+        ON CONFLICT (sku) DO UPDATE SET
+            updated_at = NOW()
+        RETURNING id INTO v_variant_id;
+    END IF;
+    
+    -- 7. Aplicar campos mapeados via UPDATE dinâmico
+    --    (color_name, color_hex, stock_quantity, etc.)
+    --    Remove 'sku' do update pois já foi usado no INSERT
+    v_update_fields := v_update_fields - 'sku';
+    
+    IF v_update_fields != '{}'::jsonb THEN
+        BEGIN
+            EXECUTE format(
+                'UPDATE product_variants SET %s, updated_at = NOW() WHERE id = %L',
+                (SELECT string_agg(format('%I = %L', key, value #>> '{}'), ', ') 
+                 FROM jsonb_each(v_update_fields)),
+                v_variant_id
+            );
+        EXCEPTION WHEN OTHERS THEN
+            v_errors := array_append(v_errors, 'dynamic_update: ' || SQLERRM);
+        END;
+    END IF;
+    
+    -- 8. Bug #9: Criar variant_supplier_sources
+    --    Constraint: variant_stocks_organization_id_variant_id_supplier_id_key
+    INSERT INTO variant_supplier_sources (
+        organization_id,
+        variant_id,
+        supplier_id,
+        supplier_sku,
+        cost_price,
+        quantity,
+        source,
+        is_preferred,
+        is_active,
+        updated_at
+    ) VALUES (
+        '5db5aee1-064b-4ef4-9193-345dcd8274ea'::UUID,
+        v_variant_id,
+        v_staged.supplier_id,
+        v_staged.supplier_sku,
+        NULLIF(v_staged.raw_data ->> 'preco', '')::NUMERIC,
+        COALESCE(NULLIF(v_staged.raw_data ->> 'qtd_estoque', '')::INTEGER, 0),
+        'asia_api',
+        TRUE,
+        TRUE,
+        NOW()
+    )
+    ON CONFLICT ON CONSTRAINT variant_stocks_organization_id_variant_id_supplier_id_key 
+    DO UPDATE SET
+        cost_price = EXCLUDED.cost_price,
+        quantity = EXCLUDED.quantity,
+        supplier_sku = EXCLUDED.supplier_sku,
+        updated_at = NOW();
+    
+    -- 9. Marcar como processado
+    UPDATE supplier_variants_raw 
+    SET processed = TRUE, processed_at = NOW(), variant_id = v_variant_id
+    WHERE id = p_staging_id;
+    
+    RETURN jsonb_build_object(
+        'success', true, 
+        'variant_id', v_variant_id, 
+        'sku', v_sku,
+        'fields_mapped', v_update_fields,
+        'errors', to_jsonb(v_errors)
+    );
+
+EXCEPTION WHEN OTHERS THEN
+    RETURN jsonb_build_object(
+        'success', false, 
+        'error', SQLERRM, 
+        'sku', v_staged.supplier_sku
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_process_staging_batch(p_batch_id uuid DEFAULT NULL::uuid, p_supplier_id uuid DEFAULT NULL::uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_start_time TIMESTAMP := NOW();
+    v_products_result JSONB;
+    v_variants_result JSONB;
+    v_batch_id UUID;
+BEGIN
+    -- Se não passou batch_id, usar o mais recente do fornecedor
+    IF p_batch_id IS NULL AND p_supplier_id IS NOT NULL THEN
+        SELECT id INTO v_batch_id
+        FROM supplier_import_batches
+        WHERE supplier_id = p_supplier_id
+          AND status = 'completed'
+        ORDER BY finished_at DESC
+        LIMIT 1;
+    ELSE
+        v_batch_id := p_batch_id;
+    END IF;
+    
+    -- 1. Processar produtos primeiro
+    v_products_result := fn_process_all_staged_products(p_supplier_id, 1000);
+    
+    -- 2. Depois processar variantes (dependem dos produtos)
+    v_variants_result := fn_process_all_staged_variants(p_supplier_id, 5000);
+    
+    RETURN jsonb_build_object(
+        'batch_id', v_batch_id,
+        'supplier_id', p_supplier_id,
+        'duration_seconds', EXTRACT(EPOCH FROM (NOW() - v_start_time)),
+        'products', v_products_result,
+        'variants', v_variants_result
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_product_has_packaging(p_product_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_result JSONB;
+BEGIN
+    SELECT jsonb_build_object(
+        'has_included', EXISTS (
+            SELECT 1 FROM product_packagings 
+            WHERE product_id = p_product_id 
+              AND relationship_type = 'included' 
+              AND active = TRUE
+        ),
+        'has_optional', EXISTS (
+            SELECT 1 FROM product_packagings 
+            WHERE product_id = p_product_id 
+              AND relationship_type = 'optional' 
+              AND active = TRUE
+        ),
+        'has_required', EXISTS (
+            SELECT 1 FROM product_packagings 
+            WHERE product_id = p_product_id 
+              AND relationship_type = 'required' 
+              AND active = TRUE
+        ),
+        'packaging_count', (
+            SELECT COUNT(*) FROM product_packagings 
+            WHERE product_id = p_product_id AND active = TRUE
+        )
+    ) INTO v_result;
+    
+    RETURN v_result;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.fn_product_market_intelligence(p_product_id uuid, p_days integer DEFAULT 30)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -1375,10 +15963,903 @@ BEGIN
 
   RETURN v_result;
 END;
-$function$
-;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_propagar_atualizacao_cor()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    -- Só propaga se nome ou hex mudou
+    IF OLD.name IS DISTINCT FROM NEW.name OR OLD.hex_code IS DISTINCT FROM NEW.hex_code THEN
+        UPDATE product_variants
+        SET 
+            color_name = NEW.name,
+            color_hex = NEW.hex_code,
+            updated_at = now()
+        WHERE color_id = NEW.id;
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_propagate_category_min_quantity(p_category_id uuid, p_new_min_quantity integer)
+ RETURNS TABLE(updated_products integer)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_updated INTEGER;
+BEGIN
+    -- Atualizar todos os produtos da categoria que NÃO têm override
+    UPDATE products
+    SET min_quantity = p_new_min_quantity
+    WHERE category_id = p_category_id
+      AND min_order_quantity IS NULL;
+    
+    GET DIAGNOSTICS v_updated = ROW_COUNT;
+    
+    RETURN QUERY SELECT v_updated;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_qip_propagate_to_quote_items()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  _quote_item_id uuid;
+  _new_personalization_cost numeric(12,2);
+BEGIN
+  _quote_item_id := COALESCE(NEW.quote_item_id, OLD.quote_item_id);
+  
+  SELECT COALESCE(SUM(total_cost), 0) INTO _new_personalization_cost
+  FROM public.quote_item_personalizations
+  WHERE quote_item_id = _quote_item_id;
+  
+  UPDATE public.quote_items 
+  SET personalization_cost = _new_personalization_cost,
+      has_personalization = (_new_personalization_cost > 0),
+      updated_at = now()
+  WHERE id = _quote_item_id
+    AND personalization_cost IS DISTINCT FROM _new_personalization_cost;
+  
+  RETURN COALESCE(NEW, OLD);
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_quote_children_enforce_parent_immutability()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  _parent_quote_id uuid;
+  _parent_status text;
+  _msg text;
+BEGIN
+  IF current_setting('request.jwt.claim.role', true) = 'service_role' THEN
+    RETURN COALESCE(NEW, OLD);
+  END IF;
+  
+  IF TG_TABLE_NAME = 'quote_items' THEN
+    _parent_quote_id := COALESCE(NEW.quote_id, OLD.quote_id);
+  ELSIF TG_TABLE_NAME = 'quote_item_personalizations' THEN
+    SELECT qi.quote_id INTO _parent_quote_id
+    FROM public.quote_items qi
+    WHERE qi.id = COALESCE(NEW.quote_item_id, OLD.quote_item_id);
+  END IF;
+  
+  IF _parent_quote_id IS NULL THEN
+    RETURN COALESCE(NEW, OLD);
+  END IF;
+  
+  SELECT status INTO _parent_status
+  FROM public.quotes WHERE id = _parent_quote_id;
+  
+  IF _parent_status IN ('approved', 'converted') THEN
+    _msg := 'Nao e possivel alterar itens de orcamento ja aprovado/convertido (status ' || 
+            _parent_status || '). Crie um novo orcamento.';
+    RAISE EXCEPTION '%', _msg USING ERRCODE = '23514';
+  END IF;
+  
+  RETURN COALESCE(NEW, OLD);
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_quote_items_calc_subtotal()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'pg_catalog', 'public'
+AS $function$
+BEGIN
+  NEW.subtotal := COALESCE(NEW.quantity, 0) * COALESCE(NEW.unit_price, 0)
+                + COALESCE(NEW.personalization_cost, 0)
+                - COALESCE(NEW.discount_amount, 0);
+  RETURN NEW;
+END $function$;
+CREATE OR REPLACE FUNCTION public.fn_quotes_calc_real_values()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'pg_catalog', 'public'
+AS $function$
+DECLARE
+  v_markup numeric;
+BEGIN
+  v_markup := LEAST(50, GREATEST(0, COALESCE(NEW.negotiation_markup_percent, 0)));
+  NEW.negotiation_markup_percent := v_markup;
 
--- ----------------------------------------------------------------------------
+  IF v_markup > 0 THEN
+    NEW.real_subtotal := ROUND(NEW.subtotal / (1 + v_markup / 100.0), 2);
+  ELSE
+    NEW.real_subtotal := NEW.subtotal;
+  END IF;
+
+  IF NEW.real_subtotal > 0 THEN
+    NEW.real_discount_percent := ROUND(
+      ((NEW.real_subtotal - (NEW.subtotal - COALESCE(NEW.discount_amount, 0))) / NEW.real_subtotal) * 100,
+      2
+    );
+  ELSE
+    NEW.real_discount_percent := 0;
+  END IF;
+
+  RETURN NEW;
+END
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_quotes_enforce_immutability()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  _msg text;
+BEGIN
+  IF current_setting('request.jwt.claim.role', true) = 'service_role' THEN
+    RETURN NEW;
+  END IF;
+  
+  IF OLD.status NOT IN ('approved', 'converted') THEN
+    RETURN NEW;
+  END IF;
+  
+  IF OLD.* IS NOT DISTINCT FROM NEW.* THEN
+    RETURN NEW;
+  END IF;
+  
+  IF OLD.status <> NEW.status THEN
+    IF (OLD.status = 'approved' AND NEW.status IN ('converted', 'expired'))
+       OR (OLD.status = 'converted' AND NEW.status = 'expired') THEN
+      IF (
+        OLD.client_id IS DISTINCT FROM NEW.client_id OR
+        OLD.client_name IS DISTINCT FROM NEW.client_name OR
+        OLD.subtotal IS DISTINCT FROM NEW.subtotal OR
+        OLD.discount_percent IS DISTINCT FROM NEW.discount_percent OR
+        OLD.discount_amount IS DISTINCT FROM NEW.discount_amount OR
+        OLD.total IS DISTINCT FROM NEW.total OR
+        OLD.negotiation_markup_percent IS DISTINCT FROM NEW.negotiation_markup_percent OR
+        OLD.real_subtotal IS DISTINCT FROM NEW.real_subtotal OR
+        OLD.real_discount_percent IS DISTINCT FROM NEW.real_discount_percent OR
+        OLD.shipping_cost IS DISTINCT FROM NEW.shipping_cost OR
+        OLD.tax_amount IS DISTINCT FROM NEW.tax_amount OR
+        OLD.seller_id IS DISTINCT FROM NEW.seller_id OR
+        OLD.created_by IS DISTINCT FROM NEW.created_by OR
+        OLD.assigned_to IS DISTINCT FROM NEW.assigned_to
+      ) THEN
+        _msg := 'Orcamento em status ' || OLD.status || 
+                ' e imutavel. So a transicao de status e permitida; valores e atribuicoes nao podem mudar. Crie um novo orcamento.';
+        RAISE EXCEPTION '%', _msg USING ERRCODE = '23514';
+      END IF;
+      RETURN NEW;
+    ELSE
+      _msg := 'Transicao de status nao permitida: ' || OLD.status || ' para ' || NEW.status || 
+              '. Orcamento em status ' || OLD.status || ' so pode ir para converted ou expired.';
+      RAISE EXCEPTION '%', _msg USING ERRCODE = '23514';
+    END IF;
+  END IF;
+  
+  _msg := 'Orcamento em status ' || OLD.status || 
+          ' e imutavel. Crie um novo orcamento para alterar valores.';
+  RAISE EXCEPTION '%', _msg USING ERRCODE = '23514';
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_quotes_recalc_subtotal_from_items()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  _quote_id uuid;
+  _quote_status text;
+  _markup numeric;
+  _disc_amount_db numeric;
+  _disc_pct numeric;
+  _ship_type text;
+  _ship_cost numeric;
+  _real_subtotal numeric(12,2);
+  _new_subtotal numeric(12,2);
+  _ship_value numeric(12,2);
+  _disc_value numeric(12,2);
+  _new_total numeric(12,2);
+BEGIN
+  _quote_id := COALESCE(NEW.quote_id, OLD.quote_id);
+  IF _quote_id IS NULL THEN RETURN COALESCE(NEW, OLD); END IF;
+
+  SELECT
+    status,
+    LEAST(50, GREATEST(0, COALESCE(negotiation_markup_percent, 0))),
+    COALESCE(discount_amount, 0),
+    COALESCE(discount_percent, 0),
+    shipping_type,
+    COALESCE(shipping_cost, 0)
+  INTO _quote_status, _markup, _disc_amount_db, _disc_pct, _ship_type, _ship_cost
+  FROM public.quotes WHERE id = _quote_id;
+
+  -- Nao mexer em quotes aprovados/convertidos (imutaveis)
+  IF _quote_status IN ('approved', 'converted') THEN
+    RETURN COALESCE(NEW, OLD);
+  END IF;
+
+  -- REAL: soma pura dos itens (sem markup)
+  SELECT COALESCE(SUM(quantity * unit_price + COALESCE(personalization_cost, 0)), 0)
+  INTO _real_subtotal
+  FROM public.quote_items
+  WHERE quote_id = _quote_id;
+
+  -- APRESENTADO ao cliente: aplica markup
+  _new_subtotal := ROUND(_real_subtotal * (1 + _markup / 100.0), 2);
+
+  -- DESCONTO: discount_percent tem prioridade (espelha logica do frontend)
+  IF _disc_pct > 0 THEN
+    _disc_value := ROUND(_new_subtotal * (_disc_pct / 100.0), 2);
+  ELSE
+    _disc_value := _disc_amount_db;
+  END IF;
+
+  -- FRETE FOB (somente FOB entra no total)
+  _ship_value := CASE WHEN _ship_type IN ('fob', 'fob_pre') THEN _ship_cost ELSE 0 END;
+
+  -- TOTAL final
+  _new_total := _new_subtotal - _disc_value + _ship_value;
+
+  -- UPDATE apenas se mudou (evita loop com trigger BEFORE em quotes)
+  UPDATE public.quotes
+  SET subtotal = _new_subtotal,
+      total = _new_total,
+      discount_amount = _disc_value,
+      updated_at = now()
+  WHERE id = _quote_id
+    AND (subtotal IS DISTINCT FROM _new_subtotal
+      OR total IS DISTINCT FROM _new_total
+      OR discount_amount IS DISTINCT FROM _disc_value);
+
+  RETURN COALESCE(NEW, OLD);
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_quotes_sync_seller()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'pg_catalog', 'public'
+AS $function$
+BEGIN
+  -- Se um dos dois é NULL e o outro tem valor, copiar
+  IF NEW.seller_id IS NULL AND NEW.created_by IS NOT NULL THEN
+    NEW.seller_id := NEW.created_by;
+  ELSIF NEW.created_by IS NULL AND NEW.seller_id IS NOT NULL THEN
+    NEW.created_by := NEW.seller_id;
+  END IF;
+  RETURN NEW;
+END $function$;
+CREATE OR REPLACE FUNCTION public.fn_quotes_validate_discount()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  _max_allowed numeric;
+  _real_discount_pct numeric;
+  _has_valid_approval boolean;
+  _current_hash text;
+  _seller_id uuid;
+  _msg text;
+BEGIN
+  IF current_setting('request.jwt.claim.role', true) = 'service_role' THEN
+    RETURN NEW;
+  END IF;
+  
+  _seller_id := COALESCE(NEW.seller_id, NEW.created_by);
+  
+  IF _seller_id IS NULL THEN
+    RETURN NEW;
+  END IF;
+  
+  IF public.is_coord_or_above(_seller_id) THEN
+    RETURN NEW;
+  END IF;
+  
+  _real_discount_pct := COALESCE(NEW.real_discount_percent, 0);
+  
+  IF _real_discount_pct <= 0 THEN
+    RETURN NEW;
+  END IF;
+  
+  SELECT max_discount_percent INTO _max_allowed
+  FROM public.seller_discount_limits
+  WHERE user_id = _seller_id;
+  
+  IF _max_allowed IS NULL THEN
+    RAISE EXCEPTION 'Vendedor sem limite de desconto cadastrado. Solicite ao admin que configure seu limite antes de salvar orcamentos.'
+      USING ERRCODE = '23514';
+  END IF;
+  
+  IF _real_discount_pct <= _max_allowed THEN
+    RETURN NEW;
+  END IF;
+  
+  IF TG_OP = 'INSERT' THEN
+    _msg := 'Desconto de ' || ROUND(_real_discount_pct, 2)::text || 
+            ' por cento acima do seu limite de ' || ROUND(_max_allowed, 2)::text || 
+            ' por cento. Salve o orcamento com desconto dentro do limite primeiro, depois solicite aprovacao ao coordenador.';
+    RAISE EXCEPTION '%', _msg USING ERRCODE = '23514';
+  END IF;
+  
+  _current_hash := public.compute_quote_snapshot_hash(NEW.id);
+  
+  SELECT EXISTS (
+    SELECT 1 FROM public.discount_approval_requests
+    WHERE quote_id = NEW.id
+      AND status = 'approved'
+      AND valid_until > now()
+      AND requested_discount_percent >= _real_discount_pct
+      AND quote_snapshot_hash = _current_hash
+  ) INTO _has_valid_approval;
+  
+  IF _has_valid_approval THEN
+    RETURN NEW;
+  END IF;
+  
+  IF EXISTS (
+    SELECT 1 FROM public.discount_approval_requests
+    WHERE quote_id = NEW.id AND status = 'approved'
+      AND (valid_until <= now() OR quote_snapshot_hash <> _current_hash)
+  ) THEN
+    RAISE EXCEPTION 'Aprovacao anterior nao vale mais (orcamento foi alterado ou aprovacao expirou). Solicite nova aprovacao ao coordenador.'
+      USING ERRCODE = '23514';
+  END IF;
+  
+  _msg := 'Desconto de ' || ROUND(_real_discount_pct, 2)::text || 
+          ' por cento acima do seu limite de ' || ROUND(_max_allowed, 2)::text || 
+          ' por cento. Solicite aprovacao ao coordenador antes de salvar.';
+  RAISE EXCEPTION '%', _msg USING ERRCODE = '23514';
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_recalculate_all_sale_prices(p_batch_size integer DEFAULT 500)
+ RETURNS TABLE(processed integer, updated integer, errors integer, message text)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_processed INTEGER := 0;
+    v_updated INTEGER := 0;
+    v_errors INTEGER := 0;
+    v_record RECORD;
+    v_new_price NUMERIC;
+BEGIN
+    FOR v_record IN 
+        SELECT id, name, base_price, sale_price
+        FROM products
+        WHERE base_price IS NOT NULL AND base_price > 0
+        LIMIT p_batch_size
+    LOOP
+        BEGIN
+            v_processed := v_processed + 1;
+            
+            -- Calcular novo preço com markup 115%
+            v_new_price := fn_calculate_sale_price(v_record.id, 1, NULL);
+            
+            -- Atualizar se diferente
+            IF v_new_price IS NOT NULL AND v_new_price != COALESCE(v_record.sale_price, 0) THEN
+                UPDATE products
+                SET sale_price = v_new_price,
+                    updated_at = NOW()
+                WHERE id = v_record.id;
+                
+                v_updated := v_updated + 1;
+            END IF;
+            
+        EXCEPTION WHEN OTHERS THEN
+            v_errors := v_errors + 1;
+        END;
+    END LOOP;
+    
+    RETURN QUERY SELECT 
+        v_processed,
+        v_updated,
+        v_errors,
+        format('Processados: %s, Atualizados: %s, Erros: %s', v_processed, v_updated, v_errors);
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_recalculate_all_stock()
+ RETURNS TABLE(variants_updated integer, products_updated integer)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_variants_updated INTEGER := 0;
+    v_products_updated INTEGER := 0;
+BEGIN
+    -- Atualizar todas as variantes
+    WITH vss_totals AS (
+        SELECT 
+            variant_id,
+            COALESCE(SUM(quantity), 0) as total_qty
+        FROM variant_supplier_sources
+        WHERE is_active = true
+        GROUP BY variant_id
+    )
+    UPDATE product_variants pv
+    SET stock_quantity = COALESCE(vt.total_qty, 0)
+    FROM vss_totals vt
+    WHERE pv.id = vt.variant_id
+      AND pv.stock_quantity IS DISTINCT FROM COALESCE(vt.total_qty, 0);
+    
+    GET DIAGNOSTICS v_variants_updated = ROW_COUNT;
+    
+    -- Atualizar todos os produtos
+    WITH pv_totals AS (
+        SELECT 
+            product_id,
+            COALESCE(SUM(stock_quantity), 0) as total_qty
+        FROM product_variants
+        WHERE is_active = true
+        GROUP BY product_id
+    )
+    UPDATE products p
+    SET 
+        stock_quantity = COALESCE(pt.total_qty, 0),
+        is_stockout = (COALESCE(pt.total_qty, 0) = 0),
+        last_stock_update_at = NOW()
+    FROM pv_totals pt
+    WHERE p.id = pt.product_id
+      AND (p.stock_quantity IS DISTINCT FROM COALESCE(pt.total_qty, 0)
+           OR p.is_stockout IS DISTINCT FROM (COALESCE(pt.total_qty, 0) = 0));
+    
+    GET DIAGNOSTICS v_products_updated = ROW_COUNT;
+    
+    RETURN QUERY SELECT v_variants_updated, v_products_updated;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_refresh_media_health()
+ RETURNS void
+ LANGUAGE plpgsql
+ SET search_path TO 'pg_catalog', 'public', 'analytics'
+AS $function$
+BEGIN
+    REFRESH MATERIALIZED VIEW CONCURRENTLY analytics.mv_media_health;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_relatorio_cores_pendentes()
+ RETURNS TABLE(tipo text, codigo text, nome text, quantidade bigint)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    -- Cores SPOT sem equivalência
+    RETURN QUERY
+    SELECT 
+        'Cor SPOT sem equivalência'::TEXT,
+        sc.code,
+        sc.name,
+        1::BIGINT
+    FROM supplier_colors sc
+    LEFT JOIN color_equivalences ce ON ce.supplier_color_id = sc.id
+    WHERE ce.id IS NULL;
+    
+    -- Códigos de cor em variantes sem mapeamento
+    RETURN QUERY
+    SELECT 
+        'Código em variante sem mapeamento'::TEXT,
+        pv.attributes->>'codigo_cor',
+        pv.attributes->>'cor',
+        COUNT(*)
+    FROM product_variants pv
+    WHERE pv.color_id IS NULL
+      AND pv.attributes->>'codigo_cor' IS NOT NULL
+    GROUP BY pv.attributes->>'codigo_cor', pv.attributes->>'cor';
+    
+    -- Nomes de cor em variantes sem mapeamento
+    RETURN QUERY
+    SELECT 
+        'Nome de cor sem mapeamento'::TEXT,
+        NULL::TEXT,
+        pv.attributes->>'cor',
+        COUNT(*)
+    FROM product_variants pv
+    WHERE pv.color_id IS NULL
+      AND pv.attributes->>'codigo_cor' IS NULL
+      AND pv.attributes->>'cor' IS NOT NULL
+    GROUP BY pv.attributes->>'cor';
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_remove_orphan_color_links(p_product_id uuid, p_old_color_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_count_removed INTEGER := 0;
+    v_has_other_variants BOOLEAN;
+    v_category_id UUID;
+BEGIN
+    -- ========================================
+    -- VALIDAÇÃO
+    -- ========================================
+    IF p_product_id IS NULL OR p_old_color_id IS NULL THEN
+        RETURN jsonb_build_object(
+            'success', false,
+            'message', 'Parâmetros inválidos',
+            'removed', 0
+        );
+    END IF;
+    
+    -- ========================================
+    -- Para cada categoria vinculada a essa cor
+    -- ========================================
+    FOR v_category_id IN
+        SELECT cc.category_id
+        FROM category_colors cc
+        WHERE cc.color_group_id = p_old_color_id
+          AND cc.is_active = true
+    LOOP
+        -- Verifica se ainda existem outras variantes com essa cor
+        SELECT EXISTS(
+            SELECT 1 
+            FROM product_variants pv
+            WHERE pv.product_id = p_product_id
+              AND pv.color_id = p_old_color_id
+        ) INTO v_has_other_variants;
+        
+        -- Se não há mais variantes com essa cor, remove o vínculo
+        IF NOT v_has_other_variants THEN
+            DELETE FROM product_category_assignments
+            WHERE product_id = p_product_id
+              AND category_id = v_category_id
+              AND is_primary = false;  -- Só remove vínculos por cor (não primários)
+            
+            IF FOUND THEN
+                v_count_removed := v_count_removed + 1;
+            END IF;
+        END IF;
+    END LOOP;
+    
+    RETURN jsonb_build_object(
+        'success', true,
+        'product_id', p_product_id,
+        'old_color_id', p_old_color_id,
+        'removed', v_count_removed
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_remove_similarity_pairs_on_delete()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  DELETE FROM product_relationships pr
+  WHERE pr.relationship_type = 'similar'
+    AND (pr.product_id = OLD.product_id OR pr.related_product_id = OLD.product_id)
+    AND NOT EXISTS (
+      SELECT 1
+      FROM product_similarity_group_members m1
+      JOIN product_similarity_group_members m2
+        ON m1.group_id = m2.group_id
+        AND m1.product_id != m2.product_id
+        AND m1.supplier_id != m2.supplier_id
+      JOIN product_similarity_groups g ON g.id = m1.group_id
+      WHERE g.is_active = true
+        AND m1.product_id = pr.product_id
+        AND m2.product_id = pr.related_product_id
+    );
+  RETURN OLD;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_reprocessar_variantes_sem_cor()
+ RETURNS TABLE(variantes_processadas integer, variantes_vinculadas integer, variantes_pendentes integer)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_total INT;
+    v_vinculadas INT;
+BEGIN
+    -- Contar antes
+    SELECT COUNT(*) INTO v_total 
+    FROM product_variants WHERE color_id IS NULL;
+    
+    -- Reprocessar por código SPOT
+    UPDATE product_variants pv
+    SET 
+        color_id = ce.promo_variation_id,
+        color_name = cv.name,
+        color_hex = cv.hex_code,
+        updated_at = now()
+    FROM supplier_colors sc
+    JOIN color_equivalences ce ON ce.supplier_color_id = sc.id
+    JOIN color_variations cv ON cv.id = ce.promo_variation_id
+    WHERE pv.attributes->>'codigo_cor' = sc.code
+      AND pv.color_id IS NULL;
+    
+    -- Reprocessar por nome
+    UPDATE product_variants pv
+    SET 
+        color_id = cv.id,
+        color_name = cv.name,
+        color_hex = cv.hex_code,
+        updated_at = now()
+    FROM color_variations cv
+    WHERE pv.color_id IS NULL
+      AND pv.attributes->>'cor' IS NOT NULL
+      AND (
+          LOWER(TRIM(pv.attributes->>'cor')) = LOWER(TRIM(cv.name))
+          OR LOWER(cv.name) LIKE LOWER(TRIM(pv.attributes->>'cor')) || '%'
+      );
+    
+    -- Contar depois
+    SELECT COUNT(*) INTO v_vinculadas 
+    FROM product_variants WHERE color_id IS NOT NULL;
+    
+    -- Retornar estatísticas
+    RETURN QUERY SELECT 
+        v_total,
+        v_total - (SELECT COUNT(*)::INT FROM product_variants WHERE color_id IS NULL),
+        (SELECT COUNT(*)::INT FROM product_variants WHERE color_id IS NULL);
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_resync_categories_products_count()
+ RETURNS TABLE(categorias_corrigidas integer, total_categorias integer)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_fixed int;
+  v_total int;
+BEGIN
+  WITH real_counts AS (
+    SELECT 
+      c.id AS category_id,
+      (SELECT COUNT(DISTINCT pca.product_id) 
+       FROM product_category_assignments pca
+       JOIN products p ON p.id = pca.product_id
+       WHERE pca.category_id = c.id 
+         AND p.is_active = true
+         AND (p.is_deleted IS NULL OR p.is_deleted = false)
+      ) AS real_count
+    FROM categories c WHERE c.is_active
+  ),
+  upd AS (
+    UPDATE categories SET products_count = rc.real_count
+    FROM real_counts rc
+    WHERE categories.id = rc.category_id
+      AND COALESCE(categories.products_count, -1) <> rc.real_count
+    RETURNING 1
+  )
+  SELECT COUNT(*)::int INTO v_fixed FROM upd;
+  
+  SELECT COUNT(*)::int INTO v_total FROM categories WHERE is_active;
+  
+  RETURN QUERY SELECT v_fixed, v_total;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_run_schema_drift_check()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_request_id   bigint;
+  v_response     jsonb;
+  v_lovable_sigs jsonb;
+  v_log_id       uuid;
+  v_attempts     int := 0;
+  v_max_attempts int := 60;  -- ate 60s (era 30s; cold-start do Lovable excedia a janela)
+  v_status_code  int;
+BEGIN
+  -- Dispara fetch
+  v_request_id := public.fn_trigger_schema_drift_fetch();
+
+  -- Polling pelo resultado
+  LOOP
+    v_attempts := v_attempts + 1;
+    PERFORM pg_sleep(1);
+
+    SELECT status_code, content::jsonb
+      INTO v_status_code, v_response
+      FROM net._http_response
+      WHERE id = v_request_id;
+
+    EXIT WHEN v_status_code IS NOT NULL;
+
+    IF v_attempts >= v_max_attempts THEN
+      -- Timeout: grava erro
+      v_log_id := public.record_schema_drift_result(jsonb_build_object(
+        'has_drift', false,
+        'tables_oficial', 0,
+        'tables_lovable', 0,
+        'only_oficial', '[]'::jsonb,
+        'only_lovable', '[]'::jsonb,
+        'schema_diff', '{}'::jsonb,
+        'error_message', format('Timeout aguardando Lovable (request_id=%s, %s tentativas)', v_request_id, v_attempts)
+      ));
+      RETURN jsonb_build_object('ok', false, 'error', 'timeout', 'log_id', v_log_id);
+    END IF;
+  END LOOP;
+
+  -- Validar resposta
+  IF v_status_code != 200 THEN
+    v_log_id := public.record_schema_drift_result(jsonb_build_object(
+      'has_drift', false,
+      'tables_oficial', 0,
+      'tables_lovable', 0,
+      'only_oficial', '[]'::jsonb,
+      'only_lovable', '[]'::jsonb,
+      'schema_diff', '{}'::jsonb,
+      'error_message', format('Lovable retornou HTTP %s: %s', v_status_code, v_response::text)
+    ));
+    RETURN jsonb_build_object('ok', false, 'error', 'http_'||v_status_code, 'log_id', v_log_id);
+  END IF;
+
+  -- Computa diff e grava
+  v_lovable_sigs := v_response;
+  v_log_id := public.fn_compute_and_record_drift(v_lovable_sigs);
+
+  RETURN jsonb_build_object('ok', true, 'log_id', v_log_id, 'request_id', v_request_id);
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_run_smoke_tests()
+ RETURNS TABLE(test_name text, test_category text, result text, details text, duration_ms numeric)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE v_start timestamptz; v_count int;
+BEGIN
+  v_start := clock_timestamp();
+  SELECT COUNT(*) INTO v_count FROM information_schema.tables
+  WHERE table_schema='public' AND table_name IN (
+    'products','product_variants','variant_supplier_sources',
+    'organizations','suppliers','categories','ncm_codes','profiles'
+  );
+  RETURN QUERY SELECT 'critical_tables_exist'::text, 'structure'::text,
+    CASE WHEN v_count = 8 THEN '✅ PASS' ELSE '❌ FAIL' END::text,
+    ('Esperado: 8, Encontrado: ' || v_count::text)::text,
+    (EXTRACT(EPOCH FROM (clock_timestamp() - v_start)) * 1000)::numeric;
+
+  v_start := clock_timestamp();
+  SELECT COUNT(*) INTO v_count FROM pg_class c 
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  WHERE n.nspname='public' AND c.relkind='r' AND NOT c.relrowsecurity;
+  RETURN QUERY SELECT 'rls_coverage'::text, 'security'::text,
+    CASE WHEN v_count = 0 THEN '✅ PASS' ELSE '❌ FAIL' END::text,
+    ('Tabelas sem RLS: ' || v_count::text)::text,
+    (EXTRACT(EPOCH FROM (clock_timestamp() - v_start)) * 1000)::numeric;
+
+  v_start := clock_timestamp();
+  SELECT COUNT(*) INTO v_count FROM cron.job_run_details
+  WHERE start_time > now() - interval '1 hour' AND status='failed';
+  RETURN QUERY SELECT 'cron_health_1h'::text, 'operations'::text,
+    CASE WHEN v_count = 0 THEN '✅ PASS' ELSE '❌ FAIL' END::text,
+    ('Falhas na última hora: ' || v_count::text)::text,
+    (EXTRACT(EPOCH FROM (clock_timestamp() - v_start)) * 1000)::numeric;
+
+  v_start := clock_timestamp();
+  SELECT COUNT(*) INTO v_count FROM product_variants pv
+  WHERE NOT EXISTS (SELECT 1 FROM products p WHERE p.id = pv.product_id);
+  RETURN QUERY SELECT 'no_orphan_variants'::text, 'integrity'::text,
+    CASE WHEN v_count = 0 THEN '✅ PASS' ELSE '❌ FAIL' END::text,
+    ('Variantes órfãs: ' || v_count::text)::text,
+    (EXTRACT(EPOCH FROM (clock_timestamp() - v_start)) * 1000)::numeric;
+
+  v_start := clock_timestamp();
+  SELECT COUNT(*) INTO v_count FROM products
+  WHERE is_active AND (name IS NULL OR sku IS NULL OR length(trim(name)) = 0);
+  RETURN QUERY SELECT 'products_have_name_and_sku'::text, 'data_quality'::text,
+    CASE WHEN v_count = 0 THEN '✅ PASS' ELSE '❌ FAIL' END::text,
+    ('Produtos ativos sem name/sku: ' || v_count::text)::text,
+    (EXTRACT(EPOCH FROM (clock_timestamp() - v_start)) * 1000)::numeric;
+
+  v_start := clock_timestamp();
+  SELECT COUNT(*) INTO v_count FROM products
+  WHERE is_active AND (ncm_code IS NULL OR ncm_id IS NULL);
+  RETURN QUERY SELECT 'fiscal_ncm_coverage'::text, 'compliance'::text,
+    CASE WHEN v_count = 0 THEN '✅ PASS' ELSE '❌ FAIL' END::text,
+    ('Produtos ativos sem NCM: ' || v_count::text)::text,
+    (EXTRACT(EPOCH FROM (clock_timestamp() - v_start)) * 1000)::numeric;
+
+  v_start := clock_timestamp();
+  SELECT COUNT(*) INTO v_count FROM product_variants pv
+  WHERE pv.is_active AND NOT EXISTS (
+    SELECT 1 FROM variant_supplier_sources vss 
+    WHERE vss.variant_id = pv.id AND vss.is_preferred AND vss.is_active);
+  RETURN QUERY SELECT 'variants_have_preferred_supplier'::text, 'data_quality'::text,
+    CASE WHEN v_count = 0 THEN '✅ PASS' ELSE '⚠️ WARN' END::text,
+    ('Variantes sem preferred: ' || v_count::text)::text,
+    (EXTRACT(EPOCH FROM (clock_timestamp() - v_start)) * 1000)::numeric;
+
+  v_start := clock_timestamp();
+  SELECT COUNT(*) INTO v_count FROM pg_indexes
+  WHERE schemaname = 'public' AND indexname IN (
+    'uq_seo_redirects_source_active',
+    'idx_products_active_name_sort',
+    'products_pkey',
+    'product_variants_pkey',
+    'products_sku_key'
+  );
+  RETURN QUERY SELECT 'critical_indexes_exist'::text, 'performance'::text,
+    CASE WHEN v_count = 5 THEN '✅ PASS' ELSE '❌ FAIL' END::text,
+    ('Encontrados: ' || v_count::text || '/5')::text,
+    (EXTRACT(EPOCH FROM (clock_timestamp() - v_start)) * 1000)::numeric;
+
+  v_start := clock_timestamp();
+  SELECT COUNT(*) INTO v_count FROM pg_publication_tables WHERE pubname='supabase_realtime';
+  RETURN QUERY SELECT 'realtime_configured'::text, 'features'::text,
+    CASE WHEN v_count >= 5 THEN '✅ PASS' ELSE '⚠️ WARN' END::text,
+    ('Tabelas publicadas: ' || v_count::text)::text,
+    (EXTRACT(EPOCH FROM (clock_timestamp() - v_start)) * 1000)::numeric;
+
+  v_start := clock_timestamp();
+  SELECT COUNT(*) INTO v_count FROM pg_extension
+  WHERE extname IN ('pg_cron','pg_net','pg_stat_statements','pgcrypto');
+  RETURN QUERY SELECT 'essential_extensions'::text, 'infrastructure'::text,
+    CASE WHEN v_count = 4 THEN '✅ PASS' ELSE '❌ FAIL' END::text,
+    ('Extensões: ' || v_count::text || '/4')::text,
+    (EXTRACT(EPOCH FROM (clock_timestamp() - v_start)) * 1000)::numeric;
+
+  v_start := clock_timestamp();
+  SELECT COUNT(*) INTO v_count FROM pg_proc p
+  JOIN pg_namespace n ON n.oid = p.pronamespace
+  WHERE n.nspname='public' AND p.proname IN (
+    'fn_calculate_health_score','fn_run_smoke_tests',
+    'fn_capacity_forecast','fn_deploy_readiness_check',
+    'fn_is_admin_user','fn_sync_product_stock_cache');
+  RETURN QUERY SELECT 'health_functions_exist'::text, 'monitoring'::text,
+    CASE WHEN v_count >= 6 THEN '✅ PASS' ELSE '❌ FAIL' END::text,
+    ('Funções: ' || v_count::text || '/6')::text,
+    (EXTRACT(EPOCH FROM (clock_timestamp() - v_start)) * 1000)::numeric;
+
+  v_start := clock_timestamp();
+  SELECT COUNT(*) INTO v_count FROM auth.users;
+  RETURN QUERY SELECT 'auth_schema_accessible'::text, 'security'::text,
+    '✅ PASS'::text,
+    ('auth.users: ' || v_count::text)::text,
+    (EXTRACT(EPOCH FROM (clock_timestamp() - v_start)) * 1000)::numeric;
+
+  v_start := clock_timestamp();
+  SELECT COUNT(*) INTO v_count FROM products WHERE stock_quantity < 0;
+  RETURN QUERY SELECT 'stock_cache_positive'::text, 'data_quality'::text,
+    CASE WHEN v_count = 0 THEN '✅ PASS' ELSE '❌ FAIL' END::text,
+    ('Stock negativo: ' || v_count::text)::text,
+    (EXTRACT(EPOCH FROM (clock_timestamp() - v_start)) * 1000)::numeric;
+
+  v_start := clock_timestamp();
+  BEGIN
+    EXECUTE 'SET LOCAL role anon';
+    EXECUTE 'SELECT COUNT(*) FROM profiles' INTO v_count;
+    EXECUTE 'RESET role';
+    RETURN QUERY SELECT 'rls_profiles_no_recursion'::text, 'security'::text,
+      '✅ PASS'::text, ('anon sees ' || v_count::text)::text,
+      (EXTRACT(EPOCH FROM (clock_timestamp() - v_start)) * 1000)::numeric;
+  EXCEPTION WHEN OTHERS THEN
+    EXECUTE 'RESET role';
+    RETURN QUERY SELECT 'rls_profiles_no_recursion'::text, 'security'::text,
+      '❌ FAIL'::text, SQLERRM::text,
+      (EXTRACT(EPOCH FROM (clock_timestamp() - v_start)) * 1000)::numeric;
+  END;
+END; $function$;
 CREATE OR REPLACE FUNCTION public.fn_save_quote_draft(p_data jsonb)
  RETURNS uuid
  LANGUAGE plpgsql
@@ -1392,18 +16873,2196 @@ BEGIN
     RETURNING id INTO v_draft_id;
     RETURN v_draft_id;
 END;
-$function$
-;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_set_category_min_quantity(p_category_slug character varying, p_min_quantity integer)
+ RETURNS TABLE(category_id uuid, category_name character varying, old_min integer, new_min integer, products_affected integer)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_category_id UUID;
+    v_category_name VARCHAR;
+    v_old_min INTEGER;
+    v_affected INTEGER;
+BEGIN
+    -- Buscar categoria pelo slug
+    SELECT c.id, c.name, c.min_order_quantity 
+    INTO v_category_id, v_category_name, v_old_min
+    FROM categories c
+    WHERE c.slug = p_category_slug;
+    
+    IF v_category_id IS NULL THEN
+        RAISE EXCEPTION 'Categoria com slug "%" não encontrada', p_category_slug;
+    END IF;
+    
+    -- Atualizar categoria (trigger propagará para produtos)
+    UPDATE categories
+    SET min_order_quantity = p_min_quantity
+    WHERE id = v_category_id;
+    
+    -- Contar produtos afetados (qualificando a coluna)
+    SELECT COUNT(*) INTO v_affected
+    FROM products p
+    WHERE p.category_id = v_category_id
+      AND p.min_order_quantity IS NULL;
+    
+    RETURN QUERY SELECT v_category_id, v_category_name, v_old_min, p_min_quantity, v_affected;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_set_initial_processed_state()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    -- Apenas marcar como não processado na INSERÇÃO inicial
+    IF TG_OP = 'INSERT' THEN
+        NEW.processed := false;
+        NEW.imported_at := COALESCE(NEW.imported_at, NOW());
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_set_product_as_new()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    -- INSERT: produto novo → novidade por 30 dias
+    IF TG_OP = 'INSERT' THEN
+        NEW.is_new := true;
+        NEW.novelty_detected_at := NOW();
+        NEW.novelty_expires_at := NOW() + INTERVAL '30 days';
+        RETURN NEW;
+    END IF;
 
--- ----------------------------------------------------------------------------
+    -- UPDATE: se expirou, desligar automaticamente
+    IF TG_OP = 'UPDATE' THEN
+        IF NEW.novelty_expires_at IS NOT NULL 
+           AND NEW.novelty_expires_at <= NOW() 
+           AND NEW.is_new = true THEN
+            NEW.is_new := false;
+        END IF;
+        RETURN NEW;
+    END IF;
+
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_set_updated_at()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'pg_catalog', 'public'
+AS $function$
+BEGIN NEW.updated_at = now(); RETURN NEW; END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_split_materials(p_materials_string text)
+ RETURNS TABLE(material_part text, sort_order integer)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_normalized TEXT;
+    v_parts TEXT[];
+    v_part TEXT;
+    v_idx INTEGER := 1;
+BEGIN
+    -- Retorna vazio se string nula ou vazia
+    IF p_materials_string IS NULL OR TRIM(p_materials_string) = '' THEN
+        RETURN;
+    END IF;
+    
+    -- Normalizar separadores para um único padrão
+    -- Separadores reconhecidos: ". ", " e ", "/", ","
+    v_normalized := p_materials_string;
+    v_normalized := REPLACE(v_normalized, '. ', '|||');  -- Ponto + espaço
+    v_normalized := REPLACE(v_normalized, ' e ', '|||'); -- " e " (com espaços)
+    v_normalized := REPLACE(v_normalized, '/', '|||');   -- Barra
+    v_normalized := REPLACE(v_normalized, ', ', '|||');  -- Vírgula + espaço
+    
+    -- Fazer split
+    v_parts := STRING_TO_ARRAY(v_normalized, '|||');
+    
+    -- Retornar cada parte
+    FOREACH v_part IN ARRAY v_parts
+    LOOP
+        -- Limpar espaços e ignorar partes vazias
+        v_part := TRIM(v_part);
+        IF v_part != '' AND LENGTH(v_part) > 1 THEN
+            material_part := v_part;
+            sort_order := v_idx;
+            v_idx := v_idx + 1;
+            RETURN NEXT;
+        END IF;
+    END LOOP;
+    
+    RETURN;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_stage_product(p_batch_id uuid, p_supplier_id uuid, p_supplier_reference text, p_raw_data jsonb)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_staging_id UUID;
+    v_hash TEXT;
+BEGIN
+    v_hash := md5(p_raw_data::TEXT);
+    
+    SELECT id INTO v_staging_id
+    FROM supplier_products_raw
+    WHERE import_batch_id = p_batch_id AND supplier_reference = p_supplier_reference;
+    
+    IF v_staging_id IS NOT NULL THEN
+        UPDATE supplier_products_raw
+        SET raw_data = p_raw_data, raw_hash = v_hash, updated_at = NOW()
+        WHERE id = v_staging_id;
+    ELSE
+        INSERT INTO supplier_products_raw (
+            import_batch_id, supplier_id, supplier_reference,
+            raw_data, raw_hash, imported_at, processed, created_at, updated_at
+        ) VALUES (
+            p_batch_id, p_supplier_id, p_supplier_reference,
+            p_raw_data, v_hash, NOW(), FALSE, NOW(), NOW()
+        )
+        RETURNING id INTO v_staging_id;
+    END IF;
+    
+    RETURN v_staging_id;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_stage_variant(p_batch_id uuid, p_supplier_id uuid, p_supplier_reference text, p_supplier_sku text, p_raw_data jsonb)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_staging_id UUID;
+    v_hash TEXT;
+BEGIN
+    v_hash := md5(p_raw_data::TEXT);
+    
+    SELECT id INTO v_staging_id
+    FROM supplier_variants_raw
+    WHERE import_batch_id = p_batch_id AND supplier_sku = p_supplier_sku;
+    
+    IF v_staging_id IS NOT NULL THEN
+        UPDATE supplier_variants_raw
+        SET raw_data = p_raw_data, raw_hash = v_hash, updated_at = NOW()
+        WHERE id = v_staging_id;
+    ELSE
+        INSERT INTO supplier_variants_raw (
+            import_batch_id, supplier_id, supplier_reference, supplier_sku,
+            raw_data, raw_hash, imported_at, processed, created_at, updated_at
+        ) VALUES (
+            p_batch_id, p_supplier_id, p_supplier_reference, p_supplier_sku,
+            p_raw_data, v_hash, NOW(), FALSE, NOW(), NOW()
+        )
+        RETURNING id INTO v_staging_id;
+    END IF;
+    
+    RETURN v_staging_id;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_sync_all_is_new()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_set_true INTEGER;
+    v_set_false INTEGER;
+BEGIN
+    -- Produtos com novidade ativa → is_new = TRUE
+    UPDATE products p
+    SET is_new = TRUE
+    FROM product_novelties pn
+    WHERE pn.product_id = p.id
+      AND pn.is_active = TRUE
+      AND p.is_new = FALSE;
+    
+    GET DIAGNOSTICS v_set_true = ROW_COUNT;
+    
+    -- Produtos sem novidade ativa → is_new = FALSE
+    UPDATE products p
+    SET is_new = FALSE
+    WHERE p.is_new = TRUE
+      AND NOT EXISTS (
+          SELECT 1 FROM product_novelties pn 
+          WHERE pn.product_id = p.id AND pn.is_active = TRUE
+      );
+    
+    GET DIAGNOSTICS v_set_false = ROW_COUNT;
+    
+    RETURN jsonb_build_object(
+        'set_to_true', v_set_true,
+        'set_to_false', v_set_false,
+        'total_changed', v_set_true + v_set_false,
+        'executed_at', NOW()
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_sync_all_product_colors()
+ RETURNS TABLE(total_products integer, products_with_colors integer, products_without_colors integer)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_total INTEGER := 0;
+    v_with_colors INTEGER := 0;
+    v_without_colors INTEGER := 0;
+BEGIN
+    -- Atualizar todos os produtos de uma vez (mais eficiente)
+    UPDATE products p
+    SET 
+        colors = COALESCE(
+            (
+                SELECT jsonb_agg(DISTINCT v.color_name ORDER BY v.color_name)
+                FROM product_variants v
+                WHERE v.product_id = p.id
+                  AND v.color_name IS NOT NULL
+                  AND v.color_name != ''
+            ),
+            '[]'::JSONB
+        ),
+        has_colors = EXISTS (
+            SELECT 1 
+            FROM product_variants v
+            WHERE v.product_id = p.id
+              AND v.color_name IS NOT NULL
+              AND v.color_name != ''
+        );
+    
+    -- Contar resultados
+    SELECT COUNT(*) INTO v_total FROM products;
+    SELECT COUNT(*) INTO v_with_colors FROM products WHERE has_colors = true;
+    v_without_colors := v_total - v_with_colors;
+    
+    RETURN QUERY SELECT v_total, v_with_colors, v_without_colors;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_sync_novelty_to_product()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    -- Quando is_active muda em product_novelties, atualizar products.is_new
+    
+    IF TG_OP = 'UPDATE' THEN
+        -- Se is_active mudou de TRUE para FALSE
+        IF OLD.is_active = TRUE AND NEW.is_active = FALSE THEN
+            UPDATE products 
+            SET is_new = FALSE 
+            WHERE id = NEW.product_id;
+        END IF;
+        
+        -- Se is_active mudou de FALSE para TRUE (reativar)
+        IF OLD.is_active = FALSE AND NEW.is_active = TRUE THEN
+            UPDATE products 
+            SET is_new = TRUE 
+            WHERE id = NEW.product_id;
+        END IF;
+    END IF;
+    
+    IF TG_OP = 'DELETE' THEN
+        -- Se deletar o registro de novidade, produto deixa de ser novo
+        UPDATE products 
+        SET is_new = FALSE 
+        WHERE id = OLD.product_id;
+    END IF;
+    
+    IF TG_OP = 'INSERT' THEN
+        -- Se inserir novo registro de novidade, produto vira novo
+        UPDATE products 
+        SET is_new = TRUE 
+        WHERE id = NEW.product_id;
+    END IF;
+    
+    RETURN COALESCE(NEW, OLD);
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_sync_product_colors_from_variants(p_product_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_colors JSONB;
+    v_has_colors BOOLEAN;
+BEGIN
+    -- Agregar cores únicas das variants do produto
+    SELECT 
+        COALESCE(
+            jsonb_agg(DISTINCT color_name ORDER BY color_name),
+            '[]'::JSONB
+        ),
+        COUNT(DISTINCT color_name) > 0
+    INTO v_colors, v_has_colors
+    FROM product_variants
+    WHERE product_id = p_product_id
+      AND color_name IS NOT NULL
+      AND color_name != '';
+    
+    -- Atualizar o produto
+    UPDATE products 
+    SET 
+        colors = v_colors,
+        has_colors = v_has_colors
+    WHERE id = p_product_id;
+    
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_sync_product_deactivation_to_similarity()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  IF OLD.is_active = true AND NEW.is_active = false THEN
+    DELETE FROM product_similarity_group_members
+    WHERE product_id = NEW.id;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_sync_product_has_sizes()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_product_id uuid;
+  v_has_sizes boolean;
+BEGIN
+  v_product_id := COALESCE(NEW.product_id, OLD.product_id);
+  
+  SELECT EXISTS (
+    SELECT 1 FROM product_variants
+    WHERE product_id = v_product_id
+      AND is_active
+      AND size_code IS NOT NULL
+  ) INTO v_has_sizes;
+  
+  UPDATE products 
+  SET has_sizes = v_has_sizes
+  WHERE id = v_product_id
+    AND COALESCE(has_sizes, false) <> v_has_sizes;
+  
+  RETURN COALESCE(NEW, OLD);
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_sync_product_stock_cache()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE v_product_id uuid; v_stock integer;
+BEGIN
+  -- Determinar qual produto foi afetado (via variant)
+  IF TG_TABLE_NAME = 'variant_supplier_sources' THEN
+    SELECT product_id INTO v_product_id FROM product_variants 
+    WHERE id = COALESCE(NEW.variant_id, OLD.variant_id);
+  ELSIF TG_TABLE_NAME = 'product_variants' THEN
+    v_product_id := COALESCE(NEW.product_id, OLD.product_id);
+  END IF;
+  
+  IF v_product_id IS NULL THEN
+    RETURN COALESCE(NEW, OLD);
+  END IF;
+  
+  SELECT COALESCE(SUM(v.quantity), 0)::integer INTO v_stock
+  FROM product_variants pv
+  LEFT JOIN variant_supplier_sources v ON v.variant_id = pv.id AND v.is_active
+  WHERE pv.product_id = v_product_id AND pv.is_active;
+  
+  UPDATE products
+  SET stock_quantity = v_stock,
+      last_stock_update_at = now(),
+      is_stockout = (v_stock <= 0)
+  WHERE id = v_product_id
+    AND (stock_quantity IS DISTINCT FROM v_stock OR is_stockout IS DISTINCT FROM (v_stock <= 0));
+  
+  RETURN COALESCE(NEW, OLD);
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_sync_single_product_dimensions(p_product_id uuid, p_raw_data jsonb)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_combined_sizes TEXT;
+    v_weight NUMERIC;
+    v_weight_unit TEXT;
+    v_box_quantity INT;
+    v_box_weight_kg NUMERIC;
+    v_box_width NUMERIC;
+    v_box_height NUMERIC;
+    v_box_length NUMERIC;
+    v_box_volume NUMERIC;
+    v_capacity TEXT;
+    v_parsed_dims JSONB;
+    v_parsed_weight JSONB;
+    v_current_combined TEXT;
+    v_rows_updated INT;
+BEGIN
+    -- Verificar se product_id é válido
+    IF p_product_id IS NULL THEN
+        RETURN FALSE;
+    END IF;
+    
+    -- Extrair CombinedSizes do raw_data
+    v_combined_sizes := TRIM(p_raw_data->>'CombinedSizes');
+    
+    -- Verificar se combined_sizes já é igual (evita update redundante)
+    SELECT combined_sizes INTO v_current_combined
+    FROM products
+    WHERE id = p_product_id;
+    
+    -- Se já é igual, não faz nada (performance)
+    IF v_current_combined IS NOT DISTINCT FROM v_combined_sizes THEN
+        RETURN FALSE; -- Nenhuma atualização necessária
+    END IF;
+    
+    -- Extrair outros campos
+    v_weight := NULLIF(TRIM(p_raw_data->>'Weight'), '')::NUMERIC;
+    v_weight_unit := COALESCE(NULLIF(TRIM(p_raw_data->>'WeightUnit'), ''), 'g');
+    v_box_quantity := NULLIF(TRIM(p_raw_data->>'BoxQuantity'), '')::INT;
+    v_box_weight_kg := NULLIF(TRIM(p_raw_data->>'BoxWeightKG'), '')::NUMERIC;
+    v_capacity := NULLIF(TRIM(p_raw_data->>'Capacity'), '');
+    
+    -- Extrair dimensões da caixa (ATENÇÃO: SPOT usa METROS, não mm!)
+    -- BoxWidthMM, BoxHeightMM, BoxLengthMM estão em METROS na API SPOT
+    v_box_width := NULLIF(TRIM(p_raw_data->>'BoxWidthMM'), '')::NUMERIC;
+    v_box_height := NULLIF(TRIM(p_raw_data->>'BoxHeightMM'), '')::NUMERIC;
+    v_box_length := NULLIF(TRIM(p_raw_data->>'BoxLengthMM'), '')::NUMERIC;
+    v_box_volume := NULLIF(TRIM(p_raw_data->>'BoxVolume'), '')::NUMERIC;
+    
+    -- Converter metros para mm (se valores pequenos, são metros)
+    IF v_box_width IS NOT NULL AND v_box_width < 10 THEN
+        v_box_width := v_box_width * 1000; -- metros → mm
+    END IF;
+    IF v_box_height IS NOT NULL AND v_box_height < 10 THEN
+        v_box_height := v_box_height * 1000;
+    END IF;
+    IF v_box_length IS NOT NULL AND v_box_length < 10 THEN
+        v_box_length := v_box_length * 1000;
+    END IF;
+    
+    -- Parsear dimensões
+    IF v_combined_sizes IS NOT NULL AND v_combined_sizes != '' THEN
+        v_parsed_dims := fn_parse_product_dimensions(v_combined_sizes);
+    ELSE
+        v_parsed_dims := '{}'::JSONB;
+    END IF;
+    
+    -- Parsear peso
+    IF v_weight IS NOT NULL THEN
+        v_parsed_weight := fn_parse_product_weight(v_weight, v_weight_unit);
+    ELSE
+        v_parsed_weight := '{}'::JSONB;
+    END IF;
+    
+    -- Atualizar produto (usando IS DISTINCT FROM para evitar updates desnecessários)
+    UPDATE products SET
+        -- Dimensões do produto
+        combined_sizes = v_combined_sizes,
+        dimensions_display = v_combined_sizes,
+        width_cm = (v_parsed_dims->>'width_cm')::NUMERIC,
+        height_cm = (v_parsed_dims->>'height_cm')::NUMERIC,
+        length_cm = (v_parsed_dims->>'length_cm')::NUMERIC,
+        diameter_cm = (v_parsed_dims->>'diameter_cm')::NUMERIC,
+        shape_type = v_parsed_dims->>'shape_type',
+        dimensions = v_parsed_dims,
+        
+        -- Peso
+        weight_g = COALESCE((v_parsed_weight->>'weight_g')::NUMERIC, v_weight),
+        product_weight_g = COALESCE((v_parsed_weight->>'weight_g')::NUMERIC, v_weight),
+        
+        -- Dados da caixa
+        box_quantity = v_box_quantity,
+        box_weight_kg = v_box_weight_kg,
+        box_width_mm = v_box_width,
+        box_height_mm = v_box_height,
+        box_length_mm = v_box_length,
+        box_volume_cm3 = CASE 
+            WHEN v_box_volume IS NOT NULL THEN v_box_volume * 1000000 -- m³ → cm³
+            WHEN v_box_width IS NOT NULL AND v_box_height IS NOT NULL AND v_box_length IS NOT NULL 
+            THEN (v_box_width / 10) * (v_box_height / 10) * (v_box_length / 10) -- mm → cm, depois multiplica
+            ELSE NULL
+        END,
+        
+        -- Capacidade
+        capacity_ml = CASE 
+            WHEN v_capacity ~ '\d+' THEN 
+                (REGEXP_REPLACE(v_capacity, '[^\d.]', '', 'g'))::NUMERIC
+            ELSE NULL
+        END,
+        
+        -- Timestamp
+        updated_at = NOW()
+    WHERE id = p_product_id
+    AND (
+        combined_sizes IS DISTINCT FROM v_combined_sizes
+        OR weight_g IS DISTINCT FROM COALESCE((v_parsed_weight->>'weight_g')::NUMERIC, v_weight)
+        OR box_quantity IS DISTINCT FROM v_box_quantity
+    );
+    
+    GET DIAGNOSTICS v_rows_updated = ROW_COUNT;
+    
+    RETURN v_rows_updated > 0;
+    
+EXCEPTION WHEN OTHERS THEN
+    -- Log de erro (opcional - pode ser removido em produção)
+    RAISE WARNING 'fn_sync_single_product_dimensions error for product %: %', p_product_id, SQLERRM;
+    RETURN FALSE;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_sync_variant_to_product()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_product_id UUID;
+    v_total_qty INTEGER;
+    v_is_stockout BOOLEAN;
+BEGIN
+    -- Buscar product_id da variant
+    v_product_id := NEW.product_id;
+    
+    -- Pular se product_id é NULL
+    IF v_product_id IS NULL THEN
+        RETURN NEW;
+    END IF;
+    
+    -- Agregar estoque de todas as variantes do produto
+    SELECT 
+        COALESCE(SUM(stock_quantity), 0),
+        COALESCE(SUM(stock_quantity), 0) = 0
+    INTO v_total_qty, v_is_stockout
+    FROM product_variants
+    WHERE product_id = v_product_id
+      AND is_active = true;
+    
+    -- Atualizar products
+    UPDATE products
+    SET 
+        stock_quantity = v_total_qty,
+        is_stockout = v_is_stockout,
+        last_stock_update_at = NOW(),
+        updated_at = NOW()
+    WHERE id = v_product_id;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_sync_vss_to_variant()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_variant_id UUID;
+    v_total_qty INTEGER;
+    v_total_reserved INTEGER;
+BEGIN
+    -- Determinar variant_id afetado
+    IF TG_OP = 'DELETE' THEN
+        v_variant_id := OLD.variant_id;
+    ELSE
+        v_variant_id := NEW.variant_id;
+    END IF;
+    
+    -- Pular se variant_id é NULL
+    IF v_variant_id IS NULL THEN
+        RETURN COALESCE(NEW, OLD);
+    END IF;
+    
+    -- Agregar estoque de todos os fornecedores ATIVOS para esta variante
+    SELECT 
+        COALESCE(SUM(quantity), 0),
+        COALESCE(SUM(reserved_quantity), 0)
+    INTO v_total_qty, v_total_reserved
+    FROM variant_supplier_sources
+    WHERE variant_id = v_variant_id
+      AND is_active = true;
+    
+    -- Atualizar product_variants
+    UPDATE product_variants
+    SET 
+        stock_quantity = v_total_qty,
+        updated_at = NOW()
+    WHERE id = v_variant_id;
+    
+    RETURN COALESCE(NEW, OLD);
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_toggle_group_similarity_pairs()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  IF OLD.is_active IS NOT DISTINCT FROM NEW.is_active THEN
+    RETURN NEW;
+  END IF;
+
+  IF NEW.is_active = true THEN
+    INSERT INTO product_relationships
+      (product_id, related_product_id, relationship_type, is_bidirectional, is_active, display_order)
+    SELECT m1.product_id, m2.product_id, 'similar', true, true, 0
+    FROM product_similarity_group_members m1
+    JOIN product_similarity_group_members m2
+      ON m1.group_id = m2.group_id
+      AND m1.product_id != m2.product_id
+      AND m1.supplier_id != m2.supplier_id
+    WHERE m1.group_id = NEW.id
+    ON CONFLICT (product_id, related_product_id, relationship_type) DO NOTHING;
+  ELSE
+    DELETE FROM product_relationships pr
+    WHERE pr.relationship_type = 'similar'
+      AND EXISTS (
+        SELECT 1
+        FROM product_similarity_group_members m1
+        JOIN product_similarity_group_members m2
+          ON m1.group_id = m2.group_id
+          AND m1.product_id != m2.product_id
+          AND m1.supplier_id != m2.supplier_id
+        WHERE m1.group_id = OLD.id
+          AND m1.product_id = pr.product_id
+          AND m2.product_id = pr.related_product_id
+      )
+      AND NOT EXISTS (
+        SELECT 1
+        FROM product_similarity_group_members ma
+        JOIN product_similarity_group_members mb
+          ON ma.group_id = mb.group_id
+          AND ma.product_id != mb.product_id
+          AND ma.supplier_id != mb.supplier_id
+        JOIN product_similarity_groups g ON g.id = ma.group_id
+        WHERE g.is_active = true
+          AND g.id != OLD.id
+          AND ma.product_id = pr.product_id
+          AND mb.product_id = pr.related_product_id
+      );
+  END IF;
+
+  RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_trigger_auto_classify_product()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_result JSONB;
+    v_category_id UUID;
+BEGIN
+    -- ========================================
+    -- CONDIÇÕES PARA EXECUTAR:
+    -- 1. Nome deve existir
+    -- 2. Categoria deve ser NULL (não sobrescreve)
+    -- 3. Apenas em INSERT ou UPDATE do campo name
+    -- ========================================
+    
+    -- Se já tem categoria, não faz nada
+    IF NEW.category_id IS NOT NULL THEN
+        RETURN NEW;
+    END IF;
+    
+    -- Se não tem nome, não faz nada
+    IF NEW.name IS NULL OR TRIM(NEW.name) = '' THEN
+        RETURN NEW;
+    END IF;
+    
+    -- Em UPDATE, só executa se o nome mudou
+    IF TG_OP = 'UPDATE' THEN
+        IF OLD.name = NEW.name AND OLD.category_id IS NOT NULL THEN
+            RETURN NEW;
+        END IF;
+    END IF;
+    
+    -- ========================================
+    -- EXECUTAR CLASSIFICAÇÃO
+    -- ========================================
+    BEGIN
+        -- Chamar função master de classificação
+        SELECT fn_master_classify_product(NEW.name, NEW.id) INTO v_result;
+        
+        -- Extrair category_id do resultado
+        IF v_result IS NOT NULL AND v_result->>'category_id' IS NOT NULL THEN
+            v_category_id := (v_result->>'category_id')::UUID;
+            
+            -- Atualizar categoria no NEW
+            NEW.category_id := v_category_id;
+            
+            -- Log opcional (comentar em produção se necessário)
+            RAISE NOTICE 'Auto-classificado: % -> % (%)', 
+                NEW.name, 
+                v_result->>'category_slug',
+                v_result->>'detected_type';
+        END IF;
+        
+    EXCEPTION WHEN OTHERS THEN
+        -- Em caso de erro, apenas loga e continua
+        RAISE WARNING 'Erro ao classificar produto %: %', NEW.id, SQLERRM;
+    END;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_trigger_auto_extract_attributes()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_capacity INTEGER;
+    v_dimensions JSONB;
+    v_weight INTEGER;
+    v_keywords TEXT[];
+BEGIN
+    -- Validação básica
+    IF NEW.name IS NULL OR TRIM(NEW.name) = '' THEN
+        RETURN NEW;
+    END IF;
+    
+    -- Se UPDATE e nome não mudou, não fazer nada
+    IF TG_OP = 'UPDATE' AND OLD.name = NEW.name THEN
+        RETURN NEW;
+    END IF;
+    
+    -- ═══════════════════════════════════════════════════════════
+    -- ❌ NÃO EXTRAIR CORES DO NOME
+    -- ═══════════════════════════════════════════════════════════
+    -- MOTIVO: Conflita com arquitetura existente de cores
+    -- As cores devem vir de:
+    --   product_variants.color_id → color_variations
+    -- E serem agregadas em products.colors[] via função separada
+    -- ═══════════════════════════════════════════════════════════
+    
+    -- 1. Extrair capacidade (ml/L)
+    IF NEW.capacity_ml IS NULL THEN
+        v_capacity := fn_extract_capacity_from_name(NEW.name);
+        IF v_capacity IS NOT NULL THEN
+            NEW.capacity_ml := v_capacity;
+            NEW.has_capacity := true;
+        END IF;
+    END IF;
+    
+    -- 2. Extrair dimensões (AxBxC cm/mm)
+    IF NEW.length_cm IS NULL AND NEW.width_cm IS NULL AND NEW.height_cm IS NULL THEN
+        v_dimensions := fn_extract_dimensions_from_name(NEW.name);
+        IF v_dimensions IS NOT NULL THEN
+            NEW.length_cm := (v_dimensions->>'length_cm')::NUMERIC;
+            NEW.width_cm := (v_dimensions->>'width_cm')::NUMERIC;
+            NEW.height_cm := (v_dimensions->>'height_cm')::NUMERIC;
+        END IF;
+    END IF;
+    
+    -- 3. Extrair peso (g/kg)
+    IF NEW.weight_g IS NULL THEN
+        v_weight := fn_extract_weight_from_name(NEW.name);
+        IF v_weight IS NOT NULL THEN
+            NEW.weight_g := v_weight;
+        END IF;
+    END IF;
+    
+    -- 4. Extrair keywords (para SEO)
+    IF NEW.meta_keywords IS NULL OR array_length(NEW.meta_keywords, 1) IS NULL THEN
+        v_keywords := fn_extract_keywords_from_name(NEW.name);
+        IF array_length(v_keywords, 1) > 0 THEN
+            NEW.meta_keywords := v_keywords;
+        END IF;
+    END IF;
+    
+    RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
+    RAISE WARNING 'Erro em fn_trigger_auto_extract_attributes: %', SQLERRM;
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_trigger_auto_sync_dimensions()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_old_combined TEXT;
+    v_new_combined TEXT;
+    v_should_sync BOOLEAN := FALSE;
+BEGIN
+    -- Extrair CombinedSizes para comparação
+    v_new_combined := NEW.raw_data->>'CombinedSizes';
+    
+    IF TG_OP = 'UPDATE' THEN
+        v_old_combined := OLD.raw_data->>'CombinedSizes';
+        
+        -- Verificar se deve sincronizar:
+        -- 1. product_id foi preenchido (novo vínculo)
+        -- 2. OU CombinedSizes mudou (reimportação)
+        IF (NEW.product_id IS NOT NULL AND OLD.product_id IS NULL) THEN
+            v_should_sync := TRUE;
+        ELSIF (NEW.product_id IS NOT NULL AND v_new_combined IS DISTINCT FROM v_old_combined) THEN
+            v_should_sync := TRUE;
+        END IF;
+        
+    ELSIF TG_OP = 'INSERT' THEN
+        -- No INSERT, só sincroniza se product_id já veio preenchido
+        IF NEW.product_id IS NOT NULL THEN
+            v_should_sync := TRUE;
+        END IF;
+    END IF;
+    
+    -- Executar sincronização se necessário
+    IF v_should_sync THEN
+        PERFORM fn_sync_single_product_dimensions(NEW.product_id, NEW.raw_data);
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_trigger_calculate_sale_price()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_markup_percent NUMERIC := 115.0;
+BEGIN
+    -- SIMPLIFICADO: Usar APENAS cost_price
+    IF NEW.cost_price IS NOT NULL AND NEW.cost_price > 0 THEN
+        
+        IF NEW.supplier_id IS NOT NULL THEN
+            SELECT COALESCE(s.default_markup_percent, 115.0)
+            INTO v_markup_percent
+            FROM suppliers s
+            WHERE s.id = NEW.supplier_id AND s.active = true;
+        END IF;
+        
+        v_markup_percent := COALESCE(v_markup_percent, 115.0);
+        
+        IF TG_OP = 'INSERT' THEN
+            NEW.sale_price := ROUND(NEW.cost_price * (1 + v_markup_percent / 100), 2);
+        ELSIF TG_OP = 'UPDATE' THEN
+            IF OLD.cost_price IS DISTINCT FROM NEW.cost_price OR NEW.sale_price IS NULL THEN
+                NEW.sale_price := ROUND(NEW.cost_price * (1 + v_markup_percent / 100), 2);
+            END IF;
+        END IF;
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_trigger_classify_packing()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_classification JSONB;
+BEGIN
+    -- Só processa se packing_type estiver preenchido
+    IF NEW.packing_type IS NOT NULL AND NEW.packing_type <> '' THEN
+        
+        -- Chamar função de classificação existente
+        v_classification := fn_classify_packing_type(NEW.packing_type);
+        
+        -- Extrair classificação e atribuir ao campo
+        IF v_classification IS NOT NULL THEN
+            NEW.packing_classification := (v_classification->>'classification')::VARCHAR;
+        END IF;
+        
+    ELSE
+        -- Se não tem packing_type, tentar extrair da descrição
+        IF NEW.description IS NOT NULL AND NEW.description <> '' THEN
+            DECLARE
+                v_extracted JSONB;
+            BEGIN
+                v_extracted := fn_extract_packaging_from_description(NEW.description);
+                
+                IF v_extracted IS NOT NULL AND (v_extracted->>'found')::boolean = true THEN
+                    NEW.packing_type := v_extracted->>'packaging_text';
+                    
+                    -- Classificar o texto extraído
+                    v_classification := fn_classify_packing_type(NEW.packing_type);
+                    IF v_classification IS NOT NULL THEN
+                        NEW.packing_classification := (v_classification->>'classification')::VARCHAR;
+                    END IF;
+                END IF;
+            END;
+        END IF;
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_trigger_extract_materials_from_name()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_count INTEGER;
+BEGIN
+    -- Só processar se o campo materials está vazio ou null
+    IF NEW.materials IS NULL OR NEW.materials = '[]'::jsonb OR jsonb_array_length(NEW.materials) = 0 THEN
+        -- Extrair materiais do nome (após o INSERT, pois precisa do ID)
+        PERFORM fn_extract_materials_from_name(NEW.id, FALSE);
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_trigger_product_automation()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_classify_result JSONB;
+    v_materials_linked INTEGER;
+    v_sale_price NUMERIC;
+BEGIN
+    -- ═══════════════════════════════════════════════════════════════════════════
+    -- 1. CLASSIFICAR CATEGORIA (se ainda não tem)
+    --    CORRIGIDO: Ordem dos parâmetros (p_name, p_product_id)
+    -- ═══════════════════════════════════════════════════════════════════════════
+    IF NEW.category_id IS NULL THEN
+        -- CORREÇÃO: NEW.name primeiro, depois NEW.id
+        v_classify_result := fn_master_classify_product(NEW.name, NEW.id);
+        
+        RAISE NOTICE 'Produto [%] classificado: tipo=%, categoria=%',
+            LEFT(NEW.name, 30),
+            v_classify_result->>'detected_type',
+            v_classify_result->>'category_id';
+    END IF;
+    
+    -- ═══════════════════════════════════════════════════════════════════════════
+    -- 2. VINCULAR MATERIAIS
+    -- ═══════════════════════════════════════════════════════════════════════════
+    v_materials_linked := fn_link_product_materials(NEW.id, NEW.supplier_id);
+    
+    IF v_materials_linked > 0 THEN
+        RAISE NOTICE 'Produto [%]: % materiais vinculados',
+            LEFT(NEW.name, 30), v_materials_linked;
+    END IF;
+    
+    -- ═══════════════════════════════════════════════════════════════════════════
+    -- 3. EXECUTAR OUTRAS AUTOMAÇÕES
+    -- ═══════════════════════════════════════════════════════════════════════════
+    -- Tags automáticas
+    BEGIN
+        PERFORM fn_auto_link_tags(NEW.id);
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'Aviso: fn_auto_link_tags não disponível ou falhou: %', SQLERRM;
+    END;
+    
+    -- Properties automáticas
+    BEGIN
+        PERFORM fn_auto_link_properties(NEW.id);
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'Aviso: fn_auto_link_properties não disponível ou falhou: %', SQLERRM;
+    END;
+    
+    -- Tag ECO
+    BEGIN
+        PERFORM fn_auto_link_eco(NEW.id);
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'Aviso: fn_auto_link_eco não disponível ou falhou: %', SQLERRM;
+    END;
+    
+    -- Tag Feminino
+    BEGIN
+        PERFORM fn_auto_link_feminino(NEW.id);
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'Aviso: fn_auto_link_feminino não disponível ou falhou: %', SQLERRM;
+    END;
+    
+    -- Datas comemorativas
+    BEGIN
+        PERFORM fn_auto_link_commemorative_dates(NEW.id);
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'Aviso: fn_auto_link_commemorative_dates não disponível ou falhou: %', SQLERRM;
+    END;
+    
+    -- Nota: O preço será calculado em lote posteriormente
+    -- pois as variantes ainda não existem no momento do INSERT do produto
+    
+    RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Erro no trigger de automação para produto %: %', NEW.id, SQLERRM;
+    RETURN NEW; -- Não falha a transação, apenas loga o erro
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_trigger_product_status_sync_category_count()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_cat_id uuid;
+  v_count integer;
+BEGIN
+  -- Só executa se is_active ou is_deleted realmente mudou
+  IF (OLD.is_active IS NOT DISTINCT FROM NEW.is_active) 
+     AND (OLD.is_deleted IS NOT DISTINCT FROM NEW.is_deleted) THEN
+    RETURN NEW;
+  END IF;
+
+  -- Recalcular products_count em TODAS as categorias desse produto
+  FOR v_cat_id IN
+    SELECT category_id FROM product_category_assignments WHERE product_id = NEW.id
+  LOOP
+    SELECT COUNT(DISTINCT pca.product_id) INTO v_count
+    FROM product_category_assignments pca
+    JOIN products p ON p.id = pca.product_id
+    WHERE pca.category_id = v_cat_id
+      AND p.is_active = true
+      AND (p.is_deleted = false OR p.is_deleted IS NULL);
+
+    UPDATE categories SET products_count = v_count
+    WHERE id = v_cat_id;
+  END LOOP;
+
+  RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_trigger_propagate_category_min()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    -- Se min_order_quantity mudou, propagar para produtos
+    IF OLD.min_order_quantity IS DISTINCT FROM NEW.min_order_quantity THEN
+        UPDATE products
+        SET min_quantity = NEW.min_order_quantity
+        WHERE category_id = NEW.id
+          AND min_order_quantity IS NULL;
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_trigger_schema_drift_fetch()
+ RETURNS bigint
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_lovable_url text;
+  v_lovable_key text;
+  v_request_id  bigint;
+BEGIN
+  -- Le configuracao
+  SELECT value #>> '{}' INTO v_lovable_url 
+  FROM public.system_settings WHERE key = 'lovable_url';
+  SELECT value #>> '{}' INTO v_lovable_key 
+  FROM public.system_settings WHERE key = 'lovable_anon_key';
+
+  IF v_lovable_url IS NULL OR v_lovable_url = 'null' THEN
+    RAISE EXCEPTION 'lovable_url nao configurado em system_settings';
+  END IF;
+  IF v_lovable_key IS NULL OR v_lovable_key = 'null' THEN
+    RAISE EXCEPTION 'lovable_anon_key nao configurado em system_settings. Preencher via UPDATE system_settings.';
+  END IF;
+
+  -- Dispara HTTP POST assincrono para o Lovable RPC
+  SELECT net.http_post(
+    url     := v_lovable_url || '/rest/v1/rpc/get_public_schema_signatures',
+    headers := jsonb_build_object(
+      'apikey',        v_lovable_key,
+      'Authorization', 'Bearer ' || v_lovable_key,
+      'Content-Type',  'application/json'
+    ),
+    body    := '{}'::jsonb
+  ) INTO v_request_id;
+
+  RETURN v_request_id;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_trigger_set_has_gift_box()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    -- Se packing_classification é commercial, has_gift_box = true
+    IF NEW.packing_classification = 'commercial' THEN
+        NEW.has_gift_box := TRUE;
+    ELSE
+        NEW.has_gift_box := FALSE;
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_trigger_set_has_optional_packaging()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    -- Se packing_classification = 'protective', produto pode receber embalagem adicional
+    IF NEW.packing_classification = 'protective' THEN
+        NEW.has_optional_packaging := TRUE;
+    ELSE
+        -- Se 'commercial', 'none' ou NULL, não permite embalagem adicional
+        NEW.has_optional_packaging := FALSE;
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_trigger_set_min_quantity()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_category_min INTEGER;
+BEGIN
+    -- Se produto não tem min_order_quantity definido
+    -- E tem category_id, busca o mínimo da categoria
+    IF NEW.min_order_quantity IS NULL AND NEW.category_id IS NOT NULL THEN
+        SELECT min_order_quantity INTO v_category_min
+        FROM categories
+        WHERE id = NEW.category_id;
+        
+        -- Atualiza o min_quantity com o valor da categoria
+        IF v_category_min IS NOT NULL THEN
+            NEW.min_quantity := v_category_min;
+        END IF;
+    ELSIF NEW.min_order_quantity IS NOT NULL THEN
+        -- Se tem override específico, usa ele
+        NEW.min_quantity := NEW.min_order_quantity;
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_trigger_supplier_source_price()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_product_id UUID;
+    v_sale_price NUMERIC;
+BEGIN
+    -- Só processa se o custo foi definido/alterado
+    IF NEW.cost_price IS NOT NULL AND NEW.cost_price > 0 THEN
+        -- Buscar product_id através da variante
+        SELECT pv.product_id INTO v_product_id
+        FROM product_variants pv
+        WHERE pv.id = NEW.variant_id;
+        
+        IF v_product_id IS NOT NULL THEN
+            -- Calcular preço do produto
+            v_sale_price := fn_calculate_sale_price(v_product_id);
+            
+            IF v_sale_price IS NOT NULL THEN
+                RAISE NOTICE 'Preço atualizado para produto %: R$ %', v_product_id, v_sale_price;
+            END IF;
+        END IF;
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_trigger_sync_colors_to_product()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_product_id UUID;
+BEGIN
+    -- Determinar qual product_id foi afetado
+    IF TG_OP = 'DELETE' THEN
+        v_product_id := OLD.product_id;
+    ELSE
+        v_product_id := NEW.product_id;
+    END IF;
+    
+    -- Sincronizar cores do produto
+    IF v_product_id IS NOT NULL THEN
+        PERFORM fn_sync_product_colors_from_variants(v_product_id);
+    END IF;
+    
+    -- Para UPDATE que muda de produto (raro mas possível)
+    IF TG_OP = 'UPDATE' AND OLD.product_id != NEW.product_id THEN
+        PERFORM fn_sync_product_colors_from_variants(OLD.product_id);
+    END IF;
+    
+    RETURN COALESCE(NEW, OLD);
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_trigger_sync_descendants_count()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_ancestor_id uuid;
+  v_count integer;
+BEGIN
+  -- INSERT: incrementar todos os ancestrais
+  IF TG_OP = 'INSERT' AND NEW.parent_id IS NOT NULL THEN
+    v_ancestor_id := NEW.parent_id;
+    WHILE v_ancestor_id IS NOT NULL LOOP
+      UPDATE categories SET descendants_count = descendants_count + 1
+      WHERE id = v_ancestor_id;
+      SELECT parent_id INTO v_ancestor_id FROM categories WHERE id = v_ancestor_id;
+    END LOOP;
+  END IF;
+
+  -- DELETE: decrementar todos os ancestrais (1 + sub-árvore)
+  IF TG_OP = 'DELETE' AND OLD.parent_id IS NOT NULL THEN
+    v_ancestor_id := OLD.parent_id;
+    WHILE v_ancestor_id IS NOT NULL LOOP
+      UPDATE categories SET descendants_count = GREATEST(0, descendants_count - 1 - OLD.descendants_count)
+      WHERE id = v_ancestor_id;
+      SELECT parent_id INTO v_ancestor_id FROM categories WHERE id = v_ancestor_id;
+    END LOOP;
+    RETURN OLD;
+  END IF;
+
+  -- UPDATE parent_id: recalcular ambos os ramos via full recount
+  IF TG_OP = 'UPDATE' AND OLD.parent_id IS DISTINCT FROM NEW.parent_id THEN
+    -- Recalcular ancestrais ANTIGOS
+    IF OLD.parent_id IS NOT NULL THEN
+      v_ancestor_id := OLD.parent_id;
+      WHILE v_ancestor_id IS NOT NULL LOOP
+        WITH RECURSIVE dtree AS (
+          SELECT id FROM categories WHERE parent_id = v_ancestor_id
+          UNION ALL
+          SELECT c.id FROM categories c JOIN dtree d ON c.parent_id = d.id
+        )
+        SELECT COUNT(*) INTO v_count FROM dtree;
+        UPDATE categories SET descendants_count = v_count WHERE id = v_ancestor_id;
+        SELECT parent_id INTO v_ancestor_id FROM categories WHERE id = v_ancestor_id;
+      END LOOP;
+    END IF;
+    -- Recalcular ancestrais NOVOS
+    IF NEW.parent_id IS NOT NULL THEN
+      v_ancestor_id := NEW.parent_id;
+      WHILE v_ancestor_id IS NOT NULL LOOP
+        WITH RECURSIVE dtree AS (
+          SELECT id FROM categories WHERE parent_id = v_ancestor_id
+          UNION ALL
+          SELECT c.id FROM categories c JOIN dtree d ON c.parent_id = d.id
+        )
+        SELECT COUNT(*) INTO v_count FROM dtree;
+        UPDATE categories SET descendants_count = v_count WHERE id = v_ancestor_id;
+        SELECT parent_id INTO v_ancestor_id FROM categories WHERE id = v_ancestor_id;
+      END LOOP;
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_trigger_sync_pca_products_count()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_category_id uuid;
+  v_count integer;
+BEGIN
+  -- Determinar qual category_id foi afetado
+  IF TG_OP = 'DELETE' THEN
+    v_category_id := OLD.category_id;
+  ELSIF TG_OP = 'INSERT' THEN
+    v_category_id := NEW.category_id;
+  ELSIF TG_OP = 'UPDATE' THEN
+    -- Se category_id mudou, atualizar ambos
+    IF OLD.category_id IS DISTINCT FROM NEW.category_id THEN
+      -- Decrementar a antiga
+      SELECT COUNT(DISTINCT pca.product_id) INTO v_count
+      FROM product_category_assignments pca
+      JOIN products p ON p.id = pca.product_id
+      WHERE pca.category_id = OLD.category_id
+        AND (p.is_deleted = false OR p.is_deleted IS NULL)
+        AND p.is_active = true;
+      
+      UPDATE categories SET products_count = v_count
+      WHERE id = OLD.category_id;
+    END IF;
+    v_category_id := NEW.category_id;
+  END IF;
+
+  -- Recalcular contagem real para a categoria afetada
+  SELECT COUNT(DISTINCT pca.product_id) INTO v_count
+  FROM product_category_assignments pca
+  JOIN products p ON p.id = pca.product_id
+  WHERE pca.category_id = v_category_id
+    AND (p.is_deleted = false OR p.is_deleted IS NULL)
+    AND p.is_active = true;
+
+  UPDATE categories SET products_count = v_count
+  WHERE id = v_category_id;
+
+  IF TG_OP = 'DELETE' THEN
+    RETURN OLD;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_trigger_sync_product_status_fields()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  -- Sync is_active → active
+  IF NEW.is_active IS DISTINCT FROM OLD.is_active THEN
+    NEW.active := NEW.is_active;
+  ELSIF NEW.active IS DISTINCT FROM OLD.active THEN
+    -- Se alguém mudou active diretamente, propagar para is_active
+    NEW.is_active := NEW.active;
+  END IF;
+
+  -- Sync is_deleted → deleted_at
+  IF NEW.is_deleted IS DISTINCT FROM OLD.is_deleted THEN
+    IF NEW.is_deleted = true AND NEW.deleted_at IS NULL THEN
+      NEW.deleted_at := NOW();
+    ELSIF NEW.is_deleted = false THEN
+      NEW.deleted_at := NULL;
+    END IF;
+  ELSIF NEW.deleted_at IS DISTINCT FROM OLD.deleted_at THEN
+    -- Se alguém mudou deleted_at diretamente, propagar para is_deleted
+    NEW.is_deleted := (NEW.deleted_at IS NOT NULL);
+  END IF;
+
+  RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_trigger_track_price_updated_products()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'pg_catalog', 'public'
+AS $function$
+BEGIN
+    IF (
+        NEW.cost_price IS DISTINCT FROM OLD.cost_price OR
+        NEW.sale_price IS DISTINCT FROM OLD.sale_price OR
+        NEW.suggested_price IS DISTINCT FROM OLD.suggested_price
+    ) THEN
+        NEW.price_updated_at := NOW();
+    END IF;
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_trigger_track_price_updated_vss()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'pg_catalog', 'public'
+AS $function$
+BEGIN
+    IF (
+        NEW.cost_price IS DISTINCT FROM OLD.cost_price OR
+        NEW.list_price IS DISTINCT FROM OLD.list_price OR
+        NEW.cost_price_1 IS DISTINCT FROM OLD.cost_price_1 OR
+        NEW.cost_price_2 IS DISTINCT FROM OLD.cost_price_2 OR
+        NEW.cost_price_3 IS DISTINCT FROM OLD.cost_price_3 OR
+        NEW.cost_price_4 IS DISTINCT FROM OLD.cost_price_4 OR
+        NEW.cost_price_5 IS DISTINCT FROM OLD.cost_price_5
+    ) THEN
+        NEW.price_updated_at := NOW();
+    END IF;
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_trigger_variant_automation()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_product_id UUID;
+    v_is_feminine BOOLEAN;
+BEGIN
+    v_product_id := NEW.product_id;
+    
+    -- 1. Verificar e vincular cor feminina
+    IF NEW.color_name IS NOT NULL THEN
+        v_is_feminine := fn_auto_link_feminino(v_product_id);
+    END IF;
+    
+    -- 2. Tentar calcular preço (se já tiver custo)
+    PERFORM fn_calculate_sale_price(v_product_id);
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_trigger_variant_price()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_product_id UUID;
+    v_has_cost BOOLEAN;
+    v_sale_price NUMERIC;
+BEGIN
+    -- Pegar o product_id da variante
+    v_product_id := NEW.product_id;
+    
+    -- Verificar se existe custo em variant_supplier_sources
+    -- (pode não existir ainda no momento do INSERT da variante)
+    SELECT EXISTS(
+        SELECT 1 
+        FROM variant_supplier_sources 
+        WHERE variant_id = NEW.id 
+          AND cost_price IS NOT NULL 
+          AND cost_price > 0
+    ) INTO v_has_cost;
+    
+    -- Se já tem custo, calcular preço do produto pai
+    IF v_has_cost THEN
+        v_sale_price := fn_calculate_sale_price(v_product_id);
+        
+        IF v_sale_price IS NOT NULL THEN
+            RAISE NOTICE 'Preço calculado para produto %: R$ %', v_product_id, v_sale_price;
+        END IF;
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_update_all_seo_scores()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_updated INTEGER := 0;
+  r RECORD;
+  v_score_result RECORD;
+BEGIN
+  -- Atualizar score de cada produto
+  FOR r IN 
+    SELECT id FROM products WHERE is_deleted = false
+  LOOP
+    SELECT * INTO v_score_result FROM calculate_seo_score(r.id);
+    
+    UPDATE products
+    SET 
+      seo_score = (v_score_result.result->>'score')::INTEGER,
+      seo_issues = v_score_result.result->'issues',
+      seo_last_audit_at = now()
+    WHERE id = r.id;
+    
+    v_updated := v_updated + 1;
+  END LOOP;
+  
+  RETURN jsonb_build_object(
+    'success', true,
+    'products_scored', v_updated
+  );
+  
+EXCEPTION WHEN OTHERS THEN
+  RETURN jsonb_build_object(
+    'success', false,
+    'error', SQLERRM
+  );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_update_cat_acc_timestamp()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_update_cat_comm_timestamp()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_update_prod_comm_timestamp()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_update_product_dimensions()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_updated INTEGER := 0;
+    v_errors INTEGER := 0;
+    v_error_details JSONB := '[]'::JSONB;
+    v_product RECORD;
+    v_dim_result JSONB;
+    v_weight_result JSONB;
+    v_capacity_value NUMERIC;
+BEGIN
+    FOR v_product IN (
+        SELECT DISTINCT ON (p.id)
+            p.id AS product_id,
+            p.sku,
+            spr.raw_data->>'CombinedSizes' AS combined_sizes,
+            (spr.raw_data->>'Weight')::NUMERIC AS weight,
+            (spr.raw_data->>'BoxQuantity')::INTEGER AS box_quantity,
+            (spr.raw_data->>'BoxInnerQuantity')::INTEGER AS box_inner_quantity,
+            (spr.raw_data->>'BoxWeightKG')::NUMERIC AS box_weight_kg,
+            (spr.raw_data->>'BoxWidthMM')::NUMERIC AS box_width_m,
+            (spr.raw_data->>'BoxHeightMM')::NUMERIC AS box_height_m,
+            (spr.raw_data->>'BoxLengthMM')::NUMERIC AS box_length_m,
+            (spr.raw_data->>'BoxVolume')::NUMERIC AS box_volume_m3,
+            spr.raw_data->>'Capacity' AS capacity_text
+        FROM products p
+        JOIN supplier_products_raw spr ON spr.product_id = p.id
+        WHERE spr.raw_data IS NOT NULL
+          AND spr.raw_data->>'CombinedSizes' IS NOT NULL
+        ORDER BY p.id, spr.created_at DESC
+    )
+    LOOP
+        BEGIN
+            -- 1. PARSE DAS DIMENSÕES
+            v_dim_result := NULL;
+            IF v_product.combined_sizes IS NOT NULL 
+               AND v_product.combined_sizes != ''
+               AND v_product.combined_sizes NOT ILIKE '%Tamanhos:%'
+            THEN
+                v_dim_result := fn_parse_product_dimensions(v_product.combined_sizes);
+            END IF;
+            
+            -- 2. PARSE DO PESO
+            v_weight_result := NULL;
+            IF v_product.weight IS NOT NULL AND v_product.weight > 0 THEN
+                v_weight_result := fn_parse_product_weight(
+                    p_weight := v_product.weight,
+                    p_weight_unit := 'g',
+                    p_box_weight_kg := v_product.box_weight_kg,
+                    p_box_quantity := v_product.box_quantity
+                );
+            END IF;
+            
+            -- 3. EXTRAIR CAPACIDADE
+            v_capacity_value := NULL;
+            IF v_product.capacity_text IS NOT NULL AND v_product.capacity_text != '' THEN
+                v_capacity_value := (
+                    REGEXP_REPLACE(v_product.capacity_text, '[^0-9.]', '', 'g')
+                )::NUMERIC;
+                IF v_capacity_value < 1 THEN
+                    v_capacity_value := NULL;
+                END IF;
+            END IF;
+            
+            -- 4. UPDATE DO PRODUTO
+            UPDATE products
+            SET
+                combined_sizes = v_product.combined_sizes,
+                dimensions_display = v_product.combined_sizes,
+                width_cm = COALESCE((v_dim_result->>'width_cm')::NUMERIC, width_cm),
+                height_cm = COALESCE((v_dim_result->>'height_cm')::NUMERIC, height_cm),
+                length_cm = COALESCE((v_dim_result->>'length_cm')::NUMERIC, length_cm),
+                diameter_cm = COALESCE((v_dim_result->>'diameter_cm')::NUMERIC, diameter_cm),
+                shape_type = COALESCE(v_dim_result->>'shape_type', shape_type),
+                dimensions = CASE 
+                    WHEN v_dim_result IS NOT NULL AND v_dim_result->>'error' IS NULL
+                    THEN jsonb_build_object(
+                        'width_cm', (v_dim_result->>'width_cm')::NUMERIC,
+                        'height_cm', (v_dim_result->>'height_cm')::NUMERIC,
+                        'length_cm', (v_dim_result->>'length_cm')::NUMERIC,
+                        'diameter_cm', (v_dim_result->>'diameter_cm')::NUMERIC,
+                        'shape_type', v_dim_result->>'shape_type',
+                        'unit_detected', v_dim_result->>'unit_detected'
+                    )
+                    ELSE dimensions
+                END,
+                -- ✅ CAMPO ÚNICO DE PESO (weight_g)
+                weight_g = COALESCE((v_weight_result->>'weight_g')::NUMERIC, weight_g),
+                -- ❌ REMOVIDO: product_weight_g (duplicata eliminada)
+                box_quantity = COALESCE(v_product.box_quantity, box_quantity),
+                box_inner_quantity = COALESCE(
+                    NULLIF(v_product.box_inner_quantity, 0), 
+                    box_inner_quantity
+                ),
+                box_weight_kg = COALESCE(v_product.box_weight_kg, box_weight_kg),
+                box_width_mm = COALESCE(
+                    CASE WHEN v_product.box_width_m > 0 
+                         THEN v_product.box_width_m * 1000 
+                         ELSE NULL END,
+                    box_width_mm
+                ),
+                box_height_mm = COALESCE(
+                    CASE WHEN v_product.box_height_m > 0 
+                         THEN v_product.box_height_m * 1000 
+                         ELSE NULL END,
+                    box_height_mm
+                ),
+                box_length_mm = COALESCE(
+                    CASE WHEN v_product.box_length_m > 0 
+                         THEN v_product.box_length_m * 1000 
+                         ELSE NULL END,
+                    box_length_mm
+                ),
+                box_volume_cm3 = COALESCE(
+                    CASE WHEN v_product.box_volume_m3 > 0 
+                         THEN v_product.box_volume_m3 * 1000000 
+                         ELSE NULL END,
+                    box_volume_cm3
+                ),
+                capacity_ml = COALESCE(v_capacity_value, capacity_ml),
+                updated_at = NOW()
+            WHERE id = v_product.product_id;
+            
+            v_updated := v_updated + 1;
+            
+        EXCEPTION WHEN OTHERS THEN
+            v_errors := v_errors + 1;
+            v_error_details := v_error_details || jsonb_build_object(
+                'product_id', v_product.product_id,
+                'sku', v_product.sku,
+                'error', SQLERRM
+            );
+        END;
+    END LOOP;
+    
+    RETURN jsonb_build_object(
+        'updated', v_updated,
+        'errors', v_errors,
+        'error_details', v_error_details
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_update_supplier_last_sync()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  IF NEW.status = 'completed' AND NEW.supplier_id IS NOT NULL THEN
+    UPDATE suppliers
+    SET last_full_sync_at = COALESCE(NEW.finished_at, now()),
+        last_sync_status = 'completed',
+        last_sync_error = NULL
+    WHERE id = NEW.supplier_id;
+  ELSIF NEW.status = 'failed' AND NEW.supplier_id IS NOT NULL THEN
+    UPDATE suppliers
+    SET last_sync_status = 'failed',
+        last_sync_error = NEW.error_log
+    WHERE id = NEW.supplier_id;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_update_target_aud_timestamp()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_update_timestamp()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_validate_image_on_change()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_req RECORD;
+    v_status VARCHAR(30);
+    v_is_valid BOOLEAN := true;
+    v_issues TEXT[] := ARRAY[]::TEXT[];
+    v_recommendations TEXT[] := ARRAY[]::TEXT[];
+    v_file_size_mb DECIMAL;
+BEGIN
+    -- Buscar requisitos do fornecedor
+    SELECT * INTO v_req
+    FROM supplier_image_requirements
+    WHERE supplier_code = COALESCE(NEW.supplier_code, 'DEFAULT') 
+      AND is_active = true;
+    
+    IF NOT FOUND THEN
+        SELECT * INTO v_req
+        FROM supplier_image_requirements
+        WHERE supplier_code = 'DEFAULT' AND is_active = true;
+    END IF;
+    
+    -- Se não encontrou requisitos, usar valores padrão
+    IF NOT FOUND THEN
+        v_req.min_width_px := 600;
+        v_req.min_height_px := 600;
+        v_req.ideal_width_px := 1200;
+        v_req.ideal_height_px := 1200;
+        v_req.max_file_size_mb := 10.0;
+        v_req.allowed_formats := ARRAY['jpg', 'jpeg', 'png', 'webp'];
+    END IF;
+    
+    -- Validar apenas se temos dimensões
+    IF NEW.width_px IS NOT NULL AND NEW.height_px IS NOT NULL THEN
+        
+        -- Verificar mínimos
+        IF NEW.width_px < v_req.min_width_px THEN
+            v_issues := array_append(v_issues, 
+                format('Largura %spx abaixo do mínimo (%spx)', NEW.width_px, v_req.min_width_px));
+            v_is_valid := false;
+        END IF;
+        
+        IF NEW.height_px < v_req.min_height_px THEN
+            v_issues := array_append(v_issues, 
+                format('Altura %spx abaixo do mínimo (%spx)', NEW.height_px, v_req.min_height_px));
+            v_is_valid := false;
+        END IF;
+        
+        -- Verificar ideais (só se passou nos mínimos)
+        IF v_is_valid THEN
+            IF NEW.width_px < v_req.ideal_width_px THEN
+                v_recommendations := array_append(v_recommendations, 
+                    format('Largura %spx abaixo do ideal (%spx)', NEW.width_px, v_req.ideal_width_px));
+            END IF;
+            
+            IF NEW.height_px < v_req.ideal_height_px THEN
+                v_recommendations := array_append(v_recommendations, 
+                    format('Altura %spx abaixo do ideal (%spx)', NEW.height_px, v_req.ideal_height_px));
+            END IF;
+        END IF;
+        
+        -- Verificar tamanho do arquivo
+        IF NEW.file_size_bytes IS NOT NULL THEN
+            v_file_size_mb := NEW.file_size_bytes / 1024.0 / 1024.0;
+            IF v_file_size_mb > v_req.max_file_size_mb THEN
+                v_recommendations := array_append(v_recommendations, 
+                    format('Arquivo %.2fMB excede recomendado (%.2fMB)', v_file_size_mb, v_req.max_file_size_mb));
+            END IF;
+        END IF;
+        
+        -- Verificar formato
+        IF NEW.format IS NOT NULL AND NOT (LOWER(NEW.format) = ANY(v_req.allowed_formats)) THEN
+            v_issues := array_append(v_issues, 
+                format('Formato "%s" não recomendado', NEW.format));
+        END IF;
+        
+        -- Determinar status
+        IF NOT v_is_valid THEN
+            v_status := 'REPROVADO';
+        ELSIF array_length(v_recommendations, 1) > 0 THEN
+            v_status := 'APROVADO_COM_RESSALVAS';
+        ELSE
+            v_status := 'APROVADO';
+        END IF;
+        
+    ELSE
+        -- Sem dimensões
+        v_status := 'SEM_DIMENSOES';
+        v_recommendations := array_append(v_recommendations, 'Dimensões não informadas');
+    END IF;
+    
+    -- Registrar log de validação
+    INSERT INTO image_validation_log (
+        image_id,
+        product_id,
+        filename,
+        supplier_code,
+        width_px,
+        height_px,
+        file_size_bytes,
+        validation_status,
+        is_valid,
+        issues,
+        recommendations,
+        action_taken,
+        was_blocked
+    ) VALUES (
+        NEW.id,
+        NEW.product_id,
+        NEW.filename,
+        NEW.supplier_code,
+        NEW.width_px,
+        NEW.height_px,
+        NEW.file_size_bytes,
+        v_status,
+        v_is_valid,
+        v_issues,
+        v_recommendations,
+        TG_OP,
+        false  -- Por enquanto não bloqueamos, apenas logamos
+    );
+    
+    -- OPCIONAL: Bloquear imagens reprovadas (descomentar se quiser)
+    -- IF NOT v_is_valid THEN
+    --     RAISE EXCEPTION 'Imagem reprovada: %', array_to_string(v_issues, '; ');
+    -- END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_validate_member_supplier()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_real_supplier uuid;
+BEGIN
+  SELECT supplier_id INTO v_real_supplier
+  FROM products WHERE id = NEW.product_id;
+  IF v_real_supplier IS NULL THEN
+    RAISE EXCEPTION 'Produto % não encontrado na tabela products', NEW.product_id;
+  END IF;
+  NEW.supplier_id := v_real_supplier;
+  RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_validate_packaging_type_on_compat()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE 
+    v_type VARCHAR(20);
+    v_name VARCHAR(200);
+BEGIN
+    -- Buscar tipo do produto referenciado como embalagem
+    SELECT product_type, name INTO v_type, v_name
+    FROM products 
+    WHERE id = NEW.packaging_id;
+    
+    IF v_type IS NULL THEN
+        RAISE EXCEPTION 'packaging_id (%) não encontrado em products', NEW.packaging_id;
+    END IF;
+    
+    IF v_type != 'packaging' THEN
+        RAISE EXCEPTION 'O produto "%" tem product_type=%, deve ser "packaging"', v_name, v_type;
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_validate_print_area_dimensions(p_area_id uuid, p_largura numeric DEFAULT NULL::numeric, p_altura numeric DEFAULT NULL::numeric)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_area RECORD;
+    v_errors JSONB := '[]'::JSONB;
+    v_tabela_codigo TEXT;
+    v_tabela_nome TEXT;
+    v_limit_width  NUMERIC;
+    v_limit_height NUMERIC;
+BEGIN
+    -- 1. BUSCAR ÁREA E SEUS LIMITES
+    SELECT 
+        pat.id,
+        pat.location_code,
+        pat.location_name,
+        pat.max_width,
+        pat.max_height,
+        pat.gravacao_largura_max,
+        pat.gravacao_altura_max,
+        tpgo.codigo_tabela,
+        tpgo.nome,
+        tpgo.usa_faixa_dimensional
+    INTO v_area
+    FROM print_area_techniques pat
+    LEFT JOIN tabela_preco_gravacao_oficial tpgo 
+        ON tpgo.id = pat.tabela_preco_id
+    WHERE pat.id = p_area_id;
+
+    IF v_area IS NULL THEN
+        RETURN jsonb_build_object(
+            'valid', false,
+            'area_id', p_area_id,
+            'error', 'Área de gravação não encontrada',
+            'error_code', 'AREA_NOT_FOUND'
+        );
+    END IF;
+
+    v_tabela_codigo := COALESCE(v_area.codigo_tabela, 'N/A');
+    v_tabela_nome := COALESCE(v_area.nome, 'N/A');
+
+    -- 2. LIMITES EFETIVOS
+    v_limit_width  := COALESCE(v_area.gravacao_largura_max, v_area.max_width);
+    v_limit_height := COALESCE(v_area.gravacao_altura_max, v_area.max_height);
+
+    -- 3. VALIDAR LARGURA
+    IF p_largura IS NOT NULL THEN
+        IF p_largura <= 0 THEN
+            v_errors := v_errors || jsonb_build_object(
+                'field', 'largura',
+                'code', 'INVALID_VALUE',
+                'message', 'Largura deve ser maior que zero',
+                'value', p_largura
+            );
+        ELSIF p_largura > v_limit_width THEN
+            v_errors := v_errors || jsonb_build_object(
+                'field', 'largura',
+                'code', 'EXCEEDS_MAX_WIDTH',
+                'message', 'Largura ' || round(p_largura, 1) || 'cm excede o máximo de ' || round(v_limit_width, 1) || 'cm para ' || v_area.location_name || ' (' || v_tabela_nome || ')',
+                'value', p_largura,
+                'max_allowed', v_limit_width
+            );
+        END IF;
+    END IF;
+
+    -- 4. VALIDAR ALTURA
+    IF p_altura IS NOT NULL THEN
+        IF p_altura <= 0 THEN
+            v_errors := v_errors || jsonb_build_object(
+                'field', 'altura',
+                'code', 'INVALID_VALUE',
+                'message', 'Altura deve ser maior que zero',
+                'value', p_altura
+            );
+        ELSIF p_altura > v_limit_height THEN
+            v_errors := v_errors || jsonb_build_object(
+                'field', 'altura',
+                'code', 'EXCEEDS_MAX_HEIGHT',
+                'message', 'Altura ' || round(p_altura, 1) || 'cm excede o máximo de ' || round(v_limit_height, 1) || 'cm para ' || v_area.location_name || ' (' || v_tabela_nome || ')',
+                'value', p_altura,
+                'max_allowed', v_limit_height
+            );
+        END IF;
+    END IF;
+
+    -- 5. RETORNAR RESULTADO
+    RETURN jsonb_build_object(
+        'valid', (jsonb_array_length(v_errors) = 0),
+        'area_id', p_area_id,
+        'location', v_area.location_code,
+        'location_name', v_area.location_name,
+        'tabela', v_tabela_codigo,
+        'tabela_nome', v_tabela_nome,
+        'usa_faixa_dimensional', COALESCE(v_area.usa_faixa_dimensional, false),
+        'limits', jsonb_build_object(
+            'max_width', v_limit_width,
+            'max_height', v_limit_height
+        ),
+        'requested', jsonb_build_object(
+            'largura', p_largura,
+            'altura', p_altura
+        ),
+        'errors', v_errors
+    );
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.fn_validate_role_change()
  RETURNS trigger
  LANGUAGE plpgsql
  SET search_path TO 'public'
-AS $function$ BEGIN RETURN NEW; END; $function$
-;
+AS $function$ BEGIN RETURN NEW; END; $function$;
+CREATE OR REPLACE FUNCTION public.fn_validate_video_on_change()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_validation RECORD;
+BEGIN
+    -- Validar apenas se temos dados de dimensão
+    IF NEW.width_px IS NOT NULL AND NEW.height_px IS NOT NULL THEN
+        SELECT * INTO v_validation
+        FROM validate_video_requirements(
+            NEW.width_px,
+            NEW.height_px,
+            NEW.duration_seconds,
+            NEW.file_size_bytes,
+            COALESCE(NEW.source_supplier, 'DEFAULT')
+        );
+        
+        -- Registrar log
+        INSERT INTO video_validation_log (
+            video_id, product_id, cloudflare_video_id, supplier_code,
+            width_px, height_px, duration_seconds, file_size_bytes,
+            validation_status, is_valid, issues, recommendations, action_type
+        ) VALUES (
+            NEW.id, NEW.product_id, NEW.cloudflare_video_id, NEW.source_supplier,
+            NEW.width_px, NEW.height_px, NEW.duration_seconds, NEW.file_size_bytes,
+            v_validation.validation_status, v_validation.is_valid,
+            v_validation.issues, v_validation.recommendations, TG_OP
+        );
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_video_link_to_products(p_queue_id uuid)
+ RETURNS integer
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_queue record;
+  v_product_id uuid;
+  v_ref text;
+  v_count integer := 0;
+BEGIN
+  SELECT * INTO v_queue FROM video_import_queue WHERE id = p_queue_id;
+  IF NOT FOUND THEN RETURN 0; END IF;
 
--- ----------------------------------------------------------------------------
+  FOREACH v_ref IN ARRAY v_queue.product_references
+  LOOP
+    SELECT id INTO v_product_id FROM products WHERE supplier_reference = v_ref LIMIT 1;
+    IF v_product_id IS NOT NULL THEN
+      INSERT INTO product_videos (
+        product_id, cloudflare_video_id, source_youtube_id, source_supplier,
+        url_stream, url_hls, url_thumbnail, url_original,
+        duration_seconds, file_size_bytes, cloudflare_status,
+        video_type, is_primary, is_active, organization_id
+      ) VALUES (
+        v_product_id, v_queue.cloudflare_video_id, v_queue.youtube_id, v_queue.source_supplier,
+        v_queue.cloudflare_embed, v_queue.cloudflare_hls, v_queue.cloudflare_thumbnail,
+        v_queue.youtube_url, v_queue.cloudflare_duration_seconds, v_queue.file_size_bytes,
+        'ready', 'product_video', true, true, '5db5aee1-064b-4ef4-9193-345dcd8274ea'
+      )
+      ON CONFLICT (product_id, cloudflare_video_id) DO UPDATE SET
+        url_stream = EXCLUDED.url_stream,
+        url_hls = EXCLUDED.url_hls,
+        url_thumbnail = EXCLUDED.url_thumbnail,
+        cloudflare_status = 'ready',
+        updated_at = now();
+      v_count := v_count + 1;
+    END IF;
+  END LOOP;
+
+  UPDATE video_import_queue SET status = 'linked' WHERE id = p_queue_id AND status = 'done';
+  RETURN v_count;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_video_queue_next(p_supplier text DEFAULT 'SPOT'::text)
+ RETURNS TABLE(queue_id uuid, youtube_id text, youtube_url text, product_references text[], retry_count integer)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_record RECORD;
+BEGIN
+    SELECT viq.id, viq.youtube_id, viq.youtube_url, 
+           viq.product_references, viq.retry_count
+    INTO v_record
+    FROM video_import_queue viq
+    WHERE viq.status IN ('pending', 'error_download', 'error_upload')
+      AND viq.source_supplier = p_supplier
+      AND viq.retry_count < viq.max_retries
+    ORDER BY 
+      CASE WHEN viq.status = 'pending' THEN 0 ELSE 1 END,
+      viq.created_at ASC
+    LIMIT 1
+    FOR UPDATE SKIP LOCKED;
+    
+    IF v_record IS NULL THEN
+        RETURN;
+    END IF;
+    
+    UPDATE video_import_queue
+    SET status = 'downloading',
+        started_at = COALESCE(started_at, NOW())
+    WHERE id = v_record.id;
+    
+    queue_id := v_record.id;
+    youtube_id := v_record.youtube_id;
+    youtube_url := v_record.youtube_url;
+    product_references := v_record.product_references;
+    retry_count := v_record.retry_count;
+    RETURN NEXT;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_video_queue_stats(p_supplier text DEFAULT 'SPOT'::text)
+ RETURNS TABLE(total bigint, pending bigint, downloading bigint, uploading bigint, done bigint, linked bigint, error_count bigint, products_linked bigint)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        count(*),
+        count(*) FILTER (WHERE viq.status = 'pending'),
+        count(*) FILTER (WHERE viq.status = 'downloading'),
+        count(*) FILTER (WHERE viq.status = 'uploading'),
+        count(*) FILTER (WHERE viq.status = 'done'),
+        count(*) FILTER (WHERE viq.status = 'linked'),
+        count(*) FILTER (WHERE viq.status LIKE 'error%'),
+        (SELECT count(*) FROM product_videos pv WHERE pv.source_supplier = p_supplier)
+    FROM video_import_queue viq
+    WHERE viq.source_supplier = p_supplier;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_video_queue_update(p_queue_id uuid, p_status text, p_cloudflare_video_id text DEFAULT NULL::text, p_cloudflare_thumbnail text DEFAULT NULL::text, p_cloudflare_hls text DEFAULT NULL::text, p_cloudflare_embed text DEFAULT NULL::text, p_cloudflare_duration integer DEFAULT NULL::integer, p_file_size bigint DEFAULT NULL::bigint, p_error text DEFAULT NULL::text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    UPDATE video_import_queue
+    SET status = p_status,
+        cloudflare_video_id = COALESCE(p_cloudflare_video_id, cloudflare_video_id),
+        cloudflare_thumbnail = COALESCE(p_cloudflare_thumbnail, cloudflare_thumbnail),
+        cloudflare_hls = COALESCE(p_cloudflare_hls, cloudflare_hls),
+        cloudflare_embed = COALESCE(p_cloudflare_embed, cloudflare_embed),
+        cloudflare_duration_seconds = COALESCE(p_cloudflare_duration, cloudflare_duration_seconds),
+        file_size_bytes = COALESCE(p_file_size, file_size_bytes),
+        last_error = p_error,
+        retry_count = CASE WHEN p_status LIKE 'error%' THEN retry_count + 1 ELSE retry_count END,
+        completed_at = CASE WHEN p_status IN ('done','linked') THEN NOW() ELSE completed_at END
+    WHERE id = p_queue_id;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.force_logout_all_users()
+ RETURNS integer
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE v_count int;
+BEGIN
+  IF NOT public.is_admin(auth.uid()) THEN RAISE EXCEPTION 'Permission denied'; END IF;
+  INSERT INTO public.user_token_revocations (user_id)
+  SELECT id FROM auth.users
+  ON CONFLICT (user_id) DO UPDATE SET revoked_at = now();
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  RETURN v_count;
+END $function$;
 CREATE OR REPLACE FUNCTION public.force_user_logout(_user_id uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -1415,10 +19074,357 @@ BEGIN
   ON CONFLICT (user_id) DO UPDATE SET revoked_at = now();
   INSERT INTO public.admin_audit_log (user_id, action, resource_type, resource_id, source)
   VALUES (auth.uid(), 'user.force_logout', 'user', _user_id::text, 'rpc');
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
+CREATE OR REPLACE FUNCTION public.generate_image_alt_text(p_product_name text, p_image_type text DEFAULT 'main'::text, p_color_name text DEFAULT NULL::text, p_display_order integer DEFAULT 1)
+ RETURNS text
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_alt_text TEXT;
+  v_type_desc TEXT;
+BEGIN
+  IF p_product_name IS NULL THEN
+    RETURN NULL;
+  END IF;
+  
+  -- Mapear tipo para descrição
+  v_type_desc := CASE LOWER(COALESCE(p_image_type, 'main'))
+    WHEN 'main' THEN 'Imagem Principal'
+    WHEN 'gallery' THEN 'Foto'
+    WHEN 'logo' THEN 'Área de Gravação'
+    WHEN 'box' THEN 'Embalagem'
+    WHEN 'pouch' THEN 'Estojo'
+    WHEN 'lifestyle' THEN 'Foto de Uso'
+    WHEN 'mockup' THEN 'Mockup Personalizado'
+    WHEN 'detail' THEN 'Detalhe'
+    WHEN '360' THEN 'Visão 360°'
+    WHEN 'video_thumb' THEN 'Capa do Vídeo'
+    ELSE 'Imagem'
+  END;
+  
+  -- Montar alt text
+  v_alt_text := p_product_name || ' - ' || v_type_desc;
+  
+  -- Adicionar cor se informada
+  IF p_color_name IS NOT NULL AND LENGTH(TRIM(p_color_name)) > 0 THEN
+    v_alt_text := v_alt_text || ' cor ' || p_color_name;
+  END IF;
+  
+  -- Adicionar número se não for principal e ordem > 1
+  IF LOWER(COALESCE(p_image_type, 'main')) NOT IN ('main', 'logo', 'box') AND p_display_order > 1 THEN
+    v_alt_text := v_alt_text || ' ' || p_display_order;
+  END IF;
+  
+  -- Sufixo SEO
+  v_alt_text := v_alt_text || ' - Brinde Promocional';
+  
+  RETURN v_alt_text;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.generate_mockup_approval_token()
+ RETURNS text
+ LANGUAGE plpgsql
+ SET search_path TO 'pg_catalog', 'public'
+AS $function$
+DECLARE
+  v_token text;
+  v_exists boolean;
+BEGIN
+  LOOP
+    v_token := encode(gen_random_bytes(24), 'base64');
+    v_token := replace(replace(replace(v_token, '/', ''), '+', ''), '=', '');
+    v_token := substring(v_token, 1, 32);
+    SELECT EXISTS(SELECT 1 FROM public.mockup_approval_links WHERE public_token = v_token) INTO v_exists;
+    EXIT WHEN NOT v_exists;
+  END LOOP;
+  RETURN v_token;
+END $function$;
+CREATE OR REPLACE FUNCTION public.generate_order_number_v3()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE year_suffix TEXT := to_char(now(), 'YY'); next_val INTEGER;
+BEGIN
+    IF NEW.order_number IS NULL THEN
+        SELECT count(*) + 1 INTO next_val FROM public.orders 
+        WHERE order_number LIKE 'PED-' || year_suffix || '-%';
+        NEW.order_number := 'PED-' || year_suffix || '-' || lpad(next_val::text, 4, '0');
+    END IF;
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.generate_order_number_v5()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE year_suffix TEXT := to_char(now(), 'YY'); next_val INTEGER;
+BEGIN
+    IF NEW.order_number IS NULL OR NEW.order_number = '' THEN
+        SELECT count(*) + 1 INTO next_val FROM public.orders 
+        WHERE order_number LIKE 'PED-' || year_suffix || '-%';
+        NEW.order_number := 'PED-' || year_suffix || '-' || lpad(next_val::text, 4, '0');
+    END IF;
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.generate_product_jsonld(p_product_id uuid, p_base_url text DEFAULT 'https://promobrindes.com.br'::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_product RECORD;
+  v_category_name TEXT;
+  v_images JSONB;
+  v_faqs JSONB;
+  v_schema JSONB;
+BEGIN
+  -- Buscar produto
+  SELECT * INTO v_product FROM products WHERE id = p_product_id;
+  
+  IF NOT FOUND THEN
+    RETURN NULL;
+  END IF;
+  
+  -- Buscar categoria
+  SELECT name INTO v_category_name 
+  FROM categories 
+  WHERE id = COALESCE(v_product.main_category_id, v_product.category_id);
+  
+  -- Buscar imagens
+  SELECT COALESCE(jsonb_agg(url_cdn ORDER BY display_order), '[]'::jsonb) INTO v_images
+  FROM product_images 
+  WHERE product_id = p_product_id AND is_active = true AND url_cdn IS NOT NULL;
+  
+  -- Buscar FAQs
+  SELECT COALESCE(
+    jsonb_agg(
+      jsonb_build_object(
+        '@type', 'Question',
+        'name', question,
+        'acceptedAnswer', jsonb_build_object(
+          '@type', 'Answer',
+          'text', answer
+        )
+      ) ORDER BY display_order
+    ),
+    '[]'::jsonb
+  ) INTO v_faqs
+  FROM product_faqs
+  WHERE product_id = p_product_id AND is_active = true;
+  
+  -- Montar Schema
+  v_schema := jsonb_build_object(
+    '@context', 'https://schema.org',
+    '@type', 'Product',
+    'name', v_product.name,
+    'description', COALESCE(v_product.description, v_product.short_description, v_product.name),
+    'image', v_images,
+    'brand', jsonb_build_object(
+      '@type', 'Brand',
+      'name', COALESCE(v_product.brand, 'Promo Brindes')
+    ),
+    'category', v_category_name,
+    'url', p_base_url || '/produto/' || COALESCE(v_product.slug, v_product.id::TEXT),
+    'offers', jsonb_build_object(
+      '@type', 'Offer',
+      'priceCurrency', 'BRL',
+      'price', COALESCE(v_product.sale_price, v_product.base_price, 0),
+      'availability', CASE 
+        WHEN COALESCE(v_product.stock_quantity, 0) > 0 THEN 'https://schema.org/InStock'
+        ELSE 'https://schema.org/OutOfStock'
+      END,
+      'seller', jsonb_build_object(
+        '@type', 'Organization',
+        'name', 'Promo Brindes'
+      )
+    )
+  );
+  
+  -- Adicionar SKU se existir
+  IF v_product.sku IS NOT NULL THEN
+    v_schema := v_schema || jsonb_build_object('sku', v_product.sku);
+  END IF;
+  
+  -- Adicionar GTIN se existir
+  IF v_product.gtin IS NOT NULL THEN
+    v_schema := v_schema || jsonb_build_object('gtin', v_product.gtin);
+  ELSIF v_product.ean IS NOT NULL THEN
+    v_schema := v_schema || jsonb_build_object('gtin13', v_product.ean);
+  END IF;
+  
+  -- Adicionar FAQs se existirem
+  IF jsonb_array_length(v_faqs) > 0 THEN
+    v_schema := v_schema || jsonb_build_object('mainEntity', v_faqs);
+  END IF;
+  
+  RETURN v_schema;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.generate_product_meta_description(p_name text, p_short_description text DEFAULT NULL::text, p_description text DEFAULT NULL::text, p_allows_personalization boolean DEFAULT false)
+ RETURNS text
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_description TEXT;
+  v_base TEXT;
+  v_personalization_text TEXT := '';
+  v_cta TEXT := ' Solicite orçamento!';
+BEGIN
+  IF p_name IS NULL THEN
+    RETURN NULL;
+  END IF;
+  
+  -- Determinar texto base
+  IF p_short_description IS NOT NULL AND LENGTH(p_short_description) >= 20 THEN
+    v_base := strip_html(p_short_description);
+  ELSIF p_description IS NOT NULL AND LENGTH(p_description) >= 20 THEN
+    v_base := truncate_text(strip_html(p_description), 100, '');
+  ELSE
+    v_base := p_name || ' para brindes corporativos e eventos promocionais';
+  END IF;
+  
+  -- Limpar espaços extras
+  v_base := TRIM(REGEXP_REPLACE(v_base, '\s+', ' ', 'g'));
+  
+  -- Adicionar info de personalização
+  IF p_allows_personalization THEN
+    v_personalization_text := ' ✓ Personalização disponível.';
+  END IF;
+  
+  -- Montar descrição
+  v_description := v_base;
+  
+  -- Adicionar extras se couber (máximo 155 chars para dar margem)
+  IF LENGTH(v_description || v_personalization_text) <= 135 THEN
+    v_description := v_description || v_personalization_text;
+  END IF;
+  
+  IF LENGTH(v_description || v_cta) <= 155 THEN
+    v_description := v_description || v_cta;
+  END IF;
+  
+  -- Garantir limite
+  v_description := LEFT(v_description, 160);
+  
+  RETURN v_description;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.generate_product_meta_title(p_name text, p_category_name text DEFAULT NULL::text)
+ RETURNS text
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_title TEXT;
+  v_suffix TEXT := ' | Promo Brindes';
+  v_max_name_length INTEGER;
+BEGIN
+  IF p_name IS NULL THEN
+    RETURN NULL;
+  END IF;
+  
+  -- Calcular espaço disponível (ideal 55 chars total)
+  v_max_name_length := 55 - LENGTH(v_suffix);
+  
+  -- Se tiver categoria e couber, incluir
+  IF p_category_name IS NOT NULL AND LENGTH(p_category_name) <= 15 THEN
+    v_max_name_length := v_max_name_length - LENGTH(p_category_name) - 3; -- " - "
+    
+    IF LENGTH(p_name) > v_max_name_length THEN
+      v_title := truncate_text(p_name, v_max_name_length, '');
+    ELSE
+      v_title := p_name;
+    END IF;
+    
+    v_title := v_title || ' - ' || p_category_name || v_suffix;
+  ELSE
+    IF LENGTH(p_name) > v_max_name_length THEN
+      v_title := truncate_text(p_name, v_max_name_length, '');
+    ELSE
+      v_title := p_name;
+    END IF;
+    
+    v_title := v_title || v_suffix;
+  END IF;
+  
+  RETURN v_title;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.generate_product_slug(p_name text, p_product_id uuid DEFAULT NULL::uuid)
+ RETURNS text
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_slug TEXT;
+  v_counter INTEGER := 0;
+  v_final_slug TEXT;
+BEGIN
+  IF p_name IS NULL OR LENGTH(TRIM(p_name)) = 0 THEN
+    RETURN NULL;
+  END IF;
+  
+  -- Gerar slug base
+  v_slug := slugify(p_name);
+  v_final_slug := v_slug;
+  
+  -- Verificar se já existe e adicionar sufixo se necessário
+  WHILE EXISTS (
+    SELECT 1 FROM products 
+    WHERE slug = v_final_slug 
+      AND is_deleted = false
+      AND (p_product_id IS NULL OR id != p_product_id)
+  ) LOOP
+    v_counter := v_counter + 1;
+    v_final_slug := v_slug || '-' || v_counter;
+  END LOOP;
+  
+  RETURN v_final_slug;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.generate_promo_sku(p_supplier_code text, p_reference text)
+ RETURNS text
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN UPPER(p_supplier_code) || '-' || UPPER(p_reference);
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.generate_slug(p_name text)
+ RETURNS text
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN LOWER(
+        REGEXP_REPLACE(
+            REGEXP_REPLACE(
+                REGEXP_REPLACE(
+                    TRANSLATE(
+                        TRIM(p_name),
+                        'áàâãäéèêëíìîïóòôõöúùûüçñÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑ',
+                        'aaaaaeeeeiiiiooooouuuucnAAAAAEEEEIIIIOOOOOUUUUCN'
+                    ),
+                    '[^a-zA-Z0-9\s-]', '', 'g'
+                ),
+                '\s+', '-', 'g'
+            ),
+            '-+', '-', 'g'
+        )
+    );
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.generate_step_up_challenge(_action step_up_action, _target_ref text DEFAULT NULL::text)
  RETURNS uuid
  LANGUAGE plpgsql
@@ -1431,10 +19437,161 @@ BEGIN
   VALUES (auth.uid(), _action, _target_ref, crypt(v_otp, gen_salt('bf')))
   RETURNING id INTO v_id;
   RETURN v_id;
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
+CREATE OR REPLACE FUNCTION public.generate_variant_sku(p_product_code text, p_supplier_color_id uuid)
+ RETURNS text
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_promo_variation_id UUID;
+    v_internal_code TEXT;
+    v_sku TEXT;
+BEGIN
+    IF p_product_code IS NULL OR TRIM(p_product_code) = '' THEN
+        RETURN NULL;
+    END IF;
+    
+    SELECT promo_variation_id INTO v_promo_variation_id
+    FROM color_equivalences
+    WHERE supplier_color_id = p_supplier_color_id
+      AND is_active = true
+    ORDER BY verified DESC, confidence_score DESC
+    LIMIT 1;
+    
+    IF v_promo_variation_id IS NULL THEN
+        RETURN NULL;
+    END IF;
+    
+    SELECT internal_code INTO v_internal_code
+    FROM color_variations
+    WHERE id = v_promo_variation_id;
+    
+    IF v_internal_code IS NULL THEN
+        RETURN NULL;
+    END IF;
+    
+    v_sku := TRIM(p_product_code) || '.' || v_internal_code;
+    
+    RETURN v_sku;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.generate_variant_sku_by_color_code(p_product_code text, p_supplier_id uuid, p_color_code text)
+ RETURNS text
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_supplier_color_id UUID;
+BEGIN
+    SELECT id INTO v_supplier_color_id
+    FROM supplier_colors
+    WHERE supplier_id = p_supplier_id
+      AND code = p_color_code
+    LIMIT 1;
+    
+    IF v_supplier_color_id IS NULL THEN
+        RETURN NULL;
+    END IF;
+    
+    RETURN generate_variant_sku(p_product_code, v_supplier_color_id);
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.gerar_nome_variante()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_nome_produto TEXT;
+BEGIN
+    -- Se já tem nome preenchido, não sobrescreve
+    IF NEW.name IS NOT NULL AND TRIM(NEW.name) != '' THEN
+        RETURN NEW;
+    END IF;
+    
+    -- Buscar nome do produto pai
+    SELECT name INTO v_nome_produto
+    FROM products
+    WHERE id = NEW.product_id;
+    
+    -- Gerar nome: "Produto | Cor"
+    IF v_nome_produto IS NOT NULL AND NEW.color_name IS NOT NULL THEN
+        NEW.name := v_nome_produto || ' | ' || NEW.color_name;
+    ELSIF v_nome_produto IS NOT NULL THEN
+        NEW.name := v_nome_produto;
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.gerar_resumo_alertas_bitrix(p_data_inicio timestamp with time zone DEFAULT (now() - '1 day'::interval))
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_resultado JSONB;
+    v_alertas JSONB;
+    v_resumo JSONB;
+BEGIN
+    -- Buscar resumo
+    SELECT jsonb_build_object(
+        'total', COUNT(*),
+        'criticos', COUNT(*) FILTER (WHERE nivel_alerta = 'CRITICO'),
+        'urgentes', COUNT(*) FILTER (WHERE nivel_alerta = 'URGENTE'),
+        'atencao', COUNT(*) FILTER (WHERE nivel_alerta = 'ATENCAO'),
+        'info', COUNT(*) FILTER (WHERE nivel_alerta = 'INFO'),
+        'aumentos', COUNT(*) FILTER (WHERE tipo_mudanca = 'AUMENTO'),
+        'reducoes', COUNT(*) FILTER (WHERE tipo_mudanca = 'REDUCAO'),
+        'novos', COUNT(*) FILTER (WHERE tipo_mudanca = 'NOVO')
+    ) INTO v_resumo
+    FROM spot_price_change_log
+    WHERE detectado_em >= p_data_inicio
+    AND bitrix_notificado = FALSE;
+    
+    -- Buscar alertas críticos e urgentes (detalhes)
+    SELECT COALESCE(jsonb_agg(
+        jsonb_build_object(
+            'id', id,
+            'tabela', table_code_option,
+            'tecnica', tecnica_nome,
+            'area', area_descricao,
+            'faixa', faixa_preco,
+            'spot_anterior', spot_valor_anterior,
+            'spot_novo', spot_valor_novo,
+            'variacao_spot', spot_variacao_percentual,
+            'nosso_preco', nosso_preco_atual,
+            'margem_anterior', margem_anterior_percentual,
+            'margem_nova', margem_nova_percentual,
+            'impacto_margem', margem_variacao_pp,
+            'nivel', nivel_alerta,
+            'tipo', tipo_mudanca
+        ) ORDER BY 
+            CASE nivel_alerta 
+                WHEN 'CRITICO' THEN 1 
+                WHEN 'URGENTE' THEN 2 
+                WHEN 'ATENCAO' THEN 3 
+                ELSE 4 
+            END,
+            ABS(COALESCE(margem_variacao_pp, 0)) DESC
+    ), '[]'::JSONB) INTO v_alertas
+    FROM spot_price_change_log
+    WHERE detectado_em >= p_data_inicio
+    AND bitrix_notificado = FALSE
+    AND nivel_alerta IN ('CRITICO', 'URGENTE', 'ATENCAO');
+    
+    -- Montar resultado
+    v_resultado := jsonb_build_object(
+        'data_verificacao', NOW(),
+        'periodo_inicio', p_data_inicio,
+        'resumo', v_resumo,
+        'alertas_prioritarios', v_alertas
+    );
+    
+    RETURN v_resultado;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.get_active_commemorative_dates()
  RETURNS TABLE(id uuid, name text, slug text, date_day integer, date_month integer, formatted_date text, category text, icon_name text, color_hex text, days_until integer, campaign_start_days integer, is_featured boolean, color_count bigint, product_count bigint)
  LANGUAGE plpgsql
@@ -1485,10 +19642,38 @@ BEGIN
       )
     ORDER BY cd.date_month, cd.date_day NULLS LAST;
 END;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
+CREATE OR REPLACE FUNCTION public.get_all_product_images(p_product_id uuid)
+ RETURNS TABLE(image_id uuid, cloudflare_id character varying, url_cdn text, url_thumbnail text, image_type character varying, image_type_name character varying, image_type_category character varying, color_id uuid, display_order integer, is_primary boolean, show_in_gallery boolean, show_in_simulator boolean)
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        pi.id,
+        pi.cloudflare_image_id,
+        pi.url_cdn,
+        pi.url_cdn || '/thumbnail',
+        it.code,
+        it.name,
+        it.category,
+        pi.color_id,
+        pi.display_order,
+        pi.is_primary,
+        it.show_in_gallery,
+        it.show_in_simulator
+    FROM product_images pi
+    LEFT JOIN image_types it ON pi.image_type_id = it.id
+    WHERE pi.product_id = p_product_id
+      AND pi.is_active = true
+    ORDER BY 
+        it.display_priority,
+        pi.is_primary DESC,
+        pi.display_order;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.get_app_setting(p_key character varying)
  RETURNS text
  LANGUAGE plpgsql
@@ -1503,10 +19688,62 @@ BEGIN
     
     RETURN v_value;
 END;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
+CREATE OR REPLACE FUNCTION public.get_automation_stats(p_supplier_id uuid DEFAULT NULL::uuid)
+ RETURNS TABLE(metric text, value bigint)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    -- Total de produtos
+    RETURN QUERY
+    SELECT 'total_products'::TEXT, COUNT(*)
+    FROM products
+    WHERE p_supplier_id IS NULL OR supplier_id = p_supplier_id;
+    
+    -- Com categoria
+    RETURN QUERY
+    SELECT 'with_category'::TEXT, COUNT(*)
+    FROM products
+    WHERE category_id IS NOT NULL
+      AND (p_supplier_id IS NULL OR supplier_id = p_supplier_id);
+    
+    -- Sem categoria
+    RETURN QUERY
+    SELECT 'without_category'::TEXT, COUNT(*)
+    FROM products
+    WHERE category_id IS NULL
+      AND (p_supplier_id IS NULL OR supplier_id = p_supplier_id);
+    
+    -- Com preço de venda
+    RETURN QUERY
+    SELECT 'with_sale_price'::TEXT, COUNT(*)
+    FROM products
+    WHERE sale_price IS NOT NULL AND sale_price > 0
+      AND (p_supplier_id IS NULL OR supplier_id = p_supplier_id);
+    
+    -- Sem preço de venda
+    RETURN QUERY
+    SELECT 'without_sale_price'::TEXT, COUNT(*)
+    FROM products
+    WHERE (sale_price IS NULL OR sale_price = 0)
+      AND (p_supplier_id IS NULL OR supplier_id = p_supplier_id);
+    
+    -- Vínculos de categoria
+    RETURN QUERY
+    SELECT 'category_assignments'::TEXT, COUNT(*)
+    FROM product_category_assignments pca
+    JOIN products p ON p.id = pca.product_id
+    WHERE p_supplier_id IS NULL OR p.supplier_id = p_supplier_id;
+    
+    -- Vínculos de material
+    RETURN QUERY
+    SELECT 'material_links'::TEXT, COUNT(*)
+    FROM product_materials pm
+    JOIN products p ON p.id = pm.product_id
+    WHERE p_supplier_id IS NULL OR p.supplier_id = p_supplier_id;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.get_best_supplier_for_quantity(p_variant_id uuid, p_quantity integer, p_criteria character varying DEFAULT 'stock'::character varying)
  RETURNS TABLE(supplier_id uuid, supplier_name text, supplier_code text, supplier_sku character varying, available_quantity integer, unit_cost numeric, lead_time_days integer, can_fulfill boolean, recommendation_reason text)
  LANGUAGE plpgsql
@@ -1575,10 +19812,109 @@ BEGIN
         -- Terceiro: prioridade
         sa.priority ASC;
 END;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
+CREATE OR REPLACE FUNCTION public.get_category_breadcrumbs(p_category_id uuid)
+ RETURNS TABLE(id uuid, name text, slug text, level integer)
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  RETURN QUERY
+  WITH RECURSIVE ancestors AS (
+    -- Base: categoria inicial
+    SELECT c.id, c.name, c.slug, c.level, c.parent_id
+    FROM categories c
+    WHERE c.id = p_category_id
+      AND c.deleted_at IS NULL
+    
+    UNION ALL
+    
+    -- Recursivo: parents
+    SELECT c.id, c.name, c.slug, c.level, c.parent_id
+    FROM categories c
+    INNER JOIN ancestors a ON c.id = a.parent_id
+    WHERE c.deleted_at IS NULL
+  )
+  SELECT a.id, a.name, a.slug, a.level
+  FROM ancestors a
+  ORDER BY a.level ASC;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_category_children(p_category_id uuid)
+ RETURNS TABLE(id uuid, name text, slug text, level integer, children_count integer, products_count integer, display_order integer)
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        c.id, 
+        c.name, 
+        c.slug, 
+        c.level,
+        c.children_count,
+        c.products_count,
+        c.display_order
+    FROM categories c
+    WHERE c.parent_id = p_category_id
+      AND c.is_active = true
+    ORDER BY c.display_order, c.name;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_category_siblings(p_category_id uuid)
+ RETURNS TABLE(id uuid, name text, slug text, level integer, display_order integer)
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_parent_id UUID;
+BEGIN
+    SELECT c.parent_id INTO v_parent_id
+    FROM categories c
+    WHERE c.id = p_category_id;
+    
+    RETURN QUERY
+    SELECT 
+        c.id, 
+        c.name, 
+        c.slug, 
+        c.level,
+        c.display_order
+    FROM categories c
+    WHERE (
+            (c.parent_id = v_parent_id) 
+            OR (c.parent_id IS NULL AND v_parent_id IS NULL)
+          )
+      AND c.id != p_category_id
+      AND c.is_active = true
+    ORDER BY c.display_order, c.name;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_cloudflare_image_url(p_base_url text, p_variant character varying DEFAULT 'public'::character varying)
+ RETURNS text
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_base TEXT;
+BEGIN
+    -- Se URL nula ou vazia, retorna NULL
+    IF p_base_url IS NULL OR p_base_url = '' THEN
+        RETURN NULL;
+    END IF;
+    
+    -- Remove variante existente se houver (última parte após /)
+    -- URL formato: https://imagedelivery.net/{hash}/{id}/{variant}
+    v_base := regexp_replace(p_base_url, '/[^/]+$', '');
+    
+    -- Adiciona nova variante
+    RETURN v_base || '/' || p_variant;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.get_cloudflare_stats()
  RETURNS TABLE(total_images bigint, images_with_cloudflare bigint, images_pending bigint, total_videos bigint, videos_with_cloudflare bigint, videos_pending bigint, total_sync_logs bigint, sync_success bigint, sync_errors bigint, last_sync_at timestamp with time zone)
  LANGUAGE plpgsql
@@ -1603,10 +19939,517 @@ BEGIN
         (SELECT COUNT(*) FROM media_sync_log WHERE status = 'error')::BIGINT,
         (SELECT MAX(created_at) FROM media_sync_log)::TIMESTAMPTZ;
 END;
-$function$
-;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_cloudflare_video_embed_url(p_video_id character varying)
+ RETURNS text
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    IF p_video_id IS NULL OR p_video_id = '' THEN
+        RETURN NULL;
+    END IF;
+    RETURN 'https://iframe.cloudflarestream.com/' || p_video_id;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_cloudflare_video_gif(p_video_id character varying, p_start_seconds integer DEFAULT 0, p_duration_seconds integer DEFAULT 5)
+ RETURNS text
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_subdomain TEXT;
+BEGIN
+    IF p_video_id IS NULL OR p_video_id = '' THEN
+        RETURN NULL;
+    END IF;
+    
+    SELECT subdomain INTO v_subdomain FROM cloudflare_stream_config WHERE id = 1;
+    RETURN 'https://' || v_subdomain || '/' || p_video_id || 
+           '/thumbnails/thumbnail.gif?time=' || p_start_seconds || 
+           's&duration=' || p_duration_seconds || 's';
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_cloudflare_video_hls_url(p_video_id character varying)
+ RETURNS text
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_subdomain TEXT;
+BEGIN
+    IF p_video_id IS NULL OR p_video_id = '' THEN
+        RETURN NULL;
+    END IF;
+    
+    SELECT subdomain INTO v_subdomain FROM cloudflare_stream_config WHERE id = 1;
+    RETURN 'https://' || v_subdomain || '/' || p_video_id || '/manifest/video.m3u8';
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_cloudflare_video_thumbnail(p_video_id character varying, p_time_seconds integer DEFAULT NULL::integer, p_width integer DEFAULT NULL::integer, p_height integer DEFAULT NULL::integer)
+ RETURNS text
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_subdomain TEXT;
+    v_url TEXT;
+BEGIN
+    IF p_video_id IS NULL OR p_video_id = '' THEN
+        RETURN NULL;
+    END IF;
+    
+    SELECT subdomain INTO v_subdomain FROM cloudflare_stream_config WHERE id = 1;
+    v_url := 'https://' || v_subdomain || '/' || p_video_id || '/thumbnails/thumbnail.jpg';
+    
+    -- Adicionar parâmetros opcionais
+    IF p_time_seconds IS NOT NULL OR p_width IS NOT NULL OR p_height IS NOT NULL THEN
+        v_url := v_url || '?';
+        IF p_time_seconds IS NOT NULL THEN
+            v_url := v_url || 'time=' || p_time_seconds || 's&';
+        END IF;
+        IF p_width IS NOT NULL THEN
+            v_url := v_url || 'width=' || p_width || '&';
+        END IF;
+        IF p_height IS NOT NULL THEN
+            v_url := v_url || 'height=' || p_height || '&';
+        END IF;
+        -- Remover & final
+        v_url := RTRIM(v_url, '&');
+    END IF;
+    
+    RETURN v_url;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_copywriting_config(p_category_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_config JSONB;
+    v_current_id UUID := p_category_id;
+    v_parent_id UUID;
+    v_iterations INTEGER := 0;
+BEGIN
+    -- Loop para buscar config na categoria ou ancestrais (máx 10 níveis)
+    WHILE v_current_id IS NOT NULL AND v_iterations < 10 LOOP
+        v_iterations := v_iterations + 1;
+        
+        -- Buscar config da categoria atual
+        SELECT jsonb_build_object(
+            'category_id', ccc.category_id,
+            'category_name', c.name,
+            'personas', ccc.personas,
+            'ocasioes', ccc.ocasioes,
+            'keywords_seo', ccc.keywords_seo,
+            'tom_voz', ccc.tom_voz,
+            'ctas', ccc.ctas,
+            'storytelling_template', ccc.storytelling_template,
+            'diferenciais', ccc.diferenciais,
+            'beneficios_emocionais', ccc.beneficios_emocionais,
+            'objecoes_comuns', ccc.objecoes_comuns,
+            'unidade_peso', ccc.unidade_peso,
+            'unidade_capacidade', ccc.unidade_capacidade,
+            'unidade_dimensao', ccc.unidade_dimensao,
+            'config_extra', ccc.config_extra,
+            'inherited_from', CASE WHEN ccc.category_id = p_category_id THEN NULL ELSE c.name END
+        )
+        INTO v_config
+        FROM category_copywriting_config ccc
+        JOIN categories c ON ccc.category_id = c.id
+        WHERE ccc.category_id = v_current_id
+          AND ccc.is_active = TRUE;
+        
+        -- Se encontrou, retorna
+        IF v_config IS NOT NULL THEN
+            RETURN v_config;
+        END IF;
+        
+        -- Buscar categoria pai
+        SELECT parent_id INTO v_parent_id
+        FROM categories
+        WHERE id = v_current_id;
+        
+        v_current_id := v_parent_id;
+    END LOOP;
+    
+    -- Retornar config padrão se não encontrou
+    RETURN jsonb_build_object(
+        'category_id', p_category_id,
+        'category_name', NULL,
+        'personas', ARRAY['Marketing', 'RH', 'Compras', 'Eventos'],
+        'ocasioes', ARRAY['eventos corporativos', 'campanhas promocionais', 'brindes para clientes'],
+        'keywords_seo', ARRAY['brinde personalizado', 'brinde corporativo', 'brinde promocional'],
+        'tom_voz', 'profissional',
+        'ctas', ARRAY['Solicite um orçamento personalizado!', 'Peça uma amostra!'],
+        'storytelling_template', 'Imagine sua marca presente no dia a dia dos seus clientes e colaboradores.',
+        'diferenciais', ARRAY['personalização', 'qualidade', 'entrega'],
+        'beneficios_emocionais', ARRAY['valorização', 'reconhecimento', 'lembrança de marca'],
+        'objecoes_comuns', ARRAY['prazo de entrega', 'quantidade mínima', 'área de gravação'],
+        'unidade_peso', 'g',
+        'unidade_capacidade', 'ml',
+        'unidade_dimensao', 'mm',
+        'config_extra', '{}',
+        'is_default', true
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_cost_for_quantity(p_variant_id uuid, p_quantity integer, p_supplier_id uuid DEFAULT NULL::uuid)
+ RETURNS TABLE(cost_per_unit numeric, tier_number integer, min_quantity integer, supplier_name character varying)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        CASE 
+            WHEN p_quantity >= COALESCE(vct.min_qty_5, 999999) AND vct.cost_5 IS NOT NULL THEN vct.cost_5
+            WHEN p_quantity >= COALESCE(vct.min_qty_4, 999999) AND vct.cost_4 IS NOT NULL THEN vct.cost_4
+            WHEN p_quantity >= COALESCE(vct.min_qty_3, 999999) AND vct.cost_3 IS NOT NULL THEN vct.cost_3
+            WHEN p_quantity >= COALESCE(vct.min_qty_2, 999999) AND vct.cost_2 IS NOT NULL THEN vct.cost_2
+            ELSE vct.cost_1
+        END AS cost_per_unit,
+        CASE 
+            WHEN p_quantity >= COALESCE(vct.min_qty_5, 999999) AND vct.cost_5 IS NOT NULL THEN 5
+            WHEN p_quantity >= COALESCE(vct.min_qty_4, 999999) AND vct.cost_4 IS NOT NULL THEN 4
+            WHEN p_quantity >= COALESCE(vct.min_qty_3, 999999) AND vct.cost_3 IS NOT NULL THEN 3
+            WHEN p_quantity >= COALESCE(vct.min_qty_2, 999999) AND vct.cost_2 IS NOT NULL THEN 2
+            ELSE 1
+        END AS tier_number,
+        CASE 
+            WHEN p_quantity >= COALESCE(vct.min_qty_5, 999999) AND vct.cost_5 IS NOT NULL THEN vct.min_qty_5
+            WHEN p_quantity >= COALESCE(vct.min_qty_4, 999999) AND vct.cost_4 IS NOT NULL THEN vct.min_qty_4
+            WHEN p_quantity >= COALESCE(vct.min_qty_3, 999999) AND vct.cost_3 IS NOT NULL THEN vct.min_qty_3
+            WHEN p_quantity >= COALESCE(vct.min_qty_2, 999999) AND vct.cost_2 IS NOT NULL THEN vct.min_qty_2
+            ELSE vct.min_qty_1
+        END AS min_quantity,
+        s.name AS supplier_name
+    FROM variant_cost_tiers vct
+    JOIN suppliers s ON s.id = vct.supplier_id
+    WHERE vct.variant_id = p_variant_id
+      AND vct.is_active = true
+      AND CURRENT_DATE >= vct.valid_from
+      AND (vct.valid_until IS NULL OR CURRENT_DATE <= vct.valid_until)
+      AND (p_supplier_id IS NULL OR vct.supplier_id = p_supplier_id)
+    ORDER BY vct.cost_1 ASC
+    LIMIT 1;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_edge_function_secret(_name text)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'vault', 'public', 'pg_temp'
+AS $function$
+DECLARE
+  _secret text;
+BEGIN
+  IF _name NOT IN (
+    'WEBHOOK_DISPATCHER_SECRET',
+    'CONNECTIONS_AUTO_TEST_SECRET',
+    'CRON_SECRET'
+  ) THEN
+    RAISE EXCEPTION 'Nome de secret nao autorizado: %', _name USING ERRCODE = 'insufficient_privilege';
+  END IF;
 
--- ----------------------------------------------------------------------------
+  SELECT decrypted_secret INTO _secret
+  FROM vault.decrypted_secrets
+  WHERE name = _name
+  LIMIT 1;
+
+  IF _secret IS NULL THEN
+    RAISE EXCEPTION 'Secret % nao encontrado no vault', _name USING ERRCODE = 'no_data_found';
+  END IF;
+
+  RETURN _secret;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_image_full_metadata(p_filename text, p_supplier_code character varying DEFAULT 'spot'::character varying)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_internal RECORD;
+    v_result JSONB;
+    v_url_base TEXT;
+BEGIN
+    -- Obter tipo interno
+    SELECT * INTO v_internal
+    FROM get_internal_image_type(p_filename, p_supplier_code)
+    LIMIT 1;
+    
+    -- Definir URL base por fornecedor
+    CASE upper(p_supplier_code)
+        WHEN 'SPOT' THEN v_url_base := 'https://www.spotgifts.com.br/fotos/produtos/';
+        ELSE v_url_base := '';
+    END CASE;
+    
+    -- Montar resultado
+    v_result := v_internal.parsed_data || jsonb_build_object(
+        'image_type_id', v_internal.image_type_id,
+        'image_type_code', v_internal.image_type_code,
+        'image_type_name', v_internal.image_type_name,
+        'category', v_internal.category,
+        'display_priority', v_internal.display_priority,
+        'url_base', v_url_base,
+        'url_full', v_url_base || p_filename
+    );
+    
+    RETURN v_result;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_image_type_by_suffix(p_filename character varying, p_supplier_code character varying DEFAULT 'SPOT'::character varying)
+ RETURNS TABLE(image_type_id uuid, image_type_code character varying, image_type_name character varying)
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_suffix VARCHAR;
+BEGIN
+    -- Extrair sufixo do filename (ex: "11113_114-logo.jpg" → "-logo")
+    v_suffix := substring(p_filename from '(-[a-zA-Z0-9_]+)\.[^.]+$');
+    
+    -- Se não tem sufixo, verificar se existe mapeamento "(sem sufixo)"
+    IF v_suffix IS NULL THEN
+        RETURN QUERY
+        SELECT m.image_type_id, it.code, it.name
+        FROM supplier_image_suffix_mappings m
+        JOIN image_types it ON m.image_type_id = it.id
+        WHERE m.supplier_code = p_supplier_code
+          AND (m.suffix_pattern = '(sem sufixo)' OR m.suffix_pattern IS NULL OR m.suffix_pattern = '')
+        LIMIT 1;
+        
+        -- Se não encontrou, retorna 'gallery'
+        IF NOT FOUND THEN
+            RETURN QUERY
+            SELECT it.id, it.code, it.name
+            FROM image_types it
+            WHERE it.code = 'gallery';
+        END IF;
+        RETURN;
+    END IF;
+    
+    -- Buscar mapeamento pelo sufixo
+    RETURN QUERY
+    SELECT m.image_type_id, it.code, it.name
+    FROM supplier_image_suffix_mappings m
+    JOIN image_types it ON m.image_type_id = it.id
+    WHERE m.supplier_code = p_supplier_code
+      AND m.suffix_pattern = v_suffix
+    LIMIT 1;
+    
+    -- Se não encontrou, retorna 'gallery'
+    IF NOT FOUND THEN
+        RETURN QUERY
+        SELECT it.id, it.code, it.name
+        FROM image_types it
+        WHERE it.code = 'gallery';
+    END IF;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_image_url(p_reference text, p_filename text, p_supplier text DEFAULT 'stricker'::text)
+ RETURNS text
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_base_url TEXT;
+    v_cdn_url TEXT;
+BEGIN
+    IF p_filename IS NULL OR p_filename = '' THEN
+        RETURN NULL;
+    END IF;
+    
+    -- Verificar se já existe no Cloudflare
+    SELECT cdn_url INTO v_cdn_url
+    FROM media_assets 
+    WHERE product_reference = p_reference 
+      AND filename = p_filename
+      AND status = 'active'
+    LIMIT 1;
+    
+    IF v_cdn_url IS NOT NULL THEN
+        RETURN v_cdn_url;
+    END IF;
+    
+    -- Construir URL do fornecedor
+    SELECT value INTO v_base_url 
+    FROM app_settings 
+    WHERE key = 'cdn_base_' || p_supplier;
+    
+    IF v_base_url IS NOT NULL THEN
+        RETURN v_base_url || '/' || p_reference || '/' || p_filename;
+    END IF;
+    
+    RETURN NULL;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_image_url_cdn(p_image_id uuid, p_width integer DEFAULT NULL::integer, p_height integer DEFAULT NULL::integer, p_format character varying DEFAULT NULL::character varying)
+ RETURNS text
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_url TEXT;
+    v_params TEXT := '';
+BEGIN
+    SELECT url_cdn INTO v_url FROM public.product_images WHERE id = p_image_id;
+    
+    IF v_url IS NULL THEN RETURN NULL; END IF;
+    
+    IF p_width IS NOT NULL THEN
+        v_params := '/width=' || p_width;
+    END IF;
+    
+    IF p_height IS NOT NULL THEN
+        v_params := v_params || CASE WHEN v_params != '' THEN ',' ELSE '/' END || 'height=' || p_height;
+    END IF;
+    
+    IF p_format IS NOT NULL THEN
+        v_params := v_params || CASE WHEN v_params != '' THEN ',' ELSE '/' END || 'format=' || p_format;
+    END IF;
+    
+    RETURN v_url || v_params;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_internal_image_type(p_filename text, p_supplier_code character varying DEFAULT 'spot'::character varying)
+ RETURNS TABLE(image_type_id uuid, image_type_code character varying, image_type_name character varying, category character varying, display_priority smallint, is_color_specific boolean, parsed_data jsonb)
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_parsed JSONB;
+    v_suffix TEXT;
+BEGIN
+    -- Parse do filename
+    v_parsed := parse_supplier_image_filename(p_filename, p_supplier_code);
+    
+    IF v_parsed->>'success' != 'true' THEN
+        RETURN QUERY
+        SELECT 
+            NULL::UUID,
+            'other'::VARCHAR(30),
+            'Não classificado'::VARCHAR(100),
+            'other'::VARCHAR(30),
+            99::SMALLINT,
+            true::BOOLEAN,
+            v_parsed;
+        RETURN;
+    END IF;
+    
+    v_suffix := v_parsed->>'suffix_pattern';
+    
+    -- Buscar mapeamento
+    RETURN QUERY
+    SELECT 
+        it.id,
+        it.code,
+        it.name,
+        it.category,
+        COALESCE(m.display_priority_override, it.display_priority),
+        COALESCE(m.force_color_specific, (v_parsed->>'is_color_specific')::BOOLEAN),
+        v_parsed
+    FROM supplier_image_suffix_mappings m
+    JOIN image_types it ON it.id = m.image_type_id
+    WHERE m.supplier_code = upper(p_supplier_code)
+      AND m.suffix_pattern = v_suffix
+      AND m.is_active = true
+      AND it.is_active = true
+    LIMIT 1;
+    
+    -- Se não encontrou, retorna tipo 'other'
+    IF NOT FOUND THEN
+        RETURN QUERY
+        SELECT 
+            (SELECT id FROM image_types WHERE code = 'other' LIMIT 1),
+            'other'::VARCHAR(30),
+            'Não classificado'::VARCHAR(100),
+            'other'::VARCHAR(30),
+            99::SMALLINT,
+            (v_parsed->>'is_color_specific')::BOOLEAN,
+            v_parsed;
+    END IF;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_inventory_health()
+ RETURNS json
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_total_products INTEGER;
+    v_products_with_stock INTEGER;
+    v_products_low_stock INTEGER;
+    v_products_no_stock INTEGER;
+    v_total_stock_value NUMERIC;
+    v_total_units INTEGER;
+BEGIN
+    -- Total de produtos ativos
+    SELECT COUNT(*) INTO v_total_products
+    FROM products WHERE is_active = true AND deleted_at IS NULL;
+    
+    -- Produtos com estoque
+    SELECT COUNT(DISTINCT p.id) INTO v_products_with_stock
+    FROM products p
+    JOIN product_variants pv ON pv.product_id = p.id
+    WHERE p.is_active = true AND p.deleted_at IS NULL
+    AND pv.stock_quantity > 0;
+    
+    -- Produtos com estoque baixo (< 10 unidades)
+    SELECT COUNT(DISTINCT p.id) INTO v_products_low_stock
+    FROM products p
+    JOIN product_variants pv ON pv.product_id = p.id
+    WHERE p.is_active = true AND p.deleted_at IS NULL
+    AND pv.stock_quantity > 0 AND pv.stock_quantity < 10;
+    
+    -- Produtos sem estoque
+    v_products_no_stock := v_total_products - v_products_with_stock;
+    
+    -- Valor total em estoque (usando price_1 ao invés de cost_price)
+    SELECT 
+        COALESCE(SUM(pv.stock_quantity * COALESCE(pv.price_1, 0)), 0),
+        COALESCE(SUM(pv.stock_quantity), 0)
+    INTO v_total_stock_value, v_total_units
+    FROM product_variants pv
+    JOIN products p ON p.id = pv.product_id
+    WHERE p.is_active = true AND p.deleted_at IS NULL;
+    
+    RETURN json_build_object(
+        'summary', json_build_object(
+            'total_products', v_total_products,
+            'with_stock', v_products_with_stock,
+            'with_stock_pct', ROUND((v_products_with_stock::NUMERIC / NULLIF(v_total_products, 0) * 100), 1),
+            'low_stock', v_products_low_stock,
+            'no_stock', v_products_no_stock,
+            'no_stock_pct', ROUND((v_products_no_stock::NUMERIC / NULLIF(v_total_products, 0) * 100), 1)
+        ),
+        'inventory', json_build_object(
+            'total_units', v_total_units,
+            'total_value', ROUND(v_total_stock_value, 2),
+            'currency', 'BRL',
+            'note', 'Valor calculado com price_1 (custo não disponível)'
+        ),
+        'alerts', json_build_object(
+            'critical_low_stock', v_products_low_stock,
+            'out_of_stock', v_products_no_stock
+        ),
+        'generated_at', NOW()
+    );
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.get_pending_images_for_sync(p_limit integer DEFAULT 100)
  RETURNS TABLE(id uuid, product_id uuid, url_original text, image_type character varying, variant_id uuid, color_id uuid)
  LANGUAGE plpgsql
@@ -1629,10 +20472,7 @@ BEGIN
     ORDER BY pi.created_at ASC
     LIMIT p_limit;
 END;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.get_pending_videos_for_sync(p_limit integer DEFAULT 50)
  RETURNS TABLE(id uuid, product_id uuid, url_original text, source_youtube_id character varying, title character varying, video_type character varying)
  LANGUAGE plpgsql
@@ -1654,10 +20494,493 @@ BEGIN
     ORDER BY pv.created_at ASC
     LIMIT p_limit;
 END;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
+CREATE OR REPLACE FUNCTION public.get_price_details(p_variant_id uuid, p_quantity integer DEFAULT 1)
+ RETURNS TABLE(variant_id uuid, variant_name text, sku text, product_name text, supplier_name text, quantity integer, tier_used integer, min_qty_tier integer, cost_price numeric, markup_percent numeric, markup_source text, sale_price_unit numeric, sale_price_total numeric, margin_value numeric, margin_percent numeric)
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_cost DECIMAL(10,4);
+    v_markup DECIMAL(5,2);
+    v_tier INT;
+    v_min_qty INT;
+    v_markup_source TEXT;
+BEGIN
+    -- Buscar dados da variante
+    FOR variant_id, variant_name, sku, product_name, supplier_name, cost_price, tier_used, min_qty_tier IN
+        SELECT 
+            pv.id,
+            pv.name,
+            pv.sku,
+            p.name,
+            s.name,
+            CASE 
+                WHEN p_quantity >= COALESCE(pv.min_qty_5, 999999) AND pv.price_5 IS NOT NULL THEN pv.price_5
+                WHEN p_quantity >= COALESCE(pv.min_qty_4, 999999) AND pv.price_4 IS NOT NULL THEN pv.price_4
+                WHEN p_quantity >= COALESCE(pv.min_qty_3, 999999) AND pv.price_3 IS NOT NULL THEN pv.price_3
+                WHEN p_quantity >= COALESCE(pv.min_qty_2, 999999) AND pv.price_2 IS NOT NULL THEN pv.price_2
+                ELSE pv.price_1
+            END,
+            CASE 
+                WHEN p_quantity >= COALESCE(pv.min_qty_5, 999999) AND pv.price_5 IS NOT NULL THEN 5
+                WHEN p_quantity >= COALESCE(pv.min_qty_4, 999999) AND pv.price_4 IS NOT NULL THEN 4
+                WHEN p_quantity >= COALESCE(pv.min_qty_3, 999999) AND pv.price_3 IS NOT NULL THEN 3
+                WHEN p_quantity >= COALESCE(pv.min_qty_2, 999999) AND pv.price_2 IS NOT NULL THEN 2
+                ELSE 1
+            END,
+            CASE 
+                WHEN p_quantity >= COALESCE(pv.min_qty_5, 999999) AND pv.price_5 IS NOT NULL THEN pv.min_qty_5
+                WHEN p_quantity >= COALESCE(pv.min_qty_4, 999999) AND pv.price_4 IS NOT NULL THEN pv.min_qty_4
+                WHEN p_quantity >= COALESCE(pv.min_qty_3, 999999) AND pv.price_3 IS NOT NULL THEN pv.min_qty_3
+                WHEN p_quantity >= COALESCE(pv.min_qty_2, 999999) AND pv.price_2 IS NOT NULL THEN pv.min_qty_2
+                ELSE pv.min_qty_1
+            END
+        FROM product_variants pv
+        LEFT JOIN products p ON pv.product_id = p.id
+        LEFT JOIN suppliers s ON p.supplier_id = s.id
+        WHERE pv.id = p_variant_id
+    LOOP
+        v_cost := cost_price;
+        v_tier := tier_used;
+        v_min_qty := min_qty_tier;
+        
+        -- Buscar markup e sua fonte
+        v_markup := get_applicable_markup(p_variant_id);
+        
+        -- Determinar fonte do markup (simplificado)
+        SELECT 
+            CASE 
+                WHEN mc.variant_id IS NOT NULL THEN 'Variante'
+                WHEN mc.product_id IS NOT NULL THEN 'Produto'
+                WHEN mc.category_id IS NOT NULL THEN 'Categoria'
+                WHEN mc.supplier_id IS NOT NULL THEN 'Fornecedor (config)'
+                WHEN mc.organization_id IS NOT NULL THEN 'Organização'
+                ELSE 'Padrão'
+            END
+        INTO v_markup_source
+        FROM markup_configurations mc
+        WHERE mc.is_active = true
+          AND (mc.variant_id = p_variant_id
+               OR mc.product_id = (SELECT product_id FROM product_variants WHERE id = p_variant_id)
+               OR mc.supplier_id = (SELECT supplier_id FROM products WHERE id = (SELECT product_id FROM product_variants WHERE id = p_variant_id)))
+        ORDER BY mc.priority
+        LIMIT 1;
+        
+        IF v_markup_source IS NULL THEN
+            v_markup_source := 'Fornecedor (default)';
+        END IF;
+        
+        -- Retornar resultado
+        RETURN QUERY SELECT 
+            p_variant_id,
+            variant_name,
+            sku,
+            product_name,
+            supplier_name,
+            p_quantity,
+            v_tier,
+            v_min_qty,
+            v_cost,
+            v_markup,
+            v_markup_source,
+            ROUND(v_cost * (1 + v_markup / 100), 2)::DECIMAL(10,2),
+            ROUND(v_cost * (1 + v_markup / 100) * p_quantity, 2)::DECIMAL(12,2),
+            ROUND(v_cost * v_markup / 100, 2)::DECIMAL(10,2),
+            v_markup;
+    END LOOP;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_price_table_for_area(p_technique_code character varying, p_width numeric, p_height numeric)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_type_name VARCHAR;
+    v_table_id UUID;
+BEGIN
+    -- Mapear técnica para tipo de personalização
+    v_type_name := CASE p_technique_code
+        WHEN 'pad_printing' THEN 'Tampografia'
+        WHEN 'uv_print' THEN 'UV Digital'
+        WHEN 'silk_textile' THEN 'Silk screen têxtil'
+        WHEN 'silk' THEN 'Silk Screen'
+        WHEN 'silk_circular' THEN 'Silk Screen Circular'
+        WHEN 'laser_fiber' THEN 'Laser'
+        WHEN 'laser_co2' THEN 'Laser'
+        WHEN 'laser_circular' THEN 'Laser circular'
+        WHEN 'embroidery' THEN 'Bordado'
+        WHEN 'transfer' THEN 'Transfer'
+        WHEN 'dtf' THEN 'Transfer Digital'
+        WHEN 'hot_stamp' THEN 'Hot stamping'
+        WHEN 'doming' THEN 'Doming'
+        WHEN 'uv_circular' THEN 'UV Circular (360)'
+        ELSE 'UV Digital' -- fallback
+    END;
+    
+    -- Buscar tabela compatível
+    SELECT id INTO v_table_id
+    FROM customization_price_tables
+    WHERE customization_type_name = v_type_name
+      AND is_active = true
+      AND max_area_width_cm >= p_width
+      AND max_area_height_cm >= p_height
+    ORDER BY (max_area_width_cm * max_area_height_cm) ASC
+    LIMIT 1;
+    
+    -- Se não encontrou, pegar a maior
+    IF v_table_id IS NULL THEN
+        SELECT id INTO v_table_id
+        FROM customization_price_tables
+        WHERE customization_type_name = v_type_name
+          AND is_active = true
+        ORDER BY (max_area_width_cm * max_area_height_cm) DESC
+        LIMIT 1;
+    END IF;
+    
+    RETURN v_table_id;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_product_composition(p_product_id uuid)
+ RETURNS TABLE(material_name character varying, group_name character varying, part character varying, percentage numeric)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        m.name AS material_name,
+        mg.name AS group_name,
+        pm.part,
+        pm.percentage
+    FROM product_materials pm
+    JOIN materials m ON pm.material_id = m.id
+    JOIN material_groups mg ON m.material_group_id = mg.id
+    WHERE pm.product_id = p_product_id
+      AND pm.is_active = true
+    ORDER BY pm.sort_order;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_product_gallery(p_product_id uuid, p_color_id uuid DEFAULT NULL::uuid)
+ RETURNS TABLE(image_id uuid, cloudflare_id character varying, url_cdn text, url_thumbnail text, url_medium text, url_large text, image_type character varying, image_type_name character varying, color_id uuid, display_order integer, is_primary boolean)
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        pi.id,
+        pi.cloudflare_image_id,
+        pi.url_cdn,
+        pi.url_cdn || '/thumbnail',
+        pi.url_cdn || '/medium',
+        pi.url_cdn || '/large',
+        it.code,
+        it.name,
+        pi.color_id,
+        pi.display_order,
+        pi.is_primary
+    FROM product_images pi
+    LEFT JOIN image_types it ON pi.image_type_id = it.id
+    WHERE pi.product_id = p_product_id
+      AND pi.is_active = true
+      AND (it.show_in_gallery = true OR it.code IN ('main', 'gallery', 'product', 'lifestyle', 'set'))
+      AND (p_color_id IS NULL OR pi.color_id IS NULL OR pi.color_id = p_color_id)
+    ORDER BY 
+        pi.is_primary DESC, 
+        COALESCE(it.gallery_order, 99),
+        pi.display_order;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_product_images_by_type(p_product_id uuid, p_type_code character varying)
+ RETURNS TABLE(image_id uuid, cloudflare_id character varying, url_cdn text, url_thumbnail text, url_medium text, url_large text, filename character varying, color_id uuid, display_order integer)
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        pi.id,
+        pi.cloudflare_image_id,
+        pi.url_cdn,
+        pi.url_cdn || '/thumbnail',
+        pi.url_cdn || '/medium',
+        pi.url_cdn || '/large',
+        pi.filename,
+        pi.color_id,
+        pi.display_order
+    FROM product_images pi
+    LEFT JOIN image_types it ON pi.image_type_id = it.id
+    WHERE pi.product_id = p_product_id
+      AND pi.is_active = true
+      AND it.code = p_type_code
+    ORDER BY pi.display_order;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_product_media_summary(p_product_id uuid)
+ RETURNS TABLE(categoria text, tipo text, quantidade bigint, tem_principal boolean)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        COALESCE(it.category, 'other')::TEXT AS categoria,
+        COALESCE(it.code, 'unknown')::TEXT AS tipo,
+        COUNT(*)::BIGINT AS quantidade,
+        BOOL_OR(pi.is_primary) AS tem_principal
+    FROM product_images pi
+    LEFT JOIN image_types it ON pi.image_type_id = it.id
+    WHERE pi.product_id = p_product_id
+      AND pi.is_active = true
+    GROUP BY it.category, it.code
+    ORDER BY it.category, quantidade DESC;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_product_primary_image(p_product_id uuid)
+ RETURNS TABLE(image_id uuid, cloudflare_id character varying, url_cdn text, url_thumbnail text, url_medium text, url_large text, image_type character varying, image_type_name character varying)
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    -- 1. Primeiro tenta buscar onde is_primary = true
+    RETURN QUERY
+    SELECT 
+        pi.id,
+        pi.cloudflare_image_id,
+        pi.url_cdn,
+        pi.url_cdn || '/thumbnail',
+        pi.url_cdn || '/medium',
+        pi.url_cdn || '/large',
+        it.code,
+        it.name
+    FROM product_images pi
+    LEFT JOIN image_types it ON pi.image_type_id = it.id
+    WHERE pi.product_id = p_product_id
+      AND pi.is_primary = true
+      AND pi.is_active = true
+    LIMIT 1;
+    
+    -- 2. Se não encontrou, busca tipo 'main' ou 'product'
+    IF NOT FOUND THEN
+        RETURN QUERY
+        SELECT 
+            pi.id,
+            pi.cloudflare_image_id,
+            pi.url_cdn,
+            pi.url_cdn || '/thumbnail',
+            pi.url_cdn || '/medium',
+            pi.url_cdn || '/large',
+            it.code,
+            it.name
+        FROM product_images pi
+        LEFT JOIN image_types it ON pi.image_type_id = it.id
+        WHERE pi.product_id = p_product_id
+          AND it.code IN ('main', 'product')
+          AND pi.is_active = true
+        ORDER BY pi.display_order
+        LIMIT 1;
+    END IF;
+    
+    -- 3. Se ainda não encontrou, pega a primeira disponível
+    IF NOT FOUND THEN
+        RETURN QUERY
+        SELECT 
+            pi.id,
+            pi.cloudflare_image_id,
+            pi.url_cdn,
+            pi.url_cdn || '/thumbnail',
+            pi.url_cdn || '/medium',
+            pi.url_cdn || '/large',
+            it.code,
+            it.name
+        FROM product_images pi
+        LEFT JOIN image_types it ON pi.image_type_id = it.id
+        WHERE pi.product_id = p_product_id
+          AND pi.is_active = true
+        ORDER BY it.display_priority, pi.display_order
+        LIMIT 1;
+    END IF;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_product_primary_video(p_product_id uuid)
+ RETURNS TABLE(video_id uuid, cloudflare_id character varying, url_embed text, url_thumbnail text, duration_seconds integer, title character varying)
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        pv.id,
+        pv.cloudflare_video_id,
+        'https://iframe.cloudflarestream.com/' || pv.cloudflare_video_id,
+        pv.url_thumbnail,
+        pv.duration_seconds,
+        pv.title
+    FROM product_videos pv
+    WHERE pv.product_id = p_product_id
+      AND pv.is_primary = true
+      AND pv.is_active = true
+    LIMIT 1;
+    
+    -- Se não encontrou primary, busca qualquer um
+    IF NOT FOUND THEN
+        RETURN QUERY
+        SELECT 
+            pv.id,
+            pv.cloudflare_video_id,
+            'https://iframe.cloudflarestream.com/' || pv.cloudflare_video_id,
+            pv.url_thumbnail,
+            pv.duration_seconds,
+            pv.title
+        FROM product_videos pv
+        WHERE pv.product_id = p_product_id
+          AND pv.is_active = true
+        ORDER BY pv.display_order
+        LIMIT 1;
+    END IF;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_product_variants_with_prices(p_product_id uuid, p_quantity integer DEFAULT 1)
+ RETURNS TABLE(id uuid, sku text, sku_promo text, color_name text, color_hex text, size_value text, capacity text, calculated_price numeric, stock_quantity integer, is_active boolean)
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT pv.id, pv.sku::TEXT, pv.sku_promo::TEXT, cv.name::TEXT, cv.hex_code::TEXT,
+           vv.value::TEXT, pv.capacity::TEXT, get_variant_price(pv.id, p_quantity),
+           COALESCE(vs.stock_quantity, pv.stock_quantity), pv.is_active
+    FROM product_variants pv
+    LEFT JOIN color_variations cv ON pv.color_id = cv.id
+    LEFT JOIN variation_values vv ON pv.size_id = vv.id
+    LEFT JOIN variant_stocks vs ON vs.variant_id = pv.id
+    WHERE pv.product_id = p_product_id
+    ORDER BY cv.name, vv.value;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_root_categories()
+ RETURNS TABLE(id uuid, name text, slug text, icon text, image_url text, children_count integer, products_count integer, display_order integer)
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        c.id, 
+        c.name, 
+        c.slug, 
+        c.icon,
+        c.image_url,
+        c.children_count, 
+        c.products_count,
+        c.display_order
+    FROM categories c
+    WHERE c.level = 1
+      AND c.is_active = true
+    ORDER BY c.display_order, c.name;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_sale_price(p_variant_id uuid, p_quantity integer DEFAULT 1)
+ RETURNS TABLE(variant_id uuid, quantity integer, cost_price numeric, markup_percent numeric, sale_price numeric, tier_used integer)
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_cost DECIMAL(10,4);
+    v_markup DECIMAL(5,2);
+    v_tier INT;
+BEGIN
+    -- Buscar custo da faixa apropriada
+    SELECT 
+        CASE 
+            WHEN p_quantity >= COALESCE(pv.min_qty_5, 999999) AND pv.price_5 IS NOT NULL THEN pv.price_5
+            WHEN p_quantity >= COALESCE(pv.min_qty_4, 999999) AND pv.price_4 IS NOT NULL THEN pv.price_4
+            WHEN p_quantity >= COALESCE(pv.min_qty_3, 999999) AND pv.price_3 IS NOT NULL THEN pv.price_3
+            WHEN p_quantity >= COALESCE(pv.min_qty_2, 999999) AND pv.price_2 IS NOT NULL THEN pv.price_2
+            ELSE pv.price_1
+        END,
+        CASE 
+            WHEN p_quantity >= COALESCE(pv.min_qty_5, 999999) AND pv.price_5 IS NOT NULL THEN 5
+            WHEN p_quantity >= COALESCE(pv.min_qty_4, 999999) AND pv.price_4 IS NOT NULL THEN 4
+            WHEN p_quantity >= COALESCE(pv.min_qty_3, 999999) AND pv.price_3 IS NOT NULL THEN 3
+            WHEN p_quantity >= COALESCE(pv.min_qty_2, 999999) AND pv.price_2 IS NOT NULL THEN 2
+            ELSE 1
+        END
+    INTO v_cost, v_tier
+    FROM product_variants pv
+    WHERE pv.id = p_variant_id;
+    
+    -- Se não encontrou variante, retorna NULL
+    IF v_cost IS NULL THEN
+        RETURN;
+    END IF;
+    
+    -- Buscar markup aplicável
+    v_markup := get_applicable_markup(p_variant_id);
+    
+    -- Retornar resultado
+    RETURN QUERY SELECT 
+        p_variant_id,
+        p_quantity,
+        v_cost,
+        v_markup,
+        ROUND(v_cost * (1 + v_markup / 100), 2)::DECIMAL(10,2),
+        v_tier;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_sale_price_for_quantity(p_variant_id uuid, p_quantity integer, p_organization_id uuid DEFAULT NULL::uuid)
+ RETURNS TABLE(price_per_unit numeric, tier_number integer, min_quantity integer, is_manual_price boolean)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        CASE 
+            WHEN p_quantity >= COALESCE(vsp.min_qty_5, 999999) AND vsp.price_5 IS NOT NULL THEN vsp.price_5
+            WHEN p_quantity >= COALESCE(vsp.min_qty_4, 999999) AND vsp.price_4 IS NOT NULL THEN vsp.price_4
+            WHEN p_quantity >= COALESCE(vsp.min_qty_3, 999999) AND vsp.price_3 IS NOT NULL THEN vsp.price_3
+            WHEN p_quantity >= COALESCE(vsp.min_qty_2, 999999) AND vsp.price_2 IS NOT NULL THEN vsp.price_2
+            ELSE vsp.price_1
+        END AS price_per_unit,
+        CASE 
+            WHEN p_quantity >= COALESCE(vsp.min_qty_5, 999999) AND vsp.price_5 IS NOT NULL THEN 5
+            WHEN p_quantity >= COALESCE(vsp.min_qty_4, 999999) AND vsp.price_4 IS NOT NULL THEN 4
+            WHEN p_quantity >= COALESCE(vsp.min_qty_3, 999999) AND vsp.price_3 IS NOT NULL THEN 3
+            WHEN p_quantity >= COALESCE(vsp.min_qty_2, 999999) AND vsp.price_2 IS NOT NULL THEN 2
+            ELSE 1
+        END AS tier_number,
+        CASE 
+            WHEN p_quantity >= COALESCE(vsp.min_qty_5, 999999) AND vsp.price_5 IS NOT NULL THEN vsp.min_qty_5
+            WHEN p_quantity >= COALESCE(vsp.min_qty_4, 999999) AND vsp.price_4 IS NOT NULL THEN vsp.min_qty_4
+            WHEN p_quantity >= COALESCE(vsp.min_qty_3, 999999) AND vsp.price_3 IS NOT NULL THEN vsp.min_qty_3
+            WHEN p_quantity >= COALESCE(vsp.min_qty_2, 999999) AND vsp.price_2 IS NOT NULL THEN vsp.min_qty_2
+            ELSE vsp.min_qty_1
+        END AS min_quantity,
+        CASE 
+            WHEN p_quantity >= COALESCE(vsp.min_qty_5, 999999) AND vsp.price_5 IS NOT NULL THEN vsp.is_price_5_manual
+            WHEN p_quantity >= COALESCE(vsp.min_qty_4, 999999) AND vsp.price_4 IS NOT NULL THEN vsp.is_price_4_manual
+            WHEN p_quantity >= COALESCE(vsp.min_qty_3, 999999) AND vsp.price_3 IS NOT NULL THEN vsp.is_price_3_manual
+            WHEN p_quantity >= COALESCE(vsp.min_qty_2, 999999) AND vsp.price_2 IS NOT NULL THEN vsp.is_price_2_manual
+            ELSE vsp.is_price_1_manual
+        END AS is_manual_price
+    FROM variant_sale_prices vsp
+    WHERE vsp.variant_id = p_variant_id
+      AND vsp.is_active = true
+      AND (p_organization_id IS NULL OR vsp.organization_id = p_organization_id)
+    LIMIT 1;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.get_upcoming_commemorative_dates(p_days_ahead integer DEFAULT 60)
  RETURNS TABLE(id uuid, name text, slug text, date_day integer, date_month integer, is_fixed_date boolean, category text, target_audience text, icon_name text, color_hex text, campaign_start_days integer, days_until integer, is_in_campaign boolean)
  LANGUAGE plpgsql
@@ -1721,10 +21044,94 @@ BEGIN
         END,
         cd.date_day NULLS LAST;
 END;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
+CREATE OR REPLACE FUNCTION public.get_validation_summary(p_days integer DEFAULT 7)
+ RETURNS TABLE(status text, quantidade bigint, percentual numeric)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN QUERY
+    WITH totals AS (
+        SELECT COUNT(*) AS total
+        FROM image_validation_log
+        WHERE validated_at >= NOW() - (p_days || ' days')::INTERVAL
+    )
+    SELECT 
+        ivl.validation_status::TEXT,
+        COUNT(*)::BIGINT,
+        ROUND((COUNT(*)::NUMERIC / NULLIF(t.total, 0)) * 100, 1)
+    FROM image_validation_log ivl
+    CROSS JOIN totals t
+    WHERE ivl.validated_at >= NOW() - (p_days || ' days')::INTERVAL
+    GROUP BY ivl.validation_status, t.total
+    ORDER BY COUNT(*) DESC;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_variant_price(p_variant_id uuid, p_quantity integer)
+ RETURNS numeric
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE v_price DECIMAL;
+BEGIN
+    SELECT CASE 
+        WHEN p_quantity >= COALESCE(min_qty_5, 999999) AND price_5 IS NOT NULL THEN price_5
+        WHEN p_quantity >= COALESCE(min_qty_4, 999999) AND price_4 IS NOT NULL THEN price_4
+        WHEN p_quantity >= COALESCE(min_qty_3, 999999) AND price_3 IS NOT NULL THEN price_3
+        WHEN p_quantity >= COALESCE(min_qty_2, 999999) AND price_2 IS NOT NULL THEN price_2
+        ELSE price_1
+    END INTO v_price
+    FROM product_variants WHERE id = p_variant_id;
+    RETURN COALESCE(v_price, 0);
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_variant_with_suppliers(p_variant_id uuid)
+ RETURNS TABLE(variant_id uuid, variant_sku character varying, variant_name character varying, color_name character varying, product_id uuid, product_name character varying, total_stock integer, supplier_count bigint, suppliers jsonb)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        pv.id as variant_id,
+        pv.sku::VARCHAR(100) as variant_sku,
+        pv.name::VARCHAR(255) as variant_name,
+        pv.color_name::VARCHAR(100),
+        pv.product_id,
+        p.name::VARCHAR(500) as product_name,
+        COALESCE(pv.stock_quantity, 0)::INTEGER as total_stock,
+        COUNT(DISTINCT vss.supplier_id) as supplier_count,
+        COALESCE(
+            jsonb_agg(
+                jsonb_build_object(
+                    'supplier_id', vss.supplier_id,
+                    'supplier_name', s.name,
+                    'supplier_code', s.code,
+                    'supplier_sku', vss.supplier_sku,
+                    'quantity', vss.quantity,
+                    'reserved_quantity', vss.reserved_quantity,
+                    'available_quantity', GREATEST(vss.quantity - COALESCE(vss.reserved_quantity, 0), 0),
+                    'cost_price', vss.cost_price_1,
+                    'min_qty', vss.min_qty_1,
+                    'lead_time_days', vss.lead_time_days,
+                    'is_preferred', vss.is_preferred,
+                    'priority', vss.priority,
+                    'last_synced_at', vss.last_synced_at,
+                    'sync_status', vss.sync_status
+                )
+            ) FILTER (WHERE vss.id IS NOT NULL),
+            '[]'::jsonb
+        ) as suppliers
+    FROM product_variants pv
+    LEFT JOIN products p ON pv.product_id = p.id
+    LEFT JOIN variant_supplier_sources vss ON pv.id = vss.variant_id AND vss.is_active = true
+    LEFT JOIN suppliers s ON vss.supplier_id = s.id
+    WHERE pv.id = p_variant_id
+    GROUP BY pv.id, pv.sku, pv.name, pv.color_name, pv.product_id, p.name, pv.stock_quantity;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.grant_mcp_full_to_user(_target_user_id uuid, _reason text)
  RETURNS uuid
  LANGUAGE plpgsql
@@ -1738,18 +21145,597 @@ BEGIN
   VALUES (_target_user_id, auth.uid(), _reason)
   ON CONFLICT (user_id) DO UPDATE SET granted_by = EXCLUDED.granted_by, reason = EXCLUDED.reason, granted_at = now();
   RETURN _target_user_id;
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
+CREATE OR REPLACE FUNCTION public.hex_to_color_name(p_hex text)
+ RETURNS text
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN COALESCE(
+        (SELECT name FROM color_groups WHERE hex_code = UPPER(p_hex) LIMIT 1),
+        p_hex
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.increment_mockup_template_usage()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'pg_catalog', 'public'
+AS $function$
+BEGIN
+  IF NEW.product_id IS NOT NULL THEN
+    UPDATE public.mockup_templates SET usage_count = usage_count + 1
+    WHERE product_id = NEW.product_id;
+  END IF;
+  RETURN NEW;
+END $function$;
+CREATE OR REPLACE FUNCTION public.insert_cloudflare_video(p_product_id uuid, p_cloudflare_video_id character varying, p_video_type character varying DEFAULT 'demo'::character varying, p_title character varying DEFAULT NULL::character varying, p_duration_seconds integer DEFAULT NULL::integer, p_width_px integer DEFAULT NULL::integer, p_height_px integer DEFAULT NULL::integer, p_is_primary boolean DEFAULT false, p_supplier_code character varying DEFAULT 'PROMO_BRINDES'::character varying)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_video_id UUID;
+    v_existing_id UUID;
+    v_subdomain TEXT;
+BEGIN
+    -- Buscar subdomain
+    SELECT subdomain INTO v_subdomain FROM cloudflare_stream_config WHERE id = 1;
+    
+    -- Verificar se já existe
+    SELECT id INTO v_existing_id
+    FROM product_videos
+    WHERE product_id = p_product_id
+      AND cloudflare_video_id = p_cloudflare_video_id;
+    
+    IF v_existing_id IS NOT NULL THEN
+        -- Atualizar existente
+        UPDATE product_videos SET
+            title = COALESCE(p_title, title),
+            duration_seconds = COALESCE(p_duration_seconds, duration_seconds),
+            width_px = COALESCE(p_width_px, width_px),
+            height_px = COALESCE(p_height_px, height_px),
+            cloudflare_status = 'ready',
+            updated_at = NOW()
+        WHERE id = v_existing_id;
+        
+        RETURN v_existing_id;
+    END IF;
+    
+    -- Se marcado como primário, desmarcar outros
+    IF p_is_primary THEN
+        UPDATE product_videos SET is_primary = false
+        WHERE product_id = p_product_id AND is_primary = true;
+    END IF;
+    
+    -- Inserir novo
+    INSERT INTO product_videos (
+        product_id,
+        cloudflare_video_id,
+        url_stream,
+        url_hls,
+        url_thumbnail,
+        video_type,
+        title,
+        duration_seconds,
+        width_px,
+        height_px,
+        source_supplier,
+        cloudflare_status,
+        is_primary,
+        display_order,
+        is_active,
+        uploaded_at
+    ) VALUES (
+        p_product_id,
+        p_cloudflare_video_id,
+        'https://iframe.cloudflarestream.com/' || p_cloudflare_video_id,
+        'https://' || v_subdomain || '/' || p_cloudflare_video_id || '/manifest/video.m3u8',
+        'https://' || v_subdomain || '/' || p_cloudflare_video_id || '/thumbnails/thumbnail.jpg',
+        p_video_type,
+        p_title,
+        p_duration_seconds,
+        p_width_px,
+        p_height_px,
+        p_supplier_code,
+        'ready',
+        p_is_primary,
+        COALESCE(
+            (SELECT MAX(display_order) + 1 FROM product_videos WHERE product_id = p_product_id),
+            1
+        ),
+        true,
+        NOW()
+    )
+    RETURNING id INTO v_video_id;
+    
+    RETURN v_video_id;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.insert_media_from_filename(p_reference text, p_filename text, p_supplier text DEFAULT 'stricker'::text, p_type text DEFAULT 'product'::text, p_role text DEFAULT 'gallery'::text, p_variant_sku text DEFAULT NULL::text, p_is_primary boolean DEFAULT false)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_id UUID;
+BEGIN
+    INSERT INTO media_assets (
+        product_reference, variant_sku, supplier_code,
+        filename, image_type, image_role, is_primary
+    ) VALUES (
+        p_reference, p_variant_sku, p_supplier,
+        p_filename, p_type, p_role, p_is_primary
+    )
+    ON CONFLICT (product_reference, filename) 
+    WHERE filename IS NOT NULL
+    DO UPDATE SET
+        supplier_code = EXCLUDED.supplier_code,
+        image_type = EXCLUDED.image_type,
+        updated_at = NOW()
+    RETURNING id INTO v_id;
+    
+    RETURN v_id;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.insert_media_from_url(p_reference text, p_source_url text, p_supplier text DEFAULT 'manual'::text, p_type text DEFAULT 'product'::text, p_role text DEFAULT 'gallery'::text, p_variant_sku text DEFAULT NULL::text, p_is_primary boolean DEFAULT false, p_filename text DEFAULT NULL::text)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_id UUID;
+    v_filename TEXT;
+BEGIN
+    -- Extrair filename do URL se não fornecido
+    v_filename := COALESCE(p_filename, 
+        regexp_replace(p_source_url, '^.*/([^/]+)$', '\1')
+    );
+    
+    INSERT INTO media_assets (
+        product_reference, variant_sku, supplier_code,
+        filename, source_url, image_type, image_role, is_primary
+    ) VALUES (
+        p_reference, p_variant_sku, p_supplier,
+        v_filename, p_source_url, p_type, p_role, p_is_primary
+    )
+    ON CONFLICT (product_reference, filename) 
+    WHERE filename IS NOT NULL
+    DO UPDATE SET
+        source_url = EXCLUDED.source_url,
+        supplier_code = EXCLUDED.supplier_code,
+        updated_at = NOW()
+    RETURNING id INTO v_id;
+    
+    RETURN v_id;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.insert_or_update_product(p_supplier_id uuid, p_supplier_reference text, p_product_data jsonb, p_organization_id uuid DEFAULT '5db5aee1-064b-4ef4-9193-345dcd8274ea'::uuid)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_product_id UUID;
+    v_existing_id UUID;
+    v_sku TEXT;
+    v_supplier_code TEXT;
+BEGIN
+    -- Obter código do fornecedor
+    SELECT code INTO v_supplier_code FROM suppliers WHERE id = p_supplier_id;
+    
+    -- Gerar SKU padrão
+    v_sku := v_supplier_code || '-' || p_supplier_reference;
+    
+    -- Verificar se produto já existe (por supplier_reference + supplier_id)
+    SELECT p.id INTO v_existing_id
+    FROM products p
+    WHERE p.supplier_reference = p_supplier_reference
+    AND p.supplier_id = p_supplier_id;
+    
+    IF v_existing_id IS NOT NULL THEN
+        -- UPDATE
+        UPDATE products SET
+            name = COALESCE(p_product_data->>'name', name),
+            description = COALESCE(p_product_data->>'description', description),
+            short_description = COALESCE(p_product_data->>'short_description', short_description),
+            height_cm = COALESCE((p_product_data->>'height_cm')::NUMERIC, height_cm),
+            width_cm = COALESCE((p_product_data->>'width_cm')::NUMERIC, width_cm),
+            length_cm = COALESCE((p_product_data->>'length_cm')::NUMERIC, length_cm),
+            weight = COALESCE((p_product_data->>'weight')::NUMERIC, weight),
+            weight_g = COALESCE((p_product_data->>'weight_g')::INTEGER, weight_g),
+            box_height_cm = COALESCE((p_product_data->>'box_height_cm')::NUMERIC, box_height_cm),
+            box_width_cm = COALESCE((p_product_data->>'box_width_cm')::NUMERIC, box_width_cm),
+            box_length_cm = COALESCE((p_product_data->>'box_length_cm')::NUMERIC, box_length_cm),
+            box_weight_kg = COALESCE((p_product_data->>'box_weight_kg')::NUMERIC, box_weight_kg),
+            box_quantity = COALESCE((p_product_data->>'box_quantity')::INTEGER, box_quantity),
+            suggested_price = COALESCE((p_product_data->>'suggested_price')::NUMERIC, suggested_price),
+            ncm_code = COALESCE(p_product_data->>'ncm_code', ncm_code),
+            primary_image_url = COALESCE(p_product_data->>'primary_image_url', primary_image_url),
+            dimensions_display = COALESCE(p_product_data->>'dimensions_display', dimensions_display),
+            is_active = COALESCE((p_product_data->>'is_active')::BOOLEAN, is_active),
+            sync_status = 'synced',
+            last_sync_at = NOW(),
+            updated_at = NOW()
+        WHERE id = v_existing_id;
+        
+        v_product_id := v_existing_id;
+    ELSE
+        -- INSERT
+        INSERT INTO products (
+            id,
+            organization_id,
+            supplier_id,
+            supplier_reference,
+            sku,
+            name,
+            description,
+            short_description,
+            height_cm,
+            width_cm,
+            length_cm,
+            weight,
+            weight_g,
+            box_height_cm,
+            box_width_cm,
+            box_length_cm,
+            box_weight_kg,
+            box_quantity,
+            suggested_price,
+            ncm_code,
+            primary_image_url,
+            dimensions_display,
+            is_active,
+            sync_status,
+            last_sync_at,
+            created_at,
+            updated_at
+        ) VALUES (
+            gen_random_uuid(),
+            p_organization_id,
+            p_supplier_id,
+            p_supplier_reference,
+            v_sku,
+            p_product_data->>'name',
+            p_product_data->>'description',
+            p_product_data->>'short_description',
+            (p_product_data->>'height_cm')::NUMERIC,
+            (p_product_data->>'width_cm')::NUMERIC,
+            (p_product_data->>'length_cm')::NUMERIC,
+            (p_product_data->>'weight')::NUMERIC,
+            (p_product_data->>'weight_g')::INTEGER,
+            (p_product_data->>'box_height_cm')::NUMERIC,
+            (p_product_data->>'box_width_cm')::NUMERIC,
+            (p_product_data->>'box_length_cm')::NUMERIC,
+            (p_product_data->>'box_weight_kg')::NUMERIC,
+            (p_product_data->>'box_quantity')::INTEGER,
+            (p_product_data->>'suggested_price')::NUMERIC,
+            p_product_data->>'ncm_code',
+            p_product_data->>'primary_image_url',
+            p_product_data->>'dimensions_display',
+            COALESCE((p_product_data->>'is_active')::BOOLEAN, true),
+            'synced',
+            NOW(),
+            NOW(),
+            NOW()
+        )
+        RETURNING id INTO v_product_id;
+    END IF;
+    
+    RETURN v_product_id;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.insert_product_image_with_type(p_product_id uuid, p_cloudflare_image_id character varying, p_url_cdn text, p_filename character varying, p_supplier_code character varying DEFAULT 'SPOT'::character varying, p_color_id uuid DEFAULT NULL::uuid, p_variant_id uuid DEFAULT NULL::uuid, p_is_primary boolean DEFAULT false, p_display_order integer DEFAULT 0)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_image_type_id UUID;
+    v_image_type_code VARCHAR;
+    v_new_image_id UUID;
+    v_suffix VARCHAR;
+BEGIN
+    -- 1. Extrair sufixo do filename (ex: "11113_114-logo.jpg" → "-logo")
+    v_suffix := substring(p_filename from '(-[a-zA-Z0-9_]+)\.[^.]+$');
+    
+    -- 2. Buscar mapeamento na tabela
+    IF v_suffix IS NOT NULL THEN
+        SELECT m.image_type_id, it.code 
+        INTO v_image_type_id, v_image_type_code
+        FROM supplier_image_suffix_mappings m
+        JOIN image_types it ON m.image_type_id = it.id
+        WHERE m.supplier_code = p_supplier_code
+          AND m.suffix_pattern = v_suffix
+        LIMIT 1;
+    END IF;
+    
+    -- 3. Se não encontrou, buscar mapeamento para "(sem sufixo)" ou usar 'gallery'
+    IF v_image_type_id IS NULL THEN
+        SELECT m.image_type_id, it.code 
+        INTO v_image_type_id, v_image_type_code
+        FROM supplier_image_suffix_mappings m
+        JOIN image_types it ON m.image_type_id = it.id
+        WHERE m.supplier_code = p_supplier_code
+          AND (m.suffix_pattern = '(sem sufixo)' OR m.suffix_pattern IS NULL)
+        LIMIT 1;
+    END IF;
+    
+    -- 4. Fallback final: usar 'gallery'
+    IF v_image_type_id IS NULL THEN
+        SELECT id, code INTO v_image_type_id, v_image_type_code
+        FROM image_types 
+        WHERE code = 'gallery';
+    END IF;
+    
+    -- 5. Inserir a imagem
+    INSERT INTO product_images (
+        product_id,
+        cloudflare_image_id,
+        url_cdn,
+        filename,
+        image_type_id,
+        image_type,  -- Coluna legada para compatibilidade
+        supplier_code,
+        color_id,
+        variant_id,
+        is_primary,
+        display_order,
+        source_supplier,
+        is_active
+    ) VALUES (
+        p_product_id,
+        p_cloudflare_image_id,
+        p_url_cdn,
+        p_filename,
+        v_image_type_id,
+        v_image_type_code,
+        p_supplier_code,
+        p_color_id,
+        p_variant_id,
+        p_is_primary,
+        p_display_order,
+        LOWER(p_supplier_code),
+        true
+    )
+    RETURNING id INTO v_new_image_id;
+    
+    RETURN v_new_image_id;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.insert_supplier_product_raw(p_supplier_id uuid, p_supplier_reference text, p_raw_data jsonb, p_import_batch_id uuid DEFAULT NULL::uuid)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_id UUID;
+    v_hash TEXT;
+BEGIN
+    -- Calcular hash para detectar mudanças
+    v_hash := md5(p_raw_data::TEXT);
+    
+    -- Inserir ou atualizar (se mudou)
+    INSERT INTO supplier_products_raw (
+        id,
+        supplier_id,
+        supplier_reference,
+        raw_data,
+        raw_hash,
+        import_batch_id,
+        imported_at,
+        processed,
+        created_at,
+        updated_at
+    ) VALUES (
+        gen_random_uuid(),
+        p_supplier_id,
+        p_supplier_reference,
+        p_raw_data,
+        v_hash,
+        p_import_batch_id,
+        NOW(),
+        false,
+        NOW(),
+        NOW()
+    )
+    ON CONFLICT (supplier_id, supplier_reference) 
+    DO UPDATE SET
+        raw_data = EXCLUDED.raw_data,
+        raw_hash = EXCLUDED.raw_hash,
+        import_batch_id = EXCLUDED.import_batch_id,
+        imported_at = NOW(),
+        processed = CASE 
+            WHEN supplier_products_raw.raw_hash != EXCLUDED.raw_hash THEN false 
+            ELSE supplier_products_raw.processed 
+        END,
+        updated_at = NOW()
+    RETURNING id INTO v_id;
+    
+    RETURN v_id;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.insert_xbz_image_staging(p_product_code character varying, p_variant_code character varying, p_item_id integer, p_image_url text, p_color_name character varying DEFAULT NULL::character varying)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_metadata JSONB;
+    v_staging_id UUID;
+BEGIN
+    v_metadata := extract_xbz_image_metadata(p_image_url);
+    
+    INSERT INTO xbz_image_import_staging (
+        xbz_product_code,
+        xbz_variant_code,
+        xbz_item_id,
+        original_url,
+        filename,
+        color_name,
+        image_type,
+        gallery_suffix,
+        status
+    ) VALUES (
+        p_product_code,
+        p_variant_code,
+        p_item_id,
+        p_image_url,
+        v_metadata->>'filename',
+        COALESCE(p_color_name, v_metadata->>'color_name'),
+        v_metadata->>'image_type',
+        v_metadata->>'gallery_suffix',
+        'pending'
+    )
+    ON CONFLICT (xbz_variant_code, original_url) DO UPDATE SET
+        xbz_item_id = EXCLUDED.xbz_item_id,
+        color_name = COALESCE(EXCLUDED.color_name, xbz_image_import_staging.color_name),
+        status = 'pending'
+    RETURNING id INTO v_staging_id;
+    
+    RETURN v_staging_id;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.is_admin_or_above(_user_id uuid DEFAULT auth.uid())
+ RETURNS boolean
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  IF _user_id IS DISTINCT FROM auth.uid()
+     AND NOT public.has_role(auth.uid(), 'dev'::app_role) THEN
+    RAISE EXCEPTION 'forbidden: cannot query role of another user'
+      USING ERRCODE = '42501';
+  END IF;
+  RETURN public.is_supervisor_or_above(_user_id);
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.is_coord_or_above(_user_id uuid DEFAULT auth.uid())
+ RETURNS boolean
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  IF _user_id IS DISTINCT FROM auth.uid()
+     AND NOT public.has_role(auth.uid(), 'dev'::app_role) THEN
+    RAISE EXCEPTION 'forbidden: cannot query role of another user'
+      USING ERRCODE = '42501';
+  END IF;
+  RETURN public.is_supervisor_or_above(_user_id);
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.li_increment_api_usage(p_provider text, p_cost numeric)
+ RETURNS void
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    INSERT INTO api_usage (provider, period_month, credits_used, cost_usd)
+    VALUES (p_provider, TO_CHAR(NOW(), 'YYYY-MM'), 1, p_cost)
+    ON CONFLICT (provider, period_month)
+    DO UPDATE SET
+        credits_used = api_usage.credits_used + 1,
+        cost_usd = api_usage.cost_usd + p_cost,
+        updated_at = NOW();
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.li_update_updated_at()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.li_upsert_enriched_contact(p_linkedin_url text, p_first_name text, p_last_name text, p_company text, p_domain text, p_email text DEFAULT NULL::text, p_email_confidence smallint DEFAULT NULL::smallint, p_email_source text DEFAULT NULL::text, p_phone text DEFAULT NULL::text, p_phone_confidence smallint DEFAULT NULL::smallint, p_phone_source text DEFAULT NULL::text)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_id UUID;
+BEGIN
+    INSERT INTO enriched_contacts (
+        linkedin_url, first_name, last_name, current_company, company_domain,
+        work_email, work_email_confidence, work_email_source,
+        phone_mobile, phone_mobile_confidence, phone_mobile_source,
+        enrichment_status, enrichment_attempts, last_enriched_at
+    ) VALUES (
+        p_linkedin_url, p_first_name, p_last_name, p_company, p_domain,
+        p_email, p_email_confidence, p_email_source,
+        p_phone, p_phone_confidence, p_phone_source,
+        CASE WHEN p_email IS NOT NULL OR p_phone IS NOT NULL THEN 'complete' ELSE 'partial' END,
+        1, NOW()
+    )
+    ON CONFLICT (linkedin_url) DO UPDATE SET
+        work_email = COALESCE(EXCLUDED.work_email, enriched_contacts.work_email),
+        work_email_confidence = GREATEST(EXCLUDED.work_email_confidence, enriched_contacts.work_email_confidence),
+        work_email_source = COALESCE(EXCLUDED.work_email_source, enriched_contacts.work_email_source),
+        phone_mobile = COALESCE(EXCLUDED.phone_mobile, enriched_contacts.phone_mobile),
+        phone_mobile_confidence = GREATEST(EXCLUDED.phone_mobile_confidence, enriched_contacts.phone_mobile_confidence),
+        phone_mobile_source = COALESCE(EXCLUDED.phone_mobile_source, enriched_contacts.phone_mobile_source),
+        enrichment_status = CASE
+            WHEN COALESCE(EXCLUDED.work_email, enriched_contacts.work_email) IS NOT NULL
+                 OR COALESCE(EXCLUDED.phone_mobile, enriched_contacts.phone_mobile) IS NOT NULL
+            THEN 'complete' ELSE 'partial' END,
+        enrichment_attempts = enriched_contacts.enrichment_attempts + 1,
+        last_enriched_at = NOW()
+    RETURNING id INTO v_id;
+    RETURN v_id;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.limit_recently_viewed_items()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  -- Mantém apenas os 50 últimos vistos por usuário
+  DELETE FROM public.recently_viewed_products
+  WHERE user_id = NEW.user_id
+    AND id NOT IN (
+      SELECT id FROM public.recently_viewed_products
+      WHERE user_id = NEW.user_id
+      ORDER BY viewed_at DESC
+      LIMIT 50
+    );
+  RETURN NEW;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.limit_recently_viewed_products()
  RETURNS trigger
  LANGUAGE plpgsql
  SET search_path TO 'public'
-AS $function$ BEGIN RETURN NEW; END; $function$
-;
-
--- ----------------------------------------------------------------------------
+AS $function$ BEGIN RETURN NEW; END; $function$;
+CREATE OR REPLACE FUNCTION public.limpar_nome_produto_spot(p_name text)
+ RETURNS text
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_pos INTEGER;
+BEGIN
+    IF p_name IS NULL OR p_name = '' THEN
+        RETURN p_name;
+    END IF;
+    
+    v_pos := POSITION('. ' IN p_name);
+    
+    IF v_pos > 0 THEN
+        RETURN SUBSTRING(p_name FROM v_pos + 2);
+    END IF;
+    
+    RETURN p_name;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.log_audit(_action text, _resource_type text, _resource_id text, _details jsonb DEFAULT '{}'::jsonb)
  RETURNS uuid
  LANGUAGE plpgsql
@@ -1760,10 +21746,41 @@ BEGIN
   INSERT INTO public.admin_audit_log (user_id, action, resource_type, resource_id, details)
   VALUES (auth.uid(), _action, _resource_type, _resource_id, _details) RETURNING id INTO v_id;
   RETURN v_id;
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
+CREATE OR REPLACE FUNCTION public.log_image_upload(p_product_id uuid, p_cloudflare_id character varying, p_url_cdn text, p_source_url text, p_file_size bigint DEFAULT NULL::bigint, p_status character varying DEFAULT 'success'::character varying)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_log_id UUID;
+BEGIN
+    INSERT INTO media_sync_log (
+        sync_type,
+        media_type,
+        product_id,
+        cloudflare_id,
+        source_url,
+        destination_url,
+        file_size_bytes,
+        status,
+        synced_by
+    ) VALUES (
+        'image_upload',
+        'image',
+        p_product_id,
+        p_cloudflare_id,
+        p_source_url,
+        p_url_cdn,
+        p_file_size,
+        p_status,
+        'n8n'
+    )
+    RETURNING id INTO v_log_id;
+    
+    RETURN v_log_id;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.log_login_attempt(_email text, _success boolean, _user_id uuid DEFAULT NULL::uuid, _ip text DEFAULT NULL::text, _user_agent text DEFAULT NULL::text, _failure_reason text DEFAULT NULL::text)
  RETURNS uuid
  LANGUAGE plpgsql
@@ -1776,10 +21793,7 @@ BEGIN
   RETURNING id INTO v_id;
   RETURN v_id;
 EXCEPTION WHEN OTHERS THEN RETURN NULL;
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
 CREATE OR REPLACE FUNCTION public.log_step_up_audit(_event_type text, _action step_up_action DEFAULT NULL::step_up_action, _metadata jsonb DEFAULT '{}'::jsonb)
  RETURNS uuid
  LANGUAGE plpgsql
@@ -1791,10 +21805,41 @@ BEGIN
   VALUES (auth.uid(), _event_type, _action, _metadata) RETURNING id INTO v_id;
   RETURN v_id;
 EXCEPTION WHEN OTHERS THEN RETURN NULL;
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
+CREATE OR REPLACE FUNCTION public.log_video_upload(p_product_id uuid, p_cloudflare_id character varying, p_url_stream text, p_source_url text, p_file_size bigint DEFAULT NULL::bigint, p_status character varying DEFAULT 'success'::character varying)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_log_id UUID;
+BEGIN
+    INSERT INTO media_sync_log (
+        sync_type,
+        media_type,
+        product_id,
+        cloudflare_id,
+        source_url,
+        destination_url,
+        file_size_bytes,
+        status,
+        synced_by
+    ) VALUES (
+        'video_upload',
+        'video',
+        p_product_id,
+        p_cloudflare_id,
+        p_source_url,
+        p_url_stream,
+        p_file_size,
+        p_status,
+        'n8n'
+    )
+    RETURNING id INTO v_log_id;
+    
+    RETURN v_log_id;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.log_voice_command(_transcript text, _action text DEFAULT NULL::text, _success boolean DEFAULT true, _data jsonb DEFAULT '{}'::jsonb)
  RETURNS uuid
  LANGUAGE plpgsql
@@ -1806,18 +21851,12 @@ BEGIN
   VALUES (auth.uid(), _transcript, _action, _success, _data)
   RETURNING id INTO v_id;
   RETURN v_id;
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
 CREATE OR REPLACE FUNCTION public.magic_up_audit_changes()
  RETURNS trigger
  LANGUAGE plpgsql
  SET search_path TO 'public'
-AS $function$ BEGIN RETURN NEW; END; $function$
-;
-
--- ----------------------------------------------------------------------------
+AS $function$ BEGIN RETURN NEW; END; $function$;
 CREATE OR REPLACE FUNCTION public.magic_up_calculate_score(_generation_id uuid)
  RETURNS numeric
  LANGUAGE plpgsql
@@ -1828,10 +21867,7 @@ BEGIN
   -- A edge function magic-up-score implementa lógica detalhada; aqui só retorna o quality_score salvo
   SELECT quality_score INTO v_score FROM public.magic_up_generations WHERE id = _generation_id;
   RETURN COALESCE(v_score, 0);
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
 CREATE OR REPLACE FUNCTION public.magic_up_create_brand_kit(_data jsonb)
  RETURNS uuid
  LANGUAGE plpgsql
@@ -1859,10 +21895,7 @@ BEGIN
   )
   RETURNING id INTO v_id;
   RETURN v_id;
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
 CREATE OR REPLACE FUNCTION public.magic_up_create_campaign(_data jsonb)
  RETURNS uuid
  LANGUAGE plpgsql
@@ -1889,10 +21922,7 @@ BEGIN
   )
   RETURNING id INTO v_id;
   RETURN v_id;
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
 CREATE OR REPLACE FUNCTION public.magic_up_increment_metric(_kit_id uuid, _metric text)
  RETURNS void
  LANGUAGE plpgsql
@@ -1903,10 +21933,7 @@ BEGIN
   SET metadata = jsonb_set(COALESCE(metadata,'{}'::jsonb), ARRAY['metrics', _metric], 
     to_jsonb(COALESCE((metadata->'metrics'->>_metric)::int, 0) + 1))
   WHERE id = _kit_id AND user_id = auth.uid();
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
 CREATE OR REPLACE FUNCTION public.magic_up_save_generation(_data jsonb)
  RETURNS uuid
  LANGUAGE plpgsql
@@ -1942,10 +21969,75 @@ BEGIN
   )
   RETURNING id INTO v_id;
   RETURN v_id;
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
+CREATE OR REPLACE FUNCTION public.maintain_webhook_metrics()
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  -- Cleanup: remove metrics > 90 dias (sem lógica de partição, pois não é partitioned em PROD)
+  DELETE FROM public.webhook_delivery_metrics WHERE occurred_at < now() - INTERVAL '90 days';
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.marcar_alertas_notificados_bitrix(p_ids uuid[], p_bitrix_task_id character varying DEFAULT NULL::character varying)
+ RETURNS integer
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_count INTEGER;
+BEGIN
+    UPDATE spot_price_change_log
+    SET 
+        bitrix_notificado = TRUE,
+        bitrix_notificado_em = NOW(),
+        bitrix_task_id = p_bitrix_task_id
+    WHERE id = ANY(p_ids);
+    
+    GET DIAGNOSTICS v_count = ROW_COUNT;
+    RETURN v_count;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.mark_for_processing_trigger()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_new_hash TEXT;
+    v_old_hash TEXT;
+BEGIN
+    v_new_hash := MD5(NEW.raw_data::TEXT);
+    
+    IF TG_OP = 'INSERT' THEN
+        NEW.processed := false;
+        NEW.raw_hash := v_new_hash;
+        NEW.imported_at := COALESCE(NEW.imported_at, NOW());
+        RETURN NEW;
+    END IF;
+    
+    IF TG_OP = 'UPDATE' THEN
+        v_old_hash := OLD.raw_hash;
+        
+        IF v_new_hash != v_old_hash THEN
+            NEW.processed := false;
+            NEW.raw_hash := v_new_hash;
+            NEW.process_errors := NULL;
+            NEW.processed_at := NULL;
+        ELSE
+            NEW.processed := OLD.processed;
+            NEW.raw_hash := OLD.raw_hash;
+            NEW.processed_at := OLD.processed_at;
+        END IF;
+        
+        RETURN NEW;
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.mcp_audit_violation(_key_id uuid, _reason text, _details jsonb DEFAULT '{}'::jsonb)
  RETURNS uuid
  LANGUAGE plpgsql
@@ -1957,10 +22049,7 @@ BEGIN
   VALUES (auth.uid(), _key_id, _reason, 'rpc', _details) RETURNING id INTO v_id;
   RETURN v_id;
 EXCEPTION WHEN OTHERS THEN RETURN NULL;
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
 CREATE OR REPLACE FUNCTION public.move_favorites_to_trash(_item_ids uuid[])
  RETURNS integer
  LANGUAGE plpgsql
@@ -1981,10 +22070,24 @@ BEGIN
   SELECT count(*) INTO v_count FROM inserted;
   RETURN v_count;
 EXCEPTION WHEN OTHERS THEN RETURN 0;
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
+CREATE OR REPLACE FUNCTION public.normalize_product_name(p_name text)
+ RETURNS text
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN INITCAP(
+        TRIM(
+            REGEXP_REPLACE(
+                REGEXP_REPLACE(p_name, '\s+', ' ', 'g'),
+                '^\d+\.\s*', ''
+            )
+        )
+    );
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.normalize_unit(p_value numeric, p_source_unit character varying, p_target_unit character varying)
  RETURNS numeric
  LANGUAGE plpgsql
@@ -2046,10 +22149,7 @@ EXCEPTION WHEN OTHERS THEN
     RAISE WARNING 'Erro em normalize_unit: %', SQLERRM;
     RETURN p_value;
 END;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.ownership_repair(_report_id uuid, _dry_run boolean DEFAULT true)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -2060,10 +22160,1586 @@ BEGIN
   INSERT INTO public.ownership_repair_logs (report_id, table_name, owner_column, issue_type, action, rows_affected, dry_run, triggered_by)
   VALUES (_report_id, 'multi', 'multi', 'manual_review', 'manual_review', 0, _dry_run, auth.uid());
   RETURN jsonb_build_object('status', 'logged', 'dry_run', _dry_run);
-END $function$
-;
+END $function$;
+CREATE OR REPLACE FUNCTION public.parse_asia_categories(p_raw_data jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_categorias JSONB;
+    v_cat_array JSONB := '[]'::jsonb;
+    v_key TEXT;
+    v_value TEXT;
+BEGIN
+    v_categorias := p_raw_data->'categorias';
+    
+    IF v_categorias IS NULL THEN
+        RETURN '[]'::jsonb;
+    END IF;
+    
+    FOR v_key, v_value IN SELECT * FROM jsonb_each_text(v_categorias)
+    LOOP
+        v_cat_array := v_cat_array || jsonb_build_array(
+            jsonb_build_object(
+                'id_asia', v_key,
+                'nome', v_value
+            )
+        );
+    END LOOP;
+    
+    RETURN v_cat_array;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN '[]'::jsonb;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.parse_asia_colors(p_raw_data jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_variacoes JSONB;
+    v_variacao JSONB;
+    v_cores JSONB := '[]'::jsonb;
+    v_cor JSONB;
+BEGIN
+    v_variacoes := p_raw_data->'variacoes';
+    
+    IF v_variacoes IS NULL THEN
+        RETURN '[]'::jsonb;
+    END IF;
+    
+    FOR v_variacao IN SELECT * FROM jsonb_array_elements(v_variacoes)
+    LOOP
+        v_cor := v_variacao->'atributos'->'cor';
+        
+        IF v_cor IS NOT NULL THEN
+            v_cores := v_cores || jsonb_build_array(
+                jsonb_build_object(
+                    'slug', v_cor->>'name',
+                    'nome', v_cor->>'value',
+                    'hex', v_cor->>'hexadecimal',
+                    'sku', v_variacao->>'referencia'
+                )
+            );
+        END IF;
+    END LOOP;
+    
+    RETURN v_cores;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN '[]'::jsonb;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.parse_asia_dimensions(p_raw_data jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN jsonb_build_object(
+        'peso_kg', COALESCE((p_raw_data->>'peso')::NUMERIC, 0),
+        'altura_cm', COALESCE((p_raw_data->>'altura')::NUMERIC, 0),
+        'largura_cm', COALESCE((p_raw_data->>'largura')::NUMERIC, 0),
+        'profundidade_cm', COALESCE((p_raw_data->>'comprimento')::NUMERIC, 0)
+    );
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object(
+            'peso_kg', 0,
+            'altura_cm', 0,
+            'largura_cm', 0,
+            'profundidade_cm', 0,
+            'error', SQLERRM
+        );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.parse_asia_media(p_raw_data jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN jsonb_build_object(
+        'imagem_principal', p_raw_data->>'imagem',
+        'galeria', COALESCE(p_raw_data->'galeria', '[]'::jsonb),
+        'video', p_raw_data->>'video',
+        'total_imagens', COALESCE(jsonb_array_length(p_raw_data->'galeria'), 0) + 1,
+        'tem_video', (p_raw_data->>'video') IS NOT NULL
+    );
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object(
+            'imagem_principal', null,
+            'galeria', '[]'::jsonb,
+            'video', null,
+            'total_imagens', 0,
+            'tem_video', false
+        );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.parse_asia_price(p_raw_data jsonb)
+ RETURNS numeric
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_preco TEXT;
+    v_preco_numeric NUMERIC;
+BEGIN
+    v_preco := p_raw_data->>'preco';
+    
+    IF v_preco IS NULL OR v_preco = '' THEN
+        RETURN 0;
+    END IF;
+    
+    v_preco_numeric := v_preco::NUMERIC;
+    RETURN v_preco_numeric;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN 0;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.parse_asia_stock(p_raw_data jsonb)
+ RETURNS integer
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_variacoes JSONB;
+    v_variacao JSONB;
+    v_estoque_total INTEGER := 0;
+BEGIN
+    v_variacoes := p_raw_data->'variacoes';
+    
+    IF v_variacoes IS NULL THEN
+        RETURN 0;
+    END IF;
+    
+    FOR v_variacao IN SELECT * FROM jsonb_array_elements(v_variacoes)
+    LOOP
+        v_estoque_total := v_estoque_total + COALESCE((v_variacao->>'qtd_estoque')::INTEGER, 0);
+    END LOOP;
+    
+    RETURN v_estoque_total;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN 0;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.parse_asia_tags(p_raw_data jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_tags JSONB;
+    v_tags_array JSONB := '[]'::jsonb;
+    v_key TEXT;
+    v_value TEXT;
+BEGIN
+    v_tags := p_raw_data->'tags';
+    
+    IF v_tags IS NULL THEN
+        RETURN '[]'::jsonb;
+    END IF;
+    
+    FOR v_key, v_value IN SELECT * FROM jsonb_each_text(v_tags)
+    LOOP
+        v_tags_array := v_tags_array || jsonb_build_array(
+            jsonb_build_object(
+                'id_asia', v_key,
+                'nome', v_value
+            )
+        );
+    END LOOP;
+    
+    RETURN v_tags_array;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN '[]'::jsonb;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.parse_supplier_image_filename(p_filename text, p_supplier_code character varying DEFAULT 'spot'::character varying)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_result JSONB;
+    v_base TEXT;
+    v_extension TEXT;
+    v_product_ref TEXT;
+    v_color_code TEXT;
+    v_suffix TEXT;
+    v_sequence_num INT;
+    v_is_color_specific BOOLEAN := true;
+    v_match TEXT[];
+BEGIN
+    -- Validar input
+    IF p_filename IS NULL OR p_filename = '' THEN
+        RETURN jsonb_build_object(
+            'success', false,
+            'error', 'Filename vazio ou nulo',
+            'supplier_code', p_supplier_code
+        );
+    END IF;
+    
+    -- Separar extensão
+    IF p_filename LIKE '%.%' THEN
+        v_base := regexp_replace(p_filename, '\.[^.]+$', '');
+        v_extension := upper(regexp_replace(p_filename, '^.*\.', ''));
+    ELSE
+        v_base := p_filename;
+        v_extension := NULL;
+    END IF;
+    
+    -- ═══════════════════════════════════════════════════════════════════════
+    -- PARSING PARA PROMO_BRINDES (interno)
+    -- ═══════════════════════════════════════════════════════════════════════
+    IF upper(p_supplier_code) = 'PROMO_BRINDES' THEN
+        
+        -- PADRÃO 1: Por cor, múltiplo - {produto}_{cor}-vp-{n} ou {produto}_{cor}-va-{n}
+        IF v_base ~ '^[0-9]+_[0-9]+-(vp|va)-[0-9]+$' THEN
+            v_match := regexp_match(v_base, '^([0-9]+)_([0-9]+)-(vp|va)-([0-9]+)$');
+            IF v_match IS NOT NULL THEN
+                v_product_ref := v_match[1];
+                v_color_code := v_match[2];
+                v_suffix := '_cor-' || v_match[3] || '-#';
+                v_sequence_num := v_match[4]::INT;
+                v_is_color_specific := true;
+            END IF;
+        
+        -- PADRÃO 2: Por cor, único - {produto}_{cor}-vp ou {produto}_{cor}-va
+        ELSIF v_base ~ '^[0-9]+_[0-9]+-(vp|va)$' THEN
+            v_match := regexp_match(v_base, '^([0-9]+)_([0-9]+)-(vp|va)$');
+            IF v_match IS NOT NULL THEN
+                v_product_ref := v_match[1];
+                v_color_code := v_match[2];
+                v_suffix := '_cor-' || v_match[3];
+                v_is_color_specific := true;
+            END IF;
+        
+        -- PADRÃO 3: Raiz, múltiplo - {produto}-vp-{n} ou {produto}-va-{n}
+        ELSIF v_base ~ '^[0-9]+-(vp|va)-[0-9]+$' THEN
+            v_match := regexp_match(v_base, '^([0-9]+)-(vp|va)-([0-9]+)$');
+            IF v_match IS NOT NULL THEN
+                v_product_ref := v_match[1];
+                v_suffix := '-' || v_match[2] || '-#';
+                v_sequence_num := v_match[3]::INT;
+                v_is_color_specific := false;
+                v_color_code := NULL;
+            END IF;
+        
+        -- PADRÃO 4: Raiz, único - {produto}-vp ou {produto}-va
+        ELSIF v_base ~ '^[0-9]+-(vp|va)$' THEN
+            v_match := regexp_match(v_base, '^([0-9]+)-(vp|va)$');
+            IF v_match IS NOT NULL THEN
+                v_product_ref := v_match[1];
+                v_suffix := '-' || v_match[2];
+                v_is_color_specific := false;
+                v_color_code := NULL;
+            END IF;
+        
+        -- PADRÃO NÃO RECONHECIDO
+        ELSE
+            v_suffix := '(desconhecido)';
+            v_match := regexp_match(v_base, '^([0-9]+)');
+            IF v_match IS NOT NULL THEN
+                v_product_ref := v_match[1];
+            END IF;
+        END IF;
+    
+    -- ═══════════════════════════════════════════════════════════════════════
+    -- PARSING PARA SPOT (fornecedor externo)
+    -- ═══════════════════════════════════════════════════════════════════════
+    ELSIF upper(p_supplier_code) = 'SPOT' THEN
+        
+        -- PADRÃO 1: Área de gravação (_#_#_#)
+        IF v_base ~ '^[0-9]+_[0-9]+_[0-9]+_[0-9]+$' THEN
+            v_match := regexp_match(v_base, '^([0-9]+)_([0-9]+)_([0-9]+)_([0-9]+)$');
+            IF v_match IS NOT NULL THEN
+                v_product_ref := v_match[1];
+                v_suffix := '_#_#_#';
+                v_is_color_specific := false;
+                v_color_code := NULL;
+            END IF;
+        
+        -- PADRÃO 2: Localização (_C#_L#)
+        ELSIF v_base ~ '_C[0-9]+_L[0-9]+$' THEN
+            v_match := regexp_match(v_base, '^([0-9]+)_([0-9]+)_C([0-9]+)_L([0-9]+)$');
+            IF v_match IS NOT NULL THEN
+                v_product_ref := v_match[1];
+                v_color_code := v_match[2];
+                v_suffix := '_C#_L#';
+                v_is_color_specific := true;
+            END IF;
+        
+        -- PADRÃO 3: Componente (_C#)
+        ELSIF v_base ~ '_C[0-9]+$' THEN
+            v_match := regexp_match(v_base, '^([0-9]+)_([0-9]+)_C([0-9]+)$');
+            IF v_match IS NOT NULL THEN
+                v_product_ref := v_match[1];
+                v_color_code := v_match[2];
+                v_suffix := '_C#';
+                v_is_color_specific := true;
+            END IF;
+        
+        -- PADRÃO 4: Set com underscore (_set)
+        ELSIF v_base ~ '_set$' THEN
+            v_match := regexp_match(v_base, '^([0-9]+)_set$');
+            IF v_match IS NOT NULL THEN
+                v_product_ref := v_match[1];
+                v_suffix := '_set';
+                v_is_color_specific := false;
+                v_color_code := NULL;
+            END IF;
+        
+        -- PADRÃO 5: Sufixos com hífen e cor
+        ELSIF v_base ~ '^[0-9]+_[0-9]+-[a-zA-Z]+$' THEN
+            v_match := regexp_match(v_base, '^([0-9]+)_([0-9]+)-([a-zA-Z]+)$');
+            IF v_match IS NOT NULL THEN
+                v_product_ref := v_match[1];
+                v_color_code := v_match[2];
+                v_suffix := '-' || lower(v_match[3]);
+                
+                CASE lower(v_match[3])
+                    WHEN 'box' THEN v_is_color_specific := false;
+                    WHEN 'pouch' THEN v_is_color_specific := false;
+                    WHEN 'bag' THEN v_is_color_specific := false;
+                    WHEN 'set' THEN v_is_color_specific := false;
+                    ELSE v_is_color_specific := true;
+                END CASE;
+            END IF;
+        
+        -- PADRÃO 6: Imagem principal sem sufixo
+        ELSIF v_base ~ '^[0-9]+_[0-9]+$' THEN
+            v_match := regexp_match(v_base, '^([0-9]+)_([0-9]+)$');
+            IF v_match IS NOT NULL THEN
+                v_product_ref := v_match[1];
+                v_color_code := v_match[2];
+                v_suffix := '(sem sufixo)';
+                v_is_color_specific := true;
+            END IF;
+        
+        -- PADRÃO 7: Apenas referência do produto
+        ELSIF v_base ~ '^[0-9]+$' THEN
+            v_product_ref := v_base;
+            v_suffix := '(sem sufixo)';
+            v_is_color_specific := false;
+        
+        -- PADRÃO NÃO RECONHECIDO
+        ELSE
+            v_suffix := '(desconhecido)';
+            v_match := regexp_match(v_base, '^([0-9]+)');
+            IF v_match IS NOT NULL THEN
+                v_product_ref := v_match[1];
+            END IF;
+        END IF;
+    
+    -- ═══════════════════════════════════════════════════════════════════════
+    -- OUTROS FORNECEDORES (genérico)
+    -- ═══════════════════════════════════════════════════════════════════════
+    ELSE
+        v_suffix := '(desconhecido)';
+        v_match := regexp_match(v_base, '^([0-9A-Za-z]+)');
+        IF v_match IS NOT NULL THEN
+            v_product_ref := v_match[1];
+        END IF;
+    END IF;
+    
+    -- Construir resultado
+    v_result := jsonb_build_object(
+        'success', true,
+        'supplier_code', p_supplier_code,
+        'filename', p_filename,
+        'base', v_base,
+        'extension', v_extension,
+        'product_reference', v_product_ref,
+        'color_code', v_color_code,
+        'suffix_pattern', v_suffix,
+        'is_color_specific', v_is_color_specific,
+        'sequence_number', v_sequence_num
+    );
+    
+    RETURN v_result;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.parse_unit_from_string(p_input text, OUT valor numeric, OUT unidade text)
+ RETURNS record
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_clean TEXT;
+    v_number TEXT;
+    v_unit TEXT;
+BEGIN
+    IF p_input IS NULL OR TRIM(p_input) = '' THEN
+        valor := NULL;
+        unidade := NULL;
+        RETURN;
+    END IF;
+    
+    -- Limpar input
+    v_clean := TRIM(p_input);
+    
+    -- Extrair parte numérica (suporta vírgula como decimal)
+    v_number := regexp_replace(v_clean, '[^0-9,.\-]', '', 'g');
+    v_number := REPLACE(v_number, ',', '.');
+    
+    -- Extrair unidade (letras no final)
+    v_unit := LOWER(regexp_replace(v_clean, '[0-9,.\s\-]', '', 'g'));
+    
+    -- Converter número
+    BEGIN
+        valor := v_number::NUMERIC;
+    EXCEPTION WHEN OTHERS THEN
+        valor := NULL;
+    END;
+    
+    -- Normalizar unidade
+    unidade := CASE 
+        WHEN v_unit IN ('kg', 'kilo', 'kilos', 'quilos', 'quilo') THEN 'kg'
+        WHEN v_unit IN ('g', 'gr', 'grama', 'gramas') THEN 'g'
+        WHEN v_unit IN ('mg', 'miligrama', 'miligramas') THEN 'mg'
+        WHEN v_unit IN ('l', 'lt', 'litro', 'litros') THEN 'l'
+        WHEN v_unit IN ('ml', 'mililitro', 'mililitros') THEN 'ml'
+        WHEN v_unit IN ('m', 'metro', 'metros') THEN 'm'
+        WHEN v_unit IN ('cm', 'centimetro', 'centimetros') THEN 'cm'
+        WHEN v_unit IN ('mm', 'milimetro', 'milimetros') THEN 'mm'
+        WHEN v_unit IN ('in', 'inch', 'inches', 'pol', 'polegada', 'polegadas') THEN 'in'
+        ELSE v_unit
+    END;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.parse_xbz_dimensions(p_raw_data jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN jsonb_build_object(
+        'peso_kg', COALESCE((p_raw_data->>'peso')::NUMERIC, 0),
+        'altura_cm', COALESCE((p_raw_data->>'altura')::NUMERIC, 0),
+        'largura_cm', COALESCE((p_raw_data->>'largura')::NUMERIC, 0),
+        'profundidade_cm', COALESCE((p_raw_data->>'profundidade')::NUMERIC, 0)
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.populate_import_staging(p_filenames text[], p_source_zip character varying DEFAULT 'products_print_area_allcolors_market1_150px.zip'::character varying, p_batch_id character varying DEFAULT NULL::character varying)
+ RETURNS TABLE(total_processado integer, total_pending integer, total_already_exists integer, total_no_product integer, total_no_color integer, total_skipped integer, total_location integer, total_area integer, total_component integer)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_filename TEXT;
+    v_base TEXT;
+    v_parts TEXT[];
+    v_sku TEXT;
+    v_color_code TEXT;
+    v_component INTEGER;
+    v_location INTEGER;
+    v_view INTEGER;
+    v_product_id UUID;
+    v_color_id UUID;
+    v_cf_id TEXT;
+    v_status VARCHAR;
+    v_image_type VARCHAR;
+    v_image_type_id UUID;
+    v_match TEXT[];
+    -- Contadores
+    v_count_processado INTEGER := 0;
+    v_count_pending INTEGER := 0;
+    v_count_exists INTEGER := 0;
+    v_count_no_product INTEGER := 0;
+    v_count_no_color INTEGER := 0;
+    v_count_skipped INTEGER := 0;
+    v_count_location INTEGER := 0;
+    v_count_area INTEGER := 0;
+    v_count_component INTEGER := 0;
+    -- UUID do fornecedor SPOT
+    v_spot_supplier_id UUID := 'bcfc0d02-44c6-48ae-8472-12b1a3f3d8e0';
+    -- UUIDs dos image_types
+    v_type_location UUID := '2ce4bc92-a110-4cca-a217-1a7a7f724ac0';
+    v_type_area UUID := '2137f12c-12f0-4a76-adfb-5a3614d7a3dc';
+    v_type_component UUID := '3303cd07-bab0-4018-9d91-954e12a0035a';
+BEGIN
+    FOREACH v_filename IN ARRAY p_filenames
+    LOOP
+        -- Ignorar se não é .png
+        IF NOT v_filename ILIKE '%.png' THEN
+            v_count_skipped := v_count_skipped + 1;
+            CONTINUE;
+        END IF;
 
--- ----------------------------------------------------------------------------
+        -- Remover extensão
+        v_base := replace(v_filename, '.png', '');
+        v_parts := string_to_array(v_base, '_');
+
+        -- Reset variáveis
+        v_sku := NULL;
+        v_color_code := '';
+        v_component := 1;
+        v_location := 0;
+        v_view := 1;
+        v_product_id := NULL;
+        v_color_id := NULL;
+        v_image_type := 'area';
+        v_image_type_id := v_type_area;
+
+        -- ====================================================
+        -- DETECTAR PADRÃO pelo conteúdo do filename
+        -- ====================================================
+
+        IF v_base ~ '_C[0-9]+_L[0-9]+$' THEN
+            -- ================================================
+            -- PADRÃO 1: LOCATION → SKU_COR_Cn_Ln.png
+            -- Ex: 11103_103_C1_L1.png
+            -- ================================================
+            IF array_length(v_parts, 1) < 4 THEN
+                v_count_skipped := v_count_skipped + 1;
+                CONTINUE;
+            END IF;
+
+            v_sku := v_parts[1];
+            v_color_code := v_parts[2];
+
+            -- Extrair número do C e L via regex
+            v_match := regexp_match(v_parts[3], '^C(\d+)$');
+            IF v_match IS NULL THEN
+                v_count_skipped := v_count_skipped + 1;
+                CONTINUE;
+            END IF;
+            v_component := v_match[1]::INTEGER;
+
+            v_match := regexp_match(v_parts[4], '^L(\d+)$');
+            IF v_match IS NULL THEN
+                v_count_skipped := v_count_skipped + 1;
+                CONTINUE;
+            END IF;
+            v_location := v_match[1]::INTEGER;
+            v_view := 1;
+
+            v_image_type := 'location';
+            v_image_type_id := v_type_location;
+            v_count_location := v_count_location + 1;
+
+        ELSIF v_base ~ '_C[0-9]+$' THEN
+            -- ================================================
+            -- PADRÃO 3: COMPONENT → SKU_COR_Cn.png
+            -- Ex: 11103_103_C1.png
+            -- ================================================
+            IF array_length(v_parts, 1) < 3 THEN
+                v_count_skipped := v_count_skipped + 1;
+                CONTINUE;
+            END IF;
+
+            v_sku := v_parts[1];
+            v_color_code := v_parts[2];
+
+            v_match := regexp_match(v_parts[3], '^C(\d+)$');
+            IF v_match IS NULL THEN
+                v_count_skipped := v_count_skipped + 1;
+                CONTINUE;
+            END IF;
+            v_component := v_match[1]::INTEGER;
+            v_location := 0;
+            v_view := 1;
+
+            v_image_type := 'component';
+            v_image_type_id := v_type_component;
+            v_count_component := v_count_component + 1;
+
+        ELSE
+            -- ================================================
+            -- PADRÃO 2: AREA → SKU_comp_loc_view.png
+            -- Ex: 11103_1_1_1.png (SEM cor, tudo numérico)
+            -- ================================================
+            IF array_length(v_parts, 1) < 4 THEN
+                v_count_skipped := v_count_skipped + 1;
+                CONTINUE;
+            END IF;
+
+            -- Validar que partes 2,3,4 são numéricas
+            IF v_parts[2] !~ '^\d+$' OR v_parts[3] !~ '^\d+$' OR v_parts[4] !~ '^\d+$' THEN
+                v_count_skipped := v_count_skipped + 1;
+                CONTINUE;
+            END IF;
+
+            v_sku := v_parts[1];
+            v_color_code := '';  -- Area NÃO tem cor (genérico)
+            v_component := v_parts[2]::INTEGER;
+            v_location := v_parts[3]::INTEGER;
+            v_view := v_parts[4]::INTEGER;
+
+            v_image_type := 'area';
+            v_image_type_id := v_type_area;
+            v_count_area := v_count_area + 1;
+        END IF;
+
+        -- ====================================================
+        -- GERAR cloudflare_image_id
+        -- ====================================================
+        v_cf_id := 'spot-pa-' || replace(v_filename, '.png', '');
+
+        -- ====================================================
+        -- VERIFICAÇÕES DE EXISTÊNCIA
+        -- ====================================================
+
+        -- 1. Já existe em product_images?
+        IF EXISTS (
+            SELECT 1 FROM product_images
+            WHERE cloudflare_image_id = v_cf_id
+        ) THEN
+            v_status := 'already_exists';
+            v_count_exists := v_count_exists + 1;
+
+            -- Mesmo assim buscar product_id para registro
+            SELECT id INTO v_product_id
+            FROM products
+            WHERE sku = v_sku AND supplier_id = v_spot_supplier_id
+            LIMIT 1;
+        ELSE
+            -- 2. Buscar product_id
+            SELECT id INTO v_product_id
+            FROM products
+            WHERE sku = v_sku AND supplier_id = v_spot_supplier_id
+            LIMIT 1;
+
+            IF v_product_id IS NULL THEN
+                v_status := 'no_product';
+                v_count_no_product := v_count_no_product + 1;
+            ELSE
+                -- 3. Buscar color_id (só se tem cor)
+                IF v_color_code != '' THEN
+                    SELECT pv.color_id INTO v_color_id
+                    FROM product_variants pv
+                    WHERE pv.product_id = v_product_id
+                      AND pv.color_code = v_color_code
+                    LIMIT 1;
+
+                    IF v_color_id IS NULL THEN
+                        v_status := 'no_color';
+                        v_count_no_color := v_count_no_color + 1;
+                    ELSE
+                        v_status := 'pending';
+                        v_count_pending := v_count_pending + 1;
+                    END IF;
+                ELSE
+                    -- Area sem cor → pending direto
+                    v_color_id := NULL;
+                    v_status := 'pending';
+                    v_count_pending := v_count_pending + 1;
+                END IF;
+            END IF;
+        END IF;
+
+        -- ====================================================
+        -- INSERIR NA STAGING
+        -- ====================================================
+        INSERT INTO import_staging_images (
+            filename,
+            source_zip,
+            parsed_sku,
+            parsed_color_code,
+            parsed_component,
+            parsed_location,
+            parsed_view,
+            product_id,
+            color_id,
+            cloudflare_image_id,
+            url_cdn,
+            target_image_type_id,
+            target_image_type,
+            target_display_order,
+            status,
+            batch_id
+        ) VALUES (
+            v_filename,
+            p_source_zip,
+            v_sku,
+            v_color_code,
+            v_component,
+            v_location,
+            v_view,
+            v_product_id,
+            v_color_id,
+            v_cf_id,
+            'https://imagedelivery.net/vKMs9Ow8bA_enuhLXZ2HAw/' || v_cf_id || '/public',
+            v_image_type_id,
+            v_image_type,
+            (v_component * 100) + (v_location * 10) + v_view,
+            v_status,
+            p_batch_id
+        )
+        ON CONFLICT (filename, source_zip) DO NOTHING;
+
+        v_count_processado := v_count_processado + 1;
+    END LOOP;
+
+    RETURN QUERY SELECT
+        v_count_processado,
+        v_count_pending,
+        v_count_exists,
+        v_count_no_product,
+        v_count_no_color,
+        v_count_skipped,
+        v_count_location,
+        v_count_area,
+        v_count_component;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.populate_media_from_products(p_supplier text DEFAULT 'stricker'::text)
+ RETURNS TABLE(inserted integer, updated integer, skipped integer)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_inserted INT := 0;
+    v_updated INT := 0;
+    v_skipped INT := 0;
+    v_product RECORD;
+    v_image TEXT;
+    v_images JSONB;
+    v_result UUID;
+    v_filename TEXT;
+    i INT;
+BEGIN
+    FOR v_product IN 
+        SELECT 
+            sku,
+            sku_promo,
+            image_url,
+            primary_image_url,
+            images
+        FROM products
+        WHERE sku IS NOT NULL OR sku_promo IS NOT NULL
+    LOOP
+        -- Usar sku_promo como referência principal, ou sku se não tiver
+        DECLARE
+            v_reference TEXT := COALESCE(v_product.sku_promo, v_product.sku);
+        BEGIN
+            -- Primary Image URL
+            IF v_product.primary_image_url IS NOT NULL AND v_product.primary_image_url != '' THEN
+                IF v_product.primary_image_url LIKE 'http%' THEN
+                    -- URL completa
+                    v_result := insert_media_from_url(
+                        v_reference, 
+                        v_product.primary_image_url, 
+                        p_supplier, 
+                        'main', 
+                        'thumbnail',
+                        NULL,
+                        TRUE
+                    );
+                ELSE
+                    -- Só filename
+                    v_result := insert_media_from_filename(
+                        v_reference, 
+                        v_product.primary_image_url, 
+                        p_supplier, 
+                        'main', 
+                        'thumbnail',
+                        NULL,
+                        TRUE
+                    );
+                END IF;
+                IF v_result IS NOT NULL THEN v_inserted := v_inserted + 1; END IF;
+            -- Image URL (fallback)
+            ELSIF v_product.image_url IS NOT NULL AND v_product.image_url != '' THEN
+                IF v_product.image_url LIKE 'http%' THEN
+                    v_result := insert_media_from_url(
+                        v_reference, 
+                        v_product.image_url, 
+                        p_supplier, 
+                        'main', 
+                        'thumbnail',
+                        NULL,
+                        TRUE
+                    );
+                ELSE
+                    v_result := insert_media_from_filename(
+                        v_reference, 
+                        v_product.image_url, 
+                        p_supplier, 
+                        'main', 
+                        'thumbnail',
+                        NULL,
+                        TRUE
+                    );
+                END IF;
+                IF v_result IS NOT NULL THEN v_inserted := v_inserted + 1; END IF;
+            END IF;
+            
+            -- Images JSONB array (galeria)
+            IF v_product.images IS NOT NULL AND jsonb_typeof(v_product.images) = 'array' THEN
+                FOR i IN 0..jsonb_array_length(v_product.images) - 1 LOOP
+                    -- Tentar extrair filename ou url do JSONB
+                    v_image := NULL;
+                    
+                    -- Se é string direta
+                    IF jsonb_typeof(v_product.images -> i) = 'string' THEN
+                        v_image := v_product.images ->> i;
+                    -- Se é objeto com url ou filename
+                    ELSIF jsonb_typeof(v_product.images -> i) = 'object' THEN
+                        v_image := COALESCE(
+                            v_product.images -> i ->> 'url',
+                            v_product.images -> i ->> 'filename',
+                            v_product.images -> i ->> 'src'
+                        );
+                    END IF;
+                    
+                    IF v_image IS NOT NULL AND v_image != '' THEN
+                        IF v_image LIKE 'http%' THEN
+                            v_result := insert_media_from_url(
+                                v_reference, 
+                                v_image, 
+                                p_supplier, 
+                                'optional', 
+                                'gallery'
+                            );
+                        ELSE
+                            v_result := insert_media_from_filename(
+                                v_reference, 
+                                v_image, 
+                                p_supplier, 
+                                'optional', 
+                                'gallery'
+                            );
+                        END IF;
+                        IF v_result IS NOT NULL THEN v_inserted := v_inserted + 1; END IF;
+                    END IF;
+                END LOOP;
+            END IF;
+        END;
+    END LOOP;
+    
+    RETURN QUERY SELECT v_inserted, v_updated, v_skipped;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.prevent_category_loops()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_ancestor_id UUID;
+  v_depth INTEGER := 0;
+  v_max_depth INTEGER := 10;
+BEGIN
+  IF NEW.parent_id IS NULL THEN
+    RETURN NEW;
+  END IF;
+  
+  -- Verificar se NEW.parent_id é descendente de NEW.id
+  v_ancestor_id := NEW.parent_id;
+  
+  WHILE v_ancestor_id IS NOT NULL AND v_depth < v_max_depth LOOP
+    IF v_ancestor_id = NEW.id THEN
+      RAISE EXCEPTION 'Circular reference detected: category % cannot be its own ancestor', NEW.id;
+    END IF;
+    
+    SELECT parent_id INTO v_ancestor_id 
+    FROM categories 
+    WHERE id = v_ancestor_id;
+    
+    v_depth := v_depth + 1;
+  END LOOP;
+  
+  IF v_depth >= v_max_depth THEN
+    RAISE EXCEPTION 'Maximum hierarchy depth (%) exceeded', v_max_depth;
+  END IF;
+  
+  RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.prevent_removing_last_owner()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+declare
+  remaining_owners int;
+begin
+  if TG_OP = 'DELETE' then
+    if OLD.role = 'owner' then
+      select count(*) into remaining_owners
+      from public.user_organizations
+      where organization_id = OLD.organization_id
+        and role = 'owner'
+        and user_id <> OLD.user_id;
+      if remaining_owners = 0 then
+        raise exception 'Cannot remove the last owner of the organization';
+      end if;
+    end if;
+    return OLD;
+  elsif TG_OP = 'UPDATE' then
+    if OLD.role = 'owner' and NEW.role <> 'owner' then
+      select count(*) into remaining_owners
+      from public.user_organizations
+      where organization_id = NEW.organization_id
+        and role = 'owner'
+        and user_id <> OLD.user_id;
+      if remaining_owners = 0 then
+        raise exception 'Cannot demote the last owner of the organization';
+      end if;
+    end if;
+    return NEW;
+  end if;
+  return COALESCE(NEW, OLD);
+end$function$;
+CREATE OR REPLACE FUNCTION public.process_pending_batches()
+ RETURNS TABLE(batch_id uuid, products_processed integer, status text)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_batch RECORD;
+    v_count INTEGER;
+BEGIN
+    -- Buscar batches não processados
+    -- FIX 23/04/2026: GROUP BY substitui DISTINCT para permitir ORDER BY em coluna agregada
+    FOR v_batch IN (
+        SELECT 
+            import_batch_id,
+            MIN(imported_at) AS oldest_imported_at
+        FROM supplier_products_raw
+        WHERE processed = false
+          AND import_batch_id IS NOT NULL
+        GROUP BY import_batch_id
+        ORDER BY oldest_imported_at ASC
+        LIMIT 10
+    ) LOOP
+        
+        -- Processar batch
+        PERFORM process_spot_products(
+            p_batch_size := 1000
+        );
+        
+        -- Contar quantos foram processados
+        SELECT COUNT(*) INTO v_count
+        FROM supplier_products_raw
+        WHERE import_batch_id = v_batch.import_batch_id
+          AND processed = true;
+        
+        RETURN QUERY SELECT 
+            v_batch.import_batch_id,
+            v_count,
+            'SUCCESS'::TEXT;
+    END LOOP;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.process_spot_products(p_batch_size integer DEFAULT 10)
+ RETURNS TABLE(prod_reference text, product_id uuid, variants_created integer, status text)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_product RECORD;
+    v_variant RECORD;
+    v_product_id UUID;
+    v_variant_id UUID;
+    v_variants_count INTEGER;
+    v_processed_count INTEGER := 0;
+    v_batch_id UUID;
+BEGIN
+    -- Criar batch
+    INSERT INTO supplier_import_batches (
+        id,
+        supplier_id,
+        started_at,
+        status
+    ) VALUES (
+        gen_random_uuid(),
+        'bcfc0d02-44c6-48ae-8472-12b1a3f3d8e0'::UUID,
+        NOW(),
+        'processing'
+    )
+    RETURNING id INTO v_batch_id;
+    
+    -- Processar produtos
+    FOR v_product IN (
+        SELECT DISTINCT ON (raw_data->>'ProdReference')
+            id,
+            supplier_id,
+            raw_data,
+            raw_data->>'ProdReference' as prod_ref,
+            raw_data->>'Name' as name
+        FROM supplier_products_raw
+        WHERE processed = false
+          AND supplier_id = 'bcfc0d02-44c6-48ae-8472-12b1a3f3d8e0'::UUID
+        ORDER BY raw_data->>'ProdReference', imported_at DESC
+        LIMIT p_batch_size
+    ) LOOP
+        
+        BEGIN
+            -- CRIAR PRODUTO COM ON CONFLICT
+            INSERT INTO products (
+                organization_id,
+                supplier_id,
+                name,
+                sku,
+                supplier_reference,
+                product_type,
+                is_active,
+                created_at,
+                updated_at
+            ) VALUES (
+                '5db5aee1-064b-4ef4-9193-345dcd8274ea'::UUID,
+                v_product.supplier_id,
+                clean_spot_name(v_product.name),
+                'SPOT-' || v_product.prod_ref,
+                v_product.prod_ref,
+                'product',
+                true,
+                NOW(),
+                NOW()
+            )
+            ON CONFLICT (sku) DO UPDATE SET
+                name = EXCLUDED.name,
+                updated_at = NOW()
+            RETURNING id INTO v_product_id;
+            
+            v_variants_count := 0;
+            
+            -- Criar variantes COM ON CONFLICT ✅ NOVO!
+            FOR v_variant IN (
+                SELECT 
+                    id,
+                    raw_data,
+                    raw_data->>'Sku' as sku,
+                    raw_data->>'ColorCode' as color_code,
+                    raw_data->>'ColorName' as color_name,
+                    raw_data->>'ColorHex' as color_hex,
+                    raw_data->>'Price1' as price1
+                FROM supplier_products_raw
+                WHERE raw_data->>'ProdReference' = v_product.prod_ref
+                  AND processed = false
+                  AND supplier_id = 'bcfc0d02-44c6-48ae-8472-12b1a3f3d8e0'::UUID
+            ) LOOP
+                
+                -- ✅ CRIAR VARIANTE COM ON CONFLICT
+                INSERT INTO product_variants (
+                    product_id,
+                    sku,
+                    name,
+                    color_code,
+                    color_name,
+                    color_hex,
+                    attributes,
+                    is_active,
+                    created_at,
+                    updated_at
+                ) VALUES (
+                    v_product_id,
+                    v_variant.sku,
+                    clean_spot_name(v_product.name) || 
+                        CASE 
+                            WHEN v_variant.color_name IS NOT NULL 
+                            THEN ' | ' || v_variant.color_name 
+                            ELSE '' 
+                        END,
+                    v_variant.color_code,
+                    v_variant.color_name,
+                    v_variant.color_hex,
+                    jsonb_build_object(
+                        'codigo_cor', COALESCE(v_variant.color_code, ''),
+                        'cor', COALESCE(v_variant.color_name, '')
+                    ),
+                    true,
+                    NOW(),
+                    NOW()
+                )
+                ON CONFLICT (sku) DO UPDATE SET  -- ✅ NOVO!
+                    name = EXCLUDED.name,
+                    color_code = EXCLUDED.color_code,
+                    color_name = EXCLUDED.color_name,
+                    color_hex = EXCLUDED.color_hex,
+                    attributes = EXCLUDED.attributes,
+                    updated_at = NOW()
+                RETURNING id INTO v_variant_id;
+                
+                -- Criar vínculo com fornecedor (COM ON CONFLICT também)
+                INSERT INTO variant_supplier_sources (
+                    variant_id,
+                    supplier_id,
+                    organization_id,
+                    supplier_sku,
+                    cost_price,
+                    is_active,
+                    updated_at
+                ) VALUES (
+                    v_variant_id,
+                    v_product.supplier_id,
+                    '5db5aee1-064b-4ef4-9193-345dcd8274ea'::UUID,
+                    v_variant.sku,
+                    NULLIF(v_variant.price1, '')::NUMERIC,
+                    true,
+                    NOW()
+                )
+                ON CONFLICT (variant_id, supplier_id) DO UPDATE SET  -- ✅ NOVO!
+                    supplier_sku = EXCLUDED.supplier_sku,
+                    cost_price = EXCLUDED.cost_price,
+                    updated_at = NOW();
+                
+                -- Marcar como processado
+                UPDATE supplier_products_raw
+                SET 
+                    processed = true,
+                    processed_at = NOW(),
+                    product_id = v_product_id,
+                    import_batch_id = v_batch_id
+                WHERE id = v_variant.id;
+                
+                v_variants_count := v_variants_count + 1;
+            END LOOP;
+            
+            -- Retornar resultado
+            prod_reference := v_product.prod_ref;
+            product_id := v_product_id;
+            variants_created := v_variants_count;
+            status := 'SUCCESS';
+            
+            RETURN NEXT;
+            
+            v_processed_count := v_processed_count + 1;
+            
+        EXCEPTION WHEN OTHERS THEN
+            -- Log de erro
+            UPDATE supplier_products_raw
+            SET 
+                process_errors = jsonb_build_object(
+                    'error', SQLERRM,
+                    'timestamp', NOW()
+                )
+            WHERE raw_data->>'ProdReference' = v_product.prod_ref
+              AND processed = false;
+            
+            -- Retornar erro
+            prod_reference := v_product.prod_ref;
+            product_id := NULL;
+            variants_created := 0;
+            status := 'ERROR: ' || SQLERRM;
+            
+            RETURN NEXT;
+        END;
+    END LOOP;
+    
+    -- Atualizar batch
+    UPDATE supplier_import_batches
+    SET 
+        finished_at = NOW(),
+        status = 'completed',
+        products_imported = v_processed_count
+    WHERE id = v_batch_id;
+    
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.process_supplier_product(p_supplier_id uuid, p_raw_data jsonb, p_supplier_reference text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_mapping RECORD;
+    v_value TEXT;
+    v_transformed_value TEXT;
+    v_normalized_value NUMERIC;
+    v_product_data JSONB := '{}'::JSONB;
+    v_variant_data JSONB := '{}'::JSONB;
+    v_product_id UUID;
+    v_existing_product_id UUID;
+    v_org_id UUID;
+    v_errors JSONB := '[]'::JSONB;
+    v_variants_created INTEGER := 0;
+    v_product_ref TEXT;
+    v_variant_name TEXT;
+BEGIN
+    SELECT organization_id INTO v_org_id FROM suppliers WHERE id = p_supplier_id;
+
+    FOR v_mapping IN 
+        SELECT * FROM supplier_field_mappings
+        WHERE supplier_id = p_supplier_id AND is_active = TRUE
+        ORDER BY priority
+    LOOP
+        BEGIN
+            v_value := extract_json_value(p_raw_data, v_mapping.source_path);
+            IF v_value IS NULL THEN CONTINUE; END IF;
+            
+            IF v_mapping.transform_type IS NOT NULL THEN
+                v_transformed_value := apply_transform(v_value, v_mapping.transform_type, v_mapping.transform_config);
+            ELSE
+                v_transformed_value := v_value;
+            END IF;
+            
+            IF v_mapping.source_unit IS NOT NULL AND v_mapping.target_unit IS NOT NULL AND v_transformed_value IS NOT NULL THEN
+                BEGIN
+                    v_normalized_value := normalize_unit(v_transformed_value::NUMERIC, v_mapping.source_unit, v_mapping.target_unit);
+                    v_transformed_value := v_normalized_value::TEXT;
+                EXCEPTION WHEN OTHERS THEN NULL;
+                END;
+            END IF;
+            
+            IF v_mapping.target_table = 'products' THEN
+                v_product_data := v_product_data || jsonb_build_object(v_mapping.target_field, v_transformed_value);
+            ELSIF v_mapping.target_table = 'product_variants' THEN
+                v_variant_data := v_variant_data || jsonb_build_object(v_mapping.target_field, v_transformed_value);
+            END IF;
+        EXCEPTION WHEN OTHERS THEN
+            v_errors := v_errors || jsonb_build_object('field', v_mapping.source_field, 'error', SQLERRM);
+        END;
+    END LOOP;
+    
+    v_product_ref := COALESCE(v_product_data->>'supplier_reference', p_supplier_reference);
+    
+    SELECT id INTO v_existing_product_id
+    FROM products
+    WHERE supplier_id = p_supplier_id AND supplier_reference = v_product_ref
+    LIMIT 1;
+    
+    IF v_existing_product_id IS NOT NULL THEN
+        UPDATE products SET 
+            name = COALESCE(v_product_data->>'name', name),
+            description = COALESCE(v_product_data->>'description', description),
+            weight_g = COALESCE((v_product_data->>'weight_g')::INTEGER, weight_g),
+            height_cm = COALESCE((v_product_data->>'height_cm')::NUMERIC, height_cm),
+            width_cm = COALESCE((v_product_data->>'width_cm')::NUMERIC, width_cm),
+            length_cm = COALESCE((v_product_data->>'length_cm')::NUMERIC, length_cm),
+            cost_price = COALESCE((v_product_data->>'cost_price')::NUMERIC, cost_price),
+            updated_at = NOW()
+        WHERE id = v_existing_product_id;
+        v_product_id := v_existing_product_id;
+    ELSE
+        INSERT INTO products (
+            organization_id, supplier_id, supplier_reference,
+            name, description, weight_g, height_cm, width_cm, length_cm,
+            cost_price, created_at, updated_at
+        ) VALUES (
+            v_org_id, p_supplier_id, v_product_ref,
+            v_product_data->>'name', v_product_data->>'description',
+            (v_product_data->>'weight_g')::INTEGER,
+            (v_product_data->>'height_cm')::NUMERIC,
+            (v_product_data->>'width_cm')::NUMERIC,
+            (v_product_data->>'length_cm')::NUMERIC,
+            (v_product_data->>'cost_price')::NUMERIC,
+            NOW(), NOW()
+        ) RETURNING id INTO v_product_id;
+    END IF;
+    
+    -- Montar nome da variante: "Nome Produto - Cor"
+    v_variant_name := COALESCE(
+        (v_product_data->>'name') || ' - ' || (v_variant_data->>'color_name'),
+        v_variant_data->>'color_name',
+        p_supplier_reference
+    );
+    
+    IF v_variant_data != '{}'::JSONB AND v_product_id IS NOT NULL THEN
+        BEGIN
+            INSERT INTO product_variants (
+                product_id, sku, supplier_sku, name, color_name, color_hex, 
+                stock_quantity, attributes, created_at, updated_at
+            ) VALUES (
+                v_product_id,
+                COALESCE(v_variant_data->>'sku', p_supplier_reference),
+                v_variant_data->>'supplier_sku',
+                v_variant_name,
+                v_variant_data->>'color_name',
+                v_variant_data->>'color_hex',
+                (v_variant_data->>'stock_quantity')::INTEGER,
+                '{}'::jsonb,
+                NOW(), NOW()
+            ) ON CONFLICT (sku) DO UPDATE SET
+                name = EXCLUDED.name,
+                color_name = EXCLUDED.color_name,
+                color_hex = EXCLUDED.color_hex,
+                stock_quantity = EXCLUDED.stock_quantity,
+                supplier_sku = EXCLUDED.supplier_sku,
+                updated_at = NOW();
+            v_variants_created := 1;
+        EXCEPTION WHEN OTHERS THEN
+            v_errors := v_errors || jsonb_build_object('stage', 'variant_creation', 'error', SQLERRM);
+        END;
+    END IF;
+    
+    RETURN jsonb_build_object(
+        'success', CASE WHEN jsonb_array_length(v_errors) = 0 THEN TRUE ELSE FALSE END,
+        'product_id', v_product_id, 'variants_created', v_variants_created,
+        'errors', v_errors, 'product_data', v_product_data, 'variant_data', v_variant_data
+    );
+EXCEPTION WHEN OTHERS THEN
+    RETURN jsonb_build_object(
+        'success', FALSE, 'product_id', NULL, 'variants_created', 0,
+        'errors', jsonb_build_array(jsonb_build_object('stage', 'fatal', 'error', SQLERRM))
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.process_supplier_product_data(p_supplier_id uuid, p_raw_data jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_mapping RECORD;
+    v_product_data JSONB := '{}'::JSONB;
+    v_variant_data JSONB := '{}'::JSONB;
+    v_raw_value TEXT;
+    v_transformed_value TEXT;
+    v_supplier_code TEXT;
+BEGIN
+    -- Obter código do fornecedor (com LIMIT 1 para segurança)
+    SELECT code INTO v_supplier_code 
+    FROM suppliers 
+    WHERE id = p_supplier_id
+    LIMIT 1;
+    
+    IF v_supplier_code IS NULL THEN
+        RETURN jsonb_build_object(
+            'success', false,
+            'error', 'Fornecedor não encontrado: ' || p_supplier_id::TEXT
+        );
+    END IF;
+    
+    -- Processar cada mapeamento do fornecedor
+    FOR v_mapping IN 
+        SELECT * FROM supplier_field_mappings 
+        WHERE supplier_id = p_supplier_id 
+        AND is_active = true
+        ORDER BY priority
+    LOOP
+        -- 1. Extrair valor do raw_data usando source_path ou source_field
+        v_raw_value := extract_json_value(
+            p_raw_data, 
+            COALESCE(v_mapping.source_path, v_mapping.source_field)
+        );
+        
+        -- Se valor não encontrado, tentar diretamente pelo nome do campo
+        IF v_raw_value IS NULL THEN
+            v_raw_value := p_raw_data ->> v_mapping.source_field;
+        END IF;
+        
+        -- Se ainda não encontrado, pular este mapeamento
+        IF v_raw_value IS NULL THEN
+            CONTINUE;
+        END IF;
+        
+        -- 2. Aplicar transformação
+        v_transformed_value := apply_transform(
+            v_raw_value,
+            v_mapping.transform_type,
+            v_mapping.transform_config
+        );
+        
+        -- 3. Normalizar unidades se configurado
+        IF v_mapping.source_unit IS NOT NULL 
+           AND v_mapping.target_unit IS NOT NULL 
+           AND v_transformed_value ~ '^[0-9.,]+$' THEN
+            BEGIN
+                v_transformed_value := normalize_unit(
+                    replace(v_transformed_value, ',', '.')::NUMERIC,
+                    v_mapping.source_unit,
+                    v_mapping.target_unit
+                )::TEXT;
+            EXCEPTION WHEN OTHERS THEN
+                -- Se falhar conversão, manter valor original
+                NULL;
+            END;
+        END IF;
+        
+        -- 4. Adicionar ao objeto correto
+        IF v_mapping.target_table = 'products' THEN
+            v_product_data := v_product_data || jsonb_build_object(
+                v_mapping.target_field, 
+                v_transformed_value
+            );
+        ELSIF v_mapping.target_table = 'product_variants' THEN
+            v_variant_data := v_variant_data || jsonb_build_object(
+                v_mapping.target_field, 
+                v_transformed_value
+            );
+        END IF;
+    END LOOP;
+    
+    -- Adicionar metadados
+    v_product_data := v_product_data || jsonb_build_object(
+        'supplier_id', p_supplier_id,
+        'supplier_code', v_supplier_code
+    );
+    
+    -- ============================================================
+    -- CORREÇÃO: Usar COUNT(*) ao invés de jsonb_object_keys() direto
+    -- O bug era: jsonb_object_keys() retorna SET de linhas
+    -- ============================================================
+    RETURN jsonb_build_object(
+        'success', true,
+        'supplier_code', v_supplier_code,
+        'product_data', v_product_data,
+        'variant_data', v_variant_data,
+        'product_fields_count', (SELECT COUNT(*) FROM jsonb_object_keys(v_product_data)),
+        'variant_fields_count', (SELECT COUNT(*) FROM jsonb_object_keys(v_variant_data))
+    );
+    
+EXCEPTION WHEN OTHERS THEN
+    RETURN jsonb_build_object(
+        'success', false,
+        'error', SQLERRM,
+        'error_detail', SQLSTATE,
+        'supplier_id', p_supplier_id::TEXT
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.process_supplier_products_batch(p_supplier_id uuid, p_limit integer DEFAULT 100)
+ RETURNS TABLE(staging_id uuid, supplier_reference text, success boolean, product_id uuid, variants_created integer, error_message text, processed_at timestamp with time zone)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_raw RECORD;
+    v_result JSONB;
+BEGIN
+    FOR v_raw IN 
+        SELECT *
+        FROM supplier_products_raw 
+        WHERE supplier_id = p_supplier_id 
+        AND processed = FALSE
+        ORDER BY imported_at ASC
+        LIMIT p_limit
+        FOR UPDATE SKIP LOCKED
+    LOOP
+        BEGIN
+            v_result := process_supplier_product(
+                v_raw.supplier_id,
+                v_raw.raw_data,
+                v_raw.supplier_reference
+            );
+            
+            IF (v_result->>'success')::BOOLEAN THEN
+                UPDATE supplier_products_raw 
+                SET 
+                    processed = TRUE,
+                    processed_at = NOW(),
+                    product_id = (v_result->>'product_id')::UUID,
+                    process_errors = NULL,
+                    updated_at = NOW()
+                WHERE id = v_raw.id;
+                
+                staging_id := v_raw.id;
+                supplier_reference := v_raw.supplier_reference;
+                success := TRUE;
+                product_id := (v_result->>'product_id')::UUID;
+                variants_created := (v_result->>'variants_created')::INTEGER;
+                error_message := NULL;
+                processed_at := NOW();
+                RETURN NEXT;
+            ELSE
+                UPDATE supplier_products_raw 
+                SET 
+                    processed = FALSE,
+                    process_errors = v_result->'errors',
+                    updated_at = NOW()
+                WHERE id = v_raw.id;
+                
+                staging_id := v_raw.id;
+                supplier_reference := v_raw.supplier_reference;
+                success := FALSE;
+                product_id := NULL;
+                variants_created := 0;
+                error_message := (v_result->'errors'->>0);
+                processed_at := NOW();
+                RETURN NEXT;
+            END IF;
+            
+        EXCEPTION WHEN OTHERS THEN
+            UPDATE supplier_products_raw 
+            SET 
+                processed = FALSE,
+                process_errors = jsonb_build_object(
+                    'fatal_error', SQLERRM,
+                    'timestamp', NOW()
+                ),
+                updated_at = NOW()
+            WHERE id = v_raw.id;
+            
+            staging_id := v_raw.id;
+            supplier_reference := v_raw.supplier_reference;
+            success := FALSE;
+            product_id := NULL;
+            variants_created := 0;
+            error_message := SQLERRM;
+            processed_at := NOW();
+            RETURN NEXT;
+        END;
+    END LOOP;
+    
+    RETURN;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.purge_edge_invocations_old()
+ RETURNS integer
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE v_count integer;
+BEGIN
+  DELETE FROM public.edge_function_invocations 
+  WHERE invoked_at < now() - interval '90 days';
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  RETURN v_count;
+END $function$;
+CREATE OR REPLACE FUNCTION public.purge_expired_security_data()
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_purged_step_up integer;
+  v_purged_logins  integer;
+BEGIN
+  v_purged_step_up := public.purge_expired_step_up_artifacts();
+
+  DELETE FROM public.login_attempts
+   WHERE created_at < now() - interval '90 days';
+  GET DIAGNOSTICS v_purged_logins = ROW_COUNT;
+
+  -- Telemetria leve em audit_log para diagnóstico futuro
+  PERFORM 1; -- placeholder; o ROW_COUNT serve aos logs do cron
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.purge_favorite_trash_old()
+ RETURNS integer
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE v_count integer;
+BEGIN
+  DELETE FROM public.favorite_items_trash 
+  WHERE deleted_at < now() - interval '30 days'
+  RETURNING 1 INTO v_count;
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  RETURN v_count;
+END $function$;
 CREATE OR REPLACE FUNCTION public.rate_limit_check(_identifier text, _endpoint text, _max_requests integer DEFAULT 100, _window_seconds integer DEFAULT 60)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -2102,10 +23778,83 @@ BEGIN
   WHERE id = v_record.id;
   
   RETURN jsonb_build_object('allowed', true, 'remaining', _max_requests - v_record.request_count - 1, 'blocked', false);
-END $function$
-;
+END $function$;
+CREATE OR REPLACE FUNCTION public.recalc_order_total()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE v_order_id uuid;
+BEGIN
+  v_order_id := COALESCE(NEW.order_id, OLD.order_id);
 
--- ----------------------------------------------------------------------------
+  UPDATE public.orders o
+  SET subtotal = COALESCE((
+        SELECT SUM(ROUND(oi.quantity * (oi.unit_price - COALESCE(oi.discount_amount,0) + COALESCE(oi.personalization_cost,0)),2))
+        FROM public.order_items oi
+        WHERE oi.order_id = v_order_id
+      ),0),
+      total = ROUND(
+        COALESCE((
+          SELECT SUM(ROUND(oi.quantity * (oi.unit_price - COALESCE(oi.discount_amount,0) + COALESCE(oi.personalization_cost,0)),2))
+          FROM public.order_items oi
+          WHERE oi.order_id = v_order_id
+        ),0)
+        - COALESCE(o.discount_amount,0)
+        + COALESCE(o.shipping_cost,0)
+        + COALESCE(o.tax_amount,0)
+      ,2),
+      updated_at = now()
+  WHERE o.id = v_order_id;
+
+  RETURN COALESCE(NEW, OLD);
+END$function$;
+CREATE OR REPLACE FUNCTION public.recalculate_sale_prices(p_variant_id uuid DEFAULT NULL::uuid, p_organization_id uuid DEFAULT NULL::uuid)
+ RETURNS integer
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_count INT := 0;
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT 
+            vsp.id AS sale_id,
+            vsp.variant_id,
+            vsp.default_markup_percent,
+            vct.cost_1, vct.cost_2, vct.cost_3, vct.cost_4, vct.cost_5,
+            vct.min_qty_1, vct.min_qty_2, vct.min_qty_3, vct.min_qty_4, vct.min_qty_5,
+            vsp.is_price_1_manual, vsp.is_price_2_manual, vsp.is_price_3_manual, 
+            vsp.is_price_4_manual, vsp.is_price_5_manual
+        FROM variant_sale_prices vsp
+        JOIN variant_cost_tiers vct ON vct.variant_id = vsp.variant_id AND vct.is_active = true
+        WHERE (p_variant_id IS NULL OR vsp.variant_id = p_variant_id)
+          AND (p_organization_id IS NULL OR vsp.organization_id = p_organization_id)
+          AND vsp.is_active = true
+    LOOP
+        UPDATE variant_sale_prices
+        SET 
+            price_1 = CASE WHEN NOT r.is_price_1_manual THEN ROUND(r.cost_1 * (1 + r.default_markup_percent/100), 2) ELSE price_1 END,
+            price_2 = CASE WHEN NOT r.is_price_2_manual AND r.cost_2 IS NOT NULL THEN ROUND(r.cost_2 * (1 + r.default_markup_percent/100), 2) ELSE price_2 END,
+            price_3 = CASE WHEN NOT r.is_price_3_manual AND r.cost_3 IS NOT NULL THEN ROUND(r.cost_3 * (1 + r.default_markup_percent/100), 2) ELSE price_3 END,
+            price_4 = CASE WHEN NOT r.is_price_4_manual AND r.cost_4 IS NOT NULL THEN ROUND(r.cost_4 * (1 + r.default_markup_percent/100), 2) ELSE price_4 END,
+            price_5 = CASE WHEN NOT r.is_price_5_manual AND r.cost_5 IS NOT NULL THEN ROUND(r.cost_5 * (1 + r.default_markup_percent/100), 2) ELSE price_5 END,
+            min_qty_1 = r.min_qty_1,
+            min_qty_2 = r.min_qty_2,
+            min_qty_3 = r.min_qty_3,
+            min_qty_4 = r.min_qty_4,
+            min_qty_5 = r.min_qty_5,
+            last_calculated_at = NOW(),
+            updated_at = NOW()
+        WHERE id = r.sale_id;
+        
+        v_count := v_count + 1;
+    END LOOP;
+    
+    RETURN v_count;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.record_app_vital(_name text, _value double precision, _rating text DEFAULT NULL::text, _req_id text DEFAULT NULL::text, _url text DEFAULT NULL::text, _ua text DEFAULT NULL::text, _uid uuid DEFAULT NULL::uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -2115,10 +23864,88 @@ BEGIN
   INSERT INTO public.app_vitals (metric_name, metric_value, rating, request_id, page_url, user_agent, user_id)
   VALUES (_name, _value, _rating, _req_id, _url, _ua, _uid);
 END;
-$function$
-;
+$function$;
+CREATE OR REPLACE FUNCTION public.record_schema_drift_result(p_result jsonb)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_log_id        uuid;
+  v_has_drift     boolean;
+  v_only_oficial  text[];
+  v_only_lovable  text[];
+  v_schema_diff   jsonb;
+  v_diff_count    integer;
+  v_notify_count  integer := 0;
+BEGIN
+  v_has_drift    := COALESCE((p_result->>'has_drift')::boolean, false);
+  v_only_oficial := COALESCE(ARRAY(SELECT jsonb_array_elements_text(p_result->'only_oficial')), ARRAY[]::text[]);
+  v_only_lovable := COALESCE(ARRAY(SELECT jsonb_array_elements_text(p_result->'only_lovable')), ARRAY[]::text[]);
+  v_schema_diff  := COALESCE(p_result->'schema_diff', '{}'::jsonb);
+  v_diff_count   := (SELECT COUNT(*) FROM jsonb_object_keys(v_schema_diff));
 
--- ----------------------------------------------------------------------------
+  INSERT INTO public.schema_drift_log (
+    has_drift, tables_oficial, tables_lovable,
+    only_oficial, only_lovable, schema_diff,
+    error_message
+  ) VALUES (
+    v_has_drift,
+    COALESCE((p_result->>'tables_oficial')::integer, 0),
+    COALESCE((p_result->>'tables_lovable')::integer, 0),
+    v_only_oficial,
+    v_only_lovable,
+    v_schema_diff,
+    NULLIF(p_result->>'error_message', '')
+  )
+  RETURNING id INTO v_log_id;
+
+  IF v_has_drift THEN
+    INSERT INTO public.workspace_notifications (
+      user_id, title, message, type, category, metadata
+    )
+    SELECT 
+      ur.user_id,
+      'Schema drift detectado',
+      format('Schema do Lovable e do Oficial divergem. only_oficial: %s; only_lovable: %s; tables com diff: %s',
+        COALESCE(array_length(v_only_oficial, 1), 0),
+        COALESCE(array_length(v_only_lovable, 1), 0),
+        v_diff_count
+      ),
+      'warning',
+      'system',
+      jsonb_build_object(
+        'log_id', v_log_id,
+        'source', 'schema-drift-check',
+        'only_oficial', v_only_oficial,
+        'only_lovable', v_only_lovable,
+        'tables_with_drift', (SELECT array_agg(k) FROM jsonb_object_keys(v_schema_diff) k)
+      )
+    FROM public.user_roles ur
+    WHERE ur.role = 'admin';
+
+    GET DIAGNOSTICS v_notify_count = ROW_COUNT;
+
+    UPDATE public.schema_drift_log
+    SET notification_sent = (v_notify_count > 0)
+    WHERE id = v_log_id;
+  END IF;
+
+  RETURN v_log_id;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.refresh_materialized_views()
+ RETURNS void
+ LANGUAGE plpgsql
+ SET search_path TO 'pg_catalog', 'public', 'analytics'
+AS $function$
+BEGIN
+    REFRESH MATERIALIZED VIEW CONCURRENTLY analytics.mv_material_group_stats;
+    REFRESH MATERIALIZED VIEW CONCURRENTLY analytics.mv_product_compositions;
+    RAISE NOTICE 'Materialized views refreshed at %', NOW();
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.register_ai_routing_decision(p_function_name text, p_user_id uuid, p_attempted_models uuid[], p_attempted_providers uuid[], p_attempted_outcomes jsonb, p_final_model_id uuid, p_final_provider_id uuid, p_total_attempts integer, p_total_duration_ms integer, p_outcome text, p_usage_log_id uuid DEFAULT NULL::uuid, p_request_id text DEFAULT NULL::text)
  RETURNS uuid
  LANGUAGE plpgsql
@@ -2138,10 +23965,200 @@ BEGIN
   ) RETURNING id INTO v_id;
   RETURN v_id;
 END;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
+CREATE OR REPLACE FUNCTION public.register_classify_function(p_function_name character varying, p_is_field character varying, p_description text DEFAULT NULL::text, p_priority integer DEFAULT 100)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_id INTEGER;
+BEGIN
+    -- Validar que a função existe
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_proc 
+        WHERE proname = p_function_name
+    ) THEN
+        RETURN jsonb_build_object(
+            'success', FALSE,
+            'error', format('Função %s não existe no banco de dados', p_function_name)
+        );
+    END IF;
+    
+    -- Inserir ou atualizar
+    INSERT INTO classify_functions_registry (function_name, is_field, description, priority)
+    VALUES (p_function_name, p_is_field, p_description, p_priority)
+    ON CONFLICT (function_name) DO UPDATE SET
+        is_field = EXCLUDED.is_field,
+        description = EXCLUDED.description,
+        priority = EXCLUDED.priority,
+        is_active = TRUE
+    RETURNING id INTO v_id;
+    
+    RETURN jsonb_build_object(
+        'success', TRUE,
+        'id', v_id,
+        'function_name', p_function_name,
+        'message', 'Função registrada com sucesso. Será usada automaticamente pelo trigger.'
+    );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.register_cloudflare_image(p_product_id uuid, p_cloudflare_image_id character varying, p_url_cdn text, p_image_type character varying DEFAULT 'gallery'::character varying, p_variant_id uuid DEFAULT NULL::uuid, p_color_id uuid DEFAULT NULL::uuid, p_filename character varying DEFAULT NULL::character varying, p_file_size_bytes bigint DEFAULT NULL::bigint, p_width_px integer DEFAULT NULL::integer, p_height_px integer DEFAULT NULL::integer, p_format character varying DEFAULT NULL::character varying, p_is_primary boolean DEFAULT false, p_display_order integer DEFAULT 0, p_source_supplier character varying DEFAULT 'stricker'::character varying, p_url_original text DEFAULT NULL::text)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_image_id UUID;
+BEGIN
+    -- Inserir imagem
+    INSERT INTO product_images (
+        product_id,
+        cloudflare_image_id,
+        url_cdn,
+        image_type,
+        variant_id,
+        color_id,
+        filename,
+        file_size_bytes,
+        width_px,
+        height_px,
+        format,
+        is_primary,
+        display_order,
+        source_supplier,
+        url_original,
+        is_active
+    ) VALUES (
+        p_product_id,
+        p_cloudflare_image_id,
+        p_url_cdn,
+        p_image_type,
+        p_variant_id,
+        p_color_id,
+        p_filename,
+        p_file_size_bytes,
+        p_width_px,
+        p_height_px,
+        p_format,
+        p_is_primary,
+        p_display_order,
+        p_source_supplier,
+        p_url_original,
+        true
+    )
+    RETURNING id INTO v_image_id;
+    
+    -- Registrar no log de sync
+    INSERT INTO media_sync_log (
+        sync_type,
+        media_type,
+        image_id,
+        product_id,
+        cloudflare_id,
+        source_url,
+        destination_url,
+        file_size_bytes,
+        status,
+        synced_by
+    ) VALUES (
+        'image_upload',
+        'image',
+        v_image_id,
+        p_product_id,
+        p_cloudflare_image_id,
+        p_url_original,
+        p_url_cdn,
+        p_file_size_bytes,
+        'success',
+        'api'
+    );
+    
+    RETURN v_image_id;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.register_cloudflare_video(p_product_id uuid, p_cloudflare_video_id character varying, p_url_stream text, p_video_type character varying DEFAULT 'demo'::character varying, p_title character varying DEFAULT NULL::character varying, p_url_hls text DEFAULT NULL::text, p_url_dash text DEFAULT NULL::text, p_url_thumbnail text DEFAULT NULL::text, p_filename character varying DEFAULT NULL::character varying, p_file_size_bytes bigint DEFAULT NULL::bigint, p_duration_seconds integer DEFAULT NULL::integer, p_width_px integer DEFAULT NULL::integer, p_height_px integer DEFAULT NULL::integer, p_is_primary boolean DEFAULT false, p_display_order integer DEFAULT 0, p_source_supplier character varying DEFAULT 'stricker'::character varying, p_source_youtube_id character varying DEFAULT NULL::character varying, p_url_original text DEFAULT NULL::text)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_video_id UUID;
+BEGIN
+    -- Inserir vídeo
+    INSERT INTO product_videos (
+        product_id,
+        cloudflare_video_id,
+        url_stream,
+        video_type,
+        title,
+        url_hls,
+        url_dash,
+        url_thumbnail,
+        filename,
+        file_size_bytes,
+        duration_seconds,
+        width_px,
+        height_px,
+        is_primary,
+        display_order,
+        source_supplier,
+        source_youtube_id,
+        url_original,
+        is_active
+    ) VALUES (
+        p_product_id,
+        p_cloudflare_video_id,
+        p_url_stream,
+        p_video_type,
+        COALESCE(p_title, 'Vídeo do produto'),
+        p_url_hls,
+        p_url_dash,
+        p_url_thumbnail,
+        p_filename,
+        p_file_size_bytes,
+        p_duration_seconds,
+        p_width_px,
+        p_height_px,
+        p_is_primary,
+        p_display_order,
+        p_source_supplier,
+        p_source_youtube_id,
+        p_url_original,
+        true
+    )
+    RETURNING id INTO v_video_id;
+    
+    -- Registrar no log de sync
+    INSERT INTO media_sync_log (
+        sync_type,
+        media_type,
+        video_id,
+        product_id,
+        cloudflare_id,
+        source_url,
+        destination_url,
+        file_size_bytes,
+        status,
+        synced_by
+    ) VALUES (
+        'video_upload',
+        'video',
+        v_video_id,
+        p_product_id,
+        p_cloudflare_video_id,
+        p_url_original,
+        p_url_stream,
+        p_file_size_bytes,
+        'success',
+        'api'
+    );
+    
+    RETURN v_video_id;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.registrar_entrada_estoque(p_variant_sku character varying, p_quantity integer, p_unit_cost numeric DEFAULT NULL::numeric, p_supplier_name character varying DEFAULT NULL::character varying, p_document_number character varying DEFAULT NULL::character varying, p_notes text DEFAULT NULL::text, p_user_id uuid DEFAULT NULL::uuid)
  RETURNS json
  LANGUAGE plpgsql
@@ -2180,10 +24197,67 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
     RETURN json_build_object('success', false, 'error', SQLERRM);
 END;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
+CREATE OR REPLACE FUNCTION public.registrar_mudancas_preco_spot(p_dados_api jsonb)
+ RETURNS TABLE(total_mudancas integer, criticos integer, urgentes integer, atencao integer, info integer)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_mudanca RECORD;
+    v_total INTEGER := 0;
+    v_criticos INTEGER := 0;
+    v_urgentes INTEGER := 0;
+    v_atencao INTEGER := 0;
+    v_info INTEGER := 0;
+BEGIN
+    FOR v_mudanca IN 
+        SELECT * FROM comparar_precos_spot(p_dados_api)
+    LOOP
+        INSERT INTO spot_price_change_log (
+            table_code,
+            table_code_option,
+            tecnica_nome,
+            area_descricao,
+            spot_valor_anterior,
+            spot_valor_novo,
+            spot_variacao_percentual,
+            nosso_preco_atual,
+            margem_anterior_percentual,
+            margem_nova_percentual,
+            margem_variacao_pp,
+            faixa_preco,
+            nivel_alerta,
+            tipo_mudanca
+        ) VALUES (
+            v_mudanca.out_table_code,
+            v_mudanca.out_table_code_option,
+            v_mudanca.out_tecnica_nome,
+            v_mudanca.out_area_descricao,
+            v_mudanca.out_spot_anterior,
+            v_mudanca.out_spot_novo,
+            v_mudanca.out_spot_variacao_pct,
+            v_mudanca.out_nosso_preco,
+            v_mudanca.out_margem_anterior_pct,
+            v_mudanca.out_margem_nova_pct,
+            v_mudanca.out_margem_variacao_pp,
+            v_mudanca.out_faixa_preco,
+            v_mudanca.out_nivel_alerta,
+            v_mudanca.out_tipo_mudanca
+        );
+        
+        v_total := v_total + 1;
+        CASE v_mudanca.out_nivel_alerta
+            WHEN 'CRITICO' THEN v_criticos := v_criticos + 1;
+            WHEN 'URGENTE' THEN v_urgentes := v_urgentes + 1;
+            WHEN 'ATENCAO' THEN v_atencao := v_atencao + 1;
+            ELSE v_info := v_info + 1;
+        END CASE;
+    END LOOP;
+    
+    RETURN QUERY SELECT v_total, v_criticos, v_urgentes, v_atencao, v_info;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.registrar_saida_estoque(p_variant_sku character varying, p_quantity integer, p_movement_type character varying DEFAULT 'VENDA'::character varying, p_document_number character varying DEFAULT NULL::character varying, p_notes text DEFAULT NULL::text, p_user_id uuid DEFAULT NULL::uuid, p_allow_negative boolean DEFAULT false)
  RETURNS json
  LANGUAGE plpgsql
@@ -2229,10 +24303,182 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
     RETURN json_build_object('success', false, 'error', SQLERRM);
 END;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
+CREATE OR REPLACE FUNCTION public.reprocess_all_automations(p_batch_size integer DEFAULT 100, p_supplier_id uuid DEFAULT NULL::uuid)
+ RETURNS TABLE(processed integer, tags_linked integer, properties_linked integer, eco_marked integer, feminine_marked integer, dates_linked integer)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_product RECORD;
+    v_processed INTEGER := 0;
+    v_tags INTEGER := 0;
+    v_properties INTEGER := 0;
+    v_eco INTEGER := 0;
+    v_feminine INTEGER := 0;
+    v_dates INTEGER := 0;
+    v_temp INTEGER;
+    v_temp_bool BOOLEAN;
+BEGIN
+    -- Loop pelos produtos
+    FOR v_product IN (
+        SELECT p.id, p.supplier_id
+        FROM products p
+        WHERE (p_supplier_id IS NULL OR p.supplier_id = p_supplier_id)
+        ORDER BY p.created_at DESC
+        LIMIT p_batch_size
+    )
+    LOOP
+        -- Tags
+        v_temp := fn_auto_link_tags(v_product.id, v_product.supplier_id);
+        v_tags := v_tags + v_temp;
+        
+        -- Properties
+        v_temp := fn_auto_link_properties(v_product.id, v_product.supplier_id);
+        v_properties := v_properties + v_temp;
+        
+        -- ECO
+        v_temp_bool := fn_auto_link_eco(v_product.id);
+        IF v_temp_bool THEN v_eco := v_eco + 1; END IF;
+        
+        -- Feminino
+        v_temp_bool := fn_auto_link_feminino(v_product.id);
+        IF v_temp_bool THEN v_feminine := v_feminine + 1; END IF;
+        
+        -- Datas
+        v_temp := fn_auto_link_commemorative_dates(v_product.id);
+        v_dates := v_dates + v_temp;
+        
+        v_processed := v_processed + 1;
+    END LOOP;
+    
+    processed := v_processed;
+    tags_linked := v_tags;
+    properties_linked := v_properties;
+    eco_marked := v_eco;
+    feminine_marked := v_feminine;
+    dates_linked := v_dates;
+    
+    RETURN NEXT;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.reprocess_all_products(p_batch_size integer DEFAULT 100, p_supplier_id uuid DEFAULT NULL::uuid, p_force_reclassify boolean DEFAULT false)
+ RETURNS TABLE(processed integer, classified integer, materials_linked integer, prices_calculated integer, errors integer)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_product RECORD;
+    v_result JSONB;
+    v_materials INTEGER;
+    v_price NUMERIC;
+    v_processed INTEGER := 0;
+    v_classified INTEGER := 0;
+    v_materials_total INTEGER := 0;
+    v_prices_total INTEGER := 0;
+    v_errors INTEGER := 0;
+BEGIN
+    -- Loop pelos produtos
+    FOR v_product IN (
+        SELECT p.id, p.name, p.category_id, p.supplier_id
+        FROM products p
+        WHERE (p_supplier_id IS NULL OR p.supplier_id = p_supplier_id)
+          AND (p_force_reclassify OR p.category_id IS NULL)
+        ORDER BY p.created_at DESC
+        LIMIT p_batch_size
+    )
+    LOOP
+        BEGIN
+            -- 1. Classificar
+            IF v_product.category_id IS NULL OR p_force_reclassify THEN
+                v_result := fn_master_classify_product(v_product.id, v_product.name);
+                IF v_result->>'category_id' IS NOT NULL THEN
+                    v_classified := v_classified + 1;
+                END IF;
+            END IF;
+            
+            -- 2. Vincular materiais
+            v_materials := fn_link_product_materials(v_product.id, v_product.supplier_id);
+            v_materials_total := v_materials_total + v_materials;
+            
+            -- 3. Calcular preço
+            v_price := fn_calculate_sale_price(v_product.id);
+            IF v_price IS NOT NULL THEN
+                v_prices_total := v_prices_total + 1;
+            END IF;
+            
+            v_processed := v_processed + 1;
+            
+        EXCEPTION WHEN OTHERS THEN
+            v_errors := v_errors + 1;
+            RAISE NOTICE 'Erro processando %: %', v_product.id, SQLERRM;
+        END;
+    END LOOP;
+    
+    processed := v_processed;
+    classified := v_classified;
+    materials_linked := v_materials_total;
+    prices_calculated := v_prices_total;
+    errors := v_errors;
+    
+    RETURN NEXT;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.reprocess_product_materials(p_batch_size integer DEFAULT 100, p_supplier_id uuid DEFAULT 'bcfc0d02-44c6-48ae-8472-12b1a3f3d8e0'::uuid)
+ RETURNS TABLE(processed integer, materials_linked integer, products_with_materials integer)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_product RECORD;
+    v_materials INTEGER;
+    v_processed INTEGER := 0;
+    v_linked INTEGER := 0;
+BEGIN
+    -- Loop pelos produtos que ainda não têm materiais
+    FOR v_product IN (
+        SELECT p.id, p.supplier_id
+        FROM products p
+        LEFT JOIN product_materials pm ON pm.product_id = p.id
+        WHERE p.supplier_id = p_supplier_id
+          AND pm.id IS NULL  -- Apenas produtos SEM materiais
+        ORDER BY p.created_at DESC
+        LIMIT p_batch_size
+    )
+    LOOP
+        v_materials := fn_link_product_materials(v_product.id, v_product.supplier_id);
+        v_linked := v_linked + v_materials;
+        v_processed := v_processed + 1;
+    END LOOP;
+    
+    -- Contar produtos com materiais
+    SELECT COUNT(DISTINCT product_id)
+    INTO products_with_materials
+    FROM product_materials;
+    
+    processed := v_processed;
+    materials_linked := v_linked;
+    
+    RETURN NEXT;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.reset_mockup_credit_limits()
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  UPDATE public.mockup_credits SET 
+    current_month_spent = 0.00,
+    last_reset_month    = CURRENT_DATE
+  WHERE last_reset_month IS NULL OR last_reset_month < date_trunc('month', CURRENT_DATE)::date;
+  
+  UPDATE public.mockup_credits SET 
+    current_day_spent = 0.00,
+    last_reset_day    = CURRENT_DATE
+  WHERE last_reset_day IS NULL OR last_reset_day < CURRENT_DATE;
+END $function$;
 CREATE OR REPLACE FUNCTION public.reset_user_step_up_state(_user_id uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -2242,10 +24488,7 @@ BEGIN
   IF NOT public.is_supervisor_or_above(auth.uid()) THEN RAISE EXCEPTION 'Permission denied'; END IF;
   DELETE FROM public.step_up_challenges WHERE user_id = _user_id AND consumed = false;
   DELETE FROM public.step_up_tokens WHERE user_id = _user_id AND consumed = false;
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
 CREATE OR REPLACE FUNCTION public.restore_collection_item_from_trash(_item_id uuid)
  RETURNS boolean
  LANGUAGE plpgsql
@@ -2260,10 +24503,7 @@ BEGIN
   DELETE FROM public.collection_items_trash WHERE id = _item_id;
   RETURN true;
 EXCEPTION WHEN OTHERS THEN RETURN false;
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
 CREATE OR REPLACE FUNCTION public.restore_favorite_item_from_trash(_item_id uuid)
  RETURNS boolean
  LANGUAGE plpgsql
@@ -2278,10 +24518,7 @@ BEGIN
   DELETE FROM public.favorite_items_trash WHERE id = _item_id;
   RETURN true;
 EXCEPTION WHEN OTHERS THEN RETURN false;
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
 CREATE OR REPLACE FUNCTION public.restore_product(p_product_id uuid)
  RETURNS boolean
  LANGUAGE plpgsql
@@ -2293,10 +24530,7 @@ BEGIN
     WHERE id = p_product_id;
     RETURN FOUND;
 END;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.revoke_mcp_full_from_user(_target_user_id uuid)
  RETURNS integer
  LANGUAGE plpgsql
@@ -2308,10 +24542,7 @@ BEGIN
   DELETE FROM public.mcp_full_grantors WHERE user_id = _target_user_id;
   GET DIAGNOSTICS v_deleted = ROW_COUNT;
   RETURN v_deleted;
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
 CREATE OR REPLACE FUNCTION public.revoke_user_step_up(_user_id uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -2320,10 +24551,7 @@ AS $function$
 BEGIN
   IF NOT public.is_supervisor_or_above(auth.uid()) THEN RAISE EXCEPTION 'Permission denied'; END IF;
   UPDATE public.step_up_tokens SET consumed = true, consumed_at = now() WHERE user_id = _user_id AND consumed = false;
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
 CREATE OR REPLACE FUNCTION public.rotate_mcp_key(_key_id uuid, _new_key_hash text, _new_key_prefix text)
  RETURNS uuid
  LANGUAGE plpgsql
@@ -2339,10 +24567,458 @@ BEGIN
   RETURNING id INTO v_new_id;
   UPDATE public.mcp_api_keys SET revoked_at = now() WHERE id = _key_id;
   RETURN v_new_id;
-END $function$
-;
+END $function$;
+CREATE OR REPLACE FUNCTION public.search_notebooks_by_size(p_width numeric DEFAULT NULL::numeric, p_height numeric DEFAULT NULL::numeric, p_format_code character varying DEFAULT NULL::character varying, p_tolerance numeric DEFAULT 0.5)
+ RETURNS TABLE(product_id uuid, product_name character varying, format_code character varying, width_cm numeric, height_cm numeric)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        p.id,
+        p.name,
+        pf.code,
+        COALESCE(pns.width_cm, pf.width_cm),
+        COALESCE(pns.height_cm, pf.height_cm)
+    FROM products p
+    JOIN product_notebook_specs pns ON p.id = pns.product_id
+    LEFT JOIN paper_formats pf ON pns.format_id = pf.id
+    WHERE 
+        (p_format_code IS NULL OR pf.code = p_format_code)
+        AND (
+            p_width IS NULL 
+            OR ABS(COALESCE(pns.width_cm, pf.width_cm) - p_width) <= p_tolerance
+        )
+        AND (
+            p_height IS NULL 
+            OR ABS(COALESCE(pns.height_cm, pf.height_cm) - p_height) <= p_tolerance
+        );
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.search_products_fulltext(p_search_term character varying, p_limit integer DEFAULT 20, p_offset integer DEFAULT 0, p_category_slug character varying DEFAULT NULL::character varying, p_only_in_stock boolean DEFAULT false, p_min_price numeric DEFAULT NULL::numeric, p_max_price numeric DEFAULT NULL::numeric)
+ RETURNS TABLE(id uuid, sku character varying, name character varying, slug character varying, description text, category_name character varying, min_price numeric, image_url text, total_stock integer, relevance numeric, match_highlights text)
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_search_normalized TEXT;
+BEGIN
+    v_search_normalized := LOWER(unaccent(p_search_term));
+    
+    RETURN QUERY
+    WITH product_search AS (
+        SELECT 
+            p.id AS ps_id,
+            p.sku::VARCHAR AS ps_sku,
+            p.name::VARCHAR AS ps_name,
+            p.slug::VARCHAR AS ps_slug,
+            p.description AS ps_description,
+            c.name::VARCHAR AS ps_category_name,
+            (SELECT MIN(pv.price_1) FROM product_variants pv WHERE pv.product_id = p.id) AS ps_min_price,
+            COALESCE(p.image_url, p.primary_image_url) AS ps_image_url,
+            (SELECT COALESCE(SUM(pv.stock_quantity), 0)::INTEGER FROM product_variants pv WHERE pv.product_id = p.id) AS ps_total_stock,
+            (
+                CASE WHEN LOWER(unaccent(p.name)) ILIKE '%' || v_search_normalized || '%' THEN 1.0 ELSE 0 END +
+                CASE WHEN LOWER(p.sku) ILIKE '%' || v_search_normalized || '%' THEN 0.8 ELSE 0 END +
+                CASE WHEN p.description IS NOT NULL AND LOWER(unaccent(p.description)) ILIKE '%' || v_search_normalized || '%' THEN 0.5 ELSE 0 END +
+                CASE WHEN (SELECT SUM(pv.stock_quantity) FROM product_variants pv WHERE pv.product_id = p.id) > 0 THEN 0.3 ELSE 0 END
+            )::NUMERIC AS ps_relevance,
+            CASE 
+                WHEN LOWER(unaccent(p.name)) ILIKE '%' || v_search_normalized || '%' THEN 'nome'
+                WHEN LOWER(p.sku) ILIKE '%' || v_search_normalized || '%' THEN 'sku'
+                WHEN p.description IS NOT NULL AND LOWER(unaccent(p.description)) ILIKE '%' || v_search_normalized || '%' THEN 'descrição'
+                ELSE 'outro'
+            END AS ps_match_highlights
+        FROM products p
+        LEFT JOIN product_category_assignments pca ON pca.product_id = p.id AND pca.is_primary = true
+        LEFT JOIN categories c ON c.id = pca.category_id
+        WHERE 
+            p.is_active = true
+            AND p.deleted_at IS NULL
+            AND (
+                LOWER(unaccent(p.name)) ILIKE '%' || v_search_normalized || '%'
+                OR LOWER(p.sku) ILIKE '%' || v_search_normalized || '%'
+                OR (p.description IS NOT NULL AND LOWER(unaccent(p.description)) ILIKE '%' || v_search_normalized || '%')
+                OR (p.supplier_reference IS NOT NULL AND LOWER(p.supplier_reference) ILIKE '%' || v_search_normalized || '%')
+            )
+            AND (p_category_slug IS NULL OR c.slug = p_category_slug)
+            AND (NOT p_only_in_stock OR (SELECT SUM(pv.stock_quantity) FROM product_variants pv WHERE pv.product_id = p.id) > 0)
+            AND (p_min_price IS NULL OR (SELECT MIN(pv.price_1) FROM product_variants pv WHERE pv.product_id = p.id) >= p_min_price)
+            AND (p_max_price IS NULL OR (SELECT MIN(pv.price_1) FROM product_variants pv WHERE pv.product_id = p.id) <= p_max_price)
+    )
+    SELECT 
+        ps.ps_id,
+        ps.ps_sku,
+        ps.ps_name,
+        ps.ps_slug,
+        ps.ps_description,
+        ps.ps_category_name,
+        ps.ps_min_price,
+        ps.ps_image_url,
+        ps.ps_total_stock,
+        ps.ps_relevance,
+        ps.ps_match_highlights
+    FROM product_search ps
+    WHERE ps.ps_relevance > 0
+    ORDER BY ps.ps_relevance DESC, ps.ps_total_stock DESC
+    LIMIT p_limit
+    OFFSET p_offset;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.search_suggestions(p_partial_term character varying, p_limit integer DEFAULT 10)
+ RETURNS TABLE(suggestion character varying, suggestion_type character varying, count bigint)
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    v_term_normalized TEXT;
+BEGIN
+    v_term_normalized := unaccent(lower(trim(p_partial_term)));
+    
+    IF length(v_term_normalized) < 2 THEN
+        RETURN;
+    END IF;
+    
+    RETURN QUERY
+    (
+        SELECT DISTINCT
+            p.name::VARCHAR AS suggestion,
+            'produto'::VARCHAR AS suggestion_type,
+            COUNT(*)::BIGINT AS count
+        FROM products p
+        WHERE 
+            p.is_active = true
+            AND (p.is_deleted = false OR p.is_deleted IS NULL)
+            AND unaccent(lower(p.name)) LIKE v_term_normalized || '%'
+        GROUP BY p.name
+        ORDER BY count DESC
+        LIMIT p_limit / 2
+    )
+    UNION ALL
+    (
+        SELECT DISTINCT
+            c.name::VARCHAR AS suggestion,
+            'categoria'::VARCHAR AS suggestion_type,
+            (SELECT COUNT(DISTINCT pca.product_id) 
+             FROM product_category_assignments pca
+             JOIN products p2 ON p2.id = pca.product_id
+             WHERE pca.category_id = c.id
+               AND p2.is_active = true
+               AND (p2.is_deleted = false OR p2.is_deleted IS NULL)
+            )::BIGINT AS count
+        FROM categories c
+        WHERE 
+            c.is_active = true
+            AND unaccent(lower(c.name)) LIKE v_term_normalized || '%'
+        ORDER BY count DESC
+        LIMIT p_limit / 2
+    )
+    ORDER BY count DESC
+    LIMIT p_limit;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.set_audit_user_fields()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    BEGIN
+        IF TG_OP = 'INSERT' THEN
+            NEW.created_by := COALESCE(
+                current_setting('app.current_user_id', true)::uuid,
+                NEW.created_by
+            );
+            NEW.updated_by := COALESCE(
+                current_setting('app.current_user_id', true)::uuid,
+                NEW.updated_by
+            );
+        ELSIF TG_OP = 'UPDATE' THEN
+            NEW.updated_by := COALESCE(
+                current_setting('app.current_user_id', true)::uuid,
+                NEW.updated_by
+            );
+        END IF;
+    EXCEPTION
+        WHEN OTHERS THEN
+            NULL;
+    END;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.set_is_imported_from_origin()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_stricker_id UUID := 'bcfc0d02-44c6-48ae-8472-12b1a3f3d8e0';
+    v_country TEXT;
+BEGIN
+    -- STRICKER ou sem fornecedor: usa país de origem
+    IF NEW.supplier_id = v_stricker_id OR NEW.supplier_id IS NULL THEN
+        
+        v_country := NULLIF(TRIM(NEW.origin_country), '');
+        
+        IF v_country IS NULL THEN
+            -- Sem país definido
+            IF TG_OP = 'INSERT' THEN
+                NEW.is_imported := TRUE;
+            ELSE
+                NEW.is_imported := COALESCE(OLD.is_imported, TRUE);
+            END IF;
+        ELSIF UPPER(v_country) IN ('BRASIL', 'BR', 'BRAZIL') THEN
+            -- Nacional
+            NEW.is_imported := FALSE;
+        ELSE
+            -- Importado
+            NEW.is_imported := TRUE;
+        END IF;
+    ELSE
+        -- XBZ, ASIA, outros fornecedores: SEMPRE importado
+        NEW.is_imported := TRUE;
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.set_mockup_approval_token()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'pg_catalog', 'public'
+AS $function$
+BEGIN
+  IF NEW.public_token IS NULL OR NEW.public_token = '' THEN
+    NEW.public_token := public.generate_mockup_approval_token();
+  END IF;
+  RETURN NEW;
+END $function$;
+CREATE OR REPLACE FUNCTION public.set_product_defaults_from_supplier()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_settings RECORD;
+    v_country TEXT;
+    v_packing_result JSONB;
+    v_extracted JSONB;
+    v_classification TEXT;
+BEGIN
+    -- Buscar configurações do fornecedor
+    SELECT * INTO v_settings
+    FROM supplier_settings
+    WHERE supplier_id = NEW.supplier_id;
+    
+    -- ═══════════════════════════════════════════════════════════════
+    -- PARTE 1: CONFIGURAÇÕES DO FORNECEDOR (supply_mode, is_imported, lead_time)
+    -- ═══════════════════════════════════════════════════════════════
+    
+    IF FOUND THEN
+        -- Aplicar supply_mode padrão
+        IF NEW.supply_mode IS NULL OR TG_OP = 'INSERT' THEN
+            NEW.supply_mode := v_settings.default_supply_mode;
+        END IF;
+        
+        -- Aplicar lead_time_days padrão
+        IF NEW.lead_time_days IS NULL THEN
+            NEW.lead_time_days := v_settings.default_lead_time_days;
+        END IF;
+        
+        -- Determinar is_imported
+        IF v_settings.use_origin_country THEN
+            v_country := NULLIF(TRIM(NEW.origin_country), '');
+            
+            IF v_country IS NULL THEN
+                IF TG_OP = 'INSERT' THEN
+                    NEW.is_imported := TRUE;
+                ELSE
+                    NEW.is_imported := COALESCE(OLD.is_imported, TRUE);
+                END IF;
+            ELSIF UPPER(v_country) IN ('BRASIL', 'BR', 'BRAZIL') THEN
+                NEW.is_imported := FALSE;
+            ELSE
+                NEW.is_imported := TRUE;
+            END IF;
+        ELSE
+            NEW.is_imported := v_settings.default_is_imported;
+        END IF;
+    ELSE
+        -- Sem configuração: manter comportamento para produtos sem fornecedor
+        IF NEW.supplier_id IS NULL THEN
+            v_country := NULLIF(TRIM(NEW.origin_country), '');
+            
+            IF v_country IS NULL THEN
+                IF TG_OP = 'INSERT' THEN
+                    NEW.is_imported := TRUE;
+                ELSE
+                    NEW.is_imported := COALESCE(OLD.is_imported, TRUE);
+                END IF;
+            ELSIF UPPER(v_country) IN ('BRASIL', 'BR', 'BRAZIL') THEN
+                NEW.is_imported := FALSE;
+            ELSE
+                NEW.is_imported := TRUE;
+            END IF;
+        END IF;
+    END IF;
+    
+    -- ═══════════════════════════════════════════════════════════════
+    -- PARTE 2: CLASSIFICAÇÃO DE EMBALAGEM (packing_classification)
+    -- ═══════════════════════════════════════════════════════════════
+    
+    -- Só classificar se ainda não tem classificação ou é INSERT
+    IF NEW.packing_classification IS NULL OR TG_OP = 'INSERT' THEN
+        
+        -- PRIORIDADE 1: Usar packing_type se existir
+        IF NEW.packing_type IS NOT NULL AND TRIM(NEW.packing_type) <> '' THEN
+            SELECT fn_classify_packing_type(NEW.packing_type) INTO v_packing_result;
+            v_classification := v_packing_result->>'classification';
+            
+            IF v_classification IS NOT NULL THEN
+                NEW.packing_classification := v_classification;
+            END IF;
+        END IF;
+        
+        -- PRIORIDADE 2: Extrair da descrição se ainda não classificou
+        IF NEW.packing_classification IS NULL AND NEW.description IS NOT NULL THEN
+            SELECT fn_extract_packaging_from_description(NEW.description) INTO v_extracted;
+            
+            IF (v_extracted->>'found')::boolean = true THEN
+                IF v_extracted->>'packaging_text' IS NOT NULL THEN
+                    SELECT fn_classify_packing_type(v_extracted->>'packaging_text') INTO v_packing_result;
+                    v_classification := v_packing_result->>'classification';
+                    
+                    IF v_classification IS NOT NULL THEN
+                        NEW.packing_classification := v_classification;
+                    ELSIF (v_extracted->>'is_gift_packaging')::boolean = true THEN
+                        NEW.packing_classification := 'commercial';
+                    END IF;
+                END IF;
+            END IF;
+        END IF;
+        
+        -- PRIORIDADE 3: Usar default do fornecedor se ainda não classificou
+        IF NEW.packing_classification IS NULL AND FOUND AND v_settings.default_packing_classification IS NOT NULL THEN
+            NEW.packing_classification := v_settings.default_packing_classification;
+        END IF;
+        
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.set_updated_at()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+begin
+  new.updated_at = now();
+  return new;
+end$function$;
+CREATE OR REPLACE FUNCTION public.sincronizar_estoque_spot(p_stock_data jsonb, p_user_id uuid DEFAULT NULL::uuid)
+ RETURNS json
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_item JSONB;
+    v_sku VARCHAR;
+    v_quantity INTEGER;
+    v_variant_id UUID;
+    v_stock_before INTEGER;
+    v_processed INTEGER := 0;
+    v_updated INTEGER := 0;
+    v_errors INTEGER := 0;
+    v_not_found INTEGER := 0;
+    v_error_list JSONB := '[]'::jsonb;
+BEGIN
+    IF p_stock_data IS NULL OR jsonb_array_length(p_stock_data) = 0 THEN
+        RETURN json_build_object('success', false, 'error', 'Dados de estoque vazios ou inválidos');
+    END IF;
 
--- ----------------------------------------------------------------------------
+    FOR v_item IN SELECT * FROM jsonb_array_elements(p_stock_data)
+    LOOP
+        v_processed := v_processed + 1;
+        v_sku := v_item->>'sku';
+        v_quantity := (v_item->>'quantity')::INTEGER;
+        
+        IF v_sku IS NULL OR v_sku = '' THEN
+            v_errors := v_errors + 1;
+            v_error_list := v_error_list || jsonb_build_object('index', v_processed, 'error', 'SKU vazio ou nulo');
+            CONTINUE;
+        END IF;
+        
+        SELECT id, COALESCE(stock_quantity, 0) INTO v_variant_id, v_stock_before FROM product_variants WHERE sku = v_sku;
+        
+        IF v_variant_id IS NULL THEN
+            v_not_found := v_not_found + 1;
+            v_error_list := v_error_list || jsonb_build_object('sku', v_sku, 'error', 'Variante não encontrada');
+            CONTINUE;
+        END IF;
+        
+        IF v_stock_before != v_quantity THEN
+            INSERT INTO stock_movements (id, variant_id, movement_type, quantity, stock_before, stock_after, reference_type, notes, created_by, created_at)
+            VALUES (gen_random_uuid(), v_variant_id, CASE WHEN v_quantity > v_stock_before THEN 'ENTRADA' ELSE 'SAIDA' END,
+                    v_quantity - v_stock_before, v_stock_before, v_quantity, 'SYNC_SPOT',
+                    format('Sincronização automática SPOT. Anterior: %s, Novo: %s', v_stock_before, v_quantity), p_user_id, NOW());
+            
+            UPDATE product_variants SET stock_quantity = v_quantity, updated_at = NOW() WHERE id = v_variant_id;
+            v_updated := v_updated + 1;
+        END IF;
+    END LOOP;
+    
+    RETURN json_build_object('success', true, 'processed', v_processed, 'updated', v_updated,
+                             'unchanged', v_processed - v_updated - v_errors - v_not_found,
+                             'not_found', v_not_found, 'errors', v_errors, 'error_details', v_error_list);
+EXCEPTION WHEN OTHERS THEN
+    RETURN json_build_object('success', false, 'error', SQLERRM, 'processed', v_processed);
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.slugify(input_text text)
+ RETURNS text
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  result TEXT;
+BEGIN
+  IF input_text IS NULL THEN
+    RETURN NULL;
+  END IF;
+  
+  result := LOWER(TRIM(input_text));
+  
+  -- Substituir acentos
+  result := TRANSLATE(result, 
+    'áàâãäåéèêëíìîïóòôõöúùûüçñýÿ',
+    'aaaaaaeeeeiiiiooooouuuucnyy'
+  );
+  
+  -- Substituir caracteres especiais por hífen
+  result := REGEXP_REPLACE(result, '[^a-z0-9]+', '-', 'g');
+  
+  -- Remover hífens duplicados
+  result := REGEXP_REPLACE(result, '-+', '-', 'g');
+  
+  -- Remover hífen do início e fim
+  result := TRIM(BOTH '-' FROM result);
+  
+  -- Limitar tamanho (máx 100 chars)
+  result := LEFT(result, 100);
+  
+  -- Remover hífen do fim se cortou no meio
+  result := TRIM(BOTH '-' FROM result);
+  
+  RETURN result;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.soft_delete_product(p_product_id uuid)
  RETURNS boolean
  LANGUAGE plpgsql
@@ -2354,10 +25030,7 @@ BEGIN
     WHERE id = p_product_id;
     RETURN FOUND;
 END;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.soft_delete_quote(_quote_id uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -2366,10 +25039,27 @@ AS $function$
 BEGIN
   UPDATE public.quotes SET status = 'cancelled', updated_at = now()
   WHERE id = _quote_id AND (seller_id = auth.uid() OR public.is_admin_or_above(auth.uid()));
-END $function$
-;
+END $function$;
+CREATE OR REPLACE FUNCTION public.start_step_up_challenge(_action text, _target_ref text DEFAULT NULL::text)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_challenge_id uuid;
+BEGIN
+    IF auth.uid() IS NULL THEN
+        RAISE EXCEPTION 'Não autenticado';
+    END IF;
 
--- ----------------------------------------------------------------------------
+    INSERT INTO public.step_up_challenges (user_id, action, target_ref)
+    VALUES (auth.uid(), _action, _target_ref)
+    RETURNING id INTO v_challenge_id;
+
+    RETURN v_challenge_id;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.step_up_challenge_verify(_challenge_id uuid, _otp text)
  RETURNS boolean
  LANGUAGE plpgsql
@@ -2382,10 +25072,7 @@ BEGIN
   WHERE id = _challenge_id AND user_id = auth.uid() AND expires_at > now() AND consumed = false
   RETURNING otp_verified INTO v_valid;
   RETURN COALESCE(v_valid, false);
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
 CREATE OR REPLACE FUNCTION public.step_up_token_create(_challenge_id uuid)
  RETURNS text
  LANGUAGE plpgsql
@@ -2402,10 +25089,7 @@ BEGIN
   VALUES (auth.uid(), v_challenge.action, v_challenge.target_ref, v_hash, _challenge_id);
   UPDATE public.step_up_challenges SET consumed = true WHERE id = _challenge_id;
   RETURN v_token;
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
 CREATE OR REPLACE FUNCTION public.step_up_token_revoke(_token_id uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -2414,10 +25098,7 @@ AS $function$
 BEGIN
   UPDATE public.step_up_tokens SET consumed = true, consumed_at = now()
   WHERE id = _token_id AND user_id = auth.uid();
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
 CREATE OR REPLACE FUNCTION public.step_up_user_settings_set(_settings jsonb, _user_id uuid DEFAULT NULL::uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -2431,10 +25112,7 @@ BEGIN
   INSERT INTO public.system_settings (key, value, updated_by)
   VALUES ('step_up_settings_' || v_target::text, _settings, auth.uid())
   ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now(), updated_by = auth.uid();
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
 CREATE OR REPLACE FUNCTION public.store_user_token_revocation(_user_id uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -2446,10 +25124,135 @@ BEGIN
   END IF;
   INSERT INTO public.user_token_revocations(user_id) VALUES (_user_id)
   ON CONFLICT (user_id) DO UPDATE SET revoked_at = EXCLUDED.revoked_at;
-END $function$
-;
+END $function$;
+CREATE OR REPLACE FUNCTION public.strip_html(input_text text)
+ RETURNS text
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  IF input_text IS NULL THEN
+    RETURN NULL;
+  END IF;
+  
+  -- Remover tags HTML
+  RETURN TRIM(REGEXP_REPLACE(input_text, '<[^>]+>', ' ', 'g'));
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.sync_order_payment_status()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  new_status public.payment_status;
+BEGIN
+  IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
+    new_status := NEW.status;
+  ELSE
+    RETURN NULL;
+  END IF;
 
--- ----------------------------------------------------------------------------
+  UPDATE public.orders o
+  SET payment_status = new_status,
+      updated_at = now()
+  WHERE o.id = NEW.order_id;
+
+  RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.test_classify_batch(product_names text[])
+ RETURNS TABLE(product_name text, tipo_detectado text, category_slug text, material text, confidence text)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_name TEXT;
+    v_result JSONB;
+BEGIN
+    FOREACH v_name IN ARRAY product_names LOOP
+        v_result := classify_product(v_name);
+        
+        product_name := v_name;
+        tipo_detectado := v_result->>'tipo_detectado';
+        category_slug := v_result->>'category_slug';
+        material := COALESCE(v_result->>'material', v_result->>'tipo');
+        confidence := CASE 
+            WHEN v_result->>'error' IS NOT NULL THEN 'BAIXO'
+            WHEN v_result->>'warning' IS NOT NULL THEN 'MEDIO'
+            WHEN v_result->>'category_slug' IS NOT NULL 
+                 AND v_result->>'material' IS NOT NULL
+                 AND v_result->>'material' != 'INDEFINIDO'
+            THEN 'ALTO'
+            WHEN v_result->>'category_slug' IS NOT NULL 
+            THEN 'MEDIO'
+            ELSE 'BAIXO'
+        END;
+        
+        RETURN NEXT;
+    END LOOP;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.tg_ai_providers_set_updated_at()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.tg_integration_credentials_derive()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'pg_catalog', 'public'
+AS $function$
+BEGIN
+  -- Derivar provider do prefixo do secret_name se não fornecido
+  IF NEW.provider IS NULL OR NEW.provider = '' THEN
+    NEW.provider := CASE
+      WHEN NEW.secret_name LIKE 'BITRIX24_%'           THEN 'bitrix24'
+      WHEN NEW.secret_name LIKE 'N8N_%'                THEN 'n8n'
+      WHEN NEW.secret_name LIKE 'GITHUB_%'             THEN 'github'
+      WHEN NEW.secret_name LIKE 'EXTERNAL_PROMOBRIND_%'THEN 'promobrind'
+      WHEN NEW.secret_name LIKE 'EXTERNAL_CRM_%'       THEN 'crm'
+      WHEN NEW.secret_name LIKE 'MCP_%'                THEN 'mcp'
+      WHEN NEW.secret_name LIKE 'INBOUND_WEBHOOK_HMAC_%' THEN 'webhook'
+      WHEN NEW.secret_name LIKE 'OUTBOUND_WEBHOOK_SECRET_%' THEN 'webhook'
+      WHEN NEW.secret_name LIKE 'CLOUDFLARE_%'         THEN 'cloudflare'  -- NEW
+      WHEN NEW.secret_name LIKE 'XBZ_%'                THEN 'xbz'         -- NEW
+      ELSE 'other'
+    END;
+  END IF;
+
+  -- Computar length e masked_suffix a partir do secret_value
+  IF NEW.secret_value IS NOT NULL THEN
+    NEW.length := length(NEW.secret_value);
+    NEW.masked_suffix := CASE
+      WHEN length(NEW.secret_value) >= 4 THEN right(NEW.secret_value, 4)
+      ELSE NEW.secret_value
+    END;
+  END IF;
+
+  -- Manter updated_at em sincronia
+  NEW.updated_at := now();
+
+  RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.tg_ip_access_control_set_updated_at()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'pg_catalog', 'public'
+AS $function$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.toggle_user_step_up(_user_id uuid, _enabled boolean)
  RETURNS void
  LANGUAGE plpgsql
@@ -2458,10 +25261,566 @@ AS $function$
 BEGIN
   IF NOT public.is_supervisor_or_above(auth.uid()) THEN RAISE EXCEPTION 'Permission denied'; END IF;
   PERFORM public.step_up_user_settings_set(jsonb_build_object('enabled', _enabled), _user_id);
-END $function$
-;
-
--- ----------------------------------------------------------------------------
+END $function$;
+CREATE OR REPLACE FUNCTION public.trg_auto_process_product_materials()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    -- Só processar se materials foi alterado e não está vazio (JSONB)
+    IF NEW.materials IS NOT NULL 
+       AND NEW.materials != '[]'::jsonb
+       AND jsonb_array_length(NEW.materials) > 0
+       AND (TG_OP = 'INSERT' OR NEW.materials IS DISTINCT FROM OLD.materials) 
+    THEN
+        -- Processar materiais automaticamente (com replace para updates)
+        PERFORM fn_process_product_materials_auto(
+            NEW.id, 
+            CASE WHEN TG_OP = 'UPDATE' THEN TRUE ELSE FALSE END
+        );
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.trg_categories_seo_autofill()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_parent_name TEXT;
+BEGIN
+  -- Buscar nome da categoria pai
+  IF NEW.parent_id IS NOT NULL THEN
+    SELECT name INTO v_parent_name FROM categories WHERE id = NEW.parent_id;
+  END IF;
+  
+  -- META TITLE
+  IF (NEW.meta_title IS NULL OR LENGTH(TRIM(COALESCE(NEW.meta_title, ''))) = 0) AND NEW.name IS NOT NULL THEN
+    IF v_parent_name IS NOT NULL THEN
+      NEW.meta_title := NEW.name || ' - ' || v_parent_name || ' | Promo Brindes';
+    ELSE
+      NEW.meta_title := NEW.name || ' - Brindes Promocionais | Promo Brindes';
+    END IF;
+    NEW.meta_title := LEFT(NEW.meta_title, 60);
+  END IF;
+  
+  -- META DESCRIPTION
+  IF (NEW.meta_description IS NULL OR LENGTH(TRIM(COALESCE(NEW.meta_description, ''))) = 0) AND NEW.name IS NOT NULL THEN
+    NEW.meta_description := 'Encontre os melhores ' || LOWER(NEW.name) || 
+      ' para brindes corporativos. Personalização disponível. Entrega para todo Brasil. Solicite orçamento!';
+    NEW.meta_description := LEFT(NEW.meta_description, 160);
+  END IF;
+  
+  -- AI_SUMMARY
+  IF (NEW.ai_summary IS NULL OR LENGTH(TRIM(COALESCE(NEW.ai_summary, ''))) = 0) AND NEW.name IS NOT NULL THEN
+    NEW.ai_summary := 'A categoria ' || NEW.name || 
+      ' oferece diversas opções de brindes promocionais para empresas. ' ||
+      'Todos os produtos podem ser personalizados com a logo da sua empresa. ' ||
+      'Entrega para todo Brasil.';
+  END IF;
+  
+  -- Atualizar timestamp
+  IF TG_OP = 'UPDATE' THEN
+    NEW.updated_at := now();
+  END IF;
+  
+  RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.trg_fn_set_updated_at()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.trg_fn_update_preferred_on_stock_change()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    -- Só atualiza se quantidade, is_active ou removed_from_api mudaram
+    IF TG_OP = 'UPDATE' AND (
+        OLD.quantity IS DISTINCT FROM NEW.quantity OR
+        OLD.is_active IS DISTINCT FROM NEW.is_active OR
+        COALESCE(OLD.removed_from_api, FALSE) IS DISTINCT FROM COALESCE(NEW.removed_from_api, FALSE)
+    ) THEN
+        PERFORM update_preferred_suppliers(NEW.variant_id);
+    END IF;
+    
+    IF TG_OP = 'INSERT' THEN
+        PERFORM update_preferred_suppliers(NEW.variant_id);
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.trg_product_faqs_updated_at()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  NEW.updated_at := now();
+  RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.trg_product_images_seo_autofill()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_product_name TEXT;
+  v_color_name TEXT;
+BEGIN
+  -- Buscar nome do produto
+  SELECT name INTO v_product_name FROM products WHERE id = NEW.product_id;
+  
+  -- Buscar nome da cor se tiver color_id
+  -- variation_values tem 'value' e 'label', NÃO 'name'
+  IF NEW.color_id IS NOT NULL THEN
+    SELECT COALESCE(label, value) INTO v_color_name 
+    FROM variation_values WHERE id = NEW.color_id;
+  END IF;
+  
+  -- AUTO-PREENCHER ALT_TEXT
+  IF (NEW.alt_text IS NULL OR LENGTH(TRIM(COALESCE(NEW.alt_text, ''))) = 0) AND v_product_name IS NOT NULL THEN
+    NEW.alt_text := generate_image_alt_text(
+      v_product_name,
+      NEW.image_type,
+      v_color_name,
+      COALESCE(NEW.display_order, 1)
+    );
+  END IF;
+  
+  -- TITLE_TEXT
+  IF (NEW.title_text IS NULL OR LENGTH(TRIM(COALESCE(NEW.title_text, ''))) = 0) AND v_product_name IS NOT NULL THEN
+    NEW.title_text := v_product_name;
+    IF v_color_name IS NOT NULL THEN
+      NEW.title_text := NEW.title_text || ' - ' || v_color_name;
+    END IF;
+  END IF;
+  
+  NEW.updated_at := now();
+  RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.trg_product_slug_redirect()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  -- Se slug mudou e tinha valor anterior, criar redirect
+  IF OLD.slug IS NOT NULL 
+     AND NEW.slug IS NOT NULL 
+     AND OLD.slug != NEW.slug 
+     AND LENGTH(OLD.slug) > 0 THEN
+    
+    INSERT INTO seo_redirects (source_path, target_path, redirect_type, reason)
+    VALUES (
+      '/produto/' || OLD.slug,
+      '/produto/' || NEW.slug,
+      301,
+      'product_slug_changed'
+    )
+    ON CONFLICT (source_path) WHERE is_active = true
+    DO UPDATE SET 
+      target_path = EXCLUDED.target_path,
+      reason = 'product_slug_changed_updated';
+  END IF;
+  
+  RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.trg_products_seo_autofill()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_category_name TEXT;
+BEGIN
+  -- Buscar nome da categoria (para usar nos meta tags)
+  IF NEW.main_category_id IS NOT NULL THEN
+    SELECT name INTO v_category_name FROM categories WHERE id = NEW.main_category_id;
+  ELSIF NEW.category_id IS NOT NULL THEN
+    SELECT name INTO v_category_name FROM categories WHERE id = NEW.category_id;
+  END IF;
+  
+  -- ============================
+  -- AUTO-PREENCHER APENAS SE NULL
+  -- (Permite override manual)
+  -- ============================
+  
+  -- SLUG
+  IF (NEW.slug IS NULL OR LENGTH(TRIM(COALESCE(NEW.slug, ''))) = 0) AND NEW.name IS NOT NULL THEN
+    NEW.slug := generate_product_slug(NEW.name, NEW.id);
+  END IF;
+  
+  -- META TITLE
+  IF (NEW.meta_title IS NULL OR LENGTH(TRIM(COALESCE(NEW.meta_title, ''))) = 0) AND NEW.name IS NOT NULL THEN
+    NEW.meta_title := generate_product_meta_title(NEW.name, v_category_name);
+  END IF;
+  
+  -- META DESCRIPTION
+  IF (NEW.meta_description IS NULL OR LENGTH(TRIM(COALESCE(NEW.meta_description, ''))) = 0) AND NEW.name IS NOT NULL THEN
+    NEW.meta_description := generate_product_meta_description(
+      NEW.name,
+      NEW.short_description,
+      NEW.description,
+      COALESCE(NEW.allows_personalization, false)
+    );
+  END IF;
+  
+  -- META KEYWORDS (CORRIGIDO: usar array_length para arrays)
+  -- ANTES: IF (NEW.meta_keywords IS NULL OR LENGTH(TRIM(COALESCE(NEW.meta_keywords, ''))) = 0)
+  -- DEPOIS: Usar array_length() que funciona com TEXT[]
+  IF (NEW.meta_keywords IS NULL OR COALESCE(array_length(NEW.meta_keywords, 1), 0) = 0) AND NEW.name IS NOT NULL THEN
+    NEW.meta_keywords := extract_keywords(
+      COALESCE(NEW.name, '') || ' ' || 
+      COALESCE(NEW.short_description, '') || ' ' || 
+      COALESCE(v_category_name, '') || ' ' ||
+      COALESCE(NEW.brand, '') || ' ' ||
+      'brinde promocional brinde corporativo brinde personalizado',
+      15
+    );
+  END IF;
+  
+  -- OG_TITLE (herda de meta_title)
+  IF NEW.og_title IS NULL AND NEW.meta_title IS NOT NULL THEN
+    NEW.og_title := NEW.meta_title;
+  END IF;
+  
+  -- OG_DESCRIPTION (herda de meta_description)
+  IF NEW.og_description IS NULL AND NEW.meta_description IS NOT NULL THEN
+    NEW.og_description := NEW.meta_description;
+  END IF;
+  
+  -- OG_IMAGE_URL (herda de primary_image_url)
+  IF NEW.og_image_url IS NULL AND NEW.primary_image_url IS NOT NULL THEN
+    NEW.og_image_url := NEW.primary_image_url;
+  END IF;
+  
+  -- CANONICAL_URL
+  IF NEW.canonical_url IS NULL AND NEW.slug IS NOT NULL THEN
+    NEW.canonical_url := '/produto/' || NEW.slug;
+  END IF;
+  
+  -- Atualizar timestamp
+  IF TG_OP = 'UPDATE' THEN
+    NEW.updated_at := now();
+  END IF;
+  
+  RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.trg_sync_ncm_id()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    -- Direção 1: ncm_code → ncm_id (comportamento original)
+    IF TG_OP = 'INSERT' OR (NEW.ncm_code IS DISTINCT FROM OLD.ncm_code) THEN
+        NEW.ncm_id := fn_get_ncm_id(NEW.ncm_code);
+    END IF;
+    
+    -- Direção 2: ncm_id → ncm_code (novo, evita inconsistência)
+    IF NEW.ncm_code IS NULL AND NEW.ncm_id IS NOT NULL THEN
+        SELECT code INTO NEW.ncm_code FROM ncm_codes WHERE id = NEW.ncm_id;
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.trg_update_is_thermal()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_product_id UUID;
+BEGIN
+    -- Determinar product_id baseado na operação
+    IF TG_OP = 'DELETE' THEN
+        v_product_id := OLD.product_id;
+    ELSE
+        v_product_id := NEW.product_id;
+    END IF;
+    
+    -- Atualiza is_thermal no produto
+    UPDATE products 
+    SET is_thermal = fn_is_thermal_product(v_product_id),
+        updated_at = NOW()
+    WHERE id = v_product_id;
+    
+    IF TG_OP = 'DELETE' THEN
+        RETURN OLD;
+    ELSE
+        RETURN NEW;
+    END IF;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.trg_validate_allowed_techniques()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_tecnica TEXT;
+BEGIN
+    IF NEW.allowed_technique_ids IS NOT NULL THEN
+        FOR v_tecnica IN SELECT jsonb_array_elements_text(NEW.allowed_technique_ids)
+        LOOP
+            IF NOT EXISTS (SELECT 1 FROM tecnicas_gravacao WHERE codigo = v_tecnica AND ativo = true) THEN
+                RAISE EXCEPTION 'Técnica inválida em allowed_technique_ids: %. Valores válidos: consulte tecnicas_gravacao.', v_tecnica;
+            END IF;
+        END LOOP;
+    END IF;
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.trg_video_queue_updated_at()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.trigger_auto_classify_product()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_func RECORD;
+    v_result JSONB;
+    v_category_id UUID;
+    v_is_match BOOLEAN;
+    v_sql TEXT;
+BEGIN
+    -- ========================================================================
+    -- REGRA: Só classificar se category_id for NULL
+    -- ========================================================================
+    
+    IF NEW.category_id IS NOT NULL THEN
+        RETURN NEW;
+    END IF;
+    
+    -- ========================================================================
+    -- LOOP DINÂMICO: Executar funções registradas por ordem de prioridade
+    -- ========================================================================
+    
+    FOR v_func IN 
+        SELECT function_name, is_field
+        FROM classify_functions_registry
+        WHERE is_active = TRUE
+        ORDER BY priority ASC
+    LOOP
+        BEGIN
+            -- Construir e executar SQL dinâmico
+            v_sql := format('SELECT %I($1)', v_func.function_name);
+            EXECUTE v_sql INTO v_result USING NEW.name;
+            
+            -- Verificar se é match (campo is_X = TRUE)
+            v_is_match := (v_result->>v_func.is_field)::BOOLEAN;
+            
+            IF v_is_match = TRUE THEN
+                v_category_id := (v_result->>'category_id')::UUID;
+                
+                IF v_category_id IS NOT NULL THEN
+                    NEW.category_id := v_category_id;
+                    -- Encontrou match, sair do loop
+                    EXIT;
+                END IF;
+            END IF;
+            
+        EXCEPTION WHEN OTHERS THEN
+            -- Log de erro (opcional) - continua para próxima função
+            RAISE WARNING '[AUTO-CLASSIFY] Erro na função %: %', v_func.function_name, SQLERRM;
+            CONTINUE;
+        END;
+    END LOOP;
+    
+    RETURN NEW;
+    
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.trigger_auto_link_variant_color()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_result JSONB;
+BEGIN
+    -- ========================================
+    -- CASO 1: INSERT com cor definida
+    -- ========================================
+    IF TG_OP = 'INSERT' AND NEW.color_id IS NOT NULL THEN
+        v_result := fn_auto_link_product_to_color_categories(
+            NEW.product_id,
+            NEW.color_id
+        );
+        -- Log opcional (debug)
+        -- RAISE NOTICE 'Auto-link INSERT: %', v_result;
+    END IF;
+    
+    -- ========================================
+    -- CASO 2: UPDATE que alterou a cor
+    -- ========================================
+    IF TG_OP = 'UPDATE' AND OLD.color_id IS DISTINCT FROM NEW.color_id THEN
+        
+        -- 2a: Remove vínculos da cor antiga (se havia)
+        IF OLD.color_id IS NOT NULL THEN
+            v_result := fn_remove_orphan_color_links(
+                NEW.product_id,
+                OLD.color_id
+            );
+        END IF;
+        
+        -- 2b: Cria vínculos para cor nova (se definida)
+        IF NEW.color_id IS NOT NULL THEN
+            v_result := fn_auto_link_product_to_color_categories(
+                NEW.product_id,
+                NEW.color_id
+            );
+        END IF;
+    END IF;
+    
+    -- ========================================
+    -- CASO 3: DELETE - Remove vínculos órfãos
+    -- ========================================
+    IF TG_OP = 'DELETE' AND OLD.color_id IS NOT NULL THEN
+        v_result := fn_remove_orphan_color_links(
+            OLD.product_id,
+            OLD.color_id
+        );
+        RETURN OLD;
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.trigger_gerar_nome_variante()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_spot_supplier_id UUID := 'bcfc0d02-44c6-48ae-8472-12b1a3f3d8e0';
+    v_produto_nome TEXT;
+    v_produto_supplier_id UUID;
+BEGIN
+    IF NEW.name IS NULL OR NEW.name = '' THEN
+        SELECT name, supplier_id INTO v_produto_nome, v_produto_supplier_id
+        FROM products WHERE id = NEW.product_id;
+        
+        IF v_produto_supplier_id = v_spot_supplier_id THEN
+            IF NEW.color_name IS NOT NULL AND NEW.color_name != '' THEN
+                NEW.name := v_produto_nome || ' - ' || NEW.color_name;
+            ELSE
+                NEW.name := v_produto_nome;
+            END IF;
+        END IF;
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.trigger_limpar_nome_produto()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_spot_supplier_id UUID := 'bcfc0d02-44c6-48ae-8472-12b1a3f3d8e0';
+BEGIN
+    IF NEW.supplier_id = v_spot_supplier_id THEN
+        NEW.name := limpar_nome_produto_spot(NEW.name);
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.trigger_mark_for_processing()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    -- Garantir que novo registro está marcado corretamente
+    NEW.processed := false;
+    NEW.imported_at := COALESCE(NEW.imported_at, NOW());
+    
+    -- Gerar batch_id se não existir
+    IF NEW.import_batch_id IS NULL THEN
+        NEW.import_batch_id := gen_random_uuid();
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.trigger_set_updated_at()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.truncate_text(input_text text, max_length integer, suffix text DEFAULT ''::text)
+ RETURNS text
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  result TEXT;
+  actual_max INTEGER;
+  last_space INTEGER;
+BEGIN
+  IF input_text IS NULL THEN
+    RETURN NULL;
+  END IF;
+  
+  -- Se texto já é menor que limite, retornar como está
+  IF LENGTH(input_text) <= max_length THEN
+    RETURN input_text;
+  END IF;
+  
+  -- Calcular tamanho real considerando sufixo
+  actual_max := max_length - LENGTH(suffix);
+  
+  -- Truncar
+  result := LEFT(input_text, actual_max);
+  
+  -- Tentar cortar na última palavra completa
+  last_space := LENGTH(result) - POSITION(' ' IN REVERSE(result)) + 1;
+  IF last_space > 1 AND last_space < LENGTH(result) THEN
+    result := LEFT(result, last_space - 1);
+  END IF;
+  
+  -- Remover pontuação do final
+  result := RTRIM(result, '.,;:!? ');
+  
+  RETURN result || suffix;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.unblock_ip(_ip text)
  RETURNS integer
  LANGUAGE plpgsql
@@ -2473,63 +25832,721 @@ BEGIN
   DELETE FROM public.ip_access_control WHERE ip_address = _ip::inet AND list_type = 'blocklist';
   GET DIAGNOSTICS v_deleted = ROW_COUNT;
   RETURN v_deleted;
-END $function$
-;
+END $function$;
+CREATE OR REPLACE FUNCTION public.update_app_settings_timestamp()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.update_categories_updated_at()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.update_classify_registry_updated_at()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.update_image_after_sync(p_image_id uuid, p_cloudflare_image_id character varying, p_url_cdn text, p_file_size_bytes bigint DEFAULT NULL::bigint, p_width_px integer DEFAULT NULL::integer, p_height_px integer DEFAULT NULL::integer, p_format character varying DEFAULT NULL::character varying)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    UPDATE product_images
+    SET 
+        cloudflare_image_id = p_cloudflare_image_id,
+        url_cdn = p_url_cdn,
+        file_size_bytes = COALESCE(p_file_size_bytes, file_size_bytes),
+        width_px = COALESCE(p_width_px, width_px),
+        height_px = COALESCE(p_height_px, height_px),
+        format = COALESCE(p_format, format),
+        updated_at = NOW()
+    WHERE id = p_image_id;
+    
+    -- Registrar no log
+    INSERT INTO media_sync_log (
+        sync_type,
+        media_type,
+        image_id,
+        cloudflare_id,
+        destination_url,
+        file_size_bytes,
+        status,
+        synced_by
+    ) VALUES (
+        'image_sync',
+        'image',
+        p_image_id,
+        p_cloudflare_image_id,
+        p_url_cdn,
+        p_file_size_bytes,
+        'success',
+        'n8n'
+    );
+    
+    RETURN FOUND;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.update_media_timestamp()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.update_mockup_job_progress()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'pg_catalog', 'public'
+AS $function$
+BEGIN
+  UPDATE public.mockup_generation_jobs
+  SET 
+    completed_mockups        = completed_mockups + 1,
+    status                   = CASE WHEN (completed_mockups + 1) >= total_mockups THEN 'completed' ELSE 'processing' END,
+    processing_completed_at  = CASE WHEN (completed_mockups + 1) >= total_mockups THEN now() ELSE processing_completed_at END
+  WHERE id = NEW.job_id;
+  RETURN NEW;
+END $function$;
+CREATE OR REPLACE FUNCTION public.update_notebook_tables_timestamp()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.update_parent_children_count()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  IF TG_OP = 'INSERT' AND NEW.parent_id IS NOT NULL THEN
+    -- Nova subcategoria: incrementar contador do parent
+    UPDATE categories
+    SET children_count = children_count + 1
+    WHERE id = NEW.parent_id;
+    
+  ELSIF TG_OP = 'DELETE' AND OLD.parent_id IS NOT NULL THEN
+    -- Categoria deletada: decrementar contador do parent
+    UPDATE categories
+    SET children_count = GREATEST(0, children_count - 1)
+    WHERE id = OLD.parent_id;
+    
+  ELSIF TG_OP = 'UPDATE' AND OLD.parent_id IS DISTINCT FROM NEW.parent_id THEN
+    -- Parent mudou: atualizar ambos
+    IF OLD.parent_id IS NOT NULL THEN
+      UPDATE categories 
+      SET children_count = GREATEST(0, children_count - 1) 
+      WHERE id = OLD.parent_id;
+    END IF;
+    
+    IF NEW.parent_id IS NOT NULL THEN
+      UPDATE categories 
+      SET children_count = children_count + 1 
+      WHERE id = NEW.parent_id;
+    END IF;
+  END IF;
+  
+  RETURN COALESCE(NEW, OLD);
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.update_preferred_suppliers(p_variant_id uuid DEFAULT NULL::uuid)
+ RETURNS TABLE(updated_count integer, variants_processed integer)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_updated INTEGER := 0;
+    v_processed INTEGER := 0;
+BEGIN
+    -- PASSO 1: Remove is_preferred de todos os registros relevantes
+    UPDATE variant_supplier_sources
+    SET is_preferred = FALSE
+    WHERE (p_variant_id IS NULL OR variant_id = p_variant_id)
+    AND is_preferred = TRUE;
+    
+    -- PASSO 2: Marca o de maior estoque como preferido para cada variante
+    WITH best_per_variant AS (
+        SELECT DISTINCT ON (variant_id)
+            id,
+            variant_id
+        FROM variant_supplier_sources
+        WHERE (p_variant_id IS NULL OR variant_id = p_variant_id)
+        AND is_active = TRUE
+        AND COALESCE(removed_from_api, FALSE) = FALSE
+        ORDER BY 
+            variant_id,
+            COALESCE(quantity, 0) DESC,
+            priority ASC,
+            COALESCE(cost_price, 999999) ASC
+    )
+    UPDATE variant_supplier_sources vss
+    SET is_preferred = TRUE
+    FROM best_per_variant bpv
+    WHERE vss.id = bpv.id;
+    
+    GET DIAGNOSTICS v_updated = ROW_COUNT;
+    
+    -- Contar variantes processadas
+    SELECT COUNT(DISTINCT variant_id)::INTEGER INTO v_processed
+    FROM variant_supplier_sources
+    WHERE (p_variant_id IS NULL OR variant_id = p_variant_id)
+    AND is_active = TRUE
+    AND COALESCE(removed_from_api, FALSE) = FALSE;
+    
+    RETURN QUERY SELECT v_updated, v_processed;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.update_print_area_images_updated_at()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.update_product_images_timestamp()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.update_product_videos_timestamp()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.update_staging_updated_at()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.update_supplier_settings_timestamp()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.update_timestamp_column()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.update_video_after_sync(p_video_id uuid, p_cloudflare_video_id character varying, p_url_stream text, p_url_hls text DEFAULT NULL::text, p_url_dash text DEFAULT NULL::text, p_url_thumbnail text DEFAULT NULL::text, p_duration_seconds integer DEFAULT NULL::integer, p_width_px integer DEFAULT NULL::integer, p_height_px integer DEFAULT NULL::integer)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    UPDATE product_videos
+    SET 
+        cloudflare_video_id = p_cloudflare_video_id,
+        url_stream = p_url_stream,
+        url_hls = COALESCE(p_url_hls, url_hls),
+        url_dash = COALESCE(p_url_dash, url_dash),
+        url_thumbnail = COALESCE(p_url_thumbnail, url_thumbnail),
+        duration_seconds = COALESCE(p_duration_seconds, duration_seconds),
+        width_px = COALESCE(p_width_px, width_px),
+        height_px = COALESCE(p_height_px, height_px),
+        updated_at = NOW()
+    WHERE id = p_video_id;
+    
+    -- Registrar no log
+    INSERT INTO media_sync_log (
+        sync_type,
+        media_type,
+        video_id,
+        cloudflare_id,
+        destination_url,
+        status,
+        synced_by
+    ) VALUES (
+        'video_sync',
+        'video',
+        p_video_id,
+        p_cloudflare_video_id,
+        p_url_stream,
+        'success',
+        'n8n'
+    );
+    
+    RETURN FOUND;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.update_video_from_cloudflare(p_cloudflare_video_id character varying, p_status character varying, p_duration_seconds integer DEFAULT NULL::integer, p_width_px integer DEFAULT NULL::integer, p_height_px integer DEFAULT NULL::integer, p_thumbnail_url text DEFAULT NULL::text, p_error_message text DEFAULT NULL::text)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_video_id UUID;
+    v_subdomain TEXT;
+BEGIN
+    SELECT subdomain INTO v_subdomain FROM cloudflare_stream_config WHERE id = 1;
+    
+    UPDATE product_videos SET
+        cloudflare_status = p_status,
+        duration_seconds = COALESCE(p_duration_seconds, duration_seconds),
+        width_px = COALESCE(p_width_px, width_px),
+        height_px = COALESCE(p_height_px, height_px),
+        url_thumbnail = COALESCE(p_thumbnail_url, 
+            'https://' || v_subdomain || '/' || cloudflare_video_id || '/thumbnails/thumbnail.jpg'),
+        cloudflare_error = p_error_message,
+        updated_at = NOW()
+    WHERE cloudflare_video_id = p_cloudflare_video_id
+    RETURNING id INTO v_video_id;
+    
+    RETURN v_video_id IS NOT NULL;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.validate_image_requirements(p_width integer, p_height integer, p_file_size_bytes bigint DEFAULT NULL::bigint, p_format character varying DEFAULT NULL::character varying, p_supplier_code character varying DEFAULT 'DEFAULT'::character varying)
+ RETURNS TABLE(is_valid boolean, validation_status character varying, issues text[], recommendations text[])
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_req RECORD;
+    v_issues TEXT[] := ARRAY[]::TEXT[];
+    v_recommendations TEXT[] := ARRAY[]::TEXT[];
+    v_status VARCHAR(20);
+    v_file_size_mb DECIMAL;
+BEGIN
+    -- Buscar requisitos do fornecedor (ou DEFAULT)
+    SELECT * INTO v_req
+    FROM supplier_image_requirements
+    WHERE supplier_code = p_supplier_code AND is_active = true;
+    
+    IF NOT FOUND THEN
+        SELECT * INTO v_req
+        FROM supplier_image_requirements
+        WHERE supplier_code = 'DEFAULT' AND is_active = true;
+    END IF;
+    
+    -- Validar dimensões mínimas
+    IF p_width < v_req.min_width_px THEN
+        v_issues := array_append(v_issues, 
+            format('Largura %spx abaixo do mínimo (%spx)', p_width, v_req.min_width_px));
+    END IF;
+    
+    IF p_height < v_req.min_height_px THEN
+        v_issues := array_append(v_issues, 
+            format('Altura %spx abaixo do mínimo (%spx)', p_height, v_req.min_height_px));
+    END IF;
+    
+    -- Validar dimensões ideais
+    IF p_width < v_req.ideal_width_px THEN
+        v_recommendations := array_append(v_recommendations, 
+            format('Largura %spx abaixo do ideal (%spx) - pode ficar pixelada no zoom', 
+                   p_width, v_req.ideal_width_px));
+    END IF;
+    
+    IF p_height < v_req.ideal_height_px THEN
+        v_recommendations := array_append(v_recommendations, 
+            format('Altura %spx abaixo do ideal (%spx) - pode ficar pixelada no zoom', 
+                   p_height, v_req.ideal_height_px));
+    END IF;
+    
+    -- Validar tamanho do arquivo
+    IF p_file_size_bytes IS NOT NULL THEN
+        v_file_size_mb := p_file_size_bytes / 1024.0 / 1024.0;
+        IF v_file_size_mb > v_req.max_file_size_mb THEN
+            v_issues := array_append(v_issues, 
+                format('Arquivo %.2fMB excede o máximo (%.2fMB)', 
+                       v_file_size_mb, v_req.max_file_size_mb));
+        END IF;
+    END IF;
+    
+    -- Validar formato
+    IF p_format IS NOT NULL AND NOT (LOWER(p_format) = ANY(v_req.allowed_formats)) THEN
+        v_issues := array_append(v_issues, 
+            format('Formato "%s" não permitido. Use: %s', 
+                   p_format, array_to_string(v_req.allowed_formats, ', ')));
+    END IF;
+    
+    -- Determinar status
+    IF array_length(v_issues, 1) > 0 THEN
+        v_status := '❌ REPROVADO';
+    ELSIF array_length(v_recommendations, 1) > 0 THEN
+        v_status := '⚠️ APROVADO*';
+    ELSE
+        v_status := '✅ APROVADO';
+    END IF;
+    
+    RETURN QUERY SELECT 
+        (array_length(v_issues, 1) IS NULL OR array_length(v_issues, 1) = 0),
+        v_status,
+        v_issues,
+        v_recommendations;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.validate_material_percentages()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    total_percentage DECIMAL;
+    current_total DECIMAL;
+BEGIN
+    -- Calcular total atual
+    SELECT COALESCE(SUM(percentage), 0) INTO total_percentage
+    FROM product_materials
+    WHERE product_id = NEW.product_id
+      AND organization_id = NEW.organization_id
+      AND is_active = true
+      AND (TG_OP = 'INSERT' OR id != NEW.id);
+    
+    current_total := total_percentage + COALESCE(NEW.percentage, 0);
+    
+    -- Validar
+    IF current_total > 100 THEN
+        RAISE EXCEPTION 'Total de percentuais excede 100 por cento (atual: %, novo: %)', 
+            total_percentage, NEW.percentage;
+    END IF;
+    
+    RETURN NEW;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.validate_product_total_percentage(p_product_id uuid)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    total_pct DECIMAL;
+BEGIN
+    SELECT SUM(percentage) INTO total_pct
+    FROM product_materials
+    WHERE product_id = p_product_id
+      AND is_active = true;
+    
+    RETURN total_pct IS NULL OR total_pct <= 100;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.validate_video_requirements(p_width integer, p_height integer, p_duration_seconds integer DEFAULT NULL::integer, p_file_size_bytes bigint DEFAULT NULL::bigint, p_supplier_code character varying DEFAULT 'DEFAULT'::character varying)
+ RETURNS TABLE(is_valid boolean, validation_status character varying, issues text[], recommendations text[])
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_req RECORD;
+    v_issues TEXT[] := ARRAY[]::TEXT[];
+    v_recommendations TEXT[] := ARRAY[]::TEXT[];
+    v_status VARCHAR(30);
+    v_file_size_mb DECIMAL;
+BEGIN
+    -- Buscar requisitos do fornecedor
+    SELECT * INTO v_req
+    FROM supplier_video_requirements
+    WHERE supplier_code = p_supplier_code AND is_active = true;
+    
+    IF NOT FOUND THEN
+        SELECT * INTO v_req
+        FROM supplier_video_requirements
+        WHERE supplier_code = 'DEFAULT' AND is_active = true;
+    END IF;
+    
+    -- Validar dimensões mínimas
+    IF p_width IS NOT NULL AND p_width < v_req.min_width_px THEN
+        v_issues := array_append(v_issues, 
+            format('Largura %spx abaixo do mínimo (%spx)', p_width, v_req.min_width_px));
+    END IF;
+    
+    IF p_height IS NOT NULL AND p_height < v_req.min_height_px THEN
+        v_issues := array_append(v_issues, 
+            format('Altura %spx abaixo do mínimo (%spx)', p_height, v_req.min_height_px));
+    END IF;
+    
+    -- Validar dimensões ideais (apenas recomendação)
+    IF p_width IS NOT NULL AND p_width < v_req.ideal_width_px THEN
+        v_recommendations := array_append(v_recommendations, 
+            format('Largura %spx abaixo do ideal (%spx)', p_width, v_req.ideal_width_px));
+    END IF;
+    
+    -- Validar duração
+    IF p_duration_seconds IS NOT NULL THEN
+        IF p_duration_seconds < v_req.min_duration_seconds THEN
+            v_issues := array_append(v_issues, 
+                format('Duração %ss abaixo do mínimo (%ss)', p_duration_seconds, v_req.min_duration_seconds));
+        END IF;
+        IF p_duration_seconds > v_req.max_duration_seconds THEN
+            v_recommendations := array_append(v_recommendations, 
+                format('Duração %ss excede o recomendado (%ss)', p_duration_seconds, v_req.max_duration_seconds));
+        END IF;
+    END IF;
+    
+    -- Validar tamanho do arquivo
+    IF p_file_size_bytes IS NOT NULL THEN
+        v_file_size_mb := p_file_size_bytes / 1024.0 / 1024.0;
+        IF v_file_size_mb > v_req.max_file_size_mb THEN
+            v_issues := array_append(v_issues, 
+                format('Arquivo %.1fMB excede o máximo (%.0fMB)', v_file_size_mb, v_req.max_file_size_mb));
+        END IF;
+    END IF;
+    
+    -- Determinar status
+    IF array_length(v_issues, 1) > 0 THEN
+        v_status := 'REPROVADO';
+    ELSIF array_length(v_recommendations, 1) > 0 THEN
+        v_status := 'APROVADO_COM_RESSALVAS';
+    ELSE
+        v_status := 'APROVADO';
+    END IF;
+    
+    RETURN QUERY SELECT 
+        (array_length(v_issues, 1) IS NULL OR array_length(v_issues, 1) = 0),
+        v_status,
+        v_issues,
+        v_recommendations;
+END;
+$function$;
+CREATE OR REPLACE FUNCTION public.vault_delete_secret(p_name text)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'vault'
+AS $function$
+DECLARE
+  v_deleted integer;
+BEGIN
+  IF NOT public.is_admin_strict(auth.uid()) THEN
+    RAISE EXCEPTION 'unauthorized: only dev role can delete from vault'
+      USING ERRCODE = '42501';
+  END IF;
+  
+  DELETE FROM vault.secrets WHERE name = p_name;
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  RETURN v_deleted > 0;
+END $function$;
+CREATE OR REPLACE FUNCTION public.vault_get_secret(p_name text)
+ RETURNS text
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'vault'
+AS $function$
+DECLARE
+  v_value text;
+BEGIN
+  -- Gate: só dev pode ler em vault (edge functions usam service_role, bypassam isso)
+  IF NOT public.is_admin_strict(auth.uid()) THEN
+    RAISE EXCEPTION 'unauthorized: only dev role can read vault directly. Edge functions bypass via service_role.'
+      USING ERRCODE = '42501';
+  END IF;
+  
+  SELECT decrypted_secret INTO v_value 
+  FROM vault.decrypted_secrets 
+  WHERE name = p_name 
+  LIMIT 1;
+  
+  RETURN v_value;  -- NULL se não existe
+END $function$;
+CREATE OR REPLACE FUNCTION public.vault_list_secret_names()
+ RETURNS TABLE(name text, description text, created_at timestamp with time zone, updated_at timestamp with time zone)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'vault'
+AS $function$
+BEGIN
+  -- Gate: dev e supervisor podem listar nomes (auditoria de inventário)
+  IF NOT public.is_supervisor_or_above(auth.uid()) THEN
+    RAISE EXCEPTION 'unauthorized: requires supervisor role or above'
+      USING ERRCODE = '42501';
+  END IF;
+  
+  RETURN QUERY
+  SELECT s.name, s.description, s.created_at, s.updated_at 
+  FROM vault.secrets s 
+  ORDER BY s.name;
+END $function$;
+CREATE OR REPLACE FUNCTION public.vault_set_secret(p_name text, p_value text, p_description text DEFAULT NULL::text)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'vault', 'extensions'
+AS $function$
+DECLARE
+  v_secret_id uuid;
+BEGIN
+  IF NOT public.is_admin_strict(auth.uid()) THEN
+    RAISE EXCEPTION 'unauthorized: only dev role can write to vault'
+      USING ERRCODE = '42501';
+  END IF;
 
--- ----------------------------------------------------------------------------
+  SELECT id INTO v_secret_id FROM vault.secrets WHERE name = p_name LIMIT 1;
+  
+  IF v_secret_id IS NULL THEN
+    -- API oficial: create_secret(new_secret, new_name, new_description)
+    SELECT vault.create_secret(p_value, p_name, p_description) INTO v_secret_id;
+  ELSE
+    PERFORM vault.update_secret(v_secret_id, p_value, p_name, COALESCE(p_description, ''));
+  END IF;
+  
+  RETURN v_secret_id;
+END $function$;
+CREATE OR REPLACE FUNCTION public.verify_step_up_password(_challenge_id uuid, _password_attempt text)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    UPDATE public.step_up_challenges 
+    SET password_verified = true
+    WHERE id = _challenge_id 
+      AND user_id = auth.uid() 
+      AND consumed = false 
+      AND expires_at > now();
+      
+    RETURN FOUND;
+END;
+$function$;
 CREATE OR REPLACE FUNCTION public.voice_command_audit()
  RETURNS trigger
  LANGUAGE plpgsql
  SET search_path TO 'public'
-AS $function$ BEGIN RETURN NEW; END; $function$
-;
-
--- ----------------------------------------------------------------------------
+AS $function$ BEGIN RETURN NEW; END; $function$;
 CREATE OR REPLACE FUNCTION public.build_full_scope_grants_v()
  RETURNS void
  LANGUAGE sql
  SET search_path TO 'public'
-AS $function$ SELECT 1; $function$
-;
-
--- ----------------------------------------------------------------------------
+AS $function$ SELECT 1; $function$;
+CREATE OR REPLACE FUNCTION public.can_access_quote(_quote_id uuid)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  SELECT EXISTS (
+    SELECT 1 FROM public.quotes q
+    WHERE q.id = _quote_id
+      AND user_is_org_member(q.organization_id)
+      AND (
+        is_coord_or_above(auth.uid())
+        OR q.seller_id  = auth.uid()
+        OR q.created_by = auth.uid()
+        OR q.assigned_to = auth.uid()
+      )
+  );
+$function$;
 CREATE OR REPLACE FUNCTION public.can_grant_mcp_full_to_user(_target_user_id uuid)
  RETURNS boolean
  LANGUAGE sql
  STABLE
  SET search_path TO 'public'
-AS $function$ SELECT public.is_admin(auth.uid()) AND auth.uid() <> _target_user_id; $function$
-;
-
--- ----------------------------------------------------------------------------
+AS $function$ SELECT public.is_admin(auth.uid()) AND auth.uid() <> _target_user_id; $function$;
+CREATE OR REPLACE FUNCTION public.can_view_all_sales()
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+  SELECT auth.uid() IS NULL
+    OR public.has_role(auth.uid(), 'admin'::app_role)
+    OR public.has_role(auth.uid(), 'manager'::app_role)
+    OR public.has_role(auth.uid(), 'supervisor'::app_role)
+    OR public.has_role(auth.uid(), 'dev'::app_role);
+$function$;
 CREATE OR REPLACE FUNCTION public.check_geo_country_allowed(_country_code text)
  RETURNS boolean
  LANGUAGE sql
  STABLE
  SET search_path TO 'public'
-AS $function$ SELECT EXISTS(SELECT 1 FROM public.geo_allowed_countries WHERE country_code = upper(_country_code)); $function$
-;
-
--- ----------------------------------------------------------------------------
+AS $function$ SELECT EXISTS(SELECT 1 FROM public.geo_allowed_countries WHERE country_code = upper(_country_code)); $function$;
 CREATE OR REPLACE FUNCTION public.check_owner_email(_user_id uuid)
  RETURNS text
  LANGUAGE sql
  STABLE
  SET search_path TO 'public'
-AS $function$ SELECT email FROM auth.users WHERE id = _user_id; $function$
-;
-
--- ----------------------------------------------------------------------------
+AS $function$ SELECT email FROM auth.users WHERE id = _user_id; $function$;
 CREATE OR REPLACE FUNCTION public.clear_auth_attempts(_email text)
  RETURNS void
  LANGUAGE sql
  SET search_path TO 'public'
 AS $function$
     DELETE FROM public.auth_login_attempts WHERE email = _email;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
+CREATE OR REPLACE FUNCTION public.cm_to_mm(p_cm numeric)
+ RETURNS numeric
+ LANGUAGE sql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+    SELECT normalize_unit(p_cm, 'cm', 'mm');
+$function$;
+CREATE OR REPLACE FUNCTION public.compare_product_ai_versions(p_product_id uuid, p_version_a integer, p_version_b integer)
+ RETURNS TABLE(campo character varying, versao_a text, versao_b text)
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+    WITH va AS (
+        SELECT ai_title, ai_description, model
+        FROM product_ai_history
+        WHERE product_id = p_product_id AND version = p_version_a
+    ),
+    vb AS (
+        SELECT ai_title, ai_description, model
+        FROM product_ai_history
+        WHERE product_id = p_product_id AND version = p_version_b
+    )
+    SELECT 'ai_title'::VARCHAR, va.ai_title, vb.ai_title FROM va, vb
+    UNION ALL
+    SELECT 'ai_description'::VARCHAR, va.ai_description, vb.ai_description FROM va, vb
+    UNION ALL
+    SELECT 'model'::VARCHAR, va.model, vb.model FROM va, vb;
+$function$;
 CREATE OR REPLACE FUNCTION public.compare_quote_snapshots(_quote_id uuid, _version_a integer, _version_b integer)
  RETURNS jsonb
  LANGUAGE sql
@@ -2539,19 +26556,25 @@ AS $function$
   WITH va AS (SELECT snapshot FROM public.quote_versions WHERE quote_id = _quote_id AND version_number = _version_a),
        vb AS (SELECT snapshot FROM public.quote_versions WHERE quote_id = _quote_id AND version_number = _version_b)
   SELECT jsonb_build_object('a', (SELECT snapshot FROM va), 'b', (SELECT snapshot FROM vb));
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.compare_quote_versions(_quote_id uuid, _version_a integer, _version_b integer)
  RETURNS jsonb
  LANGUAGE sql
  STABLE
  SET search_path TO 'public'
-AS $function$ SELECT public.compare_quote_snapshots(_quote_id, _version_a, _version_b); $function$
-;
-
--- ----------------------------------------------------------------------------
+AS $function$ SELECT public.compare_quote_snapshots(_quote_id, _version_a, _version_b); $function$;
+CREATE OR REPLACE FUNCTION public.detect_geo_violations(_days integer DEFAULT 7)
+ RETURNS jsonb
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  SELECT COALESCE(jsonb_agg(jsonb_build_object('ip', ip_address, 'count', cnt)), '[]'::jsonb) FROM (
+    SELECT ip_address, count(*) AS cnt FROM public.login_attempts
+    WHERE created_at > now() - (_days || ' days')::interval AND success = false
+    GROUP BY ip_address HAVING count(*) > 5
+  ) v;
+$function$;
 CREATE OR REPLACE FUNCTION public.expert_chat_get_conversation(_conv_id uuid)
  RETURNS jsonb
  LANGUAGE sql
@@ -2559,10 +26582,7 @@ CREATE OR REPLACE FUNCTION public.expert_chat_get_conversation(_conv_id uuid)
 AS $function$
   SELECT to_jsonb(c) FROM public.expert_conversations c
   WHERE id = _conv_id AND seller_id = auth.uid();
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.expert_chat_get_messages(_conv_id uuid, _limit integer DEFAULT 100)
  RETURNS jsonb
  LANGUAGE sql
@@ -2572,10 +26592,175 @@ AS $function$
   WHERE conversation_id = _conv_id
     AND EXISTS (SELECT 1 FROM public.expert_conversations WHERE id = _conv_id AND seller_id = auth.uid())
   LIMIT _limit;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_health_check_gravacao()
+ RETURNS TABLE(categoria text, metrica text, valor text, status text, detalhe text)
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+  -- COBERTURA
+  SELECT 'COBERTURA'::text, 'Tabelas ativas',
+    COUNT(*)::text || ' / ' || (SELECT COUNT(*) FROM tabela_preco_gravacao_oficial)::text,
+    CASE WHEN COUNT(*) >= 40 THEN 'OK' ELSE 'ATENCAO' END,
+    'Total de tabelas catalogadas vs ativas hoje'
+  FROM tabela_preco_gravacao_oficial WHERE ativo = true
+  UNION ALL
+  SELECT 'COBERTURA', 'Grupos técnicos ativos',
+    COUNT(DISTINCT grupo_tecnica)::text,
+    CASE WHEN COUNT(DISTINCT grupo_tecnica) >= 7 THEN 'OK' ELSE 'ATENCAO' END,
+    string_agg(DISTINCT grupo_tecnica, ', ')
+  FROM tabela_preco_gravacao_oficial WHERE ativo = true
+  UNION ALL
+  SELECT 'COBERTURA', 'Faixas ativas (qty + dimensional)',
+    COUNT(*)::text, 'INFO',
+    'Total de combinações qty/dimensional cadastradas em tabelas ativas'
+  FROM tabela_preco_gravacao_oficial_faixa f
+  JOIN tabela_preco_gravacao_oficial t ON t.id = f.tabela_preco_gravacao_id
+  WHERE t.ativo = true
+  UNION ALL
+  -- CONSISTÊNCIA
+  SELECT 'CONSISTENCIA', 'Tabelas sem regra anti-paradoxo',
+    COUNT(*)::text,
+    CASE WHEN COUNT(*) = 0 THEN 'OK' ELSE 'CRITICO' END,
+    'Devem ter MAX_ENTRE_FAIXAS no JSONB'
+  FROM tabela_preco_gravacao_oficial 
+  WHERE ativo = true AND opcoes_modificadores->>'regra_anti_paradoxo' IS NULL
+  UNION ALL
+  SELECT 'CONSISTENCIA', 'Tabelas ativas com custo_setup = 0',
+    COUNT(*)::text, 'INFO',
+    'Tabelas onde nao ha piso de cobranca (cobra so qty * preco_unitario)'
+  FROM tabela_preco_gravacao_oficial 
+  WHERE ativo = true AND COALESCE(custo_setup, 0) = 0
+  UNION ALL
+  SELECT 'CONSISTENCIA', 'Chaves fatmin orfas no JSONB',
+    COUNT(*)::text,
+    CASE WHEN COUNT(*) = 0 THEN 'OK' ELSE 'ATENCAO' END,
+    'Pos-UNIF-01: chaves faturamento_minimo_* devem ter sido removidas do JSONB'
+  FROM tabela_preco_gravacao_oficial 
+  WHERE opcoes_modificadores ? 'faturamento_minimo_custo'
+     OR opcoes_modificadores ? 'faturamento_minimo_base'
+     OR opcoes_modificadores ? 'faturamento_minimo_escalona_por_cor'
+  UNION ALL
+  SELECT 'CONSISTENCIA', 'Tabelas sem materiais_aplicaveis',
+    COUNT(*)::text,
+    CASE WHEN COUNT(*) = 0 THEN 'OK' ELSE 'CRITICO' END,
+    'Necessário para fn_recomendar_tecnica funcionar bem'
+  FROM tabela_preco_gravacao_oficial 
+  WHERE ativo = true AND opcoes_modificadores->'materiais_aplicaveis' IS NULL
+  UNION ALL
+  SELECT 'CONSISTENCIA', 'Faixas com sentinela 999999',
+    COUNT(*)::text,
+    CASE WHEN COUNT(*) = 0 THEN 'OK' ELSE 'CRITICO' END,
+    'Devem ser NULL após FIX-01'
+  FROM tabela_preco_gravacao_oficial_faixa WHERE quantidade_maxima = 999999
+  UNION ALL
+  SELECT 'CONSISTENCIA', 'Violações preco_minimo',
+    COUNT(*)::text,
+    CASE WHEN COUNT(*) = 0 THEN 'OK' ELSE 'CRITICO' END,
+    'Trigger trg_check_preco_minimo previne novas inserções abaixo do mínimo'
+  FROM tabela_preco_gravacao_oficial t
+  JOIN tabela_preco_gravacao_oficial_faixa f ON f.tabela_preco_gravacao_id = t.id
+  WHERE t.ativo = true AND f.preco_unitario < t.preco_minimo_unitario
+  UNION ALL
+  SELECT 'CONSISTENCIA', 'Tabelas ativas sem produto em PAT',
+    COUNT(*)::text,
+    CASE WHEN COUNT(*) = 0 THEN 'OK' ELSE 'ATENCAO' END,
+    'Tabela inalcançável - nenhum produto a referencia'
+  FROM tabela_preco_gravacao_oficial t
+  WHERE t.ativo = true 
+    AND NOT EXISTS (SELECT 1 FROM print_area_techniques pat WHERE pat.tabela_preco_id = t.id AND pat.is_active)
+  UNION ALL
+  -- INFRAESTRUTURA - atualizada para refletir realidade
+  SELECT 'INFRAESTRUTURA', 'Wrapper fn_simular_combo_gravacao aponta para',
+    CASE 
+      WHEN pg_get_functiondef((SELECT oid FROM pg_proc WHERE proname = 'fn_simular_combo_gravacao' LIMIT 1)) ILIKE '%fn_simular_combo_gravacao_v12%' THEN 'v12'
+      WHEN pg_get_functiondef((SELECT oid FROM pg_proc WHERE proname = 'fn_simular_combo_gravacao' LIMIT 1)) ILIKE '%fn_simular_combo_gravacao_v11%' THEN 'v11 (DESATUALIZADO)'
+      WHEN pg_get_functiondef((SELECT oid FROM pg_proc WHERE proname = 'fn_simular_combo_gravacao' LIMIT 1)) ILIKE '%fn_simular_combo_gravacao_v10%' THEN 'v10 (DESATUALIZADO)'
+      ELSE 'desconhecido'
+    END,
+    CASE 
+      WHEN pg_get_functiondef((SELECT oid FROM pg_proc WHERE proname = 'fn_simular_combo_gravacao' LIMIT 1)) ILIKE '%fn_simular_combo_gravacao_v12%' THEN 'OK'
+      ELSE 'CRITICO'
+    END,
+    'Wrapper deve apontar para versao mais recente (v12 pos-UNIF-01)'
+  UNION ALL
+  SELECT 'INFRAESTRUTURA', 'Função fn_simular_combo_gravacao_v11',
+    'criada (legacy)', 'OK', 'V11 mantida por compatibilidade. Usar v12 em novos chamadores'
+  UNION ALL
+  SELECT 'INFRAESTRUTURA', 'Função fn_simular_combo_gravacao_v12',
+    'criada (oficial)', 'OK', 'V12 oficial pos-UNIF-01: setup como piso, custo_natural sem setup'
+  UNION ALL
+  SELECT 'INFRAESTRUTURA', 'Função fn_recomendar_tecnica',
+    CASE WHEN EXISTS(SELECT 1 FROM pg_proc WHERE proname = 'fn_recomendar_tecnica') THEN 'criada' ELSE 'AUSENTE' END,
+    CASE WHEN EXISTS(SELECT 1 FROM pg_proc WHERE proname = 'fn_recomendar_tecnica') THEN 'OK' ELSE 'ATENCAO' END,
+    'Camada de orientação automática'
+  UNION ALL
+  SELECT 'INFRAESTRUTURA', 'Trigger trg_check_preco_minimo',
+    CASE WHEN EXISTS(SELECT 1 FROM pg_trigger WHERE tgname = 'trg_check_preco_minimo') THEN 'ativo' ELSE 'AUSENTE' END,
+    CASE WHEN EXISTS(SELECT 1 FROM pg_trigger WHERE tgname = 'trg_check_preco_minimo') THEN 'OK' ELSE 'CRITICO' END,
+    'Previne cadastro de faixa abaixo do preço mínimo'
+  UNION ALL
+  SELECT 'INFRAESTRUTURA', 'Trigger trg_audit_gravacao',
+    CASE WHEN EXISTS(SELECT 1 FROM pg_trigger WHERE tgname = 'trg_audit_gravacao') THEN 'ativo' ELSE 'AUSENTE' END,
+    CASE WHEN EXISTS(SELECT 1 FROM pg_trigger WHERE tgname = 'trg_audit_gravacao') THEN 'OK' ELSE 'ATENCAO' END,
+    'Audit trail de mudanças em tabela_preco_gravacao_oficial'
+  UNION ALL
+  SELECT 'INFRAESTRUTURA', 'View v_audit_paradoxos_gravacao',
+    CASE WHEN EXISTS(SELECT 1 FROM information_schema.views WHERE table_name = 'v_audit_paradoxos_gravacao') THEN 'criada' ELSE 'AUSENTE' END,
+    CASE WHEN EXISTS(SELECT 1 FROM information_schema.views WHERE table_name = 'v_audit_paradoxos_gravacao') THEN 'OK' ELSE 'ATENCAO' END,
+    'Detecta paradoxos naturais entre faixas'
+  UNION ALL
+  -- BACKUP
+  SELECT 'BACKUP', 'Snapshot UNIF-01 (2026-04-25)',
+    CASE WHEN EXISTS(SELECT 1 FROM information_schema.tables WHERE table_name = '_backup_unif_setup_fatmin_20260425') THEN 'sim' ELSE 'NAO' END,
+    CASE WHEN EXISTS(SELECT 1 FROM information_schema.tables WHERE table_name = '_backup_unif_setup_fatmin_20260425') THEN 'OK' ELSE 'ATENCAO' END,
+    'Backup pre-unificacao setup/fatmin'
+  UNION ALL
+  SELECT 'BACKUP', 'Snapshot pre-correções 2026-04-25',
+    CASE WHEN EXISTS(SELECT 1 FROM information_schema.tables WHERE table_name LIKE '_backup_20260425%') THEN 'sim' ELSE 'NAO' END,
+    CASE WHEN EXISTS(SELECT 1 FROM information_schema.tables WHERE table_name LIKE '_backup_20260425%') THEN 'OK' ELSE 'ATENCAO' END,
+    '_backup_20260425_tabela_preco_gravacao_oficial e companhia'
+  UNION ALL
+  -- AUDIT VOLUME
+  SELECT 'AUDIT', 'Mudanças registradas (últimos 7 dias)',
+    COUNT(*)::text, 'INFO',
+    'Linhas em audit_log_gravacao com ts > NOW() - 7 dias'
+  FROM audit_log_gravacao WHERE ts > NOW() - INTERVAL '7 days'
+  ORDER BY 1, 2;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_index_usage_report()
+ RETURNS TABLE(tabela text, indice text, tamanho text, scans bigint, tipo text, recomendacao text)
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public', 'pg_catalog'
+AS $function$
+  SELECT 
+    (s.schemaname || '.' || s.relname)::text AS tabela,
+    s.indexrelname::text AS indice,
+    pg_size_pretty(pg_relation_size(s.indexrelid))::text AS tamanho,
+    s.idx_scan AS scans,
+    CASE 
+      WHEN s.indexrelname LIKE '%_pkey' THEN 'PRIMARY KEY'
+      WHEN s.indexrelname LIKE 'uq_%' THEN 'UNIQUE'
+      WHEN s.indexrelname LIKE '%_brin' THEN 'BRIN'
+      WHEN s.indexrelname LIKE 'idx_%_gin' THEN 'GIN'
+      WHEN s.indexrelname LIKE 'idx_%_fkey%' OR s.indexrelname LIKE '%_fk_idx' THEN 'FK support'
+      ELSE 'BTREE'
+    END::text AS tipo,
+    CASE 
+      WHEN s.indexrelname LIKE '%_pkey' THEN 'MANTER (PK)'
+      WHEN s.indexrelname LIKE 'uq_%' THEN 'MANTER (UNIQUE)'
+      WHEN s.idx_scan = 0 AND pg_relation_size(s.indexrelid) > 1024*1024 
+        THEN 'AVALIAR: sem uso e >1MB (mas verifique FK)'
+      WHEN s.idx_scan = 0 THEN 'AVALIAR: sem uso'
+      WHEN s.idx_scan < 10 THEN 'OK (uso baixo)'
+      ELSE 'OK (usado)'
+    END::text AS recomendacao
+  FROM pg_stat_user_indexes s
+  WHERE s.schemaname = 'public'
+  ORDER BY pg_relation_size(s.indexrelid) DESC, s.idx_scan DESC;
+$function$;
 CREATE OR REPLACE FUNCTION public.fn_is_admin_user(p_user_id uuid DEFAULT NULL::uuid)
  RETURNS boolean
  LANGUAGE sql
@@ -2583,10 +26768,801 @@ CREATE OR REPLACE FUNCTION public.fn_is_admin_user(p_user_id uuid DEFAULT NULL::
  SET search_path TO 'public'
 AS $function$
   SELECT public.is_admin_or_above(COALESCE(p_user_id, auth.uid()));
-$function$
-;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_recomendar_tecnica(p_categoria text DEFAULT NULL::text, p_n_cores integer DEFAULT 1, p_complexidade_arte text DEFAULT 'simples'::text, p_material text DEFAULT NULL::text, p_qty integer DEFAULT 100)
+ RETURNS TABLE(rank integer, codigo_tabela character varying, nome character varying, grupo_tecnica character varying, motivo text, alerta text)
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+  WITH base AS (
+    SELECT 
+      t.codigo_tabela,
+      t.nome,
+      t.grupo_tecnica,
+      t.cobra_por_cor,
+      t.max_cores,
+      t.opcoes_modificadores->'materiais_aplicaveis' AS materiais,
+      -- Score baseado em compatibilidade
+      CASE 
+        -- Se cliente quer arte complexa/fotorrealista, priorizar full-color
+        WHEN p_complexidade_arte = 'complexa' AND t.grupo_tecnica IN ('TRANSFER_DIGITAL','UV_DIGITAL','SUBLIMACAO') THEN 100
+        WHEN p_complexidade_arte = 'complexa' AND t.cobra_por_cor THEN 30  -- silk/tampo limitam cores
+        -- Se cliente quer 1 cor simples, priorizar técnicas eficientes
+        WHEN p_n_cores = 1 AND t.grupo_tecnica IN ('SERIGRAFIA','TAMPOGRAFIA','LASER','LASER_CO2') THEN 100
+        WHEN p_n_cores = 1 AND t.grupo_tecnica IN ('TRANSFER_DIGITAL','UV_DIGITAL','SUBLIMACAO') THEN 40
+        -- Se cliente quer 2-3 cores chapadas, silk/tampo dominam
+        WHEN p_n_cores BETWEEN 2 AND 3 AND t.cobra_por_cor THEN 90
+        WHEN p_n_cores BETWEEN 2 AND 3 AND NOT t.cobra_por_cor THEN 60
+        -- Se cliente quer 4+ cores, full-color dominante
+        WHEN p_n_cores >= 4 AND NOT t.cobra_por_cor THEN 100
+        WHEN p_n_cores >= 4 AND t.cobra_por_cor AND p_n_cores <= t.max_cores THEN 50
+        ELSE 50
+      END AS score_cores,
+      -- Compatibilidade categoria via codigo_tabela
+      CASE
+        WHEN p_categoria = 'caneta' AND t.codigo_tabela ~ '(-CN-|-MCN-)' THEN 100
+        WHEN p_categoria = 'sacochila' AND t.codigo_tabela LIKE '%-SAC-%' THEN 100
+        WHEN p_categoria = 'camiseta' AND t.codigo_tabela LIKE '%-CAM-%' THEN 100
+        WHEN p_categoria = 'mochila' AND t.codigo_tabela LIKE '%-MOC-%' THEN 100
+        WHEN p_categoria = 'sacola' AND t.codigo_tabela LIKE '%-SAE-%' THEN 100
+        WHEN p_categoria = 'cilindrico' AND t.codigo_tabela LIKE '%-CIL-%' THEN 100
+        WHEN p_categoria = 'plano' AND t.codigo_tabela LIKE '%-PL-%' THEN 100
+        WHEN p_categoria IS NULL THEN 50  -- sem filtro
+        ELSE 0
+      END AS score_categoria,
+      -- Compatibilidade de material
+      CASE
+        WHEN p_material IS NULL THEN 50
+        WHEN t.opcoes_modificadores->'materiais_aplicaveis' ? p_material THEN 100
+        WHEN p_material = 'sublimatica' AND t.grupo_tecnica = 'SUBLIMACAO' THEN 100
+        WHEN p_material = 'metal' AND t.codigo_tabela ~ 'M(CN|T|OC)' THEN 100
+        WHEN p_material = 'plastico' AND t.codigo_tabela ~ '(PL|CN-01)' THEN 100
+        ELSE 30
+      END AS score_material,
+      -- Excluir sublimação se material não for sublimática
+      CASE
+        WHEN t.grupo_tecnica = 'SUBLIMACAO' AND p_material IS NOT NULL 
+             AND p_material NOT IN ('sublimatica','poliester','microfibra','dryfit') THEN 0
+        ELSE 1
+      END AS aplicavel,
+      -- Mensagem
+      CASE
+        WHEN t.grupo_tecnica = 'SERIGRAFIA' AND p_n_cores = 1 THEN 'Imbativel para 1 cor chapada em volume.'
+        WHEN t.grupo_tecnica = 'TAMPOGRAFIA' AND p_n_cores BETWEEN 1 AND 3 THEN 'Ideal para superficies pequenas/curvas com poucas cores.'
+        WHEN t.grupo_tecnica = 'TRANSFER_DIGITAL' AND p_complexidade_arte = 'complexa' THEN 'Full color CMYK - perfeito para artes complexas.'
+        WHEN t.grupo_tecnica = 'TRANSFER_DIGITAL' AND p_n_cores = 1 THEN 'Cuidado: DTF em 1 cor pode ficar 3-4x mais caro que silk.'
+        WHEN t.grupo_tecnica = 'SUBLIMACAO' THEN 'Exclusiva: nao combina com outras tecnicas na mesma peca.'
+        WHEN t.grupo_tecnica = 'UV_DIGITAL' AND p_complexidade_arte = 'complexa' THEN 'Otima qualidade fotografica em superficies rigidas.'
+        WHEN t.grupo_tecnica IN ('LASER','LASER_CO2') THEN 'Acabamento sofisticado, sem cor mas elegante.'
+        WHEN t.grupo_tecnica = 'BORDADO' THEN 'Premium em texteis - alto valor percebido.'
+        ELSE 'Tecnica disponivel para o cenario.'
+      END AS mensagem,
+      CASE
+        WHEN t.grupo_tecnica = 'TRANSFER_DIGITAL' AND p_n_cores <= 2 THEN 'ATENCAO: silk/tampo geralmente mais economicos para poucas cores.'
+        WHEN t.grupo_tecnica = 'SUBLIMACAO' THEN 'NAO COMBINA com outras tecnicas na mesma peca.'
+        WHEN t.grupo_tecnica IN ('UV_DIGITAL') AND p_n_cores <= 2 THEN 'ATENCAO: tampografia normalmente mais economica para 1-2 cores.'
+        ELSE NULL
+      END AS alerta_msg
+    FROM tabela_preco_gravacao_oficial t
+    WHERE t.ativo = true
+  ),
+  ranked AS (
+    SELECT 
+      ROW_NUMBER() OVER (ORDER BY (score_cores + score_categoria + score_material) DESC, codigo_tabela)::integer AS rk,
+      codigo_tabela::varchar,
+      nome::varchar,
+      grupo_tecnica::varchar,
+      mensagem::text AS motivo,
+      alerta_msg::text AS alerta,
+      (score_cores + score_categoria + score_material) AS total_score,
+      aplicavel
+    FROM base
+    WHERE aplicavel = 1
+  )
+  SELECT rk AS rank, codigo_tabela, nome, grupo_tecnica, motivo, alerta
+  FROM ranked
+  WHERE total_score >= 150  -- só recomenda quando há boa aderência
+  ORDER BY rk
+  LIMIT 5;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_simular_combo_gravacao(aplicacoes jsonb)
+ RETURNS TABLE(app_ordem integer, product_id uuid, tecnica_codigo text, arte text, cores text, qty integer, location_code text, custo_natural numeric, piso_comercial_aplicado numeric, custo_final numeric, regra_ativada text, venda_aplicacao numeric, motivo_erro text)
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+  SELECT 
+    app_ordem, product_id, tecnica_codigo, arte, cores, qty, location_code,
+    custo_natural, piso_comercial_aplicado, custo_final, regra_ativada, 
+    venda_aplicacao, motivo_erro
+  FROM fn_simular_combo_gravacao_v12(aplicacoes);
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_simular_combo_gravacao_kit_v1(aplicacoes jsonb)
+ RETURNS TABLE(app_ordem integer, kit_product_id uuid, kit_component_id uuid, componente_nome text, tecnica_codigo text, tabela_codigo text, arte text, cores text, qty integer, location_code text, largura_cm numeric, altura_cm numeric, preco_unit_faixa numeric, custo_natural numeric, piso_setup numeric, custo_final numeric, preco_unit_efetivo numeric, regra_ativada text, motivo_erro text)
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+  WITH input AS (
+    SELECT 
+      ord::int AS app_ord,
+      ((app->>'kit_product_id')::uuid) AS kit_prod_id,
+      ((app->>'kit_component_id')::uuid) AS kit_comp_id,
+      UPPER(COALESCE(app->>'location_code', 'LADO-A')) AS lado,
+      (app->>'tecnica_codigo')::text AS tec_cod,
+      COALESCE((app->>'largura')::numeric, COALESCE((app->>'largura_cm')::numeric, 0)) AS l,
+      COALESCE((app->>'altura')::numeric, COALESCE((app->>'altura_cm')::numeric, 0)) AS a,
+      COALESCE((app->>'cores')::int, 1) AS c,
+      (app->>'qty')::int AS q,
+      COALESCE(app->>'arte', '-') AS arte_t
+    FROM jsonb_array_elements(aplicacoes) WITH ORDINALITY arr(app, ord)
+  ),
+  diag AS (
+    SELECT 
+      i.*,
+      pkc.component_name AS comp_nome,
+      kcpa.id AS print_area_id, kcpa.max_width, kcpa.max_height,
+      t.id AS tab_id, t.codigo_tabela AS tab_cod,
+      t.custo_setup, t.custo_setup_por_cor, t.markup_percent,
+      t.cobra_por_cor, t.max_cores, t.ativo, t.usa_faixa_dimensional,
+      f.preco_unitario, f.id AS faixa_id,
+      CASE
+        WHEN i.q IS NULL OR i.q <= 0 THEN 'ERRO_QTY_INVALIDA'
+        WHEN i.c IS NULL OR i.c <= 0 THEN 'ERRO_CORES_INVALIDA'
+        WHEN pkc.id IS NULL THEN 'ERRO_KIT_COMPONENT_INEXISTENTE'
+        WHEN t.id IS NULL THEN 'ERRO_TECNICA_INEXISTENTE'
+        WHEN NOT t.ativo THEN 'ERRO_TECNICA_INATIVA'
+        WHEN i.c > t.max_cores THEN 'ERRO_CORES_EXCEDE_MAX'
+        WHEN kcpa.id IS NULL THEN 'ERRO_KIT_COMPONENT_NAO_ACEITA_TECNICA'
+        -- NOVO: rejeitar dimensões inválidas explícitas (não permitir l=0 ou negativo se a tabela usa faixa dimensional)
+        WHEN t.usa_faixa_dimensional AND (i.l IS NULL OR i.l <= 0) THEN 'ERRO_LARGURA_INVALIDA'
+        WHEN t.usa_faixa_dimensional AND (i.a IS NULL OR i.a <= 0) THEN 'ERRO_ALTURA_INVALIDA'
+        WHEN i.l > kcpa.max_width::numeric THEN 'ERRO_LARGURA_EXCEDE_AREA'
+        WHEN i.a > kcpa.max_height::numeric THEN 'ERRO_ALTURA_EXCEDE_AREA'
+        WHEN f.id IS NULL THEN 'ERRO_FAIXA_NAO_ENCONTRADA'
+        ELSE NULL
+      END AS motivo
+    FROM input i
+    LEFT JOIN product_kit_components pkc ON pkc.id = i.kit_comp_id
+    LEFT JOIN tabela_preco_gravacao_oficial t ON t.codigo_tabela = i.tec_cod
+    LEFT JOIN kit_component_print_areas kcpa ON kcpa.kit_component_id = i.kit_comp_id
+      AND kcpa.tabela_preco_id = t.id
+      AND kcpa.location_code = i.lado
+      AND kcpa.is_active = true
+    LEFT JOIN tabela_preco_gravacao_oficial_faixa f ON f.tabela_preco_gravacao_id = t.id
+      AND i.q BETWEEN f.quantidade_minima AND COALESCE(f.quantidade_maxima, 999999999)
+      AND (
+        t.usa_faixa_dimensional = false 
+        OR (
+          (f.largura_min IS NULL OR i.l BETWEEN f.largura_min::numeric AND f.largura_max::numeric)
+          AND (f.altura_min IS NULL OR i.a BETWEEN f.altura_min::numeric AND f.altura_max::numeric)
+        )
+      )
+  ),
+  calc AS (
+    SELECT 
+      d.*,
+      CASE WHEN d.custo_setup_por_cor THEN d.custo_setup * d.c ELSE d.custo_setup END AS piso_setup_v,
+      (d.q * d.preco_unitario) AS natural_v
+    FROM diag d
+    WHERE d.motivo IS NULL
+  ),
+  resultado AS (
+    SELECT 
+      d.app_ord, d.kit_prod_id, d.kit_comp_id, d.comp_nome, d.tec_cod, d.tab_cod,
+      d.arte_t, d.c::text || ' cor' AS cores_t, d.q, d.lado, d.l, d.a,
+      d.preco_unitario,
+      ROUND(c.natural_v::numeric, 2) AS custo_nat,
+      d.custo_setup AS piso,
+      ROUND(GREATEST(c.natural_v::numeric, c.piso_setup_v::numeric), 2) AS custo_fin,
+      ROUND((GREATEST(c.natural_v::numeric, c.piso_setup_v::numeric) / d.q)::numeric, 4) AS preco_efet,
+      CASE 
+        WHEN d.motivo IS NOT NULL THEN d.motivo
+        WHEN c.natural_v >= c.piso_setup_v THEN 'NATURAL_ACEITO'
+        ELSE 'PISO_SETUP_APLICADO'
+      END AS regra,
+      d.motivo
+    FROM diag d
+    LEFT JOIN calc c ON c.app_ord = d.app_ord
+  )
+  SELECT 
+    app_ord, kit_prod_id, kit_comp_id, comp_nome, tec_cod, tab_cod,
+    arte_t, cores_t, q, lado, l, a,
+    preco_unitario, custo_nat, piso, custo_fin, preco_efet, regra, motivo
+  FROM resultado
+  ORDER BY app_ord;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_simular_combo_gravacao_v10(aplicacoes jsonb)
+ RETURNS TABLE(app_ordem integer, product_id uuid, tecnica_codigo text, arte text, cores text, qty integer, location_code text, custo_natural numeric, piso_comercial_aplicado numeric, custo_final numeric, regra_ativada text, venda_aplicacao numeric)
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+  WITH input AS (
+    SELECT 
+      ord::int AS app_ord,
+      ((app->>'product_id')::uuid) AS prod_id,
+      (app->>'tecnica_codigo')::text AS tec_cod,
+      COALESCE((app->>'largura')::numeric, 0) AS l,
+      COALESCE((app->>'altura')::numeric, 0) AS a,
+      COALESCE((app->>'cores')::int, 1) AS c,
+      (app->>'qty')::int AS q,
+      UPPER(COALESCE(app->>'location_code', app->>'lado', 'LADO-A')) AS lado
+    FROM jsonb_array_elements(aplicacoes) WITH ORDINALITY arr(app, ord)
+  ),
+  apps_enriched AS (
+    SELECT 
+      i.app_ord, i.lado, i.tec_cod, i.l, i.a, i.c, i.q, i.prod_id,
+      t.id AS tab_id, t.grupo_tecnica,
+      (pat.id IS NOT NULL) AS produto_aceita_tecnica,
+      pat.max_width, pat.max_height,
+      CASE 
+        WHEN pat.id IS NULL THEN false
+        WHEN i.l = 0 OR i.a = 0 THEN true
+        ELSE (i.l <= pat.max_width AND i.a <= pat.max_height)
+      END AS dimensao_valida,
+      (pat.id IS NOT NULL) AS lado_valido,
+      (
+        SELECT COUNT(DISTINCT location_code) > 1
+        FROM print_area_techniques pat2
+        WHERE pat2.product_id = i.prod_id 
+          AND pat2.tabela_preco_id = t.id
+          AND pat2.is_active = true
+      ) AS aceita_multi_lado
+    FROM input i
+    JOIN tabela_preco_gravacao_oficial t ON t.codigo_tabela = i.tec_cod
+    LEFT JOIN print_area_techniques pat 
+      ON pat.product_id = i.prod_id 
+      AND pat.tabela_preco_id = t.id 
+      AND pat.location_code = i.lado
+      AND pat.is_active = true
+  ),
+  validacao AS (
+    SELECT 
+      EXISTS(SELECT 1 FROM apps_enriched WHERE grupo_tecnica = 'SUBLIMACAO') AS tem_subl,
+      EXISTS(SELECT 1 FROM apps_enriched WHERE grupo_tecnica IN ('SERIGRAFIA','TRANSFER_DIGITAL')) AS tem_outro_grupo,
+      (SELECT COUNT(*) FROM apps_enriched WHERE grupo_tecnica = 'SUBLIMACAO') AS n_apps_subl,
+      EXISTS(SELECT 1 FROM apps_enriched WHERE grupo_tecnica = 'SUBLIMACAO' AND aceita_multi_lado = false) AS tem_subl_exclusiva_abs,
+      (SELECT COUNT(DISTINCT lado) FROM apps_enriched 
+         WHERE grupo_tecnica = 'SUBLIMACAO' AND aceita_multi_lado = true) AS n_lados_subl_multi,
+      (SELECT COUNT(*) FROM apps_enriched 
+         WHERE grupo_tecnica = 'SUBLIMACAO' AND aceita_multi_lado = true) AS n_apps_subl_multi,
+      NOT EXISTS(SELECT 1 FROM apps_enriched WHERE produto_aceita_tecnica = false) AS todos_produtos_aceitam,
+      NOT EXISTS(SELECT 1 FROM apps_enriched WHERE lado_valido = false) AS todos_lados_validos,
+      NOT EXISTS(SELECT 1 FROM apps_enriched WHERE dimensao_valida = false) AS todas_dimensoes_validas
+  ),
+  combo_valido AS (
+    SELECT CASE
+      WHEN NOT v.todos_produtos_aceitam THEN false
+      WHEN NOT v.todos_lados_validos THEN false
+      WHEN NOT v.todas_dimensoes_validas THEN false
+      WHEN v.tem_subl AND v.tem_outro_grupo THEN false
+      WHEN v.tem_subl_exclusiva_abs AND v.n_apps_subl > 1 THEN false
+      WHEN v.n_apps_subl_multi > 4 THEN false
+      WHEN v.n_apps_subl_multi > v.n_lados_subl_multi THEN false
+      ELSE true
+    END AS ok
+    FROM validacao v
+  ),
+  resolved AS (
+    SELECT 
+      i.app_ord, i.tec_cod, i.l, i.a, i.c, i.q, i.lado, i.prod_id,
+      t.id AS tab_id, t.grupo_tecnica,
+      t.custo_setup, t.custo_setup_por_cor,
+      t.custo_aplicacao, t.markup_percent, t.max_cores,
+      f.preco_unitario, f.ordem AS faixa_ordem,
+      COALESCE(
+        (t.opcoes_modificadores->'multiplicador_cor'->>i.c::text)::numeric,
+        1.0
+      ) AS mult_cor,
+      -- v10 NOVA: setup_total agora é o PISO COMERCIAL (unificado em UNIF-01 25/04/2026)
+      CASE WHEN t.custo_setup_por_cor THEN t.custo_setup * i.c
+           ELSE t.custo_setup END AS setup_total,
+      COALESCE((t.opcoes_modificadores->>'adicional_fotolito_por_cor')::numeric, 0) AS foto_a3
+    FROM input i
+    JOIN tabela_preco_gravacao_oficial t ON t.codigo_tabela = i.tec_cod
+    JOIN tabela_preco_gravacao_oficial_faixa f ON f.tabela_preco_gravacao_id = t.id
+    JOIN combo_valido cv ON cv.ok = true
+    WHERE t.ativo = true
+      AND i.q BETWEEN f.quantidade_minima AND COALESCE(f.quantidade_maxima, 2147483647)
+      AND i.c BETWEEN 1 AND t.max_cores
+      AND (
+        t.usa_faixa_dimensional = false 
+        OR (
+          (f.largura_min IS NULL OR i.l = 0 OR i.l BETWEEN f.largura_min AND f.largura_max)
+          AND (f.altura_min IS NULL OR i.a = 0 OR i.a BETWEEN f.altura_min AND f.altura_max)
+        )
+      )
+  ),
+  -- pico_anterior SEM setup
+  pico_anterior AS (
+    SELECT r.app_ord,
+      MAX(
+        CASE 
+          WHEN r.grupo_tecnica = 'SERIGRAFIA' THEN
+            fa.quantidade_maxima * fa.preco_unitario * r.mult_cor + r.foto_a3 * r.c
+          WHEN r.grupo_tecnica = 'TAMPOGRAFIA' THEN
+            fa.quantidade_maxima * fa.preco_unitario * r.mult_cor
+          WHEN r.grupo_tecnica = 'SUBLIMACAO' THEN
+            fa.quantidade_maxima * (fa.preco_unitario + r.custo_aplicacao)
+          WHEN r.grupo_tecnica IN ('LASER','LASER_CO2','UV_DIGITAL') THEN
+            fa.quantidade_maxima * fa.preco_unitario
+          WHEN r.grupo_tecnica = 'BORDADO' THEN
+            fa.quantidade_maxima * fa.preco_unitario
+          ELSE 0
+        END
+      ) AS pico
+    FROM resolved r
+    JOIN tabela_preco_gravacao_oficial_faixa fa
+      ON fa.tabela_preco_gravacao_id = r.tab_id
+      AND fa.quantidade_maxima IS NOT NULL
+      AND fa.quantidade_maxima < r.q
+    GROUP BY r.app_ord
+  ),
+  calc AS (
+    SELECT 
+      r.*, COALESCE(pa.pico, 0) AS pico_anterior_v,
+      -- v10 NOVA: nat = GRAVACAO PURA (sem setup somado)
+      CASE 
+        WHEN r.grupo_tecnica = 'SERIGRAFIA' THEN
+          r.q * r.preco_unitario * r.mult_cor + r.foto_a3 * r.c
+        WHEN r.grupo_tecnica = 'TAMPOGRAFIA' THEN
+          r.q * r.preco_unitario * r.mult_cor
+        WHEN r.grupo_tecnica = 'TRANSFER_DIGITAL' THEN
+          r.q * ((r.l * r.a / 10000.0) * r.preco_unitario + r.custo_aplicacao)
+        WHEN r.grupo_tecnica = 'SUBLIMACAO' THEN
+          r.q * (r.preco_unitario + r.custo_aplicacao)
+        WHEN r.grupo_tecnica IN ('LASER','LASER_CO2','UV_DIGITAL') THEN
+          r.q * r.preco_unitario
+        WHEN r.grupo_tecnica = 'BORDADO' THEN
+          r.q * r.preco_unitario
+        ELSE 0
+      END AS nat
+    FROM resolved r
+    LEFT JOIN pico_anterior pa ON pa.app_ord = r.app_ord
+  )
+  SELECT 
+    app_ord AS app_ordem,
+    prod_id AS product_id,
+    tec_cod AS tecnica_codigo,
+    CASE WHEN l > 0 AND a > 0 THEN l || 'x' || a || ' cm' ELSE '-' END AS arte,
+    CASE WHEN grupo_tecnica IN ('SERIGRAFIA','TAMPOGRAFIA') THEN c::text || ' cor'
+         ELSE 'full color' END AS cores,
+    q AS qty,
+    lado AS location_code,
+    ROUND(nat::numeric, 2) AS custo_natural,
+    ROUND(setup_total::numeric, 2) AS piso_comercial_aplicado,
+    ROUND(GREATEST(nat, pico_anterior_v, setup_total)::numeric, 2) AS custo_final,
+    CASE 
+      WHEN GREATEST(nat, pico_anterior_v) < setup_total THEN 'PISO_SETUP'
+      WHEN pico_anterior_v > nat THEN 'ANTI_PARADOXO'
+      ELSE 'natural'
+    END AS regra_ativada,
+    ROUND(
+      (GREATEST(nat, pico_anterior_v, setup_total) * (1 + markup_percent/100))::numeric, 2
+    ) AS venda_aplicacao
+  FROM calc
+  ORDER BY app_ord;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_simular_combo_gravacao_v11(aplicacoes jsonb)
+ RETURNS TABLE(app_ordem integer, product_id uuid, tecnica_codigo text, arte text, cores text, qty integer, location_code text, custo_natural numeric, piso_comercial_aplicado numeric, custo_final numeric, regra_ativada text, venda_aplicacao numeric, motivo_erro text)
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+WITH input AS (
+  SELECT
+    ord::int AS app_ord,
+    ((app->>'product_id')::uuid) AS prod_id,
+    (app->>'tecnica_codigo')::text AS tec_cod,
+    COALESCE((app->>'largura')::numeric, 0) AS l,
+    COALESCE((app->>'altura')::numeric, 0) AS a,
+    COALESCE((app->>'cores')::int, 1) AS c,
+    (app->>'qty')::int AS q,
+    UPPER(COALESCE(app->>'location_code', app->>'lado', 'LADO-A')) AS lado,
+    COALESCE(app->>'arte_id', 'AUTO_' || ord::text) AS arte_id
+  FROM jsonb_array_elements(aplicacoes) WITH ORDINALITY arr(app, ord)
+),
+diag AS (
+  SELECT
+    i.*,
+    t.id AS tab_id, t.grupo_tecnica, t.ativo, t.max_cores,
+    pat.id AS pat_id, pat.max_width, pat.max_height,
+    CASE
+      WHEN i.q IS NULL OR i.q <= 0 THEN 'ERRO_QTY_INVALIDA'
+      WHEN i.c IS NULL OR i.c <= 0 THEN 'ERRO_CORES_INVALIDA'
+      WHEN t.id IS NULL THEN 'ERRO_TECNICA_INEXISTENTE'
+      WHEN NOT t.ativo THEN 'ERRO_TECNICA_INATIVA'
+      WHEN i.c > t.max_cores THEN 'ERRO_CORES_EXCEDE_MAX'
+      WHEN pat.id IS NULL THEN 'ERRO_PRODUTO_NAO_ACEITA_TECNICA'
+      WHEN i.l > 0 AND i.l > pat.max_width THEN 'ERRO_LARGURA_EXCEDE_AREA'
+      WHEN i.a > 0 AND i.a > pat.max_height THEN 'ERRO_ALTURA_EXCEDE_AREA'
+      ELSE NULL
+    END AS motivo
+  FROM input i
+  LEFT JOIN tabela_preco_gravacao_oficial t ON t.codigo_tabela = i.tec_cod
+  LEFT JOIN print_area_techniques pat ON pat.product_id = i.prod_id
+    AND pat.tabela_preco_id = t.id AND pat.location_code = i.lado AND pat.is_active = true
+),
+combo_check AS (
+  SELECT
+    EXISTS(SELECT 1 FROM diag WHERE grupo_tecnica = 'SUBLIMACAO' AND motivo IS NULL) AS tem_subl,
+    EXISTS(SELECT 1 FROM diag WHERE grupo_tecnica IN ('SERIGRAFIA','TRANSFER_DIGITAL','TAMPOGRAFIA','LASER','LASER_CO2','UV_DIGITAL','BORDADO') AND motivo IS NULL) AS tem_outro
+),
+diag_final AS (
+  SELECT d.*,
+    CASE
+      WHEN d.motivo IS NOT NULL THEN d.motivo
+      WHEN d.grupo_tecnica = 'SUBLIMACAO' AND cc.tem_outro THEN 'ERRO_SUBL_NAO_COMBINA_OUTRAS'
+      ELSE NULL
+    END AS motivo_final
+  FROM diag d CROSS JOIN combo_check cc
+),
+resolved AS (
+  SELECT
+    d.app_ord, d.tec_cod, d.l, d.a, d.c, d.q, d.lado, d.prod_id, d.grupo_tecnica, d.arte_id,
+    t.custo_setup, t.custo_setup_por_cor, t.custo_aplicacao, t.markup_percent,
+    f.preco_unitario, f.ordem AS faixa_ordem, t.id AS tab_id,
+    COALESCE((t.opcoes_modificadores->'multiplicador_cor'->>d.c::text)::numeric, 1.0) AS mult_cor,
+    CASE WHEN t.custo_setup_por_cor THEN t.custo_setup * d.c ELSE t.custo_setup END AS setup_total,
+    COALESCE((t.opcoes_modificadores->>'adicional_fotolito_por_cor')::numeric, 0) AS foto_a3
+  FROM diag_final d
+  JOIN tabela_preco_gravacao_oficial t ON t.id = d.tab_id
+  JOIN tabela_preco_gravacao_oficial_faixa f ON f.tabela_preco_gravacao_id = t.id
+    AND d.q BETWEEN f.quantidade_minima AND COALESCE(f.quantidade_maxima, 2147483647)
+    AND (
+      t.usa_faixa_dimensional = false
+      OR (
+        (f.largura_min IS NULL OR d.l = 0 OR d.l BETWEEN f.largura_min AND f.largura_max)
+        AND (f.altura_min IS NULL OR d.a = 0 OR d.a BETWEEN f.altura_min AND f.altura_max)
+      )
+    )
+  WHERE d.motivo_final IS NULL
+),
+arte_grupos AS (
+  SELECT 
+    arte_id, prod_id, tec_cod, c,
+    MIN(app_ord) AS app_ord_lider,
+    COUNT(*) AS qtd_aplicacoes_grupo
+  FROM resolved
+  GROUP BY arte_id, prod_id, tec_cod, c
+),
+pico_anterior AS (
+  SELECT r.app_ord, MAX(
+    CASE
+      WHEN r.grupo_tecnica = 'SERIGRAFIA' THEN fa.quantidade_maxima * fa.preco_unitario * r.mult_cor + r.foto_a3 * r.c
+      WHEN r.grupo_tecnica = 'TAMPOGRAFIA' THEN fa.quantidade_maxima * fa.preco_unitario * r.mult_cor
+      WHEN r.grupo_tecnica = 'SUBLIMACAO' THEN fa.quantidade_maxima * (fa.preco_unitario + r.custo_aplicacao)
+      -- FIX 2026-04-26: somar custo_aplicacao também em LASER/UV_DIGITAL/BORDADO/TRANSFER_DIGITAL
+      WHEN r.grupo_tecnica IN ('LASER','LASER_CO2','UV_DIGITAL') THEN fa.quantidade_maxima * (fa.preco_unitario + r.custo_aplicacao)
+      WHEN r.grupo_tecnica = 'BORDADO' THEN fa.quantidade_maxima * (fa.preco_unitario + r.custo_aplicacao)
+      ELSE 0 END
+  ) AS pico
+  FROM resolved r
+  JOIN tabela_preco_gravacao_oficial_faixa fa ON fa.tabela_preco_gravacao_id = r.tab_id
+    AND fa.quantidade_maxima IS NOT NULL AND fa.quantidade_maxima < r.q
+  GROUP BY r.app_ord
+),
+calc AS (
+  SELECT
+    r.app_ord, r.prod_id, r.tec_cod, r.l, r.a, r.c, r.q, r.lado,
+    r.grupo_tecnica, r.markup_percent, r.arte_id,
+    COALESCE(pa.pico, 0) AS pico_anterior_v,
+    CASE 
+      WHEN r.app_ord = ag.app_ord_lider THEN r.setup_total
+      ELSE 0
+    END AS piso_setup,
+    ag.qtd_aplicacoes_grupo,
+    ag.app_ord_lider,
+    CASE
+      WHEN r.grupo_tecnica = 'SERIGRAFIA' THEN r.q * r.preco_unitario * r.mult_cor + r.foto_a3 * r.c
+      WHEN r.grupo_tecnica = 'TAMPOGRAFIA' THEN r.q * r.preco_unitario * r.mult_cor
+      WHEN r.grupo_tecnica = 'TRANSFER_DIGITAL' THEN r.q * ((r.l * r.a / 10000.0) * r.preco_unitario + r.custo_aplicacao)
+      WHEN r.grupo_tecnica = 'SUBLIMACAO' THEN r.q * (r.preco_unitario + r.custo_aplicacao)
+      -- FIX 2026-04-26: somar custo_aplicacao também em LASER/UV_DIGITAL/BORDADO
+      WHEN r.grupo_tecnica IN ('LASER','LASER_CO2','UV_DIGITAL') THEN r.q * (r.preco_unitario + r.custo_aplicacao)
+      WHEN r.grupo_tecnica = 'BORDADO' THEN r.q * (r.preco_unitario + r.custo_aplicacao)
+      ELSE 0 END AS nat
+  FROM resolved r 
+  LEFT JOIN pico_anterior pa ON pa.app_ord = r.app_ord
+  LEFT JOIN arte_grupos ag ON ag.arte_id = r.arte_id 
+    AND ag.prod_id = r.prod_id 
+    AND ag.tec_cod = r.tec_cod 
+    AND ag.c = r.c
+),
+saida AS (
+  SELECT df.app_ord AS app_ordem, df.prod_id AS product_id, df.tec_cod AS tecnica_codigo,
+    CASE WHEN df.l > 0 AND df.a > 0 THEN df.l || 'x' || df.a || ' cm' ELSE '-' END AS arte,
+    df.c::text || ' cor' AS cores, df.q AS qty, df.lado AS location_code,
+    NULL::numeric AS custo_natural, NULL::numeric AS piso_comercial_aplicado, NULL::numeric AS custo_final,
+    df.motivo_final AS regra_ativada, NULL::numeric AS venda_aplicacao,
+    df.motivo_final AS motivo_erro
+  FROM diag_final df
+  WHERE df.motivo_final IS NOT NULL
 
--- ----------------------------------------------------------------------------
+  UNION ALL
+
+  SELECT app_ord, prod_id, tec_cod,
+    CASE WHEN l > 0 AND a > 0 THEN l || 'x' || a || ' cm' ELSE '-' END,
+    CASE WHEN grupo_tecnica IN ('SERIGRAFIA','TAMPOGRAFIA') THEN c::text || ' cor' ELSE 'full color' END,
+    q, lado,
+    ROUND(nat::numeric, 2),
+    ROUND(piso_setup::numeric, 2),
+    ROUND(GREATEST(nat, pico_anterior_v, piso_setup)::numeric, 2),
+    CASE
+      WHEN qtd_aplicacoes_grupo > 1 AND app_ord = app_ord_lider THEN 
+        CASE
+          WHEN GREATEST(nat, pico_anterior_v) < piso_setup THEN 'PISO_SETUP_LIDER_GRUPO'
+          WHEN pico_anterior_v > nat THEN 'ANTI_PARADOXO_LIDER_GRUPO'
+          ELSE 'natural_lider_grupo'
+        END
+      WHEN qtd_aplicacoes_grupo > 1 AND app_ord != app_ord_lider THEN 
+        CASE
+          WHEN pico_anterior_v > nat THEN 'ANTI_PARADOXO_MEMBRO_GRUPO'
+          ELSE 'natural_membro_grupo'
+        END
+      WHEN GREATEST(nat, pico_anterior_v) < piso_setup THEN 'PISO_SETUP'
+      WHEN pico_anterior_v > nat THEN 'ANTI_PARADOXO'
+      ELSE 'natural' END,
+    ROUND((GREATEST(nat, pico_anterior_v, piso_setup) * (1 + markup_percent/100))::numeric, 2),
+    NULL::text
+  FROM calc
+)
+SELECT * FROM saida ORDER BY app_ordem;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_simular_combo_gravacao_v12(aplicacoes jsonb)
+ RETURNS TABLE(app_ordem integer, product_id uuid, tecnica_codigo text, arte text, cores text, qty integer, location_code text, custo_natural numeric, piso_comercial_aplicado numeric, custo_final numeric, regra_ativada text, venda_aplicacao numeric, motivo_erro text)
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+  WITH input AS (
+    SELECT 
+      ord::int AS app_ord,
+      ((app->>'product_id')::uuid) AS prod_id,
+      (app->>'tecnica_codigo')::text AS tec_cod,
+      COALESCE((app->>'largura')::numeric, 0) AS l,
+      COALESCE((app->>'altura')::numeric, 0) AS a,
+      COALESCE((app->>'cores')::int, 1) AS c,
+      (app->>'qty')::int AS q,
+      UPPER(COALESCE(app->>'location_code', app->>'lado', 'LADO-A')) AS lado
+    FROM jsonb_array_elements(aplicacoes) WITH ORDINALITY arr(app, ord)
+  ),
+  diag AS (
+    SELECT 
+      i.*,
+      t.id AS tab_id, t.grupo_tecnica, t.ativo, t.max_cores,
+      pat.id AS pat_id, pat.max_width, pat.max_height,
+      CASE
+        WHEN i.q IS NULL OR i.q <= 0 THEN 'ERRO_QTY_INVALIDA'
+        WHEN i.c IS NULL OR i.c <= 0 THEN 'ERRO_CORES_INVALIDA'
+        WHEN t.id IS NULL THEN 'ERRO_TECNICA_INEXISTENTE'
+        WHEN NOT t.ativo THEN 'ERRO_TECNICA_INATIVA'
+        WHEN i.c > t.max_cores THEN 'ERRO_CORES_EXCEDE_MAX'
+        WHEN pat.id IS NULL THEN 'ERRO_PRODUTO_NAO_ACEITA_TECNICA'
+        WHEN i.l > 0 AND i.l > pat.max_width THEN 'ERRO_LARGURA_EXCEDE_AREA'
+        WHEN i.a > 0 AND i.a > pat.max_height THEN 'ERRO_ALTURA_EXCEDE_AREA'
+        ELSE NULL
+      END AS motivo
+    FROM input i
+    LEFT JOIN tabela_preco_gravacao_oficial t ON t.codigo_tabela = i.tec_cod
+    LEFT JOIN print_area_techniques pat ON pat.product_id = i.prod_id 
+      AND pat.tabela_preco_id = t.id AND pat.location_code = i.lado AND pat.is_active = true
+  ),
+  combo_check AS (
+    SELECT 
+      EXISTS(SELECT 1 FROM diag WHERE grupo_tecnica = 'SUBLIMACAO' AND motivo IS NULL) AS tem_subl,
+      EXISTS(SELECT 1 FROM diag WHERE grupo_tecnica IN ('SERIGRAFIA','TRANSFER_DIGITAL','TAMPOGRAFIA','LASER','LASER_CO2','UV_DIGITAL','BORDADO') AND motivo IS NULL) AS tem_outro
+  ),
+  diag_final AS (
+    SELECT d.*,
+      CASE
+        WHEN d.motivo IS NOT NULL THEN d.motivo
+        WHEN d.grupo_tecnica = 'SUBLIMACAO' AND cc.tem_outro THEN 'ERRO_SUBL_NAO_COMBINA_OUTRAS'
+        ELSE NULL
+      END AS motivo_final
+    FROM diag d CROSS JOIN combo_check cc
+  ),
+  resolved AS (
+    SELECT 
+      d.app_ord, d.tec_cod, d.l, d.a, d.c, d.q, d.lado, d.prod_id, d.grupo_tecnica,
+      t.custo_setup, t.custo_setup_por_cor, t.custo_aplicacao, t.markup_percent,
+      f.preco_unitario, f.ordem AS faixa_ordem, t.id AS tab_id,
+      COALESCE((t.opcoes_modificadores->'multiplicador_cor'->>d.c::text)::numeric, 1.0) AS mult_cor,
+      -- v12: setup_total agora é o PISO COMERCIAL (unificado em UNIF-01 25/04/2026)
+      CASE WHEN t.custo_setup_por_cor THEN t.custo_setup * d.c ELSE t.custo_setup END AS setup_total,
+      COALESCE((t.opcoes_modificadores->>'adicional_fotolito_por_cor')::numeric, 0) AS foto_a3
+    FROM diag_final d
+    JOIN tabela_preco_gravacao_oficial t ON t.id = d.tab_id
+    JOIN tabela_preco_gravacao_oficial_faixa f ON f.tabela_preco_gravacao_id = t.id
+      AND d.q BETWEEN f.quantidade_minima AND COALESCE(f.quantidade_maxima, 2147483647)
+      AND (
+        t.usa_faixa_dimensional = false 
+        OR (
+          (f.largura_min IS NULL OR d.l = 0 OR d.l BETWEEN f.largura_min AND f.largura_max)
+          AND (f.altura_min IS NULL OR d.a = 0 OR d.a BETWEEN f.altura_min AND f.altura_max)
+        )
+      )
+    WHERE d.motivo_final IS NULL
+  ),
+  -- pico_anterior agora SEM setup (setup virou piso, não aditivo)
+  pico_anterior AS (
+    SELECT r.app_ord, MAX(
+      CASE 
+        WHEN r.grupo_tecnica = 'SERIGRAFIA' THEN fa.quantidade_maxima * fa.preco_unitario * r.mult_cor + r.foto_a3 * r.c
+        WHEN r.grupo_tecnica = 'TAMPOGRAFIA' THEN fa.quantidade_maxima * fa.preco_unitario * r.mult_cor
+        WHEN r.grupo_tecnica = 'SUBLIMACAO' THEN fa.quantidade_maxima * (fa.preco_unitario + r.custo_aplicacao)
+        WHEN r.grupo_tecnica IN ('LASER','LASER_CO2','UV_DIGITAL') THEN fa.quantidade_maxima * fa.preco_unitario
+        WHEN r.grupo_tecnica = 'BORDADO' THEN fa.quantidade_maxima * fa.preco_unitario
+        ELSE 0 END
+    ) AS pico
+    FROM resolved r
+    JOIN tabela_preco_gravacao_oficial_faixa fa ON fa.tabela_preco_gravacao_id = r.tab_id
+      AND fa.quantidade_maxima IS NOT NULL AND fa.quantidade_maxima < r.q
+    GROUP BY r.app_ord
+  ),
+  calc AS (
+    SELECT 
+      r.app_ord, r.prod_id, r.tec_cod, r.l, r.a, r.c, r.q, r.lado,
+      r.grupo_tecnica, r.markup_percent,
+      COALESCE(pa.pico, 0) AS pico_anterior_v,
+      r.setup_total AS piso_setup,
+      -- v12: nat = GRAVACAO PURA (sem setup somado)
+      CASE 
+        WHEN r.grupo_tecnica = 'SERIGRAFIA' THEN r.q * r.preco_unitario * r.mult_cor + r.foto_a3 * r.c
+        WHEN r.grupo_tecnica = 'TAMPOGRAFIA' THEN r.q * r.preco_unitario * r.mult_cor
+        WHEN r.grupo_tecnica = 'TRANSFER_DIGITAL' THEN r.q * ((r.l * r.a / 10000.0) * r.preco_unitario + r.custo_aplicacao)
+        WHEN r.grupo_tecnica = 'SUBLIMACAO' THEN r.q * (r.preco_unitario + r.custo_aplicacao)
+        WHEN r.grupo_tecnica IN ('LASER','LASER_CO2','UV_DIGITAL') THEN r.q * r.preco_unitario
+        WHEN r.grupo_tecnica = 'BORDADO' THEN r.q * r.preco_unitario
+        ELSE 0 END AS nat
+    FROM resolved r LEFT JOIN pico_anterior pa ON pa.app_ord = r.app_ord
+  ),
+  saida AS (
+    -- Linhas de erro (mesmo schema do v11)
+    SELECT df.app_ord AS app_ordem, df.prod_id AS product_id, df.tec_cod AS tecnica_codigo,
+      CASE WHEN df.l > 0 AND df.a > 0 THEN df.l || 'x' || df.a || ' cm' ELSE '-' END AS arte,
+      df.c::text || ' cor' AS cores, df.q AS qty, df.lado AS location_code,
+      NULL::numeric AS custo_natural, NULL::numeric AS piso_comercial_aplicado, NULL::numeric AS custo_final,
+      df.motivo_final AS regra_ativada, NULL::numeric AS venda_aplicacao,
+      df.motivo_final AS motivo_erro
+    FROM diag_final df 
+    WHERE df.motivo_final IS NOT NULL
+    
+    UNION ALL
+    
+    -- Linhas calculadas v12
+    SELECT app_ord, prod_id, tec_cod,
+      CASE WHEN l > 0 AND a > 0 THEN l || 'x' || a || ' cm' ELSE '-' END,
+      CASE WHEN grupo_tecnica IN ('SERIGRAFIA','TAMPOGRAFIA') THEN c::text || ' cor' ELSE 'full color' END,
+      q, lado,
+      ROUND(nat::numeric, 2),
+      ROUND(piso_setup::numeric, 2),  -- agora reporta o setup como piso
+      ROUND(GREATEST(nat, pico_anterior_v, piso_setup)::numeric, 2),
+      CASE 
+        WHEN GREATEST(nat, pico_anterior_v) < piso_setup THEN 'PISO_SETUP'
+        WHEN pico_anterior_v > nat THEN 'ANTI_PARADOXO'
+        ELSE 'natural' END,
+      ROUND((GREATEST(nat, pico_anterior_v, piso_setup) * (1 + markup_percent/100))::numeric, 2),
+      NULL::text
+    FROM calc
+  )
+  SELECT * FROM saida ORDER BY app_ordem;
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_simular_combo_gravacao_v8_legacy(aplicacoes jsonb)
+ RETURNS TABLE(app_ordem integer, tecnica_codigo text, arte text, cores text, qty integer, custo_natural numeric, piso_comercial_aplicado numeric, custo_final numeric, regra_ativada text, venda_aplicacao numeric)
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+  -- DEPRECATED: chama v11 internamente após UNIF-01 (setup unificado)
+  SELECT app_ordem, tecnica_codigo, arte, cores, qty,
+         custo_natural, piso_comercial_aplicado, custo_final, regra_ativada, venda_aplicacao
+  FROM public.fn_simular_combo_gravacao_v11(aplicacoes);
+$function$;
+CREATE OR REPLACE FUNCTION public.fn_simular_combo_gravacao_v9_legacy_2026_04(aplicacoes jsonb)
+ RETURNS TABLE(app_ordem integer, product_id uuid, tecnica_codigo text, arte text, cores text, qty integer, location_code text, custo_natural numeric, piso_comercial_aplicado numeric, custo_final numeric, regra_ativada text, venda_aplicacao numeric)
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+  -- DEPRECATED: chama v11 internamente após UNIF-01 (setup unificado)
+  SELECT app_ordem, product_id, tecnica_codigo, arte, cores, qty, location_code,
+         custo_natural, piso_comercial_aplicado, custo_final, regra_ativada, venda_aplicacao
+  FROM public.fn_simular_combo_gravacao_v11(aplicacoes);
+$function$;
+CREATE OR REPLACE FUNCTION public.g_to_kg(p_g numeric)
+ RETURNS numeric
+ LANGUAGE sql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+    SELECT normalize_unit(p_g, 'g', 'kg');
+$function$;
+CREATE OR REPLACE FUNCTION public.get_abc_curve(p_metric character varying DEFAULT 'revenue'::character varying, p_limit integer DEFAULT 100)
+ RETURNS TABLE(rank_position integer, product_id uuid, sku character varying, name character varying, metric_value numeric, percentage numeric, cumulative_percentage numeric, abc_class character, stock_quantity integer, stock_value numeric)
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+WITH product_metrics AS (
+    SELECT 
+        p.id AS product_id,
+        p.sku,
+        p.name,
+        CASE p_metric
+            -- Revenue: soma de quantity * unit_price dos pedidos
+            WHEN 'revenue' THEN COALESCE(
+                (SELECT SUM(oi.quantity * oi.unit_price) 
+                 FROM order_items oi 
+                 WHERE oi.product_id = p.id),
+                0
+            )
+            -- Quantity: soma de unidades vendidas
+            WHEN 'quantity' THEN COALESCE(
+                (SELECT SUM(oi.quantity)::NUMERIC 
+                 FROM order_items oi 
+                 WHERE oi.product_id = p.id),
+                0
+            )
+            -- Stock Value: valor em estoque
+            WHEN 'stock_value' THEN COALESCE(
+                (SELECT SUM(pv.stock_quantity * COALESCE(pv.price_1, 0))
+                 FROM product_variants pv
+                 WHERE pv.product_id = p.id),
+                0
+            )
+            ELSE 0
+        END AS metric_value,
+        -- Estoque total
+        COALESCE(
+            (SELECT SUM(pv.stock_quantity) FROM product_variants pv WHERE pv.product_id = p.id),
+            0
+        )::INTEGER AS stock_quantity,
+        -- Valor em estoque (usando price_1)
+        COALESCE(
+            (SELECT SUM(pv.stock_quantity * COALESCE(pv.price_1, 0)) 
+             FROM product_variants pv WHERE pv.product_id = p.id),
+            0
+        ) AS stock_value
+    FROM products p
+    WHERE p.is_active = true AND p.deleted_at IS NULL
+),
+ranked_products AS (
+    SELECT 
+        ROW_NUMBER() OVER (ORDER BY pm.metric_value DESC)::INTEGER AS rank_position,
+        pm.product_id,
+        pm.sku::VARCHAR,
+        pm.name::VARCHAR,
+        pm.metric_value::NUMERIC,
+        (pm.metric_value / NULLIF(SUM(pm.metric_value) OVER (), 0) * 100)::NUMERIC(10,2) AS percentage,
+        (SUM(pm.metric_value) OVER (ORDER BY pm.metric_value DESC) / 
+         NULLIF(SUM(pm.metric_value) OVER (), 0) * 100)::NUMERIC(10,2) AS cumulative_percentage,
+        pm.stock_quantity,
+        pm.stock_value::NUMERIC
+    FROM product_metrics pm
+    WHERE pm.metric_value > 0
+)
+SELECT 
+    rp.rank_position,
+    rp.product_id,
+    rp.sku,
+    rp.name,
+    rp.metric_value,
+    rp.percentage,
+    rp.cumulative_percentage,
+    CASE 
+        WHEN rp.cumulative_percentage <= 80 THEN 'A'
+        WHEN rp.cumulative_percentage <= 95 THEN 'B'
+        ELSE 'C'
+    END::CHAR(1) AS abc_class,
+    rp.stock_quantity,
+    rp.stock_value
+FROM ranked_products rp
+ORDER BY rp.rank_position
+LIMIT p_limit;
+$function$;
 CREATE OR REPLACE FUNCTION public.get_active_step_up_tokens()
  RETURNS jsonb
  LANGUAGE sql
@@ -2596,10 +27572,61 @@ AS $function$
   SELECT COALESCE(jsonb_agg(jsonb_build_object('id', id, 'action', action, 'expires_at', expires_at)), '[]'::jsonb)
   FROM public.step_up_tokens
   WHERE user_id = auth.uid() AND consumed = false AND expires_at > now();
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
+CREATE OR REPLACE FUNCTION public.get_ai_generation_stats()
+ RETURNS jsonb
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+    SELECT jsonb_build_object(
+        'total_products', (SELECT COUNT(*) FROM products),
+        'with_ai_description', (SELECT COUNT(*) FROM products WHERE ai_generated_at IS NOT NULL),
+        'pending_generation', (SELECT COUNT(*) FROM products WHERE ai_generated_at IS NULL),
+        'percentage_complete', ROUND(
+            (SELECT COUNT(*) FROM products WHERE ai_generated_at IS NOT NULL)::NUMERIC / 
+            NULLIF((SELECT COUNT(*) FROM products), 0) * 100, 2
+        ),
+        'versions_distribution', (
+            SELECT jsonb_object_agg(ai_version, count)
+            FROM (
+                SELECT COALESCE(ai_version, 0) AS ai_version, COUNT(*) AS count
+                FROM products
+                GROUP BY COALESCE(ai_version, 0)
+                ORDER BY ai_version
+            ) sub
+        ),
+        'by_category', (
+            SELECT jsonb_agg(jsonb_build_object(
+                'category', COALESCE(c.name, 'Sem categoria'),
+                'total', sub.total,
+                'with_ai', sub.with_ai,
+                'pending', sub.pending
+            ))
+            FROM (
+                SELECT 
+                    p.category_id,
+                    COUNT(*) AS total,
+                    COUNT(*) FILTER (WHERE p.ai_generated_at IS NOT NULL) AS with_ai,
+                    COUNT(*) FILTER (WHERE p.ai_generated_at IS NULL) AS pending
+                FROM products p
+                GROUP BY p.category_id
+                ORDER BY COUNT(*) DESC
+                LIMIT 10
+            ) sub
+            LEFT JOIN categories c ON sub.category_id = c.id
+        ),
+        'history_stats', (
+            SELECT jsonb_build_object(
+                'total_versions', COUNT(*),
+                'total_tokens_used', SUM(total_tokens),
+                'avg_generation_time_ms', ROUND(AVG(generation_time_ms))
+            )
+            FROM product_ai_history
+        ),
+        'generated_at', NOW()
+    );
+$function$;
 CREATE OR REPLACE FUNCTION public.get_all_material_groups_safe()
  RETURNS TABLE(id uuid, organization_id uuid, name text, slug text, description text, sort_order integer, is_active boolean)
  LANGUAGE sql
@@ -2617,10 +27644,7 @@ AS $function$
     FROM material_groups
     WHERE is_active = true
     ORDER BY sort_order, name;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.get_all_material_types_safe()
  RETURNS TABLE(id uuid, organization_id uuid, group_id uuid, name text, slug text, description text, properties jsonb, display_order integer, is_active boolean)
  LANGUAGE sql
@@ -2640,10 +27664,29 @@ AS $function$
     FROM material_types
     WHERE is_active = true
     ORDER BY name;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
+CREATE OR REPLACE FUNCTION public.get_category_colors(p_category_slug text)
+ RETURNS TABLE(color_group_id uuid, color_group_name character varying, color_group_slug character varying, color_hex character varying, is_primary boolean, display_order integer, variations_count bigint)
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+    SELECT 
+        cg.id,
+        cg.name,
+        cg.slug,
+        cg.hex_code,
+        cc.is_primary,
+        cc.display_order,
+        (SELECT COUNT(*) FROM color_variations cv WHERE cv.group_id = cg.id)
+    FROM category_colors cc
+    JOIN categories cat ON cat.id = cc.category_id
+    JOIN color_groups cg ON cg.id = cc.color_group_id
+    WHERE cat.slug = p_category_slug
+      AND cc.is_active = true
+      AND cg.is_active = true
+    ORDER BY cc.display_order;
+$function$;
 CREATE OR REPLACE FUNCTION public.get_category_descendants(p_category_id uuid)
  RETURNS uuid[]
  LANGUAGE sql
@@ -2665,10 +27708,145 @@ AS $function$
   )
   SELECT COALESCE(ARRAY_AGG(id), ARRAY[]::UUID[]) 
   FROM descendants;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
+CREATE OR REPLACE FUNCTION public.get_category_path(p_category_slug character varying)
+ RETURNS TABLE(id uuid, name character varying, slug character varying, depth integer, is_current boolean)
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+WITH RECURSIVE category_path AS (
+    -- Base: categoria solicitada
+    SELECT 
+        c.id,
+        c.name::VARCHAR,
+        c.slug::VARCHAR,
+        c.parent_id,
+        1 AS depth,
+        TRUE AS is_current
+    FROM categories c
+    WHERE c.slug = p_category_slug
+    
+    UNION ALL
+    
+    -- Recursivo: ancestrais
+    SELECT 
+        c.id,
+        c.name::VARCHAR,
+        c.slug::VARCHAR,
+        c.parent_id,
+        cp.depth + 1,
+        FALSE AS is_current
+    FROM categories c
+    INNER JOIN category_path cp ON c.id = cp.parent_id
+)
+SELECT 
+    cp.id,
+    cp.name,
+    cp.slug,
+    cp.depth,
+    cp.is_current
+FROM category_path cp
+ORDER BY cp.depth DESC;  -- Da raiz até a categoria atual
+$function$;
+CREATE OR REPLACE FUNCTION public.get_category_tree(p_root_slug character varying DEFAULT NULL::character varying, p_max_depth integer DEFAULT 10, p_only_active boolean DEFAULT true)
+ RETURNS TABLE(id uuid, name character varying, slug character varying, parent_id uuid, depth integer, path text, path_names text, children_count bigint, products_count bigint, is_leaf boolean)
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+WITH RECURSIVE category_tree AS (
+    SELECT 
+        c.id,
+        c.name::VARCHAR,
+        c.slug::VARCHAR,
+        c.parent_id,
+        1 AS depth,
+        c.slug::TEXT AS path,
+        c.name::TEXT AS path_names
+    FROM categories c
+    WHERE 
+        CASE 
+            WHEN p_root_slug IS NOT NULL THEN c.slug = p_root_slug
+            ELSE c.parent_id IS NULL
+        END
+        AND (NOT p_only_active OR c.is_active = true)
+    
+    UNION ALL
+    
+    SELECT 
+        c.id,
+        c.name::VARCHAR,
+        c.slug::VARCHAR,
+        c.parent_id,
+        ct.depth + 1,
+        (ct.path || ' > ' || c.slug)::TEXT,
+        (ct.path_names || ' > ' || c.name)::TEXT
+    FROM categories c
+    INNER JOIN category_tree ct ON c.parent_id = ct.id
+    WHERE 
+        ct.depth < p_max_depth
+        AND (NOT p_only_active OR c.is_active = true)
+)
+SELECT 
+    ct.id,
+    ct.name,
+    ct.slug,
+    ct.parent_id,
+    ct.depth,
+    ct.path,
+    ct.path_names,
+    (SELECT COUNT(*) FROM categories WHERE parent_id = ct.id) AS children_count,
+    (SELECT COUNT(DISTINCT pca.product_id) 
+     FROM product_category_assignments pca
+     JOIN products p ON p.id = pca.product_id
+     WHERE pca.category_id = ct.id
+       AND p.is_active = true
+       AND (p.is_deleted = false OR p.is_deleted IS NULL)
+    ) AS products_count,
+    NOT EXISTS (SELECT 1 FROM categories WHERE parent_id = ct.id) AS is_leaf
+FROM category_tree ct
+ORDER BY ct.path;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_category_with_children(p_parent_slug character varying DEFAULT NULL::character varying)
+ RETURNS TABLE(id uuid, name character varying, slug character varying, description text, image_url text, products_count bigint, is_parent boolean)
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+SELECT 
+    c.id,
+    c.name::VARCHAR,
+    c.slug::VARCHAR,
+    c.description,
+    c.image_url,
+    (SELECT COUNT(DISTINCT pca.product_id) 
+     FROM product_category_assignments pca
+     JOIN products p ON p.id = pca.product_id
+     WHERE pca.category_id = c.id
+       AND p.is_active = true
+       AND (p.is_deleted = false OR p.is_deleted IS NULL)
+    ) AS products_count,
+    EXISTS (SELECT 1 FROM categories WHERE parent_id = c.id) AS is_parent
+FROM categories c
+WHERE 
+    CASE 
+        WHEN p_parent_slug IS NULL THEN c.parent_id IS NULL
+        ELSE c.parent_id = (SELECT id FROM categories WHERE slug = p_parent_slug)
+    END
+    AND c.is_active = true
+ORDER BY c.display_order, c.name;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_classify_functions()
+ RETURNS TABLE(function_name character varying, description text, is_field character varying, priority integer, is_active boolean)
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+    SELECT function_name, description, is_field, priority, is_active
+    FROM classify_functions_registry
+    ORDER BY priority ASC;
+$function$;
 CREATE OR REPLACE FUNCTION public.get_commemorative_dates_by_product(p_product_id uuid)
  RETURNS TABLE(id uuid, name text, slug text, date_day integer, date_month integer, category text, icon_name text, color_hex text, variant_id uuid, variant_name text, variant_color text, is_product_wide boolean, is_featured boolean, custom_description text)
  LANGUAGE sql
@@ -2696,10 +27874,7 @@ AS $function$
     WHERE vcd.product_id = p_product_id
        OR pv.product_id = p_product_id
     ORDER BY cd.date_month, cd.date_day;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.get_commemorative_dates_by_variant(p_variant_id uuid)
  RETURNS TABLE(id uuid, name text, slug text, date_day integer, date_month integer, category text, icon_name text, color_hex text, is_featured boolean, custom_description text)
  LANGUAGE sql
@@ -2723,19 +27898,13 @@ AS $function$
     WHERE vcd.variant_id = p_variant_id
        OR (vcd.product_id = pv.product_id AND vcd.variant_id IS NULL)
     ORDER BY cd.date_month, cd.date_day;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.get_full_scope_grants()
  RETURNS jsonb
  LANGUAGE sql
  STABLE
  SET search_path TO 'public'
-AS $function$ SELECT COALESCE(jsonb_agg(to_jsonb(g)), '[]'::jsonb) FROM public.mcp_full_grantors g WHERE public.is_admin(auth.uid()); $function$
-;
-
--- ----------------------------------------------------------------------------
+AS $function$ SELECT COALESCE(jsonb_agg(to_jsonb(g)), '[]'::jsonb) FROM public.mcp_full_grantors g WHERE public.is_admin(auth.uid()); $function$;
 CREATE OR REPLACE FUNCTION public.get_login_attempts_status(_email text DEFAULT NULL::text, _ip text DEFAULT NULL::text, _window_minutes integer DEFAULT 15)
  RETURNS jsonb
  LANGUAGE sql
@@ -2751,10 +27920,7 @@ AS $function$
   WHERE created_at > now() - (_window_minutes || ' minutes')::interval
     AND (_email IS NULL OR email = _email)
     AND (_ip IS NULL OR ip_address = _ip);
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.get_material_types_by_group_id(p_group_id uuid)
  RETURNS TABLE(id uuid, organization_id uuid, group_id uuid, name text, slug text, description text, properties jsonb, display_order integer, is_active boolean)
  LANGUAGE sql
@@ -2775,10 +27941,7 @@ AS $function$
     WHERE group_id = p_group_id
       AND is_active = true
     ORDER BY display_order, name;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.get_material_types_by_group_slug(p_group_slug text)
  RETURNS TABLE(id uuid, organization_id uuid, group_id uuid, name text, slug text, description text, properties jsonb, display_order integer, is_active boolean)
  LANGUAGE sql
@@ -2801,10 +27964,7 @@ AS $function$
       AND mt.is_active = true
       AND mg.is_active = true
     ORDER BY mt.display_order, mt.name;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.get_materials_complete_safe()
  RETURNS TABLE(material_id uuid, material_name text, material_slug text, material_description text, group_id uuid, group_name text, group_slug text, display_order integer, is_active boolean)
  LANGUAGE sql
@@ -2826,10 +27986,7 @@ AS $function$
     WHERE mt.is_active = true
       AND mg.is_active = true
     ORDER BY mg.sort_order, mg.name, mt.display_order, mt.name;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.get_mcp_key_status(_key_id uuid)
  RETURNS jsonb
  LANGUAGE sql
@@ -2843,10 +28000,7 @@ AS $function$
     'last_used_at', last_used_at
   ) FROM public.mcp_api_keys
   WHERE id = _key_id AND (created_by = auth.uid() OR public.is_admin(auth.uid()));
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.get_my_grantor_status()
  RETURNS jsonb
  LANGUAGE sql
@@ -2858,10 +28012,124 @@ AS $function$
     'can_grant', public.is_admin(auth.uid()),
     'granted_count', (SELECT count(*) FROM public.mcp_full_grantors WHERE granted_by = auth.uid())
   );
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
+CREATE OR REPLACE FUNCTION public.get_product_ai_history(p_product_id uuid)
+ RETURNS TABLE(version integer, ai_title text, ai_description text, model character varying, tokens_used integer, generated_at timestamp with time zone)
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+    SELECT 
+        version,
+        ai_title,
+        ai_description,
+        model,
+        total_tokens,
+        generated_at
+    FROM product_ai_history
+    WHERE product_id = p_product_id
+    ORDER BY version DESC;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_products_by_category_colors(p_category_slug text DEFAULT 'brindes_sicoob'::text, p_limit integer DEFAULT 100, p_offset integer DEFAULT 0, p_only_in_stock boolean DEFAULT false)
+ RETURNS TABLE(product_id uuid, product_sku text, product_name text, variant_id uuid, variant_sku text, color_variation_id uuid, color_variation_name character varying, color_group_id uuid, color_group_name character varying, color_group_slug character varying, color_hex character varying, stock_quantity integer, price_1 numeric, image_url text)
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+    SELECT 
+        p.id,
+        p.sku,
+        p.name,
+        pv.id,
+        pv.sku,
+        cv.id,
+        cv.name,
+        cg.id,
+        cg.name,
+        cg.slug,
+        COALESCE(cv.hex_code, cg.hex_code),
+        COALESCE(pv.stock_quantity, 0),
+        pv.price_1,
+        CASE 
+            WHEN pv.images IS NOT NULL AND jsonb_array_length(pv.images) > 0 
+            THEN pv.images->0->>'url'
+            ELSE NULL
+        END
+    FROM products p
+    INNER JOIN product_variants pv ON pv.product_id = p.id
+    INNER JOIN color_variations cv ON cv.id = pv.color_id
+    INNER JOIN color_groups cg ON cg.id = cv.group_id
+    INNER JOIN category_colors cc ON cc.color_group_id = cg.id
+    INNER JOIN categories cat ON cat.id = cc.category_id
+    WHERE cat.slug = p_category_slug
+      AND p.is_active = true
+      AND pv.is_active = true
+      AND cg.is_active = true
+      AND cc.is_active = true
+      AND (NOT p_only_in_stock OR COALESCE(pv.stock_quantity, 0) > 0)
+    ORDER BY cc.display_order, cg.name, p.name, pv.sku
+    LIMIT p_limit
+    OFFSET p_offset;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_products_for_regeneration(p_min_days_old integer DEFAULT 30, p_max_version integer DEFAULT 1, p_limit integer DEFAULT 50)
+ RETURNS TABLE(product_id uuid, sku character varying, name text, current_version integer, days_since_generation integer)
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+    SELECT 
+        p.id AS product_id,
+        p.sku,
+        p.name,
+        p.ai_version AS current_version,
+        EXTRACT(DAY FROM NOW() - p.ai_generated_at)::INTEGER AS days_since_generation
+    FROM products p
+    WHERE p.ai_generated_at IS NOT NULL
+      AND p.ai_version <= p_max_version
+      AND p.ai_generated_at < NOW() - (p_min_days_old || ' days')::INTERVAL
+    ORDER BY p.ai_generated_at ASC
+    LIMIT p_limit;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_products_pending_ai(p_limit integer DEFAULT 50, p_category_id uuid DEFAULT NULL::uuid)
+ RETURNS TABLE(product_id uuid, sku character varying, name text, category_name text, has_raw_data boolean)
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+    SELECT 
+        p.id AS product_id,
+        p.sku,
+        p.name,
+        c.name AS category_name,
+        EXISTS (
+            SELECT 1 FROM supplier_products_raw spr 
+            WHERE spr.product_id = p.id
+        ) AS has_raw_data
+    FROM products p
+    LEFT JOIN categories c ON p.category_id = c.id
+    WHERE p.ai_generated_at IS NULL
+      AND (p_category_id IS NULL OR p.category_id = p_category_id)
+    ORDER BY p.created_at DESC
+    LIMIT p_limit;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_public_schema_signatures()
+ RETURNS jsonb
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  SELECT COALESCE(jsonb_object_agg(table_name, sig), '{}'::jsonb)
+  FROM (
+    SELECT 
+      table_name,
+      string_agg(column_name || ':' || data_type, ',' ORDER BY column_name) AS sig
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name NOT LIKE '_backup_%'
+      AND table_name NOT LIKE 'pg_%'
+    GROUP BY table_name
+  ) t;
+$function$;
 CREATE OR REPLACE FUNCTION public.get_step_up_audit(_user_id uuid DEFAULT NULL::uuid, _limit integer DEFAULT 100)
  RETURNS jsonb
  LANGUAGE sql
@@ -2874,19 +28142,126 @@ AS $function$
       AND (auth.uid() = COALESCE(_user_id, auth.uid()) OR public.is_supervisor_or_above(auth.uid()))
     ORDER BY created_at DESC LIMIT _limit
   ) a;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.get_step_up_user_settings(_user_id uuid DEFAULT NULL::uuid)
  RETURNS jsonb
  LANGUAGE sql
  STABLE
  SET search_path TO 'public'
-AS $function$ SELECT public.step_up_user_settings_get(_user_id); $function$
-;
-
--- ----------------------------------------------------------------------------
+AS $function$ SELECT public.step_up_user_settings_get(_user_id); $function$;
+CREATE OR REPLACE FUNCTION public.get_supplier_code(p_supplier_id uuid)
+ RETURNS text
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+    SELECT code FROM suppliers WHERE id = p_supplier_id;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_trending_products(p_limit integer DEFAULT 10, p_days integer DEFAULT 7, p_category_slug character varying DEFAULT NULL::character varying)
+ RETURNS TABLE(id uuid, sku character varying, name character varying, slug character varying, primary_image text, min_price numeric, total_views bigint, recent_views bigint, trend_score numeric, stock_available integer)
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+SELECT 
+    p.id,
+    p.sku::VARCHAR,
+    p.name::VARCHAR,
+    p.slug::VARCHAR,
+    p.primary_image_url AS primary_image,
+    -- Menor preço
+    (
+        SELECT MIN(pv.price_1)
+        FROM product_variants pv
+        WHERE pv.product_id = p.id AND pv.is_active = true
+    ) AS min_price,
+    -- Total de views (histórico) - CORRIGIDO: COUNT(*)
+    COALESCE(
+        (SELECT COUNT(*) FROM product_views pviews WHERE pviews.product_id = p.id),
+        0
+    )::BIGINT AS total_views,
+    -- Views recentes (últimos N dias) - CORRIGIDO: COUNT(*)
+    COALESCE(
+        (
+            SELECT COUNT(*) 
+            FROM product_views pviews
+            WHERE pviews.product_id = p.id 
+            AND pviews.created_at >= NOW() - (p_days || ' days')::INTERVAL
+        ),
+        0
+    )::BIGINT AS recent_views,
+    -- Trend Score - CORRIGIDO: COUNT(*)
+    (
+        COALESCE(
+            (
+                SELECT COUNT(*) 
+                FROM product_views pviews
+                WHERE pviews.product_id = p.id 
+                AND pviews.created_at >= NOW() - (p_days || ' days')::INTERVAL
+            ),
+            0
+        ) * 1.5 +
+        COALESCE(
+            (
+                SELECT COUNT(*) 
+                FROM product_views pviews
+                WHERE pviews.product_id = p.id 
+                AND pviews.created_at >= NOW() - ((p_days * 2) || ' days')::INTERVAL
+                AND pviews.created_at < NOW() - (p_days || ' days')::INTERVAL
+            ),
+            0
+        ) * 0.5
+    )::NUMERIC AS trend_score,
+    -- Estoque disponível
+    (
+        SELECT COALESCE(SUM(pv.stock_quantity), 0)::INTEGER
+        FROM product_variants pv
+        WHERE pv.product_id = p.id
+    ) AS stock_available
+FROM products p
+WHERE 
+    p.is_active = true
+    AND p.deleted_at IS NULL
+    AND (
+        p_category_slug IS NULL
+        OR EXISTS (
+            SELECT 1 
+            FROM product_category_assignments pca
+            JOIN categories c ON c.id = pca.category_id
+            WHERE pca.product_id = p.id AND c.slug = p_category_slug
+        )
+    )
+ORDER BY trend_score DESC, recent_views DESC
+LIMIT p_limit;
+$function$;
+CREATE OR REPLACE FUNCTION public.get_unprocessed_color_variants(p_offset integer DEFAULT 0, p_limit integer DEFAULT 50, p_color_filter text DEFAULT NULL::text)
+ RETURNS TABLE(variant_id uuid, product_sku text, variant_sku text, image_url text, supplier_color_name text, current_variation_id uuid, current_color_name text)
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+  SELECT 
+    pv.id as variant_id,
+    p.sku as product_sku,
+    pv.sku as variant_sku,
+    pi.url_cdn as image_url,
+    pv.attributes->>'cor' as supplier_color_name,
+    pv.color_id as current_variation_id,
+    cv.name as current_color_name
+  FROM product_variants pv
+  JOIN products p ON pv.product_id = p.id
+  JOIN suppliers s ON p.supplier_id = s.id
+  JOIN product_images pi ON pi.variant_id = pv.id AND pi.is_primary = true
+  LEFT JOIN color_variations cv ON pv.color_id = cv.id
+  LEFT JOIN color_analysis_staging cas ON cas.variant_id = pv.id
+  WHERE s.code = 'XBZ'
+    AND cas.id IS NULL  -- Não processadas ainda
+    AND pi.url_cdn IS NOT NULL
+    AND (p_color_filter IS NULL OR pv.attributes->>'cor' = p_color_filter)
+  ORDER BY pv.attributes->>'cor', p.sku
+  OFFSET p_offset
+  LIMIT p_limit;
+$function$;
 CREATE OR REPLACE FUNCTION public.get_user_role_history(_user_id uuid)
  RETURNS jsonb
  LANGUAGE sql
@@ -2896,10 +28271,7 @@ AS $function$
   SELECT COALESCE(jsonb_agg(to_jsonb(a) ORDER BY a.created_at DESC), '[]'::jsonb)
   FROM public.admin_audit_log a
   WHERE resource_type = 'user_role' AND resource_id = _user_id::text;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.get_variants_by_commemorative_date(p_commemorative_date_slug text, p_limit integer DEFAULT 100)
  RETURNS TABLE(product_id uuid, product_name text, product_sku text, variant_id uuid, variant_name text, variant_sku text, color_name text, color_hex text, is_product_wide boolean, is_featured boolean, custom_description text, display_order integer)
  LANGUAGE sql
@@ -2927,10 +28299,7 @@ AS $function$
       AND (p.is_active = TRUE OR pv.is_active = TRUE)
     ORDER BY vcd.is_featured DESC, vcd.display_order, p.name, pv.color_name
     LIMIT p_limit;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.get_variants_for_commemorative_date(p_slug text, p_limit integer DEFAULT 100, p_include_all_colors boolean DEFAULT false)
  RETURNS TABLE(product_id uuid, product_name text, product_sku text, variant_id uuid, variant_name text, variant_sku text, color_name text, color_hex text, color_group_id uuid, color_group_name text, is_primary_color boolean, price_1 numeric, image_url text)
  LANGUAGE sql
@@ -2994,10 +28363,7 @@ AS $function$
     FROM variants_data vd
     ORDER BY vd.variant_id, vd.is_primary_color DESC
     LIMIT p_limit;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.get_voice_command_stats(_user_id uuid DEFAULT NULL::uuid, _days integer DEFAULT 30)
  RETURNS jsonb
  LANGUAGE sql
@@ -3011,10 +28377,7 @@ AS $function$
   WHERE created_at > now() - (_days || ' days')::interval
     AND (_user_id IS NULL OR user_id = _user_id)
     AND (_user_id IS NOT NULL OR user_id = auth.uid() OR public.is_admin(auth.uid()));
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.has_active_step_up_challenge(_action step_up_action DEFAULT NULL::step_up_action)
  RETURNS boolean
  LANGUAGE sql
@@ -3024,10 +28387,7 @@ AS $function$
   SELECT EXISTS(SELECT 1 FROM public.step_up_challenges
     WHERE user_id = auth.uid() AND consumed = false AND expires_at > now()
       AND (_action IS NULL OR action = _action));
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.has_permission(_user_id uuid, _code text)
  RETURNS boolean
  LANGUAGE sql
@@ -3041,10 +28401,7 @@ AS $function$
     WHERE ur.user_id = _user_id
       AND rp.permission_code = _code
   );
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.is_order_owner(p_order_id uuid)
  RETURNS boolean
  LANGUAGE sql
@@ -3055,10 +28412,31 @@ AS $function$
     SELECT 1 FROM public.orders o
     WHERE o.id = p_order_id AND o.created_by = (SELECT auth.uid())
   );
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
+CREATE OR REPLACE FUNCTION public.kg_to_g(p_kg numeric)
+ RETURNS numeric
+ LANGUAGE sql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+    SELECT normalize_unit(p_kg, 'kg', 'g');
+$function$;
+CREATE OR REPLACE FUNCTION public.l_to_ml(p_l numeric)
+ RETURNS numeric
+ LANGUAGE sql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+    SELECT normalize_unit(p_l, 'l', 'ml');
+$function$;
+CREATE OR REPLACE FUNCTION public.m_to_cm(p_m numeric)
+ RETURNS numeric
+ LANGUAGE sql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+    SELECT normalize_unit(p_m, 'm', 'cm');
+$function$;
 CREATE OR REPLACE FUNCTION public.magic_up_get_brand_kit(_kit_id uuid)
  RETURNS jsonb
  LANGUAGE sql
@@ -3066,10 +28444,7 @@ CREATE OR REPLACE FUNCTION public.magic_up_get_brand_kit(_kit_id uuid)
 AS $function$
   SELECT to_jsonb(k) FROM public.magic_up_brand_kits k
   WHERE id = _kit_id AND user_id = auth.uid();
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.magic_up_get_campaign(_campaign_id uuid)
  RETURNS jsonb
  LANGUAGE sql
@@ -3077,10 +28452,7 @@ CREATE OR REPLACE FUNCTION public.magic_up_get_campaign(_campaign_id uuid)
 AS $function$
   SELECT to_jsonb(c) FROM public.magic_up_campaigns c
   WHERE id = _campaign_id AND user_id = auth.uid();
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.magic_up_get_dashboard()
  RETURNS jsonb
  LANGUAGE sql
@@ -3092,67 +28464,73 @@ AS $function$
     'generations', (SELECT count(*) FROM public.magic_up_generations WHERE user_id = auth.uid()),
     'reactions', (SELECT count(*) FROM public.magic_up_reactions WHERE user_id = auth.uid())
   );
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.mcp_record_access_violation(_key_id uuid, _reason text, _details jsonb DEFAULT '{}'::jsonb)
  RETURNS uuid
  LANGUAGE sql
  SET search_path TO 'public'
-AS $function$ SELECT public.mcp_audit_violation(_key_id, _reason, _details); $function$
-;
-
--- ----------------------------------------------------------------------------
+AS $function$ SELECT public.mcp_audit_violation(_key_id, _reason, _details); $function$;
+CREATE OR REPLACE FUNCTION public.ml_to_l(p_ml numeric)
+ RETURNS numeric
+ LANGUAGE sql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+    SELECT normalize_unit(p_ml, 'ml', 'l');
+$function$;
+CREATE OR REPLACE FUNCTION public.mm_to_cm(p_mm numeric)
+ RETURNS numeric
+ LANGUAGE sql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+    SELECT normalize_unit(p_mm, 'mm', 'cm');
+$function$;
 CREATE OR REPLACE FUNCTION public.next_in_step_up_queue()
  RETURNS jsonb
  LANGUAGE sql
  STABLE
  SET search_path TO 'public'
-AS $function$ SELECT '{}'::jsonb; $function$
-;
-
--- ----------------------------------------------------------------------------
+AS $function$ SELECT '{}'::jsonb; $function$;
+CREATE OR REPLACE FUNCTION public.org_has_any_members(_org_id uuid)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+      SELECT EXISTS(SELECT 1 FROM public.organization_members WHERE organization_id = _org_id)
+    $function$;
 CREATE OR REPLACE FUNCTION public.ownership_audit(_triggered_by text DEFAULT 'manual'::text)
  RETURNS uuid
  LANGUAGE sql
  SET search_path TO 'public'
-AS $function$ SELECT public.audit_ownership_orphans(_triggered_by); $function$
-;
-
--- ----------------------------------------------------------------------------
+AS $function$ SELECT public.audit_ownership_orphans(_triggered_by); $function$;
+CREATE OR REPLACE FUNCTION public.ownership_check_orphans()
+ RETURNS jsonb
+ LANGUAGE sql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$ SELECT (SELECT details FROM public.ownership_audit_reports ORDER BY generated_at DESC LIMIT 1); $function$;
 CREATE OR REPLACE FUNCTION public.process_step_up_queue()
  RETURNS integer
  LANGUAGE sql
  SET search_path TO 'public'
-AS $function$ SELECT 0; $function$
-;
-
--- ----------------------------------------------------------------------------
+AS $function$ SELECT 0; $function$;
 CREATE OR REPLACE FUNCTION public.purge_expired_step_up_artifacts()
  RETURNS integer
  LANGUAGE sql
  SET search_path TO 'public'
-AS $function$ SELECT public.cleanup_orphan_step_up_artifacts() + public.cleanup_expired_step_up_tokens(); $function$
-;
-
--- ----------------------------------------------------------------------------
+AS $function$ SELECT public.cleanup_orphan_step_up_artifacts() + public.cleanup_expired_step_up_tokens(); $function$;
 CREATE OR REPLACE FUNCTION public.purge_old_login_attempts()
  RETURNS integer
  LANGUAGE sql
  SET search_path TO 'public'
-AS $function$ SELECT public.cleanup_old_login_attempts(); $function$
-;
-
--- ----------------------------------------------------------------------------
+AS $function$ SELECT public.cleanup_old_login_attempts(); $function$;
 CREATE OR REPLACE FUNCTION public.purge_old_rate_limits()
  RETURNS integer
  LANGUAGE sql
  SET search_path TO 'public'
-AS $function$ SELECT public.clean_old_rate_limits(); $function$
-;
-
--- ----------------------------------------------------------------------------
+AS $function$ SELECT public.clean_old_rate_limits(); $function$;
 CREATE OR REPLACE FUNCTION public.record_auth_attempt(_email text, _ip text, _success boolean, _reason text DEFAULT NULL::text, _ua text DEFAULT NULL::text)
  RETURNS void
  LANGUAGE sql
@@ -3160,43 +28538,28 @@ CREATE OR REPLACE FUNCTION public.record_auth_attempt(_email text, _ip text, _su
 AS $function$
     INSERT INTO public.auth_login_attempts (email, ip_address, success, failure_reason, user_agent)
     VALUES (_email, _ip, _success, _reason, _ua);
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.refresh_full_scope_grants_view()
  RETURNS void
  LANGUAGE sql
  SET search_path TO 'public'
-AS $function$ SELECT 1; $function$
-;
-
--- ----------------------------------------------------------------------------
+AS $function$ SELECT 1; $function$;
 CREATE OR REPLACE FUNCTION public.rls_matrix_export()
  RETURNS jsonb
  LANGUAGE sql
  STABLE
  SET search_path TO 'public'
-AS $function$ SELECT public.audit_rls_matrix(); $function$
-;
-
--- ----------------------------------------------------------------------------
+AS $function$ SELECT public.audit_rls_matrix(); $function$;
 CREATE OR REPLACE FUNCTION public.save_step_up_audit(_event_type text, _action step_up_action DEFAULT NULL::step_up_action, _metadata jsonb DEFAULT '{}'::jsonb)
  RETURNS uuid
  LANGUAGE sql
  SET search_path TO 'public'
-AS $function$ SELECT public.log_step_up_audit(_event_type, _action, _metadata); $function$
-;
-
--- ----------------------------------------------------------------------------
+AS $function$ SELECT public.log_step_up_audit(_event_type, _action, _metadata); $function$;
 CREATE OR REPLACE FUNCTION public.step_up_challenge_create(_action step_up_action, _target_ref text DEFAULT NULL::text)
  RETURNS uuid
  LANGUAGE sql
  SET search_path TO 'public'
-AS $function$ SELECT public.generate_step_up_challenge(_action, _target_ref); $function$
-;
-
--- ----------------------------------------------------------------------------
+AS $function$ SELECT public.generate_step_up_challenge(_action, _target_ref); $function$;
 CREATE OR REPLACE FUNCTION public.step_up_user_settings_get(_user_id uuid DEFAULT NULL::uuid)
  RETURNS jsonb
  LANGUAGE sql
@@ -3206,26 +28569,17 @@ AS $function$
   SELECT COALESCE(value, '{}'::jsonb) FROM public.system_settings
   WHERE key = 'step_up_settings_' || COALESCE(_user_id, auth.uid())::text
   LIMIT 1;
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.track_voice_command(_transcript text)
  RETURNS uuid
  LANGUAGE sql
  SET search_path TO 'public'
-AS $function$ SELECT public.log_voice_command(_transcript); $function$
-;
-
--- ----------------------------------------------------------------------------
+AS $function$ SELECT public.log_voice_command(_transcript); $function$;
 CREATE OR REPLACE FUNCTION public.update_step_up_user_settings(_settings jsonb, _user_id uuid DEFAULT NULL::uuid)
  RETURNS void
  LANGUAGE sql
  SET search_path TO 'public'
-AS $function$ SELECT public.step_up_user_settings_set(_settings, _user_id); $function$
-;
-
--- ----------------------------------------------------------------------------
+AS $function$ SELECT public.step_up_user_settings_set(_settings, _user_id); $function$;
 CREATE OR REPLACE FUNCTION public.user_belongs_to_org(org_id uuid)
  RETURNS boolean
  LANGUAGE sql
@@ -3238,10 +28592,7 @@ AS $function$
     WHERE uo.user_id = auth.uid()
     AND uo.organization_id = org_id
   );
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.user_can_skip_step_up(_user_id uuid DEFAULT NULL::uuid)
  RETURNS boolean
  LANGUAGE sql
@@ -3252,15 +28603,10 @@ AS $function$
     (SELECT (value->>'skip_enabled')::boolean FROM public.system_settings
       WHERE key = 'step_up_settings_' || COALESCE(_user_id, auth.uid())::text), 
     false);
-$function$
-;
-
--- ----------------------------------------------------------------------------
+$function$;
 CREATE OR REPLACE FUNCTION public.verify_user_step_up_required(_action step_up_action, _user_id uuid DEFAULT NULL::uuid)
  RETURNS boolean
  LANGUAGE sql
  STABLE
  SET search_path TO 'public'
-AS $function$ SELECT NOT public.user_can_skip_step_up(_user_id); $function$
-;
-
+AS $function$ SELECT NOT public.user_can_skip_step_up(_user_id); $function$;
