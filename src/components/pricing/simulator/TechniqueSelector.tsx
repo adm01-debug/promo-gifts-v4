@@ -78,8 +78,13 @@ export function TechniqueSelector({
 
   const handleTechniqueSelect = (
     tech: TechniqueData,
+<<<<<<< HEAD
+    loc: LocationData = selectedLocation!,
+    comp: ComponentData = selectedComponent!,
+=======
     loc: LocationData | null = selectedLocation,
     comp: ComponentData | null = selectedComponent,
+>>>>>>> origin/main
   ) => {
     if (!loc || !comp) return;
 

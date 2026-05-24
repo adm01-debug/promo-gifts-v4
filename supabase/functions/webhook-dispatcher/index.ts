@@ -130,10 +130,12 @@ Deno.serve(async (req) => {
           status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      const hookContractVersion: string = (hook as { contract_version?: string }).contract_version ?? "v1";
       const bodyJson = JSON.stringify({
         event,
         timestamp: new Date().toISOString(),
         test: true,
+        version: hookContractVersion,
         data: payload ?? null,
       });
       const headers: Record<string, string> = {
@@ -142,6 +144,7 @@ Deno.serve(async (req) => {
         "X-Event": event,
         "X-Webhook-Id": hook.id,
         "X-Test-Mode": "1",
+        "X-Contract-Version": hookContractVersion,
       };
       const secret = hook.secret_ref ? Deno.env.get(hook.secret_ref) : null;
       if (secret) headers["X-Signature-256"] = "sha256=" + await hmacSign(bodyJson, secret);
@@ -207,15 +210,25 @@ Deno.serve(async (req) => {
       });
     }
 
-    const bodyJson = JSON.stringify({
+    // bodyJson is rebuilt per-hook below so we can stamp the hook's
+    // configured `contract_version` into the payload + signature.
+    const baseEnvelope = {
       event,
       timestamp: new Date().toISOString(),
       data: payload ?? null,
-    });
-    const phash = await payloadHash(bodyJson);
+    };
     const results: Array<Record<string, unknown>> = [];
 
     for (const hook of hooks) {
+      // Per-hook contract version: each outbound endpoint can be pinned to v1
+      // (legacy) or v2 (new schema) — column lands in the same migration that
+      // ships parseVersionedBody in product-webhook. Defaults to v1.
+      const hookContractVersion: string = (hook as { contract_version?: string }).contract_version ?? "v1";
+      const bodyJson = JSON.stringify({
+        ...baseEnvelope,
+        version: hookContractVersion,
+      });
+      const phash = await payloadHash(bodyJson);
       const policy = hook.retry_policy ?? { max_attempts: 3, backoff_seconds: [5, 30, 120] };
       const max = Math.max(1, Math.min(5, Number(policy.max_attempts ?? 3)));
       const backoff = Array.isArray(policy.backoff_seconds) ? policy.backoff_seconds : [5, 30, 120];
@@ -231,6 +244,7 @@ Deno.serve(async (req) => {
             "X-Event": event,
             "X-Webhook-Id": hook.id,
             "X-Delivery-Attempt": String(attempt),
+            "X-Contract-Version": hookContractVersion,
           };
           const secret = hook.secret_ref ? Deno.env.get(hook.secret_ref) : null;
           if (secret) headers["X-Signature-256"] = "sha256=" + await hmacSign(bodyJson, secret);

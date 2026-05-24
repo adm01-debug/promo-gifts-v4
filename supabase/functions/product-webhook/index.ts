@@ -13,6 +13,11 @@ import type { Database } from '../../../src/integrations/supabase/types.ts';
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const webhookSecret = Deno.env.get('N8N_PRODUCT_WEBHOOK_SECRET');
+const configuredBatchSize = Number(Deno.env.get('PRODUCT_WEBHOOK_BATCH_SIZE') ?? '200');
+const MAX_BATCH_SIZE = 500;
+const BATCH_SIZE = Number.isFinite(configuredBatchSize)
+  ? Math.min(Math.max(Math.trunc(configuredBatchSize), 100), MAX_BATCH_SIZE)
+  : 200;
 const DEFAULT_WEBHOOK_TOLERANCE_SEC = 300;
 const MAX_WEBHOOK_TOLERANCE_SEC = 3600;
 const configuredWebhookToleranceSec = Number(
@@ -47,6 +52,56 @@ const UNAUTHORIZED_BODY = JSON.stringify({
 type ProductPayload =
   | NonNullable<ProductWebhookV1Payload['product']>
   | NonNullable<ProductWebhookV2Payload['product']>;
+
+type NormalizedProduct = {
+  external_id: string | null;
+  sku: string;
+  name: string;
+  description: string | null;
+  price: number;
+  min_quantity: number;
+  category_id: string | null;
+  category_name: string | null;
+  subcategory: string | null;
+  supplier_id: string | null;
+  supplier_name: string | null;
+  stock: number;
+  stock_status: string;
+  is_kit: boolean;
+  is_active: boolean;
+  featured: boolean;
+  new_arrival: boolean;
+  on_sale: boolean;
+  images: string[];
+  video_url: string | null;
+  colors: unknown[];
+  materials: string[];
+  tags: Record<string, unknown>;
+  kit_items: unknown[];
+  variations: unknown[];
+  metadata: Record<string, unknown>;
+  synced_at: string;
+};
+
+type UpsertOutcome = {
+  created: number;
+  updated: number;
+  failed: number;
+  processed: number;
+  errors: string[];
+  db_roundtrips: number;
+  duration_ms: number;
+  chunk_metrics: Array<{
+    chunk: number;
+    received: number;
+    processed: number;
+    duration_ms: number;
+    db_roundtrips: number;
+    created: number;
+    updated: number;
+    failed: number;
+  }>;
+};
 
 function getRequestCorsHeaders(req: Request): Record<string, string> {
   const base = getCorsHeaders(req);
@@ -217,13 +272,14 @@ Deno.serve(async (req) => {
     const products = data.products as ProductPayload[] | undefined;
     const singleProduct = data.product as ProductPayload | undefined;
     const externalIds = data.external_ids as string[] | undefined;
+    const productsReceived = products?.length || (singleProduct ? 1 : 0);
 
     const { data: syncLog, error: logError } = await supabase
       .from('product_sync_logs')
       .insert({
         status: 'processing',
         source: version === '2' ? 'n8n_v2' : 'n8n',
-        products_received: products?.length || (singleProduct ? 1 : 0),
+        products_received: productsReceived,
       })
       .select()
       .single();
@@ -234,11 +290,15 @@ Deno.serve(async (req) => {
 
     const syncLogId = syncLog?.id;
 
-    let outcome: { created: number; updated: number; failed: number; errors: string[] } = {
+    let outcome: UpsertOutcome = {
       created: 0,
       updated: 0,
       failed: 0,
+      processed: 0,
       errors: [],
+      db_roundtrips: 0,
+      duration_ms: 0,
+      chunk_metrics: [],
     };
 
     switch (data.action) {
@@ -246,7 +306,7 @@ Deno.serve(async (req) => {
         if (!singleProduct) {
           throw new Error('Product data is required for upsert action');
         }
-        outcome = await upsertProducts(supabase, [singleProduct]);
+        outcome = await upsertProducts(supabase, [singleProduct], BATCH_SIZE);
         break;
       }
 
@@ -255,7 +315,7 @@ Deno.serve(async (req) => {
         if (!products || products.length === 0) {
           throw new Error('Products array is required for batch_upsert/sync action');
         }
-        outcome = await upsertProducts(supabase, products);
+        outcome = await upsertProducts(supabase, products, BATCH_SIZE);
         break;
       }
 
@@ -268,7 +328,7 @@ Deno.serve(async (req) => {
           .delete()
           .in('external_id', externalIds);
         if (deleteError) throw deleteError;
-        outcome = { created: 0, updated: 0, failed: 0, errors: [] };
+        outcome = { ...outcome, processed: externalIds.length, db_roundtrips: 1 };
         console.log(`Deleted ${count} products`);
         break;
       }
@@ -285,6 +345,13 @@ Deno.serve(async (req) => {
           products_created: outcome.created,
           products_updated: outcome.updated,
           products_failed: outcome.failed,
+          records_processed: outcome.processed,
+          duration_ms: outcome.duration_ms,
+          payload: {
+            batch_size: BATCH_SIZE,
+            db_roundtrips: outcome.db_roundtrips,
+            chunk_metrics: outcome.chunk_metrics,
+          },
           error_message: outcome.errors.length > 0 ? outcome.errors.join('; ') : null,
           completed_at: new Date().toISOString(),
         })
@@ -297,6 +364,10 @@ Deno.serve(async (req) => {
         created: outcome.created,
         updated: outcome.updated,
         failed: outcome.failed,
+        processed: outcome.processed,
+        duration_ms: outcome.duration_ms,
+        db_roundtrips: outcome.db_roundtrips,
+        chunk_metrics: outcome.chunk_metrics,
         errors: outcome.errors,
         sync_log_id: syncLogId,
       }),
@@ -315,87 +386,184 @@ Deno.serve(async (req) => {
 async function upsertProducts(
   supabase: SupabaseClient<Database>,
   products: ProductPayload[],
-): Promise<{ created: number; updated: number; failed: number; errors: string[] }> {
+  chunkSize: number,
+): Promise<UpsertOutcome> {
+  const startedAt = Date.now();
+  const normalized = products.map(normalizeProduct);
+  const chunks = chunkArray(normalized, chunkSize);
+
   let created = 0;
   let updated = 0;
   let failed = 0;
+  let processed = 0;
+  let db_roundtrips = 0;
   const errors: string[] = [];
+  const chunk_metrics: UpsertOutcome['chunk_metrics'] = [];
 
-  for (const product of products) {
+  for (const [index, chunk] of chunks.entries()) {
+    const chunkStart = Date.now();
+    let chunkRoundtrips = 0;
     try {
-      const stockStatus = calculateStockStatus(product.stock || 0);
+      const externalIds = Array.from(
+        new Set(chunk.map((item) => item.external_id).filter(Boolean)),
+      ) as string[];
+      const skus = Array.from(new Set(chunk.map((item) => item.sku).filter(Boolean)));
 
-      const productData = {
-        external_id: product.external_id || null,
-        sku: product.sku,
-        name: product.name,
-        description: product.description || null,
-        price: product.price || 0,
-        min_quantity: product.min_quantity || 1,
-        category_id: product.category_id == null ? null : String(product.category_id),
-        category_name: product.category_name || null,
-        subcategory: product.subcategory || null,
-        supplier_id: product.supplier_id || null,
-        supplier_name: product.supplier_name || null,
-        stock: product.stock || 0,
-        stock_status: product.stock_status || stockStatus,
-        is_kit: product.is_kit || false,
-        is_active: product.is_active !== false,
-        featured: product.featured || false,
-        new_arrival: product.new_arrival || false,
-        on_sale: product.on_sale || false,
-        images: product.images || [],
-        video_url: product.video_url || null,
-        colors: product.colors || [],
-        materials: product.materials || [],
-        tags: product.tags || {},
-        kit_items: product.kit_items || [],
-        variations: product.variations || [],
-        metadata: product.metadata || {},
-        synced_at: new Date().toISOString(),
-      };
+      let existingRows: Array<{ id: string; external_id: string | null; sku: string | null }> = [];
+      if (externalIds.length > 0 || skus.length > 0) {
+        const filters: string[] = [];
+        if (externalIds.length > 0) filters.push(`external_id.in.(${externalIds.join(',')})`);
+        if (skus.length > 0) filters.push(`sku.in.(${skus.join(',')})`);
 
-      let existingProduct = null;
-      if (product.external_id) {
-        const { data } = await supabase
+        const { data: existingData, error: existingError } = await supabase
           .from('products')
-          .select('id')
-          .eq('external_id', product.external_id)
-          .maybeSingle();
-        existingProduct = data;
-      }
-      if (!existingProduct) {
-        const { data } = await supabase
-          .from('products')
-          .select('id')
-          .eq('sku', product.sku)
-          .maybeSingle();
-        existingProduct = data;
+          .select('id,external_id,sku')
+          .or(filters.join(','));
+        chunkRoundtrips += 1;
+        if (existingError) throw existingError;
+        existingRows = existingData ?? [];
       }
 
-      if (existingProduct) {
-        const { error: updateError } = await supabase
-          .from('products')
-          .update(productData as never)
-          .eq('id', existingProduct.id);
-        if (updateError) throw updateError;
-        updated++;
-        console.log(`Updated product: ${product.sku}`);
-      } else {
-        const { error: insertError } = await supabase.from('products').insert(productData as never);
-        if (insertError) throw insertError;
-        created++;
-        console.log(`Created product: ${product.sku}`);
+      const existingByExternalId = new Map(
+        existingRows
+          .filter((row) => row.external_id)
+          .map((row) => [row.external_id as string, row]),
+      );
+      const existingBySku = new Map(
+        existingRows.filter((row) => row.sku).map((row) => [row.sku as string, row]),
+      );
+
+      let chunkCreated = 0;
+      let chunkUpdated = 0;
+
+      const withExternalId: NormalizedProduct[] = [];
+      const withoutExternalId: NormalizedProduct[] = [];
+
+      for (const item of chunk) {
+        const existing = item.external_id
+          ? (existingByExternalId.get(item.external_id) ?? existingBySku.get(item.sku))
+          : existingBySku.get(item.sku);
+
+        if (existing) {
+          chunkUpdated += 1;
+          if (!item.external_id && existing.external_id) item.external_id = existing.external_id;
+        } else {
+          chunkCreated += 1;
+        }
+
+        if (item.external_id) {
+          withExternalId.push(item);
+        } else {
+          withoutExternalId.push(item);
+        }
       }
+
+      if (withExternalId.length > 0) {
+        const { error: upsertByExternalError } = await supabase
+          .from('products')
+          .upsert(withExternalId as never, { onConflict: 'external_id', ignoreDuplicates: false });
+        chunkRoundtrips += 1;
+        if (upsertByExternalError) throw upsertByExternalError;
+      }
+
+      if (withoutExternalId.length > 0) {
+        const { error: upsertBySkuError } = await supabase
+          .from('products')
+          .upsert(withoutExternalId as never, { onConflict: 'sku', ignoreDuplicates: false });
+        chunkRoundtrips += 1;
+        if (upsertBySkuError) throw upsertBySkuError;
+      }
+
+      created += chunkCreated;
+      updated += chunkUpdated;
+      processed += chunk.length;
+      db_roundtrips += chunkRoundtrips;
+
+      const chunkDuration = Date.now() - chunkStart;
+      chunk_metrics.push({
+        chunk: index + 1,
+        received: chunk.length,
+        processed: chunk.length,
+        duration_ms: chunkDuration,
+        db_roundtrips: chunkRoundtrips,
+        created: chunkCreated,
+        updated: chunkUpdated,
+        failed: 0,
+      });
+
+      console.log(
+        `[product-webhook][chunk ${index + 1}] received=${chunk.length} processed=${chunk.length} duration_ms=${chunkDuration} db_roundtrips=${chunkRoundtrips}`,
+      );
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : 'Unknown error';
-      errors.push(`${product.sku}: ${errMsg}`);
-      failed++;
-      console.error(`Failed to upsert product ${product.sku}:`, err);
+      failed += chunk.length;
+      errors.push(`chunk_${index + 1}: ${errMsg}`);
+      db_roundtrips += chunkRoundtrips;
+      chunk_metrics.push({
+        chunk: index + 1,
+        received: chunk.length,
+        processed: 0,
+        duration_ms: Date.now() - chunkStart,
+        db_roundtrips: chunkRoundtrips,
+        created: 0,
+        updated: 0,
+        failed: chunk.length,
+      });
+      console.error(`[product-webhook][chunk ${index + 1}] failed:`, err);
     }
   }
 
-  return { created, updated, failed, errors };
+  return {
+    created,
+    updated,
+    failed,
+    processed,
+    errors,
+    db_roundtrips,
+    duration_ms: Date.now() - startedAt,
+    chunk_metrics,
+  };
+}
+
+function normalizeProduct(product: ProductPayload): NormalizedProduct {
+  const stockStatus = calculateStockStatus(product.stock || 0);
+  return {
+    external_id: product.external_id || null,
+    sku: product.sku,
+    name: product.name,
+    description: product.description || null,
+    price: product.price || 0,
+    min_quantity: product.min_quantity || 1,
+    category_id: product.category_id == null ? null : String(product.category_id),
+    category_name: product.category_name || null,
+    subcategory: product.subcategory || null,
+    supplier_id: product.supplier_id || null,
+    supplier_name: product.supplier_name || null,
+    stock: product.stock || 0,
+    stock_status: product.stock_status || stockStatus,
+    is_kit: product.is_kit || false,
+    is_active: product.is_active !== false,
+    featured: product.featured || false,
+    new_arrival: product.new_arrival || false,
+    on_sale: product.on_sale || false,
+    images: product.images || [],
+    video_url: product.video_url || null,
+    colors: product.colors || [],
+    materials: product.materials || [],
+    tags: product.tags || {},
+    kit_items: product.kit_items || [],
+    variations: product.variations || [],
+    metadata: (product.metadata || {}) as Record<string, unknown>,
+    synced_at: new Date().toISOString(),
+  };
+}
+
+function chunkArray<T>(items: T[], size: number): T[][] {
+  const chunked: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunked.push(items.slice(i, i + size));
+  }
+  return chunked;
 }
 
 function calculateStockStatus(stock: number): string {

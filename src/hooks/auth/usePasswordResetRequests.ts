@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/ui';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 
 export interface PasswordResetRequest {
   id: string;
@@ -27,9 +28,9 @@ export function usePasswordResetRequests() {
         .order('requested_at', { ascending: false });
 
       if (error) throw error;
-      
+
       setRequests((data as PasswordResetRequest[]) || []);
-      setPendingCount(data?.filter(r => r.status === 'pending').length || 0);
+      setPendingCount(data?.filter((r) => r.status === 'pending').length || 0);
     } catch (error) {
       console.error('Error fetching password reset requests:', error);
     } finally {
@@ -44,12 +45,14 @@ export function usePasswordResetRequests() {
   const approveRequest = async (requestId: string, notes?: string) => {
     try {
       // Buscar a solicitação
-      const request = requests.find(r => r.id === requestId);
+      const request = requests.find((r) => r.id === requestId);
       if (!request) throw new Error('Solicitação não encontrada');
 
       // Atualizar status
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       const { error: updateError } = await supabase
         .from('password_reset_requests')
         .update({
@@ -63,10 +66,9 @@ export function usePasswordResetRequests() {
       if (updateError) throw updateError;
 
       // Enviar email de reset de senha via Supabase Auth
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        request.email,
-        { redirectTo: `${window.location.origin}/reset-password` }
-      );
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(request.email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
 
       if (resetError) throw resetError;
 
@@ -81,7 +83,7 @@ export function usePasswordResetRequests() {
       toast({
         variant: 'destructive',
         title: 'Erro ao aprovar',
-        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        description: sanitizeError(error),
       });
       return false;
     }
@@ -89,8 +91,10 @@ export function usePasswordResetRequests() {
 
   const rejectRequest = async (requestId: string, notes?: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       const { error } = await supabase
         .from('password_reset_requests')
         .update({
@@ -114,7 +118,7 @@ export function usePasswordResetRequests() {
       toast({
         variant: 'destructive',
         title: 'Erro ao rejeitar',
-        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        description: sanitizeError(error),
       });
       return false;
     }
@@ -131,26 +135,26 @@ export function usePasswordResetRequests() {
         .single();
 
       if (existing) {
-        return { 
-          success: true, 
-          message: 'Já existe uma solicitação pendente para este email. Aguarde a aprovação do gestor.' 
+        return {
+          success: true,
+          message:
+            'Já existe uma solicitação pendente para este email. Aguarde a aprovação do gestor.',
         };
       }
 
-      const { error } = await supabase
-        .from('password_reset_requests')
-        .insert({ email });
+      const { error } = await supabase.from('password_reset_requests').insert({ email });
 
       if (error) throw error;
 
-      return { 
-        success: true, 
-        message: 'Solicitação enviada! Um gestor irá analisar e aprovar seu pedido de recuperação de senha.' 
+      return {
+        success: true,
+        message:
+          'Solicitação enviada! Um gestor irá analisar e aprovar seu pedido de recuperação de senha.',
       };
     } catch (error: unknown) {
-      return { 
-        success: false, 
-        message: error instanceof Error ? error.message : 'Erro desconhecido'
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Erro desconhecido',
       };
     }
   };

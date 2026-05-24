@@ -3,10 +3,11 @@
  * Persiste no banco de dados, máx 3 carrinhos simultâneos
  */
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 
 // ============================================
 // TYPES
@@ -61,9 +62,9 @@ export interface CreateCartInput {
   company_logo_url?: string;
 }
 
-export type CartStatus = "novo" | "em_negociacao" | "pronto_orcamento";
+export type CartStatus = 'novo' | 'em_negociacao' | 'pronto_orcamento';
 
-const QUERY_KEY = "seller-carts";
+const QUERY_KEY = 'seller-carts';
 
 // ============================================
 // HOOK
@@ -81,27 +82,30 @@ export function useSellerCarts() {
       if (!userId) return [];
 
       const { data: carts, error: cartsError } = await supabase
-        .from("seller_carts")
-        .select("*")
-        .eq("seller_id", userId)
-        .order("updated_at", { ascending: false });
+        .from('seller_carts')
+        .select('*')
+        .eq('seller_id', userId)
+        .order('updated_at', { ascending: false });
 
       if (cartsError) throw cartsError;
       if (!carts?.length) return [];
 
       const { data: items, error: itemsError } = await supabase
-        .from("seller_cart_items")
-        .select("*")
-        .in("cart_id", carts.map(c => c.id))
-        .order("sort_order", { ascending: true });
+        .from('seller_cart_items')
+        .select('*')
+        .in(
+          'cart_id',
+          carts.map((c) => c.id),
+        )
+        .order('sort_order', { ascending: true });
 
       if (itemsError) throw itemsError;
 
-      return carts.map(cart => ({
+      return carts.map((cart) => ({
         ...cart,
         notes: cart.notes ?? null,
-        status: cart.status ?? "novo",
-        items: (items || []).filter(i => i.cart_id === cart.id),
+        status: cart.status ?? 'novo',
+        items: (items || []).filter((i) => i.cart_id === cart.id),
       }));
     },
     enabled: !!userId,
@@ -111,10 +115,10 @@ export function useSellerCarts() {
   // Create cart
   const createCart = useMutation({
     mutationFn: async (input: CreateCartInput) => {
-      if (!userId) throw new Error("Não autenticado");
+      if (!userId) throw new Error('Não autenticado');
 
       const { data, error } = await supabase
-        .from("seller_carts")
+        .from('seller_carts')
         .insert({
           seller_id: userId,
           company_id: input.company_id,
@@ -126,33 +130,32 @@ export function useSellerCarts() {
         .single();
 
       if (error) {
-        if (error.message?.includes("Limite de 3")) {
-          throw new Error("Você já tem 3 carrinhos ativos. Finalize ou exclua um antes de criar outro.");
+        if (error.message?.includes('Limite de 3')) {
+          throw new Error(
+            'Você já tem 3 carrinhos ativos. Finalize ou exclua um antes de criar outro.',
+          );
         }
         throw error;
       }
-      return { ...data, notes: null, status: "novo", items: [] } as SellerCart;
+      return { ...data, notes: null, status: 'novo', items: [] } as SellerCart;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
     },
     onError: (err: Error) => {
-      toast.error(err.message);
+      toast.error('Operação falhou', { description: sanitizeError(err) });
     },
   });
 
   // Delete cart
   const deleteCart = useMutation({
     mutationFn: async (cartId: string) => {
-      const { error } = await supabase
-        .from("seller_carts")
-        .delete()
-        .eq("id", cartId);
+      const { error } = await supabase.from('seller_carts').delete().eq('id', cartId);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-      toast.success("Carrinho removido");
+      toast.success('Carrinho removido');
     },
   });
 
@@ -160,39 +163,37 @@ export function useSellerCarts() {
   const addItem = useMutation({
     mutationFn: async ({ cartId, item }: { cartId: string; item: AddToCartInput }) => {
       const { data: existing } = await supabase
-        .from("seller_cart_items")
-        .select("id, quantity")
-        .eq("cart_id", cartId)
-        .eq("product_id", item.product_id)
+        .from('seller_cart_items')
+        .select('id, quantity')
+        .eq('cart_id', cartId)
+        .eq('product_id', item.product_id)
         .maybeSingle();
 
       if (existing) {
         const { error } = await supabase
-          .from("seller_cart_items")
+          .from('seller_cart_items')
           .update({ quantity: existing.quantity + (item.quantity || 1) })
-          .eq("id", existing.id);
+          .eq('id', existing.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase
-          .from("seller_cart_items")
-          .insert({
-            cart_id: cartId,
-            product_id: item.product_id,
-            product_name: item.product_name,
-            product_sku: item.product_sku || null,
-            product_image_url: item.product_image_url || null,
-            product_price: item.product_price,
-            quantity: item.quantity || 1,
-            color_name: item.color_name || null,
-            color_hex: item.color_hex || null,
-          });
+        const { error } = await supabase.from('seller_cart_items').insert({
+          cart_id: cartId,
+          product_id: item.product_id,
+          product_name: item.product_name,
+          product_sku: item.product_sku || null,
+          product_image_url: item.product_image_url || null,
+          product_price: item.product_price,
+          quantity: item.quantity || 1,
+          color_name: item.color_name || null,
+          color_hex: item.color_hex || null,
+        });
         if (error) throw error;
       }
 
       await supabase
-        .from("seller_carts")
+        .from('seller_carts')
         .update({ updated_at: new Date().toISOString() })
-        .eq("id", cartId);
+        .eq('id', cartId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
@@ -202,10 +203,7 @@ export function useSellerCarts() {
   // Remove item
   const removeItem = useMutation({
     mutationFn: async (itemId: string) => {
-      const { error } = await supabase
-        .from("seller_cart_items")
-        .delete()
-        .eq("id", itemId);
+      const { error } = await supabase.from('seller_cart_items').delete().eq('id', itemId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -217,9 +215,9 @@ export function useSellerCarts() {
   const updateItemQuantity = useMutation({
     mutationFn: async ({ itemId, quantity }: { itemId: string; quantity: number }) => {
       const { error } = await supabase
-        .from("seller_cart_items")
+        .from('seller_cart_items')
         .update({ quantity })
-        .eq("id", itemId);
+        .eq('id', itemId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -231,9 +229,9 @@ export function useSellerCarts() {
   const updateItemNotes = useMutation({
     mutationFn: async ({ itemId, notes }: { itemId: string; notes: string }) => {
       const { error } = await supabase
-        .from("seller_cart_items")
+        .from('seller_cart_items')
         .update({ notes: notes || null })
-        .eq("id", itemId);
+        .eq('id', itemId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -245,7 +243,7 @@ export function useSellerCarts() {
   const updateItemSortOrder = useMutation({
     mutationFn: async (items: { id: string; sort_order: number }[]) => {
       const promises = items.map(({ id, sort_order }) =>
-        supabase.from("seller_cart_items").update({ sort_order }).eq("id", id)
+        supabase.from('seller_cart_items').update({ sort_order }).eq('id', id),
       );
       await Promise.all(promises);
     },
@@ -258,9 +256,9 @@ export function useSellerCarts() {
   const updateCartNotes = useMutation({
     mutationFn: async ({ cartId, notes }: { cartId: string; notes: string }) => {
       const { error } = await supabase
-        .from("seller_carts")
+        .from('seller_carts')
         .update({ notes: notes || null })
-        .eq("id", cartId);
+        .eq('id', cartId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -271,10 +269,7 @@ export function useSellerCarts() {
   // Update cart status
   const updateCartStatus = useMutation({
     mutationFn: async ({ cartId, status }: { cartId: string; status: CartStatus }) => {
-      const { error } = await supabase
-        .from("seller_carts")
-        .update({ status })
-        .eq("id", cartId);
+      const { error } = await supabase.from('seller_carts').update({ status }).eq('id', cartId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -285,13 +280,13 @@ export function useSellerCarts() {
   // Duplicate cart
   const duplicateCart = useMutation({
     mutationFn: async (sourceCartId: string) => {
-      if (!userId) throw new Error("Não autenticado");
-      const sourceCart = (cartsQuery.data || []).find(c => c.id === sourceCartId);
-      if (!sourceCart) throw new Error("Carrinho não encontrado");
+      if (!userId) throw new Error('Não autenticado');
+      const sourceCart = (cartsQuery.data || []).find((c) => c.id === sourceCartId);
+      if (!sourceCart) throw new Error('Carrinho não encontrado');
 
       // Create new cart
       const { data: newCart, error: cartErr } = await supabase
-        .from("seller_carts")
+        .from('seller_carts')
         .insert({
           seller_id: userId,
           company_id: sourceCart.company_id,
@@ -305,7 +300,7 @@ export function useSellerCarts() {
 
       // Copy items
       if (sourceCart.items.length > 0) {
-        const newItems = sourceCart.items.map(i => ({
+        const newItems = sourceCart.items.map((i) => ({
           cart_id: newCart.id,
           product_id: i.product_id,
           product_name: i.product_name,
@@ -318,7 +313,7 @@ export function useSellerCarts() {
           notes: i.notes,
           sort_order: i.sort_order,
         }));
-        const { error: itemsErr } = await supabase.from("seller_cart_items").insert(newItems);
+        const { error: itemsErr } = await supabase.from('seller_cart_items').insert(newItems);
         if (itemsErr) throw itemsErr;
       }
 
@@ -326,10 +321,10 @@ export function useSellerCarts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-      toast.success("Carrinho duplicado com sucesso");
+      toast.success('Carrinho duplicado com sucesso');
     },
     onError: (err: Error) => {
-      toast.error(err.message);
+      toast.error('Operação falhou', { description: sanitizeError(err) });
     },
   });
 
@@ -337,14 +332,14 @@ export function useSellerCarts() {
   const moveItemToCart = useMutation({
     mutationFn: async ({ itemId, targetCartId }: { itemId: string; targetCartId: string }) => {
       const { error } = await supabase
-        .from("seller_cart_items")
+        .from('seller_cart_items')
         .update({ cart_id: targetCartId })
-        .eq("id", itemId);
+        .eq('id', itemId);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-      toast.success("Item movido para outro carrinho");
+      toast.success('Item movido para outro carrinho');
     },
   });
 
@@ -352,11 +347,11 @@ export function useSellerCarts() {
   const duplicateItemToCart = useMutation({
     mutationFn: async ({ itemId, targetCartId }: { itemId: string; targetCartId: string }) => {
       // Find the item in current carts
-      const allItems = (cartsQuery.data || []).flatMap(c => c.items);
-      const item = allItems.find(i => i.id === itemId);
-      if (!item) throw new Error("Item não encontrado");
+      const allItems = (cartsQuery.data || []).flatMap((c) => c.items);
+      const item = allItems.find((i) => i.id === itemId);
+      if (!item) throw new Error('Item não encontrado');
 
-      const { error } = await supabase.from("seller_cart_items").insert({
+      const { error } = await supabase.from('seller_cart_items').insert({
         cart_id: targetCartId,
         product_id: item.product_id,
         product_name: item.product_name,
@@ -372,7 +367,7 @@ export function useSellerCarts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-      toast.success("Item duplicado para outro carrinho");
+      toast.success('Item duplicado para outro carrinho');
     },
   });
 
@@ -385,8 +380,8 @@ export function useSellerCarts() {
   const restoreItems = useMutation({
     mutationFn: async ({ cartId, items }: { cartId: string; items: AddToCartInput[] }) => {
       if (items.length === 0) return;
-      
-      const itemsToInsert = items.map(item => ({
+
+      const itemsToInsert = items.map((item) => ({
         cart_id: cartId,
         product_id: item.product_id,
         product_name: item.product_name,
@@ -398,13 +393,13 @@ export function useSellerCarts() {
         color_hex: item.color_hex || null,
       }));
 
-      const { error } = await supabase.from("seller_cart_items").insert(itemsToInsert);
+      const { error } = await supabase.from('seller_cart_items').insert(itemsToInsert);
       if (error) throw error;
 
       await supabase
-        .from("seller_carts")
+        .from('seller_carts')
         .update({ updated_at: new Date().toISOString() })
-        .eq("id", cartId);
+        .eq('id', cartId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
@@ -430,10 +425,7 @@ export function useSellerCarts() {
     duplicateItemToCart,
     restoreItems,
     clearCart: async (cartId: string) => {
-      const { error } = await supabase
-        .from("seller_cart_items")
-        .delete()
-        .eq("cart_id", cartId);
+      const { error } = await supabase.from('seller_cart_items').delete().eq('cart_id', cartId);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
     },

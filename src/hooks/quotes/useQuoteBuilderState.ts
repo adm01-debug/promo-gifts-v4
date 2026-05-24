@@ -10,8 +10,8 @@ import {
   useDiscountApproval,
   useQuoteItems,
   useQuotes,
-  useSellerDiscountLimits,
   useQuoteTemplates,
+  useSellerDiscountLimits,
   type QuoteItem,
   type QuoteItemPersonalization,
   type QuoteTemplate,
@@ -31,7 +31,6 @@ import type {
   SelectedContactInfo,
 } from '@/components/quotes/CompanyContactSelector';
 import type { QuoteBuilderStep } from '@/components/quotes/QuoteBuilderStepper';
-import type { PromobrindProduct } from '@/lib/external-db/product-types';
 import {
   createProductFuseOptions,
   dedupeById,

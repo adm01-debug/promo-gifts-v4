@@ -1,9 +1,10 @@
+<<<<<<< HEAD
 /**
  * Domain Layer: Personalização / Gravação
- * 
+ *
  * Regras de negócio puras, sem dependências de React ou side effects.
  * Este módulo é o SSOT para cálculos e validações de personalização.
- * 
+ *
  * ARQUITETURA:
  * ├── types/          - Tipos de domínio
  * ├── calculators/    - Funções de cálculo
@@ -12,7 +13,7 @@
  * ├── transformers/   - Transformação de dados
  * ├── repositories/   - Acesso a dados (BD externo)
  * └── services/       - Orquestração de negócio
- * 
+ *
  * USO:
  * - Hooks devem importar transformadores daqui
  * - Componentes devem usar services para lógica complexa
@@ -20,7 +21,7 @@
  * - Nunca duplicar lógica de transformação nos hooks
  */
 
-export * from "@/pages/advanced-price-search/types";
+export * from './types';
 export * from './calculators';
 export * from './validators';
 export * from './selectors';
@@ -29,15 +30,23 @@ export * from './repositories';
 export * from './services';
 
 // Re-export principais transformadores para facilitar imports
+=======
+// Personalization Library - Main Export
 export {
-  rawToTecnicaUnificada,
-  rawToTabelaPrecoTecnica,
+  fetchTechniquesList,
+  fetchTechniqueById,
+  fetchPriceTables,
+  fetchPriceTablesByTechnique,
+} from './repositories/technique.repository';
+
+>>>>>>> origin/main
+export {
   transformRawToTecnicas,
   transformRawToTabelas,
 } from './transformers';
 
 // Re-export principais repositórios
-export { TechniqueRepository } from './repositories/technique.repository';
+// TechniqueRepository functions available via repositories/index
 export { PriceTableRepository } from './repositories/priceTable.repository';
 
 // Re-export principais serviços

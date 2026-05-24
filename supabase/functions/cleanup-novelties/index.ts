@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
           // Buscar produtos com flag ativo E data de expiração vencida
           const { data: expiredProducts, error: selectError } = await externalDb
             .from('products')
-            .select('id, name, sku')
+            .select('id')
             .eq(flag, true)
             .not(expiresField, 'is', null)
             .lt(expiresField, now)

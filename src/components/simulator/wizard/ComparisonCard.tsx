@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import {
-  Trophy, Zap, Clock, DollarSign, AlertTriangle, Check, ChevronDown,
+  Trophy, Zap, Clock, DollarSign, Check, ChevronDown,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';

@@ -218,6 +218,7 @@ describe("MagicUpResultPanel — hit area dos dots (WCAG 2.5.5)", () => {
     render(<MagicUpResultPanel m={m} />);
 
     const dots = getDots();
+    // eslint-disable-next-line no-restricted-syntax
     dots.forEach((dot) => {
       expect(dot.className).toMatch(/\bw-11\b/);
       expect(dot.className).toMatch(/\bh-11\b/);
@@ -245,6 +246,7 @@ describe("MagicUpResultPanel — Dots: roving tabindex + aria-selected (APG Tabs
       const m = buildStubState({ variationsCount: 3, activeVariation: active });
       const { unmount } = render(<MagicUpResultPanel m={m} />);
       const dots = getDots();
+      // eslint-disable-next-line no-restricted-syntax
       dots.forEach((dot, i) => {
         expect(dot).toHaveAttribute("tabindex", i === active ? "0" : "-1");
       });
@@ -293,6 +295,7 @@ describe("MagicUpResultPanel — Thumbnails: APG Tabs equivalente aos dots", () 
       const m = buildStubState({ variationsCount: 3, activeVariation: active });
       const { unmount } = render(<MagicUpResultPanel m={m} />);
       const thumbs = getThumbs();
+      // eslint-disable-next-line no-restricted-syntax
       thumbs.forEach((thumb, i) => {
         expect(thumb).toHaveAttribute("role", "tab");
         expect(thumb).toHaveAttribute("aria-selected", i === active ? "true" : "false");
@@ -359,6 +362,7 @@ describe("MagicUpResultPanel — Prev/Next: disabled states + focus ring (WCAG 1
     const prev = screen.getByRole("button", { name: "Voltar" });
     const next = screen.getByRole("button", { name: "Avançar" });
 
+    // eslint-disable-next-line no-restricted-syntax
     [prev, next].forEach((btn) => {
       expect(btn).toHaveAttribute("aria-label");
       expect(btn.className).toContain("focus-visible:ring-2");
@@ -415,6 +419,7 @@ describe("MagicUpResultPanel — focus-visible em Tab + persistência após Ente
 
     const dots = getDots();
     expect(dots).toHaveLength(3);
+    // eslint-disable-next-line no-restricted-syntax
     dots.forEach((dot) => {
       expectFocusVisibleClasses(dot);
       expectFocusVisibleOutlineNone(dot);
@@ -427,6 +432,7 @@ describe("MagicUpResultPanel — focus-visible em Tab + persistência após Ente
 
     const thumbs = getThumbs();
     expect(thumbs).toHaveLength(3);
+    // eslint-disable-next-line no-restricted-syntax
     thumbs.forEach((thumb) => {
       expectFocusVisibleClasses(thumb);
       expectFocusVisibleOutlineNone(thumb);
@@ -494,6 +500,7 @@ describe("MagicUpResultPanel — Sincronização cross-grupo entre dots e thumbn
     const dots = getDots();
     const thumbs = getThumbs();
 
+    // eslint-disable-next-line no-restricted-syntax
     [0, 1, 2].forEach((i) => {
       const expectedSelected = i === 1 ? "true" : "false";
       const expectedTabindex = i === 1 ? "0" : "-1";
@@ -543,6 +550,7 @@ describe("MagicUpResultPanel — accessible names e atributos ARIA para screen r
 
     const dots = getDots();
     expect(dots).toHaveLength(3);
+    // eslint-disable-next-line no-restricted-syntax
     dots.forEach((dot, i) => {
       expectAccessibleName(dot, `Selecionar variação ${i + 1}`);
     });
@@ -555,6 +563,7 @@ describe("MagicUpResultPanel — accessible names e atributos ARIA para screen r
 
     const thumbs = getThumbs();
     expect(thumbs).toHaveLength(3);
+    // eslint-disable-next-line no-restricted-syntax
     thumbs.forEach((thumb, i) => {
       expectAccessibleName(thumb, `Abrir miniatura da variação ${i + 1}`);
     });
@@ -563,6 +572,7 @@ describe("MagicUpResultPanel — accessible names e atributos ARIA para screen r
     // Thumbnails devem ter nomes distintos dos dots para evitar duplicação no SR
     const dotNames = getDots().map((d) => d.getAttribute("aria-label"));
     const thumbNames = thumbs.map((t) => t.getAttribute("aria-label"));
+    expect(thumbNames).not.toHaveLength(0);
     thumbNames.forEach((name) => {
       expect(dotNames).not.toContain(name);
     });
@@ -592,7 +602,9 @@ describe("MagicUpResultPanel — accessible names e atributos ARIA para screen r
     expect(getDotsTablist()).toHaveAttribute("role", "tablist");
     expect(getThumbsTablist()).toHaveAttribute("role", "tablist");
 
+    // eslint-disable-next-line no-restricted-syntax
     getDots().forEach((dot) => expect(dot).toHaveAttribute("role", "tab"));
+    // eslint-disable-next-line no-restricted-syntax
     getThumbs().forEach((thumb) => expect(thumb).toHaveAttribute("role", "tab"));
   });
 
@@ -1015,9 +1027,11 @@ describe("MagicUpResultPanel — navegação por setas nos dots e thumbnails", (
     const m = buildStubState({ variationsCount: 3, activeVariation: 0 });
     render(<MagicUpResultPanel m={m} />);
     const expected = "ArrowLeft ArrowRight ArrowUp ArrowDown Home End";
+    // eslint-disable-next-line no-restricted-syntax
     getDots().forEach((dot) => {
       expect(dot).toHaveAttribute("aria-keyshortcuts", expected);
     });
+    // eslint-disable-next-line no-restricted-syntax
     getThumbs().forEach((thumb) => {
       expect(thumb).toHaveAttribute("aria-keyshortcuts", expected);
     });
@@ -1218,6 +1232,7 @@ describe("MagicUpResultPanel — retenção de foco em click no dot", () => {
   it("Click em dot NÃO perde foco para document.body em todas as posições", () => {
     const m = buildStubState({ variationsCount: 3, activeVariation: 0 });
     render(<MagicUpResultPanel m={m} />);
+    // eslint-disable-next-line no-restricted-syntax
     [0, 1, 2].forEach((i) => {
       const dot = getDots()[i];
       clickAndCheckFocus(dot);
@@ -1233,6 +1248,8 @@ describe("MagicUpResultPanel — atributos ARIA dinâmicos refletem variação a
   beforeEach(() => vi.clearAllMocks());
 
   function expectAriaSelectedState(elements: HTMLElement[], activeIndex: number) {
+    expect(elements).not.toHaveLength(0);
+    // eslint-disable-next-line no-restricted-syntax
     elements.forEach((el, i) => {
       const expected = i === activeIndex ? "true" : "false";
       expect(el.getAttribute("aria-selected")).toBe(expected);
@@ -1240,6 +1257,8 @@ describe("MagicUpResultPanel — atributos ARIA dinâmicos refletem variação a
   }
 
   function expectTabIndexState(elements: HTMLElement[], activeIndex: number) {
+    expect(elements).not.toHaveLength(0);
+    // eslint-disable-next-line no-restricted-syntax
     elements.forEach((el, i) => {
       expect(el.tabIndex).toBe(i === activeIndex ? 0 : -1);
     });
@@ -1443,6 +1462,7 @@ describe("MagicUpResultPanel — hit area 44×44 responsiva (WCAG 2.5.5 AAA, 2.5
   it("cada dot tem classes w-11 e h-11 (44×44 base)", () => {
     const m = buildStubState({ variationsCount: 3 });
     render(<MagicUpResultPanel m={m} />);
+    // eslint-disable-next-line no-restricted-syntax
     getDots().forEach((dot) => {
       expect(dot.className).toMatch(/\bw-11\b/);
       expect(dot.className).toMatch(/\bh-11\b/);
@@ -1452,6 +1472,7 @@ describe("MagicUpResultPanel — hit area 44×44 responsiva (WCAG 2.5.5 AAA, 2.5
   it("cada dot tem min-w-11 e min-h-11 (defesa contra colapso flex)", () => {
     const m = buildStubState({ variationsCount: 3 });
     render(<MagicUpResultPanel m={m} />);
+    // eslint-disable-next-line no-restricted-syntax
     getDots().forEach((dot) => {
       expect(dot.className).toMatch(/\bmin-w-11\b/);
       expect(dot.className).toMatch(/\bmin-h-11\b/);
@@ -1461,6 +1482,7 @@ describe("MagicUpResultPanel — hit area 44×44 responsiva (WCAG 2.5.5 AAA, 2.5
   it("cada dot tem margens negativas -mx-[18px] e -my-[18px] (visual 8px sem alterar)", () => {
     const m = buildStubState({ variationsCount: 3 });
     render(<MagicUpResultPanel m={m} />);
+    // eslint-disable-next-line no-restricted-syntax
     getDots().forEach((dot) => {
       expect(dot.className).toContain("-mx-[18px]");
       expect(dot.className).toContain("-my-[18px]");
@@ -1486,6 +1508,7 @@ describe("MagicUpResultPanel — hit area 44×44 responsiva (WCAG 2.5.5 AAA, 2.5
     render(<MagicUpResultPanel m={m} />);
     // qualquer prefixo de breakpoint que reduza w/h/min-w/min-h para <11 é proibido
     const shrinkRegex = /\b(sm|md|lg|xl|2xl|max-sm|max-md|max-lg):(w|h|min-w|min-h)-(0|0\.5|1|1\.5|2|2\.5|3|3\.5|4|5|6|7|8|9|10)\b/;
+    // eslint-disable-next-line no-restricted-syntax
     getDots().forEach((dot) => {
       expect(dot.className).not.toMatch(shrinkRegex);
     });
@@ -1496,6 +1519,7 @@ describe("MagicUpResultPanel — hit area 44×44 responsiva (WCAG 2.5.5 AAA, 2.5
     render(<MagicUpResultPanel m={m} />);
     const dots = getDots();
     expect(dots).toHaveLength(5);
+    // eslint-disable-next-line no-restricted-syntax
     dots.forEach((dot) => {
       expect(dot.className).toMatch(/\bw-11\b/);
       expect(dot.className).toMatch(/\bh-11\b/);
@@ -1536,6 +1560,8 @@ describe("MagicUpResultPanel — foco e roving após click em dot/thumbnail inat
   }
 
   function expectRovingState(elements: HTMLElement[], activeIndex: number) {
+    expect(elements).not.toHaveLength(0);
+    // eslint-disable-next-line no-restricted-syntax
     elements.forEach((el, i) => {
       expect(el.tabIndex).toBe(i === activeIndex ? 0 : -1);
       expect(el.getAttribute("aria-selected")).toBe(i === activeIndex ? "true" : "false");
@@ -1740,6 +1766,7 @@ describe("MagicUpResultPanel — identidade acessível e single tab stop", () =>
 
     const dots = getDots();
     expect(dots).toHaveLength(4);
+    // eslint-disable-next-line no-restricted-syntax
     dots.forEach((dot, i) => {
       expect(dot).toHaveAttribute("role", "tab");
       expectAriaLabel(dot, `Selecionar variação ${i + 1}`);
@@ -1752,6 +1779,7 @@ describe("MagicUpResultPanel — identidade acessível e single tab stop", () =>
 
     const thumbs = getThumbs();
     expect(thumbs).toHaveLength(4);
+    // eslint-disable-next-line no-restricted-syntax
     thumbs.forEach((thumb, i) => {
       expect(thumb).toHaveAttribute("role", "tab");
       expectAriaLabel(thumb, new RegExp(`varia[cç][aã]o\\s+${i + 1}\\b`, "i"));
@@ -1778,6 +1806,8 @@ describe("MagicUpResultPanel — identidade acessível e single tab stop", () =>
     render(<MagicUpResultPanel m={m} />);
 
     const ids = getDots().map((d) => d.getAttribute("aria-describedby"));
+    expect(ids).not.toHaveLength(0);
+    // eslint-disable-next-line no-restricted-syntax
     ids.forEach((id) => expect(id).toMatch(/^magic-up-dot-tooltip-\d+$/));
     expect(new Set(ids).size).toBe(ids.length);
   });
@@ -1853,9 +1883,11 @@ describe("MagicUpResultPanel — identidade acessível e single tab stop", () =>
     const m = buildStubState({ variationsCount: 4, activeVariation: 2 });
     render(<MagicUpResultPanel m={m} />);
 
+    // eslint-disable-next-line no-restricted-syntax
     getDots().forEach((dot, i) => {
       if (i !== 2) expect(dot.tabIndex).toBe(-1);
     });
+    // eslint-disable-next-line no-restricted-syntax
     getThumbs().forEach((thumb, i) => {
       if (i !== 2) expect(thumb.tabIndex).toBe(-1);
     });
@@ -2038,6 +2070,8 @@ describe("MagicUpResultPanel — Enter/Space não wrap entre extremos (dot[last]
       .filter((entry) => entry.value === "0")
       .map((entry) => entry.i);
     expect(tabbable).toEqual([expectedIndex]);
+    expect(elements).not.toHaveLength(0);
+    // eslint-disable-next-line no-restricted-syntax
     elements.forEach((el, i) => {
       expect(el.getAttribute("tabindex")).toBe(i === expectedIndex ? "0" : "-1");
     });
@@ -2082,6 +2116,8 @@ describe("MagicUpResultPanel — Enter/Space não wrap entre extremos (dot[last]
       expect(m.setActiveVariation).not.toHaveBeenCalledWith(0);
       // Apenas chamadas com `last` são aceitas
       const calls = (m.setActiveVariation as ReturnType<typeof vi.fn>).mock.calls;
+      expect(calls).not.toHaveLength(0);
+      // eslint-disable-next-line no-restricted-syntax
       calls.forEach(([idx]) => expect(idx).toBe(last));
 
       rerenderWithActive(rerender, m, last);
@@ -2120,6 +2156,8 @@ describe("MagicUpResultPanel — Enter/Space não wrap entre extremos (dot[last]
 
       expect(m.setActiveVariation).not.toHaveBeenCalledWith(last);
       const calls = (m.setActiveVariation as ReturnType<typeof vi.fn>).mock.calls;
+      expect(calls).not.toHaveLength(0);
+      // eslint-disable-next-line no-restricted-syntax
       calls.forEach(([idx]) => expect(idx).toBe(0));
 
       rerenderWithActive(rerender, m, 0);
@@ -2154,6 +2192,8 @@ describe("MagicUpResultPanel — Enter/Space não wrap entre extremos (dot[last]
 
       expect(m.setActiveVariation).not.toHaveBeenCalledWith(0);
       const calls = (m.setActiveVariation as ReturnType<typeof vi.fn>).mock.calls;
+      expect(calls).not.toHaveLength(0);
+      // eslint-disable-next-line no-restricted-syntax
       calls.forEach(([idx]) => expect(idx).toBe(last));
 
       rerenderWithActive(rerender, m, last);
@@ -2182,6 +2222,8 @@ describe("MagicUpResultPanel — Enter/Space não wrap entre extremos (dot[last]
 
       expect(m.setActiveVariation).not.toHaveBeenCalledWith(last);
       const calls = (m.setActiveVariation as ReturnType<typeof vi.fn>).mock.calls;
+      expect(calls).not.toHaveLength(0);
+      // eslint-disable-next-line no-restricted-syntax
       calls.forEach(([idx]) => expect(idx).toBe(0));
 
       rerenderWithActive(rerender, m, 0);
@@ -2221,6 +2263,8 @@ describe("MagicUpResultPanel — Enter/Space não wrap entre extremos (dot[last]
 
     // Em nenhum momento setActiveVariation foi chamado com índice intermediário fora dos extremos
     const calls = (m.setActiveVariation as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls).not.toHaveLength(0);
+    // eslint-disable-next-line no-restricted-syntax
     calls.forEach(([idx]) => {
       expect([0, last]).toContain(idx);
     });
@@ -2305,9 +2349,11 @@ describe("MagicUpResultPanel — Tab no fim do painel sai sem ciclar de volta ao
     // qualquer dot/thumb que NÃO seja o ativo
     const prev = screen.getByRole("button", { name: /voltar/i });
     expect(document.activeElement).not.toBe(prev);
+    // eslint-disable-next-line no-restricted-syntax
     getDots().forEach((d, i) => {
       if (i !== m.activeVariation) expect(document.activeElement).not.toBe(d);
     });
+    // eslint-disable-next-line no-restricted-syntax
     getThumbs().forEach((t, i) => {
       if (i !== m.activeVariation) expect(document.activeElement).not.toBe(t);
     });
@@ -2336,9 +2382,11 @@ describe("MagicUpResultPanel — Tab no fim do painel sai sem ciclar de volta ao
     expect(document.activeElement).toBe(screen.getByTestId("after-panel"));
 
     // Roving tabindex: nenhum thumbnail/dot inativo entrou na ordem de Tab
+    // eslint-disable-next-line no-restricted-syntax
     getThumbs().forEach((t, i) => {
       if (i !== last) expect(document.activeElement).not.toBe(t);
     });
+    // eslint-disable-next-line no-restricted-syntax
     getDots().forEach((d, i) => {
       if (i !== last) expect(document.activeElement).not.toBe(d);
     });
@@ -2414,6 +2462,8 @@ describe("MagicUpResultPanel — Tab no fim do painel sai sem ciclar de volta ao
     const observedIndices = expectedSubset.map((el) => order.indexOf(el));
 
     // Todos presentes
+    expect(observedIndices).not.toHaveLength(0);
+    // eslint-disable-next-line no-restricted-syntax
     observedIndices.forEach((idx, i) => {
       expect(idx, `${expectedSubset[i].tagName}#${i} ausente da Tab order`).toBeGreaterThanOrEqual(0);
     });
@@ -2459,6 +2509,8 @@ describe("MagicUpResultPanel — Enter/Space no item ativo: foco e estado preser
     activeIndex: number
   ) {
     const calls = setter.mock.calls;
+    expect(calls).not.toHaveLength(0);
+    // eslint-disable-next-line no-restricted-syntax
     calls.forEach(([idx], n) => {
       expect(idx, `chamada #${n} deve ser idempotente (=${activeIndex})`).toBe(activeIndex);
     });
@@ -2493,6 +2545,7 @@ describe("MagicUpResultPanel — Enter/Space no item ativo: foco e estado preser
       expect(dotAfter.getAttribute("tabindex")).toBe("0");
 
       // Outros dots intocados
+      // eslint-disable-next-line no-restricted-syntax
       getDots().forEach((d, i) => {
         if (i !== activeIdx) {
           expect(d.getAttribute("aria-selected")).toBe("false");
@@ -2500,6 +2553,7 @@ describe("MagicUpResultPanel — Enter/Space no item ativo: foco e estado preser
         }
       });
       // Grupo paralelo (thumbs) sincronizado, sem oscilar
+      // eslint-disable-next-line no-restricted-syntax
       getThumbs().forEach((t, i) => {
         expect(t.getAttribute("aria-selected")).toBe(i === activeIdx ? "true" : "false");
         expect(t.getAttribute("tabindex")).toBe(i === activeIdx ? "0" : "-1");
@@ -2554,12 +2608,14 @@ describe("MagicUpResultPanel — Enter/Space no item ativo: foco e estado preser
       expect(thumbAfter.getAttribute("aria-selected")).toBe("true");
       expect(thumbAfter.getAttribute("tabindex")).toBe("0");
 
+      // eslint-disable-next-line no-restricted-syntax
       getThumbs().forEach((t, i) => {
         if (i !== activeIdx) {
           expect(t.getAttribute("aria-selected")).toBe("false");
           expect(t.getAttribute("tabindex")).toBe("-1");
         }
       });
+      // eslint-disable-next-line no-restricted-syntax
       getDots().forEach((d, i) => {
         expect(d.getAttribute("aria-selected")).toBe(i === activeIdx ? "true" : "false");
       });
@@ -2718,6 +2774,7 @@ describe("MagicUpResultPanel — Onda 5: prev/next disabled styling consistente 
     expect(btn.getAttribute("aria-label"), `${label}: aria-label presente`).toBeTruthy();
 
     // 4. Classes disabled token-on-token presentes
+    // eslint-disable-next-line no-restricted-syntax
     REQUIRED_DISABLED_CLASSES.forEach((cls) => {
       expect(btn.className, `${label}: deve conter ${cls}`).toContain(cls);
     });
@@ -2728,6 +2785,7 @@ describe("MagicUpResultPanel — Onda 5: prev/next disabled styling consistente 
     );
 
     // 6. Bloco focus-visible mantido (não desaparece quando disabled)
+    // eslint-disable-next-line no-restricted-syntax
     REQUIRED_FOCUS_VISIBLE_CLASSES.forEach((cls) => {
       expect(btn.className, `${label}: deve manter ${cls} mesmo desabilitado`).toContain(cls);
     });
@@ -2748,6 +2806,7 @@ describe("MagicUpResultPanel — Onda 5: prev/next disabled styling consistente 
     expect(btn.getAttribute("aria-label"), `${label}: aria-label presente`).toBeTruthy();
 
     // Bloco focus-visible obrigatório
+    // eslint-disable-next-line no-restricted-syntax
     REQUIRED_FOCUS_VISIBLE_CLASSES.forEach((cls) => {
       expect(btn.className, `${label}: deve conter ${cls}`).toContain(cls);
     });
@@ -2857,6 +2916,7 @@ describe("MagicUpResultPanel — Onda 5: prev/next disabled styling consistente 
     const nextLast = screen.getByRole("button", { name: "Avançar" }) as HTMLButtonElement;
     const nextLastDisabled = disabledClassSet(nextLast);
 
+    // eslint-disable-next-line no-restricted-syntax
     REQUIRED_DISABLED_CLASSES.forEach((cls) => {
       expect(prev0Disabled.has(cls), `prev@0 contém ${cls}`).toBe(true);
       expect(nextLastDisabled.has(cls), `next@last contém ${cls}`).toBe(true);
@@ -3127,6 +3187,7 @@ describe("MagicUpResultPanel — Onda 5: próximo Tab target após troca de vari
       const thumbs = getThumbs();
 
       expect(order).toContain(thumbs[target]);
+      // eslint-disable-next-line no-restricted-syntax
       thumbs.forEach((t, i) => {
         if (i !== target) expect(order).not.toContain(t);
       });
@@ -3162,6 +3223,7 @@ describe("MagicUpResultPanel — Onda 5: próximo Tab target após troca de vari
       const dots = getDots();
 
       expect(order).toContain(dots[target]);
+      // eslint-disable-next-line no-restricted-syntax
       dots.forEach((d, i) => {
         if (i !== target) expect(order).not.toContain(d);
       });
@@ -3295,6 +3357,7 @@ describe("MagicUpResultPanel — Onda 5: foco NUNCA migra entre dot ↔ thumb", 
       expect(document.activeElement).toBe(dotAfter);
       expect(document.activeElement).not.toBe(thumbAfter);
       // Nem migrou para QUALQUER thumb
+      // eslint-disable-next-line no-restricted-syntax
       getThumbs().forEach((t, i) => {
         expect(document.activeElement, `não pode estar no thumb[${i}]`).not.toBe(t);
       });
@@ -3314,6 +3377,7 @@ describe("MagicUpResultPanel — Onda 5: foco NUNCA migra entre dot ↔ thumb", 
       rerenderActive(rerender, m, target);
 
       expect(document.activeElement).toBe(getDots()[target]);
+      // eslint-disable-next-line no-restricted-syntax
       getThumbs().forEach((t, i) => {
         expect(document.activeElement, `Enter no dot não pode focar thumb[${i}]`).not.toBe(t);
       });
@@ -3333,6 +3397,7 @@ describe("MagicUpResultPanel — Onda 5: foco NUNCA migra entre dot ↔ thumb", 
       rerenderActive(rerender, m, target);
 
       expect(document.activeElement).toBe(getDots()[target]);
+      // eslint-disable-next-line no-restricted-syntax
       getThumbs().forEach((t, i) => {
         expect(document.activeElement, `Space no dot não pode focar thumb[${i}]`).not.toBe(t);
       });
@@ -3354,6 +3419,7 @@ describe("MagicUpResultPanel — Onda 5: foco NUNCA migra entre dot ↔ thumb", 
 
       const thumbAfter = getThumbs()[target];
       expect(document.activeElement).toBe(thumbAfter);
+      // eslint-disable-next-line no-restricted-syntax
       getDots().forEach((d, i) => {
         expect(document.activeElement, `click no thumb não pode focar dot[${i}]`).not.toBe(d);
       });
@@ -3373,6 +3439,7 @@ describe("MagicUpResultPanel — Onda 5: foco NUNCA migra entre dot ↔ thumb", 
       rerenderActive(rerender, m, target);
 
       expect(document.activeElement).toBe(getThumbs()[target]);
+      // eslint-disable-next-line no-restricted-syntax
       getDots().forEach((d, i) => {
         expect(document.activeElement, `Enter no thumb não pode focar dot[${i}]`).not.toBe(d);
       });
@@ -3392,6 +3459,7 @@ describe("MagicUpResultPanel — Onda 5: foco NUNCA migra entre dot ↔ thumb", 
       rerenderActive(rerender, m, target);
 
       expect(document.activeElement).toBe(getThumbs()[target]);
+      // eslint-disable-next-line no-restricted-syntax
       getDots().forEach((d, i) => {
         expect(document.activeElement, `Space no thumb não pode focar dot[${i}]`).not.toBe(d);
       });
@@ -3591,6 +3659,8 @@ describe("MagicUpResultPanel — Onda 5: foco NUNCA salta para headings/regions 
       rerenderActive(rerender, m, target);
 
       const dangerZones = getNonControlFocusables(container);
+      expect(dangerZones).not.toHaveLength(0);
+      // eslint-disable-next-line no-restricted-syntax
       dangerZones.forEach((el) => {
         expect(
           document.activeElement,
@@ -3614,6 +3684,7 @@ describe("MagicUpResultPanel — Onda 5: foco NUNCA salta para headings/regions 
       fireEvent.click(dot);
       rerenderActive(rerender, m, target);
 
+      // eslint-disable-next-line no-restricted-syntax
       getNonControlFocusables(container).forEach((el) => {
         expect(document.activeElement).not.toBe(el);
       });
@@ -3633,6 +3704,7 @@ describe("MagicUpResultPanel — Onda 5: foco NUNCA salta para headings/regions 
       fireEvent.click(dot);
       rerenderActive(rerender, m, target);
 
+      // eslint-disable-next-line no-restricted-syntax
       getNonControlFocusables(container).forEach((el) => {
         expect(document.activeElement).not.toBe(el);
       });
@@ -3653,6 +3725,7 @@ describe("MagicUpResultPanel — Onda 5: foco NUNCA salta para headings/regions 
       fireEvent.click(thumb);
       rerenderActive(rerender, m, target);
 
+      // eslint-disable-next-line no-restricted-syntax
       getNonControlFocusables(container).forEach((el) => {
         expect(document.activeElement).not.toBe(el);
       });
@@ -3672,6 +3745,7 @@ describe("MagicUpResultPanel — Onda 5: foco NUNCA salta para headings/regions 
       fireEvent.click(thumb);
       rerenderActive(rerender, m, target);
 
+      // eslint-disable-next-line no-restricted-syntax
       getNonControlFocusables(container).forEach((el) => {
         expect(document.activeElement).not.toBe(el);
       });
@@ -3691,6 +3765,7 @@ describe("MagicUpResultPanel — Onda 5: foco NUNCA salta para headings/regions 
       fireEvent.click(thumb);
       rerenderActive(rerender, m, target);
 
+      // eslint-disable-next-line no-restricted-syntax
       getNonControlFocusables(container).forEach((el) => {
         expect(document.activeElement).not.toBe(el);
       });
@@ -3741,12 +3816,14 @@ describe("MagicUpResultPanel — Onda 5: foco NUNCA salta para headings/regions 
     const m = buildStubState({ variationsCount: 3, activeVariation: 0 });
     const { container, rerender } = render(<MagicUpResultPanel m={m} />);
 
+    // eslint-disable-next-line no-restricted-syntax
     [1, 2, 0].forEach((target) => {
       const dot = getDots()[target] as HTMLButtonElement;
       dot.focus();
       fireEvent.click(dot);
       rerenderActive(rerender, m, target);
 
+      // eslint-disable-next-line no-restricted-syntax
       getNonControlFocusables(container).forEach((el) => {
         expect(document.activeElement).not.toBe(el);
       });
@@ -3758,6 +3835,7 @@ describe("MagicUpResultPanel — Onda 5: foco NUNCA salta para headings/regions 
     const m = buildStubState({ variationsCount: 3, activeVariation: 0 });
     const { container, rerender } = render(<MagicUpResultPanel m={m} />);
 
+    // eslint-disable-next-line no-restricted-syntax
     [2, 0, 1].forEach((target) => {
       const thumb = getThumbs()[target] as HTMLButtonElement;
       thumb.focus();
@@ -3765,6 +3843,7 @@ describe("MagicUpResultPanel — Onda 5: foco NUNCA salta para headings/regions 
       fireEvent.click(thumb);
       rerenderActive(rerender, m, target);
 
+      // eslint-disable-next-line no-restricted-syntax
       getNonControlFocusables(container).forEach((el) => {
         expect(document.activeElement).not.toBe(el);
       });
@@ -3784,6 +3863,8 @@ describe("MagicUpResultPanel — Onda 5: foco NUNCA salta para headings/regions 
     rerenderActive(rerender, m, 1);
 
     const liveRegions = container.querySelectorAll<HTMLElement>("[aria-live], [role='status'], [role='alert'], [role='log']");
+    expect(liveRegions).not.toHaveLength(0);
+    // eslint-disable-next-line no-restricted-syntax
     liveRegions.forEach((region) => {
       expect(document.activeElement).not.toBe(region);
       expect(region.contains(document.activeElement as Node) && document.activeElement !== getDots()[1]).toBe(false);
@@ -3818,6 +3899,7 @@ describe("MagicUpResultPanel — Onda 5: roving tabindex EXCLUSIVO após navega�
     expect(zeros.length, `${label}: deve haver EXATAMENTE 1 tabindex=0`).toBe(1);
     expect(elements[expectedZeroIdx].getAttribute("tabindex"), `${label}: índice ${expectedZeroIdx} deve ter tabindex=0`).toBe("0");
     expect(minus.length, `${label}: demais devem ter tabindex=-1`).toBe(elements.length - 1);
+    // eslint-disable-next-line no-restricted-syntax
     elements.forEach((el, i) => {
       const v = el.getAttribute("tabindex");
       expect(v, `${label}[${i}]: tabindex deve ser "0" ou "-1"`).toMatch(/^(0|-1)$/);

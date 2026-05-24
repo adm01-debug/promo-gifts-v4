@@ -269,7 +269,11 @@ export function MultiEngravingResult({
                         <Badge
                           variant="outline"
                           className="cursor-pointer font-mono text-xs transition-colors hover:bg-muted"
+<<<<<<< HEAD
+                          onClick={() => handleCopyCode(calc.priceData!.codigo_orcamento)}
+=======
                           onClick={() => handleCopyCode(calc.priceData?.codigo_orcamento ?? '')}
+>>>>>>> origin/main
                         >
                           {copied === calc.priceData.codigo_orcamento ? (
                             <CheckCircle2 className="mr-1 h-3 w-3 text-primary dark:text-primary" />

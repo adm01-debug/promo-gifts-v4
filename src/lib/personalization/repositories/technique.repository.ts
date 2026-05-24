@@ -38,23 +38,6 @@ interface PaginatedResponse<T> {
   status: number;
 }
 
-interface FetchExternalDataOptions {
-  url: string;
-  headers?: HeadersInit;
-}
-
-async function fetchExternalData<T>({ url, headers }: FetchExternalDataOptions): Promise<T> {
-  const response = await fetch(url, { headers });
-
-  if (!response.ok) {
-    throw new Error(
-      `External technique API request failed: ${response.status} ${response.statusText}`,
-    );
-  }
-
-  return response.json() as Promise<T>;
-}
-
 function externalToTecnicaUnificada(row: TecnicaGravacaoExterno): TecnicaUnificada {
   return {
     id: row.id,
@@ -75,7 +58,7 @@ function externalToTecnicaUnificada(row: TecnicaGravacaoExterno): TecnicaUnifica
 }
 
 export async function findAll(options: TechniqueQueryOptions = {}): Promise<TecnicaUnificada[]> {
-  const { search, tipo, fornecedor, limit = 100, page = 1 } = options;
+  const { search: _search, tipo, fornecedor, limit = 100, page = 1 } = options;
 
   const params = new URLSearchParams({
     limit: String(limit),
@@ -84,22 +67,21 @@ export async function findAll(options: TechniqueQueryOptions = {}): Promise<Tecn
     ...(fornecedor ? { fornecedor } : {}),
   });
 
-  const data = await fetchExternalData<PaginatedResponse<TecnicaGravacaoExterno>>({
-    url: `${GRAVACAO_API}/tecnicas?${params}`,
+  const resp = await fetch(`${GRAVACAO_API}/tecnicas?${params}`, {
     headers: { 'X-API-Key': API_KEY },
-    cache: { key: `tecnicas-${params}`, ttl: 10 * 60 },
   });
+  if (!resp.ok) throw new Error(`Failed to fetch techniques: ${resp.statusText}`);
+  const data = await resp.json() as PaginatedResponse<TecnicaGravacaoExterno>;
 
   let tecnicas = (data.data?.records || []).map(externalToTecnicaUnificada);
 
   // Filtros pós-query
-  if (search) {
-    const normalizedSearch = search.toLowerCase();
-    tecnicas = tecnicas.filter(
-      (t: TecnicaUnificada) =>
-        t.nome.toLowerCase().includes(normalizedSearch) ||
-        t.codigo.toLowerCase().includes(normalizedSearch) ||
-        t.descricao?.toLowerCase().includes(normalizedSearch),
+  if (options?.search) {
+    const search = options.search.toLowerCase();
+    tecnicas = tecnicas.filter((t: TecnicaUnificada) =>
+      t.nome.toLowerCase().includes(search) ||
+      t.codigo.toLowerCase().includes(search) ||
+      t.descricao?.toLowerCase().includes(search)
     );
   }
 
@@ -107,11 +89,11 @@ export async function findAll(options: TechniqueQueryOptions = {}): Promise<Tecn
 }
 
 export async function findById(id: string): Promise<TecnicaUnificada | null> {
-  const data = await fetchExternalData<PaginatedResponse<TecnicaGravacaoExterno>>({
-    url: `${GRAVACAO_API}/tecnicas/${id}`,
+  const resp = await fetch(`${GRAVACAO_API}/tecnicas/${id}`, {
     headers: { 'X-API-Key': API_KEY },
-    cache: { key: `tecnica-${id}`, ttl: 30 * 60 },
   });
+  if (!resp.ok) throw new Error(`Failed to fetch technique: ${resp.statusText}`);
+  const data = await resp.json() as PaginatedResponse<TecnicaGravacaoExterno>;
 
   const records = data.data?.records || [];
   return records.length > 0 ? externalToTecnicaUnificada(records[0]) : null;
@@ -138,10 +120,7 @@ export async function create(tecnica: Omit<TecnicaUnificada, 'id'>): Promise<Tec
   return response.json();
 }
 
-export async function update(
-  id: string,
-  updates: Partial<TecnicaUnificada>,
-): Promise<TecnicaUnificada> {
+export async function update(id: string, updates: Partial<TecnicaUnificada>): Promise<TecnicaUnificada> {
   const response = await fetch(`${GRAVACAO_API}/tecnicas/${id}`, {
     method: 'PATCH',
     headers: {

@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   FileText,
   Plus,
-  X,
   Wand2,
   Calculator,
   ShoppingCart,

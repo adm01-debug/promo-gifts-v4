@@ -1,6 +1,4 @@
 import { 
-  Eye, 
-  Users, 
   BarChart3,
   Package,
   Target,

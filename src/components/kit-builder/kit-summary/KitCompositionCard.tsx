@@ -60,11 +60,19 @@ export function KitCompositionCard({ kitState, kitQuantity, stockByProduct }: Ki
                       {item.material ? ` • ${item.material}` : ''}
                       {item.isOptional && <Badge variant="secondary" className="ml-1 text-[10px] px-1 py-0">Opcional</Badge>}
                     </p>
-                    {stockByProduct.has(item.id) && (
-                      <Badge variant={stockByProduct.get(item.id)! >= item.quantity * kitQuantity ? 'secondary' : 'destructive'} className="text-[10px] px-1.5 py-0">
-                        {stockByProduct.get(item.id)! >= item.quantity * kitQuantity ? `${stockByProduct.get(item.id)} em estoque` : `⚠ ${stockByProduct.get(item.id)} disponível`}
-                      </Badge>
-                    )}
+                    {(() => {
+                      const stockQty = stockByProduct.get(item.id);
+                      if (stockQty === undefined) return null;
+                      const enough = stockQty >= item.quantity * kitQuantity;
+                      return (
+                        <Badge
+                          variant={enough ? 'secondary' : 'destructive'}
+                          className="text-[10px] px-1.5 py-0"
+                        >
+                          {enough ? `${stockQty} em estoque` : `⚠ ${stockQty} disponível`}
+                        </Badge>
+                      );
+                    })()}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

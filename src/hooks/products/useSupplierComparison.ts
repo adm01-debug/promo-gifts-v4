@@ -25,10 +25,11 @@ interface SupplierComparisonResult {
 export function useSupplierComparison(product: Product | null | undefined) {
   // Fetch products in the same category (server-side, lazy)
   const categoryName = product?.category?.name;
-  const { data: categoryProducts = [], isLoading } = useProducts(
+  const { data: categoryProductsRaw, isLoading } = useProducts(
     categoryName ? { category: categoryName } : undefined,
     { enabled: !!product && !!categoryName, staleTime: 10 * 60 * 1000 },
   );
+  const categoryProducts = categoryProductsRaw ?? [];
 
   const result = useMemo((): SupplierComparisonResult | null => {
     if (!product || categoryProducts.length === 0) return null;

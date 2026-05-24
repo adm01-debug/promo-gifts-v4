@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { 
   calculateItemPersonalizationTotal, 
   calculateItemTotal, 
-  calculateSubtotal, 
   applyMarkup, 
   calculateDiscountAmount,
   calculateRealDiscountPercent
