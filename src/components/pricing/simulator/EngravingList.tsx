@@ -1,13 +1,9 @@
-import { Button } from '@/components/ui/button';
+﻿import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Paintbrush, Palette, Ruler, GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
-<<<<<<< HEAD
 import type { ConfiguredEngraving } from './types';
-=======
-import type { ConfiguredEngraving } from "./types";
->>>>>>> origin/main
 
 interface EngravingListProps {
   engravings: ConfiguredEngraving[];
@@ -28,10 +24,10 @@ export function EngravingList({
     return (
       <div className="rounded-lg border-2 border-dashed py-6 text-center">
         <Paintbrush className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
-        <p className="mb-4 text-sm text-muted-foreground">Nenhuma gravação adicionada</p>
+        <p className="mb-4 text-sm text-muted-foreground">Nenhuma gravaÃ§Ã£o adicionada</p>
         <Button onClick={onAddNew} variant="outline" size="sm">
           <Plus className="mr-2 h-4 w-4" />
-          Adicionar Gravação
+          Adicionar GravaÃ§Ã£o
         </Button>
       </div>
     );
@@ -41,7 +37,7 @@ export function EngravingList({
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-medium">
-          Gravações ({engravings.length}/{maxEngravings})
+          GravaÃ§Ãµes ({engravings.length}/{maxEngravings})
         </h4>
         {canAddMore && (
           <Button onClick={onAddNew} variant="outline" size="sm">
@@ -74,7 +70,7 @@ export function EngravingList({
 
                   <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
-                      📍 {engraving.technique.componentName} - {engraving.technique.locationName}
+                      ðŸ“ {engraving.technique.componentName} - {engraving.technique.locationName}
                     </span>
 
                     {engraving.colors > 0 && (
@@ -87,7 +83,7 @@ export function EngravingList({
                     {engraving.sizeOption && (
                       <Badge variant="secondary" className="text-xs">
                         <Ruler className="mr-1 h-3 w-3" />
-                        {engraving.sizeOption.replace('x', ' × ')} cm
+                        {engraving.sizeOption.replace('x', ' Ã— ')} cm
                       </Badge>
                     )}
                   </div>
@@ -110,7 +106,7 @@ export function EngravingList({
 
       {!canAddMore && (
         <p className="text-center text-xs text-muted-foreground">
-          Máximo de {maxEngravings} gravações atingido
+          MÃ¡ximo de {maxEngravings} gravaÃ§Ãµes atingido
         </p>
       )}
     </div>

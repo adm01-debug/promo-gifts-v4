@@ -1,12 +1,8 @@
-/**
+﻿/**
  * API helpers for kit components and print areas
  */
 import { supabase } from '@/integrations/supabase/client';
-<<<<<<< HEAD
 import type { KitComponent, PrintArea } from './types';
-=======
-import type { KitComponent, PrintArea } from "./types";
->>>>>>> origin/main
 
 export async function fetchKitComponents(productId: string): Promise<KitComponent[]> {
   const { data, error } = await supabase.functions.invoke('external-db-bridge', {
@@ -58,7 +54,7 @@ export async function fetchPrintAreas(componentId: string): Promise<PrintArea[]>
     },
   });
   if (error) throw new Error(error.message);
-  if (!data?.success) throw new Error(data?.error || 'Erro ao buscar áreas');
+  if (!data?.success) throw new Error(data?.error || 'Erro ao buscar Ã¡reas');
   return data.data?.records || [];
 }
 
@@ -67,7 +63,7 @@ export async function createPrintArea(payload: Record<string, unknown>): Promise
     body: { table: 'kit_component_print_areas', operation: 'insert', data: payload },
   });
   if (error) throw new Error(error.message);
-  if (!data?.success) throw new Error(data?.error || 'Erro ao criar área');
+  if (!data?.success) throw new Error(data?.error || 'Erro ao criar Ã¡rea');
 }
 
 export async function updatePrintArea(id: string, payload: Record<string, unknown>): Promise<void> {
@@ -75,7 +71,7 @@ export async function updatePrintArea(id: string, payload: Record<string, unknow
     body: { table: 'kit_component_print_areas', operation: 'update', id, data: payload },
   });
   if (error) throw new Error(error.message);
-  if (!data?.success) throw new Error(data?.error || 'Erro ao atualizar área');
+  if (!data?.success) throw new Error(data?.error || 'Erro ao atualizar Ã¡rea');
 }
 
 export async function deletePrintArea(id: string): Promise<void> {
@@ -83,10 +79,10 @@ export async function deletePrintArea(id: string): Promise<void> {
     body: { table: 'kit_component_print_areas', operation: 'delete', id },
   });
   if (error) throw new Error(error.message);
-  if (!data?.success) throw new Error(data?.error || 'Erro ao excluir área');
+  if (!data?.success) throw new Error(data?.error || 'Erro ao excluir Ã¡rea');
 }
 
-// ── Kit Component Media (external DB) ──
+// â”€â”€ Kit Component Media (external DB) â”€â”€
 
 export interface ComponentMedia {
   id: string;
@@ -110,7 +106,7 @@ export async function fetchComponentMedia(componentId: string): Promise<Componen
     },
   });
   if (error) throw new Error(error.message);
-  if (!data?.success) throw new Error(data?.error || 'Erro ao buscar mídia');
+  if (!data?.success) throw new Error(data?.error || 'Erro ao buscar mÃ­dia');
   return data.data?.records || [];
 }
 
@@ -119,7 +115,7 @@ export async function createComponentMedia(payload: Record<string, unknown>): Pr
     body: { table: 'kit_component_media', operation: 'insert', data: payload },
   });
   if (error) throw new Error(error.message);
-  if (!data?.success) throw new Error(data?.error || 'Erro ao criar mídia');
+  if (!data?.success) throw new Error(data?.error || 'Erro ao criar mÃ­dia');
 }
 
 export async function updateComponentMedia(
@@ -130,7 +126,7 @@ export async function updateComponentMedia(
     body: { table: 'kit_component_media', operation: 'update', id, data: payload },
   });
   if (error) throw new Error(error.message);
-  if (!data?.success) throw new Error(data?.error || 'Erro ao atualizar mídia');
+  if (!data?.success) throw new Error(data?.error || 'Erro ao atualizar mÃ­dia');
 }
 
 export async function deleteComponentMedia(id: string): Promise<void> {
@@ -138,5 +134,5 @@ export async function deleteComponentMedia(id: string): Promise<void> {
     body: { table: 'kit_component_media', operation: 'delete', id },
   });
   if (error) throw new Error(error.message);
-  if (!data?.success) throw new Error(data?.error || 'Erro ao excluir mídia');
+  if (!data?.success) throw new Error(data?.error || 'Erro ao excluir mÃ­dia');
 }

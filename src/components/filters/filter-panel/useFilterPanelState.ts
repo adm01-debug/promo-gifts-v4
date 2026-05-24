@@ -1,5 +1,4 @@
-<<<<<<< HEAD
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+﻿import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useDebounce } from '@/hooks/common';
 import {
   SORT_OPTIONS,
@@ -10,13 +9,6 @@ import {
 } from '@/hooks/products';
 import { useRamoAtividadeFilter } from '@/hooks/crm';
 import type { FilterState, FilterPanelProps } from './types';
-=======
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { useDebounce } from "@/hooks/common";
-import { SORT_OPTIONS, useAdvancedFilters, useCategoryIcons, useMaterialFilter, useSuppliers } from "@/hooks/products";
-import { useRamoAtividadeFilter } from "@/hooks/crm";
-import type { FilterState, FilterPanelProps } from "./types";
->>>>>>> origin/main
 
 export function useFilterPanelState(
   filters: FilterState,
@@ -241,10 +233,10 @@ export function useFilterPanelState(
   const sectionSummaries = useMemo(() => {
     const summaries: Record<string, string> = {};
     if (filters.priceRange[0] > 0 || filters.priceRange[1] < 9999) {
-      summaries.preco = `R$${filters.priceRange[0]}–${filters.priceRange[1] >= 9999 ? '∞' : filters.priceRange[1]}`;
+      summaries.preco = `R$${filters.priceRange[0]}â€“${filters.priceRange[1] >= 9999 ? 'âˆž' : filters.priceRange[1]}`;
     }
     if (filters.minStock > 0) {
-      summaries.estoque = `≥${filters.minStock} un.`;
+      summaries.estoque = `â‰¥${filters.minStock} un.`;
     }
     if (filters.sortBy !== 'name') {
       const opt = SORT_OPTIONS.find((o) => o.value === filters.sortBy);

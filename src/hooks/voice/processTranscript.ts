@@ -1,13 +1,8 @@
-<<<<<<< HEAD
-import { supabase } from '@/integrations/supabase/client';
+﻿import { supabase } from '@/integrations/supabase/client';
 import type { VoiceAgentAction } from './types';
-=======
-import { supabase } from "@/integrations/supabase/client";
-import type { VoiceAgentAction } from "./types";
->>>>>>> origin/main
 
 /**
- * processVoiceTranscript — Sends transcript to AI and returns structured action.
+ * processVoiceTranscript â€” Sends transcript to AI and returns structured action.
  * Uses fetch with AbortController for proper timeout support (15s).
  */
 export async function processVoiceTranscript(transcript: string): Promise<VoiceAgentAction> {
@@ -52,7 +47,7 @@ function validateAction(action: VoiceAgentAction): VoiceAgentAction {
   if (!action?.action || !action?.response) {
     return {
       action: 'answer',
-      response: action?.response || 'Desculpe, não entendi. Pode repetir?',
+      response: action?.response || 'Desculpe, nÃ£o entendi. Pode repetir?',
       data: {},
     };
   }

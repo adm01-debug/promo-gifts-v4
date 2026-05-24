@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+﻿import { useState, useMemo } from 'react';
 import { useExternalProductSearch } from '@/hooks/simulation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -6,11 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, Package, X } from 'lucide-react';
 import { formatCurrency } from './utils';
-<<<<<<< HEAD
 import type { Product } from './types';
-=======
-import type { Product } from "./types";
->>>>>>> origin/main
 
 interface ProductSearchProps {
   onSelect: (product: Product | null) => void;
@@ -64,7 +60,7 @@ export function ProductSearch({ onSelect, selectedProduct }: ProductSearchProps)
               <p className="font-medium">{selectedProduct.name}</p>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <span>SKU: {selectedProduct.sku}</span>
-                <span>•</span>
+                <span>â€¢</span>
                 <span className="font-medium text-primary">
                   {formatCurrency(selectedProduct.price)}
                 </span>
@@ -136,7 +132,7 @@ export function ProductSearch({ onSelect, selectedProduct }: ProductSearchProps)
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{product.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {product.sku} • {formatCurrency(product.price)}
+                    {product.sku} â€¢ {formatCurrency(product.price)}
                   </p>
                 </div>
               </button>

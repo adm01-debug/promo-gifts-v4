@@ -1,20 +1,15 @@
-/**
- * logVoiceCommand — Logs a voice command to the database for analytics.
- * Fire-and-forget — does not throw or block the UI.
+﻿/**
+ * logVoiceCommand â€” Logs a voice command to the database for analytics.
+ * Fire-and-forget â€” does not throw or block the UI.
  */
-<<<<<<< HEAD
 import { supabase } from '@/integrations/supabase/client';
 import type { VoiceAgentAction } from './types';
-=======
-import { supabase } from "@/integrations/supabase/client";
-import type { VoiceAgentAction } from "./types";
->>>>>>> origin/main
 
 export function logVoiceCommand(
   action: VoiceAgentAction,
   meta: { transcript: string; durationMs?: number; success?: boolean },
 ) {
-  // Fire and forget — don't await, don't block
+  // Fire and forget â€” don't await, don't block
   (async () => {
     try {
       const {
@@ -32,7 +27,7 @@ export function logVoiceCommand(
         success: meta.success ?? true,
       });
     } catch {
-      // Silent — analytics should never break UX
+      // Silent â€” analytics should never break UX
     }
   })();
 }

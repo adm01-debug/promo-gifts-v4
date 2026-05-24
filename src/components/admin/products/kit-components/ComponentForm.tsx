@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Save, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,11 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-<<<<<<< HEAD
 import type { ComponentFormData } from './types';
-=======
-import type { ComponentFormData } from "./types";
->>>>>>> origin/main
 
 interface Props {
   initial: ComponentFormData;
@@ -27,7 +23,7 @@ export function ComponentForm({ initial, onSave, onCancel, isSaving }: Props) {
 
   const handleSave = () => {
     if (!form.component_name.trim()) {
-      toast.error('Nome do componente é obrigatório');
+      toast.error('Nome do componente Ã© obrigatÃ³rio');
       return;
     }
     onSave(form);
@@ -41,7 +37,7 @@ export function ComponentForm({ initial, onSave, onCancel, isSaving }: Props) {
           <Input
             value={form.component_name}
             onChange={(e) => set('component_name', e.target.value)}
-            placeholder="Ex: Tábua de corte"
+            placeholder="Ex: TÃ¡bua de corte"
             className="h-8 text-sm"
           />
         </div>
@@ -55,7 +51,7 @@ export function ComponentForm({ initial, onSave, onCancel, isSaving }: Props) {
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-xs">Código</Label>
+          <Label className="text-xs">CÃ³digo</Label>
           <Input
             value={form.component_code}
             onChange={(e) => set('component_code', e.target.value)}
@@ -80,7 +76,7 @@ export function ComponentForm({ initial, onSave, onCancel, isSaving }: Props) {
           <Input
             value={form.supplier_component_code}
             onChange={(e) => set('supplier_component_code', e.target.value)}
-            placeholder="Código fornecedor"
+            placeholder="CÃ³digo fornecedor"
             className="h-8 font-mono text-sm"
           />
         </div>
@@ -171,8 +167,8 @@ export function ComponentForm({ initial, onSave, onCancel, isSaving }: Props) {
           [
             ['is_optional', 'Opcional'],
             ['is_packaging', 'Embalagem'],
-            ['is_replaceable', 'Substituível'],
-            ['allows_personalization', 'Personalizável'],
+            ['is_replaceable', 'SubstituÃ­vel'],
+            ['allows_personalization', 'PersonalizÃ¡vel'],
           ] as const
         ).map(([key, label]) => (
           <label key={key} className="flex cursor-pointer items-center gap-2 text-xs">
@@ -194,32 +190,32 @@ export function ComponentForm({ initial, onSave, onCancel, isSaving }: Props) {
 
       <div className="grid grid-cols-1 gap-3">
         <div className="space-y-1">
-          <Label className="text-xs">Descrição</Label>
+          <Label className="text-xs">DescriÃ§Ã£o</Label>
           <Input
             value={form.component_description}
             onChange={(e) => set('component_description', e.target.value)}
-            placeholder="Descrição / dimensões descritivas"
+            placeholder="DescriÃ§Ã£o / dimensÃµes descritivas"
             className="h-8 text-sm"
           />
         </div>
         {form.allows_personalization && (
           <div className="space-y-1">
-            <Label className="text-xs">Notas de Personalização</Label>
+            <Label className="text-xs">Notas de PersonalizaÃ§Ã£o</Label>
             <Textarea
               value={form.personalization_notes}
               onChange={(e) => set('personalization_notes', e.target.value)}
-              placeholder="Instruções de personalização..."
+              placeholder="InstruÃ§Ãµes de personalizaÃ§Ã£o..."
               rows={2}
               className="text-sm"
             />
           </div>
         )}
         <div className="space-y-1">
-          <Label className="text-xs">Observações</Label>
+          <Label className="text-xs">ObservaÃ§Ãµes</Label>
           <Input
             value={form.notes}
             onChange={(e) => set('notes', e.target.value)}
-            placeholder="Observações internas"
+            placeholder="ObservaÃ§Ãµes internas"
             className="h-8 text-sm"
           />
         </div>
