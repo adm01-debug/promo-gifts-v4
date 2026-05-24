@@ -7,14 +7,14 @@
     <!-- Security Headers -->
     <!--
       Os cabeçalhos abaixo são entregues como HTTP headers reais via `public/_headers`
-      (X-Frame-Options, Strict-Transport-Security, frame-ancestors da CSP e cabeçalhos
-      relacionados). Aqui mantemos apenas as diretivas que funcionam corretamente
-      como <meta http-equiv> — o navegador ignora as demais e emite warnings no
-      console do preview.
+      e `vercel.json` (X-Frame-Options, Strict-Transport-Security, Permissions-Policy,
+      frame-ancestors da CSP e cabeçalhos relacionados). Aqui mantemos apenas as
+      diretivas que funcionam corretamente como <meta http-equiv> — o navegador
+      ignora as demais (como Permissions-Policy, removido nesta etapa) e emite
+      warnings no console do preview.
     -->
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
-    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(self), geolocation=(), payment=()" />
     
     <!-- SEO - Título e Meta Tags -->
     <title>Promo Gifts | Catálogo Inteligente de Produtos Promocionais</title>
