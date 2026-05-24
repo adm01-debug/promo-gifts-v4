@@ -8,7 +8,6 @@ import {
   type ProductWebhookV1Payload,
   type ProductWebhookV2Payload,
 } from '../_shared/contracts/schemas/product-webhook.ts';
-import type { Database } from '../../../src/integrations/supabase/types.ts';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -190,7 +189,7 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
     const rawBody = await req.text();
@@ -384,7 +383,8 @@ Deno.serve(async (req) => {
 });
 
 async function upsertProducts(
-  supabase: SupabaseClient<Database>,
+  // deno-lint-ignore no-explicit-any
+  supabase: SupabaseClient<any>,
   products: ProductPayload[],
   chunkSize: number,
 ): Promise<UpsertOutcome> {
