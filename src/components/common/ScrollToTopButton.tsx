@@ -47,7 +47,7 @@ export function ScrollToTopButton({
           exit={{ opacity: 0, scale: 0.8, y: 10 }}
           onClick={scrollToTop}
           className={cn(
-            "fixed bottom-6 right-6 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-orange text-white shadow-lg transition-all hover:bg-orange/90 active:scale-95 sm:bottom-8 sm:right-8",
+            "fixed bottom-6 right-6 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-brand-primary text-white shadow-lg transition-all hover:bg-brand-primary/90 active:scale-95 sm:bottom-8 sm:right-8",
             className
           )}
           aria-label="Voltar ao topo"
@@ -59,3 +59,4 @@ export function ScrollToTopButton({
     </AnimatePresence>
   );
 }
+

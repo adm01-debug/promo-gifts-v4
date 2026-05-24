@@ -34,7 +34,7 @@ export const IMAGE_TYPES = [
   { value: 'detail', label: 'Detalhe', icon: ZoomIn, color: 'text-success' },
   { value: 'ambient', label: 'Ambientada', icon: Eye, color: 'text-sky-500' },
   { value: 'component', label: 'Componente', icon: Layers, color: 'text-primary' },
-  { value: 'box', label: 'Embalagem', icon: Package, color: 'text-orange' },
+  { value: 'box', label: 'Embalagem', icon: Package, color: 'text-brand-primary' },
   { value: 'mockup', label: 'Mockup', icon: Eye, color: 'text-primary' },
   { value: 'video', label: 'Vídeo', icon: Film, color: 'text-destructive' },
   { value: 'set', label: 'Conjunto', icon: Layers, color: 'text-success' },

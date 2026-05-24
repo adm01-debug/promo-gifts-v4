@@ -42,7 +42,7 @@ const urgencyConfig: Record<UrgencyType, {
   "flash-sale": {
     icon: Zap,
     label: "Oferta Relâmpago",
-    colors: "bg-orange/15 text-orange border-orange/30",
+    colors: "bg-brand-primary/15 text-brand-primary border-brand-primary/30",
     animation: "animate-pulse",
   },
   "last-units": {

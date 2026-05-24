@@ -77,7 +77,7 @@ export function PasswordResetApproval() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-orange" />
+        <Loader2 className="h-8 w-8 animate-spin text-brand-primary" />
       </div>
     );
   }
@@ -88,7 +88,7 @@ export function PasswordResetApproval() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-orange" />
+            <Shield className="h-5 w-5 text-brand-primary" />
             <CardTitle>Solicitações Pendentes</CardTitle>
           </div>
           <CardDescription>Aprove ou rejeite solicitações de recuperação de senha</CardDescription>

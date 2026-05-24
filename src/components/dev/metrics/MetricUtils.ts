@@ -9,7 +9,7 @@ export function formatBytes(b: number): string {
 export function latencyClass(ms: number): string {
   if (ms < 200) return 'text-emerald-400';
   if (ms < 600) return 'text-amber-400';
-  if (ms < 1500) return 'text-orange-400';
+  if (ms < 1500) return 'text-brand-primary-400';
   return 'text-red-400';
 }
 
