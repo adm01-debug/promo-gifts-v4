@@ -54,8 +54,20 @@ ALTER TABLE public.quotes
   ALTER COLUMN real_discount_percent      TYPE numeric(5,2);
 
 ALTER TABLE public.seller_discount_limits
-  ALTER COLUMN max_discount_percent     TYPE numeric(5,2),
-  ALTER COLUMN approval_required_above  TYPE numeric(5,2);
+  ALTER COLUMN max_discount_percent TYPE numeric(5,2);
+
+DO $g$ BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'seller_discount_limits'
+      AND column_name = 'approval_required_above'
+  ) THEN
+    ALTER TABLE public.seller_discount_limits
+      ALTER COLUMN approval_required_above TYPE numeric(5,2);
+  END IF;
+END $g$;
 
 DO $g$ BEGIN
   ALTER TABLE public.tabela_preco_gravacao_oficial
@@ -96,9 +108,31 @@ ALTER TABLE public.collection_items_trash
 
 -- 3. DIMENSÕES (5 colunas)
 ALTER TABLE public.quote_item_personalizations
-  ALTER COLUMN area_cm2  TYPE numeric(8,2),
-  ALTER COLUMN height_cm TYPE numeric(8,2),
-  ALTER COLUMN width_cm  TYPE numeric(8,2);
+  ALTER COLUMN area_cm2 TYPE numeric(8,2);
+
+DO $g$ BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'quote_item_personalizations'
+      AND column_name = 'height_cm'
+  ) THEN
+    ALTER TABLE public.quote_item_personalizations
+      ALTER COLUMN height_cm TYPE numeric(8,2);
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'quote_item_personalizations'
+      AND column_name = 'width_cm'
+  ) THEN
+    ALTER TABLE public.quote_item_personalizations
+      ALTER COLUMN width_cm TYPE numeric(8,2);
+  END IF;
+END $g$;
 
 DO $g$ BEGIN
   ALTER TABLE public.kit_component_print_areas
