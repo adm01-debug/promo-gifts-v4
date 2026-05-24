@@ -69,8 +69,8 @@ export default {
         },
         // Brand aliases (Etapa 17) — enables bg-brand-primary, text-brand-primary,
         // border-brand-primary, etc. Coexists with the orange.* tokens during the
-        // 3-phase migration (see src/index.css comment). Use brand-primary in all
-        // new code.
+        // 3-phase migration. CSS vars defined in src/styles/brand-tokens.css.
+        // Use brand-primary in all new code.
         "brand-primary": {
           DEFAULT: "hsl(var(--brand-primary))",
           hover: "hsl(var(--brand-primary-hover))",

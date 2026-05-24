@@ -8,6 +8,7 @@ import { installSafeToast } from "@/lib/security/safeToast";
 import EnhancedErrorBoundary from "@/components/errors/EnhancedErrorBoundary";
 import App from "./App.tsx";
 import "./index.css";
+import "./styles/brand-tokens.css";
 
 // Initialize Sentry FIRST (no-op if VITE_SENTRY_DSN is unset)
 initSentry();
