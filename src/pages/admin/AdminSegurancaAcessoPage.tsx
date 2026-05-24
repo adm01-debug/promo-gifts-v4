@@ -142,7 +142,27 @@ export default function AdminSegurancaAcessoPage() {
       if (botRes.error) throw botRes.error;
       if (rateRes.error) throw rateRes.error;
       if (ipRes.error) throw ipRes.error;
-      setBotLogs(botRes.data || []);
+      // bot_detection_log em prod usa `detection_type` e guarda endpoint/request_count
+      // em `metadata` (jsonb). Mapeamos para o shape esperado pela UI, com fallback,
+      // para a analise de seguranca nao exibir valores em branco.
+      const rawBotLogs = (botRes.data || []) as unknown as Array<Record<string, unknown>>;
+      setBotLogs(
+        rawBotLogs.map((r) => {
+          const meta = (r.metadata ?? {}) as Record<string, unknown>;
+          return {
+            id: String(r.id),
+            ip_address: (r.ip_address as string) ?? '',
+            user_agent: (r.user_agent as string | null) ?? null,
+            endpoint: (r.endpoint as string) ?? (meta.endpoint as string) ?? '—',
+            detection_reason:
+              (r.detection_reason as string) ?? (r.detection_type as string) ?? '—',
+            blocked: Boolean(r.blocked),
+            request_count:
+              (r.request_count as number | null) ?? (meta.request_count as number) ?? null,
+            created_at: String(r.created_at),
+          } as BotLog;
+        }),
+      );
       setRateLimits(rateRes.data || []);
       setIpList(ipRes.data || []);
     } catch (err) {
