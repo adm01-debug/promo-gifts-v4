@@ -17,15 +17,17 @@ export function useProfileRoles() {
     }
 
     const doFetch = async () => {
-      authDebug("useProfileRoles.fetchUserData", "start", { userId });
+      authDebug('useProfileRoles.fetchUserData', 'start', { userId });
       try {
         const { data: sessionData } = await supabase.auth.getSession();
         const sess = sessionData?.session ?? null;
         const sessUserId = sess?.user?.id ?? null;
 
         if (!sess || !sessUserId || sessUserId !== userId) {
-          authDebugError("useProfileRoles.fetchUserData", "ABORT — session mismatch", { 
-            userId, sessUserId, hasSession: !!sess 
+          authDebugError('useProfileRoles.fetchUserData', 'ABORT — session mismatch', {
+            userId,
+            sessUserId,
+            hasSession: !!sess,
           });
           return;
         }
@@ -37,7 +39,7 @@ export function useProfileRoles() {
 
         let rolesResult = firstRoles;
         if (!rolesResult.error && (!rolesResult.data || rolesResult.data.length === 0)) {
-          authDebug("useProfileRoles.fetchUserData", "user_roles empty — retrying", { userId });
+          authDebug('useProfileRoles.fetchUserData', 'user_roles empty — retrying', { userId });
           await new Promise((r) => setTimeout(r, 250));
           rolesResult = await authService.queryRoles(userId);
         }
@@ -45,14 +47,18 @@ export function useProfileRoles() {
         if (profileResult.data) {
           setProfile(profileResult.data as Profile);
           // background update
-          supabase.from("profiles").update({ last_login_at: new Date().toISOString() }).eq("user_id", userId).then();
+          supabase
+            .from('profiles')
+            .update({ last_login_at: new Date().toISOString() })
+            .eq('user_id', userId)
+            .then();
         }
 
         if (rolesResult.data && rolesResult.data.length > 0) {
-          setUserRoles(rolesResult.data.map(r => r.role as AppRole));
+          setUserRoles(rolesResult.data.map((r) => r.role as AppRole));
         }
       } catch (error) {
-        authDebugError("useProfileRoles.fetchUserData", "exception", error);
+        authDebugError('useProfileRoles.fetchUserData', 'exception', error);
       } finally {
         fetchPromiseRef.current = null;
         setIsLoading(false);
@@ -78,6 +84,6 @@ export function useProfileRoles() {
     setIsLoading,
     fetchUserData,
     clearProfileRoles,
-    fetchPromiseRef
+    fetchPromiseRef,
   };
 }

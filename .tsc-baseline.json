@@ -188,9 +188,6 @@
     "src/components/expert/chat/ChatMessageList.tsx": {
       "TS2322": 1
     },
-    "src/components/expert/chat/useExpertChat.ts": {
-      "TS1345": 2
-    },
     "src/components/favorites/FavoritesTrashView.tsx": {
       "TS2322": 1
     },
@@ -275,9 +272,6 @@
     },
     "src/components/layout/sidebar/__tests__/SidebarNavGroup.suspense.test.tsx": {
       "TS2749": 1
-    },
-    "src/components/loading/SkeletonMonitor.tsx": {
-      "TS2339": 1
     },
     "src/components/loading/index.ts": {
       "TS2305": 5,
@@ -396,9 +390,6 @@
       "TS2322": 1,
       "TS2339": 1
     },
-    "src/components/products/ProductTableView.tsx": {
-      "TS7006": 2
-    },
     "src/components/products/RelatedProducts.tsx": {
       "TS2322": 1
     },
@@ -446,9 +437,6 @@
       "TS2339": 6,
       "TS7006": 3,
       "TS7053": 1
-    },
-    "src/components/providers/AppBootstrap.tsx": {
-      "TS2339": 1
     },
     "src/components/quotes/DraggableQuoteItems.tsx": {
       "TS2304": 2,

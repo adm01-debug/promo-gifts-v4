@@ -2,7 +2,7 @@
  * BulkVariantWizard — Wizard modal para selecionar cor/variante de cada produto
  * antes de adicioná-los em lote ao carrinho ou orçamento.
  */
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';

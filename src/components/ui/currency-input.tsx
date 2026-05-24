@@ -16,7 +16,7 @@ interface CurrencyInputProps {
   max?: number;
   /** Notifica se há erro de validação (útil pra desabilitar submit). */
   onValidityChange?: (valid: boolean) => void;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;

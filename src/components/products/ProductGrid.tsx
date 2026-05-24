@@ -29,19 +29,19 @@ export interface ProductGridProps {
   onToggleSelect?: (id: string) => void;
 }
 
-function ProductCardWrapper({ 
-  product, 
-  index, 
-  isVisible,
+function ProductCardWrapper({
+  product,
+  index,
+  isVisible: _isVisible,
   hideCategoryBadges,
   selectionMode,
   selectedIds,
   onToggleSelect,
   priority,
   ...restProps
-}: { 
-  product: Product; 
-  index: number; 
+}: {
+  product: Product;
+  index: number;
   isVisible: boolean;
   hideCategoryBadges?: boolean;
   selectionMode?: boolean;
@@ -54,7 +54,10 @@ function ProductCardWrapper({
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (reducedMotion) { setHasAnimated(true); return; }
+    if (reducedMotion) {
+      setHasAnimated(true);
+      return;
+    }
     if (!hasAnimated) {
       const timer = setTimeout(() => setHasAnimated(true), Math.min(index * 80, 800));
       return () => clearTimeout(timer);
@@ -67,20 +70,31 @@ function ProductCardWrapper({
     <div
       ref={ref}
       className={cn(
-        reducedMotion ? '' : `transition-all duration-500 ease-out ${
-          hasAnimated ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'
-        }`,
-        "relative",
-        isSelected && "ring-2 ring-primary/40 rounded-xl"
+        reducedMotion
+          ? ''
+          : `transition-all duration-500 ease-out ${
+              hasAnimated
+                ? 'translate-y-0 scale-100 opacity-100'
+                : 'translate-y-8 scale-95 opacity-0'
+            }`,
+        'relative',
+        isSelected && 'rounded-xl ring-2 ring-primary/40',
       )}
-      style={reducedMotion ? undefined : {
-        transitionDelay: hasAnimated ? '0ms' : `${Math.min(index * 80, 800)}ms`,
-      }}
+      style={
+        reducedMotion
+          ? undefined
+          : {
+              transitionDelay: hasAnimated ? '0ms' : `${Math.min(index * 80, 800)}ms`,
+            }
+      }
     >
       {selectionMode && onToggleSelect && (
-        <div 
-          className="absolute top-2 left-2 z-20"
-          onClick={(e) => { e.stopPropagation(); onToggleSelect(product.id); }}
+        <div
+          className="absolute left-2 top-2 z-20"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSelect(product.id);
+          }}
         >
           <SelectionCheckbox
             checked={!!isSelected}
@@ -89,9 +103,9 @@ function ProductCardWrapper({
           />
         </div>
       )}
-      <ProductCard 
-        product={product} 
-        hideCategoryBadges={hideCategoryBadges} 
+      <ProductCard
+        product={product}
+        hideCategoryBadges={hideCategoryBadges}
         {...restProps}
         priority={priority}
         onClick={selectionMode ? () => onToggleSelect?.(product.id) : restProps.onClick}
@@ -101,19 +115,19 @@ function ProductCardWrapper({
 }
 
 const columnClasses: Record<number, string> = {
-  3: "grid-cols-2 sm:grid-cols-3",
-  4: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4",
-  5: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
-  6: "grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6",
-  8: "grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8",
+  3: 'grid-cols-2 sm:grid-cols-3',
+  4: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+  5: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5',
+  6: 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6',
+  8: 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8',
 };
 
-export function ProductGrid({ 
+export function ProductGrid({
   products,
   isLoading,
   onProductClick,
-  onViewProduct, 
-  onShareProduct, 
+  onViewProduct,
+  onShareProduct,
   onFavoriteProduct,
   isFavorite,
   onToggleFavorite,
@@ -143,47 +157,51 @@ export function ProductGrid({
 
   if (showEmptyState) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
-        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+      <div className="flex animate-fade-in flex-col items-center justify-center py-16 text-center">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
           <span className="text-3xl">📦</span>
         </div>
-        <h3 className="font-display text-lg font-semibold text-foreground mb-2">
+        <h3 className="mb-2 font-display text-lg font-semibold text-foreground">
           Nenhum produto encontrado
         </h3>
-        <p className="text-muted-foreground max-w-md">
+        <p className="max-w-md text-muted-foreground">
           Tente ajustar os filtros ou realizar uma nova busca para encontrar os produtos desejados.
         </p>
       </div>
     );
   }
 
-  const displayProducts = isLoading && products.length === 0 
-    ? Array.from({ length: 12 }).map((_, i) => ({ id: `skeleton-${i}`, isSkeleton: true } as any))
-    : products;
-
+  type SkeletonItem = { id: string; isSkeleton: true };
+  const displayProducts: (Product | SkeletonItem)[] =
+    isLoading && products.length === 0
+      ? Array.from({ length: 12 }).map((_, i) => ({
+          id: `skeleton-${i}`,
+          isSkeleton: true as const,
+        }))
+      : products;
 
   return (
-    <div 
+    <div
       ref={gridRef}
-      className={`grid ${columnClasses[columns] || columnClasses[5]} ${columns >= 8 ? 'gap-x-4 gap-y-8' : columns >= 6 ? 'gap-x-6 gap-y-8' : 'gap-x-4 sm:gap-x-6 lg:gap-x-8 gap-y-8'}`}
+      className={`grid ${columnClasses[columns] || columnClasses[5]} ${columns >= 8 ? 'gap-x-4 gap-y-8' : columns >= 6 ? 'gap-x-6 gap-y-8' : 'gap-x-4 gap-y-8 sm:gap-x-6 lg:gap-x-8'}`}
     >
-      {displayProducts.map((product, index) => (
-        (product as any).isSkeleton ? (
-          <ProductCardSkeleton key={product.id} />
+      {displayProducts.map((item, index) =>
+        'isSkeleton' in item ? (
+          <ProductCardSkeleton key={item.id} />
         ) : (
           <ProductCardWrapper
-            key={product.id}
-            product={product}
+            key={item.id}
+            product={item}
             index={index}
             isVisible={isGridVisible}
             priority={index < 8}
-            onClick={onProductClick ? () => onProductClick(product.id) : undefined}
+            onClick={onProductClick ? () => onProductClick(item.id) : undefined}
             onView={onViewProduct}
             onShare={onShareProduct}
             onFavorite={onFavoriteProduct}
-            isFavorited={isFavorite ? isFavorite(product.id) : false}
+            isFavorited={isFavorite ? isFavorite(item.id) : false}
             onToggleFavorite={onToggleFavorite}
-            isInCompare={isInCompare ? isInCompare(product.id) : false}
+            isInCompare={isInCompare ? isInCompare(item.id) : false}
             onToggleCompare={onToggleCompare}
             canAddToCompare={canAddToCompare}
             highlightColors={highlightColors}
@@ -193,8 +211,8 @@ export function ProductGrid({
             selectedIds={selectedIds}
             onToggleSelect={onToggleSelect}
           />
-        )
-      ))}
+        ),
+      )}
     </div>
   );
 }

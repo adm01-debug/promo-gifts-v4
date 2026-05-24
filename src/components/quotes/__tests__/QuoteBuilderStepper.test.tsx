@@ -63,6 +63,8 @@ describe('QuoteBuilderStepper UI (5 etapas)', () => {
     // não forEach+expect (anti-padrão B, não ativado). Diretiva removida
     // para zerar o WARN "Unused eslint-disable directive" no gate
     // lint:baseline. Se T-FIX-5b for ativado depois, reintroduzir.
+    expect(labels).not.toHaveLength(0);
+    // eslint-disable-next-line no-restricted-syntax
     labels.forEach((l) => expect(screen.getByText(l)).toBeDefined());
   });
 

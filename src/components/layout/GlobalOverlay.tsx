@@ -14,13 +14,27 @@ const ScrollProgressIndicator = lazyWithRetry(() => import("@/components/common/
 export function GlobalOverlay() {
   return (
     <div className="print:hidden">
-      <Suspense fallback={null}><ScrollProgressIndicator color="primary" height={3} /></Suspense>
-      <Suspense fallback={null}><EnhancedSpotlight /></Suspense>
-      <Suspense fallback={null}><OnboardingTour /></Suspense>
-      <Suspense fallback={null}><QuickQuoteFAB /></Suspense>
-      <Suspense fallback={null}><FloatingCompareBar /></Suspense>
-      <Suspense fallback={null}><SmartMobileNav /></Suspense>
-      <Suspense fallback={null}><ScrollToTopButton threshold={150} /></Suspense>
+      <Suspense fallback={null}>
+        <ScrollProgressIndicator color="primary" height={3} />
+      </Suspense>
+      <Suspense fallback={null}>
+        <EnhancedSpotlight />
+      </Suspense>
+      <Suspense fallback={null}>
+        <OnboardingTour />
+      </Suspense>
+      <Suspense fallback={null}>
+        <QuickQuoteFAB />
+      </Suspense>
+      <Suspense fallback={null}>
+        <FloatingCompareBar />
+      </Suspense>
+      <Suspense fallback={null}>
+        <SmartMobileNav />
+      </Suspense>
+      <Suspense fallback={null}>
+        <ScrollToTopButton threshold={150} />
+      </Suspense>
     </div>
   );
 }

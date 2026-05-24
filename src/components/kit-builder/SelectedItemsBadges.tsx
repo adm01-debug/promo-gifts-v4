@@ -14,7 +14,6 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core';
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
@@ -60,9 +59,13 @@ function SortableItemBadge({
       ref={setNodeRef}
       style={style}
       variant="secondary"
-      className="pl-1 pr-1 py-1 flex items-center gap-1.5 cursor-default"
+      className="flex cursor-default items-center gap-1.5 py-1 pl-1 pr-1"
     >
-      <span {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing touch-none">
+      <span
+        {...attributes}
+        {...listeners}
+        className="cursor-grab touch-none active:cursor-grabbing"
+      >
         <GripVertical className="h-3 w-3 text-muted-foreground" />
       </span>
       <span className="font-medium">{item.quantity}x</span>
@@ -77,7 +80,7 @@ function SortableItemBadge({
           onSelectVariant={onUpdateVariant}
         />
       )}
-      <div className="flex items-center gap-0.5 ml-1">
+      <div className="ml-1 flex items-center gap-0.5">
         <Button
           variant="ghost"
           size="icon"
@@ -98,7 +101,8 @@ function SortableItemBadge({
         </Button>
         <Button
           variant="ghost"
-          size="icon" aria-label="Fechar"
+          size="icon"
+          aria-label="Fechar"
           className="h-5 w-5 text-destructive hover:text-destructive"
           onClick={() => onRemoveItem(item.id)}
         >
@@ -126,8 +130,8 @@ export function SelectedItemsBadges({
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id || !onReorder) return;
-    const oldIndex = items.findIndex(i => i.id === active.id);
-    const newIndex = items.findIndex(i => i.id === over.id);
+    const oldIndex = items.findIndex((i) => i.id === active.id);
+    const newIndex = items.findIndex((i) => i.id === over.id);
     if (oldIndex !== -1 && newIndex !== -1) {
       onReorder(oldIndex, newIndex);
     }
@@ -136,12 +140,13 @@ export function SelectedItemsBadges({
   return (
     <div className="space-y-2">
       <h4 className="text-sm font-medium text-muted-foreground">
-        Itens no Kit ({items.length}) {onReorder && <span className="text-xs">— arraste para reordenar</span>}
+        Itens no Kit ({items.length}){' '}
+        {onReorder && <span className="text-xs">— arraste para reordenar</span>}
       </h4>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={items.map(i => i.id)} strategy={horizontalListSortingStrategy}>
+        <SortableContext items={items.map((i) => i.id)} strategy={horizontalListSortingStrategy}>
           <div className="flex flex-wrap gap-2">
-            {items.map(item => (
+            {items.map((item) => (
               <SortableItemBadge
                 key={item.id}
                 item={item}

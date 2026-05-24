@@ -4,8 +4,9 @@ import {
   useFavoriteLists,
   useFavoriteTrash,
   useLegacyFavoritesMigration,
+  useEnrichedFavoriteItems,
+  useFavoritesGlobalShortcuts,
 } from '@/hooks/favorites';
-import { useEnrichedFavoriteItems, useFavoritesGlobalShortcuts } from "@/hooks/favorites";
 import { useProductsContext } from '@/contexts/ProductsContext';
 import { useCatalogSelection } from '@/components/catalog/useCatalogSelection';
 import { useUndoStack } from '@/hooks/common';
