@@ -140,3 +140,19 @@ As 18 políticas irrestritas são **todas** de dados não sensíveis: catálogo/
 - **Kit Maker servindo `MOCK_BOXES/MOCK_ITEMS`** (`src/lib/kit-builder/index.ts` → `mock-data.ts`). Conectar a dados reais é **implementação de feature** + fonte de dados a definir; fabricar uma tabela seria arriscado. **Requer decisão de produto.**
 - **Atualização de preços do catálogo** (ver acima) — operação de dados na origem.
 - **`get_advisors(performance)`** — recomendado rodar para fechar o lado de performance.
+
+---
+
+## Rodada 3 — advisor de performance
+
+`get_advisors(performance)` retornou **541 itens**: 532 `unused_index` (INFO), 6 `multiple_permissive_policies` (WARN), 2 `unindexed_foreign_keys` (WARN), 1 `auth_db_connections_absolute` (INFO).
+
+### Corrigido (migration `20260524220000_perf_add_missing_fk_indexes.sql`)
+- Índice em `collection_products.product_id` (FK `..._product_id_fkey1`) — o composto `(collection_id, product_id)` lidera por `collection_id` e não cobre busca só por `product_id`.
+- Índice em `system_kill_switches.updated_by` (FK `..._updated_by_fkey`) — sem índice além da PK.
+- SQL validado em transação com `ROLLBACK`.
+
+### Não tratado (decisão consciente)
+- **532 `unused_index`** — remoção descartada: sinal baseado em stats de uso recentes; dropar índice pode degradar planos de consultas pouco frequentes. Candidatos a revisão manual, não a automação.
+- **6 `multiple_permissive_policies`** — todos em `system_kill_switches` (tabela minúscula → ganho desprezível) e mexer em política de kill switch é sensível em segurança. Fora de escopo.
+- **`auth_db_connections_absolute`** — métrica de conexões, não é correção de schema.
