@@ -180,7 +180,7 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
 
             'hover:translate-x-1 hover:bg-white/[0.04]',
             isActive
-              ? 'bg-primary/10 font-bold text-white shadow-[0_0_15px_rgba(255,165,0,0.1)] ring-1 ring-primary/20 before:absolute before:bottom-[15%] before:left-0 before:top-[15%] before:w-[3px] before:rounded-r-full before:bg-primary'
+              ? 'bg-primary/10 font-bold text-white shadow-[0_0_15px_rgba(255,165,0,0.1)] before:absolute before:bottom-[15%] before:left-0 before:top-[15%] before:w-[3px] before:rounded-r-full before:bg-primary'
               : 'text-sidebar-foreground/60 before:absolute before:left-0 before:top-1/2 before:h-0 before:w-[2px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary/50 before:transition-all before:duration-500 hover:text-sidebar-foreground hover:before:h-5',
           )}
           onClick={() => isMobileSidebarOpen && onMobileClose()}

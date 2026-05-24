@@ -74,26 +74,26 @@ describe('ConnectionsOverviewTable Regression Tests', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    useAuthMock.mockReturnValue({ isAdmin: true });
+    useAuthMock.mockReturnValue({ isAdmin: true } as unknown as ReturnType<typeof useAuth>);
     useConnectionsOverviewMock.mockReturnValue({
       rows: mockRows,
       loading: false,
       refreshing: false,
       refresh: vi.fn(),
       patchRow: vi.fn(),
-    });
+    } as unknown as ReturnType<typeof useConnectionsOverview>);
     useConnectionTesterMock.mockReturnValue({
       test: vi.fn(),
       testing: false,
-    });
+    } as unknown as ReturnType<typeof useConnectionTester>);
     useConsecutiveFailuresMock.mockReturnValue({
       map: new Map(),
       loading: false,
-    });
+    } as unknown as ReturnType<typeof useConsecutiveFailures>);
     useSecretsManagerMock.mockReturnValue({
       secrets: [],
       list: vi.fn(),
-    });
+    } as unknown as ReturnType<typeof useSecretsManager>);
   });
 
   it('should render the table with correct data', async () => {
@@ -129,7 +129,7 @@ describe('ConnectionsOverviewTable Regression Tests', () => {
       refreshing: false,
       refresh: refreshMock,
       patchRow: vi.fn(),
-    });
+    } as unknown as ReturnType<typeof useConnectionsOverview>);
 
     render(
       <TooltipProvider>
@@ -150,7 +150,7 @@ describe('ConnectionsOverviewTable Regression Tests', () => {
       refreshing: false,
       refresh: vi.fn(),
       patchRow: vi.fn(),
-    });
+    } as unknown as ReturnType<typeof useConnectionsOverview>);
 
     render(
       <TooltipProvider>

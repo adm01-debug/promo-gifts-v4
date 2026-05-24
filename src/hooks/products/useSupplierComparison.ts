@@ -36,7 +36,7 @@ export function useSupplierComparison(product: Product | null | undefined) {
     const baseProduct = product;
 
     // Find similar products from different suppliers
-    const similarProducts = categoryProducts.filter((p) => {
+    const similarProducts = categoryProducts.filter((p: Product) => {
       if (p.id === baseProduct.id) return false;
       if (p.supplier.id === baseProduct.supplier.id) return false;
 
@@ -56,7 +56,7 @@ export function useSupplierComparison(product: Product | null | undefined) {
       max: Math.max(...allProducts.map((p) => p.price)),
     };
 
-    const alternatives: SupplierProduct[] = similarProducts.map((product) => {
+    const alternatives: SupplierProduct[] = similarProducts.map((product: Product) => {
       const priceDiff = product.price - baseProduct.price;
       const priceDiffPercent = baseProduct.price > 0 ? (priceDiff / baseProduct.price) * 100 : 0;
 
@@ -70,8 +70,6 @@ export function useSupplierComparison(product: Product | null | undefined) {
       };
     });
 
-    alternatives.sort((a, b) => a.product.price - b.product.price);
-
     return {
       baseProduct,
       alternatives,
@@ -81,63 +79,40 @@ export function useSupplierComparison(product: Product | null | undefined) {
     };
   }, [product, categoryProducts]);
 
-  return { data: result, isLoading };
+  return { result, isLoading };
 }
 
-const STOP_WORDS = new Set([
-  'de',
-  'da',
-  'do',
-  'dos',
-  'das',
-  'a',
-  'o',
-  'e',
-  'em',
-  'com',
-  'para',
-  'por',
-  'um',
-  'uma',
-  'no',
-  'na',
-]);
-
-function calculateNameSimilarity(name1: string, name2: string): number {
-  if (!name1?.trim() || !name2?.trim()) return 0;
-
-  const words1 = name1
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((w) => w.length >= 3 && !STOP_WORDS.has(w));
-  const words2 = name2
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((w) => w.length >= 3 && !STOP_WORDS.has(w));
-
-  if (words1.length === 0 || words2.length === 0) return 0;
-
-  const commonWords = words1.filter((word) =>
-    words2.some((w) => w.includes(word) || word.includes(w)),
-  );
-
-  return commonWords.length / Math.max(words1.length, words2.length);
-}
-
+/** Agrupa produtos de uma categoria por supplier (utilitario auxiliar). */
 export function getSupplierProductsInCategory(
   products: Product[],
   categoryId: string | number,
 ): Map<string, Product[]> {
   const supplierMap = new Map<string, Product[]>();
-
   products.forEach((product) => {
     if (product.category.id !== categoryId) return;
-
     const supplierId = product.supplier.id;
-    const supplierProducts = supplierMap.get(supplierId) ?? [];
-    supplierMap.set(supplierId, supplierProducts);
+    let supplierProducts = supplierMap.get(supplierId);
+    if (!supplierProducts) {
+      supplierProducts = [];
+      supplierMap.set(supplierId, supplierProducts);
+    }
     supplierProducts.push(product);
   });
-
   return supplierMap;
+}
+
+function calculateNameSimilarity(a: string, b: string): number {
+  const wordsA = a
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((w) => w.length > 2);
+  const wordsB = new Set(
+    b
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 2),
+  );
+  if (!wordsA.length || !wordsB.size) return 0;
+  const matches = wordsA.filter((w) => wordsB.has(w)).length;
+  return matches / Math.max(wordsA.length, wordsB.size);
 }

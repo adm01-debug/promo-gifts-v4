@@ -1,0 +1,81 @@
+name: Required Checks Guard
+
+# Fails when the main branch protection does not require the primary quality
+# gate. This catches the exact configuration drift that lets red PRs merge.
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  assert-required-checks:
+    name: Assert typecheck gate is required on main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check required_status_checks on main
+        env:
+          GH_TOKEN: ${{ secrets.BRANCH_PROTECTION_READ_TOKEN || github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          REQUIRED="Lint, Typecheck & Test"
+          PROTECTION_URL="https://api.github.com/repos/$REPO/branches/main/protection"
+
+          HTTP=$(curl -sS -o /tmp/protection.json -w "%{http_code}" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "$PROTECTION_URL")
+
+          {
+            echo "### Required status checks - main"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ "$HTTP" == "404" ]]; then
+            echo "::error::Branch protection is absent on main. Red PRs can merge."
+            echo "Branch protection is absent on main." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          if [[ "$HTTP" == "403" ]]; then
+            echo "::error::The configured token cannot read branch protection. Add BRANCH_PROTECTION_READ_TOKEN with Administration: read access or use a GitHub App token."
+            echo "The configured token cannot read branch protection (HTTP 403)." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          if [[ "$HTTP" != "200" ]]; then
+            echo "::error::Failed to read branch protection (HTTP $HTTP)."
+            exit 1
+          fi
+
+          CONTEXTS=$(jq -r '(
+            (.required_status_checks.contexts // []) +
+            ((.required_status_checks.checks // []) | map(.context))
+          ) | unique | .[]?' /tmp/protection.json)
+
+          {
+            echo "**Required contexts:**"
+            if [[ -n "$CONTEXTS" ]]; then
+              printf '%s\n' "$CONTEXTS" | sed 's/^/- /'
+            else
+              echo "- (none)"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if ! printf '%s\n' "$CONTEXTS" | grep -qxF "$REQUIRED"; then
+            echo "::error::Required status check '$REQUIRED' is missing from main branch protection."
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Missing required check: \`$REQUIRED\`." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`$REQUIRED\` is required." >> "$GITHUB_STEP_SUMMARY"

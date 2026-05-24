@@ -75,7 +75,7 @@ function getLink(label: string): HTMLAnchorElement {
 }
 
 function isActive(label: string): boolean {
-  return getLink(label).className.includes('bg-orange/[0.03]');
+  return getLink(label).className.includes('bg-primary/10');
 }
 
 /**

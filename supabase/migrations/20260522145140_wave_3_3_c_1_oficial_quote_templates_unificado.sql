@@ -1,7 +1,28 @@
 -- Wave 3.3.C.1 - quote_templates unificado
-ALTER TABLE public.quote_templates RENAME COLUMN default_payment_terms TO payment_terms;
-ALTER TABLE public.quote_templates RENAME COLUMN default_delivery_terms TO delivery_time;
-ALTER TABLE public.quote_templates RENAME COLUMN default_notes TO notes;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='quote_templates' AND column_name='default_payment_terms')
+     AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='quote_templates' AND column_name='payment_terms') THEN
+    ALTER TABLE public.quote_templates RENAME COLUMN default_payment_terms TO payment_terms;
+  END IF;
+END
+$$;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='quote_templates' AND column_name='default_delivery_terms')
+     AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='quote_templates' AND column_name='delivery_time') THEN
+    ALTER TABLE public.quote_templates RENAME COLUMN default_delivery_terms TO delivery_time;
+  END IF;
+END
+$$;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='quote_templates' AND column_name='default_notes')
+     AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='quote_templates' AND column_name='notes') THEN
+    ALTER TABLE public.quote_templates RENAME COLUMN default_notes TO notes;
+  END IF;
+END
+$$;
 ALTER TABLE public.quote_templates
   ADD COLUMN IF NOT EXISTS seller_id uuid,
   ADD COLUMN IF NOT EXISTS template_data jsonb DEFAULT '{}'::jsonb,

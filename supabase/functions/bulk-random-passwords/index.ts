@@ -1,3 +1,4 @@
+import { createStructuredLogger } from "../_shared/structured-logger.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.8";
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
 

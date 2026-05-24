@@ -13,8 +13,10 @@ BEGIN
   RETURN QUERY SELECT v_count<=p_max_requests, GREATEST(0,p_max_requests-v_count), v_reset_at;
 END; $$;
 REVOKE EXECUTE ON FUNCTION public.check_edge_rate_limit(text,integer,integer) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.check_edge_rate_limit(text,integer,integer) TO service_role;
 
 CREATE OR REPLACE FUNCTION public.cleanup_expired_edge_rate_limits()
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN DELETE FROM public.edge_rate_limits WHERE reset_at < now(); END; $$;
 REVOKE EXECUTE ON FUNCTION public.cleanup_expired_edge_rate_limits() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.cleanup_expired_edge_rate_limits() TO service_role;

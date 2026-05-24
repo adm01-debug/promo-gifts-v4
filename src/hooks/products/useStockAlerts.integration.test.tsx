@@ -55,7 +55,7 @@ describe('useStockAlerts integration', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    const callArgs = invokeExternalDbMock.mock.calls[0][0];
+    const callArgs = invokeExternalDbMock.mock.calls[0][0] as { select: string };
     const selectStr = callArgs.select;
 
     const fields = selectStr.split(',').map((f: string) => f.trim());

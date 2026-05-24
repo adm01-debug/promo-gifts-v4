@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Heart, Share2, Calculator, FileText, ShoppingCart } from "lucide-react";
+import { Heart, Share2, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";

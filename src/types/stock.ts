@@ -12,55 +12,55 @@ export interface VariantStock {
   productId: string;
   variantId: string;
   variantSku: string;
-  
+
   // Identificação da variação
   colorId?: string;
   colorName?: string;
   colorHex?: string;
   colorGroup?: string; // Ex: "Azuis", "Vermelhos"
-  
+
   sizeName?: string;
   sizeCode?: string;
-  
+
   // Atributos extras
   attributeValues?: Record<string, string>;
-  
+
   // Estoque atual
   currentStock: number;
   minStock: number;
   maxStock?: number;
-  
+
   // Reservas e disponibilidade
-  reservedStock: number;   // Reservado em pedidos pendentes
-  inTransitStock: number;  // Em trânsito (pedido ao fornecedor)
-  availableStock: number;  // Disponível para venda (current - reserved)
-  
+  reservedStock: number; // Reservado em pedidos pendentes
+  inTransitStock: number; // Em trânsito (pedido ao fornecedor)
+  availableStock: number; // Disponível para venda (current - reserved)
+
   // Estoque futuro/previsão
   futureStock?: number;
   futureStockDate?: string;
   expectedReplenishDate?: string;
-  
+
   // Status calculado
   status: StockStatus;
-  
+
   // Métricas
   daysUntilStockout?: number;
   avgDailySales?: number;
   lastSaleDate?: string;
   lastRestockDate?: string;
-  
+
   // Metadados
   updatedAt: string;
   notes?: string;
 }
 
-export type StockStatus = 
-  | 'in_stock'      // Estoque OK
-  | 'low_stock'     // Abaixo do mínimo
-  | 'critical'      // Crítico (< 25% do mínimo)
-  | 'out_of_stock'  // Sem estoque
-  | 'overstocked'   // Excesso de estoque
-  | 'incoming';     // Estoque chegando
+export type StockStatus =
+  | 'in_stock' // Estoque OK
+  | 'low_stock' // Abaixo do mínimo
+  | 'critical' // Crítico (< 25% do mínimo)
+  | 'out_of_stock' // Sem estoque
+  | 'overstocked' // Excesso de estoque
+  | 'incoming'; // Estoque chegando
 
 // ============================================
 // PRODUTO COM ESTOQUE DETALHADO
@@ -73,32 +73,32 @@ export interface ProductStockSummary {
   productImageUrl?: string;
   categoryName?: string;
   supplierName?: string;
-  
+
   // Totais agregados
   totalCurrentStock: number;
   totalMinStock: number;
   totalReservedStock: number;
   totalInTransitStock: number;
   totalAvailableStock: number;
-  
+
   // Status geral do produto
   overallStatus: StockStatus;
-  
+
   // Contagens por status
   variantsInStock: number;
   variantsLowStock: number;
   variantsCritical: number;
   variantsOutOfStock: number;
-  
+
   // Total de variações
   totalVariants: number;
-  
+
   // Variações detalhadas
   variants: VariantStock[];
-  
+
   // Cores únicas disponíveis
   availableColors: ColorStockInfo[];
-  
+
   // Previsões
   nextRestockDate?: string;
   daysUntilFullStockout?: number;
@@ -125,28 +125,28 @@ export interface FutureStockEntry {
   productSku?: string;
   variantId?: string;
   colorName?: string;
-  
+
   // Quantidade esperada
   expectedQuantity: number;
-  
+
   // Datas
   expectedDate: string;
   orderDate?: string;
-  
+
   // Origem
   source: 'purchase_order' | 'production' | 'transfer' | 'manual';
   sourceReference?: string; // ID do pedido de compra, etc.
-  
+
   // Status
   status: 'pending' | 'confirmed' | 'in_transit' | 'partial' | 'completed' | 'cancelled';
-  
+
   // Fornecedor
   supplierId?: string;
   supplierName?: string;
-  
+
   // Notas
   notes?: string;
-  
+
   createdAt: string;
   updatedAt: string;
 }
@@ -160,36 +160,36 @@ export interface StockMovement {
   productId: string;
   variantId?: string;
   colorName?: string;
-  
+
   // Tipo e quantidade
   type: StockMovementType;
   quantity: number;
   previousStock: number;
   newStock: number;
-  
+
   // Referência
   reason: string;
   reference?: string; // ID do pedido, nota fiscal, etc.
   referenceType?: 'order' | 'purchase' | 'adjustment' | 'transfer' | 'return';
-  
+
   // Custo
   unitCost?: number;
   totalCost?: number;
-  
+
   // Rastreamento
   createdAt: string;
   createdBy?: string;
   createdByName?: string;
 }
 
-export type StockMovementType = 
-  | 'in'         // Entrada
-  | 'out'        // Saída (venda)
+export type StockMovementType =
+  | 'in' // Entrada
+  | 'out' // Saída (venda)
   | 'adjustment' // Ajuste de inventário
-  | 'transfer'   // Transferência entre locais
-  | 'return'     // Devolução
-  | 'reserved'   // Reserva para pedido
-  | 'released';  // Liberação de reserva
+  | 'transfer' // Transferência entre locais
+  | 'return' // Devolução
+  | 'reserved' // Reserva para pedido
+  | 'released'; // Liberação de reserva
 
 // ============================================
 // ALERTAS DE ESTOQUE
@@ -199,33 +199,33 @@ export interface StockAlert {
   id: string;
   type: StockAlertType;
   severity: 'info' | 'warning' | 'error';
-  
+
   // Produto/Variação afetada
   productId: string;
   productName: string;
   productSku: string;
   variantId?: string;
   colorName?: string;
-  
+
   // Mensagem
   title: string;
   message: string;
-  
+
   // Dados
   currentStock: number;
   threshold: number;
-  
+
   // Ação sugerida
   suggestedAction?: string;
   actionUrl?: string;
-  
+
   // Metadados
   createdAt: string;
   dismissedAt?: string;
   dismissedBy?: string;
 }
 
-export type StockAlertType = 
+export type StockAlertType =
   | 'out_of_stock'
   | 'critical'
   | 'low_stock'
@@ -241,35 +241,35 @@ export type StockAlertType =
 export interface StockFilters {
   // Filtros de status
   status: StockStatus | 'all';
-  
+
   // Filtros de produto
   productId?: string;
   categoryId?: string;
   supplierId?: string;
-  
+
   // Filtros de cor/variação
   colorGroup?: string;
   colorName?: string;
-  
+
   // Quantidade mínima necessária (smart filter)
   minQuantityNeeded?: number;
-  
+
   // Busca
   search: string;
-  
+
   // Ordenação
   sortBy: StockSortOption;
   sortDirection: 'asc' | 'desc';
-  
+
   // Agrupamento
   groupBy: StockGroupOption;
-  
+
   // Flags
   showOnlyWithVariants: boolean;
   showOnlyWithAlerts: boolean;
 }
 
-export type StockSortOption = 
+export type StockSortOption =
   | 'name'
   | 'sku'
   | 'stock_quantity'
@@ -278,7 +278,7 @@ export type StockSortOption =
   | 'color_name'
   | 'last_updated';
 
-export type StockGroupOption = 
+export type StockGroupOption =
   | 'none'
   | 'product'
   | 'color'
@@ -306,30 +306,30 @@ export interface StockDashboardSummary {
   totalProducts: number;
   totalVariants: number;
   totalColors: number;
-  
+
   // Por status
   productsInStock: number;
   productsLowStock: number;
   productsCritical: number;
   productsOutOfStock: number;
-  
+
   variantsInStock: number;
   variantsLowStock: number;
   variantsCritical: number;
   variantsOutOfStock: number;
-  
+
   // Valores
   totalStockValue: number;
   totalAvailableValue: number;
-  
+
   // Métricas
   averageDaysOfStock: number;
   stockTurnoverRate: number;
-  
+
   // Alertas
   totalAlerts: number;
   criticalAlerts: number;
-  
+
   // Estoque futuro
   incomingStockValue: number;
   nextRestockDate?: string;
@@ -340,10 +340,10 @@ export interface StockDashboardSummary {
 // ============================================
 
 export function calculateStockStatus(
-  current: number, 
-  min: number, 
+  current: number,
+  min: number,
   max?: number,
-  inTransit?: number
+  inTransit?: number,
 ): StockStatus {
   if (current <= 0) {
     if (inTransit && inTransit > 0) return 'incoming';
@@ -356,29 +356,29 @@ export function calculateStockStatus(
 }
 
 export function calculateDaysUntilStockout(
-  currentStock: number, 
-  avgDailySales: number = 2
+  currentStock: number,
+  avgDailySales: number = 2,
 ): number | undefined {
   if (avgDailySales <= 0 || currentStock <= 0) return undefined;
   return Math.floor(currentStock / avgDailySales);
 }
 
-export function calculateAvailableStock(
-  currentStock: number,
-  reservedStock: number = 0
-): number {
+export function calculateAvailableStock(currentStock: number, reservedStock: number = 0): number {
   return Math.max(0, currentStock - reservedStock);
 }
 
 export function aggregateVariantsToProduct(
-  variants: VariantStock[]
-): Omit<ProductStockSummary, 'productId' | 'productName' | 'productSku' | 'productImageUrl' | 'categoryName' | 'supplierName'> {
+  variants: VariantStock[],
+): Omit<
+  ProductStockSummary,
+  'productId' | 'productName' | 'productSku' | 'productImageUrl' | 'categoryName' | 'supplierName'
+> {
   const totalCurrentStock = variants.reduce((sum, v) => sum + v.currentStock, 0);
   const totalMinStock = variants.reduce((sum, v) => sum + v.minStock, 0);
   const totalReservedStock = variants.reduce((sum, v) => sum + v.reservedStock, 0);
   const totalInTransitStock = variants.reduce((sum, v) => sum + v.inTransitStock, 0);
   const totalAvailableStock = variants.reduce((sum, v) => sum + v.availableStock, 0);
-  
+
   // #13 fix: single-loop variant status counting (O(n) instead of O(4n))
   let variantsInStock = 0;
   let variantsLowStock = 0;
@@ -386,42 +386,54 @@ export function aggregateVariantsToProduct(
   let variantsOutOfStock = 0;
   for (const v of variants) {
     switch (v.status) {
-      case 'in_stock': variantsInStock++; break;
-      case 'low_stock': variantsLowStock++; break;
-      case 'critical': variantsCritical++; break;
-      case 'out_of_stock': variantsOutOfStock++; break;
+      case 'in_stock':
+        variantsInStock++;
+        break;
+      case 'low_stock':
+        variantsLowStock++;
+        break;
+      case 'critical':
+        variantsCritical++;
+        break;
+      case 'out_of_stock':
+        variantsOutOfStock++;
+        break;
     }
   }
-  
+
   // Agrupar por cor
   const colorMap = new Map<string, VariantStock[]>();
-  variants.forEach(v => {
+  variants.forEach((v) => {
     const colorKey = v.colorName || 'Sem cor';
     if (!colorMap.has(colorKey)) {
       colorMap.set(colorKey, []);
     }
-    colorMap.get(colorKey)!.push(v);
+    colorMap.get(colorKey)?.push(v);
   });
-  
-  const availableColors: ColorStockInfo[] = Array.from(colorMap.entries()).map(([colorName, colorVariants]) => {
-    const totalStock = colorVariants.reduce((sum, v) => sum + v.currentStock, 0);
-    const availableStock = colorVariants.reduce((sum, v) => sum + v.availableStock, 0);
-    const minStock = colorVariants.reduce((sum, v) => sum + v.minStock, 0);
-    
-    return {
-      colorId: colorVariants[0]?.colorId,
-      colorName,
-      colorHex: colorVariants[0]?.colorHex,
-      totalStock,
-      availableStock,
-      status: calculateStockStatus(totalStock, minStock),
-      variants: colorVariants,
-    };
-  });
-  
+
+  const availableColors: ColorStockInfo[] = Array.from(colorMap.entries()).map(
+    ([colorName, colorVariants]) => {
+      const totalStock = colorVariants.reduce((sum, v) => sum + v.currentStock, 0);
+      const availableStock = colorVariants.reduce((sum, v) => sum + v.availableStock, 0);
+      const minStock = colorVariants.reduce((sum, v) => sum + v.minStock, 0);
+
+      return {
+        colorId: colorVariants[0]?.colorId,
+        colorName,
+        colorHex: colorVariants[0]?.colorHex,
+        totalStock,
+        availableStock,
+        status: calculateStockStatus(totalStock, minStock),
+        variants: colorVariants,
+      };
+    },
+  );
+
   // Contagem de variantes com estoque chegando
-  const variantsIncoming = variants.filter(v => v.status === 'incoming' || v.inTransitStock > 0).length;
-  
+  const variantsIncoming = variants.filter(
+    (v) => v.status === 'incoming' || v.inTransitStock > 0,
+  ).length;
+
   // Status geral - prioridade: incoming > out_of_stock > critical > low_stock > in_stock
   let overallStatus: StockStatus = 'in_stock';
   if (variants.length === 0) {
@@ -436,7 +448,7 @@ export function aggregateVariantsToProduct(
   } else if (variantsLowStock > 0) {
     overallStatus = 'low_stock';
   }
-  
+
   return {
     totalCurrentStock,
     totalMinStock,

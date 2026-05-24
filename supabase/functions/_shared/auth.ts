@@ -3,7 +3,6 @@
 
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { isTokenRevoked } from "./token-revocation.ts";
-import { constantTimeEqual } from "./dispatcher-auth.ts";
 
 export interface AuthResult {
   userId: string;
@@ -33,20 +32,8 @@ export async function authenticateRequest(req: Request): Promise<AuthResult> {
   const rawToken = authHeader.slice(7).trim();
   const localServiceClient = createClient(supabaseUrl, serviceRoleKey);
 
-  // ⚡ FAST-PATH: bypass para chamadas do sistema (service_role ou simulação).
-  // Comparação em tempo constante para evitar timing-attacks de descoberta de
-  // prefixos. Ambos os tokens vivem em vault/env — NUNCA hardcoded.
-  const isServiceRole = !!serviceRoleKey && constantTimeEqual(rawToken, serviceRoleKey.trim());
-  const isSimulation = !!simulationKey && constantTimeEqual(rawToken, simulationKey.trim());
-  
-  if (isServiceRole || isSimulation) {
-    return {
-      userId: '00000000-0000-0000-0000-000000000000', // System user
-      userRole: 'dev',
-      userRoles: ['dev', 'service_role', 'simulation'],
-      localServiceClient
-    };
-  }
+  // Fast-path de credenciais de transporte removido (SEC-003).
+  // Apenas JWT de usuário válido segue como mecanismo aceito neste helper.
 
   // Validate token using getUser (works with all supabase-js versions)
   const userClient = createClient(supabaseUrl, supabaseAnonKey, {

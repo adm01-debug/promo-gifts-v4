@@ -40,6 +40,7 @@ import {
   aggregateDailySummaryByDate,
   getActiveFlags,
   type IntelligenceFlag,
+  type StockVelocity,
 } from '@/hooks/intelligence';
 import {
   safeVelocityTrend,
@@ -130,7 +131,7 @@ export function ProductRiskDetail({ productId, productName }: ProductRiskDetailP
 
   const bestVelocity = velocity?.length
     ? velocity.reduce(
-        (best, v) => (v.avg_daily_depletion_7d > (best?.avg_daily_depletion_7d ?? 0) ? v : best),
+        (best: StockVelocity, v: StockVelocity) => (v.avg_daily_depletion_7d > (best?.avg_daily_depletion_7d ?? 0) ? v : best),
         velocity[0],
       )
     : isDemo

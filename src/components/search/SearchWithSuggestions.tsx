@@ -197,10 +197,3 @@ export function SearchWithSuggestions({
     </div>
   );
 }
-
-// Add type declaration for SpeechRecognition
-declare global {
-  interface Window {
-    webkitSpeechRecognition: typeof SpeechRecognition;
-  }
-}

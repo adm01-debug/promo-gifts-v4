@@ -8,11 +8,7 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { RefreshCw, Check, Loader2, Palette, Ruler } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { invokeExternalDb } from '@/lib/external-db';
@@ -58,7 +54,6 @@ function sizeSort(a: string, b: string): number {
 
 export function VariantSelector({
   itemId,
-  itemName,
   allowedVariantIds,
   selectedColor,
   selectedSize,
@@ -74,19 +69,20 @@ export function VariantSelector({
       const result = await invokeExternalDb<VariantOption>({
         table: 'product_variants',
         operation: 'select',
-        select: 'id, color_name, color_hex, color_code, sku, selected_thumbnail, sale_price, size_code',
+        select:
+          'id, color_name, color_hex, color_code, sku, selected_thumbnail, sale_price, size_code',
         filters: { id: allowedVariantIds, is_active: true },
         limit: 50,
       });
 
-      return result.records.filter(v => v.color_name);
+      return result.records.filter((v) => v.color_name);
     },
     enabled: open && allowedVariantIds.length > 0,
     staleTime: 10 * 60 * 1000,
   });
 
   // Detect if any variant has size_code
-  const hasSizes = useMemo(() => variants.some(v => v.size_code), [variants]);
+  const hasSizes = useMemo(() => variants.some((v) => v.size_code), [variants]);
 
   // Group by color when sizes exist
   const grouped = useMemo(() => {
@@ -95,7 +91,7 @@ export function VariantSelector({
     for (const v of variants) {
       const key = v.color_name || 'Padrão';
       if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(v);
+      map.get(key)?.push(v);
     }
     // Sort sizes within each group
     for (const [, group] of map) {
@@ -112,13 +108,13 @@ export function VariantSelector({
         <>
           {selectedColor.hex && (
             <span
-              className="w-3 h-3 rounded-full border border-border inline-block"
+              className="inline-block h-3 w-3 rounded-full border border-border"
               style={{ backgroundColor: selectedColor.hex }}
             />
           )}
           <span className="truncate">{selectedColor.name}</span>
           {selectedSize && (
-            <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 font-medium">
+            <Badge variant="outline" className="h-4 px-1 py-0 text-[9px] font-medium">
               {selectedSize}
             </Badge>
           )}
@@ -150,16 +146,12 @@ export function VariantSelector({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-6 px-2 text-xs gap-1 max-w-[180px]"
-        >
+        <Button variant="outline" size="sm" className="h-6 max-w-[180px] gap-1 px-2 text-xs">
           {triggerLabel()}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-64 p-2" align="start">
-        <p className="text-xs font-medium text-muted-foreground mb-2 px-1">
+        <p className="mb-2 px-1 text-xs font-medium text-muted-foreground">
           {hasSizes ? 'Cor e Tamanho' : 'Variantes disponíveis'}
         </p>
 
@@ -168,12 +160,12 @@ export function VariantSelector({
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           </div>
         ) : variants.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-3">
+          <p className="py-3 text-center text-xs text-muted-foreground">
             Nenhuma variante encontrada
           </p>
         ) : hasSizes && grouped ? (
           /* ── Grouped view: Color → Sizes ── */
-          <div className="space-y-2 max-h-56 overflow-y-auto">
+          <div className="max-h-56 space-y-2 overflow-y-auto">
             {Array.from(grouped.entries()).map(([colorName, group]) => {
               const hex = group[0]?.color_hex;
               return (
@@ -182,17 +174,17 @@ export function VariantSelector({
                   <div className="flex items-center gap-2 px-1">
                     {hex ? (
                       <span
-                        className="w-3.5 h-3.5 rounded-full border border-border flex-shrink-0"
+                        className="h-3.5 w-3.5 flex-shrink-0 rounded-full border border-border"
                         style={{ backgroundColor: hex }}
                       />
                     ) : (
-                      <Palette className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                      <Palette className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
                     )}
                     <span className="text-xs font-medium">{colorName}</span>
                   </div>
                   {/* Size chips */}
                   <div className="flex flex-wrap gap-1 pl-6">
-                    {group.map(variant => {
+                    {group.map((variant) => {
                       const isActive =
                         selectedColor?.name === variant.color_name &&
                         selectedSize === variant.size_code;
@@ -200,10 +192,10 @@ export function VariantSelector({
                         <button
                           key={variant.id}
                           className={cn(
-                            'px-2 py-1 rounded-md text-xs border transition-colors',
-                            'hover:bg-accent hover:border-primary/40',
+                            'rounded-md border px-2 py-1 text-xs transition-colors',
+                            'hover:border-primary/40 hover:bg-accent',
                             isActive
-                              ? 'bg-primary/10 border-primary/40 text-primary font-medium'
+                              ? 'border-primary/40 bg-primary/10 font-medium text-primary'
                               : 'border-border text-foreground',
                           )}
                           onClick={() => handleSelect(variant)}
@@ -223,32 +215,30 @@ export function VariantSelector({
           </div>
         ) : (
           /* ── Flat list (no sizes) ── */
-          <div className="space-y-0.5 max-h-48 overflow-y-auto">
-            {variants.map(variant => {
+          <div className="max-h-48 space-y-0.5 overflow-y-auto">
+            {variants.map((variant) => {
               const isActive = selectedColor?.name === variant.color_name;
               return (
                 <button
                   key={variant.id}
                   className={cn(
-                    'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-sm transition-colors',
+                    'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors',
                     'hover:bg-accent',
-                    isActive && 'bg-primary/10 text-primary'
+                    isActive && 'bg-primary/10 text-primary',
                   )}
                   onClick={() => handleSelect(variant)}
                 >
                   {variant.color_hex ? (
                     <span
-                      className="w-4 h-4 rounded-full border border-border flex-shrink-0"
+                      className="h-4 w-4 flex-shrink-0 rounded-full border border-border"
                       style={{ backgroundColor: variant.color_hex }}
                     />
                   ) : (
-                    <Palette className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <Palette className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
                   )}
-                  <span className="truncate flex-1">
-                    {variant.color_name || 'Padrão'}
-                  </span>
+                  <span className="flex-1 truncate">{variant.color_name || 'Padrão'}</span>
                   {variant.sku && (
-                    <span className="text-[10px] text-muted-foreground font-mono flex-shrink-0">
+                    <span className="flex-shrink-0 font-mono text-[10px] text-muted-foreground">
                       {variant.sku}
                     </span>
                   )}

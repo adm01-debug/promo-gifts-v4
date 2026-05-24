@@ -7,7 +7,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Cloud, CloudOff, Check, Loader2, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
@@ -164,7 +163,7 @@ export function QuoteAutoSave({
     }
   }, [storageKey, quoteId]);
 
-  const handleDiscard = () => {
+  const _handleDiscard = () => {
     localStorage.removeItem(storageKey);
     
     const keysToRemove: string[] = [];

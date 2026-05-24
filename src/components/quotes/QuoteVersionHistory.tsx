@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { GitBranch, GitCompare, Plus, Eye, Check, Clock, FileText } from "lucide-react";
+import { GitBranch, GitCompare, Plus, Eye, Clock, FileText } from "lucide-react";
 import { QuoteVersionCompare } from "./QuoteVersionCompare";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useQuoteVersions, type QuoteVersion } from "@/hooks/quotes";
+import { useQuoteVersions } from "@/hooks/quotes";
 import { QUOTE_STATUS_CONFIG } from "@/lib/quote-status-config";
 import { formatCurrency } from "@/lib/format";
 
