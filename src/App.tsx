@@ -13,6 +13,7 @@ import { AccessibilityProvider, AriaLiveProvider } from "@/components/a11y";
 import { BridgeStatusBanner } from "@/components/BridgeStatusBanner";
 import { CloudStatusBanner } from "@/components/system/CloudStatusBanner";
 import { CloudStatusDot } from "@/components/system/CloudStatusDot";
+import { KillSwitchBanner } from "@/components/system/KillSwitchBanner";
 import { RootInteractivityGuard } from "@/components/system/RootInteractivityGuard";
 import { GlobalOfflineAlert } from "@/components/common/GlobalOfflineAlert";
 import { DevOnlyBridgeOverlay } from "@/components/dev/DevOnlyBridgeOverlay";
@@ -48,6 +49,7 @@ const App = () => {
                       <AppProviders>
                         <RootInteractivityGuard />
                         <Sonner />
+                        <KillSwitchBanner />
                         <CloudStatusBanner />
                         <CloudStatusDot />
                         <BridgeStatusBanner />
