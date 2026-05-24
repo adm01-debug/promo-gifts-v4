@@ -73,3 +73,39 @@ export function isBodyStuckInert(): boolean {
   if (typeof document === 'undefined') return false;
   return document.body.style.pointerEvents === 'none' && !hasOpenOverlay();
 }
+
+/** Root elements that, if made non-interactive, freeze the whole app. */
+function rootElements(): HTMLElement[] {
+  const root = document.getElementById('root');
+  return [document.documentElement, document.body, root].filter(
+    (el): el is HTMLElement => el !== null,
+  );
+}
+
+/**
+ * True when <html>, <body> or #root has a *computed* `pointer-events: none`
+ * (inline OR via a stylesheet) while no overlay justifies it — i.e. the entire
+ * app is unclickable. Broader than {@link isBodyStuckInert}, which only sees
+ * the inline value on <body>.
+ */
+export function isRootInert(): boolean {
+  if (typeof document === 'undefined' || typeof getComputedStyle === 'undefined') return false;
+  if (hasOpenOverlay()) return false;
+  return rootElements().some((el) => getComputedStyle(el).pointerEvents === 'none');
+}
+
+/**
+ * Force <html>/<body>/#root back to interactive by setting an inline
+ * `pointer-events: auto` (which beats a stuck inline `none` and most
+ * stylesheet rules), and clear any residual scroll-lock side effects.
+ * Unconditional — callers must ensure no overlay is open.
+ */
+export function forceRootInteractive(): void {
+  if (typeof document === 'undefined') return;
+  releaseScrollLock();
+  for (const el of rootElements()) {
+    if (typeof getComputedStyle !== 'undefined' && getComputedStyle(el).pointerEvents === 'none') {
+      el.style.pointerEvents = 'auto';
+    }
+  }
+}
