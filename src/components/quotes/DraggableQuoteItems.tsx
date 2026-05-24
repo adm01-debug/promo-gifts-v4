@@ -280,6 +280,7 @@ export function DraggableQuoteItems({
   onUpdatePrice,
   onRemove,
   onTogglePersonalization,
+  onConfirmPrice,
   expandedItems = new Set(),
   renderPersonalization,
   formatCurrency,
