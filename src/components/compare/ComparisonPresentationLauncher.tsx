@@ -3,7 +3,7 @@
  * Atalhos: ← → navega, Esc fecha, F fullscreen do browser.
  */
 import { useState, useEffect, useCallback } from "react";
-import type { Product } from "@/types/product";
+import type { Product } from "@/types/product-catalog";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

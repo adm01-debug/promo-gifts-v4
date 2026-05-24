@@ -3,7 +3,7 @@
  * Cada linha = atributo, produtos viram chips horizontais swipeable.
  */
 import { Badge } from "@/components/ui/badge";
-import type { Product, ProductColor } from "@/types/product";
+import type { Product, ProductColor } from "@/types/product-catalog";
 import { Button } from "@/components/ui/button";
 import { X, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";

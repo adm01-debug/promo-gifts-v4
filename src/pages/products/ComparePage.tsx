@@ -10,7 +10,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { useComparisonStore, type CompareVariantInfo } from '@/stores/useComparisonStore';
-import type { Product, ProductColor } from '@/types/product';
+import type { Product, ProductColor } from '@/types/product-catalog';
 import { useProductsContext } from '@/contexts/ProductsContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SyncedZoomGallery } from '@/components/compare/SyncedZoomGallery';
-import { CompareTableView, type CompareEntry } from '@/components/compare/CompareTableView';
+import { CompareTableView } from '@/components/compare/CompareTableView';
 import { ComparisonScoreCard } from '@/components/compare/ComparisonScoreCard';
 import { ComparisonRadarChart } from '@/components/compare/ComparisonRadarChart';
 import { AIComparisonAdvisor } from '@/components/compare/AIComparisonAdvisor';
@@ -372,15 +372,9 @@ export default function ComparePage() {
                 </TabsContent>
 
                 <TabsContent value="table">
-                  {/* Os produtos vêm de getProductsByIds → mapPromobrindToProduct,
-                      cujo shape de runtime é o de @/types/product-catalog (camelCase).
-                      A tipagem local desta página os declara como @/types/product;
-                      a asserção abaixo reconcilia esse descompasso pré-existente no
-                      único ponto de contato com o CompareTableView (já migrado ao
-                      tipo correto). Ver follow-up de unificação dos tipos de Product. */}
                   <CompareTableView
-                    entries={compareEntries as unknown as CompareEntry[]}
-                    products={products as unknown as CompareEntry['product'][]}
+                    entries={compareEntries}
+                    products={products}
                     formatCurrency={formatCurrency}
                     getStockStatusLabel={getStockStatusLabel}
                     onRemove={removeByIndex}
