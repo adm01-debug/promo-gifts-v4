@@ -10,7 +10,7 @@ FROM auth.users u
 CROSS JOIN LATERAL (
   SELECT id
   FROM public.organizations
-  ORDER BY created_at ASC NULLS LAST, id ASC
+  ORDER BY id ASC
   LIMIT 1
 ) o
 WHERE NOT EXISTS (
