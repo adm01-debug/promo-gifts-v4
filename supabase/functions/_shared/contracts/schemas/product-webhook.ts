@@ -144,6 +144,14 @@ export const ProductWebhookV2 = z
   })
   .strict()
   .superRefine((val, ctx) => {
+    if (val.product !== undefined && val.products !== undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["products"],
+        message: "product and products are mutually exclusive",
+      });
+    }
+
     if (val.action === "delete") {
       if (!val.external_ids || val.external_ids.length === 0) {
         ctx.addIssue({
