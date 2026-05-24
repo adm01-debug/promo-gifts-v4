@@ -31,7 +31,7 @@ export function CustomizationOptions({
   const { colorOptions, sizeOptions, hasPriceByColor, isLoading, error, findMatchingTable } =
     useTechniquePricing(technique.techniqueCode);
 
-  // Atualizar tabela de preÃ§os quando muda cores ou tamanho
+  // Atualizar tabela de preços quando muda cores ou tamanho
   useEffect(() => {
     if (onTableCodeChange) {
       const table = findMatchingTable(colors, sizeOption || '');
@@ -39,7 +39,7 @@ export function CustomizationOptions({
     }
   }, [colors, sizeOption, findMatchingTable, onTableCodeChange]);
 
-  // Definir valores iniciais quando opÃ§Ãµes carregam
+  // Definir valores iniciais quando opções carregam
   useEffect(() => {
     if (colorOptions.length > 0 && colors === 0) {
       onColorsChange(colorOptions[0].value);
@@ -53,7 +53,7 @@ export function CustomizationOptions({
     return (
       <div className="flex items-center justify-center py-8 text-muted-foreground">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-        Carregando opÃ§Ãµes...
+        Carregando opções...
       </div>
     );
   }
@@ -67,16 +67,16 @@ export function CustomizationOptions({
     );
   }
 
-  // Se nÃ£o hÃ¡ opÃ§Ãµes configurÃ¡veis, mostrar mensagem
+  // Se não há opções configuráveis, mostrar mensagem
   if (!hasPriceByColor && sizeOptions.length === 0) {
     return (
       <div className="rounded-lg bg-muted/50 p-4 text-center">
         <p className="text-sm text-muted-foreground">
-          Esta tÃ©cnica nÃ£o possui opÃ§Ãµes configurÃ¡veis de cores ou tamanho.
+          Esta técnica não possui opções configuráveis de cores ou tamanho.
         </p>
         {technique.maxWidth && technique.maxHeight && (
           <p className="mt-2 text-sm">
-            Ãrea de gravaÃ§Ã£o:{' '}
+            Área de gravação:{' '}
             <strong>
               {technique.maxWidth} x {technique.maxHeight} mm
             </strong>
@@ -93,7 +93,7 @@ export function CustomizationOptions({
         <div className="space-y-3">
           <label className="flex items-center gap-2 text-sm font-medium">
             <Palette className="h-4 w-4 text-primary" />
-            NÃºmero de Cores
+            Número de Cores
           </label>
           <div className="flex flex-wrap gap-2">
             {colorOptions.map((opt) => (
@@ -110,7 +110,7 @@ export function CustomizationOptions({
           </div>
           {technique.maxColors && (
             <p className="text-xs text-muted-foreground">
-              MÃ¡ximo suportado nesta Ã¡rea: {technique.maxColors} cores
+              Máximo suportado nesta área: {technique.maxColors} cores
             </p>
           )}
         </div>
@@ -121,7 +121,7 @@ export function CustomizationOptions({
         <div className="space-y-3">
           <label className="flex items-center gap-2 text-sm font-medium">
             <Ruler className="h-4 w-4 text-primary" />
-            Tamanho da GravaÃ§Ã£o
+            Tamanho da Gravação
           </label>
           <Select value={sizeOption || ''} onValueChange={onSizeChange}>
             <SelectTrigger>
@@ -131,7 +131,7 @@ export function CustomizationOptions({
               {sizeOptions.map((size) => (
                 <SelectItem key={size.value} value={size.value}>
                   {size.label}
-                  <span className="ml-2 text-muted-foreground">({size.areaCm2} cmÂ²)</span>
+                  <span className="ml-2 text-muted-foreground">({size.areaCm2} cm²)</span>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -139,14 +139,14 @@ export function CustomizationOptions({
         </div>
       )}
 
-      {/* Size Ãºnico - mostrar informaÃ§Ã£o */}
+      {/* Size único - mostrar informação */}
       {sizeOptions.length === 1 && (
         <div className="rounded-lg bg-muted/50 p-3 text-sm">
           <p className="flex items-center gap-2 text-muted-foreground">
             <Ruler className="h-4 w-4" />
-            Tamanho da gravaÃ§Ã£o:{' '}
+            Tamanho da gravação:{' '}
             <strong>
-              {sizeOptions[0].label} ({sizeOptions[0].areaCm2} cmÂ²)
+              {sizeOptions[0].label} ({sizeOptions[0].areaCm2} cm²)
             </strong>
           </p>
         </div>
@@ -156,11 +156,11 @@ export function CustomizationOptions({
       {sizeOptions.length === 0 && technique.maxWidth && technique.maxHeight && (
         <div className="rounded-lg bg-muted/50 p-3 text-sm">
           <p className="text-muted-foreground">
-            Ãrea mÃ¡xima de gravaÃ§Ã£o:{' '}
+            Área máxima de gravação:{' '}
             <strong>
               {technique.maxWidth} x {technique.maxHeight} mm
             </strong>
-            {technique.maxArea && <span> ({technique.maxArea} cmÂ²)</span>}
+            {technique.maxArea && <span> ({technique.maxArea} cm²)</span>}
           </p>
         </div>
       )}

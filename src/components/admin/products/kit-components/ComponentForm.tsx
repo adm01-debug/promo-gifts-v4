@@ -23,7 +23,7 @@ export function ComponentForm({ initial, onSave, onCancel, isSaving }: Props) {
 
   const handleSave = () => {
     if (!form.component_name.trim()) {
-      toast.error('Nome do componente Ã© obrigatÃ³rio');
+      toast.error('Nome do componente é obrigatório');
       return;
     }
     onSave(form);
@@ -37,7 +37,7 @@ export function ComponentForm({ initial, onSave, onCancel, isSaving }: Props) {
           <Input
             value={form.component_name}
             onChange={(e) => set('component_name', e.target.value)}
-            placeholder="Ex: TÃ¡bua de corte"
+            placeholder="Ex: Tábua de corte"
             className="h-8 text-sm"
           />
         </div>
@@ -51,7 +51,7 @@ export function ComponentForm({ initial, onSave, onCancel, isSaving }: Props) {
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-xs">CÃ³digo</Label>
+          <Label className="text-xs">Código</Label>
           <Input
             value={form.component_code}
             onChange={(e) => set('component_code', e.target.value)}
@@ -76,7 +76,7 @@ export function ComponentForm({ initial, onSave, onCancel, isSaving }: Props) {
           <Input
             value={form.supplier_component_code}
             onChange={(e) => set('supplier_component_code', e.target.value)}
-            placeholder="CÃ³digo fornecedor"
+            placeholder="Código fornecedor"
             className="h-8 font-mono text-sm"
           />
         </div>
@@ -167,8 +167,8 @@ export function ComponentForm({ initial, onSave, onCancel, isSaving }: Props) {
           [
             ['is_optional', 'Opcional'],
             ['is_packaging', 'Embalagem'],
-            ['is_replaceable', 'SubstituÃ­vel'],
-            ['allows_personalization', 'PersonalizÃ¡vel'],
+            ['is_replaceable', 'Substituível'],
+            ['allows_personalization', 'Personalizável'],
           ] as const
         ).map(([key, label]) => (
           <label key={key} className="flex cursor-pointer items-center gap-2 text-xs">
@@ -190,32 +190,32 @@ export function ComponentForm({ initial, onSave, onCancel, isSaving }: Props) {
 
       <div className="grid grid-cols-1 gap-3">
         <div className="space-y-1">
-          <Label className="text-xs">DescriÃ§Ã£o</Label>
+          <Label className="text-xs">Descrição</Label>
           <Input
             value={form.component_description}
             onChange={(e) => set('component_description', e.target.value)}
-            placeholder="DescriÃ§Ã£o / dimensÃµes descritivas"
+            placeholder="Descrição / dimensões descritivas"
             className="h-8 text-sm"
           />
         </div>
         {form.allows_personalization && (
           <div className="space-y-1">
-            <Label className="text-xs">Notas de PersonalizaÃ§Ã£o</Label>
+            <Label className="text-xs">Notas de Personalização</Label>
             <Textarea
               value={form.personalization_notes}
               onChange={(e) => set('personalization_notes', e.target.value)}
-              placeholder="InstruÃ§Ãµes de personalizaÃ§Ã£o..."
+              placeholder="Instruções de personalização..."
               rows={2}
               className="text-sm"
             />
           </div>
         )}
         <div className="space-y-1">
-          <Label className="text-xs">ObservaÃ§Ãµes</Label>
+          <Label className="text-xs">Observações</Label>
           <Input
             value={form.notes}
             onChange={(e) => set('notes', e.target.value)}
-            placeholder="ObservaÃ§Ãµes internas"
+            placeholder="Observações internas"
             className="h-8 text-sm"
           />
         </div>

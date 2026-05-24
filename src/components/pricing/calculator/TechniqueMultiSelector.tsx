@@ -40,7 +40,7 @@ export function TechniqueMultiSelector({
             techList.push({
               id: opt.technique_id,
               techniqueId: opt.technique_id,
-              techniqueName: opt.tecnica_nome || 'TÃ©cnica',
+              techniqueName: opt.tecnica_nome || 'Técnica',
               techniqueCode: opt.codigo_tabela || '',
               componentName: loc.location_name,
               locationName: loc.location_name,
@@ -75,14 +75,14 @@ export function TechniqueMultiSelector({
     return (
       <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-destructive">
         <AlertCircle className="mb-2 h-5 w-5" />
-        <p>Erro ao carregar tÃ©cnicas</p>
+        <p>Erro ao carregar técnicas</p>
       </div>
     );
   if (!techniques?.length)
     return (
       <div className="py-8 text-center text-muted-foreground">
         <Paintbrush className="mx-auto mb-2 h-8 w-8 opacity-50" />
-        <p>Este produto nÃ£o possui tÃ©cnicas de personalizaÃ§Ã£o cadastradas</p>
+        <p>Este produto não possui técnicas de personalização cadastradas</p>
       </div>
     );
 
@@ -99,7 +99,7 @@ export function TechniqueMultiSelector({
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Selecione uma ou mais tÃ©cnicas de gravaÃ§Ã£o para comparar
+        Selecione uma ou mais técnicas de gravação para comparar
       </p>
       {Object.entries(grouped).map(([componentName, techs]) => (
         <div key={componentName} className="space-y-2">
@@ -129,7 +129,7 @@ export function TechniqueMultiSelector({
                     {tech.isDefault && (
                       <Badge variant="secondary" className="text-xs">
                         <Sparkles className="mr-1 h-3 w-3" />
-                        PadrÃ£o
+                        Padrão
                       </Badge>
                     )}
                   </div>

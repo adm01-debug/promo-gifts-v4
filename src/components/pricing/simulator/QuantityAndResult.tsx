@@ -1,10 +1,10 @@
 ﻿/**
  * QuantityAndResult - Seletor de quantidade e resultado v5.1
  *
- * Usa a RPC fn_get_customization_price para cÃ¡lculos com:
+ * Usa a RPC fn_get_customization_price para cálculos com:
  * - Markup (115%)
- * - Faturamento mÃ­nimo (setup como piso, nÃ£o soma!)
- * - CÃ³digo de orÃ§amento automÃ¡tico
+ * - Faturamento mínimo (setup como piso, não soma!)
+ * - Código de orçamento automático
  */
 
 import { useState, useEffect } from 'react';
@@ -51,20 +51,20 @@ export function QuantityAndResult({
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  // Calcular preÃ§o quando quantidade ou parÃ¢metros mudam
+  // Calcular preço quando quantidade ou parâmetros mudam
   useEffect(() => {
     const calculate = async () => {
       setIsCalculating(true);
       setError(null);
 
       try {
-        // Usar o ID da tÃ©cnica como ID da Ã¡rea
+        // Usar o ID da técnica como ID da área
         const result = await calculatePrice(technique.id, quantity, colors);
 
         if (result?.success) {
           setPriceData(result);
         } else {
-          setError('Erro ao calcular preÃ§o');
+          setError('Erro ao calcular preço');
           setPriceData(null);
         }
       } catch (err) {
@@ -79,7 +79,7 @@ export function QuantityAndResult({
     return () => clearTimeout(debounce);
   }, [technique.id, quantity, colors, calculatePrice]);
 
-  // CÃ¡lculos derivados
+  // Cálculos derivados
   const productTotal = product.price * quantity;
   const customizationTotal = priceData?.total_price || 0;
   const grandTotal = productTotal + customizationTotal;
@@ -89,7 +89,7 @@ export function QuantityAndResult({
     if (!priceData?.codigo_orcamento) return;
     navigator.clipboard.writeText(priceData.codigo_orcamento);
     setCopied(true);
-    toast.success('CÃ³digo copiado!');
+    toast.success('Código copiado!');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -142,7 +142,7 @@ export function QuantityAndResult({
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-lg">
               <Calculator className="h-5 w-5 text-primary" />
-              Resumo do OrÃ§amento
+              Resumo do Orçamento
               {isCalculating && <Loader2 className="h-4 w-4 animate-spin" />}
             </CardTitle>
 
@@ -165,7 +165,7 @@ export function QuantityAndResult({
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>CÃ³digo de orÃ§amento - clique para copiar</p>
+                    <p>Código de orçamento - clique para copiar</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -177,7 +177,7 @@ export function QuantityAndResult({
           {error ? (
             <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-destructive">
               <AlertCircle className="mb-2 h-5 w-5" />
-              <p className="font-medium">Erro ao calcular preÃ§o</p>
+              <p className="font-medium">Erro ao calcular preço</p>
               <p className="mt-1 text-sm">{error}</p>
             </div>
           ) : (
@@ -193,7 +193,7 @@ export function QuantityAndResult({
 
                 {priceData && (
                   <>
-                    {/* GravaÃ§Ã£o */}
+                    {/* Gravação */}
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">
                         {priceData.technique}
@@ -209,12 +209,12 @@ export function QuantityAndResult({
                       <span>{formatCurrency(priceData.subtotal_pecas)}</span>
                     </div>
 
-                    {/* Faturamento mÃ­nimo aplicado */}
+                    {/* Faturamento mínimo aplicado */}
                     {priceData.minimum_applied && (
                       <div className="flex items-center justify-between rounded bg-warning/10 p-2 text-sm text-warning dark:bg-warning/10 dark:text-warning">
                         <div className="flex items-center gap-1">
                           <Info className="h-4 w-4" />
-                          <span>Faturamento mÃ­nimo aplicado</span>
+                          <span>Faturamento mínimo aplicado</span>
                         </div>
                         <span className="font-semibold">
                           {formatCurrency(priceData.faturamento_minimo_gravacao)}
@@ -222,9 +222,9 @@ export function QuantityAndResult({
                       </div>
                     )}
 
-                    {/* Subtotal gravaÃ§Ã£o */}
+                    {/* Subtotal gravação */}
                     <div className="flex justify-between border-t border-dashed pt-1 text-sm">
-                      <span className="text-muted-foreground">Subtotal gravaÃ§Ã£o</span>
+                      <span className="text-muted-foreground">Subtotal gravação</span>
                       <span
                         className={cn(
                           'font-medium',
@@ -262,7 +262,7 @@ export function QuantityAndResult({
               {priceData?.production_days && priceData.production_days > 0 && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Clock className="h-4 w-4" />
-                  <span>Prazo estimado: {priceData.production_days} dias Ãºteis</span>
+                  <span>Prazo estimado: {priceData.production_days} dias úteis</span>
                 </div>
               )}
 
@@ -271,7 +271,7 @@ export function QuantityAndResult({
                 <div className="mt-2 text-center text-xs text-muted-foreground">
                   <span>Markup: {priceData.markup_percent}% | </span>
                   <span>
-                    PreÃ§o mÃ­n. unitÃ¡rio: {formatCurrency(priceData.preco_minimo_unitario)}
+                    Preço mín. unitário: {formatCurrency(priceData.preco_minimo_unitario)}
                   </span>
                 </div>
               )}
@@ -280,14 +280,14 @@ export function QuantityAndResult({
         </CardContent>
       </Card>
 
-      {/* Info box sobre a lÃ³gica v5.1 */}
+      {/* Info box sobre a lógica v5.1 */}
       {priceData && (
         <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
-          <p className="mb-1 font-medium">ðŸ“Š Sistema de PreÃ§os v5.1</p>
+          <p className="mb-1 font-medium">ðŸ“Š Sistema de Preços v5.1</p>
           <p>
-            O setup Ã© aplicado como <strong>faturamento mÃ­nimo</strong>, nÃ£o Ã© somado ao total.
-            Se o subtotal das peÃ§as for menor que o mÃ­nimo, o total serÃ¡ igual ao faturamento
-            mÃ­nimo.
+            O setup é aplicado como <strong>faturamento mínimo</strong>, não é somado ao total.
+            Se o subtotal das peças for menor que o mínimo, o total será igual ao faturamento
+            mínimo.
           </p>
         </div>
       )}

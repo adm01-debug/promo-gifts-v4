@@ -1,7 +1,7 @@
 ﻿/**
- * Domain Calculators: PersonalizaÃ§Ã£o
+ * Domain Calculators: Personalização
  *
- * FunÃ§Ãµes puras para cÃ¡lculo de preÃ§os, sem side effects.
+ * Funções puras para cálculo de preços, sem side effects.
  */
 
 import type {
@@ -17,7 +17,7 @@ import type {
 // ============================================
 
 /**
- * Calcula o preÃ§o total de personalizaÃ§Ã£o para uma tabela e parÃ¢metros dados
+ * Calcula o preço total de personalização para uma tabela e parâmetros dados
  */
 export function calculatePrice(
   table: PriceTableInput,
@@ -25,22 +25,22 @@ export function calculatePrice(
 ): PriceCalculationResult {
   const { quantity, colors, widthCm, heightCm } = params;
 
-  // 1. Encontrar a faixa de preÃ§o correta
+  // 1. Encontrar a faixa de preço correta
   const tier = findPriceTier(table.tiers, quantity);
 
   if (!tier) {
-    throw new Error(`Nenhuma faixa de preÃ§o encontrada para quantidade ${quantity}`);
+    throw new Error(`Nenhuma faixa de preço encontrada para quantidade ${quantity}`);
   }
 
-  // 2. Calcular preÃ§o unitÃ¡rio base
+  // 2. Calcular preço unitário base
   let unitPrice = tier.unitPrice;
 
-  // 3. Ajustar por nÃºmero de cores (se aplicÃ¡vel)
+  // 3. Ajustar por número de cores (se aplicável)
   if (table.priceByColor && colors && table.maxColors) {
     unitPrice = adjustPriceByColors(unitPrice, colors, table.maxColors);
   }
 
-  // 4. Ajustar por Ã¡rea (se aplicÃ¡vel)
+  // 4. Ajustar por área (se aplicável)
   if (table.priceByArea && widthCm && heightCm) {
     unitPrice = adjustPriceByArea(
       unitPrice,
@@ -58,7 +58,7 @@ export function calculatePrice(
   // 6. Calcular economia vs primeira faixa
   const savings = calculateTierSavings(table.tiers, tier, unitPrice, quantity);
 
-  // 7. Montar Ã¡rea mÃ¡xima
+  // 7. Montar área máxima
   const maxArea: PrintArea | null =
     table.maxWidthCm && table.maxHeightCm
       ? {
@@ -87,12 +87,12 @@ export function calculatePrice(
 }
 
 /**
- * Encontra a faixa de preÃ§o apropriada para uma quantidade
+ * Encontra a faixa de preço apropriada para uma quantidade
  */
 export function findPriceTier(tiers: PriceTier[], quantity: number): PriceTier | null {
   if (tiers.length === 0) return null;
 
-  // Ordenar por quantidade mÃ­nima
+  // Ordenar por quantidade mínima
   const sortedTiers = [...tiers].sort((a, b) => a.minQuantity - b.minQuantity);
 
   // Encontrar a maior faixa que a quantidade atinge
@@ -110,8 +110,8 @@ export function findPriceTier(tiers: PriceTier[], quantity: number): PriceTier |
 }
 
 /**
- * Ajusta preÃ§o baseado no nÃºmero de cores
- * Se o cliente precisa de mais cores que o mÃ¡ximo da tabela, aplica proporcional
+ * Ajusta preço baseado no número de cores
+ * Se o cliente precisa de mais cores que o máximo da tabela, aplica proporcional
  */
 export function adjustPriceByColors(
   basePrice: number,
@@ -122,14 +122,14 @@ export function adjustPriceByColors(
     return basePrice;
   }
 
-  // PreÃ§o proporcional para cores extras
+  // Preço proporcional para cores extras
   const colorFactor = requestedColors / tableMaxColors;
   return basePrice * colorFactor;
 }
 
 /**
- * Ajusta preÃ§o baseado na Ã¡rea
- * Se a Ã¡rea excede o mÃ¡ximo, aplica proporcional
+ * Ajusta preço baseado na área
+ * Se a área excede o máximo, aplica proporcional
  */
 export function adjustPriceByArea(
   basePrice: number,
@@ -147,7 +147,7 @@ export function adjustPriceByArea(
     return basePrice;
   }
 
-  // PreÃ§o proporcional para Ã¡rea extra
+  // Preço proporcional para área extra
   const areaFactor = requestedArea / maxArea;
   return basePrice * areaFactor;
 }
@@ -181,7 +181,7 @@ function calculateTierSavings(
 }
 
 /**
- * Calcula economia entre dois preÃ§os unitÃ¡rios (exportada)
+ * Calcula economia entre dois preços unitários (exportada)
  */
 export function calculateSavings(
   originalUnitPrice: number,
@@ -200,7 +200,7 @@ export function calculateSavings(
 // ============================================
 
 /**
- * Retorna a quantidade mÃ­nima de uma lista de faixas
+ * Retorna a quantidade mínima de uma lista de faixas
  */
 export function getMinimumQuantity(tiers: PriceTier[]): number {
   if (tiers.length === 0) return 1;
@@ -209,7 +209,7 @@ export function getMinimumQuantity(tiers: PriceTier[]): number {
 }
 
 /**
- * Retorna a quantidade mÃ¡xima explÃ­cita (ou null se ilimitado)
+ * Retorna a quantidade máxima explícita (ou null se ilimitado)
  */
 export function getMaximumQuantity(tiers: PriceTier[]): number | null {
   if (tiers.length === 0) return null;
@@ -219,7 +219,7 @@ export function getMaximumQuantity(tiers: PriceTier[]): number | null {
 }
 
 /**
- * Sugere a prÃ³xima faixa de quantidade para economia
+ * Sugere a próxima faixa de quantidade para economia
  */
 export function suggestNextTier(
   tiers: PriceTier[],
@@ -250,7 +250,7 @@ export function suggestNextTier(
 // ============================================
 
 /**
- * Calcula preÃ§o para mÃºltiplas tÃ©cnicas (gravaÃ§Ã£o em vÃ¡rias posiÃ§Ãµes)
+ * Calcula preço para múltiplas técnicas (gravação em várias posições)
  */
 export function calculateMultiTechniquePrice(calculations: PriceCalculationResult[]): {
   subtotal: number;

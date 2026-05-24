@@ -45,7 +45,7 @@ export function VolumeValidation({
       <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
         <Box className="h-4 w-4 shrink-0" />
         <span>
-          Preencha as <strong>dimensÃµes internas</strong> na aba Detalhes para validar volume dos
+          Preencha as <strong>dimensões internas</strong> na aba Detalhes para validar volume dos
           componentes.
         </span>
       </div>
@@ -72,7 +72,7 @@ export function VolumeValidation({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Box className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium text-foreground">ValidaÃ§Ã£o de Volume</span>
+          <span className="font-medium text-foreground">Validação de Volume</span>
         </div>
         <div className="flex items-center gap-1.5">
           {fits ? (
@@ -98,9 +98,9 @@ export function VolumeValidation({
           <span>
             Volume usado:{' '}
             <strong className="text-foreground">
-              {(totalComponentsVolume / 1000).toFixed(0)} cmÂ³
+              {(totalComponentsVolume / 1000).toFixed(0)} cm³
             </strong>{' '}
-            / {(boxVolumeMm3! / 1000).toFixed(0)} cmÂ³
+            / {(boxVolumeMm3! / 1000).toFixed(0)} cm³
           </span>
           <span className={cn('font-bold', fits ? 'text-success' : 'text-destructive')}>
             {usagePercent}%
@@ -142,7 +142,7 @@ export function VolumeValidation({
                     )}
                   </div>
                 ) : (
-                  <span className="italic text-warning">sem dimensÃµes</span>
+                  <span className="italic text-warning">sem dimensões</span>
                 )}
               </div>
             );
@@ -153,7 +153,7 @@ export function VolumeValidation({
       {missingDimensions.length > 0 && (
         <div className="flex items-center gap-1.5 pt-0.5 text-[10px] text-warning">
           <AlertCircle className="h-3 w-3 shrink-0" />
-          {missingDimensions.length} componente(s) sem dimensÃµes â€” o cÃ¡lculo pode ser impreciso.
+          {missingDimensions.length} componente(s) sem dimensões â€” o cálculo pode ser impreciso.
         </div>
       )}
     </div>

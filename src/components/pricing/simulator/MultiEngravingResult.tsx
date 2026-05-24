@@ -1,10 +1,10 @@
 ﻿/**
- * MultiEngravingResult - Resultado de mÃºltiplas gravaÃ§Ãµes v5.1
+ * MultiEngravingResult - Resultado de múltiplas gravações v5.1
  *
- * Usa a RPC fn_get_customization_price para cÃ¡lculos com:
+ * Usa a RPC fn_get_customization_price para cálculos com:
  * - Markup (115%)
- * - Faturamento mÃ­nimo (setup como piso)
- * - CÃ³digo de orÃ§amento automÃ¡tico
+ * - Faturamento mínimo (setup como piso)
+ * - Código de orçamento automático
  */
 
 import { useState, useEffect } from 'react';
@@ -57,7 +57,7 @@ export function MultiEngravingResult({
   const [isCalculating, setIsCalculating] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
-  // Recalcular quando quantidade ou gravaÃ§Ãµes mudam
+  // Recalcular quando quantidade ou gravações mudam
   useEffect(() => {
     const calculateAll = async () => {
       if (engravings.length === 0) {
@@ -70,8 +70,8 @@ export function MultiEngravingResult({
       const results = await Promise.all(
         engravings.map(async (engraving) => {
           try {
-            // Usar ID da Ã¡rea da tÃ©cnica selecionada
-            // Assumindo que technique.id Ã© o ID da Ã¡rea de impressÃ£o
+            // Usar ID da área da técnica selecionada
+            // Assumindo que technique.id é o ID da área de impressão
             const areaId = engraving.technique.id;
 
             const priceData = await calculatePrice(areaId, quantity, engraving.colors || 1);
@@ -80,7 +80,7 @@ export function MultiEngravingResult({
               engraving,
               priceData,
               loading: false,
-              error: priceData?.success === false ? 'Erro no cÃ¡lculo' : null,
+              error: priceData?.success === false ? 'Erro no cálculo' : null,
             };
           } catch (err) {
             return {
@@ -110,19 +110,19 @@ export function MultiEngravingResult({
   const grandTotal = productTotal + customizationTotal;
   const unitTotal = quantity > 0 ? grandTotal / quantity : 0;
 
-  // Prazo mÃ¡ximo
+  // Prazo máximo
   const maxSlaDays = Math.max(
     ...calculations.map((c) => c.priceData?.production_days || 0).filter(Boolean),
     0,
   );
 
-  // Verificar se hÃ¡ erros
+  // Verificar se há erros
   const hasErrors = calculations.some((c) => c.error || !c.priceData?.success);
 
-  // Verificar se algum aplicou faturamento mÃ­nimo
+  // Verificar se algum aplicou faturamento mínimo
   const hasMinimumApplied = calculations.some((c) => c.priceData?.minimum_applied);
 
-  // Coletar todos os cÃ³digos de orÃ§amento
+  // Coletar todos os códigos de orçamento
   const allCodes = calculations
     .map((c) => c.priceData?.codigo_orcamento)
     .filter((code): code is string => !!code);
@@ -130,13 +130,13 @@ export function MultiEngravingResult({
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
     setCopied(code);
-    toast.success('CÃ³digo copiado!');
+    toast.success('Código copiado!');
     setTimeout(() => setCopied(null), 2000);
   };
 
   const handleCopyAllCodes = () => {
     navigator.clipboard.writeText(allCodes.join(' | '));
-    toast.success('Todos os cÃ³digos copiados!');
+    toast.success('Todos os códigos copiados!');
   };
 
   const quickQuantities = [50, 100, 250, 500, 1000, 2500, 5000];
@@ -186,9 +186,9 @@ export function MultiEngravingResult({
       {hasErrors && !isCalculating && (
         <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-destructive">
           <AlertCircle className="mb-2 h-5 w-5" />
-          <p className="font-medium">Algumas tÃ©cnicas nÃ£o puderam ser calculadas</p>
+          <p className="font-medium">Algumas técnicas não puderam ser calculadas</p>
           <p className="mt-1 text-sm">
-            Verifique se as Ã¡reas estÃ£o corretamente configuradas no banco de dados.
+            Verifique se as áreas estão corretamente configuradas no banco de dados.
           </p>
         </div>
       )}
@@ -199,7 +199,7 @@ export function MultiEngravingResult({
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-lg">
               <Calculator className="h-5 w-5 text-primary" />
-              Resumo do OrÃ§amento
+              Resumo do Orçamento
               {isCalculating && <Loader2 className="h-4 w-4 animate-spin" />}
             </CardTitle>
 
@@ -209,11 +209,11 @@ export function MultiEngravingResult({
                   <TooltipTrigger asChild>
                     <Button variant="outline" size="sm" onClick={handleCopyAllCodes}>
                       <Copy className="mr-1 h-4 w-4" />
-                      Copiar CÃ³digos
+                      Copiar Códigos
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Copiar todos os cÃ³digos de orÃ§amento</p>
+                    <p>Copiar todos os códigos de orçamento</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -241,12 +241,12 @@ export function MultiEngravingResult({
 
           <Separator />
 
-          {/* GravaÃ§Ãµes */}
+          {/* Gravações */}
           {engravings.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm font-medium">
                 <Paintbrush className="h-4 w-4 text-muted-foreground" />
-                PersonalizaÃ§Ãµes ({engravings.length})
+                Personalizações ({engravings.length})
               </div>
 
               {calculations.map((calc, idx) => (
@@ -304,7 +304,7 @@ export function MultiEngravingResult({
                         <div className="flex items-center gap-1 text-warning dark:text-warning">
                           <Info className="h-3 w-3" />
                           <span>
-                            Fat. mÃ­nimo aplicado:{' '}
+                            Fat. mínimo aplicado:{' '}
                             {formatCurrency(calc.priceData.faturamento_minimo_gravacao)}
                           </span>
                         </div>
@@ -314,9 +314,9 @@ export function MultiEngravingResult({
                 </div>
               ))}
 
-              {/* Subtotal personalizaÃ§Ã£o */}
+              {/* Subtotal personalização */}
               <div className="flex justify-between pl-6 pt-2 text-sm font-medium">
-                <span>Subtotal gravaÃ§Ãµes</span>
+                <span>Subtotal gravações</span>
                 <span>{formatCurrency(customizationTotal)}</span>
               </div>
             </div>
@@ -334,15 +334,15 @@ export function MultiEngravingResult({
             = {formatCurrency(unitTotal)} por unidade completa
           </div>
 
-          {/* Info sobre faturamento mÃ­nimo */}
+          {/* Info sobre faturamento mínimo */}
           {hasMinimumApplied && (
             <div className="rounded-lg bg-warning/10 p-3 text-sm text-warning dark:bg-warning/10 dark:text-warning">
               <div className="flex items-center gap-2">
                 <Info className="h-4 w-4" />
-                <span className="font-medium">Faturamento mÃ­nimo aplicado</span>
+                <span className="font-medium">Faturamento mínimo aplicado</span>
               </div>
               <p className="mt-1 text-xs">
-                O valor do setup foi aplicado como piso mÃ­nimo em uma ou mais tÃ©cnicas. Aumente a
+                O valor do setup foi aplicado como piso mínimo em uma ou mais técnicas. Aumente a
                 quantidade para diluir o custo.
               </p>
             </div>
@@ -352,7 +352,7 @@ export function MultiEngravingResult({
           {maxSlaDays > 0 && (
             <div className="flex items-center justify-center gap-2 pt-2 text-sm text-muted-foreground">
               <Clock className="h-4 w-4" />
-              <span>Prazo estimado: {maxSlaDays} dias Ãºteis</span>
+              <span>Prazo estimado: {maxSlaDays} dias úteis</span>
             </div>
           )}
         </CardContent>

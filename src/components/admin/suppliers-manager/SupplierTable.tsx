@@ -38,7 +38,7 @@ export function SupplierTable({
             <TableRow>
               <TableHead className="w-[50px]">Status</TableHead>
               <TableHead>Nome</TableHead>
-              <TableHead>CÃ³digo</TableHead>
+              <TableHead>Código</TableHead>
               <TableHead>Contato</TableHead>
               <TableHead className="text-right">Markup</TableHead>
               <TableHead className="text-center">Tipo</TableHead>
@@ -123,7 +123,7 @@ export function SupplierTable({
                       )}
                       {supplier.is_engraving_supplier && (
                         <Badge variant="outline" className="px-1.5 text-[10px]">
-                          GravaÃ§Ã£o
+                          Gravação
                         </Badge>
                       )}
                     </div>

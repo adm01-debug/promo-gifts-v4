@@ -46,7 +46,7 @@ export function StepPreview({
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
         <Badge variant="default" className="gap-1">
-          <CheckCircle2 className="h-3 w-3" /> {validCount} vÃ¡lidos
+          <CheckCircle2 className="h-3 w-3" /> {validCount} válidos
         </Badge>
         {invalidCount > 0 && (
           <Badge variant="destructive" className="gap-1">
@@ -60,7 +60,7 @@ export function StepPreview({
         )}
         {existsCount > 0 && (
           <Badge variant="outline" className="gap-1 border-primary/30 text-primary">
-            <RefreshCw className="h-3 w-3" /> {existsCount} jÃ¡ existem no BD
+            <RefreshCw className="h-3 w-3" /> {existsCount} já existem no BD
           </Badge>
         )}
         <Badge variant="outline" className="gap-1 border-success/30 text-success">
@@ -69,7 +69,7 @@ export function StepPreview({
       </div>
 
       <div className="space-y-2 rounded-lg border p-3">
-        <p className="text-sm font-medium">Modo de ImportaÃ§Ã£o</p>
+        <p className="text-sm font-medium">Modo de Importação</p>
         <RadioGroup
           value={importMode}
           onValueChange={(v) => setImportMode(v as ImportMode)}
@@ -104,7 +104,7 @@ export function StepPreview({
               <TableHead className="w-16">Status</TableHead>
               <TableHead>SKU</TableHead>
               <TableHead>Nome</TableHead>
-              <TableHead>PreÃ§o</TableHead>
+              <TableHead>Preço</TableHead>
               <TableHead>BD</TableHead>
               <TableHead>Detalhes</TableHead>
             </TableRow>

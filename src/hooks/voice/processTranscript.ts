@@ -47,7 +47,7 @@ function validateAction(action: VoiceAgentAction): VoiceAgentAction {
   if (!action?.action || !action?.response) {
     return {
       action: 'answer',
-      response: action?.response || 'Desculpe, nÃ£o entendi. Pode repetir?',
+      response: action?.response || 'Desculpe, não entendi. Pode repetir?',
       data: {},
     };
   }

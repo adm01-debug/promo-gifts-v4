@@ -24,10 +24,10 @@ export function EngravingList({
     return (
       <div className="rounded-lg border-2 border-dashed py-6 text-center">
         <Paintbrush className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
-        <p className="mb-4 text-sm text-muted-foreground">Nenhuma gravaÃ§Ã£o adicionada</p>
+        <p className="mb-4 text-sm text-muted-foreground">Nenhuma gravação adicionada</p>
         <Button onClick={onAddNew} variant="outline" size="sm">
           <Plus className="mr-2 h-4 w-4" />
-          Adicionar GravaÃ§Ã£o
+          Adicionar Gravação
         </Button>
       </div>
     );
@@ -37,7 +37,7 @@ export function EngravingList({
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-medium">
-          GravaÃ§Ãµes ({engravings.length}/{maxEngravings})
+          Gravações ({engravings.length}/{maxEngravings})
         </h4>
         {canAddMore && (
           <Button onClick={onAddNew} variant="outline" size="sm">
@@ -106,7 +106,7 @@ export function EngravingList({
 
       {!canAddMore && (
         <p className="text-center text-xs text-muted-foreground">
-          MÃ¡ximo de {maxEngravings} gravaÃ§Ãµes atingido
+          Máximo de {maxEngravings} gravações atingido
         </p>
       )}
     </div>
