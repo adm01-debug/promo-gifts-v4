@@ -25,6 +25,7 @@ import type {
   SelectedContactInfo,
 } from '@/components/quotes/CompanyContactSelector';
 import type { QuoteBuilderStep } from '@/components/quotes/QuoteBuilderStepper';
+import type { PromobrindProduct } from '@/lib/external-db/product-types';
 import {
   createProductFuseOptions,
   dedupeById,
