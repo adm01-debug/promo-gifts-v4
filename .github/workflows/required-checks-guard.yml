@@ -1,0 +1,78 @@
+name: Required Checks Guard
+
+# Garante que o gate de tipos/lint/test e um REQUIRED status check em main.
+# Sem isso, PRs vermelhos podem mergear — causa-raiz das regressoes de tipo
+# recorrentes (ver #208 e a leva #196/#181/#178). Este guard FALHA (nao so
+# avisa) quando a protecao esta ausente ou o contexto obrigatorio sumiu.
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 9 * * *'   # diario ~06:00 BRT
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  administration: read   # necessario para ler /branches/main/protection
+
+jobs:
+  assert-required-checks:
+    name: Assert typecheck gate is required on main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check required_status_checks on main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          REQUIRED="Lint, Typecheck & Test"
+
+          HTTP=$(curl -sS -o /tmp/prot.json -w "%{http_code}" \
+                   -H "Authorization: Bearer $GH_TOKEN" \
+                   -H "Accept: application/vnd.github+json" \
+                   "https://api.github.com/repos/$REPO/branches/main/protection")
+
+          {
+            echo "### 🔐 Required status checks — \`main\`"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ "$HTTP" == "404" ]]; then
+            echo "::error::Branch protection AUSENTE em main — nenhum check obrigatorio. PRs vermelhos podem mergear."
+            echo "❌ Sem branch protection em \`main\`." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          if [[ "$HTTP" != "200" ]]; then
+            echo "::error::Falha ao ler a protecao (HTTP $HTTP). O token precisa de administration:read."
+            exit 1
+          fi
+
+          CONTEXTS=$(jq -r '((.required_status_checks.contexts // []) + ((.required_status_checks.checks // []) | map(.context))) | unique | join("\n")' /tmp/prot.json)
+          ENFORCE=$(jq -r '.enforce_admins.enabled // false' /tmp/prot.json)
+
+          {
+            echo "**enforce_admins:** \`$ENFORCE\`"
+            echo ""
+            echo "**Contexts obrigatorios:**"
+            if [[ -n "$CONTEXTS" ]]; then printf '%s\n' "$CONTEXTS" | sed 's/^/- /'; else echo "- (nenhum)"; fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if ! printf '%s\n' "$CONTEXTS" | grep -qxF "$REQUIRED"; then
+            echo "::error::Required status check '$REQUIRED' ausente — o gate de tipos esta apenas consultivo. Corrija a branch protection."
+            {
+              echo ""
+              echo "❌ **\`$REQUIRED\` nao e required.**"
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          {
+            echo ""
+            echo "✅ \`$REQUIRED\` e required."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ "$ENFORCE" != "true" ]]; then
+            echo "::warning::enforce_admins=false — admins ainda podem furar o gate (recomendado: true)."
+          fi
