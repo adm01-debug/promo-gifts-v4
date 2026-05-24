@@ -192,6 +192,12 @@ export function resolveOAuthError(raw: string | null | undefined): OAuthErrorCop
   }
 
   // 3) heurísticas de texto livre
+  // Provider desabilitado é um problema de CONFIG (isConfig) — não adianta o
+  // usuário re-tentar. Cobre tanto o código do Supabase quanto a cópia PT-BR
+  // amigável que o SocialLoginButtons gera ("...ainda não está habilitado...").
+  if (/not.?enabled|provider.?is.?not|n[aã]o.?est[aá].?habilitado/.test(normalized)) {
+    return RAW_MAP.provider_is_not_enabled;
+  }
   if (/expired|expirad/.test(normalized)) {
     return {
       code: normalized,

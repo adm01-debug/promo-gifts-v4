@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-24T15:28:03.544Z",
-  "totalErrors": 173,
+  "generatedAt": "2026-05-24T19:38:14.033Z",
+  "totalErrors": 128,
   "counts": {
     "src/components/access/DevAccessDeniedPage.tsx": {
       "react-hooks/exhaustive-deps": 1
@@ -66,7 +66,7 @@
       "react-hooks/exhaustive-deps": 2
     },
     "src/components/ai/AIMockupAssistant.tsx": {
-      "@typescript-eslint/no-unused-vars": 2
+      "@typescript-eslint/no-unused-vars": 1
     },
     "src/components/auth/ForgotPasswordForm.tsx": {
       "@typescript-eslint/no-unused-vars": 2
@@ -87,9 +87,6 @@
       "@typescript-eslint/no-unused-vars": 1
     },
     "src/components/collections/CollectionDetailHeader.tsx": {
-      "@typescript-eslint/no-unused-vars": 2
-    },
-    "src/components/collections/CollectionListItem.tsx": {
       "@typescript-eslint/no-unused-vars": 1
     },
     "src/components/common/EmptyState.tsx": {
@@ -98,20 +95,11 @@
     "src/components/common/EnhancedSpotlight.tsx": {
       "react-hooks/exhaustive-deps": 2
     },
-    "src/components/compare/ComparisonDuelView.tsx": {
-      "@typescript-eslint/no-unused-vars": 1
-    },
     "src/components/compare/ComparisonHighlights.tsx": {
       "@typescript-eslint/no-unused-vars": 1
     },
-    "src/components/compare/ExportComparisonButton.tsx": {
-      "@typescript-eslint/no-unused-vars": 1
-    },
-    "src/components/compare/FloatingCompareBar.tsx": {
-      "@typescript-eslint/no-unused-vars": 1
-    },
     "src/components/compare/SupplierComparisonModal.tsx": {
-      "@typescript-eslint/no-unused-vars": 2
+      "@typescript-eslint/no-unused-vars": 1
     },
     "src/components/dashboard/QuickActionsPanel.tsx": {
       "@typescript-eslint/no-unused-vars": 1
@@ -156,9 +144,6 @@
     "src/components/intelligence/CategoryRanking.tsx": {
       "react-hooks/exhaustive-deps": 1
     },
-    "src/components/intelligence/MarketIntelligenceChart.tsx": {
-      "@typescript-eslint/no-unused-vars": 1
-    },
     "src/components/intelligence/RealtimeBadge.tsx": {
       "@typescript-eslint/no-unused-vars": 1
     },
@@ -172,17 +157,11 @@
     "src/components/kit-builder/KitBuilderHeader.tsx": {
       "@typescript-eslint/no-unused-vars": 1
     },
-    "src/components/kit-builder/SelectedItemsBadges.tsx": {
-      "@typescript-eslint/no-unused-vars": 1
-    },
-    "src/components/kit-builder/kit-summary/KitCompositionCard.tsx": {
-      "@typescript-eslint/no-non-null-assertion": 2
-    },
     "src/components/layout/MainLayout.tsx": {
       "react-hooks/exhaustive-deps": 1
     },
     "src/components/layout/SidebarReorganized.tsx": {
-      "@typescript-eslint/no-unused-vars": 4
+      "@typescript-eslint/no-unused-vars": 1
     },
     "src/components/layout/sidebar/SidebarNavGroup.tsx": {
       "react-hooks/exhaustive-deps": 1
@@ -201,9 +180,6 @@
     },
     "src/components/mockup/MockupHistoryPanel.tsx": {
       "react-hooks/exhaustive-deps": 1
-    },
-    "src/components/mockup/ProductSearchCombobox.tsx": {
-      "@typescript-eslint/no-non-null-assertion": 2
     },
     "src/components/mockup/approval/MockupLayoutButtons.tsx": {
       "@typescript-eslint/no-non-null-assertion": 1,
@@ -224,32 +200,14 @@
     "src/components/novelties/NoveltyStatsCards.tsx": {
       "@typescript-eslint/no-unused-vars": 1
     },
-    "src/components/pdf/proposal/LogoWithTransparentBg.tsx": {
-      "@typescript-eslint/no-non-null-assertion": 3
-    },
     "src/components/pdf/proposal/ProposalFooter.tsx": {
       "@typescript-eslint/no-unused-vars": 2
-    },
-    "src/components/personalization/TechniqueSelector.tsx": {
-      "@typescript-eslint/no-unused-vars": 1
     },
     "src/components/presentation/PresentationMode.tsx": {
       "react-hooks/exhaustive-deps": 1
     },
-    "src/components/pricing/QuantityPriceCalculator.tsx": {
-      "@typescript-eslint/no-unused-vars": 3
-    },
-    "src/components/pricing/simulator/CustomizationOptions.tsx": {
-      "@typescript-eslint/no-unused-vars": 1
-    },
-    "src/components/pricing/simulator/QuantityAndResult.tsx": {
-      "@typescript-eslint/no-unused-vars": 2
-    },
     "src/components/products/BulkActionBar.tsx": {
       "@typescript-eslint/naming-convention": 1
-    },
-    "src/components/products/ProductCard.tsx": {
-      "@typescript-eslint/no-unused-vars": 2
     },
     "src/components/products/ProductCardActions.tsx": {
       "@typescript-eslint/naming-convention": 1
@@ -258,7 +216,7 @@
       "@typescript-eslint/no-unused-vars": 1
     },
     "src/components/products/ProductCardSkeleton.tsx": {
-      "@typescript-eslint/no-unused-vars": 2
+      "@typescript-eslint/no-unused-vars": 1
     },
     "src/components/products/ProductCategoryBadges.tsx": {
       "@typescript-eslint/no-unused-vars": 2
@@ -281,7 +239,7 @@
     },
     "src/components/products/ProductIntelligence.tsx": {
       "@typescript-eslint/naming-convention": 1,
-      "@typescript-eslint/no-unused-vars": 3
+      "@typescript-eslint/no-unused-vars": 1
     },
     "src/components/products/ProductList.tsx": {
       "@typescript-eslint/no-explicit-any": 2,
@@ -340,14 +298,11 @@
       "@typescript-eslint/no-unused-vars": 4
     },
     "src/components/quotes/QuickQuoteFAB.tsx": {
-      "@typescript-eslint/no-unused-vars": 2
+      "@typescript-eslint/no-unused-vars": 1
     },
     "src/components/quotes/QuoteAutoSave.tsx": {
       "@typescript-eslint/no-unused-vars": 1,
       "react-hooks/exhaustive-deps": 2
-    },
-    "src/components/quotes/QuoteBuilderNavigation.tsx": {
-      "@typescript-eslint/consistent-type-imports": 1
     },
     "src/components/quotes/QuoteBuilderProductSearch.tsx": {
       "@typescript-eslint/no-non-null-assertion": 1
@@ -356,14 +311,10 @@
       "@typescript-eslint/no-unused-vars": 1
     },
     "src/components/quotes/QuoteHistoryPanel.tsx": {
-      "@typescript-eslint/no-unused-vars": 2,
       "react-hooks/exhaustive-deps": 1
     },
     "src/components/quotes/QuoteProductCustomization.tsx": {
       "@typescript-eslint/no-explicit-any": 1
-    },
-    "src/components/quotes/QuoteTemplatesList.tsx": {
-      "@typescript-eslint/no-unused-vars": 1
     },
     "src/components/quotes/QuoteVersionCompare.tsx": {
       "@typescript-eslint/no-unused-vars": 1,
@@ -397,19 +348,14 @@
       "react-hooks/exhaustive-deps": 2
     },
     "src/components/search/AdvancedSearch.tsx": {
-      "@typescript-eslint/no-unused-vars": 1,
       "react-hooks/exhaustive-deps": 1
     },
     "src/components/search/GlobalSearch.tsx": {
-      "@typescript-eslint/no-unused-vars": 2,
       "react-hooks/exhaustive-deps": 1
     },
     "src/components/search/GlobalSearchPalette.tsx": {
       "@typescript-eslint/no-explicit-any": 1,
       "react-hooks/exhaustive-deps": 4
-    },
-    "src/components/search/SmartSuggestions.tsx": {
-      "@typescript-eslint/no-unused-vars": 4
     },
     "src/components/search/VisualSearchButton.tsx": {
       "react-hooks/exhaustive-deps": 1
@@ -423,9 +369,6 @@
     "src/components/search/voice/VoiceOverlaySections.tsx": {
       "@typescript-eslint/no-unused-vars": 3
     },
-    "src/components/security/SecurityDashboard.tsx": {
-      "@typescript-eslint/no-non-null-assertion": 2
-    },
     "src/components/security/useSecurityData.ts": {
       "@typescript-eslint/no-non-null-assertion": 1
     },
@@ -436,19 +379,10 @@
       "@typescript-eslint/no-unused-vars": 1
     },
     "src/components/simulator/wizard/ComparisonCard.tsx": {
-      "@typescript-eslint/no-unused-vars": 2
-    },
-    "src/components/simulator/wizard/MobilePersonalizationSummary.tsx": {
-      "@typescript-eslint/no-unused-vars": 1
-    },
-    "src/components/simulator/wizard/PersonalizationSummary.tsx": {
       "@typescript-eslint/no-unused-vars": 1
     },
     "src/components/simulator/wizard/StepComparison.tsx": {
       "@typescript-eslint/no-unused-vars": 3
-    },
-    "src/components/simulator/wizard/StepLocation.tsx": {
-      "@typescript-eslint/no-unused-vars": 2
     },
     "src/components/simulator/wizard/StepSpecs.tsx": {
       "react-hooks/exhaustive-deps": 2
@@ -481,9 +415,6 @@
     "src/contexts/ThemeContext.tsx": {
       "@typescript-eslint/no-explicit-any": 1
     },
-    "src/hooks/__tests__/useIPValidation.test.ts": {
-      "@typescript-eslint/no-explicit-any": 1
-    },
     "src/hooks/__tests__/useLoginAttempts.unit.test.tsx": {
       "@typescript-eslint/no-explicit-any": 1
     },
@@ -499,9 +430,6 @@
     "src/hooks/common/useSearch.ts": {
       "react-hooks/exhaustive-deps": 2
     },
-    "src/hooks/favorites/useFavoritesPageState.ts": {
-      "no-duplicate-imports": 1
-    },
     "src/hooks/intelligence/useMagicUpState.ts": {
       "react-hooks/exhaustive-deps": 2
     },
@@ -510,9 +438,6 @@
     },
     "src/hooks/kit-builder/useKitCollaboration.ts": {
       "react-hooks/exhaustive-deps": 1
-    },
-    "src/hooks/mockup/useMockupGenerator.ts": {
-      "no-duplicate-imports": 1
     },
     "src/hooks/products/useAdvancedFilters.ts": {
       "react-hooks/exhaustive-deps": 1
@@ -548,7 +473,6 @@
       "react-hooks/exhaustive-deps": 1
     },
     "src/hooks/quotes/useQuoteBuilderState.ts": {
-      "no-duplicate-imports": 1,
       "react-hooks/exhaustive-deps": 7
     },
     "src/hooks/simulation/useSimulation.ts": {
@@ -576,9 +500,6 @@
     "src/lib/personalization/adapters/raw-row.adapter.ts": {
       "@typescript-eslint/naming-convention": 1
     },
-    "src/lib/print-area-grouping.ts": {
-      "@typescript-eslint/no-non-null-assertion": 2
-    },
     "src/lib/security/safeToast.ts": {
       "@typescript-eslint/naming-convention": 1
     },
@@ -591,8 +512,7 @@
       "no-console": 2
     },
     "src/logic/quotes/__tests__/calculations.test.ts": {
-      "@typescript-eslint/no-explicit-any": 6,
-      "@typescript-eslint/no-unused-vars": 1
+      "@typescript-eslint/no-explicit-any": 6
     },
     "src/pages/QAPage.tsx": {
       "react-hooks/exhaustive-deps": 1
@@ -640,7 +560,6 @@
       "react-hooks/exhaustive-deps": 2
     },
     "src/pages/products/FavoritesPage.tsx": {
-      "no-duplicate-imports": 1,
       "react-hooks/exhaustive-deps": 1
     },
     "src/pages/products/ProductDetail.tsx": {

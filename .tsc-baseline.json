@@ -1,158 +1,12 @@
 {
-  "generatedAt": "2026-05-24T15:26:00.391Z",
-  "totalErrors": 1205,
+  "generatedAt": "2026-05-24T19:40:05.304Z",
+  "totalErrors": 508,
   "counts": {
-    "src/components/admin/DiscountApprovalQueue.tsx": {
-      "TS18048": 1
-    },
-    "src/components/admin/MockupPromptManager.tsx": {
-      "TS2322": 2,
-      "TS2345": 2,
-      "TS2352": 1,
-      "TS2353": 1,
-      "TS2769": 1
-    },
-    "src/components/admin/SellerDiscountLimitsPanel.tsx": {
-      "TS2353": 1
-    },
-    "src/components/admin/TechniquesManager.tsx": {
-      "TS2322": 1
-    },
-    "src/components/admin/connections/Bitrix24Tab.tsx": {
-      "TS2322": 1
-    },
-    "src/components/admin/connections/DataSourceDebugTab.tsx": {
-      "TS2339": 1
-    },
-    "src/components/admin/connections/ExternalConnectionsSyncLogPanel.tsx": {
-      "TS2352": 1
-    },
-    "src/components/admin/connections/InboundEventsPanel.tsx": {
-      "TS2352": 1
-    },
-    "src/components/admin/connections/KeysValidationTab.tsx": {
-      "TS2339": 1
-    },
-    "src/components/admin/connections/LastSyncRunPanel.tsx": {
-      "TS2352": 1
-    },
-    "src/components/admin/connections/N8nTab.tsx": {
-      "TS2322": 1
-    },
-    "src/components/admin/connections/WebhooksTab.tsx": {
-      "TS2352": 1
-    },
-    "src/components/admin/connections/useSeverityChangeNotifier.ts": {
-      "TS2353": 1
-    },
     "src/components/admin/products/BulkImportDialog.tsx": {
       "TS2322": 1
     },
     "src/components/admin/products/ProductFormFullscreen.tsx": {
-      "TS2352": 1,
-      "TS2724": 1
-    },
-    "src/components/admin/products/ProductFormStepContent.tsx": {
-      "TS2322": 7
-    },
-    "src/components/admin/products/hooks/useProductFormDraft.ts": {
-      "TS2307": 1
-    },
-    "src/components/admin/products/hooks/useSkuValidation.ts": {
-      "TS2339": 1
-    },
-    "src/components/admin/products/sections/ProductClassificationSection.tsx": {
-      "TS2322": 1
-    },
-    "src/components/admin/products/sections/ProductEngravingSection.tsx": {
-      "TS18047": 1
-    },
-    "src/components/admin/products/sections/ProductSupplierSection.tsx": {
-      "TS2305": 2,
-      "TS2339": 2,
-      "TS7006": 1
-    },
-    "src/components/admin/products/sections/engraving/useEngravingWizard.ts": {
-      "TS18048": 3,
-      "TS2322": 1
-    },
-    "src/components/admin/products/useProductsManager.ts": {
-      "TS2322": 1,
-      "TS2345": 3,
       "TS2352": 1
-    },
-    "src/components/admin/products/video-gallery/VideoMetaEditor.tsx": {
-      "TS2322": 2
-    },
-    "src/components/admin/security/SecureUploadManager.tsx": {
-      "TS18046": 4,
-      "TS2322": 3,
-      "TS2339": 1,
-      "TS2769": 1
-    },
-    "src/components/admin/security/keys/audit/McpAuditRow.tsx": {
-      "TS2322": 1
-    },
-    "src/components/admin/security/keys/audit/useMcpAuditFeed.ts": {
-      "TS7053": 1
-    },
-    "src/components/admin/suppliers-manager/useSuppliersManager.ts": {
-      "TS2352": 4
-    },
-    "src/components/admin/telemetry/AppHealthDashboard.tsx": {
-      "TS18048": 2
-    },
-    "src/components/admin/telemetry/ColdVsWarmCrmCard.tsx": {
-      "TS18048": 4,
-      "TS2345": 1
-    },
-    "src/components/auth/KnownDevicesManager.tsx": {
-      "TS2352": 1
-    },
-    "src/components/cart/CartCompanyPicker.tsx": {
-      "TS2459": 1
-    },
-    "src/components/cart/CartCompanyPickerDialog.tsx": {
-      "TS2459": 1
-    },
-    "src/components/cart/CartEmptyStateSmart.tsx": {
-      "TS2305": 1
-    },
-    "src/components/cart/CartHeaderButton.tsx": {
-      "TS7006": 6
-    },
-    "src/components/cart/CartHealthChecklist.tsx": {
-      "TS2305": 1,
-      "TS7006": 2
-    },
-    "src/components/cart/CartTabsRich.tsx": {
-      "TS2305": 1
-    },
-    "src/components/cart/CartUtilComponents.tsx": {
-      "TS2305": 2,
-      "TS7006": 7
-    },
-    "src/components/cart/SortableCartItem.tsx": {
-      "TS2304": 2,
-      "TS2305": 2
-    },
-    "src/components/cart/__tests__/SortableCartItemExcellence.test.tsx": {
-      "TS2305": 1
-    },
-    "src/components/cart/cart-utils/CartDialogs.tsx": {
-      "TS2305": 1,
-      "TS7006": 5
-    },
-    "src/components/cart/cart-utils/CartExport.ts": {
-      "TS2305": 1,
-      "TS7006": 8
-    },
-    "src/components/cart/cart-utils/CartMobileSheet.tsx": {
-      "TS2305": 1,
-      "TS7006": 1
-    },
-    "src/components/catalog/CatalogActiveFilters.tsx": {
-      "TS2345": 1
     },
     "src/components/catalog/CatalogContent.tsx": {
       "TS2322": 1,
@@ -164,10 +18,6 @@
     "src/components/categories/CategoryTreeNavigation.tsx": {
       "TS17001": 1
     },
-    "src/components/collections/CollectionTableView.tsx": {
-      "TS2322": 2,
-      "TS2339": 2
-    },
     "src/components/collections/CollectionsTrashView.tsx": {
       "TS2322": 1
     },
@@ -177,38 +27,12 @@
     "src/components/common/BulkActionsBar.tsx": {
       "TS2322": 1
     },
-    "src/components/common/IntelligenceBadges.tsx": {
-      "TS18048": 3,
-      "TS2305": 2
-    },
-    "src/components/compare/AIComparisonAdvisor.tsx": {
-      "TS2339": 1
-    },
-    "src/components/compare/ComparisonDuelView.tsx": {
-      "TS2339": 3
-    },
-    "src/components/compare/ComparisonPresentationLauncher.tsx": {
-      "TS2339": 1
-    },
-    "src/components/compare/ComparisonScoreCard.tsx": {
-      "TS2322": 2
-    },
-    "src/components/compare/ExportComparisonButton.tsx": {
-      "TS2339": 2
-    },
-    "src/components/compare/HistoricalPriceOverlay.tsx": {
-      "TS2345": 1,
-      "TS2352": 1
-    },
     "src/components/compare/OtherSuppliersRow.tsx": {
       "TS2339": 1,
       "TS7006": 1
     },
     "src/components/compare/PriceSparkline.tsx": {
-      "TS2345": 2
-    },
-    "src/components/compare/SimilarProductsRail.tsx": {
-      "TS2339": 3
+      "TS2345": 1
     },
     "src/components/compare/SupplierComparisonModal.tsx": {
       "TS2339": 1,
@@ -239,31 +63,9 @@
     "src/components/filters/ExternalCategoryFilter.tsx": {
       "TS2345": 1
     },
-    "src/components/filters/FilterPanel.tsx": {
-      "TS2322": 4
-    },
     "src/components/filters/FilterPresets.ts": {
-      "TS2322": 2,
-      "TS2339": 6,
-      "TS2345": 3
-    },
-    "src/components/filters/PresetFormParts.tsx": {
-      "TS2305": 1,
-      "TS7006": 1
-    },
-    "src/components/filters/PresetsBar.tsx": {
-      "TS2305": 1
-    },
-    "src/components/filters/filter-panel/sections/MaterialsFilter.tsx": {
-      "TS18046": 13,
-      "TS2322": 6,
-      "TS2345": 5
-    },
-    "src/components/filters/filter-panel/sections/RamosFilter.tsx": {
-      "TS18046": 8,
-      "TS2322": 6,
-      "TS2345": 4,
-      "TS2740": 1
+      "TS2322": 1,
+      "TS2345": 1
     },
     "src/components/filters/filter-panel/useFilterPanelState.ts": {
       "TS2339": 2
@@ -279,28 +81,9 @@
       "TS2322": 1,
       "TS2345": 2
     },
-    "src/components/intelligence/MarketIntelligenceChart.tsx": {
-      "TS18046": 6,
-      "TS2322": 2
-    },
-    "src/components/intelligence/SalesOverviewChart.tsx": {
-      "TS18046": 4,
-      "TS2322": 4,
-      "TS2345": 2
-    },
-    "src/components/inventory/StockAlertsIndicator.tsx": {
-      "TS2305": 1,
-      "TS7006": 1
-    },
     "src/components/inventory/risk/ProductRiskDetail.tsx": {
       "TS2339": 10,
       "TS7053": 1
-    },
-    "src/components/inventory/risk/RiskTooltip.tsx": {
-      "TS18048": 1,
-      "TS2322": 2,
-      "TS2345": 2,
-      "TS2554": 1
     },
     "src/components/inventory/risk/types.ts": {
       "TS18048": 2
@@ -310,14 +93,6 @@
     },
     "src/components/kit-builder/KitComparisonDialog.tsx": {
       "TS2322": 3
-    },
-    "src/components/kit-builder/KitSmartSuggestions.tsx": {
-      "TS18046": 5
-    },
-    "src/components/kit-builder/PersonalizationConfig.tsx": {
-      "TS18048": 1,
-      "TS2305": 1,
-      "TS2345": 4
     },
     "src/components/layout/sidebar/__tests__/SidebarNavGroup.a11y.test.tsx": {
       "TS2749": 3
@@ -334,31 +109,17 @@
     "src/components/loading/SkeletonMonitor.tsx": {
       "TS2339": 1
     },
-    "src/components/magic-up/AdImageResult.tsx": {
-      "TS2300": 2,
-      "TS2693": 1
-    },
     "src/components/mockup/LogoColorAnalyzer.tsx": {
       "TS18048": 1
     },
-    "src/components/mockup/LogoPositionEditor.tsx": {
-      "TS2724": 1
-    },
     "src/components/mockup/MockupClientSelector.tsx": {
       "TS2322": 1
-    },
-    "src/components/mockup/MockupColorSelector.tsx": {
-      "TS2339": 2,
-      "TS2345": 2
     },
     "src/components/mockup/MockupConfigPanel.tsx": {
       "TS2322": 1
     },
     "src/components/mockup/MockupProductSelector.tsx": {
       "TS2345": 2
-    },
-    "src/components/mockup/TechniqueColorConfigDialog.tsx": {
-      "TS2304": 3
     },
     "src/components/mockup/TechniqueTooltip.tsx": {
       "TS18048": 2
@@ -378,30 +139,9 @@
     "src/components/navigation/Breadcrumbs.tsx": {
       "TS2686": 2
     },
-    "src/components/notifications/NotificationsBadgeStatsPanel.tsx": {
-      "TS2322": 1,
-      "TS2339": 6,
-      "TS2352": 1
-    },
-    "src/components/novelties/ExpiringNoveltiesWidget.tsx": {
-      "TS2305": 1,
-      "TS7006": 1
-    },
-    "src/components/novelties/NoveltiesSection.tsx": {
-      "TS2305": 2,
-      "TS7006": 1
-    },
-    "src/components/novelties/NoveltyCards.tsx": {
-      "TS2305": 1
-    },
     "src/components/novelties/NoveltyProductGrid.tsx": {
-      "TS2305": 2,
       "TS2322": 1,
-      "TS2339": 1,
-      "TS7006": 1
-    },
-    "src/components/novelties/NoveltyStatsCards.tsx": {
-      "TS2305": 1
+      "TS2339": 1
     },
     "src/components/personalization/TechniqueSLACard.tsx": {
       "TS2352": 2
@@ -409,9 +149,6 @@
     "src/components/personalization/TechniqueSelector.tsx": {
       "TS2322": 1,
       "TS2352": 2
-    },
-    "src/components/pricing/calculator/QuantityComparisonTable.tsx": {
-      "TS2339": 6
     },
     "src/components/pricing/calculator/TechniqueMultiSelector.tsx": {
       "TS2339": 4
@@ -422,23 +159,12 @@
     "src/components/products/EnhancedProductCard.tsx": {
       "TS2339": 2
     },
-    "src/components/products/FutureStockModal.tsx": {
-      "TS2322": 1,
-      "TS2339": 17,
-      "TS2345": 1
-    },
     "src/components/products/InlinePriceCalculator.tsx": {
       "TS2339": 2,
       "TS2353": 2
     },
-    "src/components/products/PriceFreshnessThresholdEditor.tsx": {
-      "TS2305": 5,
-      "TS7006": 1
-    },
     "src/components/products/ProductCard.tsx": {
-      "TS2322": 3,
-      "TS2339": 1,
-      "TS2724": 1
+      "TS2322": 3
     },
     "src/components/products/ProductCardActions.tsx": {
       "TS2322": 2
@@ -450,13 +176,7 @@
       "TS2345": 1
     },
     "src/components/products/ProductCustomizationOptions.tsx": {
-      "TS2305": 1,
-      "TS2322": 1,
-      "TS7006": 7
-    },
-    "src/components/products/ProductIntelligence.tsx": {
-      "TS2305": 2,
-      "TS7006": 1
+      "TS2322": 1
     },
     "src/components/products/ProductPersonalizationRules.tsx": {
       "TS2322": 1
@@ -466,26 +186,9 @@
     },
     "src/components/products/ProductQuickView.tsx": {
       "TS2322": 1,
-      "TS2339": 1,
-      "TS2724": 1,
-      "TS7006": 1
-    },
-    "src/components/products/RelatedProducts.tsx": {
-      "TS2322": 1
-    },
-    "src/components/products/SalesHistoryChart.tsx": {
-      "TS18046": 8,
-      "TS2305": 1,
-      "TS2322": 5,
-      "TS2345": 2,
-      "TS7006": 1
-    },
-    "src/components/products/SimilarProducts.tsx": {
-      "TS2305": 2,
-      "TS7006": 3
+      "TS2339": 1
     },
     "src/components/products/StockHistoryChart.tsx": {
-      "TS2339": 7,
       "TS2769": 1
     },
     "src/components/products/VariantGridMatrix.tsx": {
@@ -493,9 +196,6 @@
     },
     "src/components/products/customization/ConfigurationPanel.tsx": {
       "TS2345": 1
-    },
-    "src/components/products/customization/ConfigurationPanelV6.tsx": {
-      "TS18048": 8
     },
     "src/components/products/customization/__tests__/LocationPanel.test.tsx": {
       "TS2739": 2
@@ -508,23 +208,14 @@
       "TS2339": 1,
       "TS2353": 1
     },
-    "src/components/products/kit-composition/KitComponentCard.tsx": {
-      "TS18048": 6,
-      "TS2345": 1
-    },
     "src/components/products/share/ShareContactSelector.tsx": {
       "TS2339": 1,
       "TS2345": 1
-    },
-    "src/components/products/useStockChartData.ts": {
-      "TS2339": 6,
-      "TS7053": 1
     },
     "src/components/providers/AppBootstrap.tsx": {
       "TS2339": 1
     },
     "src/components/quotes/DraggableQuoteItems.tsx": {
-      "TS2304": 2,
       "TS2322": 1
     },
     "src/components/quotes/MarginInsightBadge.tsx": {
@@ -552,17 +243,10 @@
       "TS2724": 1
     },
     "src/components/replenishments/ReplenishmentProductGrid.tsx": {
-      "TS2304": 1,
-      "TS2305": 1,
       "TS2322": 1,
-      "TS2339": 1,
-      "TS2724": 1
-    },
-    "src/components/replenishments/VirtualizedReplenishmentList.tsx": {
-      "TS2305": 1
+      "TS2339": 1
     },
     "src/components/search/AdvancedSearch.tsx": {
-      "TS2305": 1,
       "TS2345": 1
     },
     "src/components/search/GlobalSearch.tsx": {
@@ -581,10 +265,6 @@
     },
     "src/components/security/MfaEnrollmentDialog.tsx": {
       "TS2367": 1
-    },
-    "src/components/security/useSecurityData.ts": {
-      "TS2345": 2,
-      "TS2769": 1
     },
     "src/components/simulator/MockupPreview.tsx": {
       "TS2339": 13,
@@ -620,13 +300,6 @@
     "src/contexts/AuthContext.test.tsx": {
       "TS2345": 2
     },
-    "src/contexts/ProductsContext.tsx": {
-      "TS2345": 1
-    },
-    "src/contexts/SellerCartContext.tsx": {
-      "TS2305": 5,
-      "TS7006": 2
-    },
     "src/hooks/__tests__/useAutoSaveQuote.test.ts": {
       "TS18047": 4
     },
@@ -634,44 +307,26 @@
       "TS2322": 2
     },
     "src/hooks/__tests__/useIPValidation.test.ts": {
-      "TS2339": 7,
-      "TS2345": 1,
-      "TS7005": 1,
-      "TS7034": 1
+      "TS2345": 1
     },
     "src/hooks/admin/useAllowedIPs.ts": {
-      "TS2322": 5,
-      "TS2345": 3,
-      "TS2769": 4
-    },
-    "src/hooks/admin/useAuditLog.ts": {
-      "TS2345": 5,
-      "TS2353": 1,
-      "TS2589": 2,
-      "TS2769": 3
+      "TS2345": 1
     },
     "src/hooks/admin/useDeviceDetection.ts": {
       "TS2353": 1
     },
     "src/hooks/admin/useGeoBlocking.ts": {
-      "TS2322": 3,
-      "TS2345": 3,
-      "TS2769": 2
+      "TS2345": 2
     },
     "src/hooks/admin/useSecretsManager.ts": {
       "TS2322": 6
     },
     "src/hooks/auth/use2FA.ts": {
-      "TS2322": 5,
-      "TS2339": 2,
-      "TS2345": 4,
-      "TS2353": 1,
-      "TS2769": 4
+      "TS2345": 1,
+      "TS2353": 1
     },
     "src/hooks/auth/useAccessSecurity.ts": {
-      "TS2345": 7,
-      "TS2589": 3,
-      "TS2769": 9
+      "TS2345": 3
     },
     "src/hooks/auth/useAuthMFA.ts": {
       "TS2339": 2
@@ -681,9 +336,6 @@
     },
     "src/hooks/common/useGenericFuzzySearch.ts": {
       "TS2322": 1
-    },
-    "src/hooks/comparison/useComparison.ts": {
-      "TS2305": 1
     },
     "src/hooks/comparison/useComparisonWeights.ts": {
       "TS2352": 1
@@ -697,13 +349,6 @@
       "TS2322": 1
     },
     "src/hooks/favorites/useFavoriteLists.ts": {
-      "TS2345": 1
-    },
-    "src/hooks/favorites/useFavorites.ts": {
-      "TS2305": 1
-    },
-    "src/hooks/favorites/useFavoritesPageState.ts": {
-      "TS2339": 4,
       "TS2345": 1
     },
     "src/hooks/gravacao/gravacao-constants.ts": {
@@ -726,19 +371,8 @@
       "TS2551": 3,
       "TS2561": 1
     },
-    "src/hooks/intelligence/useExternalDatabase.ts": {
-      "TS2339": 4,
-      "TS2345": 1,
-      "TS2638": 3
-    },
     "src/hooks/intelligence/useMagicUpGeneration.ts": {
       "TS2322": 1
-    },
-    "src/hooks/intelligence/useMagicUpState.ts": {
-      "TS2322": 1,
-      "TS2345": 4,
-      "TS2769": 1,
-      "TS2783": 2
     },
     "src/hooks/intelligence/useScheduledReports.ts": {
       "TS2322": 1
@@ -752,9 +386,6 @@
     "src/hooks/intelligence/useVoiceCommandHistory.ts": {
       "TS2769": 1
     },
-    "src/hooks/kit-builder/useKitBuilderPageState.ts": {
-      "TS2345": 1
-    },
     "src/hooks/kit-builder/useKitBuilderTransformers.ts": {
       "TS2345": 4
     },
@@ -762,21 +393,15 @@
       "TS2322": 3
     },
     "src/hooks/mockup/mockupGenerationService.ts": {
-      "TS2322": 1,
-      "TS2345": 4,
-      "TS2769": 1
+      "TS2345": 1
     },
     "src/hooks/mockup/useMockupDraft.ts": {
-      "TS18046": 9,
-      "TS2345": 3,
+      "TS2345": 2,
       "TS2769": 2
     },
     "src/hooks/mockup/useMockupGenerator.ts": {
       "TS2339": 2,
       "TS2345": 1
-    },
-    "src/hooks/products/index.ts": {
-      "TS2307": 4
     },
     "src/hooks/products/useCartTemplates.ts": {
       "TS2322": 1
@@ -784,15 +409,6 @@
     "src/hooks/products/useCatalogFiltering.ts": {
       "TS2322": 1,
       "TS2339": 1
-    },
-    "src/hooks/products/useCatalogState.ts": {
-      "TS2305": 1,
-      "TS2322": 1,
-      "TS2345": 4,
-      "TS2448": 1,
-      "TS2454": 1,
-      "TS2724": 1,
-      "TS2769": 1
     },
     "src/hooks/products/useCategoryIcons.ts": {
       "TS2769": 1
@@ -806,11 +422,7 @@
       "TS2769": 1
     },
     "src/hooks/products/useNoveltiesSelectionMode.ts": {
-      "TS2305": 1,
       "TS2352": 1
-    },
-    "src/hooks/products/usePrefetchProduct.ts": {
-      "TS2307": 2
     },
     "src/hooks/products/useProductInsights.ts": {
       "TS18047": 1,
@@ -821,27 +433,17 @@
       "TS2339": 7,
       "TS7053": 1
     },
-    "src/hooks/products/useProducts.ts": {
-      "TS2769": 3
-    },
     "src/hooks/products/useProductsByColor.ts": {
       "TS2345": 1
     },
     "src/hooks/products/useReplenishmentsSelectionMode.ts": {
       "TS2352": 1
     },
-    "src/hooks/products/useSupplierComparison.ts": {
-      "TS2339": 2
-    },
     "src/hooks/products/useSupplierFiscalData.ts": {
       "TS2352": 2
     },
     "src/hooks/quotes/useAutoSaveQuote.ts": {
       "TS2339": 2
-    },
-    "src/hooks/quotes/useQuoteBuilderState.ts": {
-      "TS2304": 2,
-      "TS2345": 3
     },
     "src/hooks/quotes/useQuoteComments.ts": {
       "TS2322": 3,
@@ -852,11 +454,6 @@
     },
     "src/hooks/quotes/useQuoteHistory.ts": {
       "TS2345": 1
-    },
-    "src/hooks/quotes/useQuoteTemplates.ts": {
-      "TS2322": 1,
-      "TS2339": 3,
-      "TS2353": 2
     },
     "src/hooks/simulation/simulationClipboard.ts": {
       "TS2339": 26,
@@ -879,7 +476,6 @@
     "src/hooks/simulation/useSimulation.ts": {
       "TS2339": 15,
       "TS2345": 3,
-      "TS2352": 2,
       "TS2561": 1,
       "TS2589": 1,
       "TS2769": 3,
@@ -899,9 +495,6 @@
     "src/hooks/simulator/useLivePricePreview.ts": {
       "TS2345": 1
     },
-    "src/hooks/simulator/useSimulatorWizard.ts": {
-      "TS2820": 1
-    },
     "src/hooks/simulator/useUndoRedo.ts": {
       "TS2345": 2
     },
@@ -911,13 +504,6 @@
     "src/hooks/simulator/useWizardPricing.ts": {
       "TS2339": 1,
       "TS2345": 2
-    },
-    "src/hooks/simulator/wizardReducer.ts": {
-      "TS2322": 3,
-      "TS2678": 1
-    },
-    "src/hooks/tecnicas/useTabelasPreco.ts": {
-      "TS2305": 1
     },
     "src/hooks/ui/useErrorHandler.ts": {
       "TS2322": 1
@@ -944,15 +530,6 @@
     "src/lib/kit-builder/types.ts": {
       "TS18048": 2
     },
-    "src/lib/pdf/whitelabel-comparison.ts": {
-      "TS2322": 3,
-      "TS2345": 1,
-      "TS2352": 1,
-      "TS2769": 1
-    },
-    "src/lib/personalization/index.ts": {
-      "TS2305": 4
-    },
     "src/lib/personalization/repositories/technique.repository.ts": {
       "TS2322": 1,
       "TS2339": 1
@@ -960,19 +537,11 @@
     "src/lib/query-config.ts": {
       "TS2352": 1
     },
-    "src/lib/security/rls-denial-logger.ts": {
-      "TS2322": 6
-    },
     "src/lib/stock-chart-utils.ts": {
       "TS2322": 2
     },
     "src/lib/system/dev-infra-messages.ts": {
       "TS2345": 1
-    },
-    "src/pages/Index.tsx": {
-      "TS2322": 1,
-      "TS2339": 5,
-      "TS2551": 1
     },
     "src/pages/SidebarQAPage.tsx": {
       "TS2322": 1
@@ -981,20 +550,11 @@
       "TS2322": 1
     },
     "src/pages/admin/PermissionsPage.tsx": {
-      "TS2345": 5
-    },
-    "src/pages/admin/PriceFreshnessSettings.tsx": {
-      "TS2305": 3,
-      "TS7006": 4
+      "TS2345": 2
     },
     "src/pages/admin/RolePermissionsPage.tsx": {
       "TS18046": 2,
-      "TS2345": 4
-    },
-    "src/pages/admin/RolesPage.tsx": {
-      "TS2322": 4,
-      "TS2345": 2,
-      "TS2769": 4
+      "TS2345": 1
     },
     "src/pages/admin/telemetry/useOptimizationQueue.ts": {
       "TS2339": 1
@@ -1005,10 +565,6 @@
     "src/pages/advanced-price-search/ResultViews.tsx": {
       "TS2551": 6
     },
-    "src/pages/advanced-price-search/useAdvancedPriceSearch.ts": {
-      "TS18048": 1,
-      "TS2339": 3
-    },
     "src/pages/auth/Auth.tsx": {
       "TS2367": 2
     },
@@ -1016,20 +572,8 @@
       "TS2345": 1
     },
     "src/pages/bi/TrendsPage.tsx": {
-      "TS2322": 2,
       "TS2339": 1,
       "TS2345": 2
-    },
-    "src/pages/filters/useFiltersPageState.ts": {
-      "TS2305": 1,
-      "TS2345": 2,
-      "TS2724": 2,
-      "TS7006": 1
-    },
-    "src/pages/kit-builder/KitBuilderPage.tsx": {
-      "TS2322": 3,
-      "TS2551": 2,
-      "TS2741": 1
     },
     "src/pages/kit-builder/useKitBuilderQuote.ts": {
       "TS2305": 1,
@@ -1047,9 +591,6 @@
       "TS2345": 1,
       "TS2352": 1
     },
-    "src/pages/products/ComparePage.tsx": {
-      "TS2322": 3
-    },
     "src/pages/products/FavoritesPage.tsx": {
       "TS2322": 9,
       "TS2339": 1,
@@ -1059,36 +600,14 @@
       "TS2339": 2
     },
     "src/pages/products/ProductDetail.tsx": {
-      "TS2305": 3,
-      "TS2322": 10,
-      "TS2339": 2,
-      "TS7006": 1
+      "TS2339": 2
     },
     "src/pages/products/ProductMatchPage.tsx": {
-      "TS2339": 9,
-      "TS2345": 3,
-      "TS7006": 2
-    },
-    "src/pages/products/SellerCartsPage.tsx": {
-      "TS2305": 1,
-      "TS7006": 6
-    },
-    "src/pages/products/product-detail/ProductDetailHero.tsx": {
-      "TS2305": 1,
-      "TS2322": 6,
-      "TS2339": 4
-    },
-    "src/pages/products/product-match/ProductSearchPanel.tsx": {
-      "TS2488": 1
+      "TS2339": 4,
+      "TS2345": 2
     },
     "src/pages/products/seller-carts/CartSidebar.tsx": {
-      "TS2305": 1,
       "TS2322": 1
-    },
-    "src/pages/products/seller-carts/useSellerCartsPage.ts": {
-      "TS18046": 1,
-      "TS2305": 1,
-      "TS7006": 13
     },
     "src/pages/quotes/QuoteBuilderPage.tsx": {
       "TS2339": 1
@@ -1115,20 +634,8 @@
       "TS2339": 1,
       "TS2345": 1
     },
-    "src/pages/quotes/quotes-dashboard/useQuotesDashboard.ts": {
-      "TS2322": 1,
-      "TS2339": 1,
-      "TS2769": 3
-    },
     "src/pages/tools/AdvancedPriceSearchPage.tsx": {
       "TS2339": 5
-    },
-    "src/pages/trends/TrendsCharts.tsx": {
-      "TS18046": 1,
-      "TS18047": 2,
-      "TS2322": 10,
-      "TS2362": 1,
-      "TS2365": 1
     },
     "src/services/__tests__/productService.test.ts": {
       "TS2345": 3
@@ -1150,15 +657,6 @@
     },
     "src/utils/personalizationExport.ts": {
       "TS2322": 2
-    },
-    "src/utils/product-colors.ts": {
-      "TS18046": 16
-    },
-    "src/utils/product-mapper.ts": {
-      "TS2322": 3,
-      "TS2339": 5,
-      "TS2345": 1,
-      "TS2551": 1
     },
     "src/utils/productPdfExport.ts": {
       "TS18048": 1
