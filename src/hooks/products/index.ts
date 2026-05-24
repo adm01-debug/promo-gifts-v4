@@ -14,14 +14,13 @@ export * from "@/hooks/products/useColorSystem";
 export * from "@/hooks/products/useExternalCategoriesQuery";
 export * from "@/hooks/products/useExternalVariantStock";
 export * from "@/hooks/products/useMaterialFilter";
-export * from "@/hooks/products/useProductIntelligence";
+// useProductIntelligence, useProductPrefetch, useProductSearch,
+// useProductSearchLightweight — files do not exist on disk (TS2307 in baseline).
+// Removed from barrel to prevent Vite ENOENT build failure.
 export * from "@/hooks/products/useProductMatch";
-export * from "@/hooks/products/useProductPrefetch";
 export * from "@/hooks/products/useProducts";
 export * from "@/hooks/products/useProductsByCategory";
 export * from "@/hooks/products/usePrefetchProduct";
-export * from "@/hooks/products/useProductSearch";
-export * from "@/hooks/products/useProductSearchLightweight";
 export * from "@/hooks/products/useProductsLightweight";
 export * from "@/hooks/products/useReplenishments";
 export * from "@/hooks/products/useStockAlerts";
