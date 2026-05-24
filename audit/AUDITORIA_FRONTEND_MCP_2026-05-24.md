@@ -6,6 +6,8 @@
 **Sessão:** login `adm01@promobrindes.com.br` — papel **Supervisor** (usuário "Joaquim Ataides")
 **Método:** navegador remoto via MCP (sessão persistente), captura de rede, snapshots ARIA, screenshots + análise de código-fonte + advisors do Supabase.
 
+> **Atualização 2026-05-24 (Rodada 2 — verificação aprofundada + correções):** ver seção [Rodada 2](#rodada-2--verificação-aprofundada-e-resolução) no final. Resumo: RLS confirmada ativa em **todas as 280 tabelas**; das 309 políticas anon/public, apenas **18 são irrestritas** e **nenhuma** expõe dado sensível. 2 funções internas tiveram EXECUTE revogado de anon/authenticated e foi adicionado rate-limit ao reset de senha (migration `20260524210000`).
+
 ---
 
 ## Resumo executivo
@@ -108,3 +110,33 @@ Em `/dashboard`, o widget abaixo de "Suas Métricas do Mês" permaneceu em skele
 5. Ligar o Kit Maker a dados reais (ou marcar claramente como demo).
 6. Calibrar o threshold de validade de preço.
 7. Executar `get_advisors(performance)` (não rodado nesta sessão) para fechar o lado de performance.
+
+---
+
+## Rodada 2 — verificação aprofundada e resolução
+
+Após a primeira passada, cada achado de backend foi **verificado com SQL read-only** antes de qualquer ação, para distinguir risco real de ruído de advisor.
+
+### Postura de RLS (medida, não presumida)
+| Métrica | Valor |
+|---|---|
+| Tabelas `public` com **RLS desabilitada** | **0** |
+| Tabelas `public` com RLS habilitada | 280 |
+| Políticas para os papéis `anon`/`public` | 309 |
+| Dessas, com expressão **irrestrita** (`USING/CHECK = true`) | **18** |
+
+As 18 políticas irrestritas são **todas** de dados não sensíveis: catálogo/refs (`products`, `categories`, `color_groups`, `material_equivalences`, `product_variants`, `product_relationships`, `product_*_packagings`, `supplier_colors`, `variant_commemorative_dates`, `commemorative_date_*`) e essenciais pré-login (`system_kill_switches`, `geo_allowed_countries`) — estes últimos lidos por `anon` **por design** (ver commit #297 "kill_switch.ts usa anon"). As tabelas sensíveis (`admin_audit_log`, `admin_settings`, `access_security_settings`, `auth_login_attempts`) **não** aparecem na lista irrestrita — têm políticas devidamente condicionadas. **Conclusão: não há vazamento de dado ativo;** os 373 avisos `anon_table_exposed` são superfície de API mitigada por RLS. Revogação em massa dos grants foi **descartada** (alto risco de quebrar catálogo/quote público/pré-login, ganho real nulo).
+
+### Corrigido nesta rodada (migration `20260524210000_harden_anon_grants_and_password_reset_rate_limit.sql`)
+1. **`REVOKE EXECUTE`** de `cleanup_expired_webhook_request_nonces()` e `get_public_schema_signatures()` para `anon` e `authenticated`. Verificado que **nenhuma** é chamada pelo front-end (`src/`) nem por edge functions; `postgres`/`service_role` mantêm acesso (pg_cron e funções server-side seguem operando). SQL validado em transação com `ROLLBACK`.
+2. **Rate-limit no reset de senha** — trigger `BEFORE INSERT` (`SECURITY DEFINER`, necessário pois `anon` não tem `SELECT`) limita a **3 solicitações por e-mail a cada 60 min** em `password_reset_requests`, fechando o vetor de abuso da política de INSERT irrestrita (achado #4) sem removê-la (ela é necessária ao fluxo pré-login).
+
+### Reclassificado após investigação (não são defeitos de código — *não* alterados)
+- **`get_quote_token_by_value` por anon** — é o lookup **por token-segredo** do orçamento público compartilhável (precisa do segredo para resolver). Não é enumeração; **mantido**.
+- **"Preço próximo do limite de validade" em todos os produtos** — `src/utils/price-freshness.ts` está **correto** (stale > 60d, aging > 30d). O aviso aparecer em tudo significa que os preços do catálogo (SSOT externo) estão genuinamente com > 30 dias. **Remédio = atualização de preços na origem (data ops)**, não código. Mexer no threshold apenas **mascararia** um sinal válido — descartado.
+- **Widget "Próximas Datas" do Dashboard** — `UpcomingDatesWidget` + hook `useUpcomingCommemorativeDates` têm estados de loading/erro/vazio corretos. O skeleton observado era carregamento **transitório** (screenshot logo após navegar), sem defeito confirmado.
+
+### Pendências que exigem decisão de produto / dados (não executáveis com segurança aqui)
+- **Kit Maker servindo `MOCK_BOXES/MOCK_ITEMS`** (`src/lib/kit-builder/index.ts` → `mock-data.ts`). Conectar a dados reais é **implementação de feature** + fonte de dados a definir; fabricar uma tabela seria arriscado. **Requer decisão de produto.**
+- **Atualização de preços do catálogo** (ver acima) — operação de dados na origem.
+- **`get_advisors(performance)`** — recomendado rodar para fechar o lado de performance.
