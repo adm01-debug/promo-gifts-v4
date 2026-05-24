@@ -1,5 +1,4 @@
 import type { TecnicaUnificada } from '@/types/tecnica-unificada';
-import { fetchExternalData } from '@/lib/external-db';
 
 export interface TechniqueQueryOptions {
   search?: string;
@@ -37,6 +36,23 @@ interface PaginatedResponse<T> {
     limit: number;
   };
   status: number;
+}
+
+interface FetchExternalDataOptions {
+  url: string;
+  headers?: HeadersInit;
+}
+
+async function fetchExternalData<T>({ url, headers }: FetchExternalDataOptions): Promise<T> {
+  const response = await fetch(url, { headers });
+
+  if (!response.ok) {
+    throw new Error(
+      `External technique API request failed: ${response.status} ${response.statusText}`,
+    );
+  }
+
+  return response.json() as Promise<T>;
 }
 
 function externalToTecnicaUnificada(row: TecnicaGravacaoExterno): TecnicaUnificada {
@@ -77,12 +93,13 @@ export async function findAll(options: TechniqueQueryOptions = {}): Promise<Tecn
   let tecnicas = (data.data?.records || []).map(externalToTecnicaUnificada);
 
   // Filtros pós-query
-  if (filters?.search) {
-    const search = filters.search.toLowerCase();
-    tecnicas = tecnicas.filter((t: TecnicaUnificada) =>
-      t.nome.toLowerCase().includes(search) ||
-      t.codigo.toLowerCase().includes(search) ||
-      t.descricao?.toLowerCase().includes(search)
+  if (search) {
+    const normalizedSearch = search.toLowerCase();
+    tecnicas = tecnicas.filter(
+      (t: TecnicaUnificada) =>
+        t.nome.toLowerCase().includes(normalizedSearch) ||
+        t.codigo.toLowerCase().includes(normalizedSearch) ||
+        t.descricao?.toLowerCase().includes(normalizedSearch),
     );
   }
 
@@ -121,7 +138,10 @@ export async function create(tecnica: Omit<TecnicaUnificada, 'id'>): Promise<Tec
   return response.json();
 }
 
-export async function update(id: string, updates: Partial<TecnicaUnificada>): Promise<TecnicaUnificada> {
+export async function update(
+  id: string,
+  updates: Partial<TecnicaUnificada>,
+): Promise<TecnicaUnificada> {
   const response = await fetch(`${GRAVACAO_API}/tecnicas/${id}`, {
     method: 'PATCH',
     headers: {
