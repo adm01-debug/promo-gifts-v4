@@ -708,8 +708,6 @@ describe("cross-contract: error envelope consistency", () => {
 // registry yields tests for free. Endpoint-specific shape is validated in
 // the hand-written describe() blocks above.
 // ===========================================================================
-import { CONTRACTS } from "./webhook-schemas";
-
 describe("auto: CONTRACTS registry baseline coverage", () => {
   for (const [name, contract] of Object.entries(CONTRACTS)) {
     describe(`contract: ${name}`, () => {
