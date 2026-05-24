@@ -8,14 +8,20 @@ import { makeRequest, expectContractError } from './_helpers';
 
 describe('contract: webhook-inbound v1 (passthrough)', () => {
   it('aceita qualquer objeto (compat com produção)', async () => {
-    const req = makeRequest({ body: { hello: 'world', random: 42 } });
+    const req = makeRequest({
+      headers: { 'accept-version': '1' },
+      body: { hello: 'world', random: 42 },
+    });
     const r = await parseContract(req, WebhookInboundSchemas);
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.version).toBe('1');
   });
 
   it('aceita array (compat — v1 é any)', async () => {
-    const req = makeRequest({ body: [1, 2, 3] });
+    const req = makeRequest({
+      headers: { 'accept-version': '1' },
+      body: [1, 2, 3],
+    });
     const r = await parseContract(req, WebhookInboundSchemas);
     expect(r.ok).toBe(true);
   });

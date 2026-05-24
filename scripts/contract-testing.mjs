@@ -47,12 +47,11 @@ const CONTRACTS = [
   {
     name: 'product-webhook',
     endpoint: 'product-webhook',
-    extraHeaders: PRODUCT_WEBHOOK_SECRET
-      ? { 'x-webhook-secret': PRODUCT_WEBHOOK_SECRET }
-      : {},
+    extraHeaders: PRODUCT_WEBHOOK_SECRET ? { 'x-webhook-secret': PRODUCT_WEBHOOK_SECRET } : {},
     scenarios: [
       {
-        description: 'valid payload v1 (default)',
+        description: 'valid payload v1 (explicit)',
+        headers: { 'accept-version': '1' },
         payload: {
           action: 'upsert',
           product: { sku: `CT-${Date.now()}`, name: 'Contract test', price: 1.0 },
@@ -61,16 +60,19 @@ const CONTRACTS = [
       },
       {
         description: 'missing body → 400 missing_body',
+        headers: { 'accept-version': '1' },
         rawBody: '',
         expect: { status: 400, code: 'missing_body' },
       },
       {
         description: 'invalid JSON → 400 invalid_json',
+        headers: { 'accept-version': '1' },
         rawBody: '{not-json',
         expect: { status: 400, code: 'invalid_json' },
       },
       {
         description: 'invalid action enum → 422 validation_failed',
+        headers: { 'accept-version': '1' },
         payload: {
           action: 'explode',
           product: { sku: 'X', name: 'Y', price: 1 },
@@ -83,6 +85,7 @@ const CONTRACTS = [
       },
       {
         description: 'wrong type in price → 422',
+        headers: { 'accept-version': '1' },
         payload: {
           action: 'upsert',
           product: { sku: 'X', name: 'Y', price: 'free' },
@@ -125,11 +128,13 @@ const CONTRACTS = [
     scenarios: [
       {
         description: 'v1 event-only → ok or dispatched',
+        headers: { 'accept-version': '1' },
         payload: { event: 'contract.test', payload: { hello: 'world' } },
         expect: { statusIn: [200, 401] }, // 401 se dispatcher secret faltar
       },
       {
         description: 'v1 empty event → 422',
+        headers: { 'accept-version': '1' },
         payload: { event: '' },
         expect: { status: 422, code: 'validation_failed', fieldPaths: ['event'] },
       },
@@ -148,11 +153,13 @@ const CONTRACTS = [
     scenarios: [
       {
         description: 'unknown slug → 404',
+        headers: { 'accept-version': '1' },
         payload: { hello: 'world' },
         expect: { statusIn: [404, 400] },
       },
       {
         description: 'empty body → 400 missing_body',
+        headers: { 'accept-version': '1' },
         rawBody: '',
         expect: { statusIn: [400, 404] }, // 404 vem antes de body check
       },
@@ -183,8 +190,7 @@ async function runScenario(contract, scenario) {
     ...(scenario.headers ?? {}),
   };
 
-  const body =
-    scenario.rawBody !== undefined ? scenario.rawBody : JSON.stringify(scenario.payload);
+  const body = scenario.rawBody !== undefined ? scenario.rawBody : JSON.stringify(scenario.payload);
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
