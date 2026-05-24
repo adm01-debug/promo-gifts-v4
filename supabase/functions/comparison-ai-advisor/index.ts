@@ -3,7 +3,6 @@ import { authenticateRequest, requireRole, authErrorResponse } from '../_shared/
 // Comparison AI Advisor — Lovable AI Gateway
 // Recebe lista slim de produtos e retorna 3-5 bullets + bestFor highVolume/fastDelivery/premium.
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { safeErrorFields } from '../_shared/log-safety.ts';
 
@@ -65,7 +64,7 @@ const ToolSchema = {
   },
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: getCorsHeaders(req) });
 
   corsHeaders = getCorsHeaders(req);
