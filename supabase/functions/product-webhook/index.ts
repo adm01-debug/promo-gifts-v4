@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
 import {
   parseContract,
@@ -8,6 +9,7 @@ import {
   type ProductWebhookV1Payload,
   type ProductWebhookV2Payload,
 } from "../_shared/contracts/schemas/product-webhook.ts";
+import type { Database } from "../../src/integrations/supabase/types.ts";
 
 const corsHeaders = buildPublicCorsHeaders({ extraAllowHeaders: ["x-webhook-secret", "accept-version"] });
 
@@ -25,7 +27,7 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
 
   try {
     // Webhook secret check (mantido idêntico)
@@ -148,7 +150,7 @@ Deno.serve(async (req) => {
 });
 
 async function upsertProducts(
-  supabase: any,
+  supabase: SupabaseClient<Database>,
   products: ProductPayload[],
 ): Promise<{ created: number; updated: number; failed: number; errors: string[] }> {
   let created = 0;
