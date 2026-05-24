@@ -9,7 +9,6 @@ import {
   type ProductWebhookV1Payload,
   type ProductWebhookV2Payload,
 } from "../_shared/contracts/schemas/product-webhook.ts";
-import type { Database } from "../../src/integrations/supabase/types.ts";
 
 const corsHeaders = buildPublicCorsHeaders({ extraAllowHeaders: ["x-webhook-secret", "accept-version"] });
 
@@ -27,7 +26,7 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
     // Webhook secret check (mantido idêntico)
@@ -150,7 +149,8 @@ Deno.serve(async (req) => {
 });
 
 async function upsertProducts(
-  supabase: SupabaseClient<Database>,
+  // deno-lint-ignore no-explicit-any
+  supabase: SupabaseClient<any>,
   products: ProductPayload[],
 ): Promise<{ created: number; updated: number; failed: number; errors: string[] }> {
   let created = 0;
