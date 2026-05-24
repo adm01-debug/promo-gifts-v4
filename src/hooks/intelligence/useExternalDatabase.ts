@@ -8,7 +8,7 @@
  *
  * Este arquivo contém o hook principal e re-exporta tudo para compatibilidade.
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
 // Re-exportar tudo dos módulos para manter compatibilidade de imports
@@ -88,13 +88,23 @@ export function useExternalDatabase<T = Record<string, unknown>>(tableName: Exte
     isLoading: false,
     error: null,
   });
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const invoke = useCallback(
     async (
       operation: Operation,
       options?: QueryOptions & { data?: Partial<T> },
     ): Promise<T | QueryResult<T> | null> => {
-      setState((prev) => ({ ...prev, isLoading: true, error: null }));
+      if (isMountedRef.current) {
+        setState((prev) => ({ ...prev, isLoading: true, error: null }));
+      }
 
       try {
         const { data, error } = await invokeWithRetry({
@@ -122,20 +132,26 @@ export function useExternalDatabase<T = Record<string, unknown>>(tableName: Exte
 
         if (operation === 'select') {
           const result = (bridgeData?.data ?? null) as QueryResult<T>;
-          setState((prev) => ({
-            ...prev,
-            data: result.records,
-            count: result.count,
-            isLoading: false,
-          }));
+          if (isMountedRef.current) {
+            setState((prev) => ({
+              ...prev,
+              data: result.records,
+              count: result.count,
+              isLoading: false,
+            }));
+          }
           return result;
         }
-        setState((prev) => ({ ...prev, isLoading: false }));
+        if (isMountedRef.current) {
+          setState((prev) => ({ ...prev, isLoading: false }));
+        }
         return (bridgeData?.data ?? null) as T;
       } catch (err) {
         const errorMessage = await extractFunctionErrorMessage(err);
-        setState((prev) => ({ ...prev, error: errorMessage, isLoading: false }));
-        toast.error(errorMessage);
+        if (isMountedRef.current) {
+          setState((prev) => ({ ...prev, error: errorMessage, isLoading: false }));
+          toast.error(errorMessage);
+        }
         return null;
       }
     },

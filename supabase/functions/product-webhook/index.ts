@@ -147,7 +147,8 @@ function timingSafeEqual(a: string, b: string): boolean {
 }
 
 async function isReplayNonce(
-  supabase: SupabaseClient<Database>,
+  // deno-lint-ignore no-explicit-any
+  supabase: SupabaseClient<any>,
   nonce: string,
   timestamp: number,
 ): Promise<boolean> {
