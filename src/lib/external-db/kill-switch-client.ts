@@ -26,6 +26,26 @@ type SwitchCheck = {
   fetchedAt: number;
 };
 
+type KillSwitchRow = {
+  enabled?: boolean | null;
+  legacy_message?: string | null;
+};
+
+type KillSwitchQueryResult = {
+  data: KillSwitchRow | null;
+  error: { message?: string } | null;
+};
+
+type KillSwitchTableClient = {
+  from(table: 'system_kill_switches'): {
+    select(columns: 'enabled, legacy_message'): {
+      eq(column: 'switch_name', value: string): {
+        maybeSingle(): Promise<KillSwitchQueryResult>;
+      };
+    };
+  };
+};
+
 const memoryCache = new Map<string, SwitchCheck>();
 
 function readFromLocalStorage(switchName: string): SwitchCheck | null {
@@ -87,11 +107,10 @@ export async function getKillSwitchState(switchName: string): Promise<KillSwitch
 
   // 3) Network (consulta REST nativa — tabela tem GRANT SELECT TO anon)
   try {
-    // Cast para `any` controlado: a tabela `system_kill_switches` foi criada
+    // Cast controlado: a tabela `system_kill_switches` foi criada
     // após o último gen-types e ainda não está no Database type. Substituir
     // por `from('system_kill_switches')` tipado quando rodar `supabase gen types`.
-    // deno-lint-ignore no-explicit-any
-    const client = supabase as any;
+    const client = supabase as unknown as KillSwitchTableClient;
     const { data, error } = await client
       .from('system_kill_switches')
       .select('enabled, legacy_message')

@@ -18,6 +18,7 @@ export type BridgeOperation =
   | 'select' | 'insert' | 'update' | 'delete' | 'upsert' | 'batch' | 'rpc'
   | `rpc:${string}` 
   | `auth:${string}`
+  | 'invoke'
   | 'handshake'
   | 'health';
 

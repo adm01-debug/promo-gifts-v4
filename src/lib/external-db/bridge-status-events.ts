@@ -46,6 +46,12 @@ export type BridgeStatusEvent =
   | BridgeUnavailableEvent
   | BridgeRecoveredEvent;
 
+type BridgeStatusEventInput = BridgeStatusEvent extends infer Event
+  ? Event extends BridgeStatusEvent
+    ? Omit<Event, 'ts'> & { ts?: number }
+    : never
+  : never;
+
 type Listener = (e: BridgeStatusEvent) => void;
 const listeners = new Set<Listener>();
 
@@ -54,7 +60,7 @@ export function onBridgeStatus(fn: Listener): () => void {
   return () => listeners.delete(fn);
 }
 
-export function emitBridgeStatus(e: Omit<BridgeStatusEvent, 'ts'> & { ts?: number }): void {
+export function emitBridgeStatus(e: BridgeStatusEventInput): void {
   const event: BridgeStatusEvent = {
     ...e,
     ts: e.ts ?? Date.now(),

@@ -22,6 +22,11 @@ export interface KillSwitchHit {
 }
 
 type QueuedHit = KillSwitchHit & { source: 'front'; occurred_at: string };
+type KillSwitchHitsClient = {
+  from(table: 'kill_switch_hits'): {
+    insert(rows: QueuedHit[]): Promise<{ error: { message?: string } | null }>;
+  };
+};
 
 const BUFFER_MAX_SIZE = 20;
 const FLUSH_INTERVAL_MS = 5_000;
@@ -57,8 +62,7 @@ async function flush(): Promise<void> {
   try {
     // Cast: kill_switch_hits foi criada após o último gen-types; quando rodar
     // `supabase gen types` o cast pode ser removido.
-    // deno-lint-ignore no-explicit-any
-    const client = supabase as any;
+    const client = supabase as unknown as KillSwitchHitsClient;
     const { error } = await client.from('kill_switch_hits').insert(toSend);
 
     if (error) {
@@ -122,7 +126,7 @@ export async function flushKillSwitchTelemetry(): Promise<void> {
  * Reset apenas para testes.
  * @internal
  */
-export function __resetKillSwitchTelemetry(): void {
+export function resetKillSwitchTelemetryForTests(): void {
   if (flushTimer) {
     clearTimeout(flushTimer);
     flushTimer = null;
