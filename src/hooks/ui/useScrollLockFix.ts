@@ -1,87 +1,90 @@
-import { useEffect } from "react";
+import { useEffect } from 'react';
+import { releaseScrollLockIfIdle, isBodyStuckInert } from '@/lib/dom/scroll-lock';
 
 /**
- * Scroll-lock fix v9 — Minimal observer, no layout thrashing.
- * 
- * Only listens for `data-state` attribute changes (not childList)
- * to detect overlay close transitions. Avoids getComputedStyle to
- * prevent forced reflows.
+ * Scroll-lock fix v10 — global watchdog against Radix's stuck body lock.
+ *
+ * Radix (react-remove-scroll / DismissableLayer) sets `pointer-events: none`
+ * and `overflow: hidden` on <html>/<body> while a modal overlay is open. A
+ * known race can leave those styles stuck after the overlay closes, making the
+ * whole UI unclickable. This hook recovers from every leak path:
+ *
+ *  1) MutationObserver on overlay `data-state` transitions (the normal close).
+ *  2) MutationObserver on <html>/<body> `style`/`class` (catches the inline
+ *     `pointer-events: none` injection even when no `data-state` change fires,
+ *     e.g. when the overlay unmounts without transitioning to "closed").
+ *  3) A capture-phase `pointerdown` self-heal: if the user clicks while <body>
+ *     is stuck inert and no overlay is open, the lock is released synchronously
+ *     so the very same interaction can land on its target.
  */
-
-function hasActiveOverlay(): boolean {
-  const selectors = [
-    '[data-state="open"][role="dialog"]',
-    '[data-state="open"][role="alertdialog"]',
-    '[vaul-drawer][data-state="open"]',
-  ];
-
-  for (const sel of selectors) {
-    if (document.querySelector(sel)) return true;
-  }
-
-  return false;
-}
-
-function cleanupScrollLock() {
-  if (hasActiveOverlay()) return;
-
-  for (const el of [document.documentElement, document.body]) {
-    el.removeAttribute('data-scroll-locked');
-
-    const s = el.style;
-    if (s.overflow === 'hidden') s.overflow = '';
-    if (s.overflowY === 'hidden') s.overflowY = '';
-    if (s.position === 'fixed') s.position = '';
-    if (s.marginRight) s.marginRight = '';
-    if (s.paddingRight) s.paddingRight = '';
-    if (s.touchAction === 'none') s.touchAction = '';
-    if (s.pointerEvents === 'none') s.pointerEvents = '';
-    if (s.top && s.position !== 'fixed') s.top = '';
-    if (s.width === '100%' && el === document.body) s.width = '';
-  }
-
-  document.body.classList.forEach(cls => {
-    if (cls.startsWith('block-interactivity-')) {
-      document.body.classList.remove(cls);
-    }
-  });
-}
-
 export function useScrollLockFix() {
   useEffect(() => {
+    if (typeof document === 'undefined') return;
+
     let scheduled = false;
 
     const scheduleCleanup = () => {
       if (scheduled) return;
       scheduled = true;
       requestAnimationFrame(() => {
-        cleanupScrollLock();
         scheduled = false;
+        releaseScrollLockIfIdle();
       });
     };
 
-    // Only watch data-state attribute changes — no childList to reduce noise
+    // 1 + 2) Watch overlay close transitions and direct style/class mutations
+    //         on the root elements.
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
-        if (mutation.attributeName === 'data-state') {
+        if (mutation.type === 'childList') {
+          scheduleCleanup();
+          return;
+        }
+
+        const attr = mutation.attributeName;
+        if (attr === 'data-state') {
           const target = mutation.target as HTMLElement;
           if (target.getAttribute('data-state') === 'closed') {
             scheduleCleanup();
-            break;
+            return;
           }
+        } else if (attr === 'style' || attr === 'class') {
+          // A root element gained/changed inline styles — re-check on the next
+          // frame, by which point any genuinely-open overlay is mounted.
+          scheduleCleanup();
+          return;
         }
       }
     });
 
     observer.observe(document.body, {
       subtree: true,
+      childList: true,
       attributes: true,
       attributeFilter: ['data-state'],
     });
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['style', 'class'],
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['style', 'class'],
+    });
 
-    // One-time initial cleanup
-    cleanupScrollLock();
+    // 3) Last-resort self-heal: if a click is attempted while the page is stuck
+    //    inert, release the lock immediately so the click can reach its target.
+    const selfHeal = () => {
+      if (isBodyStuckInert()) releaseScrollLockIfIdle();
+    };
+    window.addEventListener('pointerdown', selfHeal, { capture: true });
 
-    return () => observer.disconnect();
+    // One-time initial cleanup (e.g. after a hard reload mid-overlay).
+    releaseScrollLockIfIdle();
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('pointerdown', selfHeal, { capture: true });
+    };
   }, []);
 }

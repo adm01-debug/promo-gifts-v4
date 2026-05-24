@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { PageSEO } from '@/components/seo/PageSEO';
@@ -117,8 +117,13 @@ export default function AdminSegurancaAcessoPage() {
   });
   const { toast } = useToast();
 
+  // Guarda de montagem: evita setState após o unmount (o fetchAll é chamado
+  // pelo effect inicial, pelo polling de 30s e por handlers; sem isso, um await
+  // que resolve após o teardown vaza "window is not defined" nos testes).
+  const mountedRef = useRef(true);
+
   const fetchAll = async () => {
-    setIsLoading(true);
+    if (mountedRef.current) setIsLoading(true);
     try {
       const [botRes, rateRes, ipRes] = await Promise.all([
         supabase
@@ -133,6 +138,7 @@ export default function AdminSegurancaAcessoPage() {
           .limit(100),
         supabase.from('ip_access_control').select('*').order('created_at', { ascending: false }),
       ]);
+      if (!mountedRef.current) return;
       if (botRes.error) throw botRes.error;
       if (rateRes.error) throw rateRes.error;
       if (ipRes.error) throw ipRes.error;
@@ -140,17 +146,22 @@ export default function AdminSegurancaAcessoPage() {
       setRateLimits(rateRes.data || []);
       setIpList(ipRes.data || []);
     } catch (err) {
+      if (!mountedRef.current) return;
       const msg = err instanceof Error ? err.message : 'Erro desconhecido';
       toast({ title: 'Erro ao carregar', description: msg, variant: 'destructive' });
     } finally {
-      setIsLoading(false);
+      if (mountedRef.current) setIsLoading(false);
     }
   };
 
   useEffect(() => {
+    mountedRef.current = true;
     fetchAll();
     const interval = setInterval(fetchAll, 30000); // 30s polling
-    return () => clearInterval(interval);
+    return () => {
+      mountedRef.current = false;
+      clearInterval(interval);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

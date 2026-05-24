@@ -1,13 +1,18 @@
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { parseContract } from "../_shared/contracts/index.ts";
+import {
+  ForceGlobalLogoutSchemas,
+} from "../_shared/contracts/schemas/force-global-logout.ts";
 
 // Module-scope CORS headers — atribuído per-request no handler.
 let corsHeaders: Record<string, string> = {};
+let contractResponseHeaders: Record<string, string> = {};
 
 function jsonRes(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...corsHeaders, ...contractResponseHeaders, "Content-Type": "application/json" },
   });
 }
 
@@ -17,6 +22,7 @@ Deno.serve(async (req) => {
   }
 
   corsHeaders = getCorsHeaders(req);
+  contractResponseHeaders = {};
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -49,17 +55,13 @@ Deno.serve(async (req) => {
       return jsonRes({ error: "Apenas administradores ou desenvolvedores podem forçar logout global" }, 403);
     }
 
-    // Parse confirmation
-    let body: { confirm?: string } = {};
-    try {
-      body = await req.json();
-    } catch {
-      return jsonRes({ error: "Body inválido" }, 400);
-    }
-
-    if (body.confirm !== "FORCE_LOGOUT_ALL") {
-      return jsonRes({ error: 'Confirmação inválida. Envie {"confirm": "FORCE_LOGOUT_ALL"}' }, 400);
-    }
+    // Parse + validate body via parseContract
+    const contractResult = await parseContract(req, ForceGlobalLogoutSchemas, {
+      corsHeaders,
+    });
+    if (!contractResult.ok) return contractResult.response;
+    contractResponseHeaders = contractResult.responseHeaders;
+    // confirm já validado pelo schema (literal "FORCE_LOGOUT_ALL")
 
     // List all users and sign them out (exclude caller to keep current admin session)
     let totalSignedOut = 0;

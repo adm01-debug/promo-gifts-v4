@@ -2,7 +2,7 @@
  * Business logic hook for StockHistoryChart.
  * Extracts data fetching, mock data generation, and derived insights.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useState } from 'react';
 import {
   useStockDailySummary,
   useStockVelocity,
@@ -12,13 +12,12 @@ import {
   getActiveFlags,
   type IntelligenceFlag,
   type StockVelocity,
-} from "@/hooks/intelligence";
-import { useSupplierNames } from "@/hooks/products";
+} from '@/hooks/intelligence';
+import { useSupplierNames } from '@/hooks/products';
 import {
   safeVelocityTrend,
   safeNumber,
   generateMockStockData,
-  generateMockVelocity,
   generateMockVelocities,
   generateMockIntelligence,
   generateMockSupplierNames,
@@ -27,7 +26,7 @@ import {
   isRealIntelligence,
   safePriceChanges,
   type MockIntelligenceData,
-} from "@/lib/stock-chart-utils";
+} from '@/lib/stock-chart-utils';
 
 export function useStockChartData(productId: string) {
   const [period, setPeriod] = useState<string>('30');
@@ -63,15 +62,20 @@ export function useStockChartData(productId: string) {
 
   // Supplier names
   const supplierIds = useMemo(
-    () => hasData ? extractUniqueSupplierIds(summaries!) : (isDemo ? mockVelocities.map(v => v.supplier_id) : []),
-    [summaries, hasData, isDemo, mockVelocities]
+    () =>
+      hasData
+        ? extractUniqueSupplierIds(summaries ?? [])
+        : isDemo
+          ? mockVelocities.map((v) => v.supplier_id)
+          : [],
+    [summaries, hasData, isDemo, mockVelocities],
   );
   const { data: realSupplierNamesMap } = useSupplierNames(hasData ? supplierIds : []);
-  const supplierNamesMap = hasData ? realSupplierNamesMap : (isDemo ? mockSupplierNames : undefined);
+  const supplierNamesMap = hasData ? realSupplierNamesMap : isDemo ? mockSupplierNames : undefined;
 
   const supplierOptions = useMemo(() => {
     if (supplierIds.length <= 1) return [];
-    return supplierIds.map(id => ({
+    return supplierIds.map((id) => ({
       id,
       name: supplierNamesMap?.get(id) ?? `Fornecedor ${id.slice(0, 6)}`,
     }));
@@ -83,12 +87,23 @@ export function useStockChartData(productId: string) {
   const chartData = useMemo(() => {
     if (!hasData) return mockChartData;
     const supplierId = selectedSupplier === 'all' ? undefined : selectedSupplier;
-    const aggregated = aggregateDailySummaryByDate(summaries!, supplierId);
+    const aggregated = aggregateDailySummaryByDate(summaries ?? [], supplierId);
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
     return aggregated
-      .filter(d => new Date(d.date) >= cutoff)
-      .reduce<Array<{ date: string; stockClose: number; depleted: number; restocked: number; restockDetected: boolean; costPriceClose: number | null; dateFormatted: string; fullDate: string }>>((acc, d) => {
+      .filter((d) => new Date(d.date) >= cutoff)
+      .reduce<
+        Array<{
+          date: string;
+          stockClose: number;
+          depleted: number;
+          restocked: number;
+          restockDetected: boolean;
+          costPriceClose: number | null;
+          dateFormatted: string;
+          fullDate: string;
+        }>
+      >((acc, d) => {
         const parsed = safeParseDateForChart(d.date);
         if (parsed) acc.push({ ...d, ...parsed });
         return acc;
@@ -97,16 +112,21 @@ export function useStockChartData(productId: string) {
 
   // Effective data
   const effectiveIntelligence = intelligence ?? (isDemo ? mockIntel : null);
-  const effectiveVelocities = velocity?.length ? velocity : (isDemo ? mockVelocities : []);
+  const effectiveVelocities = useMemo(
+    () => (velocity?.length ? velocity : isDemo ? mockVelocities : []),
+    [velocity, isDemo, mockVelocities],
+  );
 
   const bestVelocity = useMemo(() => {
     if (effectiveVelocities.length) {
       if (selectedSupplier !== 'all') {
-        const match = effectiveVelocities.find(v => v.supplier_id === selectedSupplier);
+        const match = effectiveVelocities.find((v: StockVelocity) => v.supplier_id === selectedSupplier);
         if (match) return match;
       }
-      return effectiveVelocities.reduce((best, v) =>
-        (v.avg_daily_depletion_7d > (best?.avg_daily_depletion_7d ?? 0)) ? v : best, effectiveVelocities[0]);
+      return effectiveVelocities.reduce(
+        (best: StockVelocity, v: StockVelocity) => (v.avg_daily_depletion_7d > (best?.avg_daily_depletion_7d ?? 0) ? v : best),
+        effectiveVelocities[0],
+      );
     }
     return null;
   }, [effectiveVelocities, selectedSupplier]);
@@ -143,10 +163,10 @@ export function useStockChartData(productId: string) {
 
   const demandLabel: Record<string, { text: string; color: string }> = {
     'very-high': { text: 'Muito Alta', color: 'text-destructive' },
-    'high': { text: 'Alta', color: 'text-warning' },
-    'moderate': { text: 'Moderada', color: 'text-primary' },
-    'low': { text: 'Baixa', color: 'text-muted-foreground' },
-    'unknown': { text: '—', color: 'text-muted-foreground' },
+    high: { text: 'Alta', color: 'text-warning' },
+    moderate: { text: 'Moderada', color: 'text-primary' },
+    low: { text: 'Baixa', color: 'text-muted-foreground' },
+    unknown: { text: '—', color: 'text-muted-foreground' },
   };
 
   const supplierText = useMemo(() => {
@@ -172,9 +192,12 @@ export function useStockChartData(productId: string) {
 
   return {
     // State
-    period, setPeriod,
-    showCost, setShowCost,
-    selectedSupplier, setSelectedSupplier,
+    period,
+    setPeriod,
+    showCost,
+    setShowCost,
+    selectedSupplier,
+    setSelectedSupplier,
     days,
 
     // Loading/error

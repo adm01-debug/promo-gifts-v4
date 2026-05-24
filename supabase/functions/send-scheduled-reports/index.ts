@@ -50,7 +50,9 @@ Deno.serve(async (req: Request) => {
         if (resendKey) {
           await sendEmailViaResend(resendKey, report.email_to, report.report_name, reportData);
         } else {
-          console.log(`[send-scheduled-reports] Would send "${report.report_name}" to ${report.email_to}`);
+          console.log("[send-scheduled-reports] Email provider not configured; report send skipped", {
+            reportId: report.id,
+          });
         }
 
         // Calculate next run
@@ -68,7 +70,10 @@ Deno.serve(async (req: Request) => {
 
         results.push({ id: report.id, status: "sent" });
       } catch (err) {
-        console.error(`Error processing report ${report.id}:`, err);
+        console.error("Error processing scheduled report:", {
+          reportId: report.id,
+          message: err instanceof Error ? err.message : "Unknown error",
+        });
         results.push({ id: report.id, status: "error", error: err instanceof Error ? err.message : "Unknown error" });
       }
     }
@@ -77,7 +82,9 @@ Deno.serve(async (req: Request) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    console.error("send-scheduled-reports error:", err);
+    console.error("send-scheduled-reports error:", {
+      message: err instanceof Error ? err.message : "Internal error",
+    });
     return new Response(JSON.stringify({ error: err instanceof Error ? err.message : "Internal error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

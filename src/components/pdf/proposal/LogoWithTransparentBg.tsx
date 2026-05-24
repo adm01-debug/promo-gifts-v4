@@ -17,7 +17,7 @@ export function processLogoTransparent(src: string): Promise<string> {
     .then((res) => res.blob())
     .then(
       (blob) =>
-        new Promise<string>((resolve, reject) => {
+        new Promise<string>((resolve, _reject) => {
           const objectUrl = URL.createObjectURL(blob);
           const img = new Image();
           img.onload = () => {

@@ -53,25 +53,33 @@ export default function RolePermissionsPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchData();
+    // Guarda de cancelamento: evita setState após o unmount (em testes, o
+    // await pode resolver depois do teardown e vazar "window is not defined").
+    let cancelled = false;
+    fetchData(() => cancelled);
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = async (isCancelled: () => boolean = () => false) => {
     try {
       const [permRes, rolePermRes] = await Promise.all([
         supabase.from('permissions').select('*').order('category'),
         supabase.from('role_permissions').select('*'),
       ]);
 
+      if (isCancelled()) return;
       if (permRes.error) throw permRes.error;
       if (rolePermRes.error) throw rolePermRes.error;
 
       setPermissions(permRes.data || []);
       setRolePermissions(rolePermRes.data || []);
     } catch (error: unknown) {
+      if (isCancelled()) return;
       toast({ title: 'Erro ao carregar dados', description: error.message, variant: 'destructive' });
     } finally {
-      setIsLoading(false);
+      if (!isCancelled()) setIsLoading(false);
     }
   };
 

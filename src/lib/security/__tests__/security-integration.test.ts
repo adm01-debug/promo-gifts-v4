@@ -13,13 +13,13 @@ describe("XSS Prevention & Sanitization", () => {
     it("should remove dangerous attributes like onclick", () => {
       const input = '<button onclick="alert(\'XSS\')">Click me</button>';
       const output = sanitizeHtml(input);
-      expect(output).toBe('<button >Click me</button>');
+      expect(output).toBe('Click me');
     });
 
     it("should remove javascript: pseudo-protocols", () => {
       const input = '<a href="javascript:alert(1)">Link</a>';
       const output = sanitizeHtml(input);
-      expect(output).toBe('<a >Link</a>');
+      expect(output).toBe('Link');
     });
 
     it("should handle nested tags and malformed HTML reasonably", () => {

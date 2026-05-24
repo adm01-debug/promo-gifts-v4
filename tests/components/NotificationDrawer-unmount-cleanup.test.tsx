@@ -15,12 +15,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 const prefetchMock = vi.fn(() => Promise.resolve());
 
-vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ user: null, isLoading: false, signIn: vi.fn(), signOut: vi.fn(), refreshSession: vi.fn(), roles: [], isDev: false }),
-  AuthProvider: ({ children }: { children: React.ReactNode }) => children,
-}));
-
-vi.mock("@/hooks/useNotifications", () => ({
+vi.mock("@/hooks/ui", () => ({
   useNotifications: () => ({
     notifications: [],
     unreadCount: 0,
@@ -42,7 +37,7 @@ vi.mock("@/components/a11y/AriaLive", () => ({
 }));
 
 vi.mock("framer-motion", () => {
-  const passthrough = (Tag: keyof React.JSX.IntrinsicElements) =>
+  const passthrough = (Tag: keyof JSX.IntrinsicElements) =>
     React.forwardRef<HTMLElement, Record<string, unknown>>(function M(props, ref) {
       const { children, ...rest } = props as { children?: React.ReactNode };
       const clean: Record<string, unknown> = {};
@@ -54,7 +49,7 @@ vi.mock("framer-motion", () => {
       return React.createElement(Tag, { ref, ...clean }, children);
     });
   return {
-    motion: new Proxy({}, { get: (_t, p: string) => passthrough(p as keyof React.JSX.IntrinsicElements) }),
+    motion: new Proxy({}, { get: (_t, p: string) => passthrough(p as keyof JSX.IntrinsicElements) }),
     AnimatePresence: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
   };
 });

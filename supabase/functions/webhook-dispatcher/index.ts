@@ -2,30 +2,24 @@
 // subscribed to that event. HMAC signs payload with webhook secret. Retries
 // with backoff and logs each attempt to webhook_deliveries.
 //
-// AUTORIZAÇÃO (Onda 1 hardening, 2026-05-14):
+// AUTORIZAÇÃO (SEC-003 fail-closed, 2026-05-22):
 //   - Modo A: header `x-dispatcher-secret: <SECRET>` (triggers DB, RPCs, cron)
 //   - Modo B: `Authorization: Bearer <user JWT>` + role >= supervisor (frontend)
 //   - test_mode e replay_delivery_id exigem Modo B (operação sensível)
-//   - Retrocompat: se WEBHOOK_DISPATCHER_SECRET não estiver setado, aceita anônimo com warning
+//   - Se WEBHOOK_DISPATCHER_SECRET não estiver configurado em vault/env,
+//     authorizeDispatcher devolve 503 service_misconfigured (fail-closed).
 //
 // Ver: supabase/functions/_shared/dispatcher-auth.ts
 import { crypto } from "https://deno.land/std@0.224.0/crypto/mod.ts";
 import { encodeHex } from "https://deno.land/std@0.224.0/encoding/hex.ts";
-import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+import { parseContract } from "../_shared/contracts/index.ts";
+import { WebhookDispatcherSchemas } from "../_shared/contracts/schemas/webhook-dispatcher.ts";
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
 import { authorizeDispatcher } from "../_shared/dispatcher-auth.ts";
 
 const corsHeaders = buildPublicCorsHeaders({ allowMethods: "POST, OPTIONS" });
 
-const BodySchema = z.object({
-  event: z.string().min(1),
-  payload: z.unknown().optional(),
-  // Replay mode: re-deliver a single failed delivery by id
-  replay_delivery_id: z.string().uuid().optional(),
-  // Test mode (Onda 13 #9): dispatch to a specific webhook, no metrics, no breaker, no DB log
-  test_mode: z.boolean().optional(),
-  test_webhook_id: z.string().uuid().optional(),
-});
+// Schemas (v1/v2) movidos para _shared/contracts/schemas/webhook-dispatcher.ts
 
 // Circuit breaker: 5 falhas consecutivas → desativa o webhook
 const CIRCUIT_BREAKER_THRESHOLD = 5;
@@ -60,16 +54,52 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Body precisa ser parseado antes da auth pra saber se requer Modo B (test_mode/replay).
-    // Body parse falha → 400 antes da auth (não vaza info).
-    const parsed = BodySchema.safeParse(await req.json().catch(() => ({})));
-    if (!parsed.success) {
-      return new Response(JSON.stringify({ error: "Invalid body" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    // Validação de contrato (v1 default, v2 via accept-version).
+    // parseContract retorna 400 (json inválido/vazio), 422 (validação), 406 (versão).
+    const contractResult = await parseContract(req, WebhookDispatcherSchemas, { corsHeaders });
+    if (!contractResult.ok) return contractResult.response;
+    const { version: contractVersion, data: parsedData } = contractResult;
+
+    // Normalização v1/v2 → forma interna comum.
+    // v2 usa discriminated union por `mode`; v1 é o shape histórico.
+    let event: string = "";
+    let payload: unknown;
+    let replay_delivery_id: string | undefined;
+    let test_mode: boolean | undefined;
+    let test_webhook_id: string | undefined;
+    if (contractVersion === "2") {
+      const d = parsedData as {
+        mode: "dispatch" | "replay" | "test";
+        event?: string;
+        payload?: Record<string, unknown>;
+        replay_delivery_id?: string;
+        test_webhook_id?: string;
+      };
+      if (d.mode === "replay") {
+        replay_delivery_id = d.replay_delivery_id;
+      } else if (d.mode === "test") {
+        event = d.event ?? "";
+        payload = d.payload;
+        test_mode = true;
+        test_webhook_id = d.test_webhook_id;
+      } else {
+        event = d.event ?? "";
+        payload = d.payload;
+      }
+    } else {
+      const d = parsedData as {
+        event: string;
+        payload?: unknown;
+        replay_delivery_id?: string;
+        test_mode?: boolean;
+        test_webhook_id?: string;
+      };
+      event = d.event;
+      payload = d.payload;
+      replay_delivery_id = d.replay_delivery_id;
+      test_mode = d.test_mode;
+      test_webhook_id = d.test_webhook_id;
     }
-    let { event, payload } = parsed.data;
-    const { replay_delivery_id, test_mode, test_webhook_id } = parsed.data;
 
     // Operações que mexem com webhook específico (test/replay) só por Modo B
     const requiresUserContext = !!(test_mode || replay_delivery_id);

@@ -1,23 +1,27 @@
 import * as dotenv from 'dotenv';
 dotenv.config();
 
-// Fail-fast on missing env: silently falling back to a hardcoded URL once
-// caused this script to point at an obsolete Supabase project for months.
-// Define no .env (raiz do repo) ou exporte antes de rodar.
-const SUPABASE_URL = process.env.SUPABASE_URL;
+// SEC-005: SERVICE_ROLE_KEY vem APENAS de env (mesma estratégia do
+// scripts/contract-testing.mjs após SEC-001). Antes estava hardcoded
+// (UUID de simulação, mas gitleaks reclamava + risco de virar credencial real).
+// Set: export SUPABASE_TEST_BYPASS_TOKEN=<token-de-simulacao>
+const SUPABASE_URL = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '');
+const SERVICE_ROLE_KEY =
+  process.env.SUPABASE_TEST_BYPASS_TOKEN ||
+  process.env.SUPABASE_SERVICE_ROLE_KEY;
+
 if (!SUPABASE_URL) {
-  console.error("❌ SUPABASE_URL não definida.");
-  console.error("   Defina no .env (raiz do repo) ou exporte antes de rodar:");
-  console.error("   export SUPABASE_URL=https://doufsxqlfjyuvxuezpln.supabase.co");
-  process.exit(2);
+  console.error(
+    '[massive-load-test] erro: defina SUPABASE_URL ou VITE_SUPABASE_URL em .env',
+  );
+  process.exit(1);
 }
 
-const SERVICE_ROLE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 if (!SERVICE_ROLE_KEY) {
-  console.error("❌ SUPABASE_SERVICE_ROLE_KEY (ou SUPABASE_ANON_KEY) não definida.");
-  console.error("   Defina no .env (raiz do repo) ou exporte antes de rodar.");
-  process.exit(2);
+  console.error(
+    '[massive-load-test] erro: defina SUPABASE_TEST_BYPASS_TOKEN ou SUPABASE_SERVICE_ROLE_KEY em .env',
+  );
+  process.exit(1);
 }
 
 const CONCURRENCY = 5;
@@ -25,8 +29,7 @@ const TOTAL_REQUESTS = 25;
 
 async function runLoadTest() {
   console.log(`🚀 Iniciando Teste de Carga (CONCURRENCY=${CONCURRENCY}, TOTAL=${TOTAL_REQUESTS})...`);
-  console.log(`🎯 Alvo: ${SUPABASE_URL}`);
-
+  
   const startTime = Date.now();
   let completed = 0;
   let failed = 0;
@@ -41,7 +44,7 @@ async function runLoadTest() {
     const endpoint = endpoints[Math.floor(Math.random() * endpoints.length)];
     const reqStart = Date.now();
     try {
-      const body = endpoint.includes('bridge')
+      const body = endpoint.includes('bridge') 
         ? { operation: "select", table: "products", limit: 1 }
         : { cnpj: "00.000.000/0001-91" };
 
@@ -53,10 +56,10 @@ async function runLoadTest() {
         },
         body: JSON.stringify(body)
       });
-
+      
       const latency = Date.now() - reqStart;
       latencies.push(latency);
-
+      
       if (res.ok) {
         completed++;
       } else {
@@ -69,6 +72,7 @@ async function runLoadTest() {
     }
   }
 
+  const chunks = [];
   for (let i = 0; i < TOTAL_REQUESTS; i += CONCURRENCY) {
     const batch = Array(Math.min(CONCURRENCY, TOTAL_REQUESTS - i)).fill(null).map(() => makeRequest());
     await Promise.all(batch);

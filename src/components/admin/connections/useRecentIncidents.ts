@@ -15,11 +15,11 @@
  *   - P1: failures recentes sem janela, secret_stale, type='warning'
  *   - P2: informacional / type='info'
  */
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
-export type IncidentSeverity = "P0" | "P1" | "P2";
-export type IncidentSource = "notification" | "test_history";
+export type IncidentSeverity = 'P0' | 'P1' | 'P2';
+export type IncidentSource = 'notification' | 'test_history';
 
 export interface IncidentItem {
   id: string;
@@ -50,26 +50,26 @@ interface NotifRow {
 
 interface TestRow {
   id: string;
-  external_connection_id: string | null;
+  connection_id: string | null;
   tested_at: string;
-  message: string | null;
+  error_message: string | null;
   error_kind: string | null;
 }
 
 function severityFromNotification(row: NotifRow): IncidentSeverity {
   const sevMeta = (row.metadata?.severity as string | undefined)?.toUpperCase();
-  if (sevMeta === "P0" || sevMeta === "P1" || sevMeta === "P2") return sevMeta as IncidentSeverity;
+  if (sevMeta === 'P0' || sevMeta === 'P1' || sevMeta === 'P2') return sevMeta as IncidentSeverity;
   const kind = row.metadata?.kind as string | undefined;
-  if (kind === "webhook_auto_disabled" || kind === "connection_down") return "P0";
-  if (row.type === "error") return "P0";
-  if (row.type === "warning" || kind === "secret_stale") return "P1";
-  return "P2";
+  if (kind === 'webhook_auto_disabled' || kind === 'connection_down') return 'P0';
+  if (row.type === 'error') return 'P0';
+  if (row.type === 'warning' || kind === 'secret_stale') return 'P1';
+  return 'P2';
 }
 
 function severityFromTestKind(errorKind: string | null): IncidentSeverity {
-  if (!errorKind) return "P1";
-  if (["auth", "http_5xx", "platform_error"].includes(errorKind)) return "P0";
-  return "P1";
+  if (!errorKind) return 'P1';
+  if (['auth', 'http_5xx', 'platform_error'].includes(errorKind)) return 'P0';
+  return 'P1';
 }
 
 async function fetchIncidents(): Promise<IncidentItem[]> {
@@ -77,17 +77,17 @@ async function fetchIncidents(): Promise<IncidentItem[]> {
 
   const [{ data: notifs }, { data: tests }] = await Promise.all([
     supabase
-      .from("workspace_notifications")
-      .select("id, title, message, type, action_url, metadata, created_at")
-      .eq("category", "integrations")
-      .order("created_at", { ascending: false })
+      .from('workspace_notifications')
+      .select('id, title, message, type, action_url, metadata, created_at')
+      .eq('category', 'integrations')
+      .order('created_at', { ascending: false })
       .limit(20),
     supabase
-      .from("connection_test_history")
-      .select("id, external_connection_id, tested_at, message, error_kind")
-      .eq("success", false)
-      .gte("tested_at", since24h)
-      .order("tested_at", { ascending: false })
+      .from('connection_test_history')
+      .select('id, connection_id, tested_at, error_message, error_kind')
+      .eq('success', false)
+      .gte('tested_at', since24h)
+      .order('tested_at', { ascending: false })
       .limit(15),
   ]);
 
@@ -98,7 +98,7 @@ async function fetchIncidents(): Promise<IncidentItem[]> {
     const entityId = (meta.connection_id as string) ?? (meta.webhook_id as string) ?? null;
     items.push({
       id: `notif:${n.id}`,
-      source: "notification",
+      source: 'notification',
       severity: severityFromNotification(n),
       title: n.title,
       subtitle: n.message,
@@ -106,7 +106,7 @@ async function fetchIncidents(): Promise<IncidentItem[]> {
       kind: (meta.kind as string) ?? null,
       entityId,
       actionUrl: n.action_url,
-      detailsHref: n.action_url ?? `/admin/conexoes${entityId ? `?incident=${entityId}` : ""}`,
+      detailsHref: n.action_url ?? `/admin/conexoes${entityId ? `?incident=${entityId}` : ''}`,
     });
   }
 
@@ -115,18 +115,18 @@ async function fetchIncidents(): Promise<IncidentItem[]> {
   const coveredEntities = new Set(items.map((i) => i.entityId).filter(Boolean) as string[]);
 
   for (const t of (tests ?? []) as TestRow[]) {
-    if (t.external_connection_id && coveredEntities.has(t.external_connection_id)) continue;
+    if (t.connection_id && coveredEntities.has(t.connection_id)) continue;
     items.push({
       id: `test:${t.id}`,
-      source: "test_history",
+      source: 'test_history',
       severity: severityFromTestKind(t.error_kind),
-      title: `Falha em conexão${t.error_kind ? ` (${t.error_kind})` : ""}`,
-      subtitle: t.message,
+      title: `Falha em conexão${t.error_kind ? ` (${t.error_kind})` : ''}`,
+      subtitle: t.error_message,
       occurredAt: t.tested_at,
       kind: t.error_kind,
-      entityId: t.external_connection_id,
+      entityId: t.connection_id,
       actionUrl: null,
-      detailsHref: `/admin/conexoes${t.external_connection_id ? `?incident=${t.external_connection_id}` : ""}`,
+      detailsHref: `/admin/conexoes${t.connection_id ? `?incident=${t.connection_id}` : ''}`,
     });
   }
 
@@ -143,7 +143,7 @@ async function fetchIncidents(): Promise<IncidentItem[]> {
 
 export function useRecentIncidents() {
   return useQuery({
-    queryKey: ["connections-recent-incidents"],
+    queryKey: ['connections-recent-incidents'],
     queryFn: fetchIncidents,
     refetchInterval: 60_000,
     staleTime: 30_000,

@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback } from "react";
-import { Search, Filter, ChevronDown, X, Tag, Hash, History, Clock } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Search, Filter, ChevronDown, X, Tag, History, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";

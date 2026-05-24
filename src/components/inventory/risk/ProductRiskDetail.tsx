@@ -2,7 +2,7 @@
  * Detail panel for a single product's supplier risk analysis.
  * Extracted from SupplierRiskPanel for SRP compliance.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useState } from 'react';
 import {
   Maximize2,
   Minimize2,
@@ -16,8 +16,8 @@ import {
   ExternalLink,
   AlertCircle,
   RefreshCw,
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import {
   ResponsiveContainer,
   Area,
@@ -28,11 +28,11 @@ import {
   Bar,
   ComposedChart,
   Legend,
-} from "recharts";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
+} from 'recharts';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 import {
   useStockDailySummary,
   useStockVelocity,
@@ -40,7 +40,8 @@ import {
   aggregateDailySummaryByDate,
   getActiveFlags,
   type IntelligenceFlag,
-} from "@/hooks/intelligence";
+  type StockVelocity,
+} from '@/hooks/intelligence';
 import {
   safeVelocityTrend,
   safeNumber,
@@ -53,17 +54,16 @@ import {
   OPERATIONAL_FLAG_CONFIG,
   safePriceChanges,
   type MockIntelligenceData,
-} from "@/lib/stock-chart-utils";
-import { RiskKpi } from "./RiskKpi";
-import { RiskTooltip } from "./RiskTooltip";
+} from '@/lib/stock-chart-utils';
+import { RiskKpi } from './RiskKpi';
+import { RiskTooltip } from './RiskTooltip';
 
 interface ProductRiskDetailProps {
   productId: string;
   productName?: string;
-  productSku?: string;
 }
 
-export function ProductRiskDetail({ productId, productName, productSku }: ProductRiskDetailProps) {
+export function ProductRiskDetail({ productId, productName }: ProductRiskDetailProps) {
   const navigate = useNavigate();
   const [period, setPeriod] = useState<string>('30');
   const [chartExpanded, setChartExpanded] = useState(false);
@@ -103,12 +103,23 @@ export function ProductRiskDetail({ productId, productName, productSku }: Produc
   // #10 fix: correct type for reduce — use union type instead of intersection
   const chartData = useMemo(() => {
     if (!hasData) return mockChartData;
-    const aggregated = aggregateDailySummaryByDate(summaries!);
+    const aggregated = aggregateDailySummaryByDate(summaries ?? []);
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
     return aggregated
-      .filter(d => new Date(d.date) >= cutoff)
-      .reduce<Array<{ date: string; stockClose: number; depleted: number; restocked: number; restockDetected: boolean; costPriceClose: number | null; dateFormatted: string; fullDate: string }>>((acc, d) => {
+      .filter((d) => new Date(d.date) >= cutoff)
+      .reduce<
+        Array<{
+          date: string;
+          stockClose: number;
+          depleted: number;
+          restocked: number;
+          restockDetected: boolean;
+          costPriceClose: number | null;
+          dateFormatted: string;
+          fullDate: string;
+        }>
+      >((acc, d) => {
         const parsed = safeParseDateForChart(d.date);
         if (parsed) acc.push({ ...d, ...parsed });
         return acc;
@@ -119,9 +130,13 @@ export function ProductRiskDetail({ productId, productName, productSku }: Produc
   const effectiveIntelligence = intelligence ?? (isDemo ? mockIntel : null);
 
   const bestVelocity = velocity?.length
-    ? velocity.reduce((best, v) =>
-        (v.avg_daily_depletion_7d > (best?.avg_daily_depletion_7d ?? 0)) ? v : best, velocity[0])
-    : (isDemo ? mockVelocity : null);
+    ? velocity.reduce(
+        (best: StockVelocity, v: StockVelocity) => (v.avg_daily_depletion_7d > (best?.avg_daily_depletion_7d ?? 0) ? v : best),
+        velocity[0],
+      )
+    : isDemo
+      ? mockVelocity
+      : null;
 
   // #9 fix: derive flags from mock data too (was returning [] for non-real)
   const flags = useMemo(() => {
@@ -143,7 +158,11 @@ export function ProductRiskDetail({ productId, productName, productSku }: Produc
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8" role="status" aria-label="Carregando detalhes do produto">
+      <div
+        className="flex items-center justify-center py-8"
+        role="status"
+        aria-label="Carregando detalhes do produto"
+      >
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
       </div>
     );
@@ -151,13 +170,13 @@ export function ProductRiskDetail({ productId, productName, productSku }: Produc
 
   if (hasError && !hasData) {
     return (
-      <div className="flex flex-col items-center justify-center py-8 gap-2 text-center">
+      <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
         <AlertCircle className="h-6 w-6 text-destructive" />
         <p className="text-sm font-medium text-destructive">Erro ao carregar dados</p>
-        <p className="text-xs text-muted-foreground max-w-[250px]">
+        <p className="max-w-[250px] text-xs text-muted-foreground">
           Não foi possível buscar o histórico deste produto. Tente novamente em alguns instantes.
         </p>
-        <Button variant="outline" size="sm" onClick={handleRetry} className="gap-1.5 mt-1">
+        <Button variant="outline" size="sm" onClick={handleRetry} className="mt-1 gap-1.5">
           <RefreshCw className="h-3.5 w-3.5" />
           Tentar novamente
         </Button>
@@ -167,7 +186,8 @@ export function ProductRiskDetail({ productId, productName, productSku }: Produc
 
   const daysToStockout = bestVelocity?.days_to_stockout;
   const isUrgent = daysToStockout !== null && Number.isFinite(daysToStockout) && daysToStockout < 7;
-  const isWarning = daysToStockout !== null && Number.isFinite(daysToStockout) && daysToStockout < 15;
+  const isWarning =
+    daysToStockout !== null && Number.isFinite(daysToStockout) && daysToStockout < 15;
   const trend = safeVelocityTrend(bestVelocity?.velocity_trend);
   const trendDisplay = formatVelocityTrendOperational(trend);
 
@@ -178,19 +198,32 @@ export function ProductRiskDetail({ productId, productName, productSku }: Produc
   return (
     <div className="space-y-3">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <h4 className="font-semibold text-sm truncate">{productName || productId}</h4>
-          {isDemo && <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0">demo</Badge>}
-          {hasError && hasData && <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0 bg-destructive/10 text-destructive border-destructive/30">parcial</Badge>}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <h4 className="truncate text-sm font-semibold">{productName || productId}</h4>
+          {isDemo && (
+            <Badge variant="outline" className="shrink-0 px-1.5 py-0 text-[10px]">
+              demo
+            </Badge>
+          )}
+          {hasError && hasData && (
+            <Badge
+              variant="outline"
+              className="shrink-0 border-destructive/30 bg-destructive/10 px-1.5 py-0 text-[10px] text-destructive"
+            >
+              parcial
+            </Badge>
+          )}
           {effectiveIntelligence?.abc_classification && (
             <Badge
               variant="outline"
               className={cn(
-                "font-bold text-[10px] shrink-0",
-                effectiveIntelligence.abc_classification === 'A' ? 'bg-warning/15 text-warning border-warning/30' :
-                effectiveIntelligence.abc_classification === 'B' ? 'bg-primary/15 text-primary border-primary/30' :
-                'bg-muted text-muted-foreground border-border'
+                'shrink-0 text-[10px] font-bold',
+                effectiveIntelligence.abc_classification === 'A'
+                  ? 'border-warning/30 bg-warning/15 text-warning'
+                  : effectiveIntelligence.abc_classification === 'B'
+                    ? 'border-primary/30 bg-primary/15 text-primary'
+                    : 'border-border bg-muted text-muted-foreground',
               )}
             >
               Classe {effectiveIntelligence.abc_classification}
@@ -200,7 +233,7 @@ export function ProductRiskDetail({ productId, productName, productSku }: Produc
         <Button
           variant="ghost"
           size="sm"
-          className="h-6 text-[10px] gap-1 px-2 shrink-0"
+          className="h-6 shrink-0 gap-1 px-2 text-[10px]"
           onClick={() => navigate(`/produto/${productId}`)}
         >
           <ExternalLink className="h-3 w-3" />
@@ -211,11 +244,17 @@ export function ProductRiskDetail({ productId, productName, productSku }: Produc
       {/* Flags */}
       {flags.length > 0 && (
         <div className="flex flex-wrap gap-1" role="list" aria-label="Indicadores de risco">
-          {flags.map(flag => {
+          {flags.map((flag) => {
             const cfg = OPERATIONAL_FLAG_CONFIG[flag];
             const Icon = cfg.icon;
             return (
-              <Badge key={flag} variant="outline" className={cn("gap-1 px-1.5 py-0 text-[10px] border", cfg.colors)} title={cfg.description} role="listitem">
+              <Badge
+                key={flag}
+                variant="outline"
+                className={cn('gap-1 border px-1.5 py-0 text-[10px]', cfg.colors)}
+                title={cfg.description}
+                role="listitem"
+              >
                 <Icon className="h-2.5 w-2.5" />
                 {cfg.label}
               </Badge>
@@ -225,7 +264,11 @@ export function ProductRiskDetail({ productId, productName, productSku }: Produc
       )}
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" role="group" aria-label="Métricas de risco do produto">
+      <div
+        className="grid grid-cols-2 gap-2 sm:grid-cols-4"
+        role="group"
+        aria-label="Métricas de risco do produto"
+      >
         <RiskKpi
           icon={TrendingDown}
           label="Saída/dia (7d)"
@@ -235,7 +278,11 @@ export function ProductRiskDetail({ productId, productName, productSku }: Produc
         <RiskKpi
           icon={Clock}
           label="Dias até acabar"
-          value={daysToStockout !== null && Number.isFinite(daysToStockout) ? String(Math.round(daysToStockout)) : '∞'}
+          value={
+            daysToStockout !== null && Number.isFinite(daysToStockout)
+              ? String(Math.round(daysToStockout))
+              : '∞'
+          }
           sub={isUrgent ? 'URGENTE!' : isWarning ? 'atenção' : 'estimativa'}
           alert={isUrgent}
           warning={isWarning && !isUrgent}
@@ -243,14 +290,25 @@ export function ProductRiskDetail({ productId, productName, productSku }: Produc
         <RiskKpi
           icon={Package}
           label="Estoque atual"
-          value={effectiveIntelligence?.total_current_stock?.toLocaleString('pt-BR') ?? bestVelocity?.current_stock?.toLocaleString('pt-BR') ?? '—'}
-          sub={effectiveIntelligence?.supplier_count
-            ? `${effectiveIntelligence.supplier_count} fornecedor${effectiveIntelligence.supplier_count > 1 ? 'es' : ''}`
-            : 'no fornecedor'}
+          value={
+            effectiveIntelligence?.total_current_stock?.toLocaleString('pt-BR') ??
+            bestVelocity?.current_stock?.toLocaleString('pt-BR') ??
+            '—'
+          }
+          sub={
+            effectiveIntelligence?.supplier_count
+              ? `${effectiveIntelligence.supplier_count} fornecedor${effectiveIntelligence.supplier_count > 1 ? 'es' : ''}`
+              : 'no fornecedor'
+          }
         />
         <RiskKpi
-          icon={trend !== null && trend > 1.2 ? TrendingUp :
-                trend !== null && trend < 0.8 ? TrendingDown : BarChart3}
+          icon={
+            trend !== null && trend > 1.2
+              ? TrendingUp
+              : trend !== null && trend < 0.8
+                ? TrendingDown
+                : BarChart3
+          }
           label="Tendência"
           value={trendDisplay.value}
           sub={trendDisplay.label}
@@ -261,8 +319,10 @@ export function ProductRiskDetail({ productId, productName, productSku }: Produc
       <div className="flex items-center justify-between">
         <Tabs value={period} onValueChange={setPeriod}>
           <TabsList className="h-6 flex-wrap">
-            {['15','30','60','90','120','180'].map(p => (
-              <TabsTrigger key={p} value={p} className="text-[10px] px-2 h-4">{p}d</TabsTrigger>
+            {['15', '30', '60', '90', '120', '180'].map((p) => (
+              <TabsTrigger key={p} value={p} className="h-4 px-2 text-[10px]">
+                {p}d
+              </TabsTrigger>
             ))}
           </TabsList>
         </Tabs>
@@ -270,25 +330,74 @@ export function ProductRiskDetail({ productId, productName, productSku }: Produc
           variant="ghost"
           size="icon"
           className="h-6 w-6"
-          onClick={() => setChartExpanded(prev => !prev)}
-          aria-label={chartExpanded ? "Minimizar gráfico" : "Expandir gráfico"}
+          onClick={() => setChartExpanded((prev) => !prev)}
+          aria-label={chartExpanded ? 'Minimizar gráfico' : 'Expandir gráfico'}
         >
-          {chartExpanded ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+          {chartExpanded ? (
+            <Minimize2 className="h-3.5 w-3.5" />
+          ) : (
+            <Maximize2 className="h-3.5 w-3.5" />
+          )}
         </Button>
       </div>
 
-      <div className={cn("w-full transition-all duration-300", chartExpanded ? "h-[320px]" : "h-[140px] sm:h-[160px]")}>
+      <div
+        className={cn(
+          'w-full transition-all duration-300',
+          chartExpanded ? 'h-[320px]' : 'h-[140px] sm:h-[160px]',
+        )}
+      >
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-            <XAxis dataKey="dateFormatted" tick={{ fontSize: chartExpanded ? 10 : 9 }} className="fill-muted-foreground" interval="preserveStartEnd" />
-            <YAxis yAxisId="stock" tick={{ fontSize: chartExpanded ? 10 : 9 }} className="fill-muted-foreground" width={40} />
+            <XAxis
+              dataKey="dateFormatted"
+              tick={{ fontSize: chartExpanded ? 10 : 9 }}
+              className="fill-muted-foreground"
+              interval="preserveStartEnd"
+            />
+            <YAxis
+              yAxisId="stock"
+              tick={{ fontSize: chartExpanded ? 10 : 9 }}
+              className="fill-muted-foreground"
+              width={40}
+            />
             <YAxis yAxisId="flow" orientation="right" hide />
             <Tooltip content={<RiskTooltip />} />
-            <Legend wrapperStyle={{ fontSize: chartExpanded ? '10px' : '9px', paddingTop: '2px' }} iconSize={chartExpanded ? 8 : 6} formatter={(value: string) => <span className="text-muted-foreground text-[9px]">{value}</span>} />
-            <Area yAxisId="stock" type="monotone" dataKey="stockClose" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.15)" strokeWidth={1.5} name="Estoque" dot={false} activeDot={{ r: 3 }} />
-            <Bar yAxisId="flow" dataKey="depleted" fill="hsl(var(--destructive) / 0.4)" name="Saída" radius={[2, 2, 0, 0]} barSize={chartExpanded ? 5 : 3} />
-            <Bar yAxisId="flow" dataKey="restocked" fill="hsl(var(--primary) / 0.4)" name="Reposição" radius={[2, 2, 0, 0]} barSize={chartExpanded ? 5 : 3} />
+            <Legend
+              wrapperStyle={{ fontSize: chartExpanded ? '10px' : '9px', paddingTop: '2px' }}
+              iconSize={chartExpanded ? 8 : 6}
+              formatter={(value: string) => (
+                <span className="text-[9px] text-muted-foreground">{value}</span>
+              )}
+            />
+            <Area
+              yAxisId="stock"
+              type="monotone"
+              dataKey="stockClose"
+              stroke="hsl(var(--primary))"
+              fill="hsl(var(--primary) / 0.15)"
+              strokeWidth={1.5}
+              name="Estoque"
+              dot={false}
+              activeDot={{ r: 3 }}
+            />
+            <Bar
+              yAxisId="flow"
+              dataKey="depleted"
+              fill="hsl(var(--destructive) / 0.4)"
+              name="Saída"
+              radius={[2, 2, 0, 0]}
+              barSize={chartExpanded ? 5 : 3}
+            />
+            <Bar
+              yAxisId="flow"
+              dataKey="restocked"
+              fill="hsl(var(--primary) / 0.4)"
+              name="Reposição"
+              radius={[2, 2, 0, 0]}
+              barSize={chartExpanded ? 5 : 3}
+            />
           </ComposedChart>
         </ResponsiveContainer>
       </div>

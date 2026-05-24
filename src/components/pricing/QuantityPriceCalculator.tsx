@@ -17,7 +17,7 @@ import { TechniqueMultiSelector } from './calculator/TechniqueMultiSelector';
 import { TechniqueConfigCard } from './calculator/TechniqueConfigCard';
 import { QuantityComparisonTable } from './calculator/QuantityComparisonTable';
 import { type CalcProduct, type ProductTechnique, type SelectedTechniqueConfig, formatNumber } from "./calculator/types";
-import type { Product as SimulatorProduct } from "@/pages/advanced-price-search/types";
+import type { Product as SimulatorProduct } from "./simulator/types";
 
 interface QuantityPriceCalculatorProps {
   productBasePrice?: number;

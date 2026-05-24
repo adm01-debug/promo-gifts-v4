@@ -20,7 +20,7 @@ import {
   ORGANIZATION_ID,
   createEmptyContact,
   createEmptyPixKey,
-} from "./types";
+} from './types';
 
 export function useSuppliersManager() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -317,7 +317,7 @@ export function useSuppliersManager() {
       .filter((k) => k.chave.trim())
       .find((k) => validatePixKey(k.chave, k.tipo));
     if (invalidPix) {
-      toast.error(validatePixKey(invalidPix.chave, invalidPix.tipo)!);
+      toast.error(validatePixKey(invalidPix.chave, invalidPix.tipo) ?? 'Chave PIX inválida');
       return;
     }
     const cnpjRaw = editingSupplier.cnpj?.replace(/\D/g, '') || '';
@@ -413,11 +413,11 @@ export function useSuppliersManager() {
         null;
 
       const payload: Record<string, unknown> = {
-        name: es.name!.trim(),
+        name: (es.name ?? '').trim(),
         code:
           es.code?.trim() ||
-          es
-            .name!.trim()
+          (es.name ?? '')
+            .trim()
             .toUpperCase()
             .replace(/\s+/g, '_')
             .replace(/[^A-Z0-9_]/g, '')

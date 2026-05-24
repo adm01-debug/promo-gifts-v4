@@ -54,9 +54,9 @@ export function useCategoriesTree() {
         .eq('is_active', true);
 
       if (error) throw error;
-      
+
       const iconMap = new Map<string, string>();
-      (data as CategoryIcon[] || []).forEach(item => {
+      ((data as CategoryIcon[]) || []).forEach((item) => {
         iconMap.set(item.category_name.toUpperCase(), item.icon);
       });
       setCategoryIcons(iconMap);
@@ -113,11 +113,11 @@ export function useCategoriesTree() {
     const roots: CategoryNode[] = [];
 
     // Primeiro passo: Criar todos os nós
-    categories.forEach(cat => {
+    categories.forEach((cat) => {
       const isRoot = cat.level === 1 || !cat.parent_id;
       const normalizedName = cat.name.toUpperCase();
       const icon = isRoot ? categoryIcons.get(normalizedName) : undefined;
-      
+
       nodeMap.set(cat.id, {
         ...cat,
         icon,
@@ -127,15 +127,15 @@ export function useCategoriesTree() {
     });
 
     // Segundo passo: Construir hierarquia vinculando filhos aos pais
-    categories.forEach(cat => {
+    categories.forEach((cat) => {
       const node = nodeMap.get(cat.id);
       if (!node) return;
-      
+
       if (cat.parent_id) {
         const parentNode = nodeMap.get(cat.parent_id);
         if (parentNode) {
           // Verificar se o filho já não está na lista (evitar duplicatas)
-          if (!parentNode.children.find(c => c.id === node.id)) {
+          if (!parentNode.children.find((c) => c.id === node.id)) {
             parentNode.children.push(node);
           }
         } else {
@@ -159,13 +159,13 @@ export function useCategoriesTree() {
         }
         return a.name.localeCompare(b.name);
       });
-      nodes.forEach(node => {
+      nodes.forEach((node) => {
         if (node.children.length > 0) {
           sortChildren(node.children);
         }
       });
     };
-    
+
     sortChildren(roots);
 
     return roots;
@@ -174,7 +174,7 @@ export function useCategoriesTree() {
   // Categorias por nível
   const categoriesByLevel = useMemo(() => {
     const byLevel: Record<number, CategoryTreeItem[]> = {};
-    categories.forEach(cat => {
+    categories.forEach((cat) => {
       if (!byLevel[cat.level]) byLevel[cat.level] = [];
       byLevel[cat.level].push(cat);
     });
@@ -183,7 +183,7 @@ export function useCategoriesTree() {
 
   // Opções para select com indentação visual
   const selectOptions = useMemo((): CategoryOption[] => {
-    return categories.map(cat => ({
+    return categories.map((cat) => ({
       value: cat.id,
       label: cat.name,
       level: cat.level,
@@ -193,42 +193,52 @@ export function useCategoriesTree() {
   }, [categories]);
 
   // Buscar filhos de uma categoria
-  const getChildren = useCallback((parentId: string): CategoryTreeItem[] => {
-    return categories.filter(cat => cat.parent_id === parentId);
-  }, [categories]);
+  const getChildren = useCallback(
+    (parentId: string): CategoryTreeItem[] => {
+      return categories.filter((cat) => cat.parent_id === parentId);
+    },
+    [categories],
+  );
 
   // Buscar caminho até a raiz (breadcrumb)
-  const getPath = useCallback((categoryId: string): CategoryTreeItem[] => {
-    const path: CategoryTreeItem[] = [];
-    let current = categories.find(cat => cat.id === categoryId);
-    
-    while (current) {
-      path.unshift(current);
-      if (current.parent_id) {
-        current = categories.find(cat => cat.id === current!.parent_id);
-      } else {
-        current = undefined;
+  const getPath = useCallback(
+    (categoryId: string): CategoryTreeItem[] => {
+      const path: CategoryTreeItem[] = [];
+      let current = categories.find((cat) => cat.id === categoryId);
+
+      while (current) {
+        path.unshift(current);
+        if (current.parent_id) {
+          current = categories.find((cat) => cat.id === current?.parent_id);
+        } else {
+          current = undefined;
+        }
       }
-    }
-    
-    return path;
-  }, [categories]);
+
+      return path;
+    },
+    [categories],
+  );
 
   // Buscar categorias por nome
-  const searchCategories = useCallback((query: string): CategoryTreeItem[] => {
-    if (!query.trim()) return [];
-    const lowerQuery = query.toLowerCase();
-    return categories.filter(cat => 
-      cat.name.toLowerCase().includes(lowerQuery)
-    );
-  }, [categories]);
+  const searchCategories = useCallback(
+    (query: string): CategoryTreeItem[] => {
+      if (!query.trim()) return [];
+      const lowerQuery = query.toLowerCase();
+      return categories.filter((cat) => cat.name.toLowerCase().includes(lowerQuery));
+    },
+    [categories],
+  );
 
   // Estatísticas
-  const stats = useMemo(() => ({
-    total: categories.length,
-    levels: Object.keys(categoriesByLevel).length,
-    roots: tree.length,
-  }), [categories, categoriesByLevel, tree]);
+  const stats = useMemo(
+    () => ({
+      total: categories.length,
+      levels: Object.keys(categoriesByLevel).length,
+      roots: tree.length,
+    }),
+    [categories, categoriesByLevel, tree],
+  );
 
   return {
     categories,
@@ -252,7 +262,7 @@ export function useCategorySelection(initialCategoryId?: string) {
 
   const selectedCategory = useMemo(() => {
     if (!selectedId) return null;
-    return categories.find(cat => cat.id === selectedId) || null;
+    return categories.find((cat) => cat.id === selectedId) || null;
   }, [categories, selectedId]);
 
   const breadcrumb = useMemo(() => {

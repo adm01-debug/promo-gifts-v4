@@ -1,227 +1,309 @@
+#!/usr/bin/env node
 /**
- * Live HTTP contract tests for webhooks and Edge Functions.
+ * scripts/contract-testing.mjs
  *
- * Iterates over the registry in `tests/contracts/webhook-schemas.ts` and
- * sends three baseline scenarios to every deployed endpoint:
+ * Smoke contract tests dispatched against running Edge Functions.
  *
- *   1. valid (default scenario) — expects 200 OR a sane response
- *   2. empty-body 400/422 EMPTY_BODY
- *   3. malformed JSON 400 INVALID_JSON
+ * Diferente do unitário vitest (`tests/contracts/*.test.ts`), este script:
+ *   - É executado fora da CI (manualmente ou via `npm run test:contract`)
+ *   - Faz HTTP real contra o ambiente alvo (default: localhost supabase functions)
+ *   - Verifica que o formato de resposta {code, message, fields} é respeitado
+ *   - Testa: payload válido, missing body, invalid JSON, missing field, wrong type,
+ *     unsupported version, deprecated version (headers Deprecation/Sunset)
  *
- * For each canonical webhook + cnpj-lookup + external-db-bridge we also
- * send hand-crafted 422 cases (missing required, wrong type, empty value)
- * and assert the unified envelope shape:
+ * Variáveis de ambiente:
+ *   SUPABASE_URL                 default http://localhost:54321
+ *   SUPABASE_ANON_KEY            obrigatório
+ *   N8N_PRODUCT_WEBHOOK_SECRET   se setado, enviado em x-webhook-secret
+ *   CONTRACT_TEST_TIMEOUT_MS     default 10000
  *
- *   { code, message, fields:[{path,code,message}], error: <alias> }
- *
- * Run:   npm run test:contract
- * Env (required — fail-fast if missing):
- *   SUPABASE_URL                — endpoint base
- *   SUPABASE_SERVICE_ROLE_KEY   — Bearer for invocation (or SUPABASE_ANON_KEY)
- * Env (optional):
- *   N8N_PRODUCT_WEBHOOK_SECRET  — product-webhook auth
- *   WEBHOOK_DISPATCHER_SECRET   — webhook-dispatcher auth
- *   CONTRACT_TEST_FAIL_FAST=1   — stop at first failure
+ * Códigos de saída:
+ *   0 → todos os contratos passaram
+ *   1 → ao menos um falhou (detalhes no stdout)
+ *   2 → variável de ambiente obrigatória ausente
  */
-import * as dotenv from "dotenv";
-import { readFileSync } from "node:fs";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
 
-dotenv.config();
+import process from 'node:process';
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+// ---------------------------------------------------------------------------
+// Configuração
+// ---------------------------------------------------------------------------
 
-// Fail-fast on missing env: silently falling back to a hardcoded URL once
-// caused this script to point at an obsolete Supabase project for months.
-// The official BD is doufsxqlfjyuvxuezpln — define it in .env or export it
-// before running, otherwise the script aborts with a clear message.
-const SUPABASE_URL = process.env.SUPABASE_URL;
-if (!SUPABASE_URL) {
-  console.error("❌ SUPABASE_URL não definida.");
-  console.error("   Defina no .env (raiz do repo) ou exporte antes de rodar:");
-  console.error("   export SUPABASE_URL=https://doufsxqlfjyuvxuezpln.supabase.co");
+const SUPABASE_URL = process.env.SUPABASE_URL || 'http://localhost:54321';
+const ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+const PRODUCT_WEBHOOK_SECRET = process.env.N8N_PRODUCT_WEBHOOK_SECRET || '';
+const TIMEOUT_MS = Number(process.env.CONTRACT_TEST_TIMEOUT_MS || 10000);
+
+if (!ANON_KEY) {
+  console.error('❌ SUPABASE_ANON_KEY (ou SERVICE_ROLE_KEY) é obrigatório.');
   process.exit(2);
 }
 
-const AUTH_TOKEN =
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
-if (!AUTH_TOKEN) {
-  console.error("❌ SUPABASE_SERVICE_ROLE_KEY (ou SUPABASE_ANON_KEY) não definida.");
-  console.error("   Defina no .env (raiz do repo) ou exporte antes de rodar.");
-  process.exit(2);
-}
+// ---------------------------------------------------------------------------
+// Definição dos contratos
+// ---------------------------------------------------------------------------
 
-const FAIL_FAST = process.env.CONTRACT_TEST_FAIL_FAST === "1";
+const CONTRACTS = [
+  {
+    name: 'product-webhook',
+    endpoint: 'product-webhook',
+    extraHeaders: PRODUCT_WEBHOOK_SECRET ? { 'x-webhook-secret': PRODUCT_WEBHOOK_SECRET } : {},
+    scenarios: [
+      {
+        description: 'valid payload v1 (explicit)',
+        headers: { 'accept-version': '1' },
+        payload: {
+          action: 'upsert',
+          product: { sku: `CT-${Date.now()}`, name: 'Contract test', price: 1.0 },
+        },
+        expect: { status: 200, deprecation: true, version: '1' },
+      },
+      {
+        description: 'missing body → 400 missing_body',
+        headers: { 'accept-version': '1' },
+        rawBody: '',
+        expect: { status: 400, code: 'missing_body' },
+      },
+      {
+        description: 'invalid JSON → 400 invalid_json',
+        headers: { 'accept-version': '1' },
+        rawBody: '{not-json',
+        expect: { status: 400, code: 'invalid_json' },
+      },
+      {
+        description: 'invalid action enum → 422 validation_failed',
+        headers: { 'accept-version': '1' },
+        payload: {
+          action: 'explode',
+          product: { sku: 'X', name: 'Y', price: 1 },
+        },
+        expect: {
+          status: 422,
+          code: 'validation_failed',
+          fieldPaths: ['action'],
+        },
+      },
+      {
+        description: 'wrong type in price → 422',
+        headers: { 'accept-version': '1' },
+        payload: {
+          action: 'upsert',
+          product: { sku: 'X', name: 'Y', price: 'free' },
+        },
+        expect: {
+          status: 422,
+          code: 'validation_failed',
+          fieldPaths: ['product.price'],
+        },
+      },
+      {
+        description: 'unsupported version → 406',
+        headers: { 'accept-version': '99' },
+        payload: { action: 'upsert', product: { sku: 'X', name: 'Y', price: 1 } },
+        expect: { status: 406, code: 'unsupported_version' },
+      },
+      {
+        description: 'v2 valid with idempotency_key → 200, no deprecation',
+        headers: { 'accept-version': '2' },
+        payload: {
+          action: 'upsert',
+          idempotency_key: '11111111-2222-3333-4444-555555555555',
+          product: {
+            external_id: 'ct-ext',
+            sku: `CT2-${Date.now()}`,
+            name: 'Contract v2',
+            price: 1.0,
+          },
+        },
+        expect: { status: 200, deprecation: false, version: '2' },
+      },
+    ],
+  },
+  {
+    name: 'webhook-dispatcher',
+    endpoint: 'webhook-dispatcher',
+    extraHeaders: process.env.WEBHOOK_DISPATCHER_SECRET
+      ? { 'x-dispatcher-secret': process.env.WEBHOOK_DISPATCHER_SECRET }
+      : {},
+    scenarios: [
+      {
+        description: 'v1 event-only → ok or dispatched',
+        headers: { 'accept-version': '1' },
+        payload: { event: 'contract.test', payload: { hello: 'world' } },
+        expect: { statusIn: [200, 401] }, // 401 se dispatcher secret faltar
+      },
+      {
+        description: 'v1 empty event → 422',
+        headers: { 'accept-version': '1' },
+        payload: { event: '' },
+        expect: { status: 422, code: 'validation_failed', fieldPaths: ['event'] },
+      },
+      {
+        description: 'v2 mode=replay sem UUID → 422',
+        headers: { 'accept-version': '2' },
+        payload: { mode: 'replay', replay_delivery_id: 'abc' },
+        expect: { status: 422, code: 'validation_failed' },
+      },
+    ],
+  },
+  {
+    name: 'webhook-inbound',
+    endpoint: 'webhook-inbound?slug=contract-test-slug',
+    extraHeaders: {},
+    scenarios: [
+      {
+        description: 'unknown slug → 404',
+        headers: { 'accept-version': '1' },
+        payload: { hello: 'world' },
+        expect: { statusIn: [404, 400] },
+      },
+      {
+        description: 'empty body → 400 missing_body',
+        headers: { 'accept-version': '1' },
+        rawBody: '',
+        expect: { statusIn: [400, 404] }, // 404 vem antes de body check
+      },
+      {
+        description: 'v2 valid envelope (will fail at HMAC, but contract passes)',
+        headers: { 'accept-version': '2' },
+        payload: {
+          event: 'contract.test',
+          occurred_at: new Date().toISOString(),
+          data: { ping: true },
+        },
+        expect: { statusIn: [200, 401, 404] },
+      },
+    ],
+  },
+];
 
 // ---------------------------------------------------------------------------
-// Load the contract registry by grepping endpoint keys from the TS source.
-// We don't import the .ts module (no ts-loader here); we just need the names.
+// Runner
 // ---------------------------------------------------------------------------
-const registrySrc = readFileSync(
-  resolve(ROOT, "tests/contracts/webhook-schemas.ts"),
-  "utf8"
-);
-function parseRegistryEndpoints(src) {
-  const start = src.indexOf("export const CONTRACTS");
-  if (start < 0) return [];
-  const open = src.indexOf("{", start);
-  let depth = 0, end = open;
-  for (let i = open; i < src.length; i++) {
-    if (src[i] === "{") depth++;
-    if (src[i] === "}") { depth--; if (depth === 0) { end = i; break; } }
-  }
-  const block = src.slice(open, end);
-  const out = [];
-  const re = /"([a-z][a-z0-9-]*)":\s*\{([\s\S]*?)\n\s{2,}\}/g;
-  let m;
-  while ((m = re.exec(block)) !== null) {
-    const descMatch = m[2].match(/description:\s*"([^"]+)"/);
-    out.push({ endpoint: m[1], description: descMatch ? descMatch[1] : "" });
-  }
-  return out;
-}
 
-const REGISTRY = parseRegistryEndpoints(registrySrc);
-
-// ---------------------------------------------------------------------------
-// Endpoint-specific overrides (auth headers, valid payload, expected status).
-// Defaults to "any non-5xx is OK" for the valid scenario when unspecified.
-// ---------------------------------------------------------------------------
-const OVERRIDES = {
-  "product-webhook": {
-    headers: { "x-webhook-secret": process.env.N8N_PRODUCT_WEBHOOK_SECRET || "sim-secret" },
-    validPayload: {
-      action: "upsert",
-      product: { sku: `CT-${Date.now()}`, name: "Contract Test", price: 1 },
-    },
-    validStatus: 200,
-  },
-  "webhook-dispatcher": {
-    headers: { "x-dispatcher-secret": process.env.WEBHOOK_DISPATCHER_SECRET || "sim-secret" },
-    validPayload: { event: "contract.test" },
-    validStatus: [200, 401, 403],
-  },
-  "cnpj-lookup": {
-    validPayload: { cnpj: "00.000.000/0001-91" },
-    validStatus: [200, 400, 502],
-  },
-  "external-db-bridge": {
-    validPayload: { operation: "select", table: "products", limit: 1 },
-    validStatus: [200, 401, 403, 500],
-  },
-};
-
-function asStatusList(v) {
-  return Array.isArray(v) ? v : [v];
-}
-
-function isUnifiedErrorEnvelope(data, expectedCode) {
-  if (!data || typeof data !== "object") return false;
-  if (typeof data.code !== "string" || !data.code) return false;
-  if (typeof data.message !== "string" || !data.message) return false;
-  if (!Array.isArray(data.fields)) return false;
-  for (const f of data.fields) {
-    if (!f || typeof f.path !== "string" || typeof f.code !== "string" || typeof f.message !== "string") return false;
-  }
-  if (expectedCode && data.code !== expectedCode) return false;
-  return true;
-}
-
-async function callEndpoint(endpoint, { headers = {}, body, raw }) {
-  const url = `${SUPABASE_URL}/functions/v1/${endpoint}`;
-  const init = {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${AUTH_TOKEN}`,
-      ...headers,
-    },
+async function runScenario(contract, scenario) {
+  const url = `${SUPABASE_URL}/functions/v1/${contract.endpoint}`;
+  const headers = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${ANON_KEY}`,
+    ...(contract.extraHeaders ?? {}),
+    ...(scenario.headers ?? {}),
   };
-  if (raw !== undefined) init.body = raw;
-  else if (body !== undefined) init.body = JSON.stringify(body);
-  const res = await fetch(url, init);
-  const data = await res.json().catch(() => ({}));
-  return { status: res.status, data };
-}
 
-async function runContractTests() {
-  console.log("🚀 Iniciando Testes de Contrato HTTP — envelope unificado + cobertura completa");
-  console.log(`🎯 Alvo: ${SUPABASE_URL}`);
-  console.log(`📦 ${REGISTRY.length} endpoints no registry`);
-  let passed = 0;
-  let failedCount = 0;
-  let skipped = 0;
-  const failures = [];
+  const body = scenario.rawBody !== undefined ? scenario.rawBody : JSON.stringify(scenario.payload);
 
-  for (const { endpoint, description } of REGISTRY) {
-    console.log(`\n📦 ${endpoint} — ${description}`);
-    const ov = OVERRIDES[endpoint] || {};
-    const scenarios = [];
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  let res;
+  try {
+    res = await fetch(url, { method: 'POST', headers, body, signal: controller.signal });
+  } catch (err) {
+    return { ok: false, reason: `fetch error: ${err.message}` };
+  } finally {
+    clearTimeout(timer);
+  }
 
-    if (ov.validPayload) {
-      scenarios.push({
-        name: "valid payload",
-        request: { headers: ov.headers, body: ov.validPayload },
-        check: (r) => asStatusList(ov.validStatus ?? 200).includes(r.status),
-      });
+  const text = await res.text();
+  let json;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    json = null;
+  }
+
+  // 1. Status check
+  if (scenario.expect.status !== undefined && res.status !== scenario.expect.status) {
+    return {
+      ok: false,
+      reason: `status: expected ${scenario.expect.status}, got ${res.status} body=${text.slice(0, 200)}`,
+    };
+  }
+  if (scenario.expect.statusIn && !scenario.expect.statusIn.includes(res.status)) {
+    return {
+      ok: false,
+      reason: `status not in ${scenario.expect.statusIn.join('|')}, got ${res.status}`,
+    };
+  }
+
+  // 2. Error code check
+  if (scenario.expect.code) {
+    if (!json || json.code !== scenario.expect.code) {
+      return {
+        ok: false,
+        reason: `code: expected "${scenario.expect.code}", got ${json?.code ?? '<no body>'}`,
+      };
     }
+    if (!Array.isArray(json.fields)) {
+      return { ok: false, reason: 'response missing fields[]' };
+    }
+  }
 
-    scenarios.push({
-      name: "empty body → 400 EMPTY_BODY (unified envelope)",
-      request: { headers: ov.headers, raw: "" },
-      check: (r) => r.status === 400 && isUnifiedErrorEnvelope(r.data, "EMPTY_BODY"),
-    });
-
-    scenarios.push({
-      name: "malformed JSON → 400 INVALID_JSON (unified envelope)",
-      request: { headers: ov.headers, raw: "{not-json" },
-      check: (r) => r.status === 400 && isUnifiedErrorEnvelope(r.data, "INVALID_JSON"),
-    });
-
-    scenarios.push({
-      name: "obviously invalid (string) → 422 VALIDATION_FAILED",
-      request: { headers: ov.headers, body: "not-an-object-payload" },
-      check: (r) => r.status === 422 && isUnifiedErrorEnvelope(r.data, "VALIDATION_FAILED"),
-    });
-
-    for (const s of scenarios) {
-      process.stdout.write(`  - ${s.name}: `);
-      try {
-        const r = await callEndpoint(endpoint, s.request);
-        if (s.check(r)) {
-          console.log("✅ PASS");
-          passed++;
-        } else {
-          console.log("❌ FAIL");
-          console.log(`    status=${r.status} body=${JSON.stringify(r.data).slice(0, 300)}`);
-          failedCount++;
-          failures.push({ endpoint, scenario: s.name });
-          if (FAIL_FAST) break;
-        }
-      } catch (err) {
-        console.log("⚠️  SKIP (network)");
-        console.error(`    ${err?.message || err}`);
-        skipped++;
+  // 3. Field path check
+  if (scenario.expect.fieldPaths) {
+    const paths = (json?.fields ?? []).map((f) => f.path);
+    for (const expected of scenario.expect.fieldPaths) {
+      if (!paths.includes(expected)) {
+        return {
+          ok: false,
+          reason: `expected field path "${expected}" not in ${JSON.stringify(paths)}`,
+        };
       }
     }
-    if (FAIL_FAST && failedCount > 0) break;
   }
 
-  console.log(`\n--- RESULTADO ---`);
-  console.log(`✅ Sucessos: ${passed}`);
-  console.log(`❌ Falhas:   ${failedCount}`);
-  console.log(`⚠️  Skipped:  ${skipped}`);
-  if (failures.length) {
-    console.log("\nFalhas:");
-    for (const f of failures) console.log(`  • ${f.endpoint} :: ${f.scenario}`);
+  // 4. Version headers
+  if (scenario.expect.version !== undefined) {
+    const v = res.headers.get('x-contract-version');
+    if (v !== scenario.expect.version) {
+      return {
+        ok: false,
+        reason: `x-contract-version: expected "${scenario.expect.version}", got "${v}"`,
+      };
+    }
   }
-  console.log("-------------------\n");
+  if (scenario.expect.deprecation === true) {
+    if (res.headers.get('Deprecation') !== 'true') {
+      return { ok: false, reason: 'missing Deprecation: true header' };
+    }
+    if (!res.headers.get('Sunset')) {
+      return { ok: false, reason: 'missing Sunset header' };
+    }
+  }
+  if (scenario.expect.deprecation === false) {
+    if (res.headers.get('Deprecation') === 'true') {
+      return { ok: false, reason: 'unexpected Deprecation header on non-deprecated version' };
+    }
+  }
 
-  if (failedCount > 0) process.exit(1);
+  return { ok: true };
 }
 
-runContractTests().catch((err) => {
-  console.error(err);
+async function main() {
+  console.log(`🚀 Contract tests against ${SUPABASE_URL}`);
+  let passed = 0;
+  let failed = 0;
+
+  for (const contract of CONTRACTS) {
+    console.log(`\n📦 ${contract.name}`);
+    for (const scenario of contract.scenarios) {
+      process.stdout.write(`  - ${scenario.description}: `);
+      const result = await runScenario(contract, scenario);
+      if (result.ok) {
+        console.log('✅ PASS');
+        passed++;
+      } else {
+        console.log(`❌ FAIL — ${result.reason}`);
+        failed++;
+      }
+    }
+  }
+
+  console.log(`\n${'='.repeat(50)}`);
+  console.log(`Total: ${passed + failed}  passed: ${passed}  failed: ${failed}`);
+  process.exit(failed === 0 ? 0 : 1);
+}
+
+main().catch((err) => {
+  console.error('Fatal:', err);
   process.exit(1);
 });

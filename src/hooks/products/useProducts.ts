@@ -1,6 +1,6 @@
 /**
  * useProducts — Product data hooks
- * 
+ *
  * Hooks for fetching products from the external catalog.
  * Types and utilities are extracted to dedicated modules but
  * re-exported here for backward compatibility with 29+ consumers.
@@ -8,7 +8,6 @@
 import { useQuery, type UseQueryOptions } from '@tanstack/react-query';
 import { productService } from '@/services/productService';
 import type { Product, ProductFilters } from '@/types/product-catalog';
-import { mapPromobrindToProduct } from '@/utils/product-mapper';
 
 // Re-export types for backward compatibility
 export type { Product, ProductColor, ProductFilters } from '@/types/product-catalog';
@@ -20,7 +19,7 @@ export { mapPromobrindToProduct } from '@/utils/product-mapper';
  */
 export function useProducts(
   filters?: ProductFilters,
-  options?: Omit<UseQueryOptions<Product[]>, 'queryKey' | 'queryFn'>
+  options?: Omit<UseQueryOptions<Product[]>, 'queryKey' | 'queryFn'>,
 ) {
   return useQuery<Product[]>({
     queryKey: ['promobrind-products', filters],
@@ -57,11 +56,10 @@ export function useProduct(id: string) {
 export function useRelatedProducts(product: Product | null | undefined, limit = 20) {
   return useQuery<Product[]>({
     queryKey: ['related-products', product?.id, limit],
-    queryFn: () => productService.fetchRelatedProducts(product!, limit),
+    queryFn: () => (product ? productService.fetchRelatedProducts(product, limit) : []),
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
     enabled: !!product,
   });
 }
-

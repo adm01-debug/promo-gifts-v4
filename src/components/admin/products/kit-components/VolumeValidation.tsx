@@ -2,7 +2,7 @@ import { Box, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import type { KitComponent, BoxInternalDimensions } from "@/pages/advanced-price-search/types";
+import type { KitComponent, BoxInternalDimensions } from "./types";
 
 export function VolumeValidation({ components, boxDimensions }: { components: KitComponent[]; boxDimensions?: BoxInternalDimensions }) {
   const boxH = boxDimensions?.height_cm ? boxDimensions.height_cm * 10 : null;

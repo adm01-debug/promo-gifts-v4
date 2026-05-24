@@ -45,8 +45,8 @@ Deno.serve(async (req) => {
     );
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('ElevenLabs token error:', response.status, errorText);
+      await response.body?.cancel();
+      console.error('ElevenLabs scribe credential request failed:', { status: response.status });
       return new Response(
         JSON.stringify({ error: `ElevenLabs API error: ${response.status}` }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -60,7 +60,9 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error: unknown) {
-    console.error('Error generating scribe token:', error);
+    console.error('Scribe credential generation failed:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
     if (error instanceof CircuitOpenError) {
       return circuitOpenResponse(error, corsHeaders);
     }

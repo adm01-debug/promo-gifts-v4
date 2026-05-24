@@ -239,6 +239,7 @@ export function useCollectionsPageState() {
     toggleSelectCollection,
     selectAllLocal,
     clearSelection,
+    createCollection,
     handleCreate,
     handleUpdate,
     handleDelete,

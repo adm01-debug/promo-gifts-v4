@@ -27,7 +27,7 @@ import {
   type Step,
   type ColumnMapping,
   type ValidationResult,
-} from "./bulk-import/types";
+} from './bulk-import/types';
 import { StepUpload } from './bulk-import/StepUpload';
 import { StepMapping } from './bulk-import/StepMapping';
 import { StepPreview } from './bulk-import/StepPreview';
@@ -263,11 +263,11 @@ export function BulkImportDialog({ open, onOpenChange, onComplete }: BulkImportD
   const executeImport = useCallback(async () => {
     let rowsToImport: ImportRow[];
     if (importMode === 'insert') {
-      rowsToImport = validationResults
-        .filter((r) => r.valid && r.data && !r.existsInDb)
-        .map((r) => r.data!);
+      rowsToImport = validationResults.flatMap((r) =>
+        r.valid && r.data && !r.existsInDb ? [r.data] : [],
+      );
     } else {
-      rowsToImport = validationResults.filter((r) => r.valid && r.data).map((r) => r.data!);
+      rowsToImport = validationResults.flatMap((r) => (r.valid && r.data ? [r.data] : []));
     }
     if (rowsToImport.length === 0) {
       toast.error('Nenhuma linha para importar');

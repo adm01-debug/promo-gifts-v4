@@ -11,7 +11,7 @@ import {
   type VariantStock,
   defaultStockFilters,
 } from '@/types/stock';
-import { fetchAndProcessStockData } from "@/hooks/stock/stockFetcher";
+import { fetchAndProcessStockData } from '@/hooks/stock/stockFetcher';
 
 export function useVariantStock() {
   const [filters, setFilters] = useState<StockFilters>(defaultStockFilters);
@@ -27,9 +27,9 @@ export function useVariantStock() {
     refetchOnMount: false,
   });
 
-  const productStocks = data?.productStocks ?? [];
-  const rawAlerts = data?.alerts ?? [];
-  const futureStock = data?.futureStock ?? [];
+  const productStocks = useMemo(() => data?.productStocks ?? [], [data?.productStocks]);
+  const rawAlerts = useMemo(() => data?.alerts ?? [], [data?.alerts]);
+  const futureStock = useMemo(() => data?.futureStock ?? [], [data?.futureStock]);
 
   const alerts = useMemo(() => {
     if (dismissedAlerts.size === 0) return rawAlerts;
@@ -208,8 +208,9 @@ export function useVariantStock() {
       );
     }
 
-    if (filters.minQuantityNeeded && filters.minQuantityNeeded > 0) {
-      items = items.filter((p) => p.totalAvailableStock >= filters.minQuantityNeeded!);
+    const minQuantityNeeded = filters.minQuantityNeeded;
+    if (minQuantityNeeded && minQuantityNeeded > 0) {
+      items = items.filter((p) => p.totalAvailableStock >= minQuantityNeeded);
     }
 
     if (filters.showOnlyWithAlerts) {

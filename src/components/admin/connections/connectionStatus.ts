@@ -3,7 +3,7 @@
 //
 // Mirrors exactly the inline expression at SupabaseConnectionsTab.tsx ~L115.
 
-export type ConnectionStatus = "active" | "error" | "unconfigured";
+export type ConnectionStatus = 'active' | 'error' | 'unconfigured';
 
 export interface SecretLite {
   has_value: boolean;
@@ -17,7 +17,7 @@ export interface ResolveStatusInput {
   /** Resolved service-role secret (or undefined if missing). */
   service?: SecretLite;
   /** Last connection-test result (null if never tested). */
-  last?: { ok: boolean } | null;
+  last?: { ok: boolean | null } | null;
 }
 
 /**
@@ -31,9 +31,9 @@ export interface ResolveStatusInput {
  */
 export function resolveSupabaseConnectionStatus(input: ResolveStatusInput): ConnectionStatus {
   const { readOnly, url, service, last } = input;
-  if (readOnly) return "active";
+  if (readOnly) return 'active';
   const credsConfigured = !!url?.has_value && !!service?.has_value;
-  if (!credsConfigured) return "unconfigured";
-  if (last?.ok === false) return "error";
-  return "active";
+  if (!credsConfigured) return 'unconfigured';
+  if (last?.ok === false) return 'error';
+  return 'active';
 }

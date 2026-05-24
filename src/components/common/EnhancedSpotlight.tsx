@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useOnboardingContext } from "@/contexts/OnboardingContext";
+import { useOptionalOnboardingContext } from '@/contexts/OnboardingContext';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Fuse from 'fuse.js';
@@ -19,10 +19,7 @@ export function EnhancedSpotlight() {
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { isDev, isAdmin } = useAuth();
-  let onboarding: any = null;
-  try {
-    onboarding = useOnboardingContext();
-  } catch (e) {}
+  const onboarding = useOptionalOnboardingContext();
 
   const handleRestartTour = () => {
     if (onboarding) {

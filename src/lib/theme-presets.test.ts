@@ -39,72 +39,126 @@ function getContrastRatio(l1: number, l2: number): number {
   return (brightest + 0.05) / (darkest + 0.05);
 }
 
+// =====================================================================
+// T-FIX-4: cada preset vira UM caso isolado via it.each — falhas em
+// presets distintos não se mascaram mais. Anteriormente um forEach()
+// abortava na primeira asserção falha e escondia os bugs idênticos em
+// gx-hackerman, gx-frutti-di-mare e gx-razer (só Rose Quartz aparecia
+// no log do CI). Ver REDEPLOY-T-FIX-4 ou commit anterior para o caso.
+// =====================================================================
+
+const CLASSIC_PRESETS = THEME_PRESETS.filter(p => p.category === 'classic');
+const REQUIRED_TOKENS = ['primary', 'background', 'foreground', 'card', 'border'] as const;
 
 describe('Theme Presets Consistency & Contrast', () => {
-  it('should not override default fonts in classic presets', () => {
-    THEME_PRESETS.filter(p => p.category === 'classic').forEach(preset => {
-      // Diversity is an exception as it's a special classic preset
-      if (preset.id === 'diversity') return;
-      expect(preset.font, `Classic preset "${preset.name}" (${preset.id}) should not override the default font stack.`).toBeUndefined();
-    });
-  });
-
   it('should use default font constants as exported', () => {
     expect(DEFAULT_FONT_SANS).toBe("'Plus Jakarta Sans', system-ui, sans-serif");
     expect(DEFAULT_FONT_DISPLAY).toBe("'Outfit', system-ui, sans-serif");
   });
 
-  it('should have basic color tokens defined in both light and dark modes', () => {
-    const requiredTokens = ['primary', 'background', 'foreground', 'card', 'border'];
-    THEME_PRESETS.forEach(preset => {
-      requiredTokens.forEach(token => {
-        expect(preset.light[token as keyof typeof preset.light], `Preset "${preset.name}" is missing "${token}" in light mode.`).toBeDefined();
-        expect(preset.dark[token as keyof typeof preset.dark], `Preset "${preset.name}" is missing "${token}" in dark mode.`).toBeDefined();
-      });
-    });
+  describe('font defaults (classic presets, excluding diversity)', () => {
+    // Diversity is an exception as it's a special classic preset.
+    const classicNonDiversity = CLASSIC_PRESETS.filter(p => p.id !== 'diversity');
+
+    it.each(classicNonDiversity)(
+      'preset $name ($id) should not override the default font stack',
+      (preset) => {
+        expect(preset.font).toBeUndefined();
+      }
+    );
   });
 
-  it('should maintain WCAG contrast ratios for key text elements', () => {
-    THEME_PRESETS.forEach(preset => {
-      // Light Mode Contrast
-      const lightBgLum = hslToLuminance(preset.light.background);
-      const lightFgLum = hslToLuminance(preset.light.foreground);
-      const lightContrast = getContrastRatio(lightBgLum, lightFgLum);
-      expect(lightContrast, `Preset "${preset.name}" (Light) background/foreground contrast: ${lightContrast.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
+  describe('required color tokens (each preset × each token)', () => {
+    // Cross product: cada combinação preset × token vira um caso isolado.
+    // Se um token estiver faltando em gx-razer.dark, isso não esconde um
+    // token faltando em rose.light.
+    const cases = THEME_PRESETS.flatMap(preset =>
+      REQUIRED_TOKENS.flatMap(token => [
+        { preset, token, mode: 'light' as const },
+        { preset, token, mode: 'dark' as const },
+      ])
+    );
 
-      const lightCardLum = hslToLuminance(preset.light.card);
-      const lightCardFgLum = hslToLuminance(preset.light['card-foreground']);
-      const lightCardContrast = getContrastRatio(lightCardLum, lightCardFgLum);
-      expect(lightCardContrast, `Preset "${preset.name}" (Light) card contrast: ${lightCardContrast.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
-
-      // Dark Mode Contrast
-      const darkBgLum = hslToLuminance(preset.dark.background);
-      const darkFgLum = hslToLuminance(preset.dark.foreground);
-      const darkContrast = getContrastRatio(darkBgLum, darkFgLum);
-      expect(darkContrast, `Preset "${preset.name}" (Dark) background/foreground contrast: ${darkContrast.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
-
-      const darkCardLum = hslToLuminance(preset.dark.card);
-      const darkCardFgLum = hslToLuminance(preset.dark['card-foreground']);
-      const darkCardContrast = getContrastRatio(darkCardLum, darkCardFgLum);
-      expect(darkCardContrast, `Preset "${preset.name}" (Dark) card contrast: ${darkCardContrast.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
-
-      // Primary Button Contrast (Light)
-      const primaryLum = hslToLuminance(preset.light.primary);
-      const primaryFgLum = hslToLuminance(preset.light['primary-foreground']);
-      const primaryContrast = getContrastRatio(primaryLum, primaryFgLum);
-      expect(primaryContrast, `Preset "${preset.name}" (Light) primary button contrast: ${primaryContrast.toFixed(2)}:1`).toBeGreaterThanOrEqual(3);
-
-      // Primary Button Contrast (Dark)
-      const darkPrimaryLum = hslToLuminance(preset.dark.primary);
-      const darkPrimaryFgLum = hslToLuminance(preset.dark['primary-foreground']);
-      const darkPrimaryContrast = getContrastRatio(darkPrimaryLum, darkPrimaryFgLum);
-      expect(darkPrimaryContrast, `Preset "${preset.name}" (Dark) primary button contrast: ${darkPrimaryContrast.toFixed(2)}:1`).toBeGreaterThanOrEqual(3);
-    });
+    it.each(cases)(
+      'preset $preset.name should define "$token" in $mode mode',
+      ({ preset, token, mode }) => {
+        const value = preset[mode][token as keyof typeof preset.light];
+        expect(value).toBeDefined();
+      }
+    );
   });
 
-  it('should maintain consistent category types', () => {
-    THEME_PRESETS.forEach(preset => {
-      expect(['classic', 'gx']).toContain(preset.category);
-    });
+  describe('WCAG contrast ratios (each preset isolated, soft expects within)', () => {
+    // Cada preset = 1 caso isolado. Dentro do caso, usamos expect.soft
+    // para coletar TODAS as 6 dimensões de contraste falhas no mesmo run,
+    // não só a primeira. Isso garante que bugs em primary-light E
+    // primary-dark do MESMO preset apareçam juntos.
+    it.each(THEME_PRESETS)(
+      'preset $name ($id) should pass all WCAG contrast checks',
+      (preset) => {
+        // Light Mode bg/fg
+        const lightBgLum = hslToLuminance(preset.light.background);
+        const lightFgLum = hslToLuminance(preset.light.foreground);
+        const lightContrast = getContrastRatio(lightBgLum, lightFgLum);
+        expect.soft(
+          lightContrast,
+          `Light background/foreground: ${lightContrast.toFixed(2)}:1 (need >= 4.5)`
+        ).toBeGreaterThanOrEqual(4.5);
+
+        // Light Mode card
+        const lightCardLum = hslToLuminance(preset.light.card);
+        const lightCardFgLum = hslToLuminance(preset.light['card-foreground']);
+        const lightCardContrast = getContrastRatio(lightCardLum, lightCardFgLum);
+        expect.soft(
+          lightCardContrast,
+          `Light card contrast: ${lightCardContrast.toFixed(2)}:1 (need >= 4.5)`
+        ).toBeGreaterThanOrEqual(4.5);
+
+        // Dark Mode bg/fg
+        const darkBgLum = hslToLuminance(preset.dark.background);
+        const darkFgLum = hslToLuminance(preset.dark.foreground);
+        const darkContrast = getContrastRatio(darkBgLum, darkFgLum);
+        expect.soft(
+          darkContrast,
+          `Dark background/foreground: ${darkContrast.toFixed(2)}:1 (need >= 4.5)`
+        ).toBeGreaterThanOrEqual(4.5);
+
+        // Dark Mode card
+        const darkCardLum = hslToLuminance(preset.dark.card);
+        const darkCardFgLum = hslToLuminance(preset.dark['card-foreground']);
+        const darkCardContrast = getContrastRatio(darkCardLum, darkCardFgLum);
+        expect.soft(
+          darkCardContrast,
+          `Dark card contrast: ${darkCardContrast.toFixed(2)}:1 (need >= 4.5)`
+        ).toBeGreaterThanOrEqual(4.5);
+
+        // Primary Button Contrast (Light)
+        const primaryLum = hslToLuminance(preset.light.primary);
+        const primaryFgLum = hslToLuminance(preset.light['primary-foreground']);
+        const primaryContrast = getContrastRatio(primaryLum, primaryFgLum);
+        expect.soft(
+          primaryContrast,
+          `Light primary button contrast: ${primaryContrast.toFixed(2)}:1 (need >= 3)`
+        ).toBeGreaterThanOrEqual(3);
+
+        // Primary Button Contrast (Dark)
+        const darkPrimaryLum = hslToLuminance(preset.dark.primary);
+        const darkPrimaryFgLum = hslToLuminance(preset.dark['primary-foreground']);
+        const darkPrimaryContrast = getContrastRatio(darkPrimaryLum, darkPrimaryFgLum);
+        expect.soft(
+          darkPrimaryContrast,
+          `Dark primary button contrast: ${darkPrimaryContrast.toFixed(2)}:1 (need >= 3)`
+        ).toBeGreaterThanOrEqual(3);
+      }
+    );
+  });
+
+  describe('category consistency', () => {
+    it.each(THEME_PRESETS)(
+      'preset $name ($id) should have a valid category',
+      (preset) => {
+        expect(['classic', 'gx']).toContain(preset.category);
+      }
+    );
   });
 });

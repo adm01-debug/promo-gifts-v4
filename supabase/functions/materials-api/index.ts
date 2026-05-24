@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
           { global: { headers: { Authorization: authHeader } } }
         );
         const { data: { user } } = await localSupabase.auth.getUser();
-        if (user) console.log(`Materials API request from user: ${user.id}`);
+        if (user) console.log('Materials API authenticated request');
       } catch (_) { /* ignora token inválido — segue como anônimo */ }
     }
 

@@ -10,7 +10,7 @@
  * - Responsivo: labels escondidos em mobile, apenas ícones
  */
 import { memo } from "react";
-import { Heart, GitCompare, FolderPlus, X, CheckSquare, ShoppingBag, FileText, Sparkles, FileDown } from "lucide-react";
+import { Heart, GitCompare, FolderPlus, X, CheckSquare, ShoppingBag, FileText, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";

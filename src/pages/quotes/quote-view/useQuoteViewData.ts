@@ -1,7 +1,7 @@
 /**
  * Hook to manage QuoteViewPage state and data fetching.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useQuotes, type Quote } from '@/hooks/quotes';
@@ -14,7 +14,13 @@ import {
   formatCurrency as formatCurrencyHelper,
   calcPersTotal,
   formatCNPJ,
-} from "@/pages/quotes/quote-view/QuoteActionHandlers";
+} from '@/pages/quotes/quote-view/QuoteActionHandlers';
+
+type QuoteClientCompany = {
+  cnpj?: string | null;
+  bitrix_company_id?: string | number | null;
+  bitrix_id?: string | number | null;
+};
 
 export function useQuoteViewData(id: string | undefined) {
   const { fetchQuote, logQuoteHistory, duplicateQuote } = useQuotes();
@@ -28,11 +34,7 @@ export function useQuoteViewData(id: string | undefined) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [showPresentation, setShowPresentation] = useState(false);
 
-  useEffect(() => {
-    if (id) loadQuote();
-  }, [id]);
-
-  const loadQuote = async () => {
+  const loadQuote = useCallback(async () => {
     if (!id) return;
     setIsLoadingQuote(true);
     const data = await fetchQuote(id);
@@ -40,8 +42,7 @@ export function useQuoteViewData(id: string | undefined) {
     setIsLoadingQuote(false);
     if (data?.client_id) {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const company = await selectCrmById<any>('companies', data.client_id);
+        const company = await selectCrmById<QuoteClientCompany>('companies', data.client_id);
         if (company?.cnpj) setClientCnpj(formatCNPJ(company.cnpj));
         const bId = company?.bitrix_company_id ?? company?.bitrix_id;
         if (bId) setBitrixCompanyId(String(bId));
@@ -49,7 +50,11 @@ export function useQuoteViewData(id: string | undefined) {
         // Company not found
       }
     }
-  };
+  }, [fetchQuote, id]);
+
+  useEffect(() => {
+    if (id) void loadQuote();
+  }, [id, loadQuote]);
 
   const proposalData: ProposalTemplateData | null = useMemo(() => {
     if (!quote) return null;
@@ -69,10 +74,7 @@ export function useQuoteViewData(id: string | undefined) {
       ? Math.round(fullSubtotal * (quote.discount_percent / 100) * 100) / 100
       : quote.discount_amount || 0;
     // Apenas 'fob_pre' (FOB Pré-negociado) tem custo no total. 'fob' = cliente paga, sem cost.
-    const shipValue =
-      quote.shipping_type === 'fob_pre'
-        ? quote.shipping_cost || 0
-        : 0;
+    const shipValue = quote.shipping_type === 'fob_pre' ? quote.shipping_cost || 0 : 0;
     const computedTotal = fullSubtotal - discountValue + shipValue;
 
     return {
@@ -158,6 +160,19 @@ export function useQuoteViewData(id: string | undefined) {
     }
   };
 
+  const approvalLink = useMemo(
+    () => (quote ? `${window.location.origin}/orcamentos/${quote.id}` : null),
+    [quote],
+  );
+
+  const handleShareLink = () => {
+    if (!approvalLink) return;
+    void navigator.clipboard
+      .writeText(approvalLink)
+      .then(() => toast.success('Link copiado!'))
+      .catch(() => toast.error('Não foi possível copiar o link'));
+  };
+
   const handleWhatsAppShare = () => {
     const lines = [
       `📋 *Proposta Comercial ${quote?.quote_number || ''}*`,
@@ -214,9 +229,11 @@ export function useQuoteViewData(id: string | undefined) {
     showPresentation,
     setShowPresentation,
     proposalData,
+    approvalLink,
     // Actions
     handleDownloadPDF,
     handleWhatsAppShare,
+    handleShareLink,
     handleSyncBitrix,
     // Quotes
     fetchQuote,

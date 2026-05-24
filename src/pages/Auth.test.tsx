@@ -1,11 +1,11 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import Auth from '@/pages/auth/Auth';
+import Auth from "@/pages/auth/Auth";
 import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { HelmetProvider } from 'react-helmet-async';
 
-// Mocking useIPValidation + useDevGate (consumido por AppHeader/ProtectedRoute).
+// Mocking useIPValidation
 vi.mock('@/hooks/admin', () => ({
   useIPValidation: () => ({
     validateIPForAuthenticatedUser: vi.fn().mockResolvedValue({ isAllowed: true }),
@@ -13,19 +13,6 @@ vi.mock('@/hooks/admin', () => ({
     fetchCurrentIP: vi.fn().mockResolvedValue('1.2.3.4'),
   }),
   useDevGate: () => ({ isAllowed: false, isDev: false }),
-  useSecretsManager: () => ({
-    secrets: [],
-    list: vi.fn(),
-    refreshCache: vi.fn(),
-    getRotationHistory: vi.fn().mockResolvedValue([]),
-    isLoading: false,
-  }),
-  useRetestCooldownSetting: () => ({
-    cooldownMs: 3000,
-    loading: false,
-    saving: false,
-    save: vi.fn(),
-  }),
 }));
 
 // Mocking useAuth - we need to wrap with AuthProvider or mock the hook
@@ -79,14 +66,14 @@ describe('Auth Page', () => {
     expect(passwordInput).toHaveAttribute('type', 'password');
   });
 
-  it('shows forgot password form when link is clicked', () => {
+  it('shows forgot password form when link is clicked', async () => {
     renderAuth();
     const forgotLink = screen.getByTestId('login-forgot-link');
 
     fireEvent.click(forgotLink);
 
-    // Check for forgot password form elements
-    expect(screen.getByText(/Esqueceu sua senha\?/i)).toBeInTheDocument();
+    // ForgotPasswordForm monta via AnimatePresence (assíncrono) — aguardar.
+    expect(await screen.findByText(/Esqueceu sua senha\?/i)).toBeInTheDocument();
 
     expect(screen.queryByTestId('login-password-input')).not.toBeInTheDocument();
   });

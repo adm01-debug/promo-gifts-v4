@@ -2,10 +2,10 @@
  * GlobalSearchPalette — High-contrast black redesign
  * Helper components extracted to GlobalSearchHelpers.tsx
  */
-import React, { lazy, Suspense, useEffect, useCallback } from "react";
+import { lazy, Suspense, useEffect, useCallback } from "react";
 import {
-  CommandDialog, CommandEmpty, CommandGroup, CommandInput,
-  CommandItem, CommandList, CommandSeparator,
+  CommandDialog, CommandGroup, CommandInput,
+  CommandItem, CommandList
 } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 import { useGlobalSearch } from "./useGlobalSearch";
 import { typeConfig } from "./search-types";
 import { GlobalSearchIdleState } from "./GlobalSearchIdleState";
-import { paletteItemStateClass, NavCard, staggerStyle, type QuickAction } from "./GlobalSearchHelpers";
+import { paletteItemStateClass, staggerStyle, type QuickAction } from "./GlobalSearchHelpers";
 import { HighlightMatch } from "./HighlightMatch";
 import { EmptySearchState } from "./EmptySearchState";
 

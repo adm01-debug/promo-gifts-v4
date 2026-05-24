@@ -1,0 +1,36 @@
+# Sincroniza labels do repo a partir de .github/labels.yml
+#
+# Dispara automaticamente quando .github/labels.yml muda no main.
+# Também pode ser disparado manualmente (workflow_dispatch).
+#
+# Usa crazy-max/ghaction-github-labeler (mantém apenas as labels listadas;
+# para preservar labels não-gerenciadas, setar skip-delete: true).
+
+name: Sync labels
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/labels.yml'
+      - '.github/workflows/labels-sync.yml'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Apply labels
+        uses: crazy-max/ghaction-github-labeler@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          yaml-file: .github/labels.yml
+          # Mantém labels do GitHub que não estão no YAML (ex: bug, enhancement
+          # criadas por padrão). Mude para false se quiser convergência estrita.
+          skip-delete: true
+          dry-run: false

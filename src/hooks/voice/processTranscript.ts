@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { VoiceAgentAction } from "@/pages/advanced-price-search/types";
+import type { VoiceAgentAction } from "./types";
 
 /**
  * processVoiceTranscript — Sends transcript to AI and returns structured action.
