@@ -1,21 +1,21 @@
-import { useState, useCallback, useMemo } from "react";
-import { Palette, Send, Check, Eye, Pencil } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState, useCallback, useMemo } from 'react';
+import { Palette, Send, Check, Eye, Pencil } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useToast } from "@/hooks/ui";
-import type { Product, ProductColor } from "@/hooks/products";
-import { ShareContactSelector, type ShareContactSelection } from "./ShareContactSelector";
-import { WhatsAppPreview } from "./WhatsAppPreview";
-import { openWhatsAppShare } from "./whatsapp";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useToast } from '@/hooks/ui';
+import type { Product, ProductColor } from '@/hooks/products';
+import { ShareContactSelector, type ShareContactSelection } from './ShareContactSelector';
+import { WhatsAppPreview } from './WhatsAppPreview';
+import { openWhatsAppShare } from './whatsapp';
+import { cn } from '@/lib/utils';
 
 interface ShareAllColorsDialogProps {
   open: boolean;
@@ -24,23 +24,21 @@ interface ShareAllColorsDialogProps {
 }
 
 function generateColorMessage(product: Product, selectedColors: ProductColor[]) {
-  const colorList = selectedColors
-    .map((c, i) => `${i + 1}. ${c.name}`)
-    .join("\n");
+  const colorList = selectedColors.map((c, i) => `${i + 1}. ${c.name}`).join('\n');
 
   return `🎨 *CATÁLOGO DE CORES* 🎨
 
 *${product.name}*
 SKU: ${product.sku}
 
-${product.description || ""}
+${product.description || ''}
 
 📋 *${selectedColors.length} cores selecionadas:*
 ${colorList}
 
-💰 A partir de ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(product.price)}/un
+💰 A partir de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.price)}/un
 📦 Qtd mínima: ${product.minQuantity} un
-${product.stockStatus === "in-stock" ? "✅ Pronta entrega" : "⚠️ Consultar prazo"}
+${product.stockStatus === 'in-stock' ? '✅ Pronta entrega' : '⚠️ Consultar prazo'}
 
 👆 Cada cor acompanha foto ilustrativa.
 
@@ -50,7 +48,7 @@ Promo Brindes - Brindes com Excelência!`;
 export function ShareAllColorsDialog({ open, onOpenChange, product }: ShareAllColorsDialogProps) {
   const { toast } = useToast();
   const [selectedColorIds, setSelectedColorIds] = useState<Set<number>>(
-    () => new Set(product.colors.map((_, i) => i))
+    () => new Set(product.colors.map((_, i) => i)),
   );
   const [customMessage, setCustomMessage] = useState<string | null>(null);
   const [contactSelection, setContactSelection] = useState<ShareContactSelection | null>(null);
@@ -58,19 +56,21 @@ export function ShareAllColorsDialog({ open, onOpenChange, product }: ShareAllCo
 
   const selectedColors = useMemo(
     () => product.colors.filter((_, i) => selectedColorIds.has(i)),
-    [product.colors, selectedColorIds]
+    [product.colors, selectedColorIds],
   );
 
   const message = customMessage ?? generateColorMessage(product, selectedColors);
 
   // Collect representative images from selected colors for WhatsApp preview
   const allColorImages = useMemo(() => {
-    return selectedColors.map((c) => c.image || c.images?.[0] || product.images[0]).filter(Boolean) as string[];
+    return selectedColors
+      .map((c) => c.image || c.images?.[0] || product.images[0])
+      .filter(Boolean) as string[];
   }, [selectedColors, product.images]);
 
   const allColorImageIndices = useMemo(
     () => new Set(allColorImages.map((_, i) => i)),
-    [allColorImages]
+    [allColorImages],
   );
 
   const handleToggleColor = useCallback((idx: number) => {
@@ -97,7 +97,7 @@ export function ShareAllColorsDialog({ open, onOpenChange, product }: ShareAllCo
   }, []);
 
   const handleSend = () => {
-    const target = contactSelection?.contactName || contactSelection?.companyName || "destinatário";
+    const target = contactSelection?.contactName || contactSelection?.companyName || 'destinatário';
 
     const { opened } = openWhatsAppShare({
       message,
@@ -106,14 +106,14 @@ export function ShareAllColorsDialog({ open, onOpenChange, product }: ShareAllCo
 
     if (opened) {
       toast({
-        title: "WhatsApp aberto",
+        title: 'WhatsApp aberto',
         description: `Catálogo de cores preparado para ${target}`,
       });
     } else {
       toast({
-        title: "Não foi possível abrir o WhatsApp",
-        description: "Verifique se popups estão permitidos no navegador.",
-        variant: "destructive",
+        title: 'Não foi possível abrir o WhatsApp',
+        description: 'Verifique se popups estão permitidos no navegador.',
+        variant: 'destructive',
       });
     }
     onOpenChange(false);
@@ -123,9 +123,9 @@ export function ShareAllColorsDialog({ open, onOpenChange, product }: ShareAllCo
   const groupedColors = useMemo(() => {
     const groups = new Map<string, { color: ProductColor; index: number }[]>();
     product.colors.forEach((color, index) => {
-      const group = color.group || "Outras";
+      const group = color.group || 'Outras';
       if (!groups.has(group)) groups.set(group, []);
-      groups.get(group)!.push({ color, index });
+      groups.get(group)?.push({ color, index });
     });
     return groups;
   }, [product.colors]);
@@ -134,7 +134,7 @@ export function ShareAllColorsDialog({ open, onOpenChange, product }: ShareAllCo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Palette className="h-5 w-5 text-primary" />
@@ -156,7 +156,7 @@ export function ShareAllColorsDialog({ open, onOpenChange, product }: ShareAllCo
               onClick={allSelected ? handleDeselectAll : handleSelectAll}
               className="text-xs text-primary hover:underline"
             >
-              {allSelected ? "Desmarcar todas" : "Selecionar todas"}
+              {allSelected ? 'Desmarcar todas' : 'Selecionar todas'}
             </button>
           </div>
 
@@ -165,10 +165,10 @@ export function ShareAllColorsDialog({ open, onOpenChange, product }: ShareAllCo
             <div className="space-y-3 pr-2">
               {Array.from(groupedColors.entries()).map(([groupName, items]) => (
                 <div key={groupName}>
-                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5 block">
+                  <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                     {groupName}
                   </span>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                  <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                     {items.map(({ color, index }) => {
                       const isSelected = selectedColorIds.has(index);
                       const thumb = color.image || color.images?.[0] || product.images[0];
@@ -180,39 +180,39 @@ export function ShareAllColorsDialog({ open, onOpenChange, product }: ShareAllCo
                           type="button"
                           onClick={() => handleToggleColor(index)}
                           className={cn(
-                            "flex items-center gap-2 p-1.5 rounded-lg text-left transition-all border",
+                            'flex items-center gap-2 rounded-lg border p-1.5 text-left transition-all',
                             isSelected
-                              ? "bg-primary/5 border-primary/30 ring-1 ring-primary/20"
-                              : "bg-secondary/30 border-transparent opacity-60 hover:opacity-100 hover:bg-secondary/60"
+                              ? 'border-primary/30 bg-primary/5 ring-1 ring-primary/20'
+                              : 'border-transparent bg-secondary/30 opacity-60 hover:bg-secondary/60 hover:opacity-100',
                           )}
                         >
                           {/* Color thumbnail */}
-                          <div className="relative w-10 h-10 rounded-md overflow-hidden bg-secondary shrink-0">
+                          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-secondary">
                             <img
                               src={thumb}
                               alt={color.name}
-                              className="w-full h-full object-cover" loading="lazy" />
+                              className="h-full w-full object-cover"
+                              loading="lazy"
+                            />
                             {isSelected && (
-                              <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                              <div className="absolute inset-0 flex items-center justify-center bg-primary/20">
                                 <Check className="h-4 w-4 text-primary" />
                               </div>
                             )}
                           </div>
 
                           {/* Color info */}
-                          <div className="flex-1 min-w-0">
+                          <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5">
                               <div
-                                className="w-3 h-3 rounded-full border border-border shrink-0"
-                                style={{ backgroundColor: color.hex || "#ccc" }}
+                                className="h-3 w-3 shrink-0 rounded-full border border-border"
+                                style={{ backgroundColor: color.hex || '#ccc' }}
                               />
-                              <span className="text-xs font-medium truncate">
-                                {color.name}
-                              </span>
+                              <span className="truncate text-xs font-medium">{color.name}</span>
                             </div>
                             {imgCount > 0 && (
                               <span className="text-[10px] text-muted-foreground">
-                                {imgCount} foto{imgCount > 1 ? "s" : ""}
+                                {imgCount} foto{imgCount > 1 ? 's' : ''}
                               </span>
                             )}
                           </div>
@@ -232,10 +232,10 @@ export function ShareAllColorsDialog({ open, onOpenChange, product }: ShareAllCo
               type="button"
               onClick={() => setPreviewMode(!previewMode)}
               className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors",
+                'flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
                 previewMode
-                  ? "bg-[hsl(153,18%,18%)] text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                  ? 'bg-[hsl(153,18%,18%)] text-primary-foreground'
+                  : 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
               )}
             >
               {previewMode ? (
@@ -252,7 +252,7 @@ export function ShareAllColorsDialog({ open, onOpenChange, product }: ShareAllCo
             </button>
           </div>
 
-          <div key={previewMode ? "preview" : "edit"} className="animate-fade-in">
+          <div key={previewMode ? 'preview' : 'edit'} className="animate-fade-in">
             {previewMode ? (
               <WhatsAppPreview
                 message={message}
@@ -261,11 +261,11 @@ export function ShareAllColorsDialog({ open, onOpenChange, product }: ShareAllCo
                 contactName={contactSelection?.contactName}
               />
             ) : (
-              <div className="bg-secondary/50 rounded-xl p-3 border border-border">
+              <div className="rounded-xl border border-border bg-secondary/50 p-3">
                 <Textarea
                   value={message}
                   onChange={(e) => setCustomMessage(e.target.value)}
-                  className="min-h-[140px] bg-transparent border-0 resize-none focus-visible:ring-0 text-sm"
+                  className="min-h-[140px] resize-none border-0 bg-transparent text-sm focus-visible:ring-0"
                 />
               </div>
             )}
@@ -274,19 +274,12 @@ export function ShareAllColorsDialog({ open, onOpenChange, product }: ShareAllCo
           {/* Contact selector */}
           <div className="space-y-2">
             <span className="text-xs font-medium text-muted-foreground">Destinatário</span>
-            <ShareContactSelector
-              selection={contactSelection}
-              onSelect={setContactSelection}
-            />
+            <ShareContactSelector selection={contactSelection} onSelect={setContactSelection} />
           </div>
 
           {/* Actions */}
           <div className="flex gap-2 pt-1">
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => onOpenChange(false)}
-            >
+            <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
             <Button className="flex-1 gap-2" onClick={handleSend}>
