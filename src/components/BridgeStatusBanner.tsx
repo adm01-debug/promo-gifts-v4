@@ -28,7 +28,12 @@ export const BridgeStatusBanner = memo(function BridgeStatusBanner() {
       >
         <div className="container mx-auto flex items-center gap-2 px-4 py-2 text-sm">
           <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
-          <span className="font-medium">Catálogo temporariamente indisponível.</span>
+          <div>
+            <span className="font-medium">Catálogo temporariamente indisponível.</span>
+            <span className="mt-0.5 block text-xs opacity-90">
+              Pode ser uma instabilidade momentânea. Tente recarregar a página em alguns instantes.
+            </span>
+          </div>
         </div>
       </div>
     );

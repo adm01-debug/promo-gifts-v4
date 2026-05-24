@@ -91,7 +91,8 @@ export default function ComparePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [compareItems, getProductsByIds, _cacheSignal]);
 
-  const products = compareEntries.map((e) => e.product);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const products = compareEntries.map((e) => e.product) as any[];
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);

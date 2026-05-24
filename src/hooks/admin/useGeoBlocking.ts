@@ -1,13 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
+import { type createClient } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+
+// 'security_settings' table not yet in generated schema — bypass type checking via raw client cast
+const db = supabase as unknown as ReturnType<typeof createClient>;
 
 interface AllowedCountry {
   id: string;
   country_code: string;
   country_name: string;
-  is_active: boolean | null;
-  created_at: string | null;
+  is_active: boolean;
+  created_at: string;
 }
 
 interface GeoBlockingSettings {
@@ -42,15 +46,17 @@ export function useGeoBlocking() {
     try {
       const [countriesRes, settingsRes] = await Promise.all([
         supabase.from('geo_allowed_countries').select('*').order('country_name'),
-        supabase.from('security_settings').select('*').eq('setting_key', 'geo_blocking').single(),
+        db.from('security_settings').select('*').eq('setting_key', 'geo_blocking').single(),
       ]);
 
       if (countriesRes.error) throw countriesRes.error;
       setCountries(countriesRes.data || []);
 
-      if (settingsRes.data) {
-        const value = settingsRes.data.setting_value as GeoBlockingSettings;
-        setSettings(value);
+      const settingsResult = settingsRes as unknown as {
+        data: { setting_value: GeoBlockingSettings } | null;
+      };
+      if (settingsResult.data) {
+        setSettings(settingsResult.data.setting_value);
       }
     } catch (error) {
       console.error('Error fetching geo blocking data:', error);
@@ -68,7 +74,7 @@ export function useGeoBlocking() {
     async (enabled: boolean): Promise<{ success: boolean; error?: string }> => {
       try {
         const newSettings = { ...settings, enabled };
-        const { error } = await supabase
+        const { error } = await db
           .from('security_settings')
           .update({
             setting_value: newSettings,
@@ -168,7 +174,7 @@ export function useGeoBlocking() {
     (countryCode: string): boolean => {
       if (!settings.enabled) return true;
 
-      const activeCountries = countries.filter((c) => c.is_active === true);
+      const activeCountries = countries.filter((c) => c.is_active);
       if (activeCountries.length === 0) return true;
 
       return activeCountries.some(

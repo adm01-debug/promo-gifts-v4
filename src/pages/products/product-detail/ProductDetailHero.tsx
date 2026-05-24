@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { PriceFreshnessThresholdEditor } from '@/components/products/PriceFreshnessThresholdEditor';
-import { useProductFreshnessOverride, type Product } from "@/hooks/products";
+import { useProductFreshnessOverride, type Product } from '@/hooks/products';
 import { DEFAULT_PRICE_FRESHNESS_THRESHOLD_DAYS } from '@/utils/price-freshness';
 import { cn } from '@/lib/utils';
 import { sortVariationsByColor } from '@/utils/colorSorting';
@@ -92,17 +92,17 @@ export function ProductDetailHero({
         <div className="space-y-3 pb-4 lg:sticky lg:top-20">
           <ProductGallery
             images={product.images}
-            video={product.video}
-            productVideos={product.productVideos}
+            video={product.video ?? undefined}
+            productVideos={product.productVideos as never}
             productName={product.name}
             colors={product.variations?.map((variation: ProductVariation) => ({
               name: variation.color?.name || 'Cor',
               hex: variation.color?.hex || '#CCC',
               sku: variation.sku,
               stock: variation.stock,
-              image: variation.image,
+              image: variation.image ?? undefined,
               images: variation.images,
-              videos: variation.videos,
+              videos: variation.videos as never,
             }))}
             onColorSelect={(index: number) => {
               if (index === -1) setSelectedVariation(null);
@@ -123,7 +123,7 @@ export function ProductDetailHero({
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-1.5">
             <ProductCategoryBadges
-              category={product.category}
+              category={product.category as never}
               groups={product.groups}
               categoryUuid={product.category_id}
               productId={product.id}
@@ -160,10 +160,10 @@ export function ProductDetailHero({
             )}
             {product.gender && <GenderBadge gender={product.gender} size="md" />}
             <PackagingBadge
-              hasCommercialPackaging={product.hasCommercialPackaging}
-              packingType={product.packingType}
-              repackingType={product.repackingType}
-              packagingContext={product.packagingContext}
+              hasCommercialPackaging={product.hasCommercialPackaging ?? null}
+              packingType={product.packingType ?? null}
+              repackingType={product.repackingType ?? null}
+              packagingContext={(product.packagingContext ?? null) as never}
               onClick={onOpenPackagingModal}
             />
           </div>
@@ -247,9 +247,15 @@ export function ProductDetailHero({
                             style={
                               isSelected
                                 ? {
-                                    backgroundColor: variation.color?.hex ? `${variation.color.hex}15` : undefined,
-                                    border: variation.color?.hex ? `1.5px solid ${variation.color.hex}` : undefined,
-                                    boxShadow: variation.color?.hex ? `0 0 0 2px ${variation.color.hex}20` : undefined,
+                                    backgroundColor: variation.color?.hex
+                                      ? `${variation.color.hex}15`
+                                      : undefined,
+                                    border: variation.color?.hex
+                                      ? `1.5px solid ${variation.color.hex}`
+                                      : undefined,
+                                    boxShadow: variation.color?.hex
+                                      ? `0 0 0 2px ${variation.color.hex}20`
+                                      : undefined,
                                   }
                                 : undefined
                             }

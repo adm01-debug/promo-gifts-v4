@@ -34,33 +34,24 @@ const tooltipStyle = {
   borderRadius: '8px',
 };
 
-interface DailyTrend {
-  dateLabel: string;
-  views: number;
-  searches: number;
-  [key: string]: unknown;
-}
-
-interface TopProduct {
-  id?: string;
-  name?: string;
-  sku?: string;
-  views: number;
-  compares: number;
+interface TrendProduct {
+  id?: string | null;
+  name?: string | null;
+  sku?: string | null;
+  views?: number | null;
+  compares?: number | null;
   trendingScore?: number | null;
-  classification?: string;
-  [key: string]: unknown;
+  classification?: string | null;
 }
 
-interface TopSearch {
-  term: string;
-  count: number;
-  avgResults: number;
-  [key: string]: unknown;
+interface TrendSearch {
+  term?: string | null;
+  count?: number | null;
+  avgResults?: number | null;
 }
 
 interface ActivityChartProps {
-  dailyTrends: DailyTrend[] | undefined;
+  dailyTrends: Record<string, unknown>[] | undefined;
   isLoading: boolean;
 }
 
@@ -129,7 +120,7 @@ export function ActivityChart({ dailyTrends, isLoading }: ActivityChartProps) {
 }
 
 interface ProductsTabProps {
-  topProducts: TopProduct[] | undefined;
+  topProducts: TrendProduct[] | undefined;
   isLoading: boolean;
 }
 
@@ -209,7 +200,8 @@ export function ProductsTabContent({ topProducts, isLoading }: ProductsTabProps)
                   >
                     <div className="flex items-center gap-1.5">
                       <p className="truncate font-medium text-foreground">{product.name}</p>
-                      {product.trendingScore !== undefined && product.trendingScore > 1.3 && (
+                      {/* eslint-disable-next-line eqeqeq */}
+                      {product.trendingScore != null && product.trendingScore > 1.3 && (
                         <Badge
                           variant="outline"
                           className="h-4 shrink-0 border-success/30 bg-success/10 px-1 text-[9px] text-success"
@@ -237,7 +229,7 @@ export function ProductsTabContent({ topProducts, isLoading }: ProductsTabProps)
                       <Eye className="mr-1 h-3 w-3" />
                       {product.views}
                     </Badge>
-                    {product.compares > 0 && (
+                    {(product.compares ?? 0) > 0 && (
                       <Badge variant="outline" className="text-xs">
                         Comp: {product.compares}
                       </Badge>
@@ -286,7 +278,7 @@ export function ProductsTabContent({ topProducts, isLoading }: ProductsTabProps)
 }
 
 interface SearchesTabProps {
-  topSearches: TopSearch[] | undefined;
+  topSearches: TrendSearch[] | undefined;
   isLoading: boolean;
 }
 

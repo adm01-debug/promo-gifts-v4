@@ -45,7 +45,8 @@ export function KitSmartSuggestions({ selectedItems, onAddItem }: KitSmartSugges
         const hasSelectedItem = kitItemIds.some((id: string) => selectedIds.has(id));
 
         if (hasSelectedItem) {
-          for (const item of items) {
+          for (const _item of items) {
+            const item = _item as { id: string; name: string; imageUrl?: string };
             if (!selectedIds.has(item.id)) {
               const existing = coOccurrence.get(item.id);
               if (existing) {

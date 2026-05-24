@@ -121,9 +121,9 @@ export function useCatalogState() {
     const handleResize = () => {
       const w = window.innerWidth;
       if (w < 640 && gridColumns > 1) {
-        setGridColumnsState(1);
+        setGridColumnsState(3 as ColumnCount);
       } else if (w >= 640 && w < 768 && gridColumns > 2) {
-        setGridColumnsState(2);
+        setGridColumnsState(3 as ColumnCount);
       }
     };
     handleResize();
@@ -252,7 +252,7 @@ export function useCatalogState() {
     categoryFilteredProductIds,
     isLoadingCategoryFilter,
     promoSalesMap,
-    supplierSalesMap,
+    supplierSalesMap: supplierSalesMap as unknown as Map<string, number> | undefined,
   });
 
   const [lastNonTransitionedProducts, setLastNonTransitionedProducts] = useState<Product[]>([]);
@@ -325,10 +325,10 @@ export function useCatalogState() {
     filters.colorVariations,
   ]);
 
+  const hasActiveCatalogConstraints = activeFiltersCount > 0 || searchQuery.trim().length > 0;
   const shouldShowCatalogSkeleton =
     isInitialCatalogLoad ||
     (isLoading && paginatedProducts.length === 0 && !hasActiveCatalogConstraints);
-  const hasActiveCatalogConstraints = activeFiltersCount > 0 || searchQuery.trim().length > 0;
   const shouldShowEmptyState =
     !shouldShowCatalogSkeleton && paginatedProducts.length === 0 && !isFetchingNextPage;
 
@@ -410,8 +410,7 @@ export function useCatalogState() {
 
     const productCount = hasActiveFilters ? deduped.length : totalEstimate || deduped.length;
     const localVariants = deduped.reduce((sum, p) => {
-      const colorCount =
-        p.colors?.filter((c: Record<string, string>) => c.name?.trim()).length || 0;
+      const colorCount = p.colors?.filter((c) => (c as { name?: string }).name?.trim()).length || 0;
       const variationCount = !colorCount && p.variations?.length ? p.variations.length : 0;
       return sum + colorCount + variationCount;
     }, 0);
@@ -506,11 +505,11 @@ export function useCatalogState() {
 
   const handleFavoriteProduct = useCallback(
     (product: Product, e?: React.MouseEvent) => {
-      const result = favQuickAdd.handleFavoriteClick(product, { shiftKey: e?.shiftKey });
+      const result = favQuickAdd.handleFavoriteClick(product as never, { shiftKey: e?.shiftKey });
       if (!result.resolved && result.reason === 'picker-needed') {
         const target = favQuickAdd.defaultList;
         if (target) {
-          void favQuickAdd.addToList(target.id, product);
+          void favQuickAdd.addToList(target.id, product as never);
           toast({
             title: 'Adicionado aos Favoritos',
             description: `Salvo em "${target.name}". Use Shift+clique para confirmar a lista padrão sem confirmação.`,
@@ -646,6 +645,7 @@ export function useCatalogState() {
     quickSuggestions,
     searchHistory: history,
     clearHistory,
+    // Navigation & pagination
     navigate,
     isTransitioning: deferredIsTransitioning,
     hasMoreProducts,

@@ -9,7 +9,6 @@ import { VisualSearchButton } from "./VisualSearchButton";
 import { cn } from "@/lib/utils";
 import { useSearch, type SearchResult } from "@/hooks/common";
 import type { VoiceAgentAction } from "@/hooks/voice/types";
-import { useToast } from "@/hooks/ui";
 import { useProductAnalytics } from "@/hooks/products";
 import { useSpeechRecognition } from "@/hooks/intelligence";
 
@@ -32,7 +31,6 @@ interface AdvancedSearchProps {
 
 export function AdvancedSearch({ onSearch, onVisualSearchResults, className }: AdvancedSearchProps) {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { trackSearch } = useProductAnalytics();
   const {
     query,

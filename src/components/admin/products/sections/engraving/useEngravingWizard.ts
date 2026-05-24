@@ -228,7 +228,7 @@ function enrichArea(area: PrintAreaTechnique, techById: Map<string, ExternalTech
     technique_name: tech?.nome || '—',
     technique_code: tech?.codigo_curto || '—',
     technique_group: tech?.grupo_tecnica || '',
-    max_colors: tech?.max_cores !== null ? (typeof tech.max_cores === 'string' ? parseInt(tech.max_cores, 10) : tech.max_cores) : null,
+    max_colors: tech !== null && tech !== undefined && tech.max_cores !== null && tech.max_cores !== undefined ? (typeof tech.max_cores === 'string' ? parseInt(tech.max_cores, 10) : tech.max_cores) : null,
     setup_cost: tech?.custo_setup ?? null,
     charges_per_color: tech?.cobra_por_cor ?? false,
   };

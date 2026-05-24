@@ -1,6 +1,6 @@
 /**
  * Product Catalog Types (Runtime/UI)
- * 
+ *
  * These are the runtime types used throughout the UI.
  * Distinct from src/types/product.ts which holds DB-oriented types.
  */
@@ -59,7 +59,7 @@ export interface Product {
   boxQuantity?: number | null;
   boxVolumeCm3?: number | null;
 
-  stockStatus: "in-stock" | "low-stock" | "out-of-stock";
+  stockStatus: 'in-stock' | 'low-stock' | 'out-of-stock';
   featured: boolean;
   newArrival: boolean;
   onSale: boolean;
@@ -87,6 +87,24 @@ export interface Product {
 
   /** Raw metadata blob (legacy fields like height_mm, width_mm, etc — JSONB on DB). */
   metadata?: { height_mm?: number | null; width_mm?: number | null; [key: string]: unknown } | null;
+
+  /** Lead time in days (from supplier). */
+  leadTimeDays?: number | null;
+  /** Legacy video URL field. */
+  video?: string | null;
+  /** Video assets from supplier. */
+  productVideos?: Array<{
+    id: string;
+    url_stream: string | null;
+    url_hls: string | null;
+    url_thumbnail: string | null;
+    url_original: string | null;
+    source_youtube_id: string | null;
+    video_type: string | null;
+    display_order: number;
+    is_primary: boolean;
+    title: string | null;
+  }>;
 }
 
 export interface KitComponent {
@@ -123,7 +141,7 @@ export interface KitComponent {
     display_order: number;
     is_primary: boolean;
     title: string | null;
-    }>;
+  }>;
 }
 
 export interface ProductVariation {

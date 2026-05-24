@@ -173,7 +173,14 @@ export function SalesOverviewChart({ days = 30 }: Props) {
                 width={45}
               />
               <YAxis yAxisId="value" orientation="right" hide />
-              <Tooltip content={(props) => <SalesMacroTooltip {...props} />} />
+              <Tooltip
+                content={(props) => (
+                  <SalesMacroTooltip
+                    active={props.active}
+                    payload={props.payload as { payload: SalesDataPoint }[] | undefined}
+                  />
+                )}
+              />
               <Legend
                 wrapperStyle={{ fontSize: '10px', paddingTop: '4px' }}
                 iconSize={8}
@@ -215,12 +222,20 @@ export function SalesOverviewChart({ days = 30 }: Props) {
   );
 }
 
+interface SalesDataPoint {
+  quotedQty: number;
+  orderedQty: number;
+  quotedValue: number;
+  orderedValue: number;
+  fullDate: string;
+}
+
 function SalesMacroTooltip({
   active,
   payload,
 }: {
   active?: boolean;
-  payload?: { payload: Record<string, unknown> }[];
+  payload?: { payload: SalesDataPoint }[];
 }) {
   if (!active || !payload?.length) return null;
   const data = payload[0]?.payload;

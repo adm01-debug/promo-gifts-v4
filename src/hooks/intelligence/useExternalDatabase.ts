@@ -74,16 +74,6 @@ interface ExternalDatabaseState<T> {
 }
 
 // ============================================
-// INTERNAL RESPONSE TYPE
-// ============================================
-
-interface BridgeResponse {
-  success: boolean;
-  error?: string;
-  data?: unknown;
-}
-
-// ============================================
 // HOOK PRINCIPAL
 // ============================================
 
@@ -107,7 +97,7 @@ export function useExternalDatabase<T = Record<string, unknown>>(tableName: Exte
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
-        const { data: rawData, error } = await invokeWithRetry({
+        const { data, error } = await invokeWithRetry({
           table: tableName,
           operation,
           data: options?.data,
@@ -119,20 +109,19 @@ export function useExternalDatabase<T = Record<string, unknown>>(tableName: Exte
           offset: options?.offset,
         });
 
-        const data =
-          typeof rawData === 'object' && rawData !== null ? (rawData as BridgeResponse) : null;
-
         if (error) {
           const message = await extractFunctionErrorMessage(error);
           throw new Error(message);
         }
 
-        if (!data?.success) {
-          throw new Error(data?.error || 'Erro desconhecido');
+        const bridgeData = data as { success?: boolean; error?: string; data?: unknown } | null;
+
+        if (!bridgeData?.success) {
+          throw new Error(bridgeData?.error || 'Erro desconhecido');
         }
 
         if (operation === 'select') {
-          const result = data.data as QueryResult<T>;
+          const result = (bridgeData?.data ?? null) as QueryResult<T>;
           setState((prev) => ({
             ...prev,
             data: result.records,
@@ -142,7 +131,7 @@ export function useExternalDatabase<T = Record<string, unknown>>(tableName: Exte
           return result;
         }
         setState((prev) => ({ ...prev, isLoading: false }));
-        return (data?.data ?? null) as T | null;
+        return (bridgeData?.data ?? null) as T;
       } catch (err) {
         const errorMessage = await extractFunctionErrorMessage(err);
         setState((prev) => ({ ...prev, error: errorMessage, isLoading: false }));
@@ -163,8 +152,8 @@ export function useExternalDatabase<T = Record<string, unknown>>(tableName: Exte
   const fetchOne = useCallback(
     async (id: string, select?: string) => {
       const result = await invoke('select', { id, select, limit: 1 });
-      if (result && 'records' in result) {
-        return result.records[0] || null;
+      if (result && typeof result === 'object' && 'records' in result) {
+        return (result as QueryResult<T>).records[0] || null;
       }
       return null;
     },
@@ -176,8 +165,8 @@ export function useExternalDatabase<T = Record<string, unknown>>(tableName: Exte
       const result = await invoke('insert', { data });
       if (!result) return null;
 
-      if ('records' in result) {
-        const created = result.records[0] || null;
+      if (typeof result === 'object' && 'records' in result) {
+        const created = (result as QueryResult<T>).records[0] || null;
         if (created) {
           toast.success('Registro criado com sucesso!');
           return created as T;
@@ -196,8 +185,8 @@ export function useExternalDatabase<T = Record<string, unknown>>(tableName: Exte
       const result = await invoke('update', { id, data });
       if (!result) return null;
 
-      if ('records' in result) {
-        const updated = result.records[0] || null;
+      if (typeof result === 'object' && 'records' in result) {
+        const updated = (result as QueryResult<T>).records[0] || null;
         if (updated) {
           toast.success('Registro atualizado com sucesso!');
           return updated as T;
@@ -305,7 +294,7 @@ export function useExternalTags() {
 // Empresas/Clientes — MIGRADO para CRM externo
 export function useExternalCompanies() {
   logger.warn("[DEPRECATED] useExternalCompanies() → use useCrmCompanies() from '@/hooks/crm'");
-  return useExternalDatabase<ExternalCompany>('client_contacts' as ExternalTable);
+  return useExternalDatabase<ExternalCompany>('companies');
 }
 
 export function useExternalClientContacts() {

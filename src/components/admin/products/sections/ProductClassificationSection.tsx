@@ -153,7 +153,7 @@ export default function ProductClassificationSection({
           subtitle="Paleta de cores disponíveis"
           icon={Palette}
           iconColor="bg-primary/10 text-primary"
-          defaultOpen={showFullContent}
+          defaultOpen={!!showFullContent}
           disabled={!showFullContent}
         >
           {savedProductId ? (

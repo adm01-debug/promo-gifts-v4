@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { type PersonalizationArea } from '@/components/mockup/MultiAreaManager';
+import type { Json } from '@/integrations/supabase/types';
 
 const LOCAL_STORAGE_KEY = 'mockup_draft_v1';
 const AUTO_SAVE_DELAY = 2000; // 2 segundos de debounce
@@ -126,7 +127,7 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
           technique_name: data.techniqueName,
           client_id: safeClientId,
           client_name: data.clientName,
-          personalization_areas: areasWithoutLogos as unknown as Record<string, unknown>[],
+          personalization_areas: areasWithoutLogos as unknown as Json,
           logo_data: safeLogoData,
           updated_at: new Date().toISOString(),
         };
@@ -139,16 +140,17 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
         if (upsertError) {
           // If FK violation or conflict, try update-only as fallback
           if (upsertError.code === '23503' || upsertError.code === '409') {
-            const {
-              product_id: _pid,
-              technique_id: _tid,
-              client_id: _cid,
-              ...safePayload
-            } = payload as Record<string, unknown>;
             const { error: updateError } = await supabase
               .from('mockup_drafts')
               .update({
-                ...safePayload,
+                user_id: payload.user_id,
+                draft_key: payload.draft_key,
+                product_name: payload.product_name,
+                technique_name: payload.technique_name,
+                client_name: payload.client_name,
+                personalization_areas: payload.personalization_areas,
+                logo_data: payload.logo_data,
+                updated_at: payload.updated_at,
                 product_id: null,
                 technique_id: null,
                 client_id: null,
@@ -194,17 +196,20 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
 
       if (data) {
         const areas = Array.isArray(data.personalization_areas)
-          ? (data.personalization_areas as unknown[]).map((a) => ({
-              id: a.id || crypto.randomUUID(),
-              name: a.name || 'Frente',
-              positionX: a.positionX ?? 50,
-              positionY: a.positionY ?? 50,
-              logoWidth: a.logoWidth ?? 5,
-              logoHeight: a.logoHeight ?? 3,
-              logoRotation: a.logoRotation ?? 0,
-              logoScale: a.logoScale ?? 100,
-              logoPreview: a.logoPreview || null,
-            }))
+          ? (data.personalization_areas as unknown[]).map((item) => {
+              const a = item as Record<string, unknown>;
+              return {
+                id: (a.id as string | undefined) || crypto.randomUUID(),
+                name: (a.name as string | undefined) || 'Frente',
+                positionX: (a.positionX as number | undefined) ?? 50,
+                positionY: (a.positionY as number | undefined) ?? 50,
+                logoWidth: (a.logoWidth as number | undefined) ?? 5,
+                logoHeight: (a.logoHeight as number | undefined) ?? 3,
+                logoRotation: (a.logoRotation as number | undefined) ?? 0,
+                logoScale: (a.logoScale as number | undefined) ?? 100,
+                logoPreview: (a.logoPreview as string | undefined) || null,
+              };
+            })
           : [];
 
         // Restaurar logo do campo logo_data se não estiver nas áreas

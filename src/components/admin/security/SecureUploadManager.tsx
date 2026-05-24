@@ -23,15 +23,11 @@ import { ptBR } from 'date-fns/locale';
 interface FileScanLog {
   id: string;
   created_at: string;
-  file_name: string;
-  file_hash: string | null;
-  file_size: number | null;
-  mime_type: string | null;
-  scan_provider: string;
-  scan_response: Record<string, unknown> | null;
-  scan_result: string;
-  storage_path: string | null;
-  user_id: string;
+  path: string;
+  hash: string;
+  bucket: string;
+  status_code: number;
+  scan_result?: { malicious?: number } | null;
 }
 
 export function SecureUploadManager() {
@@ -50,7 +46,7 @@ export function SecureUploadManager() {
         .limit(20);
 
       if (error) throw error;
-      setLogs((data || []) as FileScanLog[]);
+      setLogs((data || []) as unknown as FileScanLog[]);
     } catch (error) {
       console.error('Error fetching logs:', error);
       toast.error('Erro ao carregar logs de auditoria');
@@ -99,8 +95,8 @@ export function SecureUploadManager() {
 
   const filteredLogs = logs.filter(
     (log) =>
-      (log.storage_path ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (log.file_hash ?? '').toLowerCase().includes(searchTerm.toLowerCase()),
+      log.path.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.hash.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   return (
@@ -247,52 +243,48 @@ export function SecureUploadManager() {
                     </td>
                   </tr>
                 ) : (
-                  filteredLogs.map((log) => {
-                    const filePath = log.storage_path ?? log.file_name;
-                    const isClean = log.scan_result === 'clean';
-                    const scanResponse = log.scan_response as { malicious?: number } | null;
-                    const maliciousCount = scanResponse?.malicious ?? 0;
-                    return (
-                      <tr key={log.id} className="hover:bg-muted/30">
-                        <td className="whitespace-nowrap p-3 text-muted-foreground">
-                          <div className="flex items-center gap-1.5">
-                            <Clock className="h-3 w-3" />
-                            {format(new Date(log.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
-                          </div>
-                        </td>
-                        <td
-                          className="max-w-[200px] truncate p-3 font-mono text-[11px]"
-                          title={filePath}
-                        >
-                          {filePath.split('/').pop()}
-                        </td>
-                        <td className="p-3">
-                          <Badge variant="outline" className="text-[10px] uppercase">
-                            {log.mime_type ?? '—'}
+                  filteredLogs.map((log) => (
+                    <tr key={log.id} className="hover:bg-muted/30">
+                      <td className="whitespace-nowrap p-3 text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="h-3 w-3" />
+                          {format(new Date(log.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                        </div>
+                      </td>
+                      <td
+                        className="max-w-[200px] truncate p-3 font-mono text-[11px]"
+                        title={log.path}
+                      >
+                        {log.path.split('/').pop()}
+                      </td>
+                      <td className="p-3">
+                        <Badge variant="outline" className="text-[10px] uppercase">
+                          {log.bucket}
+                        </Badge>
+                      </td>
+                      <td className="p-3">
+                        {log.status_code === 200 ? (
+                          <Badge className="gap-1 border-success/20 bg-success/10 text-success hover:bg-success/20">
+                            <CheckCircle2 className="h-3 w-3" /> OK
                           </Badge>
-                        </td>
-                        <td className="p-3">
-                          {isClean ? (
-                            <Badge className="gap-1 border-success/20 bg-success/10 text-success hover:bg-success/20">
-                              <CheckCircle2 className="h-3 w-3" /> OK
-                            </Badge>
-                          ) : (
-                            <Badge variant="destructive" className="gap-1">
-                              <XCircle className="h-3 w-3" />{' '}
-                              {log.scan_result === 'blocked' ? 'Bloqueado' : 'Erro'}
-                            </Badge>
-                          )}
-                        </td>
-                        <td className="p-3">
-                          {maliciousCount > 0 ? (
-                            <span className="font-bold text-destructive">{maliciousCount}!</span>
-                          ) : (
-                            <span className="text-success">0</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })
+                        ) : (
+                          <Badge variant="destructive" className="gap-1">
+                            <XCircle className="h-3 w-3" />{' '}
+                            {log.status_code === 403 ? 'Bloqueado' : 'Erro'}
+                          </Badge>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        {(log.scan_result?.malicious ?? 0) > 0 ? (
+                          <span className="font-bold text-destructive">
+                            {log.scan_result?.malicious}!
+                          </span>
+                        ) : (
+                          <span className="text-success">0</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>

@@ -172,18 +172,20 @@ export function useSuppliersManager() {
   };
 
   const handleEdit = (supplier: Supplier) => {
-    const s = { ...supplier } as Record<string, unknown>;
+    const s = { ...supplier } as unknown as Record<string, unknown>;
     try {
-      const addr = (supplier as Record<string, unknown>).address_details
-        ? JSON.parse((supplier as Record<string, unknown>).address_details as string)
+      const supplierRecord = supplier as unknown as Record<string, unknown>;
+      const addr = supplierRecord.address_details
+        ? JSON.parse(supplierRecord.address_details as string)
         : null;
       if (addr && typeof addr === 'object') Object.assign(s, addr);
     } catch {
       /* ignore */
     }
     try {
-      const social = (supplier as Record<string, unknown>).social_details
-        ? JSON.parse((supplier as Record<string, unknown>).social_details as string)
+      const supplierRecord = supplier as unknown as Record<string, unknown>;
+      const social = supplierRecord.social_details
+        ? JSON.parse(supplierRecord.social_details as string)
         : null;
       if (social && typeof social === 'object') Object.assign(s, social);
     } catch {

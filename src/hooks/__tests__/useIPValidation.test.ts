@@ -3,14 +3,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useIPValidation } from '@/hooks/admin/useIPValidation';
 import { supabase } from '@/integrations/supabase/client';
 
-interface IPValidationResult {
-  isAllowed: boolean;
-  currentIP: string | null;
-  hasRestrictions: boolean;
-  error?: string;
-  reason?: string;
-  details?: Record<string, unknown>;
-}
+type ValidationResult = Awaited<
+  ReturnType<ReturnType<typeof useIPValidation>['validateIPForAuthenticatedUser']>
+>;
+type InvokeResult = { data: unknown; error: null | { message: string } };
 
 // Mock Supabase
 vi.mock('@/integrations/supabase/client', () => ({
@@ -87,7 +83,7 @@ describe('useIPValidation', () => {
 
       const { result } = renderHook(() => useIPValidation());
 
-      let validationResult: IPValidationResult | undefined;
+      let validationResult: ValidationResult | undefined;
       await act(async () => {
         validationResult = await result.current.validateIPForAuthenticatedUser('user-123');
       });
@@ -109,7 +105,7 @@ describe('useIPValidation', () => {
 
       const { result } = renderHook(() => useIPValidation());
 
-      let validationResult: IPValidationResult | undefined;
+      let validationResult: ValidationResult | undefined;
       await act(async () => {
         validationResult = await result.current.validateIPForAuthenticatedUser('user-123');
       });
@@ -132,7 +128,7 @@ describe('useIPValidation', () => {
 
       const { result } = renderHook(() => useIPValidation());
 
-      let validationResult: IPValidationResult | undefined;
+      let validationResult: ValidationResult | undefined;
       await act(async () => {
         validationResult = await result.current.validateIPForAuthenticatedUser('user-123');
       });
@@ -150,7 +146,7 @@ describe('useIPValidation', () => {
 
       const { result } = renderHook(() => useIPValidation());
 
-      let validationResult: IPValidationResult | undefined;
+      let validationResult: ValidationResult | undefined;
       await act(async () => {
         validationResult = await result.current.validateIPForAuthenticatedUser('user-123');
       });
@@ -179,7 +175,7 @@ describe('useIPValidation', () => {
 
       const { result } = renderHook(() => useIPValidation());
 
-      let validationResult: IPValidationResult | undefined;
+      let validationResult: ValidationResult | undefined;
       await act(async () => {
         validationResult = await result.current.validateIPForAuthenticatedUser('user-123');
       });
@@ -205,7 +201,7 @@ describe('useIPValidation', () => {
 
       const { result } = renderHook(() => useIPValidation());
 
-      let validationResult: IPValidationResult | undefined;
+      let validationResult: ValidationResult | undefined;
       await act(async () => {
         validationResult = await result.current.validateIPForAuthenticatedUser('user-123');
       });
@@ -215,13 +211,12 @@ describe('useIPValidation', () => {
     });
 
     it('manages isValidating state correctly', async () => {
-      let resolveInvoke: (value: any) => void;
-      const invokePromise = new Promise((resolve) => {
+      let resolveInvoke: (value: InvokeResult) => void;
+      const invokePromise = new Promise<InvokeResult>((resolve) => {
         resolveInvoke = resolve;
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase.functions.invoke as any).mockImplementation(async (fnName: string) => {
+      vi.mocked(supabase.functions.invoke).mockImplementation(async (fnName) => {
         if (fnName === 'get-visitor-info') return { data: { ip: '1.2.3.4' }, error: null };
         return await invokePromise;
       });
@@ -230,7 +225,7 @@ describe('useIPValidation', () => {
 
       expect(result.current.isValidating).toBe(false);
 
-      let validationPromise: Promise<IPValidationResult> | undefined;
+      let validationPromise: Promise<ValidationResult> | undefined;
       await act(async () => {
         validationPromise = result.current.validateIPForAuthenticatedUser('user-123');
       });

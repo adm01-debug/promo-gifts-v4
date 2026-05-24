@@ -4,6 +4,8 @@
  */
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const anySupabase = supabase as any;
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,7 +46,7 @@ const VARIABLE_REFERENCE = [
 export function MockupPromptManager() {
   const { user } = useAuth();
   const [configs, setConfigs] = useState<PromptConfig[]>([]);
-  const [techniques, _setTechniques] = useState<Technique[]>([]);
+  const [techniques, setTechniques] = useState<Technique[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [editedPrompts, setEditedPrompts] = useState<
@@ -69,10 +71,14 @@ export function MockupPromptManager() {
   const fetchAll = async () => {
     setIsLoading(true);
     try {
-      const cr = await supabase.from('mockup_prompt_configs').select('*').order('config_key');
+      const [cr, tr] = await Promise.all([
+        supabase.from('mockup_prompt_configs').select('*').order('config_key'),
+        anySupabase.from('personalization_techniques').select('id, name, code').eq('is_active', true),
+      ]);
       if (cr.error) throw cr.error;
+      if (tr.error) throw tr.error;
       setConfigs((cr.data || []) as PromptConfig[]);
-      // personalization_techniques table removed — techniques list stays empty
+      setTechniques((tr.data || []) as unknown as Technique[]);
     } catch (err: unknown) {
       toast.error('Erro ao carregar configurações', {
         description: err instanceof Error ? err.message : undefined,
@@ -103,7 +109,7 @@ export function MockupPromptManager() {
           new_prompt: edited.prompt_text,
           old_prompt: config.prompt_text,
           ai_model: config.ai_model,
-          changed_by: user?.id || null,
+          changed_by: user?.id,
           change_notes: changeNotes[config.id] || null,
         });
       const { error } = await supabase
@@ -158,7 +164,7 @@ export function MockupPromptManager() {
     if (!historyDialog) return;
     setEditedPrompts((p) => ({
       ...p,
-      [historyDialog.configId]: { prompt_text: entry.new_prompt, ai_model: entry.ai_model },
+      [historyDialog.configId]: { prompt_text: entry.prompt_text, ai_model: entry.ai_model },
     }));
     setChangeNotes((p) => ({
       ...p,

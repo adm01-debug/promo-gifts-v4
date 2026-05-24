@@ -13,10 +13,10 @@ import { useAriaLive } from '@/components/a11y';
 import { useProductCustomizationOptionsForMockup } from '@/hooks/mockup';
 import { searchCrm } from '@/lib/crm-db';
 import { getCompanyDisplayName, type CrmCompany } from '@/types/crm';
-import type { PrintAreaWithTechniques } from '@/types/gravacao';
+import type { PrintAreaWithTechniques, AreaShape } from '@/types/gravacao';
 import type { ScenePrompt } from '@/components/magic-up/PromptBank';
 import type { GenerationHistoryItem } from '@/components/magic-up/AdImageResult';
-import { useMagicUpGeneration } from "@/hooks/intelligence/useMagicUpGeneration";
+import { useMagicUpGeneration } from '@/hooks/intelligence/useMagicUpGeneration';
 import {
   DEFAULT_BRAND_KIT,
   DEFAULT_BRIEF,
@@ -204,7 +204,7 @@ export function useMagicUpState() {
         .order('updated_at', { ascending: false })
         .limit(30);
       if (error) throw error;
-      return (data || []).map((row: Tables<'magic_up_campaigns'>) => ({
+      return ((data || []) as Tables<'magic_up_campaigns'>[]).map((row) => ({
         id: row.id,
         title: row.title,
         status: row.status as MagicUpCampaignStatus,
@@ -278,7 +278,7 @@ export function useMagicUpState() {
             images: p.images || [],
             primary_image_url: p.primary_image_url || p.image_url || null,
             og_image_url: p.og_image_url || null,
-          })),
+          })) as unknown as MagicUpProduct[],
         );
       } catch {
         toast.error('Erro ao carregar produtos');
@@ -326,16 +326,17 @@ export function useMagicUpState() {
             isPrimary: img.is_primary,
             isOgImage: img.is_og_image || false,
           }))
-          .filter((img: ProductImage) => img.url);
+          .filter((img) => !!(img as ProductImage).url) as ProductImage[];
         setProductImages(images);
         const uniqueColors = new Map<string, ProductColor>();
         (variantsResult.records || []).forEach((v: Record<string, unknown>) => {
-          if (!v.color_name || uniqueColors.has(v.color_name)) return;
-          uniqueColors.set(v.color_name, {
-            hex: v.color_hex || '#CCCCCC',
-            name: v.color_name,
-            code: v.color_code || '',
-            stock: v.stock_quantity ?? 0,
+          const colorName = v.color_name as string | undefined;
+          if (!colorName || uniqueColors.has(colorName)) return;
+          uniqueColors.set(colorName, {
+            hex: (v.color_hex as string) || '#CCCCCC',
+            name: colorName,
+            code: (v.color_code as string) || '',
+            stock: (v.stock_quantity as number) ?? 0,
           });
         });
         setColors(Array.from(uniqueColors.values()));
@@ -360,7 +361,7 @@ export function useMagicUpState() {
       max_width: Math.max(...loc.options.map((o) => o.efetiva_largura_max || 0), 0),
       max_height: Math.max(...loc.options.map((o) => o.efetiva_altura_max || 0), 0),
       unit: 'cm',
-      shape: loc.options[0]?.shape || 'rectangle',
+      shape: (loc.options[0]?.shape || 'rectangle') as AreaShape,
       is_curved: loc.options.some((o) => o.is_curved),
       is_primary: idx === 0,
       display_order: loc.location_order,
@@ -928,8 +929,6 @@ CENÁRIO: ${effectivePrompt}`;
     handleRunBatchQueue,
     handleClearBatchQueue,
     qualityScore,
-    qualityDiagnosis: generation.qualityDiagnosis,
-    curationStatus: generation.curationStatus,
     copyPack,
     effectivePrompt,
     fullPromptPreview,

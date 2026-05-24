@@ -34,7 +34,7 @@ const WINDOW_OPTIONS: { value: HealthWindow; label: string }[] = [
 ];
 
 function fmtMs(n: number | null | undefined) {
-  if (n === null) return '—';
+  if (n === null || n === undefined) return '—';
   if (n >= 1000) return `${(n / 1000).toFixed(2)}s`;
   return `${n}ms`;
 }

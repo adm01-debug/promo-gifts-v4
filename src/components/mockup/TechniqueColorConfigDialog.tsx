@@ -29,7 +29,7 @@ import type { DetectedColor } from "@/hooks/simulation";
 export type { TechniqueCategory, LaserTone, TechniqueColorConfig } from "./techniqueColorUtils";
 export { classifyTechnique, techniqueNeedsColorConfig } from "./techniqueColorUtils";
 
-import { type LaserTone, classifyTechnique } from "./techniqueColorUtils";
+import { type LaserTone, type TechniqueColorConfig, classifyTechnique } from "./techniqueColorUtils";
 
 // ─── Helpers ─────────────────────────────────────────────────────────
 

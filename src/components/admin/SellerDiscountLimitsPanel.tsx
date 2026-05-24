@@ -55,8 +55,9 @@ export function SellerDiscountLimitsPanel() {
     mutationFn: async ({ userId, percent }: { userId: string; percent: number }) => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error("Não autenticado");
-      const { error } = await supabase
-        .from("seller_discount_limits" as never)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
+        .from("seller_discount_limits")
         .upsert({ user_id: userId, max_discount_percent: percent, set_by: u.user.id }, { onConflict: "user_id" });
       if (error) throw error;
     },

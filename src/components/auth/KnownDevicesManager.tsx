@@ -50,7 +50,7 @@ export function KnownDevicesManager({ targetUserId }: KnownDevicesManagerProps) 
   const loadDevices = async () => {
     setIsLoading(true);
     const data = await getKnownDevices();
-    setDevices(data as KnownDevice[]);
+    setDevices(data as unknown as KnownDevice[]);
     setIsLoading(false);
   };
 

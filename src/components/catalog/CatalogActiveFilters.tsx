@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import type { FilterState } from "@/components/filters/FilterPanel";
-import { getCategoryIcon, useCategoryIcons, useExternalCategoriesQuery, useSupplierNames } from "@/hooks/products";
+import { getCategoryIcon, useCategoryIcons, useExternalCategoriesQuery, useSupplierNames, type CategoryIcon } from "@/hooks/products";
 import { toTitleCase } from "@/lib/textUtils";
 import { X } from "lucide-react";
 
@@ -12,7 +12,8 @@ interface CatalogActiveFiltersProps {
 
 export function CatalogActiveFilters({ filters, setFilters, activeFiltersCount }: CatalogActiveFiltersProps) {
   const { data: categories = [] } = useExternalCategoriesQuery();
-  const { data: icons = [] } = useCategoryIcons();
+  const { data: iconsRaw } = useCategoryIcons();
+  const icons = (iconsRaw ?? []) as CategoryIcon[];
   const { data: supplierNamesMap } = useSupplierNames(filters.suppliers);
 
   if (activeFiltersCount === 0) return null;

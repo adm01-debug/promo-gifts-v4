@@ -316,21 +316,21 @@ function ItemPersonalizationCard({
               <div className="bg-secondary/50 rounded-lg p-3 space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Preço unitário</span>
-                  <span>{formatCurrency(priceData.preco_unitario)}</span>
+                  <span>{formatCurrency(priceData.preco_unitario ?? 0)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Gravação ({kitQuantity}un)</span>
-                  <span>{formatCurrency(priceData.valor_gravacao)}</span>
+                  <span>{formatCurrency(priceData.valor_gravacao ?? 0)}</span>
                 </div>
-                {priceData.setup_total > 0 && (
+                {(priceData.setup_total ?? 0) > 0 && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Setup</span>
-                    <span>{formatCurrency(priceData.setup_total)}</span>
+                    <span>{formatCurrency(priceData.setup_total ?? 0)}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-semibold border-t pt-1 mt-1">
                   <span>Total gravação</span>
-                  <span className="text-primary">{formatCurrency(priceData.total_cobrado)}</span>
+                  <span className="text-primary">{formatCurrency(priceData.total_cobrado ?? 0)}</span>
                 </div>
               </div>
             )}

@@ -174,11 +174,14 @@ export function useSimulation() {
         orderBy: { column: 'name', ascending: true },
         limit: 100,
       });
-      return result.records.map((t) => ({
-        ...t,
-        setup_cost: (t as unknown as ExternalTechnique).setup_price ?? t.setup_cost,
-        unit_cost: (t as unknown as ExternalTechnique).handling_price ?? t.unit_cost,
-      }));
+      return result.records.map((t) => {
+        const ext = t as unknown as ExternalTechnique;
+        return {
+          ...t,
+          setup_cost: ext.setup_price ?? t.setup_cost,
+          unit_cost: ext.handling_price ?? t.unit_cost,
+        };
+      });
     },
   });
 
@@ -188,11 +191,10 @@ export function useSimulation() {
   );
   const { isLoading: pricingLoading, getPricingInfo } = useMultipleTechniquePricing(techniqueCodes);
 
-  const { data: savedSimulations, isLoading: savedSimulationsLoading } = useQuery({
+  const { data: _savedSimulations, isLoading: savedSimulationsLoading } = useQuery({
     queryKey: ['saved-simulations'],
     queryFn: async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('personalization_simulations')
         .select(`*, bitrix_clients (id, name, ramo)`)
         .order('created_at', { ascending: false })
@@ -201,9 +203,10 @@ export function useSimulation() {
       return (data || []).map((item) => ({
         ...item,
         simulation_data: item.simulation_data as unknown as SimulationOption[],
-      })) as SavedSimulation[];
+      }));
     },
   });
+  const savedSimulations = (_savedSimulations ?? []) as SavedSimulation[];
 
   // ─── Derived ──────────────────────────────────────────────
   const selectedProduct = useMemo(
@@ -457,12 +460,11 @@ export function useSimulation() {
   }, []);
 
   // ─── Mutations ────────────────────────────────────────────
-  const saveSimulationMutation = useMutation({
+  const saveSimulationMutation = useMutation<void, Error, void>({
     mutationFn: async () => {
       if (!user || !selectedProduct || simulationOptions.length === 0)
         throw new Error('Dados incompletos');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any).from('personalization_simulations').insert([
+      const { error } = await supabase.from('personalization_simulations').insert([
         {
           seller_id: user.id,
           client_id: selectedClientId,
@@ -489,13 +491,9 @@ export function useSimulation() {
     },
   });
 
-  const deleteSimulationMutation = useMutation({
+  const deleteSimulationMutation = useMutation<void, Error, string>({
     mutationFn: async (id: string) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any)
-        .from('personalization_simulations')
-        .delete()
-        .eq('id', id);
+      const { error } = await supabase.from('personalization_simulations').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {

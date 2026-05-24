@@ -1,20 +1,49 @@
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { PageSEO } from "@/components/seo/PageSEO";
+import { PageSEO } from '@/components/seo/PageSEO';
 import { getCdnUrl } from '@/utils/image-utils';
 import { ProductStickyHeader } from '@/components/products/ProductStickyHeader';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 
-const SimilarProducts = lazyWithRetry(() => import('@/components/products/SimilarProducts').then(m => ({ default: m.SimilarProducts })));
-const SmartRecommendations = lazyWithRetry(() => import('@/components/products/SmartRecommendations').then(m => ({ default: m.SmartRecommendations })));
-const StockHistoryChart = lazyWithRetry(() => import('@/components/products/StockHistoryChart').then(m => ({ default: m.StockHistoryChart })));
-const SalesHistoryChart = lazyWithRetry(() => import('@/components/products/SalesHistoryChart').then(m => ({ default: m.SalesHistoryChart })));
-const SupplierComparisonModal = lazyWithRetry(() => import('@/components/compare/SupplierComparisonModal').then(m => ({ default: m.SupplierComparisonModal })));
-const VariantPickerDialog = lazyWithRetry(() => import('@/components/products/VariantPickerDialog').then(m => ({ default: m.VariantPickerDialog })));
-const FutureStockModal = lazyWithRetry(() => import('@/components/products/FutureStockModal').then(m => ({ default: m.FutureStockModal })));
-const PackagingModal = lazyWithRetry(() => import('@/components/products/PackagingModal').then(m => ({ default: m.PackagingModal })));
+const SimilarProducts = lazyWithRetry(() =>
+  import('@/components/products/SimilarProducts').then((m) => ({ default: m.SimilarProducts })),
+);
+const SmartRecommendations = lazyWithRetry(() =>
+  import('@/components/products/SmartRecommendations').then((m) => ({
+    default: m.SmartRecommendations,
+  })),
+);
+const StockHistoryChart = lazyWithRetry(() =>
+  import('@/components/products/StockHistoryChart').then((m) => ({ default: m.StockHistoryChart })),
+);
+const SalesHistoryChart = lazyWithRetry(() =>
+  import('@/components/products/SalesHistoryChart').then((m) => ({ default: m.SalesHistoryChart })),
+);
+const SupplierComparisonModal = lazyWithRetry(() =>
+  import('@/components/compare/SupplierComparisonModal').then((m) => ({
+    default: m.SupplierComparisonModal,
+  })),
+);
+const VariantPickerDialog = lazyWithRetry(() =>
+  import('@/components/products/VariantPickerDialog').then((m) => ({
+    default: m.VariantPickerDialog,
+  })),
+);
+const FutureStockModal = lazyWithRetry(() =>
+  import('@/components/products/FutureStockModal').then((m) => ({ default: m.FutureStockModal })),
+);
+const PackagingModal = lazyWithRetry(() =>
+  import('@/components/products/PackagingModal').then((m) => ({ default: m.PackagingModal })),
+);
 
-import { useProduct, useProductAnalytics, useProductIntelligenceBadges, useSimilarProducts, useSupplierTrust, type ExternalVariantStock } from "@/hooks/products";
+import {
+  useProduct,
+  useProductAnalytics,
+  useProductIntelligenceBadges,
+  useSimilarProducts,
+  useSupplierTrust,
+  type ExternalVariantStock,
+} from '@/hooks/products';
 import type { ProductForRecommendation } from '@/hooks/intelligence';
 import { useToast } from '@/hooks/ui';
 import type { Product, ProductVariation } from '@/types/product-catalog';
@@ -27,12 +56,11 @@ import { FloatingCompareBar } from '@/components/compare/FloatingCompareBar';
 import { MobileProductActions } from '@/components/mobile/MobileProductActions';
 import { useRecentlyViewedStore } from '@/stores/useRecentlyViewedStore';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
-import { ProductDetailHero } from "@/pages/products/product-detail/ProductDetailHero";
+import { ProductDetailHero } from '@/pages/products/product-detail/ProductDetailHero';
 import { ScrollToTopButton } from '@/components/common/ScrollToTopButton';
 import { formatCurrency } from '@/lib/format';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ModalSkeleton } from '@/components/layout/SkeletonLoaders';
-
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -51,10 +79,10 @@ export default function ProductDetail() {
   const { addToRecentlyViewed } = useRecentlyViewedStore();
 
   const { data, isLoading, isError } = useProduct(id || '');
-  const product: Product | null | undefined = data;
+  const product = data as Product | null | undefined;
   const { data: supplierTrust } = useSupplierTrust(id);
   const { data: similarItems = [] } = useSimilarProducts(product);
-  
+
   const aiCandidates = useMemo<ProductForRecommendation[]>(
     () =>
       similarItems.slice(0, 12).map((it) => ({
@@ -66,7 +94,7 @@ export default function ProductDetail() {
       })),
     [similarItems, product?.category?.name],
   );
-  
+
   const catalogFlags = useMemo(
     () =>
       product
@@ -80,7 +108,7 @@ export default function ProductDetail() {
         : undefined,
     [product?.featured, product?.newArrival, product?.onSale, product?.stockStatus, product?.stock],
   );
-  
+
   const {
     badges: intellBadges,
     turnoverScore: intellTurnover,
@@ -109,11 +137,13 @@ export default function ProductDetail() {
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     const nextYear = new Date();
     nextYear.setFullYear(nextYear.getFullYear() + 1);
-    
+
     // Ensure images are absolute URLs
     const absoluteImages = (product.images || [])
       .filter(Boolean)
-      .map(img => img.startsWith('http') ? img : `${origin}${img.startsWith('/') ? '' : '/'}${img}`);
+      .map((img) =>
+        img.startsWith('http') ? img : `${origin}${img.startsWith('/') ? '' : '/'}${img}`,
+      );
 
     return {
       '@context': 'https://schema.org',
@@ -124,9 +154,9 @@ export default function ProductDetail() {
       mpn: product.sku,
       image: absoluteImages,
       url: currentUrl,
-      brand: { 
-        '@type': 'Brand', 
-        name: product.supplier?.name || 'Promo Gifts' 
+      brand: {
+        '@type': 'Brand',
+        name: product.supplier?.name || 'Promo Gifts',
       },
       offers: {
         '@type': 'Offer',
@@ -151,8 +181,8 @@ export default function ProductDetail() {
         ratingValue: '5',
         reviewCount: '1',
         bestRating: '5',
-        worstRating: '1'
-      }
+        worstRating: '1',
+      },
     };
   }, [product]);
 
@@ -224,26 +254,23 @@ export default function ProductDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedVariation, colorAutoSelected]);
 
-  if (isLoading)
-    return (
-        <ProductDetailSkeleton />
-    );
+  if (isLoading) return <ProductDetailSkeleton />;
 
   if (isError || !product) {
     return (
-        <EmptyState
-          variant="products"
-          title={isError ? 'Erro ao carregar produto' : 'Produto não encontrado'}
-          description={
-            isError
-              ? 'Não foi possível carregar os dados do produto.'
-              : 'O produto não existe ou foi removido.'
-          }
-          action={{
-            label: isError ? 'Tentar novamente' : 'Voltar para Vitrine',
-            onClick: () => (isError ? window.location.reload() : navigate('/')),
-          }}
-        />
+      <EmptyState
+        variant="products"
+        title={isError ? 'Erro ao carregar produto' : 'Produto não encontrado'}
+        description={
+          isError
+            ? 'Não foi possível carregar os dados do produto.'
+            : 'O produto não existe ou foi removido.'
+        }
+        action={{
+          label: isError ? 'Tentar novamente' : 'Voltar para Vitrine',
+          onClick: () => (isError ? window.location.reload() : navigate('/')),
+        }}
+      />
     );
   }
 
@@ -264,8 +291,8 @@ export default function ProductDetail() {
             color_name: variant.color_name,
             color_hex: variant.color_hex,
             size_code: variant.size_code,
-            variant_id: variant.variant_id,
-            thumbnail: variant.thumbnail,
+            variant_id: variant.id,
+            thumbnail: variant.selected_thumbnail,
           }
         : undefined,
     );
@@ -279,17 +306,11 @@ export default function ProductDetail() {
         description={product.description || `${product.name} - Brinde Promocional`}
         path={`/produto/${product.id}`}
         ogImage={
-          product.og_image_url
-            ? getCdnUrl(product.og_image_url, 'large')
-            : product.images[0] || ''
+          product.og_image_url ? getCdnUrl(product.og_image_url, 'large') : product.images[0] || ''
         }
         ogType="product"
       />
-      {jsonLd && (
-        <script type="application/ld+json">
-          {JSON.stringify(jsonLd)}
-        </script>
-      )}
+      {jsonLd && <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>}
 
       <ProductStickyHeader
         productId={product.id}
@@ -303,7 +324,7 @@ export default function ProductDetail() {
         product={product}
       />
 
-      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-4 animate-fade-in">
+      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-4 px-3 py-3 sm:px-4 sm:py-4 lg:px-6 xl:px-8">
         <IntelligenceBadges
           badges={intellBadges}
           turnoverScore={intellTurnover}
@@ -318,21 +339,33 @@ export default function ProductDetail() {
           isFavorite={isFavorite}
           onToggleFavorite={handleFavorite}
           viewCount={viewCount}
-          supplierTrust={supplierTrust}
+          supplierTrust={supplierTrust ?? null}
           onOpenPackagingModal={() => setPackagingModalOpen(true)}
           onOpenFutureStock={() => setFutureStockOpen(true)}
           onOpenSupplierComparison={() => setSupplierCompareOpen(true)}
         />
 
         <div className="border-t border-border/60 pt-6 xl:pt-8">
-          <Suspense fallback={<div className="h-48 flex items-center justify-center"><Skeleton className="h-full w-full" /></div>}>
+          <Suspense
+            fallback={
+              <div className="flex h-48 items-center justify-center">
+                <Skeleton className="h-full w-full" />
+              </div>
+            }
+          >
             <SimilarProducts currentProduct={product} />
           </Suspense>
         </div>
 
         {aiCandidates.length > 0 && (
           <div className="border-t border-border/60 pt-6 xl:pt-8">
-            <Suspense fallback={<div className="h-48 flex items-center justify-center"><Skeleton className="h-full w-full" /></div>}>
+            <Suspense
+              fallback={
+                <div className="flex h-48 items-center justify-center">
+                  <Skeleton className="h-full w-full" />
+                </div>
+              }
+            >
               <SmartRecommendations
                 currentProductId={product.id}
                 candidateProducts={aiCandidates}
@@ -378,18 +411,18 @@ export default function ProductDetail() {
             isOpen={packagingModalOpen}
             onClose={() => setPackagingModalOpen(false)}
             packingType={
-              product.packagingContext === 'with_customization'
+              (product.packagingContext === 'with_customization'
                 ? product.repackingType || product.packingType
-                : product.packingType
+                : product.packingType) ?? null
             }
-            packagingContext={product.packagingContext}
-            boxImage={product.boxImage}
-            boxWidthMm={product.boxWidthMm}
-            boxHeightMm={product.boxHeightMm}
-            boxLengthMm={product.boxLengthMm}
-            boxWeightKg={product.boxWeightKg}
-            boxQuantity={product.boxQuantity}
-            boxVolumeCm3={product.boxVolumeCm3}
+            packagingContext={product.packagingContext ?? null}
+            boxImage={product.boxImage ?? null}
+            boxWidthMm={product.boxWidthMm ?? null}
+            boxHeightMm={product.boxHeightMm ?? null}
+            boxLengthMm={product.boxLengthMm ?? null}
+            boxWeightKg={product.boxWeightKg ?? null}
+            boxQuantity={product.boxQuantity ?? null}
+            boxVolumeCm3={product.boxVolumeCm3 ?? null}
           />
         </Suspense>
       </div>
