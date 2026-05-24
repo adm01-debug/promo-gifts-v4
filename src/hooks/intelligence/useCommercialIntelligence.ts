@@ -193,13 +193,13 @@ export function useCommercialKPIs(
         };
       }
 
-      // rls-allow: respeita can_view_all_sales server-side
       let q1 = supabase
+        // rls-allow: respeita can_view_all_sales server-side
         .from('quotes')
         .select('id, total, status, created_at')
         .gte('created_at', since);
-      // rls-allow: respeita can_view_all_sales server-side
       let o1 = supabase
+        // rls-allow: respeita can_view_all_sales server-side
         .from('orders')
         .select('id, total, status, created_at')
         .gte('created_at', since);
@@ -382,15 +382,15 @@ export function useSegmentAnalysis(
           ...new Set((oi || []).map((o) => o.order_id).filter(Boolean)),
         ] as string[];
         if (!orderIds.length) return [];
-        // rls-allow: respeita can_view_all_sales server-side
         const { data: orders } = await supabase
+          // rls-allow: respeita can_view_all_sales server-side
           .from('orders')
           .select('id, client_company, total')
           .in('id', orderIds.slice(0, 200));
         return aggregateSegments(orders || []);
       }
-      // rls-allow: respeita can_view_all_sales server-side
       const { data: orders } = await supabase
+        // rls-allow: respeita can_view_all_sales server-side
         .from('orders')
         .select('client_company, total')
         .gte('created_at', since);
@@ -531,15 +531,15 @@ export function useTopClients(
           ...new Set((oi || []).map((o) => o.order_id).filter(Boolean)),
         ] as string[];
         if (!orderIds.length) return [];
-        // rls-allow: respeita can_view_all_sales server-side
         const { data: orders } = await supabase
+          // rls-allow: respeita can_view_all_sales server-side
           .from('orders')
           .select('id, client_name, client_company, total')
           .in('id', orderIds.slice(0, 200));
         return aggregateClients(orders || []);
       }
-      // rls-allow: respeita can_view_all_sales server-side
       const { data: orders } = await supabase
+        // rls-allow: respeita can_view_all_sales server-side
         .from('orders')
         .select('client_name, client_company, total')
         .gte('created_at', since);
