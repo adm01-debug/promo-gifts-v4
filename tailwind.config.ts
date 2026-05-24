@@ -67,6 +67,17 @@ export default {
           glow: "hsl(var(--orange-glow))",
           foreground: "hsl(var(--orange-foreground))",
         },
+        // Brand aliases (Etapa 17) — enables bg-brand-primary, text-brand-primary,
+        // border-brand-primary, etc. Coexists with the orange.* tokens during the
+        // 3-phase migration (see src/index.css comment). Use brand-primary in all
+        // new code.
+        "brand-primary": {
+          DEFAULT: "hsl(var(--brand-primary))",
+          hover: "hsl(var(--brand-primary-hover))",
+          active: "hsl(var(--brand-primary-active))",
+          glow: "hsl(var(--brand-primary-glow))",
+          foreground: "hsl(var(--brand-primary-foreground))",
+        },
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
@@ -190,6 +201,7 @@ export default {
         "glow-success": "0 0 25px hsl(var(--success) / 0.3)",
         "glow-warning": "0 0 25px hsl(var(--warning) / 0.3)",
         "glow-orange": "var(--shadow-glow)",
+        "glow-brand": "var(--shadow-glow)",
         "glow-cart": "0 0 25px hsl(var(--cart) / 0.4)",
         header: "var(--shadow-header)",
         elevated: "var(--shadow-premium)",
