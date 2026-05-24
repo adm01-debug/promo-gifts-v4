@@ -52,7 +52,7 @@ export function useSimulatorWizard() {
     staleTime: 10 * 60 * 1000,
   });
 
-  useEffect(() => { if (locationsData) dispatch({ type: 'SET_AVAILABLE_LOCATIONS', payload: locationsData }); }, [locationsData]);
+  useEffect(() => { if (locationsData) dispatch({ type: 'SET_AVAILABLE_LOCATIONS', payload: locationsData }); }, [locationsData, dispatch]);
 
   const { fetchComparisonPrices, confirmTechnique } = useWizardPricing({ state, dispatch });
   useWizardPersistence(state);
@@ -61,39 +61,39 @@ export function useSimulatorWizard() {
   const setStep = useCallback((step: WizardStep) => {
     if (canNavigateToStep(step, state)) dispatch({ type: 'SET_STEP', payload: step });
     else toast.warning('Complete os passos anteriores primeiro');
-  }, [state]);
+  }, [state, dispatch]);
 
   const nextStep = useCallback(() => {
     const next = getNextStep(state.currentStep);
     if (next && isStepComplete(state.currentStep, state)) dispatch({ type: 'SET_STEP', payload: next });
-  }, [state]);
+  }, [state, dispatch]);
 
   const previousStep = useCallback(() => {
     const prev = getPreviousStep(state.currentStep);
     if (prev) dispatch({ type: 'SET_STEP', payload: prev });
-  }, [state.currentStep]);
+  }, [state.currentStep, dispatch]);
 
   const selectProduct = useCallback((product: SelectedProduct | null) => {
     dispatch({ type: 'SELECT_PRODUCT', payload: product });
     if (product) dispatch({ type: 'SET_STEP', payload: 'location' });
-  }, []);
+  }, [dispatch]);
 
   const setQuantity = useCallback((quantity: number) => {
     const newQty = Math.max(1, quantity);
     dispatch({ type: 'SET_QUANTITY', payload: newQty });
     if (state.personalizations.length > 0 && newQty !== state.quantity)
       toast.info('Recalculando preços para nova tiragem...', { duration: 2000 });
-  }, [state.personalizations.length, state.quantity]);
+  }, [state.personalizations.length, state.quantity, dispatch]);
 
   const selectLocation = useCallback((location: EngravingLocation | null) => {
     dispatch({ type: 'SELECT_LOCATION', payload: location });
     if (location) dispatch({ type: 'SET_STEP', payload: 'specs' });
-  }, []);
+  }, [dispatch]);
 
-  const updateSpecs = useCallback((specs: Partial<EngravingSpecs>) => { dispatch({ type: 'UPDATE_SPECS', payload: specs }); }, []);
-  const removePersonalization = useCallback((id: string) => { dispatch({ type: 'REMOVE_PERSONALIZATION', payload: id }); toast.info('Gravação removida'); }, []);
-  const removeAllPersonalizations = useCallback(() => { dispatch({ type: 'REMOVE_ALL_PERSONALIZATIONS' }); toast.info('Todas as gravações removidas'); }, []);
-  const editPersonalization = useCallback((index: number) => { dispatch({ type: 'EDIT_PERSONALIZATION', payload: index }); }, []);
+  const updateSpecs = useCallback((specs: Partial<EngravingSpecs>) => { dispatch({ type: 'UPDATE_SPECS', payload: specs }); }, [dispatch]);
+  const removePersonalization = useCallback((id: string) => { dispatch({ type: 'REMOVE_PERSONALIZATION', payload: id }); toast.info('Gravação removida'); }, [dispatch]);
+  const removeAllPersonalizations = useCallback(() => { dispatch({ type: 'REMOVE_ALL_PERSONALIZATIONS' }); toast.info('Todas as gravações removidas'); }, [dispatch]);
+  const editPersonalization = useCallback((index: number) => { dispatch({ type: 'EDIT_PERSONALIZATION', payload: index }); }, [dispatch]);
 
   const startNewPersonalization = useCallback(() => {
     const usedIds = new Set(state.personalizations.map(p => p.location.id));
@@ -101,9 +101,9 @@ export function useSimulatorWizard() {
       toast.warning('Todos os locais já foram personalizados'); return;
     }
     dispatch({ type: 'START_NEW_PERSONALIZATION' });
-  }, [state.personalizations, state.availableLocations]);
+  }, [state.personalizations, state.availableLocations, dispatch]);
 
-  const cancelPersonalization = useCallback(() => { dispatch({ type: 'CANCEL_PERSONALIZATION' }); }, []);
+  const cancelPersonalization = useCallback(() => { dispatch({ type: 'CANCEL_PERSONALIZATION' }); }, [dispatch]);
 
   const duplicatePersonalization = useCallback((sourceId: string, targetLocationId: string) => {
     const targetLocation = state.availableLocations.find(loc => loc.id === targetLocationId);
@@ -113,9 +113,9 @@ export function useSimulatorWizard() {
     }
     dispatch({ type: 'DUPLICATE_PERSONALIZATION', payload: { sourceId, targetLocation } });
     toast.success(`Personalização duplicada para ${targetLocation.locationName}`);
-  }, [state.availableLocations, state.personalizations]);
+  }, [state.availableLocations, state.personalizations, dispatch]);
 
-  const resetWizard = useCallback(() => { dispatch({ type: 'RESET_WIZARD' }); clearSession(); }, []);
+  const resetWizard = useCallback(() => { dispatch({ type: 'RESET_WIZARD' }); clearSession(); }, [dispatch]);
 
   // Computed
   const effectivePrice = useMemo(() => state.selectedProduct?.price || 0, [state.selectedProduct]);

@@ -4,7 +4,7 @@
  */
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { TrendingUp, TrendingDown, Minus, Crown, AlertTriangle } from "lucide-react";
+import { TrendingUp, Minus, Crown, AlertTriangle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type HighlightType = "best" | "worst" | "neutral";

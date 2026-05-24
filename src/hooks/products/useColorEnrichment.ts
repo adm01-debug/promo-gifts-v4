@@ -68,7 +68,9 @@ export function useColorEnrichment({
   // Find product IDs that haven't been enriched yet
   const newProductIds = useMemo(() => {
     if (!hasFilter) return [];
-    return productIds.filter((id) => !enrichedIdsRef.current.has(id));
+    const enrichedIds =
+      lastFilterKeyRef.current === filterKey ? enrichedIdsRef.current : new Set<string>();
+    return productIds.filter((id) => !enrichedIds.has(id));
   }, [productIds, hasFilter, filterKey]);
 
   // Stable key: use count of new IDs + total count
@@ -77,6 +79,12 @@ export function useColorEnrichment({
   const query = useQuery({
     queryKey: ['color-enrichment-batch', filterKey, newProductIds.length, productIds.length],
     queryFn: async (): Promise<Map<string, ColorEnrichmentData>> => {
+      if (lastFilterKeyRef.current !== filterKey) {
+        enrichedIdsRef.current = new Set();
+        accumulatedMapRef.current = new Map();
+        lastFilterKeyRef.current = filterKey;
+      }
+
       if (newProductIds.length === 0) return accumulatedMapRef.current;
 
       // Step 1: Load reference tables (cached after first call)
@@ -116,8 +124,10 @@ export function useColorEnrichment({
           : [];
       }
 
-      const groupsBySlug = new Map(cachedColorGroups!.map((g) => [g.slug, g.id]));
-      const variationsBySlug = new Map(cachedColorVariations!.map((v) => [v.slug, v]));
+      const colorGroupsCache = cachedColorGroups ?? [];
+      const colorVariationsCache = cachedColorVariations ?? [];
+      const groupsBySlug = new Map(colorGroupsCache.map((g) => [g.slug, g.id]));
+      const variationsBySlug = new Map(colorVariationsCache.map((v) => [v.slug, v]));
 
       // Resolve target color_ids
       const targetColorIds = new Set<string>();
@@ -130,7 +140,7 @@ export function useColorEnrichment({
       for (const slug of colorGroups) {
         const groupId = groupsBySlug.get(slug);
         if (groupId) {
-          for (const v of cachedColorVariations!) {
+          for (const v of colorVariationsCache) {
             if (v.group_id === groupId) targetColorIds.add(v.id);
           }
         }
@@ -214,7 +224,7 @@ export function useColorEnrichment({
         if ((img.is_primary || img.is_og_image) && img.url_cdn) {
           if (!primaryImagesByProduct.has(img.product_id))
             primaryImagesByProduct.set(img.product_id, new Set());
-          primaryImagesByProduct.get(img.product_id)!.add(img.url_cdn);
+          primaryImagesByProduct.get(img.product_id)?.add(img.url_cdn);
         }
         if (img.variant_id) {
           if (!imagesByVariantId.has(img.variant_id) || img.is_og_image) {
@@ -233,7 +243,7 @@ export function useColorEnrichment({
       const variantsByProduct = new Map<string, typeof allVariants>();
       for (const v of allVariants) {
         if (!variantsByProduct.has(v.product_id)) variantsByProduct.set(v.product_id, []);
-        variantsByProduct.get(v.product_id)!.push(v);
+        variantsByProduct.get(v.product_id)?.push(v);
       }
 
       let withImage = 0;

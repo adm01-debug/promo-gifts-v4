@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Mail, Loader2, ArrowLeft, Clock, ShieldCheck } from 'lucide-react';
+import { Mail, Loader2, ArrowLeft, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -56,7 +56,7 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
       
       // Navega para a página de confirmação com instruções detalhadas
       navigate('/forgot-password-confirmation');
-    } catch (error) {
+    } catch (_error) {
       toast({
         variant: 'destructive',
         title: 'Erro inesperado',

@@ -17,7 +17,7 @@ describe('AppLogo Visual Consistency', () => {
     expect(iconContainer).toBeInTheDocument();
     const icon = iconContainer?.querySelector('svg');
     expect(icon).toHaveClass('text-primary-foreground');
-    expect(iconContainer).toHaveClass('h-10 w-10');
+    expect(iconContainer).toHaveClass('h-9 w-9');
   });
 
   it('renders light variant with primary background and primary foreground icon', () => {

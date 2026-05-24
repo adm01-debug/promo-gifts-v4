@@ -12,15 +12,6 @@ name: Contract Tests
 
 on:
   pull_request:
-    paths:
-      - 'supabase/functions/_shared/contracts/**'
-      - 'supabase/functions/**/index.ts'
-      - 'tests/contracts/**'
-      - 'scripts/contract-testing.mjs'
-      - 'vitest.config.ts'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.github/workflows/contract-tests.yml'
   workflow_dispatch:
 
 permissions:
@@ -62,9 +53,11 @@ jobs:
     # supabase CLI exige tokens válidos pra subir o stack)
     if: github.event.pull_request.head.repo.full_name == github.repository
     timeout-minutes: 15
+    env:
+      N8N_PRODUCT_WEBHOOK_SECRET: contract-test-secret
+      WEBHOOK_DISPATCHER_SECRET: contract-test-secret
     steps:
       - uses: actions/checkout@v5
-
       - uses: actions/setup-node@v6
         with:
           node-version: '20'
@@ -87,11 +80,22 @@ jobs:
         run: |
           nohup supabase functions serve --no-verify-jwt > /tmp/functions.log 2>&1 &
           echo $! > /tmp/functions.pid
-          # espera readiness
+
           for i in $(seq 1 30); do
-            if curl -sf "$SUPABASE_URL/functions/v1/" -o /dev/null; then break; fi
+            HTTP=$(curl -sS -o /tmp/functions-health.json -w "%{http_code}" \
+              "$SUPABASE_URL/functions/v1/health-check" || true)
+            if [[ "$HTTP" != "000" ]]; then
+              echo "Edge runtime ready via health-check (HTTP $HTTP)"
+              break
+            fi
             sleep 1
           done
+
+          if [[ "${HTTP:-000}" == "000" ]]; then
+            echo "::error::Edge runtime did not become reachable through /functions/v1/health-check"
+            cat /tmp/functions.log || true
+            exit 1
+          fi
 
       - name: Run contract smoke tests
         run: npm run test:contract

@@ -48,6 +48,26 @@ jobs:
           SMOKE_FAIL_ON_DEGRADED: '0'
         run: node scripts/smoke-tests.mjs
 
+  # Job dedicado de typecheck para PRs — fail-fast ANTES do quality.
+  # Com baseline zerado (totalErrors=0), qualquer erro novo bloqueia o merge
+  # em ~3-4min (npm ci + tsc) em vez de ~15min (quality completo).
+  # Roda somente em pull_request para nao duplicar o step ja presente no quality.
+  typecheck-pr-gate:
+    name: TypeScript gate (PR fail-fast)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: TypeScript type check (zero-tolerance baseline)
+        run: npm run typecheck
+
   quality:
     name: Lint, Typecheck & Test
     runs-on: ubuntu-latest
@@ -98,12 +118,14 @@ jobs:
       # ESLint baseline gate — único step de lint: roda ESLint internamente
       # e falha SOMENTE para erros NOVOS vs .eslint-baseline.json.
       # Step informacional separado removido (era redundante e dobrava o tempo de CI).
+      # TypeScript gate ANTES do lint — fail-fast: se houver regressao de tipo,
+      # mata o job sem gastar os ~5min de testes. Com baseline zerado (0 erros),
+      # qualquer erro novo (mesmo 1) falha imediatamente.
+      - name: TypeScript type check (fail-fast gate)
+        run: npm run typecheck
+
       - name: ESLint baseline gate (bloqueia apenas regressões novas)
         run: npm run lint:baseline
-
-
-      - name: TypeScript type check
-        run: npm run typecheck
 
       # hooks já cobertos pelo job dedicado hooks-tests (timeout-minutes: 10).
       # test:strict-ref e test:coverage omitidos aqui — rodam em ref-warning-suite

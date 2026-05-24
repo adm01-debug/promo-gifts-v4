@@ -12,5 +12,15 @@
     "https://esm.sh/@supabase/supabase-js@2.49.1": "npm:@supabase/supabase-js@2.49.1",
     "https://esm.sh/@supabase/supabase-js@2.49.4": "npm:@supabase/supabase-js@2.49.4",
     "https://esm.sh/@supabase/supabase-js@2.95.0": "npm:@supabase/supabase-js@2.95.0"
+  },
+  "lint": {
+    "rules": {
+      "tags": [
+        "recommended"
+      ],
+      "include": [
+        "no-floating-promises"
+      ]
+    }
   }
 }

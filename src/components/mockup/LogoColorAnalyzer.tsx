@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { searchPantone, type PantoneColor } from '@/data/pantone-coated';
+import { searchPantone } from '@/data/pantone-coated';
 import type { DetectedColor } from '@/hooks/simulation';
 
 interface LogoColorAnalyzerProps {

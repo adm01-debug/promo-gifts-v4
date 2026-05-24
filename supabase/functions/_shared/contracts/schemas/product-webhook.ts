@@ -13,6 +13,46 @@
 
 import { z } from "https://esm.sh/zod@3.23.8";
 
+const JsonPrimitive = z.union([z.string(), z.number(), z.boolean(), z.null()]);
+type JsonValue = z.infer<typeof JsonPrimitive> | { [key: string]: JsonValue } | JsonValue[];
+
+const JsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
+  z.union([
+    JsonPrimitive,
+    z.array(JsonValueSchema).max(100),
+    z.record(z.string().max(100), JsonValueSchema).superRefine((obj, ctx) => {
+      if (Object.keys(obj).length > 100) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Object must have at most 100 keys",
+        });
+      }
+    }),
+  ])
+);
+
+const VariationSchema = z.unknown().superRefine((value, ctx) => {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Variation must be an object" });
+    return;
+  }
+  const record = value as Record<string, unknown>;
+  const keys = Object.keys(record);
+  if (keys.length === 0) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Variation must not be empty" });
+  }
+  if (keys.length > 30) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Variation has too many keys" });
+  }
+  const candidateId = record.id ?? record.external_id ?? record.sku;
+  if (typeof candidateId !== "string" || candidateId.trim().length === 0 || candidateId.length > 255) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Variation must include id/external_id/sku as non-empty string up to 255 chars",
+    });
+  }
+});
+
 // ---------------------------------------------------------------------------
 // v1 (compatível com produção)
 // ---------------------------------------------------------------------------
@@ -55,8 +95,23 @@ const ProductV1 = z.object({
     )
     .max(50)
     .optional(),
-  variations: z.array(z.any()).max(200).optional(),
-  metadata: z.record(z.any()).optional(),
+  variations: z.array(VariationSchema).max(200).optional(),
+  metadata: z.unknown().superRefine((value, ctx) => {
+    if (value === undefined) return;
+    const parsed = z.record(z.string().max(100), JsonValueSchema).safeParse(value);
+    if (!parsed.success) {
+      for (const issue of parsed.error.issues) {
+        ctx.addIssue(issue);
+      }
+      return;
+    }
+    if (Object.keys(parsed.data).length > 100) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "metadata must have at most 100 keys",
+      });
+    }
+  }).optional(),
 });
 
 export const ProductWebhookV1 = z.object({
