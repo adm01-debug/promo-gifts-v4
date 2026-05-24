@@ -92,7 +92,7 @@ export function Bitrix24Tab() {
             {isTesting ? "Testando…" : "Testar conexão (crm.contact.fields)"}
           </Button>
           <ConnectionTimelineDrawer type="bitrix24" label="Bitrix24" open={timelineOpen} onOpenChange={setTimelineOpen} />
-          <RefreshFromDbButton onRefreshed={list} />
+          <RefreshFromDbButton onRefreshed={() => void list()} />
           <RetestCooldownSelector className="ml-auto" />
         </div>
         <TestProgressIndicator

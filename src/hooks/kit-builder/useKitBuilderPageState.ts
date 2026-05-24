@@ -3,9 +3,9 @@ import confetti from 'canvas-confetti';
 import { useSearchParams } from 'react-router-dom';
 import { transformToKitItem, useCustomKitPersistence, useDuplicateKitDetector, useKitAutoSave, useKitBuilder, useKitUndoRedo, useTemplateSnapshot } from "@/hooks/kit-builder";
 import { useKitBuilderQuote } from '@/pages/kit-builder/useKitBuilderQuote';
-import { invokeExternalDb, type PromobrindProduct } from '@/lib/external-db';
+import { invokeExternalDb } from '@/lib/external-db';
+import { calculateTotalKitPrice, type ExternalProductForKit } from '@/lib/kit-builder';
 import { logger } from '@/lib/logger';
-import { calculateTotalKitPrice } from '@/lib/kit-builder';
 
 export function useKitBuilderPageState() {
   const [searchParams] = useSearchParams();
@@ -25,6 +25,8 @@ export function useKitBuilderPageState() {
     isLoadingItems,
     boxFilters,
     itemFilters,
+    setBoxFilters,
+    setItemFilters,
     setKitName,
     selectBox,
     clearBox,
@@ -59,7 +61,7 @@ export function useKitBuilderPageState() {
     if (productIdParam && !kitIdParam) {
       (async () => {
         try {
-          const result = await invokeExternalDb<PromobrindProduct>({
+          const result = await invokeExternalDb<ExternalProductForKit>({
             table: 'products',
             operation: 'select',
             filters: { id: productIdParam },
@@ -103,6 +105,8 @@ export function useKitBuilderPageState() {
       isLoadingItems,
       boxFilters,
       itemFilters,
+      setBoxFilters,
+      setItemFilters,
       occasion,
       setOccasion,
     },

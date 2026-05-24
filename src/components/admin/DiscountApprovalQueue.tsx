@@ -105,7 +105,7 @@ export function DiscountApprovalQueue() {
             <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground">
                 Cliente: <strong>{quote?.client_name || quote?.client_company || "—"}</strong>
-                {quote?.total !== null && <> · Total: <strong>R$ {Number(quote.total).toFixed(2)}</strong></>}
+                {quote !== undefined && quote.total !== null && <> · Total: <strong>R$ {Number(quote.total).toFixed(2)}</strong></>}
               </p>
               {hasMarkup && (
                 <div className="text-xs bg-warning/5 border border-warning/20 rounded-md p-2 space-y-0.5">

@@ -369,13 +369,23 @@ function SellerRow({ seller, rank }: { seller: SellerRanking; rank: number }) {
   );
 }
 
+interface ChartDayPayload {
+  quotedQty: number;
+  orderedQty: number;
+  quoteCount: number;
+  orderCount: number;
+  quotedValue: number;
+  orderedValue: number;
+  fullDate?: string;
+}
+
 // #2 fix: SalesTooltip shows fallback when all values are zero
 function SalesTooltip({
   active,
   payload,
 }: {
   active?: boolean;
-  payload?: { payload: Record<string, unknown> }[];
+  payload?: { payload: ChartDayPayload }[];
 }) {
   if (!active || !payload?.length) return null;
   const data = payload[0]?.payload;

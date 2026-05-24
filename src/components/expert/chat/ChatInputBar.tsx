@@ -28,8 +28,9 @@ export function ChatInputBar({
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
     toast.info("🎙️ Ouvindo… fale agora", { duration: 3000 });
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      const transcript = event.results[0][0].transcript;
+    recognition.onresult = (event: Event) => {
+      const speechEvent = event as unknown as { results: ArrayLike<ArrayLike<{ transcript: string }>> };
+      const transcript = speechEvent.results[0][0].transcript;
       if (transcript) {
         setInput(transcript);
         isFromVoiceRef.current = true;

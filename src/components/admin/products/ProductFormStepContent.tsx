@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Loader2, Package, Layers, Info, Wand2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { SectionCard } from './ProductFormHelpers';
+import { SectionCard, type FormSectionProps } from './ProductFormHelpers';
 import { CategoryCascadeSelector } from './CategoryCascadeSelector';
 import { ProductSupplierSection } from './sections/ProductSupplierSection';
 import { ProductInfoSection } from './sections/ProductInfoSection';
@@ -53,7 +53,7 @@ interface FormProps {
   setValue: UseFormSetValue<ProductFormData>;
   watch: UseFormWatch<ProductFormData>;
   errors: FieldErrors<ProductFormData>;
-  numericProps: (name: keyof ProductFormData) => object;
+  numericProps: (name: keyof ProductFormData) => Record<string, unknown>;
 }
 
 interface StepContentProps {
@@ -127,13 +127,13 @@ export function ProductFormStepContent({
             primarySupplierName={formValues.brand || ''}
           />
           <ProductInfoSection
-            {...formProps}
-            skuStatus={skuStatus}
-            duplicateName={duplicateName}
+            {...(formProps as unknown as Parameters<typeof ProductInfoSection>[0])}
+            skuStatus={skuStatus as 'idle' | 'valid' | 'duplicate' | 'checking'}
+            duplicateName={duplicateName ?? ''}
             skuManuallyEdited={skuManuallyEdited}
             onSkuManualEdit={onSkuManualEdit}
           />
-          <ProductDimensionsSection {...formProps} isBoxProduct={isBoxProduct} />
+          <ProductDimensionsSection {...(formProps as unknown as FormSectionProps)} isBoxProduct={isBoxProduct} />
         </>
       );
     case 'commercial':
@@ -155,12 +155,12 @@ export function ProductFormStepContent({
         </>
       );
     case 'packaging':
-      return <ProductPackagingSection {...formProps} />;
+      return <ProductPackagingSection {...(formProps as unknown as FormSectionProps)} />;
     case 'fiscal':
       return (
         <>
           <ProductPriceSection
-            {...formProps}
+            {...(formProps as unknown as FormSectionProps)}
             supplierMarkup={supplierMarkup}
             costPriceDisplay={costPriceDisplay}
             salePriceDisplay={salePriceDisplay}
@@ -168,7 +168,7 @@ export function ProductFormStepContent({
             onSalePriceDisplayChange={onSalePriceDisplayChange}
             onSalePriceManualEdit={onSalePriceManualEdit}
           />
-          <ProductFiscalSection {...formProps} />
+          <ProductFiscalSection {...(formProps as unknown as FormSectionProps)} />
         </>
       );
     case 'content':
@@ -191,7 +191,7 @@ export function ProductFormStepContent({
               {isSeoGenerating ? 'Gerando...' : 'Preencher com IA'}
             </Button>
           </div>
-          <ProductSeoSection {...formProps} />
+          <ProductSeoSection {...(formProps as unknown as FormSectionProps)} />
           <ProductMarketingTextsSection register={register} />
         </>
       );

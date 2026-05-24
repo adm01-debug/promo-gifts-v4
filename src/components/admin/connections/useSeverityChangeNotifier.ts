@@ -114,7 +114,7 @@ export function useSeverityChangeNotifier() {
     const toastId = toast(SEV_TITLE[sev], {
       description: `${headline}\n${reason}`,
       duration: sev === "P0" ? Infinity : 30_000,
-      important: sev === "P0",
+      // important: sev === "P0", // Not in ExternalToast type
       action: {
         label: "Reconhecer",
         onClick: () => {

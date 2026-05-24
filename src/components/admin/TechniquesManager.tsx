@@ -34,7 +34,7 @@ export function TechniquesManager() {
           isLoading={isLoading}
           isRemoving={isRemoving}
           onToggleStatus={toggleStatus}
-          onUpdate={update}
+          onUpdate={update as (params: Record<string, unknown>) => void}
           onRemove={remove}
         />
         <div className="mt-4 pt-4 border-t text-xs text-muted-foreground flex items-center gap-2">

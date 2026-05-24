@@ -99,7 +99,11 @@ export function useCustomizationPricing() {
   const calc = usePrecoCalculation();
 
   return {
-    priceTables: [], // Legado - não mais usado
+    priceTables: [] as Array<{
+      table_code: string;
+      customization_type_name: string;
+      price_by_color?: boolean | null;
+    }>, // Legado - não mais usado
     techniques: calc.techniques,
     standardQuantities: calc.standardQuantities,
     isLoading: calc.isLoading,

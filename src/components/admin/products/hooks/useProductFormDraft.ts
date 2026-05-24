@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { type UseFormSetValue } from 'react-hook-form';
 import { toast } from 'sonner';
-import type { ProductFormData } from './ProductFormSchema';
+import type { ProductFormData } from '../ProductFormSchema';
 
 export function useProductFormDraft(
   productId: string | undefined,

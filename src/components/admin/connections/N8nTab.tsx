@@ -80,7 +80,7 @@ export function N8nTab() {
               {isTesting ? "Testando…" : "Testar /healthz"}
             </Button>
             <ConnectionTimelineDrawer type="n8n" label="n8n" open={timelineOpen} onOpenChange={setTimelineOpen} />
-            <RefreshFromDbButton onRefreshed={list} />
+            <RefreshFromDbButton onRefreshed={() => void list()} />
             <RetestCooldownSelector className="ml-auto" />
           </div>
           <TestProgressIndicator

@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
+import { type createClient } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+
+// Tables not yet in generated schema — bypass type checking via raw client cast
+const db = supabase as unknown as ReturnType<typeof createClient>;
 
 interface AllowedIP {
   id: string;
@@ -23,7 +27,7 @@ export function useAllowedIPs(targetUserId?: string) {
   const fetchCurrentIP = useCallback(async () => {
     try {
       const response = await fetch('https://api.ipify.org?format=json');
-      const data = await response.json();
+      const data = (await response.json()) as { ip: string };
       setCurrentIP(data.ip);
     } catch (error) {
       console.error('Error fetching current IP:', error);
@@ -38,14 +42,14 @@ export function useAllowedIPs(targetUserId?: string) {
     }
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('user_allowed_ips')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setAllowedIPs(data || []);
+      setAllowedIPs((data || []) as AllowedIP[]);
     } catch (error) {
       console.error('Error fetching allowed IPs:', error);
     } finally {
@@ -58,86 +62,93 @@ export function useAllowedIPs(targetUserId?: string) {
     fetchAllowedIPs();
   }, [fetchCurrentIP, fetchAllowedIPs]);
 
-  const addIP = useCallback(async (
-    ipAddress: string, 
-    label?: string
-  ): Promise<{ success: boolean; error?: string }> => {
-    if (!userId || !user) {
-      return { success: false, error: 'Usuário não autenticado' };
-    }
+  const addIP = useCallback(
+    async (ipAddress: string, label?: string): Promise<{ success: boolean; error?: string }> => {
+      if (!userId || !user) {
+        return { success: false, error: 'Usuário não autenticado' };
+      }
 
-    try {
-      const { error } = await supabase
-        .from('user_allowed_ips')
-        .insert({
+      try {
+        const { error } = await db.from('user_allowed_ips').insert({
           user_id: userId,
           ip_address: ipAddress,
           label: label || null,
           created_by: user.id,
-        });
+        } as never);
 
-      if (error) {
-        if (error.code === '23505') {
-          return { success: false, error: 'Este IP já está cadastrado' };
+        if (error) {
+          const e = error as { code?: string };
+          if (e.code === '23505') {
+            return { success: false, error: 'Este IP já está cadastrado' };
+          }
+          throw error;
         }
-        throw error;
+
+        await fetchAllowedIPs();
+        return { success: true };
+      } catch (error: unknown) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Erro desconhecido',
+        };
       }
+    },
+    [userId, user, fetchAllowedIPs],
+  );
 
-      await fetchAllowedIPs();
-      return { success: true };
-    } catch (error: unknown) {
-      return { success: false, error: error instanceof Error ? error.message : 'Erro desconhecido' };
-    }
-  }, [userId, user, fetchAllowedIPs]);
+  const removeIP = useCallback(
+    async (ipId: string): Promise<{ success: boolean; error?: string }> => {
+      try {
+        const { error } = await db.from('user_allowed_ips').delete().eq('id', ipId);
 
-  const removeIP = useCallback(async (
-    ipId: string
-  ): Promise<{ success: boolean; error?: string }> => {
-    try {
-      const { error } = await supabase
-        .from('user_allowed_ips')
-        .delete()
-        .eq('id', ipId);
+        if (error) throw error;
 
-      if (error) throw error;
+        await fetchAllowedIPs();
+        return { success: true };
+      } catch (error: unknown) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Erro desconhecido',
+        };
+      }
+    },
+    [fetchAllowedIPs],
+  );
 
-      await fetchAllowedIPs();
-      return { success: true };
-    } catch (error: unknown) {
-      return { success: false, error: error instanceof Error ? error.message : 'Erro desconhecido' };
-    }
-  }, [fetchAllowedIPs]);
+  const toggleIP = useCallback(
+    async (ipId: string, isActive: boolean): Promise<{ success: boolean; error?: string }> => {
+      try {
+        const { error } = await db
+          .from('user_allowed_ips')
+          .update({ is_active: isActive })
+          .eq('id', ipId);
 
-  const toggleIP = useCallback(async (
-    ipId: string, 
-    isActive: boolean
-  ): Promise<{ success: boolean; error?: string }> => {
-    try {
-      const { error } = await supabase
-        .from('user_allowed_ips')
-        .update({ is_active: isActive })
-        .eq('id', ipId);
+        if (error) throw error;
 
-      if (error) throw error;
+        await fetchAllowedIPs();
+        return { success: true };
+      } catch (error: unknown) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Erro desconhecido',
+        };
+      }
+    },
+    [fetchAllowedIPs],
+  );
 
-      await fetchAllowedIPs();
-      return { success: true };
-    } catch (error: unknown) {
-      return { success: false, error: error instanceof Error ? error.message : 'Erro desconhecido' };
-    }
-  }, [fetchAllowedIPs]);
+  const isIPAllowed = useCallback(
+    (ip: string): boolean => {
+      // Se não há IPs configurados, permitir todos
+      if (allowedIPs.length === 0) return true;
 
-  const isIPAllowed = useCallback((ip: string): boolean => {
-    // Se não há IPs configurados, permitir todos
-    if (allowedIPs.length === 0) return true;
-    
-    // Verificar se o IP está na lista de permitidos ativos
-    return allowedIPs.some(
-      allowedIP => allowedIP.is_active && allowedIP.ip_address === ip
-    );
-  }, [allowedIPs]);
+      // Verificar se o IP está na lista de permitidos ativos
+      return allowedIPs.some((allowedIP) => allowedIP.is_active && allowedIP.ip_address === ip);
+    },
+    [allowedIPs],
+  );
 
-  const hasIPRestriction = allowedIPs.filter(ip => ip.is_active).length > 0;
+  const hasIPRestriction = allowedIPs.filter((ip) => ip.is_active).length > 0;
 
   return {
     allowedIPs,

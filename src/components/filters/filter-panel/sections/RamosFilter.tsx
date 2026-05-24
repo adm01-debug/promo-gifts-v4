@@ -6,18 +6,19 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { RamoAtividadeBadge } from '@/components/ramo-atividade/RamoAtividadeBadge';
 import { RamoAtividadeGroupAccordion } from '@/components/ramo-atividade/RamoAtividadeGroupAccordion';
 import type { FilterState } from '../types';
+import type { RamoAtividadeGroup, SegmentoComplete } from '@/types/ramo-atividade';
 
 interface RamosFilterProps {
   filters: FilterState;
   onFilterChange: (filters: FilterState) => void;
   ramoSearch: string;
   setRamoSearch: (v: string) => void;
-  ramoGroups: Record<string, unknown>[];
-  allSegmentos: Record<string, unknown>[];
+  ramoGroups: RamoAtividadeGroup[];
+  allSegmentos: SegmentoComplete[];
   ramosLoading: boolean;
   totalRamoGroups: number;
   totalRamoSegmentos: number;
-  getSegmentosForRamo: (slug: string) => unknown[];
+  getSegmentosForRamo: (slug: string) => SegmentoComplete[];
   productCountsByRamo: { ramoCounts: Map<string, number>; segmentoCounts: Map<string, number> };
 }
 

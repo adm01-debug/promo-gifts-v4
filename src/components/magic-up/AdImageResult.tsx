@@ -22,7 +22,7 @@ import {
 import { cn } from '@/lib/utils';
 import {
   type MagicUpCopyPack,
-  type MagicUpCurationStatus,
+  type MagicUpCurationStatus as MagicUpCurationStatusValue,
   type MagicUpQualityDiagnosis,
   type MagicUpQualityScore,
   buildQualityDiagnosis,
@@ -70,8 +70,8 @@ interface AdImageResultProps {
   onToggleHistoryFavorite?: (id: string, current: boolean) => void;
   qualityScore?: MagicUpQualityScore;
   qualityDiagnosis?: MagicUpQualityDiagnosis;
-  curationStatus?: MagicUpCurationStatus;
-  onSetCurationStatus?: (status: MagicUpCurationStatus) => void;
+  curationStatus?: MagicUpCurationStatusValue;
+  onSetCurationStatus?: (status: MagicUpCurationStatusValue) => void;
   onRunQualityScore?: () => void;
   copyPack?: MagicUpCopyPack;
   aspectRatio?: string;

@@ -15,12 +15,17 @@ export interface VariantWithStock {
 }
 
 export interface StockEntry {
+  id: string;
   variantId: string;
   colorName: string;
   colorHex: string | null;
   expectedDate: string;
   expectedQuantity: number;
   thumbnail: string | null;
+  supplierSku?: string;
+  currentStock?: number;
+  reservedStock?: number;
+  entryIndex?: number;
 }
 
 export interface ColorSummary {
@@ -53,13 +58,14 @@ export function useProductVariantsWithStock(productId: string | undefined) {
       }>({
         table: 'product_variants',
         operation: 'select',
-        select: 'id, product_id, sku, color_code, color_name, color_hex, stock_quantity, selected_thumbnail',
+        select:
+          'id, product_id, sku, color_code, color_name, color_hex, stock_quantity, selected_thumbnail',
         filters: { product_id: productId, is_active: true },
         limit: 200,
       });
 
       // Map to VariantWithStock (next_entry fields come from variant_supplier_sources if available)
-      return result.records.map(v => ({
+      return result.records.map((v) => ({
         ...v,
         next_entry_date: null,
         next_entry_quantity: null,
@@ -76,15 +82,23 @@ export function useProductVariantsWithStock(productId: string | undefined) {
 export function processStockEntries(variants: VariantWithStock[]): StockEntry[] {
   const entries: StockEntry[] = [];
 
+  const entryCountByVariant = new Map<string, number>();
   for (const v of variants) {
     if (v.next_entry_date && v.next_entry_quantity && v.next_entry_quantity > 0) {
+      const idx = (entryCountByVariant.get(v.id) ?? 0) + 1;
+      entryCountByVariant.set(v.id, idx);
       entries.push({
+        id: `${v.id}-${idx}`,
         variantId: v.id,
         colorName: v.color_name || 'Sem cor',
         colorHex: v.color_hex,
         expectedDate: v.next_entry_date,
         expectedQuantity: v.next_entry_quantity,
         thumbnail: v.selected_thumbnail,
+        supplierSku: v.sku,
+        currentStock: v.stock_quantity ?? 0,
+        reservedStock: 0,
+        entryIndex: idx,
       });
     }
   }
@@ -97,7 +111,7 @@ export function processStockEntries(variants: VariantWithStock[]): StockEntry[] 
  */
 export function calculateColorSummary(
   variants: VariantWithStock[],
-  stockEntries: StockEntry[]
+  stockEntries: StockEntry[],
 ): ColorSummary[] {
   const colorMap = new Map<string, ColorSummary>();
 

@@ -14,6 +14,7 @@ import { QUOTE_STATUS_CONFIG } from '@/lib/quote-status-config';
 interface Client {
   id: string;
   name: string;
+  nome_fantasia?: string;
 }
 
 const statusConfig = Object.fromEntries(
@@ -110,7 +111,7 @@ export function useQuotesDashboard() {
         break;
     }
 
-    let filtered = quotes.filter((q) => new Date(q.created_at) >= startDate);
+    let filtered = quotes.filter((q) => new Date(q.created_at ?? 0) >= startDate);
     if (selectedClientId !== 'all')
       filtered = filtered.filter((q) => q.client_id === selectedClientId);
 
@@ -132,7 +133,7 @@ export function useQuotesDashboard() {
       averageResponseTime =
         withResponse.reduce((s, q) => {
           if (!q.client_response_at) return s;
-          return s + differenceInHours(new Date(q.client_response_at), new Date(q.created_at));
+          return s + differenceInHours(new Date(q.client_response_at), new Date(q.created_at ?? 0));
         }, 0) / withResponse.length;
     }
 
@@ -151,7 +152,7 @@ export function useQuotesDashboard() {
 
     const monthlyGroups = filtered.reduce(
       (a, q) => {
-        const m = format(new Date(q.created_at), 'MMM', { locale: ptBR });
+        const m = format(new Date(q.created_at ?? 0), 'MMM', { locale: ptBR });
         if (!a[m]) a[m] = { month: m, total: 0, approved: 0, rejected: 0, value: 0 };
         a[m].total++;
         if (q.status === 'approved') {
@@ -276,7 +277,7 @@ export function useQuotesDashboard() {
         startY: startY + 4,
         head: [['Orçamento', 'Status', 'Data', 'Valor']],
         body: recentResponses.map((q) => [
-          q.quote_number || q.id,
+          q.quote_number || q.id || '',
           statusConfig[q.status]?.label || q.status,
           q.client_response_at ? format(new Date(q.client_response_at), 'dd/MM/yyyy HH:mm') : '-',
           formatCurrency(q.total || 0),

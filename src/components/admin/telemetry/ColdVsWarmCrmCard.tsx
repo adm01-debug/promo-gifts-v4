@@ -45,7 +45,7 @@ const FN_URL = SUPABASE_URL ? `${SUPABASE_URL}/functions/v1/crm-db-bridge?op=dia
 const POLL_MS = 30_000;
 
 function fmtMs(v: number | null | undefined): string {
-  if (v === null) return '—';
+  if (v === null || v === undefined) return '—';
   if (v < 1000) return `${Math.round(v)} ms`;
   return `${(v / 1000).toFixed(2)} s`;
 }
@@ -58,7 +58,7 @@ function fmtAge(ms: number): string {
 }
 
 function tone(ms: number | null | undefined, warn: number, bad: number): string {
-  if (ms === null) return 'text-muted-foreground';
+  if (ms === null || ms === undefined) return 'text-muted-foreground';
   if (ms >= bad) return 'text-destructive';
   if (ms >= warn) return 'text-warning';
   return 'text-foreground';

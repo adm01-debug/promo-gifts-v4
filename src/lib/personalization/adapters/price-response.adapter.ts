@@ -13,7 +13,11 @@
  */
 
 import type { CustomizationPriceFlat } from '@/hooks/simulation';
-import { detectPriceSchema, warnUnknownSchemaOnce, type PriceSchemaVersion } from './schema-detection';
+import {
+  detectPriceSchema,
+  warnUnknownSchemaOnce,
+  type PriceSchemaVersion,
+} from './schema-detection';
 import { validateRpcPayload } from '@/lib/personalization/rpc-validator';
 import { PRICE_CONTRACT } from '@/lib/personalization/rpc-contracts';
 
@@ -50,202 +54,130 @@ function normalizeV7Aliases(resp: Record<string, unknown>): Record<string, unkno
   // Markup nested object — também aceita renomeação
   const markup = out.markup as Record<string, unknown> | undefined;
   if (markup && typeof markup === 'object') {
-    if ('unit_cost' in markup && !('custo_unitario' in markup)) markup.custo_unitario = markup.unit_cost;
-    if ('setup_cost_table' in markup && !('custo_setup_tabela' in markup)) markup.custo_setup_tabela = markup.setup_cost_table;
-    if ('markup_percent' in markup && !('markup_pct' in markup)) markup.markup_pct = markup.markup_percent;
+    if ('unit_cost' in markup && !('custo_unitario' in markup))
+      markup.custo_unitario = markup.unit_cost;
+    if ('setup_cost_table' in markup && !('custo_setup_tabela' in markup))
+      markup.custo_setup_tabela = markup.setup_cost_table;
+    if ('markup_percent' in markup && !('markup_pct' in markup))
+      markup.markup_pct = markup.markup_percent;
   }
   // Detalhes nested
   const detalhes = out.detalhes as Record<string, unknown> | undefined;
   if (detalhes && typeof detalhes === 'object') {
-    if ('charges_per_color' in detalhes && !('cobra_por_cor' in detalhes)) detalhes.cobra_por_cor = detalhes.charges_per_color;
-    if ('max_colors' in detalhes && !('max_cores' in detalhes)) detalhes.max_cores = detalhes.max_colors;
+    if ('charges_per_color' in detalhes && !('cobra_por_cor' in detalhes))
+      detalhes.cobra_por_cor = detalhes.charges_per_color;
+    if ('max_colors' in detalhes && !('max_cores' in detalhes))
+      detalhes.max_cores = detalhes.max_colors;
   }
   // Faixa nested
   const faixa = out.faixa as Record<string, unknown> | undefined;
   if (faixa && typeof faixa === 'object') {
     if ('min_qty' in faixa && !('qtd_min' in faixa)) faixa.qtd_min = faixa.min_qty;
     if ('max_qty' in faixa && !('qtd_max' in faixa)) faixa.qtd_max = faixa.max_qty;
-    if ('production_days' in faixa && !('prazo_dias' in faixa)) faixa.prazo_dias = faixa.production_days;
+    if ('production_days' in faixa && !('prazo_dias' in faixa))
+      faixa.prazo_dias = faixa.production_days;
   }
   return out;
-}
-
-// ============================================
-// FORMATOS DE PAYLOAD (tipagem de fronteira)
-// ============================================
-//
-// Os parsers recebem objetos vindos de JSON (`Record<string, unknown>`).
-// Em vez de espalhar `as any` por cada acesso aninhado, descrevemos aqui a
-// forma estrutural esperada de cada formato. Todos os campos são opcionais
-// porque o payload é, por contrato, parcialmente confiável — os defaults
-// (`?? ''`, `?? 0`, `?? false`, `?? null`) é que garantem o tipo canônico.
-
-/** Sub-objetos do formato v5.9-nested. */
-interface NestedArea {
-  id?: string;
-  code?: string;
-  name?: string;
-}
-interface NestedTabela {
-  id?: string;
-  codigo_tabela?: string;
-  nome?: string;
-  grupo_tecnica?: string;
-  cobra_por_cor?: boolean;
-  max_cores?: number;
-}
-interface NestedParametros {
-  quantidade?: number;
-  num_cores?: number;
-}
-interface NestedPrecos {
-  preco_unitario_final?: number;
-  subtotal_pecas?: number;
-  faturamento_minimo_gravacao?: number;
-  aplica_minimo?: boolean;
-  total_final?: number;
-  markup_percent?: number;
-}
-interface NestedCustos {
-  custo_base_unitario?: number;
-  custo_unitario_total?: number;
-  custo_setup_base?: number;
-}
-interface NestedFaixa {
-  ordem?: number;
-  quantidade_minima?: number;
-  quantidade_maxima?: number;
-  prazo_dias?: number | null;
-}
-interface NestedPriceResponse {
-  success?: boolean;
-  area?: NestedArea;
-  tabela?: NestedTabela;
-  parametros?: NestedParametros;
-  precos?: NestedPrecos;
-  custos?: NestedCustos;
-  faixa?: NestedFaixa;
-  codigo_orcamento?: string;
-  redirected_from?: string;
-  redirected_to?: string;
-}
-
-/** Sub-objetos do formato v6.x-flat (e v7 após normalização de aliases). */
-interface FlatMarkup {
-  custo_unitario?: number;
-  custo_setup_tabela?: number;
-  markup_pct?: number;
-}
-interface FlatDetalhes {
-  cobra_por_cor?: boolean;
-  max_cores?: number;
-}
-interface FlatFaixa {
-  faixa_id?: string | number;
-  qtd_min?: number;
-  qtd_max?: number;
-  prazo_dias?: number | null;
-}
-interface FlatPriceResponse {
-  success?: boolean;
-  area_id?: string;
-  area_code?: string;
-  nome_tabela?: string;
-  tabela_id?: string;
-  /** Código da tabela (string) — no flat o campo chama-se `tabela`. */
-  tabela?: string;
-  grupo_tecnica?: string;
-  codigo_orcamento?: string;
-  quantidade?: number;
-  num_cores?: number;
-  preco_unitario?: number;
-  preco_por_unidade?: number;
-  valor_gravacao?: number;
-  setup_total?: number;
-  total_cobrado?: number;
-  prazo_dias?: number | null;
-  markup?: FlatMarkup;
-  detalhes?: FlatDetalhes;
-  faixa?: FlatFaixa;
-  redirected_from?: string;
-  redirected_to?: string;
 }
 
 // ============================================
 // PARSERS POR FORMATO
 // ============================================
 
-function parseNested(resp: NestedPriceResponse): CustomizationPriceFlat {
+type AnyRec = Record<string, unknown>;
+
+const isDefined = (v: unknown): v is NonNullable<unknown> => v !== null && v !== undefined;
+const str = (v: unknown): string => (isDefined(v) ? String(v) : '');
+const num = (v: unknown): number => (typeof v === 'number' ? v : Number(v) || 0);
+const bool = (v: unknown): boolean => Boolean(v);
+const numOrNull = (v: unknown): number | null =>
+  isDefined(v) ? (typeof v === 'number' ? v : Number(v) || 0) : null;
+const asObj = (v: unknown): AnyRec | undefined =>
+  isDefined(v) && typeof v === 'object' && !Array.isArray(v) ? (v as AnyRec) : undefined;
+
+function parseNested(resp: AnyRec): CustomizationPriceFlat {
+  const area = asObj(resp.area);
+  const tabela = asObj(resp.tabela);
+  const parametros = asObj(resp.parametros);
+  const precos = asObj(resp.precos);
+  const custos = asObj(resp.custos);
+  const faixa = asObj(resp.faixa);
+  const tabelaCodigo = str(tabela?.codigo_tabela);
   return {
     success: !!resp.success,
-    area_id: resp.area?.id ?? '',
-    area_code: resp.area?.code ?? '',
-    area_name: resp.area?.name ?? '',
-    tabela_id: resp.tabela?.id ?? '',
-    tabela_codigo: resp.tabela?.codigo_tabela ?? '',
-    tabela_codigo_curto:
-      (resp.tabela?.codigo_tabela ?? '').split('-')[0] || resp.tabela?.codigo_tabela || '',
-    technique: resp.tabela?.nome ?? '',
-    grupo_tecnica: resp.tabela?.grupo_tecnica ?? '',
-    codigo_orcamento: resp.codigo_orcamento ?? '',
-    quantity: resp.parametros?.quantidade ?? 0,
-    num_cores: resp.parametros?.num_cores ?? 1,
-    unit_price: resp.precos?.preco_unitario_final ?? 0,
-    subtotal_pecas: resp.precos?.subtotal_pecas ?? 0,
-    faturamento_minimo_gravacao: resp.precos?.faturamento_minimo_gravacao ?? 0,
-    minimum_applied: resp.precos?.aplica_minimo ?? false,
-    total_price: resp.precos?.total_final ?? 0,
-    cost_base_unit: resp.custos?.custo_base_unitario ?? 0,
-    cost_unit_total: resp.custos?.custo_unitario_total ?? 0,
-    cost_setup: resp.custos?.custo_setup_base ?? 0,
-    markup_percent: resp.precos?.markup_percent ?? 0,
-    margin_percent: resp.precos?.markup_percent ?? 0,
-    price_by_color: resp.tabela?.cobra_por_cor ?? false,
-    max_cores: resp.tabela?.max_cores ?? 1,
-    production_days: resp.faixa?.prazo_dias ?? null,
-    tier_used: resp.faixa?.ordem ?? 0,
-    tier_min_qty: resp.faixa?.quantidade_minima ?? 0,
-    tier_max_qty: resp.faixa?.quantidade_maxima ?? 0,
-    redirected_from: resp.redirected_from,
-    redirected_to: resp.redirected_to,
+    area_id: str(area?.id),
+    area_code: str(area?.code),
+    area_name: str(area?.name),
+    tabela_id: str(tabela?.id),
+    tabela_codigo: tabelaCodigo,
+    tabela_codigo_curto: tabelaCodigo.split('-')[0] || tabelaCodigo,
+    technique: str(tabela?.nome),
+    grupo_tecnica: str(tabela?.grupo_tecnica),
+    codigo_orcamento: str(resp.codigo_orcamento),
+    quantity: num(parametros?.quantidade),
+    num_cores: num(parametros?.num_cores) || 1,
+    unit_price: num(precos?.preco_unitario_final),
+    subtotal_pecas: num(precos?.subtotal_pecas),
+    faturamento_minimo_gravacao: num(precos?.faturamento_minimo_gravacao),
+    minimum_applied: bool(precos?.aplica_minimo),
+    total_price: num(precos?.total_final),
+    cost_base_unit: num(custos?.custo_base_unitario),
+    cost_unit_total: num(custos?.custo_unitario_total),
+    cost_setup: num(custos?.custo_setup_base),
+    markup_percent: num(precos?.markup_percent),
+    margin_percent: num(precos?.markup_percent),
+    price_by_color: bool(tabela?.cobra_por_cor),
+    max_cores: num(tabela?.max_cores) || 1,
+    production_days: numOrNull(faixa?.prazo_dias),
+    tier_used: num(faixa?.ordem),
+    tier_min_qty: num(faixa?.quantidade_minima),
+    tier_max_qty: num(faixa?.quantidade_maxima),
+    redirected_from: resp.redirected_from as string | undefined,
+    redirected_to: resp.redirected_to as string | undefined,
   };
 }
 
-function parseFlat(resp: FlatPriceResponse): CustomizationPriceFlat {
-  const tabelaCode = resp.tabela ?? '';
-  const unitPrice = resp.preco_unitario ?? resp.preco_por_unidade ?? 0;
-  const valorGravacao = resp.valor_gravacao ?? unitPrice * (resp.quantidade ?? 0);
+function parseFlat(resp: AnyRec): CustomizationPriceFlat {
+  const markup = asObj(resp.markup);
+  const detalhes = asObj(resp.detalhes);
+  const faixa = asObj(resp.faixa);
+  const tabelaCode = str(resp.tabela);
+  const unitPrice = num(resp.preco_unitario ?? resp.preco_por_unidade);
+  const quantidade = num(resp.quantidade);
+  const rawValorGravacao = isDefined(resp.valor_gravacao) ? num(resp.valor_gravacao) : 0;
+  const valorGravacao = isDefined(resp.valor_gravacao) ? rawValorGravacao : unitPrice * quantidade;
+  const setupTotal = num(resp.setup_total ?? markup?.custo_setup_tabela);
   return {
-    success: resp.success ?? true,
-    area_id: resp.area_id ?? '',
-    area_code: resp.area_code ?? tabelaCode,
-    area_name: resp.nome_tabela ?? '',
-    tabela_id: resp.tabela_id ?? '',
+    success: isDefined(resp.success) ? bool(resp.success) : true,
+    area_id: str(resp.area_id),
+    area_code: str(resp.area_code) || tabelaCode,
+    area_name: str(resp.nome_tabela),
+    tabela_id: str(resp.tabela_id),
     tabela_codigo: tabelaCode,
     tabela_codigo_curto: tabelaCode.split('-')[0] || tabelaCode,
-    technique: resp.nome_tabela ?? '',
-    grupo_tecnica: resp.grupo_tecnica ?? '',
-    codigo_orcamento: resp.codigo_orcamento ?? `${tabelaCode}-${resp.quantidade ?? 0}`,
-    quantity: resp.quantidade ?? 0,
-    num_cores: resp.num_cores ?? 1,
+    technique: str(resp.nome_tabela),
+    grupo_tecnica: str(resp.grupo_tecnica),
+    codigo_orcamento: str(resp.codigo_orcamento) || `${tabelaCode}-${quantidade}`,
+    quantity: quantidade,
+    num_cores: num(resp.num_cores) || 1,
     unit_price: unitPrice,
     subtotal_pecas: valorGravacao,
-    faturamento_minimo_gravacao: resp.setup_total ?? resp.markup?.custo_setup_tabela ?? 0,
-    minimum_applied: (resp.setup_total ?? 0) > (resp.valor_gravacao ?? 0),
-    total_price: resp.total_cobrado ?? resp.valor_gravacao ?? 0,
-    cost_base_unit: resp.markup?.custo_unitario ?? 0,
-    cost_unit_total: resp.markup?.custo_unitario ?? 0,
-    cost_setup: resp.markup?.custo_setup_tabela ?? 0,
-    markup_percent: resp.markup?.markup_pct ?? 0,
-    margin_percent: resp.markup?.markup_pct ?? 0,
-    price_by_color: resp.detalhes?.cobra_por_cor ?? false,
-    max_cores: resp.detalhes?.max_cores ?? 1,
-    production_days: resp.faixa?.prazo_dias ?? resp.prazo_dias ?? null,
-    tier_used: resp.faixa?.faixa_id ? 1 : 0,
-    tier_min_qty: resp.faixa?.qtd_min ?? 0,
-    tier_max_qty: resp.faixa?.qtd_max ?? 0,
-    redirected_from: resp.redirected_from,
-    redirected_to: resp.redirected_to,
+    faturamento_minimo_gravacao: num(resp.setup_total ?? markup?.custo_setup_tabela),
+    minimum_applied: setupTotal > rawValorGravacao,
+    total_price: num(resp.total_cobrado ?? resp.valor_gravacao),
+    cost_base_unit: num(markup?.custo_unitario),
+    cost_unit_total: num(markup?.custo_unitario),
+    cost_setup: num(markup?.custo_setup_tabela),
+    markup_percent: num(markup?.markup_pct),
+    margin_percent: num(markup?.markup_pct),
+    price_by_color: bool(detalhes?.cobra_por_cor),
+    max_cores: num(detalhes?.max_cores) || 1,
+    production_days: numOrNull(faixa?.prazo_dias ?? resp.prazo_dias),
+    tier_used: isDefined(faixa?.faixa_id) ? 1 : 0,
+    tier_min_qty: num(faixa?.qtd_min),
+    tier_max_qty: num(faixa?.qtd_max),
+    redirected_from: resp.redirected_from as string | undefined,
+    redirected_to: resp.redirected_to as string | undefined,
   };
 }
 
@@ -275,14 +207,14 @@ export function adaptPriceResponseWithMeta(
   const version = detectPriceSchema(resp);
   switch (version) {
     case 'v5.9-nested':
-      return { flat: parseNested(resp as unknown as NestedPriceResponse), schemaVersion: version };
+      return { flat: parseNested(resp as AnyRec), schemaVersion: version };
     case 'v6.x-flat':
-      return { flat: parseFlat(resp as unknown as FlatPriceResponse), schemaVersion: version };
+      return { flat: parseFlat(resp as AnyRec), schemaVersion: version };
     case 'v7-new':
-      return { flat: parseFlat(normalizeV7Aliases(resp) as unknown as FlatPriceResponse), schemaVersion: version };
+      return { flat: parseFlat(normalizeV7Aliases(resp) as AnyRec), schemaVersion: version };
     default: {
       warnUnknownSchemaOnce('price-response', resp);
-      return { flat: parseFlat(resp as unknown as FlatPriceResponse), schemaVersion: 'unknown' };
+      return { flat: parseFlat(resp as AnyRec), schemaVersion: 'unknown' };
     }
   }
 }

@@ -65,7 +65,7 @@ const FIELD_MAP: DataSourceMap[] = [
 ];
 
 export function DataSourceDebugTab() {
-  const { secrets, list, loading: secretsLoading } = useSecretsManager();
+  const { secrets, list, isLoading: secretsLoading } = useSecretsManager();
   const [extConns, setExtConns] = useState<ExternalConnRow[] | null>(null);
   const [extLoading, setExtLoading] = useState(false);
   const [extError, setExtError] = useState<string | null>(null);

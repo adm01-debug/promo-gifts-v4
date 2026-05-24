@@ -1,11 +1,11 @@
 /**
  * External Database Hook - Ponto de entrada principal.
- * 
+ *
  * Modularizado em:
  * - src/lib/external-db/types.ts    → Interfaces de tipos
  * - src/lib/external-db/tables.ts   → Constantes de tabelas/views
  * - src/lib/external-db/invoke.ts   → Retry logic e error handling
- * 
+ *
  * Este arquivo contém o hook principal e re-exporta tudo para compatibilidade.
  */
 import { useState, useCallback } from 'react';
@@ -18,7 +18,7 @@ export { extractFunctionErrorMessage } from '@/lib/external-db/invoke';
 
 import type { ExternalTable } from '@/lib/external-db/tables';
 import { invokeWithRetry, extractFunctionErrorMessage } from '@/lib/external-db/invoke';
-import { logger } from "@/lib/logger";
+import { logger } from '@/lib/logger';
 import type {
   ExternalProduct,
   ExternalProductImage,
@@ -89,113 +89,135 @@ export function useExternalDatabase<T = Record<string, unknown>>(tableName: Exte
     error: null,
   });
 
-  const invoke = useCallback(async (
-    operation: Operation,
-    options?: QueryOptions & { data?: Partial<T> }
-  ): Promise<T | QueryResult<T> | null> => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
+  const invoke = useCallback(
+    async (
+      operation: Operation,
+      options?: QueryOptions & { data?: Partial<T> },
+    ): Promise<T | QueryResult<T> | null> => {
+      setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
-    try {
-      const { data, error } = await invokeWithRetry({
-        table: tableName,
-        operation,
-        data: options?.data,
-        filters: options?.filters,
-        id: options?.id,
-        select: options?.select,
-        orderBy: options?.orderBy,
-        limit: options?.limit,
-        offset: options?.offset,
-      });
+      try {
+        const { data, error } = await invokeWithRetry({
+          table: tableName,
+          operation,
+          data: options?.data,
+          filters: options?.filters,
+          id: options?.id,
+          select: options?.select,
+          orderBy: options?.orderBy,
+          limit: options?.limit,
+          offset: options?.offset,
+        });
 
-      if (error) {
-        const message = await extractFunctionErrorMessage(error);
-        throw new Error(message);
+        if (error) {
+          const message = await extractFunctionErrorMessage(error);
+          throw new Error(message);
+        }
+
+        const bridgeData = data as { success?: boolean; error?: string; data?: unknown } | null;
+
+        if (!bridgeData?.success) {
+          throw new Error(bridgeData?.error || 'Erro desconhecido');
+        }
+
+        if (operation === 'select') {
+          const result = (bridgeData?.data ?? null) as QueryResult<T>;
+          setState((prev) => ({
+            ...prev,
+            data: result.records,
+            count: result.count,
+            isLoading: false,
+          }));
+          return result;
+        }
+        setState((prev) => ({ ...prev, isLoading: false }));
+        return (bridgeData?.data ?? null) as T;
+      } catch (err) {
+        const errorMessage = await extractFunctionErrorMessage(err);
+        setState((prev) => ({ ...prev, error: errorMessage, isLoading: false }));
+        toast.error(errorMessage);
+        return null;
       }
+    },
+    [tableName],
+  );
 
-      if (!data?.success) {
-        throw new Error(data?.error || 'Erro desconhecido');
-      }
+  const fetchAll = useCallback(
+    async (options?: Omit<QueryOptions, 'id'>) => {
+      return invoke('select', options) as Promise<QueryResult<T> | null>;
+    },
+    [invoke],
+  );
 
-      if (operation === 'select') {
-        const result = data.data as QueryResult<T>;
-        setState(prev => ({ 
-          ...prev, 
-          data: result.records, 
-          count: result.count,
-          isLoading: false 
-        }));
-        return result;
-      } 
-        setState(prev => ({ ...prev, isLoading: false }));
-        return data.data as T;
-      
-    } catch (err) {
-      const errorMessage = await extractFunctionErrorMessage(err);
-      setState(prev => ({ ...prev, error: errorMessage, isLoading: false }));
-      toast.error(errorMessage);
-      return null;
-    }
-  }, [tableName]);
-
-  const fetchAll = useCallback(async (options?: Omit<QueryOptions, 'id'>) => {
-    return invoke('select', options) as Promise<QueryResult<T> | null>;
-  }, [invoke]);
-
-  const fetchOne = useCallback(async (id: string, select?: string) => {
-    const result = await invoke('select', { id, select, limit: 1 });
-    if (result && 'records' in result) {
-      return result.records[0] || null;
-    }
-    return null;
-  }, [invoke]);
-
-  const create = useCallback(async (data: Partial<T>) => {
-    const result = await invoke('insert', { data });
-    if (!result) return null;
-
-    if ('records' in result) {
-      const created = result.records[0] || null;
-      if (created) {
-        toast.success('Registro criado com sucesso!');
-        return created as T;
+  const fetchOne = useCallback(
+    async (id: string, select?: string) => {
+      const result = await invoke('select', { id, select, limit: 1 });
+      if (result && typeof result === 'object' && 'records' in result) {
+        return (result as QueryResult<T>).records[0] || null;
       }
       return null;
-    }
+    },
+    [invoke],
+  );
 
-    toast.success('Registro criado com sucesso!');
-    return result as T;
-  }, [invoke]);
+  const create = useCallback(
+    async (data: Partial<T>) => {
+      const result = await invoke('insert', { data });
+      if (!result) return null;
 
-  const update = useCallback(async (id: string, data: Partial<T>) => {
-    const result = await invoke('update', { id, data });
-    if (!result) return null;
-
-    if ('records' in result) {
-      const updated = result.records[0] || null;
-      if (updated) {
-        toast.success('Registro atualizado com sucesso!');
-        return updated as T;
+      if (typeof result === 'object' && 'records' in result) {
+        const created = (result as QueryResult<T>).records[0] || null;
+        if (created) {
+          toast.success('Registro criado com sucesso!');
+          return created as T;
+        }
+        return null;
       }
-      return null;
-    }
 
-    toast.success('Registro atualizado com sucesso!');
-    return result as T;
-  }, [invoke]);
+      toast.success('Registro criado com sucesso!');
+      return result as T;
+    },
+    [invoke],
+  );
 
-  const remove = useCallback(async (id: string) => {
-    const result = await invoke('delete', { id });
-    if (result) {
-      toast.success('Registro excluído com sucesso!');
-      return true;
-    }
-    return false;
-  }, [invoke]);
+  const update = useCallback(
+    async (id: string, data: Partial<T>) => {
+      const result = await invoke('update', { id, data });
+      if (!result) return null;
 
-  const refetch = useCallback(async (options?: Omit<QueryOptions, 'id'>) => {
-    return fetchAll(options);
-  }, [fetchAll]);
+      if (typeof result === 'object' && 'records' in result) {
+        const updated = (result as QueryResult<T>).records[0] || null;
+        if (updated) {
+          toast.success('Registro atualizado com sucesso!');
+          return updated as T;
+        }
+        return null;
+      }
+
+      toast.success('Registro atualizado com sucesso!');
+      return result as T;
+    },
+    [invoke],
+  );
+
+  const remove = useCallback(
+    async (id: string) => {
+      const result = await invoke('delete', { id });
+      if (result) {
+        toast.success('Registro excluído com sucesso!');
+        return true;
+      }
+      return false;
+    },
+    [invoke],
+  );
+
+  const refetch = useCallback(
+    async (options?: Omit<QueryOptions, 'id'>) => {
+      return fetchAll(options);
+    },
+    [fetchAll],
+  );
 
   return {
     ...state,
