@@ -4,7 +4,7 @@
  * v1: prompt 6-2000 chars. Sunset 2026-10-31.
  * v2: strict + idempotency_key.
  */
-import { z } from "../_zod.ts";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 export const KitAiBuilderV1 = z.object({
   prompt: z

@@ -137,7 +137,7 @@ export function SecretField({
                   tooltip={buildUpdatedTooltip(
                     status.updated_at,
                     status.updated_by_email,
-                    status.updated_by_id,
+                    status.updated_by,
                   )}
                 />
               )}

@@ -7,26 +7,26 @@
  * - Defesa em profundidade: filtro explícito por seller_id sobre RLS existente.
  * - Chave de agregação: client_company || client_name || client_email (lower).
  */
-import { useMemo, useState, useCallback } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
-import { Users, ArrowRight, FileText, Package, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { useMemo, useState, useCallback } from 'react';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { Users, ArrowRight, FileText, Package, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   WidgetFiltersBar,
   EMPTY_FILTERS,
   matchesSearch,
   type WidgetFiltersValue,
-} from "./widget-filters/WidgetFiltersBar";
-import { useInfiniteScroll } from "./widget-filters/useInfiniteScroll";
+} from './widget-filters/WidgetFiltersBar';
+import { useInfiniteScroll } from './widget-filters/useInfiniteScroll';
 
 const PAGE_SIZE = 100;
 
-type Source = "quote" | "order";
+type Source = 'quote' | 'order';
 
 interface ClientRow {
   key: string;
@@ -42,26 +42,49 @@ interface ClientRow {
 }
 
 const SOURCE_OPTIONS = [
-  { value: "quote", label: "Com propostas" },
-  { value: "order", label: "Com pedidos" },
+  { value: 'quote', label: 'Com propostas' },
+  { value: 'order', label: 'Com pedidos' },
 ];
 
 function aggregate(
-  quotes: Array<{ client_name: string | null; client_company: string | null; client_email: string | null; client_phone: string | null; total: number | null; updated_at: string }>,
-  orders: Array<{ client_name: string | null; client_company: string | null; client_email: string | null; client_phone: string | null; total: number | null; updated_at: string }>,
+  quotes: Array<{
+    client_name: string | null;
+    client_company: string | null;
+    client_email: string | null;
+    client_phone: string | null;
+    total: number | null;
+    updated_at: string;
+  }>,
+  orders: Array<{
+    client_name: string | null;
+    client_company: string | null;
+    client_email: string | null;
+    client_phone: string | null;
+    total: number | null;
+    updated_at: string;
+  }>,
 ): ClientRow[] {
   const map = new Map<string, ClientRow>();
   const upsert = (
     src: Source,
-    row: { client_name: string | null; client_company: string | null; client_email: string | null; client_phone: string | null; total: number | null; updated_at: string },
+    row: {
+      client_name: string | null;
+      client_company: string | null;
+      client_email: string | null;
+      client_phone: string | null;
+      total: number | null;
+      updated_at: string;
+    },
   ) => {
-    const id = (row.client_company || row.client_name || row.client_email || "").trim().toLowerCase();
+    const id = (row.client_company || row.client_name || row.client_email || '')
+      .trim()
+      .toLowerCase();
     if (!id) return;
     let r = map.get(id);
     if (!r) {
       r = {
         key: id,
-        name: row.client_name || row.client_company || row.client_email || "Cliente",
+        name: row.client_name || row.client_company || row.client_email || 'Cliente',
         company: row.client_company,
         email: row.client_email,
         phone: row.client_phone,
@@ -74,7 +97,7 @@ function aggregate(
       map.set(id, r);
     }
     r.sources.add(src);
-    if (src === "quote") r.quotes += 1;
+    if (src === 'quote') r.quotes += 1;
     else r.orders += 1;
     r.total += Number(row.total ?? 0);
     if (row.updated_at > r.lastInteraction) r.lastInteraction = row.updated_at;
@@ -82,47 +105,41 @@ function aggregate(
     r.phone = r.phone || row.client_phone;
     r.company = r.company || row.client_company;
   };
-  for (const q of quotes) upsert("quote", q);
-  for (const o of orders) upsert("order", o);
-  return Array.from(map.values()).sort((a, b) =>
-    a.lastInteraction < b.lastInteraction ? 1 : -1,
-  );
+  for (const q of quotes) upsert('quote', q);
+  for (const o of orders) upsert('order', o);
+  return Array.from(map.values()).sort((a, b) => (a.lastInteraction < b.lastInteraction ? 1 : -1));
 }
 
 export function MyClientsWidget() {
   const { user } = useAuth();
+  const userId = user?.id;
   const navigate = useNavigate();
   const [filters, setFilters] = useState<WidgetFiltersValue>(EMPTY_FILTERS);
 
   // Paginação cursor sobre quotes; orders sempre carrega o lote inicial e
   // depois acompanha a janela conforme novos quotes chegam (best-effort:
   // usamos um cursor compartilhado por updated_at).
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-  } = useInfiniteQuery({
-    queryKey: ["my-clients-widget", user?.id],
-    enabled: !!user?.id,
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
+    queryKey: ['my-clients-widget', userId],
+    enabled: !!userId,
     staleTime: 60_000,
     initialPageParam: null as string | null,
     queryFn: async ({ pageParam }) => {
+      if (!userId) return { quotes: [], orders: [] };
       const baseQuotes = supabase
-        .from("quotes")
-        .select("client_name, client_company, client_email, client_phone, total, updated_at")
-        .eq("seller_id", user!.id)
-        .order("updated_at", { ascending: false })
+        .from('quotes')
+        .select('client_name, client_company, client_email, client_phone, total, updated_at')
+        .eq('seller_id', userId)
+        .order('updated_at', { ascending: false })
         .limit(PAGE_SIZE);
       const baseOrders = supabase
-        .from("orders")
-        .select("client_name, client_company, client_email, client_phone, total, updated_at")
-        .eq("seller_id", user!.id)
-        .order("updated_at", { ascending: false })
+        .from('orders')
+        .select('client_name, client_company, client_email, client_phone, total, updated_at')
+        .eq('seller_id', userId)
+        .order('updated_at', { ascending: false })
         .limit(PAGE_SIZE);
-      const qQuery = pageParam ? baseQuotes.lt("updated_at", pageParam) : baseQuotes;
-      const oQuery = pageParam ? baseOrders.lt("updated_at", pageParam) : baseOrders;
+      const qQuery = pageParam ? baseQuotes.lt('updated_at', pageParam) : baseQuotes;
+      const oQuery = pageParam ? baseOrders.lt('updated_at', pageParam) : baseOrders;
       const [qRes, oRes] = await Promise.all([qQuery, oQuery]);
       if (qRes.error) throw qRes.error;
       if (oRes.error) throw oRes.error;
@@ -147,8 +164,8 @@ export function MyClientsWidget() {
 
   const filtered = useMemo(() => {
     return clients.filter((c) => {
-      if (filters.status === "quote" && !c.sources.has("quote")) return false;
-      if (filters.status === "order" && !c.sources.has("order")) return false;
+      if (filters.status === 'quote' && !c.sources.has('quote')) return false;
+      if (filters.status === 'order' && !c.sources.has('order')) return false;
       return matchesSearch([c.name, c.company, c.email, c.phone], filters.search);
     });
   }, [clients, filters]);
@@ -165,17 +182,17 @@ export function MyClientsWidget() {
 
   return (
     <Card>
-      <CardHeader className="pb-3 space-y-3">
+      <CardHeader className="space-y-3 pb-3">
         <div className="flex items-center justify-between gap-2">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium">
             <Users className="h-4 w-4 text-primary" />
             Meus Clientes
           </CardTitle>
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate("/orcamentos")}
-            className="text-xs gap-1"
+            onClick={() => navigate('/orcamentos')}
+            className="gap-1 text-xs"
           >
             Ver propostas <ArrowRight className="h-3 w-3" />
           </Button>
@@ -189,39 +206,37 @@ export function MyClientsWidget() {
         />
       </CardHeader>
       <CardContent className="space-y-2">
-        <div className="max-h-[420px] overflow-y-auto space-y-2 pr-1">
+        <div className="max-h-[420px] space-y-2 overflow-y-auto pr-1">
           {filtered.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-4 text-center">
+            <p className="py-4 text-center text-xs text-muted-foreground">
               Nenhum cliente encontrado com os filtros atuais.
             </p>
           ) : (
             filtered.map((c) => (
               <div
                 key={c.key}
-                className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/50 transition-colors"
+                className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-secondary/50"
               >
-                <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-primary/10">
                   <Users className="h-4 w-4 text-primary" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    {c.company || c.name}
-                  </p>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{c.company || c.name}</p>
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     {c.company && c.name && c.name !== c.company && (
-                      <span className="truncate max-w-[160px]">{c.name}</span>
+                      <span className="max-w-[160px] truncate">{c.name}</span>
                     )}
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 gap-1">
+                    <Badge variant="outline" className="gap-1 px-1.5 py-0 text-[10px]">
                       <FileText className="h-2.5 w-2.5" /> {c.quotes}
                     </Badge>
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 gap-1">
+                    <Badge variant="outline" className="gap-1 px-1.5 py-0 text-[10px]">
                       <Package className="h-2.5 w-2.5" /> {c.orders}
                     </Badge>
                   </div>
                 </div>
                 {c.total > 0 && (
-                  <p className="text-sm font-semibold text-primary flex-shrink-0">
-                    {c.total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  <p className="flex-shrink-0 text-sm font-semibold text-primary">
+                    {c.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                   </p>
                 )}
               </div>
@@ -237,8 +252,8 @@ export function MyClientsWidget() {
             </div>
           )}
         </div>
-        <p className="text-[10px] text-muted-foreground text-center pt-1">
-          {filtered.length} cliente(s) · {clients.length} carregado(s){hasNextPage ? "+" : ""}.
+        <p className="pt-1 text-center text-[10px] text-muted-foreground">
+          {filtered.length} cliente(s) · {clients.length} carregado(s){hasNextPage ? '+' : ''}.
         </p>
       </CardContent>
     </Card>

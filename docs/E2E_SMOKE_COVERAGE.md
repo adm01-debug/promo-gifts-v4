@@ -1,6 +1,6 @@
 # Auditoria de cobertura — Smoke E2E
 
-> **Gerado automaticamente** por `scripts/e2e-smoke-coverage-doc.mjs` em 2026-04-27.
+> **Gerado automaticamente** por `scripts/e2e-smoke-coverage-doc.mjs` em 2026-05-24.
 > **Não edite à mão** — a fonte de verdade é `e2e/routes/_catalog.ts` + `SMOKE_COVERAGE` em `e2e/flows/20-all-features-smoke.spec.ts`.
 
 ## Resumo
@@ -8,9 +8,9 @@
 | Métrica | Valor |
 |---|---|
 | Rotas no catálogo | **57** |
-| Rotas `smoke: true` | **32** |
+| Rotas `smoke: true` | **30** |
 | Features autenticadas cobertas | **30** |
-| Smoke público (sem auth) | **2** |
+| Smoke público (sem auth) | **0** |
 
 Suíte: [`e2e/flows/20-all-features-smoke.spec.ts`](../e2e/flows/20-all-features-smoke.spec.ts) · Project Playwright: `chromium-smoke` (workers=1, retries=0).
 
@@ -55,8 +55,7 @@ Ordem do array `SMOKE_COVERAGE`. Numeração bate com os títulos `NN · Nome` n
 
 | # | Feature | Descrição | Rota |
 |---|---|---|---|
-| `90` | `login` | Tela de login | `/login` |
-| `91` | `reset-password` | Recuperação de senha | `/reset-password` |
+
 
 ## Governança
 

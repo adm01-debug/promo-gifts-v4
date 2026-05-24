@@ -5,29 +5,29 @@ import {
   AlertDialogTitle,
   AlertDialogDescription,
   AlertDialogFooter,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { ShieldCheck, KeyRound, Loader2 } from "lucide-react";
-import { motion } from "framer-motion";
-import { SecretMaskedDiff } from "./SecretMaskedDiff";
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { ShieldCheck, KeyRound, Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { SecretMaskedDiff } from './SecretMaskedDiff';
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   secretName: string;
   /** When true → "atualizar" wording + diff preview; when false → "configurar" wording */
-  isUpdate: boolean;
-  currentSuffix: string | null;
-  currentLength: number | null;
-  newSuffix: string;
-  newLength: number;
-  loading: boolean;
+  isUpdate?: boolean;
+  currentSuffix?: string | null;
+  currentLength?: number | null;
+  newSuffix?: string;
+  newLength?: number;
+  isLoading: boolean;
   /**
    * Mensagem de erro retornada pelo backend após uma tentativa fracassada.
    * Quando preenchida, o modal permanece aberto e exibe o aviso para o
    * usuário corrigir/repetir sem precisar reabrir o fluxo.
    */
-  errorMessage?: string | null;
+  error?: string | null;
   onConfirm: () => Promise<void> | void;
 }
 
@@ -45,33 +45,33 @@ export function SaveSecretConfirmDialog({
   currentLength,
   newSuffix,
   newLength,
-  loading,
-  errorMessage,
+  isLoading,
+  error,
   onConfirm,
 }: Props) {
   const handleOpenChange = (next: boolean) => {
-    if (loading) return;
+    if (isLoading) return;
     onOpenChange(next);
   };
 
-  const verb = isUpdate ? "Atualizar" : "Salvar";
+  const verb = isUpdate ? 'Atualizar' : 'Salvar';
   const Icon = isUpdate ? KeyRound : ShieldCheck;
 
   return (
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
       <AlertDialogContent
         className="max-w-lg"
-        onEscapeKeyDown={(e) => loading && e.preventDefault()}
+        onEscapeKeyDown={(e) => isLoading && e.preventDefault()}
       >
         <AlertDialogHeader>
           <div className="flex items-start gap-4">
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              className="flex items-center justify-center w-12 h-12 rounded-full flex-shrink-0 bg-primary/10"
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-primary/10"
             >
-              <Icon className="w-6 h-6 text-primary" />
+              <Icon className="h-6 w-6 text-primary" />
             </motion.div>
             <div className="space-y-1">
               <AlertDialogTitle className="text-lg">
@@ -79,74 +79,71 @@ export function SaveSecretConfirmDialog({
               </AlertDialogTitle>
               <AlertDialogDescription>
                 {isUpdate
-                  ? "Você está prestes a sobrescrever o valor atual desta credencial sensível."
-                  : "Você está prestes a configurar esta credencial sensível pela primeira vez."}
+                  ? 'Você está prestes a sobrescrever o valor atual desta credencial sensível.'
+                  : 'Você está prestes a configurar esta credencial sensível pela primeira vez.'}
               </AlertDialogDescription>
             </div>
           </div>
         </AlertDialogHeader>
 
-        {isUpdate ? (
-          <SecretMaskedDiff
-            currentSuffix={currentSuffix}
-            currentLength={currentLength}
-            newSuffix={newSuffix}
-            newLength={newLength}
-            className="my-2"
-          />
-        ) : (
-          <SecretMaskedDiff
-            currentSuffix={null}
-            currentLength={null}
-            newSuffix={newSuffix}
-            newLength={newLength}
-            newOnly
-            className="my-2"
-          />
-        )}
+        {newSuffix !== undefined &&
+          (isUpdate ? (
+            <SecretMaskedDiff
+              currentSuffix={currentSuffix ?? null}
+              currentLength={currentLength ?? null}
+              newSuffix={newSuffix}
+              newLength={newLength ?? newSuffix.length}
+              className="my-2"
+            />
+          ) : (
+            <SecretMaskedDiff
+              currentSuffix={null}
+              currentLength={null}
+              newSuffix={newSuffix}
+              newLength={newLength ?? newSuffix.length}
+              newOnly
+              className="my-2"
+            />
+          ))}
 
         {/* Impact */}
         <div className="rounded-lg border border-border bg-muted/30 p-4">
-          <h4 className="text-sm font-medium mb-2">Isto irá:</h4>
+          <h4 className="mb-2 text-sm font-medium">Isto irá:</h4>
           <ul className="space-y-1.5 text-sm text-muted-foreground">
             <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
+              <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
               {isUpdate
-                ? "Substituir imediatamente o valor em uso por todas as integrações"
-                : "Ativar esta credencial para todas as integrações dependentes"}
+                ? 'Substituir imediatamente o valor em uso por todas as integrações'
+                : 'Ativar esta credencial para todas as integrações dependentes'}
             </li>
             <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
+              <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
               Registrar a operação no histórico de auditoria
             </li>
             <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
+              <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
               {isUpdate
-                ? "Invalidar o valor anterior — quem ainda usar a chave antiga falhará"
-                : "Disparar verificação automática da nova chave"}
+                ? 'Invalidar o valor anterior — quem ainda usar a chave antiga falhará'
+                : 'Disparar verificação automática da nova chave'}
             </li>
           </ul>
         </div>
 
-        {errorMessage && (
+        {error && (
           <div
             role="alert"
-            className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive animate-in fade-in duration-200"
+            className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive duration-200 animate-in fade-in"
           >
-            {errorMessage}
+            {error}
           </div>
         )}
 
         <AlertDialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={loading}
-          >
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
             Cancelar
           </Button>
-          <Button onClick={() => onConfirm()} disabled={loading}>
-            {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+          <Button onClick={() => onConfirm()} disabled={isLoading}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Sim, {verb.toLowerCase()}
           </Button>
         </AlertDialogFooter>

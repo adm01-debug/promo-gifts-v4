@@ -2,11 +2,12 @@
 // subscribed to that event. HMAC signs payload with webhook secret. Retries
 // with backoff and logs each attempt to webhook_deliveries.
 //
-// AUTORIZAÇÃO (Onda 1 hardening, 2026-05-14):
+// AUTORIZAÇÃO (SEC-003 fail-closed, 2026-05-22):
 //   - Modo A: header `x-dispatcher-secret: <SECRET>` (triggers DB, RPCs, cron)
 //   - Modo B: `Authorization: Bearer <user JWT>` + role >= supervisor (frontend)
 //   - test_mode e replay_delivery_id exigem Modo B (operação sensível)
-//   - Retrocompat: se WEBHOOK_DISPATCHER_SECRET não estiver setado, aceita anônimo com warning
+//   - Se WEBHOOK_DISPATCHER_SECRET não estiver configurado em vault/env,
+//     authorizeDispatcher devolve 503 service_misconfigured (fail-closed).
 //
 // Ver: supabase/functions/_shared/dispatcher-auth.ts
 import { crypto } from "https://deno.land/std@0.224.0/crypto/mod.ts";

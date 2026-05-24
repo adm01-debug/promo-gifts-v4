@@ -4,7 +4,7 @@
  * v1: regex permissivo (mesmo do handler atual). Sunset 2026-12-31.
  * v2: regex IPv4/IPv6/CIDR rigoroso + strict.
  */
-import { z } from "../_zod.ts";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 // V1 = mesmo regex permissivo do handler atual em produção (compat exato)
 const IP_REGEX_V1 = /^[0-9a-fA-F:.\/]{3,45}$/;

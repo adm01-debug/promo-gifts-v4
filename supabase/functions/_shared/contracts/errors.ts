@@ -23,7 +23,7 @@
  * Toda Edge Function que aceita body externo DEVE responder erros nesse formato.
  */
 
-import { z } from "./_zod.ts";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 // ---------------------------------------------------------------------------
 // Tipos

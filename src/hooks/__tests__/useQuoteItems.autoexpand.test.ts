@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useQuoteItems } from "@/hooks/quotes/useQuoteItems";
+import { useQuoteItems } from '@/hooks/quotes/useQuoteItems';
+
+type QuoteProduct = Parameters<ReturnType<typeof useQuoteItems>['addProductWithColor']>[0];
 
 describe('useQuoteItems Auto-Expand', () => {
   beforeEach(() => {
@@ -16,9 +18,7 @@ describe('useQuoteItems Auto-Expand', () => {
       sku: 'SKU-1',
       price: 10,
       images: [],
-      priceUpdatedAt: null,
-      priceFreshnessThresholdDays: null,
-    } as any;
+    } satisfies QuoteProduct;
 
     act(() => {
       result.current.addProductWithColor(mockProduct, null);
@@ -41,16 +41,16 @@ describe('useQuoteItems Auto-Expand', () => {
       sku: 'SKU-1',
       price: 10,
       images: [],
-    } as any;
+    } satisfies QuoteProduct;
 
     // Add first time
     act(() => {
       result.current.addProductWithColor(mockProduct, null);
     });
-    
+
     // Explicitly collapse it
     act(() => {
-        result.current.toggleExpanded(0);
+      result.current.toggleExpanded(0);
     });
     expect(result.current.expandedItems.has(0)).toBe(false);
 

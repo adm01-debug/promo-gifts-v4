@@ -29,13 +29,14 @@ const SESSION_KEY = '__pg_prewarm_done__';
 
 /**
  * Acorda o crm-db-bridge em paralelo (cold start ~80–250ms).
- * Mesma estratégia: ping leve via OPTIONS, falha silenciosa.
+ * Usa o endpoint de ping sem I/O no CRM para não transformar prewarm em erro 500
+ * quando credenciais externas ainda estão propagando/recarregando no isolate.
  */
 async function pingCrmBridge(): Promise<{ ok: boolean; ms: number }> {
   const t0 = performance.now();
   try {
     const { error } = await supabase.functions.invoke('crm-db-bridge', {
-      body: { table: 'companies', operation: 'select', select: 'id', limit: 1, countMode: 'none' },
+      body: { operation: 'ping' },
     });
     return { ok: !error, ms: Math.round(performance.now() - t0) };
   } catch {

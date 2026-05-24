@@ -13,7 +13,7 @@ import { resolve } from 'node:path';
  */
 describe('FiltersPage / Sidebar duplication guard', () => {
   const root = resolve(__dirname, '../..', '..');
-  const filtersSrc = readFileSync(resolve(root, 'src/pages/FiltersPage.tsx'), 'utf8');
+  const filtersSrc = readFileSync(resolve(root, 'src/pages/products/FiltersPage.tsx'), 'utf8');
   const appRoutesSrc = readFileSync(resolve(root, 'src/routes/AppRoutes.tsx'), 'utf8');
 
   it('FiltersPage não deve importar nem renderizar MainLayout', () => {

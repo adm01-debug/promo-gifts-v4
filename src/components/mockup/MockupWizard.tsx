@@ -113,7 +113,7 @@ export const MockupWizard = forwardRef<HTMLDivElement, MockupWizardProps>(functi
             style={{ width: `${progressPercent * 0.9}%` }}
           />
 
-          {steps.map((step, index) => {
+          {steps.map((step, _index) => {
             // Allow clicking completed steps or the current active step's next
             const isClickable = onStepClick && (step.isCompleted || step.id <= currentStep);
             return (

@@ -4,7 +4,7 @@
  * v1: shape permissivo do handler. Sunset 2026-12-31.
  * v2: strict + email obrigatório + confirm:true + idempotency_key.
  */
-import { z } from "../_zod.ts";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 const SellerScopeEnum = z.enum(["self", "explicit"]);
 

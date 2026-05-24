@@ -12,6 +12,7 @@ vi.mock('@/hooks/admin', () => ({
     logLoginAttempt: vi.fn(),
     fetchCurrentIP: vi.fn().mockResolvedValue('1.2.3.4'),
   }),
+  useDevGate: () => ({ isAllowed: false, isDev: false }),
 }));
 
 // Mocking useAuth - we need to wrap with AuthProvider or mock the hook
@@ -65,14 +66,14 @@ describe('Auth Page', () => {
     expect(passwordInput).toHaveAttribute('type', 'password');
   });
 
-  it('shows forgot password form when link is clicked', () => {
+  it('shows forgot password form when link is clicked', async () => {
     renderAuth();
     const forgotLink = screen.getByTestId('login-forgot-link');
 
     fireEvent.click(forgotLink);
 
-    // Check for forgot password form elements
-    expect(screen.getByText(/Esqueceu sua senha\?/i)).toBeInTheDocument();
+    // ForgotPasswordForm monta via AnimatePresence (assíncrono) — aguardar.
+    expect(await screen.findByText(/Esqueceu sua senha\?/i)).toBeInTheDocument();
 
     expect(screen.queryByTestId('login-password-input')).not.toBeInTheDocument();
   });

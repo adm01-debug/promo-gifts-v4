@@ -104,10 +104,9 @@ export async function fetchProductImagesBatch(
     result.records.forEach((image) => {
       if (!productIdSet.has(image.product_id)) return;
 
-      if (!imagesByProduct.has(image.product_id)) {
-        imagesByProduct.set(image.product_id, []);
-      }
-      imagesByProduct.get(image.product_id)!.push(image);
+      const productImages = imagesByProduct.get(image.product_id) ?? [];
+      imagesByProduct.set(image.product_id, productImages);
+      productImages.push(image);
     });
 
     return imagesByProduct;

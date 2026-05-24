@@ -4,7 +4,7 @@
  * v1: body opcional; default "cron" no handler. Sunset 2026-11-30.
  * v2: triggered_by obrigatório.
  */
-import { z } from "../_zod.ts";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 export const OwnershipAuditV1 = z.object({
   triggered_by: z.string().max(64).optional(),

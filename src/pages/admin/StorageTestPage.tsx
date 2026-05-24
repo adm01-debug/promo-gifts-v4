@@ -19,10 +19,11 @@ export default function StorageTestPage() {
   
   const bucketName = "test-external-storage";
 
-  const fetchFiles = async () => {
-    setLoadingFiles(true);
+  const fetchFiles = async (isCancelled: () => boolean = () => false) => {
+    if (!isCancelled()) setLoadingFiles(true);
     try {
       const { data, error } = await supabase.storage.from(bucketName).list();
+      if (isCancelled()) return;
       if (error) {
         if (error.message.includes("does not exist")) {
            toast({
@@ -36,6 +37,7 @@ export default function StorageTestPage() {
       }
       setFiles(data || []);
     } catch (error: any) {
+      if (isCancelled()) return;
       console.error("Error fetching files:", error);
       toast({
         title: "Erro ao buscar arquivos",
@@ -43,12 +45,17 @@ export default function StorageTestPage() {
         variant: "destructive",
       });
     } finally {
-      setLoadingFiles(false);
+      if (!isCancelled()) setLoadingFiles(false);
     }
   };
 
   useEffect(() => {
-    fetchFiles();
+    // Guarda de cancelamento: evita setState após o unmount.
+    let cancelled = false;
+    fetchFiles(() => cancelled);
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -243,7 +250,7 @@ export default function StorageTestPage() {
                       Listagem do bucket <code>{bucketName}</code>.
                     </CardDescription>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={fetchFiles} disabled={loadingFiles} className="text-white/60 hover:text-white">
+                  <Button variant="ghost" size="sm" onClick={() => fetchFiles()} disabled={loadingFiles} className="text-white/60 hover:text-white">
                     Atualizar Lista
                   </Button>
                 </div>

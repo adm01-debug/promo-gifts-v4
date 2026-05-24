@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { createClientLogger } from "@/lib/telemetry/structuredLogger";
 import { checkLoginAllowed, recordFailedAttempt, clearLoginAttempts } from "@/lib/auth/rate-limit";
 import { toast } from "sonner";
-import { authDebug, authDebugError, summarizeSession, summarizeUser } from "@/lib/auth/auth-debug";
 import { getRandomGreeting, getHighestRole, isSupervisorOrAbove as checkIsSupervisorOrAbove } from "@/lib/auth/auth-utils";
 import { authService } from "@/services/authService";
 import { useProfileRoles } from "@/hooks/auth/useProfileRoles";

@@ -4,7 +4,7 @@
  * v1: todos campos opcionais (compat com body vazio). Sunset 2026-10-31.
  * v2: strict, UUIDs validados.
  */
-import { z } from "../_zod.ts";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 export const MarketIntelligenceInsightsV1 = z.object({
   days: z.number().int().min(1).max(365).optional(),

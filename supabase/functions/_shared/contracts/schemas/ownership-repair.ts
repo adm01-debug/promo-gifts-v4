@@ -4,7 +4,7 @@
  * v1: todos opcionais. Sunset 2026-11-30.
  * v2: dry_run obrigatório + idempotency_key.
  */
-import { z } from "../_zod.ts";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 export const OwnershipRepairV1 = z.object({
   report_id: z.string().max(100).optional(),

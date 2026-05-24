@@ -30,9 +30,9 @@ jobs:
     continue-on-error: true
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
 
@@ -48,6 +48,26 @@ jobs:
           SMOKE_FAIL_ON_DEGRADED: '0'
         run: node scripts/smoke-tests.mjs
 
+  # Job dedicado de typecheck para PRs — fail-fast ANTES do quality.
+  # Com baseline zerado (totalErrors=0), qualquer erro novo bloqueia o merge
+  # em ~3-4min (npm ci + tsc) em vez de ~15min (quality completo).
+  # Roda somente em pull_request para nao duplicar o step ja presente no quality.
+  typecheck-pr-gate:
+    name: TypeScript gate (PR fail-fast)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: TypeScript type check (zero-tolerance baseline)
+        run: npm run typecheck
+
   quality:
     name: Lint, Typecheck & Test
     runs-on: ubuntu-latest
@@ -55,9 +75,9 @@ jobs:
     timeout-minutes: 90
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
           cache: npm
@@ -73,6 +93,12 @@ jobs:
       # Ver docs/redeploy/REDEPLOY-FASE3-PLAN.md (criterio C2).
       - name: SECURITY DEFINER hardening guard
         run: node scripts/check-security-definer-hardening.mjs
+
+      # Fail-fast: bloqueia qualquer reintrodução de chave de bypass hardcoded
+      # em código de auth/bridge (UUID literal ou const *BYPASS = "..."). Ver
+      # achado SEC-001 da auditoria back-end sênior 2026-05-22.
+      - name: Bypass-literal guard (auth/bridge — SEC-001)
+        run: node scripts/check-no-bypass-literals.mjs
 
       - name: Install dependencies
         run: npm ci
@@ -92,12 +118,14 @@ jobs:
       # ESLint baseline gate — único step de lint: roda ESLint internamente
       # e falha SOMENTE para erros NOVOS vs .eslint-baseline.json.
       # Step informacional separado removido (era redundante e dobrava o tempo de CI).
+      # TypeScript gate ANTES do lint — fail-fast: se houver regressao de tipo,
+      # mata o job sem gastar os ~5min de testes. Com baseline zerado (0 erros),
+      # qualquer erro novo (mesmo 1) falha imediatamente.
+      - name: TypeScript type check (fail-fast gate)
+        run: npm run typecheck
+
       - name: ESLint baseline gate (bloqueia apenas regressões novas)
         run: npm run lint:baseline
-
-
-      - name: TypeScript type check
-        run: npm run typecheck
 
       # hooks já cobertos pelo job dedicado hooks-tests (timeout-minutes: 10).
       # test:strict-ref e test:coverage omitidos aqui — rodam em ref-warning-suite
@@ -183,8 +211,8 @@ jobs:
     needs: quality
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
           cache: npm
@@ -201,9 +229,9 @@ jobs:
     timeout-minutes: 75
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
           cache: npm
@@ -233,7 +261,7 @@ jobs:
 
       - name: Upload coverage report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-report-${{ github.run_id }}
           path: coverage/
@@ -255,8 +283,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: quality
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
           cache: npm
@@ -283,7 +311,7 @@ jobs:
           --coverage.thresholds.branches=0
           --coverage.thresholds.statements=0
       - name: Upload Coverage Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: full-coverage-report
           path: coverage/
@@ -294,8 +322,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: quality
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
           cache: npm
@@ -307,7 +335,7 @@ jobs:
         run: npm run test:e2e:critical
       - name: Upload E2E Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: playwright-report
           path: playwright-report/
@@ -323,8 +351,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-gate
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
           cache: npm
@@ -336,7 +364,7 @@ jobs:
         run: npx playwright test e2e/flows/elite-ux-validation.spec.ts
       - name: Upload Elite E2E Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: playwright-elite-report
           path: playwright-report/
@@ -349,9 +377,9 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
           cache: npm
@@ -394,7 +422,7 @@ jobs:
 
       - name: Upload ref-warning console snapshot
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: console-snapshot-ref-${{ github.run_id }}
           path: |
@@ -409,9 +437,9 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
           cache: npm
@@ -449,7 +477,7 @@ jobs:
 
       - name: Upload hook coverage artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: hooks-coverage
           path: coverage/
@@ -462,9 +490,9 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
           cache: npm
@@ -503,7 +531,7 @@ jobs:
 
       - name: Upload price-freshness coverage artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: price-freshness-coverage
           path: coverage/
@@ -516,9 +544,9 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
           cache: npm
@@ -531,7 +559,7 @@ jobs:
 
       - name: Upload cloud-status coverage artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: cloud-status-coverage
           path: coverage/
@@ -544,9 +572,9 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
 
@@ -568,9 +596,9 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
           cache: npm
@@ -586,7 +614,7 @@ jobs:
 
       - name: Upload Theme Validation Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: theme-validation-report
           path: |

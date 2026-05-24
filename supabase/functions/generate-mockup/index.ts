@@ -1,11 +1,12 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.0";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.95.0';
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors.ts';
 import { authenticateRequest, authErrorResponse } from '../_shared/auth.ts';
-import { z } from "npm:zod@3.23.8";
+import { z } from 'npm:zod@3.23.8';
 import { callAiWithTracking, QuotaExceededError } from '../_shared/ai-usage.ts';
 import { runBotProtection } from '../_shared/bot-protection.ts';
 import { safeJson } from '../_shared/json-parser.ts';
 import { assertAllowedExternalUrl, ExternalUrlError } from '../_shared/url-allowlist.ts';
+import { safeErrorFields } from '../_shared/log-safety.ts';
 
 const MockupBodySchema = z.object({
   productImageUrl: z.string().url().max(2000),
@@ -28,7 +29,7 @@ const MockupBodySchema = z.object({
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
@@ -36,47 +37,52 @@ Deno.serve(async (req) => {
     const auth = await authenticateRequest(req);
     const user = { id: auth.userId };
 
-    const protection = await runBotProtection(req, {
-      endpoint: 'generate-mockup',
-      maxRequests: 15,
-      windowSeconds: 60,
-      blockSeconds: 3600,
-      customIdentifier: `user:${user.id}`,
-    }, corsHeaders);
+    const protection = await runBotProtection(
+      req,
+      {
+        endpoint: 'generate-mockup',
+        maxRequests: 15,
+        windowSeconds: 60,
+        blockSeconds: 3600,
+        customIdentifier: `user:${user.id}`,
+      },
+      corsHeaders,
+    );
     if (!protection.allowed) return protection.blockResponse!;
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+      throw new Error('LOVABLE_API_KEY is not configured');
     }
 
     const rawBody = await safeJson(req);
     if (!rawBody) {
-      return new Response(JSON.stringify({ error: "Invalid or empty request body" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return new Response(JSON.stringify({ error: 'Invalid or empty request body' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
     const parsed = MockupBodySchema.safeParse(rawBody);
     if (!parsed.success) {
       return new Response(
-        JSON.stringify({ error: "Invalid input", details: parsed.error.flatten().fieldErrors }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: 'Invalid input', details: parsed.error.flatten().fieldErrors }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
-    const { 
-      productImageUrl, 
+    const {
+      productImageUrl,
       logoBase64,
       logoUrl,
       techniqueName,
       techniquePrompt,
       techniqueId,
-      positionX, 
-      positionY, 
-      logoWidthCm, 
+      positionX,
+      positionY,
+      logoWidthCm,
       logoHeightCm,
       logoRotation,
       logoScale,
-      productName 
+      productName,
     } = parsed.data;
 
     // Onda 14 / item 3.7: SSRF allowlist. Rejeita URLs externas fora dos hostnames conhecidos
@@ -87,8 +93,12 @@ Deno.serve(async (req) => {
     } catch (err) {
       if (err instanceof ExternalUrlError) {
         return new Response(
-          JSON.stringify({ error: err.message, errorCode: 'URL_NOT_ALLOWED', field: err.fieldName }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({
+            error: err.message,
+            errorCode: 'URL_NOT_ALLOWED',
+            field: err.fieldName,
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         );
       }
       throw err;
@@ -97,51 +107,75 @@ Deno.serve(async (req) => {
     let logoImageSrc = logoBase64 || logoUrl;
 
     if (!logoImageSrc) {
-      return new Response(
-        JSON.stringify({ error: "Product image and logo are required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: 'Product image and logo are required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    const isSvg = typeof logoImageSrc === "string" && 
-      (logoImageSrc.startsWith("data:image/svg+xml") || logoImageSrc.endsWith(".svg"));
-    
+    const isSvg =
+      typeof logoImageSrc === 'string' &&
+      (logoImageSrc.startsWith('data:image/svg+xml') || logoImageSrc.endsWith('.svg'));
+
     if (isSvg) {
       return new Response(
-        JSON.stringify({ 
-          error: "Logos em formato SVG não são suportados. Por favor, converta para PNG ou JPG.",
-          errorCode: "SVG_NOT_SUPPORTED"
+        JSON.stringify({
+          error: 'Logos em formato SVG não são suportados. Por favor, converta para PNG ou JPG.',
+          errorCode: 'SVG_NOT_SUPPORTED',
         }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
-    console.log(`Generating mockup for product: ${productName}`);
-    console.log(`Technique: ${techniqueName}`);
-    console.log(`Position: ${positionX}%, ${positionY}%`);
-    console.log(`Size: ${logoWidthCm}cm x ${logoHeightCm}cm, Rotation: ${logoRotation}°, Scale: ${logoScale}%`);
+    console.log('Generating mockup', {
+      hasProductName: !!productName,
+      hasTechniqueName: !!techniqueName,
+      hasLogoBase64: !!logoBase64,
+      hasLogoUrl: !!logoUrl,
+    });
 
     // Calculate position descriptions
-    const horizontalPos = positionX < 25 ? "far left" : positionX < 40 ? "left of center" : positionX > 75 ? "far right" : positionX > 60 ? "right of center" : "horizontally centered";
-    const verticalPos = positionY < 25 ? "near the very top" : positionY < 40 ? "in the upper third" : positionY > 75 ? "near the very bottom" : positionY > 60 ? "in the lower third" : "vertically centered";
+    const horizontalPos =
+      positionX < 25
+        ? 'far left'
+        : positionX < 40
+          ? 'left of center'
+          : positionX > 75
+            ? 'far right'
+            : positionX > 60
+              ? 'right of center'
+              : 'horizontally centered';
+    const verticalPos =
+      positionY < 25
+        ? 'near the very top'
+        : positionY < 40
+          ? 'in the upper third'
+          : positionY > 75
+            ? 'near the very bottom'
+            : positionY > 60
+              ? 'in the lower third'
+              : 'vertically centered';
     const positionDesc = `${verticalPos}, ${horizontalPos}`;
     // logoWidthCm/logoHeightCm são opcionais no schema; usar fallback de 10cm
     // (tamanho médio típico de área de gravação) quando ausentes.
     const safeLogoWidthCm = logoWidthCm ?? 10;
     const safeLogoHeightCm = logoHeightCm ?? 10;
-    const relativeSize = ((safeLogoWidthCm + safeLogoHeightCm) / 2) / 30;
-    const sizeDesc = relativeSize < 0.15 ? "small" : relativeSize < 0.3 ? "medium-sized" : "large";
+    const relativeSize = (safeLogoWidthCm + safeLogoHeightCm) / 2 / 30;
+    const sizeDesc = relativeSize < 0.15 ? 'small' : relativeSize < 0.3 ? 'medium-sized' : 'large';
 
-    const scaleInstruction = logoScale < 100 
-      ? `\n- Logo fill: the logo should fill only ${logoScale}% of the engraving area, leaving proportional empty space around it`
-      : logoScale > 100
-      ? `\n- Logo fill: the logo should OVERFLOW beyond the engraving area boundaries, scaled to ${logoScale}% of the area (the logo appears ${Math.round(logoScale / 100 * 10) / 10}x larger than the base engraving zone)`
+    const scaleInstruction =
+      logoScale < 100
+        ? `\n- Logo fill: the logo should fill only ${logoScale}% of the engraving area, leaving proportional empty space around it`
+        : logoScale > 100
+          ? `\n- Logo fill: the logo should OVERFLOW beyond the engraving area boundaries, scaled to ${logoScale}% of the area (the logo appears ${Math.round((logoScale / 100) * 10) / 10}x larger than the base engraving zone)`
+          : '';
+    const rotationInstruction = logoRotation
+      ? `\n- Logo rotation: ${logoRotation}° clockwise from its natural upright orientation`
       : '';
-    const rotationInstruction = logoRotation ? `\n- Logo rotation: ${logoRotation}° clockwise from its natural upright orientation` : '';
 
     // Try to load prompt from database
     let promptTemplate: string | null = null;
-    let aiModel = "google/gemini-2.5-flash-image-preview";
+    let aiModel = 'google/gemini-2.5-flash-image-preview';
 
     try {
       const supabaseClient = createClient(
@@ -159,7 +193,7 @@ Deno.serve(async (req) => {
           .single();
 
         if (techConfig) {
-          console.log("Using technique-specific prompt config");
+          console.log('Using technique-specific prompt config');
           // Technique prompt is appended to technique description
         }
       }
@@ -175,15 +209,15 @@ Deno.serve(async (req) => {
       if (mainConfig) {
         promptTemplate = mainConfig.prompt_text;
         aiModel = mainConfig.ai_model;
-        console.log(`Using DB prompt template (model: ${aiModel})`);
+        console.log('Using DB prompt template', { hasModel: !!aiModel });
       }
     } catch (dbErr) {
-      console.warn("Could not load prompt from DB, using default:", dbErr);
+      console.warn('Could not load prompt from DB, using default:', safeErrorFields(dbErr));
     }
 
     // Build the final prompt
     let prompt: string;
-    
+
     if (promptTemplate) {
       // Replace template variables — todos os valores são coagidos para string
       // (productName/techniquePrompt são opcionais no schema; default '').
@@ -225,44 +259,43 @@ STRICT RULES - MUST FOLLOW ALL:
 Output the final image maintaining the exact same dimensions and aspect ratio as the original product photo.`;
     }
 
-    console.log("Sending request to Lovable AI Gateway...");
-    console.log(`Model: ${aiModel}`);
+    console.log('Sending request to Lovable AI Gateway', { model: aiModel });
 
     const response = await callAiWithTracking({
       userId: user.id,
-      functionName: "generate-mockup",
+      functionName: 'generate-mockup',
       model: aiModel,
       apiKey: LOVABLE_API_KEY,
       requestBody: {
         messages: [
           {
-            role: "user",
+            role: 'user',
             content: [
-              { type: "text", text: prompt },
-              { type: "image_url", image_url: { url: productImageUrl } },
-              { type: "image_url", image_url: { url: logoImageSrc } },
-            ]
-          }
+              { type: 'text', text: prompt },
+              { type: 'image_url', image_url: { url: productImageUrl } },
+              { type: 'image_url', image_url: { url: logoImageSrc } },
+            ],
+          },
         ],
-        modalities: ["image", "text"]
+        modalities: ['image', 'text'],
       },
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI Gateway error:", response.status, errorText);
-      
+      await response.text();
+      console.error('AI Gateway error:', { status: response.status });
+
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ error: 'Rate limit exceeded. Please try again in a moment.' }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         );
       }
-      
+
       if (response.status === 402) {
         return new Response(
-          JSON.stringify({ error: "AI credits exhausted. Please add more credits." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ error: 'AI credits exhausted. Please add more credits.' }),
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         );
       }
 
@@ -270,40 +303,42 @@ Output the final image maintaining the exact same dimensions and aspect ratio as
     }
 
     const data = await response.json();
-    console.log("AI Gateway response received");
+    console.log('AI Gateway response received');
 
     const generatedImage = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
 
     if (!generatedImage) {
-      console.error("No image in response:", JSON.stringify(data));
-      throw new Error("No image generated in response");
+      console.error('No image in response', {
+        hasChoices: Array.isArray(data?.choices),
+        choiceCount: Array.isArray(data?.choices) ? data.choices.length : 0,
+      });
+      throw new Error('No image generated in response');
     }
 
-    console.log("Mockup generated successfully");
+    console.log('Mockup generated successfully');
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         mockupUrl: generatedImage,
-        message: data.choices?.[0]?.message?.content || "Mockup generated successfully"
+        message: data.choices?.[0]?.message?.content || 'Mockup generated successfully',
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
-
   } catch (error: unknown) {
     if (error instanceof QuotaExceededError) {
       return new Response(
-        JSON.stringify({ error: "Limite mensal de IA atingido. Contate o administrador." }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: 'Limite mensal de IA atingido. Contate o administrador.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
     if ((error as any)?.status === 401 || (error as any)?.status === 403) {
       return authErrorResponse(error, corsHeaders);
     }
-    console.error("Error generating mockup:", error);
-    const message = error instanceof Error ? error.message : "Failed to generate mockup";
-    return new Response(
-      JSON.stringify({ error: message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    console.error('Error generating mockup:', safeErrorFields(error));
+    const message = error instanceof Error ? error.message : 'Failed to generate mockup';
+    return new Response(JSON.stringify({ error: message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });

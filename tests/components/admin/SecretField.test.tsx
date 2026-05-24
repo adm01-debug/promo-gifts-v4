@@ -7,18 +7,31 @@ import { render, screen, fireEvent } from "@testing-library/react";
 const setSecretMock = vi.fn();
 const rotateSecretMock = vi.fn();
 const getRotationHistoryMock = vi.fn().mockResolvedValue([]);
-vi.mock("@/hooks/useSecretsManager", () => ({
-  useSecretsManager: () => ({
-    setSecret: setSecretMock,
-    rotateSecret: rotateSecretMock,
-    getRotationHistory: getRotationHistoryMock,
-  }),
-}));
+vi.mock("@/hooks/admin", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/hooks/admin")>();
+  return {
+    ...actual,
+    useSecretsManager: () => ({
+      setSecret: setSecretMock,
+      rotateSecret: rotateSecretMock,
+      getRotationHistory: getRotationHistoryMock,
+      isLoading: false,
+      secrets: [],
+      listError: null,
+      list: vi.fn(),
+      refreshCache: vi.fn(),
+    }),
+  };
+});
 
 // O hook de detalhes de teste de conexão dispara queries — neutralizamos.
-vi.mock("@/hooks/useConnectionTestDetails", () => ({
-  useConnectionTestDetails: () => ({ details: null, loading: false, error: null, refresh: vi.fn() }),
-}));
+vi.mock("@/hooks/intelligence", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/hooks/intelligence")>();
+  return {
+    ...actual,
+    useConnectionTestDetails: () => ({ details: null, loading: false, error: null, refetch: vi.fn() }),
+  };
+});
 
 // Filtro de fonte de credencial usa contexto — sobrescreve só o hook,
 // preservando exports auxiliares (`resolveSource`, etc) usados pelo
@@ -208,6 +221,7 @@ describe("SecretField — handler de salvar nunca chama API com sufixo <4 chars"
   it("modo rotate: status com has_value → botão Rotacionar abre input, e Salvar com 3 chars NÃO chama rotateSecret", () => {
     renderField({
       status: {
+        name: "MCP_SHARED_SECRET",
         has_value: true,
         length: 32,
         masked_suffix: "abcd",
@@ -215,7 +229,7 @@ describe("SecretField — handler de salvar nunca chama API com sufixo <4 chars"
         env_fallback_active: false,
         updated_at: new Date().toISOString(),
         updated_by_email: null,
-      } as any,
+      },
     });
 
     // Entra em modo rotate via botão "Rotacionar".

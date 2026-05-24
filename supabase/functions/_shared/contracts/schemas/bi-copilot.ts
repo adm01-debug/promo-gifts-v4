@@ -5,7 +5,7 @@
  *     Sunset 2026-10-31.
  * v2: strict + context obrigatório.
  */
-import { z } from "../_zod.ts";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 const ChatMessage = z.object({
   role: z.enum(["user", "assistant"]),

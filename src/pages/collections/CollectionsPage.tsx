@@ -56,7 +56,7 @@ export default function CollectionsPage() {
     selectedCollectionIds, hintDismissed, setHintDismissed,
     formData, setFormData, isSelectionMode,
     toggleSelectCollection, selectAllLocal, clearSelection,
-    handleCreate, handleUpdate, handleDelete, handleClone, openEdit,
+    createCollection, handleCreate, handleUpdate, handleDelete, handleClone, openEdit,
     handleSendSelectedToQuote, resetForm, updateCollection,
     selectedSummary, totalProducts, totalCollections,
     gridClasses, filteredExternal, filteredLocal, navigate,

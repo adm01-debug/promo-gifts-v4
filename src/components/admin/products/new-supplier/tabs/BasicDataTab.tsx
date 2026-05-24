@@ -5,11 +5,12 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, ImagePlus, X, Search } from 'lucide-react';
 import { maskCnpj, maskPhone, ESTADOS_BR } from '@/utils/masks';
+import type { NewSupplierForm } from '../useNewSupplierForm';
 
 const fieldClass = "mt-1.5 h-9";
 
 interface BasicDataTabProps {
-  form: Record<string, unknown>;
+  form: NewSupplierForm;
 }
 
 export function BasicDataTab({ form }: BasicDataTabProps) {

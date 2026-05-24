@@ -4,7 +4,7 @@
  * v1: confirm literal. Sunset 2026-12-31.
  * v2: confirm + idempotency_key (destrutivo).
  */
-import { z } from "../_zod.ts";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 export const ForceGlobalLogoutV1 = z.object({
   confirm: z.literal("FORCE_LOGOUT_ALL"),

@@ -1,5 +1,29 @@
 name: Branch Protection Sentinel
 
+# ============================================================================
+# CHANGELOG (resumo — detalhes em .github/SENTINEL_CHANGELOG.md):
+#
+# v2.0.1 (2026-05-22) — Bug fixes pós-review (PR #110 → PR seguinte)
+#   • [10] Merge commit PR: audita apenas HEAD em vez de range completo
+#   • [2/12/16] Comando de recovery: revert específico OU PUSH_BEFORE SHA (não FAIL_COUNT)
+#   • [15] Fallback fail-closed quando PUSH_BEFORE inacessível
+#   • [6] URLs absolutas no Step Summary (../blob não resolvia)
+#   • [13] Contagem char-aware (Unicode) no bypass via LC_ALL UTF-8
+#
+# v2.0.0 (2026-05-22) — Hardening híbrido (Opção C)
+#   • Audita TODOS os commits do push, não só o HEAD (fetch-depth: 0)
+#   • Normaliza CRLF (Git Bash / Windows)
+#   • Bypass explícito [skip-sentinel: <motivo>] com motivo obrigatório (>=5 chars)
+#   • Allowlist estreita: docs(redeploy):, chore(workflows):, chore(docs):
+#   • Lógica extraída para scripts/sentinel-check.sh (testável isoladamente)
+#   • Job paralelo: verifica se Branch Protection da main está ativa
+#   • Notificação Slack opcional via secret SENTINEL_SLACK_WEBHOOK
+#   • Mensagens de erro acionáveis (instrui como corrigir)
+#   • set -euo pipefail explícito em todos os steps
+#
+# v1.0.0 — versão inicial
+# ============================================================================
+
 on:
   push:
     branches: [main]
@@ -10,66 +34,219 @@ permissions:
 
 jobs:
   verify-merge-pattern:
-    name: Verify push to main is from PR merge
+    name: Verify push to main matches accepted patterns
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
-          fetch-depth: 2
+          # fetch-depth: 0 → histórico completo, para auditar todos os commits do push
+          fetch-depth: 0
+          # Fix [5]: não persistir credenciais no runner (security best practice;
+          # este workflow só precisa de leitura, sem push)
+          persist-credentials: false
 
-      - name: Inspect last commit on main
+      - name: Make sentinel-check executable
+        run: chmod +x scripts/sentinel-check.sh
+
+      - name: Audit every commit in push
+        env:
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_AFTER: ${{ github.event.after }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
-          MSG=$(git log -1 --pretty=%B)
-          AUTHOR=$(git log -1 --pretty=%an)
-          SHA=$(git log -1 --pretty=%H)
+          set -euo pipefail
 
-          echo "### Commit inspecionado" >> $GITHUB_STEP_SUMMARY
-          echo "- SHA: \`$SHA\`" >> $GITHUB_STEP_SUMMARY
-          echo "- Autor: $AUTHOR" >> $GITHUB_STEP_SUMMARY
-          echo "- Mensagem: $MSG" >> $GITHUB_STEP_SUMMARY
-
-          # Padroes aceitos:
-          # 1. Squash merge: termina em "(#NNN)"
-          # 2. Merge commit: comeca com "Merge pull request #NNN"
-          # 3. Bot oficial GitHub: github-actions[bot], dependabot[bot], renovate[bot]
-          # 4. Bot familia Lovable (regex): lovable-*[bot] ou gpt-engineer-*[bot]
-          #    (cobre lovable-dev, gpt-engineer-app, e futuras renomeacoes dessas familias)
-          # 5. Tag de release: comeca com "chore(release):"
-
-          if echo "$MSG" | head -1 | grep -qE '\(#[0-9]+\)$'; then
-            echo "OK: squash merge de PR" >> $GITHUB_STEP_SUMMARY
-            exit 0
+          # ----------------------------------------------------------------
+          # Determina lista de commits a auditar
+          # ----------------------------------------------------------------
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            COMMITS=$(git rev-parse HEAD)
+            MODE="manual (workflow_dispatch — audita apenas HEAD)"
+          else
+            ZERO_SHA="0000000000000000000000000000000000000000"
+            if [[ "$PUSH_BEFORE" == "$ZERO_SHA" ]]; then
+              # Branch recém-criada — audita apenas o HEAD
+              COMMITS=$(git log -1 --pretty=%H)
+              MODE="push inicial (branch recém-criada)"
+            else
+              # Garantir que temos o commit before (pode ser fetch parcial)
+              if ! git cat-file -e "$PUSH_BEFORE" 2>/dev/null; then
+                echo "::warning::Commit $PUSH_BEFORE não encontrado localmente — fazendo fetch"
+                git fetch --depth=200 origin "$PUSH_BEFORE" || true
+              fi
+              if git cat-file -e "$PUSH_BEFORE" 2>/dev/null; then
+                # Fix [10]: se HEAD é merge-commit de PR, audita apenas HEAD
+                # (commits feature da branch da PR já foram revisados na PR)
+                HEAD_SUBJECT=$(git log -1 --pretty=%s "$PUSH_AFTER")
+                if echo "$HEAD_SUBJECT" | grep -qE '^Merge pull request #[0-9]+'; then
+                  COMMITS=$(git rev-parse "$PUSH_AFTER")
+                  MODE="merge-commit PR (audita apenas HEAD ${PUSH_AFTER:0:7})"
+                else
+                  COMMITS=$(git log --pretty=%H "${PUSH_BEFORE}..${PUSH_AFTER}")
+                  MODE="push padrão (${PUSH_BEFORE:0:7}..${PUSH_AFTER:0:7})"
+                fi
+              else
+                # Fix [15]: fail-closed — antes auditava só HEAD (fail-open).
+                # Agora falha defensivamente pedindo intervenção manual.
+                echo "::error::PUSH_BEFORE SHA ($PUSH_BEFORE) inacessível mesmo após fetch."
+                echo "::error::Não consigo auditar a push range completa — falhando defensivamente."
+                echo "::error::Investigue manualmente e re-execute via workflow_dispatch se necessário."
+                exit 1
+              fi
+            fi
           fi
 
-          if echo "$MSG" | head -1 | grep -qE '^Merge pull request #[0-9]+'; then
-            echo "OK: merge commit de PR" >> $GITHUB_STEP_SUMMARY
-            exit 0
+          # ----------------------------------------------------------------
+          # Cabeçalho do Summary
+          # ----------------------------------------------------------------
+          {
+            echo "### 🛡️ Branch Protection Sentinel — auditoria"
+            echo ""
+            echo "**Modo:** $MODE"
+            echo ""
+            echo "| Commit | Autor | Veredito | Regra |"
+            echo "|---|---|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          PASS_COUNT=0
+          FAIL_COUNT=0
+          FAILED_SHAS=()
+
+          # ----------------------------------------------------------------
+          # Itera commits
+          # ----------------------------------------------------------------
+          for SHA in $COMMITS; do
+            SUBJECT=$(git log -1 --pretty=%s "$SHA")
+            FULL_MSG=$(git log -1 --pretty=%B "$SHA")
+            AUTHOR=$(git log -1 --pretty=%an "$SHA")
+
+            if RESULT=$(bash scripts/sentinel-check.sh "$SUBJECT" "$FULL_MSG" "$AUTHOR" 2>&1); then
+              # Escapar pipe e quebra-linha para a tabela do Summary
+              SAFE_SUBJECT=$(echo "$SUBJECT" | tr '|' '/' | head -c 60)
+              echo "| \`${SHA:0:7}\` $SAFE_SUBJECT | $AUTHOR | ✅ | $RESULT |" >> "$GITHUB_STEP_SUMMARY"
+              PASS_COUNT=$((PASS_COUNT + 1))
+            else
+              SAFE_SUBJECT=$(echo "$SUBJECT" | tr '|' '/' | head -c 60)
+              echo "| \`${SHA:0:7}\` $SAFE_SUBJECT | $AUTHOR | ❌ | $RESULT |" >> "$GITHUB_STEP_SUMMARY"
+              FAIL_COUNT=$((FAIL_COUNT + 1))
+              FAILED_SHAS+=("${SHA:0:7}")
+            fi
+          done
+
+          # ----------------------------------------------------------------
+          # Sumário e exit code
+          # ----------------------------------------------------------------
+          {
+            echo ""
+            echo "**Resumo:** $PASS_COUNT aceito(s), $FAIL_COUNT rejeitado(s)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ $FAIL_COUNT -gt 0 ]]; then
+            {
+              echo ""
+              echo "---"
+              echo ""
+              echo "### ⚠️ Como corrigir"
+              echo ""
+              echo "Push em \`main\` deve seguir um destes padrões:"
+              echo ""
+              echo "1. **Squash merge de PR** — mensagem termina em \`(#NNN)\`"
+              echo "2. **Merge commit de PR** — começa com \`Merge pull request #NNN\`"
+              echo "3. **Bot oficial** — \`github-actions[bot]\`, \`dependabot[bot]\`, \`renovate[bot]\`"
+              echo "4. **Família Lovable** — qualquer \`lovable-*[bot]\` ou \`gpt-engineer-*[bot]\`"
+              echo "5. **Release** — \`chore(release): ...\`"
+              echo "6. **Allowlist estreita** — \`docs(redeploy):\`, \`chore(workflows):\`, \`chore(docs):\`"
+              echo "7. **Bypass de emergência** — \`[skip-sentinel: <motivo de 5+ chars>]\` na mensagem"
+              echo ""
+              echo "**Próximos passos para os commits ofensores (${FAILED_SHAS[*]}):**"
+              echo ""
+              echo '```bash'
+              echo "# OPÇÃO A — Reverter commits específicos (preserva histórico, seguro)"
+              echo "# Use os SHAs ofensores listados acima:"
+              for FSHA in "${FAILED_SHAS[@]}"; do
+                echo "git revert $FSHA"
+              done
+              echo "git push origin main  # (precisa estar no bypass list)"
+              echo ""
+              echo "# OPÇÃO B — Resetar para o estado anterior ao push (DESTRUTIVO)"
+              echo "# Use só se tiver certeza que nenhum commit do push deve permanecer:"
+              echo "git fetch origin"
+              echo "git reset --hard ${PUSH_BEFORE}"
+              echo "git push --force origin main  # (precisa bypass + force push permitido)"
+              echo ""
+              echo "# OPÇÃO C (RECOMENDADA) — Mover trabalho para branch e abrir PR"
+              echo "git checkout -b chore/<seu-trabalho>"
+              echo "git push -u origin chore/<seu-trabalho>"
+              echo "gh pr create  # ou via UI"
+              echo "# Depois, em main, opte por A ou B para limpar."
+              echo '```'
+              echo ""
+              echo "Mais detalhes em [CONTRIBUTING.md](${{ github.server_url }}/${{ github.repository }}/blob/main/CONTRIBUTING.md)."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::$FAIL_COUNT commit(s) em push para main sem padrão aceito: ${FAILED_SHAS[*]}"
+            exit 1
           fi
 
-          case "$AUTHOR" in
-            "github-actions[bot]"|"dependabot[bot]"|"renovate[bot]")
-              echo "OK: bot oficial GitHub ($AUTHOR)" >> $GITHUB_STEP_SUMMARY
-              exit 0
-              ;;
-          esac
-
-          # Familia Lovable (regex): pega renomeacoes futuras sem quebrar o gate
-          # Cobre: lovable-dev[bot], lovable-bot[bot], gpt-engineer-app[bot], gpt-engineer-*[bot]
-          if [[ "$AUTHOR" =~ ^(lovable|gpt-engineer)-[a-z0-9-]+\[bot\]$ ]]; then
-            echo "OK: bot familia Lovable ($AUTHOR)" >> $GITHUB_STEP_SUMMARY
+      - name: Notify Slack on failure (optional)
+        if: failure()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SENTINEL_SLACK_WEBHOOK }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${SLACK_WEBHOOK:-}" ]]; then
+            echo "SENTINEL_SLACK_WEBHOOK não configurado — pulando notificação"
             exit 0
           fi
+          PAYLOAD=$(printf '{"text":"🚨 *Branch Protection Sentinel* disparou em %s\\n• Commit: `%s`\\n• Run: %s"}' \
+                    "$REPO" "${SHA:0:7}" "$RUN_URL")
+          curl -sS -X POST -H 'Content-Type: application/json' \
+               --data "$PAYLOAD" \
+               "$SLACK_WEBHOOK" || echo "Slack notify falhou (não bloqueante)"
 
-          if echo "$MSG" | head -1 | grep -qE '^chore\(release\):'; then
-            echo "OK: release commit" >> $GITHUB_STEP_SUMMARY
-            exit 0
+  # ============================================================================
+  # Job paralelo: verifica se Branch Protection está ativa em main
+  # ============================================================================
+  check-protection-config:
+    name: Verify Branch Protection is enabled on main
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Query branch protection state
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          # GET /repos/{owner}/{repo}/branches/main retorna campo `protected` (boolean)
+          # — não exige permissão `administration`, só `contents:read`.
+          RESPONSE=$(curl -sS -H "Authorization: Bearer $GH_TOKEN" \
+                              -H "Accept: application/vnd.github+json" \
+                              "https://api.github.com/repos/$REPO/branches/main")
+
+          PROTECTED=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('protected', False))")
+
+          {
+            echo "### 🔐 Branch Protection — status de \`main\`"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ "$PROTECTED" == "True" ]]; then
+            echo "✅ Branch \`main\` está protegida." >> "$GITHUB_STEP_SUMMARY"
+            echo "Branch Protection ATIVA em main"
+          else
+            {
+              echo "⚠️ **Branch \`main\` NÃO está protegida.**"
+              echo ""
+              echo "O sentinel sozinho é apenas alarme reativo — sem Branch Protection,"
+              echo "qualquer push direto chega em \`main\` e só depois é detectado."
+              echo ""
+              echo "👉 **Configurar agora:** https://github.com/$REPO/settings/branches"
+              echo "📖 **Passo a passo:** [.github/BRANCH_PROTECTION_SETUP.md](${{ github.server_url }}/${{ github.repository }}/blob/main/.github/BRANCH_PROTECTION_SETUP.md)"
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::Branch Protection NÃO está ativa em main. Ative em $REPO/settings/branches"
           fi
-
-          # Nenhum padrao bateu
-          echo "::error::Push em main sem padrao de PR/bot/release detectado."
-          echo "### Direct push detectado" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Este push em \`main\` nao bate com nenhum padrao esperado." >> $GITHUB_STEP_SUMMARY
-          echo "Verificar se branch protection esta ativa em:" >> $GITHUB_STEP_SUMMARY
-          echo "https://github.com/${{ github.repository }}/settings/branches" >> $GITHUB_STEP_SUMMARY
-          exit 1

@@ -4,70 +4,66 @@
  * Filtro explícito por seller_id = auth.uid() (defesa em profundidade
  * sobre a RLS já existente).
  */
-import { useMemo, useState, useCallback } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
-import { FileText, ArrowRight, Clock, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { formatDistanceToNow } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { useMemo, useState, useCallback } from 'react';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { FileText, ArrowRight, Clock, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import {
   WidgetFiltersBar,
   EMPTY_FILTERS,
   matchesSearch,
   withinDateRange,
   type WidgetFiltersValue,
-} from "./widget-filters/WidgetFiltersBar";
-import { useInfiniteScroll } from "./widget-filters/useInfiniteScroll";
+} from './widget-filters/WidgetFiltersBar';
+import { useInfiniteScroll } from './widget-filters/useInfiniteScroll';
 
 const PAGE_SIZE = 20;
 
 const STATUS_LABELS: Record<string, string> = {
-  draft: "Rascunho",
-  sent: "Enviado",
-  approved: "Aprovado",
-  rejected: "Recusado",
-  expired: "Expirado",
-  pending_approval: "Aguardando aprovação",
-  converted: "Convertido",
+  draft: 'Rascunho',
+  sent: 'Enviado',
+  approved: 'Aprovado',
+  rejected: 'Recusado',
+  expired: 'Expirado',
+  pending_approval: 'Aguardando aprovação',
+  converted: 'Convertido',
 };
 
 const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }));
 
 export function MyRecentQuotesWidget() {
   const { user } = useAuth();
+  const userId = user?.id;
   const navigate = useNavigate();
   const [filters, setFilters] = useState<WidgetFiltersValue>(EMPTY_FILTERS);
 
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-  } = useInfiniteQuery({
-    queryKey: ["my-recent-quotes-widget", user?.id],
-    enabled: !!user?.id,
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
+    queryKey: ['my-recent-quotes-widget', userId],
+    enabled: !!userId,
     staleTime: 30_000,
     initialPageParam: null as string | null,
     queryFn: async ({ pageParam }) => {
+      if (!userId) return [];
       let q = supabase
-        .from("quotes")
-        .select("id, quote_number, status, total, client_name, client_company, updated_at")
-        .eq("seller_id", user!.id)
-        .order("updated_at", { ascending: false })
+        .from('quotes')
+        .select('id, quote_number, status, total, client_name, client_company, updated_at')
+        .eq('seller_id', userId)
+        .order('updated_at', { ascending: false })
         .limit(PAGE_SIZE);
-      if (pageParam) q = q.lt("updated_at", pageParam);
+      if (pageParam) q = q.lt('updated_at', pageParam);
       const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
     },
     getNextPageParam: (last) =>
-      last.length < PAGE_SIZE ? undefined : last[last.length - 1]?.updated_at ?? undefined,
+      last.length < PAGE_SIZE ? undefined : (last[last.length - 1]?.updated_at ?? undefined),
   });
 
   const all = useMemo(() => data?.pages.flat() ?? [], [data]);
@@ -75,7 +71,7 @@ export function MyRecentQuotesWidget() {
   const filtered = useMemo(() => {
     return all.filter(
       (q) =>
-        (filters.status === "all" || q.status === filters.status) &&
+        (filters.status === 'all' || q.status === filters.status) &&
         withinDateRange(q.updated_at, filters.dateRange) &&
         matchesSearch([q.quote_number, q.client_name, q.client_company], filters.search),
     );
@@ -93,13 +89,18 @@ export function MyRecentQuotesWidget() {
 
   return (
     <Card>
-      <CardHeader className="pb-3 space-y-3">
+      <CardHeader className="space-y-3 pb-3">
         <div className="flex items-center justify-between gap-2">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium">
             <FileText className="h-4 w-4 text-primary" />
             Minhas Propostas Recentes
           </CardTitle>
-          <Button variant="ghost" size="sm" onClick={() => navigate("/orcamentos")} className="text-xs gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/orcamentos')}
+            className="gap-1 text-xs"
+          >
             Ver todas <ArrowRight className="h-3 w-3" />
           </Button>
         </div>
@@ -111,9 +112,9 @@ export function MyRecentQuotesWidget() {
         />
       </CardHeader>
       <CardContent className="space-y-2">
-        <div className="max-h-[420px] overflow-y-auto space-y-2 pr-1">
+        <div className="max-h-[420px] space-y-2 overflow-y-auto pr-1">
           {filtered.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-4 text-center">
+            <p className="py-4 text-center text-xs text-muted-foreground">
               Nenhuma proposta encontrada com os filtros atuais.
             </p>
           ) : (
@@ -121,28 +122,37 @@ export function MyRecentQuotesWidget() {
               <button
                 key={q.id}
                 onClick={() => navigate(`/orcamentos/${q.id}`)}
-                className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/50 transition-colors text-left"
+                className="flex w-full items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-secondary/50"
               >
-                <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-primary/10">
                   <FileText className="h-4 w-4 text-primary" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    #{q.quote_number} · {q.client_company || q.client_name || "Sem cliente"}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">
+                    #{q.quote_number} · {q.client_company || q.client_name || 'Sem cliente'}
                   </p>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Badge variant={q.status === "draft" ? "secondary" : "outline"} className="text-[10px] px-1.5 py-0">
+                    <Badge
+                      variant={q.status === 'draft' ? 'secondary' : 'outline'}
+                      className="px-1.5 py-0 text-[10px]"
+                    >
                       {STATUS_LABELS[q.status] ?? q.status}
                     </Badge>
                     <span className="flex items-center gap-0.5">
                       <Clock className="h-2.5 w-2.5" />
-                      {formatDistanceToNow(new Date(q.updated_at), { addSuffix: true, locale: ptBR })}
+                      {formatDistanceToNow(new Date(q.updated_at), {
+                        addSuffix: true,
+                        locale: ptBR,
+                      })}
                     </span>
                   </div>
                 </div>
                 {q.total !== null && (
-                  <p className="text-sm font-semibold text-primary flex-shrink-0">
-                    {Number(q.total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  <p className="flex-shrink-0 text-sm font-semibold text-primary">
+                    {Number(q.total).toLocaleString('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                    })}
                   </p>
                 )}
               </button>
@@ -158,8 +168,8 @@ export function MyRecentQuotesWidget() {
             </div>
           )}
         </div>
-        <p className="text-[10px] text-muted-foreground text-center pt-1">
-          Exibindo {filtered.length} de {all.length} carregado(s){hasNextPage ? "+" : ""}.
+        <p className="pt-1 text-center text-[10px] text-muted-foreground">
+          Exibindo {filtered.length} de {all.length} carregado(s){hasNextPage ? '+' : ''}.
         </p>
       </CardContent>
     </Card>
