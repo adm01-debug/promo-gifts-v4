@@ -10,7 +10,7 @@ const anySupabase = supabase as any;
 // Types
 // ============================================
 
-type QuoteTemplateRow = Tables<"quote_templates">;
+type _QuoteTemplateRow = Tables<"quote_templates">;
 
 export interface QuoteTemplateItem {
   productId?: string;

@@ -77,7 +77,7 @@ export async function syncQuoteToBitrix({
     });
   }
 
-  logQuoteHistory(quote.id!, 'sync_started', 'Sincronização com Bitrix24 iniciada').catch(() => {});
+  logQuoteHistory(quote.id ?? "", 'sync_started', 'Sincronização com Bitrix24 iniciada').catch(() => {});
 
   // Generate PDF and upload
   let pdfStorageUrl: string | undefined;
@@ -115,7 +115,7 @@ export async function syncQuoteToBitrix({
 
   if (error || !data?.success) {
     const msg = data?.error || error?.message || 'Erro desconhecido';
-    await logQuoteHistory(quote.id!, 'sync_error', `Falha: ${msg}`);
+    await logQuoteHistory(quote.id ?? "", 'sync_error', `Falha: ${msg}`);
     throw new Error(msg);
   }
 
@@ -132,13 +132,13 @@ export async function syncQuoteToBitrix({
     await supabase
       .from('quotes')
       .update(crmUpdates as never)
-      .eq('id', quote.id!);
+      .eq('id', quote.id ?? "");
   } catch {
     /* ignore */
   }
 
   await logQuoteHistory(
-    quote.id!,
+    quote.id ?? "",
     'sync_success',
     `Sincronizado com Bitrix24${bitrixQuoteIdFromResponse ? ` — ID Bitrix: ${bitrixQuoteIdFromResponse}` : ''}`,
     { newValue: bitrixQuoteIdFromResponse ? String(bitrixQuoteIdFromResponse) : undefined },

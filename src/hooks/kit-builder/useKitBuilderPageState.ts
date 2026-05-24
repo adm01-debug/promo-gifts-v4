@@ -4,9 +4,8 @@ import { useSearchParams } from 'react-router-dom';
 import { transformToKitItem, useCustomKitPersistence, useDuplicateKitDetector, useKitAutoSave, useKitBuilder, useKitUndoRedo, useTemplateSnapshot } from "@/hooks/kit-builder";
 import { useKitBuilderQuote } from '@/pages/kit-builder/useKitBuilderQuote';
 import { invokeExternalDb } from '@/lib/external-db';
-import type { ExternalProductForKit } from '@/lib/kit-builder';
+import { calculateTotalKitPrice, type ExternalProductForKit } from '@/lib/kit-builder';
 import { logger } from '@/lib/logger';
-import { calculateTotalKitPrice } from '@/lib/kit-builder';
 
 export function useKitBuilderPageState() {
   const [searchParams] = useSearchParams();

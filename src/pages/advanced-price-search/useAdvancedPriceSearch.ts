@@ -16,7 +16,7 @@ export function useAdvancedPriceSearch() {
   const [isSearching, setIsSearching] = useState(false);
 
   const { data: _products, isLoading: loadingProducts } = useProducts();
-  const products = (_products ?? []) as Product[];
+  const products = useMemo(() => (_products ?? []) as Product[], [_products]);
   const { data: techniques = [], isLoading: loadingTechniques } = useExternalTechniques();
 
   const { data: priceTables = [] } = useQuery({

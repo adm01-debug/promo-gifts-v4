@@ -4,8 +4,7 @@
  */
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { invokeExternalDbSingle, invokeExternalDbDelete } from "@/lib/external-db";
-import type { PromobrindProduct } from "@/lib/external-db";
+import { invokeExternalDbSingle, invokeExternalDbDelete, type PromobrindProduct } from "@/lib/external-db";
 import { toast } from "sonner";
 import { useAuditLog } from "@/hooks/admin";
 import type { ProductFilters } from "../products/ProductFiltersBar";
@@ -100,6 +99,7 @@ export function useProductsManager() {
 
       const formatted = productsData.map((p) => {
         const imageUrl = getProductImageUrl(p as unknown as PromobrindProduct);
+        const pRec = p as unknown as Record<string, unknown>;
         return {
           id: p.id, sku: p.sku, name: p.name,
           description: p.description ?? p.short_description ?? null,
@@ -109,19 +109,19 @@ export function useProductsManager() {
           price: getProductPrice(p as unknown as PromobrindProduct),
           cost_price: p.cost_price ?? null,
           stock: getProductStock(p as unknown as PromobrindProduct),
-          category_id: p.category_id ?? (p as any).main_category_id ?? null,
+          category_id: p.category_id ?? (pRec.main_category_id as string | null | undefined) ?? null,
           supplier_id: p.supplier_id ?? null,
           supplier_reference: p.supplier_reference ?? null,
-          is_active: p.is_active ?? (p as any).active ?? true,
+          is_active: p.is_active ?? (pRec.active as boolean | undefined) ?? true,
           images: imageUrl ? [imageUrl] : (Array.isArray(p.images) ? p.images : []),
           colors: Array.isArray(p.colors) ? p.colors : [],
           materials: p.materials ? (typeof p.materials === 'string' ? [p.materials] : p.materials) : [],
           min_quantity: p.min_quantity ?? 1,
           is_featured: p.is_featured ?? false,
-          is_bestseller: (p as any).is_bestseller ?? false,
+          is_bestseller: (pRec.is_bestseller as boolean | undefined) ?? false,
           is_new: p.is_new ?? false,
           is_on_sale: p.is_on_sale ?? false,
-          is_kit: (p as any).is_kit ?? false,
+          is_kit: (pRec.is_kit as boolean | undefined) ?? false,
           has_commercial_packaging: p.has_commercial_packaging ?? false,
           is_imported: p.is_imported ?? false,
           is_textil: p.is_textil ?? false,
@@ -166,7 +166,7 @@ export function useProductsManager() {
           meta_title: p.meta_title ?? null,
           meta_keywords: Array.isArray(p.meta_keywords) ? p.meta_keywords : null,
           slug: p.slug ?? null, canonical_url: p.canonical_url ?? null,
-          video_url: (p as any).videos?.[0] ?? null,
+          video_url: ((pRec.videos as unknown[] | undefined)?.[0] as string | undefined) ?? null,
           key_benefits: p.key_benefits ?? null, use_cases: p.use_cases ?? null,
           created_at: p.created_at ?? '', updated_at: p.updated_at ?? '',
         };
