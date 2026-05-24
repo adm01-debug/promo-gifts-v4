@@ -38,6 +38,8 @@ export function useRamosAtividadeGroups() {
   });
 }
 
+export const useRamoAtividadeGroups = useRamosAtividadeGroups;
+
 // Buscar ramo por ID
 export function useRamoAtividade(id: string | undefined) {
   return useQuery({

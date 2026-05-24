@@ -379,7 +379,7 @@ export function AdImageResult({
                 <MagicUpCurationStatus
                   value={curationStatus}
                   disabled={!onSetCurationStatus}
-                  onChange={(status) => onSetCurationStatus?.(status)}
+                  onChange={(status: MagicUpCurationStatus) => onSetCurationStatus?.(status)}
                 />
                 {onRunQualityScore && (
                   <Button

@@ -142,9 +142,7 @@ export class AuthFlowTracer {
     const summary = summarizeSession(session);
     this.snapshot.finalSessionUser =
       summary && typeof summary === 'object' && 'user' in summary
-        ? (summary as { user?: { email?: string } }).user?.email
-          ? '<masked-email>'
-          : null
+        ? ((summary as { user?: { email?: string } }).user?.email ?? null)
         : null;
     this.snapshot.finalProvider = session.user?.app_metadata?.provider ?? null;
     this.snapshot.finalIssuer =
