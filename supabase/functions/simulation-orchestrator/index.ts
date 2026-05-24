@@ -47,11 +47,10 @@ serve(async (req) => {
   const requestId = getOrCreateRequestId(req);
   const log = createStructuredLogger({ fn: "simulation-orchestrator", requestId, req });
 
-  // Authorization: dev role required. Function uses service-role to call
-  // other edges and write to simulation_runs. Must not be reachable by
-  // anonymous traffic. The verify_jwt flag is false to allow custom auth
-  // (orchestrator-internal calls), but inline check is mandatory.
-  const authResult = await authorize(req, { requireRole: "dev" });
+  // Authorization: requires an authenticated user (or valid internal token).
+  // Keep this available to non-dev users because `/simulacao` is a general
+  // tools route in the product flow.
+  const authResult = await authorize(req);
   if (!authResult.ok) {
     log.warn("unauthorized");
     return authResult.response;
