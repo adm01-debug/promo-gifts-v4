@@ -22,13 +22,8 @@ test.describe('Rocket Animation Consistency @smoke', () => {
     await page.addInitScript(() => {
       let count = 0;
       const values = [
-        0.1, 0.5, 0.9, 0.2, 0.8,
-        0.3, 0.7, 0.4, 0.6, 0.1,
-        0.5, 0.9, 0.2, 0.8, 0.3,
-        0.7, 0.4, 0.6, 0.1, 0.5,
-        0.9, 0.2, 0.8, 0.3, 0.7,
-        0.4, 0.6, 0.1, 0.5, 0.9,
-        0.2, 0.8, 0.3, 0.7, 0.4
+        0.1, 0.5, 0.9, 0.2, 0.8, 0.3, 0.7, 0.4, 0.6, 0.1, 0.5, 0.9, 0.2, 0.8, 0.3, 0.7, 0.4, 0.6,
+        0.1, 0.5, 0.9, 0.2, 0.8, 0.3, 0.7, 0.4, 0.6, 0.1, 0.5, 0.9, 0.2, 0.8, 0.3, 0.7, 0.4,
       ];
       Math.random = () => {
         const val = values[count % values.length];
@@ -37,7 +32,7 @@ test.describe('Rocket Animation Consistency @smoke', () => {
       };
     });
 
-    await page.goto('/auth/login');
+    await page.goto('/login');
 
     const spaceScene = page.getByTestId('space-scene');
     await expect(spaceScene).toBeVisible();
@@ -54,7 +49,7 @@ test.describe('Rocket Animation Consistency @smoke', () => {
   });
 
   test('should cleanup rockets after duration', async ({ page }) => {
-    await page.goto('/auth/login');
+    await page.goto('/login');
     await page.waitForTimeout(10000);
     const currentRockets = await page.locator('svg.lucide-rocket').count();
     expect(currentRockets).toBeGreaterThan(0);
