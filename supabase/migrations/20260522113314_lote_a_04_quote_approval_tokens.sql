@@ -1,5 +1,5 @@
 -- LOTE A 4/6 - quote_approval_tokens
-CREATE TABLE public.quote_approval_tokens (
+CREATE TABLE IF NOT EXISTS public.quote_approval_tokens (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   quote_id text NOT NULL,
   token text NOT NULL DEFAULT encode(gen_random_bytes(32),'hex'),
@@ -16,16 +16,34 @@ CREATE TABLE public.quote_approval_tokens (
   CONSTRAINT quote_approval_tokens_token_key UNIQUE (token),
   CONSTRAINT quote_approval_tokens_seller_id_fkey FOREIGN KEY (seller_id) REFERENCES auth.users(id) ON DELETE CASCADE
 );
-CREATE INDEX idx_approval_tokens_quote ON public.quote_approval_tokens(quote_id);
-CREATE INDEX idx_approval_tokens_token_status ON public.quote_approval_tokens(token,status) WHERE status='active';
-CREATE INDEX idx_quote_approval_tokens_seller_id ON public.quote_approval_tokens(seller_id);
-CREATE TRIGGER trg_generate_secure_approval_token BEFORE INSERT ON public.quote_approval_tokens FOR EACH ROW EXECUTE FUNCTION public.generate_secure_token();
-CREATE TRIGGER trg_invalidate_used_approval_token BEFORE UPDATE ON public.quote_approval_tokens FOR EACH ROW EXECUTE FUNCTION public.invalidate_used_approval_token();
-CREATE TRIGGER trg_notify_quote_client_response AFTER UPDATE ON public.quote_approval_tokens FOR EACH ROW EXECUTE FUNCTION public.notify_quote_client_response();
-CREATE TRIGGER trg_owner__quote_approval_tokens__seller_id BEFORE INSERT ON public.quote_approval_tokens FOR EACH ROW EXECUTE FUNCTION public.enforce_seller_id_owner();
-CREATE TRIGGER trg_validate_approval_token_status BEFORE INSERT OR UPDATE ON public.quote_approval_tokens FOR EACH ROW EXECUTE FUNCTION public.validate_status_fields();
+CREATE INDEX IF NOT EXISTS idx_approval_tokens_quote ON public.quote_approval_tokens(quote_id);
+CREATE INDEX IF NOT EXISTS idx_approval_tokens_token_status ON public.quote_approval_tokens(token,status) WHERE status='active';
+CREATE INDEX IF NOT EXISTS idx_quote_approval_tokens_seller_id ON public.quote_approval_tokens(seller_id);
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname='trg_generate_secure_approval_token' AND tgrelid='public.quote_approval_tokens'::regclass) THEN
+  CREATE TRIGGER trg_generate_secure_approval_token BEFORE INSERT ON public.quote_approval_tokens FOR EACH ROW EXECUTE FUNCTION public.generate_secure_token();
+END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname='trg_invalidate_used_approval_token' AND tgrelid='public.quote_approval_tokens'::regclass) THEN
+  CREATE TRIGGER trg_invalidate_used_approval_token BEFORE UPDATE ON public.quote_approval_tokens FOR EACH ROW EXECUTE FUNCTION public.invalidate_used_approval_token();
+END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname='trg_notify_quote_client_response' AND tgrelid='public.quote_approval_tokens'::regclass) THEN
+  CREATE TRIGGER trg_notify_quote_client_response AFTER UPDATE ON public.quote_approval_tokens FOR EACH ROW EXECUTE FUNCTION public.notify_quote_client_response();
+END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname='trg_owner__quote_approval_tokens__seller_id' AND tgrelid='public.quote_approval_tokens'::regclass) THEN
+  CREATE TRIGGER trg_owner__quote_approval_tokens__seller_id BEFORE INSERT ON public.quote_approval_tokens FOR EACH ROW EXECUTE FUNCTION public.enforce_seller_id_owner();
+END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname='trg_validate_approval_token_status' AND tgrelid='public.quote_approval_tokens'::regclass) THEN
+  CREATE TRIGGER trg_validate_approval_token_status BEFORE INSERT OR UPDATE ON public.quote_approval_tokens FOR EACH ROW EXECUTE FUNCTION public.validate_status_fields();
+END IF; END $$;
 ALTER TABLE public.quote_approval_tokens ENABLE ROW LEVEL SECURITY;
-CREATE POLICY qatokens_select_scope ON public.quote_approval_tokens FOR SELECT TO authenticated USING (can_view_all_sales() OR seller_id = auth.uid());
-CREATE POLICY qatokens_insert_scope ON public.quote_approval_tokens FOR INSERT TO authenticated WITH CHECK (can_view_all_sales() OR seller_id = auth.uid());
-CREATE POLICY qatokens_update_scope ON public.quote_approval_tokens FOR UPDATE TO authenticated USING (can_view_all_sales() OR seller_id = auth.uid()) WITH CHECK (can_view_all_sales() OR seller_id = auth.uid());
-CREATE POLICY qatokens_delete_scope ON public.quote_approval_tokens FOR DELETE TO authenticated USING (can_view_all_sales() OR seller_id = auth.uid());
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='quote_approval_tokens' AND policyname='qatokens_select_scope') THEN
+  CREATE POLICY qatokens_select_scope ON public.quote_approval_tokens FOR SELECT TO authenticated USING (can_view_all_sales() OR seller_id = auth.uid());
+END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='quote_approval_tokens' AND policyname='qatokens_insert_scope') THEN
+  CREATE POLICY qatokens_insert_scope ON public.quote_approval_tokens FOR INSERT TO authenticated WITH CHECK (can_view_all_sales() OR seller_id = auth.uid());
+END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='quote_approval_tokens' AND policyname='qatokens_update_scope') THEN
+  CREATE POLICY qatokens_update_scope ON public.quote_approval_tokens FOR UPDATE TO authenticated USING (can_view_all_sales() OR seller_id = auth.uid()) WITH CHECK (can_view_all_sales() OR seller_id = auth.uid());
+END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='quote_approval_tokens' AND policyname='qatokens_delete_scope') THEN
+  CREATE POLICY qatokens_delete_scope ON public.quote_approval_tokens FOR DELETE TO authenticated USING (can_view_all_sales() OR seller_id = auth.uid());
+END IF; END $$;
