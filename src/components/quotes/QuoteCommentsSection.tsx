@@ -172,7 +172,7 @@ function CommentItem({
   const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [replyContent, setReplyContent] = useState('');
-  const [editContent, setEditContent] = useState(comment.comment);
+  const [editContent, setEditContent] = useState(comment.content);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isAuthor = user?.id === comment.user_id;
 
@@ -238,7 +238,7 @@ function CommentItem({
               </div>
             </div>
           ) : (
-            <p className="mt-1 whitespace-pre-line text-sm text-foreground/90">{comment.comment}</p>
+            <p className="mt-1 whitespace-pre-line text-sm text-foreground/90">{comment.content}</p>
           )}
 
           {!isEditing && (
@@ -261,7 +261,7 @@ function CommentItem({
                     className="h-7 gap-1 px-2 text-xs"
                     onClick={() => {
                       setIsEditing(true);
-                      setEditContent(comment.comment);
+                      setEditContent(comment.content);
                     }}
                   >
                     <Pencil className="h-3 w-3" /> Editar

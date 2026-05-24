@@ -96,7 +96,7 @@ export function useAdvancedPriceSearch() {
           (t) =>
             t.min_quantity <= filters.minQuantity &&
             (!t.max_quantity || t.max_quantity >= filters.minQuantity) &&
-            t.technique_name.toLowerCase().includes(filters.technique.toLowerCase()),
+            (t.technique_name ?? '').toLowerCase().includes(filters.technique.toLowerCase()),
         );
 
         if (matchingTable) {
@@ -106,8 +106,18 @@ export function useAdvancedPriceSearch() {
         }
       }
 
+      const calculatedUnitPrice = productPrice + customizationPrice + handlingPrice;
+
       return {
         ...product,
+        calculatedUnitPrice,
+        priceBreakdown: {
+          productPrice,
+          customizationPrice,
+          setupPrice,
+          handlingPrice,
+          totalPerUnit: calculatedUnitPrice,
+        },
         customizationPrice,
         setupPrice,
         handlingPrice,

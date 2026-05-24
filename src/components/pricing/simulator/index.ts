@@ -5,7 +5,6 @@ export type {
   ProductWithCalculatedPrice,
   ViewMode,
 } from '@/pages/advanced-price-search/types';
-export type { Product, ProductTechnique, ConfiguredEngraving, ProductColor } from './types';
 export * from './utils';
 export { StepIndicator } from './StepIndicator';
 export { ProductSearch } from './ProductSearch';

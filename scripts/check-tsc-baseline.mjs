@@ -18,36 +18,38 @@
  * Uso:
  *   node scripts/check-tsc-baseline.mjs
  */
-import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { spawnSync } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 const ROOT = process.cwd();
-const BASELINE_PATH = join(ROOT, ".tsc-baseline.json");
+const BASELINE_PATH = join(ROOT, '.tsc-baseline.json');
 const MAX_LIST = 50;
+const TSC_BIN = join(ROOT, 'node_modules', 'typescript', 'bin', 'tsc');
 
 if (!existsSync(BASELINE_PATH)) {
-  console.error("❌ .tsc-baseline.json não encontrado. Gere com: npm run typecheck:baseline:update");
+  console.error(
+    '❌ .tsc-baseline.json não encontrado. Gere com: npm run typecheck:baseline:update',
+  );
   process.exit(2);
 }
 
-const baseline = JSON.parse(readFileSync(BASELINE_PATH, "utf8"));
+const baseline = JSON.parse(readFileSync(BASELINE_PATH, 'utf8'));
 const baselineCounts = baseline.counts ?? {};
 
-console.log("⏳ Rodando tsc -p tsconfig.app.json --noEmit ...");
-const res = spawnSync(
-  "npx",
-  ["tsc", "-p", "tsconfig.app.json", "--noEmit"],
-  { encoding: "utf8", maxBuffer: 50 * 1024 * 1024 }
-);
+console.log('⏳ Rodando tsc -p tsconfig.app.json --noEmit ...');
+const res = spawnSync(process.execPath, [TSC_BIN, '-p', 'tsconfig.app.json', '--noEmit'], {
+  encoding: 'utf8',
+  maxBuffer: 50 * 1024 * 1024,
+});
 
 if (res.status === null || res.error) {
-  console.error("❌ tsc falhou ao executar:", res.error?.message || "desconhecido");
+  console.error('❌ tsc falhou ao executar:', res.error?.message || 'desconhecido');
   process.exit(2);
 }
 
-const output = (res.stdout || "") + (res.stderr || "");
-const lines = output.split("\n");
+const output = (res.stdout || '') + (res.stderr || '');
+const lines = output.split('\n');
 
 const ERR_RE = /^(\S+\.tsx?)\(\d+,\d+\): error (TS\d+):/;
 const currentCounts = {};
@@ -90,24 +92,30 @@ for (const [file, rules] of Object.entries(baselineCounts)) {
 }
 
 if (regressions.length > 0) {
-  console.error(`❌ Regressão de TypeScript detectada — ${regressions.length} par(es) file:rule com erros novos.`);
-  console.error("");
+  console.error(
+    `❌ Regressão de TypeScript detectada — ${regressions.length} par(es) file:rule com erros novos.`,
+  );
+  console.error('');
   console.error(`Listando até ${MAX_LIST} primeiros:`);
   for (const r of regressions.slice(0, MAX_LIST)) {
-    console.error(`  ${r.file}: ${r.rule} (atual: ${r.count}, baseline: ${r.baselineCount}, +${r.delta})`);
+    console.error(
+      `  ${r.file}: ${r.rule} (atual: ${r.count}, baseline: ${r.baselineCount}, +${r.delta})`,
+    );
   }
   if (regressions.length > MAX_LIST) {
     console.error(`  ... e mais ${regressions.length - MAX_LIST} entrada(s).`);
   }
-  console.error("");
-  console.error("Para investigar: npm run typecheck:full");
-  console.error("Para aceitar (após resolver erros legados): npm run typecheck:baseline:update");
+  console.error('');
+  console.error('Para investigar: npm run typecheck:full');
+  console.error('Para aceitar (após resolver erros legados): npm run typecheck:baseline:update');
   process.exit(1);
 }
 
 if (positiveDrift > 0) {
-  console.log(`✨ Drift positivo: ${positiveDrift} erro(s) eliminado(s). Considere atualizar o baseline.`);
+  console.log(
+    `✨ Drift positivo: ${positiveDrift} erro(s) eliminado(s). Considere atualizar o baseline.`,
+  );
 }
 
-console.log("✅ Nenhuma regressão de TypeScript detectada.");
+console.log('✅ Nenhuma regressão de TypeScript detectada.');
 process.exit(0);

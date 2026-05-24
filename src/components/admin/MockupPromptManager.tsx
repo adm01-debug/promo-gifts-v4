@@ -73,7 +73,10 @@ export function MockupPromptManager() {
     try {
       const [cr, tr] = await Promise.all([
         supabase.from('mockup_prompt_configs').select('*').order('config_key'),
-        anySupabase.from('personalization_techniques').select('id, name, code').eq('is_active', true),
+        anySupabase
+          .from('personalization_techniques')
+          .select('id, name, code')
+          .eq('is_active', true),
       ]);
       if (cr.error) throw cr.error;
       if (tr.error) throw tr.error;
@@ -100,18 +103,16 @@ export function MockupPromptManager() {
     if (!hasChanges(config)) return;
     setSavingId(config.id);
     try {
-      await supabase
-        .from('mockup_prompt_history')
-        .insert({
-          config_id: config.id,
-          config_key: config.config_key,
-          version: config.version,
-          new_prompt: edited.prompt_text,
-          old_prompt: config.prompt_text,
-          ai_model: config.ai_model,
-          changed_by: user?.id,
-          change_notes: changeNotes[config.id] || null,
-        });
+      await supabase.from('mockup_prompt_history').insert({
+        config_id: config.id,
+        config_key: config.config_key,
+        version: config.version,
+        new_prompt: edited.prompt_text,
+        old_prompt: config.prompt_text,
+        ai_model: config.ai_model,
+        changed_by: user?.id,
+        change_notes: changeNotes[config.id] || null,
+      });
       const { error } = await supabase
         .from('mockup_prompt_configs')
         .update({
@@ -164,7 +165,7 @@ export function MockupPromptManager() {
     if (!historyDialog) return;
     setEditedPrompts((p) => ({
       ...p,
-      [historyDialog.configId]: { prompt_text: entry.prompt_text, ai_model: entry.ai_model },
+      [historyDialog.configId]: { prompt_text: entry.new_prompt, ai_model: entry.ai_model },
     }));
     setChangeNotes((p) => ({
       ...p,
@@ -182,15 +183,13 @@ export function MockupPromptManager() {
       return;
     }
     try {
-      const { error } = await supabase
-        .from('mockup_prompt_configs')
-        .insert({
-          config_key: `technique_${tech.id}`,
-          label: `Prompt: ${tech.name}`,
-          prompt_text: `Apply the logo using ${tech.name} technique. The result should look realistic with proper ${tech.name.toLowerCase()} texture and finish on the product surface.`,
-          ai_model: 'google/gemini-2.5-flash-image-preview',
-          technique_id: tech.id,
-        });
+      const { error } = await supabase.from('mockup_prompt_configs').insert({
+        config_key: `technique_${tech.id}`,
+        label: `Prompt: ${tech.name}`,
+        prompt_text: `Apply the logo using ${tech.name} technique. The result should look realistic with proper ${tech.name.toLowerCase()} texture and finish on the product surface.`,
+        ai_model: 'google/gemini-2.5-flash-image-preview',
+        technique_id: tech.id,
+      });
       if (error) throw error;
       toast.success(`Prompt para "${tech.name}" criado`);
       setAddTechniqueDialog(false);

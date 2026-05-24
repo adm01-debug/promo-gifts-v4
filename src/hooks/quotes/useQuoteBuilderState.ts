@@ -12,6 +12,7 @@ import {
   useQuotes,
   useQuoteTemplates,
   useSellerDiscountLimits,
+  type Quote,
   type QuoteItem,
   type QuoteItemPersonalization,
   type QuoteTemplate,
@@ -38,6 +39,7 @@ import {
 } from '@/utils/product-search';
 import { getPriceFreshness } from '@/utils/price-freshness';
 import * as QuoteCalc from '@/logic/quotes/calculations';
+import type { PromobrindProduct } from '@/lib/external-db';
 
 interface Product {
   id: string;
@@ -780,7 +782,7 @@ export function useQuoteBuilderState() {
 
   // ── Template ──
   const applyTemplate = useCallback((template: QuoteTemplate) => {
-    const newItems: QuoteItem[] = template.items_data.map((item) => ({
+    const newItems: QuoteItem[] = template.items.map((item) => ({
       product_id: item.productId || '',
       product_name: item.productName,
       product_sku: item.productSku,
@@ -914,7 +916,7 @@ export function useQuoteBuilderState() {
 
       const effectiveStatus = status === 'pending_approval' ? 'pending_approval' : status;
 
-      const quoteData = {
+      const quoteData: Partial<Quote> = {
         client_id: clientId || undefined,
         client_name: contactInfo?.name || undefined,
         client_company: companyInfo?.name || undefined,
@@ -942,11 +944,11 @@ export function useQuoteBuilderState() {
       }
 
       // If pending_approval, create approval request usando desconto REAL (não aparente)
-      if (result && status === 'pending_approval' && maxDiscountPercent !== null) {
+      if (result?.id && status === 'pending_approval' && maxDiscountPercent !== null) {
         await requestApproval(result.id, realDiscountPercent, maxDiscountPercent, sellerNotes);
       }
 
-      if (result) {
+      if (result?.id) {
         clearAutoSave();
         navigate(`/orcamentos/${result.id}`);
       }

@@ -20,38 +20,38 @@
  * Uso:
  *   node scripts/check-eslint-baseline.mjs
  */
-import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync, mkdtempSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join, relative } from "node:path";
+import { spawnSync } from 'node:child_process';
+import { existsSync, readFileSync, mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, relative } from 'node:path';
 
 const ROOT = process.cwd();
-const BASELINE_PATH = join(ROOT, ".eslint-baseline.json");
+const BASELINE_PATH = join(ROOT, '.eslint-baseline.json');
 const MAX_LIST = 50;
+const ESLINT_BIN = join(ROOT, 'node_modules', 'eslint', 'bin', 'eslint.js');
 
 if (!existsSync(BASELINE_PATH)) {
   console.error(
-    "❌ .eslint-baseline.json não encontrado. Gere com: node scripts/eslint-baseline-generate.mjs"
+    '❌ .eslint-baseline.json não encontrado. Gere com: node scripts/eslint-baseline-generate.mjs',
   );
   process.exit(2);
 }
 
-const baseline = JSON.parse(readFileSync(BASELINE_PATH, "utf8"));
+const baseline = JSON.parse(readFileSync(BASELINE_PATH, 'utf8'));
 const baselineCounts = baseline.counts ?? {};
 
-const dir = mkdtempSync(join(tmpdir(), "eslint-gate-"));
-const out = join(dir, "report.json");
-const res = spawnSync(
-  "npx",
-  ["eslint", "src", "--format", "json", "-o", out],
-  { stdio: ["ignore", "inherit", "inherit"], shell: false }
-);
+const dir = mkdtempSync(join(tmpdir(), 'eslint-gate-'));
+const out = join(dir, 'report.json');
+const res = spawnSync(process.execPath, [ESLINT_BIN, 'src', '--format', 'json', '-o', out], {
+  stdio: ['ignore', 'inherit', 'inherit'],
+  shell: false,
+});
 if (res.status !== 0 && res.status !== 1) {
   console.error(`❌ eslint falhou com status ${res.status}`);
   process.exit(2);
 }
 
-const report = JSON.parse(readFileSync(out, "utf8"));
+const report = JSON.parse(readFileSync(out, 'utf8'));
 
 // Agrega current igual ao generator.
 const current = {};
@@ -59,20 +59,19 @@ let totalErrors = 0;
 let totalWarnings = 0;
 for (const file of report) {
   if (!file.messages?.length) continue;
-  const rel = relative(ROOT, file.filePath).replaceAll("\\", "/");
+  const rel = relative(ROOT, file.filePath).replaceAll('\\', '/');
   for (const m of file.messages) {
     // Agora processamos tanto erros (2) quanto warnings (1)
     if (m.severity === 0) continue;
-    
-    const rule = m.ruleId ?? "<no-rule>";
+
+    const rule = m.ruleId ?? '<no-rule>';
     current[rel] ??= {};
     current[rel][rule] = (current[rel][rule] ?? 0) + 1;
-    
+
     if (m.severity === 2) totalErrors += 1;
     if (m.severity === 1) totalWarnings += 1;
   }
 }
-
 
 // Compara: por (file,rule), conta quantas excedem o baseline.
 // Quando há regressão, escolhemos as primeiras N mensagens daquele par
@@ -98,19 +97,18 @@ for (const [file, rules] of Object.entries(baselineCounts)) {
 
 const baselineTotal = baseline.totalErrors ?? 0;
 console.log(
-  `ESLint baseline gate — atual: ${totalErrors} erros, ${totalWarnings} warnings · baseline: ${baselineTotal} erros`
+  `ESLint baseline gate — atual: ${totalErrors} erros, ${totalWarnings} warnings · baseline: ${baselineTotal} erros`,
 );
-
 
 if (improvements.length) {
   const improved = improvements.reduce((s, i) => s + (i.baseline - i.current), 0);
   console.log(
-    `✨ Drift positivo: ${improved} erro(s) eliminado(s) em ${improvements.length} par(es) file:rule. Considere atualizar o baseline.`
+    `✨ Drift positivo: ${improved} erro(s) eliminado(s) em ${improvements.length} par(es) file:rule. Considere atualizar o baseline.`,
   );
 }
 
 if (regressions.length === 0) {
-  console.log("✅ Nenhuma regressão de lint detectada.");
+  console.log('✅ Nenhuma regressão de lint detectada.');
   process.exit(0);
 }
 
@@ -123,10 +121,10 @@ for (const r of regressions.slice(0, MAX_LIST)) {
   examplesByKey.set(`${r.file}::${r.rule}`, []);
 }
 for (const file of report) {
-  const rel = relative(ROOT, file.filePath).replaceAll("\\", "/");
+  const rel = relative(ROOT, file.filePath).replaceAll('\\', '/');
   for (const m of file.messages ?? []) {
     if (m.severity === 0) continue;
-    const key = `${rel}::${m.ruleId ?? "<no-rule>"}`;
+    const key = `${rel}::${m.ruleId ?? '<no-rule>'}`;
     const arr = examplesByKey.get(key);
     if (arr && arr.length < 3) {
       const prefix = m.severity === 2 ? 'ERROR' : 'WARN';
@@ -135,14 +133,13 @@ for (const file of report) {
   }
 }
 
-
 console.error(
-  `\n❌ ${totalDelta} problema(s) novo(s) de ESLint (erros ou warnings) em ${regressions.length} par(es) file:rule:`
+  `\n❌ ${totalDelta} problema(s) novo(s) de ESLint (erros ou warnings) em ${regressions.length} par(es) file:rule:`,
 );
 
 for (const r of regressions.slice(0, MAX_LIST)) {
   console.error(
-    `  • ${r.file} [${r.rule}] baseline=${r.baseline} → atual=${r.current} (+${r.delta})`
+    `  • ${r.file} [${r.rule}] baseline=${r.baseline} → atual=${r.current} (+${r.delta})`,
   );
   const ex = examplesByKey.get(`${r.file}::${r.rule}`) ?? [];
   for (const e of ex) console.error(`      ${e}`);
@@ -150,8 +147,6 @@ for (const r of regressions.slice(0, MAX_LIST)) {
 if (regressions.length > MAX_LIST) {
   console.error(`  … e mais ${regressions.length - MAX_LIST} par(es) omitido(s).`);
 }
-console.error(
-  "\nPara atualizar o baseline (após corrigir os legados ou refactor intencional):"
-);
-console.error("  node scripts/eslint-baseline-generate.mjs");
+console.error('\nPara atualizar o baseline (após corrigir os legados ou refactor intencional):');
+console.error('  node scripts/eslint-baseline-generate.mjs');
 process.exit(1);

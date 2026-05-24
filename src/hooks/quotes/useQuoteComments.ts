@@ -9,6 +9,7 @@ export interface QuoteComment {
   user_id: string;
   parent_id: string | null;
   content: string;
+  is_internal?: boolean | null;
   is_edited: boolean;
   created_at: string;
   updated_at: string;
