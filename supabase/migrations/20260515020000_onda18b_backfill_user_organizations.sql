@@ -9,7 +9,7 @@
 --
 -- Hardening (CodeRabbit review):
 --   - Lookup defensivo da organization por name (era UUID hardcoded)
---   - RAISE EXCEPTION se org nao existir (evita FK violation silenciosa)
+--   - RAISE NOTICE se org nao existir em replay limpo (evita FK falsa)
 --   - RAISE NOTICE com contagem de rows inseridas (observability)
 --   - Idempotencia mantida via ON CONFLICT DO NOTHING + NOT EXISTS guard
 --
@@ -31,9 +31,10 @@ BEGIN
   LIMIT 1;
 
   IF _org_id IS NULL THEN
-    RAISE EXCEPTION
-      'Onda 18b: Organization "%" not found in public.organizations. Aborting backfill to avoid FK violation.',
+    RAISE NOTICE
+      'Onda 18b: Organization "%" not found in public.organizations. Skipping production backfill during clean replay.',
       _org_name;
+    RETURN;
   END IF;
 
   -- Insert idempotente com contagem de rows inseridas
