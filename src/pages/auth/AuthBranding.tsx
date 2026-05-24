@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Package, Factory, SlidersHorizontal, Brain, Rocket } from "lucide-react";
 import { AppLogo } from "@/components/layout/AppLogo";
 import astronautSvg from "@/assets/astronaut.svg";
+import { StarfieldCanvas } from "@/pages/auth/StarfieldCanvas";
 
 interface RocketData { id: number; left: number; size: number; duration: number; rotation: number; scale: number; }
 interface PlanetData { id: number; left: number; top: number; size: number; duration: number; type: number; delay: number; }
@@ -35,6 +36,11 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
 
   const nextIdRef = useRef(0);
   const starsRef = useRef<StarData[]>([]);
+
+  // Etapa 12b: feature flag para rollout gradual do StarfieldCanvas.
+  // Default: true (canvas ativo). Para reverter ao DOM legacy, setar
+  // VITE_USE_CANVAS_STARFIELD=false no Vercel.
+  const useCanvasStarfield = import.meta.env.VITE_USE_CANVAS_STARFIELD !== 'false';
 
   // Detecta prefers-reduced-motion
   useEffect(() => {
@@ -197,33 +203,35 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
         ))}
       </div>
 
-      {/* Dynamic Stars - Otimizado com camadas de animação separadas */}
-      {activeStars.map((star) => (
-        <div
-          key={`star-container-${star.id}`}
-          className="absolute transition-[top,left] duration-1000 ease-in-out"
-          style={{
-            top: `${star.top}%`,
-            left: `${star.left}%`,
-            width: `${star.size}px`,
-            height: `${star.size}px`,
-            // Drift (Movimento) na camada externa com translate3d para estabilidade
-            animation: `starDrift ${star.driftDur}s linear infinite alternate`,
-            willChange: "transform, top, left",
-          }}
-        >
+      {/* Dynamic Stars - Etapa 12: canvas único por padrão; DOM legacy via flag */}
+      {useCanvasStarfield ? (
+        <StarfieldCanvas density={isFull ? 150 : 50} />
+      ) : (
+        activeStars.map((star) => (
           <div
-            className="w-full h-full rounded-full bg-white"
-            data-testid={`star-breathing-${star.id}`}
+            key={`star-container-${star.id}`}
+            className="absolute transition-[top,left] duration-1000 ease-in-out"
             style={{
-              // Brilho intenso triplo (30x) + escala (8x) via animação breathingStar em index.css
-              animation: `breathingStar ${star.breathingDur}s ease-in-out ${star.breathingDelay}s infinite`,
-              willChange: "opacity, transform, filter",
-              mixBlendMode: 'screen',
+              top: `${star.top}%`,
+              left: `${star.left}%`,
+              width: `${star.size}px`,
+              height: `${star.size}px`,
+              animation: `starDrift ${star.driftDur}s linear infinite alternate`,
+              willChange: "transform, top, left",
             }}
-          />
-        </div>
-      ))}
+          >
+            <div
+              className="w-full h-full rounded-full bg-white"
+              data-testid={`star-breathing-${star.id}`}
+              style={{
+                animation: `breathingStar ${star.breathingDur}s ease-in-out ${star.breathingDelay}s infinite`,
+                willChange: "opacity, transform, filter",
+                mixBlendMode: 'screen',
+              }}
+            />
+          </div>
+        ))
+      )}
 
 
       {/* Planets with zigzag trajectory */}
