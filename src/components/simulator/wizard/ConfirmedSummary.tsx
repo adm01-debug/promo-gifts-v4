@@ -12,7 +12,6 @@ import {
   Repeat, Undo2, Redo2, AlertCircle,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/format';
 import { toast } from 'sonner';
 import type { UseSimulatorWizardReturn } from '@/hooks/simulator/useSimulatorWizard';

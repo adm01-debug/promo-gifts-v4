@@ -67,10 +67,10 @@ export default function AdminProductFormPage() {
     if (!isEdit) return;
 
     const loadProduct = async () => {
+      if (!id) return;
       setIsLoading(true);
       try {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const fullProduct = await fetchPromobrindProductById(id!);
+        const fullProduct = await fetchPromobrindProductById(id);
         if (fullProduct) {
           setProduct(fullProduct);
         } else {
@@ -190,9 +190,11 @@ export default function AdminProductFormPage() {
         const { fetchPromobrindProducts } = await import('@/lib/external-db');
         const existing = await fetchPromobrindProducts({ search: data.sku, limit: 5 });
         const products: PromobrindProduct[] = Array.isArray(existing)
-          ? (existing as PromobrindProduct[])
-          : ((existing as Record<string, unknown>).products as PromobrindProduct[]) || [];
-        const duplicate = products.find((p) => p.sku?.toLowerCase() === data.sku.toLowerCase());
+          ? existing
+          : ((existing as { products?: PromobrindProduct[] }).products ?? []);
+        const duplicate = products.find(
+          (p: PromobrindProduct) => p.sku?.toLowerCase() === data.sku.toLowerCase(),
+        );
         if (duplicate) {
           toast.error(`SKU "${data.sku}" já está cadastrado no produto "${duplicate.name}"`);
           setIsSaving(false);

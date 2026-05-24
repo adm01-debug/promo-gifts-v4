@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { X, Check, Minus, Crown, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { X, Check, Minus, Crown, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useComparisonHighlight, highlightClasses } from './ComparisonHighlights';
@@ -24,9 +24,10 @@ import { PriceSparkline } from './PriceSparkline';
 import { StockRiskBadge } from './StockRiskBadge';
 import { OtherSuppliersRow } from './OtherSuppliersRow';
 import type { CompareVariantInfo } from '@/stores/useComparisonStore';
-import type { Product } from '@/types/product';
+// Runtime/UI Product (from useProducts) — distinct from src/types/product.ts (DB-oriented).
+import type { Product } from '@/types/product-catalog';
 
-interface CompareEntry {
+export interface CompareEntry {
   product: Product;
   variant?: CompareVariantInfo;
   index: number;
@@ -41,7 +42,7 @@ interface CompareTableViewProps {
   differencesOnly?: boolean;
 }
 
-function leadTimeProxy(status: string | undefined | null): number {
+function leadTimeProxy(status: string | undefined): number {
   switch (status) {
     case 'in-stock':
       return 1;
@@ -100,21 +101,13 @@ export function CompareTableView({
 
   const eq = {
     sku: allEqual(products.map((p) => p.sku)),
-    category: allEqual(products.map((p) => p.category_name)),
-    supplier: allEqual(products.map((p) => p.supplier_name)),
-    is_kit: allEqual(products.map((p) => p.is_kit)),
+    category: allEqual(products.map((p) => p.category?.name)),
+    supplier: allEqual(products.map((p) => p.supplier?.name)),
+    isKit: allEqual(products.map((p) => p.isKit)),
     materials: allEqual(products.map((p) => (p.materials ?? []).slice().sort().join('|'))),
-    publico: allEqual(
-      products.map((p) => {
-        const tags = p.tags as Record<string, unknown> | null;
-        return ((tags?.publicoAlvo ?? []) as string[]).slice().sort().join('|');
-      }),
-    ),
+    publico: allEqual(products.map((p) => (p.tags?.publicoAlvo ?? []).slice().sort().join('|'))),
     datas: allEqual(
-      products.map((p) => {
-        const tags = p.tags as Record<string, unknown> | null;
-        return ((tags?.datasComemorativas ?? []) as string[]).slice().sort().join('|');
-      }),
+      products.map((p) => (p.tags?.datasComemorativas ?? []).slice().sort().join('|')),
     ),
     description: allEqual(products.map((p) => p.description ?? '')),
     weight: allEqual(products.map((p) => p.dimensions?.weight_g ?? null)),
@@ -149,7 +142,7 @@ export function CompareTableView({
                   className="flex min-w-[180px] shrink-0 items-center gap-2 rounded-lg border border-border bg-card px-2 py-1"
                 >
                   <img
-                    src={hoveredVariant[entry.index] ?? (entry.product.images ?? [])[0]}
+                    src={hoveredVariant[entry.index] ?? entry.product.images[0]}
                     alt={entry.product.name}
                     className="h-8 w-8 rounded object-cover"
                     loading="lazy"
@@ -194,7 +187,7 @@ export function CompareTableView({
                         </button>
                         <div className="flex flex-col items-center gap-2">
                           <img
-                            src={hoveredVariant[entry.index] ?? (entry.product.images ?? [])[0]}
+                            src={hoveredVariant[entry.index] ?? entry.product.images[0]}
                             alt={entry.product.name}
                             className="h-24 w-24 cursor-pointer rounded-lg object-cover transition-all hover:ring-2 hover:ring-primary"
                             onClick={() => navigate(`/produto/${entry.product.id}`)}
@@ -217,7 +210,7 @@ export function CompareTableView({
                           {/* Hover swatches → swap header image */}
                           {(entry.product.colors?.length ?? 0) > 1 && (
                             <div className="flex flex-wrap justify-center gap-0.5">
-                              {(entry.product.colors ?? [])
+                              {entry.product.colors
                                 .slice(0, 6)
                                 .map((c: { name: string; hex?: string }, i: number) => (
                                   <button
@@ -228,8 +221,7 @@ export function CompareTableView({
                                     title={c.name}
                                     onMouseEnter={() => {
                                       const altImg =
-                                        (entry.product.images ?? [])[i] ??
-                                        (entry.product.images ?? [])[0];
+                                        entry.product.images[i] ?? entry.product.images[0] ?? null;
                                       setHoveredVariant((prev) => ({
                                         ...prev,
                                         [entry.index]: altImg,
@@ -245,9 +237,7 @@ export function CompareTableView({
                                 ))}
                             </div>
                           )}
-                          <StockRiskBadge
-                            product={entry.product as unknown as Record<string, unknown>}
-                          />
+                          <StockRiskBadge product={entry.product} />
                         </div>
                       </div>
                     </motion.th>
@@ -282,14 +272,14 @@ export function CompareTableView({
               <HighlightedNumberRow
                 label="Quantidade mínima"
                 products={products}
-                valueFn={(p) => p.min_quantity ?? 0}
+                valueFn={(p) => p.minQuantity}
                 renderFn={(v) => `${v} un.`}
                 mode="lower-is-better"
               />
               <HighlightedNumberRow
                 label="Custo total (qtd. mín.)"
                 products={products}
-                valueFn={(p) => Number(p.price ?? 0) * Number(p.min_quantity ?? 1)}
+                valueFn={(p) => Number(p.price ?? 0) * Number(p.minQuantity ?? 1)}
                 renderFn={(v) => formatCurrency(v)}
                 mode="lower-is-better"
                 subtitle="TCO"
@@ -304,7 +294,7 @@ export function CompareTableView({
               <HighlightedNumberRow
                 label="Lead time"
                 products={products}
-                valueFn={(p) => leadTimeProxy(p.stock_status)}
+                valueFn={(p) => leadTimeProxy(p.stockStatus)}
                 renderFn={(v) =>
                   leadTimeLabel(v === 1 ? 'in-stock' : v === 2 ? 'low-stock' : 'out-of-stock')
                 }
@@ -329,7 +319,7 @@ export function CompareTableView({
                 <SimpleRow
                   label="Categoria"
                   products={products}
-                  render={(p) => <Badge variant="outline">{p.category_name}</Badge>}
+                  render={(p) => <Badge variant="outline">{p.category?.name}</Badge>}
                 />
               )}
               {showRow('supplier') && (
@@ -338,8 +328,7 @@ export function CompareTableView({
                   products={products}
                   render={(p) => (
                     <div className="flex items-center justify-center gap-1.5">
-                      <ShieldCheck className="h-3.5 w-3.5 text-success" />
-                      <span>{p.supplier_name}</span>
+                      <span>{p.supplier?.name}</span>
                     </div>
                   )}
                 />
@@ -348,16 +337,16 @@ export function CompareTableView({
                 label="Estoque (status)"
                 products={products}
                 render={(p) => {
-                  const s = getStockStatusLabel(p.stock_status ?? '');
+                  const s = getStockStatusLabel(p.stockStatus);
                   return <span className={cn('font-medium', s.color)}>{s.label}</span>;
                 }}
               />
-              {showRow('is_kit') && (
+              {showRow('isKit') && (
                 <SimpleRow
                   label="É Kit?"
                   products={products}
                   render={(p) =>
-                    p.is_kit ? (
+                    p.isKit ? (
                       <Check className="mx-auto h-5 w-5 text-success" />
                     ) : (
                       <Minus className="mx-auto h-5 w-5 text-muted-foreground" />
@@ -370,20 +359,16 @@ export function CompareTableView({
                 products={products}
                 render={(p) => (
                   <div className="flex flex-wrap justify-center gap-1">
-                    {(p.colors ?? [])
-                      .slice(0, 6)
-                      .map((c: { name: string; hex?: string }, i: number) => (
-                        <div
-                          key={i}
-                          className="h-5 w-5 rounded-full border border-border"
-                          style={{ backgroundColor: c.hex }}
-                          title={c.name}
-                        />
-                      ))}
+                    {p.colors?.slice(0, 6).map((c: { name: string; hex?: string }, i: number) => (
+                      <div
+                        key={i}
+                        className="h-5 w-5 rounded-full border border-border"
+                        style={{ backgroundColor: c.hex }}
+                        title={c.name}
+                      />
+                    ))}
                     {(p.colors?.length ?? 0) > 6 && (
-                      <span className="text-xs text-muted-foreground">
-                        +{(p.colors?.length ?? 0) - 6}
-                      </span>
+                      <span className="text-xs text-muted-foreground">+{p.colors.length - 6}</span>
                     )}
                   </div>
                 )}
@@ -436,31 +421,25 @@ export function CompareTableView({
                 <SimpleRow
                   label="Público-alvo"
                   products={products}
-                  render={(p) => {
-                    const tags = p.tags as Record<string, unknown> | null;
-                    const publicoAlvo = (tags?.publicoAlvo ?? []) as string[];
-                    return (
-                      <div className="flex flex-wrap justify-center gap-1">
-                        {publicoAlvo.slice(0, 3).map((t: string) => (
-                          <Badge key={t} variant="outline" className="text-xs">
-                            {t}
-                          </Badge>
-                        ))}
-                      </div>
-                    );
-                  }}
+                  render={(p) => (
+                    <div className="flex flex-wrap justify-center gap-1">
+                      {(p.tags?.publicoAlvo ?? []).slice(0, 3).map((t: string) => (
+                        <Badge key={t} variant="outline" className="text-xs">
+                          {t}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 />
               )}
               {showRow('datas') && (
                 <SimpleRow
                   label="Datas comemorativas"
                   products={products}
-                  render={(p) => {
-                    const tags = p.tags as Record<string, unknown> | null;
-                    const datasComemorativas = (tags?.datasComemorativas ?? []) as string[];
-                    return datasComemorativas.length > 0 ? (
+                  render={(p) =>
+                    (p.tags?.datasComemorativas ?? []).length > 0 ? (
                       <div className="flex flex-wrap justify-center gap-1">
-                        {datasComemorativas.slice(0, 2).map((d: string) => (
+                        {p.tags.datasComemorativas.slice(0, 2).map((d: string) => (
                           <Badge key={d} variant="outline" className="text-xs">
                             {d}
                           </Badge>
@@ -468,8 +447,8 @@ export function CompareTableView({
                       </div>
                     ) : (
                       <Minus className="mx-auto h-4 w-4 text-muted-foreground" />
-                    );
-                  }}
+                    )
+                  }
                 />
               )}
               {showRow('description') && (
@@ -489,10 +468,7 @@ export function CompareTableView({
                 </TableCell>
                 {products.map((p, idx) => (
                   <TableCell key={`alt-${idx}`} className="align-top">
-                    <OtherSuppliersRow
-                      product={p as unknown as Record<string, unknown>}
-                      formatCurrency={formatCurrency}
-                    />
+                    <OtherSuppliersRow product={p} formatCurrency={formatCurrency} />
                   </TableCell>
                 ))}
               </TableRow>

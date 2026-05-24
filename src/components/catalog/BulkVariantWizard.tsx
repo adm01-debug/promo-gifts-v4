@@ -8,9 +8,18 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import {
-  Package, AlertTriangle, SkipForward, ShoppingBag, FileText, Heart, GitCompare, FolderPlus, FileDown,
+  Package,
+  AlertTriangle,
+  SkipForward,
+  ShoppingBag,
+  FileText,
+  Heart,
+  GitCompare,
+  FolderPlus,
+  FileDown,
+  type LucideIcon,
 } from 'lucide-react';
-import { useExternalVariantStock, type ExternalVariantStock, type Product } from "@/hooks/products";
+import { useExternalVariantStock, type ExternalVariantStock, type Product } from '@/hooks/products';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export interface BulkVariantSelection {
@@ -94,19 +103,22 @@ function ProductVariantStep({
       className="space-y-3"
     >
       {/* Product info card */}
-      <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 border border-border/50">
+      <div className="flex items-center gap-3 rounded-xl border border-border/50 bg-muted/40 p-3">
         {product.images?.[0] && (
           <img
             src={product.images[0]}
             alt={product.name}
-            className="w-12 h-12 rounded-lg object-cover border border-border/60 shrink-0 shadow-sm"
+            className="h-12 w-12 shrink-0 rounded-lg border border-border/60 object-cover shadow-sm"
           />
         )}
-        <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm truncate leading-tight">{product.name}</p>
-          <p className="text-[11px] text-muted-foreground font-mono mt-0.5">{product.sku}</p>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium leading-tight">{product.name}</p>
+          <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">{product.sku}</p>
         </div>
-        <Badge variant="outline" className="text-[10px] gap-1 shrink-0 border-success/30 text-success">
+        <Badge
+          variant="outline"
+          className="shrink-0 gap-1 border-success/30 text-[10px] text-success"
+        >
           <Package className="h-3 w-3" />
           {fmt(totalStock)}
         </Badge>
@@ -115,15 +127,15 @@ function ProductVariantStep({
       {/* Skip / add without color */}
       <button
         onClick={onSkip}
-        className="w-full flex items-center gap-3 p-3 rounded-xl border border-dashed border-border/60 hover:border-primary/40 hover:bg-primary/5 transition-all text-left text-sm text-muted-foreground group"
+        className="group flex w-full items-center gap-3 rounded-xl border border-dashed border-border/60 p-3 text-left text-sm text-muted-foreground transition-all hover:border-primary/40 hover:bg-primary/5"
       >
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-destructive/70 via-success/70 to-info/70 border border-border/50 shrink-0 group-hover:scale-110 transition-transform" />
+        <div className="h-8 w-8 shrink-0 rounded-full border border-border/50 bg-gradient-to-br from-destructive/70 via-success/70 to-info/70 transition-transform group-hover:scale-110" />
         <span className="flex-1">Sem cor específica</span>
-        <SkipForward className="h-3.5 w-3.5 opacity-50 group-hover:opacity-100 transition-opacity" />
+        <SkipForward className="h-3.5 w-3.5 opacity-50 transition-opacity group-hover:opacity-100" />
       </button>
 
       {/* Variant grid */}
-      <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-1 scrollbar-thin">
+      <div className="scrollbar-thin grid max-h-60 grid-cols-2 gap-2 overflow-y-auto pr-1">
         {sortedVariants.map((variant) => {
           const stock = variant.stock_quantity ?? 0;
           const isOutOfStock = stock === 0;
@@ -134,10 +146,10 @@ function ProductVariantStep({
               key={variant.id}
               onClick={() => onSelect(variant)}
               className={cn(
-                'relative flex items-center gap-2.5 p-2.5 rounded-xl border transition-all text-left group',
+                'group relative flex items-center gap-2.5 rounded-xl border p-2.5 text-left transition-all',
                 'hover:border-primary/50 hover:bg-accent/60 hover:shadow-sm',
                 isOutOfStock
-                  ? 'opacity-50 border-border/40 bg-muted/20'
+                  ? 'border-border/40 bg-muted/20 opacity-50'
                   : 'border-border/60 bg-card',
               )}
             >
@@ -145,11 +157,11 @@ function ProductVariantStep({
                 <img
                   src={`${variant.selected_thumbnail}/thumbnail`}
                   alt={variant.color_name ?? ''}
-                  className="w-10 h-10 rounded-lg object-cover border border-border/50 shrink-0 shadow-sm group-hover:scale-105 transition-transform"
+                  className="h-10 w-10 shrink-0 rounded-lg border border-border/50 object-cover shadow-sm transition-transform group-hover:scale-105"
                   onError={(e) => {
                     const t = e.currentTarget;
                     if (t.src.includes('/thumbnail')) {
-                      t.src = variant.selected_thumbnail!;
+                      t.src = variant.selected_thumbnail ?? '';
                     } else {
                       t.style.display = 'none';
                     }
@@ -157,25 +169,30 @@ function ProductVariantStep({
                 />
               ) : (
                 <div
-                  className="w-10 h-10 rounded-lg border border-border/50 shrink-0 shadow-sm group-hover:scale-105 transition-transform"
+                  className="h-10 w-10 shrink-0 rounded-lg border border-border/50 shadow-sm transition-transform group-hover:scale-105"
                   style={{ backgroundColor: variant.color_hex || '#CCC' }}
                 />
               )}
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium truncate leading-tight">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-medium leading-tight">
                   {variant.color_name || 'Sem nome'}
                   {variant.size_code && (
-                    <span className="text-muted-foreground ml-1">— {variant.size_code}</span>
+                    <span className="ml-1 text-muted-foreground">— {variant.size_code}</span>
                   )}
                 </p>
-                <div className="flex items-center gap-1 mt-1">
+                <div className="mt-1 flex items-center gap-1">
                   {isOutOfStock ? (
-                    <span className="text-[10px] text-destructive flex items-center gap-0.5">
+                    <span className="flex items-center gap-0.5 text-[10px] text-destructive">
                       <AlertTriangle className="h-2.5 w-2.5" />
                       Sem estoque
                     </span>
                   ) : (
-                    <span className={cn('text-[10px] font-medium flex items-center gap-0.5', isLowStock ? 'text-warning' : 'text-success')}>
+                    <span
+                      className={cn(
+                        'flex items-center gap-0.5 text-[10px] font-medium',
+                        isLowStock ? 'text-warning' : 'text-success',
+                      )}
+                    >
                       <Package className="h-2.5 w-2.5" />
                       {fmt(stock)} un
                     </span>
@@ -200,17 +217,17 @@ function ProductHeader({
   total: number;
 }) {
   return (
-    <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 border border-border/50">
+    <div className="flex items-center gap-3 rounded-xl border border-border/50 bg-muted/40 p-3">
       {product.images?.[0] && (
         <img
           src={product.images[0]}
           alt={product.name}
-          className="w-12 h-12 rounded-lg object-cover border border-border/60 shrink-0 shadow-sm"
+          className="h-12 w-12 shrink-0 rounded-lg border border-border/60 object-cover shadow-sm"
         />
       )}
-      <div className="flex-1 min-w-0">
-        <p className="font-medium text-sm truncate">{product.name}</p>
-        <p className="text-[11px] text-muted-foreground font-mono mt-0.5">{product.sku}</p>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{product.name}</p>
+        <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">{product.sku}</p>
       </div>
       <Badge variant="secondary" className="text-[10px]">
         {step + 1}/{total}
@@ -223,9 +240,9 @@ function ProductHeader({
 function ProgressBar({ current, total }: { current: number; total: number }) {
   const pct = total > 0 ? (current / total) * 100 : 0;
   return (
-    <div className="h-1.5 bg-muted/60 rounded-full overflow-hidden">
+    <div className="h-1.5 overflow-hidden rounded-full bg-muted/60">
       <motion.div
-        className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full"
+        className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70"
         initial={{ width: 0 }}
         animate={{ width: `${pct}%` }}
         transition={{ duration: 0.4, ease: 'easeOut' }}
@@ -235,7 +252,13 @@ function ProgressBar({ current, total }: { current: number; total: number }) {
 }
 
 /* ── Main Wizard ── */
-export function BulkVariantWizard({ open, onOpenChange, products, mode, onComplete }: BulkVariantWizardProps) {
+export function BulkVariantWizard({
+  open,
+  onOpenChange,
+  products,
+  mode,
+  onComplete,
+}: BulkVariantWizardProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selections, setSelections] = useState<BulkVariantSelection[]>([]);
 
@@ -270,28 +293,63 @@ export function BulkVariantWizard({ open, onOpenChange, products, mode, onComple
   const currentProduct = products[currentIndex];
   if (!currentProduct) return null;
 
-  const modeConfig: Record<BulkWizardMode, { icon: any; title: string; colorClass: string; bgClass: string }> = {
-    cart: { icon: ShoppingBag, title: 'Adicionar ao Carrinho', colorClass: 'text-primary', bgClass: 'bg-primary/15' },
-    quote: { icon: FileText, title: 'Enviar para Orçamento', colorClass: 'text-success', bgClass: 'bg-success/15' },
-    favorite: { icon: Heart, title: 'Favoritar com Cor', colorClass: 'text-destructive', bgClass: 'bg-destructive/15' },
-    compare: { icon: GitCompare, title: 'Comparar com Cor', colorClass: 'text-primary', bgClass: 'bg-primary/15' },
-    collection: { icon: FolderPlus, title: 'Coleção com Cor', colorClass: 'text-info', bgClass: 'bg-info/15' },
-    pdf: { icon: FileDown, title: 'Gerar Catálogo PDF', colorClass: 'text-orange-500', bgClass: 'bg-orange-500/15' },
+  const modeConfig: Record<
+    BulkWizardMode,
+    { icon: LucideIcon; title: string; colorClass: string; bgClass: string }
+  > = {
+    cart: {
+      icon: ShoppingBag,
+      title: 'Adicionar ao Carrinho',
+      colorClass: 'text-primary',
+      bgClass: 'bg-primary/15',
+    },
+    quote: {
+      icon: FileText,
+      title: 'Enviar para Orçamento',
+      colorClass: 'text-success',
+      bgClass: 'bg-success/15',
+    },
+    favorite: {
+      icon: Heart,
+      title: 'Favoritar com Cor',
+      colorClass: 'text-destructive',
+      bgClass: 'bg-destructive/15',
+    },
+    compare: {
+      icon: GitCompare,
+      title: 'Comparar com Cor',
+      colorClass: 'text-primary',
+      bgClass: 'bg-primary/15',
+    },
+    collection: {
+      icon: FolderPlus,
+      title: 'Coleção com Cor',
+      colorClass: 'text-info',
+      bgClass: 'bg-info/15',
+    },
+    pdf: {
+      icon: FileDown,
+      title: 'Gerar Catálogo PDF',
+      colorClass: 'text-orange-500',
+      bgClass: 'bg-orange-500/15',
+    },
   };
   const { icon: Icon, title, colorClass } = modeConfig[mode];
   const bgClass = modeConfig[mode].bgClass;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[85vh] overflow-hidden flex flex-col gap-0 p-0">
+      <DialogContent className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-md">
         {/* Header */}
-        <div className="px-5 pt-5 pb-3 space-y-3">
+        <div className="space-y-3 px-5 pb-3 pt-5">
           <DialogHeader className="p-0">
-            <DialogTitle className="flex items-center gap-2.5 text-base font-display font-semibold">
-              <div className={cn(
-                'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
-                bgClass,
-              )}>
+            <DialogTitle className="flex items-center gap-2.5 font-display text-base font-semibold">
+              <div
+                className={cn(
+                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
+                  bgClass,
+                )}
+              >
                 <Icon className={cn('h-4 w-4', colorClass)} />
               </div>
               {title}
@@ -303,7 +361,7 @@ export function BulkVariantWizard({ open, onOpenChange, products, mode, onComple
 
           <ProgressBar current={currentIndex} total={products.length} />
 
-          <p className="text-xs text-muted-foreground leading-relaxed">
+          <p className="text-xs leading-relaxed text-muted-foreground">
             Escolha a cor/variação de cada produto. Clique em "Sem cor específica" para pular.
           </p>
         </div>
@@ -323,19 +381,22 @@ export function BulkVariantWizard({ open, onOpenChange, products, mode, onComple
         </div>
 
         {/* Bottom step indicator */}
-        <div className="px-5 py-3 border-t border-border/40 bg-muted/20 flex items-center justify-between">
+        <div className="flex items-center justify-between border-t border-border/40 bg-muted/20 px-5 py-3">
           <span className="text-[11px] text-muted-foreground">
-            Produto <strong className="text-foreground">{currentIndex + 1}</strong> de <strong className="text-foreground">{products.length}</strong>
+            Produto <strong className="text-foreground">{currentIndex + 1}</strong> de{' '}
+            <strong className="text-foreground">{products.length}</strong>
           </span>
           <div className="flex gap-1">
             {products.map((_, i) => (
               <div
                 key={i}
                 className={cn(
-                  'w-1.5 h-1.5 rounded-full transition-all duration-300',
-                  i < currentIndex ? 'bg-primary' :
-                  i === currentIndex ? 'bg-primary w-4' :
-                  'bg-muted-foreground/20',
+                  'h-1.5 w-1.5 rounded-full transition-all duration-300',
+                  i < currentIndex
+                    ? 'bg-primary'
+                    : i === currentIndex
+                      ? 'w-4 bg-primary'
+                      : 'bg-muted-foreground/20',
                 )}
               />
             ))}

@@ -70,6 +70,9 @@ export function AppHealthDashboard() {
   };
 
   const kpis = data?.kpis;
+  const topRoutesByError = data?.top_routes_by_error ?? [];
+  const webhooksBySource = data?.webhooks_by_source ?? [];
+  const edgesByLatency = data?.edges_by_latency ?? [];
   const tone4xx = statusTone(kpis?.pct_4xx ?? 0, 5, 15);
   const tone5xx = statusTone(kpis?.pct_5xx ?? 0, 1, 5);
 
@@ -77,7 +80,7 @@ export function AppHealthDashboard() {
     <section
       id="saude-aplicacao"
       data-testid="app-health-dashboard"
-      className="space-y-3 sm:space-y-4 border border-border/60 rounded-xl p-3 sm:p-4 bg-card/40"
+      className="space-y-3 rounded-xl border border-border/60 bg-card/40 p-3 sm:space-y-4 sm:p-4"
     >
       {/* Header da seção */}
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -99,7 +102,11 @@ export function AppHealthDashboard() {
             size="sm"
           >
             {WINDOW_OPTIONS.map((opt) => (
-              <ToggleGroupItem key={opt.value} value={String(opt.value)} className="text-xs h-7 px-2">
+              <ToggleGroupItem
+                key={opt.value}
+                value={String(opt.value)}
+                className="h-7 px-2 text-xs"
+              >
                 {opt.label}
               </ToggleGroupItem>
             ))}
@@ -111,7 +118,7 @@ export function AppHealthDashboard() {
       </div>
 
       {/* KPI cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {isLoading || !kpis ? (
           Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 w-full" />)
         ) : (
@@ -149,13 +156,13 @@ export function AppHealthDashboard() {
       {/* Lookup por request-id */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
             <Search className="h-4 w-4 text-primary" />
             Lookup por X-Request-Id
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <Input
               placeholder="Cole o request-id (ex: 2c5b…-uuid)"
               value={requestIdQuery}
@@ -171,8 +178,8 @@ export function AppHealthDashboard() {
           {lookupResult && (
             <div className="space-y-2">
               <div className="text-xs text-muted-foreground">
-                <strong>{lookupResult.event_count}</strong> evento(s) correlacionado(s) — request_id:{' '}
-                <code className="font-mono">{lookupResult.request_id}</code>
+                <strong>{lookupResult.event_count}</strong> evento(s) correlacionado(s) —
+                request_id: <code className="font-mono">{lookupResult.request_id}</code>
               </div>
               {lookupResult.event_count > 0 && (
                 <div className="overflow-x-auto rounded-lg border border-border/60">
@@ -191,19 +198,27 @@ export function AppHealthDashboard() {
                     <tbody>
                       {lookupResult.webhook_events.map((ev, i) => (
                         <tr key={i} className="border-t border-border/40">
-                          <td className="px-2 py-1.5 font-mono whitespace-nowrap">
+                          <td className="whitespace-nowrap px-2 py-1.5 font-mono">
                             {format(new Date(ev.occurred_at), 'HH:mm:ss.SSS')}
                           </td>
                           <td className="px-2 py-1.5">{ev.source}</td>
                           <td className="px-2 py-1.5">{ev.direction}</td>
-                          <td className="px-2 py-1.5 max-w-[280px] truncate" title={ev.endpoint ?? ''}>
+                          <td
+                            className="max-w-[280px] truncate px-2 py-1.5"
+                            title={ev.endpoint ?? ''}
+                          >
                             {ev.endpoint ?? '—'}
                           </td>
                           <td className="px-2 py-1.5 text-right">
                             <StatusBadge status={ev.http_status} success={ev.success} />
                           </td>
-                          <td className="px-2 py-1.5 text-right tabular-nums">{fmtMs(ev.duration_ms)}</td>
-                          <td className="px-2 py-1.5 text-destructive max-w-[260px] truncate" title={ev.error_message ?? ''}>
+                          <td className="px-2 py-1.5 text-right tabular-nums">
+                            {fmtMs(ev.duration_ms)}
+                          </td>
+                          <td
+                            className="max-w-[260px] truncate px-2 py-1.5 text-destructive"
+                            title={ev.error_message ?? ''}
+                          >
                             {ev.error_class || ev.error_message || '—'}
                           </td>
                         </tr>
@@ -218,19 +233,19 @@ export function AppHealthDashboard() {
       </Card>
 
       {/* 3 tabelas em grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
         {/* Top rotas por erro */}
         <Card className="xl:col-span-1">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-sm">
               <AlertTriangle className="h-4 w-4 text-destructive" />
               Top rotas por erro
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-x-auto max-h-[360px]">
+            <div className="max-h-[360px] overflow-x-auto">
               <table className="w-full text-xs">
-                <thead className="bg-muted/40 sticky top-0">
+                <thead className="sticky top-0 bg-muted/40">
                   <tr className="text-left">
                     <th className="px-2 py-1.5">Endpoint</th>
                     <th className="px-2 py-1.5 text-right">4xx</th>
@@ -240,20 +255,35 @@ export function AppHealthDashboard() {
                 </thead>
                 <tbody>
                   {isLoading ? (
-                    <tr><td colSpan={4} className="p-3"><Skeleton className="h-20 w-full" /></td></tr>
-                  ) : (data?.top_routes_by_error ?? []).length === 0 ? (
-                    <tr><td colSpan={4} className="p-3 text-center text-muted-foreground">Sem erros na janela</td></tr>
+                    <tr>
+                      <td colSpan={4} className="p-3">
+                        <Skeleton className="h-20 w-full" />
+                      </td>
+                    </tr>
+                  ) : topRoutesByError.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="p-3 text-center text-muted-foreground">
+                        Sem erros na janela
+                      </td>
+                    </tr>
                   ) : (
-                    data!.top_routes_by_error.map((r, i) => (
+                    topRoutesByError.map((r, i) => (
                       <tr key={i} className="border-t border-border/40">
-                        <td className="px-2 py-1.5 max-w-[220px] truncate" title={r.endpoint}>
+                        <td className="max-w-[220px] truncate px-2 py-1.5" title={r.endpoint}>
                           {r.endpoint}
-                          <span className="text-[10px] text-muted-foreground ml-1">({r.direction})</span>
+                          <span className="ml-1 text-[10px] text-muted-foreground">
+                            ({r.direction})
+                          </span>
                         </td>
                         <td className="px-2 py-1.5 text-right tabular-nums">{r.count_4xx}</td>
-                        <td className="px-2 py-1.5 text-right tabular-nums text-destructive font-semibold">{r.count_5xx}</td>
+                        <td className="px-2 py-1.5 text-right font-semibold tabular-nums text-destructive">
+                          {r.count_5xx}
+                        </td>
                         <td className="px-2 py-1.5 text-right tabular-nums">
-                          <Badge variant={r.error_rate_pct >= 10 ? 'destructive' : 'secondary'} className="text-[10px]">
+                          <Badge
+                            variant={r.error_rate_pct >= 10 ? 'destructive' : 'secondary'}
+                            className="text-[10px]"
+                          >
                             {r.error_rate_pct.toFixed(1)}%
                           </Badge>
                         </td>
@@ -269,15 +299,15 @@ export function AppHealthDashboard() {
         {/* Webhooks por source */}
         <Card className="xl:col-span-1">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-sm">
               <Webhook className="h-4 w-4 text-primary" />
               Webhooks (source × direction)
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-x-auto max-h-[360px]">
+            <div className="max-h-[360px] overflow-x-auto">
               <table className="w-full text-xs">
-                <thead className="bg-muted/40 sticky top-0">
+                <thead className="sticky top-0 bg-muted/40">
                   <tr className="text-left">
                     <th className="px-2 py-1.5">Source</th>
                     <th className="px-2 py-1.5 text-right">Total</th>
@@ -287,20 +317,34 @@ export function AppHealthDashboard() {
                 </thead>
                 <tbody>
                   {isLoading ? (
-                    <tr><td colSpan={4} className="p-3"><Skeleton className="h-20 w-full" /></td></tr>
-                  ) : (data?.webhooks_by_source ?? []).length === 0 ? (
-                    <tr><td colSpan={4} className="p-3 text-center text-muted-foreground">Sem webhooks na janela</td></tr>
+                    <tr>
+                      <td colSpan={4} className="p-3">
+                        <Skeleton className="h-20 w-full" />
+                      </td>
+                    </tr>
+                  ) : webhooksBySource.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="p-3 text-center text-muted-foreground">
+                        Sem webhooks na janela
+                      </td>
+                    </tr>
                   ) : (
-                    data!.webhooks_by_source.map((r, i) => (
+                    webhooksBySource.map((r, i) => (
                       <tr key={i} className="border-t border-border/40">
                         <td className="px-2 py-1.5">
                           {r.source}
-                          <span className="text-[10px] text-muted-foreground ml-1">({r.direction})</span>
+                          <span className="ml-1 text-[10px] text-muted-foreground">
+                            ({r.direction})
+                          </span>
                         </td>
                         <td className="px-2 py-1.5 text-right tabular-nums">{r.total}</td>
                         <td className="px-2 py-1.5 text-right tabular-nums">
-                          <span className={cn(r.failures > 0 && 'text-destructive font-semibold')}>{r.failures}</span>
-                          <span className="text-[10px] text-muted-foreground ml-1">({r.failure_rate_pct.toFixed(1)}%)</span>
+                          <span className={cn(r.failures > 0 && 'font-semibold text-destructive')}>
+                            {r.failures}
+                          </span>
+                          <span className="ml-1 text-[10px] text-muted-foreground">
+                            ({r.failure_rate_pct.toFixed(1)}%)
+                          </span>
                         </td>
                         <td className="px-2 py-1.5 text-right tabular-nums">{fmtMs(r.p95_ms)}</td>
                       </tr>
@@ -315,15 +359,15 @@ export function AppHealthDashboard() {
         {/* Edges por latência */}
         <Card className="xl:col-span-1">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-sm">
               <Timer className="h-4 w-4 text-warning" />
               Edge functions (latência)
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-x-auto max-h-[360px]">
+            <div className="max-h-[360px] overflow-x-auto">
               <table className="w-full text-xs">
-                <thead className="bg-muted/40 sticky top-0">
+                <thead className="sticky top-0 bg-muted/40">
                   <tr className="text-left">
                     <th className="px-2 py-1.5">Edge fn</th>
                     <th className="px-2 py-1.5 text-right">p50</th>
@@ -333,19 +377,34 @@ export function AppHealthDashboard() {
                 </thead>
                 <tbody>
                   {isLoading ? (
-                    <tr><td colSpan={4} className="p-3"><Skeleton className="h-20 w-full" /></td></tr>
-                  ) : (data?.edges_by_latency ?? []).length === 0 ? (
-                    <tr><td colSpan={4} className="p-3 text-center text-muted-foreground">Sem dados na janela</td></tr>
+                    <tr>
+                      <td colSpan={4} className="p-3">
+                        <Skeleton className="h-20 w-full" />
+                      </td>
+                    </tr>
+                  ) : edgesByLatency.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="p-3 text-center text-muted-foreground">
+                        Sem dados na janela
+                      </td>
+                    </tr>
                   ) : (
-                    data!.edges_by_latency.map((r, i) => (
+                    edgesByLatency.map((r, i) => (
                       <tr key={i} className="border-t border-border/40">
-                        <td className="px-2 py-1.5 max-w-[180px] truncate" title={r.edge_function}>
+                        <td className="max-w-[180px] truncate px-2 py-1.5" title={r.edge_function}>
                           {r.edge_function}
-                          <span className="text-[10px] text-muted-foreground ml-1">({r.total})</span>
+                          <span className="ml-1 text-[10px] text-muted-foreground">
+                            ({r.total})
+                          </span>
                         </td>
                         <td className="px-2 py-1.5 text-right tabular-nums">{fmtMs(r.p50_ms)}</td>
                         <td className="px-2 py-1.5 text-right tabular-nums">
-                          <span className={cn(r.p95_ms >= 2000 && 'text-destructive font-semibold', r.p95_ms >= 1000 && r.p95_ms < 2000 && 'text-warning')}>
+                          <span
+                            className={cn(
+                              r.p95_ms >= 2000 && 'font-semibold text-destructive',
+                              r.p95_ms >= 1000 && r.p95_ms < 2000 && 'text-warning',
+                            )}
+                          >
                             {fmtMs(r.p95_ms)}
                           </span>
                         </td>
@@ -365,7 +424,11 @@ export function AppHealthDashboard() {
 
 // ----------------------------------------------------------------------------
 function KpiCard({
-  icon, label, value, sub, tone = 'muted',
+  icon,
+  label,
+  value,
+  sub,
+  tone = 'muted',
 }: {
   icon: React.ReactNode;
   label: string;
@@ -374,26 +437,36 @@ function KpiCard({
   tone?: 'muted' | 'warning' | 'destructive';
 }) {
   return (
-    <Card className={cn(
-      'border-[1.5px] transition-colors',
-      tone === 'destructive' && 'border-destructive/40 bg-destructive/5',
-      tone === 'warning' && 'border-warning/40 bg-warning/5',
-    )}>
-      <CardContent className="p-3 flex items-center gap-3">
-        <div className={cn(
-          'p-2 rounded-lg',
-          tone === 'destructive' && 'bg-destructive/15 text-destructive',
-          tone === 'warning' && 'bg-warning/15 text-warning',
-          tone === 'muted' && 'bg-muted text-muted-foreground',
-        )}>{icon}</div>
+    <Card
+      className={cn(
+        'border-[1.5px] transition-colors',
+        tone === 'destructive' && 'border-destructive/40 bg-destructive/5',
+        tone === 'warning' && 'border-warning/40 bg-warning/5',
+      )}
+    >
+      <CardContent className="flex items-center gap-3 p-3">
+        <div
+          className={cn(
+            'rounded-lg p-2',
+            tone === 'destructive' && 'bg-destructive/15 text-destructive',
+            tone === 'warning' && 'bg-warning/15 text-warning',
+            tone === 'muted' && 'bg-muted text-muted-foreground',
+          )}
+        >
+          {icon}
+        </div>
         <div className="min-w-0">
           <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p>
-          <p className={cn(
-            'font-display text-2xl font-bold tabular-nums leading-tight truncate',
-            tone === 'destructive' && 'text-destructive',
-            tone === 'warning' && 'text-warning',
-          )}>{value}</p>
-          {sub && <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{sub}</p>}
+          <p
+            className={cn(
+              'truncate font-display text-2xl font-bold tabular-nums leading-tight',
+              tone === 'destructive' && 'text-destructive',
+              tone === 'warning' && 'text-warning',
+            )}
+          >
+            {value}
+          </p>
+          {sub && <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{sub}</p>}
         </div>
       </CardContent>
     </Card>
@@ -402,9 +475,17 @@ function KpiCard({
 
 function StatusBadge({ status, success }: { status: number | null; success: boolean }) {
   if (status === null) {
-    return <Badge variant="secondary" className="text-[10px]">{success ? 'ok' : 'fail'}</Badge>;
+    return (
+      <Badge variant="secondary" className="text-[10px]">
+        {success ? 'ok' : 'fail'}
+      </Badge>
+    );
   }
   const variant: 'default' | 'destructive' | 'secondary' =
     status >= 500 ? 'destructive' : status >= 400 ? 'destructive' : 'secondary';
-  return <Badge variant={variant} className="text-[10px] tabular-nums">{status}</Badge>;
+  return (
+    <Badge variant={variant} className="text-[10px] tabular-nums">
+      {status}
+    </Badge>
+  );
 }

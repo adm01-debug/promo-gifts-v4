@@ -14,9 +14,7 @@ import {
   Bar,
   ComposedChart,
   Legend,
-  type TooltipProps,
 } from 'recharts';
-import type { ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, ShoppingCart, FileText, DollarSign, Users, Target, Package } from 'lucide-react';
@@ -28,11 +26,10 @@ import { safeParseDateForChart } from '@/lib/stock-chart-utils';
 
 interface Props {
   days?: number;
-  productId?: string | null;
 }
 
-export function SalesOverviewChart({ days = 30, productId: _productId }: Props) {
-  const { data, isLoading, error: _error } = useSalesHistoryMacro(days);
+export function SalesOverviewChart({ days = 30 }: Props) {
+  const { data, isLoading } = useSalesHistoryMacro(days);
 
   const chartData = useMemo(() => {
     if (!data?.daily?.length) return [];
@@ -79,7 +76,7 @@ export function SalesOverviewChart({ days = 30, productId: _productId }: Props) 
     );
   }
 
-  const safeAvgOrderValue = Number.isFinite(kpis?.avgOrderValue) ? kpis!.avgOrderValue : 0;
+  const safeAvgOrderValue = Number.isFinite(kpis?.avgOrderValue) ? (kpis?.avgOrderValue ?? 0) : 0;
 
   return (
     <Card>
@@ -176,11 +173,7 @@ export function SalesOverviewChart({ days = 30, productId: _productId }: Props) 
                 width={45}
               />
               <YAxis yAxisId="value" orientation="right" hide />
-              <Tooltip
-                content={(props: TooltipProps<ValueType, NameType>) => (
-                  <SalesMacroTooltip {...props} />
-                )}
-              />
+              <Tooltip content={(props) => <SalesMacroTooltip {...props} />} />
               <Legend
                 wrapperStyle={{ fontSize: '10px', paddingTop: '4px' }}
                 iconSize={8}
@@ -222,39 +215,37 @@ export function SalesOverviewChart({ days = 30, productId: _productId }: Props) 
   );
 }
 
-interface SalesMacroPayload {
-  quotedQty?: number;
-  orderedQty?: number;
-  quotedValue?: number;
-  orderedValue?: number;
-  fullDate?: string;
-}
-
-function SalesMacroTooltip({ active, payload }: TooltipProps<ValueType, NameType>) {
+function SalesMacroTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: { payload: Record<string, unknown> }[];
+}) {
   if (!active || !payload?.length) return null;
-  const data = payload[0]?.payload as SalesMacroPayload | undefined;
+  const data = payload[0]?.payload;
   if (!data) return null;
 
-  const hasAny = (data.quotedQty ?? 0) > 0 || (data.orderedQty ?? 0) > 0;
+  const hasAny = data.quotedQty > 0 || data.orderedQty > 0;
 
   return (
     <div className="min-w-[180px] rounded-lg border border-border bg-popover p-3 shadow-lg">
       <p className="text-xs font-medium text-foreground">{data.fullDate}</p>
       <div className="mt-2 space-y-1.5">
         {!hasAny && <p className="text-xs italic text-muted-foreground">Sem movimentação</p>}
-        {(data.quotedQty ?? 0) > 0 && (
+        {data.quotedQty > 0 && (
           <div className="flex justify-between text-xs">
             <span className="text-muted-foreground">Orçado:</span>
             <span className="font-semibold">
-              {data.quotedQty} un · {formatCurrency(data.quotedValue ?? 0)}
+              {data.quotedQty} un · {formatCurrency(data.quotedValue)}
             </span>
           </div>
         )}
-        {(data.orderedQty ?? 0) > 0 && (
+        {data.orderedQty > 0 && (
           <div className="flex justify-between text-xs">
             <span className="text-primary">Vendido:</span>
             <span className="font-semibold text-primary">
-              {data.orderedQty} un · {formatCurrency(data.orderedValue ?? 0)}
+              {data.orderedQty} un · {formatCurrency(data.orderedValue)}
             </span>
           </div>
         )}

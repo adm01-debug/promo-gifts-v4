@@ -1,10 +1,10 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Target, Save, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import type { PrintAreaFormData } from "./types";
+import type { PrintAreaFormData } from './types';
 
 interface Props {
   initial: PrintAreaFormData;
@@ -21,33 +21,48 @@ export function PrintAreaForm({ initial, onSave, onCancel, isSaving }: Props) {
 
   const handleSave = () => {
     if (!form.location_name.trim()) {
-      toast.error('Nome do local é obrigatório');
+      toast.error('Nome do local Ã© obrigatÃ³rio');
       return;
     }
     onSave(form);
   };
 
-  const areaNamePreview = [form.location_name, form.technique_name].filter(Boolean).join(' — ');
+  const areaNamePreview = [form.location_name, form.technique_name].filter(Boolean).join(' â€” ');
 
   return (
-    <div className="rounded-md border border-primary/20 bg-primary/5 p-2.5 space-y-2.5 ml-6">
+    <div className="ml-6 space-y-2.5 rounded-md border border-primary/20 bg-primary/5 p-2.5">
       <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
         <Target className="h-3 w-3" />
-        Área de Gravação
+        Ãrea de GravaÃ§Ã£o
       </div>
 
       <div className="grid grid-cols-3 gap-2">
         <div className="space-y-1">
-          <Label className="text-[10px]">Código Local</Label>
-          <Input value={form.location_code} onChange={(e) => set('location_code', e.target.value)} placeholder="Ex: CABO" className="h-7 text-xs font-mono uppercase" />
+          <Label className="text-[10px]">CÃ³digo Local</Label>
+          <Input
+            value={form.location_code}
+            onChange={(e) => set('location_code', e.target.value)}
+            placeholder="Ex: CABO"
+            className="h-7 font-mono text-xs uppercase"
+          />
         </div>
         <div className="space-y-1">
           <Label className="text-[10px]">Nome Local *</Label>
-          <Input value={form.location_name} onChange={(e) => set('location_name', e.target.value)} placeholder="Ex: Cabo, Frente, 360°" className="h-7 text-xs" />
+          <Input
+            value={form.location_name}
+            onChange={(e) => set('location_name', e.target.value)}
+            placeholder="Ex: Cabo, Frente, 360Â°"
+            className="h-7 text-xs"
+          />
         </div>
         <div className="space-y-1">
-          <Label className="text-[10px]">Técnica</Label>
-          <Input value={form.technique_name} onChange={(e) => set('technique_name', e.target.value)} placeholder="Ex: Laser, Serigrafia" className="h-7 text-xs" />
+          <Label className="text-[10px]">TÃ©cnica</Label>
+          <Input
+            value={form.technique_name}
+            onChange={(e) => set('technique_name', e.target.value)}
+            placeholder="Ex: Laser, Serigrafia"
+            className="h-7 text-xs"
+          />
         </div>
       </div>
 
@@ -59,38 +74,90 @@ export function PrintAreaForm({ initial, onSave, onCancel, isSaving }: Props) {
 
       <div className="grid grid-cols-5 gap-2">
         <div className="space-y-1">
-          <Label className="text-[10px]">Larg. Máx (mm)</Label>
-          <Input type="number" value={form.max_width_mm ?? ''} onChange={(e) => set('max_width_mm', e.target.value ? parseFloat(e.target.value) : null)} className="h-7 text-xs" />
+          <Label className="text-[10px]">Larg. MÃ¡x (mm)</Label>
+          <Input
+            type="number"
+            value={form.max_width_mm ?? ''}
+            onChange={(e) =>
+              set('max_width_mm', e.target.value ? parseFloat(e.target.value) : null)
+            }
+            className="h-7 text-xs"
+          />
         </div>
         <div className="space-y-1">
-          <Label className="text-[10px]">Alt. Máx (mm)</Label>
-          <Input type="number" value={form.max_height_mm ?? ''} onChange={(e) => set('max_height_mm', e.target.value ? parseFloat(e.target.value) : null)} className="h-7 text-xs" />
+          <Label className="text-[10px]">Alt. MÃ¡x (mm)</Label>
+          <Input
+            type="number"
+            value={form.max_height_mm ?? ''}
+            onChange={(e) =>
+              set('max_height_mm', e.target.value ? parseFloat(e.target.value) : null)
+            }
+            className="h-7 text-xs"
+          />
         </div>
         <div className="space-y-1">
-          <Label className="text-[10px]">ID Técnica</Label>
-          <Input value={form.technique_id} onChange={(e) => set('technique_id', e.target.value)} placeholder="UUID" className="h-7 text-xs font-mono" />
+          <Label className="text-[10px]">ID TÃ©cnica</Label>
+          <Input
+            value={form.technique_id}
+            onChange={(e) => set('technique_id', e.target.value)}
+            placeholder="UUID"
+            className="h-7 font-mono text-xs"
+          />
         </div>
         <div className="space-y-1">
-          <Label className="text-[10px]">ID Tabela Preço</Label>
-          <Input value={form.tabela_preco_id} onChange={(e) => set('tabela_preco_id', e.target.value)} placeholder="UUID" className="h-7 text-xs font-mono" />
+          <Label className="text-[10px]">ID Tabela PreÃ§o</Label>
+          <Input
+            value={form.tabela_preco_id}
+            onChange={(e) => set('tabela_preco_id', e.target.value)}
+            placeholder="UUID"
+            className="h-7 font-mono text-xs"
+          />
         </div>
         <div className="space-y-1">
           <Label className="text-[10px]">Ordem</Label>
-          <Input type="number" value={form.display_order} onChange={(e) => set('display_order', parseInt(e.target.value, 10) || 0)} min="0" className="h-7 text-xs" />
+          <Input
+            type="number"
+            value={form.display_order}
+            onChange={(e) => set('display_order', parseInt(e.target.value, 10) || 0)}
+            min="0"
+            className="h-7 text-xs"
+          />
         </div>
       </div>
 
       <div className="space-y-1">
-        <Label className="text-[10px]">Observações</Label>
-        <Input value={form.notes} onChange={(e) => set('notes', e.target.value)} placeholder="Observações sobre a área de gravação" className="h-7 text-xs" />
+        <Label className="text-[10px]">ObservaÃ§Ãµes</Label>
+        <Input
+          value={form.notes}
+          onChange={(e) => set('notes', e.target.value)}
+          placeholder="ObservaÃ§Ãµes sobre a Ã¡rea de gravaÃ§Ã£o"
+          className="h-7 text-xs"
+        />
       </div>
 
       <div className="flex justify-end gap-1.5">
-        <Button type="button" variant="ghost" size="sm" className="h-6 text-[10px] px-2" onClick={onCancel} disabled={isSaving}>
-          <X className="h-3 w-3 mr-0.5" /> Cancelar
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-6 px-2 text-[10px]"
+          onClick={onCancel}
+          disabled={isSaving}
+        >
+          <X className="mr-0.5 h-3 w-3" /> Cancelar
         </Button>
-        <Button type="button" size="sm" className="h-6 text-[10px] px-2" disabled={isSaving} onClick={handleSave}>
-          {isSaving ? <Loader2 className="h-3 w-3 mr-0.5 animate-spin" /> : <Save className="h-3 w-3 mr-0.5" />}
+        <Button
+          type="button"
+          size="sm"
+          className="h-6 px-2 text-[10px]"
+          disabled={isSaving}
+          onClick={handleSave}
+        >
+          {isSaving ? (
+            <Loader2 className="mr-0.5 h-3 w-3 animate-spin" />
+          ) : (
+            <Save className="mr-0.5 h-3 w-3" />
+          )}
           Salvar
         </Button>
       </div>

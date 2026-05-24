@@ -92,30 +92,50 @@ export interface PromobrindProduct {
     length_mm: number | null;
     weight_g: number | null;
     notes: string | null;
+    // Campos provenientes do join `product_kit_components` × `products`
+    // (vide JSON_BUILD_OBJECT em supabase/migrations/20250103070000…).
+    // Podem vir ausentes em produtos mais antigos sem catálogo completo.
+    component_type_code?: string | null;
+    supplier_component_code?: string | null;
+    component_description?: string | null;
+    personalization_notes?: string | null;
+    color?: string | null;
   }> | null;
+
+  // ------------------------------------------------------------------
+  // Campos adicionais mapeados pelo formulário admin (AdminProductFormPage).
+  // Colunas reais (ou potenciais) da base externa; todas opcionais/nullable
+  // porque nem todo SELECT as traz — os consumidores aplicam `?? default`.
+  // ------------------------------------------------------------------
+  // Pricing / estoque
   cost_price?: number | null;
   suggested_price?: number | null;
   stock_unit?: string | null;
   product_type?: string | null;
   min_order_quantity?: number | null;
+  // Dimensões internas
   internal_height_cm?: number | null;
   internal_width_cm?: number | null;
   internal_length_cm?: number | null;
   internal_diameter_cm?: number | null;
+  // Embalagem
   packaging_material?: string | null;
   packaging_color?: string | null;
   packaging_finish?: string | null;
+  // Flags de destaque + expiração
   is_featured_expires_at?: string | null;
   is_bestseller_expires_at?: string | null;
   is_new_expires_at?: string | null;
   novelty_expires_at?: string | null;
   is_on_sale_expires_at?: string | null;
+  // Flags de característica
   is_imported?: boolean | null;
   is_textil?: boolean | null;
   is_thermal?: boolean | null;
   allows_personalization?: boolean | null;
   has_gift_box?: boolean | null;
   has_optional_packaging?: boolean | null;
+  // Fiscal
   ncm_code?: string | null;
   ean?: string | null;
   gtin?: string | null;
@@ -129,6 +149,7 @@ export interface PromobrindProduct {
   cofins_rate?: number | null;
   tax_regime?: string | null;
   cest?: string | null;
+  // Logística / frete
   freight_class?: string | null;
   default_carrier?: string | null;
   shipping_weight_kg?: number | null;
@@ -141,6 +162,7 @@ export interface PromobrindProduct {
   lead_time_days?: number | null;
   supply_mode?: string | null;
   warranty_months?: number | null;
+  // SEO / mídia
   meta_title?: string | null;
   meta_keywords?: string[] | null;
   slug?: string | null;
@@ -149,6 +171,7 @@ export interface PromobrindProduct {
   video_url?: string | null;
   key_benefits?: string | null;
   use_cases?: string | null;
+  // Nomes denormalizados (fallback de exibição)
   category?: string | null;
   supplier?: string | null;
 }

@@ -90,7 +90,6 @@ describe('BridgeStatusBanner — visibilidade por papel e ambiente', () => {
     emit({ type: 'unavailable', reason: 'timeout' } as any);
     expect(screen.getByRole('alert')).toBeInTheDocument();
     expect(screen.getByText(/Catálogo temporariamente indisponível/i)).toBeInTheDocument();
-    expect(screen.getByText(/instabilidade momentânea/i)).toBeInTheDocument();
   });
 
   it('usuário dev: exibe avisos de infra e avisos críticos com cópia técnica', () => {

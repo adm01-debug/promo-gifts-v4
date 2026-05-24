@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { notificationsMetrics, type BadgeRenderStat, type TriggerSource } from "@/lib/notifications-metrics";
+import { notificationsMetrics } from "@/lib/notifications-metrics";
 
 /** Sliding-window length for the sparkline (60 samples × 1s = 60s). */
 const SPARK_WINDOW_SECONDS = 60;

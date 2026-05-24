@@ -1,33 +1,33 @@
-/**
+﻿/**
  * Kit Builder - Volume Calculator
- * Utilitários para cálculo e validação de volume
+ * UtilitÃ¡rios para cÃ¡lculo e validaÃ§Ã£o de volume
  */
 
-import type { KitBox, KitItem, CompatibilityResult } from "./types";
+import type { KitBox, KitItem, CompatibilityResult } from './types';
 
 // ============================================
 // CONSTANTES
 // ============================================
 
-// Fator de folga para empacotamento (itens não ocupam 100% do volume)
-const PACKING_EFFICIENCY = 0.75; // 75% de eficiência
+// Fator de folga para empacotamento (itens nÃ£o ocupam 100% do volume)
+const PACKING_EFFICIENCY = 0.75; // 75% de eficiÃªncia
 
 // Limite de alerta de volume
 const VOLUME_WARNING_THRESHOLD = 0.85; // 85%
 
 // ============================================
-// CÁLCULOS BÁSICOS
+// CÃLCULOS BÃSICOS
 // ============================================
 
 /**
- * Calcula o volume de um objeto em cm³
+ * Calcula o volume de um objeto em cmÂ³
  */
 export function calculateVolume(width: number, height: number, depth: number): number {
   return width * height * depth;
 }
 
 /**
- * Calcula o volume utilizável de uma caixa (com fator de eficiência)
+ * Calcula o volume utilizÃ¡vel de uma caixa (com fator de eficiÃªncia)
  */
 export function calculateUsableVolume(box: KitBox): number {
   return box.internalVolume * PACKING_EFFICIENCY;
@@ -37,23 +37,20 @@ export function calculateUsableVolume(box: KitBox): number {
  * Calcula o volume total dos itens
  */
 export function calculateTotalItemsVolume(items: KitItem[]): number {
-  return items.reduce((total, item) => total + (item.volume * item.quantity), 0);
+  return items.reduce((total, item) => total + item.volume * item.quantity, 0);
 }
 
 /**
  * Calcula a porcentagem de volume utilizado
  */
-export function calculateVolumeUsagePercent(
-  itemsVolume: number,
-  boxVolume: number
-): number {
+export function calculateVolumeUsagePercent(itemsVolume: number, boxVolume: number): number {
   if (boxVolume === 0) return 0;
   const usableVolume = boxVolume * PACKING_EFFICIENCY;
   return (itemsVolume / usableVolume) * 100;
 }
 
 // ============================================
-// VALIDAÇÕES
+// VALIDAÃ‡Ã•ES
 // ============================================
 
 /**
@@ -63,26 +60,27 @@ export function checkItemFits(
   item: KitItem,
   box: KitBox,
   existingItems: KitItem[],
-  quantity: number = 1
+  quantity: number = 1,
 ): CompatibilityResult {
   const currentVolume = calculateTotalItemsVolume(existingItems);
   const itemVolume = item.volume * quantity;
   const totalVolumeAfter = currentVolume + itemVolume;
   const usableVolume = calculateUsableVolume(box);
-  
+
   const percentAfterAdd = (totalVolumeAfter / usableVolume) * 100;
 
-  // Verifica se o item cabe em alguma das 6 orientações possíveis
+  // Verifica se o item cabe em alguma das 6 orientaÃ§Ãµes possÃ­veis
   const itemDims = [item.width, item.height, item.depth].sort((a, b) => a - b);
   const boxDims = [box.internalWidth, box.internalHeight, box.internalDepth].sort((a, b) => a - b);
 
-  // Se as dimensões ordenadas do item excedem as da caixa, não cabe em nenhuma orientação
-  const fitsAnyOrientation = itemDims[0] <= boxDims[0] && itemDims[1] <= boxDims[1] && itemDims[2] <= boxDims[2];
+  // Se as dimensÃµes ordenadas do item excedem as da caixa, nÃ£o cabe em nenhuma orientaÃ§Ã£o
+  const fitsAnyOrientation =
+    itemDims[0] <= boxDims[0] && itemDims[1] <= boxDims[1] && itemDims[2] <= boxDims[2];
 
   if (!fitsAnyOrientation) {
     return {
       fits: false,
-      reason: `Dimensões do item (${item.width}×${item.height}×${item.depth}cm) não cabem na caixa (${box.internalWidth}×${box.internalHeight}×${box.internalDepth}cm) em nenhuma orientação`,
+      reason: `DimensÃµes do item (${item.width}Ã—${item.height}Ã—${item.depth}cm) nÃ£o cabem na caixa (${box.internalWidth}Ã—${box.internalHeight}Ã—${box.internalDepth}cm) em nenhuma orientaÃ§Ã£o`,
     };
   }
 
@@ -90,7 +88,7 @@ export function checkItemFits(
   if (totalVolumeAfter > usableVolume) {
     return {
       fits: false,
-      reason: `Volume total excederá a capacidade da caixa (${Math.round(percentAfterAdd)}% > 100%)`,
+      reason: `Volume total excederÃ¡ a capacidade da caixa (${Math.round(percentAfterAdd)}% > 100%)`,
       volumeAfterAdd: totalVolumeAfter,
       percentAfterAdd,
     };
@@ -104,38 +102,38 @@ export function checkItemFits(
 }
 
 /**
- * Verifica se a caixa está no limite de alerta
+ * Verifica se a caixa estÃ¡ no limite de alerta
  */
 export function isNearCapacity(usagePercent: number): boolean {
   return usagePercent >= VOLUME_WARNING_THRESHOLD * 100;
 }
 
 /**
- * Verifica se a caixa está cheia
+ * Verifica se a caixa estÃ¡ cheia
  */
 export function isAtCapacity(usagePercent: number): boolean {
   return usagePercent >= 100;
 }
 
 // ============================================
-// FORMATAÇÃO
+// FORMATAÃ‡ÃƒO
 // ============================================
 
 /**
- * Formata volume para exibição
+ * Formata volume para exibiÃ§Ã£o
  */
 export function formatVolume(volumeCm3: number): string {
   if (volumeCm3 >= 1000) {
     return `${(volumeCm3 / 1000).toFixed(1)}L`;
   }
-  return `${Math.round(volumeCm3)}cm³`;
+  return `${Math.round(volumeCm3)}cmÂ³`;
 }
 
 /**
- * Formata dimensões para exibição
+ * Formata dimensÃµes para exibiÃ§Ã£o
  */
 export function formatDimensions(width: number, height: number, depth: number): string {
-  return `${width} × ${height} × ${depth} cm`;
+  return `${width} Ã— ${height} Ã— ${depth} cm`;
 }
 
 /**
@@ -154,33 +152,33 @@ export function getVolumeStatusLabel(percent: number): string {
   if (percent >= 100) return 'Cheio';
   if (percent >= 85) return 'Quase cheio';
   if (percent >= 50) return 'Bom uso';
-  if (percent > 0) return 'Espaço disponível';
+  if (percent > 0) return 'EspaÃ§o disponÃ­vel';
   return 'Vazio';
 }
 
 // ============================================
-// PARSING DE DIMENSÕES
+// PARSING DE DIMENSÃ•ES
 // ============================================
 
 /**
- * Tenta extrair dimensões de uma string de dimensões
- * Formatos suportados: "10x20x5", "10 x 20 x 5", "10×20×5"
+ * Tenta extrair dimensÃµes de uma string de dimensÃµes
+ * Formatos suportados: "10x20x5", "10 x 20 x 5", "10Ã—20Ã—5"
  */
 export function parseDimensionsString(
-  dimensionsStr: string | null | undefined
+  dimensionsStr: string | null | undefined,
 ): { width: number; height: number; depth: number } | null {
   if (!dimensionsStr) return null;
 
-  // Remove espaços extras e normaliza separadores
+  // Remove espaÃ§os extras e normaliza separadores
   const normalized = dimensionsStr
     .toLowerCase()
     .replace(/\s+/g, '')
-    .replace(/×/g, 'x')
+    .replace(/Ã—/g, 'x')
     .replace(/cm/g, '');
 
-  // Tenta match com padrão NxNxN
-  const match = normalized.match(/(\d+(?:\.\d+)?)[x×](\d+(?:\.\d+)?)[x×](\d+(?:\.\d+)?)/);
-  
+  // Tenta match com padrÃ£o NxNxN
+  const match = normalized.match(/(\d+(?:\.\d+)?)[xÃ—](\d+(?:\.\d+)?)[xÃ—](\d+(?:\.\d+)?)/);
+
   if (match) {
     return {
       width: parseFloat(match[1]),
@@ -193,28 +191,25 @@ export function parseDimensionsString(
 }
 
 /**
- * Extrai dimensões de um produto externo
+ * Extrai dimensÃµes de um produto externo
  */
-export function extractProductDimensions(
-  product: {
-    dimensions?: string | { width_cm?: number; height_cm?: number; length_cm?: number; diameter_cm?: number } | null;
-    width_cm?: number | null;
-    height_cm?: number | null;
-    length_cm?: number | null;
-    box_length_cm?: number | null;
-    box_width_cm?: number | null;
-    box_height_cm?: number | null;
-    internal_length_cm?: number | null;
-    internal_width_cm?: number | null;
-    internal_height_cm?: number | null;
-  }
-): { width: number; height: number; depth: number } | null {
-  // Primeiro tenta campos específicos de dimensão interna (para caixas)
-  if (
-    product.internal_width_cm &&
-    product.internal_length_cm &&
-    product.internal_height_cm
-  ) {
+export function extractProductDimensions(product: {
+  dimensions?:
+    | string
+    | { width_cm?: number; height_cm?: number; length_cm?: number; diameter_cm?: number }
+    | null;
+  width_cm?: number | null;
+  height_cm?: number | null;
+  length_cm?: number | null;
+  box_length_cm?: number | null;
+  box_width_cm?: number | null;
+  box_height_cm?: number | null;
+  internal_length_cm?: number | null;
+  internal_width_cm?: number | null;
+  internal_height_cm?: number | null;
+}): { width: number; height: number; depth: number } | null {
+  // Primeiro tenta campos especÃ­ficos de dimensÃ£o interna (para caixas)
+  if (product.internal_width_cm && product.internal_length_cm && product.internal_height_cm) {
     return {
       width: product.internal_width_cm,
       height: product.internal_height_cm,
@@ -222,12 +217,8 @@ export function extractProductDimensions(
     };
   }
 
-  // Depois tenta campos de dimensão externa
-  if (
-    product.box_width_cm &&
-    product.box_length_cm &&
-    product.box_height_cm
-  ) {
+  // Depois tenta campos de dimensÃ£o externa
+  if (product.box_width_cm && product.box_length_cm && product.box_height_cm) {
     return {
       width: product.box_width_cm,
       height: product.box_height_cm,
@@ -236,11 +227,7 @@ export function extractProductDimensions(
   }
 
   // Depois tenta campos diretos em cm
-  if (
-    product.width_cm &&
-    product.length_cm &&
-    product.height_cm
-  ) {
+  if (product.width_cm && product.length_cm && product.height_cm) {
     return {
       width: product.width_cm,
       height: product.height_cm,
@@ -250,7 +237,11 @@ export function extractProductDimensions(
 
   // Tenta JSONB dimensions (formato do banco externo)
   if (product.dimensions && typeof product.dimensions === 'object') {
-    const dims = product.dimensions as { width_cm?: number; height_cm?: number; length_cm?: number };
+    const dims = product.dimensions as {
+      width_cm?: number;
+      height_cm?: number;
+      length_cm?: number;
+    };
     if (dims.width_cm && dims.height_cm && dims.length_cm) {
       return {
         width: dims.width_cm,
@@ -267,7 +258,7 @@ export function extractProductDimensions(
     }
   }
 
-  // Por fim tenta parsear string de dimensões
+  // Por fim tenta parsear string de dimensÃµes
   if (typeof product.dimensions === 'string') {
     return parseDimensionsString(product.dimensions);
   }
@@ -280,11 +271,13 @@ export function extractProductDimensions(
 // ============================================
 
 /**
- * Estima dimensões padrão baseado na categoria do produto
+ * Estima dimensÃµes padrÃ£o baseado na categoria do produto
  */
-export function estimateDefaultDimensions(
-  category?: string
-): { width: number; height: number; depth: number } {
+export function estimateDefaultDimensions(category?: string): {
+  width: number;
+  height: number;
+  depth: number;
+} {
   const categoryLower = (category || '').toLowerCase();
 
   // Estimativas baseadas em categorias comuns
@@ -313,6 +306,6 @@ export function estimateDefaultDimensions(
     return { width: 7, height: 14, depth: 2 };
   }
 
-  // Padrão genérico para itens pequenos
+  // PadrÃ£o genÃ©rico para itens pequenos
   return { width: 10, height: 10, depth: 5 };
 }

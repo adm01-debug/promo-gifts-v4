@@ -7,8 +7,9 @@ export interface QuoteComment {
   id: string;
   quote_id: string;
   user_id: string;
-  comment: string;
-  is_internal: boolean;
+  parent_id: string | null;
+  content: string;
+  is_edited: boolean;
   created_at: string;
   updated_at: string;
   // Joined
@@ -57,7 +58,23 @@ export function useQuoteComments(quoteId: string | undefined) {
         author_avatar: profileMap[c.user_id]?.avatar_url || null,
       }));
 
-      setComments(enriched);
+      // Build thread tree
+      const topLevel = enriched.filter((c) => !c.parent_id);
+      const childMap = new Map<string, QuoteComment[]>();
+      enriched
+        .filter((c) => c.parent_id)
+        .forEach((c) => {
+          if (!c.parent_id) return;
+          const arr = childMap.get(c.parent_id) || [];
+          arr.push(c);
+          childMap.set(c.parent_id, arr);
+        });
+
+      topLevel.forEach((c) => {
+        c.replies = childMap.get(c.id) || [];
+      });
+
+      setComments(topLevel);
     } catch (err) {
       console.error('Error fetching comments:', err);
     } finally {
@@ -75,7 +92,8 @@ export function useQuoteComments(quoteId: string | undefined) {
       const { error } = await supabase.from('quote_comments').insert({
         quote_id: quoteId,
         user_id: user.id,
-        comment: content,
+        parent_id: parentId || null,
+        content,
       });
 
       if (error) throw error;
@@ -95,7 +113,7 @@ export function useQuoteComments(quoteId: string | undefined) {
     try {
       const { error } = await supabase
         .from('quote_comments')
-        .update({ comment: content, updated_at: new Date().toISOString() })
+        .update({ content, is_edited: true, updated_at: new Date().toISOString() })
         .eq('id', commentId);
 
       if (error) throw error;

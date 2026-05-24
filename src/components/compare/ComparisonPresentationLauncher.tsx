@@ -3,7 +3,7 @@
  * Atalhos: ← → navega, Esc fecha, F fullscreen do browser.
  */
 import { useState, useEffect, useCallback } from 'react';
-import type { Product } from '@/types/product';
+import type { Product } from '@/types/product-catalog';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,10 +21,9 @@ export function ComparisonPresentationLauncher({ products, formatCurrency, trigg
   const [open, setOpen] = useState(false);
   const [slide, setSlide] = useState(0);
   const totalSlides = products.length + 1; // +1 para slide final tabela
-  const scoreItems =
-    useComparisonScore(products.map((p) => ({ ...p, minQuantity: p.min_quantity }))) ?? [];
+  const scoreItems = useComparisonScore(products);
   const winnerIdx =
-    scoreItems && scoreItems.length > 0
+    scoreItems.length > 0
       ? scoreItems.reduce((best, cur, idx, arr) => (cur.total > arr[best].total ? idx : best), 0)
       : -1;
 
@@ -194,10 +193,10 @@ function ProductSlide({
           {formatCurrency(product.price)}
         </p>
         <div className="grid grid-cols-2 gap-4 pt-4">
-          <Stat label="Quantidade mínima" value={`${product.min_quantity ?? 0} un.`} />
+          <Stat label="Quantidade mínima" value={`${product.minQuantity ?? 0} un.`} />
           <Stat label="Estoque" value={`${product.stock ?? 0} un.`} />
           <Stat label="Cores disponíveis" value={`${product.colors?.length ?? 0}`} />
-          <Stat label="Fornecedor" value={product.supplier_name ?? '—'} />
+          <Stat label="Fornecedor" value={product.supplier?.name ?? '—'} />
         </div>
         {product.description && (
           <p className="line-clamp-4 pt-2 text-base text-muted-foreground">{product.description}</p>
@@ -279,7 +278,7 @@ function FinalSlide({
                 <td className="p-3 text-right text-lg font-bold tabular-nums text-primary">
                   {formatCurrency(p.price)}
                 </td>
-                <td className="p-3 text-right tabular-nums">{p.min_quantity ?? 0}</td>
+                <td className="p-3 text-right tabular-nums">{p.minQuantity ?? 0}</td>
                 <td className="p-3 text-right tabular-nums">{p.stock ?? 0}</td>
                 <td className="p-3 text-right tabular-nums">{p.colors?.length ?? 0}</td>
               </tr>

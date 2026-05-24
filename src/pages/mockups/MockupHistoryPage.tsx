@@ -40,18 +40,20 @@ interface GeneratedMockup {
 
 export default function MockupHistoryPage() {
   const { user } = useAuth();
+  const userId = user?.id;
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 400);
   const pageSize = 20;
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['mockup-history', page, debouncedSearch],
+    queryKey: ['mockup-history', userId, page, debouncedSearch],
     queryFn: async () => {
+      if (!userId) return { mockups: [], totalCount: 0 };
       let query = supabase
         .from('generated_mockups')
         .select('*', { count: 'exact' })
-        .eq('user_id', user!.id)
+        .eq('seller_id', userId)
         .order('created_at', { ascending: false })
         .range((page - 1) * pageSize, page * pageSize - 1);
 
@@ -63,9 +65,9 @@ export default function MockupHistoryPage() {
 
       const { data, error, count } = await query;
       if (error) throw error;
-      return { mockups: data as unknown as GeneratedMockup[], totalCount: count || 0 };
+      return { mockups: data as GeneratedMockup[], totalCount: count || 0 };
     },
-    enabled: !!user,
+    enabled: !!userId,
     staleTime: 1000 * 60 * 5, // 5 minutos
   });
 
@@ -223,7 +225,7 @@ export default function MockupHistoryPage() {
                               variant="ghost"
                               size="icon"
                               aria-label="Download"
-                              onClick={() => window.open(m.mockup_url!, '_blank')}
+                              onClick={() => m.mockup_url && window.open(m.mockup_url, '_blank')}
                               data-testid="mockup-history-download-btn"
                             >
                               <Download className="h-4 w-4" />

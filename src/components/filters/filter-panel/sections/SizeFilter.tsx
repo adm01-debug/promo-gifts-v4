@@ -3,10 +3,9 @@
  * Extrai size_codes únicos das variações dos produtos carregados.
  */
 import { useMemo, useState } from "react";
-import { Ruler, Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 
 const SIZE_ORDER = [
   "PP", "P", "M", "G", "GG", "XG", "XXG", "EG", "EGG",

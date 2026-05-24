@@ -1,9 +1,9 @@
-/**
+﻿/**
  * Mock/fallback data for Kit Builder
  * Used when external DB is unavailable
  */
 
-import type { KitBox, KitItem } from "./types";
+import type { KitBox, KitItem } from './types';
 
 export const MOCK_BOXES: KitBox[] = [
   {
@@ -55,7 +55,7 @@ export const MOCK_BOXES: KitBox[] = [
     internalHeight: 18,
     internalDepth: 12,
     internalVolume: 6048,
-    material: 'Papelão Revestido',
+    material: 'PapelÃ£o Revestido',
     weight: 280,
   },
 ];
@@ -63,7 +63,7 @@ export const MOCK_BOXES: KitBox[] = [
 export const MOCK_ITEMS: KitItem[] = [
   {
     id: 'mock-item-1',
-    name: 'Caneca Cerâmica 350ml',
+    name: 'Caneca CerÃ¢mica 350ml',
     sku: 'CAN-CER-350',
     imageUrl: null,
     price: 18.9,
@@ -72,7 +72,7 @@ export const MOCK_ITEMS: KitItem[] = [
     depth: 9,
     volume: 810,
     weight: 320,
-    material: 'Cerâmica',
+    material: 'CerÃ¢mica',
     category: 'Canecas',
     quantity: 1,
     isOptional: false,
@@ -90,7 +90,7 @@ export const MOCK_ITEMS: KitItem[] = [
     depth: 2,
     volume: 630,
     weight: 250,
-    material: 'Papel / Couro Sintético',
+    material: 'Papel / Couro SintÃ©tico',
     category: 'Cadernos',
     quantity: 1,
     isOptional: false,
@@ -117,7 +117,7 @@ export const MOCK_ITEMS: KitItem[] = [
   },
   {
     id: 'mock-item-4',
-    name: 'Garrafa Térmica 500ml',
+    name: 'Garrafa TÃ©rmica 500ml',
     sku: 'GAR-TERM-500',
     imageUrl: null,
     price: 35.0,
@@ -126,7 +126,7 @@ export const MOCK_ITEMS: KitItem[] = [
     depth: 7,
     volume: 1225,
     weight: 280,
-    material: 'Aço Inox',
+    material: 'AÃ§o Inox',
     category: 'Garrafas',
     quantity: 1,
     isOptional: true,
@@ -145,7 +145,7 @@ export const MOCK_ITEMS: KitItem[] = [
     volume: 1440,
     weight: 80,
     material: 'Nylon',
-    category: 'Acessórios',
+    category: 'AcessÃ³rios',
     quantity: 1,
     isOptional: true,
     isReplaceable: false,
@@ -162,7 +162,7 @@ export const MOCK_ITEMS: KitItem[] = [
     depth: 1,
     volume: 12,
     weight: 15,
-    material: 'Plástico / Metal',
+    material: 'PlÃ¡stico / Metal',
     category: 'Tecnologia',
     quantity: 1,
     isOptional: true,

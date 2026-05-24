@@ -1,8 +1,8 @@
 /**
  * Domain Types: Simulator Wizard v2
- * 
+ *
  * Novo fluxo: Produto → Local → Especificações → Comparativo
- * 
+ *
  * O vendedor configura PRIMEIRO (cores, tamanho, tiragem),
  * depois vê TODAS as técnicas possíveis com preços para comparar.
  * Suporta múltiplas personalizações por produto.
@@ -12,18 +12,13 @@
 // STEPS DO WIZARD (4 passos)
 // ============================================
 
-export type WizardStep = 
-  | 'product'      // Passo 1: Selecionar produto + quantidade
-  | 'location'     // Passo 2: Selecionar local de gravação
-  | 'specs'        // Passo 3: Configurar cores, tamanho
-  | 'comparison';  // Passo 4: Comparativo de técnicas com preços
+export type WizardStep =
+  | 'product' // Passo 1: Selecionar produto + quantidade
+  | 'location' // Passo 2: Selecionar local de gravação
+  | 'specs' // Passo 3: Configurar cores, tamanho
+  | 'comparison'; // Passo 4: Comparativo de técnicas com preços
 
-export const WIZARD_STEPS: WizardStep[] = [
-  'product',
-  'location', 
-  'specs',
-  'comparison',
-];
+export const WIZARD_STEPS: WizardStep[] = ['product', 'location', 'specs', 'comparison'];
 
 export interface WizardStepConfig {
   step: WizardStep;
@@ -110,13 +105,13 @@ export interface EngravingLocation {
 export interface AvailableTechnique {
   id: string;
   printAreaId: string; // ID da print area = p_area_id para fn_get_customization_price
-  techniqueId: string;  // Mesmo que printAreaId (cada área = 1 técnica)
+  techniqueId: string; // Mesmo que printAreaId (cada área = 1 técnica)
   techniqueName: string;
   techniqueCode: string;
   maxColors: number | null;
   isDefault: boolean;
   isCurved?: boolean;
-  hasPricing?: boolean;     // true se tem customization_price_table_id
+  hasPricing?: boolean; // true se tem customization_price_table_id
   // Dimensões específicas da área (para exibição em cards agrupados)
   areaMaxWidth?: number;
   areaMaxHeight?: number;
@@ -124,10 +119,10 @@ export interface AvailableTechnique {
   grupoTecnica?: string;
   cobraPorCor?: boolean;
   // v6 fields
-  usaDimensao?: boolean;       // se precisa informar dimensões
-  efetivaLarguraMax?: number;  // MIN(max_width, gravacao_largura_max)
-  efetivaAlturaMax?: number;   // MIN(max_height, gravacao_altura_max)
-  variacaoLabel?: string;      // label da variação
+  usaDimensao?: boolean; // se precisa informar dimensões
+  efetivaLarguraMax?: number; // MIN(max_width, gravacao_largura_max)
+  efetivaAlturaMax?: number; // MIN(max_height, gravacao_altura_max)
+  variacaoLabel?: string; // label da variação
   shape?: 'rectangle' | 'circle';
 }
 
@@ -151,11 +146,11 @@ export interface TechniqueComparisonResult {
   techniqueCode: string;
   printAreaId: string; // = p_area_id usado na RPC
   maxColors: number | null;
-  
+
   // Status
   isAvailable: boolean;
   unavailableReason?: string;
-  
+
   // Preços (do RPC fn_get_customization_price v5.9)
   unitPrice: number;
   setupPrice: number;
@@ -163,26 +158,26 @@ export interface TechniqueComparisonResult {
   totalPrice: number;
   costPerUnit: number;
   minimumApplied: boolean;
-  
+
   // Código de orçamento
   budgetCode: string;
-  
+
   // Prazo
   productionDays: number | null;
-  
+
   // Markup
   markupPercent: number;
   marginPercent: number;
-  
+
   // Faixa
   tierUsed: number;
   tierMinQty: number;
   tierMaxQty: number;
-  
+
   // Badges
   isCheapest?: boolean;
   isFastest?: boolean;
-  
+
   // Dados completos do RPC (para uso posterior)
   rawData?: Record<string, unknown>;
 }
@@ -209,6 +204,9 @@ export interface Personalization {
     costPerUnit: number;
     budgetCode: string;
     productionDays: number | null;
+    // Marcador interno: preço precisa ser recalculado (após SET_QUANTITY/DUPLICATE).
+    // Lido por useWizardPricing, opcional para não impactar contrato externo.
+    _needsRecalc?: boolean;
   };
 }
 
@@ -219,27 +217,27 @@ export interface Personalization {
 export interface SimulatorWizardState {
   // Navegação
   currentStep: WizardStep;
-  
+
   // Passo 1: Produto
   selectedProduct: SelectedProduct | null;
   quantity: number;
-  
+
   // Personalizações confirmadas
   personalizations: Personalization[];
   currentPersonalizationIndex: number;
   isEditingPersonalization: boolean;
-  
+
   // Passo 2: Local
   availableLocations: EngravingLocation[];
   selectedLocation: EngravingLocation | null;
-  
+
   // Passo 3: Especificações
   engravingSpecs: EngravingSpecs;
-  
+
   // Passo 4: Comparativo
   comparisonResults: TechniqueComparisonResult[];
   selectedComparison: TechniqueComparisonResult | null;
-  
+
   // UI State
   isCalculating: boolean;
   error: string | null;
@@ -261,13 +259,20 @@ export type WizardAction =
   | { type: 'ADD_PERSONALIZATION'; payload: Personalization }
   | { type: 'UPDATE_PERSONALIZATION'; payload: { index: number; personalization: Personalization } }
   | { type: 'REMOVE_PERSONALIZATION'; payload: string }
+  | { type: 'REMOVE_ALL_PERSONALIZATIONS' }
   | { type: 'EDIT_PERSONALIZATION'; payload: number }
   | { type: 'START_NEW_PERSONALIZATION' }
   | { type: 'CANCEL_PERSONALIZATION' }
   | { type: 'SET_CALCULATING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
-  | { type: 'RECALC_PERSONALIZATION_PRICING'; payload: { personalizationId: string; pricing: Personalization['pricing'] } }
-  | { type: 'DUPLICATE_PERSONALIZATION'; payload: { sourceId: string; targetLocation: EngravingLocation } }
+  | {
+      type: 'RECALC_PERSONALIZATION_PRICING';
+      payload: { personalizationId: string; pricing: Personalization['pricing'] };
+    }
+  | {
+      type: 'DUPLICATE_PERSONALIZATION';
+      payload: { sourceId: string; targetLocation: EngravingLocation };
+    }
   | { type: 'RESET_WIZARD' };
 
 // ============================================
@@ -301,9 +306,11 @@ export const isStepComplete = (step: WizardStep, state: SimulatorWizardState): b
     case 'location':
       return state.selectedLocation !== null;
     case 'specs':
-      return state.engravingSpecs.colors > 0 && 
-             state.engravingSpecs.width > 0 && 
-             state.engravingSpecs.height > 0;
+      return (
+        state.engravingSpecs.colors > 0 &&
+        state.engravingSpecs.width > 0 &&
+        state.engravingSpecs.height > 0
+      );
     case 'comparison':
       return state.selectedComparison !== null;
     default:
@@ -314,18 +321,18 @@ export const isStepComplete = (step: WizardStep, state: SimulatorWizardState): b
 export const canNavigateToStep = (targetStep: WizardStep, state: SimulatorWizardState): boolean => {
   const targetIndex = getStepIndex(targetStep);
   const currentIndex = getStepIndex(state.currentStep);
-  
+
   // Sempre pode voltar
   if (targetIndex <= currentIndex) return true;
-  
+
   // Se já tem personalizações, pode ir direto ao comparativo (resumo)
   if (targetStep === 'comparison' && state.personalizations.length > 0) return true;
-  
+
   for (let i = 0; i < targetIndex; i++) {
     if (!isStepComplete(WIZARD_STEPS[i], state)) {
       return false;
     }
   }
-  
+
   return true;
 };

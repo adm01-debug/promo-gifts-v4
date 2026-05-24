@@ -80,6 +80,24 @@ vi.mock('@/components/admin/DevAccessAuditAlert', () => ({
   DevAccessAuditAlert: () => <div data-testid="dev-audit-alert">Dev Audit</div>,
 }));
 
+// AdminConexoesPage renders SupabaseConnectionsTab which has useEffect async
+// calls (fetchLastTest) that fire setLastByEnv after the test environment is
+// torn down, causing "window is not defined". Mock the tab component itself to
+// remove all async operations while preserving the page's container structure.
+vi.mock('@/components/admin/connections/SupabaseConnectionsTab', () => ({
+  SupabaseConnectionsTab: () => <div data-testid="supabase-connections-tab-mock" />,
+}));
+
+// Mock ConnectionsOverviewTable and SecretField which also transitively use
+// @/hooks/intelligence and trigger similar post-teardown async errors.
+vi.mock('@/components/admin/connections/ConnectionsOverviewTable', () => ({
+  ConnectionsOverviewTable: () => <div data-testid="connections-overview-mock" />,
+}));
+
+vi.mock('@/components/admin/connections/SecretField', () => ({
+  SecretField: () => <div data-testid="secret-field-mock" />,
+}));
+
 describe('Admin Module Structural Comparison', () => {
   it('Conexoes and Usuarios should share matching container hierarchy', async () => {
     const { container: conexoes } = render(<AdminConexoesPage />, { wrapper });

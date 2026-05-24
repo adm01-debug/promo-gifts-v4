@@ -187,8 +187,15 @@ npm run build        # build de produção
 | `npm run preview` | Preview do build |
 | `npm run test` | Executa testes Vitest |
 | `npm run test:coverage` | Testes com cobertura |
-| `npm run lint:check` | ESLint |
+| `npm run lint` | **Gate** de baseline TS (não roda ESLint — ver nota abaixo) |
+| `npm run lint:baseline` | Gate ESLint baseline (bloqueia apenas regressões novas) |
+| `npm run qa:lint` | ESLint real (todas as violações, ignora baseline) |
+| `npm run typecheck` | **Gate** de baseline TS (alias de `lint`) |
+| `npm run qa:typecheck` | `tsc -p tsconfig.app.json --noEmit` real (todas as violações) |
+| `npm run qa:full` | Roda os 3 gates QA reais em sequência |
 | `npm run test:e2e` | Suíte E2E Playwright |
+
+> ⚠️ **Nota sobre `lint` e `typecheck`** — Em alinhamento com o gate-de-baseline adotado pelo time, `npm run lint` e `npm run typecheck` executam **apenas o gate de regressão** sobre `.tsc-baseline.json` (bloqueiam apenas erros novos). Para inspeção completa (sem o filtro de baseline), use `npm run qa:lint` (ESLint real) e `npm run qa:typecheck` (tsc real). Ver `docs/QA_REPORT_2026-05-22.md` para histórico.
 
 ### Solução de problemas
 
@@ -408,15 +415,20 @@ O deploy é gerenciado automaticamente pelo **Lovable Cloud**:
 
 ## 📊 Métricas do Projeto
 
-| Métrica | Valor |
+| Métrica | Valor (snapshot 2026-05-22) |
 |---|---|
-| Arquivos TypeScript | ~907 |
-| Linhas de código | ~180.000 |
-| Edge Functions | 46 |
-| Migrations SQL | 212 |
+| Arquivos TypeScript | 1.736 |
+| Edge Functions | 82 |
+| Migrations SQL | 708 |
+| Workflows GitHub Actions | 11 |
 | Tabelas com RLS | 100% |
-| Testes | 168 arquivos |
+| Testes Vitest (arquivos) | 349 |
+| Specs Playwright | 155 |
 | TypeScript strict | ✅ |
+| ESLint baseline (errors suprimidos) | 472 |
+| TS baseline (errors suprimidos) | 1.375 |
+
+> Snapshot mais recente, com baselines pós-rodada QA. Para detalhes do estado QA atual ver [`docs/QA_REPORT_2026-05-22.md`](docs/QA_REPORT_2026-05-22.md).
 
 ---
 

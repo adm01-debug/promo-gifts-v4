@@ -46,7 +46,7 @@ export const VoiceSearchOverlay = React.forwardRef<HTMLDivElement, VoiceSearchOv
   function VoiceSearchOverlay({
     isOpen, phase, partialTranscript, finalTranscript, agentResponse, error,
     recentCommands, currentAction, onClose, onStartListening, onStopListening, onStopSpeaking, onCommandSelect, onSimulateCommand,
-  }, ref) {
+  }, _ref) {
     const [isAutoStarting, setIsAutoStarting] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
     const [bootingTimedOut, setBootingTimedOut] = useState(false);

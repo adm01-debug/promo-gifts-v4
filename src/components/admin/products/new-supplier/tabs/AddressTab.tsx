@@ -1,17 +1,16 @@
 import type { ChangeEvent } from 'react';
-import type { useNewSupplierForm } from '@/components/admin/products/new-supplier/useNewSupplierForm';
-
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Search, Truck, X } from 'lucide-react';
 import { maskCep, ESTADOS_BR } from '@/utils/masks';
+import type { NewSupplierForm } from '../useNewSupplierForm';
 
 const fieldClass = 'mt-1.5 h-9';
 
 interface AddressTabProps {
-  form: ReturnType<typeof useNewSupplierForm>;
+  form: NewSupplierForm;
 }
 
 export function AddressTab({ form }: AddressTabProps) {
@@ -244,17 +243,15 @@ export function AddressTab({ form }: AddressTabProps) {
             )}
             {form.showCarrierDropdown && form.carrierResults.length > 0 && (
               <div className="absolute z-50 mt-1 max-h-48 w-full overflow-y-auto rounded-md border bg-popover shadow-lg">
-                {form.carrierResults.map((c: Record<string, unknown>) => (
+                {form.carrierResults.map((c) => (
                   <button
                     key={c.id}
                     type="button"
                     className="w-full px-3 py-2 text-left text-sm transition-colors hover:bg-accent/50"
                     onMouseDown={(e) => {
                       e.preventDefault();
-                      form.setTransportadoraPadrao(
-                        ((c.nome_fantasia || c.razao_social) as string) ?? '',
-                      );
-                      form.setTransportadoraId((c.id as string) ?? '');
+                      form.setTransportadoraPadrao(c.nome_fantasia || c.razao_social);
+                      form.setTransportadoraId(c.id);
                       form.setCarrierSearch('');
                       form.setShowCarrierDropdown(false);
                     }}

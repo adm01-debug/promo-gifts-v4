@@ -135,12 +135,22 @@ export default [
       //
       // Documentação completa: docs/redeploy/T-FIX-5-LINT-GUARDRAIL.md
       // ──────────────────────────────────────────────────────────────
+      //
+      // T-FIX-5b: Anti-padrão B — forEach() com expect() dentro de it()
+      // Array vazio → nenhuma asserção roda → teste verde falso.
+      // Correção: adicione expect(array).not.toHaveLength(0) antes do forEach.
+      // ──────────────────────────────────────────────────────────────
       'no-restricted-syntax': [
         'error',
         {
           selector: "CallExpression[callee.property.name='forEach'] CallExpression[callee.name=/^(it|test|describe)$/]",
           message:
             'Anti-padrão T-FIX-4: forEach() declarando it()/test()/describe() — use it.each(), test.each() ou describe.each() para registrar cada caso como teste isolado e evitar que falhas mascarem umas às outras. Veja docs/redeploy/T-FIX-5-LINT-GUARDRAIL.md',
+        },
+        {
+          selector: "CallExpression[callee.property.name='forEach']:has(CallExpression[callee.name='expect'])",
+          message:
+            'Anti-padrão T-FIX-5b: forEach() com expect() — array vazio faz o teste passar silenciosamente. Adicione expect(array).not.toHaveLength(0) antes do forEach, ou use it.each() para expor cada caso como teste isolado. Veja docs/redeploy/T-FIX-5-LINT-GUARDRAIL.md',
         },
       ],
     },
@@ -235,12 +245,21 @@ export default [
 
       // T-FIX-5: mesmo guard de src/ — aplicado também em tests/** para
       // cobertura completa. Veja docs/redeploy/T-FIX-5-LINT-GUARDRAIL.md
+      //
+      // T-FIX-5b: Anti-padrão B — forEach() com expect() dentro de it()
+      // Array vazio → nenhuma asserção roda → teste verde falso.
+      // Correção: adicione expect(array).not.toHaveLength(0) antes do forEach.
       'no-restricted-syntax': [
         'error',
         {
           selector: "CallExpression[callee.property.name='forEach'] CallExpression[callee.name=/^(it|test|describe)$/]",
           message:
             'Anti-padrão T-FIX-4: forEach() declarando it()/test()/describe() — use it.each(), test.each() ou describe.each() para registrar cada caso como teste isolado e evitar que falhas mascarem umas às outras. Veja docs/redeploy/T-FIX-5-LINT-GUARDRAIL.md',
+        },
+        {
+          selector: "CallExpression[callee.property.name='forEach']:has(CallExpression[callee.name='expect'])",
+          message:
+            'Anti-padrão T-FIX-5b: forEach() com expect() — array vazio faz o teste passar silenciosamente. Adicione expect(array).not.toHaveLength(0) antes do forEach, ou use it.each() para expor cada caso como teste isolado. Veja docs/redeploy/T-FIX-5-LINT-GUARDRAIL.md',
         },
       ],
     },

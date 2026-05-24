@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createStructuredLogger } from "../_shared/structured-logger.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { parseContract } from "../_shared/contracts/index.ts";
 import {
@@ -8,7 +8,7 @@ import { buildPublicCorsHeaders } from "../_shared/cors.ts";
 
 const corsHeaders = buildPublicCorsHeaders();
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }

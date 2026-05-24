@@ -11,14 +11,14 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { toast } from 'sonner';
 import { needsConversion, ensureSupportedFormat } from '@/lib/image-converter';
 import { useAuth } from '@/contexts/AuthContext';
-import { useMockupDraft } from '@/hooks/mockup';
 import {
   useFilteredTechniques,
+  useMockupDraft,
   useProductCustomizationOptionsForMockup,
-  type TechniqueWithLimits,
   type CustomizationOption,
+  type TechniqueWithLimits,
 } from '@/hooks/mockup';
-import { useLogoColorAnalysis, usePositionHistory } from "@/hooks/simulation";
+import { useLogoColorAnalysis, usePositionHistory } from '@/hooks/simulation';
 import { useProductsContext } from '@/contexts/ProductsContext';
 import { getMockupWizardStep } from '@/components/mockup/mockupWizardStep';
 import { showMockupSuccessToast } from '@/components/mockup/MockupSuccessToast';
@@ -37,7 +37,7 @@ import {
   generateMockupApi,
   downloadMockupAsPdf,
   deleteMockupFromDb,
-} from "@/hooks/mockup/mockupGenerationService";
+} from '@/hooks/mockup/mockupGenerationService';
 
 // Re-export types for consumers
 export type { Technique, GeneratedMockup };

@@ -17,7 +17,6 @@ import {
   Zap,
   AlertTriangle,
   CheckCircle2,
-  DollarSign,
   Package,
   Filter,
   X,

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -80,7 +80,7 @@ export default function SystemStatusPage() {
   const appVersion = '2.1.0-diagnostic';
   const buildDate = new Date().toISOString().split('T')[0];
 
-  const runHealthCheck = async () => {
+  const runHealthCheck = useCallback(async () => {
     setIsChecking(true);
     const results: StatusItem[] = [];
 
@@ -90,14 +90,17 @@ export default function SystemStatusPage() {
     const {
       data: { session },
     } = await supabase.auth.getSession();
+    const sessionType = session
+      ? `Autenticado (${session.user.app_metadata.provider || 'e-mail'})`
+      : 'Anônimo';
+    const jwtValid =
+      !!session && (session.expires_at ? session.expires_at * 1000 > Date.now() : false);
 
     setInstanceInfo({
       url: supabaseUrl,
       hasAnon: !!supabaseKey,
-      sessionType: session
-        ? `Autenticado (${session.user.app_metadata.provider || 'e-mail'})`
-        : 'Anônimo',
-      jwtValid: !!session && (session.expires_at ? session.expires_at * 1000 > Date.now() : false),
+      sessionType,
+      jwtValid,
     });
 
     // 2. Env vars Check
@@ -151,7 +154,7 @@ export default function SystemStatusPage() {
           } else if (httpStatus === 403 || error.code === '42501') {
             status = 'warning';
             msg = `Forbidden (Bloqueado por RLS: ${error.code})`;
-            suggestion = `Verifique se existe uma política SELECT para a role '${instanceInfo.sessionType}' na tabela ${t}.`;
+            suggestion = `Verifique se existe uma política SELECT para a role '${sessionType}' na tabela ${t}.`;
           } else if (error.code === '42P01') {
             status = 'error';
             msg = `Tabela Inexistente (Esquema não sincronizado: ${error.code})`;
@@ -178,7 +181,7 @@ export default function SystemStatusPage() {
     setStatuses(results);
     setLastCheck(new Date());
     setIsChecking(false);
-  };
+  }, []);
 
   const downloadReport = async () => {
     setIsChecking(true);
@@ -212,7 +215,7 @@ export default function SystemStatusPage() {
     setIsChecking(false);
   };
 
-  const runCrmHealthCheck = async () => {
+  const runCrmHealthCheck = useCallback(async () => {
     setIsCheckingCrm(true);
     const tableResults: CrmTableCheck[] = CRM_CRITICAL_TABLES.map((t) => ({
       name: t,
@@ -260,12 +263,12 @@ export default function SystemStatusPage() {
     }
 
     setIsCheckingCrm(false);
-  };
+  }, []);
 
   useEffect(() => {
     runHealthCheck();
     runCrmHealthCheck();
-  }, []);
+  }, [runCrmHealthCheck, runHealthCheck]);
 
   const getStatusIcon = (status: 'ok' | 'error' | 'warning' | 'loading') => {
     switch (status) {

@@ -24,11 +24,7 @@ export default defineConfig({
     typecheck: {
       enabled: false,
     },
-    // 'tests/e2e/**' excluído: contém testes Playwright (imports @playwright/test)
-    // que vitest tenta carregar e trava workers em deadlock. Playwright config
-    // usa testDir: './e2e' (não 'tests/e2e'), então esses 8 arquivos estavam
-    // órfãos. Ver fix(test): unblock vitest hang in CI.
-    exclude: ['node_modules', 'dist', '.idea', '.git', '.cache', 'tests/e2e/**'],
+    exclude: ['node_modules', 'dist', '.idea', '.git', '.cache'],
     // CI runners (GitHub Actions ubuntu-latest) têm 2 vCPU (4 vThreads).
     // Default thread pool causava timeout de 75min — mitigado com
     // maxThreads: 2 para evitar contenção.

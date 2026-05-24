@@ -3,6 +3,7 @@ name: E2E (Playwright)
 # Job opcional: roda os specs públicos sempre; specs autenticados só se
 # E2E_USER_EMAIL/E2E_USER_PASSWORD estiverem configurados como secrets do repo.
 # Artefatos (relatório HTML, screenshots, vídeos, traces) são publicados.
+# T14 UPDATE 13 (2026-05-24): corrige if: conditions inválidas (test -f → steps.outcome)
 
 on:
   push:
@@ -103,11 +104,13 @@ jobs:
       # — sem nenhum job dispatched. Mantida apenas a versão completa abaixo.
       # T14 UPDATE 3 (2026-05-22): adicionado `&& touch playwright-report/.smoke-passed`
       # para criar marker file SOMENTE quando `npx playwright test` retorna
-      # exit 0 explícito. Gate determinístico via [ -f file ] em vez de
+      # exit 0 explícito. Gate determinístico via steps.outcome em vez de
       # `hashFiles()` (que era afetado por exit codes ruidosos do Playwright
       # mesmo com testes passando — visto no run 26311927286, sha 1fa53507,
       # onde smoke step rodou 2m54s success na API mas gate disparou false-positive).
-      # T14 UPDATE 12: substituído `hashFiles()` por `test -f` que é determinístico.
+      # T14 UPDATE 13: substituído `test -f` nos campos if: por steps.outcome
+      # (test -f é shell command, não expressão GitHub Actions — causava
+      # validation failure com 0 jobs despachados).
       - name: Run E2E smoke (gate — para na 1ª falha)
         id: e2e_smoke
         run: |
@@ -131,13 +134,15 @@ jobs:
         run: node scripts/e2e-smoke-summary.mjs || true
 
       - name: 📤 Append SMOKE summary to GitHub UI
-        if: always() && test -f playwright-report/smoke-summary.md
+        if: always() && steps.e2e_smoke.outcome != 'skipped'
         run: |
-          {
-            echo "## 🚦 E2E Smoke Summary"
-            echo ""
-            cat playwright-report/smoke-summary.md
-          } >> "$GITHUB_STEP_SUMMARY"
+          if test -f playwright-report/smoke-summary.md; then
+            {
+              echo "## 🚦 E2E Smoke Summary"
+              echo ""
+              cat playwright-report/smoke-summary.md
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       # T14 UPDATE 3 (2026-05-22): step de diagnóstico para depurar discrepâncias
       # entre `outcome` (raw exit code antes de continue-on-error), `conclusion`
@@ -161,7 +166,7 @@ jobs:
           exec > >(tee playwright-report/T14-step-log.txt) 2>&1
 
           echo "================================================================"
-          echo "🔍 SMOKE GATE DIAGNOSTIC (T14 UPDATE 12)"
+          echo "🔍 SMOKE GATE DIAGNOSTIC (T14 UPDATE 13)"
           echo "================================================================"
           echo "Run:        #${{ github.run_number }} (id ${{ github.run_id }})"
           echo "SHA:        ${{ github.sha }}"
@@ -297,15 +302,17 @@ jobs:
           echo ""
           echo "Done."
 
+      # T14 UPDATE 13: substituído `test -f playwright-report/.smoke-passed`
+      # por `steps.e2e_smoke.outcome != 'success'` — expressão GitHub Actions válida.
       - name: 🛑 Fail-fast se smoke falhou (gate)
-        if: "! test -f playwright-report/.smoke-passed"
+        if: steps.e2e_smoke.outcome != 'success'
         run: |
           echo "::error title=Smoke gate failed::Smoke parou na 1ª falha — veja '🚦 E2E Smoke Summary' acima e o artifact 'playwright-report' (screenshots+vídeos+trace)."
           exit 1
 
       # ─── HEADER STICKY GATE ─────────────────────────────────────────────
       # Spec dedicado `e2e/flows/22-header-sticky.spec.ts` que valida que o
-      # `<header data-testid="app-header\">` permanece `position: sticky` em
+      # `<header data-testid="app-header">` permanece `position: sticky` em
       # y≈0 ao rolar — em todas as rotas autenticadas estáticas do catálogo,
       # × 3 viewports (mobile/tablet/desktop), + cenários de pós-login e
       # navegação encadeada entre módulos.
@@ -313,11 +320,11 @@ jobs:
       # Fail-fast (`--max-failures=1`): qualquer regressão de sticky
       # invalida o run. Reporter `github` cria annotation clicável no PR
       # apontando o spec exato; `list` deixa o log human-readable.
-      # T14 UPDATE 3: condicional trocada para o marker do smoke (mesmo motivo
-      # do gate acima). Cria próprio marker `.header-sticky-passed` ao passar.
+      # T14 UPDATE 13: condicional usa steps.e2e_smoke.outcome (expressão
+      # GitHub Actions válida) em vez de `test -f` (shell command inválido).
       - name: 🧲 Run E2E header-sticky gate (fail-fast por rota/viewport)
         id: e2e_header_sticky
-        if: test -f playwright-report/.smoke-passed
+        if: steps.e2e_smoke.outcome == 'success'
         run: |
           npx playwright test \
             e2e/flows/22-header-sticky.spec.ts \
@@ -328,10 +335,9 @@ jobs:
           E2E_BASE_URL: http://localhost:8080
         continue-on-error: true
 
-      # T14 UPDATE 3: dispara se o header-sticky rodou (marker do smoke existe)
-      # mas não criou o próprio marker — coerente com o gate do smoke.
+      # T14 UPDATE 13: condicional usa steps.outcome (expressão válida).
       - name: 🛑 Fail-fast se header sticky falhou
-        if: test -f playwright-report/.smoke-passed && ! test -f playwright-report/.header-sticky-passed
+        if: steps.e2e_smoke.outcome == 'success' && steps.e2e_header_sticky.outcome != 'success'
         run: |
           echo "::error title=Header sticky regression::O Header global deixou de ser sticky em alguma rota/viewport. Spec: e2e/flows/22-header-sticky.spec.ts. Causa raiz típica: 'overflow' / 'transform' / 'filter' em ancestral do <header> em src/components/layout/MainLayout.tsx criando scroll container ou stacking context indevido. Veja o artifact 'playwright-report' (screenshot + vídeo + trace) para a rota específica."
           exit 1
@@ -344,9 +350,9 @@ jobs:
       # mexe em smoke).
       # Requer E2E_USER_EMAIL configurado — specs autenticados falham sem
       # credenciais. Quando ausente, step é skipped e o job passa normalmente.
-      # T14 UPDATE 3: condicional usa markers do smoke + header-sticky.
+      # T14 UPDATE 13: condicional usa steps.outcome + env.E2E_USER_EMAIL (expressões válidas).
       - name: Run E2E regression (cobertura completa — registra todas as falhas)
-        if: test -f playwright-report/.smoke-passed && test -f playwright-report/.header-sticky-passed && env.E2E_USER_EMAIL != ''
+        if: steps.e2e_smoke.outcome == 'success' && steps.e2e_header_sticky.outcome == 'success' && env.E2E_USER_EMAIL != ''
         run: |
           # Sem credenciais de autenticação, limita à suíte pública (routes-public)
           # para evitar que centenas de testes autenticados falhem com redirect para
@@ -376,13 +382,15 @@ jobs:
         run: node scripts/e2e-feature-summary.mjs || true
 
       - name: 📤 Append feature summary to GitHub UI
-        if: always() && test -f playwright-report/feature-summary.md
+        if: always() && steps.e2e_run.outcome != 'skipped'
         run: |
-          {
-            echo "## 🧪 E2E Feature Summary (regression)"
-            echo ""
-            cat playwright-report/feature-summary.md
-          } >> "$GITHUB_STEP_SUMMARY"
+          if test -f playwright-report/feature-summary.md; then
+            {
+              echo "## 🧪 E2E Feature Summary (regression)"
+              echo ""
+              cat playwright-report/feature-summary.md
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Upload Playwright report
         if: always()

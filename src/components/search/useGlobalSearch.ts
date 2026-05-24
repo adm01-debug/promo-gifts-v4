@@ -9,18 +9,13 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { searchCache } from './searchCache';
 import { pushRecentSearch } from './EmptySearchState';
-import { playTtsAudio as _playTtsAudio } from '@/hooks/voice/playTtsAudio';
-import { processVoiceTranscript as _processVoiceTranscript } from '@/hooks/voice/processTranscript';
-import { useDebounce, useSearch as _useSearch, useSearchHistory } from '@/hooks/common';
+import { useDebounce, useSearchHistory } from '@/hooks/common';
 import {
   useContextualSuggestions,
   useVoiceCommandHistory,
   type VoiceCommandRecord,
 } from '@/hooks/intelligence';
-import {
-  useSlashCommands,
-  type CommandDefinition as _CommandDefinition,
-} from '@/hooks/ui/useSlashCommands';
+import { useSlashCommands } from '@/hooks/ui/useSlashCommands';
 import type { VoiceAgentAction } from '@/hooks/voice/types';
 
 import { createProductFuseOptions, rankProductSearchResults } from '@/utils/product-search';
@@ -121,9 +116,10 @@ export function useGlobalSearch() {
       switch (action.action) {
         case 'navigate':
           if (action.data?.route) {
+            const route = action.data.route;
             setTimeout(() => {
               setVoiceOverlayOpen(false);
-              navigate(action.data!.route!);
+              navigate(route);
             }, 500);
           }
           break;
@@ -181,17 +177,17 @@ export function useGlobalSearch() {
           break;
       }
     },
-    [navigate, addVoiceCommand],
+    [addVoiceCommand, navigate, setOpen, setVoiceOverlayOpen],
   );
 
   const handleOpenVoiceOverlay = useCallback(() => {
     setOpen(false);
     setVoiceOverlayOpen(true);
-  }, []);
+  }, [setOpen, setVoiceOverlayOpen]);
 
   const handleCloseVoiceOverlay = useCallback(() => {
     setVoiceOverlayOpen(false);
-  }, []);
+  }, [setVoiceOverlayOpen]);
 
   // ── Popular products ──
   useEffect(() => {
@@ -269,38 +265,7 @@ export function useGlobalSearch() {
   // ── Semantic search ──
   const abortRef = useRef<AbortController | null>(null);
   const performSemanticSearch = useCallback(async (searchQuery: string) => {
-    if (!searchQuery.trim() || searchQuery.length < 2) {
-      setResults([]);
-      setSearchIntent(null);
-      return;
-    }
-
-    // ── Slash Commands ──
-    if (searchQuery.startsWith('/')) {
-      const lowerQuery = searchQuery.toLowerCase();
-      const matchedCommands = commands
-        .filter(
-          (c) =>
-            c.command.toLowerCase().includes(lowerQuery) ||
-            c.keywords?.some((k) => k.toLowerCase().includes(lowerQuery.slice(1))),
-        )
-        .map((c) => ({
-          id: c.id,
-          title: c.label,
-          subtitle: c.description,
-          type: 'command' as const,
-          href: `command:${c.id}`,
-          metadata: { iconName: c.icon },
-        }));
-
-      setResults(matchedCommands);
-      setSearchIntent(null);
-      setIsSearching(false);
-      setIsAIProcessing(false);
-      return;
-    }
-
-    if (searchQuery.length < 3) {
+    if (!searchQuery.trim() || searchQuery.length < 3) {
       setResults([]);
       setSearchIntent(null);
       return;
@@ -364,16 +329,14 @@ export function useGlobalSearch() {
             if (intent.filters.priceRange === 'low')
               filteredProducts = filteredProducts.filter(
                 (p) =>
-                  ((p as unknown as ExternalProduct).sale_price ||
-                    (p as unknown as ExternalProduct).base_price ||
-                    0) < 50,
+                  ((p as ExternalProduct).sale_price || (p as ExternalProduct).base_price || 0) <
+                  50,
               );
             else if (intent.filters.priceRange === 'high')
               filteredProducts = filteredProducts.filter(
                 (p) =>
-                  ((p as unknown as ExternalProduct).sale_price ||
-                    (p as unknown as ExternalProduct).base_price ||
-                    0) > 200,
+                  ((p as ExternalProduct).sale_price || (p as ExternalProduct).base_price || 0) >
+                  200,
               );
           }
           if (intent.filters.color) {
@@ -382,27 +345,20 @@ export function useGlobalSearch() {
               if (!p.colors) return false;
               const colors = Array.isArray(p.colors) ? p.colors : [];
               return colors.some(
-                (c: unknown) =>
-                  (c as Record<string, string>)?.name?.toLowerCase().includes(colorLower) ||
-                  (c as Record<string, string>)?.label?.toLowerCase().includes(colorLower),
+                (c: Record<string, string>) =>
+                  c.name?.toLowerCase().includes(colorLower) ||
+                  c.label?.toLowerCase().includes(colorLower),
               );
             });
             if (colorFiltered.length > 0) filteredProducts = colorFiltered;
           }
 
-          const fuse = new Fuse(
-            filteredProducts as unknown as ExternalProduct[],
-            createProductFuseOptions<ExternalProduct>(),
-          );
-          rankProductSearchResults(
-            filteredProducts as unknown as ExternalProduct[],
-            productQuery,
-            fuse,
-          ).forEach((p) => {
+          const fuse = new Fuse(filteredProducts, createProductFuseOptions<ExternalProduct>());
+          rankProductSearchResults(filteredProducts, productQuery, fuse).forEach((p) => {
             allResults.push({
               id: p.id,
               title: p.name,
-              subtitle: `SKU: ${p.sku} • ${p.category_name || 'Sem categoria'} • ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((p as unknown as ExternalProduct).sale_price || (p as unknown as ExternalProduct).base_price || 0)}`,
+              subtitle: `SKU: ${p.sku} • ${p.category_name || 'Sem categoria'} • ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((p as ExternalProduct).sale_price || (p as ExternalProduct).base_price || 0)}`,
               type: 'product',
               href: `/produto/${p.id}`,
             });
@@ -415,7 +371,6 @@ export function useGlobalSearch() {
       if (intent.type === 'client' || intent.type === 'mixed') {
         try {
           const { searchCrm } = await import('@/lib/crm-db');
-          const { getCompanyDisplayName: _getCompanyDisplayName } = await import('@/types/crm');
           const searchTerm = intent.filters.clientName || intent.keywords.join(' ');
           if (searchTerm) {
             const companies = await searchCrm<Record<string, string>>(
@@ -524,15 +479,17 @@ export function useGlobalSearch() {
         try {
           const { data } = await supabase
             .from('generated_mockups')
-            .select('id, product_name, technique_name, created_at')
-            .or(`product_name.ilike.%${term}%,technique_name.ilike.%${term}%`)
+            .select('id, product_name, client_name, technique_name, created_at')
+            .or(
+              `product_name.ilike.%${term}%,client_name.ilike.%${term}%,technique_name.ilike.%${term}%`,
+            )
             .order('created_at', { ascending: false })
             .limit(5);
           (data || []).forEach((m) =>
             allResults.push({
               id: m.id,
               title: m.product_name || 'Mockup',
-              subtitle: `${m.technique_name || '—'}`,
+              subtitle: `${m.client_name || 'Sem cliente'} • ${m.technique_name || '—'}`,
               type: 'mockup',
               href: `/mockups/${m.id}`,
             }),
@@ -755,10 +712,10 @@ export function useGlobalSearch() {
           return supabase
             .from('search_analytics')
             .insert({
-              user_id: sellerId,
+              seller_id: sellerId,
               search_term: searchQuery.toLowerCase().trim().slice(0, 200),
               results_count: finalResults.length,
-              search_context: { latency_ms: latencyMs, intent_type: intent.type },
+              filters_used: { latency_ms: latencyMs, intent_type: intent.type },
             })
             .then(
               () => undefined,
@@ -775,8 +732,32 @@ export function useGlobalSearch() {
   }, []);
 
   useEffect(() => {
+    if (debouncedQuery.startsWith('/')) {
+      const lowerQuery = debouncedQuery.toLowerCase();
+      const matchedCommands = commands
+        .filter(
+          (c) =>
+            c.command.toLowerCase().includes(lowerQuery) ||
+            c.keywords?.some((k) => k.toLowerCase().includes(lowerQuery.slice(1))),
+        )
+        .map((c) => ({
+          id: c.id,
+          title: c.label,
+          subtitle: c.description,
+          type: 'command' as const,
+          href: `command:${c.id}`,
+          metadata: { iconName: c.icon },
+        }));
+
+      setResults(matchedCommands);
+      setSearchIntent(null);
+      setIsSearching(false);
+      setIsAIProcessing(false);
+      return;
+    }
+
     performSemanticSearch(debouncedQuery);
-  }, [debouncedQuery, performSemanticSearch]);
+  }, [commands, debouncedQuery, performSemanticSearch]);
 
   const handleSelect = useCallback(
     (href: string, saveToHistory = true) => {
@@ -813,7 +794,7 @@ export function useGlobalSearch() {
       if (/^https?:\/\//.test(href)) window.open(href, '_blank', 'noopener,noreferrer');
       else navigate(href);
     },
-    [query, addGlobalHistoryItem, navigate],
+    [commands, query, addGlobalHistoryItem, navigate, setOpen],
   );
 
   const handleSuggestionClick = useCallback((suggestion: string) => {

@@ -1,0 +1,2 @@
+-- Historical one-off password reset removed to keep migration replay safe.
+-- No-op migration intentionally left in place for history consistency.

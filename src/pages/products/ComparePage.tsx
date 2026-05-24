@@ -11,7 +11,6 @@ import { useNavigate } from 'react-router-dom';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { useComparisonStore, type CompareVariantInfo } from '@/stores/useComparisonStore';
 import type { Product, ProductColor } from '@/types/product-catalog';
-import type { Product as DBProduct } from '@/types/product';
 import { useProductsContext } from '@/contexts/ProductsContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -93,8 +92,6 @@ export default function ComparePage() {
   }, [compareItems, getProductsByIds, _cacheSignal]);
 
   const products = compareEntries.map((e) => e.product);
-  // Child components that import Product from '@/types/product' need a cast
-  const productsAsDB = products as unknown as DBProduct[];
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -212,14 +209,8 @@ export default function ComparePage() {
               <FileText className="mr-2 h-4 w-4" />
               Criar orçamento
             </Button>
-            <ComparisonPresentationLauncher
-              products={productsAsDB}
-              formatCurrency={formatCurrency}
-            />
-            <ExportComparisonButton
-              products={productsAsDB as unknown as Record<string, unknown>[]}
-              formatCurrency={formatCurrency}
-            />
+            <ComparisonPresentationLauncher products={products} formatCurrency={formatCurrency} />
+            <ExportComparisonButton products={products} formatCurrency={formatCurrency} />
             <Button variant="outline" size="sm" onClick={() => setShareOpen(true)}>
               <Share2 className="mr-2 h-4 w-4" />
               Compartilhar
@@ -239,7 +230,7 @@ export default function ComparePage() {
 
         {/* Mobile carousel view (<768px) */}
         <ComparisonMobileView
-          products={productsAsDB}
+          products={products}
           formatCurrency={formatCurrency}
           onRemove={removeByIndex}
           onProductClick={(id) => navigate(`/produto/${id}`)}
@@ -249,10 +240,10 @@ export default function ComparePage() {
         <div className="hidden space-y-4 md:block">
           {/* Score + Radar */}
           <div className={cn('grid grid-cols-1 gap-4', showRadar && 'lg:grid-cols-2')}>
-            <ComparisonScoreCard products={productsAsDB} />
-            {showRadar && <ComparisonRadarChart products={productsAsDB} />}
+            <ComparisonScoreCard products={products} />
+            {showRadar && <ComparisonRadarChart products={products} />}
           </div>
-          <AIComparisonAdvisor products={productsAsDB} />
+          <AIComparisonAdvisor products={products} />
 
           {/* Duel mode toggle (only visible when 2 products) */}
           {compareCount === 2 && (
@@ -270,7 +261,7 @@ export default function ComparePage() {
 
           {compareCount === 2 && duelMode ? (
             <ComparisonDuelView
-              products={productsAsDB}
+              products={products}
               formatCurrency={formatCurrency}
               onRemove={removeByIndex}
               onProductClick={(id) => navigate(`/produto/${id}`)}
@@ -350,7 +341,7 @@ export default function ComparePage() {
                           <div className="flex items-center justify-between">
                             <span className="text-muted-foreground">Cores:</span>
                             <div className="flex gap-0.5">
-                              {(entry.product.colors ?? [])
+                              {entry.product.colors
                                 .slice(0, 4)
                                 .map((c: ProductColor, i: number) => (
                                   <div
@@ -359,9 +350,9 @@ export default function ComparePage() {
                                     style={{ backgroundColor: c.hex }}
                                   />
                                 ))}
-                              {(entry.product.colors ?? []).length > 4 && (
+                              {entry.product.colors.length > 4 && (
                                 <span className="ml-1 text-xs text-muted-foreground">
-                                  +{(entry.product.colors ?? []).length - 4}
+                                  +{entry.product.colors.length - 4}
                                 </span>
                               )}
                             </div>
@@ -382,14 +373,8 @@ export default function ComparePage() {
 
               <TabsContent value="table">
                 <CompareTableView
-                  entries={
-                    compareEntries as unknown as {
-                      product: DBProduct;
-                      variant?: CompareVariantInfo;
-                      index: number;
-                    }[]
-                  }
-                  products={productsAsDB}
+                  entries={compareEntries}
+                  products={products}
                   formatCurrency={formatCurrency}
                   getStockStatusLabel={getStockStatusLabel}
                   onRemove={removeByIndex}
@@ -400,10 +385,7 @@ export default function ComparePage() {
           )}
 
           {/* Bottom rail — Compare também com... */}
-          <SimilarProductsRail
-            products={products as unknown as Record<string, unknown>[]}
-            formatCurrency={formatCurrency}
-          />
+          <SimilarProductsRail products={products} formatCurrency={formatCurrency} />
         </div>
       </div>
     </>

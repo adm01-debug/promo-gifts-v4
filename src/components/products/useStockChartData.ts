@@ -12,7 +12,6 @@ import {
   getActiveFlags,
   type IntelligenceFlag,
   type StockVelocity,
-  type ProductIntelligenceData,
 } from '@/hooks/intelligence';
 import { useSupplierNames } from '@/hooks/products';
 import {
@@ -65,7 +64,7 @@ export function useStockChartData(productId: string) {
   const supplierIds = useMemo(
     () =>
       hasData
-        ? extractUniqueSupplierIds(summaries!)
+        ? extractUniqueSupplierIds(summaries ?? [])
         : isDemo
           ? mockVelocities.map((v) => v.supplier_id)
           : [],
@@ -88,7 +87,7 @@ export function useStockChartData(productId: string) {
   const chartData = useMemo(() => {
     if (!hasData) return mockChartData;
     const supplierId = selectedSupplier === 'all' ? undefined : selectedSupplier;
-    const aggregated = aggregateDailySummaryByDate(summaries!, supplierId);
+    const aggregated = aggregateDailySummaryByDate(summaries ?? [], supplierId);
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
     return aggregated
@@ -112,19 +111,20 @@ export function useStockChartData(productId: string) {
   }, [summaries, days, hasData, mockChartData, selectedSupplier]);
 
   // Effective data
-  const effectiveIntelligence =
-    (intelligence as ProductIntelligenceData | null | undefined) ?? (isDemo ? mockIntel : null);
-  const velocityData = velocity as StockVelocity[] | undefined;
-  const effectiveVelocities = velocityData?.length ? velocityData : isDemo ? mockVelocities : [];
+  const effectiveIntelligence = intelligence ?? (isDemo ? mockIntel : null);
+  const effectiveVelocities = useMemo(
+    () => (velocity?.length ? velocity : isDemo ? mockVelocities : []),
+    [velocity, isDemo, mockVelocities],
+  );
 
   const bestVelocity = useMemo(() => {
     if (effectiveVelocities.length) {
       if (selectedSupplier !== 'all') {
-        const match = effectiveVelocities.find((v) => v.supplier_id === selectedSupplier);
+        const match = effectiveVelocities.find((v: StockVelocity) => v.supplier_id === selectedSupplier);
         if (match) return match;
       }
       return effectiveVelocities.reduce(
-        (best, v) => (v.avg_daily_depletion_7d > (best?.avg_daily_depletion_7d ?? 0) ? v : best),
+        (best: StockVelocity, v: StockVelocity) => (v.avg_daily_depletion_7d > (best?.avg_daily_depletion_7d ?? 0) ? v : best),
         effectiveVelocities[0],
       );
     }
@@ -175,7 +175,7 @@ export function useStockChartData(productId: string) {
       return name ? `em ${name}` : 'fornecedor selecionado';
     }
     const count = effectiveIntelligence?.supplier_count;
-    if (count === null || count === undefined || count === 0) return 'no fornecedor';
+    if (count === null || count === 0) return 'no fornecedor';
     return `em ${count} fornecedor${count > 1 ? 'es' : ''}`;
   }, [effectiveIntelligence, selectedSupplier, supplierNamesMap]);
 

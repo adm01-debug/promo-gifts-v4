@@ -3,8 +3,7 @@
  * Contains back button, collection info, CRM badge, share, export and action buttons.
  */
 import { motion } from "framer-motion";
-import {
-  ArrowLeft, Monitor, Package, FileText, Clock, Users, Share2,
+import { Monitor, Package, FileText, Clock, Users, Share2,
   ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";

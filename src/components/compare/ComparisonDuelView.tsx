@@ -5,10 +5,10 @@
 import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Crown, X, Check, Minus } from "lucide-react";
+import { Crown, X, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useComparisonScore } from "@/hooks/comparison";
-import type { Product } from "@/types/product";
+import type { Product } from "@/types/product-catalog";
 
 interface Props {
   products: Product[];

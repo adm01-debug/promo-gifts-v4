@@ -36,7 +36,7 @@ export function useFavoriteQuickAdd() {
       const map = new Map<string, Set<string>>();
       (data ?? []).forEach((row: { product_id: string; list_id: string }) => {
         if (!map.has(row.product_id)) map.set(row.product_id, new Set());
-        map.get(row.product_id)!.add(row.list_id);
+        map.get(row.product_id)?.add(row.list_id);
       });
       return map;
     },

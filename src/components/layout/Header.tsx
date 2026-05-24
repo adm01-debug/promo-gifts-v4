@@ -145,10 +145,10 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
       }
       className={cn(
         'theme-transitioning fixed right-0 top-0 z-40 border-b transition-all duration-300 print:hidden',
-        'border-border/30 bg-background/40 backdrop-blur-xl',
+        'border-border/10 bg-sidebar/60 backdrop-blur-xl',
         'h-[var(--header-h)]',
         isScrolled &&
-          'border-border/50 bg-background/60 shadow-[0_4px_20px_-5px_rgba(0,0,0,0.1)] backdrop-blur-2xl',
+          'border-border/30 bg-sidebar/80 shadow-[0_4px_20px_-5px_rgba(0,0,0,0.1)] backdrop-blur-2xl',
       )}
     >
       <div className="flex h-full items-center justify-between px-2 sm:px-4 lg:px-6">
@@ -448,8 +448,8 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
         </div>
       </div>
 
-      {/* #9 — Barra colorida de seção no bottom */}
-      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary/80 via-primary to-primary/40 opacity-60" />
+      {/* #9 — Barra sutil no bottom */}
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-white/5 opacity-50" />
     </header>
   );
 });

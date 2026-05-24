@@ -1,0 +1,81 @@
+name: Gitleaks — Full History Audit
+
+# Roda 1 vez por dia + on-demand para escanear TODO o historico Git
+# buscando secrets vazados (chaves Supabase, tokens Bitrix, JWTs, etc).
+#
+# DIFERENCA do .gitleaks.toml: aquele e usado pelo pre-commit hook
+# para BLOQUEAR commits novos. Este workflow audita TUDO QUE JA EXISTE.
+
+on:
+  schedule:
+    - cron: '0 6 * * *'      # diario as 06h UTC (03h BRT)
+  workflow_dispatch:           # botao "Run workflow" no GitHub UI
+  push:
+    branches: [main]           # tambem audita a cada merge em main
+
+permissions:
+  contents: read
+  security-events: write       # para upload de SARIF
+  issues: write                # para abrir issue automatica em finding
+
+jobs:
+  gitleaks-full-history:
+    name: Scan complete git history for leaked secrets
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0       # baixa TODO o historico, nao apenas o ultimo commit
+
+      - name: Run Gitleaks
+        id: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # GITLEAKS_LICENSE: not required for OSS repos. Adicionar GITLEAKS_LICENSE
+          # como secret quando o repo for privatizado (Etapa 1 do plano).
+        with:
+          config-path: .gitleaks.toml
+
+      - name: Upload report as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-report-${{ github.run_id }}
+          path: results.sarif
+          retention-days: 90
+
+      - name: Open issue if leaks found
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const today = new Date().toISOString().slice(0, 10);
+            const title = `[SECURITY] Gitleaks encontrou secrets vazados — ${today}`;
+            const body = [
+              '## Gitleaks detectou possiveis secrets no historico',
+              '',
+              `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              '',
+              '### Acoes obrigatorias',
+              '1. Baixar o artifact `gitleaks-report-${{ github.run_id }}` para detalhes',
+              '2. Categorizar cada finding em:',
+              '   - (a) false positive -> adicionar ao allowlist em `.gitleaks.toml`',
+              '   - (b) chave ja rotacionada -> documentar e adicionar ao allowlist',
+              '   - (c) chave AINDA VALIDA -> **ROTACIONAR IMEDIATAMENTE**',
+              '3. Para findings tipo (c): documentar o que foi rotacionado e quando',
+              '4. Fechar esta issue apos resolver todos os findings',
+              '',
+              'SLA: 24h para findings tipo (c), 7 dias para tipos (a)/(b).',
+            ].join('\n');
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              labels: ['security', 'priority-high', 'gitleaks'],
+            });

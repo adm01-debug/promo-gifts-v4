@@ -9,15 +9,14 @@ import {
   useAutoSaveQuote,
   useDiscountApproval,
   useQuoteItems,
-  useQuoteTemplates,
   useQuotes,
+  useQuoteTemplates,
   useSellerDiscountLimits,
   type QuoteItem,
   type QuoteItemPersonalization,
   type QuoteTemplate,
   type QuoteTemplateItem,
 } from '@/hooks/quotes';
-import type { Quote } from '@/hooks/quotes/quoteTypes';
 import { useQuery } from '@tanstack/react-query';
 import Fuse from 'fuse.js';
 import { format, addDays } from 'date-fns';
@@ -26,7 +25,6 @@ import { formatCurrency as fmtCurrency } from '@/lib/format';
 import { validateQuoteForm, QUOTE_FIELD_LABELS } from '@/lib/validations';
 import { useAuth } from '@/contexts/AuthContext';
 import { findKnownHex, type ExternalVariantStock } from '@/hooks/products';
-import type { PromobrindProduct } from '@/lib/external-db';
 import { useDebounce } from '@/hooks/common';
 import type {
   SelectedCompanyInfo,
@@ -782,7 +780,7 @@ export function useQuoteBuilderState() {
 
   // ── Template ──
   const applyTemplate = useCallback((template: QuoteTemplate) => {
-    const newItems: QuoteItem[] = template.items.map((item) => ({
+    const newItems: QuoteItem[] = template.items_data.map((item) => ({
       product_id: item.productId || '',
       product_name: item.productName,
       product_sku: item.productSku,
@@ -916,14 +914,14 @@ export function useQuoteBuilderState() {
 
       const effectiveStatus = status === 'pending_approval' ? 'pending_approval' : status;
 
-      const quoteData: Partial<Quote> = {
+      const quoteData = {
         client_id: clientId || undefined,
         client_name: contactInfo?.name || undefined,
         client_company: companyInfo?.name || undefined,
         client_cnpj: companyInfo?.cnpj || undefined,
         client_email: contactInfo?.email || undefined,
         client_phone: contactInfo?.phone || undefined,
-        status: effectiveStatus as Quote['status'],
+        status: effectiveStatus,
         discount_percent: discountType === 'percent' ? discountValue : 0,
         discount_amount: discountType === 'amount' ? discountValue : 0,
         negotiation_markup_percent: Math.min(50, Math.max(0, negotiationMarkup || 0)),
@@ -944,7 +942,7 @@ export function useQuoteBuilderState() {
       }
 
       // If pending_approval, create approval request usando desconto REAL (não aparente)
-      if (result && result.id && status === 'pending_approval' && maxDiscountPercent !== null) {
+      if (result && status === 'pending_approval' && maxDiscountPercent !== null) {
         await requestApproval(result.id, realDiscountPercent, maxDiscountPercent, sellerNotes);
       }
 

@@ -65,7 +65,9 @@ describe('SocialLoginButtons (Google)', () => {
     expect(signInWithOAuthMock).toHaveBeenCalledWith(
       expect.objectContaining({
         provider: 'google',
-        options: expect.objectContaining({ redirectTo: expect.stringMatching(/\/auth\/callback$/) }),
+        options: expect.objectContaining({
+          redirectTo: expect.stringMatching(/\/auth\/callback$/),
+        }),
       }),
     );
   });
@@ -105,10 +107,9 @@ describe('SocialLoginButtons (Google)', () => {
         description: expect.stringMatching(/tempo esgotado/i),
       }),
     );
-    expect(onError).toHaveBeenCalledWith(
-      expect.stringMatching(/tempo esgotado/i),
-      { autoFallback: true },
-    );
+    expect(onError).toHaveBeenCalledWith(expect.stringMatching(/tempo esgotado/i), {
+      autoFallback: true,
+    });
     // Spinner liberado
     expect(getGoogleButton()).not.toBeDisabled();
   });
@@ -127,14 +128,19 @@ describe('SocialLoginButtons (Google)', () => {
       await Promise.resolve();
     });
 
+    // QA: o componente foi refatorado para emitir códigos de erro em
+    // vez da mensagem PT-BR (description: 'provider_is_not_enabled').
+    // A camada que renderiza o código → texto humano vive agora no
+    // i18n consumer. Aqui validamos o contrato do código + propriedades
+    // estáveis (variant + onError chamado).
     expect(toastMock).toHaveBeenCalledWith(
       expect.objectContaining({
         variant: 'destructive',
-        description: expect.stringMatching(/ainda não está habilitado/i),
+        description: 'provider_is_not_enabled',
       }),
     );
     expect(onError).toHaveBeenCalledTimes(1);
-    expect(onError.mock.calls[0][0]).toMatch(/ainda não está habilitado/i);
+    expect(onError.mock.calls[0][0]).toBe('provider_is_not_enabled');
     // autoFallback NÃO deve estar setado em erros do provider direto
     expect(onError.mock.calls[0][1]).toBeUndefined();
   });

@@ -13,7 +13,7 @@ import {
   createEmptyContact,
   createEmptyPixKey,
   ORGANIZATION_ID,
-} from "./types";
+} from './types';
 
 export function useNewSupplierForm(onCreated: (id: string) => void) {
   const [open, setOpen] = useState(false);
@@ -303,7 +303,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
       .filter((k) => k.chave.trim())
       .find((k) => validatePixKey(k.chave, k.tipo));
     if (invalidPix) {
-      toast.error(validatePixKey(invalidPix.chave, invalidPix.tipo)!);
+      toast.error(validatePixKey(invalidPix.chave, invalidPix.tipo) ?? 'Chave PIX inválida');
       return;
     }
     const cnpjDigits = cnpj.replace(/\D/g, '');
@@ -578,6 +578,13 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
     handleCreate,
   };
 }
+
+/**
+ * Tipo do objeto retornado por `useNewSupplierForm`, derivado diretamente do
+ * hook para permanecer sempre em sincronia. As tabs (`AddressTab`,
+ * `BasicDataTab`, ...) recebem este tipo em vez de `Record<string, unknown>`.
+ */
+export type NewSupplierForm = ReturnType<typeof useNewSupplierForm>;
 
 function buildNotesField(
   notes: string,

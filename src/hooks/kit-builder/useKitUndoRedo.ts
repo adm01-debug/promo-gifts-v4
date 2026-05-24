@@ -22,7 +22,7 @@ export function useKitUndoRedo() {
 
   const pushSnapshot = useCallback((snapshot: UndoRedoSnapshot) => {
     if (isRestoringRef.current) return;
-    setHistory(prev => {
+    setHistory((prev) => {
       const last = prev[prev.length - 1];
       if (last && JSON.stringify(last) === JSON.stringify(snapshot)) return prev;
       const next = [...prev, snapshot];
@@ -39,11 +39,17 @@ export function useKitUndoRedo() {
     if (history.length <= 1) return null;
     isRestoringRef.current = true;
     const newHistory = [...history];
-    const current = newHistory.pop()!;
+    const current = newHistory.pop();
+    if (!current) {
+      isRestoringRef.current = false;
+      return null;
+    }
     const prev = newHistory[newHistory.length - 1];
     setHistory(newHistory);
-    setFuture(f => [current, ...f]);
-    setTimeout(() => { isRestoringRef.current = false; }, 100);
+    setFuture((f) => [current, ...f]);
+    setTimeout(() => {
+      isRestoringRef.current = false;
+    }, 100);
     return prev;
   }, [history]);
 
@@ -52,8 +58,10 @@ export function useKitUndoRedo() {
     isRestoringRef.current = true;
     const [next, ...rest] = future;
     setFuture(rest);
-    setHistory(prev => [...prev, next]);
-    setTimeout(() => { isRestoringRef.current = false; }, 100);
+    setHistory((prev) => [...prev, next]);
+    setTimeout(() => {
+      isRestoringRef.current = false;
+    }, 100);
     return next;
   }, [future]);
 
