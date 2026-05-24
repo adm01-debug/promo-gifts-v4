@@ -155,7 +155,7 @@ export const SidebarReorganized = React.memo(
       isCollapsed ? "4rem" : "16rem",
     );
   }, [isCollapsed]);
-  const isItemActive = (href: string, exact?: boolean) =>
+  const _isItemActive = (href: string, exact?: boolean) =>
     isNavItemActive(location.pathname, href, exact);
 
   // Compute which groups should be auto-opened for the current route.
