@@ -4,6 +4,8 @@ import {
   releaseScrollLock,
   releaseScrollLockIfIdle,
   isBodyStuckInert,
+  isRootInert,
+  forceRootInteractive,
 } from "@/lib/dom/scroll-lock";
 
 function lockBody() {
@@ -79,5 +81,28 @@ describe("scroll-lock helpers", () => {
     menu.setAttribute("data-state", "open");
     document.body.appendChild(menu);
     expect(isBodyStuckInert()).toBe(false);
+  });
+
+  it("isRootInert detects a computed pointer-events:none on the root chain", () => {
+    expect(isRootInert()).toBe(false);
+    document.documentElement.style.pointerEvents = "none";
+    expect(isRootInert()).toBe(true);
+
+    const dialog = document.createElement("div");
+    dialog.setAttribute("role", "dialog");
+    dialog.setAttribute("data-state", "open");
+    document.body.appendChild(dialog);
+    expect(isRootInert()).toBe(false); // legitimate open overlay → not "stuck"
+  });
+
+  it("forceRootInteractive restores interactivity on html and body", () => {
+    document.documentElement.style.pointerEvents = "none";
+    document.body.style.pointerEvents = "none";
+
+    forceRootInteractive();
+
+    expect(getComputedStyle(document.documentElement).pointerEvents).not.toBe("none");
+    expect(getComputedStyle(document.body).pointerEvents).not.toBe("none");
+    expect(isRootInert()).toBe(false);
   });
 });
