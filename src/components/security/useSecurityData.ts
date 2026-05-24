@@ -1,7 +1,7 @@
 /**
  * useSecurityData — Hook que carrega métricas, logins e alertas de segurança
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { use2FA } from '@/hooks/auth';
 import { useAllowedIPs } from '@/hooks/admin';
@@ -42,61 +42,50 @@ export interface UserProfile {
 }
 
 const defaultMetrics: SecurityMetrics = {
-  score: 0,
-  mfaEnabled: false,
-  ipRestrictionsActive: false,
-  knownDevicesCount: 0,
-  recentLoginAttempts: 0,
-  failedLoginAttempts: 0,
-  securityAlerts: 0,
+  score: 0, mfaEnabled: false, ipRestrictionsActive: false,
+  knownDevicesCount: 0, recentLoginAttempts: 0, failedLoginAttempts: 0, securityAlerts: 0,
 };
 
-export function useSecurityData(
-  effectiveUserId: string | undefined,
-  isManagingOther: boolean,
-  selectedUserId: string | null,
-) {
-  const { is2FAEnabled, isLoading: is2FALoading } = use2FA(
-    isManagingOther ? selectedUserId! : undefined,
-  );
+export function useSecurityData(effectiveUserId: string | undefined, isManagingOther: boolean, selectedUserId: string | null) {
+  const { is2FAEnabled, isLoading: is2FALoading } = use2FA(isManagingOther ? selectedUserId! : undefined);
   const { allowedIPs } = useAllowedIPs();
   const [metrics, setMetrics] = useState<SecurityMetrics>(defaultMetrics);
   const [loginAttempts, setLoginAttempts] = useState<LoginAttempt[]>([]);
   const [notifications, setNotifications] = useState<SecurityNotification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Guarda de montagem: evita setState após o unmount (await que resolve
+  // após o teardown vaza "window is not defined" em testes).
+  const mountedRef = useRef(true);
+
   const loadSecurityData = useCallback(async () => {
     if (!effectiveUserId) return;
-    setIsLoading(true);
+    if (mountedRef.current) setIsLoading(true);
     try {
       const { data: attempts } = await supabase
-        .from('login_attempts')
-        .select('*')
+        .from('login_attempts').select('*')
         .eq('user_id', effectiveUserId)
-        .order('created_at', { ascending: false })
-        .limit(20);
+        .order('created_at', { ascending: false }).limit(20);
 
+      if (!mountedRef.current) return;
       setLoginAttempts((attempts as LoginAttempt[]) || []);
 
       const { count: devicesCount } = await supabase
-        .from('user_known_devices')
-        .select('*', { count: 'exact', head: true })
+        .from('user_known_devices').select('*', { count: 'exact', head: true })
         .eq('user_id', effectiveUserId);
 
       const { data: notifs } = await supabase
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .from('notifications' as any)
-        .select('*')
-        .eq('user_id', effectiveUserId)
-        .eq('type', 'security')
-        .order('created_at', { ascending: false })
-        .limit(10);
+        .from('notifications' as any).select('*')
+        .eq('user_id', effectiveUserId).eq('type', 'security')
+        .order('created_at', { ascending: false }).limit(10);
 
+      if (!mountedRef.current) return;
       const safeNotifs = notifs as unknown as SecurityNotification[] | null;
       setNotifications(safeNotifs || []);
 
-      const failedAttempts = attempts?.filter((a) => !a.success).length || 0;
-      const unreadAlerts = safeNotifs?.filter((n) => !n.is_read).length || 0;
+      const failedAttempts = attempts?.filter(a => !a.success).length || 0;
+      const unreadAlerts = safeNotifs?.filter(n => !n.is_read).length || 0;
 
       let score = 40;
       if (is2FAEnabled) score += 30;
@@ -114,25 +103,22 @@ export function useSecurityData(
         securityAlerts: unreadAlerts,
       });
     } catch (error) {
+      if (!mountedRef.current) return;
       console.error('Error loading security data:', error);
     } finally {
-      setIsLoading(false);
+      if (mountedRef.current) setIsLoading(false);
     }
   }, [effectiveUserId, is2FAEnabled, allowedIPs]);
 
   useEffect(() => {
+    mountedRef.current = true;
     if (effectiveUserId) loadSecurityData();
+    return () => {
+      mountedRef.current = false;
+    };
   }, [effectiveUserId, loadSecurityData]);
 
-  return {
-    metrics,
-    loginAttempts,
-    notifications,
-    isLoading,
-    is2FAEnabled,
-    is2FALoading,
-    allowedIPs,
-  };
+  return { metrics, loginAttempts, notifications, isLoading, is2FAEnabled, is2FALoading, allowedIPs };
 }
 
 // Score helpers

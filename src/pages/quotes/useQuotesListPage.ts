@@ -1,10 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import Fuse from 'fuse.js';
 import { useQuoteFunnel, useQuotes } from "@/hooks/quotes";
-import { Quote } from '@/hooks/quotes/quoteTypes';
 
 export type SortOption = 'newest' | 'oldest' | 'highest' | 'lowest' | 'expiring';
 

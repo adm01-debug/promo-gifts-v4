@@ -38,7 +38,7 @@ export function SaveAsTemplateButton({
     onSaved?.();
   };
 
-  const initialTemplate = {
+  const _initialTemplate = {
     name: "",
     description: "",
     is_default: false,

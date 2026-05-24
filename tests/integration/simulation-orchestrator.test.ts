@@ -1,28 +1,28 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Integration test for the Simulation Orchestrator.
  * This ensures the bridge between frontend and simulation logic is intact.
  *
- * Note: `supabase.functions` is a getter that returns a NEW FunctionsClient instance
- * on every access. To spy reliably, we capture one reference in beforeEach and use
- * it for both the spy installation and the actual invoke call.
+ * Nota: `supabase.functions` é um getter lazy do supabase-js v2 que retorna uma
+ * NOVA instância de FunctionsClient a cada acesso. Por isso capturamos a
+ * instância UMA vez (`fns`) e usamos a MESMA referência para o spy e para a
+ * chamada — espiar `supabase.functions.invoke` inline criaria instâncias
+ * diferentes e o spy registraria 0 chamadas.
  */
 describe('Simulation Orchestrator Integration', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let fns: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let invokeSpy: any;
+  let fns: typeof supabase.functions;
+  let invokeSpy: ReturnType<typeof vi.spyOn>;
 
-  beforeEach(() => {
-    // Capture a single reference so spy and call target the same object.
+  beforeAll(() => {
     fns = supabase.functions;
-    invokeSpy = vi.spyOn(fns, 'invoke');
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
+  beforeEach(() => {
+    invokeSpy = vi
+      .spyOn(fns, 'invoke')
+      .mockResolvedValue({ data: { ok: true }, error: null } as never);
   });
 
   it('should trigger a resilience simulation successfully', async () => {

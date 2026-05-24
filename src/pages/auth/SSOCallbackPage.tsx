@@ -11,7 +11,6 @@ import { consumePostLoginRedirect } from '@/lib/auth/post-login-redirect';
 import { clearOAuthPending } from '@/lib/auth/oauth-pending';
 import { explainOAuthError, type OAuthErrorExplanation } from '@/lib/auth/oauth-error-explainer';
 import { SpaceScene } from "@/pages/auth/AuthBranding";
-import { motion } from 'framer-motion';
 
 /**
  * Callback do login social via Supabase Auth.

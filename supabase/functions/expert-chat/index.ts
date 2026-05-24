@@ -539,7 +539,7 @@ Deno.serve(async (req) => {
       return new Response(rl.body, { status: rl.status, headers });
     }
 
-    console.log("Authenticated user:", userId);
+    console.log("Authenticated expert-chat request");
 
     const rawBody = await safeJson(req);
     if (!rawBody) {
@@ -1260,8 +1260,8 @@ IMPORTANTE: Você tem acesso completo aos dados do cliente em tempo real — CRM
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI Gateway error:", response.status, errorText);
+      await response.text();
+      console.error("AI Gateway error:", { status: response.status });
 
       if (response.status === 429) {
         return new Response(

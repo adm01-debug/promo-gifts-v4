@@ -13,11 +13,7 @@
  */
 
 import type { CustomizationPriceFlat } from '@/hooks/simulation';
-import {
-  detectPriceSchema,
-  warnUnknownSchemaOnce,
-  type PriceSchemaVersion,
-} from './schema-detection';
+import { detectPriceSchema, warnUnknownSchemaOnce, type PriceSchemaVersion } from './schema-detection';
 import { validateRpcPayload } from '@/lib/personalization/rpc-validator';
 import { PRICE_CONTRACT } from '@/lib/personalization/rpc-contracts';
 
@@ -54,40 +50,132 @@ function normalizeV7Aliases(resp: Record<string, unknown>): Record<string, unkno
   // Markup nested object — também aceita renomeação
   const markup = out.markup as Record<string, unknown> | undefined;
   if (markup && typeof markup === 'object') {
-    if ('unit_cost' in markup && !('custo_unitario' in markup))
-      markup.custo_unitario = markup.unit_cost;
-    if ('setup_cost_table' in markup && !('custo_setup_tabela' in markup))
-      markup.custo_setup_tabela = markup.setup_cost_table;
-    if ('markup_percent' in markup && !('markup_pct' in markup))
-      markup.markup_pct = markup.markup_percent;
+    if ('unit_cost' in markup && !('custo_unitario' in markup)) markup.custo_unitario = markup.unit_cost;
+    if ('setup_cost_table' in markup && !('custo_setup_tabela' in markup)) markup.custo_setup_tabela = markup.setup_cost_table;
+    if ('markup_percent' in markup && !('markup_pct' in markup)) markup.markup_pct = markup.markup_percent;
   }
   // Detalhes nested
   const detalhes = out.detalhes as Record<string, unknown> | undefined;
   if (detalhes && typeof detalhes === 'object') {
-    if ('charges_per_color' in detalhes && !('cobra_por_cor' in detalhes))
-      detalhes.cobra_por_cor = detalhes.charges_per_color;
-    if ('max_colors' in detalhes && !('max_cores' in detalhes))
-      detalhes.max_cores = detalhes.max_colors;
+    if ('charges_per_color' in detalhes && !('cobra_por_cor' in detalhes)) detalhes.cobra_por_cor = detalhes.charges_per_color;
+    if ('max_colors' in detalhes && !('max_cores' in detalhes)) detalhes.max_cores = detalhes.max_colors;
   }
   // Faixa nested
   const faixa = out.faixa as Record<string, unknown> | undefined;
   if (faixa && typeof faixa === 'object') {
     if ('min_qty' in faixa && !('qtd_min' in faixa)) faixa.qtd_min = faixa.min_qty;
     if ('max_qty' in faixa && !('qtd_max' in faixa)) faixa.qtd_max = faixa.max_qty;
-    if ('production_days' in faixa && !('prazo_dias' in faixa))
-      faixa.prazo_dias = faixa.production_days;
+    if ('production_days' in faixa && !('prazo_dias' in faixa)) faixa.prazo_dias = faixa.production_days;
   }
   return out;
+}
+
+// ============================================
+// FORMATOS DE PAYLOAD (tipagem de fronteira)
+// ============================================
+//
+// Os parsers recebem objetos vindos de JSON (`Record<string, unknown>`).
+// Em vez de espalhar `as any` por cada acesso aninhado, descrevemos aqui a
+// forma estrutural esperada de cada formato. Todos os campos são opcionais
+// porque o payload é, por contrato, parcialmente confiável — os defaults
+// (`?? ''`, `?? 0`, `?? false`, `?? null`) é que garantem o tipo canônico.
+
+/** Sub-objetos do formato v5.9-nested. */
+interface NestedArea {
+  id?: string;
+  code?: string;
+  name?: string;
+}
+interface NestedTabela {
+  id?: string;
+  codigo_tabela?: string;
+  nome?: string;
+  grupo_tecnica?: string;
+  cobra_por_cor?: boolean;
+  max_cores?: number;
+}
+interface NestedParametros {
+  quantidade?: number;
+  num_cores?: number;
+}
+interface NestedPrecos {
+  preco_unitario_final?: number;
+  subtotal_pecas?: number;
+  faturamento_minimo_gravacao?: number;
+  aplica_minimo?: boolean;
+  total_final?: number;
+  markup_percent?: number;
+}
+interface NestedCustos {
+  custo_base_unitario?: number;
+  custo_unitario_total?: number;
+  custo_setup_base?: number;
+}
+interface NestedFaixa {
+  ordem?: number;
+  quantidade_minima?: number;
+  quantidade_maxima?: number;
+  prazo_dias?: number | null;
+}
+interface NestedPriceResponse {
+  success?: boolean;
+  area?: NestedArea;
+  tabela?: NestedTabela;
+  parametros?: NestedParametros;
+  precos?: NestedPrecos;
+  custos?: NestedCustos;
+  faixa?: NestedFaixa;
+  codigo_orcamento?: string;
+  redirected_from?: string;
+  redirected_to?: string;
+}
+
+/** Sub-objetos do formato v6.x-flat (e v7 após normalização de aliases). */
+interface FlatMarkup {
+  custo_unitario?: number;
+  custo_setup_tabela?: number;
+  markup_pct?: number;
+}
+interface FlatDetalhes {
+  cobra_por_cor?: boolean;
+  max_cores?: number;
+}
+interface FlatFaixa {
+  faixa_id?: string | number;
+  qtd_min?: number;
+  qtd_max?: number;
+  prazo_dias?: number | null;
+}
+interface FlatPriceResponse {
+  success?: boolean;
+  area_id?: string;
+  area_code?: string;
+  nome_tabela?: string;
+  tabela_id?: string;
+  /** Código da tabela (string) — no flat o campo chama-se `tabela`. */
+  tabela?: string;
+  grupo_tecnica?: string;
+  codigo_orcamento?: string;
+  quantidade?: number;
+  num_cores?: number;
+  preco_unitario?: number;
+  preco_por_unidade?: number;
+  valor_gravacao?: number;
+  setup_total?: number;
+  total_cobrado?: number;
+  prazo_dias?: number | null;
+  markup?: FlatMarkup;
+  detalhes?: FlatDetalhes;
+  faixa?: FlatFaixa;
+  redirected_from?: string;
+  redirected_to?: string;
 }
 
 // ============================================
 // PARSERS POR FORMATO
 // ============================================
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyRec = Record<string, any>;
-
-function parseNested(resp: AnyRec): CustomizationPriceFlat {
+function parseNested(resp: NestedPriceResponse): CustomizationPriceFlat {
   return {
     success: !!resp.success,
     area_id: resp.area?.id ?? '',
@@ -123,7 +211,7 @@ function parseNested(resp: AnyRec): CustomizationPriceFlat {
   };
 }
 
-function parseFlat(resp: AnyRec): CustomizationPriceFlat {
+function parseFlat(resp: FlatPriceResponse): CustomizationPriceFlat {
   const tabelaCode = resp.tabela ?? '';
   const unitPrice = resp.preco_unitario ?? resp.preco_por_unidade ?? 0;
   const valorGravacao = resp.valor_gravacao ?? unitPrice * (resp.quantidade ?? 0);
@@ -134,7 +222,7 @@ function parseFlat(resp: AnyRec): CustomizationPriceFlat {
     area_name: resp.nome_tabela ?? '',
     tabela_id: resp.tabela_id ?? '',
     tabela_codigo: tabelaCode,
-    tabela_codigo_curto: (tabelaCode as string).split('-')[0] || tabelaCode,
+    tabela_codigo_curto: tabelaCode.split('-')[0] || tabelaCode,
     technique: resp.nome_tabela ?? '',
     grupo_tecnica: resp.grupo_tecnica ?? '',
     codigo_orcamento: resp.codigo_orcamento ?? `${tabelaCode}-${resp.quantidade ?? 0}`,
@@ -187,14 +275,14 @@ export function adaptPriceResponseWithMeta(
   const version = detectPriceSchema(resp);
   switch (version) {
     case 'v5.9-nested':
-      return { flat: parseNested(resp as AnyRec), schemaVersion: version };
+      return { flat: parseNested(resp as unknown as NestedPriceResponse), schemaVersion: version };
     case 'v6.x-flat':
-      return { flat: parseFlat(resp as AnyRec), schemaVersion: version };
+      return { flat: parseFlat(resp as unknown as FlatPriceResponse), schemaVersion: version };
     case 'v7-new':
-      return { flat: parseFlat(normalizeV7Aliases(resp) as AnyRec), schemaVersion: version };
+      return { flat: parseFlat(normalizeV7Aliases(resp) as unknown as FlatPriceResponse), schemaVersion: version };
     default: {
       warnUnknownSchemaOnce('price-response', resp);
-      return { flat: parseFlat(resp as AnyRec), schemaVersion: 'unknown' };
+      return { flat: parseFlat(resp as unknown as FlatPriceResponse), schemaVersion: 'unknown' };
     }
   }
 }

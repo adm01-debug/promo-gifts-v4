@@ -1,12 +1,11 @@
 /**
  * DevOnlyBridgeOverlay — wrapper que gateia o BridgeMetricsOverlay por papel `dev`.
  *
- * O componente usa <DevOnly strict>, ou seja, apenas `isDev` controla a visibilidade.
- * Overrides via env/localStorage (isAllowed) são ignorados no modo strict.
- *
  * Valida:
- *  - Não-dev (isDev=false): retorna null independente de isAllowed.
- *  - Dev (isDev=true): monta o overlay independente de isAllowed.
+ *  - Não-dev: retorna null (sem montar o overlay, sem disparar o lazy import).
+ *  - Dev: monta o overlay (via Suspense) — fallback null durante o load.
+ *  - Gate desligado (env false) com isDev=true: retorna null.
+ *  - Gate ligado por override (localStorage) com isDev=false: monta.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -42,15 +41,17 @@ describe('DevOnlyBridgeOverlay — gate por papel + SSOT', () => {
     expect(await screen.findByTestId('bridge-metrics-overlay-mock')).toBeInTheDocument();
   });
 
-  it('modo strict: dev com isAllowed=false ainda renderiza (isDev prevalece)', async () => {
-    // strict=true → allowed = isDev = true → deve renderizar
+  // DevOnlyBridgeOverlay usa <DevOnly strict>, que decide EXCLUSIVAMENTE por
+  // `isDev` (role dev real) e IGNORA overrides de env/localStorage (isAllowed).
+  // Os dois casos abaixo cobrem justamente essa diferença entre `isDev` e
+  // `isAllowed`.
+  it('strict ignora override: isDev=true monta mesmo com isAllowed=false', async () => {
     vi.mocked(useDevGate).mockReturnValue({ isAllowed: false, isDev: true });
     render(<DevOnlyBridgeOverlay />);
     expect(await screen.findByTestId('bridge-metrics-overlay-mock')).toBeInTheDocument();
   });
 
-  it('modo strict: não-dev com isAllowed=true é bloqueado (isDev prevalece)', () => {
-    // strict=true → allowed = isDev = false → deve bloquear
+  it('strict ignora override: isAllowed=true mas isDev=false NÃO monta', () => {
     vi.mocked(useDevGate).mockReturnValue({ isAllowed: true, isDev: false });
     const { container } = render(<DevOnlyBridgeOverlay />);
     expect(container).toBeEmptyDOMElement();

@@ -40,8 +40,6 @@ import {
   aggregateDailySummaryByDate,
   getActiveFlags,
   type IntelligenceFlag,
-  type StockVelocity,
-  type ProductIntelligenceData,
 } from '@/hooks/intelligence';
 import {
   safeVelocityTrend,
@@ -62,14 +60,9 @@ import { RiskTooltip } from './RiskTooltip';
 interface ProductRiskDetailProps {
   productId: string;
   productName?: string;
-  productSku?: string;
 }
 
-export function ProductRiskDetail({
-  productId,
-  productName,
-  productSku: _productSku,
-}: ProductRiskDetailProps) {
+export function ProductRiskDetail({ productId, productName }: ProductRiskDetailProps) {
   const navigate = useNavigate();
   const [period, setPeriod] = useState<string>('30');
   const [chartExpanded, setChartExpanded] = useState(false);
@@ -82,17 +75,15 @@ export function ProductRiskDetail({
     refetch: refetchSummary,
   } = useStockDailySummary(productId, days);
   const {
-    data: velocityRaw,
+    data: velocity,
     error: velocityError,
     refetch: refetchVelocity,
   } = useStockVelocity(productId);
-  const velocity = velocityRaw as StockVelocity[] | undefined;
   const {
-    data: intelligenceRaw,
+    data: intelligence,
     error: intelligenceError,
     refetch: refetchIntelligence,
   } = useProductIntelligenceData(productId);
-  const intelligence = intelligenceRaw as ProductIntelligenceData | null | undefined;
 
   const hasData = !!summaries?.length;
   const hasError = !!(summaryError || velocityError || intelligenceError);
@@ -111,7 +102,7 @@ export function ProductRiskDetail({
   // #10 fix: correct type for reduce — use union type instead of intersection
   const chartData = useMemo(() => {
     if (!hasData) return mockChartData;
-    const aggregated = aggregateDailySummaryByDate(summaries!);
+    const aggregated = aggregateDailySummaryByDate(summaries ?? []);
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
     return aggregated
@@ -193,16 +184,9 @@ export function ProductRiskDetail({
   }
 
   const daysToStockout = bestVelocity?.days_to_stockout;
-  const isUrgent =
-    daysToStockout !== null &&
-    daysToStockout !== undefined &&
-    Number.isFinite(daysToStockout) &&
-    daysToStockout < 7;
+  const isUrgent = daysToStockout !== null && Number.isFinite(daysToStockout) && daysToStockout < 7;
   const isWarning =
-    daysToStockout !== null &&
-    daysToStockout !== undefined &&
-    Number.isFinite(daysToStockout) &&
-    daysToStockout < 15;
+    daysToStockout !== null && Number.isFinite(daysToStockout) && daysToStockout < 15;
   const trend = safeVelocityTrend(bestVelocity?.velocity_trend);
   const trendDisplay = formatVelocityTrendOperational(trend);
 
@@ -294,9 +278,7 @@ export function ProductRiskDetail({
           icon={Clock}
           label="Dias até acabar"
           value={
-            daysToStockout !== null &&
-            daysToStockout !== undefined &&
-            Number.isFinite(daysToStockout)
+            daysToStockout !== null && Number.isFinite(daysToStockout)
               ? String(Math.round(daysToStockout))
               : '∞'
           }

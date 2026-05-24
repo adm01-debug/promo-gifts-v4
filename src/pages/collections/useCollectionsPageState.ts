@@ -281,6 +281,7 @@ export function useCollectionsPageState() {
     toggleSelectCollection,
     selectAllLocal,
     clearSelection,
+    createCollection,
     handleCreate,
     handleUpdate,
     handleDelete,
@@ -289,7 +290,6 @@ export function useCollectionsPageState() {
     handleSendSelectedToQuote,
     resetForm,
     updateCollection,
-    createCollection,
 
     // Computed
     selectedSummary,

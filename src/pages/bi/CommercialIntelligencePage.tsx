@@ -112,7 +112,7 @@ export default function CommercialIntelligencePage() {
 
           {/* 5. Vendas Internas */}
           <div className="animate-fade-in" style={{ animationDelay: "350ms" }}>
-            <SalesOverviewChart days={filters.days} productId={filters.productId} />
+            <SalesOverviewChart days={filters.days} />
           </div>
         </div>
       </>

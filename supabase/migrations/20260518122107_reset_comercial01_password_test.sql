@@ -1,0 +1,2 @@
+-- Segurança: migrations não devem conter reset de senha hardcoded.
+-- Mantido intencionalmente sem operações para preservar a ordem de versões.

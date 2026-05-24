@@ -10,15 +10,15 @@
  * - Leitura: qualquer autenticado.
  * - Escrita: somente admin (RLS).
  */
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export const ALLOWED_FRESHNESS_THRESHOLDS = [30, 60, 90] as const;
 export type FreshnessThreshold = (typeof ALLOWED_FRESHNESS_THRESHOLDS)[number];
 
-const QK = (productId: string) => ["product-freshness-override", productId];
-const QK_ALL = ["product-freshness-overrides"] as const;
+const QK = (productId: string) => ['product-freshness-override', productId];
+const QK_ALL = ['product-freshness-overrides'] as const;
 
 export interface ProductFreshnessOverride {
   id: string;
@@ -31,13 +31,14 @@ export interface ProductFreshnessOverride {
 
 export function useProductFreshnessOverride(productId: string | null | undefined) {
   return useQuery({
-    queryKey: QK(productId ?? "_"),
+    queryKey: QK(productId ?? '_'),
     enabled: !!productId,
     queryFn: async (): Promise<ProductFreshnessOverride | null> => {
+      if (!productId) return null;
       const { data, error } = await supabase
-        .from("product_price_freshness_overrides")
-        .select("*")
-        .eq("product_id", productId!)
+        .from('product_price_freshness_overrides')
+        .select('*')
+        .eq('product_id', productId)
         .maybeSingle();
       if (error) throw error;
       return (data as ProductFreshnessOverride | null) ?? null;
@@ -51,9 +52,9 @@ export function useAllFreshnessOverrides() {
     queryKey: QK_ALL,
     queryFn: async (): Promise<ProductFreshnessOverride[]> => {
       const { data, error } = await supabase
-        .from("product_price_freshness_overrides")
-        .select("*")
-        .order("updated_at", { ascending: false });
+        .from('product_price_freshness_overrides')
+        .select('*')
+        .order('updated_at', { ascending: false });
       if (error) throw error;
       return (data as ProductFreshnessOverride[]) ?? [];
     },
@@ -64,25 +65,22 @@ export function useAllFreshnessOverrides() {
 export function useUpsertFreshnessOverride() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: {
-      productId: string;
-      thresholdDays: FreshnessThreshold;
-    }) => {
+    mutationFn: async (input: { productId: string; thresholdDays: FreshnessThreshold }) => {
       if (!ALLOWED_FRESHNESS_THRESHOLDS.includes(input.thresholdDays)) {
-        throw new Error("Validade inválida — use 30, 60 ou 90 dias.");
+        throw new Error('Validade inválida — use 30, 60 ou 90 dias.');
       }
       const { data: userRes } = await supabase.auth.getUser();
       const userId = userRes.user?.id ?? null;
 
       const { data, error } = await supabase
-        .from("product_price_freshness_overrides")
+        .from('product_price_freshness_overrides')
         .upsert(
           {
             product_id: input.productId,
             threshold_days: input.thresholdDays,
             updated_by: userId,
           },
-          { onConflict: "product_id" },
+          { onConflict: 'product_id' },
         )
         .select()
         .single();
@@ -95,8 +93,7 @@ export function useUpsertFreshnessOverride() {
       toast.success(`Validade definida para ${data.threshold_days} dias.`);
     },
     onError: (err: unknown) => {
-      const msg =
-        err instanceof Error ? err.message : "Não foi possível salvar a validade.";
+      const msg = err instanceof Error ? err.message : 'Não foi possível salvar a validade.';
       toast.error(msg);
     },
   });
@@ -107,20 +104,19 @@ export function useDeleteFreshnessOverride() {
   return useMutation({
     mutationFn: async (productId: string) => {
       const { error } = await supabase
-        .from("product_price_freshness_overrides")
+        .from('product_price_freshness_overrides')
         .delete()
-        .eq("product_id", productId);
+        .eq('product_id', productId);
       if (error) throw error;
       return productId;
     },
     onSuccess: (productId) => {
       qc.invalidateQueries({ queryKey: QK(productId) });
       qc.invalidateQueries({ queryKey: QK_ALL });
-      toast.success("Validade restaurada para o padrão (60 dias).");
+      toast.success('Validade restaurada para o padrão (60 dias).');
     },
     onError: (err: unknown) => {
-      const msg =
-        err instanceof Error ? err.message : "Não foi possível restaurar.";
+      const msg = err instanceof Error ? err.message : 'Não foi possível restaurar.';
       toast.error(msg);
     },
   });

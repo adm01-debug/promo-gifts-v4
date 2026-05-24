@@ -67,10 +67,10 @@ export default function AdminProductFormPage() {
     if (!isEdit) return;
 
     const loadProduct = async () => {
+      if (!id) return;
       setIsLoading(true);
       try {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const fullProduct = await fetchPromobrindProductById(id!);
+        const fullProduct = await fetchPromobrindProductById(id);
         if (fullProduct) {
           setProduct(fullProduct);
         } else {
@@ -189,10 +189,9 @@ export default function AdminProductFormPage() {
       if (!isEdit || skuChanged) {
         const { fetchPromobrindProducts } = await import('@/lib/external-db');
         const existing = await fetchPromobrindProducts({ search: data.sku, limit: 5 });
-        const products = Array.isArray(existing)
-          ? (existing as PromobrindProduct[])
-          : (((existing as Record<string, unknown>).products as PromobrindProduct[] | undefined) ??
-            []);
+        const products: PromobrindProduct[] = Array.isArray(existing)
+          ? existing
+          : ((existing as { products?: PromobrindProduct[] }).products ?? []);
         const duplicate = products.find(
           (p: PromobrindProduct) => p.sku?.toLowerCase() === data.sku.toLowerCase(),
         );
@@ -447,8 +446,8 @@ export default function AdminProductFormPage() {
                       exportProductPdf({
                         formData,
                         productImages: getProductImages(product),
-                        categoryName: product.category_name || '',
-                        supplierName: product.supplier_name || '',
+                        categoryName: product.category_name || product.category || '',
+                        supplierName: product.supplier_name || product.supplier || '',
                       });
                       toast.success('PDF gerado com sucesso!');
                     }}

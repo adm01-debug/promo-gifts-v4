@@ -149,8 +149,8 @@ Com base no perfil do cliente, recomende os produtos mais adequados.`;
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      const errorText = await response.text();
-      console.error("AI Gateway error:", response.status, errorText);
+      await response.text();
+      console.error("AI Gateway error:", { status: response.status });
       throw new Error(`AI Gateway error: ${response.status}`);
     }
 

@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
-import type { KitState } from '@/lib/kit-builder';
+import type { KitState } from '@/hooks/kit-builder';
 
 export function useKitBuilderQuote() {
   const { user } = useAuth();
@@ -116,7 +116,8 @@ export function useKitBuilderQuote() {
           const personalizations: Array<Record<string, unknown>> = [];
 
           if (kitState.personalization.box.enabled && kitState.box) {
-            const boxQuoteItem = insertedItems.find((i) => i.product_id === kitState.box!.id);
+            const boxId = kitState.box.id;
+            const boxQuoteItem = insertedItems.find((i) => i.product_id === boxId);
             if (boxQuoteItem) {
               const bp = kitState.personalization.box;
               personalizations.push({

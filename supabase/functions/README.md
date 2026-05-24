@@ -194,3 +194,17 @@ _Total potencialmente órfãs: **7**_
 
 _Doc gerado automaticamente. Pra atualizar: `node scripts/gen-edges-readme.mjs` (script preservado em `scripts/`)._
 
+
+
+## Mecanismos de autenticação aceitos por endpoint
+
+- `webhook-dispatcher`:
+  - `x-dispatcher-secret: <WEBHOOK_DISPATCHER_SECRET>` **ou**
+  - `Authorization: Bearer <JWT de usuário válido>` com role mínima (`supervisor` por padrão).
+  - `Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>` **não é aceito** como credencial de transporte.
+- Endpoints de cron que usam `authorizeCron`:
+  - `x-cron-secret: <CRON_SECRET>` (vault/env).
+  - `Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>` **não é aceito**.
+- Helpers compartilhados de usuário (ex.: `authenticateRequest`):
+  - Apenas `Authorization: Bearer <JWT de usuário válido>`.
+  - Fast-path com `SUPABASE_SERVICE_ROLE_KEY`/`SIMULATION_BYPASS_KEY` foi removido.

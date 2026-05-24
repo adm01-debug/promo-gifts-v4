@@ -137,17 +137,25 @@ export default function Auth() {
 
   // Fetch IP, geolocation and backend status
   useEffect(() => {
+    // Guarda de cancelamento: evita setState após o unmount do componente.
+    // Sem isso, os awaits de loadInfo podem resolver depois do teardown e
+    // disparar setDbStatus/setCurrentIP fora do ciclo de vida do React
+    // (em testes, isso vaza como "ReferenceError: window is not defined").
+    let cancelled = false;
+
     const loadInfo = async () => {
       // 1. IP Info
       try {
         const { data, error } = await supabase.functions.invoke('get-visitor-info');
-        if (!error && data) {
+        if (!cancelled && !error && data) {
           if (data.ip) setCurrentIP(data.ip);
           if (data.city) setGeoLocation(`${data.city}, ${data.country_code}`);
         }
       } catch {
         // silent fail
       }
+
+      if (cancelled) return;
 
       // 2. Principal Backend (Directly from env or client)
       const principalUrl = import.meta.env.VITE_EXTERNAL_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
@@ -169,6 +177,8 @@ export default function Auth() {
           body: { operation: 'ping' }
         });
 
+        if (cancelled) return;
+
         if (!error && data?.ok) {
           setDbStatus(prev => ({
             ...prev,
@@ -183,11 +193,17 @@ export default function Auth() {
           setDbStatus(prev => ({ ...prev, external: { ok: false, loading: false } }));
         }
       } catch {
-        setDbStatus(prev => ({ ...prev, external: { ok: false, loading: false } }));
+        if (!cancelled) {
+          setDbStatus(prev => ({ ...prev, external: { ok: false, loading: false } }));
+        }
       }
     };
     
     loadInfo();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Redirect if already logged in (only on initial load)

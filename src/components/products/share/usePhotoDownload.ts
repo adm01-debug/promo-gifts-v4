@@ -54,7 +54,7 @@ export function usePhotoDownload() {
           title: "Download concluído",
           description: `${images.length} foto(s) baixada(s)`,
         });
-      } catch (err) {
+      } catch (_err) {
         toast({
           title: "Erro no download",
           description: "Não foi possível baixar as fotos",

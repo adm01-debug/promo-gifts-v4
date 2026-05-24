@@ -2,7 +2,6 @@ import { PieChart, Building2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSegmentAnalysis } from "@/hooks/intelligence";
-import { cn } from "@/lib/utils";
 
 export function SegmentAnalysis({ days = 30, categoryId, supplierId }: { days?: number; categoryId?: string | null; supplierId?: string | null }) {
   const { data: segments, isLoading } = useSegmentAnalysis(days, categoryId, supplierId);

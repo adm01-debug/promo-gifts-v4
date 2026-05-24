@@ -1,22 +1,17 @@
-import { useEffect, useState, useMemo } from "react";
+import { useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
 import {
   FilePlus,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  TrendingUp,
-  FileText,
-  ArrowRight,
-  DollarSign,
+  Clock, TrendingUp,
+  FileText, DollarSign,
   Target,
-  BarChart3,
+  BarChart3
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useQuotes, Quote } from "@/hooks/quotes";
+import { useQuotes } from "@/hooks/quotes";
 import { useAuth } from "@/contexts/AuthContext";
 import { startOfMonth, endOfMonth, parseISO, isWithinInterval } from "date-fns";
 

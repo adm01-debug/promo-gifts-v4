@@ -2,8 +2,8 @@
  * useProdutoPersonalizacao — busca regras de personalização de um produto local
  * (componentes + locations já modeladas em product_components / product_component_locations).
  */
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface ComponentLocation {
   id: string;
@@ -27,26 +27,27 @@ export interface ComponentWithLocations {
 
 export function useProdutoPersonalizacao(productId: string | null | undefined) {
   return useQuery({
-    queryKey: ["produto-personalizacao", productId],
+    queryKey: ['produto-personalizacao', productId],
     enabled: !!productId,
     queryFn: async (): Promise<ComponentWithLocations[]> => {
+      if (!productId) return [];
       const { data: components, error: cErr } = await supabase
-        .from("product_components")
-        .select("id, component_code, component_name, is_personalizable, sort_order")
-        .eq("product_id", productId!)
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
+        .from('product_components')
+        .select('id, component_code, component_name, is_personalizable, sort_order')
+        .eq('product_id', productId)
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
 
       if (cErr) throw cErr;
       if (!components?.length) return [];
 
       const componentIds = components.map((c) => c.id);
       const { data: locations, error: lErr } = await supabase
-        .from("product_component_locations")
-        .select("*")
-        .in("component_id", componentIds)
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
+        .from('product_component_locations')
+        .select('*')
+        .in('component_id', componentIds)
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
 
       if (lErr) throw lErr;
 

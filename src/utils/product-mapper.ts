@@ -181,7 +181,7 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
       (typeof p.updated_at === 'string' && p.updated_at.trim() !== '' ? p.updated_at : null),
     priceFreshnessThresholdDays: p.price_freshness_threshold_days ?? null,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    variations: variations.length > 0 ? (variations as any) : null,
+    variations: variations.length > 0 ? (variations as any) : undefined,
     productVideos: p.product_videos?.length ? p.product_videos : undefined,
     kitItems:
       p.kit_components?.map((c) => ({

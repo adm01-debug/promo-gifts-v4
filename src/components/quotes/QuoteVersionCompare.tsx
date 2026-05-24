@@ -207,7 +207,7 @@ export function QuoteVersionCompare({ open, onOpenChange, versions, currentQuote
                   {[leftDetail, rightDetail].map((detail) => (
                     <div key={detail.id} className="space-y-2">
                       <p className="text-xs font-medium text-muted-foreground mb-2">v{detail.version}</p>
-                      {detail.items.map((item, i) => {
+                      {detail.items.map((item, _i) => {
                         const otherDetail = detail === leftDetail ? rightDetail : leftDetail;
                         const otherItem = otherDetail.items.find(oi => oi.product_sku === item.product_sku);
                         const isNew = !otherItem;

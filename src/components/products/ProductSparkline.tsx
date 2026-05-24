@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { useSparklineData } from "@/hooks/intelligence";
-import { TrendingUp, TrendingDown, Minus, BarChart3, Zap, Activity } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Zap, Activity } from "lucide-react";
 
 interface ProductSparklineProps {
   productId: string;
@@ -89,7 +89,7 @@ export function ProductSparkline({ productId, className }: ProductSparklineProps
     setTooltipPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
   }, [points.length]);
 
-  const handleMouseEnter = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMouseEnter = useCallback((_e: React.MouseEvent<HTMLDivElement>) => {
     if (hoverIndex === null) {
       const container = containerRef.current;
       if (!container) return;

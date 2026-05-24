@@ -1,7 +1,7 @@
-import { useOrganization } from "@/contexts/OrganizationContext";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 /**
  * Hook to fetch generic data scoped to the current organization.
@@ -12,8 +12,8 @@ export function useOrgData<T>(
   options: {
     enabled?: boolean;
     select?: string;
-    filters?: Record<string, any>;
-  } = {}
+    filters?: Record<string, unknown>;
+  } = {},
 ) {
   const { currentOrg } = useOrganization();
 
@@ -22,18 +22,16 @@ export function useOrgData<T>(
     queryFn: async () => {
       if (!currentOrg) return [] as T[];
 
-      let query = supabase
-        .from(tableName as any)
-        .select(options.select || "*");
+      let query = supabase.from(tableName as never).select(options.select || '*');
 
       // Scope to current organization
-      query = query.eq("organization_id", currentOrg.id);
+      query = query.eq('organization_id', currentOrg.id);
 
       // Apply additional filters
       if (options.filters) {
         Object.entries(options.filters).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
-            query = query.eq(key as any, value);
+            query = query.eq(key as never, value);
           }
         });
       }
@@ -47,7 +45,7 @@ export function useOrgData<T>(
 
       return (data || []) as T[];
     },
-    enabled: !!currentOrg && (options.enabled !== false),
+    enabled: !!currentOrg && options.enabled !== false,
   });
 }
 
@@ -60,15 +58,13 @@ export function useOrgCreate(tableName: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (payload: any) => {
-      if (!currentOrg) throw new Error("No organization selected");
+    mutationFn: async (payload: Record<string, unknown>) => {
+      if (!currentOrg) throw new Error('No organization selected');
 
       const { data, error } = await supabase
-        .from(tableName as any)
-        .insert({
-          ...payload,
-          organization_id: currentOrg.id,
-        })
+        .from(tableName as never)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .insert({ ...payload, organization_id: currentOrg.id } as any)
         .select()
         .single();
 
@@ -77,10 +73,11 @@ export function useOrgCreate(tableName: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [tableName, currentOrg?.id] });
-      toast.success("Registro criado com sucesso");
+      toast.success('Registro criado com sucesso');
     },
-    onError: (error: any) => {
-      toast.error(`Erro ao criar registro: ${error.message}`);
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : 'Erro desconhecido';
+      toast.error(`Erro ao criar registro: ${message}`);
     },
   });
 }
@@ -93,11 +90,12 @@ export function useOrgUpdate(tableName: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...payload }: { id: string; [key: string]: any }) => {
-      const { data, error } = await supabase
-        .from(tableName as any)
+    mutationFn: async ({ id, ...payload }: { id: string; [key: string]: unknown }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const q = supabase.from(tableName as never) as any;
+      const { data, error } = await q
         .update(payload)
-        .eq("id", id)
+        .eq('id', id)
         .select()
         .single();
 
@@ -106,10 +104,11 @@ export function useOrgUpdate(tableName: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [tableName, currentOrg?.id] });
-      toast.success("Registro atualizado com sucesso");
+      toast.success('Registro atualizado com sucesso');
     },
-    onError: (error: any) => {
-      toast.error(`Erro ao atualizar registro: ${error.message}`);
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : 'Erro desconhecido';
+      toast.error(`Erro ao atualizar registro: ${message}`);
     },
   });
 }
@@ -124,19 +123,20 @@ export function useOrgDelete(tableName: string) {
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from(tableName as any)
+        .from(tableName as never)
         .delete()
-        .eq("id", id);
+        .eq('id', id);
 
       if (error) throw error;
       return id;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [tableName, currentOrg?.id] });
-      toast.success("Registro removido com sucesso");
+      toast.success('Registro removido com sucesso');
     },
-    onError: (error: any) => {
-      toast.error(`Erro ao remover registro: ${error.message}`);
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : 'Erro desconhecido';
+      toast.error(`Erro ao remover registro: ${message}`);
     },
   });
 }

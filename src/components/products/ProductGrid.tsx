@@ -6,7 +6,6 @@ import { useReducedMotion } from "@/hooks/ui";
 import { SelectionCheckbox } from "@/components/common/SelectionCheckbox";
 import { cn } from "@/lib/utils";
 import { ProductCardSkeleton } from "./ProductCardSkeleton";
-import type { ColumnCount } from "./ColumnSelector";
 
 export interface ProductGridProps {
   products: Product[];

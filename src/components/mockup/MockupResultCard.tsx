@@ -15,7 +15,6 @@ import {
   X,
   ArrowLeftRight,
 } from "lucide-react";
-import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import {
   Dialog,

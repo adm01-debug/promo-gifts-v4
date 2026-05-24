@@ -41,11 +41,7 @@ interface SalesHistoryChartProps {
 
 // ---------- Main Component ----------
 
-export function SalesHistoryChart({
-  productId,
-  productSku,
-  productName: _productName,
-}: SalesHistoryChartProps) {
+export function SalesHistoryChart({ productId, productSku }: SalesHistoryChartProps) {
   const [period, setPeriod] = useState<string>('30');
   const days = Number(period);
 
@@ -56,13 +52,15 @@ export function SalesHistoryChart({
 
   const chartData = useMemo(() => {
     if (!hasData) return [];
-    return data!.daily.reduce<
-      Array<(typeof data.daily)[0] & { dateFormatted: string; fullDate: string }>
-    >((acc, d) => {
-      const parsed = safeParseDateForChart(d.date);
-      if (parsed) acc.push({ ...d, ...parsed });
-      return acc;
-    }, []);
+    const daily = data?.daily ?? [];
+    return daily.reduce<Array<(typeof daily)[0] & { dateFormatted: string; fullDate: string }>>(
+      (acc, d) => {
+        const parsed = safeParseDateForChart(d.date);
+        if (parsed) acc.push({ ...d, ...parsed });
+        return acc;
+      },
+      [],
+    );
   }, [data, hasData]);
 
   const kpis = useMemo(() => {
@@ -77,7 +75,18 @@ export function SalesHistoryChart({
         avgOrderValue: 0,
         topSellers: [],
       };
-    return data!.kpis;
+    return (
+      data?.kpis ?? {
+        totalQuotedQty: 0,
+        totalOrderedQty: 0,
+        totalQuotedValue: 0,
+        totalOrderedValue: 0,
+        conversionRate: 0,
+        uniqueSellers: 0,
+        avgOrderValue: 0,
+        topSellers: [],
+      }
+    );
   }, [data, hasData]);
 
   // Loading
@@ -361,13 +370,12 @@ function SellerRow({ seller, rank }: { seller: SellerRanking; rank: number }) {
 }
 
 // #2 fix: SalesTooltip shows fallback when all values are zero
- 
 function SalesTooltip({
   active,
   payload,
 }: {
   active?: boolean;
-  payload?: { payload: Record<string, any> }[]; // eslint-disable-line @typescript-eslint/no-explicit-any
+  payload?: { payload: Record<string, unknown> }[];
 }) {
   if (!active || !payload?.length) return null;
   const data = payload[0]?.payload;
