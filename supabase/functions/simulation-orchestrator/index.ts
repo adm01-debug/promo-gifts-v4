@@ -1,7 +1,12 @@
+import { createStructuredLogger } from "../_shared/structured-logger.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { encodeHex } from "https://deno.land/std@0.224.0/encoding/hex.ts";
-import { buildPublicCorsHeaders, handleCorsPreflight } from "../_shared/cors.ts";
+import { parseContract } from "../_shared/contracts/index.ts";
+import {
+  SimulationOrchestratorSchemas,
+} from "../_shared/contracts/schemas/simulation-orchestrator.ts";
+import { buildPublicCorsHeaders } from "../_shared/cors.ts";
 
 const corsHeaders = buildPublicCorsHeaders();
 
@@ -39,17 +44,19 @@ function generateFuzzedPayload(type: string) {
 }
 
 serve(async (req) => {
-  const preflight = handleCorsPreflight(req, { public: true });
-  if (preflight) return preflight;
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   const startTime = performance.now();
 
   try {
-    const { 
-      count = 100, 
-      targetFunctions = ["external-db-bridge", "webhook-inbound", "product-webhook"],
-      mode = "resilience" // "resilience", "load", "fuzzing"
-    } = await req.json();
+    const contractResult = await parseContract(req, SimulationOrchestratorSchemas, {
+      corsHeaders,
+    });
+    if (!contractResult.ok) return contractResult.response;
+    const { data: parsedBody, responseHeaders } = contractResult;
+    const count = parsedBody.count ?? 100;
+    const targetFunctions = parsedBody.targetFunctions ?? ["external-db-bridge", "webhook-inbound", "product-webhook"];
+    const mode = parsedBody.mode ?? "resilience";
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -213,7 +220,7 @@ serve(async (req) => {
     }
     
     return new Response(JSON.stringify(report), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error) {

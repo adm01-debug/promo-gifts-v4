@@ -58,6 +58,8 @@ vi.mock("@/contexts/SellerCartContext", () => ({
 
 vi.mock("@/contexts/OnboardingContext", () => ({
   OnboardingProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useOnboardingContext: () => ({ isTourOpen: false, startTour: vi.fn(), completeTour: vi.fn() }),
+  useOptionalOnboardingContext: () => null,
 }));
 
 describe("MainLayout — PersistentBreadcrumbs (PR)", () => {

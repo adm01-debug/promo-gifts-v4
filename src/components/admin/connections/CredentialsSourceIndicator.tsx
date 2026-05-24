@@ -15,14 +15,14 @@
  * Importante: é apenas leitura, não dispara invocações novas — recebe os
  * `secrets` já carregados pelo hook `useSecretsManager` do componente pai.
  */
-import { useState } from "react";
-import { Database, Clock, ShieldCheck, RefreshCw } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { toast } from "sonner";
-import { resolveSource } from "./CredentialsSourceFilterContext";
-import type { SecretStatus } from "@/hooks/admin";
+import { useState } from 'react';
+import { Database, Clock, ShieldCheck, RefreshCw } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { toast } from 'sonner';
+import { resolveSource } from './CredentialsSourceFilterContext';
+import type { SecretStatus } from '@/hooks/admin';
 
 interface Props {
   secrets: SecretStatus[];
@@ -38,7 +38,11 @@ interface Props {
   className?: string;
 }
 
-const RTF = new Intl.RelativeTimeFormat("pt-BR", { numeric: "auto" });
+const RTF = new Intl.RelativeTimeFormat('pt-BR', { numeric: 'auto' });
+
+function hasUpdatedAt(secret: SecretStatus): secret is SecretStatus & { updated_at: string } {
+  return !!secret.updated_at;
+}
 
 function formatRelative(iso: string | null): string | null {
   if (!iso) return null;
@@ -49,19 +53,22 @@ function formatRelative(iso: string | null): string | null {
   const min = 60_000;
   const hour = 60 * min;
   const day = 24 * hour;
-  if (abs < min) return "há poucos segundos";
-  if (abs < hour) return RTF.format(Math.round(diffMs / min), "minute");
-  if (abs < day) return RTF.format(Math.round(diffMs / hour), "hour");
-  return RTF.format(Math.round(diffMs / day), "day");
+  if (abs < min) return 'há poucos segundos';
+  if (abs < hour) return RTF.format(Math.round(diffMs / min), 'minute');
+  if (abs < day) return RTF.format(Math.round(diffMs / hour), 'hour');
+  return RTF.format(Math.round(diffMs / day), 'day');
 }
 
 function formatAbsolute(iso: string | null): string | null {
   if (!iso) return null;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleString("pt-BR", {
-    day: "2-digit", month: "2-digit", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
+  return d.toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 
@@ -73,12 +80,12 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
     setRefreshing(true);
     try {
       await onRefresh();
-      toast.success("Credenciais recarregadas", {
-        description: "Cache do secrets-manager invalidado e integration_credentials re-listada.",
+      toast.success('Credenciais recarregadas', {
+        description: 'Cache do secrets-manager invalidado e integration_credentials re-listada.',
       });
     } catch (err) {
-      toast.error("Falha ao recarregar credenciais", {
-        description: err instanceof Error ? err.message : "Erro desconhecido.",
+      toast.error('Falha ao recarregar credenciais', {
+        description: err instanceof Error ? err.message : 'Erro desconhecido.',
       });
     } finally {
       setRefreshing(false);
@@ -97,7 +104,7 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
   );
 
   // Ordena alfabeticamente para consistência de leitura nos tooltips.
-  (Object.keys(grouped) as Array<"db" | "env" | "none">).forEach((k) => {
+  (Object.keys(grouped) as Array<'db' | 'env' | 'none'>).forEach((k) => {
     grouped[k].sort((a, b) => a.name.localeCompare(b.name));
   });
 
@@ -110,43 +117,39 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
   // Limita a lista exibida no tooltip para não estourar a viewport
   // quando houver muitos secrets — o restante aparece como "+ N mais".
   const TOOLTIP_LIMIT = 12;
-  function renderNameList(items: SecretStatus[], tone: "success" | "warning" | "destructive") {
+  function renderNameList(items: SecretStatus[], tone: 'success' | 'warning' | 'destructive') {
     if (items.length === 0) {
-      return (
-        <p className="text-muted-foreground italic">Nenhum secret nesta categoria.</p>
-      );
+      return <p className="italic text-muted-foreground">Nenhum secret nesta categoria.</p>;
     }
     const visible = items.slice(0, TOOLTIP_LIMIT);
     const rest = items.length - visible.length;
     const toneCls =
-      tone === "success"
-        ? "text-success"
-        : tone === "warning"
-          ? "text-warning"
-          : "text-destructive";
+      tone === 'success'
+        ? 'text-success'
+        : tone === 'warning'
+          ? 'text-warning'
+          : 'text-destructive';
     return (
-      <ul className="font-mono text-[10px] space-y-0.5 max-h-56 overflow-y-auto pr-1">
+      <ul className="max-h-56 space-y-0.5 overflow-y-auto pr-1 font-mono text-[10px]">
         {visible.map((s) => (
           <li key={s.name} className="flex items-center justify-between gap-2">
             <span className={`truncate ${toneCls}`}>{s.name}</span>
             {s.masked_suffix ? (
-              <span className="text-muted-foreground shrink-0">••••{s.masked_suffix}</span>
+              <span className="shrink-0 text-muted-foreground">••••{s.masked_suffix}</span>
             ) : (
-              <span className="text-muted-foreground shrink-0">—</span>
+              <span className="shrink-0 text-muted-foreground">—</span>
             )}
           </li>
         ))}
-        {rest > 0 && (
-          <li className="text-muted-foreground italic pt-0.5">+ {rest} mais…</li>
-        )}
+        {rest > 0 && <li className="pt-0.5 italic text-muted-foreground">+ {rest} mais…</li>}
       </ul>
     );
   }
 
   // Pega o secret mais recentemente atualizado (apenas os com updated_at)
   const latest = secrets
-    .filter((s) => !!s.updated_at)
-    .sort((a, b) => (b.updated_at! > a.updated_at! ? 1 : -1))[0];
+    .filter(hasUpdatedAt)
+    .sort((a, b) => (b.updated_at > a.updated_at ? 1 : -1))[0];
 
   const relative = formatRelative(latest?.updated_at ?? null);
   const absolute = formatAbsolute(latest?.updated_at ?? null);
@@ -154,31 +157,29 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
   return (
     <div
       className={[
-        "rounded-lg border bg-card px-4 py-3",
-        "flex items-start gap-3 flex-wrap",
-        className ?? "",
-      ].join(" ")}
+        'rounded-lg border bg-card px-4 py-3',
+        'flex flex-wrap items-start gap-3',
+        className ?? '',
+      ].join(' ')}
       role="status"
       aria-live="polite"
       data-testid="credentials-source-indicator"
     >
-      <div className="h-9 w-9 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10">
         <Database className="h-4 w-4 text-primary" aria-hidden="true" />
       </div>
 
-      <div className="flex-1 min-w-[260px] space-y-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          <p className="text-sm font-medium leading-none">
-            Fonte das credenciais
-          </p>
+      <div className="min-w-[260px] flex-1 space-y-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-sm font-medium leading-none">Fonte das credenciais</p>
           <TooltipProvider delayDuration={200}>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Badge
                   variant="outline"
-                  className="text-[10px] font-mono uppercase border-success/40 bg-success/10 text-success cursor-help"
+                  className="cursor-help border-success/40 bg-success/10 font-mono text-[10px] uppercase text-success"
                 >
-                  <ShieldCheck className="h-3 w-3 mr-1" aria-hidden="true" />
+                  <ShieldCheck className="mr-1 h-3 w-3" aria-hidden="true" />
                   SSOT
                 </Badge>
               </TooltipTrigger>
@@ -187,51 +188,44 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
                 <code className="mx-1 font-mono">integration_credentials</code>
                 lida via edge function
                 <code className="mx-1 font-mono">secrets-manager</code>
-                (action <code className="font-mono">list</code>). Os segredos
-                permanecem mascarados — apenas o sufixo é retornado ao
-                navegador.
+                (action <code className="font-mono">list</code>). Os segredos permanecem mascarados
+                — apenas o sufixo é retornado ao navegador.
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Lista, badges e máscaras desta página vêm de{" "}
-          <code className="text-[11px] font-mono text-foreground">
-            integration_credentials
-          </code>{" "}
-          via{" "}
-          <code className="text-[11px] font-mono text-foreground">
-            secrets-manager
-          </code>
-          . Valores nunca trafegam em texto puro para o frontend.
+          Lista, badges e máscaras desta página vêm de{' '}
+          <code className="font-mono text-[11px] text-foreground">integration_credentials</code> via{' '}
+          <code className="font-mono text-[11px] text-foreground">secrets-manager</code>. Valores
+          nunca trafegam em texto puro para o frontend.
         </p>
 
-        <div className="flex items-center gap-1.5 flex-wrap pt-1">
+        <div className="flex flex-wrap items-center gap-1.5 pt-1">
           <TooltipProvider delayDuration={150}>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Badge
                   variant="outline"
                   tabIndex={0}
-                  className="text-[10px] font-mono uppercase border-success/40 bg-success/10 text-success cursor-help focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="cursor-help border-success/40 bg-success/10 font-mono text-[10px] uppercase text-success focus:outline-none focus:ring-2 focus:ring-ring"
                   aria-label={`${counts.db} credenciais com origem DB`}
                 >
                   DB · {counts.db}
                 </Badge>
               </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-sm text-xs space-y-1.5">
+              <TooltipContent side="top" className="max-w-sm space-y-1.5 text-xs">
                 <p className="font-semibold">Origem: banco (SSOT) — {counts.db}</p>
                 <p>
-                  Valor persistido em{" "}
-                  <code className="font-mono">integration_credentials</code> e
+                  Valor persistido em <code className="font-mono">integration_credentials</code> e
                   resolvido pelo <code className="font-mono">secrets-manager</code>.
                 </p>
                 <div className="border-t pt-1.5">
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                  <p className="mb-1 text-[10px] uppercase tracking-wide text-muted-foreground">
                     Secrets contribuintes
                   </p>
-                  {renderNameList(grouped.db, "success")}
+                  {renderNameList(grouped.db, 'success')}
                 </div>
                 <p className="text-muted-foreground">
                   ✅ Nada a fazer — auditável, rotacionável e versionado pelo painel.
@@ -244,28 +238,29 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
                 <Badge
                   variant="outline"
                   tabIndex={0}
-                  className="text-[10px] font-mono uppercase border-warning/40 bg-warning/10 text-warning cursor-help focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="cursor-help border-warning/40 bg-warning/10 font-mono text-[10px] uppercase text-warning focus:outline-none focus:ring-2 focus:ring-ring"
                   aria-label={`${counts.env} credenciais com origem ENV`}
                 >
                   ENV · {counts.env}
                 </Badge>
               </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-sm text-xs space-y-1.5">
-                <p className="font-semibold">Origem: variável de ambiente (legado) — {counts.env}</p>
+              <TooltipContent side="top" className="max-w-sm space-y-1.5 text-xs">
+                <p className="font-semibold">
+                  Origem: variável de ambiente (legado) — {counts.env}
+                </p>
                 <p>
-                  Valor lido via <code className="font-mono">Deno.env.get()</code>{" "}
-                  porque o registro ainda não existe em{" "}
-                  <code className="font-mono">integration_credentials</code>.
+                  Valor lido via <code className="font-mono">Deno.env.get()</code> porque o registro
+                  ainda não existe em <code className="font-mono">integration_credentials</code>.
                 </p>
                 <div className="border-t pt-1.5">
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                  <p className="mb-1 text-[10px] uppercase tracking-wide text-muted-foreground">
                     Secrets resolvidos por ENV
                   </p>
-                  {renderNameList(grouped.env, "warning")}
+                  {renderNameList(grouped.env, 'warning')}
                 </div>
                 <p className="text-muted-foreground">
-                  ⚠ Abra o card correspondente e clique em <strong>Salvar</strong> para
-                  migrar para o banco e liberar rotação/auditoria.
+                  ⚠ Abra o card correspondente e clique em <strong>Salvar</strong> para migrar para
+                  o banco e liberar rotação/auditoria.
                 </p>
               </TooltipContent>
             </Tooltip>
@@ -275,27 +270,26 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
                 <Badge
                   variant="outline"
                   tabIndex={0}
-                  className="text-[10px] font-mono uppercase border-destructive/40 bg-destructive/10 text-destructive cursor-help focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="cursor-help border-destructive/40 bg-destructive/10 font-mono text-[10px] uppercase text-destructive focus:outline-none focus:ring-2 focus:ring-ring"
                   aria-label={`${counts.none} credenciais ausentes`}
                 >
                   AUSENTE · {counts.none}
                 </Badge>
               </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-sm text-xs space-y-1.5">
+              <TooltipContent side="top" className="max-w-sm space-y-1.5 text-xs">
                 <p className="font-semibold">Sem valor em DB nem em ENV — {counts.none}</p>
                 <p>
-                  O <code className="font-mono">secrets-manager</code> não encontrou
-                  o segredo em nenhuma das duas fontes — a integração que depende
-                  dele ficará inativa.
+                  O <code className="font-mono">secrets-manager</code> não encontrou o segredo em
+                  nenhuma das duas fontes — a integração que depende dele ficará inativa.
                 </p>
                 <div className="border-t pt-1.5">
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                  <p className="mb-1 text-[10px] uppercase tracking-wide text-muted-foreground">
                     Secrets ausentes
                   </p>
-                  {renderNameList(grouped.none, "destructive")}
+                  {renderNameList(grouped.none, 'destructive')}
                 </div>
                 <p className="text-muted-foreground">
-                  🔧 Preencha o campo correspondente no card e salve para gravar em{" "}
+                  🔧 Preencha o campo correspondente no card e salve para gravar em{' '}
                   <code className="font-mono">integration_credentials</code>.
                 </p>
               </TooltipContent>
@@ -305,7 +299,7 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
       </div>
 
       <div
-        className="flex items-center gap-2 text-xs text-muted-foreground shrink-0"
+        className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground"
         title={absolute ? `Última gravação em ${absolute}` : undefined}
       >
         <Clock className="h-3.5 w-3.5" aria-hidden="true" />
@@ -317,9 +311,7 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
           <span>
             <span className="font-medium text-foreground">Atualizado {relative}</span>
             {absolute && (
-              <span className="ml-1 hidden md:inline text-muted-foreground/80">
-                · {absolute}
-              </span>
+              <span className="ml-1 hidden text-muted-foreground/80 md:inline">· {absolute}</span>
             )}
             {latest?.updated_by_email && (
               <span className="ml-1 hidden lg:inline">
@@ -346,18 +338,16 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
                 className="shrink-0 self-start"
               >
                 <RefreshCw
-                  className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
+                  className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`}
                   aria-hidden="true"
                 />
-                <span className="ml-1.5 text-xs">
-                  {refreshing ? "Atualizando…" : "Atualizar"}
-                </span>
+                <span className="ml-1.5 text-xs">{refreshing ? 'Atualizando…' : 'Atualizar'}</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-xs text-xs">
-              Invalida o cache do <code className="font-mono">secrets-manager</code>{" "}
-              e recarrega <code className="font-mono">integration_credentials</code>{" "}
-              imediatamente. Útil após editar secrets em outra aba.
+              Invalida o cache do <code className="font-mono">secrets-manager</code> e recarrega{' '}
+              <code className="font-mono">integration_credentials</code> imediatamente. Útil após
+              editar secrets em outra aba.
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

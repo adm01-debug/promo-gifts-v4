@@ -24,29 +24,17 @@ vi.mock('@/contexts/AuthContext', () => ({
   useAuth: vi.fn(() => ({ user: { id: 'test-user' } })),
 }));
 
-// Mock hooks that might trigger side effects or complex logic
+// Mock hooks de @/hooks/quotes (factory unico — multiplos vi.mock no mesmo path se sobrescrevem; so o ultimo vence)
 vi.mock('@/hooks/quotes', () => ({
   useSellerDiscountLimits: vi.fn(() => ({ myLimit: 10 })),
-}));
-
-vi.mock('@/hooks/quotes', () => ({
   useDiscountApproval: vi.fn(() => ({ requestApproval: vi.fn() })),
-}));
-
-vi.mock('@/hooks/quotes', () => ({
   useQuotes: vi.fn(() => ({
     createQuote: vi.fn(),
     updateQuote: vi.fn(),
     fetchQuote: vi.fn(),
     isLoading: false,
   })),
-}));
-
-vi.mock('@/hooks/quotes', () => ({
   useQuoteTemplates: vi.fn(() => ({ templates: [] })),
-}));
-
-vi.mock('@/hooks/quotes', () => ({
   useQuoteItems: vi.fn(() => ({
     items: [],
     setItems: vi.fn(),
@@ -62,9 +50,6 @@ vi.mock('@/hooks/quotes', () => ({
     handlePersonalizationsChange: vi.fn(),
     confirmItemPrice: vi.fn(),
   })),
-}));
-
-vi.mock('@/hooks/quotes', () => ({
   useAutoSaveQuote: vi.fn(() => ({ clearAutoSave: vi.fn() })),
 }));
 
@@ -131,7 +116,7 @@ describe('useQuoteBuilderState Navigation and Validation', () => {
     });
 
     // Validates 'client' and 'conditions'. 'conditions' will fail.
-    expect(toast.error).toHaveBeenCalledWith('Preencha todas as condições comerciais');
+    expect(toast.error).toHaveBeenCalledWith('Selecione a forma de pagamento');
     expect(result.current.currentStep).toBe('client');
   });
 

@@ -32,6 +32,7 @@ import { retrySupabaseCall } from "../_shared/retry-backoff.ts";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { getOrCreateRequestId, REQUEST_ID_HEADER } from "../_shared/request-id.ts";
 import { resolveCredential } from "../_shared/credentials.ts";
+import { constantTimeEqual } from "../_shared/dispatcher-auth.ts";
 
 const breaker = getBreaker("external-db");
 
@@ -153,6 +154,12 @@ function validateFilters(filters: Record<string, unknown> | undefined | null): A
 
 function safeStringify(v: unknown): string {
   try { return JSON.stringify(v); } catch { return String(v); }
+}
+
+function summarizeFilterViolations(
+  violations: Array<{ field: string; reason: string; receivedType: string }>,
+) {
+  return violations.map(({ field, reason, receivedType }) => ({ field, reason, receivedType }));
 }
 
 export function applyFilters(
@@ -589,7 +596,10 @@ async function handleBatch(body: any, req: Request, corsHeaders: Record<string, 
       // Reject malformed filters (objects, NaN, functions) per-batch-item BEFORE building the query.
       const batchFilterViolations = validateFilters(qFilters);
       if (batchFilterViolations.length > 0) {
-        console.warn(`[batch] Query ${idx} (${qTable}) rejected — invalid filters:`, batchFilterViolations);
+        console.warn(
+          `[batch] Query ${idx} (${qTable}) rejected — invalid filters:`,
+          summarizeFilterViolations(batchFilterViolations),
+        );
         return {
           success: false,
           error: 'Invalid filter values',
@@ -721,7 +731,7 @@ async function handleRpc(body: any, corsHeaders: Record<string, string>) {
   const externalSupabase = await getExternalClient(corsHeaders);
   if (externalSupabase instanceof Response) return externalSupabase;
 
-  console.log(`RPC: ${rpcName}`, rpcParams);
+  console.log(`RPC: ${rpcName} params_keys=${Object.keys(rpcParams || {}).length}`);
   const rpcStart = performance.now();
   const { data: rpcDataRaw, error: rpcError } = await externalSupabase.rpc(rpcName, rpcParams || {});
   const rpcDuration = Math.round(performance.now() - rpcStart);
@@ -828,7 +838,10 @@ async function handleCrud(body: any, req: Request, corsHeaders: Record<string, s
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')?.trim();
     const simulationKey = Deno.env.get('SIMULATION_BYPASS_KEY')?.trim();
 
-    const isBypass = (serviceRoleKey && token === serviceRoleKey) || (simulationKey && token === simulationKey);
+    // Comparação em tempo constante para evitar timing-attacks de descoberta de prefixos.
+    const isBypass =
+      (!!serviceRoleKey && constantTimeEqual(token, serviceRoleKey)) ||
+      (!!simulationKey && constantTimeEqual(token, simulationKey));
 
     if (isBypass) {
       userId = '00000000-0000-0000-0000-000000000000';
@@ -986,7 +999,10 @@ async function handleSelect(externalSupabase: any, table: string, opts: any) {
   // Reject malformed filters (objects, NaN, functions) BEFORE building the query.
   const filterViolations = validateFilters(filters as Record<string, unknown> | undefined);
   if (filterViolations.length > 0) {
-    console.warn(`[external-db-bridge] Rejecting select on "${table}" — ${filterViolations.length} invalid filter(s):`, filterViolations);
+    console.warn(
+      `[external-db-bridge] Rejecting select on "${table}" — ${filterViolations.length} invalid filter(s):`,
+      summarizeFilterViolations(filterViolations),
+    );
     return jsonResponse({
       error: 'Invalid filter values',
       details: filterViolations,
@@ -1228,7 +1244,7 @@ async function handleSelect(externalSupabase: any, table: string, opts: any) {
       console.warn(
         `[external-db-bridge] orderBy fallback: column "${orderColumn}" failed on table "${table}" ` +
         `(code=${errCode || 'n/a'}, msg="${errMsg}"). Retrying without orderBy. ` +
-        `Caller origin: select="${effectiveSelect.slice(0, 80)}..." filters=${JSON.stringify(filters ?? {}).slice(0, 200)}`
+        `Caller origin: select_fields=${effectiveSelect.split(',').length} filters_keys=${Object.keys(filters ?? {}).length}`
       );
 
       const retryStart = performance.now();
@@ -1329,7 +1345,7 @@ async function handleInsert(externalSupabase: any, table: string, opts: any) {
     const virtualRecord = buildVirtualRecords(productId, updatedAreas)
       .find((r) => r.area_id === areaId && r.technique_id === techniqueId);
     const result = virtualRecord || { id: `${productId}::${areaId}::${techniqueId}`, product_id: productId, area_id: areaId, technique_id: techniqueId };
-    console.log(`${alreadyLinked ? 'Already linked' : 'Inserted virtual record'} in ${table}:`, (result as any).id);
+    console.log(`${alreadyLinked ? 'Already linked' : 'Inserted virtual record'} in ${table}`);
     return result;
   }
 
@@ -1342,7 +1358,7 @@ async function handleInsert(externalSupabase: any, table: string, opts: any) {
   });
   if (canInjectCreatedAt && !insertData.created_at) insertData.created_at = new Date().toISOString();
 
-  console.log(`Inserting into ${table}:`, JSON.stringify(insertData).substring(0, 500));
+  console.log(`Inserting into ${table}: field_count=${Object.keys(insertData).length}`);
   const { data: insertResult, error: insertError } = await externalSupabase.from(table).insert(insertData).select().single();
 
   if (insertError) {
@@ -1350,7 +1366,7 @@ async function handleInsert(externalSupabase: any, table: string, opts: any) {
     return jsonResponse({ error: insertError.message, details: insertError.details, hint: insertError.hint }, 400, corsHeaders);
   }
 
-  console.log(`Inserted record in ${table}:`, insertResult?.id);
+  console.log(`Inserted record in ${table}`);
   return insertResult;
 }
 
@@ -1373,7 +1389,7 @@ async function handleUpdate(externalSupabase: any, table: string, opts: any) {
     ...(canInjectUpdatedAt ? { updated_at: new Date().toISOString() } : {}),
   });
 
-  console.log(`Updating ${table} id=${id}:`, JSON.stringify(updateData).substring(0, 500));
+  console.log(`Updating ${table}: field_count=${Object.keys(updateData).length}`);
   const { data: updateResult, error: updateError } = await externalSupabase.from(table).update(updateData).eq('id', id).select().maybeSingle();
 
   if (updateError) {
@@ -1382,7 +1398,7 @@ async function handleUpdate(externalSupabase: any, table: string, opts: any) {
   }
   if (!updateResult) return jsonResponse({ error: `Registro não encontrado em '${table}' com id='${id}'` }, 404, corsHeaders);
 
-  console.log(`Updated record in ${table}:`, id);
+  console.log(`Updated record in ${table}`);
   return updateResult;
 }
 
@@ -1415,7 +1431,7 @@ async function handleDelete(externalSupabase: any, table: string, opts: any) {
     if (updateError) return jsonResponse({ error: updateError.message, details: updateError.details }, 400, corsHeaders);
     if (!updatedProduct) return jsonResponse({ error: `Produto '${parsedId.productId}' não encontrado para atualização` }, 404, corsHeaders);
 
-    console.log(`Deleted virtual record from ${table}:`, id);
+    console.log(`Deleted virtual record from ${table}`);
     return { success: true, deleted_id: id };
   }
 
@@ -1428,7 +1444,7 @@ async function handleDelete(externalSupabase: any, table: string, opts: any) {
   }
   if (!deleteResult) return jsonResponse({ error: `Registro não encontrado em '${table}' com id='${id}'` }, 404, corsHeaders);
 
-  console.log(`Deleted record from ${table}:`, id);
+  console.log(`Deleted record from ${table}`);
   return { success: true, deleted_id: id };
 }
 
@@ -1451,7 +1467,7 @@ async function handleUpsert(externalSupabase: any, table: string, opts: any) {
   // Default merge on 'sku' for products, 'id' for others
   const onConflict = table === 'products' ? 'sku' : 'id';
 
-  console.log(`Upserting into ${table} (onConflict=${onConflict}):`, JSON.stringify(upsertData).substring(0, 500));
+  console.log(`Upserting into ${table} (onConflict=${onConflict}): field_count=${Object.keys(upsertData).length}`);
   const { data: result, error } = await externalSupabase
     .from(table)
     .upsert(upsertData, { onConflict })
@@ -1463,7 +1479,7 @@ async function handleUpsert(externalSupabase: any, table: string, opts: any) {
     return jsonResponse({ error: error.message, details: error.details, hint: error.hint }, 400, corsHeaders);
   }
 
-  console.log(`Upserted record in ${table}:`, result?.id);
+  console.log(`Upserted record in ${table}`);
   return result;
 }
 

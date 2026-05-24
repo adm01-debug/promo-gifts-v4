@@ -6,6 +6,10 @@ import { getCorsHeaders } from "../_shared/cors.ts";
  */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { parseContract } from "../_shared/contracts/index.ts";
+import {
+  SendTransactionalEmailSchemas,
+} from "../_shared/contracts/schemas/send-transactional-email.ts";
 
 interface EmailRequest {
   event_type: "quote_sent" | "quote_approved" | "quote_rejected" | "order_created";
@@ -155,14 +159,11 @@ serve(async (req) => {
       });
     }
 
-    const body: EmailRequest = await req.json();
-
-    if (!body.event_type || !body.recipient_email) {
-      return new Response(JSON.stringify({ error: "Missing event_type or recipient_email" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const contractResult = await parseContract(req, SendTransactionalEmailSchemas, {
+      corsHeaders,
+    });
+    if (!contractResult.ok) return contractResult.response;
+    const { data: body, responseHeaders } = contractResult;
 
     const { subject, html } = buildEmailContent(body);
 
@@ -188,7 +189,7 @@ serve(async (req) => {
         message: "Email queued successfully",
         preview: { subject, recipient: body.recipient_email, event_type: body.event_type },
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error ?? "Internal error");

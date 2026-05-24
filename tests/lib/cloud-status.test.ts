@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+const loggerWarnMock = vi.fn();
+vi.mock('@/lib/logger', () => ({
+  logger: { warn: (...args: unknown[]) => loggerWarnMock(...args) },
+}));
+
 // Mock supabase client + pingHealth ANTES de importar o módulo testado.
 const getSessionMock = vi.fn();
 vi.mock('@/integrations/supabase/client', () => ({
@@ -27,6 +32,8 @@ beforeEach(() => {
   getSessionMock.mockReset();
   pingHealthMock.mockReset();
   fetchMock.mockReset();
+  loggerWarnMock.mockReset();
+  localStorage.clear();
 });
 
 describe('cloud-status', () => {
@@ -82,6 +89,33 @@ describe('cloud-status', () => {
     expect(getSessionMock).toHaveBeenCalledTimes(1);
     expect(pingHealthMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+
+  it('does not fail probe when history persistence throws', async () => {
+    getSessionMock.mockResolvedValue({ error: null });
+    pingHealthMock.mockResolvedValue({ ok: true, ms: 100 });
+    fetchMock.mockResolvedValue({ ok: true, status: 200 } as Response);
+
+    const setItemSpy = vi
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(() => {
+        throw new Error('quota exceeded');
+      });
+
+    const snap = await probeCloudStatus(true);
+
+    expect(snap.status).toBe('healthy');
+    expect(snap.signals.auth.ok).toBe(true);
+    expect(loggerWarnMock).toHaveBeenCalledWith(
+      '[CloudStatus] failed to persist status history',
+      expect.objectContaining({
+        HISTORY_KEY: 'supabase_health_history',
+        error: 'quota exceeded',
+      }),
+    );
+
+    setItemSpy.mockRestore();
   });
 
   it('ensureCloudReady throws CloudNotReadyError when persistently degraded', async () => {

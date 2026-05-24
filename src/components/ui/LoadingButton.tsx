@@ -1,6 +1,6 @@
 import { forwardRef } from "react";
 import { Loader2 } from "lucide-react";
-import { Button, type ButtonProps, buttonVariants } from "./button";
+import { Button, type ButtonProps } from "./button";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 

@@ -3,7 +3,7 @@
  * Utilitários para cálculo e validação de volume
  */
 
-import type { KitBox, KitItem, CompatibilityResult } from "@/pages/advanced-price-search/types";
+import type { KitBox, KitItem, CompatibilityResult } from "./types";
 
 // ============================================
 // CONSTANTES

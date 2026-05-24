@@ -148,8 +148,8 @@ Create ${numPrompts} distinct scene concepts that:
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("[ad-prompt] AI error:", response.status, errorText);
+      await response.text();
+      console.error("[ad-prompt] AI error:", { status: response.status });
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em instantes." }),

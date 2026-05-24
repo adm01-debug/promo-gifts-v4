@@ -169,7 +169,6 @@ function formatValue(value: unknown): string | number {
 /**
  * Formata moeda brasileira
  */
-import { formatCurrency } from "@/lib/format";
 
 
 /**

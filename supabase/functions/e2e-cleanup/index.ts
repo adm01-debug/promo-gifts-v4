@@ -27,6 +27,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { castRpcResult } from "../_shared/supabase-client-adapter.ts";
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
+import { parseContract } from "../_shared/contracts/index.ts";
+import {
+  E2eCleanupSchemas,
+} from "../_shared/contracts/schemas/e2e-cleanup.ts";
 
 type E2ERateLimitRow = {
   allowed: boolean;
@@ -35,11 +39,12 @@ type E2ERateLimitRow = {
 };
 
 const corsHeaders = buildPublicCorsHeaders({ extraAllowHeaders: ["x-e2e-cleanup-token"], allowMethods: "POST, OPTIONS" });
+let contractResponseHeaders: Record<string, string> = {};
 
 function jsonResponse(body: unknown, status = 200, extraHeaders: Record<string, string> = {}) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json", ...extraHeaders },
+    headers: { ...corsHeaders, ...contractResponseHeaders, "Content-Type": "application/json", ...extraHeaders },
   });
 }
 
@@ -159,6 +164,9 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: "method_not_allowed" }, 405);
   }
 
+  // Reset module-scope response headers para esta request
+  contractResponseHeaders = {};
+
   const startedAt = Date.now();
   const ip = clientIp(req);
   const userAgent = req.headers.get("user-agent");
@@ -232,23 +240,19 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: "invalid_cleanup_token" }, 401);
   }
 
-  // --- parse body ---------------------------------------------------------
-  let body: {
-    email?: unknown;
-    dryRun?: unknown;
-    sellerScope?: unknown;
-    sellerId?: unknown;
-    nameFilterPrefix?: unknown;
-  };
-  try {
-    body = await req.json();
-  } catch {
+  // --- parse + validate body via parseContract ----------------------------
+  const contractResult = await parseContract(req, E2eCleanupSchemas, {
+    corsHeaders,
+  });
+  if (!contractResult.ok) {
+    // Preserva audit log de tentativa inválida (mantém rastreabilidade
+    // do comportamento atual que loga `invalid_json` quando body falha).
     await writeAudit(admin, {
       email: "",
       user_id: null,
       dry_run: true,
       status: "invalid",
-      reason: "invalid_json",
+      reason: contractResult.response.status === 400 ? "invalid_json" : "invalid_payload",
       ip,
       user_agent: userAgent,
       total_deleted: 0,
@@ -256,9 +260,11 @@ Deno.serve(async (req: Request) => {
       errors: {},
       duration_ms: Date.now() - startedAt,
     });
-    return jsonResponse({ error: "invalid_json" }, 400);
+    return contractResult.response;
   }
-  const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+  const body = contractResult.data;
+  contractResponseHeaders = contractResult.responseHeaders;
+  const email = (body.email ?? "").trim().toLowerCase();
   const dryRun = body.dryRun === false ? false : true;
 
   // sellerScope: "self" (default) usa o user_id resolvido como seller_id.
@@ -269,9 +275,7 @@ Deno.serve(async (req: Request) => {
   const sellerScope: "self" | "explicit" =
     body.sellerScope === "explicit" ? "explicit" : "self";
   const requestedSellerId =
-    typeof body.sellerId === "string" && body.sellerId.length > 0
-      ? body.sellerId
-      : null;
+    body.sellerId && body.sellerId.length > 0 ? body.sellerId : null;
 
   // nameFilterPrefix: quando presente, restringe DELETEs a recursos cujo
   // nome começa com o prefixo (ex.: "[E2E]"). Garante isolamento contra
@@ -280,7 +284,7 @@ Deno.serve(async (req: Request) => {
   // escopadas apenas por user_id/seller_id (são internas/órfãs por
   // construção).
   const nameFilterPrefix =
-    typeof body.nameFilterPrefix === "string" && body.nameFilterPrefix.length > 0
+    body.nameFilterPrefix && body.nameFilterPrefix.length > 0
       ? body.nameFilterPrefix
       : null;
   // Sanitiza % e _ (LIKE wildcards) para evitar match acidental amplo.

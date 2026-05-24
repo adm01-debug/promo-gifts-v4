@@ -2,8 +2,12 @@
 import { useQuery } from '@tanstack/react-query';
 import Fuse from 'fuse.js';
 import { supabase } from '@/integrations/supabase/client';
-import { logger } from "@/lib/logger";
-import { createProductFuseOptions, dedupeById, rankProductSearchResults } from '@/utils/product-search';
+import { logger } from '@/lib/logger';
+import {
+  createProductFuseOptions,
+  dedupeById,
+  rankProductSearchResults,
+} from '@/utils/product-search';
 
 // ============================================
 // TIPOS
@@ -16,8 +20,8 @@ export interface ExternalProduct {
   name: string;
   sku: string;
   sale_price: number | null;
-  image_url: string | null;      // Preenchido via product_images
-  images: string[] | null;       // Preenchido via product_images
+  image_url: string | null; // Preenchido via product_images
+  images: string[] | null; // Preenchido via product_images
   primary_image_url: string | null; // Preenchido via product_images
   category_id: string | null;
   main_category_id: string | null;
@@ -92,7 +96,7 @@ async function invokeExternalDb<T>(
     select?: string;
     orderBy?: { column: string; ascending?: boolean };
     limit?: number;
-  }
+  },
 ): Promise<{ records: T[]; count: number }> {
   const { data, error } = await supabase.functions.invoke('external-db-bridge', {
     body: {
@@ -104,7 +108,7 @@ async function invokeExternalDb<T>(
 
   if (error) throw new Error(error.message);
   if (!data.success) throw new Error(data.error || 'Erro desconhecido');
-  
+
   return data.data as { records: T[]; count: number };
 }
 
@@ -113,7 +117,8 @@ async function invokeExternalDb<T>(
 // ============================================
 
 // Select fields que existem no schema Promobrind (campos legados mantidos para fallback)
-const PRODUCT_SELECT = 'id, name, sku, sale_price, primary_image_url, category_id, main_category_id, supplier_reference, description, brand, is_active, active, stock_quantity';
+const PRODUCT_SELECT =
+  'id, name, sku, sale_price, primary_image_url, category_id, main_category_id, supplier_reference, description, brand, is_active, active, stock_quantity';
 
 /**
  * Busca produtos do banco externo Promobrind com imagens da nova tabela product_images
@@ -149,45 +154,48 @@ export function useExternalProductSearch(searchQuery: string) {
       const mergedProducts = dedupeById([...prefixResult.records, ...broadResult.records]);
       const fuse = new Fuse(mergedProducts, createProductFuseOptions<ExternalProduct>());
       const products = rankProductSearchResults(mergedProducts, normalizedSearch, fuse);
-      
+
       // Buscar imagens da nova tabela product_images para enriquecer os produtos
       if (products.length > 0) {
-        const productIds = products.map(p => p.id);
-        
+        const productIds = products.map((p) => p.id);
+
         try {
-          const imagesResult = await invokeExternalDb<ProductImageRecord>('product_images', 'select', {
-            filters: { product_id: productIds, is_active: true },
-            select: 'product_id, url_cdn, image_type, is_primary, display_order',
-            orderBy: { column: 'display_order', ascending: true },
-            limit: Math.max(productIds.length * 8, 100),
-          });
-          
+          const imagesResult = await invokeExternalDb<ProductImageRecord>(
+            'product_images',
+            'select',
+            {
+              filters: { product_id: productIds, is_active: true },
+              select: 'product_id, url_cdn, image_type, is_primary, display_order',
+              orderBy: { column: 'display_order', ascending: true },
+              limit: Math.max(productIds.length * 8, 100),
+            },
+          );
+
           // Agrupar imagens por product_id
           const imagesByProduct = new Map<string, ProductImageRecord[]>();
           const productIdSet = new Set(productIds);
-          
-          imagesResult.records.forEach(img => {
+
+          imagesResult.records.forEach((img) => {
             if (!productIdSet.has(img.product_id)) return;
-            
-            if (!imagesByProduct.has(img.product_id)) {
-              imagesByProduct.set(img.product_id, []);
-            }
-            imagesByProduct.get(img.product_id)!.push(img);
+
+            const productImages = imagesByProduct.get(img.product_id) ?? [];
+            imagesByProduct.set(img.product_id, productImages);
+            productImages.push(img);
           });
-          
+
           // Enriquecer produtos com imagens
-          products.forEach(product => {
+          products.forEach((product) => {
             const productImages = imagesByProduct.get(product.id);
             if (productImages && productImages.length > 0) {
               productImages.sort((a, b) => a.display_order - b.display_order);
-              
-              const primaryImage = productImages.find(img => img.is_primary) || productImages[0];
+
+              const primaryImage = productImages.find((img) => img.is_primary) || productImages[0];
               if (primaryImage) {
                 product.primary_image_url = primaryImage.url_cdn;
                 product.image_url = primaryImage.url_cdn;
               }
-              
-              product.images = productImages.map(img => img.url_cdn);
+
+              product.images = productImages.map((img) => img.url_cdn);
             }
           });
         } catch (err) {
@@ -210,7 +218,7 @@ export function useExternalProduct(productId: string | null) {
     queryKey: ['external-product', productId],
     queryFn: async () => {
       if (!productId) return null;
-      
+
       const result = await invokeExternalDb<ExternalProduct>('products', 'select', {
         filters: { id: productId },
         select: PRODUCT_SELECT,
@@ -218,33 +226,39 @@ export function useExternalProduct(productId: string | null) {
       });
 
       const product = result.records[0] || null;
-      
+
       // Buscar imagens da nova tabela product_images
       if (product) {
         try {
-          const imagesResult = await invokeExternalDb<ProductImageRecord>('product_images', 'select', {
-            filters: { product_id: productId, is_active: true },
-            select: 'product_id, url_cdn, image_type, is_primary, display_order',
-            orderBy: { column: 'display_order', ascending: true },
-            limit: 100,
-          });
-          
+          const imagesResult = await invokeExternalDb<ProductImageRecord>(
+            'product_images',
+            'select',
+            {
+              filters: { product_id: productId, is_active: true },
+              select: 'product_id, url_cdn, image_type, is_primary, display_order',
+              orderBy: { column: 'display_order', ascending: true },
+              limit: 100,
+            },
+          );
+
           if (imagesResult.records.length > 0) {
-            const sortedImages = imagesResult.records.sort((a, b) => a.display_order - b.display_order);
-            
-            const primaryImage = sortedImages.find(img => img.is_primary) || sortedImages[0];
+            const sortedImages = imagesResult.records.sort(
+              (a, b) => a.display_order - b.display_order,
+            );
+
+            const primaryImage = sortedImages.find((img) => img.is_primary) || sortedImages[0];
             if (primaryImage) {
               product.primary_image_url = primaryImage.url_cdn;
               product.image_url = primaryImage.url_cdn;
             }
-            
-            product.images = sortedImages.map(img => img.url_cdn);
+
+            product.images = sortedImages.map((img) => img.url_cdn);
           }
         } catch (err) {
           logger.warn('Não foi possível buscar imagens da tabela product_images:', err);
         }
       }
-      
+
       return product;
     },
     enabled: !!productId,
@@ -261,7 +275,7 @@ export function useExternalPrintAreas(productId: string | null) {
     queryKey: ['external-print-areas', productId],
     queryFn: async () => {
       if (!productId) return [];
-      
+
       // Buscar áreas da tabela print_area_techniques (SSOT)
       const { fetchPrintAreasFromProduct } = await import('@/lib/fetch-print-areas');
       const fetchedAreas = await fetchPrintAreasFromProduct(productId);
@@ -272,7 +286,7 @@ export function useExternalPrintAreas(productId: string | null) {
 
       for (const area of result.records) {
         const compKey = area.component_code || 'default';
-        
+
         if (!grouped[compKey]) {
           grouped[compKey] = {
             componentName: area.component_name || 'Produto',
@@ -282,7 +296,7 @@ export function useExternalPrintAreas(productId: string | null) {
         }
 
         const comp = grouped[compKey];
-        let location = comp.locations.find(l => l.locationCode === area.location_code);
+        let location = comp.locations.find((l) => l.locationCode === area.location_code);
 
         if (!location) {
           location = {
@@ -325,7 +339,7 @@ export function useExternalProductsList(options?: {
     queryKey: ['external-products-list', options],
     queryFn: async () => {
       const result = await invokeExternalDb<ExternalProduct>('products', 'select', {
-        filters: { 
+        filters: {
           active: true,
         },
         select: 'id, name, sku, sale_price, primary_image_url, supplier_reference, brand',
@@ -334,45 +348,48 @@ export function useExternalProductsList(options?: {
       });
 
       const products = result.records;
-      
+
       // Buscar imagens da nova tabela product_images
       if (products.length > 0) {
-        const productIds = products.map(p => p.id);
-        
+        const productIds = products.map((p) => p.id);
+
         try {
-          const imagesResult = await invokeExternalDb<ProductImageRecord>('product_images', 'select', {
-            filters: { is_active: true },
-            select: 'product_id, url_cdn, image_type, is_primary, display_order',
-            orderBy: { column: 'display_order', ascending: true },
-            limit: 2000,
-          });
-          
+          const imagesResult = await invokeExternalDb<ProductImageRecord>(
+            'product_images',
+            'select',
+            {
+              filters: { is_active: true },
+              select: 'product_id, url_cdn, image_type, is_primary, display_order',
+              orderBy: { column: 'display_order', ascending: true },
+              limit: 2000,
+            },
+          );
+
           // Agrupar imagens por product_id
           const imagesByProduct = new Map<string, ProductImageRecord[]>();
           const productIdSet = new Set(productIds);
-          
-          imagesResult.records.forEach(img => {
+
+          imagesResult.records.forEach((img) => {
             if (!productIdSet.has(img.product_id)) return;
-            
-            if (!imagesByProduct.has(img.product_id)) {
-              imagesByProduct.set(img.product_id, []);
-            }
-            imagesByProduct.get(img.product_id)!.push(img);
+
+            const productImages = imagesByProduct.get(img.product_id) ?? [];
+            imagesByProduct.set(img.product_id, productImages);
+            productImages.push(img);
           });
-          
+
           // Enriquecer produtos com imagens
-          products.forEach(product => {
+          products.forEach((product) => {
             const productImages = imagesByProduct.get(product.id);
             if (productImages && productImages.length > 0) {
               productImages.sort((a, b) => a.display_order - b.display_order);
-              
-              const primaryImage = productImages.find(img => img.is_primary) || productImages[0];
+
+              const primaryImage = productImages.find((img) => img.is_primary) || productImages[0];
               if (primaryImage) {
                 product.primary_image_url = primaryImage.url_cdn;
                 product.image_url = primaryImage.url_cdn;
               }
-              
-              product.images = productImages.map(img => img.url_cdn);
+
+              product.images = productImages.map((img) => img.url_cdn);
             }
           });
         } catch (err) {

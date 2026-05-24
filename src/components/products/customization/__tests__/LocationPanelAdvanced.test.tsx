@@ -4,7 +4,6 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, within, fireEvent } from "@testing-library/react";
-import { toast } from "sonner";
 import { LocationPanel } from "../LocationPanel";
 import type { GravacaoLocation, TechniqueOption, CustomizationPriceResponseV6 } from "@/types/customization";
 

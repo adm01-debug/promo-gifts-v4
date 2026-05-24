@@ -33,7 +33,7 @@ export function useGlobalShortcuts(handlers?: ShortcutHandlers) {
   let onboarding: any = null;
   try {
     onboarding = useOnboardingContext();
-  } catch (e) {
+  } catch (_e) {
     // Context may not be available outside MainLayout
   }
 

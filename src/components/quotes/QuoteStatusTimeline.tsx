@@ -1,4 +1,4 @@
-import { Check, Clock, Eye, FileText, RefreshCw, Send, Shield, ThumbsDown, ThumbsUp, AlertTriangle } from "lucide-react";
+import { Check, Clock, FileText, RefreshCw, Send, Shield, ThumbsDown, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";

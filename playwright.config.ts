@@ -9,7 +9,7 @@
  * Hardening anti-flake:
  *  - headless POR PADRÃO (sobrescrevível por --headed ou E2E_HEADLESS=false)
  *  - retries controlados: CI=2, local=1 (override por E2E_RETRIES=N)
- *  - expect.timeout elevado (15s) para reduzir polls inflados nos specs
+ *  - expect.timeout escalonado: 15s local / 45s CI (absorve hidratação SPA pesada)
  *  - reducedMotion: "reduce" para neutralizar animações (Radix/framer-motion)
  *  - testIdAttribute padronizado em "data-testid"
  *
@@ -58,8 +58,14 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: RETRIES,
   workers: process.env.CI ? 1 : undefined,
-  timeout: 45_000,
-  expect: { timeout: 15_000 },
+  // CI dobra o per-test timeout para absorver teardown lento do browser context
+  // em rotas com ProtectedRoute (effects pendentes fazem context.close atrasar).
+  // Local mantém 45s para detectar regressões cedo.
+  timeout: process.env.CI ? 90_000 : 45_000,
+  // CI dobra+ todos os timeouts para absorver hidratação SPA pesada (~10s
+  // de parse/eval JS no primeiro acesso à rota, mesmo após bundle pronto).
+  // Local mantém valores originais para detectar regressões reais cedo.
+  expect: { timeout: process.env.CI ? 45_000 : 15_000 },
   outputDir: ARTIFACTS_DIR,
   // JSON reporter sempre emitido para alimentar `scripts/e2e-feature-summary.mjs`
   // (overhead desprezível). HTML aberto on-demand via `npm run test:e2e:report`.
@@ -85,8 +91,8 @@ export default defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
-    actionTimeout: 10_000,
-    navigationTimeout: 20_000,
+    actionTimeout: process.env.CI ? 30_000 : 10_000,
+    navigationTimeout: process.env.CI ? 45_000 : 20_000,
     reducedMotion: "reduce",
     launchOptions: {
       args: ["--disable-blink-features=AutomationControlled"],

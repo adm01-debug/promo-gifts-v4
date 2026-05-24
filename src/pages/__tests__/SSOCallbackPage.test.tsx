@@ -12,7 +12,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, waitFor } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import SSOCallbackPage from '../SSOCallbackPage';
+import SSOCallbackPage from '../auth/SSOCallbackPage';
+import type * as ReactRouterDom from 'react-router-dom';
 
 const navigateMock = vi.fn();
 const refreshSessionMock = vi.fn().mockResolvedValue(undefined);
@@ -23,7 +24,7 @@ const onAuthStateChangeMock = vi.fn();
 const unsubscribeMock = vi.fn();
 
 vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+  const actual = await vi.importActual<typeof ReactRouterDom>('react-router-dom');
   return { ...actual, useNavigate: () => navigateMock };
 });
 
@@ -65,6 +66,12 @@ function fakeSession(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function readSsoFlowSnapshot() {
+  const raw = sessionStorage.getItem('__sso_last_flow');
+  expect(raw).not.toBeNull();
+  return JSON.parse(raw ?? '{}');
+}
+
 describe('SSOCallbackPage', () => {
   beforeEach(() => {
     navigateMock.mockClear();
@@ -93,10 +100,12 @@ describe('SSOCallbackPage', () => {
     await waitFor(() => expect(navigateMock).toHaveBeenCalledTimes(1));
     const [to, opts] = navigateMock.mock.calls[0];
     expect(to).toMatch(/^\/login\?error=/);
-    expect(decodeURIComponent(String(to).split('error=')[1])).toBe('User cancelled');
+    const p1 = new URLSearchParams(String(to).split('?')[1]);
+    expect(p1.get('error')).toBe('access_denied');
+    expect(p1.get('error_description')).toBe('User cancelled');
     expect(opts).toEqual({ replace: true });
 
-    const snap = JSON.parse(sessionStorage.getItem('__sso_last_flow')!);
+    const snap = readSsoFlowSnapshot();
     expect(snap.outcome).toBe('failure');
     expect(snap.providerError).toBe('access_denied');
     expect(snap.steps.map((s: { phase: string }) => s.phase)).toContain('provider-error-query');
@@ -111,7 +120,9 @@ describe('SSOCallbackPage', () => {
     try {
       renderAt('/auth/callback');
       await waitFor(() => expect(navigateMock).toHaveBeenCalledTimes(1));
-      expect(navigateMock.mock.calls[0][0]).toMatch(/\/login\?error=Boom/);
+      const p2 = new URLSearchParams(String(navigateMock.mock.calls[0][0]).split('?')[1]);
+      expect(p2.get('error')).toBe('server_error');
+      expect(p2.get('error_description')).toBe('Boom');
     } finally {
       window.location.hash = '';
       // restaura href se mudou
@@ -132,7 +143,7 @@ describe('SSOCallbackPage', () => {
     await waitFor(() => expect(refreshSessionMock).toHaveBeenCalled());
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/', { replace: true }));
 
-    const snap = JSON.parse(sessionStorage.getItem('__sso_last_flow')!);
+    const snap = readSsoFlowSnapshot();
     expect(snap.outcome).toBe('success');
     expect(snap.flow).toBe('pkce');
     expect(snap.finalProvider).toBe('google');
@@ -149,7 +160,8 @@ describe('SSOCallbackPage', () => {
     });
     renderAt('/auth/callback?code=expired');
     await waitFor(() => expect(navigateMock).toHaveBeenCalled());
-    expect(navigateMock.mock.calls[0][0]).toMatch(/\/login\?error=invalid_grant/);
+    const p3 = new URLSearchParams(String(navigateMock.mock.calls[0][0]).split('?')[1]);
+    expect(p3.get('error_description')).toBe('invalid_grant');
     expect(refreshSessionMock).not.toHaveBeenCalled();
   });
 

@@ -6,7 +6,6 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { useSalesScope } from '@/lib/auth/visibility-scope';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 import { toast } from 'sonner';
-import { sanitizeError } from '@/lib/security/sanitize-error';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { quoteService } from '@/services/quoteService';
 import type { Quote, QuoteItem } from '@/hooks/quotes/quoteTypes';
@@ -19,8 +18,26 @@ export type {
   PersonalizationTechnique,
 } from '@/hooks/quotes/quoteTypes';
 
+type QuoteHistoryOptions = {
+  fieldChanged?: string;
+  oldValue?: unknown;
+  newValue?: unknown;
+  metadata?: Record<string, unknown>;
+};
+
+type QuoteSyncResponse = {
+  error?: string;
+  bitrix_deal_id?: string | number | null;
+  success?: boolean;
+};
+
+function getErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : 'Erro desconhecido';
+}
+
 export function useQuotes() {
   const { user } = useAuth();
+  const userId = user?.id ?? null;
   const { currentOrg } = useOrganization();
   const orgId = currentOrg?.id || null;
   const scope = useSalesScope();
@@ -33,28 +50,30 @@ export function useQuotes() {
     error,
     refetch: fetchQuotes,
   } = useQuery({
-    queryKey: ['quotes', user?.id, scope],
-    queryFn: () => quoteService.fetchQuotes(user!.id, scope),
-    enabled: !!user,
+    queryKey: ['quotes', userId, scope],
+    queryFn: () => quoteService.fetchQuotes(userId ?? '', scope),
+    enabled: !!userId,
   });
 
   const { data: techniques = [], refetch: fetchTechniques } = useQuery({
     queryKey: ['techniques'],
     queryFn: () => quoteService.fetchTechniques(),
-    enabled: !!user,
+    enabled: !!userId,
     staleTime: 60 * 60 * 1000, // 1 hour
   });
 
   // Mutations
   const createMutation = useMutation({
-    mutationFn: ({ quote, items }: { quote: Partial<Quote>; items: QuoteItem[] }) =>
-      quoteService.createQuote(quote, items, user!.id, orgId),
+    mutationFn: ({ quote, items }: { quote: Partial<Quote>; items: QuoteItem[] }) => {
+      if (!userId) throw new Error('Usuario nao autenticado');
+      return quoteService.createQuote(quote, items, userId, orgId);
+    },
     onSuccess: (newQuote) => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       toast.success('Orçamento criado!', { description: `Número: ${newQuote.quote_number}` });
     },
     onError: (err: unknown) => {
-      toast.error('Erro ao criar orçamento', { description: sanitizeError(err) });
+      toast.error('Erro ao criar orçamento', { description: getErrorMessage(err) });
     },
   });
 
@@ -73,7 +92,7 @@ export function useQuotes() {
       toast.success('Orçamento atualizado!');
     },
     onError: (err: unknown) => {
-      toast.error('Erro ao atualizar orçamento', { description: sanitizeError(err) });
+      toast.error('Erro ao atualizar orçamento', { description: getErrorMessage(err) });
     },
   });
 
@@ -105,7 +124,7 @@ export function useQuotes() {
     try {
       return await quoteService.fetchQuote(quoteId);
     } catch (err: unknown) {
-      toast.error('Erro ao carregar orçamento', { description: sanitizeError(err) });
+      toast.error('Erro ao carregar orçamento', { description: getErrorMessage(err) });
       return null;
     }
   };
@@ -193,7 +212,7 @@ export function useQuotes() {
 
       return newQuote;
     } catch (err: unknown) {
-      toast.error('Erro ao duplicar', { description: sanitizeError(err) });
+      toast.error('Erro ao duplicar', { description: getErrorMessage(err) });
       return null;
     }
   };
@@ -206,14 +225,15 @@ export function useQuotes() {
         headers: log.headers(),
       });
       if (fnError) throw new Error(fnError.message);
-      if (data.error) throw new Error(data.error);
+      const syncData = data as QuoteSyncResponse | null;
+      if (syncData?.error) throw new Error(syncData.error);
       toast.success('Sincronizado com Bitrix!', {
-        description: `Deal ID: ${data.bitrix_deal_id || 'N/A'}`,
+        description: `Deal ID: ${syncData?.bitrix_deal_id || 'N/A'}`,
       });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       return true;
     } catch (err: unknown) {
-      toast.error('Erro ao sincronizar', { description: sanitizeError(err) });
+      toast.error('Erro ao sincronizar', { description: getErrorMessage(err) });
       return false;
     }
   };
@@ -224,14 +244,15 @@ export function useQuotes() {
         body: { action: 'test_webhook', data: {} },
       });
       if (fnError) throw new Error(fnError.message);
-      if (data.success) {
+      const testData = data as QuoteSyncResponse | null;
+      if (testData?.success) {
         toast.success('Conexão com N8N estabelecida!');
         return true;
       }
       toast.error('Falha na conexão com N8N');
       return false;
     } catch (err: unknown) {
-      toast.error('Erro ao testar webhook', { description: sanitizeError(err) });
+      toast.error('Erro ao testar webhook', { description: getErrorMessage(err) });
       return false;
     }
   };
@@ -240,7 +261,7 @@ export function useQuotes() {
     quoteId: string,
     action: string,
     description: string,
-    options?: unknown,
+    options?: QuoteHistoryOptions,
   ) => {
     if (!user) return;
     try {
@@ -254,7 +275,7 @@ export function useQuotes() {
     quotes,
     techniques,
     isLoading: isLoading || createMutation.isPending || updateMutation.isPending,
-    error: error ? sanitizeError(error) : null,
+    error: error ? getErrorMessage(error) : null,
     fetchQuotes,
     fetchQuote,
     createQuote,

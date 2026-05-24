@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useDebounce } from "@/hooks/common";
 import { SORT_OPTIONS, useAdvancedFilters, useCategoryIcons, useMaterialFilter, useSuppliers } from "@/hooks/products";
 import { useRamoAtividadeFilter } from "@/hooks/crm";
-import type { FilterState, FilterPanelProps } from "@/pages/advanced-price-search/types";
+import type { FilterState, FilterPanelProps } from "./types";
 
 export function useFilterPanelState(
   filters: FilterState,

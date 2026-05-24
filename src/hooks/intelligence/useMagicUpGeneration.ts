@@ -4,7 +4,6 @@
 import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { sanitizeError } from '@/lib/security/sanitize-error';
 import { supabase } from '@/integrations/supabase/client';
 import type { Json, TablesInsert } from '@/integrations/supabase/types';
 import {
@@ -125,13 +124,17 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
   const handleGenerate = useCallback(
     async (batchVariant?: MagicUpBatchVariant) => {
       if (!canGenerate) return;
+      const selectedProduct = deps.selectedProduct;
+      const logoPreview = deps.logoPreview;
+      if (!selectedProduct || !logoPreview) return;
+
       setGenerating(true);
       const log = createClientLogger('magicUp.generate', {
         base: { productId: deps.selectedProduct?.id, channel: deps.brief.channel },
       });
       log.info('generate_start', { batch: batchVariant?.id ?? null });
       try {
-        const isLogoUrl = deps.logoPreview!.startsWith('http');
+        const isLogoUrl = logoPreview.startsWith('http');
         const variantBrief = batchVariant
           ? {
               ...deps.brief,
@@ -152,9 +155,9 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
           headers: log.headers(),
           body: {
             productImageUrl: deps.currentImage,
-            logoBase64: isLogoUrl ? undefined : deps.logoPreview,
-            logoUrl: isLogoUrl ? deps.logoPreview : undefined,
-            productName: deps.selectedProduct!.name,
+            logoBase64: isLogoUrl ? undefined : logoPreview,
+            logoUrl: isLogoUrl ? logoPreview : undefined,
+            productName: selectedProduct.name,
             productColor: deps.selectedColor?.name || null,
             techniqueName: deps.selectedTechnique?.name || null,
             locationName: deps.selectedLocationName || null,
@@ -194,9 +197,9 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
             const generationPayload: TablesInsert<'magic_up_generations'> = {
               user_id: deps.userId,
               campaign_id: deps.activeCampaign?.id || null,
-              product_name: deps.selectedProduct!.name,
-              product_id: deps.selectedProduct!.id,
-              product_sku: deps.selectedProduct!.sku,
+              product_name: selectedProduct.name,
+              product_id: selectedProduct.id,
+              product_sku: selectedProduct.sku,
               scene_title: deps.selectedScene?.title || null,
               scene_category: deps.selectedScene?.category || batchVariant?.id || 'custom',
               generated_image_url: data.imageUrl,
@@ -266,7 +269,7 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
         }
       } catch (err: unknown) {
         log.error('generate_failed', { err });
-        toast.error('Erro ao gerar imagem', { description: sanitizeError(err) });
+        toast.error(err instanceof Error ? err.message : 'Erro ao gerar imagem');
       } finally {
         setGenerating(false);
       }
@@ -387,24 +390,36 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
           const canvas = document.createElement('canvas');
           const img = new Image();
           img.crossOrigin = 'anonymous';
-          await new Promise<void>((resolve) => {
+          const imageUrl = URL.createObjectURL(blob);
+          await new Promise<void>((resolve, reject) => {
             img.onload = () => {
               canvas.width = img.width;
               canvas.height = img.height;
-              const ctx = canvas.getContext('2d')!;
+              const ctx = canvas.getContext('2d');
+              if (!ctx) {
+                reject(new Error('Canvas 2D context is unavailable'));
+                return;
+              }
               ctx.fillStyle = '#FFFFFF';
               ctx.fillRect(0, 0, canvas.width, canvas.height);
               ctx.drawImage(img, 0, 0);
               canvas.toBlob(
                 (b) => {
-                  if (b) finalBlob = b;
+                  if (!b) {
+                    reject(new Error('Failed to convert image to JPEG'));
+                    return;
+                  }
+                  finalBlob = b;
                   resolve();
                 },
                 'image/jpeg',
                 0.85,
               );
             };
-            img.src = URL.createObjectURL(blob);
+            img.onerror = () => reject(new Error('Failed to load image for JPEG conversion'));
+            img.src = imageUrl;
+          }).finally(() => {
+            URL.revokeObjectURL(imageUrl);
           });
         }
         const url = URL.createObjectURL(finalBlob);

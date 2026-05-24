@@ -235,12 +235,12 @@ src/
 
 supabase/
 ├── config.toml       # Configuração do projeto Supabase
-├── functions/        # 47 Edge Functions
+├── functions/        # 81 Edge Functions (Deno) — ver docs/EDGE_FUNCTIONS.md
 │   ├── _shared/      # Utilitários compartilhados (CORS, auth, validação)
 │   ├── expert-chat/  # Assistente IA
 │   ├── external-db-bridge/ # Bridge para banco externo
 │   └── ...
-└── migrations/       # 205 migrations SQL versionadas
+└── migrations/       # 710 arquivos SQL versionados (~685 aplicadas em PROD)
 ```
 
 ---
@@ -313,10 +313,12 @@ supabase/
 ## 🗄 Banco de Dados
 
 ### Supabase (Interno)
-- 35+ tabelas com RLS completo
-- 205 migrations versionadas e reproduzíveis
+- **269 tabelas** em `public`, **100% com RLS ativo** (662 policies, ~2.5 por tabela)
+- **112 funções `SECURITY DEFINER`**, 100% com `search_path` setado (gate de CI bloqueia regressão)
+- **~710 migrations** versionadas (~685 aplicadas em PROD; drift de ~25)
 - Tipos gerados automaticamente (`supabase gen types`)
 - Connection pooling via Supabase pooler
+- 17 cron jobs ativos via `pg_cron` (autenticados por secret no vault)
 
 ### Banco Externo (Promobrind)
 - Acesso via Edge Function `external-db-bridge`
@@ -328,7 +330,7 @@ supabase/
 
 ## ⚡ Edge Functions
 
-47 Edge Functions organizadas em categorias:
+**81 Edge Functions** (Deno) organizadas em categorias. **24 marcadas `verify_jwt = false`** em `supabase/config.toml` — todas com defesa interna validada (vault secret, `x-mcp-key`, `x-dispatcher-secret`, `runBotProtection`, ou `authenticateRequest`). Para inventário completo veja [`docs/EDGE_FUNCTIONS.md`](docs/EDGE_FUNCTIONS.md).
 
 | Categoria | Funções |
 |---|---|
