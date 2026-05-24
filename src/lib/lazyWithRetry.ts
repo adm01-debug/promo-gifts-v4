@@ -1,6 +1,6 @@
 import { lazy, type ComponentType, createElement } from 'react';
 import { logger } from "@/lib/logger";
-import { attemptChunkRecovery, isChunkLoadError, extractChunkUrl } from "@/lib/chunk-recovery";
+import { attemptChunkRecovery, isChunkLoadError } from "@/lib/chunk-recovery";
 import { getFallback } from "@/components/layout/SkeletonLoaders";
 
 /**

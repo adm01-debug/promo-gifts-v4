@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { authService } from '@/services/authService';
 import { authDebug, authDebugError } from '@/lib/auth/auth-debug';
 import { type AppRole, type Profile } from '@/contexts/AuthContext';
-import { logger } from '@/lib/logger';
 
 export function useProfileRoles() {
   const [profile, setProfile] = useState<Profile | null>(null);
