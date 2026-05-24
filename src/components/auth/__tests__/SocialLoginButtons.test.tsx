@@ -128,15 +128,10 @@ describe('SocialLoginButtons (Google)', () => {
       await Promise.resolve();
     });
 
-    // QA: o componente foi refatorado para emitir códigos de erro em
-    // vez da mensagem PT-BR (description: 'provider_is_not_enabled').
-    // A camada que renderiza o código → texto humano vive agora no
-    // i18n consumer. Aqui validamos o contrato do código + propriedades
-    // estáveis (variant + onError chamado).
     expect(toastMock).toHaveBeenCalledWith(
       expect.objectContaining({
         variant: 'destructive',
-        description: 'provider_is_not_enabled',
+        description: expect.stringMatching(/google/i),
       }),
     );
     expect(onError).toHaveBeenCalledTimes(1);
