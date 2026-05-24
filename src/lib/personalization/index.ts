@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /**
  * Domain Layer: Personalização / Gravação
  *
@@ -29,15 +30,23 @@ export * from './repositories';
 export * from './services';
 
 // Re-export principais transformadores para facilitar imports
+=======
+// Personalization Library - Main Export
 export {
-  rawToTecnicaUnificada,
-  rawToTabelaPrecoTecnica,
+  fetchTechniquesList,
+  fetchTechniqueById,
+  fetchPriceTables,
+  fetchPriceTablesByTechnique,
+} from './repositories/technique.repository';
+
+>>>>>>> origin/main
+export {
   transformRawToTecnicas,
   transformRawToTabelas,
 } from './transformers';
 
 // Re-export principais repositórios
-export { TechniqueRepository } from './repositories/technique.repository';
+// TechniqueRepository functions available via repositories/index
 export { PriceTableRepository } from './repositories/priceTable.repository';
 
 // Re-export principais serviços

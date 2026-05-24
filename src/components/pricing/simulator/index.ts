@@ -1,3 +1,4 @@
+export type { Product, ProductTechnique, ConfiguredEngraving, ProductColor } from './types';
 // Barrel exports para os componentes do simulador
 export type { SearchFilters, ProductWithCalculatedPrice, ViewMode } from "@/pages/advanced-price-search/types";
 export * from './utils';

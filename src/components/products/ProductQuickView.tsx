@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, forwardRef } from "react";
+import { useState, useMemo, useEffect, forwardRef } from "react";
 // framer-motion removido — transição via CSS animate-fade-in
 import {
   Heart,
@@ -6,27 +6,17 @@ import {
   Share2,
   ShoppingCart,
   Package,
-  Truck,
-  ChevronLeft,
-  ChevronRight,
-  ExternalLink,
-  Sparkles,
-  Layers,
-  Plus,
-  Minus,
-  Ruler,
-  Weight,
-  ImageOff,
+  Truck, ExternalLink, Plus,
+  Minus
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { VisuallyHidden } from "@/components/a11y/VisuallyHidden";
 import { cn } from "@/lib/utils";
-import { useProductImages, type Product, type ProductImage } from "@/hooks/products";
+import { useProductImages, type Product } from "@/hooks/products";
 import { ProductCategoryBadges } from "./ProductCategoryBadges";
 import { QuickViewGallery } from "./quick-view/QuickViewGallery";
 import { ProductColorSelector, type ProductColor } from "./ProductColorSelector";
@@ -61,7 +51,7 @@ export const ProductQuickView = forwardRef<HTMLDivElement, ProductQuickViewProps
   const [quantity, setQuantity] = useState(1);
   const [selectedColorId, setSelectedColorId] = useState<string | null>(null);
   // imageLoaded removido — transição instantânea sem skeleton intermediário
-  const [imageError, setImageError] = useState(false);
+  const [_imageError, setImageError] = useState(false);
 
   // Hook: buscar imagens do produto via BD externo (Briefing v3)
   const { data: productImages = [] } = useProductImages(open && product ? product.id : null);
@@ -168,22 +158,22 @@ export const ProductQuickView = forwardRef<HTMLDivElement, ProductQuickViewProps
 
   // Obter URL atual da imagem com variante CDN
   const currentImage = displayImages[currentImageIndex] || displayImages[0];
-  const currentImageUrl = currentImage
+  const _currentImageUrl = currentImage
     ? getCdnUrl(currentImage.url_cdn, 'large')
     : '/placeholder.svg';
-  const currentImageSrcSet = currentImage
+  const _currentImageSrcSet = currentImage
     ? getSrcSet(currentImage.url_cdn)
     : undefined;
-  const currentAlt = currentImage?.alt_text || `${product.name} - Imagem ${currentImageIndex + 1}`;
+  const _currentAlt = currentImage?.alt_text || `${product.name} - Imagem ${currentImageIndex + 1}`;
 
-  const handlePrevImage = () => {
+  const _handlePrevImage = () => {
     setImageError(false);
     setCurrentImageIndex((prev) =>
       prev === 0 ? displayImages.length - 1 : prev - 1
     );
   };
 
-  const handleNextImage = () => {
+  const _handleNextImage = () => {
     setImageError(false);
     setCurrentImageIndex((prev) =>
       prev === displayImages.length - 1 ? 0 : prev + 1

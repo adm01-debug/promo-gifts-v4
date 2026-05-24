@@ -292,13 +292,11 @@ Deno.serve(async (req) => {
     }
 
     // ── 7. Log (no sensitive content) ───────────────────────────────────────
-    console.log("Sending to n8n:", JSON.stringify({
-      ...payload,
-      pdf: payload.pdf ? { filename: (payload.pdf as any).filename, url: (payload.pdf as any).url } : undefined,
+    console.log("Sending quote sync payload to n8n:", {
       products_count: products.length,
-      seller_email_authenticated: sellerEmail,
-      bitrix_company_id_input: bitrixCompanyId,
-    }));
+      has_pdf: Boolean(payload.pdf),
+      has_bitrix_company_id: Boolean(bitrixCompanyId),
+    });
 
     // ── 8. Call n8n webhook ──────────────────────────────────────────────────
     const response = await fetchWithBreaker("bitrix", webhookUrl, {
@@ -317,10 +315,13 @@ Deno.serve(async (req) => {
       result = { raw: text };
     }
 
-    console.log("n8n response status:", response.status, "body:", JSON.stringify(result));
+    console.log("n8n response received:", {
+      status: response.status,
+      content_type: contentType || 'unknown',
+    });
 
     if (!response.ok) {
-      const errMsg = (result as any)?.error || (result as any)?.raw || `HTTP ${response.status}`;
+      const errMsg = (result as any)?.error || `HTTP ${response.status}`;
       throw new Error(errMsg);
     }
 

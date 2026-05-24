@@ -2,7 +2,11 @@
  * API helpers for kit components and print areas
  */
 import { supabase } from '@/integrations/supabase/client';
+<<<<<<< HEAD
 import type { KitComponent, PrintArea } from './types';
+=======
+import type { KitComponent, PrintArea } from "./types";
+>>>>>>> origin/main
 
 export async function fetchKitComponents(productId: string): Promise<KitComponent[]> {
   const { data, error } = await supabase.functions.invoke('external-db-bridge', {

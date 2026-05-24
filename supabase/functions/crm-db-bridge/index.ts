@@ -8,6 +8,7 @@ import { getOrCreateRequestId, REQUEST_ID_HEADER } from "../_shared/request-id.t
 import { resolveCredential, buildCredentialsHealth } from "../_shared/credentials.ts";
 
 const breaker = getBreaker("crm-db");
+// redeploy marker: force isolate refresh after CRM secrets synchronization (2026-05-22 12:45)
 
 // Contexto async por-request — garante isolamento mesmo com requisições concorrentes.
 // Cada handler.run() instala um requestId na chain; jsonResponse lê dele.
@@ -383,7 +384,6 @@ export function logInsertResultIfAnomalous(
     shape: diagnostic.shape,
     rowCount: diagnostic.rowCount,
     errorMessage: diagnostic.errorMessage,
-    preview: diagnostic.preview,
   };
 
   const icon = diagnostic.shape === "generic-string-error" ? "🚨" : "⚠️";
@@ -463,7 +463,7 @@ async function authenticateRequest(req: Request): Promise<AuthResult> {
     .from("user_roles").select("role").eq("user_id", user.id).single();
 
   const userRole = roleData?.role || "vendedor";
-  console.log(`Request from user: ${user.id}, role: ${userRole}`);
+  console.log(`Authenticated CRM request role=${userRole}`);
   return { userId: user.id, userRole };
 }
 
@@ -666,7 +666,7 @@ async function handleInsert(crm: SupabaseClient, body: CrmQuery): Promise<Respon
     if (isOptionalQuoteTable(table) && isMissingTableError(error, table)) {
       return createOptionalWriteError(table);
     }
-    console.error("CRM insert error:", error);
+    console.error("CRM insert error:", { code: error.code ?? "unknown", message: error.message });
     return jsonResponse({ error: error.message }, 500);
   }
   return jsonResponse({ data: result, count: result?.length || 0 });
@@ -696,7 +696,7 @@ async function handleUpdate(crm: SupabaseClient, body: CrmQuery): Promise<Respon
     if (isOptionalQuoteTable(table) && isMissingTableError(error, table)) {
       return createOptionalWriteError(table);
     }
-    console.error("CRM update error:", error);
+    console.error("CRM update error:", { code: error.code ?? "unknown", message: error.message });
     return jsonResponse({ error: error.message }, 500);
   }
   return jsonResponse({ data: result, count: result?.length || 0 });
@@ -719,7 +719,7 @@ async function handleDelete(crm: SupabaseClient, body: CrmQuery): Promise<Respon
     if (isOptionalQuoteTable(table) && isMissingTableError(error, table)) {
       return createOptionalWriteError(table);
     }
-    console.error("CRM delete error:", error);
+    console.error("CRM delete error:", { code: error.code ?? "unknown", message: error.message });
     return jsonResponse({ error: error.message }, 500);
   }
   return jsonResponse({ data: null, success: true });
@@ -729,14 +729,17 @@ async function handleSelect(crm: SupabaseClient, body: CrmQuery): Promise<Respon
   const { table, id, filters, select, orderBy, limit, offset, search, relations } = body;
   const selectFields = select || (relations ? `${select || "*"}, ${relations}` : "*");
   
-  console.log(`[SELECT] table=${table}, selectFields=${selectFields}, filters=${JSON.stringify(filters)}, limit=${limit}`);
+  console.log(
+    `[SELECT] table=${table}, select_fields=${selectFields.split(',').length}, ` +
+      `filter_keys=${Object.keys(filters ?? {}).length}, limit=${limit ?? 'default'}`
+  );
   
   let query = crm.from(table).select(selectFields);
 
   if (id) {
     const { data, error } = await query.eq("id", id).single();
     if (error) {
-      console.error(`[SELECT] single error: code=${error.code}, message=${error.message}, details=${JSON.stringify(error)}`);
+      console.error(`[SELECT] single error: code=${error.code}, message=${error.message}`);
       if (isOptionalQuoteTable(table) && isMissingTableError(error, table)) {
         return createOptionalSelectFallback(table, true);
       }
@@ -752,7 +755,10 @@ async function handleSelect(crm: SupabaseClient, body: CrmQuery): Promise<Respon
   if (offset) query = query.range(offset, offset + (limit || 50) - 1);
 
   const { data, error, count, status, statusText } = await query;
-  console.log(`[SELECT] result: status=${status}, statusText=${statusText}, dataLength=${(data || []).length}, error=${error ? JSON.stringify(error) : 'none'}, count=${count}`);
+  console.log(
+    `[SELECT] result: status=${status}, statusText=${statusText}, ` +
+      `dataLength=${(data || []).length}, hasError=${!!error}, count=${count}`
+  );
   
   if (error) {
     if (isOptionalQuoteTable(table) && isMissingTableError(error, table)) {
@@ -889,14 +895,9 @@ Deno.serve((req) => {
         evt: "crm-creds-resolved",
         url_source: urlRes.source,
         url_via_alias: urlRes.resolved_name !== "EXTERNAL_CRM_URL",
-        url_prefix: CRM_URL.substring(0, 30),
         using,
         key_source: keySource,
-        key_len: CRM_KEY.length,
-        anon_len: CRM_ANON.length,
         keys_match: CRM_SERVICE_KEY === CRM_ANON,
-        svc_last4: CRM_KEY.slice(-4),
-        anon_last4: CRM_ANON.slice(-4),
       }));
     }
 

@@ -4,7 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+<<<<<<< HEAD
 import type { PrintAreaFormData } from './types';
+=======
+import type { PrintAreaFormData } from "./types";
+>>>>>>> origin/main
 
 interface Props {
   initial: PrintAreaFormData;

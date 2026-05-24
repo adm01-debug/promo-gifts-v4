@@ -1,16 +1,16 @@
 /**
  * Resolve a imagem específica de um produto baseado nos filtros de cor ativos.
- * 
+ *
  * Lógica baseada nos dados REAIS do banco:
  * 1. Usa groupSlug e variationSlug (vindos do enriquecimento color_variations → color_groups)
  * 2. Fallback para keyword matching apenas se groupSlug não estiver disponível
  * 3. Retorna color.image (thumbnail da variante daquela cor)
  */
 
-import type { Product, ProductColor, ProductVariation } from "@/hooks/products";
+import type { Product, ProductColor, ProductVariation } from '@/hooks/products';
 
 export interface ActiveColorFilter {
-  groups: string[];     // slugs dos grupos selecionados (ex: ['rosa', 'azul'])
+  groups: string[]; // slugs dos grupos selecionados (ex: ['rosa', 'azul'])
   variations: string[]; // slugs das variações selecionadas (ex: ['azul-marinho'])
 }
 
@@ -20,7 +20,7 @@ export interface ActiveColorFilter {
  */
 export function resolveColorImage(
   product: Product,
-  activeColors: ActiveColorFilter | null | undefined
+  activeColors: ActiveColorFilter | null | undefined,
 ): string | undefined {
   if (!activeColors) return undefined;
   if (!activeColors.groups.length && !activeColors.variations.length) return undefined;
@@ -30,17 +30,17 @@ export function resolveColorImage(
   if (activeColors.variations.length > 0) {
     for (const variationSlug of activeColors.variations) {
       // Match direto pelo variationSlug do banco
-      const match = product.colors.find(c =>
-        c.variationSlug === variationSlug
-      );
+      const match = product.colors.find((c) => c.variationSlug === variationSlug);
       if (match) {
         const img = getColorImage(match);
         if (img) return img;
       }
       // Fallback keyword
       const slugNormalized = variationSlug.toLowerCase().replace(/-/g, ' ');
-      const fallback = product.colors.find(c =>
-        c.name.toLowerCase().includes(slugNormalized) || slugNormalized.includes(c.name.toLowerCase())
+      const fallback = product.colors.find(
+        (c) =>
+          c.name.toLowerCase().includes(slugNormalized) ||
+          slugNormalized.includes(c.name.toLowerCase()),
       );
       if (fallback) {
         const img = getColorImage(fallback);
@@ -53,18 +53,21 @@ export function resolveColorImage(
   if (activeColors.groups.length > 0) {
     for (const groupSlug of activeColors.groups) {
       // Match direto pelo groupSlug do banco de dados
-      const match = product.colors.find(c => c.groupSlug === groupSlug);
+      const match = product.colors.find((c) => c.groupSlug === groupSlug);
       if (match) {
         const img = getColorImage(match);
         if (img) return img;
       }
       // Fallback keyword pelo grupo detectado
       const groupNormalized = groupSlug.toLowerCase().replace(/-/g, ' ');
-      const fallback = product.colors.find(c => {
+      const fallback = product.colors.find((c) => {
         const colorGroup = c.group.toLowerCase();
         const colorName = c.name.toLowerCase();
-        return colorGroup === groupNormalized || colorGroup.includes(groupNormalized)
-          || colorName.includes(groupNormalized);
+        return (
+          colorGroup === groupNormalized ||
+          colorGroup.includes(groupNormalized) ||
+          colorName.includes(groupNormalized)
+        );
       });
       if (fallback) {
         const img = getColorImage(fallback);
@@ -94,44 +97,46 @@ function getColorImage(color: ProductColor): string | undefined {
  */
 export function resolveColorStock(
   product: Product,
-  activeColors: ActiveColorFilter | null | undefined
+  activeColors: ActiveColorFilter | null | undefined,
 ): { stock: number; stockStatus: 'in-stock' | 'low-stock' | 'out-of-stock' } | undefined {
   if (!activeColors) return undefined;
   if (!activeColors.groups.length && !activeColors.variations.length) return undefined;
   if (!product.variations?.length) return undefined;
+  const variations = product.variations;
 
   const matchVariation = (variationSlug: string) => {
     // Try matching via product.colors first to find the color code
-    const colorMatch = product.colors.find(c => c.variationSlug === variationSlug);
+    const colorMatch = product.colors.find((c) => c.variationSlug === variationSlug);
     if (colorMatch?.code) {
-      const variant = product.variations!.find((v: ProductVariation) =>
-        v.sku === colorMatch.code || v.color?.name === colorMatch.name
+      const variant = variations.find(
+        (v: ProductVariation) => v.sku === colorMatch.code || v.color?.name === colorMatch.name,
       );
       if (variant) return variant;
     }
     // Direct match via variation color name
     const slugNorm = variationSlug.replace(/-/g, ' ').toLowerCase();
-    return product.variations!.find((v: ProductVariation) =>
-      v.color?.name?.toLowerCase() === slugNorm ||
-      v.color?.name?.toLowerCase().includes(slugNorm)
+    return variations.find(
+      (v: ProductVariation) =>
+        v.color?.name?.toLowerCase() === slugNorm ||
+        v.color?.name?.toLowerCase().includes(slugNorm),
     );
   };
 
   const matchGroup = (groupSlug: string) => {
-    const colorMatch = product.colors.find(c => c.groupSlug === groupSlug);
+    const colorMatch = product.colors.find((c) => c.groupSlug === groupSlug);
     if (colorMatch?.code) {
-      const variant = product.variations!.find((v: ProductVariation) =>
-        v.sku === colorMatch.code || v.color?.name === colorMatch.name
+      const variant = variations.find(
+        (v: ProductVariation) => v.sku === colorMatch.code || v.color?.name === colorMatch.name,
       );
       if (variant) return variant;
     }
     // Sum all variants in this group
-    const groupColors = product.colors.filter(c => c.groupSlug === groupSlug);
+    const groupColors = product.colors.filter((c) => c.groupSlug === groupSlug);
     if (groupColors.length > 0) {
       let totalStock = 0;
       for (const gc of groupColors) {
-        const v = product.variations!.find((v: ProductVariation) => v.color?.name === gc.name);
-        if (v) totalStock += (v.stock ?? 0);
+        const v = variations.find((v: ProductVariation) => v.color?.name === gc.name);
+        if (v) totalStock += v.stock ?? 0;
       }
       return { stock: totalStock };
     }
@@ -146,7 +151,10 @@ export function resolveColorStock(
       const v = matchVariation(slug);
       if (v) {
         stock = v.stock ?? 0;
-        return { stock, stockStatus: stock <= 0 ? 'out-of-stock' : stock < 10 ? 'low-stock' : 'in-stock' };
+        return {
+          stock,
+          stockStatus: stock <= 0 ? 'out-of-stock' : stock < 10 ? 'low-stock' : 'in-stock',
+        };
       }
     }
   }
@@ -157,7 +165,10 @@ export function resolveColorStock(
       const result = matchGroup(slug);
       if (result) {
         stock = result.stock ?? 0;
-        return { stock, stockStatus: stock <= 0 ? 'out-of-stock' : stock < 10 ? 'low-stock' : 'in-stock' };
+        return {
+          stock,
+          stockStatus: stock <= 0 ? 'out-of-stock' : stock < 10 ? 'low-stock' : 'in-stock',
+        };
       }
     }
   }
@@ -167,7 +178,7 @@ export function resolveColorStock(
 
 export function getActiveColorName(
   product: Product,
-  activeColors: ActiveColorFilter | null | undefined
+  activeColors: ActiveColorFilter | null | undefined,
 ): string | undefined {
   if (!activeColors) return undefined;
   if (!activeColors.groups.length && !activeColors.variations.length) return undefined;
@@ -175,12 +186,14 @@ export function getActiveColorName(
 
   if (activeColors.variations.length > 0) {
     for (const slug of activeColors.variations) {
-      const color = product.colors.find(c => c.variationSlug === slug);
+      const color = product.colors.find((c) => c.variationSlug === slug);
       if (color) return color.name;
       // Fallback keyword
       const slugNormalized = slug.toLowerCase().replace(/-/g, ' ');
-      const fb = product.colors.find(c =>
-        c.name.toLowerCase().includes(slugNormalized) || slugNormalized.includes(c.name.toLowerCase())
+      const fb = product.colors.find(
+        (c) =>
+          c.name.toLowerCase().includes(slugNormalized) ||
+          slugNormalized.includes(c.name.toLowerCase()),
       );
       if (fb) return fb.name;
     }
@@ -188,12 +201,14 @@ export function getActiveColorName(
 
   if (activeColors.groups.length > 0) {
     for (const slug of activeColors.groups) {
-      const color = product.colors.find(c => c.groupSlug === slug);
+      const color = product.colors.find((c) => c.groupSlug === slug);
       if (color) return color.name;
       // Fallback keyword
       const groupNormalized = slug.toLowerCase().replace(/-/g, ' ');
-      const fb = product.colors.find(c =>
-        c.group.toLowerCase() === groupNormalized || c.group.toLowerCase().includes(groupNormalized)
+      const fb = product.colors.find(
+        (c) =>
+          c.group.toLowerCase() === groupNormalized ||
+          c.group.toLowerCase().includes(groupNormalized),
       );
       if (fb) return fb.name;
     }

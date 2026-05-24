@@ -11,11 +11,19 @@ import {
   stopWebSpeech,
   isWebSpeechSupported,
   isWebSpeechActive,
+<<<<<<< HEAD
 } from '@/hooks/voice/webSpeechFallback';
 import type { VoiceAgentAction, VoiceAgentPhase, UseVoiceAgentOptions } from '@/hooks/voice/types';
 import { logger } from '@/lib/logger';
 
 export type { VoiceAgentAction, VoiceAgentPhase } from '@/hooks/voice/types';
+=======
+} from "@/hooks/voice/webSpeechFallback";
+import type { VoiceAgentAction, VoiceAgentPhase, UseVoiceAgentOptions } from "@/hooks/voice/types";
+import { logger } from '@/lib/logger';
+
+export type { VoiceAgentAction, VoiceAgentPhase } from "@/hooks/voice/types";
+>>>>>>> origin/main
 
 const ERROR_RESET_DELAY_MS = 5000;
 const PROCESSING_ERROR_RESET_DELAY_MS = 3000;

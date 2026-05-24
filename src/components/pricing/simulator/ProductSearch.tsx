@@ -6,7 +6,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, Package, X } from 'lucide-react';
 import { formatCurrency } from './utils';
+<<<<<<< HEAD
 import type { Product } from './types';
+=======
+import type { Product } from "./types";
+>>>>>>> origin/main
 
 interface ProductSearchProps {
   onSelect: (product: Product | null) => void;

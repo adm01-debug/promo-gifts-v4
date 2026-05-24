@@ -8,7 +8,15 @@
  * Hooks devem importar daqui, não definir transformadores próprios.
  */
 
+<<<<<<< HEAD
 import type { PriceTableInput, TechniqueInput, PriceTier } from './types';
+=======
+import type {
+  PriceTableInput,
+  TechniqueInput,
+  PriceTier,
+} from "./types";
+>>>>>>> origin/main
 
 import type {
   TabelaPrecoTecnica,

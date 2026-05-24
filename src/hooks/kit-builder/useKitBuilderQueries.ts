@@ -17,7 +17,10 @@ import {
 import { MOCK_BOXES, MOCK_ITEMS } from '@/lib/kit-builder/mock-data';
 
 // Import transformers from the main hook file
-import { transformToKitBox, transformToKitItem } from "@/hooks/kit-builder/useKitBuilderTransformers";
+import {
+  transformToKitBox,
+  transformToKitItem,
+} from '@/hooks/kit-builder/useKitBuilderTransformers';
 import { logger } from '@/lib/logger';
 
 function filterBoxes(
@@ -32,12 +35,18 @@ function filterBoxes(
       (b) => b.name.toLowerCase().includes(q) || b.sku.toLowerCase().includes(q),
     );
   }
-  if (dimFilters?.minWidth)
-    filtered = filtered.filter((b) => b.internalWidth >= dimFilters.minWidth!);
-  if (dimFilters?.minHeight)
-    filtered = filtered.filter((b) => b.internalHeight >= dimFilters.minHeight!);
-  if (dimFilters?.minDepth)
-    filtered = filtered.filter((b) => b.internalDepth >= dimFilters.minDepth!);
+  if (dimFilters?.minWidth) {
+    const minWidth = dimFilters.minWidth;
+    filtered = filtered.filter((b) => b.internalWidth >= minWidth);
+  }
+  if (dimFilters?.minHeight) {
+    const minHeight = dimFilters.minHeight;
+    filtered = filtered.filter((b) => b.internalHeight >= minHeight);
+  }
+  if (dimFilters?.minDepth) {
+    const minDepth = dimFilters.minDepth;
+    filtered = filtered.filter((b) => b.internalDepth >= minDepth);
+  }
   if (dimFilters?.material) filtered = filtered.filter((b) => b.material === dimFilters.material);
   return filtered;
 }
@@ -127,7 +136,7 @@ export function useKitBuilderQueries() {
           .filter((box): box is KitBox => box !== null);
 
         if (boxes.length === 0) {
-          console.info('[KitBuilder] No boxes from external DB, using mock data');
+          logger.info('[KitBuilder] No boxes from external DB, using mock data');
           return filterBoxes(MOCK_BOXES, debouncedBoxSearch, boxDimFilters);
         }
 
@@ -165,7 +174,7 @@ export function useKitBuilderQueries() {
           .map((p) => transformToKitItem(p));
 
         if (items.length === 0) {
-          console.info('[KitBuilder] No items from external DB, using mock data');
+          logger.info('[KitBuilder] No items from external DB, using mock data');
           return filterItems(MOCK_ITEMS, debouncedItemSearch);
         }
 

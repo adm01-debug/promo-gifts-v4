@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Search, Truck, X } from 'lucide-react';
 import { maskCep, ESTADOS_BR } from '@/utils/masks';
+import type { NewSupplierForm } from '../useNewSupplierForm';
 
 const fieldClass = 'mt-1.5 h-9';
 
 interface AddressTabProps {
-  form: Record<string, unknown>;
+  form: NewSupplierForm;
 }
 
 export function AddressTab({ form }: AddressTabProps) {
@@ -242,7 +243,7 @@ export function AddressTab({ form }: AddressTabProps) {
             )}
             {form.showCarrierDropdown && form.carrierResults.length > 0 && (
               <div className="absolute z-50 mt-1 max-h-48 w-full overflow-y-auto rounded-md border bg-popover shadow-lg">
-                {form.carrierResults.map((c: Record<string, unknown>) => (
+                {form.carrierResults.map((c) => (
                   <button
                     key={c.id}
                     type="button"

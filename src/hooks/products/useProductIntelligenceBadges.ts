@@ -1,58 +1,48 @@
 /**
- * Hook that derives visual badges from market intelligence data + catalog flags.
+ * useProductIntelligenceBadges
+ * Computes smart commercial badges for a product based on:
+ * 1. Catalog flags (featured, new_arrival, etc.) from mv_product_intelligence
+ * 2. Stock velocity trend (emerging, declining) from mv_stock_velocity
+ * 3. Restock cadence (frequent_restock flag)
  * Uses real data from mv_product_intelligence + mv_stock_velocity,
- * falling back to mock data when MVs aren't populated.
- * Also incorporates catalog flags (featured, newArrival, onSale) from product data.
+ * falls back to seeded mock data for demo/loading states.
  */
 import { useMemo } from 'react';
-import { useProductIntelligenceData, useStockVelocity } from '@/hooks/intelligence';
-import { generateMockIntelligence, generateMockVelocities } from '@/lib/stock-chart-utils';
+import { useProductIntelligenceData, useStockVelocity, type StockVelocity } from '@/hooks/intelligence';
+import { generateMockVelocities, generateMockIntelligence } from '@/lib/stock-chart-utils';
 
-export type IntelligenceBadgeType =
-  | 'best-seller' // ABC A
-  | 'popular' // ABC B
-  | 'normal' // ABC C
-  | 'emergente' // trend > 1.3
+type BadgeType =
+  | 'featured'
+  | 'new-arrival'
+  | 'hot-item'
+  | 'emerging'
+  | 'declining'
+  | 'frequent-restock'
   | 'last-units' // low stock + high velocity (stockout risk)
-  | 'featured' // catalog: product.featured
-  | 'new-arrival' // catalog: product.newArrival
-  | 'on-sale'; // catalog: product.onSale
+  | 'best-seller' // top tier velocity
+  | 'class-a';   // ABC classification A
 
 export interface IntelligenceBadge {
-  type: IntelligenceBadgeType;
+  type: BadgeType;
   label: string;
-  emoji: string;
-  tooltip: string;
-}
-
-/** Catalog flags from the product record */
-export interface CatalogFlags {
-  featured?: boolean;
-  newArrival?: boolean;
-  onSale?: boolean;
-  lowStock?: boolean; // stockStatus === "low-stock"
-  stock?: number;
-}
-
-export interface ProductIntelligenceBadgesResult {
-  badges: IntelligenceBadge[];
-  turnoverScore: number | null;
-  demandLevel: 'muito-alta' | 'alta' | 'moderada' | 'baixa' | null;
-  isLoading: boolean;
-  isDemo: boolean;
+  icon: string;
+  color: string; // Tailwind class
+  priority: number;
 }
 
 export function useProductIntelligenceBadges(
-  productId?: string,
-  catalogFlags?: CatalogFlags,
-): ProductIntelligenceBadgesResult {
+  productId: string | undefined,
+  catalogFlags?: {
+    featured?: boolean;
+    new_arrival?: boolean;
+  }
+) {
   const { data: intelligence, isLoading: loadingIntel } = useProductIntelligenceData(productId);
   const { data: velocity, isLoading: loadingVel } = useStockVelocity(productId);
 
-  return useMemo(() => {
-    const isDemo = !intelligence;
-    const mockIntel = productId ? generateMockIntelligence(productId) : null;
+  const badges = useMemo((): IntelligenceBadge[] => {
     const mockVels = productId ? generateMockVelocities(productId) : [];
+    const mockIntel = productId ? generateMockIntelligence(productId) : null;
 
     const effectiveIntel = intelligence ?? mockIntel;
     const effectiveVels = velocity?.length ? velocity : mockVels;
@@ -64,121 +54,109 @@ export function useProductIntelligenceBadges(
       badges.push({
         type: 'featured',
         label: 'Destaque',
-        emoji: '✨',
-        tooltip: 'Produto em destaque no catálogo',
+        icon: '⭐',
+        color: 'bg-amber-100 text-amber-800 border-amber-200',
+        priority: 100,
       });
     }
-    if (catalogFlags?.newArrival) {
+    if (catalogFlags?.new_arrival) {
       badges.push({
         type: 'new-arrival',
-        label: 'Novidade',
-        emoji: '🆕',
-        tooltip: 'Produto adicionado recentemente ao catálogo',
-      });
-    }
-    if (catalogFlags?.onSale) {
-      badges.push({
-        type: 'on-sale',
-        label: 'Promoção',
-        emoji: '🏷️',
-        tooltip: 'Produto com preço promocional',
+        label: 'Lançamento',
+        icon: '🌟',
+        color: 'bg-blue-100 text-blue-800 border-blue-200',
+        priority: 90,
       });
     }
 
-    if (!effectiveIntel) {
-      return {
-        badges,
-        turnoverScore: null,
-        demandLevel: null,
-        isLoading: loadingIntel || loadingVel,
-        isDemo: true,
-      };
-    }
-
-    // === 2. ABC Classification (from market intelligence) ===
-    const abc = effectiveIntel.abc_classification;
-    if (abc === 'A') {
+    // === 2. Hot item (from intelligence mv) ===
+    if (effectiveIntel?.is_hot_product) {
       badges.push({
-        type: 'best-seller',
-        label: 'Best-Seller',
-        emoji: '🔥',
-        tooltip: 'Classe A — um dos produtos mais vendidos do mercado',
-      });
-    } else if (abc === 'B') {
-      badges.push({
-        type: 'popular',
-        label: 'Popular',
-        emoji: '⚡',
-        tooltip: 'Classe B — boa tração comercial',
-      });
-    } else {
-      badges.push({
-        type: 'normal',
-        label: 'Normal',
-        emoji: '📦',
-        tooltip: 'Classe C — volume regular de vendas',
+        type: 'hot-item',
+        label: 'Hot Item',
+        icon: '🔥',
+        color: 'bg-orange-100 text-orange-800 border-orange-200',
+        priority: 80,
       });
     }
 
     // === 3. Emergente (trend > 1.3) ===
     const bestVel = effectiveVels.length
       ? effectiveVels.reduce(
-          (best, v) => (v.avg_daily_depletion_7d > (best?.avg_daily_depletion_7d ?? 0) ? v : best),
+          (best: StockVelocity, v: StockVelocity) => (v.avg_daily_depletion_7d > (best?.avg_daily_depletion_7d ?? 0) ? v : best),
           effectiveVels[0],
         )
       : null;
     const trend = bestVel?.velocity_trend;
-    if (trend !== null && trend > 1.3) {
+
+    if (trend && trend > 1.3) {
       badges.push({
-        type: 'emergente',
+        type: 'emerging',
         label: 'Emergente',
-        emoji: '🚀',
-        tooltip: 'Vendas acelerando — tendência de crescimento > 30%',
+        icon: '📈',
+        color: 'bg-green-100 text-green-800 border-green-200',
+        priority: 70,
+      });
+    } else if (trend && trend < 0.7) {
+      badges.push({
+        type: 'declining',
+        label: 'Em queda',
+        icon: '📉',
+        color: 'bg-red-100 text-red-800 border-red-200',
+        priority: 65,
       });
     }
 
-    // === 4. Últimas Unidades (stockout risk) ===
-    if (effectiveIntel.is_stockout_risk && effectiveIntel.total_current_stock > 0) {
+    // === 4. ABC Class A ===
+    if (effectiveIntel?.abc_classification === 'A') {
+      badges.push({
+        type: 'class-a',
+        label: 'Classe A',
+        icon: '🏆',
+        color: 'bg-purple-100 text-purple-800 border-purple-200',
+        priority: 60,
+      });
+    }
+
+    // === 5. Restock freqüente ===
+    if (effectiveIntel?.has_frequent_restock) {
+      badges.push({
+        type: 'frequent-restock',
+        label: 'Reposição freq.',
+        icon: '🔄',
+        color: 'bg-cyan-100 text-cyan-800 border-cyan-200',
+        priority: 50,
+      });
+    }
+
+    // === 6. Last units (stockout risk + high velocity) ===
+    if (effectiveIntel?.is_stockout_risk) {
       badges.push({
         type: 'last-units',
-        label: 'Últimas Unidades',
-        emoji: '⚠️',
-        tooltip: 'Estoque baixo com alta velocidade de venda — risco real de ruptura',
+        label: 'Últ. unidades',
+        icon: '⚠️',
+        color: 'bg-red-50 text-red-700 border-red-200',
+        priority: 85,
       });
     }
 
-    // Turnover score
-    const turnoverScore =
-      effectiveIntel.turnover_score !== null && Number.isFinite(effectiveIntel.turnover_score)
-        ? Math.round(effectiveIntel.turnover_score)
-        : null;
+    // === 7. Best-seller (top velocity) ===
+    const avgDepletion = bestVel?.avg_daily_depletion_7d ?? 0;
+    if (avgDepletion >= 15) {
+      badges.push({
+        type: 'best-seller',
+        label: 'Best-seller',
+        icon: '🏅',
+        color: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+        priority: 75,
+      });
+    }
 
-    // Demand level
-    const avgDaily = bestVel?.avg_daily_depletion_7d ?? effectiveIntel.avg_velocity_7d ?? 0;
-    const demandLevel: ProductIntelligenceBadgesResult['demandLevel'] =
-      avgDaily >= 20
-        ? 'muito-alta'
-        : avgDaily >= 10
-          ? 'alta'
-          : avgDaily >= 3
-            ? 'moderada'
-            : 'baixa';
+    return badges.sort((a, b) => b.priority - a.priority);
+  }, [intelligence, velocity, catalogFlags, productId]);
 
-    return {
-      badges,
-      turnoverScore,
-      demandLevel,
-      isLoading: loadingIntel || loadingVel,
-      isDemo,
-    };
-  }, [
-    intelligence,
-    velocity,
-    productId,
-    loadingIntel,
-    loadingVel,
-    catalogFlags?.featured,
-    catalogFlags?.newArrival,
-    catalogFlags?.onSale,
-  ]);
+  return {
+    badges,
+    isLoading: loadingIntel || loadingVel,
+  };
 }

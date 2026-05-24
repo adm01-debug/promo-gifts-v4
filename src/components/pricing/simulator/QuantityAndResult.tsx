@@ -24,9 +24,17 @@ import {
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+<<<<<<< HEAD
 import { useCustomizationPriceLegacy, type CustomizationPriceV2 } from '@/hooks/simulation';
 import { formatCurrency, formatNumber } from './utils';
 import type { Product, ProductTechnique } from './types';
+=======
+import {
+  useCustomizationPriceLegacy, type CustomizationPriceV2
+} from '@/hooks/simulation';
+import { formatCurrency, formatNumber } from './utils';
+import type { Product, ProductTechnique } from "./types";
+>>>>>>> origin/main
 import { toast } from 'sonner';
 
 interface QuantityAndResultProps {

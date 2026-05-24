@@ -2,8 +2,13 @@
  * logVoiceCommand — Logs a voice command to the database for analytics.
  * Fire-and-forget — does not throw or block the UI.
  */
+<<<<<<< HEAD
 import { supabase } from '@/integrations/supabase/client';
 import type { VoiceAgentAction } from './types';
+=======
+import { supabase } from "@/integrations/supabase/client";
+import type { VoiceAgentAction } from "./types";
+>>>>>>> origin/main
 
 export function logVoiceCommand(
   action: VoiceAgentAction,

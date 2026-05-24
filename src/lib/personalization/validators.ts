@@ -11,7 +11,11 @@ import type {
   ValidationResult,
   ValidationError,
   ValidationWarning,
+<<<<<<< HEAD
 } from './types';
+=======
+} from "./types";
+>>>>>>> origin/main
 
 // ============================================
 // TABLE VALIDATION

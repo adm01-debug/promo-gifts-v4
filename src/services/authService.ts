@@ -1,6 +1,4 @@
 import { supabase } from "@/integrations/supabase/client";
-import { AppRole, Profile } from "@/contexts/AuthContext";
-import { authDebug, authDebugError } from "@/lib/auth/auth-debug";
 import { logger } from "@/lib/logger";
 
 export const authService = {

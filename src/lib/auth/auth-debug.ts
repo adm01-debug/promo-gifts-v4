@@ -2,13 +2,16 @@
  * Auth debug logger — emite logs detalhados (com mascaramento de dados
  * sensíveis) para diagnosticar falhas no fluxo de login social.
  *
- * Visível sempre no console com prefixo `[AUTH-DEBUG]` para facilitar
- * filtragem no DevTools. Não envia nada para o backend.
+ * Visível apenas em DEV ou com `VITE_AUTH_DEBUG=true`, com prefixo
+ * `[AUTH-DEBUG]` para facilitar filtragem no DevTools. Não envia nada para o
+ * backend.
  */
 
 import type { Session, User } from '@supabase/supabase-js';
+import { maskSensitiveText } from '@/lib/sensitive-masking';
 
 const PREFIX = '[AUTH-DEBUG]';
+const AUTH_DEBUG_ENABLED = import.meta.env.DEV || import.meta.env.VITE_AUTH_DEBUG === 'true';
 
 /** Mascara token JWT mostrando apenas 8 primeiros e 6 últimos caracteres. */
 function maskToken(token: string | null | undefined): string {
@@ -87,19 +90,24 @@ export function summarizeSession(session: Session | null | undefined) {
 }
 
 export function authDebug(scope: string, message: string, data?: unknown): void {
+  if (!AUTH_DEBUG_ENABLED) return;
   const ts = new Date().toISOString();
-  // eslint-disable-next-line no-console
-  console.log(`${PREFIX} [${ts}] [${scope}] ${message}`, data ?? '');
+  console.warn(`${PREFIX} [${ts}] [${scope}] ${message}`, sanitizeDebugPayload(data) ?? '');
 }
 
 export function authDebugError(scope: string, message: string, error: unknown): void {
+  if (!AUTH_DEBUG_ENABLED) return;
   const normalized =
     error instanceof Error
-      ? { name: error.name, message: error.message, stack: error.stack }
+      ? {
+          name: error.name,
+          message: maskSensitiveText(error.message),
+          stack: maskSensitiveText(error.stack),
+        }
       : { value: error };
   const ts = new Date().toISOString();
 
-  console.error(`${PREFIX} [${ts}] [${scope}] ${message}`, normalized);
+  console.error(`${PREFIX} [${ts}] [${scope}] ${message}`, sanitizeDebugPayload(normalized));
 }
 
 /** Loga o estado bruto da URL no callback (query, hash, error params). */
@@ -127,3 +135,15 @@ export function authDebugUrl(scope: string): void {
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const __authDebugInternals = { maskToken, maskEmail, decodeJwtPayload };
+
+function sanitizeDebugPayload(data: unknown): unknown {
+  if (data === null || data === undefined) return data;
+  if (typeof data === 'string') return maskSensitiveText(data);
+  try {
+    const json = JSON.stringify(data);
+    const masked = maskSensitiveText(json);
+    return masked ? JSON.parse(masked) : data;
+  } catch {
+    return { unserializable: true };
+  }
+}

@@ -72,8 +72,12 @@ describe('Auth Page', () => {
 
     fireEvent.click(forgotLink);
 
+<<<<<<< HEAD:src/pages/auth/__tests__/Auth.test.tsx
     // ForgotPasswordForm é trocado dentro de <AnimatePresence>. Aguardar a
     // troca para evitar flakiness com timers do framer-motion em jsdom.
+=======
+    // ForgotPasswordForm monta via AnimatePresence (assíncrono) — aguardar.
+>>>>>>> origin/main:src/pages/Auth.test.tsx
     expect(await screen.findByText(/Esqueceu sua senha\?/i)).toBeInTheDocument();
 
     expect(screen.queryByTestId('login-password-input')).not.toBeInTheDocument();

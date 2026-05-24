@@ -24,7 +24,7 @@ export default function BridgeMetricsOverlay() {
   // early-return. Caso contrário, mudanças em `isAllowed` (ex: AuthContext
   // resolvendo role `dev` após RLS desbloqueada) provocam
   // "Rendered more hooks than during the previous render" e crash global.
-  const { isDev } = useDevGate();
+  const { isDev, isAllowed } = useDevGate();
 
   const {
     open,
@@ -47,7 +47,11 @@ export default function BridgeMetricsOverlay() {
 
   // Guards APÓS todos os hooks (ordem de hooks fica estável entre renders).
   if (import.meta.env.PROD) return null;
-  if (!isDev) return null;
+  // Overlay de métricas = ferramenta de DEV PREVIEW com gate SSOT em runtime.
+  // Exige AMBOS: papel `dev` (isDev) E aprovação do gate (isAllowed).
+  //  - admin com isAllowed=true mas isDev=false → NÃO vê (não é dev).
+  //  - dev com isAllowed=false → NÃO vê (gate SSOT rejeitou, mesmo sendo dev).
+  if (!isDev || !isAllowed) return null;
 
   if (!open) {
     return (

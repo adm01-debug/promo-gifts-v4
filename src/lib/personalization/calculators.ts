@@ -10,7 +10,11 @@ import type {
   PriceCalculationParams,
   PriceCalculationResult,
   PrintArea,
+<<<<<<< HEAD
 } from './types';
+=======
+} from "./types";
+>>>>>>> origin/main
 
 // ============================================
 // PRICE CALCULATION

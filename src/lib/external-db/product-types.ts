@@ -83,6 +83,79 @@ export interface PromobrindProduct {
     height_mm: number | null; width_mm: number | null; length_mm: number | null;
     weight_g: number | null; notes: string | null;
   }> | null;
+
+  // ------------------------------------------------------------------
+  // Campos adicionais mapeados pelo formulário admin (AdminProductFormPage).
+  // Colunas reais (ou potenciais) da base externa; todas opcionais/nullable
+  // porque nem todo SELECT as traz — os consumidores aplicam `?? default`.
+  // ------------------------------------------------------------------
+  // Pricing / estoque
+  cost_price?: number | null;
+  suggested_price?: number | null;
+  stock_unit?: string | null;
+  product_type?: string | null;
+  min_order_quantity?: number | null;
+  // Dimensões internas
+  internal_height_cm?: number | null;
+  internal_width_cm?: number | null;
+  internal_length_cm?: number | null;
+  internal_diameter_cm?: number | null;
+  // Embalagem
+  packaging_material?: string | null;
+  packaging_color?: string | null;
+  packaging_finish?: string | null;
+  // Flags de destaque + expiração
+  is_featured_expires_at?: string | null;
+  is_bestseller_expires_at?: string | null;
+  is_new_expires_at?: string | null;
+  novelty_expires_at?: string | null;
+  is_on_sale_expires_at?: string | null;
+  // Flags de característica
+  is_imported?: boolean | null;
+  is_textil?: boolean | null;
+  is_thermal?: boolean | null;
+  allows_personalization?: boolean | null;
+  has_gift_box?: boolean | null;
+  has_optional_packaging?: boolean | null;
+  // Fiscal
+  ncm_code?: string | null;
+  ean?: string | null;
+  gtin?: string | null;
+  ipi_rate?: number | null;
+  country_of_origin?: string | null;
+  origin_country?: string | null;
+  cfop?: string | null;
+  csosn?: string | null;
+  icms_rate?: number | null;
+  pis_rate?: number | null;
+  cofins_rate?: number | null;
+  tax_regime?: string | null;
+  cest?: string | null;
+  // Logística / frete
+  freight_class?: string | null;
+  default_carrier?: string | null;
+  shipping_weight_kg?: number | null;
+  shipping_width_cm?: number | null;
+  shipping_height_cm?: number | null;
+  shipping_length_cm?: number | null;
+  cubic_weight?: number | null;
+  requires_special_shipping?: boolean | null;
+  shipping_notes?: string | null;
+  lead_time_days?: number | null;
+  supply_mode?: string | null;
+  warranty_months?: number | null;
+  // SEO / mídia
+  meta_title?: string | null;
+  meta_keywords?: string[] | null;
+  slug?: string | null;
+  canonical_url?: string | null;
+  videos?: string[] | null;
+  video_url?: string | null;
+  key_benefits?: string | null;
+  use_cases?: string | null;
+  // Nomes denormalizados (fallback de exibição)
+  category?: string | null;
+  supplier?: string | null;
 }
 
 export function getProductImageUrl(product: PromobrindProduct): string | null {

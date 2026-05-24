@@ -17,6 +17,20 @@ interface PriceTableEntry {
   min_quantity: number | null;
 }
 
+function hasMaxColors(table: PriceTableEntry): table is PriceTableEntry & { max_colors: number } {
+  return table.price_by_color && typeof table.max_colors === 'number';
+}
+
+function hasAreaSize(
+  table: PriceTableEntry,
+): table is PriceTableEntry & { max_area_width_cm: number; max_area_height_cm: number } {
+  return (
+    table.price_by_area &&
+    typeof table.max_area_width_cm === 'number' &&
+    typeof table.max_area_height_cm === 'number'
+  );
+}
+
 export interface ColorOption {
   value: number;
   label: string;
@@ -57,12 +71,12 @@ export function useTechniquePricingOptions(techniqueCode: string | null): Techni
             table: 'customization_price_tables',
             operation: 'select',
             filters: { table_code: techniqueCode },
-            limit: 100
-          }
+            limit: 100,
+          },
         });
 
         if (error) throw error;
-        
+
         if (data?.success && data?.data?.records) {
           setTables(data.data.records);
         } else if (Array.isArray(data?.data)) {
@@ -83,60 +97,58 @@ export function useTechniquePricingOptions(techniqueCode: string | null): Techni
 
   // Determinar se usa preço por cor ou por área
   const hasPriceByColor = useMemo(() => {
-    return tables.some(t => t.price_by_color === true);
+    return tables.some((t) => t.price_by_color === true);
   }, [tables]);
 
   const hasPriceByArea = useMemo(() => {
-    return tables.some(t => t.price_by_area === true);
+    return tables.some((t) => t.price_by_area === true);
   }, [tables]);
 
   // Gerar opções de cores únicas disponíveis
   const colorOptions = useMemo((): ColorOption[] => {
     if (!hasPriceByColor) return [];
-    
+
     const uniqueColors = new Set<number>();
-    tables
-      .filter(t => t.price_by_color && t.max_colors)
-      .forEach(t => uniqueColors.add(t.max_colors!));
-    
+    tables.filter(hasMaxColors).forEach((t) => uniqueColors.add(t.max_colors));
+
     return Array.from(uniqueColors)
       .sort((a, b) => a - b)
-      .map(c => ({
+      .map((c) => ({
         value: c,
-        label: c === 1 ? '1 cor' : `${c} cores`
+        label: c === 1 ? '1 cor' : `${c} cores`,
       }));
   }, [tables, hasPriceByColor]);
 
   // Gerar opções de tamanho únicas disponíveis
   const sizeOptions = useMemo((): SizeOption[] => {
     if (!hasPriceByArea) return [];
-    
+
     const uniqueSizes = new Map<string, SizeOption>();
-    
-    tables
-      .filter(t => t.price_by_area && t.max_area_width_cm && t.max_area_height_cm)
-      .forEach(t => {
-        const w = t.max_area_width_cm!;
-        const h = t.max_area_height_cm!;
-        const key = `${w}x${h}`;
-        
-        if (!uniqueSizes.has(key)) {
-          uniqueSizes.set(key, {
-            value: key,
-            label: `${w} × ${h} cm`,
-            width: w,
-            height: h,
-            areaCm2: w * h
-          });
-        }
-      });
-    
-    return Array.from(uniqueSizes.values())
-      .sort((a, b) => a.areaCm2 - b.areaCm2);
+
+    tables.filter(hasAreaSize).forEach((t) => {
+      const w = t.max_area_width_cm;
+      const h = t.max_area_height_cm;
+      const key = `${w}x${h}`;
+
+      if (!uniqueSizes.has(key)) {
+        uniqueSizes.set(key, {
+          value: key,
+          label: `${w} × ${h} cm`,
+          width: w,
+          height: h,
+          areaCm2: w * h,
+        });
+      }
+    });
+
+    return Array.from(uniqueSizes.values()).sort((a, b) => a.areaCm2 - b.areaCm2);
   }, [tables, hasPriceByArea]);
 
   // Função para encontrar a tabela correta baseada na seleção
-  const getTableForSelection = (colors: number, sizeValue: string | null): PriceTableEntry | null => {
+  const getTableForSelection = (
+    colors: number,
+    sizeValue: string | null,
+  ): PriceTableEntry | null => {
     if (tables.length === 0) return null;
 
     // Filtrar tabelas que atendem aos critérios
@@ -144,8 +156,8 @@ export function useTechniquePricingOptions(techniqueCode: string | null): Techni
 
     // Se usa cores, encontrar tabela com max_colors >= colors selecionadas
     if (hasPriceByColor && colors > 0) {
-      candidates = candidates.filter(t => 
-        t.price_by_color && t.max_colors && t.max_colors >= colors
+      candidates = candidates.filter(
+        (t) => t.price_by_color && t.max_colors && t.max_colors >= colors,
       );
       // Ordenar pelo mais próximo (menor max_colors que atende)
       candidates.sort((a, b) => (a.max_colors || 0) - (b.max_colors || 0));
@@ -154,10 +166,8 @@ export function useTechniquePricingOptions(techniqueCode: string | null): Techni
     // Se usa área, encontrar tabela com dimensões correspondentes
     if (hasPriceByArea && sizeValue) {
       const [w, h] = sizeValue.split('x').map(Number);
-      candidates = candidates.filter(t => 
-        t.price_by_area && 
-        t.max_area_width_cm === w && 
-        t.max_area_height_cm === h
+      candidates = candidates.filter(
+        (t) => t.price_by_area && t.max_area_width_cm === w && t.max_area_height_cm === h,
       );
     }
 
@@ -170,7 +180,7 @@ export function useTechniquePricingOptions(techniqueCode: string | null): Techni
     colorOptions,
     sizeOptions,
     isLoading,
-    getTableForSelection
+    getTableForSelection,
   };
 }
 
@@ -178,9 +188,12 @@ export function useTechniquePricingOptions(techniqueCode: string | null): Techni
 export function useMultipleTechniquePricing(techniqueCodes: string[]) {
   const [allTables, setAllTables] = useState<Record<string, PriceTableEntry[]>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const techniqueCodesKey = techniqueCodes.join(',');
 
   useEffect(() => {
-    if (techniqueCodes.length === 0) {
+    const codes = techniqueCodesKey ? techniqueCodesKey.split(',').filter(Boolean) : [];
+
+    if (codes.length === 0) {
       setAllTables({});
       return;
     }
@@ -190,15 +203,15 @@ export function useMultipleTechniquePricing(techniqueCodes: string[]) {
       const results: Record<string, PriceTableEntry[]> = {};
 
       await Promise.all(
-        techniqueCodes.map(async (code) => {
+        codes.map(async (code) => {
           try {
             const { data, error } = await supabase.functions.invoke('external-db-bridge', {
               body: {
                 table: 'customization_price_tables',
                 operation: 'select',
                 filters: { table_code: code },
-                limit: 100
-              }
+                limit: 100,
+              },
             });
 
             if (!error && data?.success && data?.data?.records) {
@@ -209,7 +222,7 @@ export function useMultipleTechniquePricing(techniqueCodes: string[]) {
           } catch (err) {
             console.error(`Error fetching pricing for ${code}:`, err);
           }
-        })
+        }),
       );
 
       setAllTables(results);
@@ -217,55 +230,58 @@ export function useMultipleTechniquePricing(techniqueCodes: string[]) {
     };
 
     fetchAll();
-  }, [techniqueCodes.join(',')]);
+  }, [techniqueCodesKey]);
 
   const getPricingInfo = (code: string): Omit<TechniquePricingInfo, 'isLoading'> => {
     const tables = allTables[code] || [];
-    
-    const hasPriceByColor = tables.some(t => t.price_by_color === true);
-    const hasPriceByArea = tables.some(t => t.price_by_area === true);
+
+    const hasPriceByColor = tables.some((t) => t.price_by_color === true);
+    const hasPriceByArea = tables.some((t) => t.price_by_area === true);
 
     const colorOptions: ColorOption[] = hasPriceByColor
-      ? Array.from(new Set(
-          tables.filter(t => t.price_by_color && t.max_colors).map(t => t.max_colors!)
-        ))
-        .sort((a, b) => a - b)
-        .map(c => ({ value: c, label: c === 1 ? '1 cor' : `${c} cores` }))
+      ? Array.from(new Set(tables.filter(hasMaxColors).map((t) => t.max_colors)))
+          .sort((a, b) => a - b)
+          .map((c) => ({ value: c, label: c === 1 ? '1 cor' : `${c} cores` }))
       : [];
 
     const sizeOptions: SizeOption[] = hasPriceByArea
       ? Array.from(
           tables
-            .filter(t => t.price_by_area && t.max_area_width_cm && t.max_area_height_cm)
+            .filter(hasAreaSize)
             .reduce((map, t) => {
               const key = `${t.max_area_width_cm}x${t.max_area_height_cm}`;
               if (!map.has(key)) {
                 map.set(key, {
                   value: key,
                   label: `${t.max_area_width_cm} × ${t.max_area_height_cm} cm`,
-                  width: t.max_area_width_cm!,
-                  height: t.max_area_height_cm!,
-                  areaCm2: t.max_area_width_cm! * t.max_area_height_cm!
+                  width: t.max_area_width_cm,
+                  height: t.max_area_height_cm,
+                  areaCm2: t.max_area_width_cm * t.max_area_height_cm,
                 });
               }
               return map;
             }, new Map<string, SizeOption>())
-            .values()
+            .values(),
         ).sort((a, b) => a.areaCm2 - b.areaCm2)
       : [];
 
-    const getTableForSelection = (colors: number, sizeValue: string | null): PriceTableEntry | null => {
+    const getTableForSelection = (
+      colors: number,
+      sizeValue: string | null,
+    ): PriceTableEntry | null => {
       let candidates = [...tables];
 
       if (hasPriceByColor && colors > 0) {
-        candidates = candidates.filter(t => t.price_by_color && t.max_colors && t.max_colors >= colors);
+        candidates = candidates.filter(
+          (t) => t.price_by_color && t.max_colors && t.max_colors >= colors,
+        );
         candidates.sort((a, b) => (a.max_colors || 0) - (b.max_colors || 0));
       }
 
       if (hasPriceByArea && sizeValue) {
         const [w, h] = sizeValue.split('x').map(Number);
-        candidates = candidates.filter(t => 
-          t.price_by_area && t.max_area_width_cm === w && t.max_area_height_cm === h
+        candidates = candidates.filter(
+          (t) => t.price_by_area && t.max_area_width_cm === w && t.max_area_height_cm === h,
         );
       }
 

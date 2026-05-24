@@ -40,7 +40,11 @@ import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLogo } from '@/components/layout/AppLogo';
 import { loginSchema, type LoginFormData } from '@/lib/validations';
+<<<<<<< HEAD
 import { authDebug, authDebugError } from '@/lib/auth/auth-debug';
+=======
+import { logger } from '@/lib/logger';
+>>>>>>> origin/main
 
 type LoginForm = LoginFormData;
 
@@ -139,17 +143,25 @@ export default function Auth() {
 
   // Fetch IP, geolocation and backend status
   useEffect(() => {
+    // Guarda de cancelamento: evita setState após o unmount do componente.
+    // Sem isso, os awaits de loadInfo podem resolver depois do teardown e
+    // disparar setDbStatus/setCurrentIP fora do ciclo de vida do React
+    // (em testes, isso vaza como "ReferenceError: window is not defined").
+    let cancelled = false;
+
     const loadInfo = async () => {
       // 1. IP Info
       try {
         const { data, error } = await supabase.functions.invoke('get-visitor-info');
-        if (!error && data) {
+        if (!cancelled && !error && data) {
           if (data.ip) setCurrentIP(data.ip);
           if (data.city) setGeoLocation(`${data.city}, ${data.country_code}`);
         }
       } catch {
         // silent fail
       }
+
+      if (cancelled) return;
 
       // 2. Principal Backend (Directly from env or client)
       const principalUrl =
@@ -172,6 +184,8 @@ export default function Auth() {
           body: { operation: 'ping' },
         });
 
+        if (cancelled) return;
+
         if (!error && data?.ok) {
           setDbStatus((prev) => ({
             ...prev,
@@ -184,13 +198,25 @@ export default function Auth() {
           }));
         } else {
           setDbStatus((prev) => ({ ...prev, external: { ok: false, loading: false } }));
+<<<<<<< HEAD
         }
       } catch {
         setDbStatus((prev) => ({ ...prev, external: { ok: false, loading: false } }));
+=======
+        }
+      } catch {
+        if (!cancelled) {
+          setDbStatus((prev) => ({ ...prev, external: { ok: false, loading: false } }));
+        }
+>>>>>>> origin/main
       }
     };
 
     loadInfo();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Redirect if already logged in (only on initial load)
@@ -241,8 +267,8 @@ export default function Auth() {
         navigate(resolveRedirectTargetCb(), { replace: true });
       }, 600);
       return true;
-    } catch (error) {
-      console.error('Validation error:', error);
+    } catch {
+      logger.warn('[AUTH_POST_LOGIN_VALIDATION] continuing with fail-open redirect');
       navigate(resolveRedirectTargetCb(), { replace: true }); // Fail-open
       return true;
     }
@@ -253,11 +279,18 @@ export default function Auth() {
     setIpBlocked(false);
 
     try {
+<<<<<<< HEAD
       authDebug('login:start', 'Tentativa de login', { email: data.email });
       const { error } = await signIn(data.email, data.password);
 
       if (error) {
         authDebugError('login:failed', 'Erro de autenticação', error);
+=======
+      const { error } = await signIn(data.email, data.password);
+
+      if (error) {
+        logger.warn('[AUTH_FAILED] Authentication failed', { status: error.status ?? 'unknown' });
+>>>>>>> origin/main
         await logLoginAttempt(data.email, null, false, error.message);
 
         let description = error.message;
@@ -312,8 +345,11 @@ export default function Auth() {
         return;
       }
 
+<<<<<<< HEAD
       authDebug('login:ok', 'Login bem-sucedido, validando sessão', { email: data.email });
 
+=======
+>>>>>>> origin/main
       // Credential Management API — pede ao navegador para salvar email/senha
       // após login bem-sucedido (Chrome/Edge/Brave). Silencioso se não suportado.
       try {
@@ -330,8 +366,13 @@ export default function Auth() {
           const cred = new CredCtor({ id: data.email, password: data.password, name: data.email });
           await navigator.credentials.store(cred);
         }
+<<<<<<< HEAD
       } catch (credErr) {
         authDebugError('login:cred-store', 'Não foi possível salvar credenciais', credErr);
+=======
+      } catch {
+        logger.warn('[AUTH_CRED_STORE] Credential store failed');
+>>>>>>> origin/main
       }
 
       const { data: sessionData } = await supabase.auth.getSession();
@@ -348,7 +389,10 @@ export default function Auth() {
       }
 
       // 1. Verificação detalhada de Perfil (is_active)
+<<<<<<< HEAD
       authDebug('login:session', 'Sessão iniciada, carregando perfil', { userId });
+=======
+>>>>>>> origin/main
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('is_active, role')
@@ -356,11 +400,17 @@ export default function Auth() {
         .single();
 
       if (profileError) {
+<<<<<<< HEAD
         authDebugError(
           'login:profile-failed',
           `Erro ao buscar perfil para ${userId}`,
           profileError,
         );
+=======
+        logger.error('[AUTH_PROFILE_FAILED] Failed to load authenticated profile', {
+          code: profileError.code ?? 'unknown',
+        });
+>>>>>>> origin/main
         const isRLSError = profileError.code === 'PGRST301' || profileError.code === '42501';
         toast({
           variant: 'destructive',
@@ -394,18 +444,29 @@ export default function Auth() {
         .eq('user_id', userId);
 
       if (rolesError || !rolesData || rolesData.length === 0) {
+<<<<<<< HEAD
         authDebug('login:rbac-warn', 'Usuário sem papéis (roles) atribuídos', {
           userId,
           rolesError,
         });
       } else {
         authDebug('login:rbac-ok', `Usuário possui ${rolesData.length} roles`, { userId });
+=======
+        logger.warn('[AUTH_RBAC_WARN] Authenticated user has no assigned roles', {
+          code: rolesError?.code ?? 'none',
+        });
+>>>>>>> origin/main
       }
 
       // 3. Validação final de IP e Redirecionamento
       await validateAndRedirect(userId, data.email);
+<<<<<<< HEAD
     } catch (err) {
       console.error('Login exception:', err);
+=======
+    } catch {
+      logger.error('[AUTH_LOGIN_EXCEPTION] Unexpected login exception');
+>>>>>>> origin/main
       toast({
         variant: 'destructive',
         title: 'Erro inesperado',

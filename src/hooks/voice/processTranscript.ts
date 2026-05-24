@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 import { supabase } from '@/integrations/supabase/client';
 import type { VoiceAgentAction } from './types';
+=======
+import { supabase } from "@/integrations/supabase/client";
+import type { VoiceAgentAction } from "./types";
+>>>>>>> origin/main
 
 /**
  * processVoiceTranscript — Sends transcript to AI and returns structured action.

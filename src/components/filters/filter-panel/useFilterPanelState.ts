@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useDebounce } from '@/hooks/common';
 import {
@@ -9,6 +10,13 @@ import {
 } from '@/hooks/products';
 import { useRamoAtividadeFilter } from '@/hooks/crm';
 import type { FilterState, FilterPanelProps } from './types';
+=======
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useDebounce } from "@/hooks/common";
+import { SORT_OPTIONS, useAdvancedFilters, useCategoryIcons, useMaterialFilter, useSuppliers } from "@/hooks/products";
+import { useRamoAtividadeFilter } from "@/hooks/crm";
+import type { FilterState, FilterPanelProps } from "./types";
+>>>>>>> origin/main
 
 export function useFilterPanelState(
   filters: FilterState,

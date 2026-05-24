@@ -231,8 +231,8 @@ Style: Professional commercial photography, advertising campaign quality, magazi
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("[ad-image] AI Gateway error:", response.status, errorText);
+      await response.text();
+      console.error("[ad-image] AI Gateway error:", { status: response.status });
 
       if (response.status === 429) {
         return new Response(

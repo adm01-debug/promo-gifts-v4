@@ -16,6 +16,7 @@ import { ProductSearch as UnifiedProductSearch } from './simulator/ProductSearch
 import { TechniqueMultiSelector } from './calculator/TechniqueMultiSelector';
 import { TechniqueConfigCard } from './calculator/TechniqueConfigCard';
 import { QuantityComparisonTable } from './calculator/QuantityComparisonTable';
+<<<<<<< HEAD
 import {
   type CalcProduct,
   type ProductTechnique,
@@ -23,6 +24,10 @@ import {
   formatNumber,
 } from './calculator/types';
 import type { Product as SimulatorProduct } from './simulator/types';
+=======
+import { type CalcProduct, type ProductTechnique, type SelectedTechniqueConfig, formatNumber } from "./calculator/types";
+import type { Product as SimulatorProduct } from "./simulator/types";
+>>>>>>> origin/main
 
 interface QuantityPriceCalculatorProps {
   productBasePrice?: number;

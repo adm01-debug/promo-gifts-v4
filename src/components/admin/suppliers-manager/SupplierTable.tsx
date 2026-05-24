@@ -11,7 +11,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Building2, Pencil, Trash2, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+<<<<<<< HEAD
 import type { Supplier } from './types';
+=======
+import type { Supplier } from "./types";
+>>>>>>> origin/main
 
 interface SupplierTableProps {
   suppliers: Supplier[];

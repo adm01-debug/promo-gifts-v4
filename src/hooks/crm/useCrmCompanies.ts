@@ -14,6 +14,7 @@ import {
 import { toast } from 'sonner';
 import { DEMO_COMPANY, isDemoClient } from '@/lib/bi/demoClient';
 import { logger } from '@/lib/logger';
+import { maskSensitiveText } from '@/lib/sensitive-masking';
 
 /**
  * Lista empresas do CRM com filtros opcionais
@@ -115,11 +116,11 @@ export function useCrmInfiniteCompanySelector() {
         };
       } catch (err) {
         const duration = Math.round(performance.now() - startedAt);
-        const msg = err instanceof Error ? err.message : String(err);
-        console.error('[CRM-DB] useCrmInfiniteCompanySelector: FALHA:', {
+        const msg =
+          maskSensitiveText(err instanceof Error ? err.message : String(err)) ?? 'unknown';
+        logger.error('[CRM-DB] useCrmInfiniteCompanySelector: FALHA', {
           message: msg,
           durationMs: duration,
-          error: err,
         });
         throw err;
       }
@@ -175,7 +176,9 @@ export function useCrmCompanySelector() {
           cnpj: c.cnpj,
         }));
       } catch (err) {
-        console.error('[CRM-DB] useCrmCompanySelector: FALHA:', err);
+        logger.error('[CRM-DB] useCrmCompanySelector: FALHA', {
+          message: maskSensitiveText(err instanceof Error ? err.message : String(err)) ?? 'unknown',
+        });
         toast.error('Não foi possível carregar a lista de empresas.');
         throw err;
       }

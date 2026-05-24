@@ -10,7 +10,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { useComparisonStore, type CompareVariantInfo } from '@/stores/useComparisonStore';
-import type { Product, ProductColor } from '@/types/product';
+import type { Product, ProductColor } from '@/types/product-catalog';
 import { useProductsContext } from '@/contexts/ProductsContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

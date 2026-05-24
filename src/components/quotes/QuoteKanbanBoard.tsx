@@ -1,6 +1,6 @@
-import { useMemo, useState, lazy, Suspense } from "react";
-import confetti from "canvas-confetti";
-import { useNavigate } from "react-router-dom";
+import { useMemo, useState } from 'react';
+import confetti from 'canvas-confetti';
+import { useNavigate } from 'react-router-dom';
 import {
   DndContext,
   type DragEndEvent,
@@ -11,13 +11,13 @@ import {
   useSensor,
   useSensors,
   closestCorners,
-} from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   FileText,
   Clock,
@@ -30,14 +30,14 @@ import {
   Calendar,
   Building2,
   GripVertical,
-} from "lucide-react";
-import { type Quote, useQuotes } from "@/hooks/quotes";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+} from 'lucide-react';
+import { type Quote, useQuotes } from '@/hooks/quotes';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
-type QuoteStatus = Quote["status"];
+type QuoteStatus = Quote['status'];
 
 interface Column {
   id: QuoteStatus;
@@ -49,53 +49,53 @@ interface Column {
 
 const columns: Column[] = [
   {
-    id: "draft",
-    title: "Rascunho",
+    id: 'draft',
+    title: 'Rascunho',
     icon: FileText,
-    color: "text-muted-foreground",
-    bgColor: "bg-muted/30",
+    color: 'text-muted-foreground',
+    bgColor: 'bg-muted/30',
   },
   {
-    id: "pending_approval" as QuoteStatus,
-    title: "Aguardando Aprovação",
+    id: 'pending_approval' as QuoteStatus,
+    title: 'Aguardando Aprovação',
     icon: AlertTriangle,
-    color: "text-amber-500",
-    bgColor: "bg-gradient-to-b from-amber-500/15 to-amber-500/5",
+    color: 'text-amber-500',
+    bgColor: 'bg-gradient-to-b from-amber-500/15 to-amber-500/5',
   },
   {
-    id: "pending",
-    title: "Pendente",
+    id: 'pending',
+    title: 'Pendente',
     icon: Clock,
-    color: "text-warning",
-    bgColor: "bg-warning/10",
+    color: 'text-warning',
+    bgColor: 'bg-warning/10',
   },
   {
-    id: "sent",
-    title: "Enviado",
+    id: 'sent',
+    title: 'Enviado',
     icon: Send,
-    color: "text-info",
-    bgColor: "bg-info/10",
+    color: 'text-info',
+    bgColor: 'bg-info/10',
   },
   {
-    id: "approved",
-    title: "Aprovado",
+    id: 'approved',
+    title: 'Aprovado',
     icon: CheckCircle,
-    color: "text-success",
-    bgColor: "bg-success/10",
+    color: 'text-success',
+    bgColor: 'bg-success/10',
   },
   {
-    id: "rejected",
-    title: "Rejeitado",
+    id: 'rejected',
+    title: 'Rejeitado',
     icon: XCircle,
-    color: "text-destructive",
-    bgColor: "bg-destructive/10",
+    color: 'text-destructive',
+    bgColor: 'bg-destructive/10',
   },
   {
-    id: "expired",
-    title: "Expirado",
+    id: 'expired',
+    title: 'Expirado',
     icon: AlertTriangle,
-    color: "text-muted-foreground",
-    bgColor: "bg-muted/20",
+    color: 'text-muted-foreground',
+    bgColor: 'bg-muted/20',
   },
 ];
 
@@ -108,32 +108,31 @@ function QuoteCard({ quote, isDragging }: QuoteCardProps) {
   const navigate = useNavigate();
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
     }).format(value);
   };
 
   return (
     <Card
       className={cn(
-        "cursor-grab active:cursor-grabbing transition-all duration-200",
-        "bg-card hover:bg-accent/50 border-border/50",
-        isDragging && "opacity-50 shadow-lg ring-2 ring-primary",
-        quote.status === "pending_approval" && "border-amber-500/40 ring-1 ring-amber-500/10"
+        'cursor-grab transition-all duration-200 active:cursor-grabbing',
+        'border-border/50 bg-card hover:bg-accent/50',
+        isDragging && 'opacity-50 shadow-lg ring-2 ring-primary',
+        quote.status === 'pending_approval' && 'border-amber-500/40 ring-1 ring-amber-500/10',
       )}
     >
-      <CardContent className="p-3 space-y-2">
+      <CardContent className="space-y-2 p-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <GripVertical className="h-4 w-4 text-muted-foreground" />
-            <span className="font-mono text-xs text-primary font-medium">
-              {quote.quote_number}
-            </span>
+            <span className="font-mono text-xs font-medium text-primary">{quote.quote_number}</span>
           </div>
           <Button
             variant="ghost"
-            size="icon" aria-label="Visualizar"
+            size="icon"
+            aria-label="Visualizar"
             className="h-6 w-6"
             onClick={(e) => {
               e.stopPropagation();
@@ -159,14 +158,14 @@ function QuoteCard({ quote, isDragging }: QuoteCardProps) {
           {quote.created_at && (
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Calendar className="h-3 w-3" />
-              {format(new Date(quote.created_at), "dd/MM", { locale: ptBR })}
+              {format(new Date(quote.created_at), 'dd/MM', { locale: ptBR })}
             </div>
           )}
         </div>
 
         {quote.valid_until && (
           <div className="text-xs text-muted-foreground">
-            Válido até: {format(new Date(quote.valid_until), "dd/MM/yyyy", { locale: ptBR })}
+            Válido até: {format(new Date(quote.valid_until), 'dd/MM/yyyy', { locale: ptBR })}
           </div>
         )}
       </CardContent>
@@ -179,14 +178,10 @@ interface SortableQuoteCardProps {
 }
 
 function SortableQuoteCard({ quote }: SortableQuoteCardProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: quote.id! });
+  const sortableId = quote.id ?? `quote-${quote.quote_number}`;
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: sortableId,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -208,46 +203,42 @@ interface KanbanColumnProps {
 
 function KanbanColumn({ column, quotes, totalValue }: KanbanColumnProps) {
   const Icon = column.icon;
+  const sortableQuoteIds = quotes.map((q) => q.id).filter((id): id is string => Boolean(id));
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
   };
 
   return (
-    <div className="flex flex-col min-w-[280px] max-w-[320px]">
-      <Card className={cn("mb-3", column.bgColor, "border-border/30")}>
+    <div className="flex min-w-[280px] max-w-[320px] flex-col">
+      <Card className={cn('mb-3', column.bgColor, 'border-border/30')}>
         <CardHeader className="p-3 pb-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Icon className={cn("h-4 w-4", column.color)} />
+              <Icon className={cn('h-4 w-4', column.color)} />
               <CardTitle className="text-sm font-medium">{column.title}</CardTitle>
             </div>
             <Badge variant="secondary" className="text-xs">
               {quotes.length}
             </Badge>
           </div>
-          <div className="text-xs text-muted-foreground">
-            {formatCurrency(totalValue)}
-          </div>
+          <div className="text-xs text-muted-foreground">{formatCurrency(totalValue)}</div>
         </CardHeader>
       </Card>
 
-      <ScrollArea className="flex-1 min-h-[400px] max-h-[calc(100vh-320px)]">
-        <SortableContext
-          items={quotes.map((q) => q.id!)}
-          strategy={verticalListSortingStrategy}
-        >
+      <ScrollArea className="max-h-[calc(100vh-320px)] min-h-[400px] flex-1">
+        <SortableContext items={sortableQuoteIds} strategy={verticalListSortingStrategy}>
           <div className="space-y-2 p-1">
             {quotes.map((quote) => (
               <SortableQuoteCard key={quote.id} quote={quote} />
             ))}
             {quotes.length === 0 && (
-              <div className="text-center text-muted-foreground text-sm py-8 border border-dashed border-border/50 rounded-lg">
+              <div className="rounded-lg border border-dashed border-border/50 py-8 text-center text-sm text-muted-foreground">
                 Nenhum orçamento
               </div>
             )}
@@ -271,7 +262,7 @@ export function QuoteKanbanBoard({ quotes }: QuoteKanbanBoardProps) {
       activationConstraint: {
         distance: 8,
       },
-    })
+    }),
   );
 
   const quotesByStatus = useMemo(() => {
@@ -319,7 +310,7 @@ export function QuoteKanbanBoard({ quotes }: QuoteKanbanBoardProps) {
     setActiveQuote(quote || null);
   };
 
-  const handleDragOver = (event: DragOverEvent) => {
+  const handleDragOver = (_event: DragOverEvent) => {
     // Handled on drag end for simplicity
   };
 
@@ -350,34 +341,35 @@ export function QuoteKanbanBoard({ quotes }: QuoteKanbanBoardProps) {
     if (targetStatus && targetStatus !== activeQuote.status) {
       // Validate status transitions
       const validTransitions: Record<string, QuoteStatus[]> = {
-        draft: ["pending", "sent"],
-        pending_approval: ["draft"], // Admin approves/rejects → back to draft
-        pending: ["draft", "sent", "expired"],
-        sent: ["approved", "rejected", "pending", "expired"],
-        approved: ["sent"],
-        rejected: ["sent"],
-        expired: ["pending", "sent"],
+        draft: ['pending', 'sent'],
+        pending_approval: ['draft'], // Admin approves/rejects → back to draft
+        pending: ['draft', 'sent', 'expired'],
+        sent: ['approved', 'rejected', 'pending', 'expired'],
+        approved: ['sent'],
+        rejected: ['sent'],
+        expired: ['pending', 'sent'],
       };
 
       if (!validTransitions[activeQuote.status]?.includes(targetStatus)) {
-        toast.error("Transição inválida", {
-          description: `Não é possível mover de "${columns.find(c => c.id === activeQuote.status)?.title}" para "${columns.find(c => c.id === targetStatus)?.title}"`,
+        toast.error('Transição inválida', {
+          description: `Não é possível mover de "${columns.find((c) => c.id === activeQuote.status)?.title}" para "${columns.find((c) => c.id === targetStatus)?.title}"`,
         });
         return;
       }
 
-      const success = await updateQuoteStatus(activeQuote.id!, targetStatus);
+      if (!activeQuote.id) return;
+      const success = await updateQuoteStatus(activeQuote.id, targetStatus);
       if (success) {
-        toast.success("Status atualizado!", {
-          description: `Orçamento movido para "${columns.find(c => c.id === targetStatus)?.title}"`,
+        toast.success('Status atualizado!', {
+          description: `Orçamento movido para "${columns.find((c) => c.id === targetStatus)?.title}"`,
         });
         // 🎉 Celebration when quote is approved
-        if (targetStatus === "approved") {
+        if (targetStatus === 'approved') {
           confetti({
             particleCount: 80,
             spread: 60,
             origin: { y: 0.7 },
-            colors: ["hsl(25, 100%, 50%)", "hsl(142, 71%, 45%)", "hsl(217, 91%, 60%)"],
+            colors: ['hsl(25, 100%, 50%)', 'hsl(142, 71%, 45%)', 'hsl(217, 91%, 60%)'],
           });
         }
       }
@@ -403,9 +395,7 @@ export function QuoteKanbanBoard({ quotes }: QuoteKanbanBoardProps) {
         ))}
       </div>
 
-      <DragOverlay>
-        {activeQuote && <QuoteCard quote={activeQuote} isDragging />}
-      </DragOverlay>
+      <DragOverlay>{activeQuote && <QuoteCard quote={activeQuote} isDragging />}</DragOverlay>
     </DndContext>
   );
 }

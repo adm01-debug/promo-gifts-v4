@@ -51,7 +51,7 @@ export function TechniqueSelector({
     setSelectedComponent(null);
     setSelectedLocation(null);
     onSelect(null);
-  }, [productId]);
+  }, [productId, onSelect]);
 
   const handleComponentSelect = (comp: ComponentData) => {
     setSelectedComponent(comp);
@@ -62,7 +62,11 @@ export function TechniqueSelector({
     }
   };
 
-  const handleLocationSelect = (loc: LocationData, comp: ComponentData = selectedComponent!) => {
+  const handleLocationSelect = (
+    loc: LocationData,
+    comp: ComponentData | null = selectedComponent,
+  ) => {
+    if (!comp) return;
     setSelectedLocation(loc);
     onSelect(null);
     const primaryTech = loc.techniques.find((t) => t.isPrimary);
@@ -74,9 +78,16 @@ export function TechniqueSelector({
 
   const handleTechniqueSelect = (
     tech: TechniqueData,
+<<<<<<< HEAD
     loc: LocationData = selectedLocation!,
     comp: ComponentData = selectedComponent!,
+=======
+    loc: LocationData | null = selectedLocation,
+    comp: ComponentData | null = selectedComponent,
+>>>>>>> origin/main
   ) => {
+    if (!loc || !comp) return;
+
     const fullTechnique: ProductTechnique = {
       id: tech.id,
       techniqueCode: tech.techniqueCode,

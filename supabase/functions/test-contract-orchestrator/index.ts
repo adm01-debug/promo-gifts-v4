@@ -1,3 +1,4 @@
+import { createStructuredLogger } from "../_shared/structured-logger.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { encodeHex } from "https://deno.land/std@0.224.0/encoding/hex.ts";
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
@@ -23,7 +24,21 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   const results = [];
-  const SIM_BYPASS = "a46c3981-244a-4f81-9f57-bab5c45b5cde";
+
+  // SIMULATION_BYPASS_KEY: resolvido via vault/env, nunca hardcoded.
+  // Se não estiver configurado, este orchestrator não consegue executar
+  // os contratos que exigem bypass — devolve 503 explícito (fail-closed).
+  const bypassRes = await resolveCredential("SIMULATION_BYPASS_KEY", supabase);
+  const SIM_BYPASS = bypassRes.value;
+  if (!SIM_BYPASS) {
+    return new Response(
+      JSON.stringify({
+        error: "service_misconfigured",
+        message: "SIMULATION_BYPASS_KEY não configurado em integration_credentials nem em env. Este orchestrator exige bypass para chamar bridges internas.",
+      }),
+      { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
 
   try {
     // 1. Testar external-db-bridge (Operação de Select Mocado ou Simples)
@@ -48,10 +63,8 @@ Deno.serve(async (req) => {
     const inboundStart = performance.now();
     try {
       const payload = { event: "test", data: { ping: "pong" } };
-      // Usar o segredo que inserimos no DB via resolveCredential para assinar corretamente
-      const secretRes = await resolveCredential("SIMULATION_BYPASS_KEY", supabase);
-      const secret = secretRes.value || SIM_BYPASS;
-      const signature = "sha256=" + await hmacSign(JSON.stringify(payload), secret);
+      // Usar o mesmo segredo já resolvido para assinar (consistente com o endpoint mockado).
+      const signature = "sha256=" + await hmacSign(JSON.stringify(payload), SIM_BYPASS);
 
       
       // Criar endpoint de teste se não existir

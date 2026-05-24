@@ -18,6 +18,8 @@ interface Props {
   showWhenValid?: boolean;
   /** Mostra o sufixo formatado ao lado do ícone (default: true). */
   showSuffix?: boolean;
+  /** Tooltip nativo (title) opcional — ex.: "atualizado em/por". */
+  tooltip?: string;
   className?: string;
 }
 
@@ -37,6 +39,7 @@ export function MaskedSuffixBadge({
   length,
   showWhenValid = false,
   showSuffix = true,
+  tooltip,
   className,
 }: Props) {
   const diagnosis = diagnoseMaskedSuffix(suffix, { secretName });
@@ -50,6 +53,7 @@ export function MaskedSuffixBadge({
       <span
         className={cn('font-mono text-xs tabular-nums text-muted-foreground', className)}
         aria-label={diagnosis.message}
+        title={tooltip}
       >
         {display}
       </span>

@@ -6,9 +6,13 @@
  * (ver docs/redeploy/REDEPLOY-T3-MIGRATIONS-AUDIT.md).
  *
  * Allowlist:
- *   - Entradas terminadas em '/' são tratadas como diretórios (prefix match)
+ *   - Entradas terminadas em '/' são tratadas como diretórios (prefix match).
+ *     Use para pastas de DOCUMENTAÇÃO onde nada é executável (apenas .md).
  *   - Entradas sem '/' final exigem igualdade exata (evita bypass via
- *     `DEPLOYMENT.md.tmp`, `DEPLOYMENT.md.bak` etc.)
+ *     `DEPLOYMENT.md.tmp`, `DEPLOYMENT.md.bak` etc.). Use para arquivos
+ *     pontuais e principalmente para migrations .sql, que devem ser
+ *     liberadas uma a uma após revisão manual (uma migration que cite o
+ *     comando proibido em comentário precisa de aprovação humana).
  *
  * Busca usa regex ERE com whitespace livre para pegar variações como
  * `supabase   db   push` (espaços múltiplos, tabs). Quebra de linha
@@ -18,33 +22,44 @@
 import { execSync } from 'node:child_process';
 
 const ALLOWLIST = [
-  // Docs/scripts que explicitamente proíbem ou mencionam o comando:
+  // ─── Docs operacionais que explicitamente PROÍBEM ou mencionam o comando ──
   'docs/DEPLOYMENT.md',
-  'docs/redeploy/REDEPLOY-T3-MIGRATIONS-AUDIT.md',
-  'docs/redeploy/REDEPLOY-FASE2-EXECUTION-LOG.md',
-  'docs/redeploy/REDEPLOY-FASE3-FINAL.md',
   'supabase/MIGRATIONS_README.md',
   'recovery/agent-db/tasks/FASE_0_setup.md',
   'recovery/analysis/ACHADO_ZERO_OVERLAP_MIGRATIONS.md',
-  // CONTRIBUTING e ADR explicam a proibição (não são guia operacional):
+
+  // ─── CONTRIBUTING e ADR explicam a proibição (não são guia operacional) ──
   'CONTRIBUTING.md',
   'docs/adr/0006-migration-baseline.md',
-  // CHANGELOG cita o comando ao descrever a proibição da Fase 2:
+
+  // ─── CHANGELOG cita o comando ao descrever a proibição da Fase 2 ──
   'CHANGELOG.md',
-  // Auditoria de redeploy gerada automaticamente (documenta o desync, não é guia operacional):
-  // Diretórios de histórico/auditoria (não são guia operacional ativo):
+
+  // ─── Diretórios de DOCUMENTAÇÃO (apenas .md, nada executável) ──
+  // - docs/historico/  : auditorias antigas (documenta o desync)
+  // - docs/sessoes/    : transcrições de sessões anteriores
+  // - docs/hardening/  : ondas de hardening (mencionam o comando como anti-padrão)
+  // - docs/redeploy/   : manuais, READMEs e logs de execução do redeploy
+  //                      (Decision 010 / Lovable→Oficial — todos citam o comando como proibido)
   'docs/historico/',
   'docs/sessoes/',
-  // Arquivo de auditoria na raiz (menciona o comando como proibição):
-  'AUDITORIA_REDEPLOY_PROMO_GIFTS_2026-05-13_15-32 (1).md',
-  // Auto-referências:
-  'scripts/check-no-db-push.mjs',
-  'scripts/gen-migrations-readme.mjs',
-  // Relatorios de auditoria (referenciam o comando ao descrever o problema):
+  'docs/hardening/',
+  'docs/redeploy/',
+
+  // ─── Auditorias de raiz e auditorias independentes ──
   'AUDITORIA_REDEPLOY_PROMO_GIFTS_2026-05-13_15-32 (1).md',
   'docs/AUDITORIA_INDEPENDENTE_PRE_PRODUCAO_2026-05-13.md',
   'docs/AUDIT_INDEPENDENTE.md',
-  'docs/hardening/',
+
+  // ─── Auto-referências dos próprios scripts ──
+  'scripts/check-no-db-push.mjs',
+  'scripts/gen-migrations-readme.mjs',
+
+  // ─── Migrations .sql que citam o comando em COMENTÁRIO ──
+  // Política: liberar UMA POR UMA após revisão humana. Nunca usar prefix
+  // 'supabase/migrations/' aqui — uma migration nova com `supabase db push`
+  // em comentário deve forçar o autor a justificar e pedir entrada explícita.
+  'supabase/migrations/20260522155000_align_wave_3_5_2_lovable_uuid_casts.sql',
 ];
 
 function isAllowed(path) {

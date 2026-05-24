@@ -34,27 +34,47 @@ export function selectBestTable(
 
   // Filtrar por nome da técnica
   if (criteria.techniqueName) {
+<<<<<<< HEAD
     const byName = candidates.filter((t) =>
       t.techniqueName.toLowerCase().includes(criteria.techniqueName!.toLowerCase()),
+=======
+    const techniqueName = criteria.techniqueName.toLowerCase();
+    const byName = candidates.filter((t) =>
+      t.techniqueName.toLowerCase().includes(techniqueName),
+>>>>>>> origin/main
     );
     if (byName.length > 0) candidates = byName;
   }
 
   // Filtrar por código da técnica
   if (criteria.techniqueCode) {
+<<<<<<< HEAD
     const byCode = candidates.filter(
       (t) =>
         t.tableCode.toLowerCase().includes(criteria.techniqueCode!.toLowerCase()) ||
         criteria.techniqueCode!.toLowerCase().includes(t.tableCode.toLowerCase()),
+=======
+    const techniqueCode = criteria.techniqueCode.toLowerCase();
+    const byCode = candidates.filter(
+      (t) =>
+        t.tableCode.toLowerCase().includes(techniqueCode) ||
+        techniqueCode.includes(t.tableCode.toLowerCase()),
+>>>>>>> origin/main
     );
     if (byCode.length > 0) candidates = byCode;
   }
 
   // Ordenar por número de cores (preferir a que atende exatamente)
   if (criteria.colors) {
+    const colors = criteria.colors;
     candidates.sort((a, b) => {
+<<<<<<< HEAD
       const aFits = a.maxColors !== null && a.maxColors >= criteria.colors!;
       const bFits = b.maxColors !== null && b.maxColors >= criteria.colors!;
+=======
+      const aFits = a.maxColors !== null && a.maxColors >= colors;
+      const bFits = b.maxColors !== null && b.maxColors >= colors;
+>>>>>>> origin/main
 
       if (aFits && !bFits) return -1;
       if (!aFits && bFits) return 1;
@@ -71,10 +91,19 @@ export function selectBestTable(
 
   // Filtrar por dimensões
   if (criteria.widthCm && criteria.heightCm) {
+<<<<<<< HEAD
     const byDimensions = candidates.filter(
       (t) =>
         (t.maxWidthCm === null || t.maxWidthCm >= criteria.widthCm!) &&
         (t.maxHeightCm === null || t.maxHeightCm >= criteria.heightCm!),
+=======
+    const widthCm = criteria.widthCm;
+    const heightCm = criteria.heightCm;
+    const byDimensions = candidates.filter(
+      (t) =>
+        (t.maxWidthCm === null || t.maxWidthCm >= widthCm) &&
+        (t.maxHeightCm === null || t.maxHeightCm >= heightCm),
+>>>>>>> origin/main
     );
     if (byDimensions.length > 0) candidates = byDimensions;
   }
@@ -109,7 +138,7 @@ export function groupTablesByTechnique(tables: PriceTableInput[]): Map<string, P
     if (!grouped.has(key)) {
       grouped.set(key, []);
     }
-    grouped.get(key)!.push(table);
+    grouped.get(key)?.push(table);
   }
 
   return grouped;

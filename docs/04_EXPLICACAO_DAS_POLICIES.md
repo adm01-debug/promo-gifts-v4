@@ -1,7 +1,8 @@
 # 🔐 Explicação das Policies (RLS)
 
-> **Sistema Multi-tenant Gifts Store**  
-> Guia completo de todas as 80+ policies de Row Level Security
+> **Sistema Multi-tenant Gifts Store**
+> Guia das ~662 policies de Row Level Security ativas em 269 tabelas (100% das tabelas em `public` têm RLS habilitado — gate de CI bloqueia regressão).
+> Última atualização: 2026-05-22 (DOC-001).
 
 ---
 

@@ -2,7 +2,11 @@ import { Box, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+<<<<<<< HEAD
 import type { KitComponent, BoxInternalDimensions } from './types';
+=======
+import type { KitComponent, BoxInternalDimensions } from "./types";
+>>>>>>> origin/main
 
 export function VolumeValidation({
   components,

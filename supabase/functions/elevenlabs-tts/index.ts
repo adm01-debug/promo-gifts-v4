@@ -96,8 +96,8 @@ Deno.serve(async (req) => {
     );
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('ElevenLabs TTS error:', response.status, errorText);
+      await response.text();
+      console.error('ElevenLabs TTS error:', { status: response.status });
 
       if (response.status === 429) {
         return new Response(

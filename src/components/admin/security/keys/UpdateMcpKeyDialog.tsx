@@ -12,18 +12,23 @@
  *  - Para edições que NÃO promovem a FULL, o step-up não é necessário e a
  *    chamada vai direta.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from 'react';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Pencil, ShieldAlert } from "lucide-react";
-import { toast } from "sonner";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Pencil, ShieldAlert } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   KNOWN_SCOPES,
   FULL_SCOPE,
@@ -33,14 +38,14 @@ import {
   FULL_SCOPE_MAX_TTL_DAYS,
   isFullAccess,
   type McpScope,
-} from "@/lib/mcp/scopes";
-import { useCanGrantMcpFull } from "./useCanGrantMcpFull";
-import { sanitizeError } from "@/lib/security/sanitize-error";
-import { useDevChallenge } from "@/contexts/DevChallengeContext";
-import { invokeFullScopeFunction } from "@/lib/auth/invoke-full-scope";
-import { supabase } from "@/integrations/supabase/client";
-import { handleStepUpError } from "@/lib/auth/step-up-error";
-import type { McpKeyRow } from "./useMcpKeys";
+} from '@/lib/mcp/scopes';
+import { useCanGrantMcpFull } from './useCanGrantMcpFull';
+import { sanitizeError } from '@/lib/security/sanitize-error';
+import { useDevChallenge } from '@/contexts/DevChallengeContext';
+import { invokeFullScopeFunction } from '@/lib/auth/invoke-full-scope';
+import { supabase } from '@/integrations/supabase/client';
+import { handleStepUpError } from '@/lib/auth/step-up-error';
+import type { McpKeyRow } from './useMcpKeys';
 
 interface Props {
   source: McpKeyRow | null;
@@ -50,27 +55,27 @@ interface Props {
 }
 
 function isoToLocalInput(iso: string | null): string {
-  if (!iso) return "";
+  if (!iso) return '';
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  const pad = (n: number) => n.toString().padStart(2, "0");
+  if (Number.isNaN(d.getTime())) return '';
+  const pad = (n: number) => n.toString().padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function isoDaysFromNow(days: number): string {
   const d = new Date();
   d.setDate(d.getDate() + days);
-  const pad = (n: number) => n.toString().padStart(2, "0");
+  const pad = (n: number) => n.toString().padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 export function UpdateMcpKeyDialog({ source, open, onOpenChange, onUpdated }: Props) {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
   const [scopes, setScopes] = useState<McpScope[]>([]);
-  const [expiresLocal, setExpiresLocal] = useState("");
-  const [justification, setJustification] = useState("");
-  const [confirmation, setConfirmation] = useState("");
+  const [expiresLocal, setExpiresLocal] = useState('');
+  const [justification, setJustification] = useState('');
+  const [confirmation, setConfirmation] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const { canGrant: canGrantFull, loading: grantorLoading } = useCanGrantMcpFull();
@@ -80,11 +85,11 @@ export function UpdateMcpKeyDialog({ source, open, onOpenChange, onUpdated }: Pr
   useEffect(() => {
     if (!open || !source) return;
     setName(source.name);
-    setDescription(source.description ?? "");
+    setDescription(source.description ?? '');
     setScopes((source.scopes ?? []) as McpScope[]);
     setExpiresLocal(isoToLocalInput(source.expires_at));
-    setJustification("");
-    setConfirmation("");
+    setJustification('');
+    setConfirmation('');
     setSubmitting(false);
   }, [open, source]);
 
@@ -105,12 +110,12 @@ export function UpdateMcpKeyDialog({ source, open, onOpenChange, onUpdated }: Pr
 
   const validation = useMemo(() => {
     if (!source) return null;
-    if (name.trim().length < 3) return "Nome precisa ter ao menos 3 caracteres.";
-    if (scopes.length === 0) return "Selecione ao menos um escopo.";
+    if (name.trim().length < 3) return 'Nome precisa ter ao menos 3 caracteres.';
+    if (scopes.length === 0) return 'Selecione ao menos um escopo.';
     if (escalating) {
-      if (!expiresLocal) return "Chaves FULL exigem data de expiração.";
+      if (!expiresLocal) return 'Chaves FULL exigem data de expiração.';
       const exp = new Date(expiresLocal).getTime();
-      if (Number.isNaN(exp) || exp <= Date.now()) return "Expiração precisa ser no futuro.";
+      if (Number.isNaN(exp) || exp <= Date.now()) return 'Expiração precisa ser no futuro.';
       const maxMs = FULL_SCOPE_MAX_TTL_DAYS * 24 * 60 * 60 * 1000;
       if (exp - Date.now() > maxMs) return `Janela máxima é ${FULL_SCOPE_MAX_TTL_DAYS} dias.`;
       if (justification.trim().length < FULL_SCOPE_MIN_JUSTIFICATION) {
@@ -124,21 +129,23 @@ export function UpdateMcpKeyDialog({ source, open, onOpenChange, onUpdated }: Pr
   }, [source, name, scopes, escalating, expiresLocal, justification, confirmation]);
 
   /** Body comum enviado para mcp-keys-update. */
-  const buildBody = (): Record<string, unknown> => ({
-    key_id: source!.id,
-    name: name.trim() !== source!.name ? name.trim() : undefined,
-    description: description.trim() !== (source!.description ?? "")
-      ? (description.trim() || null)
-      : undefined,
-    scopes,
-    expires_at: expiresLocal ? new Date(expiresLocal).toISOString() : null,
-    justification: escalating ? justification.trim() : null,
-    confirmation_phrase: escalating ? confirmation : null,
-  });
+  const buildBody = (): Record<string, unknown> | null => {
+    if (!source) return null;
+    return {
+      key_id: source.id,
+      name: name.trim() !== source.name ? name.trim() : undefined,
+      description:
+        description.trim() !== (source.description ?? '') ? description.trim() || null : undefined,
+      scopes,
+      expires_at: expiresLocal ? new Date(expiresLocal).toISOString() : null,
+      justification: escalating ? justification.trim() : null,
+      confirmation_phrase: escalating ? confirmation : null,
+    };
+  };
 
   const handleSuccess = (data: { ok?: boolean; escalated_to_full?: boolean }) => {
     toast.success(
-      data?.escalated_to_full ? "Chave atualizada e escalada para FULL" : "Chave atualizada",
+      data?.escalated_to_full ? 'Chave atualizada e escalada para FULL' : 'Chave atualizada',
     );
     onUpdated();
     onOpenChange(false);
@@ -150,6 +157,8 @@ export function UpdateMcpKeyDialog({ source, open, onOpenChange, onUpdated }: Pr
       return;
     }
     if (!source) return;
+    const body = buildBody();
+    if (!body) return;
     setSubmitting(true);
     try {
       if (escalating) {
@@ -159,30 +168,37 @@ export function UpdateMcpKeyDialog({ source, open, onOpenChange, onUpdated }: Pr
           { ok: boolean; escalated_to_full?: boolean }
         >({
           challenge,
-          functionName: "mcp-keys-update",
-          action: "mcp_full_escalate",
+          functionName: 'mcp-keys-update',
+          action: 'mcp_full_escalate',
           actionLabel: `Escalar chave MCP "${source.name}" para FULL`,
           targetRef: source.id,
-          body: buildBody(),
+          body,
         });
-        if (result.status === "cancelled" || result.status === "step_up_error") return;
-        if (result.status === "error") {
-          toast.error("Falha ao atualizar chave", { description: sanitizeError(result.error ?? result.data) });
+        if (result.status === 'cancelled' || result.status === 'step_up_error') return;
+        if (result.status === 'error') {
+          toast.error('Falha ao atualizar chave', {
+            description: sanitizeError(result.error ?? result.data),
+          });
           return;
         }
         handleSuccess(result.data);
       } else {
         // Edição comum: chamada direta (sem step-up).
-        const { data, error } = await supabase.functions.invoke("mcp-keys-update", {
-          body: { ...buildBody(), step_up_token: null },
+        const { data, error } = await supabase.functions.invoke('mcp-keys-update', {
+          body: { ...body, step_up_token: null },
         });
-        if (handleStepUpError(data, error, () => { void handleSubmit(); })) return;
+        if (
+          handleStepUpError(data, error, () => {
+            void handleSubmit();
+          })
+        )
+          return;
         if (error) {
-          toast.error("Falha ao atualizar chave", { description: sanitizeError(error) });
+          toast.error('Falha ao atualizar chave', { description: sanitizeError(error) });
           return;
         }
         if (!data?.ok) {
-          toast.error("Não foi possível atualizar a chave", { description: sanitizeError(data) });
+          toast.error('Não foi possível atualizar a chave', { description: sanitizeError(data) });
           return;
         }
         handleSuccess(data);
@@ -199,14 +215,14 @@ export function UpdateMcpKeyDialog({ source, open, onOpenChange, onUpdated }: Pr
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Pencil className="h-5 w-5" /> Editar chave MCP
             </DialogTitle>
             <DialogDescription>
-              <code className="font-mono text-xs">{source.key_prefix}…</code> ·{" "}
-              alterações ficam registradas no audit log.
+              <code className="font-mono text-xs">{source.key_prefix}…</code> · alterações ficam
+              registradas no audit log.
             </DialogDescription>
           </DialogHeader>
 
@@ -234,7 +250,7 @@ export function UpdateMcpKeyDialog({ source, open, onOpenChange, onUpdated }: Pr
             </div>
 
             <div>
-              <Label className="block mb-2">Escopos</Label>
+              <Label className="mb-2 block">Escopos</Label>
               <div className="flex flex-wrap gap-2">
                 {KNOWN_SCOPES.map((s) => {
                   const active = scopes.includes(s);
@@ -247,25 +263,26 @@ export function UpdateMcpKeyDialog({ source, open, onOpenChange, onUpdated }: Pr
                       onClick={() => handleScopeToggle(s)}
                       disabled={lock}
                       className={[
-                        "px-2 py-1 rounded text-xs border font-mono transition",
+                        'rounded border px-2 py-1 font-mono text-xs transition',
                         lock
-                          ? "bg-muted text-muted-foreground border-border cursor-not-allowed opacity-60"
+                          ? 'cursor-not-allowed border-border bg-muted text-muted-foreground opacity-60'
                           : active
                             ? isFull
-                              ? "bg-destructive text-destructive-foreground border-destructive"
-                              : "bg-primary text-primary-foreground border-primary"
-                            : "bg-background border-border hover:border-primary/40",
-                      ].join(" ")}
+                              ? 'border-destructive bg-destructive text-destructive-foreground'
+                              : 'border-primary bg-primary text-primary-foreground'
+                            : 'border-border bg-background hover:border-primary/40',
+                      ].join(' ')}
                     >
                       {s}
-                      {lock && " 🔒"}
+                      {lock && ' 🔒'}
                     </button>
                   );
                 })}
               </div>
               {fullLockedForUser && (
                 <p className="mt-2 text-[11px] text-muted-foreground">
-                  🔒 Você não pode escalar esta chave para <code className="font-mono">*</code> (FULL).
+                  🔒 Você não pode escalar esta chave para <code className="font-mono">*</code>{' '}
+                  (FULL).
                 </p>
               )}
             </div>
@@ -280,10 +297,10 @@ export function UpdateMcpKeyDialog({ source, open, onOpenChange, onUpdated }: Pr
                 value={expiresLocal}
                 onChange={(e) => setExpiresLocal(e.target.value)}
               />
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="mt-1 text-xs text-muted-foreground">
                 {willBeFull
                   ? `Obrigatório para chave FULL. Máx ${FULL_SCOPE_MAX_TTL_DAYS} dias.`
-                  : "Em branco = sem expiração."}
+                  : 'Em branco = sem expiração.'}
               </p>
             </div>
 
@@ -294,9 +311,9 @@ export function UpdateMcpKeyDialog({ source, open, onOpenChange, onUpdated }: Pr
                   Escalando para acesso total <Badge variant="destructive">*</Badge>
                 </AlertTitle>
                 <AlertDescription>
-                  Esta alteração concede <strong>acesso total</strong> ao MCP.
-                  Exige justificativa, confirmação e <strong>verificação dupla</strong>{" "}
-                  (senha + código por e-mail) antes de ser aplicada.
+                  Esta alteração concede <strong>acesso total</strong> ao MCP. Exige justificativa,
+                  confirmação e <strong>verificação dupla</strong> (senha + código por e-mail) antes
+                  de ser aplicada.
                 </AlertDescription>
               </Alert>
             )}
@@ -315,9 +332,9 @@ export function UpdateMcpKeyDialog({ source, open, onOpenChange, onUpdated }: Pr
                     maxLength={1000}
                     placeholder="Por que esta chave precisa virar FULL agora?"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {justification.length}/{FULL_SCOPE_MIN_JUSTIFICATION} mínimo —
-                    registrada no audit log.
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {justification.length}/{FULL_SCOPE_MIN_JUSTIFICATION} mínimo — registrada no
+                    audit log.
                   </p>
                 </div>
                 <div>
@@ -345,10 +362,10 @@ export function UpdateMcpKeyDialog({ source, open, onOpenChange, onUpdated }: Pr
               disabled={submitting || !!validation || fullLockedForUser}
             >
               {submitting
-                ? "Salvando…"
+                ? 'Salvando…'
                 : escalating
-                  ? "Verificar e escalar para FULL"
-                  : "Salvar alterações"}
+                  ? 'Verificar e escalar para FULL'
+                  : 'Salvar alterações'}
             </Button>
           </DialogFooter>
         </DialogContent>

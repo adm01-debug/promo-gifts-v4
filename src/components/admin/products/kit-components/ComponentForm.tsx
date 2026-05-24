@@ -6,7 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
+<<<<<<< HEAD
 import type { ComponentFormData } from './types';
+=======
+import type { ComponentFormData } from "./types";
+>>>>>>> origin/main
 
 interface Props {
   initial: ComponentFormData;

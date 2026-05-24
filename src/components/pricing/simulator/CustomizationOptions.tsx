@@ -9,7 +9,11 @@ import {
 } from '@/components/ui/select';
 import { Palette, Ruler, Loader2, AlertCircle } from 'lucide-react';
 import { useTechniquePricing } from '@/hooks/simulation';
+<<<<<<< HEAD
 import type { ProductTechnique } from './types';
+=======
+import type { ProductTechnique } from "./types";
+>>>>>>> origin/main
 
 interface CustomizationOptionsProps {
   technique: ProductTechnique;

@@ -9,7 +9,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { AlertCircle, Package, Paintbrush, Palette, Ruler, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
+<<<<<<< HEAD
 import type { ProductTechnique, SelectedTechniqueConfig } from './types';
+=======
+import type { ProductTechnique, SelectedTechniqueConfig } from "./types";
+>>>>>>> origin/main
 
 interface Props {
   productId: string;

@@ -3,7 +3,11 @@
  * Utilitários para cálculo e validação de volume
  */
 
+<<<<<<< HEAD
 import type { KitBox, KitItem, CompatibilityResult } from './types';
+=======
+import type { KitBox, KitItem, CompatibilityResult } from "./types";
+>>>>>>> origin/main
 
 // ============================================
 // CONSTANTES

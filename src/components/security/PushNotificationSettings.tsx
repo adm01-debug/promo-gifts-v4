@@ -3,18 +3,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { useNotifications, useToast } from "@/hooks/ui";
-import { 
-  Bell, 
-  BellOff, 
+import {
+  Bell,
+  BellOff,
   BellRing,
   CheckCircle2,
   XCircle,
   AlertTriangle,
-  Smartphone,
-  Volume2,
-  VolumeX
+  Smartphone
 } from 'lucide-react';
 
 export function PushNotificationSettings() {
