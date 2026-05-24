@@ -1,16 +1,20 @@
 import { useState } from 'react';
-import { Globe, Plus, Trash2, ToggleLeft, ToggleRight, Loader2, AlertCircle, MapPin, Shield } from 'lucide-react';
+import {
+  Globe,
+  Plus,
+  Trash2,
+  ToggleLeft,
+  ToggleRight,
+  Loader2,
+  AlertCircle,
+  MapPin,
+  Shield,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -89,7 +93,7 @@ export function GeoBlockingManager() {
     if (result.success) {
       toast({
         title: enabled ? 'Bloqueio Geográfico Ativado' : 'Bloqueio Geográfico Desativado',
-        description: enabled 
+        description: enabled
           ? 'Apenas países permitidos poderão acessar o sistema.'
           : 'O acesso está liberado de qualquer país.',
       });
@@ -107,7 +111,7 @@ export function GeoBlockingManager() {
     let name: string;
 
     if (selectedCountry) {
-      const country = COMMON_COUNTRIES.find(c => c.code === selectedCountry);
+      const country = COMMON_COUNTRIES.find((c) => c.code === selectedCountry);
       if (!country) return;
       code = country.code;
       name = country.name;
@@ -175,7 +179,7 @@ export function GeoBlockingManager() {
   };
 
   const availableCountries = COMMON_COUNTRIES.filter(
-    c => !countries.some(existing => existing.country_code === c.code)
+    (c) => !countries.some((existing) => existing.country_code === c.code),
   );
 
   if (isLoading) {
@@ -217,7 +221,10 @@ export function GeoBlockingManager() {
         {currentCountry && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <MapPin className="h-4 w-4" />
-            Sua localização atual: <span className="font-medium">{currentCountry.name} ({currentCountry.code})</span>
+            Sua localização atual:{' '}
+            <span className="font-medium">
+              {currentCountry.name} ({currentCountry.code})
+            </span>
           </div>
         )}
 
@@ -225,7 +232,8 @@ export function GeoBlockingManager() {
           <Alert>
             <Shield className="h-4 w-4" />
             <AlertDescription>
-              O bloqueio geográfico está ativo. Apenas usuários dos países listados abaixo podem acessar o sistema.
+              O bloqueio geográfico está ativo. Apenas usuários dos países listados abaixo podem
+              acessar o sistema.
             </AlertDescription>
           </Alert>
         )}
@@ -256,8 +264,9 @@ export function GeoBlockingManager() {
                     <div className="flex items-center gap-1">
                       <Button
                         variant="ghost"
-                        size="icon" aria-label="ToggleRight"
-                        onClick={() => handleToggleCountry(country.id, country.is_active)}
+                        size="icon"
+                        aria-label="ToggleRight"
+                        onClick={() => handleToggleCountry(country.id, country.is_active ?? false)}
                       >
                         {country.is_active ? (
                           <ToggleRight className="h-4 w-4 text-success" />
@@ -267,7 +276,8 @@ export function GeoBlockingManager() {
                       </Button>
                       <Button
                         variant="ghost"
-                        size="icon" aria-label="Excluir"
+                        size="icon"
+                        aria-label="Excluir"
                         onClick={() => handleRemoveCountry(country.id, country.country_name)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
@@ -279,7 +289,7 @@ export function GeoBlockingManager() {
             </TableBody>
           </Table>
         ) : (
-          <div className="text-sm text-muted-foreground text-center py-4">
+          <div className="py-4 text-center text-sm text-muted-foreground">
             Nenhum país configurado. Adicione países à lista de permitidos.
           </div>
         )}
@@ -287,7 +297,7 @@ export function GeoBlockingManager() {
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button variant="outline">
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="mr-2 h-4 w-4" />
               Adicionar País
             </Button>
           </DialogTrigger>
@@ -301,11 +311,14 @@ export function GeoBlockingManager() {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label>Selecione um País</Label>
-                <Select value={selectedCountry} onValueChange={(v) => {
-                  setSelectedCountry(v);
-                  setCustomCode('');
-                  setCustomName('');
-                }}>
+                <Select
+                  value={selectedCountry}
+                  onValueChange={(v) => {
+                    setSelectedCountry(v);
+                    setCustomCode('');
+                    setCustomName('');
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Escolha um país..." />
                   </SelectTrigger>
@@ -356,7 +369,7 @@ export function GeoBlockingManager() {
                 </div>
               </div>
 
-              {currentCountry && !countries.some(c => c.country_code === currentCountry.code) && (
+              {currentCountry && !countries.some((c) => c.country_code === currentCountry.code) && (
                 <Button
                   variant="outline"
                   className="w-full"
@@ -366,7 +379,7 @@ export function GeoBlockingManager() {
                     setSelectedCountry('');
                   }}
                 >
-                  <MapPin className="h-4 w-4 mr-2" />
+                  <MapPin className="mr-2 h-4 w-4" />
                   Usar minha localização ({currentCountry.name})
                 </Button>
               )}
@@ -376,9 +389,7 @@ export function GeoBlockingManager() {
                 disabled={(!selectedCountry && (!customCode || !customName)) || isSubmitting}
                 className="w-full"
               >
-                {isSubmitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : null}
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Adicionar País
               </Button>
             </div>
@@ -389,7 +400,8 @@ export function GeoBlockingManager() {
           <Alert variant="default">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              O bloqueio geográfico está desativado. Ative-o para restringir o acesso aos países listados.
+              O bloqueio geográfico está desativado. Ative-o para restringir o acesso aos países
+              listados.
             </AlertDescription>
           </Alert>
         )}
