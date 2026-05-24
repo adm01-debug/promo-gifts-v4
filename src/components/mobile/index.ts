@@ -1,1 +1,1 @@
-export { default as SmartMobileNav } from "./SmartMobileNav";
+export { SmartMobileNav } from "./SmartMobileNav";
