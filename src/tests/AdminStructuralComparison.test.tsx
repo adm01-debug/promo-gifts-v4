@@ -20,9 +20,7 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
         <ThemeProvider>
           <AuthProvider>
             <TooltipProvider>
-              <AriaLiveProvider>
-                {children}
-              </AriaLiveProvider>
+              <AriaLiveProvider>{children}</AriaLiveProvider>
             </TooltipProvider>
           </AuthProvider>
         </ThemeProvider>
@@ -30,7 +28,6 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
     </HelmetProvider>
   </QueryClientProvider>
 );
-
 
 // Mock hooks that use network/Supabase to avoid async leaks during tests
 vi.mock('@/hooks/admin', () => ({
@@ -83,14 +80,32 @@ vi.mock('@/components/admin/DevAccessAuditAlert', () => ({
   DevAccessAuditAlert: () => <div data-testid="dev-audit-alert">Dev Audit</div>,
 }));
 
+// AdminConexoesPage renders SupabaseConnectionsTab which has useEffect async
+// calls (fetchLastTest) that fire setLastByEnv after the test environment is
+// torn down, causing "window is not defined". Mock the tab component itself to
+// remove all async operations while preserving the page's container structure.
+vi.mock('@/components/admin/connections/SupabaseConnectionsTab', () => ({
+  SupabaseConnectionsTab: () => <div data-testid="supabase-connections-tab-mock" />,
+}));
+
+// Mock ConnectionsOverviewTable and SecretField which also transitively use
+// @/hooks/intelligence and trigger similar post-teardown async errors.
+vi.mock('@/components/admin/connections/ConnectionsOverviewTable', () => ({
+  ConnectionsOverviewTable: () => <div data-testid="connections-overview-mock" />,
+}));
+
+vi.mock('@/components/admin/connections/SecretField', () => ({
+  SecretField: () => <div data-testid="secret-field-mock" />,
+}));
+
 describe('Admin Module Structural Comparison', () => {
   it('Conexoes and Usuarios should share matching container hierarchy', async () => {
     const { container: conexoes } = render(<AdminConexoesPage />, { wrapper });
     const { container: usuarios } = render(<AdminUsuariosPage />, { wrapper });
-    
+
     // Select the standardized inner container (div with max-w inside main)
-    const findContainer = (root: HTMLElement) => 
-      Array.from(root.querySelectorAll('div')).find(d => d.className.includes('max-w-'));
+    const findContainer = (root: HTMLElement) =>
+      Array.from(root.querySelectorAll('div')).find((d) => d.className.includes('max-w-'));
 
     const conexoesInner = findContainer(conexoes);
     const usuariosInner = findContainer(usuarios);
