@@ -81,111 +81,28 @@ function normalizeV7Aliases(resp: Record<string, unknown>): Record<string, unkno
 }
 
 // ============================================
-// FORMATOS DE PAYLOAD (tipagem de fronteira)
-// ============================================
-//
-// Os parsers recebem objetos vindos de JSON (`Record<string, unknown>`).
-// Em vez de espalhar `as any` por cada acesso aninhado, descrevemos aqui a
-// forma estrutural esperada de cada formato. Todos os campos são opcionais
-// porque o payload é, por contrato, parcialmente confiável — os defaults
-// (`?? ''`, `?? 0`, `?? false`, `?? null`) é que garantem o tipo canônico.
-
-/** Sub-objetos do formato v5.9-nested. */
-interface NestedArea {
-  id?: string;
-  code?: string;
-  name?: string;
-}
-interface NestedTabela {
-  id?: string;
-  codigo_tabela?: string;
-  nome?: string;
-  grupo_tecnica?: string;
-  cobra_por_cor?: boolean;
-  max_cores?: number;
-}
-interface NestedParametros {
-  quantidade?: number;
-  num_cores?: number;
-}
-interface NestedPrecos {
-  preco_unitario_final?: number;
-  subtotal_pecas?: number;
-  faturamento_minimo_gravacao?: number;
-  aplica_minimo?: boolean;
-  total_final?: number;
-  markup_percent?: number;
-}
-interface NestedCustos {
-  custo_base_unitario?: number;
-  custo_unitario_total?: number;
-  custo_setup_base?: number;
-}
-interface NestedFaixa {
-  ordem?: number;
-  quantidade_minima?: number;
-  quantidade_maxima?: number;
-  prazo_dias?: number | null;
-}
-interface NestedPriceResponse {
-  success?: boolean;
-  area?: NestedArea;
-  tabela?: NestedTabela;
-  parametros?: NestedParametros;
-  precos?: NestedPrecos;
-  custos?: NestedCustos;
-  faixa?: NestedFaixa;
-  codigo_orcamento?: string;
-  redirected_from?: string;
-  redirected_to?: string;
-}
-
-/** Sub-objetos do formato v6.x-flat (e v7 após normalização de aliases). */
-interface FlatMarkup {
-  custo_unitario?: number;
-  custo_setup_tabela?: number;
-  markup_pct?: number;
-}
-interface FlatDetalhes {
-  cobra_por_cor?: boolean;
-  max_cores?: number;
-}
-interface FlatFaixa {
-  faixa_id?: string | number;
-  qtd_min?: number;
-  qtd_max?: number;
-  prazo_dias?: number | null;
-}
-interface FlatPriceResponse {
-  success?: boolean;
-  area_id?: string;
-  area_code?: string;
-  nome_tabela?: string;
-  tabela_id?: string;
-  /** Código da tabela (string) — no flat o campo chama-se `tabela`. */
-  tabela?: string;
-  grupo_tecnica?: string;
-  codigo_orcamento?: string;
-  quantidade?: number;
-  num_cores?: number;
-  preco_unitario?: number;
-  preco_por_unidade?: number;
-  valor_gravacao?: number;
-  setup_total?: number;
-  total_cobrado?: number;
-  prazo_dias?: number | null;
-  markup?: FlatMarkup;
-  detalhes?: FlatDetalhes;
-  faixa?: FlatFaixa;
-  redirected_from?: string;
-  redirected_to?: string;
-}
-
-// ============================================
 // PARSERS POR FORMATO
 // ============================================
 
-function parseNested(resp: NestedPriceResponse): CustomizationPriceFlat {
+type AnyRec = Record<string, unknown>;
+
+const isDefined = (v: unknown): v is NonNullable<unknown> => v !== null && v !== undefined;
+const str = (v: unknown): string => (isDefined(v) ? String(v) : '');
+const num = (v: unknown): number => (typeof v === 'number' ? v : Number(v) || 0);
+const bool = (v: unknown): boolean => Boolean(v);
+const numOrNull = (v: unknown): number | null =>
+  isDefined(v) ? (typeof v === 'number' ? v : Number(v) || 0) : null;
+const asObj = (v: unknown): AnyRec | undefined =>
+  isDefined(v) && typeof v === 'object' && !Array.isArray(v) ? (v as AnyRec) : undefined;
+
+function parseNested(resp: AnyRec): CustomizationPriceFlat {
+  const area = asObj(resp.area);
+  const tabela = asObj(resp.tabela);
+  const parametros = asObj(resp.parametros);
+  const precos = asObj(resp.precos);
+  const custos = asObj(resp.custos);
+  const faixa = asObj(resp.faixa);
+  const tabelaCodigo = str(tabela?.codigo_tabela);
   return {
     success: !!resp.success,
     area_id: str(area?.id),
@@ -220,10 +137,16 @@ function parseNested(resp: NestedPriceResponse): CustomizationPriceFlat {
   };
 }
 
-function parseFlat(resp: FlatPriceResponse): CustomizationPriceFlat {
-  const tabelaCode = resp.tabela ?? '';
-  const unitPrice = resp.preco_unitario ?? resp.preco_por_unidade ?? 0;
-  const valorGravacao = resp.valor_gravacao ?? unitPrice * (resp.quantidade ?? 0);
+function parseFlat(resp: AnyRec): CustomizationPriceFlat {
+  const markup = asObj(resp.markup);
+  const detalhes = asObj(resp.detalhes);
+  const faixa = asObj(resp.faixa);
+  const tabelaCode = str(resp.tabela);
+  const unitPrice = num(resp.preco_unitario ?? resp.preco_por_unidade);
+  const quantidade = num(resp.quantidade);
+  const rawValorGravacao = isDefined(resp.valor_gravacao) ? num(resp.valor_gravacao) : 0;
+  const valorGravacao = isDefined(resp.valor_gravacao) ? rawValorGravacao : unitPrice * quantidade;
+  const setupTotal = num(resp.setup_total ?? markup?.custo_setup_tabela);
   return {
     success: isDefined(resp.success) ? bool(resp.success) : true,
     area_id: str(resp.area_id),
@@ -232,11 +155,11 @@ function parseFlat(resp: FlatPriceResponse): CustomizationPriceFlat {
     tabela_id: str(resp.tabela_id),
     tabela_codigo: tabelaCode,
     tabela_codigo_curto: tabelaCode.split('-')[0] || tabelaCode,
-    technique: resp.nome_tabela ?? '',
-    grupo_tecnica: resp.grupo_tecnica ?? '',
-    codigo_orcamento: resp.codigo_orcamento ?? `${tabelaCode}-${resp.quantidade ?? 0}`,
-    quantity: resp.quantidade ?? 0,
-    num_cores: resp.num_cores ?? 1,
+    technique: str(resp.nome_tabela),
+    grupo_tecnica: str(resp.grupo_tecnica),
+    codigo_orcamento: str(resp.codigo_orcamento) || `${tabelaCode}-${quantidade}`,
+    quantity: quantidade,
+    num_cores: num(resp.num_cores) || 1,
     unit_price: unitPrice,
     subtotal_pecas: valorGravacao,
     faturamento_minimo_gravacao: num(resp.setup_total ?? markup?.custo_setup_tabela),
@@ -284,14 +207,14 @@ export function adaptPriceResponseWithMeta(
   const version = detectPriceSchema(resp);
   switch (version) {
     case 'v5.9-nested':
-      return { flat: parseNested(resp as unknown as NestedPriceResponse), schemaVersion: version };
+      return { flat: parseNested(resp as AnyRec), schemaVersion: version };
     case 'v6.x-flat':
-      return { flat: parseFlat(resp as unknown as FlatPriceResponse), schemaVersion: version };
+      return { flat: parseFlat(resp as AnyRec), schemaVersion: version };
     case 'v7-new':
-      return { flat: parseFlat(normalizeV7Aliases(resp) as unknown as FlatPriceResponse), schemaVersion: version };
+      return { flat: parseFlat(normalizeV7Aliases(resp) as AnyRec), schemaVersion: version };
     default: {
       warnUnknownSchemaOnce('price-response', resp);
-      return { flat: parseFlat(resp as unknown as FlatPriceResponse), schemaVersion: 'unknown' };
+      return { flat: parseFlat(resp as AnyRec), schemaVersion: 'unknown' };
     }
   }
 }

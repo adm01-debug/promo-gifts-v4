@@ -96,8 +96,8 @@ export function CompareTableView({
   const eq = {
     sku: allEqual(products.map((p) => p.sku)),
     category: allEqual(products.map((p) => p.category_name)),
-    supplier: allEqual(products.map((p) => p.supplier_name)),
-    isKit: allEqual(products.map((p) => p.is_kit)),
+    supplier: allEqual(products.map((p) => p.supplier?.name)),
+    isKit: allEqual(products.map((p) => p.isKit)),
     materials: allEqual(products.map((p) => (p.materials ?? []).slice().sort().join('|'))),
     publico: allEqual(
       products.map((p) =>
@@ -284,25 +284,6 @@ export function CompareTableView({
                   {(p.colors?.length ?? 0) > 6 && <span className="text-xs text-muted-foreground">+{(p.colors?.length ?? 0) - 6}</span>}
                 </div>
               )} />
-              {showRow("materials") && (
-                <SimpleRow label="Materiais" products={products} render={(p) => (
-                  <div className="flex flex-wrap justify-center gap-1">
-                    {p.colors?.slice(0, 6).map((c: { name: string; hex?: string }, i: number) => (
-                      <div
-                        key={i}
-                        className="h-5 w-5 rounded-full border border-border"
-                        style={{ backgroundColor: c.hex }}
-                        title={c.name}
-                      />
-                    ))}
-                    {(p.colors?.length ?? 0) > 6 && (
-                      <span className="text-xs text-muted-foreground">
-                        +{(p.colors?.length ?? 0) - 6}
-                      </span>
-                    )}
-                  </div>
-                )}
-              />
               {showRow('materials') && (
                 <SimpleRow
                   label="Materiais"
