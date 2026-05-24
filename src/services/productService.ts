@@ -2,6 +2,9 @@ import { fetchPromobrindProducts, fetchPromobrindProductById } from '@/lib/exter
 import { mapPromobrindToProduct } from '@/utils/product-mapper';
 import { type Product, type ProductFilters } from '@/types/product-catalog';
 
+const getFiniteNumber = (value: unknown): number | null =>
+  typeof value === 'number' && Number.isFinite(value) ? value : null;
+
 export const productService = {
   async fetchProducts(filters?: ProductFilters) {
     const products = await fetchPromobrindProducts({
@@ -11,20 +14,30 @@ export const productService = {
 
     let result = products.map(mapPromobrindToProduct);
 
-    if (filters?.category) {
+    const category = filters?.category;
+    if (category) {
+      const normalizedCategory = category.toLowerCase();
       result = result.filter(
         (p) =>
-          p.category_name?.toLowerCase().includes(filters.category!.toLowerCase()) ||
-          (p.category_id !== null && String(p.category_id) === filters.category),
+          p.category_name?.toLowerCase().includes(normalizedCategory) ||
+          (p.category_id !== null && String(p.category_id) === category),
       );
     }
 
-    if (filters?.minPrice !== undefined) {
-      result = result.filter((p) => p.price >= filters.minPrice!);
+    const minPrice = getFiniteNumber(filters?.minPrice);
+    if (minPrice !== null) {
+      result = result.filter((p) => {
+        const price = getFiniteNumber(p.price);
+        return price !== null && price >= minPrice;
+      });
     }
 
-    if (filters?.maxPrice !== undefined) {
-      result = result.filter((p) => p.price <= filters.maxPrice!);
+    const maxPrice = getFiniteNumber(filters?.maxPrice);
+    if (maxPrice !== null) {
+      result = result.filter((p) => {
+        const price = getFiniteNumber(p.price);
+        return price !== null && price <= maxPrice;
+      });
     }
 
     if (filters?.inStock) {

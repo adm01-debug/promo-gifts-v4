@@ -13,6 +13,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, waitFor } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import SSOCallbackPage from '../auth/SSOCallbackPage';
+import type * as ReactRouterDom from 'react-router-dom';
 
 const navigateMock = vi.fn();
 const refreshSessionMock = vi.fn().mockResolvedValue(undefined);
@@ -23,7 +24,7 @@ const onAuthStateChangeMock = vi.fn();
 const unsubscribeMock = vi.fn();
 
 vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+  const actual = await vi.importActual<typeof ReactRouterDom>('react-router-dom');
   return { ...actual, useNavigate: () => navigateMock };
 });
 
@@ -65,6 +66,12 @@ function fakeSession(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function readSsoFlowSnapshot() {
+  const raw = sessionStorage.getItem('__sso_last_flow');
+  expect(raw).not.toBeNull();
+  return JSON.parse(raw ?? '{}');
+}
+
 describe('SSOCallbackPage', () => {
   beforeEach(() => {
     navigateMock.mockClear();
@@ -98,7 +105,7 @@ describe('SSOCallbackPage', () => {
     expect(p1.get('error_description')).toBe('User cancelled');
     expect(opts).toEqual({ replace: true });
 
-    const snap = JSON.parse(sessionStorage.getItem('__sso_last_flow')!);
+    const snap = readSsoFlowSnapshot();
     expect(snap.outcome).toBe('failure');
     expect(snap.providerError).toBe('access_denied');
     expect(snap.steps.map((s: { phase: string }) => s.phase)).toContain('provider-error-query');
@@ -136,7 +143,7 @@ describe('SSOCallbackPage', () => {
     await waitFor(() => expect(refreshSessionMock).toHaveBeenCalled());
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/', { replace: true }));
 
-    const snap = JSON.parse(sessionStorage.getItem('__sso_last_flow')!);
+    const snap = readSsoFlowSnapshot();
     expect(snap.outcome).toBe('success');
     expect(snap.flow).toBe('pkce');
     expect(snap.finalProvider).toBe('google');

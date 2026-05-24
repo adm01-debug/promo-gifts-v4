@@ -8,13 +8,12 @@
  * ✅ PERFORMANCE 10/10: Virtualização implementada para suportar 15.000+ itens.
  */
 import { memo, useState, useCallback, useMemo, useRef, useEffect } from "react";
-import { ArrowUpDown, ArrowUp, ArrowDown, Package, Loader2, Check } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, Package, Loader2 } from "lucide-react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { TableRowActions } from "./table-view/TableRowActions";
 import { resolveColorImage, resolveColorStock, getActiveColorName, type ActiveColorFilter } from "@/utils/color-image-resolver";
 import { resolveHighlightHex } from "@/utils/color-group-hex";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -262,7 +261,7 @@ export const ProductTableView = memo(function ProductTableView({
             const displayStatus = colorStock?.stockStatus ?? product.stockStatus;
             const activeColorName = getActiveColorName(product, activeColorFilter);
             const isSelected = selectionMode && selectedIds?.has(product.id);
-            const matchedColor = resolveHighlightHex(product.colors, activeColorFilter, highlightColors);
+            const _matchedColor = resolveHighlightHex(product.colors, activeColorFilter, highlightColors);
 
             return (
               <div key={vr.key} data-index={vr.index} ref={virtualizer.measureElement}
@@ -290,7 +289,7 @@ export const ProductTableView = memo(function ProductTableView({
                 <div className="w-40 px-3 hidden lg:block text-xs text-muted-foreground truncate">{product.supplier?.name}</div>
                 
                 <div className="w-32 px-3 hidden sm:flex items-center gap-0.5">
-                  {product.colors.slice(0, 5).map((c, i) => (
+                  {product.colors.slice(0, 5).map((c: NonNullable<typeof product.colors>[number], i: number) => (
                     <Tooltip key={i}>
                       <TooltipTrigger asChild><div className="w-3.5 h-3.5 rounded-full border border-border/50" style={{ backgroundColor: c.hex }} /></TooltipTrigger>
                       <TooltipContent side="top" className="text-[10px]">{c.name}</TooltipContent>

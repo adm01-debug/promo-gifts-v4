@@ -42,6 +42,27 @@ describe('QuoteBuilderStepper UI (5 etapas)', () => {
   it('renders all 5 labels in the new order', () => {
     render(<QuoteBuilderStepper completedSteps={[]} activeStep="client" />);
     const labels = ['Cliente', 'Condições', 'Itens', 'Personalização', 'Revisão'];
+    // T-FIX-5b — decisão Opção A (eslint-disable cirúrgico):
+    //
+    // 5 labels estáticos do mesmo render(), todos renderizados juntos
+    // no DOM. Masking aqui tem alcance mínimo: se 'Cliente' faltar
+    // (label hardcoded no componente), os outros 4 provavelmente
+    // também faltariam — o usuário veria stepper inteiro quebrado
+    // imediatamente.
+    //
+    // Refactor para it.each exigiria 5 renders separados ou setup
+    // helper compartilhado. Custo-benefício não compensa para 5
+    // labels estáticos.
+    //
+    // Severity 'error' continua protegendo todo o repo — esta exceção
+    // foi documentada em docs/redeploy/T-FIX-5-LINT-GUARDRAIL.md.
+    //
+    // Update 2026-05-23: o eslint-disable original tornou-se órfão após
+    // refinamento da regra no(s) commit(s) e0f1315/73c2efa — a `no-restricted-syntax`
+    // atual só flagga forEach que contém it/test/describe (anti-padrão A),
+    // não forEach+expect (anti-padrão B, não ativado). Diretiva removida
+    // para zerar o WARN "Unused eslint-disable directive" no gate
+    // lint:baseline. Se T-FIX-5b for ativado depois, reintroduzir.
     labels.forEach((l) => expect(screen.getByText(l)).toBeDefined());
   });
 

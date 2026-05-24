@@ -2,7 +2,7 @@
  * PackagingModal - Modal com detalhes da embalagem especial do produto
  */
 import { useState } from "react";
-import { Gift, Package, Ruler, Scale, Boxes, Info, X } from "lucide-react";
+import { Gift, Package, Ruler, Scale, Boxes, Info } from "lucide-react";
 import {
   Dialog,
   DialogContent,

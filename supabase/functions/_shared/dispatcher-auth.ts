@@ -159,24 +159,6 @@ export async function authorizeDispatcher(
       return { ok: false, response: jsonResponse({ error: "missing_token" }, 401, corsHeaders) };
     }
 
-    if (SERVICE_KEY && constantTimeEqual(token, SERVICE_KEY)) {
-      if (requireUserContext) {
-        logAuthEvent({ outcome: "denied", reason: "service_role_not_allowed_in_user_only_mode" });
-        return {
-          ok: false,
-          response: jsonResponse({ error: "user_context_required" }, 403, corsHeaders),
-        };
-      }
-      logAuthEvent({ outcome: "allowed", mode: "secret", via: "service_role_bearer" });
-      return {
-        ok: true,
-        mode: "secret",
-        supabaseAdmin: createClient(SUPABASE_URL, SERVICE_KEY, {
-          auth: { persistSession: false, autoRefreshToken: false },
-        }),
-      };
-    }
-
     const supabaseUser = createClient(SUPABASE_URL, ANON_KEY, {
       global: { headers: { Authorization: `Bearer ${token}` } },
       auth: { persistSession: false, autoRefreshToken: false },

@@ -10,10 +10,10 @@
 //     forense limitado a callers que conhecem ao menos o slug).
 //
 // Contract validation:
-//   - v1 = passthrough (compat com produção). default.
+//   - v1 = passthrough (compat com produção) APENAS para emissores legados allowlisted.
 //   - v2 = envelope strict { event, occurred_at, data, idempotency_key? }
 //   Cliente seleciona via header `accept-version: 2` ou `?v=2`.
-//   v1 será descontinuada em 2026-09-30; resposta inclui headers Deprecation/Sunset.
+//   v1 será descontinuada em 2026-06-30; resposta inclui headers Deprecation/Sunset + warning explícito.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { crypto } from "https://deno.land/std@0.224.0/crypto/mod.ts";
@@ -46,6 +46,25 @@ function timingSafeEqual(a: string, b: string): boolean {
   let r = 0;
   for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return r === 0;
+}
+
+function readRequestedVersion(req: Request): string | null {
+  const headerVal = req.headers.get("accept-version");
+  if (headerVal) return headerVal.replace(/^v/i, "").split(".")[0].trim();
+  try {
+    const qv = new URL(req.url).searchParams.get("v");
+    if (qv) return qv.replace(/^v/i, "").split(".")[0].trim();
+  } catch {
+    // no-op
+  }
+  return null;
+}
+
+function parseAllowlist(): Set<string> {
+  const raw = Deno.env.get("WEBHOOK_INBOUND_V1_ALLOWLIST") ?? "";
+  return new Set(
+    raw.split(",").map((x) => x.trim()).filter(Boolean),
+  );
 }
 
 Deno.serve(async (req) => {
@@ -109,6 +128,44 @@ Deno.serve(async (req) => {
     });
     if (!contractResult.ok) return contractResult.response;
     const { version, data: payloadParsed, responseHeaders } = contractResult;
+    const requestedVersion = readRequestedVersion(req);
+    const isDefaultVersion = !requestedVersion;
+    const issuer = req.headers.get("x-webhook-issuer")?.trim() || slug;
+
+    const v1CompatEnabled = (Deno.env.get("WEBHOOK_INBOUND_V1_COMPAT_ENABLED") ?? "false")
+      .toLowerCase() === "true";
+    const v1Allowlist = parseAllowlist();
+    const v1AllowedIssuer = v1Allowlist.has(issuer) || v1Allowlist.has(slug);
+
+    console.info(JSON.stringify({
+      metric: "webhook_inbound_contract_version_adoption",
+      endpoint: slug,
+      issuer,
+      contract_version: version,
+      is_default_version: isDefaultVersion,
+      requested_version: requestedVersion ?? "default",
+    }));
+
+    if (version === "1" && (!v1CompatEnabled || !v1AllowedIssuer)) {
+      return new Response(
+        JSON.stringify({
+          code: "legacy_version_blocked",
+          message:
+            "v1 temporariamente restrita: solicite migração para envelope v2 ou peça allowlist de emissor legado.",
+          fields: ["accept-version"],
+        }),
+        {
+          status: 426,
+          headers: {
+            ...corsHeaders,
+            ...responseHeaders,
+            "Content-Type": "application/json",
+            "Warning":
+              '299 - "Webhook v1 está em sunset (2026-06-30). Use v2 envelope."',
+          },
+        },
+      );
+    }
 
     const signatureHeader = req.headers.get("x-signature-256")
       || req.headers.get("x-webhook-signature")
@@ -156,6 +213,9 @@ Deno.serve(async (req) => {
       .eq("id", endpoint.id);
 
     const okHeaders = { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" };
+    if (version === "1") {
+      okHeaders["Warning"] = '299 - "Webhook v1 deprecado; sunset em 2026-06-30. Migre para v2."';
+    }
 
     if (!signatureValid) {
       return new Response(
@@ -165,7 +225,13 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ ok: true, received: true }),
+      JSON.stringify({
+        ok: true,
+        received: true,
+        warning: version === "1"
+          ? "Webhook v1 deprecado; sunset em 2026-06-30. Migre para envelope v2."
+          : undefined,
+      }),
       { headers: okHeaders },
     );
   } catch (err) {

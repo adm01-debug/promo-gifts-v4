@@ -7,6 +7,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import { maskSensitiveText } from '@/lib/sensitive-masking';
 import { recordBridgeCall, estimatePayloadBytes } from '@/lib/telemetry/bridgeCallMetrics';
 import { newRequestId, REQUEST_ID_HEADER } from '@/lib/telemetry/requestId';
 
@@ -28,6 +29,24 @@ export interface CrmQuery {
 export interface CrmResponse<T> {
   data: T;
   count?: number;
+}
+
+function safeCrmLogMessage(value: unknown): string {
+  const raw = value instanceof Error ? value.message : String(value ?? 'unknown');
+  return maskSensitiveText(raw) ?? 'unknown';
+}
+
+function safeCrmErrorFields(error: unknown): Record<string, unknown> {
+  if (error instanceof Error) {
+    const maybeStatus = error as Error & { status?: unknown; code?: unknown };
+    return {
+      name: error.name,
+      message: safeCrmLogMessage(error),
+      status: maybeStatus.status ?? 'unknown',
+      code: maybeStatus.code ?? 'unknown',
+    };
+  }
+  return { message: safeCrmLogMessage(error) };
 }
 
 // ============================================
@@ -86,7 +105,10 @@ export async function invokeCrmBatch(queries: CrmBatchQuery[]): Promise<CrmBatch
   });
 
   if (error) {
-    console.error(`[CRM-DB] Batch error [req_id=${requestId}]:`, error);
+    logger.error('[CRM-DB] Batch error', {
+      requestId,
+      ...safeCrmErrorFields(error),
+    });
     throw new Error(`CRM batch error: ${error.message}`);
   }
 
@@ -197,9 +219,10 @@ export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
 
     if (attempt < MAX_RETRIES && isRetryableCrmError(msg)) {
       const delay = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
-      logger.warn(
-        `[CRM-DB] Retry ${attempt + 1}/${MAX_RETRIES} after ${delay}ms [req_id=${requestId}]: ${msg}`,
-      );
+      logger.warn(`[CRM-DB] Retry ${attempt + 1}/${MAX_RETRIES} after ${delay}ms`, {
+        requestId,
+        message: safeCrmLogMessage(msg),
+      });
       await new Promise((r) => setTimeout(r, delay));
       continue;
     }
@@ -208,11 +231,17 @@ export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
 
     // Final attempt failed
     if (error) {
-      console.error(`[CRM-DB] Edge function error [req_id=${requestId}]:`, msg);
+      logger.error('[CRM-DB] Edge function error', {
+        requestId,
+        message: safeCrmLogMessage(msg),
+      });
       throw new Error(`CRM DB error: ${msg}`);
     }
 
-    console.error(`[CRM-DB] Query error [req_id=${requestId}]:`, msg);
+    logger.error('[CRM-DB] Query error', {
+      requestId,
+      message: safeCrmLogMessage(msg),
+    });
     throw new Error(`CRM query error: ${msg}`);
   }
 

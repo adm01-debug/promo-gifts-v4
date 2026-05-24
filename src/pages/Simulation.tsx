@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Play, CheckCircle2, XCircle, Loader2, Database, Globe, Zap, ShieldAlert, BarChart3, AlertTriangle } from "lucide-react";
+import { Play, CheckCircle2, Loader2, Database, Zap, ShieldAlert, BarChart3, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

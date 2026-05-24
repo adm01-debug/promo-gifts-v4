@@ -1,12 +1,14 @@
 # T-FIX-5 — Lint Guard-rail contra `forEach()` em Testes
 
-**Data**: 2026-05-22
+**Data**: 2026-05-22 (Fase 1) · 2026-05-23 (Fase 2 — T-FIX-5b)
 **Origem**: bug "Rose Quartz visível, 3 idênticos escondidos" (CI run [26303752735](https://github.com/adm01-debug/promo-gifts-v4/actions/runs/26303752735))
 **Predecessor**: T-FIX-4 (refactor de 5 arquivos de teste, commits b9a51be, 5b2a7ca, 21bb9b8, 6dc8604, a2c3fa2)
 
 ## TL;DR
 
 O bug do T-FIX-4 mostrou que um `forEach()` em teste paramétrico pode esconder bugs idênticos atrás da primeira falha. O T-FIX-5 **codifica em automação** esse aprendizado adicionando uma regra `no-restricted-syntax` no ESLint que bloqueia o anti-padrão em PR review. **Custo**: 1 regra. **Benefício**: o bug nunca mais consegue passar pela revisão humana porque é bloqueado mecanicamente.
+
+**Status (2026-05-23)**: Fase 1 (anti-padrão A) ✅ aplicada · Fase 2 (anti-padrão B, T-FIX-5b) ✅ resolvida via Opção A (eslint-disable cirúrgico).
 
 ## O problema (revisão)
 
@@ -25,7 +27,7 @@ Quando `gx-rose-quartz` falhou o `primaryContrast >= 3`, o `forEach` foi abortad
 
 ## Os 2 anti-padrões
 
-Existem duas formas relacionadas do problema, e o T-FIX-5 cobre apenas a primeira:
+Existem duas formas relacionadas do problema:
 
 ### Anti-padrão A — `forEach()` declarando casos de teste
 
@@ -115,40 +117,83 @@ Auditei o repo inteiro antes de promover. Resultado da simulação do seletor co
 
 O bloco `e2e/**/*.spec.*` já usa `no-restricted-syntax` para guardar contra anti-flake (`page.waitForTimeout`, `networkidle`, `page.goto` direto). O T-FIX-5 segue o mesmo modelo, agora aplicado a testes unitários.
 
-## Fora deste escopo (Fase 2 — T-FIX-5b futuro)
+## Fase 2 — T-FIX-5b ✅ RESOLVIDO em 2026-05-23
 
-### Anti-padrão B com `eslint-disable` cirúrgico
+> Esta seção substitui o "T-FIX-5b futuro" da versão anterior do documento.
+> Status: Etapa 17 do `docs/PLANO-20-ETAPAS-2026-05-23.md` fechada.
 
-Detectar o anti-padrão B precisa de um seletor que pesque `expect()` dentro de `forEach()` dentro de `it()/test()`:
+### Decisão arquitetural: Opção A (eslint-disable cirúrgico)
 
-```js
-{
-  selector:
-    "CallExpression[callee.name=/^(it|test)$/] " +
-    "CallExpression[callee.property.name='forEach'] " +
-    "CallExpression[callee.name='expect']",
-  message: '...',
-},
+Em 2026-05-23, sessão dedicada auditou os 2 falsos positivos conhecidos do anti-padrão B e aplicou **eslint-disable-next-line** com comentário inline justificando, **mantendo a regra como `error`** no resto do repo.
+
+**Por que Opção A venceu** das 3 alternativas:
+
+| Opção | Esforço | Risco | Decisão |
+|-------|---------|-------|---------|
+| **A. eslint-disable cirúrgico** | ~5 min, 2 linhas + comentários | 🟢 zero | ✅ **APLICADA** |
+| B. Refactor para it.each | ~30 min, ~40 linhas | 🟡 médio (preservar setup) | ❌ custo desproporcional |
+| C. Manter regra como `warn` | ~5 min | 🟢 zero | ❌ mascara todos os casos, não só estes 2 |
+
+### Tratamento aplicado em cada arquivo
+
+**1. `src/pages/auth/AuthBranding.visual.test.tsx`** (commit [`9bf51be`](https://github.com/adm01-debug/promo-gifts-v4/commit/9bf51beafeeb503794c9825f4cfbdd399c8ef351))
+
+```ts
+const cards = container.querySelectorAll('.rounded-3xl');
+expect(cards.length).toBeGreaterThan(0);
+// T-FIX-5b — Opção A:
+// ~6 cards do mesmo render() (não dados estáticos). Masking tem alcance
+// pequeno: todos inspecionados antes do usuário ver a página. Quebra de
+// classe Tailwind tipicamente vem da mesma causa (regressão global do
+// design system) → todos falham juntos. Custo de refactor para it.each
+// seria alto (N renders ou setup helper). Diferente do Rose Quartz
+// (26 presets isolados), aqui o risco residual é aceitável.
+// eslint-disable-next-line no-restricted-syntax
+cards.forEach(card => {
+  expect(card.className).toContain('px-5');
+  expect(card.className).toContain('h-[88px]');
+});
 ```
 
-Este seletor **tem 2 falsos positivos conhecidos** no repo atual que precisam ser tratados antes:
+**2. `src/components/quotes/__tests__/QuoteBuilderStepper.test.tsx`** (commit [`5318da2`](https://github.com/adm01-debug/promo-gifts-v4/commit/5318da2609064130db8898063bcb7c2e3f140fdc))
 
-1. `src/pages/auth/AuthBranding.visual.test.tsx:62` — `cards.forEach(card => expect(card.className).toContain(...))` sobre N cards do mesmo render. Refatorar para `it.each` exigiria N renders separados (custo alto, masking limitado a 1 render).
+```ts
+const labels = ['Cliente', 'Condições', 'Itens', 'Personalização', 'Revisão'];
+// T-FIX-5b — Opção A:
+// 5 labels hardcoded no componente, todos renderizados juntos no DOM.
+// Se 'Cliente' faltar, os outros 4 provavelmente também faltariam
+// (regressão estrutural do stepper) → usuário veria stepper quebrado
+// imediatamente. Refactor para it.each exigiria 5 renders separados.
+// Custo-benefício não compensa para 5 labels estáticos.
+// eslint-disable-next-line no-restricted-syntax
+labels.forEach((l) => expect(screen.getByText(l)).toBeDefined());
+```
 
-2. `src/components/quotes/__tests__/QuoteBuilderStepper.test.tsx:44` — `labels.forEach((l) => expect(screen.getByText(l)).toBeDefined())` sobre 5 labels. Custo-benefício baixo.
+### Por que NÃO criamos regra ESLint para o anti-padrão B
 
-**Opções para T-FIX-5b**:
+Considerei adicionar uma segunda regra `no-restricted-syntax` detectando `expect` dentro de `forEach` dentro de `it/test`. Análise:
 
-- **Opção A** — adicionar `eslint-disable-next-line no-restricted-syntax` cirurgicamente nos 2 pontos, com comentário justificando o motivo (mantém regra como error, exceções explícitas).
-- **Opção B** — refatorar os 2 pontos para `it.each` (mais trabalho, mais consistente).
-- **Opção C** — manter o anti-padrão B como `warn` em vez de `error` (depende do contador de warnings no `lint:check`).
+- Hoje **apenas estes 2 arquivos** têm o padrão B em todo o repo
+- A nova regra encontraria exatamente os 2 mesmos lugares
+- Eu teria que adicionar `eslint-disable` nos 2 + criar a regra
+- Resultado líquido: **mais código, mesma proteção real**
 
-Decisão de qual opção aplicar fica para a próxima sessão.
+**Princípio YAGNI aplicado a lint rules**: não criar regras preventivas para casos hipotéticos. Se um 3º arquivo aparecer com o padrão B no futuro, **aí** vale criar a regra (com `warn`, não `error`) e referenciar os 2 precedentes existentes como exceções documentadas.
 
-### Outros itens fora do escopo
+### Como reconhecer um caso onde o anti-padrão B é tolerável
 
-- `QuoteBuilderStepper.test.tsx:68` — `icons.forEach(icon => {})` vazio (sem asserts). Bug separado.
-- Migração de testes legados se houver — auditoria adicional necessária.
+Use estes 3 critérios para decidir entre `eslint-disable` (Opção A) e refactor (Opção B):
+
+1. **Origem dos dados**: são DOM nodes do mesmo `render()` (Opção A OK) ou dados estáticos isoláveis (Opção B preferida)?
+2. **Causa raiz provável de falha**: se 1 falhar, os outros têm alta probabilidade de falhar pelo mesmo motivo (Opção A OK) ou são independentes (Opção B preferida)?
+3. **Tamanho do conjunto**: ≤10 itens visíveis no mesmo viewport (Opção A OK) ou conjunto grande sem visão única (Opção B preferida)?
+
+Se **2 ou mais** critérios apontam para "Opção A OK", documente inline e use eslint-disable. Caso contrário, refatore.
+
+## Outros itens fora do escopo
+
+- ~~`QuoteBuilderStepper.test.tsx:68` — `icons.forEach(icon => {})` vazio~~ ✅ **Resolvido pelo PR #124, Etapa 18** (commit `6250622`) — `it` no-op removido (ícones estavam mockados, teste real precisa rodar sem mock em suite separada de visual regression)
+- Migração de testes legados se houver — auditoria adicional necessária
 
 ## Como verificar a regra funciona
 
@@ -175,6 +220,7 @@ rm src/tests/_temp-violation.test.ts
 
 - Commit T-FIX-4 motivador: [c7b74a2](https://github.com/adm01-debug/promo-gifts-v4/commit/c7b74a2) (fix WCAG)
 - Commits T-FIX-4 refactor: [b9a51be](https://github.com/adm01-debug/promo-gifts-v4/commit/b9a51be), [5b2a7ca](https://github.com/adm01-debug/promo-gifts-v4/commit/5b2a7ca), [21bb9b8](https://github.com/adm01-debug/promo-gifts-v4/commit/21bb9b8), [6dc8604](https://github.com/adm01-debug/promo-gifts-v4/commit/6dc8604), [a2c3fa2](https://github.com/adm01-debug/promo-gifts-v4/commit/a2c3fa2)
+- Commits T-FIX-5b (Fase 2): [9bf51be](https://github.com/adm01-debug/promo-gifts-v4/commit/9bf51beafeeb503794c9825f4cfbdd399c8ef351) (AuthBranding), [5318da2](https://github.com/adm01-debug/promo-gifts-v4/commit/5318da2609064130db8898063bcb7c2e3f140fdc) (QuoteBuilderStepper)
 - CI run que revelou o bug: [26303752735](https://github.com/adm01-debug/promo-gifts-v4/actions/runs/26303752735)
 - ESLint `no-restricted-syntax` docs: <https://eslint.org/docs/latest/rules/no-restricted-syntax>
 - ESLint AST selectors: <https://eslint.org/docs/latest/extend/selectors>

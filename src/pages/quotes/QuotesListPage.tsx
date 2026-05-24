@@ -1,5 +1,18 @@
 import { format } from 'date-fns';
-import { FileText, Plus, Search, BookTemplate, ArrowUpDown, AlertTriangle, CheckCircle2, Clock, TrendingUp, TrendingDown, DollarSign, Loader2 } from 'lucide-react';
+import {
+  FileText,
+  Plus,
+  Search,
+  BookTemplate,
+  ArrowUpDown,
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  Loader2,
+} from 'lucide-react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { formatCurrency } from '@/lib/format';
 import { Card, CardContent } from '@/components/ui/card';
@@ -32,7 +45,7 @@ import { FadeInView, AnimatedCounter } from '@/components/common/MicroInteractio
 import { QuotesConfigurableList } from '@/components/quotes/QuotesConfigurableList';
 import { QuotesStatusChips } from '@/components/quotes/QuotesStatusChips';
 import { QuotesFunnelChart } from '@/components/quotes/QuotesFunnelChart';
-import { useQuotesListPage, sortOptions, type SortOption } from "@/pages/quotes/useQuotesListPage";
+import { useQuotesListPage, sortOptions, type SortOption } from '@/pages/quotes/useQuotesListPage';
 
 export default function QuotesListPage() {
   const {
@@ -95,7 +108,7 @@ export default function QuotesListPage() {
         path="/orcamentos"
       />
       <TooltipProvider>
-        <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
+        <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
           {/* Header */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <FadeInView>
@@ -285,7 +298,7 @@ export default function QuotesListPage() {
                   }
                 }}
                 onBulkExport={(ids) => {
-                  const selected = filteredQuotes.filter((q) => ids.includes(q.id!));
+                  const selected = filteredQuotes.filter((q) => q.id && ids.includes(q.id));
                   import('@/utils/excelExport').then(({ exportToExcel }) => {
                     exportToExcel(
                       selected.map((q) => ({
@@ -319,7 +332,10 @@ export default function QuotesListPage() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              <AlertDialogAction
+                onClick={handleDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
                 Confirmar Exclusão
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -337,7 +353,10 @@ export default function QuotesListPage() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              <AlertDialogAction
+                onClick={handleBulkDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
                 Excluir Todos
               </AlertDialogAction>
             </AlertDialogFooter>

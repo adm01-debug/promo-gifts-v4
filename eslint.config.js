@@ -7,10 +7,7 @@ import typescriptParser from '@typescript-eslint/parser';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 
 // Parser options compartilhados — apontam para o tsconfig.eslint.json que
-// inclui src/, e2e/, tests/ e scripts/. Isso evita o erro
-// "ESLint was configured to run on `<file>` using `parserOptions.project`
-//  but the file is not included" que aparecia para arquivos fora de src/
-// e gerava ruído nos relatórios.
+// inclui src/, e2e/, tests/ e scripts/.
 const tsParserOptions = {
   ecmaFeatures: { jsx: true },
   ecmaVersion: 'latest',

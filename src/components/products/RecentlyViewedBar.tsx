@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, ChevronRight, X, Trash2 } from "lucide-react";
+import { Clock, X, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useRecentlyViewedStore } from "@/stores/useRecentlyViewedStore";

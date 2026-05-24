@@ -4,14 +4,15 @@
  */
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, ShieldCheck } from "lucide-react";
+import type { Product } from "@/types/product-catalog";
 
 interface Props {
-  product: Record<string, unknown>;
+  product: Product;
 }
 
 export function StockRiskBadge({ product }: Props) {
-  const stock = Number(product.stock ?? 0);
-  const min = Number(product.minQuantity ?? 1);
+  const stock = product.stock ?? 0;
+  const min = product.minQuantity ?? 1;
   const status = product.stockStatus;
 
   if (status === "out-of-stock" || stock === 0) {

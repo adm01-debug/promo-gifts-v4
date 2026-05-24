@@ -176,11 +176,11 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
           to={item.href}
           data-tour={item.tourId}
           className={cn(
-            'group relative flex items-center gap-3 rounded-lg px-3 py-2 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 active:scale-[0.98]',
+            'group relative flex items-center gap-3 rounded-xl px-3 py-2 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 active:scale-[0.98]',
 
-            'hover:translate-x-1.5 hover:bg-white/[0.04]',
+            'hover:translate-x-1 hover:bg-white/[0.04]',
             isActive
-              ? 'bg-orange/[0.03] font-bold text-white before:absolute before:bottom-[12%] before:left-0 before:top-[12%] before:w-[4px] before:rounded-r-full before:bg-primary'
+              ? 'bg-primary/10 font-bold text-white shadow-[0_0_15px_rgba(255,165,0,0.1)] before:absolute before:bottom-[15%] before:left-0 before:top-[15%] before:w-[3px] before:rounded-r-full before:bg-primary'
               : 'text-sidebar-foreground/60 before:absolute before:left-0 before:top-1/2 before:h-0 before:w-[2px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary/50 before:transition-all before:duration-500 hover:text-sidebar-foreground hover:before:h-5',
           )}
           onClick={() => isMobileSidebarOpen && onMobileClose()}

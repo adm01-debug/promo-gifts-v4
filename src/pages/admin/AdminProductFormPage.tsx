@@ -67,10 +67,10 @@ export default function AdminProductFormPage() {
     if (!isEdit) return;
 
     const loadProduct = async () => {
+      if (!id) return;
       setIsLoading(true);
       try {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const fullProduct = await fetchPromobrindProductById(id!);
+        const fullProduct = await fetchPromobrindProductById(id);
         if (fullProduct) {
           setProduct(fullProduct);
         } else {
@@ -189,9 +189,9 @@ export default function AdminProductFormPage() {
       if (!isEdit || skuChanged) {
         const { fetchPromobrindProducts } = await import('@/lib/external-db');
         const existing = await fetchPromobrindProducts({ search: data.sku, limit: 5 });
-        const products = Array.isArray(existing)
+        const products: PromobrindProduct[] = Array.isArray(existing)
           ? existing
-          : (existing as Record<string, unknown>).products || [];
+          : ((existing as { products?: PromobrindProduct[] }).products ?? []);
         const duplicate = products.find(
           (p: PromobrindProduct) => p.sku?.toLowerCase() === data.sku.toLowerCase(),
         );
@@ -378,163 +378,163 @@ export default function AdminProductFormPage() {
 
   if (isLoading) {
     return (
-        <>
-          <PageSEO
-            title="Carregando Produto..."
-            description="Aguarde enquanto carregamos os dados do produto."
-            path="/admin/cadastros/produto"
-            noIndex
-          />
-          <div className="flex min-h-[60vh] items-center justify-center">
-            <div className="flex flex-col items-center gap-3">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-sm text-muted-foreground">Carregando produto...</p>
-            </div>
+      <>
+        <PageSEO
+          title="Carregando Produto..."
+          description="Aguarde enquanto carregamos os dados do produto."
+          path="/admin/cadastros/produto"
+          noIndex
+        />
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Carregando produto...</p>
           </div>
-        </>
+        </div>
+      </>
     );
   }
 
   return (
-      <>
-        <PageSEO
-          title={isEdit ? `Editar: ${product?.sku || 'Produto'}` : 'Novo Produto'}
-          description={
-            isEdit ? `Editando o produto ${product?.name}` : 'Cadastre um novo produto no catálogo.'
-          }
-          path={`/admin/cadastros/produto/${id || 'novo'}`}
-          noIndex
-        />
-        <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
-          <h1 data-testid="page-title-admin-produto" className="sr-only">
-            {isEdit ? 'Editar Produto' : 'Novo Produto'}
-          </h1>
-          {/* Breadcrumbs are rendered by MainLayout's PersistentBreadcrumbs */}
+    <>
+      <PageSEO
+        title={isEdit ? `Editar: ${product?.sku || 'Produto'}` : 'Novo Produto'}
+        description={
+          isEdit ? `Editando o produto ${product?.name}` : 'Cadastre um novo produto no catálogo.'
+        }
+        path={`/admin/cadastros/produto/${id || 'novo'}`}
+        noIndex
+      />
+      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
+        <h1 data-testid="page-title-admin-produto" className="sr-only">
+          {isEdit ? 'Editar Produto' : 'Novo Produto'}
+        </h1>
+        {/* Breadcrumbs are rendered by MainLayout's PersistentBreadcrumbs */}
 
-          {/* Header */}
-          {isEdit && (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Voltar"
-                  onClick={() => navigate('/admin/cadastros')}
-                  className="h-9 w-9 rounded-lg"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-                {isEdit && product && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      {product.sku} — {product.name}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                {isEdit && product && (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5"
-                      onClick={async () => {
-                        const { exportProductPdf } = await import('@/utils/productPdfExport');
-                        const formData = productToFormData(product) as ProductFormData;
-                        exportProductPdf({
-                          formData,
-                          productImages: getProductImages(product),
-                          categoryName: product.category_name || product.category || '',
-                          supplierName: product.supplier_name || product.supplier || '',
-                        });
-                        toast.success('PDF gerado com sucesso!');
-                      }}
-                    >
-                      <FileDown className="h-3.5 w-3.5" />
-                      Exportar PDF
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5"
-                      onClick={() => {
-                        const dupeData = { ...product, sku: `${product.sku}-COPIA` };
-                        sessionStorage.setItem('duplicate_product', JSON.stringify(dupeData));
-                        navigate('/admin/cadastros/produto/novo');
-                      }}
-                    >
-                      <Copy className="h-3.5 w-3.5" />
-                      Duplicar
-                    </Button>
-                  </>
-                )}
-
-                {isEdit && (
-                  <Tabs
-                    value={activeTab}
-                    onValueChange={(v) => setActiveTab(v as 'form' | 'history')}
-                  >
-                    <TabsList className="h-9">
-                      <TabsTrigger value="form" className="gap-1.5 text-xs">
-                        <Pencil className="h-3.5 w-3.5" />
-                        Editar
-                      </TabsTrigger>
-                      <TabsTrigger value="history" className="gap-1.5 text-xs">
-                        <History className="h-3.5 w-3.5" />
-                        Histórico
-                      </TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                )}
-              </div>
+        {/* Header */}
+        {isEdit && (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Voltar"
+                onClick={() => navigate('/admin/cadastros')}
+                className="h-9 w-9 rounded-lg"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              {isEdit && product && (
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    {product.sku} — {product.name}
+                  </p>
+                </div>
+              )}
             </div>
-          )}
 
-          {/* Content */}
-          <Suspense
-            fallback={
-              <div className="flex items-center justify-center py-16">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              </div>
-            }
-          >
-            {activeTab === 'form' ? (
-              <ProductFormFullscreen
-                initialData={
-                  isEdit && product
-                    ? productToFormData(product)
-                    : duplicateProduct
-                      ? productToFormData(duplicateProduct)
-                      : undefined
-                }
-                productImages={
-                  isEdit && product
-                    ? getProductImages(product)
-                    : duplicateProduct
-                      ? getProductImages(duplicateProduct)
-                      : []
-                }
-                productId={isEdit ? id : undefined}
-                onSubmit={handleFormSubmit}
-                onCancel={() => navigate('/admin/cadastros')}
-                isSaving={isSaving}
-                isEdit={isEdit}
+            <div className="flex items-center gap-2">
+              {isEdit && product && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={async () => {
+                      const { exportProductPdf } = await import('@/utils/productPdfExport');
+                      const formData = productToFormData(product) as ProductFormData;
+                      exportProductPdf({
+                        formData,
+                        productImages: getProductImages(product),
+                        categoryName: product.category_name || product.category || '',
+                        supplierName: product.supplier_name || product.supplier || '',
+                      });
+                      toast.success('PDF gerado com sucesso!');
+                    }}
+                  >
+                    <FileDown className="h-3.5 w-3.5" />
+                    Exportar PDF
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => {
+                      const dupeData = { ...product, sku: `${product.sku}-COPIA` };
+                      sessionStorage.setItem('duplicate_product', JSON.stringify(dupeData));
+                      navigate('/admin/cadastros/produto/novo');
+                    }}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    Duplicar
+                  </Button>
+                </>
+              )}
+
+              {isEdit && (
+                <Tabs
+                  value={activeTab}
+                  onValueChange={(v) => setActiveTab(v as 'form' | 'history')}
+                >
+                  <TabsList className="h-9">
+                    <TabsTrigger value="form" className="gap-1.5 text-xs">
+                      <Pencil className="h-3.5 w-3.5" />
+                      Editar
+                    </TabsTrigger>
+                    <TabsTrigger value="history" className="gap-1.5 text-xs">
+                      <History className="h-3.5 w-3.5" />
+                      Histórico
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Content */}
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          }
+        >
+          {activeTab === 'form' ? (
+            <ProductFormFullscreen
+              initialData={
+                isEdit && product
+                  ? productToFormData(product)
+                  : duplicateProduct
+                    ? productToFormData(duplicateProduct)
+                    : undefined
+              }
+              productImages={
+                isEdit && product
+                  ? getProductImages(product)
+                  : duplicateProduct
+                    ? getProductImages(duplicateProduct)
+                    : []
+              }
+              productId={isEdit ? id : undefined}
+              onSubmit={handleFormSubmit}
+              onCancel={() => navigate('/admin/cadastros')}
+              isSaving={isSaving}
+              isEdit={isEdit}
+            />
+          ) : (
+            isEdit &&
+            id && (
+              <AuditHistory
+                entityType="products"
+                entityId={id}
+                title="Histórico de Alterações"
+                maxHeight="70vh"
               />
-            ) : (
-              isEdit &&
-              id && (
-                <AuditHistory
-                  entityType="products"
-                  entityId={id}
-                  title="Histórico de Alterações"
-                  maxHeight="70vh"
-                />
-              )
-            )}
-          </Suspense>
-        </div>
-      </>
+            )
+          )}
+        </Suspense>
+      </div>
+    </>
   );
 }

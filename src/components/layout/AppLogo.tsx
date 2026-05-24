@@ -23,38 +23,40 @@ export function AppLogo({
   const iconColor = usesBrandIcon ? 'text-primary-foreground' : 'text-background';
 
   return (
-    <div className={cn("flex items-center gap-3", className, onClick && "cursor-pointer")} onClick={onClick}>
+    <div className={cn("group flex items-center gap-3 select-none", className, onClick && "cursor-pointer active:scale-95 transition-transform duration-200")} onClick={onClick}>
       <div className={cn(
-        "relative inline-flex items-center justify-center rounded-[14px] shadow-[0_8px_16px_-4px_rgba(var(--primary),0.25)] transition-all duration-500 shrink-0 overflow-hidden border border-white/10",
-        !iconClassName?.includes('h-') && (variant === 'sidebar' ? "h-10 w-10" : "h-11 w-11"),
+        "relative inline-flex items-center justify-center rounded-[12px] shadow-[0_4px_12px_rgba(0,0,0,0.1)] transition-all duration-500 shrink-0 overflow-hidden border border-white/5",
+        !iconClassName?.includes('h-') && (variant === 'sidebar' ? "h-9 w-9" : "h-11 w-11"),
         iconBg,
         iconClassName
       )}>
         <Gift className={cn(
-          "shrink-0 transition-transform duration-500 hover:scale-110",
-          iconClassName?.includes('h-20') ? "h-12 w-12" : 
-          iconClassName?.includes('h-14') ? "h-8 w-8" : 
-          variant === 'sidebar' ? "h-5.5 w-5.5" : "h-6.5 w-6.5",
+          "shrink-0 transition-transform duration-500",
+          iconClassName?.includes('h-20') ? "h-10 w-10" : 
+          iconClassName?.includes('h-14') ? "h-7 w-7" : 
+          variant === 'sidebar' ? "h-5 w-5" : "h-6 w-6",
           iconColor
         )} />
-        <Sparkles className="absolute top-0 right-0 h-3 w-3 text-white/40 animate-pulse" />
+        <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <Sparkles className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 text-white/50 animate-pulse" />
       </div>
       {showText && (
         <div className="flex flex-col">
           <span className={cn(
-            "font-display text-xl font-black leading-none tracking-tight text-white drop-shadow-sm",
+            "font-display text-lg font-black leading-none tracking-tight text-foreground drop-shadow-sm",
             textClassName
           )}>
             Promo Gifts
           </span>
           <span className={cn(
-            "text-[9px] font-bold uppercase tracking-[0.2em] text-primary/70 flex items-center gap-1.5 mt-0.5",
+            "text-[9px] font-bold uppercase tracking-[0.2em] text-primary/80 flex items-center gap-1.5 mt-0.5",
           )}>
-            Plataforma de Produtos
-            <span className="inline-block w-1 h-1 rounded-full bg-primary animate-ping" />
+            Plataforma
+            <span className="inline-block w-1 h-1 rounded-full bg-primary" />
           </span>
         </div>
       )}
     </div>
   );
 }
+

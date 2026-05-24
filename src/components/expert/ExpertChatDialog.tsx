@@ -3,7 +3,7 @@
  * Original: 1418 lines → Now: ~80 lines (orchestrator only)
  */
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { FlowFilterPanel, defaultFlowFilters } from "./FlowFilterPanel";
+import { FlowFilterPanel } from "./FlowFilterPanel";
 import { useExpertChat } from "./chat/useExpertChat";
 import { ChatHeader } from "./chat/ChatHeader";
 import { ChatHistoryPanel } from "./chat/ChatHistoryPanel";

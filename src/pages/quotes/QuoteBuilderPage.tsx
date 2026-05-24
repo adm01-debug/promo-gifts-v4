@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -28,15 +27,12 @@ import {
   Package,
   Loader2,
   BookTemplate,
-  ArrowLeft,
-  Edit,
   AlertTriangle,
   Calendar as CalendarIcon,
   Sparkles,
   ExternalLink,
   Info,
 } from 'lucide-react';
-import { toast } from 'sonner';
 import { format, addDays } from 'date-fns';
 
 import { QuoteTemplateSelector } from '@/components/quotes/QuoteTemplateSelector';
@@ -55,16 +51,15 @@ import { UnsavedChangesDialog } from '@/components/common/UnsavedChangesDialog';
 
 export default function QuoteBuilderPage() {
   const s = useQuoteBuilderState();
-  const { showDialog, guardNavigation, confirmLeave, cancelLeave, message } =
-    useUnsavedChangesGuard({
-      hasUnsavedChanges: s.hasUnsavedData,
-    });
+  const { showDialog, confirmLeave, cancelLeave, message } = useUnsavedChangesGuard({
+    hasUnsavedChanges: s.hasUnsavedData,
+  });
 
   if (s.loadingQuote) {
     return (
-        <div className="flex min-h-[60vh] items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     );
   }
 
@@ -97,8 +92,13 @@ export default function QuoteBuilderPage() {
         className="fixed right-4 top-20 z-40"
       />
 
-      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 pt-3 sm:pt-4 space-y-3 sm:space-y-4 pb-6 animate-fade-in">
-        <div aria-live="polite" className="sr-only" role="status" id="quote-builder-announcer"></div>
+      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 pb-6 pt-3 sm:space-y-4 sm:px-4 sm:pt-4 lg:px-6 xl:px-8">
+        <div
+          aria-live="polite"
+          className="sr-only"
+          role="status"
+          id="quote-builder-announcer"
+        ></div>
         {/* Header */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-3">
@@ -107,7 +107,9 @@ export default function QuoteBuilderPage() {
             </div>
             <div>
               <h1
-                data-testid={s.isEditMode ? "page-title-orcamento-editar" : "page-title-orcamento-novo"}
+                data-testid={
+                  s.isEditMode ? 'page-title-orcamento-editar' : 'page-title-orcamento-novo'
+                }
                 className="font-display text-xl font-bold leading-tight sm:text-2xl"
               >
                 {s.isEditMode ? 'Editar Orçamento' : 'Novo Orçamento'}
@@ -146,11 +148,10 @@ export default function QuoteBuilderPage() {
           </div>
         </div>
 
-
         {/* Stepper */}
-        <QuoteBuilderStepper 
-          completedSteps={s.completedSteps} 
-          activeStep={s.activeStep} 
+        <QuoteBuilderStepper
+          completedSteps={s.completedSteps}
+          activeStep={s.activeStep}
           onStepClick={s.goToStep}
         />
 
@@ -183,7 +184,12 @@ export default function QuoteBuilderPage() {
                   </p>
                 </div>
               </div>
-              <Button variant="outline" onClick={() => s.applyTemplate(s.defaultTemplate!)}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (s.defaultTemplate) s.applyTemplate(s.defaultTemplate);
+                }}
+              >
                 Aplicar Template
               </Button>
             </CardContent>
@@ -280,9 +286,9 @@ export default function QuoteBuilderPage() {
                       <span className="ml-1">*</span>
                     )}
                   </Label>
-                  <Select 
+                  <Select
                     data-testid="payment-method-select-root"
-                    value={s.paymentMethod} 
+                    value={s.paymentMethod}
                     onValueChange={s.setPaymentMethod}
                   >
                     <SelectTrigger
@@ -296,7 +302,9 @@ export default function QuoteBuilderPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="boleto">Boleto Bancário</SelectItem>
-                      <SelectItem value="pix_transferencia">Transferência Bancária / Pix</SelectItem>
+                      <SelectItem value="pix_transferencia">
+                        Transferência Bancária / Pix
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -316,9 +324,9 @@ export default function QuoteBuilderPage() {
                       <span className="ml-1">*</span>
                     )}
                   </Label>
-                  <Select 
+                  <Select
                     data-testid="payment-terms-select-root"
-                    value={s.paymentTerms} 
+                    value={s.paymentTerms}
                     onValueChange={s.setPaymentTerms}
                   >
                     <SelectTrigger
@@ -342,7 +350,7 @@ export default function QuoteBuilderPage() {
                 </div>
 
                 {/* Entrega */}
-                <div className="space-y-1.5 border-t border-border/30 pt-3 mt-1">
+                <div className="mt-1 space-y-1.5 border-t border-border/30 pt-3">
                   <div className="flex items-center gap-1.5" data-testid="delivery-label-container">
                     <Label
                       data-testid="delivery-label"
@@ -361,16 +369,19 @@ export default function QuoteBuilderPage() {
                     <TooltipProvider delayDuration={150}>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span 
+                          <span
                             data-testid="delivery-info-tooltip-trigger"
-                            className="inline-flex cursor-help align-middle text-muted-foreground/60 hover:text-primary transition-colors"
+                            className="inline-flex cursor-help align-middle text-muted-foreground/60 transition-colors hover:text-primary"
                           >
-                            <Info className="h-3 w-3" aria-label="Informação sobre prazo de entrega" />
+                            <Info
+                              className="h-3 w-3"
+                              aria-label="Informação sobre prazo de entrega"
+                            />
                           </span>
                         </TooltipTrigger>
-                        <TooltipContent 
+                        <TooltipContent
                           data-testid="delivery-info-tooltip-content"
-                          side="top" 
+                          side="top"
                           className="max-w-xs text-[11px] leading-relaxed"
                         >
                           Antes de assumir o compromisso com seu Cliente, valide com todo o time
@@ -381,39 +392,38 @@ export default function QuoteBuilderPage() {
                     </TooltipProvider>
                   </div>
 
-
-                    <div className="flex flex-col gap-1.5 rounded-xl bg-muted/30 p-1.5 border border-border/40">
-                      <div className="flex gap-1">
-                        <button
-                          type="button"
-                          onClick={() => s.handleDeliveryModeChange('prazo')}
-                          className={cn(
-                            'flex-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition-all',
-                            s.deliveryMode === 'prazo'
-                              ? 'bg-background text-primary shadow-sm ring-1 ring-border/50'
-                              : 'text-muted-foreground hover:bg-muted/50',
-                          )}
-                        >
-                          Contar dias
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => s.handleDeliveryModeChange('data')}
-                          className={cn(
-                            'flex-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition-all',
-                            s.deliveryMode === 'data'
-                              ? 'bg-background text-primary shadow-sm ring-1 ring-border/50'
-                              : 'text-muted-foreground hover:bg-muted/50',
-                          )}
-                        >
-                          Data fixa
-                        </button>
-                      </div>
+                  <div className="flex flex-col gap-1.5 rounded-xl border border-border/40 bg-muted/30 p-1.5">
+                    <div className="flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => s.handleDeliveryModeChange('prazo')}
+                        className={cn(
+                          'flex-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition-all',
+                          s.deliveryMode === 'prazo'
+                            ? 'bg-background text-primary shadow-sm ring-1 ring-border/50'
+                            : 'text-muted-foreground hover:bg-muted/50',
+                        )}
+                      >
+                        Contar dias
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => s.handleDeliveryModeChange('data')}
+                        className={cn(
+                          'flex-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition-all',
+                          s.deliveryMode === 'data'
+                            ? 'bg-background text-primary shadow-sm ring-1 ring-border/50'
+                            : 'text-muted-foreground hover:bg-muted/50',
+                        )}
+                      >
+                        Data fixa
+                      </button>
                     </div>
+                  </div>
                   {s.deliveryMode === 'prazo' ? (
-                    <Select 
+                    <Select
                       data-testid="delivery-time-select-root"
-                      value={s.deliveryTime} 
+                      value={s.deliveryTime}
                       onValueChange={s.setDeliveryTime}
                     >
                       <SelectTrigger
@@ -436,10 +446,10 @@ export default function QuoteBuilderPage() {
                   ) : (
                     <Popover>
                       <PopoverTrigger asChild>
-                          <Button
-                            data-testid="delivery-date-picker"
-                            variant="outline"
-                            className={cn(
+                        <Button
+                          data-testid="delivery-date-picker"
+                          variant="outline"
+                          className={cn(
                             'h-8 w-full justify-start text-left text-xs font-normal',
                             !s.deliveryDate && 'text-muted-foreground',
                             s.validationErrors.includes('prazo_entrega') && 'border-destructive',
@@ -465,7 +475,7 @@ export default function QuoteBuilderPage() {
                 </div>
 
                 {/* Frete */}
-                <div className="space-y-1.5 border-t border-border/30 pt-3 mt-1">
+                <div className="mt-1 space-y-1.5 border-t border-border/30 pt-3">
                   <Label
                     className={cn(
                       'text-xs',
@@ -476,9 +486,9 @@ export default function QuoteBuilderPage() {
                   >
                     Frete {s.validationErrors.includes('frete') && <span className="ml-1">*</span>}
                   </Label>
-                  <Select 
+                  <Select
                     data-testid="shipping-type-select-root"
-                    value={s.shippingType} 
+                    value={s.shippingType}
                     onValueChange={s.setShippingType}
                   >
                     <SelectTrigger
@@ -497,7 +507,7 @@ export default function QuoteBuilderPage() {
                     </SelectContent>
                   </Select>
                   {s.validationErrors.includes('frete') && (
-                    <p className="flex items-center gap-1 text-[10px] text-destructive mt-0.5">
+                    <p className="mt-0.5 flex items-center gap-1 text-[10px] text-destructive">
                       <AlertTriangle className="h-3 w-3" />
                       Selecione a modalidade de frete
                     </p>
@@ -533,29 +543,29 @@ export default function QuoteBuilderPage() {
                   )}
                 </div>
 
-              {/* Atalho para Business Analytics do cliente — substitui o antigo painel de Recomendações IA,
+                {/* Atalho para Business Analytics do cliente — substitui o antigo painel de Recomendações IA,
                   consolidando inteligência comercial no módulo /ferramentas/bi (SSOT). */}
-              {s.companyInfo?.id && (
-                <a
-                  href={`/ferramentas/bi?clientId=${s.companyInfo.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center gap-3 rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-3 transition-colors hover:border-primary/50 hover:bg-primary/10"
-                >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-display text-sm font-semibold leading-tight">
-                      Inteligência completa deste cliente
-                    </p>
-                    <p className="mt-0.5 text-[11px] leading-tight text-muted-foreground">
-                      Histórico, afinidade, sazonalidade e tendência do setor
-                    </p>
-                  </div>
-                  <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
-                </a>
-              )}
+                {s.companyInfo?.id && (
+                  <a
+                    href={`/ferramentas/bi?clientId=${s.companyInfo.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-center gap-3 rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-3 transition-colors hover:border-primary/50 hover:bg-primary/10"
+                  >
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-display text-sm font-semibold leading-tight">
+                        Inteligência completa deste cliente
+                      </p>
+                      <p className="mt-0.5 text-[11px] leading-tight text-muted-foreground">
+                        Histórico, afinidade, sazonalidade e tendência do setor
+                      </p>
+                    </div>
+                    <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
+                  </a>
+                )}
               </div>
             </div>
           </div>
@@ -571,7 +581,11 @@ export default function QuoteBuilderPage() {
                       {s.items.length} item(ns) adicionado(s)
                     </p>
                   </div>
-                  <Button size="sm" data-testid="quote-add-product-button" onClick={() => s.setProductSearchOpen(true)}>
+                  <Button
+                    size="sm"
+                    data-testid="quote-add-product-button"
+                    onClick={() => s.setProductSearchOpen(true)}
+                  >
                     <Plus className="mr-1.5 h-3.5 w-3.5" />
                     Produto
                   </Button>
@@ -661,7 +675,6 @@ export default function QuoteBuilderPage() {
             confirmAllStalePrices={s.confirmAllStalePrices}
           />
         </div>
-
       </div>
 
       {/* Product Search Dialog */}

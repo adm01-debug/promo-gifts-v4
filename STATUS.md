@@ -8,23 +8,56 @@
 
 ## 🎯 Onde estamos hoje
 
-**Última sessão**: 2026-05-23 — **Auditoria exaustiva + Plano de 20 etapas** (11 etapas fechadas, 8 adiadas para sessões dedicadas).
+**Última sessão**: 2026-05-23 — **Etapas 9-13** fechadas — refatoração do top-5 do TSC baseline (235 erros eliminados, 0 regressão).
+
+**Sessões recentes**:
+- 2026-05-23 (mais recente) — **Etapas 9-13** (top-5 TSC baseline) ✅
+- 2026-05-23 — **Etapa 17 / T-FIX-5b** ✅
+- 2026-05-23 — Auditoria exaustiva + Plano de 20 etapas (PR #124) — 11 etapas fechadas, 8 adiadas
 
 | Métrica | Valor |
 |---------|-------|
-| Sessões de hardening concluídas | T-FIX-3, T-FIX-4, T-FIX-5, Bugs #1/#2, Redeploy de schemas, Auditoria 2026-05-23 |
-| Erros TS em `.tsc-baseline.json` | 1.333 (320 arquivos) — sem regressão |
+| Sessões de hardening concluídas | T-FIX-3, T-FIX-4, T-FIX-5, T-FIX-5b, Bugs #1/#2, Redeploy de schemas, Auditoria 2026-05-23 |
+| Erros TS em `.tsc-baseline.json` | 1.010 (291 arquivos) — sem regressão · top-5 eliminado nas etapas 9-13 (2026-05-23) |
 | Erros ESLint em `.eslint-baseline.json` | 442 (404 arquivos) — drift positivo de 31 capitalizado em 2026-05-23 |
 | Próximo cutoff iminente | ✅ T-FIX-3 fechado em 2026-05-23 (era 2026-06-02) — sem outro cutoff em <30 dias |
 
 ---
 
-## ✅ Fechado nesta sessão (2026-05-23 — Auditoria + Plano 20 etapas)
+## ✅ Fechado nesta sessão (2026-05-23 — Etapas 9-13: top-5 do TSC baseline)
 
-PR #124 — branch `claude/code-bug-analysis-VLG0u`.
+Refatoração dos 5 arquivos com mais erros no `.tsc-baseline.json` — **235 erros TS eliminados**, baseline 1.253→1.010, **zero regressão** (gate `typecheck` verde).
+
+| Etapa | Arquivo | Erros | Causa-raiz / correção |
+|---|---|---|---|
+| 9 | `lib/personalization/adapters/price-response.adapter.ts` | 61 → 0 | Parsers recebiam `Record<string,unknown>` → tipagem de fronteira (12 interfaces `Nested*`/`Flat*`); remove `AnyRec` e cast redundante |
+| 10 | `pages/admin/AdminProductFormPage.tsx` | 60 → 0 | `PromobrindProduct` não declarava ~57 campos lidos pelo form → estende o tipo (todos opcionais/nullable) + tipa `products` no dedupe de SKU |
+| 11 | `components/admin/products/new-supplier/tabs/AddressTab.tsx` | 56 → 0 | Prop `form: Record<string,unknown>` descartava o tipo do hook → `NewSupplierForm = ReturnType<typeof useNewSupplierForm>` |
+| 12 | `components/admin/products/new-supplier/tabs/BasicDataTab.tsx` | 32 → 0 | Mesma origem do AddressTab (mesmo tipo de prop) |
+| 13 | `components/compare/CompareTableView.tsx` | 26 → 0 | Acessos `camelCase`→`snake_case` (bugs latentes de runtime: `isKit`/`minQuantity`/`stockStatus`), null-safety em `images`/`colors`, helper `tagArray` p/ JSONB `tags`, refs aninhados `category`/`supplier` no tipo `Product` |
+
+**Efeito colateral positivo**: a extensão de `Product` (refs `category`/`supplier`) tornou obsoletas 2 diretivas `@ts-expect-error` em `ExportFavoritesButton.tsx` (removidas).
+
+**Follow-up registrado**: `StockRiskBadge.tsx` e `OtherSuppliersRow.tsx` ainda tipam `product: Record<string,unknown>` e têm bugs `camelCase` latentes próprios — fora de escopo aqui (cast no call-site); candidatos a uma futura etapa dedicada.
+
+---
+
+## ✅ Fechado em 2026-05-23 (Etapa 17 / T-FIX-5b)
+
+**3 commits sequenciais** resolvendo o anti-padrão B do guard-rail ESLint:
+
+- ✅ [`9bf51be`](https://github.com/adm01-debug/promo-gifts-v4/commit/9bf51beafeeb503794c9825f4cfbdd399c8ef351) — `src/pages/auth/AuthBranding.visual.test.tsx`: eslint-disable + comentário inline justificando (Opção A do T-FIX-5b)
+- ✅ [`5318da2`](https://github.com/adm01-debug/promo-gifts-v4/commit/5318da2609064130db8898063bcb7c2e3f140fdc) — `src/components/quotes/__tests__/QuoteBuilderStepper.test.tsx`: mesma decisão para os 5 labels do stepper
+- ✅ [`2543585`](https://github.com/adm01-debug/promo-gifts-v4/commit/2543585d28fcaa424741d3956be60f0be4d0ecda) — `docs/redeploy/T-FIX-5-LINT-GUARDRAIL.md`: doc atualizada registrando Fase 2 + 3 critérios para futuras decisões A vs B
+
+**Decisão arquitetural**: Opção A (eslint-disable cirúrgico) venceu Opção B (refactor) e Opção C (warn). Custo real: ~10 min (vs ~3h estimados originalmente). Severity `error` continua protegendo o repo inteiro; apenas 2 exceções autorizadas com comentário inline auditável.
+
+---
+
+## ✅ Fechado em 2026-05-23 (Auditoria + Plano 20 etapas — PR #124)
 
 ### Quick wins / desbloqueio CI (Etapas 1-5)
-- ✅ **Etapa 1** — P5 do plano "10/10": rename 3 params PascalCase em `AdminStandardRules.test.tsx`
+- ✅ **Etapa 1** — P5 do plano "10/10": rename 3 params PascalCase em `AdminStandardRules.test.tsx:107-113`
 - ✅ **Etapa 2** — refactor `useOptionalOnboardingContext`: elimina 3 empty catches + 3 violações `rules-of-hooks` + 3 `any`
 - ✅ **Etapa 3** — regenera baseline ESLint capturando 31 erros eliminados (473→442)
 - ✅ **Etapa 4** — T-FIX-3: bump 60 usos de GH Actions em 12 workflows (checkout/setup-node/upload-artifact)
@@ -36,7 +69,7 @@ PR #124 — branch `claude/code-bug-analysis-VLG0u`.
 - ✅ **Etapa 8** — Issue 2: 15 testes Deno para `validateUrlFormat`
 
 ### Pendências menores (Etapas 18-19)
-- ✅ **Etapa 18** — `QuoteBuilderStepper.test.tsx`: remove forEach no-op
+- ✅ **Etapa 18** — `QuoteBuilderStepper.test.tsx:68`: remove forEach no-op
 - ✅ **Etapa 19** — `ScenarioSimulation.test.ts`: corrige Scenario 2 CIF/FOB vs schema real (3 cenários)
 
 ### Outras correções (não numeradas)
@@ -55,23 +88,17 @@ PR #124 — branch `claude/code-bug-analysis-VLG0u`.
 
 ## ⏳ Pendências adiadas (sessões dedicadas)
 
-8 etapas do plano de 20 ficaram para sessões dedicadas porque exigem refactor arquitetural não-trivial:
+**3 etapas** do plano de 20 ainda ficam para sessões dedicadas (as 5 do TSC baseline — etapas 9-13 — foram fechadas em 2026-05-23):
 
 | # | Etapa | Razão do adiamento | Esforço estimado |
 |---|---|---|---|
-| 9 | Refatorar `price-response.adapter.ts` (61 erros TS) | Adapter complexo, mistura snake/camelCase, nullable fields | ~4h |
-| 10 | Refatorar `AdminProductFormPage.tsx` (60 erros TS) | Form com 60 fields, schemas Zod entrelaçados | ~4h |
-| 11 | Refatorar `AddressTab.tsx` (56 erros TS) | Form de endereço com validações múltiplas | ~3h |
-| 12 | Refatorar `BasicDataTab.tsx` (32 erros TS) | Mesma origem do AddressTab | ~2h |
-| 13 | Refatorar `CompareTableView.tsx` (26 erros TS) | Renomear ~15 acessos `camelCase` → `snake_case` + null-safe (verificar callers) | ~2h |
 | 14 | Reduzir `SupabaseConnectionsTab.tsx` (17 ESLint warnings) | Auditoria caso-a-caso | ~1h |
 | 15 | Reduzir `CatalogContent.tsx` + `ProductQuickView.tsx` (32 warnings) | Idem | ~2h |
 | 16 | Reduzir `useSimulatorWizard.ts` + `useGlobalSearch.ts` (27 warnings) | Idem | ~2h |
-| 17 | T-FIX-5b — antipadrão B (`expect` em `forEach` em `it`) | Evolução do guard-rail ESLint | ~3h |
 
-**Total estimado**: ~23h de trabalho cuidadoso.
+**Total estimado**: ~5h de trabalho cuidadoso.
 
-> 💡 Sugestão: rodar essas etapas **uma por sessão dedicada**, sem misturar com novas features. A refatoração de um arquivo do top-5 do TSC baseline gera ~20+ pares de edits e é frágil — vale ter 100% do CI rodando antes/depois de cada.
+> 💡 Sugestão: rodar essas etapas **uma por sessão dedicada**, sem misturar com novas features.
 
 ---
 
@@ -79,12 +106,14 @@ PR #124 — branch `claude/code-bug-analysis-VLG0u`.
 
 | Prioridade | Item | Origem | Cutoff |
 |------------|------|--------|--------|
-| 🟡 Alta | Refatorar top-5 arquivos do TSC baseline (etapas 9-13 do plano) | Auditoria 2026-05-23 | Sem cutoff |
-| 🟡 Média | Reduzir top arquivos do ESLint baseline (etapas 14-16) | Idem | Sem cutoff |
+| 🟡 Média | Reduzir top arquivos do ESLint baseline (etapas 14-16) | Auditoria 2026-05-23 | Sem cutoff |
 | 🟡 Média | Plano "10/10" #3, #4 (coverage, quality runner) | Bugs anteriores | Sem cutoff |
-| 🟢 Baixa | T-FIX-5b — antipadrão B | T-FIX-4 audit | Sem cutoff |
 | 🟢 Baixa | Issue 3 do post-mortem CRM — migrar `EXTERNAL_CRM_*` para `integration_credentials` | Post-mortem | Sponsor precisa fornecer chaves |
 | 🟢 Baixa | Flakiness teardown async Helmet/Event listener | Sessão anterior | Sem cutoff |
+
+> ✅ **Removido do backlog em 2026-05-23**: T-FIX-5b (Etapa 17) — anti-padrão B do guard-rail ESLint resolvido via Opção A. Ver `docs/redeploy/T-FIX-5-LINT-GUARDRAIL.md` → seção "Fase 2 — T-FIX-5b RESOLVIDO".
+>
+> ✅ **Removido do backlog em 2026-05-23**: Etapas 9-13 (top-5 do TSC baseline) — 235 erros eliminados (price-response.adapter 61, AdminProductFormPage 60, AddressTab 56, BasicDataTab 32, CompareTableView 26). Baseline TSC 1.253→1.010. Zero regressão.
 
 ---
 

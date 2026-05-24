@@ -1,3 +1,34 @@
+_asia_api_staging	referencia	text	0
+_asia_api_staging	nome	text	0
+_asia_api_staging	raw_json	jsonb	0
+_asia_api_staging	propriedades	jsonb	0
+_asia_api_staging	altura	integer	0
+_asia_api_staging	largura	integer	0
+_asia_api_staging	comprimento	integer	0
+_asia_api_staging	peso	numeric	0
+_asia_api_staging	origem_faturamento	character varying	0
+_asia_api_staging	promocao	integer	0
+_asia_api_staging	categorias	jsonb	0
+_asia_api_staging	tags	jsonb	0
+_asia_api_staging	galeria	jsonb	0
+_asia_api_staging	video	text	0
+_asia_api_staging	total_variacoes	integer	0
+_asia_api_staging	created_at	timestamp with time zone	0
+_unif_pending_log	id	integer	0
+_unif_pending_log	ticket	text	0
+_unif_pending_log	prioridade	text	0
+_unif_pending_log	acao	text	0
+_unif_pending_log	status	text	0
+_unif_pending_log	decisao_em	timestamp without time zone	0
+_unif_pending_log	revisar_em	date	0
+_unif_pending_log	contexto	jsonb	0
+_unif_pending_log	observacao	text	0
+_unif_settings_arquivo	id	bigint	0
+_unif_settings_arquivo	setting_key	text	0
+_unif_settings_arquivo	setting_value	jsonb	0
+_unif_settings_arquivo	description	text	0
+_unif_settings_arquivo	arquivado_em	timestamp with time zone	0
+_unif_settings_arquivo	motivo	text	0
 access_security_settings	id	uuid	0
 access_security_settings	ip_whitelist_enabled	boolean	0
 access_security_settings	city_whitelist_enabled	boolean	0
@@ -23,140 +54,35 @@ admin_audit_log	duration_ms	integer	0
 admin_audit_log	status	text	0
 admin_audit_log	payload_summary	jsonb	0
 admin_audit_log	source	text	0
-admin_audit_log_old	id	uuid	0
-admin_audit_log_old	user_id	uuid	0
-admin_audit_log_old	action	text	0
-admin_audit_log_old	resource_type	text	0
-admin_audit_log_old	resource_id	text	0
-admin_audit_log_old	details	jsonb	0
-admin_audit_log_old	ip_address	text	0
-admin_audit_log_old	user_agent	text	0
-admin_audit_log_old	created_at	timestamp with time zone	0
-admin_audit_log_old	request_id	text	0
-admin_audit_log_old	started_at	timestamp with time zone	0
-admin_audit_log_old	finished_at	timestamp with time zone	0
-admin_audit_log_old	duration_ms	integer	0
-admin_audit_log_old	status	text	0
-admin_audit_log_old	payload_summary	jsonb	0
-admin_audit_log_old	source	text	0
-admin_audit_log_y2025m12	id	uuid	0
-admin_audit_log_y2025m12	user_id	uuid	0
-admin_audit_log_y2025m12	action	text	0
-admin_audit_log_y2025m12	resource_type	text	0
-admin_audit_log_y2025m12	resource_id	text	0
-admin_audit_log_y2025m12	details	jsonb	0
-admin_audit_log_y2025m12	ip_address	text	0
-admin_audit_log_y2025m12	user_agent	text	0
-admin_audit_log_y2025m12	created_at	timestamp with time zone	0
-admin_audit_log_y2025m12	request_id	text	0
-admin_audit_log_y2025m12	started_at	timestamp with time zone	0
-admin_audit_log_y2025m12	finished_at	timestamp with time zone	0
-admin_audit_log_y2025m12	duration_ms	integer	0
-admin_audit_log_y2025m12	status	text	0
-admin_audit_log_y2025m12	payload_summary	jsonb	0
-admin_audit_log_y2025m12	source	text	0
-admin_audit_log_y2026m01	id	uuid	0
-admin_audit_log_y2026m01	user_id	uuid	0
-admin_audit_log_y2026m01	action	text	0
-admin_audit_log_y2026m01	resource_type	text	0
-admin_audit_log_y2026m01	resource_id	text	0
-admin_audit_log_y2026m01	details	jsonb	0
-admin_audit_log_y2026m01	ip_address	text	0
-admin_audit_log_y2026m01	user_agent	text	0
-admin_audit_log_y2026m01	created_at	timestamp with time zone	0
-admin_audit_log_y2026m01	request_id	text	0
-admin_audit_log_y2026m01	started_at	timestamp with time zone	0
-admin_audit_log_y2026m01	finished_at	timestamp with time zone	0
-admin_audit_log_y2026m01	duration_ms	integer	0
-admin_audit_log_y2026m01	status	text	0
-admin_audit_log_y2026m01	payload_summary	jsonb	0
-admin_audit_log_y2026m01	source	text	0
-admin_audit_log_y2026m02	id	uuid	0
-admin_audit_log_y2026m02	user_id	uuid	0
-admin_audit_log_y2026m02	action	text	0
-admin_audit_log_y2026m02	resource_type	text	0
-admin_audit_log_y2026m02	resource_id	text	0
-admin_audit_log_y2026m02	details	jsonb	0
-admin_audit_log_y2026m02	ip_address	text	0
-admin_audit_log_y2026m02	user_agent	text	0
-admin_audit_log_y2026m02	created_at	timestamp with time zone	0
-admin_audit_log_y2026m02	request_id	text	0
-admin_audit_log_y2026m02	started_at	timestamp with time zone	0
-admin_audit_log_y2026m02	finished_at	timestamp with time zone	0
-admin_audit_log_y2026m02	duration_ms	integer	0
-admin_audit_log_y2026m02	status	text	0
-admin_audit_log_y2026m02	payload_summary	jsonb	0
-admin_audit_log_y2026m02	source	text	0
-admin_audit_log_y2026m03	id	uuid	0
-admin_audit_log_y2026m03	user_id	uuid	0
-admin_audit_log_y2026m03	action	text	0
-admin_audit_log_y2026m03	resource_type	text	0
-admin_audit_log_y2026m03	resource_id	text	0
-admin_audit_log_y2026m03	details	jsonb	0
-admin_audit_log_y2026m03	ip_address	text	0
-admin_audit_log_y2026m03	user_agent	text	0
-admin_audit_log_y2026m03	created_at	timestamp with time zone	0
-admin_audit_log_y2026m03	request_id	text	0
-admin_audit_log_y2026m03	started_at	timestamp with time zone	0
-admin_audit_log_y2026m03	finished_at	timestamp with time zone	0
-admin_audit_log_y2026m03	duration_ms	integer	0
-admin_audit_log_y2026m03	status	text	0
-admin_audit_log_y2026m03	payload_summary	jsonb	0
-admin_audit_log_y2026m03	source	text	0
-admin_audit_log_y2026m04	id	uuid	0
-admin_audit_log_y2026m04	user_id	uuid	0
-admin_audit_log_y2026m04	action	text	0
-admin_audit_log_y2026m04	resource_type	text	0
-admin_audit_log_y2026m04	resource_id	text	0
-admin_audit_log_y2026m04	details	jsonb	0
-admin_audit_log_y2026m04	ip_address	text	0
-admin_audit_log_y2026m04	user_agent	text	0
-admin_audit_log_y2026m04	created_at	timestamp with time zone	0
-admin_audit_log_y2026m04	request_id	text	0
-admin_audit_log_y2026m04	started_at	timestamp with time zone	0
-admin_audit_log_y2026m04	finished_at	timestamp with time zone	0
-admin_audit_log_y2026m04	duration_ms	integer	0
-admin_audit_log_y2026m04	status	text	0
-admin_audit_log_y2026m04	payload_summary	jsonb	0
-admin_audit_log_y2026m04	source	text	0
-admin_audit_log_y2026m05	id	uuid	0
-admin_audit_log_y2026m05	user_id	uuid	0
-admin_audit_log_y2026m05	action	text	0
-admin_audit_log_y2026m05	resource_type	text	0
-admin_audit_log_y2026m05	resource_id	text	0
-admin_audit_log_y2026m05	details	jsonb	0
-admin_audit_log_y2026m05	ip_address	text	0
-admin_audit_log_y2026m05	user_agent	text	0
-admin_audit_log_y2026m05	created_at	timestamp with time zone	0
-admin_audit_log_y2026m05	request_id	text	0
-admin_audit_log_y2026m05	started_at	timestamp with time zone	0
-admin_audit_log_y2026m05	finished_at	timestamp with time zone	0
-admin_audit_log_y2026m05	duration_ms	integer	0
-admin_audit_log_y2026m05	status	text	0
-admin_audit_log_y2026m05	payload_summary	jsonb	0
-admin_audit_log_y2026m05	source	text	0
-admin_audit_log_y2026m06	id	uuid	0
-admin_audit_log_y2026m06	user_id	uuid	0
-admin_audit_log_y2026m06	action	text	0
-admin_audit_log_y2026m06	resource_type	text	0
-admin_audit_log_y2026m06	resource_id	text	0
-admin_audit_log_y2026m06	details	jsonb	0
-admin_audit_log_y2026m06	ip_address	text	0
-admin_audit_log_y2026m06	user_agent	text	0
-admin_audit_log_y2026m06	created_at	timestamp with time zone	0
-admin_audit_log_y2026m06	request_id	text	0
-admin_audit_log_y2026m06	started_at	timestamp with time zone	0
-admin_audit_log_y2026m06	finished_at	timestamp with time zone	0
-admin_audit_log_y2026m06	duration_ms	integer	0
-admin_audit_log_y2026m06	status	text	0
-admin_audit_log_y2026m06	payload_summary	jsonb	0
-admin_audit_log_y2026m06	source	text	0
 admin_settings	id	uuid	0
 admin_settings	key	text	0
 admin_settings	value	jsonb	0
 admin_settings	updated_by	uuid	0
 admin_settings	created_at	timestamp with time zone	0
 admin_settings	updated_at	timestamp with time zone	0
+ai_description_queue	id	uuid	0
+ai_description_queue	product_id	uuid	0
+ai_description_queue	status	text	0
+ai_description_queue	priority	integer	0
+ai_description_queue	attempts	integer	0
+ai_description_queue	max_attempts	integer	0
+ai_description_queue	error_message	text	0
+ai_description_queue	ai_model	text	0
+ai_description_queue	queued_at	timestamp with time zone	0
+ai_description_queue	started_at	timestamp with time zone	0
+ai_description_queue	completed_at	timestamp with time zone	0
+ai_description_queue	organization_id	uuid	0
+ai_function_routing	id	uuid	0
+ai_function_routing	function_name	text	0
+ai_function_routing	primary_model_id	uuid	0
+ai_function_routing	fallback_model_ids	ARRAY	0
+ai_function_routing	required_capabilities	jsonb	0
+ai_function_routing	request_overrides	jsonb	0
+ai_function_routing	is_active	boolean	0
+ai_function_routing	notes	text	0
+ai_function_routing	created_at	timestamp with time zone	0
+ai_function_routing	updated_at	timestamp with time zone	0
+ai_function_routing	updated_by	uuid	0
 ai_insights_cache	id	uuid	0
 ai_insights_cache	user_id	uuid	0
 ai_insights_cache	function_name	text	0
@@ -168,6 +94,68 @@ ai_insights_cache	tokens_output	integer	0
 ai_insights_cache	duration_ms	integer	0
 ai_insights_cache	created_at	timestamp with time zone	0
 ai_insights_cache	expires_at	timestamp with time zone	0
+ai_models	id	uuid	0
+ai_models	provider_id	uuid	0
+ai_models	model_id	text	0
+ai_models	display_name	text	0
+ai_models	capabilities	jsonb	0
+ai_models	cost_input_per_1m	numeric	0
+ai_models	cost_output_per_1m	numeric	0
+ai_models	cost_per_image	numeric	0
+ai_models	max_input_tokens	integer	0
+ai_models	max_output_tokens	integer	0
+ai_models	is_active	boolean	0
+ai_models	metadata	jsonb	0
+ai_models	created_at	timestamp with time zone	0
+ai_models	updated_at	timestamp with time zone	0
+ai_provider_quotas	id	uuid	0
+ai_provider_quotas	provider_id	uuid	0
+ai_provider_quotas	monthly_limit_usd	numeric	0
+ai_provider_quotas	monthly_limit_tokens	bigint	0
+ai_provider_quotas	alert_threshold_pct	integer	0
+ai_provider_quotas	hard_stop	boolean	0
+ai_provider_quotas	current_period_start	date	0
+ai_provider_quotas	current_period_usage_usd	numeric	0
+ai_provider_quotas	current_period_usage_tokens	bigint	0
+ai_provider_quotas	is_active	boolean	0
+ai_provider_quotas	notes	text	0
+ai_provider_quotas	created_at	timestamp with time zone	0
+ai_provider_quotas	updated_at	timestamp with time zone	0
+ai_providers	id	uuid	0
+ai_providers	slug	text	0
+ai_providers	display_name	text	0
+ai_providers	api_base_url	text	0
+ai_providers	api_format	text	0
+ai_providers	auth_header	text	0
+ai_providers	auth_format	text	0
+ai_providers	secret_name	text	0
+ai_providers	is_active	boolean	0
+ai_providers	priority	integer	0
+ai_providers	timeout_ms	integer	0
+ai_providers	max_retries	integer	0
+ai_providers	metadata	jsonb	0
+ai_providers	last_test_at	timestamp with time zone	0
+ai_providers	last_test_ok	boolean	0
+ai_providers	last_test_message	text	0
+ai_providers	last_latency_ms	integer	0
+ai_providers	created_at	timestamp with time zone	0
+ai_providers	updated_at	timestamp with time zone	0
+ai_providers	created_by	uuid	0
+ai_providers	updated_by	uuid	0
+ai_routing_decisions	id	uuid	0
+ai_routing_decisions	function_name	text	0
+ai_routing_decisions	user_id	uuid	0
+ai_routing_decisions	attempted_models	ARRAY	0
+ai_routing_decisions	attempted_providers	ARRAY	0
+ai_routing_decisions	attempted_outcomes	jsonb	0
+ai_routing_decisions	final_model_id	uuid	0
+ai_routing_decisions	final_provider_id	uuid	0
+ai_routing_decisions	total_attempts	integer	0
+ai_routing_decisions	total_duration_ms	integer	0
+ai_routing_decisions	outcome	text	0
+ai_routing_decisions	usage_log_id	uuid	0
+ai_routing_decisions	request_id	text	0
+ai_routing_decisions	created_at	timestamp with time zone	0
 ai_usage_events	id	uuid	0
 ai_usage_events	user_id	uuid	0
 ai_usage_events	function_name	text	0
@@ -193,6 +181,22 @@ ai_usage_quotas	monthly_limit	integer	0
 ai_usage_quotas	is_unlimited	boolean	0
 ai_usage_quotas	created_at	timestamp with time zone	0
 ai_usage_quotas	updated_at	timestamp with time zone	0
+analytics_events	id	uuid	0
+analytics_events	user_id	uuid	0
+analytics_events	event_type	text	0
+analytics_events	event_name	text	0
+analytics_events	properties	jsonb	0
+analytics_events	session_id	text	0
+analytics_events	ip_address	inet	0
+analytics_events	user_agent	text	0
+analytics_events	created_at	timestamp with time zone	0
+api_usage	id	uuid	0
+api_usage	provider	text	0
+api_usage	period_month	text	0
+api_usage	credits_used	integer	0
+api_usage	credits_limit	integer	0
+api_usage	cost_usd	numeric	0
+api_usage	updated_at	timestamp with time zone	0
 app_vitals	id	uuid	0
 app_vitals	metric_name	text	0
 app_vitals	metric_value	numeric	0
@@ -215,6 +219,72 @@ art_file_attachments	file_extension	text	0
 art_file_attachments	notes	text	0
 art_file_attachments	created_at	timestamp with time zone	0
 art_file_attachments	updated_at	timestamp with time zone	0
+attribute_definitions	id	uuid	0
+attribute_definitions	organization_id	uuid	0
+attribute_definitions	group_id	uuid	0
+attribute_definitions	name	character varying	0
+attribute_definitions	slug	character varying	0
+attribute_definitions	display_name	character varying	0
+attribute_definitions	description	text	0
+attribute_definitions	data_type	character varying	0
+attribute_definitions	unit	character varying	0
+attribute_definitions	default_value	text	0
+attribute_definitions	possible_values	jsonb	0
+attribute_definitions	validation_rules	jsonb	0
+attribute_definitions	is_required	boolean	0
+attribute_definitions	is_filterable	boolean	0
+attribute_definitions	is_comparable	boolean	0
+attribute_definitions	is_visible	boolean	0
+attribute_definitions	is_searchable	boolean	0
+attribute_definitions	display_order	integer	0
+attribute_definitions	is_active	boolean	0
+attribute_definitions	created_at	timestamp with time zone	0
+attribute_definitions	updated_at	timestamp with time zone	0
+attribute_equivalences	id	uuid	0
+attribute_equivalences	organization_id	uuid	0
+attribute_equivalences	promo_attribute_id	uuid	0
+attribute_equivalences	supplier_attribute_id	uuid	0
+attribute_equivalences	value_transformation	jsonb	0
+attribute_equivalences	match_quality	character varying	0
+attribute_equivalences	confidence_score	integer	0
+attribute_equivalences	is_active	boolean	0
+attribute_equivalences	verified	boolean	0
+attribute_equivalences	verified_by	uuid	0
+attribute_equivalences	verified_at	timestamp with time zone	0
+attribute_equivalences	source	character varying	0
+attribute_equivalences	notes	text	0
+attribute_equivalences	created_at	timestamp with time zone	0
+attribute_equivalences	updated_at	timestamp with time zone	0
+attribute_groups	id	uuid	0
+attribute_groups	organization_id	uuid	0
+attribute_groups	name	character varying	0
+attribute_groups	slug	character varying	0
+attribute_groups	description	text	0
+attribute_groups	icon	character varying	0
+attribute_groups	display_order	integer	0
+attribute_groups	is_active	boolean	0
+attribute_groups	created_at	timestamp with time zone	0
+attribute_groups	updated_at	timestamp with time zone	0
+audit_log	id	uuid	0
+audit_log	user_id	uuid	0
+audit_log	action	text	0
+audit_log	entity_type	text	0
+audit_log	entity_id	uuid	0
+audit_log	old_values	jsonb	0
+audit_log	new_values	jsonb	0
+audit_log	ip_address	inet	0
+audit_log	user_agent	text	0
+audit_log	created_at	timestamp with time zone	0
+audit_log_gravacao	id	bigint	0
+audit_log_gravacao	tabela_origem	text	0
+audit_log_gravacao	operacao	text	0
+audit_log_gravacao	registro_id	uuid	0
+audit_log_gravacao	codigo_tabela	text	0
+audit_log_gravacao	campos_alterados	jsonb	0
+audit_log_gravacao	valor_antes	jsonb	0
+audit_log_gravacao	valor_depois	jsonb	0
+audit_log_gravacao	usuario	text	0
+audit_log_gravacao	ts	timestamp with time zone	0
 audit_logs	id	uuid	0
 audit_logs	event_type	text	0
 audit_logs	endpoint	text	0
@@ -228,15 +298,45 @@ auth_login_attempts	success	boolean	0
 auth_login_attempts	failure_reason	text	0
 auth_login_attempts	user_agent	text	0
 auth_login_attempts	created_at	timestamp with time zone	0
+auto_tag_rules	id	uuid	0
+auto_tag_rules	organization_id	uuid	0
+auto_tag_rules	rule_name	character varying	0
+auto_tag_rules	rule_type	character varying	0
+auto_tag_rules	condition_field	character varying	0
+auto_tag_rules	condition_operator	character varying	0
+auto_tag_rules	condition_value	text	0
+auto_tag_rules	condition_value_max	text	0
+auto_tag_rules	tag_slug	character varying	0
+auto_tag_rules	priority	integer	0
+auto_tag_rules	is_active	boolean	0
+auto_tag_rules	created_at	timestamp with time zone	0
+auto_tag_rules	updated_at	timestamp with time zone	0
+b2b_collection_products	id	uuid	0
+b2b_collection_products	b2b_collection_id	uuid	0
+b2b_collection_products	product_id	uuid	0
+b2b_collection_products	display_order	integer	0
+b2b_collection_products	added_at	timestamp with time zone	0
+b2b_collections	id	uuid	0
+b2b_collections	name	text	0
+b2b_collections	slug	text	0
+b2b_collections	description	text	0
+b2b_collections	image_url	text	0
+b2b_collections	is_public	boolean	0
+b2b_collections	is_featured	boolean	0
+b2b_collections	display_order	integer	0
+b2b_collections	created_by	uuid	0
+b2b_collections	created_at	timestamp with time zone	0
+b2b_collections	updated_at	timestamp with time zone	0
+b2b_collections	organization_id	uuid	0
 bot_detection_log	id	uuid	0
 bot_detection_log	ip_address	text	0
 bot_detection_log	user_agent	text	0
-bot_detection_log	endpoint	text	0
-bot_detection_log	detection_reason	text	0
-bot_detection_log	request_count	integer	0
-bot_detection_log	blocked	boolean	0
+bot_detection_log	detection_type	text	0
+bot_detection_log	score	numeric	0
+bot_detection_log	action_taken	text	0
 bot_detection_log	metadata	jsonb	0
 bot_detection_log	created_at	timestamp with time zone	0
+bot_detection_log	blocked	boolean	0
 cart_templates	id	uuid	0
 cart_templates	user_id	uuid	0
 cart_templates	name	text	0
@@ -244,6 +344,100 @@ cart_templates	description	text	0
 cart_templates	items	jsonb	0
 cart_templates	created_at	timestamp with time zone	0
 cart_templates	updated_at	timestamp with time zone	0
+categories	id	uuid	0
+categories	name	text	0
+categories	icon	text	0
+categories	description	text	0
+categories	parent_id	uuid	0
+categories	sort_order	integer	0
+categories	active	boolean	0
+categories	created_at	timestamp with time zone	0
+categories	slug	text	0
+categories	image_url	text	0
+categories	display_order	integer	0
+categories	is_active	boolean	0
+categories	updated_at	timestamp with time zone	0
+categories	organization_id	uuid	0
+categories	bitrix_id	integer	0
+categories	bitrix_modified_at	timestamp with time zone	0
+categories	synced_at	timestamp with time zone	0
+categories	sync_status	text	0
+categories	level	integer	0
+categories	path	text	0
+categories	is_visible	boolean	0
+categories	color_hex	text	0
+categories	meta_title	text	0
+categories	meta_description	text	0
+categories	meta_keywords	ARRAY	0
+categories	products_count	integer	0
+categories	children_count	integer	0
+categories	descendants_count	integer	0
+categories	created_by	uuid	0
+categories	updated_by	uuid	0
+categories	deleted_at	timestamp with time zone	0
+categories	full_path_readable	text	0
+categories	ai_summary	text	0
+categories	schema_json	jsonb	0
+categories	seo_priority	numeric	0
+categories	min_order_quantity	integer	0
+category_accessory_categories	id	uuid	0
+category_accessory_categories	category_id	uuid	0
+category_accessory_categories	accessory_category_id	uuid	0
+category_accessory_categories	relationship_type	character varying	0
+category_accessory_categories	is_required	boolean	0
+category_accessory_categories	include_children	boolean	0
+category_accessory_categories	display_order	integer	0
+category_accessory_categories	display_label	character varying	0
+category_accessory_categories	is_active	boolean	0
+category_accessory_categories	created_at	timestamp with time zone	0
+category_accessory_categories	updated_at	timestamp with time zone	0
+category_attributes	id	uuid	0
+category_attributes	category_id	uuid	0
+category_attributes	attribute_key	text	0
+category_attributes	attribute_value	text	0
+category_attributes	attribute_type	text	0
+category_attributes	is_filterable	boolean	0
+category_attributes	display_order	integer	0
+category_attributes	created_at	timestamp with time zone	0
+category_attributes	updated_at	timestamp with time zone	0
+category_colors	id	uuid	0
+category_colors	category_id	uuid	0
+category_colors	color_group_id	uuid	0
+category_colors	is_primary	boolean	0
+category_colors	display_order	integer	0
+category_colors	is_active	boolean	0
+category_colors	created_at	timestamp with time zone	0
+category_colors	updated_at	timestamp with time zone	0
+category_commemorative_dates	id	uuid	0
+category_commemorative_dates	category_id	uuid	0
+category_commemorative_dates	commemorative_date_id	uuid	0
+category_commemorative_dates	is_primary	boolean	0
+category_commemorative_dates	relevance_score	integer	0
+category_commemorative_dates	display_order	integer	0
+category_commemorative_dates	custom_message	text	0
+category_commemorative_dates	is_active	boolean	0
+category_commemorative_dates	created_at	timestamp with time zone	0
+category_commemorative_dates	updated_at	timestamp with time zone	0
+category_copywriting_config	id	uuid	0
+category_copywriting_config	category_id	uuid	0
+category_copywriting_config	personas	ARRAY	0
+category_copywriting_config	ocasioes	ARRAY	0
+category_copywriting_config	keywords_seo	ARRAY	0
+category_copywriting_config	tom_voz	character varying	0
+category_copywriting_config	ctas	ARRAY	0
+category_copywriting_config	storytelling_template	text	0
+category_copywriting_config	diferenciais	ARRAY	0
+category_copywriting_config	beneficios_emocionais	ARRAY	0
+category_copywriting_config	objecoes_comuns	ARRAY	0
+category_copywriting_config	unidade_peso	character varying	0
+category_copywriting_config	unidade_capacidade	character varying	0
+category_copywriting_config	unidade_dimensao	character varying	0
+category_copywriting_config	config_extra	jsonb	0
+category_copywriting_config	is_active	boolean	0
+category_copywriting_config	created_at	timestamp with time zone	0
+category_copywriting_config	updated_at	timestamp with time zone	0
+category_copywriting_config	created_by	uuid	0
+category_copywriting_config	updated_by	uuid	0
 category_icons	id	uuid	0
 category_icons	category_name	text	0
 category_icons	icon	text	0
@@ -251,6 +445,42 @@ category_icons	description	text	0
 category_icons	is_active	boolean	0
 category_icons	created_at	timestamp with time zone	0
 category_icons	updated_at	timestamp with time zone	0
+category_relationships	id	uuid	0
+category_relationships	organization_id	uuid	0
+category_relationships	parent_id	uuid	0
+category_relationships	child_id	uuid	0
+category_relationships	parent_bitrix_id	integer	0
+category_relationships	child_bitrix_id	integer	0
+category_relationships	parent_name	text	0
+category_relationships	child_name	text	0
+category_relationships	depth	integer	0
+category_relationships	created_at	timestamp with time zone	0
+category_target_audiences	id	uuid	0
+category_target_audiences	category_id	uuid	0
+category_target_audiences	target_audience_id	uuid	0
+category_target_audiences	is_primary	boolean	0
+category_target_audiences	relevance_score	integer	0
+category_target_audiences	display_order	integer	0
+category_target_audiences	is_active	boolean	0
+category_target_audiences	created_at	timestamp with time zone	0
+category_target_audiences	updated_at	timestamp with time zone	0
+category_variation_types	id	uuid	0
+category_variation_types	category_id	uuid	0
+category_variation_types	variation_type_id	uuid	0
+category_variation_types	is_required	boolean	0
+category_variation_types	inherit_from_parent	boolean	0
+category_variation_types	display_order	integer	0
+category_variation_types	is_active	boolean	0
+category_variation_types	created_at	timestamp with time zone	0
+category_variation_types	updated_at	timestamp with time zone	0
+classify_functions_registry	id	integer	0
+classify_functions_registry	function_name	character varying	0
+classify_functions_registry	description	text	0
+classify_functions_registry	is_field	character varying	0
+classify_functions_registry	priority	integer	0
+classify_functions_registry	is_active	boolean	0
+classify_functions_registry	created_at	timestamp with time zone	0
+classify_functions_registry	updated_at	timestamp with time zone	0
 collection_item_reactions	id	uuid	0
 collection_item_reactions	collection_id	uuid	0
 collection_item_reactions	item_id	uuid	0
@@ -283,6 +513,11 @@ collection_items_trash	price_at_save	numeric	0
 collection_items_trash	sort_order	integer	0
 collection_items_trash	deleted_at	timestamp with time zone	0
 collection_items_trash	expires_at	timestamp with time zone	0
+collection_products	id	uuid	0
+collection_products	collection_id	uuid	0
+collection_products	product_id	uuid	0
+collection_products	display_order	integer	0
+collection_products	created_at	timestamp with time zone	0
 collections	id	uuid	0
 collections	user_id	uuid	0
 collections	name	text	0
@@ -298,6 +533,133 @@ collections	share_token	text	0
 collections	share_expires_at	timestamp with time zone	0
 collections	is_public	boolean	0
 collections	is_deleted	boolean	0
+color_analysis_staging	id	uuid	0
+color_analysis_staging	variant_id	uuid	0
+color_analysis_staging	product_sku	text	0
+color_analysis_staging	variant_sku	text	0
+color_analysis_staging	image_url	text	0
+color_analysis_staging	supplier_color_name	text	0
+color_analysis_staging	detected_hex	text	0
+color_analysis_staging	detected_rgb_r	integer	0
+color_analysis_staging	detected_rgb_g	integer	0
+color_analysis_staging	detected_rgb_b	integer	0
+color_analysis_staging	blue_pixel_count	integer	0
+color_analysis_staging	total_pixel_count	integer	0
+color_analysis_staging	current_variation_id	uuid	0
+color_analysis_staging	current_variation_name	text	0
+color_analysis_staging	suggested_variation_id	uuid	0
+color_analysis_staging	suggested_variation_name	text	0
+color_analysis_staging	suggested_hex	text	0
+color_analysis_staging	match_distance	numeric	0
+color_analysis_staging	needs_review	boolean	0
+color_analysis_staging	reviewed	boolean	0
+color_analysis_staging	approved	boolean	0
+color_analysis_staging	processed_at	timestamp with time zone	0
+color_analysis_staging	organization_id	uuid	0
+color_equivalences	id	uuid	0
+color_equivalences	organization_id	uuid	0
+color_equivalences	promo_variation_id	uuid	0
+color_equivalences	promo_nuance_id	uuid	0
+color_equivalences	supplier_color_id	uuid	0
+color_equivalences	match_quality	character varying	0
+color_equivalences	confidence_score	integer	0
+color_equivalences	is_active	boolean	0
+color_equivalences	verified	boolean	0
+color_equivalences	verified_by	uuid	0
+color_equivalences	verified_at	timestamp with time zone	0
+color_equivalences	source	character varying	0
+color_equivalences	notes	text	0
+color_equivalences	created_at	timestamp with time zone	0
+color_equivalences	updated_at	timestamp with time zone	0
+color_groups	id	uuid	0
+color_groups	organization_id	uuid	0
+color_groups	name	character varying	0
+color_groups	slug	character varying	0
+color_groups	description	text	0
+color_groups	hex_code	character varying	0
+color_groups	bitrix_id	integer	0
+color_groups	sort_order	integer	0
+color_groups	is_active	boolean	0
+color_groups	created_at	timestamp with time zone	0
+color_groups	updated_at	timestamp with time zone	0
+color_groups	internal_code	character varying	0
+color_nuances	id	uuid	0
+color_nuances	organization_id	uuid	0
+color_nuances	name	character varying	0
+color_nuances	slug	character varying	0
+color_nuances	description	text	0
+color_nuances	bitrix_id	integer	0
+color_nuances	sort_order	integer	0
+color_nuances	is_active	boolean	0
+color_nuances	created_at	timestamp with time zone	0
+color_nuances	updated_at	timestamp with time zone	0
+color_variations	id	uuid	0
+color_variations	organization_id	uuid	0
+color_variations	group_id	uuid	0
+color_variations	name	character varying	0
+color_variations	slug	character varying	0
+color_variations	hex_code	character varying	0
+color_variations	bitrix_id	integer	0
+color_variations	xml_id	character varying	0
+color_variations	image_url	text	0
+color_variations	description	text	0
+color_variations	sort_order	integer	0
+color_variations	is_active	boolean	0
+color_variations	is_available	boolean	0
+color_variations	created_at	timestamp with time zone	0
+color_variations	updated_at	timestamp with time zone	0
+color_variations	color_group_id	uuid	0
+color_variations	nuance_id	uuid	0
+color_variations	internal_code	character varying	0
+commemorative_date_colors	id	uuid	0
+commemorative_date_colors	commemorative_date_id	uuid	0
+commemorative_date_colors	color_group_id	uuid	0
+commemorative_date_colors	is_primary	boolean	0
+commemorative_date_colors	match_score	integer	0
+commemorative_date_colors	created_at	timestamp with time zone	0
+commemorative_date_exclusions	id	uuid	0
+commemorative_date_exclusions	commemorative_date_id	uuid	0
+commemorative_date_exclusions	product_id	uuid	0
+commemorative_date_exclusions	variant_id	uuid	0
+commemorative_date_exclusions	reason	text	0
+commemorative_date_exclusions	excluded_by	uuid	0
+commemorative_date_exclusions	created_at	timestamp with time zone	0
+commemorative_dates	id	uuid	0
+commemorative_dates	name	text	0
+commemorative_dates	slug	text	0
+commemorative_dates	description	text	0
+commemorative_dates	date_day	integer	0
+commemorative_dates	date_month	integer	0
+commemorative_dates	is_fixed_date	boolean	0
+commemorative_dates	variable_date_rule	text	0
+commemorative_dates	category	text	0
+commemorative_dates	target_audience	text	0
+commemorative_dates	icon_name	text	0
+commemorative_dates	color_hex	text	0
+commemorative_dates	image_url	text	0
+commemorative_dates	banner_url	text	0
+commemorative_dates	is_active	boolean	0
+commemorative_dates	is_featured	boolean	0
+commemorative_dates	display_order	integer	0
+commemorative_dates	campaign_start_days	integer	0
+commemorative_dates	campaign_end_days	integer	0
+commemorative_dates	organization_id	uuid	0
+commemorative_dates	created_by	uuid	0
+commemorative_dates	created_at	timestamp with time zone	0
+commemorative_dates	updated_by	uuid	0
+commemorative_dates	updated_at	timestamp with time zone	0
+company_email_patterns	id	uuid	0
+company_email_patterns	company_domain	text	0
+company_email_patterns	company_name	text	0
+company_email_patterns	pattern_format	text	0
+company_email_patterns	pattern_confidence	smallint	0
+company_email_patterns	mx_server	text	0
+company_email_patterns	email_provider	text	0
+company_email_patterns	is_catch_all	boolean	0
+company_email_patterns	verified_count	integer	0
+company_email_patterns	last_verified_at	timestamp with time zone	0
+company_email_patterns	created_at	timestamp with time zone	0
+company_email_patterns	updated_at	timestamp with time zone	0
 comparison_reactions	id	uuid	0
 comparison_reactions	comparison_id	uuid	0
 comparison_reactions	item_index	integer	0
@@ -362,28 +724,29 @@ conversation_event_history	tokens_estimated	integer	0
 conversation_event_history	created_at	timestamp with time zone	0
 conversation_event_history	request_id	uuid	0
 custom_kits	id	uuid	0
-custom_kits	user_id	uuid	0
+custom_kits	organization_id	uuid	0
 custom_kits	name	text	0
+custom_kits	total_price	numeric	0
+custom_kits	personalization_price	numeric	0
+custom_kits	kit_quantity	integer	0
 custom_kits	status	text	0
+custom_kits	created_at	timestamp with time zone	0
+custom_kits	updated_at	timestamp with time zone	0
+custom_kits	user_id	uuid	0
+custom_kits	kit_type	text	0
 custom_kits	box_data	jsonb	0
 custom_kits	items_data	jsonb	0
 custom_kits	personalization_data	jsonb	0
-custom_kits	kit_quantity	integer	0
 custom_kits	box_price	numeric	0
 custom_kits	items_price	numeric	0
-custom_kits	personalization_price	numeric	0
-custom_kits	total_price	numeric	0
 custom_kits	volume_usage_percent	numeric	0
-custom_kits	created_at	timestamp with time zone	0
-custom_kits	updated_at	timestamp with time zone	0
-custom_kits	kit_type	text	0
 custom_kits	color	text	0
-custom_kits	tag	text	0
 custom_kits	icon	text	0
+custom_kits	tag	text	0
 custom_kits	description	text	0
 custom_kits	is_favorite	boolean	0
-custom_kits	last_used_at	timestamp with time zone	0
 custom_kits	is_pinned	boolean	0
+custom_kits	last_used_at	timestamp with time zone	0
 discount_approval_requests	id	uuid	0
 discount_approval_requests	quote_id	uuid	0
 discount_approval_requests	seller_id	uuid	0
@@ -396,26 +759,82 @@ discount_approval_requests	seller_notes	text	0
 discount_approval_requests	responded_at	timestamp with time zone	0
 discount_approval_requests	created_at	timestamp with time zone	0
 discount_approval_requests	updated_at	timestamp with time zone	0
-e2e_cleanup_audit	id	uuid	0
-e2e_cleanup_audit	email	text	0
-e2e_cleanup_audit	user_id	uuid	0
-e2e_cleanup_audit	dry_run	boolean	0
-e2e_cleanup_audit	status	text	0
-e2e_cleanup_audit	reason	text	0
-e2e_cleanup_audit	ip	text	0
-e2e_cleanup_audit	user_agent	text	0
-e2e_cleanup_audit	total_deleted	integer	0
-e2e_cleanup_audit	deleted_by_table	jsonb	0
-e2e_cleanup_audit	errors	jsonb	0
-e2e_cleanup_audit	duration_ms	integer	0
-e2e_cleanup_audit	created_at	timestamp with time zone	0
-e2e_cleanup_audit	seller_scope	text	0
-e2e_cleanup_audit	seller_id	uuid	0
-e2e_cleanup_audit	name_filter_prefix	text	0
+discount_approval_requests	valid_until	timestamp with time zone	0
+discount_approval_requests	quote_snapshot_hash	text	0
 e2e_cleanup_rate_limit	key	text	0
 e2e_cleanup_rate_limit	count	integer	0
 e2e_cleanup_rate_limit	window_start	timestamp with time zone	0
 e2e_cleanup_rate_limit	updated_at	timestamp with time zone	0
+eco_material_config	material_id	uuid	0
+eco_material_config	material_name	character varying	0
+eco_material_config	notes	text	0
+eco_material_config	created_at	timestamp with time zone	0
+eco_material_config	is_active	boolean	0
+edge_function_invocations	id	uuid	0
+edge_function_invocations	function_slug	text	0
+edge_function_invocations	invoked_by	uuid	0
+edge_function_invocations	invoked_at	timestamp with time zone	0
+edge_function_invocations	request_method	text	0
+edge_function_invocations	request_metadata	jsonb	0
+edge_function_invocations	status_code	integer	0
+edge_function_invocations	duration_ms	integer	0
+edge_function_invocations	error_message	text	0
+edge_function_invocations	ip_address	inet	0
+edge_function_invocations	user_agent	text	0
+edge_rate_limits	key	text	0
+edge_rate_limits	count	integer	0
+edge_rate_limits	reset_at	timestamp with time zone	0
+edge_rate_limits	created_at	timestamp with time zone	0
+edge_rate_limits	updated_at	timestamp with time zone	0
+enriched_contacts	id	uuid	0
+enriched_contacts	linkedin_url	text	0
+enriched_contacts	linkedin_profile_id	text	0
+enriched_contacts	first_name	text	0
+enriched_contacts	last_name	text	0
+enriched_contacts	full_name	text	0
+enriched_contacts	headline	text	0
+enriched_contacts	current_title	text	0
+enriched_contacts	current_company	text	0
+enriched_contacts	company_domain	text	0
+enriched_contacts	location	text	0
+enriched_contacts	profile_picture_url	text	0
+enriched_contacts	work_email	text	0
+enriched_contacts	work_email_confidence	smallint	0
+enriched_contacts	work_email_verified_at	timestamp with time zone	0
+enriched_contacts	work_email_source	text	0
+enriched_contacts	personal_email	text	0
+enriched_contacts	personal_email_confidence	smallint	0
+enriched_contacts	personal_email_source	text	0
+enriched_contacts	phone_mobile	text	0
+enriched_contacts	phone_mobile_confidence	smallint	0
+enriched_contacts	phone_mobile_source	text	0
+enriched_contacts	phone_work	text	0
+enriched_contacts	phone_work_confidence	smallint	0
+enriched_contacts	phone_work_source	text	0
+enriched_contacts	whatsapp_number	text	0
+enriched_contacts	company_size	text	0
+enriched_contacts	company_industry	text	0
+enriched_contacts	company_linkedin_url	text	0
+enriched_contacts	company_website	text	0
+enriched_contacts	enrichment_status	text	0
+enriched_contacts	enrichment_attempts	integer	0
+enriched_contacts	last_enriched_at	timestamp with time zone	0
+enriched_contacts	bitrix24_contact_id	integer	0
+enriched_contacts	bitrix24_synced_at	timestamp with time zone	0
+enriched_contacts	created_at	timestamp with time zone	0
+enriched_contacts	updated_at	timestamp with time zone	0
+enriched_contacts	created_by	text	0
+enrichment_log	id	uuid	0
+enrichment_log	contact_id	uuid	0
+enrichment_log	enrichment_level	integer	0
+enrichment_log	provider_name	text	0
+enrichment_log	success	boolean	0
+enrichment_log	data_found	jsonb	0
+enrichment_log	error_message	text	0
+enrichment_log	credits_used	numeric	0
+enrichment_log	cost_usd	numeric	0
+enrichment_log	response_time_ms	integer	0
+enrichment_log	created_at	timestamp with time zone	0
 expert_conversations	id	uuid	0
 expert_conversations	seller_id	uuid	0
 expert_conversations	client_id	text	0
@@ -443,18 +862,17 @@ external_connections	last_latency_ms	integer	0
 external_connections	env_key	text	0
 external_connections	auto_test_enabled	boolean	0
 external_connections_sync_log	id	uuid	0
-external_connections_sync_log	ran_at	timestamp with time zone	0
-external_connections_sync_log	triggered_by_user_id	uuid	0
-external_connections_sync_log	triggered_by_secret_name	text	0
-external_connections_sync_log	trigger_op	text	0
-external_connections_sync_log	processed	integer	0
-external_connections_sync_log	created_count	integer	0
-external_connections_sync_log	updated_count	integer	0
+external_connections_sync_log	connection_id	uuid	0
+external_connections_sync_log	connection_name	text	0
+external_connections_sync_log	sync_type	text	0
 external_connections_sync_log	status	text	0
-external_connections_sync_log	error_message	text	0
+external_connections_sync_log	records_processed	integer	0
+external_connections_sync_log	records_failed	integer	0
 external_connections_sync_log	duration_ms	integer	0
-external_connections_sync_log	details	jsonb	0
-external_connections_sync_log	created_at	timestamp with time zone	0
+external_connections_sync_log	error_message	text	0
+external_connections_sync_log	metadata	jsonb	0
+external_connections_sync_log	started_at	timestamp with time zone	0
+external_connections_sync_log	completed_at	timestamp with time zone	0
 favorite_item_reactions	id	uuid	0
 favorite_item_reactions	item_id	uuid	0
 favorite_item_reactions	list_id	uuid	0
@@ -466,8 +884,8 @@ favorite_item_reactions	created_at	timestamp with time zone	0
 favorite_items	id	uuid	0
 favorite_items	list_id	uuid	0
 favorite_items	user_id	uuid	0
-favorite_items	product_id	text	0
-favorite_items	variant_id	text	0
+favorite_items	product_id	uuid	0
+favorite_items	variant_id	uuid	0
 favorite_items	variant_info	jsonb	0
 favorite_items	note	text	0
 favorite_items	price_at_save	numeric	0
@@ -478,11 +896,13 @@ favorite_items_trash	id	uuid	0
 favorite_items_trash	original_id	uuid	0
 favorite_items_trash	list_id	uuid	0
 favorite_items_trash	user_id	uuid	0
-favorite_items_trash	product_id	text	0
-favorite_items_trash	variant_id	text	0
+favorite_items_trash	product_id	uuid	0
+favorite_items_trash	variant_id	uuid	0
 favorite_items_trash	variant_info	jsonb	0
 favorite_items_trash	note	text	0
 favorite_items_trash	price_at_save	numeric	0
+favorite_items_trash	position	integer	0
+favorite_items_trash	added_at	timestamp with time zone	0
 favorite_items_trash	deleted_at	timestamp with time zone	0
 favorite_items_trash	expires_at	timestamp with time zone	0
 favorite_lists	id	uuid	0
@@ -493,27 +913,28 @@ favorite_lists	color	text	0
 favorite_lists	icon	text	0
 favorite_lists	is_default	boolean	0
 favorite_lists	is_archived	boolean	0
-favorite_lists	client_id	text	0
+favorite_lists	client_id	uuid	0
 favorite_lists	client_name	text	0
 favorite_lists	shared_token	text	0
 favorite_lists	shared_expires_at	timestamp with time zone	0
 favorite_lists	position	integer	0
 favorite_lists	created_at	timestamp with time zone	0
 favorite_lists	updated_at	timestamp with time zone	0
-favorites	id	uuid	0
-favorites	user_id	uuid	0
-favorites	product_id	text	0
-favorites	variant_info	jsonb	0
-favorites	added_at	timestamp with time zone	0
-favorites	updated_at	timestamp with time zone	0
-favorites	is_deleted	boolean	0
+feminine_color_config	color_group_id	uuid	0
+feminine_color_config	color_group_name	character varying	0
+feminine_color_config	notes	text	0
+feminine_color_config	created_at	timestamp with time zone	0
+feminine_color_config	is_active	boolean	0
 file_scan_logs	id	uuid	0
 file_scan_logs	user_id	uuid	0
-file_scan_logs	bucket	character varying	0
-file_scan_logs	path	text	0
-file_scan_logs	hash	character varying	0
-file_scan_logs	scan_result	jsonb	0
-file_scan_logs	status_code	integer	0
+file_scan_logs	file_name	text	0
+file_scan_logs	file_size	bigint	0
+file_scan_logs	file_hash	text	0
+file_scan_logs	mime_type	text	0
+file_scan_logs	scan_provider	text	0
+file_scan_logs	scan_result	text	0
+file_scan_logs	scan_response	jsonb	0
+file_scan_logs	storage_path	text	0
 file_scan_logs	created_at	timestamp with time zone	0
 follow_up_reminders	id	uuid	0
 follow_up_reminders	quote_id	text	0
@@ -527,26 +948,45 @@ follow_up_reminders	title	text	0
 follow_up_reminders	notes	text	0
 follow_up_reminders	is_completed	boolean	0
 follow_up_reminders	completed_at	timestamp with time zone	0
+frontend_telemetry	id	uuid	0
+frontend_telemetry	event_type	text	0
+frontend_telemetry	name	text	0
+frontend_telemetry	duration_ms	double precision	0
+frontend_telemetry	metadata	jsonb	0
+frontend_telemetry	url	text	0
+frontend_telemetry	user_agent	text	0
+frontend_telemetry	session_id	text	0
+frontend_telemetry	user_id	uuid	0
+frontend_telemetry	created_at	timestamp with time zone	0
 generated_mockups	id	uuid	0
-generated_mockups	seller_id	uuid	0
-generated_mockups	client_id	text	0
-generated_mockups	client_name	text	0
-generated_mockups	product_id	text	0
+generated_mockups	job_id	uuid	0
+generated_mockups	user_id	uuid	0
+generated_mockups	product_id	uuid	0
 generated_mockups	product_name	text	0
 generated_mockups	product_sku	text	0
-generated_mockups	technique_id	text	0
+generated_mockups	technique_id	uuid	0
 generated_mockups	technique_name	text	0
-generated_mockups	logo_url	text	0
+generated_mockups	product_color_hex	text	0
+generated_mockups	product_color_name	text	0
+generated_mockups	area_name	text	0
+generated_mockups	area_config	jsonb	0
 generated_mockups	mockup_url	text	0
-generated_mockups	layout_url	text	0
-generated_mockups	position_x	numeric	0
-generated_mockups	position_y	numeric	0
-generated_mockups	logo_width_cm	numeric	0
-generated_mockups	logo_height_cm	numeric	0
-generated_mockups	location_name	text	0
-generated_mockups	colors_count	integer	0
-generated_mockups	annotations	jsonb	0
+generated_mockups	logo_url	text	0
+generated_mockups	thumbnail_url	text	0
+generated_mockups	ai_model_used	text	0
+generated_mockups	generation_time_seconds	integer	0
+generated_mockups	prompt_used	text	0
+generated_mockups	seed_used	integer	0
+generated_mockups	quality_score	numeric	0
+generated_mockups	has_errors	boolean	0
+generated_mockups	error_details	text	0
+generated_mockups	approval_status	text	0
+generated_mockups	approved_by_user_id	uuid	0
+generated_mockups	approved_at	timestamp with time zone	0
+generated_mockups	client_feedback	text	0
+generated_mockups	generation_cost	numeric	0
 generated_mockups	created_at	timestamp with time zone	0
+generated_mockups	updated_at	timestamp with time zone	0
 geo_allowed_countries	id	uuid	0
 geo_allowed_countries	country_code	character	0
 geo_allowed_countries	country_name	text	0
@@ -560,44 +1000,149 @@ hardening_health_snapshots	max_score	integer	0
 hardening_health_snapshots	failures	ARRAY	0
 hardening_health_snapshots	details	jsonb	0
 hardening_health_snapshots	created_at	timestamp with time zone	0
+image_import_log	id	uuid	0
+image_import_log	cloudflare_image_id	character varying	0
+image_import_log	product_id	uuid	0
+image_import_log	source_type	character varying	0
+image_import_log	source_zip	character varying	0
+image_import_log	source_url	text	0
+image_import_log	parsed_sku	character varying	0
+image_import_log	parsed_color_code	character varying	0
+image_import_log	supplier_ref_id	character varying	0
+image_import_log	sha256_hash	text	0
+image_import_log	import_status	character varying	0
+image_import_log	error_message	text	0
+image_import_log	original_created_at	timestamp with time zone	0
+image_import_log	imported_at	timestamp with time zone	0
+image_types	id	uuid	0
+image_types	code	character varying	0
+image_types	name	character varying	0
+image_types	name_en	character varying	0
+image_types	description	text	0
+image_types	description_en	text	0
+image_types	category	character varying	0
+image_types	subcategory	character varying	0
+image_types	is_color_specific	boolean	0
+image_types	is_primary_candidate	boolean	0
+image_types	requires_variant	boolean	0
+image_types	show_in_gallery	boolean	0
+image_types	show_in_simulator	boolean	0
+image_types	is_internal_only	boolean	0
+image_types	display_priority	smallint	0
+image_types	gallery_order	smallint	0
+image_types	icon	character varying	0
+image_types	ui_color	character varying	0
+image_types	is_active	boolean	0
+image_types	created_at	timestamp with time zone	0
+image_types	updated_at	timestamp with time zone	0
+image_validation_log	id	uuid	0
+image_validation_log	image_id	uuid	0
+image_validation_log	product_id	uuid	0
+image_validation_log	filename	character varying	0
+image_validation_log	supplier_code	character varying	0
+image_validation_log	width_px	integer	0
+image_validation_log	height_px	integer	0
+image_validation_log	file_size_bytes	bigint	0
+image_validation_log	validation_status	character varying	0
+image_validation_log	is_valid	boolean	0
+image_validation_log	issues	ARRAY	0
+image_validation_log	recommendations	ARRAY	0
+image_validation_log	action_taken	character varying	0
+image_validation_log	was_blocked	boolean	0
+image_validation_log	validated_at	timestamp with time zone	0
+import_pipeline_steps	id	integer	0
+import_pipeline_steps	fase	character varying	0
+import_pipeline_steps	etapa	integer	0
+import_pipeline_steps	titulo	character varying	0
+import_pipeline_steps	descricao	text	0
+import_pipeline_steps	comando_resumo	text	0
+import_pipeline_steps	dependencia	ARRAY	0
+import_pipeline_steps	status	character varying	0
+import_pipeline_steps	resultado	jsonb	0
+import_pipeline_steps	error_message	text	0
+import_pipeline_steps	started_at	timestamp with time zone	0
+import_pipeline_steps	completed_at	timestamp with time zone	0
+import_pipeline_steps	created_at	timestamp with time zone	0
+import_pipeline_steps	updated_at	timestamp with time zone	0
+import_staging_images	id	uuid	0
+import_staging_images	filename	character varying	0
+import_staging_images	source_zip	character varying	0
+import_staging_images	source_folder	character varying	0
+import_staging_images	file_size_bytes	bigint	0
+import_staging_images	parsed_sku	character varying	0
+import_staging_images	parsed_color_code	character varying	0
+import_staging_images	parsed_component	integer	0
+import_staging_images	parsed_location	integer	0
+import_staging_images	parsed_view	integer	0
+import_staging_images	product_id	uuid	0
+import_staging_images	color_id	uuid	0
+import_staging_images	variant_id	uuid	0
+import_staging_images	cloudflare_image_id	character varying	0
+import_staging_images	url_cdn	text	0
+import_staging_images	target_image_type_id	uuid	0
+import_staging_images	target_image_type	character varying	0
+import_staging_images	target_display_order	integer	0
+import_staging_images	status	character varying	0
+import_staging_images	batch_id	character varying	0
+import_staging_images	retry_count	integer	0
+import_staging_images	error_message	text	0
+import_staging_images	product_image_id	uuid	0
+import_staging_images	created_at	timestamp with time zone	0
+import_staging_images	updated_at	timestamp with time zone	0
+import_staging_images	processed_at	timestamp with time zone	0
+import_staging_images	uploaded_at	timestamp with time zone	0
+import_staging_images	completed_at	timestamp with time zone	0
 inbound_webhook_endpoints	id	uuid	0
 inbound_webhook_endpoints	slug	text	0
 inbound_webhook_endpoints	name	text	0
+inbound_webhook_endpoints	description	text	0
+inbound_webhook_endpoints	secret_key	text	0
+inbound_webhook_endpoints	is_active	boolean	0
+inbound_webhook_endpoints	allowed_ips	ARRAY	0
+inbound_webhook_endpoints	metadata	jsonb	0
+inbound_webhook_endpoints	created_by	uuid	0
+inbound_webhook_endpoints	created_at	timestamp with time zone	0
+inbound_webhook_endpoints	updated_at	timestamp with time zone	0
 inbound_webhook_endpoints	source_system	text	0
 inbound_webhook_endpoints	hmac_secret_ref	text	0
 inbound_webhook_endpoints	allowed_events	ARRAY	0
-inbound_webhook_endpoints	active	boolean	0
-inbound_webhook_endpoints	description	text	0
-inbound_webhook_endpoints	created_by	uuid	0
 inbound_webhook_endpoints	last_received_at	timestamp with time zone	0
 inbound_webhook_endpoints	total_received	integer	0
 inbound_webhook_endpoints	total_invalid	integer	0
-inbound_webhook_endpoints	created_at	timestamp with time zone	0
-inbound_webhook_endpoints	updated_at	timestamp with time zone	0
 inbound_webhook_events	id	uuid	0
 inbound_webhook_events	endpoint_id	uuid	0
 inbound_webhook_events	event_type	text	0
 inbound_webhook_events	payload	jsonb	0
+inbound_webhook_events	headers	jsonb	0
+inbound_webhook_events	ip_address	text	0
 inbound_webhook_events	signature_valid	boolean	0
 inbound_webhook_events	processed	boolean	0
-inbound_webhook_events	error	text	0
-inbound_webhook_events	source_ip	text	0
-inbound_webhook_events	received_at	timestamp with time zone	0
+inbound_webhook_events	processed_at	timestamp with time zone	0
+inbound_webhook_events	error_message	text	0
+inbound_webhook_events	created_at	timestamp with time zone	0
 integration_credentials	id	uuid	0
+integration_credentials	provider	text	0
 integration_credentials	secret_name	text	0
+integration_credentials	description	text	0
+integration_credentials	credential_type	text	0
 integration_credentials	secret_value	text	0
-integration_credentials	masked_suffix	text	0
-integration_credentials	length	integer	0
-integration_credentials	notes	text	0
-integration_credentials	updated_by	uuid	0
+integration_credentials	metadata	jsonb	0
+integration_credentials	is_active	boolean	0
+integration_credentials	expires_at	timestamp with time zone	0
+integration_credentials	created_by	uuid	0
 integration_credentials	created_at	timestamp with time zone	0
 integration_credentials	updated_at	timestamp with time zone	0
+integration_credentials	notes	text	0
+integration_credentials	updated_by	uuid	0
+integration_credentials	masked_suffix	text	0
+integration_credentials	length	integer	0
 ip_access_control	id	uuid	0
 ip_access_control	ip_address	text	0
 ip_access_control	list_type	text	0
 ip_access_control	reason	text	0
 ip_access_control	expires_at	timestamp with time zone	0
 ip_access_control	created_by	uuid	0
+ip_access_control	metadata	jsonb	0
 ip_access_control	created_at	timestamp with time zone	0
 ip_access_control	updated_at	timestamp with time zone	0
 kit_collaborators	id	uuid	0
@@ -617,6 +1162,38 @@ kit_comments	body	text	0
 kit_comments	resolved	boolean	0
 kit_comments	created_at	timestamp with time zone	0
 kit_comments	updated_at	timestamp with time zone	0
+kit_component_print_areas	id	uuid	0
+kit_component_print_areas	kit_component_id	uuid	0
+kit_component_print_areas	tabela_preco_id	uuid	0
+kit_component_print_areas	location_code	text	0
+kit_component_print_areas	location_name	text	0
+kit_component_print_areas	location_order	integer	0
+kit_component_print_areas	max_width	numeric	0
+kit_component_print_areas	max_height	numeric	0
+kit_component_print_areas	shape	text	0
+kit_component_print_areas	is_curved	boolean	0
+kit_component_print_areas	technique_order	integer	0
+kit_component_print_areas	is_active	boolean	0
+kit_component_print_areas	created_at	timestamp with time zone	0
+kit_component_print_areas	updated_at	timestamp with time zone	0
+kit_component_types	id	uuid	0
+kit_component_types	code	character varying	0
+kit_component_types	name	character varying	0
+kit_component_types	name_plural	character varying	0
+kit_component_types	description	text	0
+kit_component_types	icon	character varying	0
+kit_component_types	default_material_type_id	uuid	0
+kit_component_types	secondary_material_type_id	uuid	0
+kit_component_types	typical_length_mm	integer	0
+kit_component_types	typical_width_mm	integer	0
+kit_component_types	typical_height_mm	integer	0
+kit_component_types	typical_weight_g	integer	0
+kit_component_types	category	character varying	0
+kit_component_types	display_order	integer	0
+kit_component_types	is_active	boolean	0
+kit_component_types	created_at	timestamp with time zone	0
+kit_component_types	updated_at	timestamp with time zone	0
+kit_component_types	is_personalizable_by_default	boolean	0
 kit_share_tokens	id	uuid	0
 kit_share_tokens	kit_id	uuid	0
 kit_share_tokens	seller_id	uuid	0
@@ -657,14 +1234,15 @@ kit_variants	kit_quantity	integer	0
 kit_variants	total_price	numeric	0
 kit_variants	created_at	timestamp with time zone	0
 kit_variants	updated_at	timestamp with time zone	0
-login_attempts	id	uuid	4
-login_attempts	email	text	4
-login_attempts	user_id	uuid	4
-login_attempts	ip_address	text	4
-login_attempts	user_agent	text	4
-login_attempts	success	boolean	4
-login_attempts	failure_reason	text	4
-login_attempts	created_at	timestamp with time zone	4
+login_attempts	id	uuid	0
+login_attempts	email	text	0
+login_attempts	user_id	uuid	0
+login_attempts	ip_address	text	0
+login_attempts	user_agent	text	0
+login_attempts	success	boolean	0
+login_attempts	failure_reason	text	0
+login_attempts	metadata	jsonb	0
+login_attempts	created_at	timestamp with time zone	0
 magic_up_brand_kits	id	uuid	0
 magic_up_brand_kits	user_id	uuid	0
 magic_up_brand_kits	client_id	text	0
@@ -743,6 +1321,63 @@ magic_up_reactions	reaction_type	text	0
 magic_up_reactions	ip_hash	text	0
 magic_up_reactions	user_agent	text	0
 magic_up_reactions	created_at	timestamp with time zone	0
+markup_configurations	id	uuid	0
+markup_configurations	organization_id	uuid	0
+markup_configurations	supplier_id	uuid	0
+markup_configurations	category_id	uuid	0
+markup_configurations	product_id	uuid	0
+markup_configurations	variant_id	uuid	0
+markup_configurations	markup_percent	numeric	0
+markup_configurations	description	text	0
+markup_configurations	is_active	boolean	0
+markup_configurations	priority	integer	0
+markup_configurations	created_at	timestamp with time zone	0
+markup_configurations	updated_at	timestamp with time zone	0
+markup_configurations	created_by	uuid	0
+material_equivalences	id	uuid	0
+material_equivalences	supplier_material_id	uuid	0
+material_equivalences	promo_variation_id	uuid	0
+material_equivalences	promo_type_id	uuid	0
+material_equivalences	promo_group_id	uuid	0
+material_equivalences	match_level	character varying	0
+material_equivalences	match_quality	character varying	0
+material_equivalences	confidence_score	numeric	0
+material_equivalences	notes	text	0
+material_equivalences	created_at	timestamp with time zone	0
+material_equivalences	updated_at	timestamp with time zone	0
+material_groups	id	uuid	0
+material_groups	organization_id	uuid	0
+material_groups	name	character varying	0
+material_groups	slug	character varying	0
+material_groups	description	text	0
+material_groups	sort_order	integer	0
+material_groups	is_active	boolean	0
+material_groups	created_at	timestamp with time zone	0
+material_groups	updated_at	timestamp with time zone	0
+material_groups	created_by	uuid	0
+material_groups	updated_by	uuid	0
+material_types	id	uuid	0
+material_types	organization_id	uuid	0
+material_types	group_id	uuid	0
+material_types	name	character varying	0
+material_types	slug	character varying	0
+material_types	description	text	0
+material_types	properties	jsonb	0
+material_types	display_order	integer	0
+material_types	is_active	boolean	0
+material_types	created_at	timestamp with time zone	0
+material_types	updated_at	timestamp with time zone	0
+material_variations	id	uuid	0
+material_variations	organization_id	uuid	0
+material_variations	type_id	uuid	0
+material_variations	name	character varying	0
+material_variations	slug	character varying	0
+material_variations	description	text	0
+material_variations	specifications	jsonb	0
+material_variations	display_order	integer	0
+material_variations	is_active	boolean	0
+material_variations	created_at	timestamp with time zone	0
+material_variations	updated_at	timestamp with time zone	0
 mcp_access_violations	id	uuid	0
 mcp_access_violations	user_id	uuid	0
 mcp_access_violations	reason	text	0
@@ -778,15 +1413,105 @@ mcp_key_auto_revocations	revoked_at	timestamp with time zone	0
 mcp_key_auto_revocations	source	text	0
 mcp_key_auto_revocations	reason	text	0
 mcp_key_auto_revocations	created_at	timestamp with time zone	0
-mcp_keys	id	uuid	0
-mcp_keys	user_id	uuid	0
-mcp_keys	key_name	text	0
-mcp_keys	key_hash	text	0
-mcp_keys	scopes	ARRAY	0
-mcp_keys	expires_at	timestamp with time zone	0
-mcp_keys	last_used_at	timestamp with time zone	0
-mcp_keys	created_at	timestamp with time zone	0
-mcp_keys	is_revoked	boolean	0
+media_assets	id	uuid	0
+media_assets	product_reference	character varying	0
+media_assets	variant_sku	character varying	0
+media_assets	supplier_code	character varying	0
+media_assets	filename	character varying	0
+media_assets	original_filename	character varying	0
+media_assets	source_url	text	0
+media_assets	cdn_url	text	0
+media_assets	cloudflare_id	character varying	0
+media_assets	image_type	character varying	0
+media_assets	image_role	character varying	0
+media_assets	width	integer	0
+media_assets	height	integer	0
+media_assets	file_size	integer	0
+media_assets	mime_type	character varying	0
+media_assets	alt_text	text	0
+media_assets	status	character varying	0
+media_assets	error_message	text	0
+media_assets	retry_count	integer	0
+media_assets	display_order	integer	0
+media_assets	is_primary	boolean	0
+media_assets	is_visible	boolean	0
+media_assets	created_at	timestamp with time zone	0
+media_assets	updated_at	timestamp with time zone	0
+media_assets	processed_at	timestamp with time zone	0
+media_sync_log	id	uuid	0
+media_sync_log	sync_type	character varying	0
+media_sync_log	media_type	character varying	0
+media_sync_log	image_id	uuid	0
+media_sync_log	video_id	uuid	0
+media_sync_log	product_id	uuid	0
+media_sync_log	source_url	text	0
+media_sync_log	destination_url	text	0
+media_sync_log	cloudflare_id	character varying	0
+media_sync_log	status	character varying	0
+media_sync_log	error_message	text	0
+media_sync_log	retry_count	integer	0
+media_sync_log	file_size_bytes	bigint	0
+media_sync_log	processing_time_ms	integer	0
+media_sync_log	synced_by	character varying	0
+media_sync_log	metadata	jsonb	0
+media_sync_log	created_at	timestamp with time zone	0
+media_sync_queue	id	uuid	0
+media_sync_queue	product_id	uuid	0
+media_sync_queue	source_url	text	0
+media_sync_queue	source_type	text	0
+media_sync_queue	supplier_id	uuid	0
+media_sync_queue	status	text	0
+media_sync_queue	priority	integer	0
+media_sync_queue	attempts	integer	0
+media_sync_queue	max_attempts	integer	0
+media_sync_queue	error_message	text	0
+media_sync_queue	cloudflare_image_id	text	0
+media_sync_queue	cloudflare_url	text	0
+media_sync_queue	organization_id	uuid	0
+media_sync_queue	queued_at	timestamp with time zone	0
+media_sync_queue	started_at	timestamp with time zone	0
+media_sync_queue	completed_at	timestamp with time zone	0
+mockup_approval_links	id	uuid	0
+mockup_approval_links	job_id	uuid	0
+mockup_approval_links	client_id	uuid	0
+mockup_approval_links	public_token	text	0
+mockup_approval_links	expires_at	timestamp with time zone	0
+mockup_approval_links	max_uses	integer	0
+mockup_approval_links	current_uses	integer	0
+mockup_approval_links	is_active	boolean	0
+mockup_approval_links	first_accessed_at	timestamp with time zone	0
+mockup_approval_links	last_accessed_at	timestamp with time zone	0
+mockup_approval_links	access_count	integer	0
+mockup_approval_links	approved_at	timestamp with time zone	0
+mockup_approval_links	rejected_at	timestamp with time zone	0
+mockup_approval_links	client_notes	text	0
+mockup_approval_links	created_at	timestamp with time zone	0
+mockup_approval_links	updated_at	timestamp with time zone	0
+mockup_credit_transactions	id	uuid	0
+mockup_credit_transactions	user_id	uuid	0
+mockup_credit_transactions	credit_account_id	uuid	0
+mockup_credit_transactions	type	text	0
+mockup_credit_transactions	amount	numeric	0
+mockup_credit_transactions	balance_before	numeric	0
+mockup_credit_transactions	balance_after	numeric	0
+mockup_credit_transactions	mockup_id	uuid	0
+mockup_credit_transactions	job_id	uuid	0
+mockup_credit_transactions	description	text	0
+mockup_credit_transactions	metadata	jsonb	0
+mockup_credit_transactions	created_at	timestamp with time zone	0
+mockup_credits	id	uuid	0
+mockup_credits	user_id	uuid	0
+mockup_credits	balance	numeric	0
+mockup_credits	lifetime_earned	numeric	0
+mockup_credits	lifetime_spent	numeric	0
+mockup_credits	monthly_limit	numeric	0
+mockup_credits	daily_limit	numeric	0
+mockup_credits	current_month_spent	numeric	0
+mockup_credits	current_day_spent	numeric	0
+mockup_credits	last_reset_month	date	0
+mockup_credits	last_reset_day	date	0
+mockup_credits	created_at	timestamp with time zone	0
+mockup_credits	updated_at	timestamp with time zone	0
 mockup_drafts	id	uuid	0
 mockup_drafts	user_id	uuid	0
 mockup_drafts	draft_key	text	0
@@ -800,6 +1525,33 @@ mockup_drafts	personalization_areas	jsonb	0
 mockup_drafts	logo_data	text	0
 mockup_drafts	created_at	timestamp with time zone	0
 mockup_drafts	updated_at	timestamp with time zone	0
+mockup_generation_jobs	id	uuid	0
+mockup_generation_jobs	user_id	uuid	0
+mockup_generation_jobs	client_id	uuid	0
+mockup_generation_jobs	product_id	uuid	0
+mockup_generation_jobs	product_name	text	0
+mockup_generation_jobs	product_sku	text	0
+mockup_generation_jobs	technique_id	uuid	0
+mockup_generation_jobs	technique_name	text	0
+mockup_generation_jobs	logo_url	text	0
+mockup_generation_jobs	logo_filename	text	0
+mockup_generation_jobs	product_colors	jsonb	0
+mockup_generation_jobs	colors_count	integer	0
+mockup_generation_jobs	areas_config	jsonb	0
+mockup_generation_jobs	art_colors_count	integer	0
+mockup_generation_jobs	custom_prompt	text	0
+mockup_generation_jobs	ai_model	text	0
+mockup_generation_jobs	status	text	0
+mockup_generation_jobs	total_mockups	integer	0
+mockup_generation_jobs	completed_mockups	integer	0
+mockup_generation_jobs	failed_mockups	integer	0
+mockup_generation_jobs	estimated_cost	numeric	0
+mockup_generation_jobs	actual_cost	numeric	0
+mockup_generation_jobs	error_message	text	0
+mockup_generation_jobs	processing_started_at	timestamp with time zone	0
+mockup_generation_jobs	processing_completed_at	timestamp with time zone	0
+mockup_generation_jobs	created_at	timestamp with time zone	0
+mockup_generation_jobs	updated_at	timestamp with time zone	0
 mockup_prompt_configs	id	uuid	0
 mockup_prompt_configs	config_key	text	0
 mockup_prompt_configs	label	text	0
@@ -821,19 +1573,66 @@ mockup_prompt_history	changed_by	uuid	0
 mockup_prompt_history	change_notes	text	0
 mockup_prompt_history	changed_at	timestamp with time zone	0
 mockup_templates	id	uuid	0
-mockup_templates	user_id	uuid	0
+mockup_templates	product_id	uuid	0
 mockup_templates	name	text	0
 mockup_templates	description	text	0
-mockup_templates	product_id	text	0
-mockup_templates	product_name	text	0
-mockup_templates	technique_id	text	0
-mockup_templates	technique_name	text	0
-mockup_templates	personalization_areas	jsonb	0
-mockup_templates	thumbnail_url	text	0
+mockup_templates	template_image_url	text	0
+mockup_templates	predefined_areas	jsonb	0
+mockup_templates	default_technique_id	uuid	0
+mockup_templates	available_colors	jsonb	0
 mockup_templates	usage_count	integer	0
-mockup_templates	is_favorite	boolean	0
+mockup_templates	is_featured	boolean	0
+mockup_templates	is_active	boolean	0
 mockup_templates	created_at	timestamp with time zone	0
 mockup_templates	updated_at	timestamp with time zone	0
+ncm_codes	id	uuid	0
+ncm_codes	code	character varying	0
+ncm_codes	code_formatted	character varying	0
+ncm_codes	chapter	character varying	0
+ncm_codes	position	character varying	0
+ncm_codes	subposition	character varying	0
+ncm_codes	item	character varying	0
+ncm_codes	description	text	0
+ncm_codes	chapter_desc	text	0
+ncm_codes	position_desc	text	0
+ncm_codes	ipi_rate	numeric	0
+ncm_codes	import_rate	numeric	0
+ncm_codes	is_active	boolean	0
+ncm_codes	source	text	0
+ncm_codes	notes	text	0
+ncm_codes	organization_id	uuid	0
+ncm_codes	created_at	timestamp with time zone	0
+ncm_codes	updated_at	timestamp with time zone	0
+notification_preferences	id	uuid	0
+notification_preferences	user_id	uuid	0
+notification_preferences	email_notifications	boolean	0
+notification_preferences	push_notifications	boolean	0
+notification_preferences	quote_updates	boolean	0
+notification_preferences	order_updates	boolean	0
+notification_preferences	system_announcements	boolean	0
+notification_preferences	marketing	boolean	0
+notification_preferences	created_at	timestamp with time zone	0
+notification_preferences	updated_at	timestamp with time zone	0
+notification_templates	id	uuid	0
+notification_templates	code	text	0
+notification_templates	name	text	0
+notification_templates	subject	text	0
+notification_templates	body_template	text	0
+notification_templates	variables	jsonb	0
+notification_templates	is_active	boolean	0
+notification_templates	created_at	timestamp with time zone	0
+notification_templates	updated_at	timestamp with time zone	0
+notifications	id	uuid	0
+notifications	user_id	uuid	0
+notifications	type	text	0
+notifications	title	text	0
+notifications	message	text	0
+notifications	data	jsonb	0
+notifications	read_at	timestamp with time zone	0
+notifications	action_url	text	0
+notifications	is_read	boolean	0
+notifications	priority	text	0
+notifications	created_at	timestamp with time zone	0
 optimization_queue	id	uuid	0
 optimization_queue	title	text	0
 optimization_queue	description	text	0
@@ -869,47 +1668,59 @@ order_item_personalizations	created_at	timestamp with time zone	0
 order_item_personalizations	updated_at	timestamp with time zone	0
 order_items	id	uuid	0
 order_items	order_id	uuid	0
-order_items	product_id	text	0
-order_items	product_sku	text	0
-order_items	product_name	text	0
-order_items	product_image_url	text	0
+order_items	product_id	uuid	0
 order_items	quantity	integer	0
 order_items	unit_price	numeric	0
+order_items	subtotal	numeric	0
 order_items	created_at	timestamp with time zone	0
-order_items	organization_id	uuid	0
-order_items	total_price	numeric	0
-order_items	color_name	text	0
-order_items	color_hex	text	0
-order_items	notes	text	0
-order_items	size_code	text	0
-order_items	gender	text	0
-order_items	kit_group_id	uuid	0
-order_items	kit_name	text	0
+order_items	quote_item_id	uuid	0
+order_items	product_sku	text	0
+order_items	product_name	text	0
+order_items	product_description	text	0
+order_items	product_image_url	text	0
+order_items	personalization_config	jsonb	0
+order_items	personalization_cost	numeric	0
+order_items	discount_amount	numeric	0
+order_items	production_status	text	0
+order_items	production_notes	text	0
+order_items	updated_at	timestamp with time zone	0
 orders	id	uuid	0
-orders	seller_id	uuid	0
 orders	order_number	text	0
 orders	status	text	0
-orders	fulfillment_status	text	0
-orders	client_id	text	0
-orders	client_name	text	0
-orders	client_email	text	0
-orders	client_phone	text	0
-orders	client_company	text	0
+orders	total	numeric	0
+orders	payment_method	text	0
+orders	payment_status	text	0
+orders	delivery_address	text	0
+orders	notes	text	0
+orders	created_by	uuid	0
+orders	created_at	timestamp with time zone	0
+orders	updated_at	timestamp with time zone	0
 orders	quote_id	uuid	0
+orders	client_id	uuid	0
+orders	client_name	text	0
+orders	assigned_to	uuid	0
+orders	fulfillment_status	text	0
 orders	subtotal	numeric	0
 orders	discount_amount	numeric	0
 orders	shipping_cost	numeric	0
-orders	total	numeric	0
-orders	notes	text	0
+orders	tax_amount	numeric	0
+orders	paid_amount	numeric	0
+orders	payment_terms	text	0
+orders	payment_due_date	date	0
+orders	shipping_address	jsonb	0
+orders	shipping_method	text	0
+orders	estimated_delivery_date	date	0
+orders	delivered_at	timestamp with time zone	0
 orders	internal_notes	text	0
+orders	organization_id	uuid	0
+orders	seller_id	uuid	0
+orders	client_company	text	0
+orders	version	integer	0
+orders	client_email	text	0
+orders	client_phone	text	0
 orders	tracking_number	text	0
 orders	shipping_type	text	0
-orders	payment_terms	text	0
 orders	delivery_time	text	0
-orders	created_at	timestamp with time zone	0
-orders	updated_at	timestamp with time zone	0
-orders	organization_id	uuid	0
-orders	version	integer	0
 organization_members	id	uuid	0
 organization_members	organization_id	uuid	0
 organization_members	user_id	uuid	0
@@ -920,12 +1731,12 @@ organization_members	created_at	timestamp with time zone	0
 organization_members	updated_at	timestamp with time zone	0
 organizations	id	uuid	0
 organizations	name	text	0
+organizations	created_at	timestamp with time zone	0
 organizations	slug	text	0
 organizations	logo_url	text	0
 organizations	description	text	0
 organizations	is_active	boolean	0
 organizations	settings	jsonb	0
-organizations	created_at	timestamp with time zone	0
 organizations	updated_at	timestamp with time zone	0
 outbound_webhooks	id	uuid	0
 outbound_webhooks	name	text	0
@@ -968,18 +1779,122 @@ ownership_repair_logs	triggered_by_label	text	0
 ownership_repair_logs	notes	text	0
 ownership_repair_logs	error_message	text	0
 ownership_repair_logs	created_at	timestamp with time zone	0
-permissions	id	uuid	0
+packaging_compatibility_config	id	uuid	0
+packaging_compatibility_config	config_key	character varying	0
+packaging_compatibility_config	config_value	text	0
+packaging_compatibility_config	description	text	0
+packaging_compatibility_config	created_at	timestamp with time zone	0
+packaging_types	id	uuid	0
+packaging_types	code	character varying	0
+packaging_types	name	character varying	0
+packaging_types	description	text	0
+packaging_types	is_gift_box	boolean	0
+packaging_types	is_protective	boolean	0
+packaging_types	is_display	boolean	0
+packaging_types	active	boolean	0
+packaging_types	created_at	timestamp with time zone	0
+packaging_types	updated_at	timestamp with time zone	0
+packagings	id	uuid	0
+packagings	code	character varying	0
+packagings	name	character varying	0
+packagings	description	text	0
+packagings	packaging_type_id	uuid	0
+packagings	internal_width_cm	numeric	0
+packagings	internal_height_cm	numeric	0
+packagings	internal_length_cm	numeric	0
+packagings	internal_diameter_cm	numeric	0
+packagings	external_width_cm	numeric	0
+packagings	external_height_cm	numeric	0
+packagings	external_length_cm	numeric	0
+packagings	external_diameter_cm	numeric	0
+packagings	weight_g	integer	0
+packagings	material	character varying	0
+packagings	color	character varying	0
+packagings	is_customizable	boolean	0
+packagings	print_area_width_cm	numeric	0
+packagings	print_area_height_cm	numeric	0
+packagings	active	boolean	0
+packagings	created_at	timestamp with time zone	0
+packagings	updated_at	timestamp with time zone	0
+password_reset_requests	id	uuid	0
+password_reset_requests	email	text	0
+password_reset_requests	status	text	0
+password_reset_requests	requested_at	timestamp with time zone	0
+password_reset_requests	reviewed_at	timestamp with time zone	0
+password_reset_requests	reviewed_by	uuid	0
+password_reset_requests	reviewer_notes	text	0
+password_reset_requests	user_id	uuid	0
 permissions	code	text	0
-permissions	name	text	0
-permissions	description	text	0
 permissions	category	text	0
+permissions	label	text	0
+permissions	description	text	0
 permissions	created_at	timestamp with time zone	0
-permissions	updated_at	timestamp with time zone	0
+personalization_techniques	id	uuid	0
+personalization_techniques	name	text	0
+personalization_techniques	code	text	0
+personalization_techniques	description	text	0
+personalization_techniques	prompt_suffix	text	0
+personalization_techniques	requires_color_count	boolean	0
+personalization_techniques	base_cost_multiplier	numeric	0
+personalization_techniques	is_active	boolean	0
+personalization_techniques	created_at	timestamp with time zone	0
+personalization_techniques	updated_at	timestamp with time zone	0
 price_history	id	uuid	0
-price_history	product_id	text	0
-price_history	variant_id	text	0
-price_history	price	numeric	0
-price_history	recorded_at	timestamp with time zone	0
+price_history	variant_id	uuid	0
+price_history	change_type	character varying	0
+price_history	old_values	jsonb	0
+price_history	new_values	jsonb	0
+price_history	change_reason	text	0
+price_history	changed_by	uuid	0
+price_history	changed_at	timestamp with time zone	0
+price_history	source	character varying	0
+print_area_techniques	id	uuid	0
+print_area_techniques	tabela_preco_id	uuid	0
+print_area_techniques	max_width	numeric	0
+print_area_techniques	max_height	numeric	0
+print_area_techniques	is_curved	boolean	0
+print_area_techniques	shape	text	0
+print_area_techniques	technique_order	integer	0
+print_area_techniques	is_active	boolean	0
+print_area_techniques	created_at	timestamp with time zone	0
+print_area_techniques	updated_at	timestamp with time zone	0
+print_area_techniques	product_id	uuid	0
+print_area_techniques	location_code	text	0
+print_area_techniques	location_name	text	0
+print_area_techniques	location_order	integer	0
+print_area_techniques	notes	text	0
+print_area_techniques	unit_cost	numeric	0
+product_ai_history	id	uuid	0
+product_ai_history	product_id	uuid	0
+product_ai_history	version	integer	0
+product_ai_history	ai_title	text	0
+product_ai_history	ai_description	text	0
+product_ai_history	model	character varying	0
+product_ai_history	prompt_tokens	integer	0
+product_ai_history	completion_tokens	integer	0
+product_ai_history	total_tokens	integer	0
+product_ai_history	generation_time_ms	integer	0
+product_ai_history	context_snapshot	jsonb	0
+product_ai_history	generated_at	timestamp with time zone	0
+product_ai_history	created_at	timestamp with time zone	0
+product_category_assignments	id	uuid	0
+product_category_assignments	product_id	uuid	0
+product_category_assignments	category_id	uuid	0
+product_category_assignments	is_primary	boolean	0
+product_category_assignments	display_order	integer	0
+product_category_assignments	created_at	timestamp with time zone	0
+product_commemorative_dates	id	uuid	0
+product_commemorative_dates	product_id	uuid	0
+product_commemorative_dates	commemorative_date_id	uuid	0
+product_commemorative_dates	source	character varying	0
+product_commemorative_dates	category_id	uuid	0
+product_commemorative_dates	is_featured	boolean	0
+product_commemorative_dates	relevance_score	integer	0
+product_commemorative_dates	display_order	integer	0
+product_commemorative_dates	custom_message	text	0
+product_commemorative_dates	is_active	boolean	0
+product_commemorative_dates	created_at	timestamp with time zone	0
+product_commemorative_dates	updated_at	timestamp with time zone	0
 product_component_locations	id	uuid	0
 product_component_locations	component_id	uuid	0
 product_component_locations	location_code	text	0
@@ -1000,6 +1915,23 @@ product_components	is_active	boolean	0
 product_components	sort_order	integer	0
 product_components	created_at	timestamp with time zone	0
 product_components	updated_at	timestamp with time zone	0
+product_faqs	id	uuid	0
+product_faqs	product_id	uuid	0
+product_faqs	category_id	uuid	0
+product_faqs	faq_scope	text	0
+product_faqs	question	text	0
+product_faqs	answer	text	0
+product_faqs	answer_html	text	0
+product_faqs	keywords	ARRAY	0
+product_faqs	display_order	integer	0
+product_faqs	is_featured	boolean	0
+product_faqs	is_active	boolean	0
+product_faqs	view_count	integer	0
+product_faqs	helpful_count	integer	0
+product_faqs	not_helpful_count	integer	0
+product_faqs	created_at	timestamp with time zone	0
+product_faqs	updated_at	timestamp with time zone	0
+product_faqs	created_by	uuid	0
 product_group_members	id	uuid	0
 product_group_members	product_group_id	uuid	0
 product_group_members	product_id	text	0
@@ -1013,12 +1945,187 @@ product_groups	description	text	0
 product_groups	is_active	boolean	0
 product_groups	created_at	timestamp with time zone	0
 product_groups	updated_at	timestamp with time zone	0
+product_images	id	uuid	0
+product_images	product_id	uuid	0
+product_images	variant_id	uuid	0
+product_images	color_id	uuid	0
+product_images	cloudflare_image_id	character varying	0
+product_images	url_cdn	text	0
+product_images	filename	character varying	0
+product_images	file_size_bytes	bigint	0
+product_images	width_px	integer	0
+product_images	height_px	integer	0
+product_images	format	character varying	0
+product_images	image_type	character varying	0
+product_images	is_primary	boolean	0
+product_images	display_order	integer	0
+product_images	applies_to_color	boolean	0
+product_images	source_supplier	character varying	0
+product_images	url_original	text	0
+product_images	is_active	boolean	0
+product_images	created_at	timestamp with time zone	0
+product_images	updated_at	timestamp with time zone	0
+product_images	image_type_id	uuid	0
+product_images	supplier_code	character varying	0
+product_images	alt_text	text	0
+product_images	title_text	text	0
+product_images	caption	text	0
+product_images	is_og_image	boolean	0
+product_images	organization_id	uuid	0
+product_included_packagings	id	uuid	0
+product_included_packagings	product_id	uuid	0
+product_included_packagings	name	character varying	0
+product_included_packagings	description	text	0
+product_included_packagings	material	character varying	0
+product_included_packagings	color	character varying	0
+product_included_packagings	finish	character varying	0
+product_included_packagings	has_inner_cradle	boolean	0
+product_included_packagings	cradle_material	character varying	0
+product_included_packagings	internal_height_cm	numeric	0
+product_included_packagings	internal_width_cm	numeric	0
+product_included_packagings	internal_length_cm	numeric	0
+product_included_packagings	internal_diameter_cm	numeric	0
+product_included_packagings	external_height_cm	numeric	0
+product_included_packagings	external_width_cm	numeric	0
+product_included_packagings	external_length_cm	numeric	0
+product_included_packagings	weight_g	integer	0
+product_included_packagings	is_default	boolean	0
+product_included_packagings	can_be_disabled	boolean	0
+product_included_packagings	can_be_customized	boolean	0
+product_included_packagings	supplier_packaging_code	character varying	0
+product_included_packagings	supplier_packaging_name	character varying	0
+product_included_packagings	notes	text	0
+product_included_packagings	active	boolean	0
+product_included_packagings	created_at	timestamp with time zone	0
+product_included_packagings	updated_at	timestamp with time zone	0
+product_kit_components	id	uuid	0
+product_kit_components	kit_product_id	uuid	0
+product_kit_components	component_product_id	uuid	0
+product_kit_components	quantity	integer	0
+product_kit_components	is_optional	boolean	0
+product_kit_components	is_replaceable	boolean	0
+product_kit_components	allowed_variant_ids	jsonb	0
+product_kit_components	display_order	integer	0
+product_kit_components	notes	text	0
+product_kit_components	created_at	timestamp with time zone	0
+product_kit_components	updated_at	timestamp with time zone	0
+product_kit_components	component_code	character varying	0
+product_kit_components	component_name	character varying	0
+product_kit_components	component_description	text	0
+product_kit_components	component_sku	character varying	0
+product_kit_components	material	character varying	0
+product_kit_components	color	character varying	0
+product_kit_components	weight_g	integer	0
+product_kit_components	length_mm	integer	0
+product_kit_components	width_mm	integer	0
+product_kit_components	height_mm	integer	0
+product_kit_components	images	jsonb	0
+product_kit_components	primary_image_url	text	0
+product_kit_components	allows_personalization	boolean	0
+product_kit_components	personalization_notes	text	0
+product_kit_components	supplier_component_code	character varying	0
+product_kit_components	material_type_id	uuid	0
+product_kit_components	secondary_material_type_id	uuid	0
+product_kit_components	component_type_code	character varying	0
+product_kit_components	is_packaging	boolean	0
+product_materials	id	uuid	0
+product_materials	organization_id	uuid	0
+product_materials	product_id	uuid	0
+product_materials	material_id	uuid	0
+product_materials	part	character varying	0
+product_materials	percentage	numeric	0
+product_materials	notes	text	0
+product_materials	sort_order	integer	0
+product_materials	created_at	timestamp with time zone	0
+product_materials	updated_at	timestamp with time zone	0
+product_materials	is_active	boolean	0
+product_materials	created_by	uuid	0
+product_materials	updated_by	uuid	0
+product_packaging_compatibility	id	uuid	0
+product_packaging_compatibility	product_id	uuid	0
+product_packaging_compatibility	packaging_id	uuid	0
+product_packaging_compatibility	compatibility_source	character varying	0
+product_packaging_compatibility	supplier_reference_text	text	0
+product_packaging_compatibility	supplier_reference_code	character varying	0
+product_packaging_compatibility	fit_gap_height_mm	numeric	0
+product_packaging_compatibility	fit_gap_width_mm	numeric	0
+product_packaging_compatibility	fit_gap_length_mm	numeric	0
+product_packaging_compatibility	fit_gap_diameter_mm	numeric	0
+product_packaging_compatibility	fit_gap_min_mm	numeric	0
+product_packaging_compatibility	fit_gap_avg_mm	numeric	0
+product_packaging_compatibility	fit_rating	character varying	0
+product_packaging_compatibility	is_recommended	boolean	0
+product_packaging_compatibility	is_same_supplier	boolean	0
+product_packaging_compatibility	display_order	integer	0
+product_packaging_compatibility	is_verified	boolean	0
+product_packaging_compatibility	verified_at	timestamp with time zone	0
+product_packaging_compatibility	verification_notes	text	0
+product_packaging_compatibility	notes	text	0
+product_packaging_compatibility	active	boolean	0
+product_packaging_compatibility	created_at	timestamp with time zone	0
+product_packaging_compatibility	updated_at	timestamp with time zone	0
+product_packagings	id	uuid	0
+product_packagings	product_id	uuid	0
+product_packagings	packaging_id	uuid	0
+product_packagings	relationship_type	character varying	0
+product_packagings	additional_price	numeric	0
+product_packagings	currency	character varying	0
+product_packagings	min_quantity	integer	0
+product_packagings	notes	text	0
+product_packagings	active	boolean	0
+product_packagings	created_at	timestamp with time zone	0
+product_packagings	updated_at	timestamp with time zone	0
 product_price_freshness_overrides	id	uuid	0
 product_price_freshness_overrides	product_id	text	0
 product_price_freshness_overrides	threshold_days	integer	0
 product_price_freshness_overrides	updated_by	uuid	0
 product_price_freshness_overrides	created_at	timestamp with time zone	0
 product_price_freshness_overrides	updated_at	timestamp with time zone	0
+product_properties	id	uuid	0
+product_properties	product_id	uuid	0
+product_properties	property_definition_id	uuid	0
+product_properties	property_code	text	0
+product_properties	property_value	text	0
+product_properties	source	text	0
+product_properties	raw_value	text	0
+product_properties	created_at	timestamp with time zone	0
+product_properties	updated_at	timestamp with time zone	0
+product_relationships	id	uuid	0
+product_relationships	product_id	uuid	0
+product_relationships	related_product_id	uuid	0
+product_relationships	relationship_type	character varying	0
+product_relationships	display_order	integer	0
+product_relationships	is_bidirectional	boolean	0
+product_relationships	is_active	boolean	0
+product_relationships	created_at	timestamp with time zone	0
+product_search_logs	id	uuid	0
+product_search_logs	query	text	0
+product_search_logs	filters	jsonb	0
+product_search_logs	results_count	integer	0
+product_search_logs	latency_ms	integer	0
+product_search_logs	created_at	timestamp with time zone	0
+product_similarity_group_members	id	uuid	0
+product_similarity_group_members	group_id	uuid	0
+product_similarity_group_members	product_id	uuid	0
+product_similarity_group_members	supplier_id	uuid	0
+product_similarity_group_members	is_reference_product	boolean	0
+product_similarity_group_members	similarity_score	numeric	0
+product_similarity_group_members	match_source	text	0
+product_similarity_group_members	notes	text	0
+product_similarity_group_members	created_at	timestamp with time zone	0
+product_similarity_groups	id	uuid	0
+product_similarity_groups	name	text	0
+product_similarity_groups	category_id	uuid	0
+product_similarity_groups	material_family	text	0
+product_similarity_groups	capacity_band	text	0
+product_similarity_groups	capacity_min	integer	0
+product_similarity_groups	capacity_max	integer	0
+product_similarity_groups	match_criteria	jsonb	0
+product_similarity_groups	match_source	text	0
+product_similarity_groups	is_active	boolean	0
+product_similarity_groups	notes	text	0
+product_similarity_groups	created_at	timestamp with time zone	0
+product_similarity_groups	updated_at	timestamp with time zone	0
 product_sync_logs	id	uuid	0
 product_sync_logs	source	text	0
 product_sync_logs	status	text	0
@@ -1031,6 +2138,77 @@ product_sync_logs	payload	jsonb	0
 product_sync_logs	error_message	text	0
 product_sync_logs	triggered_by	uuid	0
 product_sync_logs	created_at	timestamp with time zone	0
+product_sync_logs	products_received	integer	0
+product_sync_logs	products_created	integer	0
+product_sync_logs	products_updated	integer	0
+product_sync_logs	products_failed	integer	0
+product_sync_logs	completed_at	timestamp with time zone	0
+product_tags	id	uuid	0
+product_tags	product_id	uuid	0
+product_tags	tag_id	uuid	0
+product_tags	created_at	timestamp with time zone	0
+product_target_audiences	id	uuid	0
+product_target_audiences	product_id	uuid	0
+product_target_audiences	target_audience_id	uuid	0
+product_target_audiences	source	character varying	0
+product_target_audiences	category_id	uuid	0
+product_target_audiences	is_featured	boolean	0
+product_target_audiences	relevance_score	integer	0
+product_target_audiences	is_active	boolean	0
+product_target_audiences	created_at	timestamp with time zone	0
+product_target_audiences	updated_at	timestamp with time zone	0
+product_variants	id	uuid	0
+product_variants	product_id	uuid	0
+product_variants	sku	text	0
+product_variants	name	text	0
+product_variants	attributes	jsonb	0
+product_variants	stock_quantity	integer	0
+product_variants	images	jsonb	0
+product_variants	is_active	boolean	0
+product_variants	created_at	timestamp with time zone	0
+product_variants	updated_at	timestamp with time zone	0
+product_variants	sku_promo	character varying	0
+product_variants	color_id	uuid	0
+product_variants	size_id	uuid	0
+product_variants	supplier_sku	character varying	0
+product_variants	color_code	character varying	0
+product_variants	color_name	character varying	0
+product_variants	color_hex	character varying	0
+product_variants	size_code	character varying	0
+product_variants	capacity_ml	integer	0
+product_variants	last_sync_at	timestamp with time zone	0
+product_variants	last_sync_supplier_id	uuid	0
+product_variants	selected_thumbnail	character varying	0
+product_variants	bitrix_product_id	integer	0
+product_variants	CodigoXbz	text	0
+product_videos	id	uuid	0
+product_videos	product_id	uuid	0
+product_videos	cloudflare_video_id	character varying	0
+product_videos	url_stream	text	0
+product_videos	url_hls	text	0
+product_videos	url_dash	text	0
+product_videos	url_thumbnail	text	0
+product_videos	filename	character varying	0
+product_videos	file_size_bytes	bigint	0
+product_videos	duration_seconds	integer	0
+product_videos	width_px	integer	0
+product_videos	height_px	integer	0
+product_videos	video_type	character varying	0
+product_videos	title	character varying	0
+product_videos	description	text	0
+product_videos	is_primary	boolean	0
+product_videos	display_order	integer	0
+product_videos	source_supplier	character varying	0
+product_videos	source_youtube_id	character varying	0
+product_videos	url_original	text	0
+product_videos	is_active	boolean	0
+product_videos	created_at	timestamp with time zone	0
+product_videos	updated_at	timestamp with time zone	0
+product_videos	video_type_id	uuid	0
+product_videos	cloudflare_status	character varying	0
+product_videos	cloudflare_error	text	0
+product_videos	uploaded_at	timestamp with time zone	0
+product_videos	organization_id	uuid	0
 product_views	id	uuid	0
 product_views	product_id	text	0
 product_views	product_sku	text	0
@@ -1038,19 +2216,184 @@ product_views	product_name	text	0
 product_views	seller_id	uuid	0
 product_views	view_type	text	0
 product_views	created_at	timestamp with time zone	0
+products	id	uuid	0
+products	name	text	0
+products	description	text	0
+products	sku	text	0
+products	category_id	uuid	0
+products	supplier_id	uuid	0
+products	cost_price	numeric	0
+products	sale_price	numeric	0
+products	stock_quantity	integer	0
+products	active	boolean	0
+products	created_at	timestamp with time zone	0
+products	updated_at	timestamp with time zone	0
+products	suggested_price	numeric	0
+products	dimensions	jsonb	0
+products	images	jsonb	0
+products	primary_image_url	text	0
+products	videos	jsonb	0
+products	allows_personalization	boolean	0
+products	colors	jsonb	0
+products	materials	jsonb	0
+products	tags	jsonb	0
+products	meta_title	text	0
+products	meta_description	text	0
+products	meta_keywords	ARRAY	0
+products	is_featured	boolean	0
+products	is_new	boolean	0
+products	is_on_sale	boolean	0
+products	view_count	integer	0
+products	favorite_count	integer	0
+products	order_count	integer	0
+products	organization_id	uuid	0
+products	product_type	text	0
+products	is_active	boolean	0
+products	created_by	uuid	0
+products	updated_by	uuid	0
+products	sku_promo	character varying	0
+products	short_description	character varying	0
+products	main_category_id	uuid	0
+products	brand	character varying	0
+products	is_deleted	boolean	0
+products	deleted_at	timestamp with time zone	0
+products	is_kit	boolean	0
+products	is_bestseller	boolean	0
+products	min_quantity	integer	0
+products	box_length_mm	integer	0
+products	box_width_mm	integer	0
+products	box_height_mm	integer	0
+products	box_weight_kg	numeric	0
+products	has_colors	boolean	0
+products	has_sizes	boolean	0
+products	ean	character varying	0
+products	gtin	character varying	0
+products	ncm_code	character varying	0
+products	origin_country	character varying	0
+products	warranty_months	integer	0
+products	manufacturer_sku	character varying	0
+products	last_stock_update_at	timestamp with time zone	0
+products	supplier_reference	character varying	0
+products	is_textil	boolean	0
+products	has_capacity	boolean	0
+products	combined_sizes	character varying	0
+products	gender	character varying	0
+products	is_stockout	boolean	0
+products	is_online_exclusive	boolean	0
+products	catalog_page	integer	0
+products	weight_g	integer	0
+products	length_cm	numeric	0
+products	width_cm	numeric	0
+products	height_cm	numeric	0
+products	dimensions_display	character varying	0
+products	box_length_cm	numeric	0
+products	box_width_cm	numeric	0
+products	box_height_cm	numeric	0
+products	box_volume_cm3	numeric	0
+products	box_quantity	integer	0
+products	box_inner_quantity	integer	0
+products	packing_type	character varying	0
+products	repacking_type	character varying	0
+products	capacities	character varying	0
+products	last_sync_at	timestamp with time zone	0
+products	last_sync_supplier_id	uuid	0
+products	sync_status	character varying	0
+products	diameter_cm	numeric	0
+products	shape_type	character varying	0
+products	internal_height_cm	numeric	0
+products	internal_width_cm	numeric	0
+products	internal_length_cm	numeric	0
+products	internal_diameter_cm	numeric	0
+products	packaging_material	character varying	0
+products	packaging_color	character varying	0
+products	has_inner_cradle	boolean	0
+products	cradle_material	character varying	0
+products	packaging_finish	character varying	0
+products	is_imported	boolean	0
+products	lead_time_days	integer	0
+products	requires_minimum_order	boolean	0
+products	supply_mode	character varying	0
+products	is_thermal	boolean	0
+products	capacity_ml	integer	0
+products	slug	text	0
+products	ai_summary	text	0
+products	key_benefits	ARRAY	0
+products	use_cases	ARRAY	0
+products	target_audience	ARRAY	0
+products	schema_json	jsonb	0
+products	canonical_url	text	0
+products	robots_meta	text	0
+products	seo_score	integer	0
+products	seo_last_audit_at	timestamp with time zone	0
+products	seo_issues	jsonb	0
+products	og_title	text	0
+products	og_description	text	0
+products	og_image_url	text	0
+products	description_packaging_info	jsonb	0
+products	has_optional_packaging	boolean	0
+products	optional_packaging_ref	character varying	0
+products	packing_classification	character varying	0
+products	ipi_rate	numeric	0
+products	tax_reference_state	character varying	0
+products	engraving_type	text	0
+products	supplier_updated_at	timestamp with time zone	0
+products	has_gift_box	boolean	0
+products	min_order_quantity	integer	0
+products	ai_title	text	0
+products	ai_description	text	0
+products	ai_version	integer	0
+products	ai_generated_at	timestamp with time zone	0
+products	ai_model	character varying	0
+products	box_image	text	0
+products	repacking_classification	text	0
+products	has_commercial_packaging	boolean	0
+products	packaging_context	text	0
+products	bitrix_product_id	integer	0
+products	novelty_detected_at	timestamp with time zone	0
+products	novelty_expires_at	timestamp with time zone	0
+products	ncm_id	uuid	0
+products	bitrix_images_synced_at	timestamp with time zone	0
+products	is_featured_expires_at	timestamp with time zone	0
+products	is_bestseller_expires_at	timestamp with time zone	0
+products	is_on_sale_expires_at	timestamp with time zone	0
+products	is_new_expires_at	timestamp with time zone	0
+products	supplier_product_url	text	0
+products	freight_class	character varying	0
+products	cubic_weight	numeric	0
+products	auto_category	text	0
+products	auto_material	text	0
+products	classification_confidence	double precision	0
+products	price_updated_at	timestamp with time zone	0
+produto_ramo_atividade	id	uuid	0
+produto_ramo_atividade	produto_id	uuid	0
+produto_ramo_atividade	ramo_atividade_filho_id	uuid	0
+produto_ramo_atividade	created_at	timestamp with time zone	0
 profiles	id	uuid	0
-profiles	user_id	uuid	0
 profiles	email	text	0
 profiles	full_name	text	0
 profiles	role	text	0
+profiles	created_at	timestamp with time zone	0
+profiles	updated_at	timestamp with time zone	0
 profiles	avatar_url	text	0
 profiles	phone	text	0
 profiles	department	text	0
 profiles	is_active	boolean	0
 profiles	last_login_at	timestamp with time zone	0
 profiles	preferences	jsonb	0
-profiles	created_at	timestamp with time zone	0
-profiles	updated_at	timestamp with time zone	0
+profiles	bitrix_id	integer	0
+profiles	user_id	uuid	0
+property_definitions	id	uuid	0
+property_definitions	code	text	0
+property_definitions	name_pt	text	0
+property_definitions	name_en	text	0
+property_definitions	category	text	0
+property_definitions	icon_code	text	0
+property_definitions	is_thermal_indicator	boolean	0
+property_definitions	is_premium_indicator	boolean	0
+property_definitions	display_order	integer	0
+property_definitions	active	boolean	0
+property_definitions	created_at	timestamp with time zone	0
+property_definitions	updated_at	timestamp with time zone	0
 public_token_failures	id	uuid	0
 public_token_failures	resource_type	text	0
 public_token_failures	resource_id	text	0
@@ -1059,6 +2402,13 @@ public_token_failures	ip_address	text	0
 public_token_failures	user_agent	text	0
 public_token_failures	reason	text	0
 public_token_failures	created_at	timestamp with time zone	0
+push_subscriptions	id	uuid	0
+push_subscriptions	user_id	uuid	0
+push_subscriptions	endpoint	text	0
+push_subscriptions	keys	jsonb	0
+push_subscriptions	is_active	boolean	0
+push_subscriptions	created_at	timestamp with time zone	0
+push_subscriptions	updated_at	timestamp with time zone	0
 query_telemetry	id	uuid	0
 query_telemetry	operation	text	0
 query_telemetry	table_name	text	0
@@ -1098,11 +2448,10 @@ quote_approval_tokens	signer_user_agent	text	0
 quote_approval_tokens	signature_hash	text	0
 quote_approval_tokens	signed_at	timestamp with time zone	0
 quote_comments	id	uuid	0
-quote_comments	quote_id	text	0
+quote_comments	quote_id	uuid	0
 quote_comments	user_id	uuid	0
-quote_comments	parent_id	uuid	0
-quote_comments	content	text	0
-quote_comments	is_edited	boolean	0
+quote_comments	comment	text	0
+quote_comments	is_internal	boolean	0
 quote_comments	created_at	timestamp with time zone	0
 quote_comments	updated_at	timestamp with time zone	0
 quote_drafts	id	uuid	0
@@ -1113,15 +2462,15 @@ quote_history	id	uuid	0
 quote_history	quote_id	uuid	0
 quote_history	user_id	uuid	0
 quote_history	action	text	0
-quote_history	description	text	0
 quote_history	field_changed	text	0
 quote_history	old_value	text	0
 quote_history	new_value	text	0
+quote_history	description	text	0
 quote_history	metadata	jsonb	0
 quote_history	created_at	timestamp with time zone	0
 quote_item_personalizations	id	uuid	0
 quote_item_personalizations	quote_item_id	uuid	0
-quote_item_personalizations	technique_id	text	0
+quote_item_personalizations	technique_id	uuid	0
 quote_item_personalizations	technique_name	text	0
 quote_item_personalizations	colors_count	integer	0
 quote_item_personalizations	positions_count	integer	0
@@ -1135,64 +2484,111 @@ quote_item_personalizations	total_cost	numeric	0
 quote_item_personalizations	notes	text	0
 quote_item_personalizations	created_at	timestamp with time zone	0
 quote_item_personalizations	updated_at	timestamp with time zone	0
+quote_item_personalizations	location_code	text	0
+quote_item_personalizations	location_name	text	0
 quote_items	id	uuid	0
 quote_items	quote_id	uuid	0
-quote_items	product_id	text	0
-quote_items	product_name	text	0
+quote_items	product_id	uuid	0
 quote_items	product_sku	text	0
+quote_items	product_name	text	0
+quote_items	product_description	text	0
 quote_items	product_image_url	text	0
+quote_items	has_personalization	boolean	0
+quote_items	personalization_config	jsonb	0
+quote_items	personalization_cost	numeric	0
 quote_items	quantity	integer	0
 quote_items	unit_price	numeric	0
+quote_items	discount_percentage	numeric	0
+quote_items	discount_amount	numeric	0
 quote_items	subtotal	numeric	0
-quote_items	color_name	text	0
-quote_items	color_hex	text	0
+quote_items	mockup_urls	jsonb	0
+quote_items	artwork_urls	jsonb	0
 quote_items	notes	text	0
-quote_items	sort_order	integer	0
-quote_items	display_order	integer	0
 quote_items	created_at	timestamp with time zone	0
 quote_items	updated_at	timestamp with time zone	0
-quote_items	kit_group_id	text	0
+quote_items	color_name	text	0
+quote_items	color_hex	text	0
+quote_items	bitrix_product_id	text	0
+quote_items	kit_group_id	uuid	0
 quote_items	kit_name	text	0
 quote_items	size_code	text	0
 quote_items	gender	text	0
+quote_items	sort_order	integer	0
+quote_items	price_updated_at	timestamp with time zone	0
+quote_items	price_freshness_threshold_days	integer	0
 quote_items	price_confirmed_at	timestamp with time zone	0
 quote_templates	id	uuid	0
-quote_templates	seller_id	uuid	0
 quote_templates	name	text	0
 quote_templates	description	text	0
-quote_templates	is_default	boolean	0
-quote_templates	template_data	jsonb	0
-quote_templates	items_data	jsonb	0
-quote_templates	discount_percent	numeric	0
-quote_templates	discount_amount	numeric	0
-quote_templates	notes	text	0
-quote_templates	internal_notes	text	0
+quote_templates	category	text	0
+quote_templates	items	jsonb	0
 quote_templates	payment_terms	text	0
 quote_templates	delivery_time	text	0
-quote_templates	validity_days	integer	0
+quote_templates	notes	text	0
+quote_templates	is_active	boolean	0
+quote_templates	usage_count	integer	0
+quote_templates	created_by	uuid	0
 quote_templates	created_at	timestamp with time zone	0
 quote_templates	updated_at	timestamp with time zone	0
+quote_templates	seller_id	uuid	0
+quote_templates	template_data	jsonb	0
+quote_templates	discount_percent	numeric	0
+quote_templates	discount_amount	numeric	0
+quote_templates	internal_notes	text	0
+quote_templates	is_default	boolean	0
+quote_templates	validity_days	integer	0
+quote_versions	id	uuid	0
+quote_versions	quote_id	uuid	0
+quote_versions	version_number	integer	0
+quote_versions	snapshot	jsonb	0
+quote_versions	change_summary	text	0
+quote_versions	created_by	uuid	0
+quote_versions	created_at	timestamp with time zone	0
 quotes	id	uuid	0
 quotes	quote_number	text	0
-quotes	client_id	text	0
+quotes	client_id	uuid	0
 quotes	client_name	text	0
+quotes	created_by	uuid	0
+quotes	assigned_to	uuid	0
+quotes	status	text	0
+quotes	stage	text	0
+quotes	priority	text	0
+quotes	subtotal	numeric	0
+quotes	discount_amount	numeric	0
+quotes	shipping_cost	numeric	0
+quotes	tax_amount	numeric	0
+quotes	total	numeric	0
+quotes	valid_until	date	0
+quotes	estimated_delivery_days	integer	0
+quotes	notes	text	0
+quotes	internal_notes	text	0
+quotes	payment_terms	text	0
+quotes	tags	jsonb	0
+quotes	approval_token	text	0
+quotes	approved_at	timestamp with time zone	0
+quotes	approved_by_client_name	text	0
+quotes	client_feedback	text	0
+quotes	viewed_at	timestamp with time zone	0
+quotes	view_count	integer	0
+quotes	last_sent_at	timestamp with time zone	0
+quotes	converted_to_order_id	uuid	0
+quotes	converted_at	timestamp with time zone	0
+quotes	conversion_notes	text	0
+quotes	created_at	timestamp with time zone	0
+quotes	updated_at	timestamp with time zone	0
+quotes	organization_id	uuid	0
+quotes	seller_id	uuid	0
+quotes	discount_percent	numeric	0
+quotes	negotiation_markup_percent	numeric	0
+quotes	real_subtotal	numeric	0
+quotes	real_discount_percent	numeric	0
+quotes	version	integer	0
 quotes	client_email	text	0
 quotes	client_phone	text	0
 quotes	client_company	text	0
 quotes	client_cnpj	text	0
-quotes	seller_id	uuid	0
-quotes	status	text	0
-quotes	subtotal	numeric	0
-quotes	discount_percent	numeric	0
-quotes	discount_amount	numeric	0
-quotes	total	numeric	0
-quotes	notes	text	0
-quotes	payment_terms	text	0
 quotes	delivery_time	text	0
 quotes	shipping_type	text	0
-quotes	shipping_cost	numeric	0
-quotes	internal_notes	text	0
-quotes	valid_until	timestamp with time zone	0
 quotes	bitrix_deal_id	text	0
 quotes	bitrix_quote_id	text	0
 quotes	synced_to_bitrix	boolean	0
@@ -1200,16 +2596,31 @@ quotes	synced_at	timestamp with time zone	0
 quotes	client_response	text	0
 quotes	client_response_at	timestamp with time zone	0
 quotes	client_response_notes	text	0
-quotes	sent_at	timestamp with time zone	0
-quotes	created_at	timestamp with time zone	0
-quotes	updated_at	timestamp with time zone	0
-quotes	version	integer	0
+quotes	shipping_method	text	0
 quotes	parent_quote_id	uuid	0
 quotes	is_latest_version	boolean	0
-quotes	organization_id	uuid	0
-quotes	negotiation_markup_percent	numeric	0
-quotes	real_subtotal	numeric	0
-quotes	real_discount_percent	numeric	0
+quotes	payment_method	text	0
+quotes	sent_at	timestamp with time zone	0
+ramo_atividade	id	uuid	0
+ramo_atividade	nome	character varying	0
+ramo_atividade	slug	character varying	0
+ramo_atividade	descricao	text	0
+ramo_atividade	icone	character varying	0
+ramo_atividade	cor	character varying	0
+ramo_atividade	ativo	boolean	0
+ramo_atividade	ordem	integer	0
+ramo_atividade	created_at	timestamp with time zone	0
+ramo_atividade	updated_at	timestamp with time zone	0
+ramo_atividade_filho	id	uuid	0
+ramo_atividade_filho	ramo_atividade_id	uuid	0
+ramo_atividade_filho	nome	character varying	0
+ramo_atividade_filho	slug	character varying	0
+ramo_atividade_filho	descricao	text	0
+ramo_atividade_filho	icone	character varying	0
+ramo_atividade_filho	ativo	boolean	0
+ramo_atividade_filho	ordem	integer	0
+ramo_atividade_filho	created_at	timestamp with time zone	0
+ramo_atividade_filho	updated_at	timestamp with time zone	0
 recently_viewed_products	id	uuid	0
 recently_viewed_products	user_id	uuid	0
 recently_viewed_products	product_id	text	0
@@ -1271,14 +2682,14 @@ role_permissions	created_at	timestamp with time zone	0
 saved_filters	id	uuid	0
 saved_filters	user_id	uuid	0
 saved_filters	name	text	0
-saved_filters	description	text	0
-saved_filters	filters	jsonb	0
-saved_filters	context	text	0
+saved_filters	filter_config	jsonb	0
 saved_filters	is_default	boolean	0
-saved_filters	icon	text	0
-saved_filters	color	text	0
+saved_filters	category	text	0
 saved_filters	created_at	timestamp with time zone	0
 saved_filters	updated_at	timestamp with time zone	0
+saved_filters	description	text	0
+saved_filters	icon	text	0
+saved_filters	color	text	0
 saved_trends_views	id	uuid	0
 saved_trends_views	user_id	uuid	0
 saved_trends_views	name	text	0
@@ -1297,20 +2708,86 @@ scheduled_reports	last_sent_at	timestamp with time zone	0
 scheduled_reports	next_run_at	timestamp with time zone	0
 scheduled_reports	created_at	timestamp with time zone	0
 scheduled_reports	updated_at	timestamp with time zone	0
+schema_drift_allowlist	table_name	text	0
+schema_drift_allowlist	reason	text	0
+schema_drift_allowlist	added_by	text	0
+schema_drift_allowlist	added_at	timestamp with time zone	0
+schema_drift_allowlist	metadata	jsonb	0
+schema_drift_log	id	uuid	0
+schema_drift_log	ran_at	timestamp with time zone	0
+schema_drift_log	has_drift	boolean	0
+schema_drift_log	tables_oficial	integer	0
+schema_drift_log	tables_lovable	integer	0
+schema_drift_log	only_oficial	ARRAY	0
+schema_drift_log	only_lovable	ARRAY	0
+schema_drift_log	schema_diff	jsonb	0
+schema_drift_log	notification_sent	boolean	0
+schema_drift_log	error_message	text	0
+scraper_checkpoints	id	uuid	0
+scraper_checkpoints	checkpoint_name	text	0
+scraper_checkpoints	phase	text	0
+scraper_checkpoints	status	text	0
+scraper_checkpoints	total_records	integer	0
+scraper_checkpoints	processed_records	integer	0
+scraper_checkpoints	error_records	integer	0
+scraper_checkpoints	metrics	jsonb	0
+scraper_checkpoints	started_at	timestamp with time zone	0
+scraper_checkpoints	completed_at	timestamp with time zone	0
+scraper_checkpoints	notes	text	0
+scraper_checkpoints	created_at	timestamp with time zone	0
+scraper_images_staging	id	uuid	0
+scraper_images_staging	product_id	uuid	0
+scraper_images_staging	sku	text	0
+scraper_images_staging	supplier_id	uuid	0
+scraper_images_staging	woo_image_id	integer	0
+scraper_images_staging	woo_product_id	integer	0
+scraper_images_staging	image_name	text	0
+scraper_images_staging	image_src	text	0
+scraper_images_staging	image_position	integer	0
+scraper_images_staging	image_alt	text	0
+scraper_images_staging	image_type_detected	text	0
+scraper_images_staging	color_code_detected	text	0
+scraper_images_staging	color_id	uuid	0
+scraper_images_staging	exists_in_db	boolean	0
+scraper_images_staging	is_duplicate	boolean	0
+scraper_images_staging	sha256_hash	text	0
+scraper_images_staging	status	text	0
+scraper_images_staging	error_message	text	0
+scraper_images_staging	retry_count	integer	0
+scraper_images_staging	cloudflare_image_id	text	0
+scraper_images_staging	url_cdn	text	0
+scraper_images_staging	batch_id	text	0
+scraper_images_staging	checkpoint	text	0
+scraper_images_staging	created_at	timestamp with time zone	0
+scraper_images_staging	updated_at	timestamp with time zone	0
+scraper_images_staging	processed_at	timestamp with time zone	0
 search_analytics	id	uuid	0
 search_analytics	user_id	uuid	0
 search_analytics	search_term	text	0
 search_analytics	results_count	integer	0
 search_analytics	search_context	text	0
 search_analytics	created_at	timestamp with time zone	0
+search_queries	id	uuid	0
+search_queries	user_id	uuid	0
+search_queries	query	text	0
+search_queries	results_count	integer	0
+search_queries	clicked_product_id	uuid	0
+search_queries	filters_applied	jsonb	0
+search_queries	created_at	timestamp with time zone	0
 secret_rotation_log	id	uuid	0
 secret_rotation_log	secret_name	text	0
 secret_rotation_log	rotated_by	uuid	0
-secret_rotation_log	rotated_at	timestamp with time zone	0
 secret_rotation_log	previous_suffix	text	0
 secret_rotation_log	new_suffix	text	0
 secret_rotation_log	notes	text	0
 secret_rotation_log	action_type	text	0
+secret_rotation_log	rotated_at	timestamp with time zone	0
+security_settings	setting_key	text	0
+security_settings	setting_value	jsonb	0
+security_settings	description	text	0
+security_settings	updated_by	uuid	0
+security_settings	created_at	timestamp with time zone	0
+security_settings	updated_at	timestamp with time zone	0
 seller_cart_items	id	uuid	0
 seller_cart_items	cart_id	uuid	0
 seller_cart_items	product_id	text	0
@@ -1338,10 +2815,35 @@ seller_carts	updated_at	timestamp with time zone	0
 seller_discount_limits	id	uuid	0
 seller_discount_limits	user_id	uuid	0
 seller_discount_limits	max_discount_percent	numeric	0
-seller_discount_limits	set_by	uuid	0
+seller_discount_limits	approval_required_above	numeric	0
 seller_discount_limits	notes	text	0
+seller_discount_limits	set_by	uuid	0
 seller_discount_limits	created_at	timestamp with time zone	0
 seller_discount_limits	updated_at	timestamp with time zone	0
+seo_audit_log	id	uuid	0
+seo_audit_log	entity_type	text	0
+seo_audit_log	entity_id	uuid	0
+seo_audit_log	seo_score	integer	0
+seo_audit_log	previous_score	integer	0
+seo_audit_log	issues	jsonb	0
+seo_audit_log	warnings	jsonb	0
+seo_audit_log	passed_checks	jsonb	0
+seo_audit_log	suggestions	jsonb	0
+seo_audit_log	meta_snapshot	jsonb	0
+seo_audit_log	audited_at	timestamp with time zone	0
+seo_audit_log	audit_trigger	text	0
+seo_redirects	id	uuid	0
+seo_redirects	source_path	text	0
+seo_redirects	target_path	text	0
+seo_redirects	redirect_type	integer	0
+seo_redirects	is_regex	boolean	0
+seo_redirects	is_active	boolean	0
+seo_redirects	reason	text	0
+seo_redirects	hit_count	integer	0
+seo_redirects	last_hit_at	timestamp with time zone	0
+seo_redirects	created_at	timestamp with time zone	0
+seo_redirects	expires_at	timestamp with time zone	0
+seo_redirects	created_by	uuid	0
 simulator_wizard_drafts	id	uuid	0
 simulator_wizard_drafts	user_id	uuid	0
 simulator_wizard_drafts	title	text	0
@@ -1351,6 +2853,41 @@ simulator_wizard_drafts	personalizations	jsonb	0
 simulator_wizard_drafts	wizard_step	text	0
 simulator_wizard_drafts	created_at	timestamp with time zone	0
 simulator_wizard_drafts	updated_at	timestamp with time zone	0
+sm_images_staging	id	uuid	0
+sm_images_staging	sku	text	0
+sm_images_staging	product_id	uuid	0
+sm_images_staging	variant_id	uuid	0
+sm_images_staging	supplier_id	uuid	0
+sm_images_staging	source_url	text	0
+sm_images_staging	image_slug	text	0
+sm_images_staging	image_id_site	integer	0
+sm_images_staging	image_type	text	0
+sm_images_staging	is_primary	boolean	0
+sm_images_staging	display_order	integer	0
+sm_images_staging	source	text	0
+sm_images_staging	status	text	0
+sm_images_staging	cloudflare_image_id	text	0
+sm_images_staging	cloudflare_url	text	0
+sm_images_staging	uploaded_at	timestamp with time zone	0
+sm_images_staging	product_image_id	uuid	0
+sm_images_staging	populated_at	timestamp with time zone	0
+sm_images_staging	partition_id	integer	0
+sm_images_staging	error_message	text	0
+sm_images_staging	retry_count	integer	0
+sm_images_staging	created_at	timestamp with time zone	0
+sm_images_staging	updated_at	timestamp with time zone	0
+sm_worker_partitions	id	integer	0
+sm_worker_partitions	worker_id	integer	0
+sm_worker_partitions	total_skus	integer	0
+sm_worker_partitions	total_images	integer	0
+sm_worker_partitions	total_uploaded	integer	0
+sm_worker_partitions	total_errors	integer	0
+sm_worker_partitions	status	text	0
+sm_worker_partitions	started_at	timestamp with time zone	0
+sm_worker_partitions	completed_at	timestamp with time zone	0
+sm_worker_partitions	last_invocation_at	timestamp with time zone	0
+sm_worker_partitions	invocation_count	integer	0
+sm_worker_partitions	created_at	timestamp with time zone	0
 step_up_audit_log	id	uuid	0
 step_up_audit_log	user_id	uuid	0
 step_up_audit_log	action	USER-DEFINED	0
@@ -1386,10 +2923,456 @@ step_up_tokens	consumed	boolean	0
 step_up_tokens	created_at	timestamp with time zone	0
 step_up_tokens	expires_at	timestamp with time zone	0
 step_up_tokens	consumed_at	timestamp with time zone	0
+stock_daily_summary	id	bigint	0
+stock_daily_summary	variant_supplier_source_id	uuid	0
+stock_daily_summary	supplier_id	uuid	0
+stock_daily_summary	supplier_branch_id	uuid	0
+stock_daily_summary	variant_id	uuid	0
+stock_daily_summary	product_id	uuid	0
+stock_daily_summary	summary_date	date	0
+stock_daily_summary	stock_open	integer	0
+stock_daily_summary	stock_close	integer	0
+stock_daily_summary	stock_min	integer	0
+stock_daily_summary	stock_max	integer	0
+stock_daily_summary	net_change	integer	0
+stock_daily_summary	units_depleted	integer	0
+stock_daily_summary	units_restocked	integer	0
+stock_daily_summary	restock_detected	boolean	0
+stock_daily_summary	restock_quantity	integer	0
+stock_daily_summary	restock_count	smallint	0
+stock_daily_summary	cost_price_open	numeric	0
+stock_daily_summary	cost_price_close	numeric	0
+stock_daily_summary	price_changed	boolean	0
+stock_daily_summary	sync_count	smallint	0
+stock_daily_summary	created_at	timestamp with time zone	0
+stock_snapshots	id	bigint	0
+stock_snapshots	variant_supplier_source_id	uuid	0
+stock_snapshots	supplier_id	uuid	0
+stock_snapshots	supplier_branch_id	uuid	0
+stock_snapshots	variant_id	uuid	0
+stock_snapshots	product_id	uuid	0
+stock_snapshots	stock_main_old	integer	0
+stock_snapshots	stock_main_new	integer	0
+stock_snapshots	stock_main_delta	integer	0
+stock_snapshots	stock_other_old	integer	0
+stock_snapshots	stock_other_new	integer	0
+stock_snapshots	stock_other_delta	integer	0
+stock_snapshots	stock_total_old	integer	0
+stock_snapshots	stock_total_new	integer	0
+stock_snapshots	cost_price_old	numeric	0
+stock_snapshots	cost_price_new	numeric	0
+stock_snapshots	cost_price_delta	numeric	0
+stock_snapshots	change_type	character varying	0
+stock_snapshots	captured_at	timestamp with time zone	0
+stock_snapshots	sync_source	character varying	0
+supplier_attribute_definitions	id	uuid	0
+supplier_attribute_definitions	organization_id	uuid	0
+supplier_attribute_definitions	supplier_id	uuid	0
+supplier_attribute_definitions	api_attribute_key	character varying	0
+supplier_attribute_definitions	api_attribute_name	character varying	0
+supplier_attribute_definitions	api_attribute_name_original	character varying	0
+supplier_attribute_definitions	data_type	character varying	0
+supplier_attribute_definitions	api_description	text	0
+supplier_attribute_definitions	api_unit	character varying	0
+supplier_attribute_definitions	api_raw_data	jsonb	0
+supplier_attribute_definitions	source	character varying	0
+supplier_attribute_definitions	sample_values	jsonb	0
+supplier_attribute_definitions	value_count	integer	0
+supplier_attribute_definitions	is_active	boolean	0
+supplier_attribute_definitions	is_mapped	boolean	0
+supplier_attribute_definitions	notes	text	0
+supplier_attribute_definitions	created_at	timestamp with time zone	0
+supplier_attribute_definitions	updated_at	timestamp with time zone	0
+supplier_branches	id	uuid	0
+supplier_branches	supplier_id	uuid	0
+supplier_branches	branch_name	character varying	0
+supplier_branches	branch_code	character varying	0
+supplier_branches	cnpj	character varying	0
+supplier_branches	inscricao_estadual	character varying	0
+supplier_branches	state_uf	character varying	0
+supplier_branches	city	character varying	0
+supplier_branches	address	text	0
+supplier_branches	tax_regime	character varying	0
+supplier_branches	icms_internal_rate	numeric	0
+supplier_branches	icms_interstate_rate	numeric	0
+supplier_branches	default_cfop_internal	character varying	0
+supplier_branches	default_cfop_interstate	character varying	0
+supplier_branches	is_default	boolean	0
+supplier_branches	is_active	boolean	0
+supplier_branches	notes	text	0
+supplier_branches	created_at	timestamp with time zone	0
+supplier_branches	updated_at	timestamp with time zone	0
+supplier_branches	default_cst	character varying	0
+supplier_branches	default_pis_rate	numeric	0
+supplier_branches	default_cofins_rate	numeric	0
+supplier_branches	default_csosn	character varying	0
+supplier_branches	default_cest	character varying	0
+supplier_branches	default_operation_nature	character varying	0
+supplier_categories	id	uuid	0
+supplier_categories	supplier_id	uuid	0
+supplier_categories	supplier_code	text	0
+supplier_categories	supplier_name	text	0
+supplier_categories	parent_code	text	0
+supplier_categories	level	integer	0
+supplier_categories	raw_data	jsonb	0
+supplier_categories	created_at	timestamp with time zone	0
+supplier_category_mappings	id	uuid	0
+supplier_category_mappings	supplier_category_id	uuid	0
+supplier_category_mappings	category_id	uuid	0
+supplier_category_mappings	confidence	numeric	0
+supplier_category_mappings	created_at	timestamp with time zone	0
+supplier_colors	id	uuid	0
+supplier_colors	organization_id	uuid	0
+supplier_colors	supplier_id	uuid	0
+supplier_colors	name	character varying	0
+supplier_colors	code	character varying	0
+supplier_colors	hex_code	character varying	0
+supplier_colors	api_color_id	character varying	0
+supplier_colors	api_description	text	0
+supplier_colors	api_optional_description	text	0
+supplier_colors	api_raw_data	jsonb	0
+supplier_colors	image_url	text	0
+supplier_colors	source	character varying	0
+supplier_colors	is_active	boolean	0
+supplier_colors	is_available	boolean	0
+supplier_colors	notes	text	0
+supplier_colors	created_at	timestamp with time zone	0
+supplier_colors	updated_at	timestamp with time zone	0
+supplier_colors	color_variation_id	uuid	0
+supplier_field_mappings	id	uuid	0
+supplier_field_mappings	supplier_id	uuid	0
+supplier_field_mappings	source_field	character varying	0
+supplier_field_mappings	source_path	character varying	0
+supplier_field_mappings	target_table	character varying	0
+supplier_field_mappings	target_field	character varying	0
+supplier_field_mappings	transform_type	character varying	0
+supplier_field_mappings	transform_config	jsonb	0
+supplier_field_mappings	source_unit	character varying	0
+supplier_field_mappings	target_unit	character varying	0
+supplier_field_mappings	is_active	boolean	0
+supplier_field_mappings	priority	integer	0
+supplier_field_mappings	created_at	timestamp with time zone	0
+supplier_field_mappings	updated_at	timestamp with time zone	0
+supplier_field_mappings	created_by	uuid	0
+supplier_field_priority	id	uuid	0
+supplier_field_priority	target_table	character varying	0
+supplier_field_priority	target_field	character varying	0
+supplier_field_priority	supplier_id	uuid	0
+supplier_field_priority	priority	integer	0
+supplier_field_priority	condition_config	jsonb	0
+supplier_field_priority	is_active	boolean	0
+supplier_field_priority	created_at	timestamp with time zone	0
+supplier_image_requirements	id	uuid	0
+supplier_image_requirements	supplier_code	character varying	0
+supplier_image_requirements	supplier_name	character varying	0
+supplier_image_requirements	min_width_px	integer	0
+supplier_image_requirements	min_height_px	integer	0
+supplier_image_requirements	ideal_width_px	integer	0
+supplier_image_requirements	ideal_height_px	integer	0
+supplier_image_requirements	max_width_px	integer	0
+supplier_image_requirements	max_height_px	integer	0
+supplier_image_requirements	max_file_size_mb	numeric	0
+supplier_image_requirements	allowed_formats	ARRAY	0
+supplier_image_requirements	preferred_format	character varying	0
+supplier_image_requirements	min_quality_score	integer	0
+supplier_image_requirements	require_white_background	boolean	0
+supplier_image_requirements	require_square_aspect	boolean	0
+supplier_image_requirements	aspect_ratio_tolerance	numeric	0
+supplier_image_requirements	notes	text	0
+supplier_image_requirements	is_active	boolean	0
+supplier_image_requirements	created_at	timestamp with time zone	0
+supplier_image_requirements	updated_at	timestamp with time zone	0
+supplier_image_suffix_mappings	id	uuid	0
+supplier_image_suffix_mappings	supplier_suffix_id	uuid	0
+supplier_image_suffix_mappings	supplier_code	character varying	0
+supplier_image_suffix_mappings	suffix_pattern	character varying	0
+supplier_image_suffix_mappings	image_type_id	uuid	0
+supplier_image_suffix_mappings	image_type_code	character varying	0
+supplier_image_suffix_mappings	display_priority_override	smallint	0
+supplier_image_suffix_mappings	gallery_order_override	smallint	0
+supplier_image_suffix_mappings	force_color_specific	boolean	0
+supplier_image_suffix_mappings	force_primary_candidate	boolean	0
+supplier_image_suffix_mappings	mapping_notes	text	0
+supplier_image_suffix_mappings	confidence_score	smallint	0
+supplier_image_suffix_mappings	is_validated	boolean	0
+supplier_image_suffix_mappings	validated_by	character varying	0
+supplier_image_suffix_mappings	validated_at	timestamp with time zone	0
+supplier_image_suffix_mappings	is_active	boolean	0
+supplier_image_suffix_mappings	created_at	timestamp with time zone	0
+supplier_image_suffix_mappings	updated_at	timestamp with time zone	0
+supplier_image_suffix_patterns	id	uuid	0
+supplier_image_suffix_patterns	supplier_id	uuid	0
+supplier_image_suffix_patterns	supplier_code	character varying	0
+supplier_image_suffix_patterns	suffix_pattern	character varying	0
+supplier_image_suffix_patterns	suffix_regex	character varying	0
+supplier_image_suffix_patterns	supplier_name	character varying	0
+supplier_image_suffix_patterns	supplier_description	text	0
+supplier_image_suffix_patterns	file_format	character varying	0
+supplier_image_suffix_patterns	is_color_specific	boolean	0
+supplier_image_suffix_patterns	api_fields	jsonb	0
+supplier_image_suffix_patterns	example_filename	character varying	0
+supplier_image_suffix_patterns	example_url	text	0
+supplier_image_suffix_patterns	images_count	integer	0
+supplier_image_suffix_patterns	last_analysis_at	timestamp with time zone	0
+supplier_image_suffix_patterns	is_active	boolean	0
+supplier_image_suffix_patterns	created_at	timestamp with time zone	0
+supplier_image_suffix_patterns	updated_at	timestamp with time zone	0
+supplier_import_batches	id	uuid	0
+supplier_import_batches	supplier_id	uuid	0
+supplier_import_batches	started_at	timestamp with time zone	0
+supplier_import_batches	finished_at	timestamp with time zone	0
+supplier_import_batches	status	character varying	0
+supplier_import_batches	products_imported	integer	0
+supplier_import_batches	products_updated	integer	0
+supplier_import_batches	products_errors	integer	0
+supplier_import_batches	variants_imported	integer	0
+supplier_import_batches	variants_updated	integer	0
+supplier_import_batches	variants_errors	integer	0
+supplier_import_batches	error_log	jsonb	0
+supplier_import_batches	notes	text	0
+supplier_import_batches	created_at	timestamp with time zone	0
+supplier_materials	id	uuid	0
+supplier_materials	supplier_id	uuid	0
+supplier_materials	api_material_key	character varying	0
+supplier_materials	api_material_name	character varying	0
+supplier_materials	api_material_group	character varying	0
+supplier_materials	raw_data	jsonb	0
+supplier_materials	created_at	timestamp with time zone	0
+supplier_materials	updated_at	timestamp with time zone	0
+supplier_packagings	id	uuid	0
+supplier_packagings	supplier_id	uuid	0
+supplier_packagings	packaging_id	uuid	0
+supplier_packagings	supplier_code	character varying	0
+supplier_packagings	supplier_name	character varying	0
+supplier_packagings	unit_price	numeric	0
+supplier_packagings	currency	character varying	0
+supplier_packagings	min_order_quantity	integer	0
+supplier_packagings	is_available	boolean	0
+supplier_packagings	lead_time_days	integer	0
+supplier_packagings	last_price_update	timestamp with time zone	0
+supplier_packagings	active	boolean	0
+supplier_packagings	created_at	timestamp with time zone	0
+supplier_packagings	updated_at	timestamp with time zone	0
+supplier_products_raw	id	uuid	0
+supplier_products_raw	supplier_id	uuid	0
+supplier_products_raw	supplier_reference	character varying	0
+supplier_products_raw	raw_data	jsonb	0
+supplier_products_raw	raw_hash	character varying	0
+supplier_products_raw	imported_at	timestamp with time zone	0
+supplier_products_raw	import_batch_id	uuid	0
+supplier_products_raw	processed	boolean	0
+supplier_products_raw	processed_at	timestamp with time zone	0
+supplier_products_raw	process_errors	jsonb	0
+supplier_products_raw	product_id	uuid	0
+supplier_products_raw	created_at	timestamp with time zone	0
+supplier_products_raw	updated_at	timestamp with time zone	0
+supplier_products_raw	images_processed	boolean	0
+supplier_products_raw	supplier_sku	character varying	0
+supplier_products_raw	variant_id	uuid	0
+supplier_property_mappings	id	uuid	0
+supplier_property_mappings	supplier_id	uuid	0
+supplier_property_mappings	supplier_code	text	0
+supplier_property_mappings	raw_pattern	text	0
+supplier_property_mappings	property_code	text	0
+supplier_property_mappings	priority	integer	0
+supplier_property_mappings	notes	text	0
+supplier_property_mappings	active	boolean	0
+supplier_property_mappings	created_at	timestamp with time zone	0
+supplier_property_mappings	updated_at	timestamp with time zone	0
+supplier_settings	id	uuid	0
+supplier_settings	supplier_id	uuid	0
+supplier_settings	default_supply_mode	character varying	0
+supplier_settings	default_is_imported	boolean	0
+supplier_settings	use_origin_country	boolean	0
+supplier_settings	default_lead_time_days	integer	0
+supplier_settings	auto_sync_enabled	boolean	0
+supplier_settings	created_at	timestamp with time zone	0
+supplier_settings	updated_at	timestamp with time zone	0
+supplier_settings	default_packing_classification	character varying	0
+supplier_technique_mappings	id	uuid	0
+supplier_technique_mappings	supplier_technique_name	text	0
+supplier_technique_mappings	supplier_technique_code	character varying	0
+supplier_technique_mappings	supplier_name	character varying	0
+supplier_technique_mappings	target_technique_id	uuid	0
+supplier_technique_mappings	confidence	numeric	0
+supplier_technique_mappings	is_verified	boolean	0
+supplier_technique_mappings	mapped_by	character varying	0
+supplier_technique_mappings	created_at	timestamp with time zone	0
+supplier_technique_mappings	updated_at	timestamp with time zone	0
+supplier_unit_conversions	id	uuid	0
+supplier_unit_conversions	supplier_id	uuid	0
+supplier_unit_conversions	source_unit	character varying	0
+supplier_unit_conversions	target_unit	character varying	0
+supplier_unit_conversions	multiplier	numeric	0
+supplier_unit_conversions	unit_type	character varying	0
+supplier_unit_conversions	description	character varying	0
+supplier_unit_conversions	is_default	boolean	0
+supplier_unit_conversions	is_active	boolean	0
+supplier_unit_conversions	created_at	timestamp with time zone	0
+supplier_value_mappings	id	uuid	0
+supplier_value_mappings	supplier_id	uuid	0
+supplier_value_mappings	field_type	character varying	0
+supplier_value_mappings	source_value	character varying	0
+supplier_value_mappings	target_value	character varying	0
+supplier_value_mappings	display_value	character varying	0
+supplier_value_mappings	sort_order	integer	0
+supplier_value_mappings	is_active	boolean	0
+supplier_value_mappings	created_at	timestamp with time zone	0
+supplier_value_mappings	updated_at	timestamp with time zone	0
+supplier_video_requirements	id	uuid	0
+supplier_video_requirements	supplier_code	character varying	0
+supplier_video_requirements	supplier_name	character varying	0
+supplier_video_requirements	min_width_px	integer	0
+supplier_video_requirements	min_height_px	integer	0
+supplier_video_requirements	ideal_width_px	integer	0
+supplier_video_requirements	ideal_height_px	integer	0
+supplier_video_requirements	min_duration_seconds	integer	0
+supplier_video_requirements	max_duration_seconds	integer	0
+supplier_video_requirements	max_file_size_mb	numeric	0
+supplier_video_requirements	allowed_formats	ARRAY	0
+supplier_video_requirements	notes	text	0
+supplier_video_requirements	is_active	boolean	0
+supplier_video_requirements	created_at	timestamp with time zone	0
+supplier_video_requirements	updated_at	timestamp with time zone	0
+suppliers	id	uuid	0
+suppliers	name	text	0
+suppliers	code	text	0
+suppliers	cnpj	text	0
+suppliers	contact_name	text	0
+suppliers	email	text	0
+suppliers	phone	text	0
+suppliers	address	text	0
+suppliers	active	boolean	0
+suppliers	created_at	timestamp with time zone	0
+suppliers	website	text	0
+suppliers	contact_person	text	0
+suppliers	payment_terms	text	0
+suppliers	delivery_time_days	integer	0
+suppliers	minimum_order_value	numeric	0
+suppliers	notes	text	0
+suppliers	updated_at	timestamp with time zone	0
+suppliers	organization_id	uuid	0
+suppliers	trading_name	character varying	0
+suppliers	api_type	character varying	0
+suppliers	api_base_url	text	0
+suppliers	api_credentials	jsonb	0
+suppliers	min_order_value	numeric	0
+suppliers	shipping_terms	text	0
+suppliers	default_markup_percent	numeric	0
+suppliers	is_product_supplier	boolean	0
+suppliers	is_engraving_supplier	boolean	0
+suppliers	sync_enabled	boolean	0
+suppliers	sync_interval_minutes	integer	0
+suppliers	last_full_sync_at	timestamp with time zone	0
+suppliers	last_sync_status	character varying	0
+suppliers	last_sync_error	text	0
+suppliers	api_rate_limit_per_hour	integer	0
+suppliers	priority	integer	0
+suppliers	api_requests_current_hour	integer	0
+suppliers	api_requests_reset_at	timestamp with time zone	0
+suppliers	state_uf	character varying	0
+suppliers	tax_regime	character varying	0
+suppliers	inscricao_estadual	character varying	0
+suppliers	phone2	character varying	0
+suppliers	logo_url	text	0
+system_changelog	id	uuid	0
+system_changelog	executed_at	timestamp with time zone	0
+system_changelog	step_number	integer	0
+system_changelog	category	text	0
+system_changelog	title	text	0
+system_changelog	description	text	0
+system_changelog	impact	text	0
+system_changelog	executed_by	text	0
+system_changelog	metadata	jsonb	0
+system_documentation	id	uuid	0
+system_documentation	modulo	character varying	0
+system_documentation	tabela	character varying	0
+system_documentation	proposito	text	0
+system_documentation	relaciona_com	ARRAY	0
+system_documentation	observacoes	text	0
+system_documentation	criado_em	timestamp with time zone	0
+system_documentation	atualizado_em	timestamp with time zone	0
 system_settings	key	text	0
 system_settings	value	jsonb	0
-system_settings	updated_at	timestamp with time zone	0
 system_settings	updated_by	uuid	0
+system_settings	updated_at	timestamp with time zone	0
+system_settings	description	text	0
+system_settings_legacy	id	uuid	0
+system_settings_legacy	setting_key	text	0
+system_settings_legacy	setting_value	jsonb	0
+system_settings_legacy	description	text	0
+system_settings_legacy	is_public	boolean	0
+system_settings_legacy	created_at	timestamp with time zone	0
+system_settings_legacy	updated_at	timestamp with time zone	0
+system_settings_legacy	category	text	0
+system_settings_legacy	is_secret	boolean	0
+tabela_preco_gravacao_oficial	id	uuid	0
+tabela_preco_gravacao_oficial	codigo_tabela	character varying	0
+tabela_preco_gravacao_oficial	nome	character varying	0
+tabela_preco_gravacao_oficial	descricao	text	0
+tabela_preco_gravacao_oficial	cobra_por_cor	boolean	0
+tabela_preco_gravacao_oficial	max_cores	integer	0
+tabela_preco_gravacao_oficial	desconto_segunda_cor	numeric	0
+tabela_preco_gravacao_oficial	desconto_terceira_cor	numeric	0
+tabela_preco_gravacao_oficial	custo_setup	numeric	0
+tabela_preco_gravacao_oficial	custo_setup_por_cor	boolean	0
+tabela_preco_gravacao_oficial	custo_manuseio	numeric	0
+tabela_preco_gravacao_oficial	ativo	boolean	0
+tabela_preco_gravacao_oficial	created_at	timestamp with time zone	0
+tabela_preco_gravacao_oficial	updated_at	timestamp with time zone	0
+tabela_preco_gravacao_oficial	custo_aplicacao	numeric	0
+tabela_preco_gravacao_oficial	custo_termo_transferencia	numeric	0
+tabela_preco_gravacao_oficial	custo_queima_forno	numeric	0
+tabela_preco_gravacao_oficial	codigo_curto	character varying	0
+tabela_preco_gravacao_oficial	grupo_tecnica	character varying	0
+tabela_preco_gravacao_oficial	usa_faixa_dimensional	boolean	0
+tabela_preco_gravacao_oficial	opcoes_modificadores	jsonb	0
+tabela_preco_gravacao_oficial	tom_options	jsonb	0
+tabela_preco_gravacao_oficial	markup_percent	numeric	0
+tabela_preco_gravacao_oficial	preco_minimo_unitario	numeric	0
+tabela_preco_gravacao_oficial	preco_maximo_unitario	numeric	0
+tabela_preco_gravacao_oficial_faixa	id	uuid	0
+tabela_preco_gravacao_oficial_faixa	tabela_preco_gravacao_id	uuid	0
+tabela_preco_gravacao_oficial_faixa	quantidade_minima	integer	0
+tabela_preco_gravacao_oficial_faixa	quantidade_maxima	integer	0
+tabela_preco_gravacao_oficial_faixa	preco_unitario	numeric	0
+tabela_preco_gravacao_oficial_faixa	prazo_dias	integer	0
+tabela_preco_gravacao_oficial_faixa	ordem	integer	0
+tabela_preco_gravacao_oficial_faixa	created_at	timestamp with time zone	0
+tabela_preco_gravacao_oficial_faixa	updated_at	timestamp with time zone	0
+tabela_preco_gravacao_oficial_faixa	largura_min	numeric	0
+tabela_preco_gravacao_oficial_faixa	largura_max	numeric	0
+tabela_preco_gravacao_oficial_faixa	altura_min	numeric	0
+tabela_preco_gravacao_oficial_faixa	altura_max	numeric	0
+tags	id	uuid	0
+tags	organization_id	uuid	0
+tags	name	character varying	0
+tags	slug	character varying	0
+tags	color_hex	character varying	0
+tags	description	text	0
+tags	usage_count	integer	0
+tags	is_active	boolean	0
+tags	created_at	timestamp with time zone	0
+tags	updated_at	timestamp with time zone	0
+target_audiences	id	uuid	0
+target_audiences	organization_id	uuid	0
+target_audiences	name	character varying	0
+target_audiences	slug	character varying	0
+target_audiences	description	text	0
+target_audiences	category	character varying	0
+target_audiences	icon_name	character varying	0
+target_audiences	color_hex	character varying	0
+target_audiences	display_order	integer	0
+target_audiences	is_active	boolean	0
+target_audiences	created_at	timestamp with time zone	0
+target_audiences	updated_at	timestamp with time zone	0
+tecnicas_gravacao	codigo	character varying	0
+tecnicas_gravacao	nome	character varying	0
+tecnicas_gravacao	slug	character varying	0
+tecnicas_gravacao	ativo	boolean	0
+tecnicas_gravacao	ordem_exibicao	integer	0
+tecnicas_gravacao	created_at	timestamp with time zone	0
+tecnicas_gravacao	updated_at	timestamp with time zone	0
 user_comparisons	id	uuid	0
 user_comparisons	user_id	uuid	0
 user_comparisons	client_id	text	0
@@ -1402,6 +3385,19 @@ user_comparisons	share_expires_at	timestamp with time zone	0
 user_comparisons	view_count	integer	0
 user_comparisons	created_at	timestamp with time zone	0
 user_comparisons	updated_at	timestamp with time zone	0
+user_favorites	id	uuid	0
+user_favorites	user_id	uuid	0
+user_favorites	product_id	uuid	0
+user_favorites	notes	text	0
+user_favorites	created_at	timestamp with time zone	0
+user_filter_presets	id	uuid	0
+user_filter_presets	user_id	uuid	0
+user_filter_presets	preset_name	text	0
+user_filter_presets	filters	jsonb	0
+user_filter_presets	is_global	boolean	0
+user_filter_presets	usage_count	integer	0
+user_filter_presets	created_at	timestamp with time zone	0
+user_filter_presets	updated_at	timestamp with time zone	0
 user_known_devices	id	uuid	0
 user_known_devices	user_id	uuid	0
 user_known_devices	fingerprint	text	0
@@ -1417,6 +3413,11 @@ user_onboarding	started_at	timestamp with time zone	0
 user_onboarding	completed_at	timestamp with time zone	0
 user_onboarding	created_at	timestamp with time zone	0
 user_onboarding	updated_at	timestamp with time zone	0
+user_organizations	organization_id	uuid	0
+user_organizations	user_id	uuid	0
+user_organizations	role	USER-DEFINED	0
+user_organizations	created_at	timestamp with time zone	0
+user_organizations	updated_at	timestamp with time zone	0
 user_preferences	id	uuid	0
 user_preferences	user_id	uuid	0
 user_preferences	comparison_weights	jsonb	0
@@ -1424,9 +3425,10 @@ user_preferences	comparison_column_order	jsonb	0
 user_preferences	created_at	timestamp with time zone	0
 user_preferences	updated_at	timestamp with time zone	0
 user_preferences	filter_states	jsonb	0
-user_roles	id	uuid	0
 user_roles	user_id	uuid	0
 user_roles	role	USER-DEFINED	0
+user_roles	created_at	timestamp with time zone	0
+user_roles	granted_by	uuid	0
 user_search_history	id	uuid	0
 user_search_history	user_id	uuid	0
 user_search_history	query_text	text	0
@@ -1438,24 +3440,145 @@ user_search_history	created_at	timestamp with time zone	0
 user_search_history	updated_at	timestamp with time zone	0
 user_token_revocations	user_id	uuid	0
 user_token_revocations	revoked_at	timestamp with time zone	0
-v_full_scope_grants	audit_id	uuid	0
-v_full_scope_grants	granted_at	timestamp with time zone	0
-v_full_scope_grants	granted_to_user_id	uuid	0
-v_full_scope_grants	granted_to_name	text	0
-v_full_scope_grants	granted_to_email	character varying	0
-v_full_scope_grants	step_up_action	USER-DEFINED	0
-v_full_scope_grants	operation	text	0
-v_full_scope_grants	key_id	uuid	0
-v_full_scope_grants	key_prefix	text	0
-v_full_scope_grants	key_expires_at	timestamp with time zone	0
-v_full_scope_grants	justification	text	0
-v_full_scope_grants	challenge_id	uuid	0
-v_full_scope_grants	token_id	uuid	0
-v_full_scope_grants	ip_address	inet	0
-v_full_scope_grants	user_agent	text	0
-v_full_scope_grants	request_id	text	0
-v_full_scope_grants	verifications_applied	jsonb	0
-v_full_scope_grants	extra	jsonb	0
+variant_commemorative_dates	id	uuid	0
+variant_commemorative_dates	product_id	uuid	0
+variant_commemorative_dates	variant_id	uuid	0
+variant_commemorative_dates	commemorative_date_id	uuid	0
+variant_commemorative_dates	display_order	integer	0
+variant_commemorative_dates	is_featured	boolean	0
+variant_commemorative_dates	custom_description	text	0
+variant_commemorative_dates	created_by	uuid	0
+variant_commemorative_dates	created_at	timestamp with time zone	0
+variant_supplier_sources	id	uuid	0
+variant_supplier_sources	organization_id	uuid	0
+variant_supplier_sources	variant_id	uuid	0
+variant_supplier_sources	supplier_id	uuid	0
+variant_supplier_sources	quantity	integer	0
+variant_supplier_sources	source	character varying	0
+variant_supplier_sources	last_synced_at	timestamp with time zone	0
+variant_supplier_sources	sync_status	character varying	0
+variant_supplier_sources	sync_error	text	0
+variant_supplier_sources	updated_at	timestamp with time zone	0
+variant_supplier_sources	next_quantity_1	integer	0
+variant_supplier_sources	next_date_1	date	0
+variant_supplier_sources	next_quantity_2	integer	0
+variant_supplier_sources	next_date_2	date	0
+variant_supplier_sources	next_quantity_3	integer	0
+variant_supplier_sources	next_date_3	date	0
+variant_supplier_sources	supplier_sku	character varying	0
+variant_supplier_sources	supplier_color_code	character varying	0
+variant_supplier_sources	supplier_color_name	character varying	0
+variant_supplier_sources	cost_price	numeric	0
+variant_supplier_sources	list_price	numeric	0
+variant_supplier_sources	cost_price_1	numeric	0
+variant_supplier_sources	min_qty_1	integer	0
+variant_supplier_sources	cost_price_2	numeric	0
+variant_supplier_sources	min_qty_2	integer	0
+variant_supplier_sources	cost_price_3	numeric	0
+variant_supplier_sources	min_qty_3	integer	0
+variant_supplier_sources	cost_price_4	numeric	0
+variant_supplier_sources	min_qty_4	integer	0
+variant_supplier_sources	cost_price_5	numeric	0
+variant_supplier_sources	min_qty_5	integer	0
+variant_supplier_sources	lead_time_days	integer	0
+variant_supplier_sources	min_order_qty	integer	0
+variant_supplier_sources	pack_quantity	integer	0
+variant_supplier_sources	sale_multiplier	integer	0
+variant_supplier_sources	is_preferred	boolean	0
+variant_supplier_sources	priority	integer	0
+variant_supplier_sources	is_active	boolean	0
+variant_supplier_sources	supplier_images	jsonb	0
+variant_supplier_sources	supplier_videos	jsonb	0
+variant_supplier_sources	supplier_thumbnail	character varying	0
+variant_supplier_sources	removed_from_api	boolean	0
+variant_supplier_sources	removed_at	timestamp with time zone	0
+variant_supplier_sources	raw_data	jsonb	0
+variant_supplier_sources	stock_main_warehouse	integer	0
+variant_supplier_sources	stock_other_warehouses	integer	0
+variant_supplier_sources	supplier_availability_status	character varying	0
+variant_supplier_sources	supplier_ipi_rate	numeric	0
+variant_supplier_sources	supplier_branch_id	uuid	0
+variant_supplier_sources	icms_rate	numeric	0
+variant_supplier_sources	pis_rate	numeric	0
+variant_supplier_sources	cofins_rate	numeric	0
+variant_supplier_sources	cfop	character varying	0
+variant_supplier_sources	csosn	character varying	0
+variant_supplier_sources	cest	character varying	0
+variant_supplier_sources	cst	character varying	0
+variant_supplier_sources	operation_nature	character varying	0
+variant_supplier_sources	price_updated_at	timestamp with time zone	0
+variation_types	id	uuid	0
+variation_types	organization_id	uuid	0
+variation_types	code	character varying	0
+variation_types	name	character varying	0
+variation_types	slug	character varying	0
+variation_types	description	text	0
+variation_types	is_required	boolean	0
+variation_types	value_type	character varying	0
+variation_types	sort_order	integer	0
+variation_types	is_active	boolean	0
+variation_types	created_at	timestamp with time zone	0
+variation_types	updated_at	timestamp with time zone	0
+variation_values	id	uuid	0
+variation_values	organization_id	uuid	0
+variation_values	variation_type_id	uuid	0
+variation_values	value	character varying	0
+variation_values	label	character varying	0
+variation_values	description	text	0
+variation_values	sort_order	integer	0
+variation_values	is_active	boolean	0
+variation_values	created_at	timestamp with time zone	0
+variation_values	updated_at	timestamp with time zone	0
+video_import_queue	id	uuid	0
+video_import_queue	youtube_id	text	0
+video_import_queue	youtube_url	text	0
+video_import_queue	source_supplier	text	0
+video_import_queue	product_references	ARRAY	0
+video_import_queue	status	text	0
+video_import_queue	local_file_path	text	0
+video_import_queue	file_size_bytes	bigint	0
+video_import_queue	cloudflare_video_id	text	0
+video_import_queue	cloudflare_thumbnail	text	0
+video_import_queue	cloudflare_hls	text	0
+video_import_queue	cloudflare_embed	text	0
+video_import_queue	cloudflare_duration_seconds	integer	0
+video_import_queue	retry_count	integer	0
+video_import_queue	max_retries	integer	0
+video_import_queue	last_error	text	0
+video_import_queue	created_at	timestamp with time zone	0
+video_import_queue	updated_at	timestamp with time zone	0
+video_import_queue	started_at	timestamp with time zone	0
+video_import_queue	completed_at	timestamp with time zone	0
+video_types	id	uuid	0
+video_types	code	character varying	0
+video_types	name	character varying	0
+video_types	name_en	character varying	0
+video_types	description	text	0
+video_types	category	character varying	0
+video_types	autoplay	boolean	0
+video_types	muted	boolean	0
+video_types	loop	boolean	0
+video_types	controls	boolean	0
+video_types	display_priority	integer	0
+video_types	icon	character varying	0
+video_types	is_active	boolean	0
+video_types	created_at	timestamp with time zone	0
+video_types	updated_at	timestamp with time zone	0
+video_validation_log	id	uuid	0
+video_validation_log	video_id	uuid	0
+video_validation_log	product_id	uuid	0
+video_validation_log	cloudflare_video_id	character varying	0
+video_validation_log	supplier_code	character varying	0
+video_validation_log	width_px	integer	0
+video_validation_log	height_px	integer	0
+video_validation_log	duration_seconds	integer	0
+video_validation_log	file_size_bytes	bigint	0
+video_validation_log	validation_status	character varying	0
+video_validation_log	is_valid	boolean	0
+video_validation_log	issues	ARRAY	0
+video_validation_log	recommendations	ARRAY	0
+video_validation_log	action_type	character varying	0
+video_validation_log	validated_at	timestamp with time zone	0
 video_variant_links	id	uuid	0
 video_variant_links	video_id	text	0
 video_variant_links	variant_id	text	0
@@ -1499,36 +3622,6 @@ webhook_delivery_metrics	error_message	text	0
 webhook_delivery_metrics	payload_bytes	integer	0
 webhook_delivery_metrics	metadata	jsonb	0
 webhook_delivery_metrics	occurred_at	timestamp with time zone	0
-webhook_delivery_metrics_y2026m05	id	uuid	0
-webhook_delivery_metrics_y2026m05	request_id	text	0
-webhook_delivery_metrics_y2026m05	event_type	text	0
-webhook_delivery_metrics_y2026m05	source	text	0
-webhook_delivery_metrics_y2026m05	direction	text	0
-webhook_delivery_metrics_y2026m05	endpoint	text	0
-webhook_delivery_metrics_y2026m05	http_status	integer	0
-webhook_delivery_metrics_y2026m05	duration_ms	integer	0
-webhook_delivery_metrics_y2026m05	attempt	integer	0
-webhook_delivery_metrics_y2026m05	success	boolean	0
-webhook_delivery_metrics_y2026m05	error_class	text	0
-webhook_delivery_metrics_y2026m05	error_message	text	0
-webhook_delivery_metrics_y2026m05	payload_bytes	integer	0
-webhook_delivery_metrics_y2026m05	metadata	jsonb	0
-webhook_delivery_metrics_y2026m05	occurred_at	timestamp with time zone	0
-webhook_delivery_metrics_y2026m06	id	uuid	0
-webhook_delivery_metrics_y2026m06	request_id	text	0
-webhook_delivery_metrics_y2026m06	event_type	text	0
-webhook_delivery_metrics_y2026m06	source	text	0
-webhook_delivery_metrics_y2026m06	direction	text	0
-webhook_delivery_metrics_y2026m06	endpoint	text	0
-webhook_delivery_metrics_y2026m06	http_status	integer	0
-webhook_delivery_metrics_y2026m06	duration_ms	integer	0
-webhook_delivery_metrics_y2026m06	attempt	integer	0
-webhook_delivery_metrics_y2026m06	success	boolean	0
-webhook_delivery_metrics_y2026m06	error_class	text	0
-webhook_delivery_metrics_y2026m06	error_message	text	0
-webhook_delivery_metrics_y2026m06	payload_bytes	integer	0
-webhook_delivery_metrics_y2026m06	metadata	jsonb	0
-webhook_delivery_metrics_y2026m06	occurred_at	timestamp with time zone	0
 workspace_notifications	id	uuid	0
 workspace_notifications	user_id	uuid	0
 workspace_notifications	title	text	0
@@ -1539,3 +3632,16 @@ workspace_notifications	is_read	boolean	0
 workspace_notifications	action_url	text	0
 workspace_notifications	metadata	jsonb	0
 workspace_notifications	created_at	timestamp with time zone	0
+xbz_gallery_staging	id	uuid	0
+xbz_gallery_staging	codigo_amigavel	text	0
+xbz_gallery_staging	d_number	integer	0
+xbz_gallery_staging	url_original	text	0
+xbz_gallery_staging	cloudflare_image_id	text	0
+xbz_gallery_staging	url_cdn	text	0
+xbz_gallery_staging	product_id	uuid	0
+xbz_gallery_staging	http_status	integer	0
+xbz_gallery_staging	file_size_bytes	bigint	0
+xbz_gallery_staging	status	text	0
+xbz_gallery_staging	error_message	text	0
+xbz_gallery_staging	created_at	timestamp with time zone	0
+xbz_gallery_staging	updated_at	timestamp with time zone	0

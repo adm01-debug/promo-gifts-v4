@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { AlertTriangle, TrendingDown, X, CheckCircle2, Package, XCircle, Truck } from "lucide-react";
+import { AlertTriangle, TrendingDown, X, CheckCircle2, XCircle } from "lucide-react";
 import {
   Dialog,
   DialogContent,

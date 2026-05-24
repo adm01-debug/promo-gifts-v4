@@ -138,6 +138,27 @@ Deno.test("authorizeCron: secret com chars especiais (base64)", async () => {
   Deno.env.delete("TEST_CRON_SECRET_6");
 });
 
+
+Deno.test("authorizeCron: bearer com SERVICE_ROLE_KEY nao autentica cron (401)", async () => {
+  Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", "svc-role-secret");
+  Deno.env.set("TEST_CRON_SECRET_7", "real-cron-secret");
+
+  const req = makeRequest({ Authorization: "Bearer svc-role-secret" });
+  const result = await authorizeCron(req, {
+    corsHeaders: CORS,
+    secretEnvName: "TEST_CRON_SECRET_7",
+    headerName: "x-cron-secret",
+  });
+
+  assertEquals(result.ok, false);
+  if (!result.ok) {
+    assertEquals(result.response.status, 401);
+  }
+
+  Deno.env.delete("TEST_CRON_SECRET_7");
+  Deno.env.delete("SUPABASE_SERVICE_ROLE_KEY");
+});
+
 // NOTE: testes do authorizeDispatcher dependem de mock de Supabase Auth para
 // validar JWT — escopo de integration test, não unit. O fluxo Modo A (secret)
 // é simétrico ao authorizeCron e está coberto pelos testes acima.
