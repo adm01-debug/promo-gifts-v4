@@ -53,14 +53,17 @@ Deno.serve(async (req) => {
     });
 
     if (updateError) {
-      console.error('Error confirming email:', updateError);
+      console.error('Verification update failed:', {
+        code: updateError.code ?? 'unknown',
+        message: updateError.message,
+      });
       return new Response(
         JSON.stringify({ error: 'Erro ao confirmar email' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Email verified for user: ${user.email}`);
+    console.log('Verification completed');
 
     return new Response(
       JSON.stringify({ success: true, message: 'Email verificado com sucesso' }),
@@ -68,7 +71,9 @@ Deno.serve(async (req) => {
     );
 
   } catch (error: any) {
-    console.error('Error in verify-email:', error);
+    console.error('Verification handler failed:', {
+      message: error instanceof Error ? error.message : 'Internal error',
+    });
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

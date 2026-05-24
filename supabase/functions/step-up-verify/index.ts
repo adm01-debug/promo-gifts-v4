@@ -5,9 +5,15 @@ import { getCorsHeaders } from "../_shared/cors.ts";
 // target_ref e action_label para rastreabilidade humana.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { castRpcResult } from "../_shared/supabase-client-adapter.ts";
+import { parseContract } from "../_shared/contracts/index.ts";
+import {
+  StepUpVerifySchemas,
+} from "../_shared/contracts/schemas/step-up-verify.ts";
 
 // Module-scope CORS headers — atribuído per-request no handler.
 let corsHeaders: Record<string, string> = {};
+// Module-scope contract response headers (Deprecation/Sunset) — setado após parseContract OK.
+let contractResponseHeaders: Record<string, string> = {};
 
 type RpcEnvelope<T> = { data: T | null; error: { message: string } | null };
 type StepUpChallengeRow = { challenge_id: string; otp_plain: string; expires_at: string };
@@ -39,10 +45,10 @@ interface RequestBody {
   cancel_reason?: string;
 }
 
-function json(data: unknown, status = 200) {
+function json(data: unknown, status = 200, extraHeaders: Record<string, string> = {}) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...corsHeaders, ...contractResponseHeaders, ...extraHeaders, "Content-Type": "application/json" },
   });
 }
 
@@ -56,6 +62,7 @@ function safeLabel(label: string | undefined | null, max = 200): string | null {
 
 Deno.serve(async (req) => {
   corsHeaders = getCorsHeaders(req);
+  contractResponseHeaders = {};
   if (req.method === "OPTIONS") return new Response(null, { headers: getCorsHeaders(req) });
 
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
@@ -116,7 +123,12 @@ Deno.serve(async (req) => {
       return json({ error: "unauthorized" }, 401);
     }
 
-    const body = (await req.json()) as RequestBody;
+    const contractResult = await parseContract(req, StepUpVerifySchemas, {
+      corsHeaders,
+    });
+    if (!contractResult.ok) return contractResult.response;
+    const body = contractResult.data as RequestBody;
+    contractResponseHeaders = contractResult.responseHeaders;
     const action = body.action ?? null;
     const targetRef = body.target_ref ?? null;
     const actionLabel = safeLabel(body.action_label);

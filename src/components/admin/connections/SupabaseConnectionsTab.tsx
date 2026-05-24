@@ -21,19 +21,11 @@ import { TestProgressIndicator, type TestProgressPhase } from './TestProgressInd
 import { RetestCooldownSelector } from './RetestCooldownSelector';
 import { ConnectionDetailsDialog } from './ConnectionDetailsDialog';
 
-/**
- * Discriminante `envKey: null` ⇒ ambiente local (readonly) sem secrets externas;
- * `envKey: "promobrind" | "crm"` ⇒ ambiente remoto que expõe
- * urlSecret/anonSecret/serviceSecret. O type-narrow abaixo evita non-null
- * assertions em todo o resto do arquivo (eram 17 antes).
- */
-type RemoteEnvKey = 'promobrind' | 'crm';
-
 const ENVS = [
   {
-    key: 'local' as const,
+    key: 'local',
     name: 'Lovable Cloud (Local)',
-    readOnly: true as const,
+    readOnly: true,
     envKey: null,
     urlSecret: null,
     anonSecret: null,
@@ -41,9 +33,9 @@ const ENVS = [
     description: 'Banco principal do sistema. Gerenciado automaticamente pelo Lovable.',
   },
   {
-    key: 'promobrind' as const,
+    key: 'promobrind',
     name: 'Catálogo Promobrind',
-    readOnly: false as const,
+    readOnly: false,
     envKey: 'promobrind' as const,
     urlSecret: 'EXTERNAL_PROMOBRIND_URL',
     anonSecret: 'EXTERNAL_PROMOBRIND_ANON_KEY',
@@ -51,9 +43,9 @@ const ENVS = [
     description: 'Banco SSOT de produtos, fornecedores e categorias.',
   },
   {
-    key: 'crm' as const,
+    key: 'crm',
     name: 'CRM Promobrind',
-    readOnly: false as const,
+    readOnly: false,
     envKey: 'crm' as const,
     urlSecret: 'EXTERNAL_CRM_URL',
     anonSecret: 'EXTERNAL_CRM_ANON_KEY',
@@ -62,12 +54,11 @@ const ENVS = [
   },
 ] as const;
 
-type EnvDef = (typeof ENVS)[number];
-type RemoteEnvDef = Extract<EnvDef, { envKey: RemoteEnvKey }>;
+type SupabaseEnv = (typeof ENVS)[number];
+type ManagedSupabaseEnv = Extract<SupabaseEnv, { readOnly: false }>;
 
-/** Type-predicate para narrow do ENVS em ambientes remotos (sem `!`). */
-function isRemoteEnv(e: EnvDef): e is RemoteEnvDef {
-  return e.envKey !== null;
+function isManagedSupabaseEnv(env: SupabaseEnv): env is ManagedSupabaseEnv {
+  return !env.readOnly;
 }
 
 export function SupabaseConnectionsTab() {
@@ -87,7 +78,7 @@ export function SupabaseConnectionsTab() {
 
   const hydrate = useCallback(async () => {
     const entries = await Promise.all(
-      ENVS.filter(isRemoteEnv).map(async (e) => {
+      ENVS.filter(isManagedSupabaseEnv).map(async (e) => {
         const last = await fetchLastTest('supabase', { env_key: e.envKey });
         return [
           e.key,
@@ -134,29 +125,30 @@ export function SupabaseConnectionsTab() {
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       {ENVS.map((env) => {
-        const remote = isRemoteEnv(env);
-        const url = remote ? get(env.urlSecret) : undefined;
-        const anon = remote ? get(env.anonSecret) : undefined;
-        const svc = remote ? get(env.serviceSecret) : undefined;
-        const last = remote ? (lastByEnv[env.key] ?? null) : null;
+        const isManaged = isManagedSupabaseEnv(env);
+        const url = isManaged ? get(env.urlSecret) : undefined;
+        const anon = isManaged ? get(env.anonSecret) : undefined;
+        const svc = isManaged ? get(env.serviceSecret) : undefined;
+        const last = isManaged ? (lastByEnv[env.key] ?? null) : null;
+        const pendingStartedAt = pendingByEnv[env.key];
         const credsConfigured = !!url?.has_value && !!svc?.has_value;
-        const suspicious = remote
+        const suspicious = isManaged
           ? hasSuspiciousLength(secrets, [env.urlSecret, env.anonSecret, env.serviceSecret])
           : false;
         const credsLooksValid = credsConfigured && !suspicious;
-        const preflightIssues = remote
+        const preflightIssues = isManaged
           ? getPreflightIssues(secrets, [
               { name: env.urlSecret, label: 'URL do projeto' },
               { name: env.serviceSecret, label: 'Service Role Key' },
             ])
           : [];
         const status = resolveSupabaseConnectionStatus({
-          readOnly: !remote,
+          readOnly: !isManaged,
           url,
           service: svc,
           last,
         });
-        const canTest = remote && credsLooksValid && preflightIssues.length === 0;
+        const canTest = isManaged && credsLooksValid && preflightIssues.length === 0;
         return (
           <Card
             key={env.key}
@@ -175,7 +167,7 @@ export function SupabaseConnectionsTab() {
               <CardDescription>{env.description}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {!isRemoteEnv(env) ? (
+              {!isManaged ? (
                 <p className="text-sm text-muted-foreground">
                   Credenciais gerenciadas automaticamente. Não requer configuração manual.
                 </p>
@@ -239,7 +231,11 @@ export function SupabaseConnectionsTab() {
                         setTimelineOpenByEnv((cur) => ({ ...cur, [env.key]: v }))
                       }
                     />
-                    <RefreshFromDbButton onRefreshed={list} />
+                    <RefreshFromDbButton
+                      onRefreshed={() => {
+                        void list();
+                      }}
+                    />
                     <Button
                       size="sm"
                       variant="ghost"
@@ -289,9 +285,7 @@ export function SupabaseConnectionsTab() {
                     envKey={env.envKey}
                     label={env.name}
                     refreshKey={historyKeyByEnv[env.key] ?? 0}
-                    pendingTest={
-                      pendingByEnv[env.key] ? { startedAt: pendingByEnv[env.key] as string } : null
-                    }
+                    pendingTest={pendingStartedAt ? { startedAt: pendingStartedAt } : null}
                   />
                   <ConnectionTestDetailsDialog
                     open={!!detailsDialogByEnv[env.key]}

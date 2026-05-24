@@ -1,10 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
-import {
-  useSecretsManager,
-  type SecretStatus,
-  type SecretMutationResult,
-} from '@/hooks/admin';
+import { useSecretsManager, type SecretStatus, type SecretMutationResult } from '@/hooks/admin';
 import { normalizeSecret } from './secretNormalizers';
 import { validateSecretName } from './secretWhitelist';
 import { validateSecret, getMinLength, MIN_SUFFIX_LENGTH } from './secretValidators';
@@ -143,7 +139,7 @@ export function useSecretField({ secretName, status, connectionId, onSaved }: Us
     } catch {
       /* empty */
     }
-  }, [secretName, connectionId]);
+  }, [secretName, connectionId, draftScope, draftKey, legacyDraftKey]);
 
   useEffect(() => {
     if (editing && value.length > 0) {

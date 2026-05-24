@@ -33,7 +33,7 @@ export function QuoteSignaturePad({ onSign, isSubmitting }: QuoteSignaturePadPro
 
   const getPos = (e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current;
-    if (!canvas) return { x: 0, y: 0 };
+    if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
     const point = 'touches' in e ? e.touches[0] : e;
     return { x: point.clientX - rect.left, y: point.clientY - rect.top };
@@ -42,7 +42,9 @@ export function QuoteSignaturePad({ onSign, isSubmitting }: QuoteSignaturePadPro
   const start = (e: React.MouseEvent | React.TouchEvent) => {
     const ctx = canvasRef.current?.getContext('2d');
     if (!ctx) return;
-    const { x, y } = getPos(e);
+    const pos = getPos(e);
+    if (!pos) return;
+    const { x, y } = pos;
     ctx.beginPath();
     ctx.moveTo(x, y);
     setIsDrawing(true);
@@ -53,7 +55,9 @@ export function QuoteSignaturePad({ onSign, isSubmitting }: QuoteSignaturePadPro
     e.preventDefault();
     const ctx = canvasRef.current?.getContext('2d');
     if (!ctx) return;
-    const { x, y } = getPos(e);
+    const pos = getPos(e);
+    if (!pos) return;
+    const { x, y } = pos;
     ctx.lineTo(x, y);
     ctx.stroke();
     setHasSignature(true);

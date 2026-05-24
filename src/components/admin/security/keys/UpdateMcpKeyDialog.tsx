@@ -128,17 +128,20 @@ export function UpdateMcpKeyDialog({ source, open, onOpenChange, onUpdated }: Pr
     return null;
   }, [source, name, scopes, escalating, expiresLocal, justification, confirmation]);
 
-  /** Body comum enviado para mcp-keys-update. Só chamamos onSubmit quando `source` está definido. */
-  const buildBody = (s: McpKeyRow): Record<string, unknown> => ({
-    key_id: s.id,
-    name: name.trim() !== s.name ? name.trim() : undefined,
-    description:
-      description.trim() !== (s.description ?? '') ? description.trim() || null : undefined,
-    scopes,
-    expires_at: expiresLocal ? new Date(expiresLocal).toISOString() : null,
-    justification: escalating ? justification.trim() : null,
-    confirmation_phrase: escalating ? confirmation : null,
-  });
+  /** Body comum enviado para mcp-keys-update. */
+  const buildBody = (): Record<string, unknown> | null => {
+    if (!source) return null;
+    return {
+      key_id: source.id,
+      name: name.trim() !== source.name ? name.trim() : undefined,
+      description:
+        description.trim() !== (source.description ?? '') ? description.trim() || null : undefined,
+      scopes,
+      expires_at: expiresLocal ? new Date(expiresLocal).toISOString() : null,
+      justification: escalating ? justification.trim() : null,
+      confirmation_phrase: escalating ? confirmation : null,
+    };
+  };
 
   const handleSuccess = (data: { ok?: boolean; escalated_to_full?: boolean }) => {
     toast.success(
@@ -154,6 +157,8 @@ export function UpdateMcpKeyDialog({ source, open, onOpenChange, onUpdated }: Pr
       return;
     }
     if (!source) return;
+    const body = buildBody();
+    if (!body) return;
     setSubmitting(true);
     try {
       if (escalating) {
@@ -167,7 +172,7 @@ export function UpdateMcpKeyDialog({ source, open, onOpenChange, onUpdated }: Pr
           action: 'mcp_full_escalate',
           actionLabel: `Escalar chave MCP "${source.name}" para FULL`,
           targetRef: source.id,
-          body: buildBody(source),
+          body,
         });
         if (result.status === 'cancelled' || result.status === 'step_up_error') return;
         if (result.status === 'error') {
@@ -180,7 +185,7 @@ export function UpdateMcpKeyDialog({ source, open, onOpenChange, onUpdated }: Pr
       } else {
         // Edição comum: chamada direta (sem step-up).
         const { data, error } = await supabase.functions.invoke('mcp-keys-update', {
-          body: { ...buildBody(source), step_up_token: null },
+          body: { ...body, step_up_token: null },
         });
         if (
           handleStepUpError(data, error, () => {

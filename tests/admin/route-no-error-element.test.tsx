@@ -104,7 +104,7 @@ function ReducedApp({
       <Suspense fallback={<div>loading…</div>}>
         {onNavigateReady && <NavigationProbe onReady={onNavigateReady} />}
         <Routes>
-          <Route path="/login" element={<LoginStub />} />
+          <Route path="/auth" element={<LoginStub />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<HomeStub />} />
             <Route path="/dashboard" element={<DashboardStub />} />

@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Building2, Pencil, Trash2, Loader2, CheckCircle2, XCircle } from 'lucide-react';
-import type { Supplier } from "@/pages/advanced-price-search/types";
+import type { Supplier } from "./types";
 
 interface SupplierTableProps {
   suppliers: Supplier[];

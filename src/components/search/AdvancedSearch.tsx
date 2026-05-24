@@ -11,6 +11,7 @@ import { useSearch, type SearchResult } from "@/hooks/common";
 import type { VoiceAgentAction } from "@/hooks/voice/types";
 import { useToast } from "@/hooks/ui";
 import { useProductAnalytics } from "@/hooks/products";
+import { useSpeechRecognition } from "@/hooks/intelligence";
 
 const LazyVoiceOverlay = lazy(() => import("./VoiceSearchOverlayConnected"));
 
@@ -49,6 +50,9 @@ export function AdvancedSearch({ onSearch, onVisualSearchResults, className }: A
   const [isVoiceOverlayOpen, setIsVoiceOverlayOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Voice support detection + live listening state (overlay drives the actual agent)
+  const { isListening, transcript, isSupported: isVoiceSupported } = useSpeechRecognition();
 
   // Voice agent (ElevenLabs + AI)
   const handleVoiceAction = useCallback((action: VoiceAgentAction) => {

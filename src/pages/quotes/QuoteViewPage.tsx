@@ -205,13 +205,13 @@ export default function QuoteViewPage() {
                   <DropdownMenuItem
                     onClick={async () => {
                       try {
-                        // rls-allow: lookup por id; RLS valida ownership
                         await supabase
+                          // rls-allow: lookup por id; RLS valida ownership
                           .from('quotes')
-                          .update({ status: 'pending' } as Record<string, unknown>)
-                          .eq('id', quote.id);
+                          .update({ status: 'pending' } as never)
+                          .eq('id', quote.id ?? '');
                         await logQuoteHistory(
-                          quote.id,
+                          quote.id ?? '',
                           'status_change',
                           'Status revertido para Pendente',
                           { oldValue: 'sent', newValue: 'pending' },
@@ -233,8 +233,7 @@ export default function QuoteViewPage() {
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={async () => {
-                    if (!id) return;
-                    const newQuote = await duplicateQuote(id);
+                    const newQuote = await duplicateQuote(quote.id ?? '');
                     if (newQuote?.id) navigate(`/orcamentos/${newQuote.id}`);
                   }}
                 >
@@ -253,7 +252,9 @@ export default function QuoteViewPage() {
                     <SheetHeader>
                       <SheetTitle>Histórico de Alterações</SheetTitle>
                     </SheetHeader>
-                    <div className="mt-6">{id && <QuoteHistoryPanel quoteId={id} />}</div>
+                    <div className="mt-6">
+                      <QuoteHistoryPanel quoteId={quote.id ?? ''} />
+                    </div>
                   </SheetContent>
                 </Sheet>
               </DropdownMenuContent>
@@ -312,7 +313,7 @@ export default function QuoteViewPage() {
               clientCnpj={clientCnpj}
             />
             <Separator />
-            <QuoteItemsTable items={quote.items || []} />
+            <QuoteItemsTable items={(quote.items || []) as never} />
             <QuoteTotalsSummary
               items={quote.items || []}
               discountPercent={quote.discount_percent}

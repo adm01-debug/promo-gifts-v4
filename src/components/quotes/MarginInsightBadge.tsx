@@ -26,9 +26,11 @@ export function MarginInsightBadge({
   className,
 }: MarginInsightBadgeProps) {
   const { user } = useAuth();
-  const dualMode = (markupPercent ?? 0) > 0 && realMarginPercent !== null;
-
   const userId = user?.id;
+  const effectiveMarkupPercent = markupPercent ?? 0;
+  const effectiveRealMarginPercent = realMarginPercent ?? 0;
+  const dualMode = effectiveMarkupPercent > 0 && realMarginPercent !== undefined;
+
   const { data: median } = useQuery({
     queryKey: ['seller-margin-median', userId],
     enabled: !!userId && !dualMode,
@@ -61,10 +63,7 @@ export function MarginInsightBadge({
   });
 
   // Modo dual: mostra desconto APARENTE (cliente vê) vs REAL (alçada).
-  // O guard de `dualMode` no JSX abaixo já garante markupPercent > 0 e
-  // realMarginPercent != null, mas o TS não narrow através da variável.
-  // Re-checamos localmente para o narrow chegar até o JSX.
-  if (dualMode && typeof realMarginPercent === 'number' && typeof markupPercent === 'number') {
+  if (dualMode) {
     return (
       <TooltipProvider>
         <Tooltip>
@@ -75,20 +74,21 @@ export function MarginInsightBadge({
             >
               <Info className="h-3 w-3" />
               <span className="text-[11px] font-medium">
-                Aparente {currentMarginPercent.toFixed(1)}% · Real {realMarginPercent.toFixed(1)}%
+                Aparente {currentMarginPercent.toFixed(1)}% · Real{' '}
+                {effectiveRealMarginPercent.toFixed(1)}%
               </span>
             </Badge>
           </TooltipTrigger>
           <TooltipContent side="top" className="max-w-xs text-xs">
             <p className="mb-1 font-medium">Margem de negociação ativa</p>
             <p className="text-muted-foreground">
-              Markup interno: <strong>+{markupPercent.toFixed(1)}%</strong>
+              Markup interno: <strong>+{effectiveMarkupPercent.toFixed(1)}%</strong>
               <br />
               Cliente vê desconto de <strong>{currentMarginPercent.toFixed(1)}%</strong>
               <br />
               Desconto real (alçada):{' '}
               <strong>
-                {realMarginPercent.toLocaleString('pt-BR', {
+                {effectiveRealMarginPercent.toLocaleString('pt-BR', {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}

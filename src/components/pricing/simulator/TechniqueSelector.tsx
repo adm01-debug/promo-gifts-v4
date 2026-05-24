@@ -15,12 +15,7 @@ import {
   AlertCircle,
   Sparkles,
 } from 'lucide-react';
-import type {
-  ProductTechnique,
-  ComponentData,
-  LocationData,
-  TechniqueData,
-} from '@/pages/advanced-price-search/types';
+import type { ProductTechnique, ComponentData, LocationData, TechniqueData } from './types';
 
 interface TechniqueSelectorProps {
   productId: string;
@@ -56,7 +51,7 @@ export function TechniqueSelector({
     setSelectedComponent(null);
     setSelectedLocation(null);
     onSelect(null);
-  }, [productId]);
+  }, [productId, onSelect]);
 
   const handleComponentSelect = (comp: ComponentData) => {
     setSelectedComponent(comp);
@@ -67,30 +62,35 @@ export function TechniqueSelector({
     }
   };
 
-  const handleLocationSelect = (loc: LocationData, comp?: ComponentData) => {
-    const componentArg = comp ?? selectedComponent;
-    if (!componentArg) return;
+  const handleLocationSelect = (
+    loc: LocationData,
+    comp: ComponentData | null = selectedComponent,
+  ) => {
+    if (!comp) return;
     setSelectedLocation(loc);
     onSelect(null);
     const primaryTech = loc.techniques.find((t) => t.isPrimary);
     if (loc.techniques.length === 1 || primaryTech) {
       const techToSelect = primaryTech || loc.techniques[0];
-      handleTechniqueSelect(techToSelect, loc, componentArg);
+      handleTechniqueSelect(techToSelect, loc, comp);
     }
   };
 
-  const handleTechniqueSelect = (tech: TechniqueData, loc?: LocationData, comp?: ComponentData) => {
-    const locArg = loc ?? selectedLocation;
-    const compArg = comp ?? selectedComponent;
-    if (!locArg || !compArg) return;
+  const handleTechniqueSelect = (
+    tech: TechniqueData,
+    loc: LocationData | null = selectedLocation,
+    comp: ComponentData | null = selectedComponent,
+  ) => {
+    if (!loc || !comp) return;
+
     const fullTechnique: ProductTechnique = {
       id: tech.id,
       techniqueCode: tech.techniqueCode,
       techniqueName: tech.areaName || tech.techniqueCode,
-      componentName: compArg.name,
-      locationName: locArg.name,
-      locationCode: locArg.code,
-      composedCode: tech.servCode || `${compArg.code}.${locArg.code}.${tech.techniqueCode}`,
+      componentName: comp.name,
+      locationName: loc.name,
+      locationCode: loc.code,
+      composedCode: tech.servCode || `${comp.code}.${loc.code}.${tech.techniqueCode}`,
       maxWidth: tech.maxWidth,
       maxHeight: tech.maxHeight,
       maxArea: tech.areaCm2,

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -20,7 +20,6 @@ import {
   ImagePlus,
   Calculator,
   PlayCircle,
-  type LucideIcon,
 } from 'lucide-react';
 import { useOptionalOnboardingContext } from '@/contexts/OnboardingContext';
 
@@ -138,7 +137,7 @@ function ShortcutItem({
   keys,
   sub,
 }: {
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   label: string;
   keys: string[];
   sub?: string;

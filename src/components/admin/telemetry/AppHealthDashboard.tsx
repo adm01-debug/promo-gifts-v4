@@ -70,6 +70,9 @@ export function AppHealthDashboard() {
   };
 
   const kpis = data?.kpis;
+  const topRoutesByError = data?.top_routes_by_error ?? [];
+  const webhooksBySource = data?.webhooks_by_source ?? [];
+  const edgesByLatency = data?.edges_by_latency ?? [];
   const tone4xx = statusTone(kpis?.pct_4xx ?? 0, 5, 15);
   const tone5xx = statusTone(kpis?.pct_5xx ?? 0, 1, 5);
 
@@ -257,14 +260,14 @@ export function AppHealthDashboard() {
                         <Skeleton className="h-20 w-full" />
                       </td>
                     </tr>
-                  ) : (data?.top_routes_by_error ?? []).length === 0 ? (
+                  ) : topRoutesByError.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="p-3 text-center text-muted-foreground">
                         Sem erros na janela
                       </td>
                     </tr>
                   ) : (
-                    (data?.top_routes_by_error ?? []).map((r, i) => (
+                    topRoutesByError.map((r, i) => (
                       <tr key={i} className="border-t border-border/40">
                         <td className="max-w-[220px] truncate px-2 py-1.5" title={r.endpoint}>
                           {r.endpoint}
@@ -319,14 +322,14 @@ export function AppHealthDashboard() {
                         <Skeleton className="h-20 w-full" />
                       </td>
                     </tr>
-                  ) : (data?.webhooks_by_source ?? []).length === 0 ? (
+                  ) : webhooksBySource.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="p-3 text-center text-muted-foreground">
                         Sem webhooks na janela
                       </td>
                     </tr>
                   ) : (
-                    (data?.webhooks_by_source ?? []).map((r, i) => (
+                    webhooksBySource.map((r, i) => (
                       <tr key={i} className="border-t border-border/40">
                         <td className="px-2 py-1.5">
                           {r.source}
@@ -379,14 +382,14 @@ export function AppHealthDashboard() {
                         <Skeleton className="h-20 w-full" />
                       </td>
                     </tr>
-                  ) : (data?.edges_by_latency ?? []).length === 0 ? (
+                  ) : edgesByLatency.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="p-3 text-center text-muted-foreground">
                         Sem dados na janela
                       </td>
                     </tr>
                   ) : (
-                    data?.edges_by_latency.map((r, i) => (
+                    edgesByLatency.map((r, i) => (
                       <tr key={i} className="border-t border-border/40">
                         <td className="max-w-[180px] truncate px-2 py-1.5" title={r.edge_function}>
                           {r.edge_function}

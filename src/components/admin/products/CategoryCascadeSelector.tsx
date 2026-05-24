@@ -3,10 +3,7 @@
  * breadcrumb persistente e navegação em árvore via dialog.
  */
 import { useMemo, useState } from 'react';
-import {
-  useExternalCategoriesQuery,
-  type ExternalCategory,
-} from '@/hooks/products';
+import { useExternalCategoriesQuery, type ExternalCategory } from '@/hooks/products';
 import {
   Select,
   SelectContent,
@@ -61,7 +58,7 @@ function buildTree(categories: ExternalCategory[]): {
   }
   for (const node of map.values()) {
     if (node.parent_id && map.has(node.parent_id)) {
-      map.get(node.parent_id)!.children.push(node);
+      map.get(node.parent_id)?.children.push(node);
     } else {
       roots.push(node);
     }

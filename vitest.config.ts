@@ -13,15 +13,18 @@ export default defineConfig({
     env: { TZ: 'America/Sao_Paulo' },
     environment: 'jsdom',
     setupFiles: ['./tests/setup.ts', './tests/setup-ref-warning-capture.ts'],
-    include: ['tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}', 'src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}', 'e2e/scripts/__tests__/*.test.ts'],
+    include: [
+      'tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
+      'src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
+      'e2e/scripts/__tests__/*.test.ts',
+      // T-FIX-5: descobre a suite vitest do script anti-órfão.
+      // Ver docs/redeploy/T-FIX-5-CHECKLIST.md (Passo 3).
+      'scripts/__tests__/**/*.{test,spec}.{ts,mts,cts}',
+    ],
     typecheck: {
       enabled: false,
     },
-    // 'tests/e2e/**' excluído: contém testes Playwright (imports @playwright/test)
-    // que vitest tenta carregar e trava workers em deadlock. Playwright config
-    // usa testDir: './e2e' (não 'tests/e2e'), então esses 8 arquivos estavam
-    // órfãos. Ver fix(test): unblock vitest hang in CI.
-    exclude: ['node_modules', 'dist', '.idea', '.git', '.cache', 'tests/e2e/**'],
+    exclude: ['node_modules', 'dist', '.idea', '.git', '.cache'],
     // CI runners (GitHub Actions ubuntu-latest) têm 2 vCPU (4 vThreads).
     // Default thread pool causava timeout de 75min — mitigado com
     // maxThreads: 2 para evitar contenção.
@@ -56,8 +59,13 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
+    alias: [
+      { find: '@', replacement: path.resolve(__dirname, './src') },
+      // Edge Functions (Deno) importam Zod via URL esm.sh. Vitest (Node) usa o pacote npm.
+      // Aliases permitem que os mesmos arquivos rodem nos dois runtimes sem duplicação.
+      // Pattern abrange qualquer pin de versão (3.22.x, 3.23.x, 4.x).
+      { find: /^https:\/\/esm\.sh\/zod@.*$/, replacement: 'zod' },
+      { find: /^https:\/\/deno\.land\/x\/zod@.*\/mod\.ts$/, replacement: 'zod' },
+    ],
   },
 });

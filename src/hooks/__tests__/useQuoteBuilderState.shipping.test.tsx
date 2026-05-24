@@ -21,6 +21,7 @@ vi.mock('react-router-dom', () => ({
 }));
 
 // Mock dos hooks customizados
+// Mock dos hooks @/hooks/quotes (factory unico — multiplos vi.mock no mesmo path se sobrescrevem)
 vi.mock('@/hooks/quotes', () => ({
   useQuotes: () => ({
     createQuote: vi.fn(),
@@ -28,33 +29,9 @@ vi.mock('@/hooks/quotes', () => ({
     fetchQuote: vi.fn(),
     isLoading: false,
   }),
-}));
-
-vi.mock('@/hooks/quotes', () => ({
-  useQuoteTemplates: () => ({
-    templates: [],
-  }),
-}));
-
-vi.mock('@/hooks/quotes', () => ({
-  useSellerDiscountLimits: () => ({
-    myLimit: 50,
-  }),
-}));
-
-vi.mock('@/hooks/quotes', () => ({
-  useDiscountApproval: () => ({
-    requestApproval: vi.fn(),
-  }),
-}));
-
-vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({
-    user: { id: 'user-123' },
-  }),
-}));
-
-vi.mock('@/hooks/quotes', () => ({
+  useQuoteTemplates: () => ({ templates: [] }),
+  useSellerDiscountLimits: () => ({ myLimit: 50 }),
+  useDiscountApproval: () => ({ requestApproval: vi.fn() }),
   useQuoteItems: () => ({
     items: [],
     setItems: vi.fn(),
@@ -69,7 +46,18 @@ vi.mock('@/hooks/quotes', () => ({
     handlePersonalizationsChange: vi.fn(),
     confirmItemPrice: vi.fn(),
   }),
+  useAutoSaveQuote: () => ({ clearAutoSave: vi.fn() }),
 }));
+
+
+
+
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({
+    user: { id: 'user-123' },
+  }),
+}));
+
 
 const queryClient = new QueryClient({
   defaultOptions: {

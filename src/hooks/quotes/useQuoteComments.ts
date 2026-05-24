@@ -62,8 +62,9 @@ export function useQuoteComments(quoteId: string | undefined) {
       const topLevel = enriched.filter((c) => !c.parent_id);
       const childMap = new Map<string, QuoteComment[]>();
       enriched
-        .filter((c): c is typeof c & { parent_id: string } => !!c.parent_id)
+        .filter((c) => c.parent_id)
         .forEach((c) => {
+          if (!c.parent_id) return;
           const arr = childMap.get(c.parent_id) || [];
           arr.push(c);
           childMap.set(c.parent_id, arr);

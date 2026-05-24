@@ -55,7 +55,6 @@ export function ExportFavoritesButton({ products, rawItems, listName }: Props) {
       const rows = products.map((p) => {
         const item = itemMap.get(p.id);
         const variant = item?.variant_info;
-        // @ts-expect-error - category_name vem do enriched
         const cat = p.category_name ?? p.category?.name ?? "";
         return [
           p.sku ?? "",
@@ -93,7 +92,6 @@ export function ExportFavoritesButton({ products, rawItems, listName }: Props) {
             sku: p.sku,
             name: p.name,
             price: p.price,
-            // @ts-expect-error - category enriquecido
             category: p.category_name ?? p.category?.name,
             image: p.images?.[0],
             variant: item?.variant_info ?? null,

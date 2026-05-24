@@ -6,7 +6,6 @@ import { useMemo, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Package, AlertTriangle, SkipForward } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
 import { useExternalVariantStock, type ExternalVariantStock } from '@/hooks/products';
 
 interface SingleVariantPickerProps {
@@ -16,7 +15,12 @@ interface SingleVariantPickerProps {
   className?: string;
 }
 
-export function SingleVariantPicker({ productId, onSelect, compact, className }: SingleVariantPickerProps) {
+export function SingleVariantPicker({
+  productId,
+  onSelect,
+  compact,
+  className,
+}: SingleVariantPickerProps) {
   const { data: variants, isLoading } = useExternalVariantStock(productId);
 
   const sortedVariants = useMemo(() => {
@@ -69,18 +73,20 @@ export function SingleVariantPicker({ productId, onSelect, compact, className }:
           e.stopPropagation();
           onSelect(null);
         }}
-        className="w-full flex items-center gap-2 p-2 rounded-lg border border-dashed border-border/60 hover:border-primary/40 hover:bg-primary/5 transition-all text-left text-xs text-muted-foreground group"
+        className="group flex w-full items-center gap-2 rounded-lg border border-dashed border-border/60 p-2 text-left text-xs text-muted-foreground transition-all hover:border-primary/40 hover:bg-primary/5"
       >
-        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-destructive/70 via-success/70 to-info/70 border border-border/50 shrink-0 group-hover:scale-110 transition-transform" />
+        <div className="h-6 w-6 shrink-0 rounded-full border border-border/50 bg-gradient-to-br from-destructive/70 via-success/70 to-info/70 transition-transform group-hover:scale-110" />
         <span className="flex-1">Sem cor específica</span>
-        <SkipForward className="h-3 w-3 opacity-50 group-hover:opacity-100 transition-opacity" />
+        <SkipForward className="h-3 w-3 opacity-50 transition-opacity group-hover:opacity-100" />
       </button>
 
       {/* Variant grid */}
-      <div className={cn(
-        'grid gap-1.5 overflow-y-auto pr-0.5 scrollbar-thin',
-        compact ? 'grid-cols-1 max-h-36' : 'grid-cols-2 max-h-48',
-      )}>
+      <div
+        className={cn(
+          'scrollbar-thin grid gap-1.5 overflow-y-auto pr-0.5',
+          compact ? 'max-h-36 grid-cols-1' : 'max-h-48 grid-cols-2',
+        )}
+      >
         {sortedVariants.map((variant) => {
           const stock = variant.stock_quantity ?? 0;
           const isOutOfStock = stock === 0;
@@ -96,10 +102,10 @@ export function SingleVariantPicker({ productId, onSelect, compact, className }:
                 onSelect(variant);
               }}
               className={cn(
-                'flex items-center gap-2 p-2 rounded-lg border transition-all text-left group',
+                'group flex items-center gap-2 rounded-lg border p-2 text-left transition-all',
                 'hover:border-primary/50 hover:bg-accent/60 hover:shadow-sm',
                 isOutOfStock
-                  ? 'opacity-50 border-border/40 bg-muted/20'
+                  ? 'border-border/40 bg-muted/20 opacity-50'
                   : 'border-border/60 bg-card',
               )}
             >
@@ -107,33 +113,38 @@ export function SingleVariantPicker({ productId, onSelect, compact, className }:
                 <img
                   src={`${variant.selected_thumbnail}/thumbnail`}
                   alt={variant.color_name ?? ''}
-                  className="w-8 h-8 rounded-md object-cover border border-border/50 shrink-0 group-hover:scale-105 transition-transform"
+                  className="h-8 w-8 shrink-0 rounded-md border border-border/50 object-cover transition-transform group-hover:scale-105"
                   onError={(e) => {
                     const t = e.currentTarget;
-                    if (t.src.includes('/thumbnail')) t.src = variant.selected_thumbnail!;
+                    if (t.src.includes('/thumbnail')) t.src = variant.selected_thumbnail ?? '';
                     else t.style.display = 'none';
                   }}
                 />
               ) : (
                 <div
-                  className="w-8 h-8 rounded-md border border-border/50 shrink-0 group-hover:scale-105 transition-transform"
+                  className="h-8 w-8 shrink-0 rounded-md border border-border/50 transition-transform group-hover:scale-105"
                   style={{ backgroundColor: variant.color_hex || '#CCC' }}
                 />
               )}
-              <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-medium truncate leading-tight">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[11px] font-medium leading-tight">
                   {variant.color_name || 'Sem nome'}
                   {variant.size_code && (
-                    <span className="text-muted-foreground ml-1">— {variant.size_code}</span>
+                    <span className="ml-1 text-muted-foreground">— {variant.size_code}</span>
                   )}
                 </p>
-                <div className="flex items-center gap-1 mt-0.5">
+                <div className="mt-0.5 flex items-center gap-1">
                   {isOutOfStock ? (
-                    <span className="text-[9px] text-destructive flex items-center gap-0.5">
+                    <span className="flex items-center gap-0.5 text-[9px] text-destructive">
                       <AlertTriangle className="h-2 w-2" /> Sem estoque
                     </span>
                   ) : (
-                    <span className={cn('text-[9px] font-medium flex items-center gap-0.5', isLowStock ? 'text-warning' : 'text-success')}>
+                    <span
+                      className={cn(
+                        'flex items-center gap-0.5 text-[9px] font-medium',
+                        isLowStock ? 'text-warning' : 'text-success',
+                      )}
+                    >
                       <Package className="h-2 w-2" /> {fmt(stock)} un
                     </span>
                   )}

@@ -1,0 +1,110 @@
+name: Sentinel Self-Test
+
+# Roda em PRs que mexem no sentinel/script ou via dispatch manual.
+# Previne regressões: mudanças no sentinel só passam se 100% das fixtures verdes.
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/sentinel-check.sh'
+      - '.github/workflows/branch-protection-sentinel.yml'
+      - '.github/workflows/sentinel-self-test.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fixtures:
+    name: Run sentinel-check.sh against fixture matrix
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Run fixture matrix
+        run: |
+          set -uo pipefail
+
+          SCRIPT="scripts/sentinel-check.sh"
+          chmod +x "$SCRIPT"
+
+          FAIL=0
+          PASS=0
+
+          assert_pass() {
+            local desc="$1"; local sub="$2"; local msg="$3"; local author="$4"
+            if RESULT=$(bash "$SCRIPT" "$sub" "$msg" "$author" 2>&1); then
+              echo "  ✅ $desc → $RESULT"
+              PASS=$((PASS + 1))
+            else
+              echo "  ❌ $desc → DEVERIA passar, falhou: $RESULT"
+              FAIL=$((FAIL + 1))
+            fi
+          }
+
+          assert_fail() {
+            local desc="$1"; local sub="$2"; local msg="$3"; local author="$4"
+            if RESULT=$(bash "$SCRIPT" "$sub" "$msg" "$author" 2>&1); then
+              echo "  ❌ $desc → DEVERIA falhar, passou: $RESULT"
+              FAIL=$((FAIL + 1))
+            else
+              echo "  ✅ $desc → $RESULT"
+              PASS=$((PASS + 1))
+            fi
+          }
+
+          echo "═══════════════════════════════════════════════════════════"
+          echo "  CASOS QUE DEVEM PASSAR"
+          echo "═══════════════════════════════════════════════════════════"
+          assert_pass "squash padrão"               "feat: nova func (#123)"      "feat: nova func (#123)"      "alice"
+          assert_pass "squash 4 dígitos"            "fix: bug (#9999)"            "fix: bug (#9999)"            "alice"
+          assert_pass "squash whitespace fim"       "feat: x (#1) "               "feat: x (#1) "               "alice"
+          assert_pass "merge commit"                "Merge pull request #456 from x/y" "Merge pull request #456 from x/y" "alice"
+          assert_pass "revert via UI"               'Revert "feat: x (#1)" (#789)' 'Revert "feat: x (#1)" (#789)' "alice"
+          assert_pass "dependabot"                  "Bump foo from 1 to 2"        "Bump foo from 1 to 2"        "dependabot[bot]"
+          assert_pass "renovate"                    "fix(deps): update"           "fix(deps): update"           "renovate[bot]"
+          assert_pass "github-actions"              "Auto-commit"                 "Auto-commit"                 "github-actions[bot]"
+          assert_pass "lovable-dev"                 "automated"                   "automated"                   "lovable-dev[bot]"
+          assert_pass "gpt-engineer-app"            "scaffold"                    "scaffold"                    "gpt-engineer-app[bot]"
+          assert_pass "lovable-cloud (futuro)"      "auto"                        "auto"                        "lovable-cloud[bot]"
+          assert_pass "release"                     "chore(release): v1.0.0"      "chore(release): v1.0.0"      "alice"
+          assert_pass "allowlist docs(redeploy)"    "docs(redeploy): add README"  "docs(redeploy): add README"  "alice"
+          assert_pass "allowlist chore(workflows)"  "chore(workflows): update CI" "chore(workflows): update CI" "alice"
+          assert_pass "allowlist chore(docs)"       "chore(docs): typo"           "chore(docs): typo"           "alice"
+          assert_pass "bypass motivo longo (body)"  "fix urgente" $'fix urgente\n\n[skip-sentinel: rollback emergencial T-23 prod]'  "alice"
+          assert_pass "bypass motivo subject"       "fix [skip-sentinel: hotfix prod incidente]" "fix [skip-sentinel: hotfix prod incidente]" "alice"
+
+          echo ""
+          echo "═══════════════════════════════════════════════════════════"
+          echo "  CASOS QUE DEVEM FALHAR"
+          echo "═══════════════════════════════════════════════════════════"
+          assert_fail "push direto humano"          "feat: nova feature"          "feat: nova feature"          "alice"
+          assert_fail "edit web GitHub"             "Update README.md"            "Update README.md"            "alice"
+          assert_fail "release capitalizado"        "Chore(release): v1.0"        "Chore(release): v1.0"        "alice"
+          assert_fail "lovable sem hífen"           "x"                           "x"                           "lovable[bot]"
+          assert_fail "bypass sem motivo"           "feat: x"                     "feat: x [skip-sentinel]"     "alice"
+          assert_fail "bypass motivo vazio"         "feat: x"                     "feat: x [skip-sentinel: ]"   "alice"
+          assert_fail "bypass motivo 3 chars"       "feat: x"                     "feat: x [skip-sentinel: ok]" "alice"
+          assert_fail "PR ID não-numérico"          "feat: x (#ABC)"              "feat: x (#ABC)"              "alice"
+          assert_fail "docs genérico (sem escopo)"  "docs: README"                "docs: README"                "alice"
+          assert_fail "chore genérico"              "chore: bump"                 "chore: bump"                 "alice"
+          assert_fail "docs escopo não-allowlist"   "docs(api): nova endpoint"    "docs(api): nova endpoint"    "alice"
+
+          echo ""
+          echo "═══════════════════════════════════════════════════════════"
+          echo "  REGRESSÃO v2.0.1 — Unicode bypass e edge cases"
+          echo "═══════════════════════════════════════════════════════════"
+          # Fix [13]: bypass com motivo Unicode 5 chars (10 bytes UTF-8) DEVE PASSAR
+          assert_pass "bypass Unicode 5 chars"        "fix: x"                      "fix: x [skip-sentinel: ãéçüñ]"          "alice"
+          # Fix [13]: bypass com motivo Unicode 4 chars (8 bytes UTF-8) DEVE FALHAR
+          assert_fail "bypass Unicode 4 chars"        "fix: x"                      "fix: x [skip-sentinel: ãéçü]"           "alice"
+
+          echo ""
+          echo "═══════════════════════════════════════════════════════════"
+          echo "  $PASS passaram | $FAIL falharam"
+          echo "═══════════════════════════════════════════════════════════"
+
+          if [[ $FAIL -gt 0 ]]; then
+            echo "::error::$FAIL fixture(s) divergiram do esperado"
+            exit 1
+          fi

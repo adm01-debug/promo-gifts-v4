@@ -18,17 +18,30 @@ export type {
   PersonalizationTechnique,
 } from '@/hooks/quotes/quoteTypes';
 
+type QuoteHistoryOptions = {
+  fieldChanged?: string;
+  oldValue?: unknown;
+  newValue?: unknown;
+  metadata?: Record<string, unknown>;
+};
+
+type QuoteSyncResponse = {
+  error?: string;
+  bitrix_deal_id?: string | number | null;
+  success?: boolean;
+};
+
+function getErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : 'Erro desconhecido';
+}
+
 export function useQuotes() {
   const { user } = useAuth();
+  const userId = user?.id ?? null;
   const { currentOrg } = useOrganization();
   const orgId = currentOrg?.id || null;
   const scope = useSalesScope();
   const queryClient = useQueryClient();
-
-  // Estabiliza a chave do scope para a queryKey. Sem isso, `useSalesScope`
-  // retornando objeto novo a cada render dispararia refetch desnecessário.
-  const scopeKey = JSON.stringify(scope);
-  const userId = user?.id;
 
   // Queries
   const {
@@ -37,33 +50,30 @@ export function useQuotes() {
     error,
     refetch: fetchQuotes,
   } = useQuery({
-    queryKey: ['quotes', userId, scopeKey],
-    queryFn: () => {
-      if (!userId) throw new Error('useQuotes: missing userId');
-      return quoteService.fetchQuotes(userId, scope);
-    },
+    queryKey: ['quotes', userId, scope],
+    queryFn: () => quoteService.fetchQuotes(userId ?? '', scope),
     enabled: !!userId,
   });
 
   const { data: techniques = [], refetch: fetchTechniques } = useQuery({
     queryKey: ['techniques'],
     queryFn: () => quoteService.fetchTechniques(),
-    enabled: !!user,
+    enabled: !!userId,
     staleTime: 60 * 60 * 1000, // 1 hour
   });
 
   // Mutations
   const createMutation = useMutation({
     mutationFn: ({ quote, items }: { quote: Partial<Quote>; items: QuoteItem[] }) => {
-      if (!userId) throw new Error('useQuotes.createMutation: usuário não autenticado');
+      if (!userId) throw new Error('Usuario nao autenticado');
       return quoteService.createQuote(quote, items, userId, orgId);
     },
     onSuccess: (newQuote) => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       toast.success('Orçamento criado!', { description: `Número: ${newQuote.quote_number}` });
     },
-    onError: (err: Error) => {
-      toast.error('Erro ao criar orçamento', { description: err.message });
+    onError: (err: unknown) => {
+      toast.error('Erro ao criar orçamento', { description: getErrorMessage(err) });
     },
   });
 
@@ -81,8 +91,8 @@ export function useQuotes() {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       toast.success('Orçamento atualizado!');
     },
-    onError: (err: Error) => {
-      toast.error('Erro ao atualizar orçamento', { description: err.message });
+    onError: (err: unknown) => {
+      toast.error('Erro ao atualizar orçamento', { description: getErrorMessage(err) });
     },
   });
 
@@ -113,21 +123,19 @@ export function useQuotes() {
   const fetchQuote = async (quoteId: string) => {
     try {
       return await quoteService.fetchQuote(quoteId);
-    } catch (err) {
-      toast.error('Erro ao carregar orçamento', {
-        description: err instanceof Error ? err.message : String(err),
-      });
+    } catch (err: unknown) {
+      toast.error('Erro ao carregar orçamento', { description: getErrorMessage(err) });
       return null;
     }
   };
 
   const createQuote = async (quote: Partial<Quote>, items: QuoteItem[]) => {
-    if (!userId) return null;
+    if (!user) return null;
     return await createMutation.mutateAsync({ quote, items });
   };
 
   const updateQuote = async (quoteId: string, quote: Partial<Quote>, items: QuoteItem[]) => {
-    if (!userId) return null;
+    if (!user) return null;
     return await updateMutation.mutateAsync({ quoteId, quote, items });
   };
 
@@ -150,7 +158,7 @@ export function useQuotes() {
   };
 
   const duplicateQuote = async (quoteId: string): Promise<Quote | null> => {
-    if (!userId) return null;
+    if (!user) return null;
     try {
       const original = await fetchQuote(quoteId);
       if (!original) throw new Error('Orçamento não encontrado');
@@ -203,10 +211,8 @@ export function useQuotes() {
       );
 
       return newQuote;
-    } catch (err) {
-      toast.error('Erro ao duplicar', {
-        description: err instanceof Error ? err.message : String(err),
-      });
+    } catch (err: unknown) {
+      toast.error('Erro ao duplicar', { description: getErrorMessage(err) });
       return null;
     }
   };
@@ -219,16 +225,15 @@ export function useQuotes() {
         headers: log.headers(),
       });
       if (fnError) throw new Error(fnError.message);
-      if (data?.error) throw new Error(data.error);
+      const syncData = data as QuoteSyncResponse | null;
+      if (syncData?.error) throw new Error(syncData.error);
       toast.success('Sincronizado com Bitrix!', {
-        description: `Deal ID: ${data?.bitrix_deal_id || 'N/A'}`,
+        description: `Deal ID: ${syncData?.bitrix_deal_id || 'N/A'}`,
       });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       return true;
-    } catch (err) {
-      toast.error('Erro ao sincronizar', {
-        description: err instanceof Error ? err.message : String(err),
-      });
+    } catch (err: unknown) {
+      toast.error('Erro ao sincronizar', { description: getErrorMessage(err) });
       return false;
     }
   };
@@ -239,16 +244,15 @@ export function useQuotes() {
         body: { action: 'test_webhook', data: {} },
       });
       if (fnError) throw new Error(fnError.message);
-      if (data?.success) {
+      const testData = data as QuoteSyncResponse | null;
+      if (testData?.success) {
         toast.success('Conexão com N8N estabelecida!');
         return true;
       }
       toast.error('Falha na conexão com N8N');
       return false;
-    } catch (err) {
-      toast.error('Erro ao testar webhook', {
-        description: err instanceof Error ? err.message : String(err),
-      });
+    } catch (err: unknown) {
+      toast.error('Erro ao testar webhook', { description: getErrorMessage(err) });
       return false;
     }
   };
@@ -257,11 +261,11 @@ export function useQuotes() {
     quoteId: string,
     action: string,
     description: string,
-    options?: Record<string, unknown>,
+    options?: QuoteHistoryOptions,
   ) => {
-    if (!userId) return;
+    if (!user) return;
     try {
-      await quoteService.logHistory(quoteId, userId, action, description, options);
+      await quoteService.logHistory(quoteId, user.id, action, description, options);
     } catch (err) {
       console.error('Error logging history:', err);
     }
@@ -271,7 +275,7 @@ export function useQuotes() {
     quotes,
     techniques,
     isLoading: isLoading || createMutation.isPending || updateMutation.isPending,
-    error: error instanceof Error ? error.message : null,
+    error: error ? getErrorMessage(error) : null,
     fetchQuotes,
     fetchQuote,
     createQuote,

@@ -102,7 +102,6 @@ export function resolveColorStock(
   if (!activeColors) return undefined;
   if (!activeColors.groups.length && !activeColors.variations.length) return undefined;
   if (!product.variations?.length) return undefined;
-  // Captura local pós-guard para o TS narrow sobreviver às closures abaixo.
   const variations = product.variations;
 
   const matchVariation = (variationSlug: string) => {

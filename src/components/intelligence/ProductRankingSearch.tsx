@@ -44,6 +44,7 @@ export function ProductRankingSearch() {
   );
 
   const hasResults = !!products?.length;
+  const rankedProducts = products ?? [];
   const hasActiveFilters = !!(supplierId || categoryId || debouncedSearch);
 
   const formatCurrency = (v: number) =>
@@ -201,7 +202,7 @@ export function ProductRankingSearch() {
               <span className="text-right">P.Médio</span>
               <span className="text-right">Conv.</span>
             </div>
-            {(products ?? []).map((product, index) => (
+            {rankedProducts.map((product, index) => (
               <RankingResultRow
                 key={product.productSku || product.productId || index}
                 product={product}
@@ -217,7 +218,7 @@ export function ProductRankingSearch() {
 
         {hasResults && (
           <p className="text-center text-[10px] text-muted-foreground">
-            Top {products?.length ?? 0} {debouncedSearch ? `para "${debouncedSearch}"` : 'produtos'}
+            Top {rankedProducts.length} {debouncedSearch ? `para "${debouncedSearch}"` : 'produtos'}
             {categoryName ? ` · ${categoryName}` : ''}
             {supplierName ? ` · ${supplierName}` : ''} · {days} dias · ordenado por faturamento
           </p>

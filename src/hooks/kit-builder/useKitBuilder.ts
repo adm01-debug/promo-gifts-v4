@@ -23,7 +23,7 @@ import {
   checkItemFits,
   calculateTotalKitPrice,
 } from '@/lib/kit-builder';
-import { useKitBuilderQueries } from "@/hooks/kit-builder/useKitBuilderQueries";
+import { useKitBuilderQueries } from '@/hooks/kit-builder/useKitBuilderQueries';
 
 // ============================================
 // HOOK PRINCIPAL
@@ -41,7 +41,11 @@ export function useKitBuilder() {
   });
   const [kitQuantity, setKitQuantity] = useState(1);
   const [identity, setIdentity] = useState<KitIdentity>({
-    color: '#3B82F6', icon: 'Package', tag: '', description: '', isFavorite: false,
+    color: '#3B82F6',
+    icon: 'Package',
+    tag: '',
+    description: '',
+    isFavorite: false,
   });
 
   // Estado do wizard
@@ -72,7 +76,8 @@ export function useKitBuilder() {
 
     const boxWeight = selectedBox?.weight || 0;
     const itemsWeight = selectedItems.reduce(
-      (sum, item) => sum + ((item.weight || 0) * item.quantity), 0
+      (sum, item) => sum + (item.weight || 0) * item.quantity,
+      0,
     );
     const totalWeight = boxWeight + itemsWeight;
 
@@ -80,18 +85,19 @@ export function useKitBuilder() {
       selectedBox,
       selectedItems,
       personalization,
-      kitQuantity
+      kitQuantity,
     );
 
     const validationErrors: string[] = [];
     if (!selectedBox) validationErrors.push('Selecione uma caixa');
     if (selectedItems.length === 0) validationErrors.push('Adicione pelo menos um item ao kit');
-    if (volumeUsagePercent > 100) validationErrors.push('Volume dos itens excede a capacidade da caixa');
-    
+    if (volumeUsagePercent > 100)
+      validationErrors.push('Volume dos itens excede a capacidade da caixa');
+
     // Weight validation
     if (selectedBox?.maxWeight && itemsWeight > selectedBox.maxWeight) {
       validationErrors.push(
-        `Peso dos itens (${(itemsWeight / 1000).toFixed(1)}kg) excede o limite da caixa (${(selectedBox.maxWeight / 1000).toFixed(1)}kg)`
+        `Peso dos itens (${(itemsWeight / 1000).toFixed(1)}kg) excede o limite da caixa (${(selectedBox.maxWeight / 1000).toFixed(1)}kg)`,
       );
     }
 
@@ -117,11 +123,12 @@ export function useKitBuilder() {
 
   const wizardState = useMemo((): KitBuilderWizardState => {
     const completedSteps: KitBuilderStep[] = [];
-    
+
     if (selectedBox) completedSteps.push('box');
     if (selectedItems.length > 0) completedSteps.push('items');
-    
-    const hasPersonalizationConfig = Object.keys(personalization.items).length > 0 || personalization.box.enabled;
+
+    const hasPersonalizationConfig =
+      Object.keys(personalization.items).length > 0 || personalization.box.enabled;
     if (hasPersonalizationConfig || currentStep === 'summary') {
       completedSteps.push('personalization');
     }
@@ -163,113 +170,121 @@ export function useKitBuilder() {
     setPersonalization({ box: { enabled: false }, items: {} });
   }, []);
 
-  const addItem = useCallback((item: KitItem): CompatibilityResult => {
-    if (!selectedBox) {
-      return { fits: false, reason: 'Selecione uma caixa primeiro' };
-    }
+  const addItem = useCallback(
+    (item: KitItem): CompatibilityResult => {
+      if (!selectedBox) {
+        return { fits: false, reason: 'Selecione uma caixa primeiro' };
+      }
 
-    const existingIndex = selectedItems.findIndex(i => i.id === item.id);
-    if (existingIndex >= 0) {
-      const updatedItems = [...selectedItems];
-      const newQuantity = updatedItems[existingIndex].quantity + 1;
-      
-      const result = checkItemFits(
-        { ...item, quantity: 1 },
-        selectedBox,
-        selectedItems.filter((_, i) => i !== existingIndex),
-        newQuantity
-      );
+      const existingIndex = selectedItems.findIndex((i) => i.id === item.id);
+      if (existingIndex >= 0) {
+        const updatedItems = [...selectedItems];
+        const newQuantity = updatedItems[existingIndex].quantity + 1;
+
+        const result = checkItemFits(
+          { ...item, quantity: 1 },
+          selectedBox,
+          selectedItems.filter((_, i) => i !== existingIndex),
+          newQuantity,
+        );
+
+        if (result.fits) {
+          updatedItems[existingIndex] = {
+            ...updatedItems[existingIndex],
+            quantity: newQuantity,
+          };
+          setSelectedItems(updatedItems);
+        }
+
+        return result;
+      }
+
+      const result = checkItemFits(item, selectedBox, selectedItems, 1);
 
       if (result.fits) {
-        updatedItems[existingIndex] = {
-          ...updatedItems[existingIndex],
-          quantity: newQuantity,
-        };
-        setSelectedItems(updatedItems);
+        setSelectedItems((prev) => [...prev, { ...item, quantity: 1 }]);
       }
 
       return result;
-    }
-
-    const result = checkItemFits(item, selectedBox, selectedItems, 1);
-    
-    if (result.fits) {
-      setSelectedItems(prev => [...prev, { ...item, quantity: 1 }]);
-    }
-
-    return result;
-  }, [selectedBox, selectedItems]);
+    },
+    [selectedBox, selectedItems],
+  );
 
   const removeItem = useCallback((itemId: string) => {
-    setSelectedItems(prev => prev.filter(i => i.id !== itemId));
-    setPersonalization(prev => {
+    setSelectedItems((prev) => prev.filter((i) => i.id !== itemId));
+    setPersonalization((prev) => {
       const { [itemId]: _, ...rest } = prev.items;
       return { ...prev, items: rest };
     });
   }, []);
 
-  const updateItemQuantity = useCallback((itemId: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeItem(itemId);
-      return;
-    }
+  const updateItemQuantity = useCallback(
+    (itemId: string, quantity: number) => {
+      if (quantity <= 0) {
+        removeItem(itemId);
+        return;
+      }
 
-    if (selectedBox) {
-      const item = selectedItems.find(i => i.id === itemId);
-      if (item && quantity > item.quantity) {
-        const otherItems = selectedItems.filter(i => i.id !== itemId);
-        const result = checkItemFits(item, selectedBox, otherItems, quantity);
-        if (!result.fits) {
-          toast.warning('Volume excedido', {
-            description: result.reason || 'Essa quantidade não cabe na caixa selecionada.',
-          });
-          return;
+      if (selectedBox) {
+        const item = selectedItems.find((i) => i.id === itemId);
+        if (item && quantity > item.quantity) {
+          const otherItems = selectedItems.filter((i) => i.id !== itemId);
+          const result = checkItemFits(item, selectedBox, otherItems, quantity);
+          if (!result.fits) {
+            toast.warning('Volume excedido', {
+              description: result.reason || 'Essa quantidade não cabe na caixa selecionada.',
+            });
+            return;
+          }
         }
       }
-    }
 
-    setSelectedItems(prev =>
-      prev.map(item =>
-        item.id === itemId ? { ...item, quantity } : item
-      )
-    );
-  }, [removeItem, selectedBox, selectedItems]);
+      setSelectedItems((prev) =>
+        prev.map((item) => (item.id === itemId ? { ...item, quantity } : item)),
+      );
+    },
+    [removeItem, selectedBox, selectedItems],
+  );
 
-  const updateItemVariant = useCallback((itemId: string, variantData: {
-    color: { name: string; hex?: string };
-    size?: string;
-    sku?: string;
-    imageUrl?: string | null;
-    price?: number;
-  }) => {
-    setSelectedItems(prev =>
-      prev.map(item => {
-        if (item.id !== itemId) return item;
-        return {
-          ...item,
-          selectedColor: variantData.color,
-          selectedSize: variantData.size || undefined,
-          ...(variantData.sku && { sku: variantData.sku }),
-          ...(variantData.imageUrl !== undefined && { imageUrl: variantData.imageUrl }),
-          ...(variantData.price !== undefined && { price: variantData.price }),
-        };
-      })
-    );
-  }, []);
+  const updateItemVariant = useCallback(
+    (
+      itemId: string,
+      variantData: {
+        color: { name: string; hex?: string };
+        size?: string;
+        sku?: string;
+        imageUrl?: string | null;
+        price?: number;
+      },
+    ) => {
+      setSelectedItems((prev) =>
+        prev.map((item) => {
+          if (item.id !== itemId) return item;
+          return {
+            ...item,
+            selectedColor: variantData.color,
+            selectedSize: variantData.size || undefined,
+            ...(variantData.sku && { sku: variantData.sku }),
+            ...(variantData.imageUrl !== undefined && { imageUrl: variantData.imageUrl }),
+            ...(variantData.price !== undefined && { price: variantData.price }),
+          };
+        }),
+      );
+    },
+    [],
+  );
 
   const updateItemColor = useCallback((itemId: string, color: { name: string; hex?: string }) => {
-    setSelectedItems(prev =>
-      prev.map(item =>
-        item.id === itemId ? { ...item, selectedColor: color } : item
-      )
+    setSelectedItems((prev) =>
+      prev.map((item) => (item.id === itemId ? { ...item, selectedColor: color } : item)),
     );
   }, []);
 
   const toggleOptionalItem = useCallback((itemId: string, item?: KitItem) => {
-    setSelectedItems(prev => {
-      const exists = prev.find(i => i.id === itemId);
+    setSelectedItems((prev) => {
+      const exists = prev.find((i) => i.id === itemId);
       if (exists) {
-        return prev.filter(i => i.id !== itemId);
+        return prev.filter((i) => i.id !== itemId);
       }
       if (item) {
         return [...prev, { ...item, quantity: 1 }];
@@ -279,7 +294,7 @@ export function useKitBuilder() {
   }, []);
 
   const setItemPersonalization = useCallback((itemId: string, config: KitItemPersonalization) => {
-    setPersonalization(prev => ({
+    setPersonalization((prev) => ({
       ...prev,
       items: {
         ...prev.items,
@@ -289,7 +304,7 @@ export function useKitBuilder() {
   }, []);
 
   const setBoxPersonalization = useCallback((config: KitItemPersonalization) => {
-    setPersonalization(prev => ({
+    setPersonalization((prev) => ({
       ...prev,
       box: config,
     }));
@@ -316,7 +331,7 @@ export function useKitBuilder() {
   }, [currentStep]);
 
   const reorderItems = useCallback((fromIndex: number, toIndex: number) => {
-    setSelectedItems(prev => {
+    setSelectedItems((prev) => {
       const next = [...prev];
       const [moved] = next.splice(fromIndex, 1);
       next.splice(toIndex, 0, moved);
@@ -336,41 +351,48 @@ export function useKitBuilder() {
   }, []);
 
   /** Load a saved kit (from custom_kits JSONB snapshots) into the wizard */
-  const loadKit = useCallback((data: {
-    name: string;
-    kitType: KitType;
-    box: KitBox | null;
-    items: KitItem[];
-    personalization: KitPersonalization;
-    kitQuantity: number;
-    identity?: KitIdentity;
-  }) => {
-    setKitName(data.name);
-    setKitType(data.kitType);
-    setSelectedBox(data.box);
-    setSelectedItems(data.items);
-    setPersonalization(data.personalization || { box: { enabled: false }, items: {} });
-    setKitQuantity(data.kitQuantity || 1);
-    if (data.identity) {
-      setIdentity({
-        color: data.identity.color || '#3B82F6',
-        icon: data.identity.icon || 'Package',
-        tag: data.identity.tag || '',
-        description: data.identity.description || '',
-        isFavorite: data.identity.isFavorite ?? false,
-      });
-    }
-    setCurrentStep('summary');
-  }, []);
+  const loadKit = useCallback(
+    (data: {
+      name: string;
+      kitType: KitType;
+      box: KitBox | null;
+      items: KitItem[];
+      personalization: KitPersonalization;
+      kitQuantity: number;
+      identity?: KitIdentity;
+    }) => {
+      setKitName(data.name);
+      setKitType(data.kitType);
+      setSelectedBox(data.box);
+      setSelectedItems(data.items);
+      setPersonalization(data.personalization || { box: { enabled: false }, items: {} });
+      setKitQuantity(data.kitQuantity || 1);
+      if (data.identity) {
+        setIdentity({
+          color: data.identity.color || '#3B82F6',
+          icon: data.identity.icon || 'Package',
+          tag: data.identity.tag || '',
+          description: data.identity.description || '',
+          isFavorite: data.identity.isFavorite ?? false,
+        });
+      }
+      setCurrentStep('summary');
+    },
+    [],
+  );
 
   // ============================================
   // FILTROS COM COMPATIBILIDADE
   // ============================================
 
   const itemsWithCompatibility = useMemo(() => {
-    if (!selectedBox) return availableItems.map(item => ({ ...item, compatibility: null as CompatibilityResult | null }));
+    if (!selectedBox)
+      return availableItems.map((item) => ({
+        ...item,
+        compatibility: null as CompatibilityResult | null,
+      }));
 
-    return availableItems.map(item => {
+    return availableItems.map((item) => {
       const compatibility = checkItemFits(item, selectedBox, selectedItems, 1);
       return { ...item, compatibility };
     });
@@ -380,15 +402,16 @@ export function useKitBuilder() {
     let items = itemsWithCompatibility;
 
     if (itemFilters.onlyFitting) {
-      items = items.filter(item => item.compatibility?.fits !== false);
+      items = items.filter((item) => item.compatibility?.fits !== false);
     }
 
     if (itemFilters.maxVolume) {
-      items = items.filter(item => item.volume <= (itemFilters.maxVolume || Infinity));
+      items = items.filter((item) => item.volume <= (itemFilters.maxVolume || Infinity));
     }
 
     if (itemFilters.category) {
-      items = items.filter(item => item.category?.toLowerCase().includes(itemFilters.category!.toLowerCase()));
+      const categoryFilter = itemFilters.category.toLowerCase();
+      items = items.filter((item) => item.category?.toLowerCase().includes(categoryFilter));
     }
 
     return items;

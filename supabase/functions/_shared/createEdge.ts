@@ -87,7 +87,7 @@ export function createEdge(
 
       // ── Modo cron ─────────────────────────────────────────────────────────
       if (config.auth === "cron") {
-        const result = authorizeCron(req, {
+        const result = await authorizeCron(req, {
           corsHeaders,
           secretEnvName: config.secretEnv,
           headerName: config.headerName ?? "x-cron-secret",

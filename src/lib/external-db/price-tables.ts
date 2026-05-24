@@ -66,30 +66,21 @@ export async function fetchPromobrindPriceTables(options?: {
     technique_name: r.customization_type_name as string,
   }));
 
-  // Captura os parâmetros em locais para que o type-narrow sobreviva ao escopo do callback do filter.
-  const qty = options?.quantity;
-  const colors = options?.colors;
-  const width = options?.width;
-  const height = options?.height;
-
-  if (typeof qty === 'number') {
+  const { quantity, colors, width, height } = options ?? {};
+  if (quantity)
     tables = tables.filter(
-      (t) => t.min_quantity <= qty && (t.max_quantity === null || t.max_quantity >= qty),
+      (t) => t.min_quantity <= quantity && (t.max_quantity === null || t.max_quantity >= quantity),
     );
-  }
-  if (typeof colors === 'number') {
+  if (colors)
     tables = tables.filter(
       (t) =>
         (t.min_colors === null || t.min_colors <= colors) &&
         (t.max_colors === null || t.max_colors >= colors),
     );
-  }
-  if (typeof width === 'number') {
+  if (width)
     tables = tables.filter((t) => t.max_area_width_cm === null || t.max_area_width_cm >= width);
-  }
-  if (typeof height === 'number') {
+  if (height)
     tables = tables.filter((t) => t.max_area_height_cm === null || t.max_area_height_cm >= height);
-  }
 
   return tables;
 }

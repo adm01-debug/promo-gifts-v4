@@ -4,7 +4,7 @@
  */
 import type { Product } from '@/types/product-catalog';
 
-const img = (name: string) => `/placeholder.svg`;
+const img = (_name: string) => `/placeholder.svg`;
 
 export const MOCK_MATCH_PRODUCTS: Product[] = [
   // ── CHURRASCO cluster ──

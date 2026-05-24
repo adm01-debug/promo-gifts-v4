@@ -28,10 +28,8 @@ export function useFiltersPageState() {
       const v = searchParams.get(k);
       return v ? v.split(',').filter(Boolean) : [];
     };
-    {
-      const v = get('search');
-      if (v) f.search = v;
-    }
+    const search = get('search');
+    if (search) f.search = search;
     const cg = getArr('colorGroups');
     if (cg.length) f.colorGroups = cg;
     const cv = getArr('colorVariations');
@@ -82,10 +80,8 @@ export function useFiltersPageState() {
     if (get('isNew') === '1') f.isNew = true;
     if (get('hasPersonalization') === '1') f.hasPersonalization = true;
     if (get('hasCommercialPackaging') === '1') f.hasCommercialPackaging = true;
-    {
-      const v = get('sortBy');
-      if (v) f.sortBy = v;
-    }
+    const sortByParam = get('sortBy');
+    if (sortByParam) f.sortBy = sortByParam;
     return f;
   });
 

@@ -338,15 +338,12 @@ export default function QuotesDashboardPage() {
           <CardContent>
             <div className="space-y-3">
               {s.quotes
-                .filter(
-                  (q): q is typeof q & { client_response_at: string } =>
-                    typeof q.client_response_at === 'string',
-                )
-                .sort(
-                  (a, b) =>
-                    new Date(b.client_response_at).getTime() -
-                    new Date(a.client_response_at).getTime(),
-                )
+                .filter((q) => q.client_response_at)
+                .sort((a, b) => {
+                  const bResponseAt = b.client_response_at ?? '';
+                  const aResponseAt = a.client_response_at ?? '';
+                  return new Date(bResponseAt).getTime() - new Date(aResponseAt).getTime();
+                })
                 .slice(0, 5)
                 .map((quote) => (
                   <div

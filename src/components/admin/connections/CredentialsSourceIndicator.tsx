@@ -40,6 +40,10 @@ interface Props {
 
 const RTF = new Intl.RelativeTimeFormat('pt-BR', { numeric: 'auto' });
 
+function hasUpdatedAt(secret: SecretStatus): secret is SecretStatus & { updated_at: string } {
+  return !!secret.updated_at;
+}
+
 function formatRelative(iso: string | null): string | null {
   if (!iso) return null;
   const t = new Date(iso).getTime();
@@ -144,7 +148,7 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
 
   // Pega o secret mais recentemente atualizado (apenas os com updated_at)
   const latest = secrets
-    .filter((s): s is typeof s & { updated_at: string } => !!s.updated_at)
+    .filter(hasUpdatedAt)
     .sort((a, b) => (b.updated_at > a.updated_at ? 1 : -1))[0];
 
   const relative = formatRelative(latest?.updated_at ?? null);

@@ -107,63 +107,6 @@ export type Database = {
         }
         Relationships: []
       }
-      admin_audit_log_old: {
-        Row: {
-          action: string
-          created_at: string
-          details: Json | null
-          duration_ms: number | null
-          finished_at: string | null
-          id: string
-          ip_address: string | null
-          payload_summary: Json | null
-          request_id: string | null
-          resource_id: string | null
-          resource_type: string
-          source: string | null
-          started_at: string | null
-          status: string | null
-          user_agent: string | null
-          user_id: string
-        }
-        Insert: {
-          action: string
-          created_at?: string
-          details?: Json | null
-          duration_ms?: number | null
-          finished_at?: string | null
-          id?: string
-          ip_address?: string | null
-          payload_summary?: Json | null
-          request_id?: string | null
-          resource_id?: string | null
-          resource_type: string
-          source?: string | null
-          started_at?: string | null
-          status?: string | null
-          user_agent?: string | null
-          user_id: string
-        }
-        Update: {
-          action?: string
-          created_at?: string
-          details?: Json | null
-          duration_ms?: number | null
-          finished_at?: string | null
-          id?: string
-          ip_address?: string | null
-          payload_summary?: Json | null
-          request_id?: string | null
-          resource_id?: string | null
-          resource_type?: string
-          source?: string | null
-          started_at?: string | null
-          status?: string | null
-          user_agent?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       admin_audit_log_y2025m12: {
         Row: {
           action: string
@@ -1448,6 +1391,7 @@ export type Database = {
           kit_type: string
           last_used_at: string | null
           name: string
+          organization_id: string | null
           personalization_data: Json
           personalization_price: number
           status: string
@@ -1473,6 +1417,7 @@ export type Database = {
           kit_type?: string
           last_used_at?: string | null
           name?: string
+          organization_id?: string | null
           personalization_data?: Json
           personalization_price?: number
           status?: string
@@ -1498,6 +1443,7 @@ export type Database = {
           kit_type?: string
           last_used_at?: string | null
           name?: string
+          organization_id?: string | null
           personalization_data?: Json
           personalization_price?: number
           status?: string
@@ -1517,12 +1463,14 @@ export type Database = {
           id: string
           max_allowed_percent: number
           quote_id: string
+          quote_snapshot_hash: string | null
           requested_discount_percent: number
           responded_at: string | null
           seller_id: string
           seller_notes: string | null
           status: string
           updated_at: string
+          valid_until: string | null
         }
         Insert: {
           admin_id?: string | null
@@ -1531,12 +1479,14 @@ export type Database = {
           id?: string
           max_allowed_percent: number
           quote_id: string
+          quote_snapshot_hash?: string | null
           requested_discount_percent: number
           responded_at?: string | null
           seller_id: string
           seller_notes?: string | null
           status?: string
           updated_at?: string
+          valid_until?: string | null
         }
         Update: {
           admin_id?: string | null
@@ -1545,12 +1495,14 @@ export type Database = {
           id?: string
           max_allowed_percent?: number
           quote_id?: string
+          quote_snapshot_hash?: string | null
           requested_discount_percent?: number
           responded_at?: string | null
           seller_id?: string
           seller_notes?: string | null
           status?: string
           updated_at?: string
+          valid_until?: string | null
         }
         Relationships: [
           {
@@ -1779,49 +1731,46 @@ export type Database = {
       }
       external_connections_sync_log: {
         Row: {
-          created_at: string
-          created_count: number
-          details: Json | null
+          completed_at: string | null
+          connection_id: string | null
+          connection_name: string
           duration_ms: number | null
           error_message: string | null
           id: string
-          processed: number
-          ran_at: string
+          metadata: Json | null
+          records_failed: number | null
+          records_processed: number | null
+          started_at: string
           status: string
-          trigger_op: string | null
-          triggered_by_secret_name: string | null
-          triggered_by_user_id: string | null
-          updated_count: number
+          sync_type: string
         }
         Insert: {
-          created_at?: string
-          created_count?: number
-          details?: Json | null
+          completed_at?: string | null
+          connection_id?: string | null
+          connection_name: string
           duration_ms?: number | null
           error_message?: string | null
           id?: string
-          processed?: number
-          ran_at?: string
+          metadata?: Json | null
+          records_failed?: number | null
+          records_processed?: number | null
+          started_at?: string
           status?: string
-          trigger_op?: string | null
-          triggered_by_secret_name?: string | null
-          triggered_by_user_id?: string | null
-          updated_count?: number
+          sync_type?: string
         }
         Update: {
-          created_at?: string
-          created_count?: number
-          details?: Json | null
+          completed_at?: string | null
+          connection_id?: string | null
+          connection_name?: string
           duration_ms?: number | null
           error_message?: string | null
           id?: string
-          processed?: number
-          ran_at?: string
+          metadata?: Json | null
+          records_failed?: number | null
+          records_processed?: number | null
+          started_at?: string
           status?: string
-          trigger_op?: string | null
-          triggered_by_secret_name?: string | null
-          triggered_by_user_id?: string | null
-          updated_count?: number
+          sync_type?: string
         }
         Relationships: []
       }
@@ -1925,12 +1874,14 @@ export type Database = {
       }
       favorite_items_trash: {
         Row: {
+          added_at: string | null
           deleted_at: string
           expires_at: string
           id: string
           list_id: string
           note: string | null
           original_id: string
+          position: number | null
           price_at_save: number | null
           product_id: string
           user_id: string
@@ -1938,12 +1889,14 @@ export type Database = {
           variant_info: Json | null
         }
         Insert: {
+          added_at?: string | null
           deleted_at?: string
           expires_at?: string
           id?: string
           list_id: string
           note?: string | null
           original_id: string
+          position?: number | null
           price_at_save?: number | null
           product_id: string
           user_id: string
@@ -1951,12 +1904,14 @@ export type Database = {
           variant_info?: Json | null
         }
         Update: {
+          added_at?: string | null
           deleted_at?: string
           expires_at?: string
           id?: string
           list_id?: string
           note?: string | null
           original_id?: string
+          position?: number | null
           price_at_save?: number | null
           product_id?: string
           user_id?: string
@@ -2019,66 +1974,45 @@ export type Database = {
         }
         Relationships: []
       }
-      favorites: {
-        Row: {
-          added_at: string
-          id: string
-          is_deleted: boolean
-          product_id: string
-          updated_at: string
-          user_id: string
-          variant_info: Json | null
-        }
-        Insert: {
-          added_at?: string
-          id?: string
-          is_deleted?: boolean
-          product_id: string
-          updated_at?: string
-          user_id: string
-          variant_info?: Json | null
-        }
-        Update: {
-          added_at?: string
-          id?: string
-          is_deleted?: boolean
-          product_id?: string
-          updated_at?: string
-          user_id?: string
-          variant_info?: Json | null
-        }
-        Relationships: []
-      }
       file_scan_logs: {
         Row: {
-          bucket: string
-          created_at: string | null
-          hash: string
+          created_at: string
+          file_hash: string | null
+          file_name: string
+          file_size: number | null
           id: string
-          path: string
-          scan_result: Json
-          status_code: number
-          user_id: string | null
+          mime_type: string | null
+          scan_provider: string
+          scan_response: Json | null
+          scan_result: string
+          storage_path: string | null
+          user_id: string
         }
         Insert: {
-          bucket: string
-          created_at?: string | null
-          hash: string
+          created_at?: string
+          file_hash?: string | null
+          file_name: string
+          file_size?: number | null
           id?: string
-          path: string
-          scan_result?: Json
-          status_code: number
-          user_id?: string | null
+          mime_type?: string | null
+          scan_provider?: string
+          scan_response?: Json | null
+          scan_result?: string
+          storage_path?: string | null
+          user_id: string
         }
         Update: {
-          bucket?: string
-          created_at?: string | null
-          hash?: string
+          created_at?: string
+          file_hash?: string | null
+          file_name?: string
+          file_size?: number | null
           id?: string
-          path?: string
-          scan_result?: Json
-          status_code?: number
-          user_id?: string | null
+          mime_type?: string | null
+          scan_provider?: string
+          scan_response?: Json | null
+          scan_result?: string
+          storage_path?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -2168,70 +2102,97 @@ export type Database = {
       }
       generated_mockups: {
         Row: {
-          annotations: Json | null
-          client_id: string | null
-          client_name: string | null
-          colors_count: number | null
+          ai_model_used: string
+          approval_status: string | null
+          approved_at: string | null
+          approved_by_user_id: string | null
+          area_config: Json
+          area_name: string
+          client_feedback: string | null
           created_at: string
+          error_details: string | null
+          generation_cost: number | null
+          generation_time_seconds: number | null
+          has_errors: boolean | null
           id: string
-          layout_url: string | null
-          location_name: string | null
-          logo_height_cm: number | null
-          logo_url: string | null
-          logo_width_cm: number | null
-          mockup_url: string | null
-          position_x: number | null
-          position_y: number | null
+          job_id: string
+          logo_url: string
+          mockup_url: string
+          product_color_hex: string
+          product_color_name: string | null
           product_id: string | null
-          product_name: string | null
+          product_name: string
           product_sku: string | null
-          seller_id: string
+          prompt_used: string | null
+          quality_score: number | null
+          seed_used: number | null
           technique_id: string | null
-          technique_name: string | null
+          technique_name: string
+          thumbnail_url: string | null
+          updated_at: string
+          user_id: string
         }
         Insert: {
-          annotations?: Json | null
-          client_id?: string | null
-          client_name?: string | null
-          colors_count?: number | null
+          ai_model_used: string
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by_user_id?: string | null
+          area_config: Json
+          area_name: string
+          client_feedback?: string | null
           created_at?: string
+          error_details?: string | null
+          generation_cost?: number | null
+          generation_time_seconds?: number | null
+          has_errors?: boolean | null
           id?: string
-          layout_url?: string | null
-          location_name?: string | null
-          logo_height_cm?: number | null
-          logo_url?: string | null
-          logo_width_cm?: number | null
-          mockup_url?: string | null
-          position_x?: number | null
-          position_y?: number | null
+          job_id: string
+          logo_url: string
+          mockup_url: string
+          product_color_hex: string
+          product_color_name?: string | null
           product_id?: string | null
-          product_name?: string | null
+          product_name: string
           product_sku?: string | null
-          seller_id: string
+          prompt_used?: string | null
+          quality_score?: number | null
+          seed_used?: number | null
           technique_id?: string | null
-          technique_name?: string | null
+          technique_name: string
+          thumbnail_url?: string | null
+          updated_at?: string
+          user_id: string
         }
         Update: {
-          annotations?: Json | null
-          client_id?: string | null
-          client_name?: string | null
-          colors_count?: number | null
+          ai_model_used?: string
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by_user_id?: string | null
+          area_config?: Json
+          area_name?: string
+          client_feedback?: string | null
           created_at?: string
+          error_details?: string | null
+          generation_cost?: number | null
+          generation_time_seconds?: number | null
+          has_errors?: boolean | null
           id?: string
-          layout_url?: string | null
-          location_name?: string | null
-          logo_height_cm?: number | null
-          logo_url?: string | null
-          logo_width_cm?: number | null
-          mockup_url?: string | null
-          position_x?: number | null
-          position_y?: number | null
+          job_id?: string
+          logo_url?: string
+          mockup_url?: string
+          product_color_hex?: string
+          product_color_name?: string | null
           product_id?: string | null
-          product_name?: string | null
+          product_name?: string
           product_sku?: string | null
-          seller_id?: string
+          prompt_used?: string | null
+          quality_score?: number | null
+          seed_used?: number | null
           technique_id?: string | null
-          technique_name?: string | null
+          technique_name?: string
+          thumbnail_url?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -2294,15 +2255,18 @@ export type Database = {
       }
       inbound_webhook_endpoints: {
         Row: {
-          active: boolean
           allowed_events: string[]
+          allowed_ips: string[] | null
           created_at: string
           created_by: string
           description: string | null
           hmac_secret_ref: string
           id: string
+          is_active: boolean
           last_received_at: string | null
+          metadata: Json | null
           name: string
+          secret_key: string | null
           slug: string
           source_system: string
           total_invalid: number
@@ -2310,15 +2274,18 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          active?: boolean
           allowed_events?: string[]
+          allowed_ips?: string[] | null
           created_at?: string
           created_by: string
           description?: string | null
           hmac_secret_ref: string
           id?: string
+          is_active?: boolean
           last_received_at?: string | null
+          metadata?: Json | null
           name: string
+          secret_key?: string | null
           slug: string
           source_system: string
           total_invalid?: number
@@ -2326,15 +2293,18 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          active?: boolean
           allowed_events?: string[]
+          allowed_ips?: string[] | null
           created_at?: string
           created_by?: string
           description?: string | null
           hmac_secret_ref?: string
           id?: string
+          is_active?: boolean
           last_received_at?: string | null
+          metadata?: Json | null
           name?: string
+          secret_key?: string | null
           slug?: string
           source_system?: string
           total_invalid?: number
@@ -2345,37 +2315,43 @@ export type Database = {
       }
       inbound_webhook_events: {
         Row: {
+          created_at: string
           endpoint_id: string
-          error: string | null
+          error_message: string | null
           event_type: string | null
+          headers: Json | null
           id: string
+          ip_address: string | null
           payload: Json | null
           processed: boolean
-          received_at: string
+          processed_at: string | null
           signature_valid: boolean
-          source_ip: string | null
         }
         Insert: {
+          created_at?: string
           endpoint_id: string
-          error?: string | null
+          error_message?: string | null
           event_type?: string | null
+          headers?: Json | null
           id?: string
+          ip_address?: string | null
           payload?: Json | null
           processed?: boolean
-          received_at?: string
+          processed_at?: string | null
           signature_valid?: boolean
-          source_ip?: string | null
         }
         Update: {
+          created_at?: string
           endpoint_id?: string
-          error?: string | null
+          error_message?: string | null
           event_type?: string | null
+          headers?: Json | null
           id?: string
+          ip_address?: string | null
           payload?: Json | null
           processed?: boolean
-          received_at?: string
+          processed_at?: string | null
           signature_valid?: boolean
-          source_ip?: string | null
         }
         Relationships: [
           {
@@ -2390,10 +2366,17 @@ export type Database = {
       integration_credentials: {
         Row: {
           created_at: string
+          created_by: string | null
+          credential_type: string | null
+          description: string | null
+          expires_at: string | null
           id: string
+          is_active: boolean | null
           length: number | null
           masked_suffix: string | null
+          metadata: Json | null
           notes: string | null
+          provider: string | null
           secret_name: string
           secret_value: string
           updated_at: string
@@ -2401,10 +2384,17 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
+          credential_type?: string | null
+          description?: string | null
+          expires_at?: string | null
           id?: string
+          is_active?: boolean | null
           length?: number | null
           masked_suffix?: string | null
+          metadata?: Json | null
           notes?: string | null
+          provider?: string | null
           secret_name: string
           secret_value: string
           updated_at?: string
@@ -2412,10 +2402,17 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by?: string | null
+          credential_type?: string | null
+          description?: string | null
+          expires_at?: string | null
           id?: string
+          is_active?: boolean | null
           length?: number | null
           masked_suffix?: string | null
+          metadata?: Json | null
           notes?: string | null
+          provider?: string | null
           secret_name?: string
           secret_value?: string
           updated_at?: string
@@ -2431,6 +2428,7 @@ export type Database = {
           id: string
           ip_address: string
           list_type: string
+          metadata: Json | null
           reason: string | null
           updated_at: string
         }
@@ -2441,6 +2439,7 @@ export type Database = {
           id?: string
           ip_address: string
           list_type: string
+          metadata?: Json | null
           reason?: string | null
           updated_at?: string
         }
@@ -2451,6 +2450,7 @@ export type Database = {
           id?: string
           ip_address?: string
           list_type?: string
+          metadata?: Json | null
           reason?: string | null
           updated_at?: string
         }
@@ -2718,6 +2718,7 @@ export type Database = {
           failure_reason: string | null
           id: string
           ip_address: string
+          metadata: Json | null
           success: boolean
           user_agent: string | null
           user_id: string | null
@@ -2728,6 +2729,7 @@ export type Database = {
           failure_reason?: string | null
           id?: string
           ip_address?: string
+          metadata?: Json | null
           success?: boolean
           user_agent?: string | null
           user_id?: string | null
@@ -2738,6 +2740,7 @@ export type Database = {
           failure_reason?: string | null
           id?: string
           ip_address?: string
+          metadata?: Json | null
           success?: boolean
           user_agent?: string | null
           user_id?: string | null
@@ -3228,42 +3231,6 @@ export type Database = {
           },
         ]
       }
-      mcp_keys: {
-        Row: {
-          created_at: string
-          expires_at: string | null
-          id: string
-          is_revoked: boolean
-          key_hash: string
-          key_name: string
-          last_used_at: string | null
-          scopes: string[] | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          expires_at?: string | null
-          id?: string
-          is_revoked?: boolean
-          key_hash: string
-          key_name: string
-          last_used_at?: string | null
-          scopes?: string[] | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          expires_at?: string | null
-          id?: string
-          is_revoked?: boolean
-          key_hash?: string
-          key_name?: string
-          last_used_at?: string | null
-          scopes?: string[] | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       mockup_drafts: {
         Row: {
           client_id: string | null
@@ -3400,52 +3367,49 @@ export type Database = {
       }
       mockup_templates: {
         Row: {
+          available_colors: Json | null
           created_at: string
+          default_technique_id: string | null
           description: string | null
           id: string
-          is_favorite: boolean
+          is_active: boolean | null
+          is_featured: boolean | null
           name: string
-          personalization_areas: Json
+          predefined_areas: Json
           product_id: string | null
-          product_name: string | null
-          technique_id: string | null
-          technique_name: string | null
-          thumbnail_url: string | null
+          template_image_url: string
           updated_at: string
-          usage_count: number
-          user_id: string
+          usage_count: number | null
         }
         Insert: {
+          available_colors?: Json | null
           created_at?: string
+          default_technique_id?: string | null
           description?: string | null
           id?: string
-          is_favorite?: boolean
+          is_active?: boolean | null
+          is_featured?: boolean | null
           name: string
-          personalization_areas?: Json
+          predefined_areas?: Json
           product_id?: string | null
-          product_name?: string | null
-          technique_id?: string | null
-          technique_name?: string | null
-          thumbnail_url?: string | null
+          template_image_url: string
           updated_at?: string
-          usage_count?: number
-          user_id: string
+          usage_count?: number | null
         }
         Update: {
+          available_colors?: Json | null
           created_at?: string
+          default_technique_id?: string | null
           description?: string | null
           id?: string
-          is_favorite?: boolean
+          is_active?: boolean | null
+          is_featured?: boolean | null
           name?: string
-          personalization_areas?: Json
+          predefined_areas?: Json
           product_id?: string | null
-          product_name?: string | null
-          technique_id?: string | null
-          technique_name?: string | null
-          thumbnail_url?: string | null
+          template_image_url?: string
           updated_at?: string
-          usage_count?: number
-          user_id?: string
+          usage_count?: number | null
         }
         Relationships: []
       }
@@ -3593,152 +3557,180 @@ export type Database = {
       }
       order_items: {
         Row: {
-          color_hex: string | null
-          color_name: string | null
           created_at: string
-          gender: string | null
+          discount_amount: number | null
           id: string
-          kit_group_id: string | null
-          kit_name: string | null
-          notes: string | null
           order_id: string | null
-          organization_id: string | null
+          personalization_config: Json | null
+          personalization_cost: number | null
+          product_description: string | null
           product_id: string | null
           product_image_url: string | null
           product_name: string | null
           product_sku: string | null
+          production_notes: string | null
+          production_status: string | null
           quantity: number | null
-          size_code: string | null
-          total_price: number | null
+          quote_item_id: string | null
+          subtotal: number
           unit_price: number | null
+          updated_at: string | null
         }
         Insert: {
-          color_hex?: string | null
-          color_name?: string | null
           created_at?: string
-          gender?: string | null
+          discount_amount?: number | null
           id?: string
-          kit_group_id?: string | null
-          kit_name?: string | null
-          notes?: string | null
           order_id?: string | null
-          organization_id?: string | null
+          personalization_config?: Json | null
+          personalization_cost?: number | null
+          product_description?: string | null
           product_id?: string | null
           product_image_url?: string | null
           product_name?: string | null
           product_sku?: string | null
+          production_notes?: string | null
+          production_status?: string | null
           quantity?: number | null
-          size_code?: string | null
-          total_price?: number | null
+          quote_item_id?: string | null
+          subtotal?: number
           unit_price?: number | null
+          updated_at?: string | null
         }
         Update: {
-          color_hex?: string | null
-          color_name?: string | null
           created_at?: string
-          gender?: string | null
+          discount_amount?: number | null
           id?: string
-          kit_group_id?: string | null
-          kit_name?: string | null
-          notes?: string | null
           order_id?: string | null
-          organization_id?: string | null
+          personalization_config?: Json | null
+          personalization_cost?: number | null
+          product_description?: string | null
           product_id?: string | null
           product_image_url?: string | null
           product_name?: string | null
           product_sku?: string | null
+          production_notes?: string | null
+          production_status?: string | null
           quantity?: number | null
-          size_code?: string | null
-          total_price?: number | null
+          quote_item_id?: string | null
+          subtotal?: number
           unit_price?: number | null
+          updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "order_items_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       orders: {
         Row: {
+          assigned_to: string | null
           client_company: string | null
           client_email: string | null
           client_id: string | null
           client_name: string | null
           client_phone: string | null
           created_at: string
+          created_by: string | null
+          delivered_at: string | null
+          delivery_address: string | null
           delivery_time: string | null
           discount_amount: number | null
+          estimated_delivery_date: string | null
           fulfillment_status: string
           id: string
           internal_notes: string | null
           notes: string | null
           order_number: string
           organization_id: string | null
+          paid_amount: number | null
+          payment_due_date: string | null
+          payment_method: string | null
+          payment_status: string | null
           payment_terms: string | null
           quote_id: string | null
           seller_id: string
+          shipping_address: Json | null
           shipping_cost: number | null
+          shipping_method: string | null
           shipping_type: string | null
           status: string
           subtotal: number | null
+          tax_amount: number | null
           total: number | null
           tracking_number: string | null
           updated_at: string
           version: number
         }
         Insert: {
+          assigned_to?: string | null
           client_company?: string | null
           client_email?: string | null
           client_id?: string | null
           client_name?: string | null
           client_phone?: string | null
           created_at?: string
+          created_by?: string | null
+          delivered_at?: string | null
+          delivery_address?: string | null
           delivery_time?: string | null
           discount_amount?: number | null
+          estimated_delivery_date?: string | null
           fulfillment_status?: string
           id?: string
           internal_notes?: string | null
           notes?: string | null
           order_number?: string
           organization_id?: string | null
+          paid_amount?: number | null
+          payment_due_date?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
           payment_terms?: string | null
           quote_id?: string | null
           seller_id: string
+          shipping_address?: Json | null
           shipping_cost?: number | null
+          shipping_method?: string | null
           shipping_type?: string | null
           status?: string
           subtotal?: number | null
+          tax_amount?: number | null
           total?: number | null
           tracking_number?: string | null
           updated_at?: string
           version?: number
         }
         Update: {
+          assigned_to?: string | null
           client_company?: string | null
           client_email?: string | null
           client_id?: string | null
           client_name?: string | null
           client_phone?: string | null
           created_at?: string
+          created_by?: string | null
+          delivered_at?: string | null
+          delivery_address?: string | null
           delivery_time?: string | null
           discount_amount?: number | null
+          estimated_delivery_date?: string | null
           fulfillment_status?: string
           id?: string
           internal_notes?: string | null
           notes?: string | null
           order_number?: string
           organization_id?: string | null
+          paid_amount?: number | null
+          payment_due_date?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
           payment_terms?: string | null
           quote_id?: string | null
           seller_id?: string
+          shipping_address?: Json | null
           shipping_cost?: number | null
+          shipping_method?: string | null
           shipping_type?: string | null
           status?: string
           subtotal?: number | null
+          tax_amount?: number | null
           total?: number | null
           tracking_number?: string | null
           updated_at?: string
@@ -4035,51 +4027,57 @@ export type Database = {
           code: string
           created_at: string
           description: string | null
-          id: string
-          name: string
-          updated_at: string
+          label: string
         }
         Insert: {
           category?: string
           code: string
           created_at?: string
           description?: string | null
-          id?: string
-          name: string
-          updated_at?: string
+          label: string
         }
         Update: {
           category?: string
           code?: string
           created_at?: string
           description?: string | null
-          id?: string
-          name?: string
-          updated_at?: string
+          label?: string
         }
         Relationships: []
       }
       price_history: {
         Row: {
+          change_reason: string | null
+          change_type: string
+          changed_at: string | null
+          changed_by: string | null
           id: string
-          price: number
-          product_id: string
-          recorded_at: string
-          variant_id: string | null
+          new_values: Json | null
+          old_values: Json | null
+          source: string | null
+          variant_id: string
         }
         Insert: {
+          change_reason?: string | null
+          change_type: string
+          changed_at?: string | null
+          changed_by?: string | null
           id?: string
-          price: number
-          product_id: string
-          recorded_at?: string
-          variant_id?: string | null
+          new_values?: Json | null
+          old_values?: Json | null
+          source?: string | null
+          variant_id: string
         }
         Update: {
+          change_reason?: string | null
+          change_type?: string
+          changed_at?: string | null
+          changed_by?: string | null
           id?: string
-          price?: number
-          product_id?: string
-          recorded_at?: string
-          variant_id?: string | null
+          new_values?: Json | null
+          old_values?: Json | null
+          source?: string | null
+          variant_id?: string
         }
         Relationships: []
       }
@@ -4453,6 +4451,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bitrix_id: number | null
           created_at: string
           department: string | null
           email: string | null
@@ -4468,6 +4467,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          bitrix_id?: number | null
           created_at?: string
           department?: string | null
           email?: string | null
@@ -4483,6 +4483,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          bitrix_id?: number | null
           created_at?: string
           department?: string | null
           email?: string | null
@@ -4665,44 +4666,33 @@ export type Database = {
       }
       quote_comments: {
         Row: {
-          content: string
+          comment: string
           created_at: string
           id: string
-          is_edited: boolean
-          parent_id: string | null
+          is_internal: boolean
           quote_id: string
           updated_at: string
           user_id: string
         }
         Insert: {
-          content: string
+          comment: string
           created_at?: string
           id?: string
-          is_edited?: boolean
-          parent_id?: string | null
+          is_internal?: boolean
           quote_id: string
           updated_at?: string
           user_id: string
         }
         Update: {
-          content?: string
+          comment?: string
           created_at?: string
           id?: string
-          is_edited?: boolean
-          parent_id?: string | null
+          is_internal?: boolean
           quote_id?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "quote_comments_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "quote_comments"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       quote_drafts: {
         Row: {
@@ -4845,16 +4835,26 @@ export type Database = {
       }
       quote_items: {
         Row: {
+          artwork_urls: Json | null
+          bitrix_product_id: string | null
           color_hex: string | null
           color_name: string | null
           created_at: string
-          display_order: number | null
+          discount_amount: number | null
+          discount_percentage: number | null
           gender: string | null
+          has_personalization: boolean | null
           id: string
           kit_group_id: string | null
           kit_name: string | null
+          mockup_urls: Json | null
           notes: string | null
+          personalization_config: Json | null
+          personalization_cost: number | null
           price_confirmed_at: string | null
+          price_freshness_threshold_days: number | null
+          price_updated_at: string | null
+          product_description: string | null
           product_id: string | null
           product_image_url: string | null
           product_name: string
@@ -4868,16 +4868,26 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          artwork_urls?: Json | null
+          bitrix_product_id?: string | null
           color_hex?: string | null
           color_name?: string | null
           created_at?: string
-          display_order?: number | null
+          discount_amount?: number | null
+          discount_percentage?: number | null
           gender?: string | null
+          has_personalization?: boolean | null
           id?: string
           kit_group_id?: string | null
           kit_name?: string | null
+          mockup_urls?: Json | null
           notes?: string | null
+          personalization_config?: Json | null
+          personalization_cost?: number | null
           price_confirmed_at?: string | null
+          price_freshness_threshold_days?: number | null
+          price_updated_at?: string | null
+          product_description?: string | null
           product_id?: string | null
           product_image_url?: string | null
           product_name: string
@@ -4891,16 +4901,26 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          artwork_urls?: Json | null
+          bitrix_product_id?: string | null
           color_hex?: string | null
           color_name?: string | null
           created_at?: string
-          display_order?: number | null
+          discount_amount?: number | null
+          discount_percentage?: number | null
           gender?: string | null
+          has_personalization?: boolean | null
           id?: string
           kit_group_id?: string | null
           kit_name?: string | null
+          mockup_urls?: Json | null
           notes?: string | null
+          personalization_config?: Json | null
+          personalization_cost?: number | null
           price_confirmed_at?: string | null
+          price_freshness_threshold_days?: number | null
+          price_updated_at?: string | null
+          product_description?: string | null
           product_id?: string | null
           product_image_url?: string | null
           product_name?: string
@@ -4925,184 +4945,250 @@ export type Database = {
       }
       quote_templates: {
         Row: {
+          category: string | null
           created_at: string
+          created_by: string | null
           delivery_time: string | null
           description: string | null
           discount_amount: number | null
           discount_percent: number | null
           id: string
           internal_notes: string | null
+          is_active: boolean
           is_default: boolean | null
-          items_data: Json | null
+          items: Json | null
           name: string
           notes: string | null
           payment_terms: string | null
           seller_id: string
           template_data: Json | null
           updated_at: string
+          usage_count: number
           validity_days: number | null
         }
         Insert: {
+          category?: string | null
           created_at?: string
+          created_by?: string | null
           delivery_time?: string | null
           description?: string | null
           discount_amount?: number | null
           discount_percent?: number | null
           id?: string
           internal_notes?: string | null
+          is_active?: boolean
           is_default?: boolean | null
-          items_data?: Json | null
+          items?: Json | null
           name: string
           notes?: string | null
           payment_terms?: string | null
           seller_id: string
           template_data?: Json | null
           updated_at?: string
+          usage_count?: number
           validity_days?: number | null
         }
         Update: {
+          category?: string | null
           created_at?: string
+          created_by?: string | null
           delivery_time?: string | null
           description?: string | null
           discount_amount?: number | null
           discount_percent?: number | null
           id?: string
           internal_notes?: string | null
+          is_active?: boolean
           is_default?: boolean | null
-          items_data?: Json | null
+          items?: Json | null
           name?: string
           notes?: string | null
           payment_terms?: string | null
           seller_id?: string
           template_data?: Json | null
           updated_at?: string
+          usage_count?: number
           validity_days?: number | null
         }
         Relationships: []
       }
       quotes: {
         Row: {
+          approval_token: string | null
+          approved_at: string | null
+          approved_by_client_name: string | null
+          assigned_to: string | null
           bitrix_deal_id: string | null
           bitrix_quote_id: string | null
           client_cnpj: string | null
           client_company: string | null
           client_email: string | null
+          client_feedback: string | null
           client_id: string | null
           client_name: string | null
           client_phone: string | null
           client_response: string | null
           client_response_at: string | null
           client_response_notes: string | null
+          conversion_notes: string | null
+          converted_at: string | null
+          converted_to_order_id: string | null
           created_at: string
+          created_by: string | null
           delivery_time: string | null
           discount_amount: number
           discount_percent: number
+          estimated_delivery_days: number | null
           id: string
           internal_notes: string | null
           is_latest_version: boolean
+          last_sent_at: string | null
           negotiation_markup_percent: number
           notes: string | null
           organization_id: string | null
           parent_quote_id: string | null
           payment_method: string | null
           payment_terms: string | null
+          priority: string | null
           quote_number: string
           real_discount_percent: number | null
           real_subtotal: number | null
           seller_id: string
           sent_at: string | null
           shipping_cost: number | null
+          shipping_method: string | null
           shipping_type: string | null
+          stage: string | null
           status: string
           subtotal: number
           synced_at: string | null
           synced_to_bitrix: boolean | null
+          tags: Json | null
+          tax_amount: number | null
           total: number
           updated_at: string
           valid_until: string | null
           version: number
+          view_count: number | null
+          viewed_at: string | null
         }
         Insert: {
+          approval_token?: string | null
+          approved_at?: string | null
+          approved_by_client_name?: string | null
+          assigned_to?: string | null
           bitrix_deal_id?: string | null
           bitrix_quote_id?: string | null
           client_cnpj?: string | null
           client_company?: string | null
           client_email?: string | null
+          client_feedback?: string | null
           client_id?: string | null
           client_name?: string | null
           client_phone?: string | null
           client_response?: string | null
           client_response_at?: string | null
           client_response_notes?: string | null
+          conversion_notes?: string | null
+          converted_at?: string | null
+          converted_to_order_id?: string | null
           created_at?: string
+          created_by?: string | null
           delivery_time?: string | null
           discount_amount?: number
           discount_percent?: number
+          estimated_delivery_days?: number | null
           id?: string
           internal_notes?: string | null
           is_latest_version?: boolean
+          last_sent_at?: string | null
           negotiation_markup_percent?: number
           notes?: string | null
           organization_id?: string | null
           parent_quote_id?: string | null
           payment_method?: string | null
           payment_terms?: string | null
+          priority?: string | null
           quote_number?: string
           real_discount_percent?: number | null
           real_subtotal?: number | null
           seller_id: string
           sent_at?: string | null
           shipping_cost?: number | null
+          shipping_method?: string | null
           shipping_type?: string | null
+          stage?: string | null
           status?: string
           subtotal?: number
           synced_at?: string | null
           synced_to_bitrix?: boolean | null
+          tags?: Json | null
+          tax_amount?: number | null
           total?: number
           updated_at?: string
           valid_until?: string | null
           version?: number
+          view_count?: number | null
+          viewed_at?: string | null
         }
         Update: {
+          approval_token?: string | null
+          approved_at?: string | null
+          approved_by_client_name?: string | null
+          assigned_to?: string | null
           bitrix_deal_id?: string | null
           bitrix_quote_id?: string | null
           client_cnpj?: string | null
           client_company?: string | null
           client_email?: string | null
+          client_feedback?: string | null
           client_id?: string | null
           client_name?: string | null
           client_phone?: string | null
           client_response?: string | null
           client_response_at?: string | null
           client_response_notes?: string | null
+          conversion_notes?: string | null
+          converted_at?: string | null
+          converted_to_order_id?: string | null
           created_at?: string
+          created_by?: string | null
           delivery_time?: string | null
           discount_amount?: number
           discount_percent?: number
+          estimated_delivery_days?: number | null
           id?: string
           internal_notes?: string | null
           is_latest_version?: boolean
+          last_sent_at?: string | null
           negotiation_markup_percent?: number
           notes?: string | null
           organization_id?: string | null
           parent_quote_id?: string | null
           payment_method?: string | null
           payment_terms?: string | null
+          priority?: string | null
           quote_number?: string
           real_discount_percent?: number | null
           real_subtotal?: number | null
           seller_id?: string
           sent_at?: string | null
           shipping_cost?: number | null
+          shipping_method?: string | null
           shipping_type?: string | null
+          stage?: string | null
           status?: string
           subtotal?: number
           synced_at?: string | null
           synced_to_bitrix?: boolean | null
+          tags?: Json | null
+          tax_amount?: number | null
           total?: number
           updated_at?: string
           valid_until?: string | null
           version?: number
+          view_count?: number | null
+          viewed_at?: string | null
         }
         Relationships: [
           {
@@ -5359,11 +5445,11 @@ export type Database = {
       }
       saved_filters: {
         Row: {
+          category: string
           color: string | null
-          context: string
           created_at: string
           description: string | null
-          filters: Json
+          filter_config: Json
           icon: string | null
           id: string
           is_default: boolean
@@ -5372,11 +5458,11 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          category?: string
           color?: string | null
-          context?: string
           created_at?: string
           description?: string | null
-          filters?: Json
+          filter_config?: Json
           icon?: string | null
           id?: string
           is_default?: boolean
@@ -5385,11 +5471,11 @@ export type Database = {
           user_id: string
         }
         Update: {
+          category?: string
           color?: string | null
-          context?: string
           created_at?: string
           description?: string | null
-          filters?: Json
+          filter_config?: Json
           icon?: string | null
           id?: string
           is_default?: boolean
@@ -5631,6 +5717,7 @@ export type Database = {
       }
       seller_discount_limits: {
         Row: {
+          approval_required_above: number | null
           created_at: string
           id: string
           max_discount_percent: number
@@ -5640,6 +5727,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          approval_required_above?: number | null
           created_at?: string
           id?: string
           max_discount_percent?: number
@@ -5649,6 +5737,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          approval_required_above?: number | null
           created_at?: string
           id?: string
           max_discount_percent?: number
@@ -6085,17 +6174,20 @@ export type Database = {
       }
       user_roles: {
         Row: {
-          id: string
+          created_at: string
+          granted_by: string | null
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
-          id?: string
+          created_at?: string
+          granted_by?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
-          id?: string
+          created_at?: string
+          granted_by?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
@@ -6600,9 +6692,11 @@ export type Database = {
       cleanup_expired_favorite_trash: { Args: never; Returns: number }
       cleanup_expired_public_comparisons: { Args: never; Returns: number }
       cleanup_expired_step_up: { Args: never; Returns: undefined }
+      cleanup_inbound_webhook_events: { Args: never; Returns: Json }
       cleanup_old_notifications: { Args: never; Returns: undefined }
       cleanup_rate_limits: { Args: never; Returns: undefined }
       cleanup_security_logs: { Args: never; Returns: Json }
+      cleanup_simulation_telemetry: { Args: never; Returns: Json }
       cleanup_webhook_logs: { Args: never; Returns: Json }
       clear_auth_attempts: { Args: { _email: string }; Returns: undefined }
       complete_optimization: {
@@ -6812,6 +6906,7 @@ export type Database = {
         Args: { window_minutes?: number }
         Returns: Json
       }
+      get_public_schema_signatures: { Args: never; Returns: Json }
       get_quote_token_by_value: {
         Args: { _token: string }
         Returns: {
@@ -7173,7 +7268,14 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "manager" | "vendedor" | "supervisor" | "dev"
+      app_role:
+        | "admin"
+        | "manager"
+        | "vendedor"
+        | "supervisor"
+        | "dev"
+        | "agente"
+        | "coordenador"
       conversation_event_type:
         | "text"
         | "image"
@@ -7331,7 +7433,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "manager", "vendedor", "supervisor", "dev"],
+      app_role: [
+        "admin",
+        "manager",
+        "vendedor",
+        "supervisor",
+        "dev",
+        "agente",
+        "coordenador",
+      ],
       conversation_event_type: [
         "text",
         "image",

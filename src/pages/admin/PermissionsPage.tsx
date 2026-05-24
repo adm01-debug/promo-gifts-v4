@@ -34,22 +34,29 @@ export default function PermissionsPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchPermissions();
+    // Guarda de cancelamento: evita setState após o unmount.
+    let cancelled = false;
+    fetchPermissions(() => cancelled);
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const fetchPermissions = async () => {
+  const fetchPermissions = async (isCancelled: () => boolean = () => false) => {
     try {
       const { data, error } = await supabase
         .from('permissions')
         .select('*')
         .order('category', { ascending: true });
 
+      if (isCancelled()) return;
       if (error) throw error;
       setPermissions(data || []);
     } catch (error: unknown) {
+      if (isCancelled()) return;
       toast({ title: 'Erro', description: error instanceof Error ? error.message : String(error), variant: 'destructive' });
     } finally {
-      setIsLoading(false);
+      if (!isCancelled()) setIsLoading(false);
     }
   };
 

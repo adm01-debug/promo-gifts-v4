@@ -90,16 +90,19 @@ describe('auth-utils', () => {
       vi.restoreAllMocks();
     });
 
-    it('works for all templates', () => {
-      const name = 'John';
-      FLOW_GREETINGS.forEach((_, index) => {
-        // Force specific template
+    it.each(FLOW_GREETINGS.map((_, index) => ({ index })))(
+      'works for template index $index',
+      ({ index }) => {
+        const name = 'John';
+        // Force specific template by mocking Math.random to a value that
+        // maps to this index. T-FIX-4: cada template é um caso isolado,
+        // se 1 quebrar os outros ainda rodam.
         vi.spyOn(Math, 'random').mockReturnValue(index / FLOW_GREETINGS.length + 0.01);
         const result = getRandomGreeting(name);
         expect(result).toContain(name);
         vi.restoreAllMocks();
-      });
-    });
+      }
+    );
 
     it('replaces greeting when present', () => {
       vi.setSystemTime(new Date(2024, 0, 1, 9, 0)); // 09:00 -> "Bom dia"

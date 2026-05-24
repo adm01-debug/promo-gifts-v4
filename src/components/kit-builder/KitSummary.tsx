@@ -3,7 +3,6 @@
  * Sub-components extracted to ./kit-summary/
  */
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { AlertTriangle } from 'lucide-react';
 import { KitMarginSimulator } from './KitMarginSimulator';
 import { KitVisualPreview } from './KitVisualPreview';

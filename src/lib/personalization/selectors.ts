@@ -11,7 +11,7 @@ import type {
   ColorOption,
   SizeOption,
   PriceTier,
-} from '@/pages/advanced-price-search/types';
+} from './types';
 
 // ============================================
 // TABLE SELECTION
@@ -33,25 +33,28 @@ export function selectBestTable(
   if (candidates.length === 0) return null;
 
   // Filtrar por nome da técnica
-  const { techniqueName, techniqueCode, colors, widthCm, heightCm } = criteria;
-  if (techniqueName) {
-    const needle = techniqueName.toLowerCase();
-    const byName = candidates.filter((t) => t.techniqueName.toLowerCase().includes(needle));
+  if (criteria.techniqueName) {
+    const techniqueName = criteria.techniqueName.toLowerCase();
+    const byName = candidates.filter((t) =>
+      t.techniqueName.toLowerCase().includes(techniqueName),
+    );
     if (byName.length > 0) candidates = byName;
   }
 
   // Filtrar por código da técnica
-  if (techniqueCode) {
-    const needle = techniqueCode.toLowerCase();
+  if (criteria.techniqueCode) {
+    const techniqueCode = criteria.techniqueCode.toLowerCase();
     const byCode = candidates.filter(
       (t) =>
-        t.tableCode.toLowerCase().includes(needle) || needle.includes(t.tableCode.toLowerCase()),
+        t.tableCode.toLowerCase().includes(techniqueCode) ||
+        techniqueCode.includes(t.tableCode.toLowerCase()),
     );
     if (byCode.length > 0) candidates = byCode;
   }
 
   // Ordenar por número de cores (preferir a que atende exatamente)
-  if (typeof colors === 'number') {
+  if (criteria.colors) {
+    const colors = criteria.colors;
     candidates.sort((a, b) => {
       const aFits = a.maxColors !== null && a.maxColors >= colors;
       const bFits = b.maxColors !== null && b.maxColors >= colors;
@@ -70,7 +73,9 @@ export function selectBestTable(
   }
 
   // Filtrar por dimensões
-  if (typeof widthCm === 'number' && typeof heightCm === 'number') {
+  if (criteria.widthCm && criteria.heightCm) {
+    const widthCm = criteria.widthCm;
+    const heightCm = criteria.heightCm;
     const byDimensions = candidates.filter(
       (t) =>
         (t.maxWidthCm === null || t.maxWidthCm >= widthCm) &&
@@ -106,12 +111,10 @@ export function groupTablesByTechnique(tables: PriceTableInput[]): Map<string, P
 
   for (const table of tables) {
     const key = table.techniqueName;
-    const arr = grouped.get(key);
-    if (arr) {
-      arr.push(table);
-    } else {
-      grouped.set(key, [table]);
+    if (!grouped.has(key)) {
+      grouped.set(key, []);
     }
+    grouped.get(key)?.push(table);
   }
 
   return grouped;

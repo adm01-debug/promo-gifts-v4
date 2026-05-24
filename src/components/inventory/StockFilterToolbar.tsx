@@ -58,7 +58,7 @@ interface StockFilterToolbarProps {
   filteredCount: number;
 }
 
-const STATUS_OPTIONS: { value: StockStatus | 'all'; label: string; icon: React.ReactNode; color: string }[] = [
+const _STATUS_OPTIONS: { value: StockStatus | 'all'; label: string; icon: React.ReactNode; color: string }[] = [
   { value: 'all', label: 'Todos', icon: <PackageCheck className="h-3.5 w-3.5" />, color: 'text-foreground' },
   { value: 'in_stock', label: 'Em Estoque', icon: <PackageCheck className="h-3.5 w-3.5" />, color: 'text-success' },
   { value: 'low_stock', label: 'Baixo', icon: <AlertTriangle className="h-3.5 w-3.5" />, color: 'text-warning' },

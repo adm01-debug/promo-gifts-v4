@@ -56,13 +56,14 @@ function DisabledPlaceholder() {
 function ClassificationCard({
   title,
   subtitle,
-  icon: Icon,
+  icon: iconComponent,
   iconColor,
   children,
   defaultOpen = false,
   disabled = false,
 }: ClassificationCardProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  const Icon = iconComponent;
 
   return (
     <Card
@@ -110,6 +111,7 @@ export default function ProductClassificationSection({
   onGenderChange,
 }: Props) {
   const showFullContent = isEdit && productId;
+  const savedProductId = showFullContent ? productId : undefined;
 
   return (
     <div className="space-y-4">
@@ -154,9 +156,9 @@ export default function ProductClassificationSection({
           defaultOpen={showFullContent}
           disabled={!showFullContent}
         >
-          {showFullContent ? (
+          {savedProductId ? (
             <ProductVariantsSection
-              productId={productId ?? ''}
+              productId={savedProductId}
               productName={productName}
               productSku={productSku}
             />
@@ -173,8 +175,8 @@ export default function ProductClassificationSection({
           iconColor="bg-success/10 text-success"
           disabled={!showFullContent}
         >
-          {showFullContent ? (
-            <ProductMaterialsSection productId={productId ?? ''} />
+          {savedProductId ? (
+            <ProductMaterialsSection productId={savedProductId} />
           ) : (
             <DisabledPlaceholder />
           )}
@@ -188,8 +190,8 @@ export default function ProductClassificationSection({
           iconColor="bg-orange/10 text-orange"
           disabled={!showFullContent}
         >
-          {showFullContent ? (
-            <ProductTagsSection productId={productId ?? ''} />
+          {savedProductId ? (
+            <ProductTagsSection productId={savedProductId} />
           ) : (
             <DisabledPlaceholder />
           )}
@@ -203,8 +205,8 @@ export default function ProductClassificationSection({
           iconColor="bg-info/10 text-info"
           disabled={!showFullContent}
         >
-          {showFullContent ? (
-            <ProductRamosSection productId={productId ?? ''} />
+          {savedProductId ? (
+            <ProductRamosSection productId={savedProductId} />
           ) : (
             <DisabledPlaceholder />
           )}
@@ -218,8 +220,8 @@ export default function ProductClassificationSection({
           iconColor="bg-destructive/10 text-destructive"
           disabled={!showFullContent}
         >
-          {showFullContent ? (
-            <ProductMarketingSection productId={productId ?? ''} />
+          {savedProductId ? (
+            <ProductMarketingSection productId={savedProductId} />
           ) : (
             <DisabledPlaceholder />
           )}

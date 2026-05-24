@@ -13,14 +13,12 @@
  *    Favoritar, Comparar, Coleção, Share, Orçamento, Carrinho, QuickView
  */
 import { memo, useState, useCallback, useRef, useEffect } from "react";
-import { Heart, GitCompare, Share2, Package, Building2, FolderPlus, Eye, FileText } from "lucide-react";
+import { Package, Building2 } from "lucide-react";
 import { NoveltyBadge } from "./NoveltyBadge";
 import { ListItemActions } from "./list-item/ListItemActions";
 import { useNavigate } from "react-router-dom";
 import { getCdnUrl } from "@/utils/image-utils";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { isLightColor, type ExternalVariantStock, type Product } from "@/hooks/products";
 import { toast } from "sonner";
@@ -31,7 +29,6 @@ import { resolveHighlightHex } from "@/utils/color-group-hex";
 import { PriceFreshnessBadge } from "./PriceFreshnessBadge";
 import { resolveAllMatchingColors } from "@/utils/color-variant-carousel";
 import { showUndoToast, showErrorToast } from "@/utils/undoToast";
-import { QuickAddToQuote } from "./QuickAddToQuote";
 import { AddToCollectionModal } from "@/components/collections/AddToCollectionModal";
 import { ProductQuickView } from "./ProductQuickView";
 import { SharePreviewDialog } from "./share/SharePreviewDialog";

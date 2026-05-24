@@ -35,14 +35,19 @@ function filterBoxes(
       (b) => b.name.toLowerCase().includes(q) || b.sku.toLowerCase().includes(q),
     );
   }
-  const minW = dimFilters?.minWidth;
-  const minH = dimFilters?.minHeight;
-  const minD = dimFilters?.minDepth;
-  const material = dimFilters?.material;
-  if (typeof minW === 'number') filtered = filtered.filter((b) => b.internalWidth >= minW);
-  if (typeof minH === 'number') filtered = filtered.filter((b) => b.internalHeight >= minH);
-  if (typeof minD === 'number') filtered = filtered.filter((b) => b.internalDepth >= minD);
-  if (material) filtered = filtered.filter((b) => b.material === material);
+  if (dimFilters?.minWidth) {
+    const minWidth = dimFilters.minWidth;
+    filtered = filtered.filter((b) => b.internalWidth >= minWidth);
+  }
+  if (dimFilters?.minHeight) {
+    const minHeight = dimFilters.minHeight;
+    filtered = filtered.filter((b) => b.internalHeight >= minHeight);
+  }
+  if (dimFilters?.minDepth) {
+    const minDepth = dimFilters.minDepth;
+    filtered = filtered.filter((b) => b.internalDepth >= minDepth);
+  }
+  if (dimFilters?.material) filtered = filtered.filter((b) => b.material === dimFilters.material);
   return filtered;
 }
 
@@ -131,7 +136,7 @@ export function useKitBuilderQueries() {
           .filter((box): box is KitBox => box !== null);
 
         if (boxes.length === 0) {
-          console.info('[KitBuilder] No boxes from external DB, using mock data');
+          logger.info('[KitBuilder] No boxes from external DB, using mock data');
           return filterBoxes(MOCK_BOXES, debouncedBoxSearch, boxDimFilters);
         }
 
@@ -169,7 +174,7 @@ export function useKitBuilderQueries() {
           .map((p) => transformToKitItem(p));
 
         if (items.length === 0) {
-          console.info('[KitBuilder] No items from external DB, using mock data');
+          logger.info('[KitBuilder] No items from external DB, using mock data');
           return filterItems(MOCK_ITEMS, debouncedItemSearch);
         }
 

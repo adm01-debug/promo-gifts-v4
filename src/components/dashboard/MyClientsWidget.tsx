@@ -112,6 +112,7 @@ function aggregate(
 
 export function MyClientsWidget() {
   const { user } = useAuth();
+  const userId = user?.id;
   const navigate = useNavigate();
   const [filters, setFilters] = useState<WidgetFiltersValue>(EMPTY_FILTERS);
 
@@ -119,13 +120,12 @@ export function MyClientsWidget() {
   // depois acompanha a janela conforme novos quotes chegam (best-effort:
   // usamos um cursor compartilhado por updated_at).
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
-    queryKey: ['my-clients-widget', user?.id],
-    enabled: !!user?.id,
+    queryKey: ['my-clients-widget', userId],
+    enabled: !!userId,
     staleTime: 60_000,
     initialPageParam: null as string | null,
     queryFn: async ({ pageParam }) => {
-      const userId = user?.id;
-      if (!userId) throw new Error('MyClientsWidget: user not authenticated');
+      if (!userId) return { quotes: [], orders: [] };
       const baseQuotes = supabase
         .from('quotes')
         .select('client_name, client_company, client_email, client_phone, total, updated_at')

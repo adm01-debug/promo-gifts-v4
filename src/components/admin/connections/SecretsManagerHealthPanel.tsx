@@ -344,6 +344,7 @@ export function SecretsManagerHealthPanel({ className }: { className?: string })
 }
 
 function SampleRow({ sample }: { sample: SecretsManagerCallSample }) {
+  const requestId = sample.requestId;
   const tone = sample.ok
     ? 'border-success/30 bg-success/5'
     : 'border-destructive/40 bg-destructive/5';
@@ -377,14 +378,12 @@ function SampleRow({ sample }: { sample: SecretsManagerCallSample }) {
           · {sample.errorMessage}
         </span>
       )}
-      {sample.requestId && (
+      {requestId && (
         <button
           type="button"
           onClick={() => {
-            const reqId = sample.requestId;
-            if (!reqId) return;
-            navigator.clipboard.writeText(reqId).then(
-              () => toast.success('request_id copiado', { description: reqId }),
+            navigator.clipboard.writeText(requestId).then(
+              () => toast.success('request_id copiado', { description: requestId }),
               () => toast.error('Não foi possível copiar'),
             );
           }}
@@ -392,7 +391,7 @@ function SampleRow({ sample }: { sample: SecretsManagerCallSample }) {
           title="Copiar request_id"
         >
           <Copy className="h-3 w-3" />
-          {sample.requestId.slice(0, 8)}…
+          {requestId.slice(0, 8)}…
         </button>
       )}
     </li>

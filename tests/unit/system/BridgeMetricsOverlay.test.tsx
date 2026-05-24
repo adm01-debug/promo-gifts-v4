@@ -40,14 +40,12 @@ describe('BridgeMetricsOverlay', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // O componente lê `isDev` (não `isAllowed`) para o early-return.
-    // Mock devolve ambos para cobrir a API real do hook.
     (useDevGate as any).mockReturnValue({ isAllowed: true, isDev: true });
     (useBridgeMetrics as any).mockReturnValue(defaultMockValues);
   });
 
   it('não deve renderizar nada se isAllowed for false', () => {
-    (useDevGate as any).mockReturnValue({ isAllowed: false, isDev: false });
+    (useDevGate as any).mockReturnValue({ isAllowed: false, isDev: true });
     const { container } = render(<BridgeMetricsOverlay />);
     expect(container.firstChild).toBeNull();
   });

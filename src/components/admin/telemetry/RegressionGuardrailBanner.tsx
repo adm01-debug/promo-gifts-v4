@@ -190,10 +190,10 @@ function MetricDelta({
   unit = '%',
   inverted,
 }: MetricDeltaProps) {
-  const numericDelta = typeof deltaPct === 'number' && !Number.isNaN(deltaPct) ? deltaPct : null;
-  const hasDelta = numericDelta !== null;
-  const isBad = hasDelta && (inverted ? numericDelta > 0 : numericDelta < 0);
-  const isGood = hasDelta && (inverted ? numericDelta < 0 : numericDelta > 0);
+  const hasDelta = deltaPct !== undefined && deltaPct !== null && !Number.isNaN(deltaPct);
+  const delta = hasDelta ? deltaPct : 0;
+  const isBad = hasDelta && (inverted ? delta > 0 : delta < 0);
+  const isGood = hasDelta && (inverted ? delta < 0 : delta > 0);
 
   return (
     <div className="rounded-md border border-border/40 bg-background/50 p-2">
@@ -211,8 +211,8 @@ function MetricDelta({
             !isBad && !isGood && 'text-muted-foreground',
           )}
         >
-          {numericDelta > 0 ? '+' : ''}
-          {numericDelta}
+          {delta > 0 ? '+' : ''}
+          {delta}
           {unit}
         </p>
       )}

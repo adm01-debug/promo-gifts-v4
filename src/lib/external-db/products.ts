@@ -138,11 +138,7 @@ export async function fetchPromobrindProducts(options?: {
       // Reduce page size aggressively because the external products table is timing out under larger ranges
       const pageSize = offset >= 1000 ? 125 : BASE_PAGE_SIZE;
       const countMode: 'planned' | 'none' = shouldRequestCount && offset === 0 ? 'planned' : 'none';
-      // `page` é sempre definido até o `if (typeof page.count...)` mais abaixo
-      // — todos os caminhos do try/catch ou atribuem (sucesso/fallback) ou
-      // continuam/quebram o loop. Defensivamente inicializamos com null e
-      // checamos antes de usar para o TS rastrear a invariante.
-      let page: InvokeResult<PromobrindProduct> | null = null;
+      let page: InvokeResult<PromobrindProduct>;
       try {
         page = await invokeExternalDb<PromobrindProduct>({
           table: 'products',
@@ -205,7 +201,7 @@ export async function fetchPromobrindProducts(options?: {
         }
       }
 
-      if (!page) break; // segurança extra; em prática nunca chega aqui sem `page`
+      if (!page) break;
       if (typeof page.count === 'number') loopCount = page.count;
       products.push(...page.records);
       offset += page.records.length;
@@ -388,7 +384,9 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
 
   imagesRecords.forEach((img) => {
     if (!productIdSet.has(img.product_id)) return;
-    const entry = {
+    const productImages = imagesByProduct.get(img.product_id) ?? [];
+    imagesByProduct.set(img.product_id, productImages);
+    productImages.push({
       url: img.url_cdn,
       urlOriginal: img.url_original || null,
       filename: img.filename || null,
@@ -401,10 +399,7 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
       altText: img.alt_text || null,
       titleText: img.title_text || null,
       variantId: img.variant_id || null,
-    };
-    const arr = imagesByProduct.get(img.product_id);
-    if (arr) arr.push(entry);
-    else imagesByProduct.set(img.product_id, [entry]);
+    });
   });
 
   // Build color map
@@ -426,11 +421,8 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
 
   variantsRecords.forEach((variant) => {
     if (!variant.color_name || !productIds.includes(variant.product_id)) return;
-    let colors = colorsByProduct.get(variant.product_id);
-    if (!colors) {
-      colors = [];
-      colorsByProduct.set(variant.product_id, colors);
-    }
+    const colors = colorsByProduct.get(variant.product_id) ?? [];
+    colorsByProduct.set(variant.product_id, colors);
     if (colors.some((c) => c.name === variant.color_name)) return;
 
     const productImgs = imagesByProduct.get(variant.product_id) || [];

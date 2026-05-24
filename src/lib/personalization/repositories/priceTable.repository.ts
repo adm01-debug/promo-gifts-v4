@@ -87,12 +87,12 @@ export async function findAll(options: PriceTableQueryOptions = {}): Promise<Tab
   let tabelas = transformRawToTabelas(result.records);
 
   // Filtros pós-query (não suportados diretamente)
-  const maxColors = filters?.maxColors;
-  const minColors = filters?.minColors;
-  if (typeof maxColors === 'number') {
+  if (filters?.maxColors !== undefined) {
+    const maxColors = filters.maxColors;
     tabelas = tabelas.filter((t) => t.maxCores !== null && t.maxCores <= maxColors);
   }
-  if (typeof minColors === 'number') {
+  if (filters?.minColors !== undefined) {
+    const minColors = filters.minColors;
     tabelas = tabelas.filter((t) => t.maxCores !== null && t.maxCores >= minColors);
   }
 

@@ -4,7 +4,15 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Check, ChevronsUpDown, ChevronRight, FolderOpen, Folder, X, ArrowLeft } from 'lucide-react';
+import {
+  Check,
+  ChevronsUpDown,
+  ChevronRight,
+  FolderOpen,
+  Folder,
+  X,
+  ArrowLeft,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface CategorySelectProps {
@@ -37,7 +45,7 @@ export function CategorySelect({ value, onChange, error }: CategorySelectProps) 
     // Second pass: link children
     for (const node of map.values()) {
       if (node.parent_id && map.has(node.parent_id)) {
-        map.get(node.parent_id)!.children.push(node);
+        map.get(node.parent_id)?.children.push(node);
       } else {
         roots.push(node);
       }
@@ -58,11 +66,14 @@ export function CategorySelect({ value, onChange, error }: CategorySelectProps) 
   }, [categories]);
 
   // Get full breadcrumb for a category id
-  const getFullBreadcrumb = useCallback((catId: string): string => {
-    const node = nodeMap.get(catId);
-    if (!node) return '';
-    return node.fullPath.join(' › ');
-  }, [nodeMap]);
+  const getFullBreadcrumb = useCallback(
+    (catId: string): string => {
+      const node = nodeMap.get(catId);
+      if (!node) return '';
+      return node.fullPath.join(' › ');
+    },
+    [nodeMap],
+  );
 
   // Breadcrumb for current navigation level
   const navigationBreadcrumb = useMemo((): CategoryNode[] => {
@@ -88,7 +99,10 @@ export function CategorySelect({ value, onChange, error }: CategorySelectProps) 
     const q = search.toLowerCase();
     const results: CategoryNode[] = [];
     for (const node of nodeMap.values()) {
-      if (node.name.toLowerCase().includes(q) || node.fullPath.join(' ').toLowerCase().includes(q)) {
+      if (
+        node.name.toLowerCase().includes(q) ||
+        node.fullPath.join(' ').toLowerCase().includes(q)
+      ) {
         results.push(node);
       }
     }
@@ -98,10 +112,7 @@ export function CategorySelect({ value, onChange, error }: CategorySelectProps) 
   const isSearching = search.length > 0;
   const displayItems = isSearching ? searchResults : currentItems;
 
-  const selected = useMemo(
-    () => categories.find(c => c.id === value),
-    [categories, value]
-  );
+  const selected = useMemo(() => categories.find((c) => c.id === value), [categories, value]);
 
   const handleSelect = (catId: string) => {
     onChange(catId);
@@ -140,7 +151,7 @@ export function CategorySelect({ value, onChange, error }: CategorySelectProps) 
             className={cn(
               'w-full justify-between font-normal',
               !value && 'text-muted-foreground',
-              error && 'border-destructive'
+              error && 'border-destructive',
             )}
           >
             <span className="flex items-center gap-2 truncate">
@@ -162,11 +173,11 @@ export function CategorySelect({ value, onChange, error }: CategorySelectProps) 
         </PopoverTrigger>
         <PopoverContent className="w-[420px] p-0" align="start">
           {/* Search */}
-          <div className="p-2 border-b border-border">
+          <div className="border-b border-border p-2">
             <Input
               placeholder="Buscar categoria..."
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               className="h-8"
               autoFocus
             />
@@ -174,29 +185,30 @@ export function CategorySelect({ value, onChange, error }: CategorySelectProps) 
 
           {/* Breadcrumb navigation */}
           {!isSearching && currentParentId && (
-            <div className="px-2 py-1.5 border-b border-border flex items-center gap-1 text-xs text-muted-foreground overflow-x-auto">
+            <div className="flex items-center gap-1 overflow-x-auto border-b border-border px-2 py-1.5 text-xs text-muted-foreground">
               <button
                 type="button"
-                className="shrink-0 p-0.5 rounded hover:bg-accent transition-colors"
+                className="shrink-0 rounded p-0.5 transition-colors hover:bg-accent"
                 onClick={handleBack}
-               aria-label="Voltar">
+                aria-label="Voltar"
+              >
                 <ArrowLeft className="h-3.5 w-3.5" />
               </button>
               <button
                 type="button"
-                className="shrink-0 hover:text-foreground transition-colors"
+                className="shrink-0 transition-colors hover:text-foreground"
                 onClick={() => setCurrentParentId(null)}
               >
                 Raiz
               </button>
               {navigationBreadcrumb.map((node, i) => (
-                <span key={node.id} className="flex items-center gap-1 shrink-0">
+                <span key={node.id} className="flex shrink-0 items-center gap-1">
                   <ChevronRight className="h-3 w-3 text-muted-foreground/50" />
                   <button
                     type="button"
                     className={cn(
-                      'hover:text-foreground transition-colors truncate max-w-[120px]',
-                      i === navigationBreadcrumb.length - 1 && 'text-foreground font-medium'
+                      'max-w-[120px] truncate transition-colors hover:text-foreground',
+                      i === navigationBreadcrumb.length - 1 && 'font-medium text-foreground',
                     )}
                     onClick={() => setCurrentParentId(node.id)}
                   >
@@ -211,13 +223,13 @@ export function CategorySelect({ value, onChange, error }: CategorySelectProps) 
           <ScrollArea className="h-[280px]">
             <div className="p-1">
               {isLoading ? (
-                <p className="text-sm text-muted-foreground text-center py-4">Carregando...</p>
+                <p className="py-4 text-center text-sm text-muted-foreground">Carregando...</p>
               ) : displayItems.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
+                <p className="py-4 text-center text-sm text-muted-foreground">
                   {isSearching ? 'Nenhuma categoria encontrada' : 'Sem subcategorias'}
                 </p>
               ) : (
-                displayItems.map(node => {
+                displayItems.map((node) => {
                   const hasChildren = node.children.length > 0;
                   const isSelected = value === node.id;
 
@@ -225,17 +237,22 @@ export function CategorySelect({ value, onChange, error }: CategorySelectProps) 
                     <div
                       key={node.id}
                       className={cn(
-                        'flex items-center rounded-sm hover:bg-accent transition-colors',
-                        isSelected && 'bg-accent'
+                        'flex items-center rounded-sm transition-colors hover:bg-accent',
+                        isSelected && 'bg-accent',
                       )}
                     >
                       {/* Select button */}
                       <button
                         type="button"
-                        className="flex-1 flex items-center gap-2 px-2 py-1.5 text-sm text-left min-w-0"
+                        className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-left text-sm"
                         onClick={() => handleSelect(node.id)}
                       >
-                        <Check className={cn('h-4 w-4 shrink-0', isSelected ? 'opacity-100' : 'opacity-0')} />
+                        <Check
+                          className={cn(
+                            'h-4 w-4 shrink-0',
+                            isSelected ? 'opacity-100' : 'opacity-0',
+                          )}
+                        />
                         {hasChildren ? (
                           <Folder className="h-3.5 w-3.5 shrink-0 text-primary/70" />
                         ) : (
@@ -259,7 +276,7 @@ export function CategorySelect({ value, onChange, error }: CategorySelectProps) 
                       {hasChildren && !isSearching && (
                         <button
                           type="button"
-                          className="shrink-0 px-2 py-1.5 text-muted-foreground hover:text-foreground transition-colors"
+                          className="shrink-0 px-2 py-1.5 text-muted-foreground transition-colors hover:text-foreground"
                           onClick={() => handleNavigate(node.id)}
                           title={`Ver ${node.children.length} subcategorias`}
                         >
@@ -279,14 +296,19 @@ export function CategorySelect({ value, onChange, error }: CategorySelectProps) 
               <button
                 type="button"
                 className={cn(
-                  'w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent text-left',
-                  value === currentParentId && 'bg-accent'
+                  'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent',
+                  value === currentParentId && 'bg-accent',
                 )}
                 onClick={() => handleSelect(currentParentId)}
               >
-                <Check className={cn('h-4 w-4 shrink-0', value === currentParentId ? 'opacity-100' : 'opacity-0')} />
+                <Check
+                  className={cn(
+                    'h-4 w-4 shrink-0',
+                    value === currentParentId ? 'opacity-100' : 'opacity-0',
+                  )}
+                />
                 <span className="text-muted-foreground">Selecionar "</span>
-                <span className="font-medium truncate">{nodeMap.get(currentParentId)?.name}</span>
+                <span className="truncate font-medium">{nodeMap.get(currentParentId)?.name}</span>
                 <span className="text-muted-foreground">"</span>
               </button>
             </div>

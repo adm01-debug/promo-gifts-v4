@@ -39,18 +39,16 @@ export function ProductAwareLink({
   const navigate = useNavigate();
   const [imgError, setImgError] = useState(false);
 
-  // Detect product links — both produto:// protocol AND /produto/ paths.
-  // Captura `href` em const para narrow após o check inicial sobreviver.
-  const hrefValue = href ?? '';
-  const isProductProtocol = hrefValue.startsWith(PRODUCT_HREF_PREFIX);
-  const productPathMatch = hrefValue.match(/^\/produto\/([a-f0-9-]+)/i);
+  // Detect product links — both produto:// protocol AND /produto/ paths
+  const isProductProtocol = href?.startsWith(PRODUCT_HREF_PREFIX);
+  const isProductPath = href?.match(/^\/produto\/([a-f0-9-]+)/i);
 
-  if (isProductProtocol || productPathMatch) {
+  if (isProductProtocol || isProductPath) {
     let productId: string;
     let imageUrl: string | null = null;
 
-    if (isProductProtocol) {
-      const urlPart = hrefValue.slice(PRODUCT_HREF_PREFIX.length);
+    if (isProductProtocol && href) {
+      const urlPart = href.slice(PRODUCT_HREF_PREFIX.length);
       const [id, fragment] = urlPart.split('#');
       productId = id;
       if (fragment?.startsWith('img=')) {
@@ -60,10 +58,10 @@ export function ProductAwareLink({
           /* ignore */
         }
       }
-    } else if (productPathMatch) {
-      productId = productPathMatch[1];
+    } else if (isProductPath?.[1]) {
+      productId = isProductPath[1];
     } else {
-      return null;
+      productId = '';
     }
 
     // Extract name from children (strip the 🔗 emoji)
@@ -112,13 +110,13 @@ export function ProductAwareLink({
 
   // Regular link — render as normal anchor, but internal links stay in same tab
   const isInternal = href?.startsWith('/');
-  if (isInternal && href) {
+  if (isInternal) {
     return (
       <a
         href={href}
         onClick={(e) => {
           e.preventDefault();
-          navigate(href);
+          if (href) navigate(href);
         }}
         {...props}
       >

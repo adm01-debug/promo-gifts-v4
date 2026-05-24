@@ -26,17 +26,30 @@ import {
 import { getErrorCopy, getKindBadgeClass, getKindLabel } from '@/lib/connection-error-copy';
 import { maskSensitiveText } from '@/lib/sensitive-masking';
 
+/** Estado pré-computado de detalhes (saída de `useConnectionTestDetails`). */
+export interface ConnectionTestDetailsState {
+  details: TestDetails | null;
+  loading: boolean;
+  error?: string | null;
+  refetch?: () => Promise<unknown>;
+}
+
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  connectionType: ConnectionType;
-  connectionLabel: string;
+  connectionType?: ConnectionType;
+  connectionLabel?: string;
   envKey?: 'promobrind' | 'crm';
   connectionId?: string;
   /** Quando presente, abre os detalhes deste registro específico do histórico. */
   historyId?: string;
   /** Callback opcional: quando provido, mostra o botão "Ver histórico completo" no header. */
   onViewFullHistory?: () => void;
+  /**
+   * Estado já carregado por um hook externo. Quando provido, o diálogo usa
+   * estes dados em vez de buscar internamente (evita dupla requisição).
+   */
+  state?: ConnectionTestDetailsState;
 }
 
 const TRIGGER_META: Record<TestDetails['triggered_by'], { label: string; Icon: typeof User }> = {
@@ -131,14 +144,17 @@ export function ConnectionTestDetailsDialog({
   connectionId,
   historyId,
   onViewFullHistory,
+  state,
 }: Props) {
-  const { details, loading } = useConnectionTestDetails({
-    open,
-    type: connectionType,
+  const internal = useConnectionTestDetails({
+    open: open && !state,
+    type: connectionType ?? 'n8n',
     envKey,
     connectionId,
     historyId,
   });
+  const details = state ? state.details : internal.details;
+  const loading = state ? state.loading : internal.loading;
 
   const [tab, setTab] = useState<'resumo' | 'http' | 'timing' | 'resposta'>('resumo');
   const [bodyExpanded, setBodyExpanded] = useState(false);
@@ -202,9 +218,11 @@ export function ConnectionTestDetailsDialog({
               <Clock className="h-5 w-5 text-muted-foreground" />
             )}
             Detalhes do último teste
-            <Badge variant="outline" className="ml-2">
-              {connectionLabel}
-            </Badge>
+            {connectionLabel && (
+              <Badge variant="outline" className="ml-2">
+                {connectionLabel}
+              </Badge>
+            )}
             {onViewFullHistory && (
               <Button
                 variant="ghost"

@@ -3,7 +3,7 @@
  * Fire-and-forget — does not throw or block the UI.
  */
 import { supabase } from "@/integrations/supabase/client";
-import type { VoiceAgentAction } from "@/pages/advanced-price-search/types";
+import type { VoiceAgentAction } from "./types";
 
 export function logVoiceCommand(
   action: VoiceAgentAction,

@@ -10,7 +10,7 @@ import type {
   PriceCalculationParams,
   PriceCalculationResult,
   PrintArea,
-} from "@/pages/advanced-price-search/types";
+} from "./types";
 
 // ============================================
 // PRICE CALCULATION

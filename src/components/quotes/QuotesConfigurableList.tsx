@@ -142,6 +142,12 @@ export function QuotesConfigurableList({
     return quotes.slice(start, start + pageSize);
   }, [quotes, safePage, pageSize]);
 
+  // ── Visualizações pelo cliente (apenas página atual, performance) ──
+  const selectablePaginatedQuotes = useMemo(
+    () => paginatedQuotes.filter((q): q is Quote & { id: string } => Boolean(q.id)),
+    [paginatedQuotes],
+  );
+
   // ── Bulk selection (operates on paginated items) ──
   const {
     selectedIds,
@@ -151,7 +157,7 @@ export function QuotesConfigurableList({
     clearSelection,
     isSelected,
     isAllSelected,
-  } = useBulkSelection(paginatedQuotes as (Quote & { id: string })[]);
+  } = useBulkSelection(selectablePaginatedQuotes);
 
   // "Select ALL across all pages" state
   const [allPagesSelected, setAllPagesSelected] = useState(false);
@@ -168,7 +174,7 @@ export function QuotesConfigurableList({
 
   const effectiveSelectedCount = allPagesSelected ? quotes.length : selectedCount;
   const effectiveSelectedIds = allPagesSelected
-    ? quotes.map((q) => q.id).filter((id): id is string => !!id)
+    ? quotes.map((q) => q.id).filter((id): id is string => Boolean(id))
     : selectedIds;
 
   // Reset allPagesSelected when page/selection changes
@@ -186,7 +192,7 @@ export function QuotesConfigurableList({
       columnOrder
         .filter((id) => !hiddenColumns.has(id))
         .map((id) => ALL_COLUMNS.find((c) => c.id === id))
-        .filter((c): c is (typeof ALL_COLUMNS)[number] => c !== undefined),
+        .filter((column): column is ColumnDef => Boolean(column)),
     [columnOrder, hiddenColumns],
   );
 
@@ -341,28 +347,27 @@ export function QuotesConfigurableList({
 
         {/* Rows */}
         {paginatedQuotes.map((quote) => {
-          // `id` é PK no BD; o tipo de Quote o marca como opcional para
-          // suportar pré-criação. Aqui filtramos rows sem id antes do render.
           const quoteId = quote.id;
-          if (!quoteId) return null;
+          const selected = Boolean(quoteId && isSelected(quoteId)) || allPagesSelected;
+
           return (
             <div
-              key={quoteId}
+              key={quoteId ?? quote.quote_number}
               className={`group grid cursor-pointer items-center gap-4 border-b border-border/40 px-4 py-3 transition-all duration-150 hover:border-l-2 hover:border-l-primary/60 hover:bg-muted/40 ${
-                isSelected(quoteId) || allPagesSelected
-                  ? 'border-l-2 border-l-primary bg-primary/5'
-                  : ''
+                selected ? 'border-l-2 border-l-primary bg-primary/5' : ''
               }`}
               style={{ gridTemplateColumns: gridTemplate }}
-              onClick={() => navigate(`/orcamentos/${quoteId}`)}
+              onClick={() => navigate(`/orcamentos/${quote.id}`)}
             >
               <div
                 className="flex items-center justify-center"
                 onClick={(e) => e.stopPropagation()}
               >
                 <Checkbox
-                  checked={isSelected(quoteId) || allPagesSelected}
+                  checked={selected}
+                  disabled={!quoteId}
                   onCheckedChange={() => {
+                    if (!quoteId) return;
                     if (allPagesSelected) {
                       setAllPagesSelected(false);
                       toggleAll();
@@ -411,13 +416,17 @@ export function QuotesConfigurableList({
                     <DropdownMenuItem onClick={() => navigate(`/orcamentos/${quote.id}/editar`)}>
                       <Edit className="mr-2 h-4 w-4" /> Editar
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onDuplicate(quoteId)}>
+                    <DropdownMenuItem
+                      disabled={!quoteId}
+                      onClick={() => quoteId && onDuplicate(quoteId)}
+                    >
                       <Copy className="mr-2 h-4 w-4" /> Duplicar
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       className="text-destructive"
-                      onClick={() => onDelete(quoteId)}
+                      disabled={!quoteId}
+                      onClick={() => quoteId && onDelete(quoteId)}
                     >
                       <Trash2 className="mr-2 h-4 w-4" /> Excluir
                     </DropdownMenuItem>

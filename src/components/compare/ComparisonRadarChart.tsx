@@ -3,7 +3,7 @@
  * Eixos: Preço (invertido), Estoque, Variedade de cores, Qtd mínima (invertido), Lead time (invertido).
  */
 import { useMemo } from "react";
-import type { Product } from "@/types/product";
+import type { Product } from "@/types/product-catalog";
 import {
   Radar,
   RadarChart,

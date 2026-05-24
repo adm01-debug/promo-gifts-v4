@@ -44,9 +44,9 @@ describe('quoteService', () => {
 
     const fromMock = supabase.from as any;
     
-    // First call: quotes
+    // First call: quotes — produção usa .select('*').eq('id').single()
     fromMock.mockReturnValueOnce({
-      select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: mockQuote, error: null }) }) }) })
+      select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: mockQuote, error: null }) }) })
     });
     // Second call: items
     fromMock.mockReturnValueOnce({
@@ -57,7 +57,7 @@ describe('quoteService', () => {
       select: () => ({ in: () => Promise.resolve({ data: mockPers, error: null }) })
     });
 
-    const quote = await quoteService.fetchQuote('q-1', 'user-123');
+    const quote = await quoteService.fetchQuote('q-1');
     
     expect(quote?.id).toBe('q-1');
     expect(quote?.items).toHaveLength(1);

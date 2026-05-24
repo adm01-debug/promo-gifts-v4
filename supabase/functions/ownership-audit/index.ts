@@ -10,12 +10,18 @@ import { authorizeCron } from "../_shared/dispatcher-auth.ts";
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { castRpcResult } from "../_shared/supabase-client-adapter.ts";
+import { parseContract } from "../_shared/contracts/index.ts";
+import {
+  OwnershipAuditSchemas,
+} from "../_shared/contracts/schemas/ownership-audit.ts";
 
 // Module-scope CORS headers — atribuído per-request no handler.
 let corsHeaders: Record<string, string> = {};
+let contractResponseHeaders: Record<string, string> = {};
 
 Deno.serve(async (req) => {
   corsHeaders = getCorsHeaders(req);
+  contractResponseHeaders = {};
   if (req.method === "OPTIONS") return new Response(null, { headers: getCorsHeaders(req) });
 
   // Cron: exige x-cron-secret para evitar chamadas diretas não autorizadas
@@ -33,13 +39,12 @@ Deno.serve(async (req) => {
       return json({ error: "missing_env" }, 500);
     }
 
-    let triggeredBy = "cron";
-    try {
-      const body = await req.json();
-      if (body && typeof body.triggered_by === "string") triggeredBy = body.triggered_by;
-    } catch {
-      // sem body — ok, usa default "cron"
-    }
+    const contractResult = await parseContract(req, OwnershipAuditSchemas, {
+      corsHeaders,
+    });
+    if (!contractResult.ok) return contractResult.response;
+    contractResponseHeaders = contractResult.responseHeaders;
+    const triggeredBy = contractResult.data.triggered_by ?? "cron";
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false },
@@ -99,6 +104,6 @@ Deno.serve(async (req) => {
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...corsHeaders, ...contractResponseHeaders, "Content-Type": "application/json" },
   });
 }

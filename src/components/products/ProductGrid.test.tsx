@@ -45,7 +45,7 @@ vi.mock('@/components/products/share/SharePreviewDialog', () => ({
 // Mock CDN and image utility
 vi.mock('@/utils/cdn-utils', () => ({
   getCdnUrl: (url: string) => url,
-  getSrcSet: (url: string) => undefined,
+  getSrcSet: (_url: string) => undefined,
 }));
 
 const queryClient = new QueryClient({

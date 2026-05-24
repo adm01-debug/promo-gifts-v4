@@ -29,22 +29,30 @@ export default function RolesPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchRoles();
+    // Guarda de cancelamento: evita setState após o unmount (em testes, o
+    // await pode resolver depois do teardown e vazar "window is not defined").
+    let cancelled = false;
+    fetchRoles(() => cancelled);
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const fetchRoles = async () => {
+  const fetchRoles = async (isCancelled: () => boolean = () => false) => {
     try {
       const { data, error } = await supabase
         .from('roles')
         .select('*')
         .order('name');
 
+      if (isCancelled()) return;
       if (error) throw error;
       setRoles(data || []);
     } catch (error: unknown) {
+      if (isCancelled()) return;
       toast({ title: 'Erro', description: error instanceof Error ? error.message : String(error), variant: 'destructive' });
     } finally {
-      setIsLoading(false);
+      if (!isCancelled()) setIsLoading(false);
     }
   };
 

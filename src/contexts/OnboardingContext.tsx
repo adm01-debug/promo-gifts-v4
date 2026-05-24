@@ -18,12 +18,9 @@ export function useOnboardingContext(): OnboardingContextType {
   return ctx;
 }
 
-/**
- * Variante segura para componentes que podem renderizar antes do
- * <OnboardingProvider /> (ex.: Sidebar, Spotlight, atalhos globais).
- * Retorna `null` em vez de lançar — assim os callers param de embrulhar
- * o hook em try/catch (anti-pattern que viola react-hooks/rules-of-hooks).
- */
+// Variante opcional: retorna null quando o provider não existe (componentes
+// que querem degradar a feature em vez de falhar). Substitui o padrão
+// `try { useOnboardingContext() } catch {}` que violava rules-of-hooks.
 export function useOptionalOnboardingContext(): OnboardingContextType | null {
   return useContext(OnboardingContext);
 }

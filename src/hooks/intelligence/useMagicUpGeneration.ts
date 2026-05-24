@@ -124,16 +124,13 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
   const handleGenerate = useCallback(
     async (batchVariant?: MagicUpBatchVariant) => {
       if (!canGenerate) return;
-      // `canGenerate` (linha 61) já verificou os 4 campos abaixo; capturamos em
-      // locais para que o type-narrow sobreviva ao callback de payload.
       const selectedProduct = deps.selectedProduct;
       const logoPreview = deps.logoPreview;
-      const effectivePrompt = deps.effectivePrompt;
-      if (!selectedProduct || !logoPreview || !effectivePrompt || !deps.currentImage) return;
+      if (!selectedProduct || !logoPreview) return;
 
       setGenerating(true);
       const log = createClientLogger('magicUp.generate', {
-        base: { productId: selectedProduct.id, channel: deps.brief.channel },
+        base: { productId: deps.selectedProduct?.id, channel: deps.brief.channel },
       });
       log.info('generate_start', { batch: batchVariant?.id ?? null });
       try {
@@ -149,7 +146,7 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
           ? { ...deps.creativeControls, aspectRatio: batchVariant.aspectRatio }
           : deps.creativeControls;
         const variantPrompt = [
-          batchVariant?.scenePrompt || effectivePrompt,
+          batchVariant?.scenePrompt || deps.effectivePrompt,
           batchVariant?.refinementInstruction || deps.activeRefinement?.instruction,
         ]
           .filter(Boolean)
@@ -393,15 +390,14 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
           const canvas = document.createElement('canvas');
           const img = new Image();
           img.crossOrigin = 'anonymous';
-          await new Promise<void>((resolve) => {
+          const imageUrl = URL.createObjectURL(blob);
+          await new Promise<void>((resolve, reject) => {
             img.onload = () => {
               canvas.width = img.width;
               canvas.height = img.height;
               const ctx = canvas.getContext('2d');
               if (!ctx) {
-                // jsdom / contexto bloqueado — propaga o blob original sem flatten.
-                finalBlob = blob;
-                resolve();
+                reject(new Error('Canvas 2D context is unavailable'));
                 return;
               }
               ctx.fillStyle = '#FFFFFF';
@@ -409,14 +405,21 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
               ctx.drawImage(img, 0, 0);
               canvas.toBlob(
                 (b) => {
-                  if (b) finalBlob = b;
+                  if (!b) {
+                    reject(new Error('Failed to convert image to JPEG'));
+                    return;
+                  }
+                  finalBlob = b;
                   resolve();
                 },
                 'image/jpeg',
                 0.85,
               );
             };
-            img.src = URL.createObjectURL(blob);
+            img.onerror = () => reject(new Error('Failed to load image for JPEG conversion'));
+            img.src = imageUrl;
+          }).finally(() => {
+            URL.revokeObjectURL(imageUrl);
           });
         }
         const url = URL.createObjectURL(finalBlob);

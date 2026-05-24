@@ -1,6 +1,5 @@
 import { differenceInDays, parseISO, isValid } from "date-fns";
 import { AlertTriangle, Clock, CheckCircle2 } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface QuoteValidityBannerProps {
   validUntil?: string;

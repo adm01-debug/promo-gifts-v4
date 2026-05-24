@@ -83,7 +83,9 @@ export function NicheRecommendationBadge({
   const recommendation = useMemo(() => {
     if (!clientRamo && !clientNicho) return null;
 
-    const searchTerms = [clientRamo, clientNicho].flatMap((t) => (t ? [t.toLowerCase()] : []));
+    const searchTerms = [clientRamo, clientNicho]
+      .filter((t): t is string => Boolean(t))
+      .map((t) => t.toLowerCase());
 
     for (const term of searchTerms) {
       for (const [key, value] of Object.entries(NICHE_TECHNIQUE_MAP)) {
@@ -150,7 +152,9 @@ export function useNicheRecommendations(
       };
     }
 
-    const searchTerms = [clientRamo, clientNicho].flatMap((t) => (t ? [t.toLowerCase()] : []));
+    const searchTerms = [clientRamo, clientNicho]
+      .filter((t): t is string => Boolean(t))
+      .map((t) => t.toLowerCase());
 
     const allRecommendedCodes: string[] = [];
     let reason: string | null = null;

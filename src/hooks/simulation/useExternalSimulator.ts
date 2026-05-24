@@ -178,9 +178,9 @@ export function useExternalProductSearch(searchQuery: string) {
           imagesResult.records.forEach((img) => {
             if (!productIdSet.has(img.product_id)) return;
 
-            const arr = imagesByProduct.get(img.product_id);
-            if (arr) arr.push(img);
-            else imagesByProduct.set(img.product_id, [img]);
+            const productImages = imagesByProduct.get(img.product_id) ?? [];
+            imagesByProduct.set(img.product_id, productImages);
+            productImages.push(img);
           });
 
           // Enriquecer produtos com imagens
@@ -372,9 +372,9 @@ export function useExternalProductsList(options?: {
           imagesResult.records.forEach((img) => {
             if (!productIdSet.has(img.product_id)) return;
 
-            const arr = imagesByProduct.get(img.product_id);
-            if (arr) arr.push(img);
-            else imagesByProduct.set(img.product_id, [img]);
+            const productImages = imagesByProduct.get(img.product_id) ?? [];
+            imagesByProduct.set(img.product_id, productImages);
+            productImages.push(img);
           });
 
           // Enriquecer produtos com imagens

@@ -174,12 +174,13 @@ function QuoteCard({ quote, isDragging }: QuoteCardProps) {
 }
 
 interface SortableQuoteCardProps {
-  quote: Quote & { id: string };
+  quote: Quote;
 }
 
 function SortableQuoteCard({ quote }: SortableQuoteCardProps) {
+  const sortableId = quote.id ?? `quote-${quote.quote_number}`;
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: quote.id,
+    id: sortableId,
   });
 
   const style = {
@@ -196,12 +197,13 @@ function SortableQuoteCard({ quote }: SortableQuoteCardProps) {
 
 interface KanbanColumnProps {
   column: Column;
-  quotes: (Quote & { id: string })[];
+  quotes: Quote[];
   totalValue: number;
 }
 
 function KanbanColumn({ column, quotes, totalValue }: KanbanColumnProps) {
   const Icon = column.icon;
+  const sortableQuoteIds = quotes.map((q) => q.id).filter((id): id is string => Boolean(id));
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -230,7 +232,7 @@ function KanbanColumn({ column, quotes, totalValue }: KanbanColumnProps) {
       </Card>
 
       <ScrollArea className="max-h-[calc(100vh-320px)] min-h-[400px] flex-1">
-        <SortableContext items={quotes.map((q) => q.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext items={sortableQuoteIds} strategy={verticalListSortingStrategy}>
           <div className="space-y-2 p-1">
             {quotes.map((quote) => (
               <SortableQuoteCard key={quote.id} quote={quote} />
@@ -264,7 +266,7 @@ export function QuoteKanbanBoard({ quotes }: QuoteKanbanBoardProps) {
   );
 
   const quotesByStatus = useMemo(() => {
-    const grouped: Record<string, (Quote & { id: string })[]> = {
+    const grouped: Record<string, Quote[]> = {
       draft: [],
       pending_approval: [],
       pending: [],
@@ -275,15 +277,12 @@ export function QuoteKanbanBoard({ quotes }: QuoteKanbanBoardProps) {
     };
 
     quotes.forEach((quote) => {
-      // Apenas orçamentos com PK definida entram no board (DnD precisa de id estável).
-      if (!quote.id) return;
-      const withId = quote as Quote & { id: string };
       if (grouped[quote.status]) {
-        grouped[quote.status].push(withId);
+        grouped[quote.status].push(quote);
       }
     });
 
-    return grouped as Record<QuoteStatus, (Quote & { id: string })[]>;
+    return grouped as Record<QuoteStatus, Quote[]>;
   }, [quotes]);
 
   const totalsByStatus = useMemo(() => {
@@ -322,7 +321,7 @@ export function QuoteKanbanBoard({ quotes }: QuoteKanbanBoardProps) {
     if (!over) return;
 
     const activeQuote = quotes.find((q) => q.id === active.id);
-    if (!activeQuote || !activeQuote.id) return;
+    if (!activeQuote) return;
 
     // Find target column - check if dropped on column or another card
     let targetStatus: QuoteStatus | null = null;
@@ -358,6 +357,7 @@ export function QuoteKanbanBoard({ quotes }: QuoteKanbanBoardProps) {
         return;
       }
 
+      if (!activeQuote.id) return;
       const success = await updateQuoteStatus(activeQuote.id, targetStatus);
       if (success) {
         toast.success('Status atualizado!', {

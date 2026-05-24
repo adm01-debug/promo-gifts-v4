@@ -12,13 +12,13 @@ import { useSupplierComparison } from '@/hooks/products/useSupplierComparison';
 describe('useSupplierComparison', () => {
   it('should return null when no product is provided', () => {
     const { result } = renderHook(() => useSupplierComparison(null));
-    expect(result.current.data).toBeNull();
+    expect(result.current.result).toBeNull();
     expect(result.current.isLoading).toBe(false);
   });
 
   it('should return null when undefined product is provided', () => {
     const { result } = renderHook(() => useSupplierComparison(undefined));
-    expect(result.current.data).toBeNull();
+    expect(result.current.result).toBeNull();
     expect(result.current.isLoading).toBe(false);
   });
 });
