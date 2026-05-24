@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Package, AlertTriangle } from "lucide-react";
 import { replenishmentToProduct, useReplenishmentsSelectionMode, useReplenishmentsWithDetails } from "@/hooks/products";
 import { getDefaultColumns, type ColumnCount } from "@/components/products/ColumnSelector";
