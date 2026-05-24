@@ -3,6 +3,7 @@ name: E2E (Playwright)
 # Job opcional: roda os specs públicos sempre; specs autenticados só se
 # E2E_USER_EMAIL/E2E_USER_PASSWORD estiverem configurados como secrets do repo.
 # Artefatos (relatório HTML, screenshots, vídeos, traces) são publicados.
+# T14 UPDATE 13 (2026-05-24): corrige if: conditions inválidas (test -f → steps.outcome)
 
 on:
   push:
