@@ -5,7 +5,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { KitTemplateRow } from "@/hooks/kit-builder/useKitTemplates";
+import { sanitizeError } from '@/lib/security/sanitize-error';
+import type { KitTemplateRow } from '@/hooks/kit-builder/useKitTemplates';
 
 const QUERY_KEY = ['admin-kit-templates'] as const;
 
@@ -38,9 +39,7 @@ export function useAdminKitTemplates() {
           .eq('id', id);
         if (error) throw error;
       } else {
-        const { error } = await supabase
-          .from('kit_templates')
-          .insert(payload as never);
+        const { error } = await supabase.from('kit_templates').insert(payload as never);
         if (error) throw error;
       }
     },
@@ -49,7 +48,7 @@ export function useAdminKitTemplates() {
       queryClient.invalidateQueries({ queryKey: ['kit-templates'] });
       toast.success('Template salvo');
     },
-    onError: (err: Error) => toast.error(`Erro: ${err.message}`),
+    onError: (err: Error) => toast.error('Operação falhou', { description: sanitizeError(err) }),
   });
 
   const deleteMutation = useMutation({

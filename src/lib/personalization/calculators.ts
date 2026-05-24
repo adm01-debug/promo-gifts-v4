@@ -1,6 +1,6 @@
 /**
  * Domain Calculators: Personalização
- * 
+ *
  * Funções puras para cálculo de preços, sem side effects.
  */
 
@@ -10,7 +10,11 @@ import type {
   PriceCalculationParams,
   PriceCalculationResult,
   PrintArea,
+<<<<<<< HEAD
+} from './types';
+=======
 } from "./types";
+>>>>>>> origin/main
 
 // ============================================
 // PRICE CALCULATION
@@ -21,25 +25,25 @@ import type {
  */
 export function calculatePrice(
   table: PriceTableInput,
-  params: PriceCalculationParams
+  params: PriceCalculationParams,
 ): PriceCalculationResult {
   const { quantity, colors, widthCm, heightCm } = params;
-  
+
   // 1. Encontrar a faixa de preço correta
   const tier = findPriceTier(table.tiers, quantity);
-  
+
   if (!tier) {
     throw new Error(`Nenhuma faixa de preço encontrada para quantidade ${quantity}`);
   }
-  
+
   // 2. Calcular preço unitário base
   let unitPrice = tier.unitPrice;
-  
+
   // 3. Ajustar por número de cores (se aplicável)
   if (table.priceByColor && colors && table.maxColors) {
     unitPrice = adjustPriceByColors(unitPrice, colors, table.maxColors);
   }
-  
+
   // 4. Ajustar por área (se aplicável)
   if (table.priceByArea && widthCm && heightCm) {
     unitPrice = adjustPriceByArea(
@@ -47,26 +51,27 @@ export function calculatePrice(
       widthCm,
       heightCm,
       table.maxWidthCm,
-      table.maxHeightCm
+      table.maxHeightCm,
     );
   }
-  
+
   // 5. Calcular totais
   const subtotal = unitPrice * quantity;
   const grandTotal = subtotal + table.setupPrice + table.handlingPrice;
-  
+
   // 6. Calcular economia vs primeira faixa
   const savings = calculateTierSavings(table.tiers, tier, unitPrice, quantity);
-  
+
   // 7. Montar área máxima
-  const maxArea: PrintArea | null = table.maxWidthCm && table.maxHeightCm
-    ? {
-        widthCm: table.maxWidthCm,
-        heightCm: table.maxHeightCm,
-        areaCm2: table.maxWidthCm * table.maxHeightCm,
-      }
-    : null;
-  
+  const maxArea: PrintArea | null =
+    table.maxWidthCm && table.maxHeightCm
+      ? {
+          widthCm: table.maxWidthCm,
+          heightCm: table.maxHeightCm,
+          areaCm2: table.maxWidthCm * table.maxHeightCm,
+        }
+      : null;
+
   return {
     tableId: table.id,
     tableCode: table.tableCodeOption,
@@ -90,13 +95,13 @@ export function calculatePrice(
  */
 export function findPriceTier(tiers: PriceTier[], quantity: number): PriceTier | null {
   if (tiers.length === 0) return null;
-  
+
   // Ordenar por quantidade mínima
   const sortedTiers = [...tiers].sort((a, b) => a.minQuantity - b.minQuantity);
-  
+
   // Encontrar a maior faixa que a quantidade atinge
   let selectedTier = sortedTiers[0];
-  
+
   for (const tier of sortedTiers) {
     if (quantity >= tier.minQuantity) {
       selectedTier = tier;
@@ -104,7 +109,7 @@ export function findPriceTier(tiers: PriceTier[], quantity: number): PriceTier |
       break;
     }
   }
-  
+
   return selectedTier;
 }
 
@@ -115,12 +120,12 @@ export function findPriceTier(tiers: PriceTier[], quantity: number): PriceTier |
 export function adjustPriceByColors(
   basePrice: number,
   requestedColors: number,
-  tableMaxColors: number
+  tableMaxColors: number,
 ): number {
   if (requestedColors <= tableMaxColors) {
     return basePrice;
   }
-  
+
   // Preço proporcional para cores extras
   const colorFactor = requestedColors / tableMaxColors;
   return basePrice * colorFactor;
@@ -135,17 +140,17 @@ export function adjustPriceByArea(
   requestedWidth: number,
   requestedHeight: number,
   maxWidth: number | null,
-  maxHeight: number | null
+  maxHeight: number | null,
 ): number {
   if (!maxWidth || !maxHeight) return basePrice;
-  
+
   const requestedArea = requestedWidth * requestedHeight;
   const maxArea = maxWidth * maxHeight;
-  
+
   if (requestedArea <= maxArea) {
     return basePrice;
   }
-  
+
   // Preço proporcional para área extra
   const areaFactor = requestedArea / maxArea;
   return basePrice * areaFactor;
@@ -158,20 +163,20 @@ function calculateTierSavings(
   tiers: PriceTier[],
   currentTier: PriceTier,
   currentUnitPrice: number,
-  quantity: number
+  quantity: number,
 ): PriceCalculationResult['savings'] {
   if (tiers.length === 0) return undefined;
-  
+
   const firstTier = [...tiers].sort((a, b) => a.minQuantity - b.minQuantity)[0];
   const firstTierPrice = firstTier.unitPrice;
-  
+
   const savingsPerUnit = firstTierPrice - currentUnitPrice;
-  
+
   if (savingsPerUnit <= 0) return undefined;
-  
+
   const totalSavings = savingsPerUnit * quantity;
   const percentOff = (savingsPerUnit / firstTierPrice) * 100;
-  
+
   return {
     perUnit: savingsPerUnit,
     total: totalSavings,
@@ -185,14 +190,12 @@ function calculateTierSavings(
 export function calculateSavings(
   originalUnitPrice: number,
   discountedUnitPrice: number,
-  quantity: number
+  quantity: number,
 ): { perUnit: number; total: number; percentOff: number } {
   const perUnit = originalUnitPrice - discountedUnitPrice;
   const total = perUnit * quantity;
-  const percentOff = originalUnitPrice > 0 
-    ? Math.round((perUnit / originalUnitPrice) * 100)
-    : 0;
-  
+  const percentOff = originalUnitPrice > 0 ? Math.round((perUnit / originalUnitPrice) * 100) : 0;
+
   return { perUnit, total, percentOff };
 }
 
@@ -205,8 +208,8 @@ export function calculateSavings(
  */
 export function getMinimumQuantity(tiers: PriceTier[]): number {
   if (tiers.length === 0) return 1;
-  
-  return Math.min(...tiers.map(t => t.minQuantity));
+
+  return Math.min(...tiers.map((t) => t.minQuantity));
 }
 
 /**
@@ -214,7 +217,7 @@ export function getMinimumQuantity(tiers: PriceTier[]): number {
  */
 export function getMaximumQuantity(tiers: PriceTier[]): number | null {
   if (tiers.length === 0) return null;
-  
+
   const lastTier = [...tiers].sort((a, b) => b.minQuantity - a.minQuantity)[0];
   return lastTier.maxQuantity;
 }
@@ -224,21 +227,22 @@ export function getMaximumQuantity(tiers: PriceTier[]): number | null {
  */
 export function suggestNextTier(
   tiers: PriceTier[],
-  currentQuantity: number
+  currentQuantity: number,
 ): { quantity: number; savingsPercent: number } | null {
   const currentTier = findPriceTier(tiers, currentQuantity);
   if (!currentTier) return null;
-  
+
   const sortedTiers = [...tiers].sort((a, b) => a.minQuantity - b.minQuantity);
-  const currentIndex = sortedTiers.findIndex(t => t.tier === currentTier.tier);
-  
+  const currentIndex = sortedTiers.findIndex((t) => t.tier === currentTier.tier);
+
   if (currentIndex === -1 || currentIndex >= sortedTiers.length - 1) {
     return null;
   }
-  
+
   const nextTier = sortedTiers[currentIndex + 1];
-  const savingsPercent = ((currentTier.unitPrice - nextTier.unitPrice) / currentTier.unitPrice) * 100;
-  
+  const savingsPercent =
+    ((currentTier.unitPrice - nextTier.unitPrice) / currentTier.unitPrice) * 100;
+
   return {
     quantity: nextTier.minQuantity,
     savingsPercent: Math.round(savingsPercent),
@@ -252,9 +256,7 @@ export function suggestNextTier(
 /**
  * Calcula preço para múltiplas técnicas (gravação em várias posições)
  */
-export function calculateMultiTechniquePrice(
-  calculations: PriceCalculationResult[]
-): {
+export function calculateMultiTechniquePrice(calculations: PriceCalculationResult[]): {
   subtotal: number;
   totalSetup: number;
   totalHandling: number;
@@ -265,7 +267,7 @@ export function calculateMultiTechniquePrice(
   const totalSetup = calculations.reduce((sum, c) => sum + c.setupPrice, 0);
   const totalHandling = calculations.reduce((sum, c) => sum + c.handlingPrice, 0);
   const totalSavings = calculations.reduce((sum, c) => sum + (c.savings?.total ?? 0), 0);
-  
+
   return {
     subtotal,
     totalSetup,

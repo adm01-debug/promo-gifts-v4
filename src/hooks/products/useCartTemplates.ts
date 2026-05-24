@@ -2,10 +2,11 @@
  * useCartTemplates - Salvar e carregar templates de carrinho reutilizáveis
  */
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 
 export interface CartTemplateItem {
   product_id: string;
@@ -28,7 +29,7 @@ export interface CartTemplate {
   updated_at: string;
 }
 
-const QUERY_KEY = "cart-templates";
+const QUERY_KEY = 'cart-templates';
 
 export function useCartTemplates() {
   const { user } = useAuth();
@@ -40,12 +41,12 @@ export function useCartTemplates() {
     queryFn: async () => {
       if (!userId) return [];
       const { data, error } = await supabase
-        .from("cart_templates")
-        .select("*")
-        .eq("user_id", userId)
-        .order("updated_at", { ascending: false });
+        .from('cart_templates')
+        .select('*')
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false });
       if (error) throw error;
-      return (data || []).map(t => ({
+      return (data || []).map((t) => ({
         ...t,
         items: (t.items as unknown as CartTemplateItem[]) || [],
       }));
@@ -54,9 +55,17 @@ export function useCartTemplates() {
   });
 
   const saveTemplate = useMutation({
-    mutationFn: async ({ name, description, items }: { name: string; description?: string; items: CartTemplateItem[] }) => {
-      if (!userId) throw new Error("Não autenticado");
-      const { error } = await supabase.from("cart_templates").insert({
+    mutationFn: async ({
+      name,
+      description,
+      items,
+    }: {
+      name: string;
+      description?: string;
+      items: CartTemplateItem[];
+    }) => {
+      if (!userId) throw new Error('Não autenticado');
+      const { error } = await supabase.from('cart_templates').insert({
         user_id: userId,
         name,
         description: description || null,
@@ -66,19 +75,19 @@ export function useCartTemplates() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-      toast.success("Template salvo com sucesso");
+      toast.success('Template salvo com sucesso');
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) => toast.error('Operação falhou', { description: sanitizeError(err) }),
   });
 
   const deleteTemplate = useMutation({
     mutationFn: async (templateId: string) => {
-      const { error } = await supabase.from("cart_templates").delete().eq("id", templateId);
+      const { error } = await supabase.from('cart_templates').delete().eq('id', templateId);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-      toast.success("Template excluído");
+      toast.success('Template excluído');
     },
   });
 

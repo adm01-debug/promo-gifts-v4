@@ -4,7 +4,6 @@ import { getCorsHeaders } from "../_shared/cors.ts";
  * Envia emails transacionais para eventos do sistema.
  * Suporta: quote_sent, quote_approved, quote_rejected, order_created.
  */
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { parseContract } from "../_shared/contracts/index.ts";
 import {
@@ -129,7 +128,7 @@ function buildEmailContent(event: EmailRequest): { subject: string; html: string
   }
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: getCorsHeaders(req) });
   }

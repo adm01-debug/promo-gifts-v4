@@ -7,12 +7,10 @@ import {
   Edit2, 
   RefreshCw, 
   Trash2, 
-  Send, 
   CheckCircle, 
   XCircle,
   Clock,
   Package,
-  Upload,
   FileText,
   AlertTriangle,
   Zap

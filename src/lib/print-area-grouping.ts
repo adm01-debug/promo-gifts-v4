@@ -9,7 +9,7 @@
  * - Estatísticas e resumos
  * - Detecção de área máxima por grupo
  */
-import type { PrintAreaWithTechniques, GroupedPrintArea } from "@/types/gravacao";
+import type { PrintAreaWithTechniques, GroupedPrintArea } from '@/types/gravacao';
 
 // ============================================
 // AGRUPAMENTO PRINCIPAL
@@ -19,35 +19,35 @@ import type { PrintAreaWithTechniques, GroupedPrintArea } from "@/types/gravacao
  * Agrupa áreas de impressão/personalização por componente → localização → técnicas.
  * Áreas sem componente são agrupadas sob "Produto" (default).
  */
-export function groupPrintAreasByComponent(
-  areas: PrintAreaWithTechniques[]
-): GroupedPrintArea[] {
+export function groupPrintAreasByComponent(areas: PrintAreaWithTechniques[]): GroupedPrintArea[] {
   if (!areas.length) return [];
 
-  const componentMap = new Map<string, Map<string, GroupedPrintArea["locations"][number]["techniques"]>>();
+  const componentMap = new Map<
+    string,
+    Map<string, GroupedPrintArea['locations'][number]['techniques']>
+  >();
 
   for (const area of areas) {
-    const compName = area.component_name || "Produto";
-    const locName = area.location_name || area.area_name || "Padrão";
+    const compName = area.component_name || 'Produto';
+    const locName = area.location_name || area.area_name || 'Padrão';
 
-    if (!componentMap.has(compName)) {
-      componentMap.set(compName, new Map());
-    }
-    const locMap = componentMap.get(compName)!;
-
-    if (!locMap.has(locName)) {
-      locMap.set(locName, []);
+    let locMap = componentMap.get(compName);
+    if (!locMap) {
+      locMap = new Map();
+      componentMap.set(compName, locMap);
     }
 
-    const techniques = locMap.get(locName)!;
+    let techniques = locMap.get(locName);
+    if (!techniques) {
+      techniques = [];
+      locMap.set(locName, techniques);
+    }
 
     for (const tech of area.techniques) {
       const code = tech.codigo;
 
       // Deduplicação: evita técnica duplicada na mesma localização+área
-      const isDuplicate = techniques.some(
-        (t) => t.techniqueCode === code && t.id === area.area_id
-      );
+      const isDuplicate = techniques.some((t) => t.techniqueCode === code && t.id === area.area_id);
       if (isDuplicate) continue;
 
       techniques.push({
@@ -71,12 +71,12 @@ export function groupPrintAreasByComponent(
   const grouped: GroupedPrintArea[] = [];
 
   for (const [compName, locMap] of componentMap) {
-    const locations: GroupedPrintArea["locations"] = [];
+    const locations: GroupedPrintArea['locations'] = [];
 
     for (const [locName, techniques] of locMap) {
       locations.push({
         locationName: locName,
-        locationCode: locName.toLowerCase().replace(/\s+/g, "-"),
+        locationCode: locName.toLowerCase().replace(/\s+/g, '-'),
         techniques,
       });
     }
@@ -92,15 +92,15 @@ export function groupPrintAreasByComponent(
 
     grouped.push({
       componentName: compName,
-      componentCode: compName.toLowerCase().replace(/\s+/g, "-"),
+      componentCode: compName.toLowerCase().replace(/\s+/g, '-'),
       locations,
     });
   }
 
   // Sort: "Produto" first, then alphabetical
   grouped.sort((a, b) => {
-    if (a.componentName === "Produto") return -1;
-    if (b.componentName === "Produto") return 1;
+    if (a.componentName === 'Produto') return -1;
+    if (b.componentName === 'Produto') return 1;
     return a.componentName.localeCompare(b.componentName);
   });
 
@@ -131,7 +131,7 @@ export function getUniqueTechniques(groups: GroupedPrintArea[]): string[] {
  */
 export function filterGroupsByTechnique(
   groups: GroupedPrintArea[],
-  techniqueCode: string
+  techniqueCode: string,
 ): GroupedPrintArea[] {
   return groups
     .map((g) => ({
@@ -151,7 +151,7 @@ export function filterGroupsByTechnique(
  */
 export function filterGroupsByComponent(
   groups: GroupedPrintArea[],
-  componentName: string
+  componentName: string,
 ): GroupedPrintArea[] {
   return groups.filter((g) => g.componentName === componentName);
 }
@@ -294,7 +294,7 @@ export function summarizeGroups(groups: GroupedPrintArea[]): PrintAreaSummary {
  * Encontra a maior área disponível (em cm²) entre todos os grupos.
  */
 export function findLargestArea(
-  groups: GroupedPrintArea[]
+  groups: GroupedPrintArea[],
 ): { componentName: string; locationName: string; areaCm2: number } | null {
   let largest: { componentName: string; locationName: string; areaCm2: number } | null = null;
 

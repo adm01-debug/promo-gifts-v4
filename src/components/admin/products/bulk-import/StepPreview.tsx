@@ -122,16 +122,28 @@ export function StepPreview({
                 </TableCell>
                 <TableCell className="font-mono text-xs">
                   {r.data?.sku ||
+<<<<<<< HEAD
+                    rawData[r.row - 1]?.[
+                      Object.entries(mapping).find(([, v]) => v === 'sku')?.[0] || ''
+                    ] ||
+=======
                     (rawData[r.row - 1]?.[
                       Object.entries(mapping).find(([, v]) => v === 'sku')?.[0] || ''
                     ] as string) ||
+>>>>>>> origin/main
                     '—'}
                 </TableCell>
                 <TableCell className="max-w-[180px] truncate text-sm">
                   {r.data?.name ||
+<<<<<<< HEAD
+                    rawData[r.row - 1]?.[
+                      Object.entries(mapping).find(([, v]) => v === 'name')?.[0] || ''
+                    ] ||
+=======
                     (rawData[r.row - 1]?.[
                       Object.entries(mapping).find(([, v]) => v === 'name')?.[0] || ''
                     ] as string) ||
+>>>>>>> origin/main
                     '—'}
                 </TableCell>
                 <TableCell className="text-sm tabular-nums">

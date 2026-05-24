@@ -16,8 +16,8 @@ export type {
   SimulatorState,
   SimulationScenario,
   SimulationResult,
-  ProductColor,
 } from './domain';
+export type { ProductColor } from './product';
 
 // ============================================
 // TIPOS LEGADOS (para compatibilidade)

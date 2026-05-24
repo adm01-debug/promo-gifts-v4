@@ -1,14 +1,20 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * 🚀 PREFETCH CORE CHUNKS: Warm up the next predicted routes for instant feel.
  *
  * Triggers eager `import()` on contextually likely-next pages based on
  * current pathname. Has no DOM output — returns null.
+ *
+ * IMPORTANTE: Só pré-carrega chunks de rotas PROTEGIDAS quando o usuário
+ * está autenticado. Visitantes anônimos não devem baixar bundles que
+ * só serão usados após login (economia de banda + UX).
  */
 export function RoutePrefetcher() {
   const { pathname } = useLocation();
+  const { user } = useAuth();
 
   useEffect(() => {
     type ConnectionInfo = {
@@ -30,6 +36,16 @@ export function RoutePrefetcher() {
       return;
     }
 
+    // Anonymous visitors: only prefetch Auth chunk (entry point).
+    // Don't waste bandwidth on protected dashboard chunks they can't reach.
+    if (!user) {
+      if (pathname !== '/auth' && pathname !== '/login') {
+        import('@/pages/auth/Auth');
+      }
+      return;
+    }
+
+    // Authenticated users: prefetch likely-next protected routes.
     if (pathname === '/auth' || pathname === '/login') {
       // Prefetch dashboard early
       import('@/pages/Index');
@@ -52,7 +68,7 @@ export function RoutePrefetcher() {
     }, 2500);
 
     return () => clearTimeout(timeoutId);
-  }, [pathname]);
+  }, [pathname, user]);
 
   return null;
 }
