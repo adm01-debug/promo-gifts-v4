@@ -82,7 +82,11 @@
     "test:stress": "node scripts/massive-load-test.mjs",
     "test:fuzz:full": "node scripts/fuzz-testing.mjs",
     "test:contract": "node scripts/contract-testing.mjs",
-    "check:proposed-configs": "node scripts/check-eslint-config-current.mjs --strict"
+    "check:proposed-configs": "node scripts/check-eslint-config-current.mjs --strict",
+    "coverage:report": "node scripts/generate-coverage-report.mjs",
+    "coverage:report:check": "node scripts/generate-coverage-report.mjs --check",
+    "test:edge:integration:all": "TZ=America/Sao_Paulo vitest run tests/edge-functions/integration/ --reporter=verbose",
+    "test:fuzz:dry": "node scripts/fuzz-testing.mjs"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [

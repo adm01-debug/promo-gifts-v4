@@ -270,6 +270,25 @@ jobs:
         continue-on-error: true
         run: npm run check:critical-coverage
 
+      # Gera relatório de cobertura por módulo e por rota (após coverage-summary.json existir).
+      # Informativo: não bloqueia o build mas é publicado como artifact para análise de gaps.
+      - name: Generate Per-Module & Per-Route Coverage Report
+        if: always()
+        continue-on-error: true
+        run: node scripts/generate-coverage-report.mjs
+
+      - name: Upload per-module coverage report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: module-coverage-report-${{ github.run_id }}
+          path: |
+            coverage/module-coverage-report.json
+            coverage/route-coverage-report.json
+            coverage/coverage-report.md
+          retention-days: 30
+          if-no-files-found: ignore
+
   integration-tests:
     name: Edge Integration & Fuzzing
     runs-on: ubuntu-latest
@@ -283,8 +302,17 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Run Fuzz Testing (Massive)
+
+      # Testes de integração mocked para todas as edge functions críticas.
+      # Cobre: health-check, cnpj-lookup, webhook-inbound, secure-upload,
+      # send-notification, validate-access, generate-mockup, quote-sync.
+      - name: Run Edge Function Integration Tests (mocked)
+        run: npx vitest run tests/edge-functions/integration/ --reporter=verbose
+
+      - name: Run Fuzz Testing (Massive — dry-run sem credenciais)
         run: npm run test:fuzz:full
+        env:
+          FUZZ_CONCURRENCY: "3"
       - name: Run Contract Testing (Schema Validation)
         shell: bash
         run: |
@@ -301,13 +329,26 @@ jobs:
           else
             echo "Skipping stress test: Supabase URL/token not configured."
           fi
-      - name: Run Edge Integration Tests (Mocked Env)
+      - name: Run Legacy Edge Integration Tests (Mocked Env)
         run: |
           npm run test:edge:integration || true
       # Report-only: gera artifact JSON/HTML sem aplicar thresholds globais.
       # Gates reais ficam em jobs dedicados (per-file).
-      - name: Generate Coverage Report
-        run: npm run test:ci-core:coverage
+      - name: Generate Coverage Report (JSON/HTML)
+        run: >-
+          npx vitest run --coverage
+          --coverage.reporter=json
+          --coverage.reporter=html
+          --coverage.thresholds.lines=0
+          --coverage.thresholds.functions=0
+          --coverage.thresholds.branches=0
+          --coverage.thresholds.statements=0
+      # Gera relatório por módulo/rota a partir do coverage-summary.json produzido acima.
+      - name: Generate Per-Module & Per-Route Coverage Report
+        if: always()
+        continue-on-error: true
+        run: node scripts/generate-coverage-report.mjs
+
       - name: Upload Coverage Artifacts
         uses: actions/upload-artifact@v5
         with:
