@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-05-23T21:25:07.115Z",
-  "total": 173,
+  "generated_at": "2026-05-25T17:25:14.449Z",
+  "total": 101,
   "entries": [
     {
       "file": "src/components/admin/DiscountApprovalQueue.tsx",
@@ -8,23 +8,8 @@
       "snippet": "onError: (e: Error) => toast.error(e.message),"
     },
     {
-      "file": "src/components/admin/MockupPromptManager.tsx",
-      "line": 55,
-      "snippet": "} catch (err: unknown) { toast.error(\"Erro ao carregar configurações\", { description: err instanceof Error ? err.message : undefined }); }"
-    },
-    {
-      "file": "src/components/admin/MockupPromptManager.tsx",
-      "line": 73,
-      "snippet": "} catch (err: unknown) { toast.error(\"Erro ao salvar\", { description: err instanceof Error ? err.message : undefined }); }"
-    },
-    {
-      "file": "src/components/admin/MockupPromptManager.tsx",
-      "line": 99,
-      "snippet": "} catch (err: unknown) { toast.error(\"Erro ao criar prompt\", { description: err instanceof Error ? err.message : undefined }); }"
-    },
-    {
       "file": "src/components/admin/SellerDiscountLimitsPanel.tsx",
-      "line": 67,
+      "line": 75,
       "snippet": "onError: (e: Error) => toast.error(e.message),"
     },
     {
@@ -36,11 +21,6 @@
       "file": "src/components/admin/connections/AutoTestIntervalCard.tsx",
       "line": 54,
       "snippet": "description: error.message.includes(\"forbidden\")"
-    },
-    {
-      "file": "src/components/admin/connections/ConnectionsOverviewTable.tsx",
-      "line": 204,
-      "snippet": "toast.error(\"Não foi possível atualizar o auto-teste\", { description: error.message });"
     },
     {
       "file": "src/components/admin/connections/CredentialCacheMetricsPanel.tsx",
@@ -69,7 +49,7 @@
     },
     {
       "file": "src/components/admin/connections/LastSyncRunPanel.tsx",
-      "line": 66,
+      "line": 75,
       "snippet": "toast.error(`Falha ao executar sync: ${error.message}`);"
     },
     {
@@ -86,26 +66,6 @@
       "file": "src/components/admin/connections/RefreshFromDbButton.tsx",
       "line": 57,
       "snippet": "description: r.error?.message ?? \"Erro desconhecido\","
-    },
-    {
-      "file": "src/components/admin/connections/WebhooksTab.tsx",
-      "line": 63,
-      "snippet": "if (error) { toast.error(\"Erro\", { description: error.message }); return; }"
-    },
-    {
-      "file": "src/components/admin/connections/WebhooksTab.tsx",
-      "line": 80,
-      "snippet": "if (error) { toast.error(\"Erro\", { description: error.message }); return; }"
-    },
-    {
-      "file": "src/components/admin/connections/WebhooksTab.tsx",
-      "line": 89,
-      "snippet": "if (error) toast.error(error.message); else { toast.success(\"Removido\"); load(); }"
-    },
-    {
-      "file": "src/components/admin/connections/WebhooksTab.tsx",
-      "line": 173,
-      "snippet": "if (error) toast.error(error.message); else { toast.success(\"Reativado\"); load(); }"
     },
     {
       "file": "src/components/admin/products/NewCategoryDialog.tsx",
@@ -224,12 +184,12 @@
     },
     {
       "file": "src/components/admin/products/useProductsManager.ts",
-      "line": 221,
+      "line": 222,
       "snippet": "toast.error(error instanceof Error ? error.message : \"Erro ao excluir produto\");"
     },
     {
       "file": "src/components/admin/products/useProductsManager.ts",
-      "line": 245,
+      "line": 246,
       "snippet": "toast.error(error instanceof Error ? error.message : 'Erro ao atualizar produtos em lote');"
     },
     {
@@ -264,7 +224,7 @@
     },
     {
       "file": "src/components/admin/security/SecureUploadManager.tsx",
-      "line": 70,
+      "line": 80,
       "snippet": "toast.error(`Erro no upload: ${error.message}`);"
     },
     {
@@ -279,23 +239,23 @@
     },
     {
       "file": "src/components/admin/security/keys/useMcpKeys.ts",
-      "line": 88,
-      "snippet": "toast.error(\"Erro ao carregar chaves\", { description: error.message });"
+      "line": 91,
+      "snippet": "toast.error('Erro ao carregar chaves', { description: error.message });"
     },
     {
       "file": "src/components/admin/security/role-migration/RoleMigrationPanel.tsx",
-      "line": 100,
-      "snippet": "toast.error(\"Falha ao carregar usuários\", { description: e instanceof Error ? e.message : String(e) });"
+      "line": 135,
+      "snippet": "description: e instanceof Error ? e.message : String(e),"
     },
     {
       "file": "src/components/admin/security/role-migration/RoleMigrationPanel.tsx",
-      "line": 154,
-      "snippet": "toast.error(\"Falha ao executar lote\", { description: e instanceof Error ? e.message : String(e) });"
+      "line": 195,
+      "snippet": "description: e instanceof Error ? e.message : String(e),"
     },
     {
       "file": "src/components/admin/security/role-migration/RoleMigrationPanel.tsx",
-      "line": 164,
-      "snippet": "toast.error(\"Falha ao carregar itens\", { description: e instanceof Error ? e.message : String(e) });"
+      "line": 207,
+      "snippet": "description: e instanceof Error ? e.message : String(e),"
     },
     {
       "file": "src/components/admin/telemetry/AppHealthDashboard.tsx",
@@ -304,27 +264,27 @@
     },
     {
       "file": "src/components/admin/users/useUserManagement.ts",
-      "line": 110,
-      "snippet": "toast.error(\"Erro ao excluir usuário\", { description: error instanceof Error ? error.message : String(error) });"
+      "line": 145,
+      "snippet": "description: error instanceof Error ? error.message : String(error),"
     },
     {
       "file": "src/components/admin/users/useUserManagement.ts",
-      "line": 135,
-      "snippet": "toast.error(\"Erro ao atualizar usuário\", { description: error instanceof Error ? error.message : String(error) });"
+      "line": 183,
+      "snippet": "description: error instanceof Error ? error.message : String(error),"
     },
     {
       "file": "src/components/admin/users/useUserManagement.ts",
-      "line": 158,
-      "snippet": "toast.error(\"Erro ao enviar foto\", { description: error instanceof Error ? error.message : String(error) });"
+      "line": 212,
+      "snippet": "description: error instanceof Error ? error.message : String(error),"
     },
     {
       "file": "src/components/auth/ForgotPasswordForm.tsx",
-      "line": 47,
+      "line": 52,
       "snippet": "description: result.message,"
     },
     {
       "file": "src/components/auth/ForgotPasswordForm.tsx",
-      "line": 54,
+      "line": 59,
       "snippet": "description: result.message,"
     },
     {
@@ -353,11 +313,6 @@
       "snippet": "toast.error(e instanceof Error ? e.message : 'Erro ao gerar sugestão');"
     },
     {
-      "file": "src/components/magic-up/PromptGenerator.tsx",
-      "line": 199,
-      "snippet": "toast.error(err instanceof Error ? err.message : \"Erro ao gerar prompts\");"
-    },
-    {
       "file": "src/components/search/VisualSearchButton.tsx",
       "line": 99,
       "snippet": "description: error instanceof Error ? error.message : \"Não foi possível processar a imagem.\","
@@ -376,151 +331,6 @@
       "file": "src/components/security/MfaEnrollmentDialog.tsx",
       "line": 87,
       "snippet": "toast.error(\"Código inválido\", { description: e instanceof Error ? e.message : \"Tente novamente\" });"
-    },
-    {
-      "file": "src/hooks/admin/useAdminKitTemplates.ts",
-      "line": 52,
-      "snippet": "onError: (err: Error) => toast.error(`Erro: ${err.message}`),"
-    },
-    {
-      "file": "src/hooks/admin/useRetestCooldownSetting.ts",
-      "line": 75,
-      "snippet": "toast.error(\"Não foi possível salvar o cooldown\", { description: error.message });"
-    },
-    {
-      "file": "src/hooks/admin/useSecretsManager.ts",
-      "line": 154,
-      "snippet": "toast.error(\"Erro ao listar credenciais\", { description: normalized.message });"
-    },
-    {
-      "file": "src/hooks/admin/useSecretsManager.ts",
-      "line": 166,
-      "snippet": "toast.error(\"Erro ao listar credenciais\", { description: normalized.message });"
-    },
-    {
-      "file": "src/hooks/admin/useSecretsManager.ts",
-      "line": 223,
-      "snippet": "toast.error(\"Falha ao carregar histórico\", { description: error.message });"
-    },
-    {
-      "file": "src/hooks/auth/usePasswordResetRequests.ts",
-      "line": 84,
-      "snippet": "description: error instanceof Error ? error.message : 'Erro desconhecido',"
-    },
-    {
-      "file": "src/hooks/auth/usePasswordResetRequests.ts",
-      "line": 117,
-      "snippet": "description: error instanceof Error ? error.message : 'Erro desconhecido',"
-    },
-    {
-      "file": "src/hooks/collections/useExternalCollections.ts",
-      "line": 134,
-      "snippet": "toast.error(`Erro ao criar coleção: ${error.message}`);"
-    },
-    {
-      "file": "src/hooks/collections/useExternalCollections.ts",
-      "line": 152,
-      "snippet": "toast.error(`Erro ao atualizar: ${error.message}`);"
-    },
-    {
-      "file": "src/hooks/collections/useExternalCollections.ts",
-      "line": 169,
-      "snippet": "toast.error(`Erro ao excluir: ${error.message}`);"
-    },
-    {
-      "file": "src/hooks/collections/useExternalCollections.ts",
-      "line": 189,
-      "snippet": "toast.error(`Erro: ${error.message}`);"
-    },
-    {
-      "file": "src/hooks/collections/useExternalCollections.ts",
-      "line": 206,
-      "snippet": "toast.error(`Erro: ${error.message}`);"
-    },
-    {
-      "file": "src/hooks/common/useOrgData.ts",
-      "line": 83,
-      "snippet": "toast.error(`Erro ao criar registro: ${error.message}`);"
-    },
-    {
-      "file": "src/hooks/common/useOrgData.ts",
-      "line": 112,
-      "snippet": "toast.error(`Erro ao atualizar registro: ${error.message}`);"
-    },
-    {
-      "file": "src/hooks/common/useOrgData.ts",
-      "line": 139,
-      "snippet": "toast.error(`Erro ao remover registro: ${error.message}`);"
-    },
-    {
-      "file": "src/hooks/crm/useRamoAtividade.ts",
-      "line": 70,
-      "snippet": "toast.error(`Erro ao criar: ${error.message}`);"
-    },
-    {
-      "file": "src/hooks/crm/useRamoAtividade.ts",
-      "line": 88,
-      "snippet": "toast.error(`Erro ao atualizar: ${error.message}`);"
-    },
-    {
-      "file": "src/hooks/crm/useRamoAtividade.ts",
-      "line": 106,
-      "snippet": "toast.error(`Erro ao remover: ${error.message}`);"
-    },
-    {
-      "file": "src/hooks/crm/useRamoAtividade.ts",
-      "line": 124,
-      "snippet": "toast.error(`Erro ao atualizar: ${error.message}`);"
-    },
-    {
-      "file": "src/hooks/crm/useRamoAtividadeFilho.ts",
-      "line": 89,
-      "snippet": "toast.error(`Erro ao criar: ${error.message}`);"
-    },
-    {
-      "file": "src/hooks/crm/useRamoAtividadeFilho.ts",
-      "line": 107,
-      "snippet": "toast.error(`Erro ao atualizar: ${error.message}`);"
-    },
-    {
-      "file": "src/hooks/crm/useRamoAtividadeFilho.ts",
-      "line": 126,
-      "snippet": "toast.error(`Erro ao remover: ${error.message}`);"
-    },
-    {
-      "file": "src/hooks/crm/useRamoAtividadeFilho.ts",
-      "line": 144,
-      "snippet": "toast.error(`Erro ao atualizar: ${error.message}`);"
-    },
-    {
-      "file": "src/hooks/favorites/useFavoriteLists.ts",
-      "line": 116,
-      "snippet": "onError: (e: Error) => toast.error(`Erro ao criar lista: ${e.message}`),"
-    },
-    {
-      "file": "src/hooks/favorites/useFavoriteLists.ts",
-      "line": 131,
-      "snippet": "onError: (e: Error) => toast.error(`Erro ao atualizar lista: ${e.message}`),"
-    },
-    {
-      "file": "src/hooks/favorites/useFavoriteLists.ts",
-      "line": 146,
-      "snippet": "onError: (e: Error) => toast.error(e.message),"
-    },
-    {
-      "file": "src/hooks/favorites/useFavoriteLists.ts",
-      "line": 268,
-      "snippet": "onError: (e: Error) => toast.error(`Erro ao salvar: ${e.message}`),"
-    },
-    {
-      "file": "src/hooks/favorites/useFavoriteLists.ts",
-      "line": 351,
-      "snippet": "onError: (e: Error) => toast.error(`Erro ao mover: ${e.message}`),"
-    },
-    {
-      "file": "src/hooks/favorites/useFavoriteLists.ts",
-      "line": 416,
-      "snippet": "onError: (e: Error) => toast.error(e.message),"
     },
     {
       "file": "src/hooks/gravacao/useFornecedoresGravacao.ts",
@@ -583,131 +393,6 @@
       "snippet": "toast.error(error.message);"
     },
     {
-      "file": "src/hooks/intelligence/useAiRouter.ts",
-      "line": 191,
-      "snippet": "onError: (e: Error) => toast.error(\"Erro ao criar provider\", { description: e.message }),"
-    },
-    {
-      "file": "src/hooks/intelligence/useAiRouter.ts",
-      "line": 204,
-      "snippet": "onError: (e: Error) => toast.error(\"Erro ao atualizar provider\", { description: e.message }),"
-    },
-    {
-      "file": "src/hooks/intelligence/useAiRouter.ts",
-      "line": 218,
-      "snippet": "onError: (e: Error) => toast.error(\"Erro ao remover provider\", { description: e.message }),"
-    },
-    {
-      "file": "src/hooks/intelligence/useAiRouter.ts",
-      "line": 255,
-      "snippet": "onError: (e: Error) => toast.error(\"Erro ao criar modelo\", { description: e.message }),"
-    },
-    {
-      "file": "src/hooks/intelligence/useAiRouter.ts",
-      "line": 271,
-      "snippet": "onError: (e: Error) => toast.error(\"Erro ao atualizar modelo\", { description: e.message }),"
-    },
-    {
-      "file": "src/hooks/intelligence/useAiRouter.ts",
-      "line": 284,
-      "snippet": "onError: (e: Error) => toast.error(\"Erro ao remover modelo\", { description: e.message }),"
-    },
-    {
-      "file": "src/hooks/intelligence/useAiRouter.ts",
-      "line": 327,
-      "snippet": "onError: (e: Error) => toast.error(\"Erro ao criar roteamento\", { description: e.message }),"
-    },
-    {
-      "file": "src/hooks/intelligence/useAiRouter.ts",
-      "line": 342,
-      "snippet": "onError: (e: Error) => toast.error(\"Erro ao atualizar roteamento\", { description: e.message }),"
-    },
-    {
-      "file": "src/hooks/intelligence/useAiRouter.ts",
-      "line": 354,
-      "snippet": "onError: (e: Error) => toast.error(\"Erro ao remover roteamento\", { description: e.message }),"
-    },
-    {
-      "file": "src/hooks/intelligence/useConnectionTester.ts",
-      "line": 89,
-      "snippet": "description: normalized.message ?? `${normalized.status ?? \"200\"} em ${normalized.latency_ms ?? \"?\"}ms`,"
-    },
-    {
-      "file": "src/hooks/intelligence/useMagicUpGeneration.ts",
-      "line": 171,
-      "snippet": "toast.error(err instanceof Error ? err.message : \"Erro ao gerar imagem\");"
-    },
-    {
-      "file": "src/hooks/intelligence/useSalesGoals.ts",
-      "line": 123,
-      "snippet": "toast.error(\"Erro ao criar meta\", { description: error.message });"
-    },
-    {
-      "file": "src/hooks/intelligence/useSalesGoals.ts",
-      "line": 189,
-      "snippet": "toast.error(\"Erro ao atualizar progresso\", { description: error.message });"
-    },
-    {
-      "file": "src/hooks/kit-builder/useCustomKitPersistence.ts",
-      "line": 126,
-      "snippet": "toast.error(`Erro ao salvar kit: ${err.message}`);"
-    },
-    {
-      "file": "src/hooks/kit-builder/useCustomKitPersistence.ts",
-      "line": 146,
-      "snippet": "toast.error(`Erro ao remover: ${err.message}`);"
-    },
-    {
-      "file": "src/hooks/kit-builder/useKitCollaboration.ts",
-      "line": 68,
-      "snippet": "onError: (e: Error) => toast.error(e.message),"
-    },
-    {
-      "file": "src/hooks/kit-builder/useKitCollaboration.ts",
-      "line": 125,
-      "snippet": "onError: (e: Error) => toast.error(e.message),"
-    },
-    {
-      "file": "src/hooks/kit-builder/useKitIdentitySuggestion.ts",
-      "line": 41,
-      "snippet": "toast.error(e instanceof Error ? e.message : 'Falha ao sugerir identidade');"
-    },
-    {
-      "file": "src/hooks/kit-builder/useKitTemplates.ts",
-      "line": 93,
-      "snippet": "onError: (err: Error) => toast.error(`Erro ao clonar: ${err.message}`),"
-    },
-    {
-      "file": "src/hooks/kit-builder/useKitVariants.ts",
-      "line": 61,
-      "snippet": "onError: (e: Error) => toast.error(`Erro: ${e.message}`),"
-    },
-    {
-      "file": "src/hooks/kit-builder/useTemplateSnapshot.ts",
-      "line": 62,
-      "snippet": "onError: (err: Error) => toast.error(`Erro ao salvar template: ${err.message}`),"
-    },
-    {
-      "file": "src/hooks/products/useCartTemplates.ts",
-      "line": 71,
-      "snippet": "onError: (err: Error) => toast.error(err.message),"
-    },
-    {
-      "file": "src/hooks/products/useProductSeoAI.ts",
-      "line": 66,
-      "snippet": "toast.error(err instanceof Error ? err.message : 'Erro ao gerar conteúdo com IA');"
-    },
-    {
-      "file": "src/hooks/products/useSellerCarts.ts",
-      "line": 140,
-      "snippet": "toast.error(err.message);"
-    },
-    {
-      "file": "src/hooks/products/useSellerCarts.ts",
-      "line": 332,
-      "snippet": "toast.error(err.message);"
-    },
-    {
       "file": "src/hooks/simulator/useWizardDrafts.ts",
       "line": 72,
       "snippet": "toast.error(`Erro ao salvar: ${err.message}`);"
@@ -749,62 +434,22 @@
     },
     {
       "file": "src/pages/admin/AdminSegurancaAcessoPage.tsx",
-      "line": 182,
+      "line": 202,
       "snippet": "description: parsed.error.errors[0].message,"
     },
     {
       "file": "src/pages/admin/AdminSegurancaAcessoPage.tsx",
-      "line": 200,
+      "line": 220,
       "snippet": "toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });"
     },
     {
       "file": "src/pages/admin/AdminSegurancaAcessoPage.tsx",
-      "line": 215,
+      "line": 235,
       "snippet": "toast({ title: 'Erro ao remover', description: error.message, variant: 'destructive' });"
     },
     {
-      "file": "src/pages/admin/PermissionsPage.tsx",
-      "line": 57,
-      "snippet": "toast({ title: 'Erro', description: error instanceof Error ? error.message : String(error), variant: 'destructive' });"
-    },
-    {
-      "file": "src/pages/admin/PermissionsPage.tsx",
-      "line": 82,
-      "snippet": "toast({ title: 'Erro', description: error instanceof Error ? error.message : String(error), variant: 'destructive' });"
-    },
-    {
-      "file": "src/pages/admin/PermissionsPage.tsx",
-      "line": 104,
-      "snippet": "toast({ title: 'Erro', description: error instanceof Error ? error.message : String(error), variant: 'destructive' });"
-    },
-    {
-      "file": "src/pages/admin/RolePermissionsPage.tsx",
-      "line": 80,
-      "snippet": "toast({ title: 'Erro ao carregar dados', description: error.message, variant: 'destructive' });"
-    },
-    {
-      "file": "src/pages/admin/RolePermissionsPage.tsx",
-      "line": 145,
-      "snippet": "toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });"
-    },
-    {
-      "file": "src/pages/admin/RolesPage.tsx",
-      "line": 53,
-      "snippet": "toast({ title: 'Erro', description: error instanceof Error ? error.message : String(error), variant: 'destructive' });"
-    },
-    {
-      "file": "src/pages/admin/RolesPage.tsx",
-      "line": 80,
-      "snippet": "toast({ title: 'Erro', description: error instanceof Error ? error.message : String(error), variant: 'destructive' });"
-    },
-    {
-      "file": "src/pages/admin/RolesPage.tsx",
-      "line": 97,
-      "snippet": "toast({ title: 'Erro', description: error instanceof Error ? error.message : String(error), variant: 'destructive' });"
-    },
-    {
       "file": "src/pages/admin/SellerDiscountLimitsAdminPage.tsx",
-      "line": 201,
+      "line": 202,
       "snippet": "onError: (e: Error) => toast.error(e.message),"
     },
     {
@@ -859,13 +504,8 @@
     },
     {
       "file": "src/pages/auth/ResetPassword.tsx",
-      "line": 105,
+      "line": 104,
       "snippet": "description: error.message,"
-    },
-    {
-      "file": "src/pages/system/RateLimitDashboardPage.tsx",
-      "line": 61,
-      "snippet": "toast({ title: 'Erro', description: error instanceof Error ? error.message : String(error), variant: 'destructive' });"
     }
   ]
 }
