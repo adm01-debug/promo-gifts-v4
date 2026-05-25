@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-25T17:05:20.939Z",
-  "totalErrors": 135,
+  "generatedAt": "2026-05-25T22:39:29.287Z",
+  "totalErrors": 127,
   "counts": {
     "src/components/access/DevAccessDeniedPage.tsx": {
       "react-hooks/exhaustive-deps": 1
@@ -83,9 +83,6 @@
     "src/components/bi/ClientSeasonalityHeatmap.tsx": {
       "@typescript-eslint/no-non-null-assertion": 1
     },
-    "src/components/catalog/CatalogHeader.tsx": {
-      "@typescript-eslint/no-unused-vars": 1
-    },
     "src/components/collections/CollectionDetailHeader.tsx": {
       "@typescript-eslint/no-unused-vars": 1
     },
@@ -159,11 +156,7 @@
     "src/components/layout/MainLayout.tsx": {
       "react-hooks/exhaustive-deps": 1
     },
-    "src/components/layout/SidebarReorganized.tsx": {
-      "@typescript-eslint/no-unused-vars": 1
-    },
     "src/components/layout/sidebar/SidebarNavGroup.tsx": {
-      "react-hooks/exhaustive-deps": 1,
       "eqeqeq": 2
     },
     "src/components/loading/SkeletonMonitor.tsx": {
@@ -245,9 +238,6 @@
       "@typescript-eslint/no-explicit-any": 2,
       "@typescript-eslint/no-non-null-assertion": 1
     },
-    "src/components/products/ProductPersonalizationRules.tsx": {
-      "@typescript-eslint/no-unused-vars": 1
-    },
     "src/components/products/ProductQuickActions.tsx": {
       "@typescript-eslint/naming-convention": 1,
       "@typescript-eslint/no-unused-vars": 1
@@ -290,9 +280,6 @@
     },
     "src/components/products/zoomable-gallery/useGalleryZoom.ts": {
       "react-hooks/exhaustive-deps": 1
-    },
-    "src/components/providers/AppBootstrap.tsx": {
-      "@typescript-eslint/no-unused-vars": 1
     },
     "src/components/quotes/PdfGenerationDialog.tsx": {
       "@typescript-eslint/no-unused-vars": 4
@@ -366,6 +353,9 @@
     "src/components/search/VoiceSearchOverlayConnected.tsx": {
       "react-hooks/exhaustive-deps": 1
     },
+    "src/components/search/useGlobalSearch.ts": {
+      "@typescript-eslint/no-explicit-any": 3
+    },
     "src/components/search/voice/VoiceOverlaySections.tsx": {
       "@typescript-eslint/no-unused-vars": 3
     },
@@ -423,12 +413,6 @@
     },
     "src/hooks/admin/useDevGate.ts": {
       "react-hooks/exhaustive-deps": 1
-    },
-    "src/hooks/admin/useKillSwitchObservability.ts": {
-      "@typescript-eslint/no-explicit-any": 1
-    },
-    "src/hooks/admin/useSmokeTests.ts": {
-      "@typescript-eslint/no-explicit-any": 2
     },
     "src/hooks/auth/useAccessSecurity.ts": {
       "@typescript-eslint/naming-convention": 5
@@ -497,9 +481,6 @@
       "@typescript-eslint/naming-convention": 1,
       "@typescript-eslint/no-non-null-assertion": 1
     },
-    "src/lib/external-db/rest-native.ts": {
-      "@typescript-eslint/no-explicit-any": 3
-    },
     "src/lib/feature-flags.ts": {
       "@typescript-eslint/no-non-null-assertion": 1
     },
@@ -537,9 +518,6 @@
     },
     "src/pages/admin/AdminExternalDbPage.tsx": {
       "react-hooks/exhaustive-deps": 1
-    },
-    "src/pages/admin/ObservabilityDashboard.tsx": {
-      "eqeqeq": 1
     },
     "src/pages/admin/PermissionsPage.tsx": {
       "react-hooks/exhaustive-deps": 1
