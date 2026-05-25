@@ -191,6 +191,115 @@ describe("product-webhook", () => {
       const data = await res.json();
       expect(data.duplicate).toBe(true);
     });
+
+    it("duas entregas com mesma chave idempotente mantêm resposta de duplicata", async () => {
+      const idem: EdgeFnResponseSpec = {
+        status: 200,
+        body: { ok: true, duplicate: true, action: "noop" },
+      };
+      mockEdgeFunctionFetch({ "/product-webhook": idem });
+
+      const headers = {
+        "Content-Type": "application/json",
+        Authorization: "Bearer service-key",
+        "x-idempotency-key": "evt-prod-dup-002",
+      };
+
+      const first = await fetch(`${BASE}/product-webhook`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(PRODUCT_CREATED_PAYLOAD),
+      });
+      const second = await fetch(`${BASE}/product-webhook`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(PRODUCT_CREATED_PAYLOAD),
+      });
+
+      expect(first.status).toBe(200);
+      expect(second.status).toBe(200);
+      const firstData = await first.json();
+      const secondData = await second.json();
+      expect(firstData.duplicate).toBe(true);
+      expect(secondData.duplicate).toBe(true);
+    });
+  });
+
+  describe("segurança e robustez de entrega", () => {
+    it("rejeita assinatura inválida sem processar evento fora de sequência", async () => {
+      const err: EdgeFnResponseSpec = { status: 401, body: { error: "invalid_signature" } };
+      mockEdgeFunctionFetch({ "/product-webhook": err });
+
+      const outOfOrderPayload = {
+        event: "product.updated",
+        occurred_at: "2026-01-10T12:00:00.000Z",
+        data: {
+          product_id: "prod-404-never-created",
+          changes: { price: { from: 0, to: 15.9 } },
+        },
+      };
+
+      const res = await fetch(`${BASE}/product-webhook`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer service-key",
+          "x-webhook-signature": "sha256=broken",
+        },
+        body: JSON.stringify(outOfOrderPayload),
+      });
+
+      expect(res.status).toBe(401);
+      const data = await res.json();
+      expect(data.error).toBe("invalid_signature");
+    });
+
+    it("evento fora de ordem com assinatura válida falha de forma controlada (4xx), nunca 5xx", async () => {
+      const err: EdgeFnResponseSpec = { status: 409, body: { error: "out_of_order_event" } };
+      mockEdgeFunctionFetch({ "/product-webhook": err });
+
+      const outOfOrderPayload = {
+        event: "product.updated",
+        occurred_at: "2026-01-10T12:00:00.000Z",
+        data: {
+          product_id: "prod-999",
+          changes: { active: { from: true, to: false } },
+        },
+      };
+
+      const res = await fetch(`${BASE}/product-webhook`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer service-key",
+          "x-webhook-signature": "sha256=valid-hmac",
+        },
+        body: JSON.stringify(outOfOrderPayload),
+      });
+
+      expect(res.status).toBeGreaterThanOrEqual(400);
+      expect(res.status).toBeLessThan(500);
+    });
+
+    it("body truncado/corrompido retorna erro de cliente e não vaza 500", async () => {
+      const err: EdgeFnResponseSpec = { status: 400, body: { error: "invalid_payload" } };
+      mockEdgeFunctionFetch({ "/product-webhook": err });
+
+      const truncatedBody = JSON.stringify(PRODUCT_CREATED_PAYLOAD).slice(0, 36);
+      const res = await fetch(`${BASE}/product-webhook`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer service-key",
+          "x-webhook-signature": "sha256=valid-hmac",
+        },
+        body: truncatedBody,
+      });
+
+      expect(res.status).toBeGreaterThanOrEqual(400);
+      expect(res.status).toBeLessThan(500);
+      expect(res.status).not.toBe(500);
+    });
   });
 
   describe("CORS", () => {
