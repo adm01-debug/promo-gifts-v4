@@ -4,7 +4,7 @@
  *
  * Features:
  * - AbortController para cancelamento de requisições em andamento
- * - Retry com backoff exponencial (até 2 tentativas em erros 5xx)
+ * - Retry com backoff exponencial (apenas 502/503/504 — infra temporária)
  * - Cache em memória por chave de request
  * - Tratamento específico para 429 (rate limit) e 402 (créditos)
  */
@@ -60,9 +60,11 @@ function cacheKey(client: ClientProfile, products: ProductForRecommendation[]): 
 /** Delay com promise */
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/** Verifica se o erro é retentável (5xx) */
+/** Verifica se o erro é retentável.
+ * Apenas 502/503/504 (infra temporariamente indisponível) devem ser retentados.
+ * 500 = erro de configuração/lógica no servidor — não adianta tentar de novo. */
 function isRetryable(status: number): boolean {
-  return status >= 500 && status < 600;
+  return status === 502 || status === 503 || status === 504;
 }
 
 // ============================================

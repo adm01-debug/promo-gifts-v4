@@ -89,46 +89,18 @@ Deno.serve(async (req) => {
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
+      // Key not configured in this environment — return empty recommendations gracefully
+      // instead of throwing 500 (which causes the frontend to retry 3x unnecessarily).
+      console.warn('[ai-recommendations] LOVABLE_API_KEY not configured — returning empty result');
+      return new Response(
+        JSON.stringify({ recommendations: [], insights: 'Servi\u00e7o de IA n\u00e3o configurado neste ambiente.' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     }
 
-    const systemPrompt = `Você é um especialista em brindes promocionais e marketing corporativo. 
-Sua tarefa é analisar o perfil de um cliente e recomendar os melhores produtos para ele.
+    const systemPrompt = `Voc\u00ea \u00e9 um especialista em brindes promocionais e marketing corporativo. \nSua tarefa \u00e9 analisar o perfil de um cliente e recomendar os melhores produtos para ele.\n\nConsidere:\n- O segmento/ind\u00fastria do cliente\n- Hist\u00f3rico de compras anteriores\n- Prefer\u00eancias de cores e estilos\n- Or\u00e7amento dispon\u00edvel\n- Ocasi\u00f5es e datas comemorativas relevantes\n\nRetorne EXATAMENTE em formato JSON com a estrutura:\n{\n  "recommendations": [\n    {\n      "productId": "id do produto",\n      "score": 0.95,\n      "reason": "Motivo breve da recomenda\u00e7\u00e3o"\n    }\n  ],\n  "insights": "Uma an\u00e1lise geral do perfil do cliente e sugest\u00f5es"\n}\n\nOrdene por score (maior primeiro). Retorne no m\u00e1ximo 6 recomenda\u00e7\u00f5es.`;
 
-Considere:
-- O segmento/indústria do cliente
-- Histórico de compras anteriores
-- Preferências de cores e estilos
-- Orçamento disponível
-- Ocasiões e datas comemorativas relevantes
-
-Retorne EXATAMENTE em formato JSON com a estrutura:
-{
-  "recommendations": [
-    {
-      "productId": "id do produto",
-      "score": 0.95,
-      "reason": "Motivo breve da recomendação"
-    }
-  ],
-  "insights": "Uma análise geral do perfil do cliente e sugestões"
-}
-
-Ordene por score (maior primeiro). Retorne no máximo 6 recomendações.`;
-
-    const userPrompt = `
-## Perfil do Cliente
-- Nome: ${client.name}
-${client.company ? `- Empresa: ${client.company}` : ''}
-${client.industry ? `- Segmento: ${client.industry}` : ''}
-${client.preferences?.length ? `- Preferências: ${client.preferences.join(', ')}` : ''}
-${client.purchaseHistory?.length ? `- Histórico de Compras: ${client.purchaseHistory.join(', ')}` : ''}
-${client.budget ? `- Orçamento: ${client.budget}` : ''}
-
-## Produtos Disponíveis
-${products.map((p) => `- ID: ${p.id} | ${p.name} | Categoria: ${p.category}${p.tags?.length ? ` | Tags: ${p.tags.join(', ')}` : ''}`).join('\n')}
-
-Com base no perfil do cliente, recomende os produtos mais adequados.`;
+    const userPrompt = `\n## Perfil do Cliente\n- Nome: ${client.name}\n${client.company ? `- Empresa: ${client.company}` : ''}\n${client.industry ? `- Segmento: ${client.industry}` : ''}\n${client.preferences?.length ? `- Prefer\u00eancias: ${client.preferences.join(', ')}` : ''}\n${client.purchaseHistory?.length ? `- Hist\u00f3rico de Compras: ${client.purchaseHistory.join(', ')}` : ''}\n${client.budget ? `- Or\u00e7amento: ${client.budget}` : ''}\n\n## Produtos Dispon\u00edveis\n${products.map((p) => `- ID: ${p.id} | ${p.name} | Categoria: ${p.category}${p.tags?.length ? ` | Tags: ${p.tags.join(', ')}` : ''}`).join('\n')}\n\nCom base no perfil do cliente, recomende os produtos mais adequados.`;
 
     const model = 'google/gemini-2.5-flash';
 
@@ -150,14 +122,14 @@ Com base no perfil do cliente, recomende os produtos mais adequados.`;
       if (response.status === 429) {
         return new Response(
           JSON.stringify({
-            error: 'Limite de requisições excedido. Tente novamente em alguns minutos.',
+            error: 'Limite de requisi\u00e7\u00f5es excedido. Tente novamente em alguns minutos.',
           }),
           { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         );
       }
       if (response.status === 402) {
         return new Response(
-          JSON.stringify({ error: 'Créditos de IA esgotados. Adicione créditos na sua conta.' }),
+          JSON.stringify({ error: 'Cr\u00e9ditos de IA esgotados. Adicione cr\u00e9ditos na sua conta.' }),
           { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         );
       }
@@ -193,7 +165,7 @@ Com base no perfil do cliente, recomende os produtos mais adequados.`;
     console.error('Error in ai-recommendations:', safeErrorFields(error));
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : 'Erro ao gerar recomendações',
+        error: error instanceof Error ? error.message : 'Erro ao gerar recomenda\u00e7\u00f5es',
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
