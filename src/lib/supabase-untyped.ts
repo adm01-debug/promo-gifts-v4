@@ -1,1 +1,60 @@
-LyoqCiAqIFR5cGVkIHdyYXBwZXIgZm9yIFN1cGFiYXNlIHRhYmxlcyBub3QgeWV0IGluIHRoZSBnZW5lcmF0ZWQgc2NoZW1hLgogKiBFbGltaW5hdGVzIGBhcyBhbnlgIGNhc3RzIGF0IGNhbGwgc2l0ZXMgd2hpbGUgbWFpbnRhaW5pbmcgdHlwZSBzYWZldHkuCiAqCiAqIFVzYWdlOgogKiAgIGNvbnN0IHsgZGF0YSB9ID0gYXdhaXQgdW50eXBlZEZyb208TXlUeXBlPigibXlfdGFibGUiKS5zZWxlY3QoIioiKS5lcSgiaWQiLCBpZCk7CiAqICAgLy8gICAgICAgICAgICAgIGRhdGEgaXMgTXlUeXBlW10gKGZyb20gZ2VuZXJpYyksIG5vdCBuZXZlcltdCiAqCiAqIFN0cmF0ZWd5OgogKiAgIFRoZSBTdXBhYmFzZSBnZW5lcmF0ZWQgdHlwZXMgbmFycm93IGBmcm9tKClgIHRvIGtub3duIHRhYmxlIG5hbWVzIOKAlCBhbnkKICogICBvdGhlciBzdHJpbmcgZmFsbHMgYmFjayB0byBgYXVkaXRfbG9nc2Agcm93IHNoYXBlLCB3aGljaCBjYXVzZXMgVFMyMzM5CiAqICAgZmxvb2RzIG9uIGV2ZXJ5IHByb3BlcnR5IGFjY2Vzcy4gQ2FzdGluZyBgc3VwYWJhc2VgIGl0c2VsZiB0byBhCiAqICAgcGVybWlzc2l2ZSBgU3VwYWJhc2VDbGllbnQ8YW55PmAgcmVzdG9yZXMgdGhlIHVucmVzdHJpY3RlZCBidWlsZGVyIHNvCiAqICAgdGhlIHJvdy1zaGFwZSBnZW5lcmljIGBUYCBmbG93cyB0aHJvdWdoIGBzZWxlY3QoKS9pbnNlcnQoKS91cGRhdGUoKWAuCiAqCiAqIE1JR1JBVElPTiBOT1RFIChwb3N0LWNvbGFwc28gMjAyNi0wNS0yNCk6CiAqICAgVGhlIDUgdGFibGVzIHByZXZpb3VzbHkgbGlzdGVkIGluIFVudHlwZWRUYWJsZSBiZWxvdyBub3cgZXhpc3QgaW4gdGhlCiAqICAgZGF0YWJhc2UgKFBScyAjMzE1IGFuZCAjMzE3KS4gT25jZSBgc3VwYWJhc2UgZ2VuIHR5cGVzIHR5cGVzY3JpcHRgIGlzCiAqICAgcmUtcnVuIGFuZCB0eXBlcy50cyB1cGRhdGVkLCB0aGUgcmVtYWluaW5nIGB1bnR5cGVkRnJvbSgiLi4uIilgIGNhbGwKICogICBzaXRlcyBpbiBzcmMvIHNob3VsZCBtaWdyYXRlIHRvIGBzdXBhYmFzZS5mcm9tKCIuLi4iKWAgZm9yIGZ1bGwgdHlwZQogKiAgIHNhZmV0eS4gVGhpcyBmaWxlIHN0YXlzIGFzIGEgc2FmZXR5IG5ldCBmb3IgZnV0dXJlIHRhYmxlcyB0aGF0IGhhdmVuJ3QKICogICBsYW5kZWQgaW4gdGhlIGdlbmVyYXRlZCBzY2hlbWEgeWV0LgogKgogKiAgIENJIGd1YXJkOiBgLmdpdGh1Yi93b3JrZmxvd3MvbGludC11bnR5cGVkLWZyb20ueW1sYCBmYWlscyB0aGUgYnVpbGQgaWYKICogICBhbnkgYHVudHlwZWRGcm9tKCJYIilgIGNhbGwgcmVmZXJlbmNlcyBhIHRhYmxlIE5PVCBpbiB0eXBlcy50cyDigJQKICogICB3aGljaCBpcyB0aGUgcHJlY2lzZSBjb25kaXRpb24gdGhhdCBjYXVzZWQgYSAyMDI2LTA1LTI0IHNpbGVudAogKiAgIGZhaWx1cmVzICh0YWJsZXMgbWlzc2luZyBmcm9tIHRoZSBkYXRhYmFzZSkuCiAqLwppbXBvcnQgdHlwZSB7IFN1cGFiYXNlQ2xpZW50IH0gZnJvbSAiQHN1cGFiYXNlL3N1cGFiYXNlLWpzIjsKaW1wb3J0IHsgc3VwYWJhc2UgfSBmcm9tICJAL2ludGVncmF0aW9ucy9zdXBhYmFzZS9jbGllbnQiOwoKLy8gZXNsaW50LWRpc2FibGUtbmV4dC1saW5lIEB0eXBlc2NyaXB0LWVzbGludC9uby1leHBsaWNpdC1hbnkgLS0gbmVlZGVkIGZvciBwZXJtaXNzaXZlIFN1cGFiYXNlQ2xpZW50IGNhc3QgKHNlZSBmaWxlIGhlYWRlcikKdHlwZSBBbnlDbGllbnQgPSBTdXBhYmFzZUNsaWVudDxhbnksIGFueSwgYW55PjsKCi8qKgogKiBBY2Nlc3MgYSBTdXBhYmFzZSB0YWJsZSB0aGF0IGRvZXNuJ3QgZXhpc3QgaW4gdGhlIGdlbmVyYXRlZCB0eXBlcy4KICoKICogUGFzcyB0aGUgcm93IHNoYXBlIGFzIGBUYCB0byByZWNvdmVyIGZ1bGwgdHlwaW5nIG9uIGAuc2VsZWN0KClgLAogKiBgLmluc2VydCgpYCwgYC51cGRhdGUoKWAg4oCUIG90aGVyd2lzZSBmYWxscyBiYWNrIHRvIGEgcGVybWlzc2l2ZQogKiBgUmVjb3JkPHN0cmluZywgdW5rbm93bj5gIHRoYXQgaXMgc3RpbGwgc2FmZXIgdGhhbiBgYW55YC4KICovCmV4cG9ydCBmdW5jdGlvbiB1bnR5cGVkRnJvbTxUID0gUmVjb3JkPHN0cmluZywgdW5rbm93bj4+KHRhYmxlOiBzdHJpbmcpIHsKICByZXR1cm4gKHN1cGFiYXNlIGFzIHVua25vd24gYXMgQW55Q2xpZW50KS5mcm9tKHRhYmxlKSBhcyBSZXR1cm5UeXBlPAogICAgQW55Q2xpZW50WyJmcm9tIl0KICA+ICYgeyBfcm93PzogVCB9Owp9CgovKioKICogS25vd24gdW50eXBlZCB0YWJsZSBuYW1lcyBmb3IgZG9jdW1lbnRhdGlvbi4KICoKICogQWxsIGVudHJpZXMgaGVyZSBzaG91bGQgYWxzbyBleGlzdCBpbiB0aGUgZGF0YWJhc2UgKHZhbGlkYXRlZCBieSBDSSkuCiAqIFdoZW4gYSBuYW1lIGlzIGFkZGVkIGhlcmUgT1IgYSBuZXcgYHVudHlwZWRGcm9tKCJYIilgIGNhbGwgaXMgYWRkZWQgaW4KICogc3JjLywgdGhlIGxpbnQgam9iIHdpbGwgZmFpbCB1bmxlc3MgWCBhbHNvIGFwcGVhcnMgaW4KICogc3JjL2ludGVncmF0aW9ucy9zdXBhYmFzZS90eXBlcy50cyAoaS5lLiB0aGUgc2NoZW1hIHdhcyByZWdlbmVyYXRlZCkuCiAqCiAqIEVtcHR5IHNpbmNlIHRoZSAyMDI2LTA1LTI0IGNsZWFudXAg4oCUIHRoZSA1IHByZXZpb3VzIGVudHJpZXMgbm93IGV4aXN0CiAqIGluIHRoZSBkYXRhYmFzZSBhbmQgc2hvdWxkIGJlIG1pZ3JhdGVkIHRvIGBzdXBhYmFzZS5mcm9tKClgIG9uY2UKICogdHlwZXMudHMgaXMgcmVnZW5lcmF0ZWQuCiAqLwpleHBvcnQgdHlwZSBVbnR5cGVkVGFibGUgPSBuZXZlcjsK
+/**
+ * Typed wrapper for Supabase tables not yet in the generated schema.
+ * Eliminates `as any` casts at call sites while maintaining type safety.
+ *
+ * Usage:
+ *   const { data } = await untypedFrom<MyType>("my_table").select("*").eq("id", id);
+ *   //              data is MyType[] (from generic), not never[]
+ *
+ * Strategy:
+ *   The Supabase generated types narrow `from()` to known table names — any
+ *   other string falls back to `audit_logs` row shape, which causes TS2339
+ *   floods on every property access. Casting `supabase` itself to a
+ *   permissive `SupabaseClient<any>` restores the unrestricted builder so
+ *   the row-shape generic `T` flows through `select()/insert()/update()`.
+ *
+ * MIGRATION NOTE (post-colapso 2026-05-24):
+ *   The 5 tables previously listed in UntypedTable below now exist in the
+ *   database (PRs #315 and #317). Once `supabase gen types typescript` is
+ *   re-run and types.ts updated, the remaining `untypedFrom("...")` call
+ *   sites in src/ should migrate to `supabase.from("...")` for full type
+ *   safety. This file stays as a safety net for future tables that haven't
+ *   landed in the generated schema yet.
+ *
+ *   CI guard: `.github/workflows/lint-untyped-from.yml` fails the build if
+ *   any `untypedFrom("X")` call references a table NOT in types.ts —
+ *   which is the precise condition that caused a 2026-05-24 silent
+ *   failures (tables missing from the database).
+ */
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- needed for permissive SupabaseClient cast (see file header)
+type AnyClient = SupabaseClient<any, any, any>;
+
+/**
+ * Access a Supabase table that doesn't exist in the generated types.
+ *
+ * Pass the row shape as `T` to recover full typing on `.select()`,
+ * `.insert()`, `.update()` — otherwise falls back to a permissive
+ * `Record<string, unknown>` that is still safer than `any`.
+ */
+export function untypedFrom<T = Record<string, unknown>>(table: string) {
+  return (supabase as unknown as AnyClient).from(table) as ReturnType<AnyClient['from']> & {
+    _row?: T;
+  };
+}
+
+/**
+ * Known untyped table names for documentation.
+ *
+ * All entries here should also exist in the database (validated by CI).
+ * When a name is added here OR a new `untypedFrom("X")` call is added in
+ * src/, the lint job will fail unless X also appears in
+ * src/integrations/supabase/types.ts (i.e. the schema was regenerated).
+ *
+ * Empty since the 2026-05-24 cleanup — the 5 previous entries now exist
+ * in the database and should be migrated to `supabase.from()` once
+ * types.ts is regenerated.
+ */
+export type UntypedTable = never;
