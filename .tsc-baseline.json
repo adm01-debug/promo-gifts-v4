@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-25T14:23:22.196Z",
-  "totalErrors": 509,
+  "generatedAt": "2026-05-25T22:52:43.606Z",
+  "totalErrors": 486,
   "counts": {
     "src/components/admin/products/BulkImportDialog.tsx": {
       "TS2322": 1
@@ -53,9 +53,6 @@
     },
     "src/components/expert/chat/ChatMessageList.tsx": {
       "TS2322": 1
-    },
-    "src/components/expert/chat/useExpertChat.ts": {
-      "TS1345": 2
     },
     "src/components/favorites/FavoritesTrashView.tsx": {
       "TS2322": 1
@@ -212,9 +209,6 @@
       "TS2339": 1,
       "TS2345": 1
     },
-    "src/components/providers/AppBootstrap.tsx": {
-      "TS2339": 1
-    },
     "src/components/quotes/DraggableQuoteItems.tsx": {
       "TS2322": 1
     },
@@ -253,15 +247,14 @@
       "TS2322": 1
     },
     "src/components/search/GlobalSearchPalette.tsx": {
-      "TS2322": 1,
-      "TS2339": 1
+      "TS2322": 1
     },
     "src/components/search/useGlobalSearch.ts": {
-      "TS2322": 2,
       "TS2339": 6,
-      "TS2345": 3,
+      "TS2345": 4,
       "TS2352": 6,
-      "TS2353": 1
+      "TS2353": 1,
+      "TS2769": 1
     },
     "src/components/security/MfaEnrollmentDialog.tsx": {
       "TS2367": 1
@@ -392,10 +385,6 @@
     "src/hooks/mockup/mockupGenerationService.ts": {
       "TS2345": 1
     },
-    "src/hooks/mockup/useMockupDraft.ts": {
-      "TS2345": 2,
-      "TS2769": 2
-    },
     "src/hooks/mockup/useMockupGenerator.ts": {
       "TS2339": 2,
       "TS2345": 1
@@ -413,18 +402,11 @@
     "src/hooks/products/useColorEnrichment.ts": {
       "TS2322": 1
     },
-    "src/hooks/products/useColorSystem.ts": {
-      "TS2345": 1,
-      "TS2352": 1,
-      "TS2769": 1
-    },
     "src/hooks/products/useNoveltiesSelectionMode.ts": {
       "TS2352": 1
     },
     "src/hooks/products/useProductInsights.ts": {
-      "TS18047": 1,
-      "TS2345": 1,
-      "TS2531": 1
+      "TS2345": 1
     },
     "src/hooks/products/useProductIntelligenceBadges.ts": {
       "TS2339": 7,
@@ -469,10 +451,8 @@
     },
     "src/hooks/simulation/useSimulation.ts": {
       "TS2339": 15,
-      "TS2345": 3,
+      "TS2345": 2,
       "TS2561": 1,
-      "TS2589": 1,
-      "TS2769": 3,
       "TS7006": 2
     },
     "src/hooks/simulation/useSimulatorPreferences.ts": {
@@ -505,6 +485,10 @@
     "src/hooks/ui/usePushNotifications.tsx": {
       "TS2353": 1
     },
+    "src/integrations/supabase/types.ts": {
+      "TS2300": 10,
+      "TS2717": 1
+    },
     "src/lib/access/log-access-denied.ts": {
       "TS2322": 1
     },
@@ -513,9 +497,6 @@
     },
     "src/lib/external-db/batch-import.ts": {
       "TS2352": 2
-    },
-    "src/lib/external-db/invoke.ts": {
-      "TS2322": 1
     },
     "src/lib/kit-builder/types.ts": {
       "TS18048": 2
@@ -543,7 +524,6 @@
       "TS2345": 2
     },
     "src/pages/admin/RolePermissionsPage.tsx": {
-      "TS18046": 2,
       "TS2345": 1
     },
     "src/pages/admin/telemetry/useOptimizationQueue.ts": {
@@ -601,10 +581,6 @@
     "src/pages/quotes/QuoteBuilderPage.tsx": {
       "TS2339": 1
     },
-    "src/pages/quotes/QuotesKanbanPage.tsx": {
-      "TS2345": 1,
-      "TS2769": 1
-    },
     "src/pages/quotes/QuotesListPage.tsx": {
       "TS2345": 1,
       "TS2554": 1
@@ -649,10 +625,6 @@
     },
     "src/utils/productPdfExport.ts": {
       "TS18048": 1
-    },
-    "src/integrations/supabase/types.ts": {
-      "TS2300": 10,
-      "TS2717": 1
     }
   }
 }
