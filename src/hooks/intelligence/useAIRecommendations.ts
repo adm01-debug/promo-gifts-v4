@@ -7,6 +7,7 @@
  * - Retry com backoff exponencial (apenas 502/503/504 — infra temporária)
  * - Cache em memória por chave de request
  * - Tratamento específico para 429 (rate limit) e 402 (créditos)
+ * - extractErrorMessage: extrai mensagem legível de respostas 4xx/5xx (inclui 500 com body JSON)
  */
 import { useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,6 +66,29 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
  * 500 = erro de configuração/lógica no servidor — não adianta tentar de novo. */
 function isRetryable(status: number): boolean {
   return status === 502 || status === 503 || status === 504;
+}
+
+/**
+ * Extrai mensagem de erro legível de uma Response falha (4xx/5xx).
+ * Tenta parsear JSON (campos message/error/msg), fallback para texto puro,
+ * fallback para mensagem genérica amigável — nunca retorna string vazia.
+ */
+async function extractErrorMessage(response: Response): Promise<string> {
+  try {
+    const text = await response.text();
+    if (!text.trim()) {
+      return `Erro interno no serviço de recomendações (HTTP ${response.status}). Tente novamente mais tarde.`;
+    }
+    try {
+      const json = JSON.parse(text);
+      const msg = json.message ?? json.error ?? json.msg ?? null;
+      return msg ? String(msg) : text;
+    } catch {
+      return text;
+    }
+  } catch {
+    return `Erro interno no serviço de recomendações (HTTP ${response.status}). Tente novamente mais tarde.`;
+  }
 }
 
 // ============================================
@@ -152,8 +176,8 @@ export function useAIRecommendations() {
                 lastError = new Error(`Erro do servidor: ${response.status}`);
                 continue;
               }
-              const errText = await response.text().catch(() => "");
-              throw new Error(`Erro ao gerar recomendações: ${response.status} ${errText}`);
+              const errMsg = await extractErrorMessage(response);
+              throw new Error(errMsg);
             }
 
             const result: AIRecommendationsResult = await response.json();

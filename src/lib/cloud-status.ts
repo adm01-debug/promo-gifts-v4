@@ -20,6 +20,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { pingHealth } from '@/lib/external-db/health-check';
+import { KillSwitchActiveError } from '@/lib/external-db/kill-switch-client';
 
 export type CloudStatus = 'healthy' | 'warming' | 'degraded' | 'down' | 'unknown';
 
@@ -129,6 +130,25 @@ async function checkAuth(): Promise<{ ok: boolean; ms: number }> {
   }
 }
 
+/**
+ * Verifica o bridge externo (external-db-bridge).
+ * Se o kill-switch estiver ativo (Caminho B — bridge descontinuada via PRs #230-232),
+ * retorna ok=true: bridge desligada intencionalmente ≠ falha de infra.
+ */
+async function checkBridge(timeoutMs: number): Promise<{ ok: boolean; ms: number }> {
+  const t0 = performance.now();
+  try {
+    const r = await pingHealth(timeoutMs);
+    return { ok: r.ok, ms: r.ms };
+  } catch (err) {
+    if (err instanceof KillSwitchActiveError) {
+      // Bridge desligada intencionalmente — não degrada o status geral do sistema.
+      return { ok: true, ms: Math.round(performance.now() - t0) };
+    }
+    return { ok: false, ms: Math.round(performance.now() - t0) };
+  }
+}
+
 async function checkRest(): Promise<{ ok: boolean; ms: number }> {
   const t0 = performance.now();
   const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
@@ -194,7 +214,7 @@ export async function probeCloudStatus(force = false): Promise<CloudStatusSnapsh
   inFlight = (async () => {
     const [auth, bridgeRes, rest] = await Promise.all([
       checkAuth(),
-      pingHealth(PROBE_TIMEOUT_MS).then((r) => ({ ok: r.ok, ms: r.ms })),
+      checkBridge(PROBE_TIMEOUT_MS),
       checkRest(),
     ]);
     const signals = { auth, bridge: bridgeRes, rest };
