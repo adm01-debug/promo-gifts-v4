@@ -70,7 +70,11 @@ $function$;
 REVOKE ALL ON FUNCTION public.fn_run_and_persist_smoke_tests() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.fn_run_and_persist_smoke_tests() TO authenticated;
 
-CREATE OR REPLACE VIEW public.v_smoke_tests_latest_run
+-- DROP+CREATE (não OR REPLACE): em prod a view já existe com colunas count(*)
+-- em bigint; CREATE OR REPLACE não pode mudar o tipo p/ integer. DROP recria
+-- limpo (nada depende destas views — verificado em pg_depend).
+DROP VIEW IF EXISTS public.v_smoke_tests_latest_run;
+CREATE VIEW public.v_smoke_tests_latest_run
 WITH (security_invoker = on) AS
 SELECT
   ran_at,
@@ -89,7 +93,8 @@ ORDER BY
   END,
   test_name;
 
-CREATE OR REPLACE VIEW public.v_smoke_tests_trend
+DROP VIEW IF EXISTS public.v_smoke_tests_trend;
+CREATE VIEW public.v_smoke_tests_trend
 WITH (security_invoker = on) AS
 SELECT
   ran_at,
