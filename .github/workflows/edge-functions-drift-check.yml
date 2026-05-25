@@ -1,0 +1,147 @@
+name: Edge Functions Drift Check
+
+on:
+  schedule:
+    - cron: '0 9 * * *'
+  pull_request:
+    paths:
+      - 'supabase/functions/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  drift-check:
+    name: Drift Check – GitHub vs Supabase Canônico
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_PROJECT_ID: doufsxqlfjyuvxuezpln
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
+      - name: Enumerate functions from GitHub
+        id: github-fns
+        run: |
+          mapfile -t SLUGS < <(find supabase/functions -mindepth 1 -maxdepth 1 -type d \
+            ! -name '_shared' ! -name 'tests' \
+            -exec test -f {}/index.ts \; -print | xargs -I{} basename {})
+          echo "slugs=${SLUGS[*]}" >> "$GITHUB_OUTPUT"
+          echo "Found ${#SLUGS[@]} functions in GitHub"
+
+      - name: Download all functions from Supabase canônico
+        run: |
+          mkdir -p /tmp/supabase-canonical
+          for slug in ${{ steps.github-fns.outputs.slugs }}; do
+            echo "Downloading $slug ..."
+            supabase functions download "$slug" \
+              --project-ref "$SUPABASE_PROJECT_ID" \
+              --output /tmp/supabase-canonical/$slug.ts 2>/dev/null || \
+              echo "WARN: failed to download $slug" >&2
+          done
+
+      - name: Compare hashes and detect drift
+        id: drift
+        run: |
+          DRIFT_TABLE=""
+          DRIFT_COUNT=0
+          ALIGNED=0
+          MISSING=0
+
+          for slug in ${{ steps.github-fns.outputs.slugs }}; do
+            GITHUB_FILE="supabase/functions/$slug/index.ts"
+            CANONICAL_FILE="/tmp/supabase-canonical/$slug.ts"
+
+            if [ ! -f "$CANONICAL_FILE" ]; then
+              MISSING=$((MISSING+1))
+              DRIFT_TABLE+="| $slug | ⚠️ MISSING | – | – |\n"
+              continue
+            fi
+
+            GH_HASH=$(sha256sum "$GITHUB_FILE" | awk '{print $1}')
+            CAN_HASH=$(sha256sum "$CANONICAL_FILE" | awk '{print $1}')
+
+            if [ "$GH_HASH" == "$CAN_HASH" ]; then
+              ALIGNED=$((ALIGNED+1))
+            else
+              DRIFT_COUNT=$((DRIFT_COUNT+1))
+              SHORT_GH=${GH_HASH:0:12}
+              SHORT_CAN=${CAN_HASH:0:12}
+              DRIFT_TABLE+="| $slug | 🔴 DRIFT | $SHORT_GH | $SHORT_CAN |\n"
+            fi
+          done
+
+          echo "drift_count=$DRIFT_COUNT" >> "$GITHUB_OUTPUT"
+          echo "aligned=$ALIGNED" >> "$GITHUB_OUTPUT"
+          echo "missing=$MISSING" >> "$GITHUB_OUTPUT"
+          echo "drift_table<<EOF" >> "$GITHUB_OUTPUT"
+          echo -e "$DRIFT_TABLE" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+          echo "=== RESULT ==="
+          echo "Aligned : $ALIGNED"
+          echo "Drift   : $DRIFT_COUNT"
+          echo "Missing : $MISSING"
+
+      - name: Open issue when drift detected (schedule runs)
+        if: github.event_name == 'schedule' && steps.drift.outputs.drift_count != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = [
+              '## 🔴 Edge Functions Drift Detected',
+              '',
+              `**Data:** ${new Date().toISOString().split('T')[0]}`,
+              `**Drift count:** ${{ steps.drift.outputs.drift_count }}`,
+              `**Aligned:** ${{ steps.drift.outputs.aligned }}`,
+              '',
+              '| Function | Status | GitHub SHA | Canonical SHA |',
+              '|---|---|---|---|',
+              `${{ steps.drift.outputs.drift_table }}`,
+              '',
+              '> Ação requerida: abrir PR `chore/reconcile-<slug>-<YYYYMMDD>` trazendo o source do canônico para o GitHub.',
+            ].join('\n');
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `⚠️ Edge Functions Drift – ${new Date().toISOString().split('T')[0]}`,
+              body,
+              labels: ['drift', 'edge-functions', 'automated'],
+            });
+
+      - name: Fail PR if drift detected (pull_request runs)
+        if: github.event_name == 'pull_request' && steps.drift.outputs.drift_count != '0'
+        run: |
+          echo "::error::${{ steps.drift.outputs.drift_count }} edge function(s) com drift detectado!"
+          echo "::group::Funções com drift"
+          echo -e "${{ steps.drift.outputs.drift_table }}"
+          echo "::endgroup::"
+          exit 1
+
+      - name: Summary
+        run: |
+          echo "### Edge Functions Drift Check" >> $GITHUB_STEP_SUMMARY
+          echo "| Indicador | Valor |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| ✅ Alinhadas | ${{ steps.drift.outputs.aligned }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔴 Drift | ${{ steps.drift.outputs.drift_count }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| ⚠️ Missing no canônico | ${{ steps.drift.outputs.missing }} |" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.drift.outputs.drift_count }}" == "0" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**✅ Tudo alinhado — nenhum drift detectado.**" >> $GITHUB_STEP_SUMMARY
+          fi
