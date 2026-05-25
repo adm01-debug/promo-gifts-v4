@@ -47,7 +47,9 @@ jobs:
           node-version-file: '.nvmrc'
           cache: 'npm'
       - run: npm ci
-      - run: npm test --if-present
+      # A suite completa tambem roda hooks e estoura a janela do gate em PRs grandes.
+      # Hooks seguem cobertos pelo job dedicado `Hook tests` do workflow CI.
+      - run: npm run test:quality --if-present
 
   e2e-smoke:
     name: Gate 3 - E2E Smoke
