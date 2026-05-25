@@ -1,10 +1,18 @@
 /**
  * External DB Bridge — Core invocation layer.
  * Handles retry, error parsing, batch queries.
+ *
+ * DUAL-MODE (2026-05-25): quando o kill-switch `edge_external_db_bridge` está OFF,
+ * SELECTs em tabelas whitelistadas são roteados via REST nativo (PostgREST).
+ * Writes e batches continuam sempre via bridge. Veja rest-native.ts.
  */
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { emitBridgeStatus, isColdStartSignal } from './bridge-status-events';
+import { getKillSwitchState } from './kill-switch-client';
+import { tryExecuteRestNative } from './rest-native';
+
+const KILL_SWITCH_NAME = 'edge_external_db_bridge';
 
 export type Operation = 'select' | 'insert' | 'update' | 'delete' | 'upsert' | 'batch_insert';
 
@@ -79,7 +87,6 @@ async function buildBridgeError(error: unknown): Promise<{ message: string; retr
     diagnostic.includes('statement timeout') ||
     diagnostic.includes('canceling statement due to statement timeout') ||
     diagnostic.includes('57014') ||
-    // Cold start / runtime crash transitório do isolate
     diagnostic.includes('supabase_edge_runtime_error') ||
     diagnostic.includes('service is temporarily unavailable') ||
     diagnostic.includes('functionshttperror') ||
@@ -114,7 +121,6 @@ export async function invokeBridge<T>(body: Record<string, unknown>): Promise<Br
     if (error) {
       const parsed = await buildBridgeError(error);
       if (parsed.retryable && attempt < BOOT_RETRY_ATTEMPTS) {
-        // Backoff exponencial com jitter: 400ms, 800ms, 1600ms
         const base = BOOT_INITIAL_BACKOFF_MS * Math.pow(2, attempt - 1);
         const jitter = Math.floor(Math.random() * 150);
         const delay = Math.min(base + jitter, 4000);
@@ -192,12 +198,37 @@ export async function invokeBatchBridge(queries: BatchQuery[]): Promise<BatchRes
 }
 
 // ============================================
-// CRUD HELPERS
+// CRUD HELPERS (dual-mode aware)
 // ============================================
 
+/**
+ * Smart routing: tries REST nativo first when kill-switch is OFF and table is whitelisted.
+ * Falls back to bridge otherwise. Failures in REST nativo are silently caught and routed to bridge.
+ */
 export async function invokeExternalDb<T>(
   options: InvokeOptions
 ): Promise<InvokeResult<T>> {
+  // Step 1: kill-switch check (fail-open, cached 60s+5min)
+  let useRestNative = false;
+  try {
+    const switchState = await getKillSwitchState(KILL_SWITCH_NAME);
+    useRestNative = !switchState.enabled;
+  } catch {
+    // fail-open: assume bridge available
+    useRestNative = false;
+  }
+
+  // Step 2: route to REST nativo when applicable
+  if (useRestNative) {
+    const restResult = await tryExecuteRestNative<T>(options);
+    if (restResult !== null) {
+      return restResult;
+    }
+    // REST not eligible or failed — fall through to bridge.
+    logger.debug(`[external-db] REST nativo não aplicável para ${options.table}/${options.operation}, usando bridge`);
+  }
+
+  // Step 3: bridge path (legacy / fallback)
   const response = await invokeBridge<InvokeResult<T> | T>(options as unknown as Record<string, unknown>);
   const payload = response.data;
 
