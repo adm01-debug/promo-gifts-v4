@@ -82,6 +82,46 @@ SELECT public.get_connections_auto_test_interval();
 
 ## 🔐 Rotação de Credenciais CRM
 
+
+### Rotação de chave usada por cron jobs (`apikey`)
+
+Quando a chave de autenticação de Edge Functions for rotacionada, **os crons também precisam ser validados**.
+
+**Pré-requisitos de runtime (sem hardcode em migration):**
+
+```sql
+-- Definir no ambiente/role do banco (ou via ALTER DATABASE ... SET)
+-- app.supabase_functions_base_url = https://<project-ref>.supabase.co
+-- app.supabase_anon_key           = <jwt anon atual>
+SELECT current_setting('app.supabase_functions_base_url', true) AS base_url;
+SELECT current_setting('app.supabase_anon_key', true)           AS anon_key_present;
+```
+
+**Checklist pós-rotação:**
+
+```sql
+-- 1) Validar comandos dos jobs (não pode conter host fixo nem 'eyJ...')
+SELECT jobname, command
+  FROM cron.job
+ WHERE jobname IN ('connections-auto-test','external-db-bridge-keepalive');
+
+-- 2) Disparo manual de fumaça
+SELECT public.run_connections_auto_test();
+
+-- 3) Saúde recente do cron
+SELECT j.jobname, d.status, d.return_message, d.start_time
+  FROM cron.job_run_details d
+  JOIN cron.job j ON j.jobid = d.jobid
+ WHERE j.jobname IN ('connections-auto-test','external-db-bridge-keepalive')
+ ORDER BY d.start_time DESC
+ LIMIT 20;
+```
+
+Se `current_setting(..., true)` retornar `NULL`, o cron vai falhar com erro de URL/header ausente. Ajuste as variáveis e reexecute a validação.
+
+---
+
+
 1. **Provedor:** gerar nova `service_role` key no dashboard Supabase do CRM.
 2. **Aplicar:** `/admin/conexoes` → Tab "Supabase" → Card CRM → "Rotacionar".
 3. **Verificar:** seletor de empresas no front carrega em <3s.
