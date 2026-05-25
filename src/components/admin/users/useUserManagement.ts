@@ -11,31 +11,27 @@ export function useUserManagement() {
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [{ data: profiles, error: profilesError }, { data: roles, error: rolesError }] =
-        await Promise.all([
-          supabase
-            .from('profiles')
-            .select('id, user_id, full_name, email, avatar_url, is_active, created_at')
-            .order('created_at', { ascending: false }),
-          supabase.from('user_roles').select('user_id, role'),
-        ]);
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, user_id, full_name, email, avatar_url, is_active, created_at, user_roles(role)')
+        .order('created_at', { ascending: false });
 
       if (profilesError) throw profilesError;
-      if (rolesError) throw rolesError;
 
       const usersWithRoles: UserWithRole[] = (profiles || [])
         .filter(
           (profile): profile is typeof profile & { user_id: string } => profile.user_id !== null,
         )
         .map((profile) => {
-          const userRole = roles?.find((r) => r.user_id === profile.user_id);
+          const roles = profile.user_roles as { role: string }[] | null;
+          const primaryRole = roles?.[0]?.role;
           return {
             id: profile.id,
             user_id: profile.user_id,
             full_name: profile.full_name,
             email: profile.email,
             avatar_url: profile.avatar_url,
-            role: (userRole?.role as AppRole) || 'vendedor',
+            role: (primaryRole as AppRole) || 'vendedor',
             created_at: profile.created_at,
             is_active: profile.is_active,
           };

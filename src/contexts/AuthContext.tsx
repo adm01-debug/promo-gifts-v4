@@ -24,7 +24,7 @@ import { setSafeToastRoles } from '@/lib/security/safeToast';
 import { isSupabaseLighthousePlaceholder } from '@/lib/env/supabase-placeholder';
 
 // Tipos de role conforme app_role enum no banco.
-export type AppRole = 'dev' | 'supervisor' | 'agente' | 'admin' | 'manager' | 'vendedor';
+export type AppRole = 'dev' | 'supervisor' | 'agente' | 'coordenador' | 'admin' | 'manager' | 'vendedor';
 
 export interface Profile {
   id: string;

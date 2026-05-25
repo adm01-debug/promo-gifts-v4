@@ -6,6 +6,9 @@ import { rateLimiters, applyRateLimit } from '../_shared/rate-limiter.ts';
 import { runBotProtection } from '../_shared/bot-protection.ts';
 import { extractAndParseAIJSON, safeJson } from '../_shared/json-parser.ts';
 import { safeErrorFields } from '../_shared/log-safety.ts';
+import { assertSwitchEnabled } from '../_shared/kill_switch.ts';
+import { fetchWithBreaker, CircuitOpenError, circuitOpenResponse } from '../_shared/external-fetch.ts';
+import { resolveCredential } from '../_shared/credentials.ts';
 
 const ClientSchema = z.object({
   name: z.string().trim().min(1).max(255),
@@ -40,6 +43,9 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const killResponse = await assertSwitchEnabled('edge_ai_recommendations', req, corsHeaders);
+  if (killResponse) return killResponse;
+
   try {
     const protection = await runBotProtection(
       req,
@@ -58,7 +64,7 @@ Deno.serve(async (req) => {
       return new Response(rl.body, { status: rl.status, headers });
     }
 
-    const HF_API_KEY = Deno.env.get('HUGGINGFACE_API_KEY');
+    const HF_API_KEY = await resolveCredential('HUGGINGFACE_API_KEY');
     if (!HF_API_KEY) {
       console.warn('[ai-recommendations] HUGGINGFACE_API_KEY not configured');
       return new Response(
@@ -121,7 +127,7 @@ ${products.map((p) => `- ID: ${p.id} | ${p.name} | Categoria: ${p.category}${p.t
 
 Retorne APENAS o JSON de recomenda\u00e7\u00f5es, sem texto adicional.`;
 
-    const hfResponse = await fetch(HF_ENDPOINT, {
+    const hfResponse = await fetchWithBreaker('huggingface', HF_ENDPOINT, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${HF_API_KEY}`,
@@ -171,6 +177,7 @@ Retorne APENAS o JSON de recomenda\u00e7\u00f5es, sem texto adicional.`;
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
+    if (error instanceof CircuitOpenError) return circuitOpenResponse(error, corsHeaders);
     if ((error as any)?.status === 401 || (error as any)?.status === 403) {
       return authErrorResponse(error, corsHeaders);
     }

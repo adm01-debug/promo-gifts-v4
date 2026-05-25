@@ -27,7 +27,11 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.gpteng.co https://vercel.live https://*.vercel.app; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https: ; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.lovable.dev https://*.lovable.app https://*.vercel.app https://*.ingest.sentry.io https://*.glitchtip.io https://*.elevenlabs.io wss://*.elevenlabs.io https://api.cnpja.com https://*.bitrix24.com.br https://*.bitrix24.com https://fonts.googleapis.com https://fonts.gstatic.com; media-src 'self' blob: https:; worker-src 'self' blob:; frame-src 'self' https://vercel.live; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.gpteng.co https://vercel.live https://*.vercel.app; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https: ; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.lovable.dev https://*.lovable.app https://*.vercel.app https://*.ingest.sentry.io https://*.glitchtip.io https://*.elevenlabs.io wss://*.elevenlabs.io https://api.cnpja.com https://*.bitrix24.com.br https://*.bitrix24.com https://fonts.googleapis.com https://fonts.gstatic.com; media-src 'self' blob: https:; worker-src 'self' blob:; frame-src 'self' https://vercel.live; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests; report-to csp-endpoint; report-uri https://promogifts.report-uri.com/r/d/csp/enforce"
+        },
+        {
+          "key": "Reporting-Endpoints",
+          "value": "csp-endpoint=\"https://promogifts.report-uri.com/a/d/g\""
         }
       ]
     },

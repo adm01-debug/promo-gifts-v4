@@ -6,6 +6,7 @@ import { getBreaker, circuitOpenResponse, getAllBreakerStatuses } from '../_shar
 import { AsyncLocalStorage } from "node:async_hooks";
 import { getOrCreateRequestId, REQUEST_ID_HEADER } from "../_shared/request-id.ts";
 import { resolveCredential, buildCredentialsHealth } from "../_shared/credentials.ts";
+import { assertSwitchEnabled } from "../_shared/kill_switch.ts";
 
 const breaker = getBreaker("crm-db");
 // redeploy marker: force isolate refresh after CRM secrets synchronization (2026-05-22 12:45)
@@ -803,6 +804,9 @@ Deno.serve((req) => {
     if (req.method === "OPTIONS") {
       return new Response(null, { headers: { ...corsHeaders, [REQUEST_ID_HEADER]: requestId } });
     }
+
+    const killResponse = await assertSwitchEnabled('edge_crm_db_bridge', req, corsHeaders);
+    if (killResponse) return killResponse;
 
   // ─────────────────────────────────────────────────────────────────
   // PING / DIAG — endpoints de diagnóstico SEMPRE disponíveis.

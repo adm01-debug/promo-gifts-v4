@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { invokeExternalDb, invokeExternalDbSingle, invokeExternalDbDelete } from '@/lib/external-db';
 import type { FornecedorGravacao } from '@/types/gravacao-database';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 
 const QUERY_KEY = 'fornecedores-gravacao';
 
@@ -49,7 +50,7 @@ export function useFornecedoresGravacao() {
       toast.success('Fornecedor criado com sucesso!');
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      toast.error(sanitizeError(error));
     },
   });
 
@@ -70,7 +71,7 @@ export function useFornecedoresGravacao() {
       toast.success('Fornecedor atualizado com sucesso!');
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      toast.error(sanitizeError(error));
     },
   });
 
@@ -83,7 +84,7 @@ export function useFornecedoresGravacao() {
       toast.success('Fornecedor excluído com sucesso!');
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      toast.error(sanitizeError(error));
     },
   });
 

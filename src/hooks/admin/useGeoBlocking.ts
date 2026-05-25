@@ -45,8 +45,8 @@ export function useGeoBlocking() {
   const fetchData = useCallback(async () => {
     try {
       const [countriesRes, settingsRes] = await Promise.all([
-        supabase.from('geo_allowed_countries').select('*').order('country_name'),
-        db.from('security_settings').select('*').eq('setting_key', 'geo_blocking').single(),
+        supabase.from('geo_allowed_countries').select('id, country_code, country_name, is_active, created_at').order('country_name'),
+        db.from('security_settings').select('id, setting_key, setting_value').eq('setting_key', 'geo_blocking').single(),
       ]);
 
       if (countriesRes.error) throw countriesRes.error;
