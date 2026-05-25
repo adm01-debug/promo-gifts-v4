@@ -53,6 +53,36 @@ function ProductCardWrapper({
   const [hasAnimated, setHasAnimated] = useState(reducedMotion);
   const ref = useRef<HTMLDivElement>(null);
 
+  // Bug P2-06: lazy mount via IntersectionObserver para reduzir custo de DOM
+  // quando o grid tem 200+ produtos. Cards fora da viewport (com margem de
+  // 800px = ~2 viewports antes/depois) ficam como placeholder vazio mantendo
+  // altura. priority=true (primeiros 8 cards above-the-fold) montam sempre.
+  const [inView, setInView] = useState(priority === true);
+  useEffect(() => {
+    if (inView) return; // já está montado, IO desliga
+    if (!ref.current) return;
+    const el = ref.current;
+    if (typeof IntersectionObserver === 'undefined') {
+      // SSR/jsdom: monta direto
+      setInView(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setInView(true);
+            io.disconnect();
+            break;
+          }
+        }
+      },
+      { rootMargin: '800px 0px', threshold: 0 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [inView, priority]);
+
   useEffect(() => {
     if (reducedMotion) { setHasAnimated(true); return; }
     if (!hasAnimated) {
@@ -71,13 +101,15 @@ function ProductCardWrapper({
           hasAnimated ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'
         }`,
         "relative",
+        // Placeholder mantém footprint visual (altura ~card) enquanto não monta
+        !inView && "min-h-[360px]",
         isSelected && "ring-2 ring-primary/40 rounded-xl"
       )}
       style={reducedMotion ? undefined : {
         transitionDelay: hasAnimated ? '0ms' : `${Math.min(index * 80, 800)}ms`,
       }}
     >
-      {selectionMode && onToggleSelect && (
+      {inView && selectionMode && onToggleSelect && (
         <div 
           className="absolute top-2 left-2 z-20"
           onClick={(e) => { e.stopPropagation(); onToggleSelect(product.id); }}
@@ -89,13 +121,19 @@ function ProductCardWrapper({
           />
         </div>
       )}
-      <ProductCard 
-        product={product} 
-        hideCategoryBadges={hideCategoryBadges} 
-        {...restProps}
-        priority={priority}
-        onClick={selectionMode ? () => onToggleSelect?.(product.id) : restProps.onClick}
-      />
+      {inView ? (
+        <ProductCard 
+          product={product} 
+          hideCategoryBadges={hideCategoryBadges} 
+          {...restProps}
+          priority={priority}
+          onClick={selectionMode ? () => onToggleSelect?.(product.id) : restProps.onClick}
+        />
+      ) : (
+        /* Placeholder leve: mantém o slot sem custar React tree.
+           Não usamos ProductCardSkeleton aqui pois ele anima — caro em 100+ slots. */
+        <div aria-hidden="true" className="h-[360px] rounded-xl bg-muted/30" />
+      )}
     </div>
   );
 }

@@ -9,43 +9,123 @@ export interface TelemetryPayload {
   metadata?: Record<string, any>;
 }
 
+/**
+ * Limites de batch e sampling — Bug P3-03 da auditoria 24/05/2026.
+ *
+ * Estado anterior: 1 INSERT por evento (4545 rows / 3 dias = ~63 rows/h normal,
+ * mas em incidentes pode disparar dezenas por segundo). Sem batching, cada
+ * evento gera round-trip HTTP + RLS check + write — muito caro em pico.
+ *
+ * Estratégia agora:
+ *  1. Buffer in-memory com flush a cada FLUSH_INTERVAL_MS OU BATCH_SIZE eventos
+ *  2. Sampling configurável por event_type (errors e api_fail nunca samplam)
+ *  3. Flush forçado no pagehide/beforeunload via navigator.sendBeacon-like
+ */
+const BATCH_SIZE = 10;
+const FLUSH_INTERVAL_MS = 5000;
+const SAMPLE_RATE: Record<TelemetryEventType, number> = {
+  error: 1.0,       // 100% — todo erro importa
+  api_fail: 1.0,    // 100% — falhas de API são críticas
+  performance: 0.1, // 10% — performance é estatística
+  ux_action: 0.2,   // 20% — ações de UX são frequentes mas amostradas
+};
+
+interface BufferedEvent extends TelemetryPayload {
+  url: string;
+  user_agent: string;
+  session_id: string;
+}
+
 class TelemetryService {
   private sessionId: string;
+  private buffer: BufferedEvent[] = [];
+  private flushTimer: ReturnType<typeof setTimeout> | null = null;
+  private flushing = false;
 
   constructor() {
     this.sessionId = Math.random().toString(36).substring(2, 15);
+    if (typeof window !== 'undefined') {
+      // Flush no fechamento da página/aba — eventos pendentes não somem
+      window.addEventListener('pagehide', () => { void this.flush(true); });
+      window.addEventListener('beforeunload', () => { void this.flush(true); });
+    }
   }
 
-  async log(payload: TelemetryPayload) {
+  private shouldSample(eventType: TelemetryEventType): boolean {
+    const rate = SAMPLE_RATE[eventType] ?? 1.0;
+    if (rate >= 1) return true;
+    return Math.random() < rate;
+  }
+
+  private scheduleFlush() {
+    if (this.flushTimer) return;
+    this.flushTimer = setTimeout(() => {
+      this.flushTimer = null;
+      void this.flush();
+    }, FLUSH_INTERVAL_MS);
+  }
+
+  private async flush(force = false): Promise<void> {
+    if (this.flushing) return;
+    if (this.buffer.length === 0) return;
+    if (!force && this.buffer.length < BATCH_SIZE && this.flushTimer) {
+      // ainda esperando o timer ou batch encher
+      return;
+    }
+
+    this.flushing = true;
+    const batch = this.buffer.splice(0, BATCH_SIZE);
+    if (this.flushTimer) {
+      clearTimeout(this.flushTimer);
+      this.flushTimer = null;
+    }
+
     try {
-      // Don't log in development to save DB space, unless explicitly needed
+      const { error } = await supabase.from('frontend_telemetry').insert(batch);
+      if (error) {
+        // Não re-bufferiza pra evitar loop infinito se erro for RLS/quota
+        console.warn('[Telemetry] Batch insert failed:', error.message);
+      }
+    } catch (e) {
+      console.error('[Telemetry] Critical batch failure:', e);
+    } finally {
+      this.flushing = false;
+      // Se ainda tem coisa no buffer, agenda próxima
+      if (this.buffer.length > 0) this.scheduleFlush();
+    }
+  }
+
+  async log(payload: TelemetryPayload): Promise<void> {
+    try {
       if (import.meta.env.DEV) {
         console.log(`[Telemetry] ${payload.event_type}: ${payload.name}`, payload.metadata);
-        // return; // Uncomment to disable dev logging
       }
 
-      const { error } = await supabase.from('frontend_telemetry').insert({
+      if (!this.shouldSample(payload.event_type)) return;
+
+      this.buffer.push({
         event_type: payload.event_type,
         name: payload.name,
         duration_ms: payload.duration_ms,
         metadata: payload.metadata || {},
-        url: window.location.href,
-        user_agent: navigator.userAgent,
-        session_id: this.sessionId
+        url: typeof window !== 'undefined' ? window.location.href : '',
+        user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+        session_id: this.sessionId,
       });
 
-      if (error) {
-        console.warn('[Telemetry] Error inserting log:', error);
+      if (this.buffer.length >= BATCH_SIZE) {
+        void this.flush();
+      } else {
+        this.scheduleFlush();
       }
     } catch (e) {
+      // Telemetria nunca deve quebrar o app
       console.error('[Telemetry] Critical failure:', e);
     }
   }
 
-  async logError(name: string, error: any, metadata?: Record<string, any>) {
-    // Captura stack trace detalhado para facilitar depuração de crashes
+  async logError(name: string, error: any, metadata?: Record<string, any>): Promise<void> {
     const stack = error?.stack || new Error().stack;
-    
     return this.log({
       event_type: 'error',
       name,
@@ -53,30 +133,43 @@ class TelemetryService {
         message: error?.message || String(error),
         stack,
         context_data: metadata,
-        pathname: window.location.pathname,
-        timestamp: new Date().toISOString()
-      }
+        pathname: typeof window !== 'undefined' ? window.location.pathname : '',
+        timestamp: new Date().toISOString(),
+      },
     });
   }
 
-  async logPerformance(name: string, duration_ms: number, metadata?: Record<string, any>) {
-    // Only log outliers (e.g. > 1s for routes, > 500ms for themes)
-    if (duration_ms < 100) return; 
-
+  async logPerformance(name: string, duration_ms: number, metadata?: Record<string, any>): Promise<void> {
+    // Mantém o threshold (só >= 100ms importa) ANTES do sampling
+    if (duration_ms < 100) return;
     return this.log({
       event_type: 'performance',
       name,
       duration_ms,
-      metadata
+      metadata,
     });
   }
 
-  async logUXAction(name: string, metadata?: Record<string, any>) {
+  async logUXAction(name: string, metadata?: Record<string, any>): Promise<void> {
     return this.log({
       event_type: 'ux_action',
       name,
-      metadata
+      metadata,
     });
+  }
+
+  /** Para tests: limpa buffer e timers sem flush. */
+  __reset(): void {
+    this.buffer = [];
+    if (this.flushTimer) {
+      clearTimeout(this.flushTimer);
+      this.flushTimer = null;
+    }
+  }
+
+  /** Para tests: força flush imediato. */
+  async __flushNow(): Promise<void> {
+    return this.flush(true);
   }
 }
 
