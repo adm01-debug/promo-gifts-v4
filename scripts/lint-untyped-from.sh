@@ -1,1 +1,94 @@
-IyEvdXNyL2Jpbi9lbnYgYmFzaAojIExpbnQ6IGNydXphIG5vbWVzIGRlIHRhYmVsYSBjaGFtYWRvcyB2aWEgdW50eXBlZEZyb20oIi4uLiIpIGNvbnRyYSBvCiMgc2NoZW1hIGdlcmFkbyBlbSBzcmMvaW50ZWdyYXRpb25zL3N1cGFiYXNlL3R5cGVzLnRzLiBGYWxoYSBzZSBob3V2ZXIKIyB0YWJlbGEgZW0gdW50eXBlZEZyb20oKSBxdWUgTsODTyBhcGFyZWNlIG5vIHR5cGVzLnRzLgojCiMgT3JpZ2VtOiBvIGNvbGFwc28gZGUgMjAyNi0wNS0yNCAoUFJzICMzMTUgZSAjMzE3KSBmb2kgY2F1c2FkbyBwb3IgMTQKIyB0YWJlbGFzIGNoYW1hZGFzIHZpYSB1bnR5cGVkRnJvbSgpIHF1ZSBuw6NvIGV4aXN0aWFtIG5vIGJhbmNvLiBPIGZyb250CiMgdGVtIGBjYXRjaCB7IHJldHVybiBbXTsgfWAgZW0gY2FkYSBjaGFtYWRhLCBlbnTDo28gZmVhdHVyZXMgcXVlYnJhdmFtCiMgZW0gc2lsw6puY2lvLiBFc3RlIGxpbnQgZXZpdGEgYSByZWdyZXNzw6NvLgojCiMgUG9zc8OtdmVpcyBmYWxoYXM6CiMgICAxLiBBIHRhYmVsYSBuw6NvIGV4aXN0ZSBubyBiYW5jbyDihpIgY3JpYXIgbWlncmF0aW9uIHF1ZSBhIHJlc3RhdXJlLgojICAgMi4gZGF0YWJhc2UudHlwZXMudHMgZXN0w6EgZGVzYXR1YWxpemFkbyDihpIgcm9kYXIgYHN1cGFiYXNlIGdlbiB0eXBlc2AuCiMKIyBVc28gbG9jYWw6IC4vc2NyaXB0cy9saW50LXVudHlwZWQtZnJvbS5zaAojIFVzbyBDSTogICAgLmdpdGh1Yi93b3JrZmxvd3MvbGludC11bnR5cGVkLWZyb20ueW1sCgpzZXQgLWV1byBwaXBlZmFpbAoKUkVQT19ST09UPSIkezE6LSQoZ2l0IHJldi1wYXJzZSAtLXNob3ctdG9wbGV2ZWwgMj4vZGV2L251bGwgfHwgcHdkKX0iClRZUEVTX0ZJTEU9IiRSRVBPX1JPT1Qvc3JjL2ludGVncmF0aW9ucy9zdXBhYmFzZS90eXBlcy50cyIKU1JDX0RJUj0iJFJFUE9fUk9PVC9zcmMiCkRFRl9GSUxFPSJzcmMvbGliL3N1cGFiYXNlLXVudHlwZWQudHMiCgppZiBbWyAhIC1mICIkVFlQRVNfRklMRSIgXV07IHRoZW4KICBlY2hvICI6OmVycm9yOjp0eXBlcy50cyBuw6NvIGVuY29udHJhZG8gZW0gJFRZUEVTX0ZJTEUiCiAgZWNobyAiUm9kZSAnc3VwYWJhc2UgZ2VuIHR5cGVzIHR5cGVzY3JpcHQgLS1wcm9qZWN0LWlkIDxpZD4gPiAkVFlQRVNfRklMRScgYW50ZXMuIgogIGV4aXQgMgpmaQoKaWYgW1sgISAtZCAiJFNSQ19ESVIiIF1dOyB0aGVuCiAgZWNobyAiOjplcnJvcjo6ZGlyZXTDs3JpbyBzcmMvIG7Do28gZW5jb250cmFkbyBlbSAkU1JDX0RJUiIKICBleGl0IDIKZmkKCnRtcF9jYWxsZWQ9JChta3RlbXApCnRtcF9zY2hlbWE9JChta3RlbXApCnRtcF9taXNzaW5nPSQobWt0ZW1wKQp0cmFwICdybSAtZiAiJHRtcF9jYWxsZWQiICIkdG1wX3NjaGVtYSIgIiR0bXBfbWlzc2luZyInIEVYSVQKCiMgMSkgVGFiZWxhcyBjaGFtYWRhcyB2aWEgdW50eXBlZEZyb20oIi4uLiIpIG91IHVudHlwZWRGcm9tKCcuLi4nKSBlbSBzcmMvCiMgICAgKGV4Y2x1aSBhIHByw7NwcmlhIGRlZmluacOnw6NvIGVtIHN1cGFiYXNlLXVudHlwZWQudHMpCmdyZXAgLXJoRSAidW50eXBlZEZyb21bXihdKlwoWydcIl0oW2Etel9dW2EtejAtOV9dKilbJ1wiXSIgIiRTUkNfRElSIiBcCiAgICAtLWluY2x1ZGU9JyoudHMnIC0taW5jbHVkZT0nKi50c3gnIC0tZXhjbHVkZT0nc3VwYWJhc2UtdW50eXBlZC50cycgMj4vZGV2L251bGwgXAogIHwgc2VkIC1FICJzLy4qdW50eXBlZEZyb21bXihdKlwoWydcIl0oW2Etel9dW2EtejAtOV9dKylbJ1wiXS4qL1wxLyIgXAogIHwgc29ydCAtdSA+ICIkdG1wX2NhbGxlZCIgfHwgdHJ1ZQoKIyAyKSBOb21lcyBkZSB0YWJlbGEgbm8gdHlwZXMudHMgZ2VyYWRvLgojICAgIEVzdHJ1dHVyYTogZGVudHJvIGRlIGBUYWJsZXM6IHtgLCBjYWRhIGNoYXZlIMOpIHVtYSB0YWJlbGEgY29tIDYKIyAgICBlc3Bhw6dvcyBkZSBpbmRlbnRhw6fDo28gc2VndWlkYSBkZSBgOiB7YC4KZ3JlcCAtRSAnXiAgICAgIFthLXpfXVthLXowLTlfXSs6IFx7JCcgIiRUWVBFU19GSUxFIiBcCiAgfCBzZWQgLUUgJ3MvXiAgICAgIChbYS16X11bYS16MC05X10rKTouKi9cMS8nIFwKICB8IHNvcnQgLXUgPiAiJHRtcF9zY2hlbWEiCgpjYWxsZWRfY291bnQ9JCh3YyAtbCA8ICIkdG1wX2NhbGxlZCIgfCB0ciAtZCAnICcpCnNjaGVtYV9jb3VudD0kKHdjIC1sIDwgIiR0bXBfc2NoZW1hIiB8IHRyIC1kICcgJykKCmVjaG8gIj09PSBsaW50LXVudHlwZWQtZnJvbSA9PT0iCmVjaG8gIlRhYmVsYXMgY2hhbWFkYXMgdmlhIHVudHlwZWRGcm9tKCk6ICRjYWxsZWRfY291bnQiCmVjaG8gIlRhYmVsYXMgbm8gc2NoZW1hIGdlcmFkbyAodHlwZXMudHMpOiAkc2NoZW1hX2NvdW50IgplY2hvICIiCgppZiBbWyAiJGNhbGxlZF9jb3VudCIgLWVxIDAgXV07IHRoZW4KICBlY2hvICLinIUgTmVuaHVtYSBjaGFtYWRhIHVudHlwZWRGcm9tKCkgZW5jb250cmFkYSDigJQgZm9udGUgZXN0w6EgdG90YWxtZW50ZSB0aXBhZGEuIgogIGV4aXQgMApmaQoKIyAzKSBEaWZmOiB0YWJlbGFzIGVtIHVudHlwZWRGcm9tIHF1ZSBOw4NPIGV4aXN0ZW0gbm8gc2NoZW1hCmNvbW0gLTIzICIkdG1wX2NhbGxlZCIgIiR0bXBfc2NoZW1hIiA+ICIkdG1wX21pc3NpbmciCgppZiBbWyAhIC1zICIkdG1wX21pc3NpbmciIF1dOyB0aGVuCiAgZWNobyAi4pyFIFRvZGFzIGFzICRjYWxsZWRfY291bnQgdGFiZWxhcyBjaGFtYWRhcyB2aWEgdW50eXBlZEZyb20oKSBleGlzdGVtIgogIGVjaG8gIiAgIG5vIHNjaGVtYSBnZXJhZG8uIENvbnNpZGVyZSBtaWdyw6EtbGFzIHBhcmEgc3VwYWJhc2UuZnJvbSgpIHRpcGFkby4iCiAgZWNobyAiIgogIGVjaG8gIkNoYW1hZGFzIGRldGVjdGFkYXM6IgogIHNlZCAncy9eLyAgLSAvJyAiJHRtcF9jYWxsZWQiCiAgZXhpdCAwCmZpCgptaXNzaW5nX2NvdW50PSQod2MgLWwgPCAiJHRtcF9taXNzaW5nIiB8IHRyIC1kICcgJykKCmVjaG8gIjo6ZXJyb3I6OiRtaXNzaW5nX2NvdW50IHRhYmVsYShzKSBlbSB1bnR5cGVkRnJvbSgpIG7Do28gZXhpc3RlbSBubyBzY2hlbWEgZ2VyYWRvOiIKc2VkICdzL14vICAtIC8nICIkdG1wX21pc3NpbmciCmVjaG8gIiIKZWNobyAiUG9zc8OtdmVpcyBjYXVzYXM6IgplY2hvICIgIDEuIEEgdGFiZWxhIG7Do28gZXhpc3RlIG5vIGJhbmNvLiBDcmllIHVtYSBtaWdyYXRpb24gcXVlIGEgcmVzdGF1cmUiCmVjaG8gIiAgICAgKHZlciBQUiAjMzE1IC8gIzMxNyBjb21vIHJlZmVyw6puY2lhKS4iCmVjaG8gIiAgMi4gZGF0YWJhc2UudHlwZXMudHMgZXN0w6EgZGVzYXR1YWxpemFkby4gUm9kZToiCmVjaG8gIiAgICAgICBzdXBhYmFzZSBnZW4gdHlwZXMgdHlwZXNjcmlwdCAtLXByb2plY3QtaWQgPGlkPiBcXCIKZWNobyAiICAgICAgICAgPiBzcmMvaW50ZWdyYXRpb25zL3N1cGFiYXNlL3R5cGVzLnRzIgplY2hvICIiCmVjaG8gIkVzdGUgbGludCBleGlzdGUgcHJhIGV2aXRhciBhIHJlZ3Jlc3PDo28gZG8gY29sYXBzbyBkZSAyMDI2LTA1LTI0LCIKZWNobyAicXVhbmRvIHRhYmVsYXMgaW5leGlzdGVudGVzIG5vIGJhbmNvIHF1ZWJyYXZhbSBmZWF0dXJlcyBzaWxlbmNpb3NhbWVudGUuIgpleGl0IDEK
+#!/usr/bin/env bash
+# Lint: cruza nomes de tabela chamados via untypedFrom("...") contra o
+# schema gerado em src/integrations/supabase/types.ts. Falha se houver
+# tabela em untypedFrom() que NÃO aparece no types.ts.
+#
+# Origem: o colapso de 2026-05-24 (PRs #315 e #317) foi causado por 14
+# tabelas chamadas via untypedFrom() que não existiam no banco. O front
+# tem `catch { return []; }` em cada chamada, então features quebravam
+# em silêncio. Este lint evita a regressão.
+#
+# Possíveis falhas:
+#   1. A tabela não existe no banco → criar migration que a restaure.
+#   2. database.types.ts está desatualizado → rodar `supabase gen types`.
+#
+# Uso local: ./scripts/lint-untyped-from.sh
+# Uso CI:    .github/workflows/lint-untyped-from.yml
+
+set -euo pipefail
+
+REPO_ROOT="${1:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+TYPES_FILE="$REPO_ROOT/src/integrations/supabase/types.ts"
+SRC_DIR="$REPO_ROOT/src"
+DEF_FILE="src/lib/supabase-untyped.ts"
+
+if [[ ! -f "$TYPES_FILE" ]]; then
+  echo "::error::types.ts não encontrado em $TYPES_FILE"
+  echo "Rode 'supabase gen types typescript --project-id <id> > $TYPES_FILE' antes."
+  exit 2
+fi
+
+if [[ ! -d "$SRC_DIR" ]]; then
+  echo "::error::diretório src/ não encontrado em $SRC_DIR"
+  exit 2
+fi
+
+tmp_called=$(mktemp)
+tmp_schema=$(mktemp)
+tmp_missing=$(mktemp)
+trap 'rm -f "$tmp_called" "$tmp_schema" "$tmp_missing"' EXIT
+
+# 1) Tabelas chamadas via untypedFrom("...") ou untypedFrom('...') em src/
+#    (exclui a própria definição em supabase-untyped.ts)
+grep -rhE "untypedFrom[^(]*\(['\"]([a-z_][a-z0-9_]*)['\"]" "$SRC_DIR" \
+    --include='*.ts' --include='*.tsx' --exclude='supabase-untyped.ts' 2>/dev/null \
+  | sed -E "s/.*untypedFrom[^(]*\(['\"]([a-z_][a-z0-9_]+)['\"].*/\1/" \
+  | sort -u > "$tmp_called" || true
+
+# 2) Nomes de tabela no types.ts gerado.
+#    Estrutura: dentro de `Tables: {`, cada chave é uma tabela com 6
+#    espaços de indentação seguida de `: {`.
+grep -E '^      [a-z_][a-z0-9_]+: \{$' "$TYPES_FILE" \
+  | sed -E 's/^      ([a-z_][a-z0-9_]+):.*/\1/' \
+  | sort -u > "$tmp_schema"
+
+called_count=$(wc -l < "$tmp_called" | tr -d ' ')
+schema_count=$(wc -l < "$tmp_schema" | tr -d ' ')
+
+echo "=== lint-untyped-from ==="
+echo "Tabelas chamadas via untypedFrom(): $called_count"
+echo "Tabelas no schema gerado (types.ts): $schema_count"
+echo ""
+
+if [[ "$called_count" -eq 0 ]]; then
+  echo "✅ Nenhuma chamada untypedFrom() encontrada — fonte está totalmente tipada."
+  exit 0
+fi
+
+# 3) Diff: tabelas em untypedFrom que NÃO existem no schema
+comm -23 "$tmp_called" "$tmp_schema" > "$tmp_missing"
+
+if [[ ! -s "$tmp_missing" ]]; then
+  echo "✅ Todas as $called_count tabelas chamadas via untypedFrom() existem"
+  echo "   no schema gerado. Considere migrá-las para supabase.from() tipado."
+  echo ""
+  echo "Chamadas detectadas:"
+  sed 's/^/  - /' "$tmp_called"
+  exit 0
+fi
+
+missing_count=$(wc -l < "$tmp_missing" | tr -d ' ')
+
+echo "::error::$missing_count tabela(s) em untypedFrom() não existem no schema gerado:"
+sed 's/^/  - /' "$tmp_missing"
+echo ""
+echo "Possíveis causas:"
+echo "  1. A tabela não existe no banco. Crie uma migration que a restaure"
+echo "     (ver PR #315 / #317 como referência)."
+echo "  2. database.types.ts está desatualizado. Rode:"
+echo "       supabase gen types typescript --project-id <id> \\"
+echo "         > src/integrations/supabase/types.ts"
+echo ""
+echo "Este lint existe pra evitar a regressão do colapso de 2026-05-24,"
+echo "quando tabelas inexistentes no banco quebravam features silenciosamente."
+exit 1
