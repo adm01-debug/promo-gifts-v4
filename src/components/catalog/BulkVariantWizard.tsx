@@ -19,7 +19,8 @@ import {
   FileDown,
   type LucideIcon,
 } from 'lucide-react';
-import { useExternalVariantStock, type ExternalVariantStock, type Product } from '@/hooks/products';
+import { useExternalVariantStock, type ExternalVariantStock } from '@/hooks/products/useExternalVariantStock';
+import type { Product } from '@/types/product-catalog';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export interface BulkVariantSelection {

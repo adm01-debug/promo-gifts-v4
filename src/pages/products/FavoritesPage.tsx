@@ -18,7 +18,7 @@ import { getDefaultColumns, type ColumnCount } from '@/components/products/Colum
 import {
   getGridColsClass,
   getGridGapClass,
-} from '@/components/replenishments/VirtualizedReplenishmentGrid';
+} from '@/components/replenishments/grid-layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';

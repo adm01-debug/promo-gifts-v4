@@ -1,8 +1,8 @@
 import { useMemo, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Check, X, AlertTriangle, Loader2, Shield } from 'lucide-react';
-import { usePasswordBreachCheck } from '@/hooks/auth';
-import { useDebounce } from '@/hooks/common';
+import { usePasswordBreachCheck } from '@/hooks/auth/usePasswordBreachCheck';
+import { useDebounce } from '@/hooks/common/useDebounce';
 
 interface PasswordStrengthIndicatorProps {
   password: string;

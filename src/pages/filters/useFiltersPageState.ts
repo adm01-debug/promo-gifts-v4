@@ -2,17 +2,15 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { type FilterState, defaultFilters } from '@/components/filters/FilterPanel';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
-import {
-  useColorEnrichment,
-  useProductFuzzySearch,
-  useProductsByCategory,
-  useProductsByColor,
-  useProductsByMaterial,
-  useProductsCatalog,
-  useSupplierSalesRanking,
-} from '@/hooks/products';
-import { useDebounce } from '@/hooks/common';
-import { usePromoSalesRanking } from '@/hooks/intelligence';
+import { useColorEnrichment } from '@/hooks/products/useColorEnrichment';
+import { useProductFuzzySearch } from '@/hooks/products/useProductFuzzySearch';
+import { useProductsByCategory } from '@/hooks/products/useProductsByCategory';
+import { useProductsByColor } from '@/hooks/products/useProductsByColor';
+import { useProductsByMaterial } from '@/hooks/products/useProductsByMaterial';
+import { useProductsCatalog } from '@/hooks/products/useProductsLightweight';
+import { useSupplierSalesRanking } from '@/hooks/products/useSupplierSalesRanking';
+import { useDebounce } from '@/hooks/common/useDebounce';
+import { usePromoSalesRanking } from '@/hooks/intelligence/usePromoSalesRanking';
 import { sortProducts } from '@/utils/product-sorting';
 import { toast } from 'sonner';
 import type { ProductVariation } from '@/types/product-catalog';

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, type ReactNode, useMemo, useCallback, useState, useEffect, useRef } from "react";
-import { type Product, mapPromobrindToProduct } from "@/hooks/products";
-import { fetchPromobrindProducts } from "@/lib/external-db";
+import type { Product } from "@/types/product-catalog";
+import { mapPromobrindToProduct } from "@/utils/product-mapper";
+import { fetchPromobrindProducts } from "@/lib/external-db/products";
 import { logger } from "@/lib/logger";
 
 // HMR Module Duplication Guard

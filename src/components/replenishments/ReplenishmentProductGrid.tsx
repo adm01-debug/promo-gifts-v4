@@ -14,7 +14,8 @@ import { useComparisonStore } from "@/stores/useComparisonStore";
 import { AnimatePresence, motion } from "framer-motion";
 import { ReplenishmentTableView } from "./ReplenishmentCards";
 import { ReplenishmentToolbar } from "./ReplenishmentToolbar";
-import { VirtualizedReplenishmentGrid, getGridColsClass, getGridGapClass } from "./VirtualizedReplenishmentGrid";
+import { getGridColsClass, getGridGapClass } from "./grid-layout";
+import { VirtualizedReplenishmentGrid } from "./VirtualizedReplenishmentGrid";
 import { VirtualizedReplenishmentList } from "./VirtualizedReplenishmentList";
 import { ProductCardSkeleton } from "@/components/products/ProductCardSkeleton";
 

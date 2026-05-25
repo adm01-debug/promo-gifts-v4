@@ -1,8 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import {
-  getGridColsClass,
-} from "@/components/replenishments/VirtualizedReplenishmentGrid";
+import { getGridColsClass } from "@/components/replenishments/grid-layout";
 import type { ColumnCount } from "@/components/products/ColumnSelector";
 
 interface ProductCardSkeletonProps {

@@ -1,11 +1,25 @@
-import { type ReactNode, useState, useEffect } from "react";
+import { type ReactNode, Suspense, useState, useEffect } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { EnhancedErrorBoundary } from "@/components/errors/EnhancedErrorBoundary";
 import { EmptyState } from "@/components/common/EmptyState";
-import { MfaEnrollmentDialog } from "@/components/security/MfaEnrollmentDialog";
-import { MfaChallengeDialog } from "@/components/security/MfaChallengeDialog";
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
+
+const MfaEnrollmentDialog = lazyWithRetry(() =>
+  import("@/components/security/MfaEnrollmentDialog").then((m) => ({
+    default: m.MfaEnrollmentDialog,
+  })),
+);
+const MfaChallengeDialog = lazyWithRetry(() =>
+  import("@/components/security/MfaChallengeDialog").then((m) => ({
+    default: m.MfaChallengeDialog,
+  })),
+);
+
+function DialogFallback() {
+  return null;
+}
 
 interface AdminRouteProps {
   children?: ReactNode;
@@ -59,7 +73,9 @@ export function AdminRoute({ children }: AdminRouteProps) {
         <div className="min-h-screen flex items-center justify-center bg-background">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-        <MfaEnrollmentDialog open={enrollOpen} onOpenChange={setEnrollOpen} enforce />
+        <Suspense fallback={<DialogFallback />}>
+          <MfaEnrollmentDialog open={enrollOpen} onOpenChange={setEnrollOpen} enforce />
+        </Suspense>
       </>
     );
   }
@@ -71,7 +87,9 @@ export function AdminRoute({ children }: AdminRouteProps) {
         <div className="min-h-screen flex items-center justify-center bg-background">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-        <MfaChallengeDialog open />
+        <Suspense fallback={<DialogFallback />}>
+          <MfaChallengeDialog open />
+        </Suspense>
       </>
     );
   }

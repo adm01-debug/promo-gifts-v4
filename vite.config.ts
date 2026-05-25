@@ -49,6 +49,12 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks(id: string) {
+            if (id.includes('vite/preload-helper')) {
+              return 'runtime-vendor';
+            }
+            if (id.includes('node_modules/clsx/')) {
+              return 'utils-vendor';
+            }
             if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
               return 'react-vendor';
             }
@@ -72,9 +78,6 @@ export default defineConfig(({ mode }) => {
             }
             if (id.includes('node_modules/recharts/') || id.includes('node_modules/d3-')) {
               return 'charts-vendor';
-            }
-            if (id.includes('node_modules/lucide-react/')) {
-              return 'icons-vendor';
             }
             if (id.includes('node_modules/zod/')) {
               return 'zod-vendor';

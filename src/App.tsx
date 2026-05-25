@@ -7,7 +7,6 @@ import { BrowserRouter } from "react-router-dom";
 
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { AppProviders } from "@/components/providers/AppProviders";
 import { AppBootstrap } from "@/components/providers/AppBootstrap";
 import { AccessibilityProvider, AriaLiveProvider } from "@/components/a11y";
 import { BridgeStatusBanner } from "@/components/BridgeStatusBanner";
@@ -20,7 +19,7 @@ import { DevOnlyBridgeOverlay } from "@/components/dev/DevOnlyBridgeOverlay";
 import { RouteScrollReset } from "@/components/common/RouteScrollReset";
 import { EnhancedErrorBoundary } from "@/components/errors/EnhancedErrorBoundary";
 import { ThemeInitializer } from "@/components/ThemeInitializer";
-import { useAppBootstrap } from "@/hooks/common";
+import { useAppBootstrap } from "@/hooks/common/useAppBootstrap";
 import { AppRoutes } from "@/routes/AppRoutes";
 import { RoutePrefetcher } from "@/routes/RoutePrefetcher";
 import "./App.css";
@@ -45,8 +44,7 @@ const App = () => {
                 <AuthProvider>
                   <AppBootstrapContainer>
                     <AppBootstrap>
-                    <EnhancedErrorBoundary>
-                      <AppProviders>
+                      <EnhancedErrorBoundary>
                         <RootInteractivityGuard />
                         <Sonner />
                         <KillSwitchBanner />
@@ -58,8 +56,7 @@ const App = () => {
                         <RouteScrollReset />
                         <RoutePrefetcher />
                         <AppRoutes />
-                      </AppProviders>
-                    </EnhancedErrorBoundary>
+                      </EnhancedErrorBoundary>
                     </AppBootstrap>
                   </AppBootstrapContainer>
                 </AuthProvider>

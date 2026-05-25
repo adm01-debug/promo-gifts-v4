@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { useState, useEffect, useRef, forwardRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/ui';
+import { useToast } from '@/hooks/ui/use-toast';
 import { authDebug, authDebugError } from '@/lib/auth/auth-debug';
 import { markOAuthPending, clearOAuthPending, readOAuthPending } from '@/lib/auth/oauth-pending';
 import { resolveOAuthError } from '@/lib/auth/oauth-error-messages';

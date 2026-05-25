@@ -1,50 +1,48 @@
 import { useEffect, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useGlobalErrorCatcher } from "@/hooks/ui";
+import { useGlobalErrorCatcher } from "@/hooks/ui/useErrorHandler";
 import { markBootSuccessful } from "@/lib/chunk-recovery";
-import { loadThemeConfig, applyThemePreset, applyRadius } from "@/lib/theme-presets";
+import { loadThemeConfig, applyRadius, applyThemePreset } from "@/lib/theme-presets";
 import { startBridgeTelemetry } from "@/lib/external-db/bridge-telemetry-client";
 import { startColdStartRecorder } from "@/lib/external-db/cold-start-recorder";
-import { useCatalogPrefetch } from "@/hooks/products";
 
 /**
- * useAppBootstrap — Centraliza a lógica de inicialização do App.
- * Extraído de App.tsx para manter o componente principal limpo e focado no roteamento.
+ * useAppBootstrap centralizes global initialization used by App.tsx.
  */
 export function useAppBootstrap() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { actualTheme } = useTheme();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const initializedRef = useRef(false);
+  const catalogPrefetchedRef = useRef(false);
 
   useGlobalErrorCatcher();
-  useCatalogPrefetch();
 
-  // 1. Telemetria e Infra (Idempotente)
+  // 1. Telemetry and infra are idempotent.
   useEffect(() => {
     if (initializedRef.current) return;
     initializedRef.current = true;
-    
+
     startBridgeTelemetry();
     startColdStartRecorder();
-    
-    // Limpa marcador de chunk-recovery após boot bem-sucedido
     markBootSuccessful();
   }, []);
 
-  // 2. Sincronização de Tema e Configurações Visuais
+  // 2. Theme and visual config sync.
   useEffect(() => {
     const cfg = loadThemeConfig();
     applyThemePreset(cfg.presetId, actualTheme);
     applyRadius(cfg.radius);
   }, [actualTheme]);
 
-  // 3. Gestão de Conectividade
+  // 3. Connectivity listeners.
   useEffect(() => {
     const handleStatusChange = () => {
-      // Futuro: Adicionar lógica de toast de offline/online global
+      // Reserved for global offline/online notifications.
     };
 
     window.addEventListener("online", handleStatusChange);
@@ -56,18 +54,31 @@ export function useAppBootstrap() {
     };
   }, []);
 
-  // 4. Lógica de Scroll Progressivo em Navegação
+  // 4. Catalog prefetch runs only after auth and outside the public boot graph.
+  useEffect(() => {
+    if (authLoading || !isAuthenticated || catalogPrefetchedRef.current) return;
+
+    const timer = window.setTimeout(() => {
+      catalogPrefetchedRef.current = true;
+      import("@/hooks/products/useCatalogPrefetch")
+        .then(({ prefetchCatalog }) => prefetchCatalog(queryClient))
+        .catch((error) => {
+          console.warn("[app-bootstrap] catalog prefetch skipped:", error);
+        });
+    }, 400);
+
+    return () => window.clearTimeout(timer);
+  }, [authLoading, isAuthenticated, queryClient]);
+
+  // 5. Progressive scroll/breadcrumb CSS var.
   const isHome = location.pathname === "/";
   useEffect(() => {
-    document.documentElement.style.setProperty(
-      "--breadcrumb-h",
-      isHome ? "0px" : "40px"
-    );
+    document.documentElement.style.setProperty("--breadcrumb-h", isHome ? "0px" : "40px");
   }, [isHome]);
 
   return {
     isHome,
     authLoading,
-    isAuthenticated
+    isAuthenticated,
   };
 }

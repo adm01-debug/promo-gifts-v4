@@ -1,6 +1,8 @@
 import { Badge } from "@/components/ui/badge";
 import type { FilterState } from "@/components/filters/FilterPanel";
-import { getCategoryIcon, useCategoryIcons, useExternalCategoriesQuery, useSupplierNames, type CategoryIcon } from "@/hooks/products";
+import { getCategoryIcon, useCategoryIcons, type CategoryIcon } from "@/hooks/products/useCategoryIcons";
+import { useExternalCategoriesQuery } from "@/hooks/products/useExternalCategoriesQuery";
+import { useSupplierNames } from "@/hooks/products/useSupplierNames";
 import { toTitleCase } from "@/lib/textUtils";
 import { X } from "lucide-react";
 

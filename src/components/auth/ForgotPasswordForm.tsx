@@ -8,8 +8,8 @@ import { Mail, Loader2, ArrowLeft, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/ui';
-import { usePasswordResetRequests } from '@/hooks/auth';
+import { useToast } from '@/hooks/ui/use-toast';
+import { usePasswordResetRequests } from '@/hooks/auth/usePasswordResetRequests';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const forgotPasswordSchema = z.object({

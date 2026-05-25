@@ -23,11 +23,11 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   ALLOWED_FRESHNESS_THRESHOLDS,
+  type FreshnessThreshold,
+  useDeleteFreshnessOverride,
   useProductFreshnessOverride,
   useUpsertFreshnessOverride,
-  useDeleteFreshnessOverride,
-  type FreshnessThreshold,
-} from "@/hooks/products";
+} from "@/hooks/products/useProductFreshnessOverride";
 
 interface Props {
   productId: string;

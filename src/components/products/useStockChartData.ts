@@ -13,8 +13,8 @@ import {
   type IntelligenceFlag,
   type StockVelocity,
   type ProductIntelligenceData,
-} from '@/hooks/intelligence';
-import { useSupplierNames } from '@/hooks/products';
+} from '@/hooks/intelligence/useStockHistory';
+import { useSupplierNames } from '@/hooks/products/useSupplierNames';
 import {
   safeVelocityTrend,
   safeNumber,

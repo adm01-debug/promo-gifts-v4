@@ -2,7 +2,7 @@ import { useState, Suspense, useEffect, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { performanceTracker } from '@/utils/performance';
 import { useScrollLockFix } from '@/hooks/ui/useScrollLockFix';
-import { useGlobalShortcuts } from '@/hooks/ui';
+import { useGlobalShortcuts } from '@/hooks/ui/useGlobalShortcuts';
 
 import { SkipToContent } from '@/components/common/SkipToContent';
 

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { WifiOff, X, Wifi, AlertCircle, RefreshCw } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { useBridgeStatusBanner } from '@/hooks/intelligence';
+import { useBridgeStatusBanner } from '@/hooks/intelligence/useBridgeStatusBanner';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 

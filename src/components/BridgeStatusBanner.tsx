@@ -8,8 +8,8 @@
 import { memo } from 'react';
 import { AlertTriangle, X, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useDevGate } from '@/hooks/admin';
-import { useBridgeStatusBanner } from '@/hooks/intelligence';
+import { useDevGate } from '@/hooks/admin/useDevGate';
+import { useBridgeStatusBanner } from '@/hooks/intelligence/useBridgeStatusBanner';
 
 export const BridgeStatusBanner = memo(function BridgeStatusBanner() {
   // O hook ainda precisa do flag para suprimir toasts internos.

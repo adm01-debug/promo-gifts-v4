@@ -6,7 +6,7 @@ import { useMemo, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Package, AlertTriangle, SkipForward } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useExternalVariantStock, type ExternalVariantStock } from '@/hooks/products';
+import { useExternalVariantStock, type ExternalVariantStock } from '@/hooks/products/useExternalVariantStock';
 
 interface SingleVariantPickerProps {
   productId: string;
