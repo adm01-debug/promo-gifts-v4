@@ -157,8 +157,14 @@ export function MyClientsWidget() {
   });
 
   const clients = useMemo(() => {
-    const allQ = data?.pages.flatMap((p) => p.quotes) ?? [];
-    const allO = data?.pages.flatMap((p) => p.orders) ?? [];
+    const allQ = (data?.pages.flatMap((p) => p.quotes) ?? []).map((q) => ({
+      ...q,
+      updated_at: q.updated_at ?? '',
+    }));
+    const allO = (data?.pages.flatMap((p) => p.orders) ?? []).map((o) => ({
+      ...o,
+      updated_at: o.updated_at ?? '',
+    }));
     return aggregate(allQ, allO);
   }, [data]);
 

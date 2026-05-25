@@ -4,14 +4,14 @@
  * Reusa o cliente Supabase autenticado (admin via RLS) e enriquece cada
  * chave com `creator_email` / `creator_name` via lookup batch em `profiles`.
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { isFullAccess } from "@/lib/mcp/scopes";
-import { sanitizeError } from "@/lib/security/sanitize-error";
-import { useDevChallenge } from "@/contexts/DevChallengeContext";
-import { handleStepUpError } from "@/lib/auth/step-up-error";
-import { createClientLogger } from "@/lib/telemetry/structuredLogger";
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { isFullAccess } from '@/lib/mcp/scopes';
+import { sanitizeError } from '@/lib/security/sanitize-error';
+import { useDevChallenge } from '@/contexts/DevChallengeContext';
+import { handleStepUpError } from '@/lib/auth/step-up-error';
+import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 
 export interface McpKeyRow {
   id: string;
@@ -28,12 +28,12 @@ export interface McpKeyRow {
   // enriched
   creator_email: string | null;
   creator_name: string | null;
-  status: "active" | "expired" | "revoked";
+  status: 'active' | 'expired' | 'revoked';
   is_full: boolean;
 }
 
-export type StatusFilter = "all" | "active" | "expired" | "revoked";
-export type SortKey = "created_desc" | "expires_asc" | "last_used_desc";
+export type StatusFilter = 'all' | 'active' | 'expired' | 'revoked';
+export type SortKey = 'created_desc' | 'expires_asc' | 'last_used_desc';
 
 export interface CreatorOption {
   user_id: string;
@@ -55,10 +55,13 @@ interface Filters {
   createdTo: string | null;
 }
 
-function deriveStatus(row: { revoked_at: string | null; expires_at: string | null }): McpKeyRow["status"] {
-  if (row.revoked_at) return "revoked";
-  if (row.expires_at && new Date(row.expires_at).getTime() <= Date.now()) return "expired";
-  return "active";
+function deriveStatus(row: {
+  revoked_at: string | null;
+  expires_at: string | null;
+}): McpKeyRow['status'] {
+  if (row.revoked_at) return 'revoked';
+  if (row.expires_at && new Date(row.expires_at).getTime() <= Date.now()) return 'expired';
+  return 'active';
 }
 
 export function useMcpKeys() {
@@ -66,10 +69,10 @@ export function useMcpKeys() {
   const [rows, setRows] = useState<McpKeyRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<Filters>({
-    search: "",
-    status: "all",
+    search: '',
+    status: 'all',
     onlyFull: false,
-    sort: "created_desc",
+    sort: 'created_desc',
     creator: null,
     createdFrom: null,
     createdTo: null,
@@ -78,14 +81,14 @@ export function useMcpKeys() {
   const load = useCallback(async () => {
     setLoading(true);
     const { data: keys, error } = await supabase
-      .from("mcp_api_keys")
+      .from('mcp_api_keys')
       .select(
-        "id, name, key_prefix, scopes, description, created_by, last_used_at, expires_at, revoked_at, created_at, rotated_from",
+        'id, name, key_prefix, scopes, description, created_by, last_used_at, expires_at, revoked_at, created_at, rotated_from',
       )
-      .order("created_at", { ascending: false });
+      .order('created_at', { ascending: false });
 
     if (error) {
-      toast.error("Erro ao carregar chaves", { description: error.message });
+      toast.error('Erro ao carregar chaves', { description: error.message });
       setRows([]);
       setLoading(false);
       return;
@@ -95,16 +98,16 @@ export function useMcpKeys() {
     let creators: Map<string, { email: string | null; name: string | null }> = new Map();
     if (ids.length > 0) {
       const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, email, full_name")
-        .in("user_id", ids);
+        .from('profiles')
+        .select('user_id, email, full_name')
+        .in('user_id', ids);
       creators = new Map(
-        (profiles ?? []).map(
-          (p: { user_id: string; email: string | null; full_name: string | null }) => [
-            p.user_id,
-            { email: p.email, name: p.full_name },
-          ],
-        ),
+        (profiles ?? [])
+          .filter(
+            (p): p is { user_id: string; email: string | null; full_name: string | null } =>
+              p.user_id !== null,
+          )
+          .map((p) => [p.user_id, { email: p.email, name: p.full_name }]),
       );
     }
 
@@ -136,10 +139,10 @@ export function useMcpKeys() {
         (r) =>
           r.name.toLowerCase().includes(q) ||
           r.key_prefix.toLowerCase().includes(q) ||
-          (r.creator_email ?? "").toLowerCase().includes(q),
+          (r.creator_email ?? '').toLowerCase().includes(q),
       );
     }
-    if (filters.status !== "all") {
+    if (filters.status !== 'all') {
       out = out.filter((r) => r.status === filters.status);
     }
     if (filters.onlyFull) {
@@ -164,14 +167,14 @@ export function useMcpKeys() {
     }
     const sorted = [...out];
     switch (filters.sort) {
-      case "expires_asc":
+      case 'expires_asc':
         sorted.sort((a, b) => {
           const ax = a.expires_at ? new Date(a.expires_at).getTime() : Number.POSITIVE_INFINITY;
           const bx = b.expires_at ? new Date(b.expires_at).getTime() : Number.POSITIVE_INFINITY;
           return ax - bx;
         });
         break;
-      case "last_used_desc":
+      case 'last_used_desc':
         sorted.sort((a, b) => {
           const ax = a.last_used_at ? new Date(a.last_used_at).getTime() : 0;
           const bx = b.last_used_at ? new Date(b.last_used_at).getTime() : 0;
@@ -179,9 +182,7 @@ export function useMcpKeys() {
         });
         break;
       default:
-        sorted.sort(
-          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-        );
+        sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     }
     return sorted;
   }, [rows, filters]);
@@ -213,10 +214,10 @@ export function useMcpKeys() {
   const counts = useMemo(
     () => ({
       total: rows.length,
-      active: rows.filter((r) => r.status === "active").length,
-      expired: rows.filter((r) => r.status === "expired").length,
-      revoked: rows.filter((r) => r.status === "revoked").length,
-      full: rows.filter((r) => r.is_full && r.status === "active").length,
+      active: rows.filter((r) => r.status === 'active').length,
+      expired: rows.filter((r) => r.status === 'expired').length,
+      revoked: rows.filter((r) => r.status === 'revoked').length,
+      full: rows.filter((r) => r.is_full && r.status === 'active').length,
     }),
     [rows],
   );
@@ -229,35 +230,40 @@ export function useMcpKeys() {
 
       const requestStepUp = () =>
         challenge({
-          action: "mcp_key_revoke",
-          actionLabel: "Revogar chave MCP",
+          action: 'mcp_key_revoke',
+          actionLabel: 'Revogar chave MCP',
           targetRef: id,
         });
       const token = await requestStepUp();
-      if (!token) { log.warn('cancelled_by_user'); return false; }
+      if (!token) {
+        log.warn('cancelled_by_user');
+        return false;
+      }
 
       const attempt = async (tk: string): Promise<boolean> => {
-        const { data, error } = await supabase.functions.invoke("mcp-keys-revoke", {
+        const { data, error } = await supabase.functions.invoke('mcp-keys-revoke', {
           body: { key_id: id, reason: reason ?? null, step_up_token: tk },
           headers: log.headers(),
         });
         // Tratamento dedicado de step-up: mostra toast com CTA "Refazer verificação".
-        if (handleStepUpError(data, error, () => {
-          void (async () => {
-            const fresh = await requestStepUp();
-            if (fresh) await attempt(fresh);
-          })();
-        })) {
+        if (
+          handleStepUpError(data, error, () => {
+            void (async () => {
+              const fresh = await requestStepUp();
+              if (fresh) await attempt(fresh);
+            })();
+          })
+        ) {
           log.warn('step_up_required');
           return false;
         }
         if (error || (data && (data as { error?: string }).error)) {
           log.error('failed', { err: error ?? data });
-          toast.error("Erro ao revogar", { description: sanitizeError(error ?? data) });
+          toast.error('Erro ao revogar', { description: sanitizeError(error ?? data) });
           return false;
         }
         log.info('ok');
-        toast.success("Chave revogada");
+        toast.success('Chave revogada');
         await load();
         return true;
       };
@@ -267,5 +273,15 @@ export function useMcpKeys() {
     [load, challenge],
   );
 
-  return { rows: filtered, allRows: rows, loading, filters, setFilters, counts, creators, reload: load, revoke };
+  return {
+    rows: filtered,
+    allRows: rows,
+    loading,
+    filters,
+    setFilters,
+    counts,
+    creators,
+    reload: load,
+    revoke,
+  };
 }

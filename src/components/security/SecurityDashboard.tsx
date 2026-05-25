@@ -82,7 +82,8 @@ export function SecurityDashboard() {
         .eq('is_active', true)
         .order('full_name')
         .then(({ data }) => {
-          if (data) setUsers(data);
+          if (data)
+            setUsers(data.filter((u): u is typeof u & { user_id: string } => u.user_id !== null));
         });
     }
   }, [isAdmin]);

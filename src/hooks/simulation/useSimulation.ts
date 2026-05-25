@@ -206,7 +206,7 @@ export function useSimulation() {
       }));
     },
   });
-  const savedSimulations = (_savedSimulations ?? []) as SavedSimulation[];
+  const savedSimulations = (_savedSimulations ?? []) as unknown as SavedSimulation[];
 
   // ─── Derived ──────────────────────────────────────────────
   const selectedProduct = useMemo(

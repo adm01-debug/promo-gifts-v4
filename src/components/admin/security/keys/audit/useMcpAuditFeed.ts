@@ -13,7 +13,6 @@ export type AuditAction =
   | 'mcp_key.revoked'
   | 'mcp_key.scope_escalated'
   | 'mcp_key.auto_revoked'
-
   | 'mcp_key.issue_denied'
   | 'mcp_key.issue_error'
   | 'mcp_key.revoke_denied'
@@ -101,15 +100,17 @@ export function useMcpAuditFeed() {
         .select('user_id, email, full_name')
         .in('user_id', userIds);
       (profs ?? []).forEach(
-        (p: { user_id: string; email?: string | null; full_name?: string | null }) => {
-          profiles[p.user_id] = { email: p.email, full_name: p.full_name };
+        (p: { user_id: string | null; email?: string | null; full_name?: string | null }) => {
+          if (p.user_id) profiles[p.user_id] = { email: p.email, full_name: p.full_name };
         },
       );
     }
 
     const enriched = base.map<AuditFeedRow>((r) => {
       const d = (r.details ?? {}) as Record<string, unknown>;
-      const scopes = (d.scopes ?? (d.after as Record<string, unknown>)?.['scopes'] ?? []) as string[];
+      const scopes = (d.scopes ??
+        (d.after as Record<string, unknown>)?.['scopes'] ??
+        []) as string[];
       const isFull = (Array.isArray(scopes) && scopes.includes('*')) || d.is_full_access === true;
       const escalated = d.escalated_to_full === true || r.action === 'mcp_key.scope_escalated';
       const prof = r.user_id ? profiles[r.user_id] : undefined;

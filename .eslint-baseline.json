@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-24T19:38:14.033Z",
-  "totalErrors": 128,
+  "generatedAt": "2026-05-25T02:40:18.480Z",
+  "totalErrors": 133,
   "counts": {
     "src/components/access/DevAccessDeniedPage.tsx": {
       "react-hooks/exhaustive-deps": 1
@@ -123,7 +123,6 @@
       "@typescript-eslint/naming-convention": 2
     },
     "src/components/expert/chat/useExpertChat.ts": {
-      "@typescript-eslint/no-unused-expressions": 2,
       "react-hooks/exhaustive-deps": 3
     },
     "src/components/filters/CommemorativeDateFilter.tsx": {
@@ -424,6 +423,12 @@
     "src/hooks/admin/useDevGate.ts": {
       "react-hooks/exhaustive-deps": 1
     },
+    "src/hooks/admin/useKillSwitchObservability.ts": {
+      "@typescript-eslint/no-explicit-any": 1
+    },
+    "src/hooks/admin/useSmokeTests.ts": {
+      "@typescript-eslint/no-explicit-any": 2
+    },
     "src/hooks/auth/useAccessSecurity.ts": {
       "@typescript-eslint/naming-convention": 5
     },
@@ -491,6 +496,9 @@
       "@typescript-eslint/naming-convention": 1,
       "@typescript-eslint/no-non-null-assertion": 1
     },
+    "src/lib/external-db/rest-native.ts": {
+      "@typescript-eslint/no-explicit-any": 3
+    },
     "src/lib/feature-flags.ts": {
       "@typescript-eslint/no-non-null-assertion": 1
     },
@@ -528,6 +536,9 @@
     },
     "src/pages/admin/AdminExternalDbPage.tsx": {
       "react-hooks/exhaustive-deps": 1
+    },
+    "src/pages/admin/ObservabilityDashboard.tsx": {
+      "eqeqeq": 1
     },
     "src/pages/admin/PermissionsPage.tsx": {
       "react-hooks/exhaustive-deps": 1

@@ -38,7 +38,7 @@ interface IpEntry {
   reason: string | null;
   expires_at: string | null;
   created_at: string;
-  created_by: string;
+  created_by: string | null;
 }
 
 type Filter = 'all' | 'allow' | 'block' | 'active' | 'expired';

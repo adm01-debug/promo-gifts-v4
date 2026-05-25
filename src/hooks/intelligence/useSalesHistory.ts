@@ -68,8 +68,8 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
         .limit(5000);
 
       // Fetch related quotes for seller info
-      const quoteIds = [...new Set((quoteItems || []).map(q => q.quote_id))];
-      const orderIds = [...new Set((orderItems || []).map(o => o.order_id))];
+      const quoteIds = [...new Set((quoteItems || []).map((q) => q.quote_id))];
+      const orderIds = [...new Set((orderItems || []).map((o) => o.order_id))];
 
       const quotesMap: Record<string, { seller_id: string; status: string }> = {};
       const ordersMap: Record<string, { seller_id: string; status: string }> = {};
@@ -83,7 +83,7 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
           .in('id', quoteIds)
           .in('status', ['sent', 'approved', 'rejected', 'expired', 'converted']);
         for (const q of quotes || []) {
-          quotesMap[q.id] = { seller_id: q.seller_id, status: q.status };
+          quotesMap[q.id] = { seller_id: q.seller_id ?? '', status: q.status ?? '' };
         }
       }
 
@@ -94,15 +94,17 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
           .select('id, seller_id, status')
           .in('id', orderIds.filter(Boolean) as string[]);
         for (const o of orders || []) {
-          ordersMap[o.id] = { seller_id: o.seller_id, status: o.status };
+          ordersMap[o.id] = { seller_id: o.seller_id ?? '', status: o.status ?? '' };
         }
       }
 
       // Fetch seller names
-      const allSellerIds = [...new Set([
-        ...Object.values(quotesMap).map(q => q.seller_id),
-        ...Object.values(ordersMap).map(o => o.seller_id),
-      ])];
+      const allSellerIds = [
+        ...new Set([
+          ...Object.values(quotesMap).map((q) => q.seller_id),
+          ...Object.values(ordersMap).map((o) => o.seller_id),
+        ]),
+      ];
       const sellerNames: Record<string, string> = {};
       if (allSellerIds.length > 0) {
         const { data: profiles } = await supabase
@@ -110,7 +112,7 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
           .select('user_id, full_name')
           .in('user_id', allSellerIds);
         for (const p of profiles || []) {
-          sellerNames[p.user_id] = p.full_name || 'Vendedor';
+          if (p.user_id) sellerNames[p.user_id] = p.full_name || 'Vendedor';
         }
       }
 
@@ -123,7 +125,7 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
         const date = qi.created_at.substring(0, 10);
         const entry = dailyMap.get(date) || newDailyPoint(date);
         entry.quotedQty += qi.quantity || 0;
-        entry.quotedValue += qi.subtotal ?? ((qi.quantity ?? 0) * (qi.unit_price ?? 0));
+        entry.quotedValue += qi.subtotal ?? (qi.quantity ?? 0) * (qi.unit_price ?? 0);
         entry.quoteCount += 1;
         dailyMap.set(date, entry);
       }
@@ -149,10 +151,13 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
         const s = sellerMap.get(sellerId) || {
           sellerId,
           sellerName: sellerNames[sellerId] || 'Vendedor',
-          totalQty: 0, totalValue: 0, quoteCount: 0, orderCount: 0,
+          totalQty: 0,
+          totalValue: 0,
+          quoteCount: 0,
+          orderCount: 0,
         };
         s.totalQty += qi.quantity || 0;
-        s.totalValue += qi.subtotal ?? ((qi.quantity ?? 0) * (qi.unit_price ?? 0));
+        s.totalValue += qi.subtotal ?? (qi.quantity ?? 0) * (qi.unit_price ?? 0);
         s.quoteCount += 1;
         sellerMap.set(sellerId, s);
       }
@@ -163,7 +168,10 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
         const s = sellerMap.get(sellerId) || {
           sellerId,
           sellerName: sellerNames[sellerId] || 'Vendedor',
-          totalQty: 0, totalValue: 0, quoteCount: 0, orderCount: 0,
+          totalQty: 0,
+          totalValue: 0,
+          quoteCount: 0,
+          orderCount: 0,
         };
         s.totalQty += oi.quantity || 0;
         s.totalValue += (oi.quantity || 0) * (oi.unit_price || 0);
@@ -181,8 +189,10 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
       const totalOrderedValue = daily.reduce((s, d) => s + d.orderedValue, 0);
 
       // B13 fix: conversion rate uses unique DOCUMENT counts, not item counts
-      const uniqueQuoteIds = new Set((quoteItems || []).map(qi => qi.quote_id));
-      const uniqueOrderIds = new Set((orderItems || []).filter(oi => oi.order_id).map(oi => oi.order_id));
+      const uniqueQuoteIds = new Set((quoteItems || []).map((qi) => qi.quote_id));
+      const uniqueOrderIds = new Set(
+        (orderItems || []).filter((oi) => oi.order_id).map((oi) => oi.order_id),
+      );
       const totalUniqueQuotes = uniqueQuoteIds.size;
       const totalUniqueOrders = uniqueOrderIds.size;
 
@@ -208,14 +218,26 @@ export function useSalesHistory(productId: string | undefined, days = 30) {
 // ---------- Helpers ----------
 
 function newDailyPoint(date: string): DailySalesPoint {
-  return { date, quotedQty: 0, orderedQty: 0, quotedValue: 0, orderedValue: 0, quoteCount: 0, orderCount: 0 };
+  return {
+    date,
+    quotedQty: 0,
+    orderedQty: 0,
+    quotedValue: 0,
+    orderedValue: 0,
+    quoteCount: 0,
+    orderCount: 0,
+  };
 }
 
 export function emptyKpis(): SalesKpis {
   return {
-    totalQuotedQty: 0, totalOrderedQty: 0,
-    totalQuotedValue: 0, totalOrderedValue: 0,
-    conversionRate: 0, uniqueSellers: 0, avgOrderValue: 0,
+    totalQuotedQty: 0,
+    totalOrderedQty: 0,
+    totalQuotedValue: 0,
+    totalOrderedValue: 0,
+    conversionRate: 0,
+    uniqueSellers: 0,
+    avgOrderValue: 0,
     topSellers: [],
   };
 }

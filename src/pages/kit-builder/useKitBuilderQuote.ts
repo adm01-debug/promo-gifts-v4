@@ -40,6 +40,9 @@ export function useKitBuilderQuote() {
       const quotePayload = {
         seller_id: user.id,
         status: 'draft',
+        // Empty string lets the `set_quote_number` BEFORE INSERT trigger generate it.
+        quote_number: '',
+        client_name: 'Sem cliente',
         subtotal: pricing.subtotal,
         discount_percent: 0,
         discount_amount: 0,
