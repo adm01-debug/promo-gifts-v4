@@ -36,14 +36,44 @@ DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname='trg_validate_a
 END IF; END $$;
 ALTER TABLE public.quote_approval_tokens ENABLE ROW LEVEL SECURITY;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='quote_approval_tokens' AND policyname='qatokens_select_scope') THEN
-  CREATE POLICY qatokens_select_scope ON public.quote_approval_tokens FOR SELECT TO authenticated USING (can_view_all_sales() OR seller_id = auth.uid());
+  CREATE POLICY qatokens_select_scope ON public.quote_approval_tokens FOR SELECT TO authenticated USING (
+    public.has_role((select auth.uid()), 'admin'::public.app_role)
+    OR public.has_role((select auth.uid()), 'manager'::public.app_role)
+    OR public.has_role((select auth.uid()), 'supervisor'::public.app_role)
+    OR public.has_role((select auth.uid()), 'dev'::public.app_role)
+    OR seller_id = (select auth.uid())
+  );
 END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='quote_approval_tokens' AND policyname='qatokens_insert_scope') THEN
-  CREATE POLICY qatokens_insert_scope ON public.quote_approval_tokens FOR INSERT TO authenticated WITH CHECK (can_view_all_sales() OR seller_id = auth.uid());
+  CREATE POLICY qatokens_insert_scope ON public.quote_approval_tokens FOR INSERT TO authenticated WITH CHECK (
+    public.has_role((select auth.uid()), 'admin'::public.app_role)
+    OR public.has_role((select auth.uid()), 'manager'::public.app_role)
+    OR public.has_role((select auth.uid()), 'supervisor'::public.app_role)
+    OR public.has_role((select auth.uid()), 'dev'::public.app_role)
+    OR seller_id = (select auth.uid())
+  );
 END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='quote_approval_tokens' AND policyname='qatokens_update_scope') THEN
-  CREATE POLICY qatokens_update_scope ON public.quote_approval_tokens FOR UPDATE TO authenticated USING (can_view_all_sales() OR seller_id = auth.uid()) WITH CHECK (can_view_all_sales() OR seller_id = auth.uid());
+  CREATE POLICY qatokens_update_scope ON public.quote_approval_tokens FOR UPDATE TO authenticated USING (
+    public.has_role((select auth.uid()), 'admin'::public.app_role)
+    OR public.has_role((select auth.uid()), 'manager'::public.app_role)
+    OR public.has_role((select auth.uid()), 'supervisor'::public.app_role)
+    OR public.has_role((select auth.uid()), 'dev'::public.app_role)
+    OR seller_id = (select auth.uid())
+  ) WITH CHECK (
+    public.has_role((select auth.uid()), 'admin'::public.app_role)
+    OR public.has_role((select auth.uid()), 'manager'::public.app_role)
+    OR public.has_role((select auth.uid()), 'supervisor'::public.app_role)
+    OR public.has_role((select auth.uid()), 'dev'::public.app_role)
+    OR seller_id = (select auth.uid())
+  );
 END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='quote_approval_tokens' AND policyname='qatokens_delete_scope') THEN
-  CREATE POLICY qatokens_delete_scope ON public.quote_approval_tokens FOR DELETE TO authenticated USING (can_view_all_sales() OR seller_id = auth.uid());
+  CREATE POLICY qatokens_delete_scope ON public.quote_approval_tokens FOR DELETE TO authenticated USING (
+    public.has_role((select auth.uid()), 'admin'::public.app_role)
+    OR public.has_role((select auth.uid()), 'manager'::public.app_role)
+    OR public.has_role((select auth.uid()), 'supervisor'::public.app_role)
+    OR public.has_role((select auth.uid()), 'dev'::public.app_role)
+    OR seller_id = (select auth.uid())
+  );
 END IF; END $$;

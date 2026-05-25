@@ -43,17 +43,47 @@ ALTER POLICY "Admins read token failures" ON public.public_token_failures
   USING (is_admin((select auth.uid())));
 
 ALTER POLICY "qatokens_delete_scope" ON public.quote_approval_tokens
-  USING ((can_view_all_sales() OR (seller_id = (select auth.uid()))));
+  USING ((
+    public.has_role((select auth.uid()), 'admin'::public.app_role)
+    OR public.has_role((select auth.uid()), 'manager'::public.app_role)
+    OR public.has_role((select auth.uid()), 'supervisor'::public.app_role)
+    OR public.has_role((select auth.uid()), 'dev'::public.app_role)
+    OR (seller_id = (select auth.uid()))
+  ));
 
 ALTER POLICY "qatokens_insert_scope" ON public.quote_approval_tokens
-  WITH CHECK ((can_view_all_sales() OR (seller_id = (select auth.uid()))));
+  WITH CHECK ((
+    public.has_role((select auth.uid()), 'admin'::public.app_role)
+    OR public.has_role((select auth.uid()), 'manager'::public.app_role)
+    OR public.has_role((select auth.uid()), 'supervisor'::public.app_role)
+    OR public.has_role((select auth.uid()), 'dev'::public.app_role)
+    OR (seller_id = (select auth.uid()))
+  ));
 
 ALTER POLICY "qatokens_select_scope" ON public.quote_approval_tokens
-  USING ((can_view_all_sales() OR (seller_id = (select auth.uid()))));
+  USING ((
+    public.has_role((select auth.uid()), 'admin'::public.app_role)
+    OR public.has_role((select auth.uid()), 'manager'::public.app_role)
+    OR public.has_role((select auth.uid()), 'supervisor'::public.app_role)
+    OR public.has_role((select auth.uid()), 'dev'::public.app_role)
+    OR (seller_id = (select auth.uid()))
+  ));
 
 ALTER POLICY "qatokens_update_scope" ON public.quote_approval_tokens
-  USING ((can_view_all_sales() OR (seller_id = (select auth.uid()))))
-  WITH CHECK ((can_view_all_sales() OR (seller_id = (select auth.uid()))));
+  USING ((
+    public.has_role((select auth.uid()), 'admin'::public.app_role)
+    OR public.has_role((select auth.uid()), 'manager'::public.app_role)
+    OR public.has_role((select auth.uid()), 'supervisor'::public.app_role)
+    OR public.has_role((select auth.uid()), 'dev'::public.app_role)
+    OR (seller_id = (select auth.uid()))
+  ))
+  WITH CHECK ((
+    public.has_role((select auth.uid()), 'admin'::public.app_role)
+    OR public.has_role((select auth.uid()), 'manager'::public.app_role)
+    OR public.has_role((select auth.uid()), 'supervisor'::public.app_role)
+    OR public.has_role((select auth.uid()), 'dev'::public.app_role)
+    OR (seller_id = (select auth.uid()))
+  ));
 
 ALTER POLICY "Admins manage drift allowlist" ON public.schema_drift_allowlist
   USING (EXISTS ( SELECT 1 FROM user_roles WHERE ((user_roles.user_id = (select auth.uid())) AND (user_roles.role = 'admin'::app_role))))
