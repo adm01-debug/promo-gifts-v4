@@ -707,15 +707,15 @@ export function useGlobalSearch() {
       const latencyMs = Math.round(performance.now() - startedAt);
       void supabase.auth.getUser().then(
         ({ data }) => {
-          const sellerId = data.user?.id;
-          if (!sellerId) return;
+          const userId = data.user?.id;
+          if (!userId) return;
           return supabase
             .from('search_analytics')
             .insert({
-              seller_id: sellerId,
+              user_id: userId,
               search_term: searchQuery.toLowerCase().trim().slice(0, 200),
               results_count: finalResults.length,
-              filters_used: { latency_ms: latencyMs, intent_type: intent.type },
+              search_context: JSON.stringify({ latency_ms: latencyMs, intent_type: intent.type }),
             })
             .then(
               () => undefined,
