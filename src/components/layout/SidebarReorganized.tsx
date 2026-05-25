@@ -337,9 +337,12 @@ export const SidebarReorganized = React.memo(
           data-tour="sidebar"
           role="navigation"
           aria-label="Menu principal"
-          style={{ ['--sidebar-w' as string]: isCollapsed ? '4rem' : '16rem' }}
+          style={{
+            ['--sidebar-w' as string]: isCollapsed ? '4rem' : '16rem',
+            transitionTimingFunction: 'cubic-bezier(0.23,1,0.32,1)',
+          }}
           className={cn(
-            'ease-[cubic-bezier(0.23,1,0.32,1)] theme-transitioning fixed left-0 top-0 z-50 h-full border-r border-sidebar-border/20 bg-sidebar/80 backdrop-blur-3xl transition-all duration-500',
+            'theme-transitioning fixed left-0 top-0 z-50 h-full border-r border-sidebar-border/20 bg-sidebar/80 backdrop-blur-3xl transition-all duration-500',
             isCollapsed ? 'overflow-visible' : 'overflow-hidden',
             'lg:sticky lg:top-0 lg:z-40 lg:h-screen',
 
