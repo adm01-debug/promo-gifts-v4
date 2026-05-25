@@ -52,6 +52,10 @@ export interface LocationTechnique {
   technique_id: string;
   composed_code: string;
   max_colors: number | null;
+  /**
+   * @deprecated TODO(#339): coluna não existe em product_component_location_techniques.
+   * Updates do toggle "definir como padrão" não persistem no DB.
+   */
   is_default: boolean;
   is_active: boolean;
   technique?: Technique;

@@ -158,7 +158,7 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
           {!isCollapsed && item.shortcut && (
             <kbd className="ml-auto hidden rounded bg-muted/30 px-1 py-0.5 font-mono text-[9px] text-muted-foreground/40 lg:inline-block">{item.shortcut}</kbd>
           )}
-          {!isCollapsed && item.badge != null && (
+          {!isCollapsed && item.badge !== undefined && item.badge !== null && (
             <span className="ml-auto min-w-[20px] rounded-full bg-primary/20 px-1.5 py-0.5 text-center text-[10px] font-semibold text-white">{item.badge}</span>
           )}
         </NavLink>
@@ -174,7 +174,7 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
                 {item.shortcut && (
                   <kbd className="rounded bg-muted/50 px-1 py-0.5 font-mono text-[9px] text-muted-foreground/60">{item.shortcut}</kbd>
                 )}
-                {item.badge != null && (
+                {item.badge !== undefined && item.badge !== null && (
                   <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-semibold text-white">{item.badge}</span>
                 )}
               </div>

@@ -17,6 +17,11 @@ export interface GroupComponent {
   product_group_id: string;
   component_code: string;
   component_name: string;
+  /**
+   * @deprecated TODO(#339): coluna não existe em product_group_components.
+   * Existe em product_components — herda no momento do "use group rules".
+   * Toggle no admin não persiste.
+   */
   is_personalizable: boolean;
   is_active: boolean;
   sort_order: number;
@@ -30,6 +35,7 @@ export interface GroupLocation {
   max_width_cm: number | null;
   max_height_cm: number | null;
   max_area_cm2: number | null;
+  /** @deprecated TODO(#339): coluna não existe em product_group_locations; upload não persiste. */
   area_image_url: string | null;
   is_active: boolean;
 }
