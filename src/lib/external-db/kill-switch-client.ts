@@ -1,32 +1,62 @@
 /**
  * Kill-switch client — consulta o estado de switches em public.system_kill_switches
- * para que o FRONT-END pare de chamar edge functions descontinuadas ANTES
- * mesmo de fazer o invoke. Reduz tráfego à edge function, custo e logs ruidosos.
+ * com suporte a ROLLOUT GRADUAL (A/B canary) via fn_should_apply_kill_switch.
  *
- * Padrão (back-end espelho): docs/PATCH_external_db_bridge_kill_switch.md.
- * Tabela: public.system_kill_switches (criada na fase 1 do colapso 2026-05-24).
+ * Padrão (back-end espelho): docs/PATCH_external_db_bridge_kill_switch.md
+ * Plano A/B: docs/PLANO_AB_DESLIGAMENTO_SWITCH.md
  *
  * Cache:
- *  - Memória: 60s (mesma janela do helper back-end _shared/kill_switch.ts).
- *  - localStorage: 5min, sobrevive reload e troca de aba. Backup em quota error.
+ *  - Memória: 60s
+ *  - localStorage: 5min, sobrevive reload e troca de aba
  *
  * Falha aberta (fail-open): se a consulta falhar, ASSUME que o switch está
  * ON (= permite invoke). É segurança em camadas — o back-end ainda decide.
+ *
+ * Rollout gradual: quando `rollout_percentage < 100`, apenas X% dos clientes
+ * (determinístico por bucket_key = user_id || anon_bucket) recebem o kill.
  */
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 
-const MEM_TTL_MS = 60_000;       // 60s — alinhado ao cache do helper back-end
-const STORAGE_TTL_MS = 300_000;  // 5min — sobrevive reload/aba
+const MEM_TTL_MS = 60_000;
+const STORAGE_TTL_MS = 300_000;
 const STORAGE_KEY_PREFIX = 'kill_switch:';
+const BUCKET_KEY_STORAGE = 'kill_switch:bucket_key';
 
 type SwitchCheck = {
   enabled: boolean;
   legacy_message?: string | null;
   fetchedAt: number;
+  /** Resultado do rollout para o bucket_key deste cliente. */
+  shouldApply?: boolean;
 };
 
 const memoryCache = new Map<string, SwitchCheck>();
+
+/**
+ * Bucket key estável por cliente. Para usuários anon, gera UUID v4 leve
+ * uma única vez e persiste em localStorage. Para logged-in (futuro),
+ * pode-se usar auth.uid().
+ */
+function getBucketKey(): string {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return 'ssr-anon';
+  }
+  try {
+    let key = window.localStorage.getItem(BUCKET_KEY_STORAGE);
+    if (!key) {
+      // UUID-like leve sem depender de crypto.randomUUID (compatível com browsers antigos)
+      key =
+        Date.now().toString(36) +
+        Math.random().toString(36).slice(2, 10) +
+        Math.random().toString(36).slice(2, 10);
+      window.localStorage.setItem(BUCKET_KEY_STORAGE, key);
+    }
+    return key;
+  } catch {
+    return 'fallback-anon';
+  }
+}
 
 function readFromLocalStorage(switchName: string): SwitchCheck | null {
   if (typeof window === 'undefined' || !window.localStorage) return null;
@@ -54,7 +84,7 @@ function writeToLocalStorage(switchName: string, check: SwitchCheck): void {
 }
 
 export interface KillSwitchState {
-  /** true = invoke OK; false = bloqueado, ver `message` para razão UX. */
+  /** true = invoke OK; false = bloqueado. Considera o rollout %. */
   enabled: boolean;
   /** Mensagem amigável quando bloqueado (vem do banco). */
   message?: string | null;
@@ -63,33 +93,32 @@ export interface KillSwitchState {
 }
 
 /**
- * Consulta o estado de um switch. NÃO lança — fail-open em qualquer erro.
+ * Consulta o estado efetivo de um switch para este cliente (considerando rollout).
+ * Fail-open em qualquer erro.
  *
- * @example
- * const state = await getKillSwitchState('edge_external_db_bridge');
- * if (!state.enabled) {
- *   throw new Error(state.message ?? 'Service unavailable');
- * }
+ * Algoritmo:
+ *   1. Lê {enabled, legacy_message} de system_kill_switches (com cache 60s+5min)
+ *   2. Se enabled=true → retorna {enabled: true} imediatamente (caso comum, switch ATIVO)
+ *   3. Se enabled=false → chama RPC fn_should_apply_kill_switch para decidir
+ *      considerando o rollout_percentage e o bucket_key deste cliente
+ *   4. Cacheia o resultado para evitar RPCs repetidos
  */
 export async function getKillSwitchState(switchName: string): Promise<KillSwitchState> {
-  // 1) Memória (60s)
+  // 1) Memória
   const mem = memoryCache.get(switchName);
   if (mem && Date.now() - mem.fetchedAt < MEM_TTL_MS) {
-    return { enabled: mem.enabled, message: mem.legacy_message, source: 'memory' };
+    return resolveEffectiveState(mem, 'memory');
   }
 
-  // 2) localStorage (5min)
+  // 2) localStorage
   const stored = readFromLocalStorage(switchName);
   if (stored) {
     memoryCache.set(switchName, stored);
-    return { enabled: stored.enabled, message: stored.legacy_message, source: 'storage' };
+    return resolveEffectiveState(stored, 'storage');
   }
 
-  // 3) Network (consulta REST nativa — tabela tem GRANT SELECT TO anon)
+  // 3) Network
   try {
-    // Cast para `any` controlado: a tabela `system_kill_switches` foi criada
-    // após o último gen-types e ainda não está no Database type. Substituir
-    // por `from('system_kill_switches')` tipado quando rodar `supabase gen types`.
     // deno-lint-ignore no-explicit-any
     const client = supabase as any;
     const { data, error } = await client
@@ -104,19 +133,43 @@ export async function getKillSwitchState(switchName: string): Promise<KillSwitch
     }
 
     if (!data) {
-      // Switch não cadastrado = assume ON (fail-open).
       return { enabled: true, source: 'fail-open' };
     }
 
+    const enabled = Boolean(data.enabled);
+    let shouldApply: boolean | undefined;
+
+    // Se switch está OFF (enabled=false), consulta rollout para este cliente
+    if (!enabled) {
+      try {
+        const bucketKey = getBucketKey();
+        const { data: rpcResult, error: rpcError } = await client.rpc(
+          'fn_should_apply_kill_switch',
+          { p_switch_name: switchName, p_bucket_key: bucketKey },
+        );
+        if (rpcError) {
+          // RPC falhou — default conservador: aplica kill (mesmo comportamento de quando rollout=100)
+          logger.warn(`[kill-switch-client] RPC rollout falhou — assume 100%: ${rpcError.message}`);
+          shouldApply = true;
+        } else {
+          shouldApply = Boolean(rpcResult);
+        }
+      } catch (e) {
+        logger.warn(`[kill-switch-client] RPC rollout erro — assume 100%: ${(e as Error).message}`);
+        shouldApply = true;
+      }
+    }
+
     const check: SwitchCheck = {
-      enabled: Boolean(data.enabled),
+      enabled,
       legacy_message: data.legacy_message ?? null,
+      shouldApply,
       fetchedAt: Date.now(),
     };
     memoryCache.set(switchName, check);
     writeToLocalStorage(switchName, check);
 
-    return { enabled: check.enabled, message: check.legacy_message, source: 'network' };
+    return resolveEffectiveState(check, 'network');
   } catch (e) {
     logger.warn(`[kill-switch-client] erro inesperado para "${switchName}" — fail-open: ${(e as Error).message}`);
     return { enabled: true, source: 'fail-open' };
@@ -124,8 +177,36 @@ export async function getKillSwitchState(switchName: string): Promise<KillSwitch
 }
 
 /**
- * Força refresh do cache para um switch — útil quando o back-end retornar 410 Gone
- * (sinal de que o estado mudou).
+ * Combina enabled (banco) + shouldApply (rollout) para um estado efetivo.
+ * 
+ * Tabela verdade:
+ *   enabled=true                       → effective enabled=true (sempre permite)
+ *   enabled=false, shouldApply=undef   → effective enabled=false (sem rollout, modo legado)
+ *   enabled=false, shouldApply=true    → effective enabled=false (no bucket de teste, bloqueado)
+ *   enabled=false, shouldApply=false   → effective enabled=true (fora do rollout, permite)
+ */
+function resolveEffectiveState(check: SwitchCheck, source: KillSwitchState['source']): KillSwitchState {
+  // Switch ATIVO — sempre permite
+  if (check.enabled) {
+    return { enabled: true, source };
+  }
+  // Switch OFF — considera rollout
+  // Se shouldApply não foi calculado (cache antigo pré-rollout), assume 100% (= aplica)
+  const blockedByRollout = check.shouldApply ?? true;
+  if (!blockedByRollout) {
+    // Fora do rollout — cliente não está no bucket de teste, mantém comportamento antigo
+    return { enabled: true, source };
+  }
+  // Dentro do bucket — bloqueia
+  return {
+    enabled: false,
+    message: check.legacy_message,
+    source,
+  };
+}
+
+/**
+ * Força refresh do cache para um switch.
  */
 export function invalidateKillSwitchCache(switchName: string): void {
   memoryCache.delete(switchName);
@@ -139,8 +220,7 @@ export function invalidateKillSwitchCache(switchName: string): void {
 }
 
 /**
- * Erro lançado quando uma operação foi abortada pelo kill-switch (camada cliente).
- * Mensagem amigável vinda do banco em `state.message`.
+ * Erro lançado quando uma operação foi abortada pelo kill-switch.
  */
 export class KillSwitchActiveError extends Error {
   switchName: string;
