@@ -3,6 +3,7 @@ import { Toaster as Sonner } from '@/components/ui/sonner';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { createQueryClient } from '@/lib/query-config';
 import { BrowserRouter } from 'react-router-dom';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
@@ -129,31 +130,33 @@ const App = () => {
         <ThemeInitializer />
         <AccessibilityProvider>
           <AriaLiveProvider>
-            {/*
-             * Keep v7_startTransition disabled: under concurrent root work it can
-             * update history before the matching route render commits.
-             */}
-            <BrowserRouter future={{ v7_relativeSplatPath: true }}>
-              <AuthProvider>
-                <AppBootstrapContainer>
-                  <AppBootstrap>
-                    <EnhancedErrorBoundary>
-                      <RootInteractivityGuard />
-                      <Sonner />
-                      <OptionalKillSwitchBanner />
-                      <OptionalCloudStatusBanner />
-                      <OptionalCloudStatusDot />
-                      <OptionalBridgeStatusBanner />
-                      <OptionalGlobalOfflineAlert />
-                      <OptionalDevOnlyBridgeOverlay />
-                      <RouteScrollReset />
-                      <RoutePrefetcher />
-                      <AppRoutes />
-                    </EnhancedErrorBoundary>
-                  </AppBootstrap>
-                </AppBootstrapContainer>
-              </AuthProvider>
-            </BrowserRouter>
+            <TooltipProvider>
+              {/*
+               * Keep v7_startTransition disabled: under concurrent root work it can
+               * update history before the matching route render commits.
+               */}
+              <BrowserRouter future={{ v7_relativeSplatPath: true }}>
+                <AuthProvider>
+                  <AppBootstrapContainer>
+                    <AppBootstrap>
+                      <EnhancedErrorBoundary>
+                        <RootInteractivityGuard />
+                        <Sonner />
+                        <OptionalKillSwitchBanner />
+                        <OptionalCloudStatusBanner />
+                        <OptionalCloudStatusDot />
+                        <OptionalBridgeStatusBanner />
+                        <OptionalGlobalOfflineAlert />
+                        <OptionalDevOnlyBridgeOverlay />
+                        <RouteScrollReset />
+                        <RoutePrefetcher />
+                        <AppRoutes />
+                      </EnhancedErrorBoundary>
+                    </AppBootstrap>
+                  </AppBootstrapContainer>
+                </AuthProvider>
+              </BrowserRouter>
+            </TooltipProvider>
           </AriaLiveProvider>
         </AccessibilityProvider>
       </ThemeProvider>
