@@ -1,5 +1,5 @@
 -- LOTE F 1/4
-ALTER TABLE public.bot_detection_log ADD COLUMN blocked boolean NOT NULL DEFAULT false;
+ALTER TABLE public.bot_detection_log ADD COLUMN IF NOT EXISTS blocked boolean NOT NULL DEFAULT false;
 
 CREATE OR REPLACE FUNCTION public.record_public_token_failure(_resource_type text, _resource_id text, _attempted_token text, _ip text, _ua text, _reason text)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$
