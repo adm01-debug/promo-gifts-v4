@@ -234,12 +234,17 @@ jobs:
             }
 
       # ---------------------------------------------------------------
-      # MODO OBSERVAÇÃO (primeira fase do rollout).
-      # Quando confirmarmos a primeira execução com sucesso, troque o
-      # bloco abaixo pelo enforce final (descomentar exit 1).
+      # MODO ENFORCE — quebra build/PR se houver qualquer drift.
+      # Validado em 25/05/2026 (run 26413875585): 82/82 aligned, 0 drift.
+      # Histórico: começou em modo observação no PR #342, promovido a
+      # enforce após primeira execução limpa.
       # ---------------------------------------------------------------
-      - name: Report drift (observation mode)
+      - name: Fail if drift detected
         if: steps.hash_diff.outputs.drift_count != '0' || steps.slug_diff.outputs.has_orphans == 'true' || steps.slug_diff.outputs.has_missing == 'true'
         run: |
-          echo "::warning::Drift detectado (observation mode — não quebra build). Veja sumário e artefato drift-report."
-          # exit 1   # TODO: descomentar depois que primeira execução for validada
+          echo "::error::Drift detectado entre GitHub e canônico. Veja sumário do job e artefato drift-report.csv."
+          echo "::error::Resoluções possíveis:"
+          echo "::error::  1. Drift de conteúdo: rodar 'supabase functions download <slug>' e commit no repo"
+          echo "::error::  2. Órfã no canônico: deletar via dashboard ou commit em supabase/functions/<slug>/"
+          echo "::error::  3. Sem deploy: aguardar workflow Deploy Edge Functions ou disparar manual"
+          exit 1
