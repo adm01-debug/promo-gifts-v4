@@ -26,7 +26,9 @@ export function DiscountApprovalHeaderBadge() {
         .eq("status", "pending");
       return count || 0;
     },
-    enabled: isAdmin,
+    enabled: Boolean(isAdmin), // força boolean estável — evita re-trigger em undefined→false
+    retry: 0,                  // sem retries: falha = falha, não flood de HEAD requests
+    retryOnMount: false,       // não re-tenta ao remontar o componente
     refetchInterval: 60_000,
     staleTime: 15_000,
   });
