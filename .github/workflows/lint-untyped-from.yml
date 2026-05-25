@@ -1,1 +1,45 @@
-IyBMaW50OiBjcnV6YSBjaGFtYWRhcyB1bnR5cGVkRnJvbSgiWCIpIG5vIHNyYy8gY29udHJhIG8gc2NoZW1hIGdlcmFkbwojIGVtIHNyYy9pbnRlZ3JhdGlvbnMvc3VwYWJhc2UvdHlwZXMudHMuIEV4aXN0ZSBwcmEgZXZpdGFyIGEgcmVncmVzc8OjbwojIGRvIGNvbGFwc28gZGUgMjAyNi0wNS0yNCwgcXVhbmRvIHRhYmVsYXMgaW5leGlzdGVudGVzIG5vIGJhbmNvIGVyYW0KIyBjaGFtYWRhcyBlIHF1ZWJyYXZhbSBmZWF0dXJlcyBlbSBzaWzDqm5jaW8gKGNhdGNoIHsgcmV0dXJuIFtdOyB9KS4KIwojIEVzdGFkbzogYWR2aXNvcnkgKGNvbnRpbnVlLW9uLWVycm9yKSBhdMOpIHR5cGVzLnRzIHNlciByZWdlbmVyYWRvCiMgYXDDs3MgUFJzICMzMTUgZSAjMzE3LiBRdWFuZG8gbyBidWlsZCB2b2x0YXIgYSBwYXNzYXIsIHJlbW92YSBvCiMgY29udGludWUtb24tZXJyb3IgcHJhIHRvcm5hciBlc3RlIGNoZWNrIHJlcXVpcmVkLgoKbmFtZTogTGludCB1bnR5cGVkRnJvbQoKb246CiAgcHVsbF9yZXF1ZXN0OgogICAgcGF0aHM6CiAgICAgIC0gJ3NyYy8qKi8qLnRzJwogICAgICAtICdzcmMvKiovKi50c3gnCiAgICAgIC0gJ3NjcmlwdHMvbGludC11bnR5cGVkLWZyb20uc2gnCiAgICAgIC0gJy5naXRodWIvd29ya2Zsb3dzL2xpbnQtdW50eXBlZC1mcm9tLnltbCcKICBwdXNoOgogICAgYnJhbmNoZXM6IFttYWluXQogIHdvcmtmbG93X2Rpc3BhdGNoOgoKcGVybWlzc2lvbnM6CiAgY29udGVudHM6IHJlYWQKCmNvbmN1cnJlbmN5OgogIGdyb3VwOiBsaW50LXVudHlwZWQtZnJvbS0ke3sgZ2l0aHViLnJlZiB9fQogIGNhbmNlbC1pbi1wcm9ncmVzczogdHJ1ZQoKam9iczoKICBsaW50OgogICAgbmFtZTogQ3J1emEgdW50eXBlZEZyb20gw5cgdHlwZXMudHMKICAgIHJ1bnMtb246IHVidW50dS1sYXRlc3QKICAgIHRpbWVvdXQtbWludXRlczogMgogICAgIyBUT0RPKEBhZG0wMS1kZWJ1Zyk6IHJlbW92ZXIgY29udGludWUtb24tZXJyb3IgYXDDs3MgcmVnZW5lcmFyCiAgICAjIHNyYy9pbnRlZ3JhdGlvbnMvc3VwYWJhc2UvdHlwZXMudHMgKHN1cGFiYXNlIGdlbiB0eXBlcyB0eXBlc2NyaXB0KQogICAgIyBwYXJhIHF1ZSBvIGxpbnQgcGFzc2UgbmF0dXJhbG1lbnRlLiBBIHBhcnRpciBkYcOtLCBxdWFscXVlcgogICAgIyB1bnR5cGVkRnJvbSgpIGFwb250YW5kbyBwYXJhIHRhYmVsYSBmYWx0YW50ZSBibG9xdWVpYSBvIFBSLgogICAgY29udGludWUtb24tZXJyb3I6IHRydWUKICAgIHN0ZXBzOgogICAgICAtIG5hbWU6IENoZWNrb3V0CiAgICAgICAgdXNlczogYWN0aW9ucy9jaGVja291dEB2NQoKICAgICAgLSBuYW1lOiBSdW4gbGludAogICAgICAgIHJ1bjogYmFzaCBzY3JpcHRzL2xpbnQtdW50eXBlZC1mcm9tLnNoCg==
+# Lint: cruza chamadas untypedFrom("X") no src/ contra o schema gerado
+# em src/integrations/supabase/types.ts. Existe pra evitar a regressão
+# do colapso de 2026-05-24, quando tabelas inexistentes no banco eram
+# chamadas e quebravam features em silêncio (catch { return []; }).
+#
+# Estado: advisory (continue-on-error) até types.ts ser regenerado
+# após PRs #315 e #317. Quando o build voltar a passar, remova o
+# continue-on-error pra tornar este check required.
+
+name: Lint untypedFrom
+
+on:
+  pull_request:
+    paths:
+      - 'src/**/*.ts'
+      - 'src/**/*.tsx'
+      - 'scripts/lint-untyped-from.sh'
+      - '.github/workflows/lint-untyped-from.yml'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lint-untyped-from-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Cruza untypedFrom × types.ts
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    # TODO(@adm01-debug): remover continue-on-error após regenerar
+    # src/integrations/supabase/types.ts (supabase gen types typescript)
+    # para que o lint passe naturalmente. A partir daí, qualquer
+    # untypedFrom() apontando para tabela faltante bloqueia o PR.
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Run lint
+        run: bash scripts/lint-untyped-from.sh
