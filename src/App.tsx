@@ -41,7 +41,22 @@ const App = () => {
         <AccessibilityProvider>
           <AriaLiveProvider>
             <TooltipProvider>
-              <BrowserRouter future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
+              {/*
+               * BUG FIX: v7_startTransition REMOVIDO.
+               *
+               * v7_startTransition: true envolvia toda chamada navigate() em
+               * React.startTransition(), tornando navegacoes low-priority.
+               * Com rendering concorrente ativo (Supabase Realtime, intervals
+               * do RootInteractivityGuard, etc.), o React abandonava transicoes
+               * de navegacao — a URL atualizava no window.history mas o
+               * componente nao re-renderizava, dando a impressao de que o clique
+               * nao fez nada. Hard refresh carregava a URL ja atualizada e
+               * parecia "executar" a acao.
+               *
+               * v7_relativeSplatPath mantido — normaliza apenas matching de
+               * splat routes e nao afeta rendering concorrente.
+               */}
+              <BrowserRouter future={{ v7_relativeSplatPath: true }}>
                 <AuthProvider>
                   <AppBootstrapContainer>
                     <AppBootstrap>
