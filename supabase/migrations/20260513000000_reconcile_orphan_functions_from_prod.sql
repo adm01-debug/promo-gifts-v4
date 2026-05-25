@@ -28610,3 +28610,78 @@ CREATE OR REPLACE FUNCTION public.verify_user_step_up_required(_action step_up_a
  STABLE
  SET search_path TO 'public'
 AS $function$ SELECT NOT public.user_can_skip_step_up(_user_id); $function$;
+
+-- ============================================================================
+-- Gap-fill (2026-05-25): funções órfãs de "novelties" criadas out-of-band em
+-- produção e NÃO cobertas pela geração original deste reconcile. Sem elas, o
+-- replay do zero falha em 20260513000003_t37b1_security_invoker_candidate_batch1
+-- com "function public.get_active_novelties(...) does not exist" (e análogas
+-- em get_novelties_stats / cleanup_expired_novelties via REVOKE/GRANT/ALTER).
+-- Definições verbatim de produção (doufsxqlfjyuvxuezpln).
+-- ============================================================================
+SET check_function_bodies = false;
+
+CREATE OR REPLACE FUNCTION public.cleanup_expired_novelties()
+ RETURNS integer
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_deleted_count INTEGER;
+BEGIN
+    DELETE FROM public.product_novelties
+    WHERE expires_at < NOW()
+      AND is_active = true;
+
+    GET DIAGNOSTICS v_deleted_count = ROW_COUNT;
+
+    RETURN v_deleted_count;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_active_novelties(p_supplier_code character varying DEFAULT NULL::character varying, p_limit integer DEFAULT 50, p_offset integer DEFAULT 0, p_only_highlighted boolean DEFAULT false)
+ RETURNS TABLE(novelty_id uuid, product_id uuid, product_name text, product_sku text, supplier_code character varying, supplier_product_code character varying, detected_at timestamp with time zone, expires_at timestamp with time zone, days_remaining integer, is_highlighted boolean)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT
+        n.id AS novelty_id,
+        n.product_id,
+        p.name AS product_name,
+        p.sku AS product_sku,
+        n.supplier_code,
+        n.supplier_product_code,
+        n.detected_at,
+        n.expires_at,
+        EXTRACT(DAY FROM (n.expires_at - NOW()))::INTEGER AS days_remaining,
+        n.is_highlighted
+    FROM public.product_novelties n
+    JOIN public.products p ON n.product_id = p.id
+    WHERE n.is_active = true
+      AND n.expires_at > NOW()
+      AND (p_supplier_code IS NULL OR n.supplier_code = p_supplier_code)
+      AND (p_only_highlighted = false OR n.is_highlighted = true)
+    ORDER BY n.detected_at DESC
+    LIMIT p_limit
+    OFFSET p_offset;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_novelties_stats()
+ RETURNS TABLE(total_novelties bigint, active_novelties bigint, highlighted_novelties bigint, expiring_soon bigint)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT
+        COUNT(*)::BIGINT AS total_novelties,
+        COUNT(*) FILTER (WHERE expires_at > NOW() AND is_active = true)::BIGINT AS active_novelties,
+        COUNT(*) FILTER (WHERE is_highlighted = true AND expires_at > NOW() AND is_active = true)::BIGINT AS highlighted_novelties,
+        COUNT(*) FILTER (WHERE expires_at BETWEEN NOW() AND NOW() + INTERVAL '7 days' AND is_active = true)::BIGINT AS expiring_soon
+    FROM public.product_novelties;
+END;
+$function$;
