@@ -31,6 +31,35 @@ type SwitchCheck = {
   shouldApply?: boolean;
 };
 
+type KillSwitchRow = {
+  enabled?: boolean | null;
+  legacy_message?: string | null;
+};
+
+type KillSwitchQueryResult = {
+  data: KillSwitchRow | null;
+  error: { message?: string } | null;
+};
+
+type KillSwitchRpcResult = {
+  data: boolean | null;
+  error: { message?: string } | null;
+};
+
+type KillSwitchTableClient = {
+  from(table: 'system_kill_switches'): {
+    select(columns: 'enabled, legacy_message'): {
+      eq(column: 'switch_name', value: string): {
+        maybeSingle(): Promise<KillSwitchQueryResult>;
+      };
+    };
+  };
+  rpc(
+    fn: 'fn_should_apply_kill_switch',
+    args: { p_switch_name: string; p_bucket_key: string },
+  ): Promise<KillSwitchRpcResult>;
+};
+
 const memoryCache = new Map<string, SwitchCheck>();
 
 /**
@@ -119,16 +148,18 @@ export async function getKillSwitchState(switchName: string): Promise<KillSwitch
 
   // 3) Network
   try {
-    const { data, error } = await supabase
+    // Cast controlado: a tabela `system_kill_switches` foi criada
+    // após o último gen-types e ainda não está no Database type. Substituir
+    // por `from('system_kill_switches')` tipado quando rodar `supabase gen types`.
+    const client = supabase as unknown as KillSwitchTableClient;
+    const { data, error } = await client
       .from('system_kill_switches')
       .select('enabled, legacy_message')
       .eq('switch_name', switchName)
       .maybeSingle();
 
     if (error) {
-      logger.warn(
-        `[kill-switch-client] consulta falhou para "${switchName}" — fail-open: ${error.message}`,
-      );
+      logger.warn(`[kill-switch-client] consulta falhou para "${switchName}" — fail-open: ${error.message}`);
       return { enabled: true, source: 'fail-open' };
     }
 
@@ -143,7 +174,7 @@ export async function getKillSwitchState(switchName: string): Promise<KillSwitch
     if (!enabled) {
       try {
         const bucketKey = getBucketKey();
-        const { data: rpcResult, error: rpcError } = await supabase.rpc(
+        const { data: rpcResult, error: rpcError } = await client.rpc(
           'fn_should_apply_kill_switch',
           { p_switch_name: switchName, p_bucket_key: bucketKey },
         );
@@ -171,9 +202,7 @@ export async function getKillSwitchState(switchName: string): Promise<KillSwitch
 
     return resolveEffectiveState(check, 'network');
   } catch (e) {
-    logger.warn(
-      `[kill-switch-client] erro inesperado para "${switchName}" — fail-open: ${(e as Error).message}`,
-    );
+    logger.warn(`[kill-switch-client] erro inesperado para "${switchName}" — fail-open: ${(e as Error).message}`);
     return { enabled: true, source: 'fail-open' };
   }
 }
