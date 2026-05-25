@@ -8,10 +8,8 @@
  *   if (banner) return <KillSwitchBanner message={banner.message} />;
  */
 import { useEffect, useState } from 'react';
-import {
-  getKillSwitchState,
-  type KillSwitchActiveError,
-} from '@/lib/external-db/kill-switch-client';
+import type { KillSwitchActiveError } from '@/lib/external-db/kill-switch-client';
+import { isSupabaseLighthousePlaceholder } from '@/lib/env/supabase-placeholder';
 
 const SWITCH_NAME = 'edge_external_db_bridge';
 const POLL_INTERVAL_MS = 120_000; // 2min — não-crítico, polling leve
@@ -25,10 +23,16 @@ export function useKillSwitchBanner(): KillSwitchBannerData | null {
   const [banner, setBanner] = useState<KillSwitchBannerData | null>(null);
 
   useEffect(() => {
+    if (isSupabaseLighthousePlaceholder()) {
+      setBanner(null);
+      return;
+    }
+
     let cancelled = false;
 
     const check = async () => {
       try {
+        const { getKillSwitchState } = await import('@/lib/external-db/kill-switch-client');
         const state = await getKillSwitchState(SWITCH_NAME);
         if (cancelled) return;
         if (!state.enabled) {
