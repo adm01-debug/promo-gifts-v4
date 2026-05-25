@@ -41,10 +41,16 @@ export interface BridgeRecoveredEvent extends BridgeStatusEventBase {
   type: 'recovered';
 }
 
-export type BridgeStatusEvent = BridgeDegradedEvent | BridgeUnavailableEvent | BridgeRecoveredEvent;
+export type BridgeStatusEvent =
+  | BridgeDegradedEvent
+  | BridgeUnavailableEvent
+  | BridgeRecoveredEvent;
 
-/** Distributes `Omit` across the union so each variant keeps its own fields. */
-type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
+type BridgeStatusEventInput = BridgeStatusEvent extends infer Event
+  ? Event extends BridgeStatusEvent
+    ? Omit<Event, 'ts'> & { ts?: number }
+    : never
+  : never;
 
 type Listener = (e: BridgeStatusEvent) => void;
 const listeners = new Set<Listener>();
@@ -54,20 +60,14 @@ export function onBridgeStatus(fn: Listener): () => void {
   return () => listeners.delete(fn);
 }
 
-export function emitBridgeStatus(
-  e: DistributiveOmit<BridgeStatusEvent, 'ts'> & { ts?: number },
-): void {
+export function emitBridgeStatus(e: BridgeStatusEventInput): void {
   const event: BridgeStatusEvent = {
     ...e,
     ts: e.ts ?? Date.now(),
   } as BridgeStatusEvent;
 
   for (const fn of listeners) {
-    try {
-      fn(event);
-    } catch {
-      /* noop */
-    }
+    try { fn(event); } catch { /* noop */ }
   }
 }
 
@@ -84,5 +84,5 @@ const COLD_START_PATTERNS = [
 
 export function isColdStartSignal(message: string): boolean {
   const lower = message.toLowerCase();
-  return COLD_START_PATTERNS.some((p) => lower.includes(p));
+  return COLD_START_PATTERNS.some(p => lower.includes(p));
 }
