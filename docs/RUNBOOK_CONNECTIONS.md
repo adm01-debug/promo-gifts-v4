@@ -186,3 +186,35 @@ Todas usam `resolveCredential()` — DB-first, env como fallback.
 - `supabase/migrations/20260429163414_*.sql` — schedule do cron
 - `supabase/migrations/20260429163441_*.sql` — RLS para dev
 - `docs/RUNBOOK.md` — runbook geral
+
+## Estratégia de promoção dev → stage → prod para jobs agendados (Edge URL)
+
+A partir da migration `20260525113000_runtime_edge_function_base_url.sql`, os callers SQL (`cron`, trigger e RPC) **não dependem mais de URL hardcoded por ambiente**. A URL base é resolvida em runtime por `public.get_edge_functions_base_url()` com precedência:
+
+1. `current_setting('app.edge_functions_base_url', true)`
+2. Vault secret `EDGE_FUNCTIONS_BASE_URL`
+3. Falha explícita (fail-closed)
+
+### Como promover sem editar migration histórica
+
+1. Defina o valor por ambiente:
+   - **dev:** URL do projeto dev (`https://<dev-ref>.supabase.co`)
+   - **stage:** URL do projeto stage (`https://<stage-ref>.supabase.co`)
+   - **prod:** URL do projeto prod (`https://doufsxqlfjyuvxuezpln.supabase.co`)
+2. Rode migrations normalmente em cada ambiente.
+3. Valide resolução com:
+
+```sql
+SELECT * FROM public.validate_edge_functions_base_url('dev');
+SELECT * FROM public.validate_edge_functions_base_url('stage');
+SELECT * FROM public.validate_edge_functions_base_url('prod');
+```
+
+`ok=true` confirma que o endpoint resolvido está aderente ao padrão esperado do ambiente.
+
+### Checklist operacional por ambiente
+
+- Confirmar que `connections-auto-test` está agendado (`cron.job`) e ativo.
+- Confirmar que os últimos runs chamam a edge correta (logs da função + `cron.job_run_details`).
+- Em rotação de endpoint, atualizar configuração (GUC/secret) **antes** de janela de execução crítica de cron.
+- Não reescrever migrations antigas para trocar URL: a promoção ocorre apenas por configuração de runtime.
