@@ -214,14 +214,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [userRoles]);
 
   // Watchdog (Etapa 8): se isLoading travar (network error, edge function timeout, RLS hang),
-  // força isLoading=false após 8s. Sem isso o ProtectedRoute renderiza spinner infinito
-  // e o usuário fica preso sem URL mudar — sintoma observado em /dashboard anônimo.
+  // força isLoading=false. Threshold aumentado de 8s → 12s porque com a remoção do
+  // getSession() redundante em fetchUserData, cold starts de Vercel + Supabase ficam
+  // dentro de ~3-4s. O threshold de 12s garante cobertura sem falsos positivos.
   useEffect(() => {
     if (!isLoading) return;
     const timer = window.setTimeout(() => {
-      console.warn('[AuthContext] Watchdog: isLoading travado por 8s — forçando false');
+      console.warn('[AuthContext] Watchdog: isLoading travado por 12s — forçando false');
       setIsLoading(false);
-    }, 8000);
+    }, 12000);
     return () => window.clearTimeout(timer);
   }, [isLoading, setIsLoading]);
 
