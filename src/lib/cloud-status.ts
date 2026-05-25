@@ -4,7 +4,7 @@
  * Combina 3 sinais para inferir um estado normalizado:
  *   1. `auth.getSession()`     → API de auth respondendo
  *   2. `pingHealth()`          → bridge externo (edge function) viva
- *   3. HEAD em `/rest/v1/`     → Postgres/PostgREST acessível
+ *   3. GET `/health`           → Supabase instance healthy (auth/rest/storage)
  *
  * Estados:
  *   - `healthy`   3/3 OK (mesmo com latência alta)
@@ -149,24 +149,25 @@ async function checkBridge(timeoutMs: number): Promise<{ ok: boolean; ms: number
   }
 }
 
+/**
+ * Verifica o Supabase instance via endpoint /health (público, sem auth).
+ *
+ * FIX: substituído HEAD /rest/v1/ (que retornava 401 e gerava ruído no console)
+ * pelo GET /health, que retorna 200 sem precisar de auth header.
+ * A lógica de negócio não muda — 401 já era tratado como ok=true antes.
+ */
 async function checkRest(): Promise<{ ok: boolean; ms: number }> {
   const t0 = performance.now();
   const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-  const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
-  if (!url || !key) return { ok: false, ms: 0 };
+  if (!url) return { ok: false, ms: 0 };
   try {
     const res = await withTimeout(
-      fetch(`${url}/rest/v1/`, {
-        method: 'HEAD',
-        headers: { apikey: key, Authorization: `Bearer ${key}` },
-      }),
+      // GET /health: endpoint público do Supabase, retorna 200 + JSON com status
+      // de cada serviço (auth, rest, storage, realtime). Sem auth → sem 401 no console.
+      fetch(`${url}/health`),
       PROBE_TIMEOUT_MS,
     );
-    // PostgREST typically returns 200/404 for HEAD /
-    return {
-      ok: res.ok || res.status === 404 || res.status === 401,
-      ms: Math.round(performance.now() - t0),
-    };
+    return { ok: res.ok, ms: Math.round(performance.now() - t0) };
   } catch {
     return { ok: false, ms: Math.round(performance.now() - t0) };
   }
