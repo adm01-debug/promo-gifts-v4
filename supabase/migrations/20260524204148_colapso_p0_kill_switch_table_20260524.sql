@@ -1,13 +1,13 @@
--- Migration: P0.2 — Tabela de kill-switches para edge functions legadas
--- Contexto: edge function `external-db-bridge` (aposentada no Caminho B, PRs #230-232 do antigo repo Promo_Gifts)
--- ainda está sendo chamada por clientes legados em LOOP (30-50 invocações/segundo),
--- cada uma disparando 5-7 sub-queries no banco. O resultado é uma tempestade que satura
--- o pool de 90 conexões do Postgres.
+-- =============================================================
+-- P0.2 — Tabela de kill-switches para parar tráfego em edge functions
+-- legadas (ex.: external-db-bridge — Caminho B já migrou para PostgREST nativo,
+-- mas a edge function continua sendo chamada por clientes legados, em LOOP,
+-- gerando 30-50 invocações/segundo e saturando o pool de conexões).
 --
--- Estratégia: edge functions devem checar esta tabela ANTES de processar e retornar
--- 410 Gone imediatamente quando o switch correspondente estiver desabilitado.
--- Aplicada em produção em 2026-05-24.
-
+-- Edge functions devem checar esta tabela no início e retornar 410 Gone
+-- se estiverem desabilitadas. A leitura é pública (anon/authenticated)
+-- pois a checagem precisa ocorrer cedo na request, sem JWT validado ainda.
+-- =============================================================
 CREATE TABLE IF NOT EXISTS public.system_kill_switches (
   switch_name        text PRIMARY KEY,
   enabled            boolean NOT NULL DEFAULT true,
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS public.system_kill_switches (
 
 ALTER TABLE public.system_kill_switches ENABLE ROW LEVEL SECURITY;
 
--- Leitura pública (edge functions precisam checar antes de validar JWT)
+-- Leitura pública (para edge functions checarem rapidamente)
 DROP POLICY IF EXISTS "kill_switches_read_all" ON public.system_kill_switches;
 CREATE POLICY "kill_switches_read_all"
   ON public.system_kill_switches
@@ -35,12 +35,13 @@ CREATE POLICY "kill_switches_write_admin"
   WITH CHECK (public.is_admin_or_above((SELECT auth.uid())));
 
 GRANT SELECT ON public.system_kill_switches TO anon, authenticated, service_role;
-GRANT ALL    ON public.system_kill_switches TO postgres;
+GRANT ALL ON public.system_kill_switches TO postgres;
 
+-- Pré-popular com o switch para external-db-bridge (DESABILITADO por padrão)
 INSERT INTO public.system_kill_switches (switch_name, enabled, reason, legacy_message)
 VALUES (
   'edge_external_db_bridge',
-  false,
+  false,  -- DESABILITADO: força front-ends legados a migrar para PostgREST nativo (Caminho B)
   'Substituída pelo Caminho B: PostgREST nativo. PRs #230-232 do antigo repo Promo_Gifts.',
   'A função external-db-bridge foi descontinuada. Use chamadas REST nativas em /rest/v1/.'
 )

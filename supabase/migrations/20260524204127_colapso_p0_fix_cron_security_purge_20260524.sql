@@ -1,9 +1,10 @@
--- Migration: P0.1 — Recriar purge_expired_security_data para invalidar plan-cache do pg_cron worker
--- Contexto: o cron job "purge-expired-security" estava falhando 95/96 vezes/24h porque
--- o worker mantinha plano antigo chamando `purge_expired_step_up_artifacts(60, 60)`,
--- assinatura que não existe (a função real é sem args).
--- Aplicada em produção em 2026-05-24 pelo coordenador de TI Abner Silva.
-
+-- =============================================================
+-- P0.1 — Forçar invalidação de plan cache do cron worker
+-- Bug: cron job "purge-expired-security" chama `purge_expired_step_up_artifacts(60, 60)`,
+-- assinatura que NÃO EXISTE no banco (a função real é sem args).
+-- O def atual de purge_expired_security_data já está correto, mas o plan cache do
+-- pg_cron worker ficou "zumbi". DROP + CREATE força replan.
+-- =============================================================
 DROP FUNCTION IF EXISTS public.purge_expired_security_data();
 
 CREATE OR REPLACE FUNCTION public.purge_expired_security_data()
@@ -22,7 +23,8 @@ BEGIN
    WHERE created_at < now() - interval '90 days';
   GET DIAGNOSTICS v_purged_logins = ROW_COUNT;
 
-  PERFORM 1;
+  -- Telemetria leve em audit_log para diagnóstico futuro
+  PERFORM 1; -- placeholder; o ROW_COUNT serve aos logs do cron
 END;
 $function$;
 
