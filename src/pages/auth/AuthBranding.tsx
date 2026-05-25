@@ -234,8 +234,8 @@ export const SpaceScene = React.memo(({ isFull = true }: { isFull?: boolean }) =
       )}
 
 
-      {/* Planets with zigzag trajectory */}
-      {planets.map(p => (
+      {/* Planets with zigzag trajectory — pulados em prefers-reduced-motion (P2-03) */}
+      {!config.reducedMotion && planets.map(p => (
         <div
           key={`planet-${p.id}`}
           className="absolute opacity-25 blur-[0.5px]"
