@@ -78,7 +78,10 @@ export default function SellerDiscountLimitsAdminPage() {
         .order('full_name');
       if (pErr) throw pErr;
 
-      const ids = (profiles ?? []).map((p) => p.user_id);
+      const sellers = (profiles ?? []).filter(
+        (p): p is typeof p & { user_id: string } => p.user_id !== null,
+      );
+      const ids = sellers.map((p) => p.user_id);
       if (!ids.length) return [];
 
       const { data: limits } = await supabase
@@ -93,7 +96,7 @@ export default function SellerDiscountLimitsAdminPage() {
         ]),
       );
 
-      return (profiles ?? []).map((p) => {
+      return sellers.map((p) => {
         const lim = byId.get(p.user_id);
         return {
           user_id: p.user_id,
@@ -176,17 +179,15 @@ export default function SellerDiscountLimitsAdminPage() {
     }) => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error('Não autenticado');
-      const { error } = await supabase
-        .from('seller_discount_limits')
-        .upsert(
-          {
-            user_id: userId,
-            max_discount_percent: percent,
-            notes: notes || null,
-            set_by: u.user.id,
-          },
-          { onConflict: 'user_id' },
-        );
+      const { error } = await supabase.from('seller_discount_limits').upsert(
+        {
+          user_id: userId,
+          max_discount_percent: percent,
+          notes: notes || null,
+          set_by: u.user.id,
+        },
+        { onConflict: 'user_id' },
+      );
       if (error) throw error;
     },
     onSuccess: (_d, vars) => {

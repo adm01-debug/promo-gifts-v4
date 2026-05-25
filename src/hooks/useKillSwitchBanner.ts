@@ -8,7 +8,10 @@
  *   if (banner) return <KillSwitchBanner message={banner.message} />;
  */
 import { useEffect, useState } from 'react';
-import { getKillSwitchState, KillSwitchActiveError } from '@/lib/external-db/kill-switch-client';
+import {
+  getKillSwitchState,
+  type KillSwitchActiveError,
+} from '@/lib/external-db/kill-switch-client';
 
 const SWITCH_NAME = 'edge_external_db_bridge';
 const POLL_INTERVAL_MS = 120_000; // 2min — não-crítico, polling leve

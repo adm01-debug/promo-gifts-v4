@@ -56,7 +56,7 @@ export function useKitCollaborators(kitId: string | undefined) {
         .eq('email', email)
         .maybeSingle();
       if (pErr) throw pErr;
-      if (!profile) throw new Error('Usuário não encontrado para esse email');
+      if (!profile?.user_id) throw new Error('Usuário não encontrado para esse email');
       const { error } = await supabase.from('kit_collaborators').insert({
         kit_id: kitId,
         user_id: profile.user_id,

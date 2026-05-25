@@ -21,7 +21,7 @@ import {
 const mockMaybeSingle = vi.fn();
 const mockEq = vi.fn(() => ({ maybeSingle: mockMaybeSingle }));
 const mockSelect = vi.fn(() => ({ eq: mockEq }));
-const mockFrom = vi.fn(() => ({ select: mockSelect }));
+const mockFrom = vi.fn((..._args: unknown[]) => ({ select: mockSelect }));
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {

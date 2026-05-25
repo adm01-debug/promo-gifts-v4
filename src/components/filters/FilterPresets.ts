@@ -44,12 +44,12 @@ export function useFilterPresets(context: string = 'catalog') {
           name: row.name,
           description: row.description ?? undefined,
           filters: row.filter_config as unknown as FilterState,
-          context: row.category,
-          is_default: row.is_default,
+          context: row.category ?? context,
+          is_default: row.is_default ?? false,
           icon: row.icon ?? undefined,
           color: row.color ?? undefined,
-          created_at: row.created_at,
-          updated_at: row.updated_at,
+          created_at: row.created_at ?? '',
+          updated_at: row.updated_at ?? '',
         })),
       );
     } catch (err) {
@@ -103,12 +103,12 @@ export function useFilterPresets(context: string = 'catalog') {
           name: data.name,
           description: data.description ?? undefined,
           filters: data.filter_config as unknown as FilterState,
-          context: data.category,
-          is_default: data.is_default,
+          context: data.category ?? context,
+          is_default: data.is_default ?? false,
           icon: data.icon ?? undefined,
           color: data.color ?? undefined,
-          created_at: data.created_at,
-          updated_at: data.updated_at,
+          created_at: data.created_at ?? '',
+          updated_at: data.updated_at ?? '',
         };
 
         setPresets((prev) => [newPreset, ...prev]);
@@ -147,12 +147,12 @@ export function useFilterPresets(context: string = 'catalog') {
           name: data.name,
           description: data.description ?? undefined,
           filters: data.filter_config as unknown as FilterState,
-          context: data.category,
-          is_default: data.is_default,
+          context: data.category ?? context,
+          is_default: data.is_default ?? false,
           icon: data.icon ?? undefined,
           color: data.color ?? undefined,
-          created_at: data.created_at,
-          updated_at: data.updated_at,
+          created_at: data.created_at ?? '',
+          updated_at: data.updated_at ?? '',
         };
 
         setPresets((prev) => prev.map((p) => (p.id === id ? updated : p)));
@@ -163,7 +163,7 @@ export function useFilterPresets(context: string = 'catalog') {
         return null;
       }
     },
-    [],
+    [context],
   );
 
   const deletePreset = useCallback(async (id: string): Promise<boolean> => {

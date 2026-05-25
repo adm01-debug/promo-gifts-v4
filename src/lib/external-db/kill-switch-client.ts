@@ -119,16 +119,16 @@ export async function getKillSwitchState(switchName: string): Promise<KillSwitch
 
   // 3) Network
   try {
-    // deno-lint-ignore no-explicit-any
-    const client = supabase as any;
-    const { data, error } = await client
+    const { data, error } = await supabase
       .from('system_kill_switches')
       .select('enabled, legacy_message')
       .eq('switch_name', switchName)
       .maybeSingle();
 
     if (error) {
-      logger.warn(`[kill-switch-client] consulta falhou para "${switchName}" — fail-open: ${error.message}`);
+      logger.warn(
+        `[kill-switch-client] consulta falhou para "${switchName}" — fail-open: ${error.message}`,
+      );
       return { enabled: true, source: 'fail-open' };
     }
 
@@ -143,7 +143,7 @@ export async function getKillSwitchState(switchName: string): Promise<KillSwitch
     if (!enabled) {
       try {
         const bucketKey = getBucketKey();
-        const { data: rpcResult, error: rpcError } = await client.rpc(
+        const { data: rpcResult, error: rpcError } = await supabase.rpc(
           'fn_should_apply_kill_switch',
           { p_switch_name: switchName, p_bucket_key: bucketKey },
         );
@@ -171,7 +171,9 @@ export async function getKillSwitchState(switchName: string): Promise<KillSwitch
 
     return resolveEffectiveState(check, 'network');
   } catch (e) {
-    logger.warn(`[kill-switch-client] erro inesperado para "${switchName}" — fail-open: ${(e as Error).message}`);
+    logger.warn(
+      `[kill-switch-client] erro inesperado para "${switchName}" — fail-open: ${(e as Error).message}`,
+    );
     return { enabled: true, source: 'fail-open' };
   }
 }

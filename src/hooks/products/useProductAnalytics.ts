@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { untypedFrom } from '@/lib/supabase-untyped';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface TrackViewParams {
@@ -25,7 +25,7 @@ export function useProductAnalytics() {
       try {
         // Using type assertion since table was just created
         // Silently insert - all errors are ignored for analytics to not affect UX
-        await untypedFrom('product_views').insert({
+        await supabase.from('product_views').insert({
           product_id: productId,
           product_sku: productSku,
           product_name: productName,
@@ -42,16 +42,15 @@ export function useProductAnalytics() {
   );
 
   const trackSearch = useCallback(
-    async ({ searchTerm, resultsCount, filtersUsed = {} }: TrackSearchParams) => {
+    async ({ searchTerm, resultsCount }: TrackSearchParams) => {
       if (!user?.id || !searchTerm.trim()) return;
 
       try {
         // Silently insert - all errors are ignored for analytics to not affect UX
-        await untypedFrom('search_analytics').insert({
+        await supabase.from('search_analytics').insert({
           search_term: searchTerm.toLowerCase().trim(),
           results_count: resultsCount,
-          seller_id: user.id,
-          filters_used: filtersUsed,
+          user_id: user.id,
         });
         // Note: We intentionally ignore ALL errors for analytics
       } catch {

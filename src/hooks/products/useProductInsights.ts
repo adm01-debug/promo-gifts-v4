@@ -30,7 +30,7 @@ export function useProductInsights(productId?: string, productSku?: string) {
           conversionRate: 0,
           averageQuantity: 0,
           topSegments: [],
-          recentActivity: []
+          recentActivity: [],
         };
       }
 
@@ -50,20 +50,20 @@ export function useProductInsights(productId?: string, productSku?: string) {
         .eq('product_sku', productSku);
 
       const allQuantities = [
-        ...(quoteItems || []).map(q => q.quantity),
-        ...(orderItems || []).map(o => o.quantity)
+        ...(quoteItems || []).map((q) => q.quantity),
+        ...(orderItems || []).map((o) => o.quantity),
       ];
-      const averageQuantity = allQuantities.length > 0
-        ? allQuantities.reduce((a, b) => a + (b ?? 0), 0) / allQuantities.length
-        : 0;
+      const averageQuantity =
+        allQuantities.length > 0
+          ? allQuantities.reduce((a, b) => a + (b ?? 0), 0) / allQuantities.length
+          : 0;
 
-      const conversionRate = quotesCount && quotesCount > 0
-        ? ((ordersCount || 0) / quotesCount) * 100
-        : 0;
+      const conversionRate =
+        quotesCount && quotesCount > 0 ? ((ordersCount || 0) / quotesCount) * 100 : 0;
 
-      const orderIds = (orderItems || []).map(o => o.order_id);
+      const orderIds = (orderItems || []).map((o) => o.order_id);
       let topSegments: ProductInsight['topSegments'] = [];
-      
+
       if (orderIds.length > 0) {
         const { data: orders } = await supabase
           // rls-allow: agregação respeita escopo via RLS
@@ -71,12 +71,12 @@ export function useProductInsights(productId?: string, productSku?: string) {
           .select('client_id')
           .in('id', orderIds);
 
-        const clientIds = [...new Set((orders || []).map(o => o.client_id).filter(Boolean))];
-        
+        const clientIds = [...new Set((orders || []).map((o) => o.client_id).filter(Boolean))];
+
         if (clientIds.length > 0) {
-          const { selectCrm } = await import("@/lib/crm-db");
-          const clients = await selectCrm<{ id: string; ramo_atividade?: string }>("companies", {
-            select: "id, ramo_atividade",
+          const { selectCrm } = await import('@/lib/crm-db');
+          const clients = await selectCrm<{ id: string; ramo_atividade?: string }>('companies', {
+            select: 'id, ramo_atividade',
             filters: { id: { in: clientIds } },
           });
 
@@ -86,7 +86,7 @@ export function useProductInsights(productId?: string, productSku?: string) {
           });
 
           const segmentCounts: Record<string, number> = {};
-          (orders || []).forEach(order => {
+          (orders || []).forEach((order) => {
             const segment = order.client_id ? clientSegmentMap[order.client_id] : null;
             if (segment) {
               segmentCounts[segment] = (segmentCounts[segment] || 0) + 1;
@@ -109,11 +109,11 @@ export function useProductInsights(productId?: string, productSku?: string) {
         .order('created_at', { ascending: false })
         .limit(3);
 
-      (recentViews || []).forEach(v => {
+      (recentViews || []).forEach((v) => {
         recentActivity.push({
           type: 'view',
           date: v.created_at,
-          details: 'Visualizado por um vendedor'
+          details: 'Visualizado por um vendedor',
         });
       });
 
@@ -124,17 +124,15 @@ export function useProductInsights(productId?: string, productSku?: string) {
         .order('created_at', { ascending: false })
         .limit(3);
 
-      (recentQuotes || []).forEach(q => {
+      (recentQuotes || []).forEach((q) => {
         recentActivity.push({
           type: 'quote',
-          date: q.created_at,
-          details: `Adicionado em cotação (${q.quantity} un.)`
+          date: q.created_at ?? '',
+          details: `Adicionado em cotação (${q.quantity} un.)`,
         });
       });
 
-      recentActivity.sort((a, b) => 
-        new Date(b.date).getTime() - new Date(a.date).getTime()
-      );
+      recentActivity.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
       return {
         totalViews: viewsCount || 0,
@@ -143,7 +141,7 @@ export function useProductInsights(productId?: string, productSku?: string) {
         conversionRate: Math.round(conversionRate * 10) / 10,
         averageQuantity: Math.round(averageQuantity),
         topSegments,
-        recentActivity: recentActivity.slice(0, 5)
+        recentActivity: recentActivity.slice(0, 5),
       };
     },
     enabled: !!productSku,
