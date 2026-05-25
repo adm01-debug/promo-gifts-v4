@@ -1,1 +1,37 @@
-ewogICIvLyI6ICJDb25maWcgcGFyYSBkZW5vIGNoZWNrIGVtIHRvZGFzIGVkZ2UgZnVuY3Rpb25zLiBEZWZhdWx0IERlbm8gMi54IGFzc3VtaXJpYSIsCiAgIi8vY29tbWVudCI6ICJub2RlX21vZHVsZXMvIHBvcnF1ZSBleGlzdGUgcGFja2FnZS5qc29uIG5hIHJhaXosIG1hcyBhcyBlZGdlcyBpbXBvcnRhbSB2aWEiLAogICIvL25wbS1zeW50YXgiOiAiJ25wbTp6b2RAeCcgZGlyZXRhbWVudGUgKFN1cGFiYXNlIHBhdHRlcm4pLiBub2RlTW9kdWxlc0Rpcj1ub25lIGZvcmNhIiwKICAiLy9iZWhhdmlvciI6ICJEZW5vIGEgdXNhciBzZXUgY2FjaGUgbG9jYWwgZW0gdmV6IGRlIGV4aWdpciBub2RlX21vZHVsZXMuIiwKICAibm9kZU1vZHVsZXNEaXIiOiAibm9uZSIsCiAgImxvY2siOiBmYWxzZSwKICAiLy9pbXBvcnRzIjogIkltcG9ydCBtYXA6IHJlZGlyZWNpb25hIGVzbS5zaCAtPiBucG06IGUgZGVuby5sYW5kIC0+IG5wbTovanNyOiBwYXJhIGV2aXRhciBmYWxoYXMgZGUgVExTL3JlZGUgbm8gQ0kuIFRvZGFzIGFzIHZhcmlhbnRlcyBkZSBab2QgcmVkaXJlY2lvbmFtIHBhcmEgbnBtOnpvZEAzLjIzLjggKGNhbm9uaWNvIC0tIGlzc3VlICM1MikuIiwKICAiaW1wb3J0cyI6IHsKICAgICJodHRwczovL2VzbS5zaC96b2RAMy4yMy44IjogIm5wbTp6b2RAMy4yMy44IiwKICAgICJodHRwczovL2VzbS5zaC96b2RAMy4yMi40IjogIm5wbTp6b2RAMy4yMy44IiwKICAgICJodHRwczovL2VzbS5zaC96b2RAMy4yMi4yIjogIm5wbTp6b2RAMy4yMy44IiwKICAgICJodHRwczovL2VzbS5zaC9Ac3VwYWJhc2Uvc3VwYWJhc2UtanNAMiI6ICJucG06QHN1cGFiYXNlL3N1cGFiYXNlLWpzQDIiLAogICAgImh0dHBzOi8vZXNtLnNoL0BzdXBhYmFzZS9zdXBhYmFzZS1qc0AyLjQ1LjAiOiAibnBtOkBzdXBhYmFzZS9zdXBhYmFzZS1qc0AyLjQ1LjAiLAogICAgImh0dHBzOi8vZXNtLnNoL0BzdXBhYmFzZS9zdXBhYmFzZS1qc0AyLjQ5LjEiOiAibnBtOkBzdXBhYmFzZS9zdXBhYmFzZS1qc0AyLjQ5LjEiLAogICAgImh0dHBzOi8vZXNtLnNoL0BzdXBhYmFzZS9zdXBhYmFzZS1qc0AyLjQ5LjQiOiAibnBtOkBzdXBhYmFzZS9zdXBhYmFzZS1qc0AyLjQ5LjQiLAogICAgImh0dHBzOi8vZXNtLnNoL0BzdXBhYmFzZS9zdXBhYmFzZS1qc0AyLjk1LjAiOiAibnBtOkBzdXBhYmFzZS9zdXBhYmFzZS1qc0AyLjk1LjAiLAogICAgImh0dHBzOi8vZGVuby5sYW5kL3gvem9kQHYzLjIzLjgvbW9kLnRzIjogIm5wbTp6b2RAMy4yMy44IiwKICAgICJodHRwczovL2Rlbm8ubGFuZC94L3pvZEB2My4yMi40L21vZC50cyI6ICJucG06em9kQDMuMjMuOCIsCiAgICAiaHR0cHM6Ly9kZW5vLmxhbmQvc3RkQDAuMjI0LjAvY3J5cHRvL21vZC50cyI6ICJqc3I6QHN0ZC9jcnlwdG9AXjAuMjI0LjAiLAogICAgImh0dHBzOi8vZGVuby5sYW5kL3N0ZEAwLjIyNC4wL2VuY29kaW5nL2hleC50cyI6ICJqc3I6QHN0ZC9lbmNvZGluZ0BeMC4yMjQuMC9oZXgiLAogICAgImh0dHBzOi8vZGVuby5sYW5kL3N0ZEAwLjIyNC4wL2Fzc2VydC9tb2QudHMiOiAianNyOkBzdGQvYXNzZXJ0QF4wLjIyNC4wIiwKICAgICJodHRwczovL2Rlbm8ubGFuZC9zdGRAMC4yMDguMC9hc3NlcnQvbW9kLnRzIjogImpzcjpAc3RkL2Fzc2VydEBeMC4yMDguMCIsCiAgICAiaHR0cHM6Ly9kZW5vLmxhbmQvc3RkQDAuMjI0LjAvZG90ZW52L2xvYWQudHMiOiAianNyOkBzdGQvZG90ZW52QF4wLjIyNC4wL2xvYWQiLAogICAgImh0dHBzOi8vZGVuby5sYW5kL3N0ZEAwLjIyNC4wL3Rlc3RpbmcvYmRkLnRzIjogImpzcjpAc3RkL3Rlc3RpbmdAXjAuMjI0LjAvYmRkIgogIH0sCiAgImxpbnQiOiB7CiAgICAicnVsZXMiOiB7CiAgICAgICJ0YWdzIjogWwogICAgICAgICJyZWNvbW1lbmRlZCIKICAgICAgXSwKICAgICAgImluY2x1ZGUiOiBbCiAgICAgICAgIm5vLWZsb2F0aW5nLXByb21pc2VzIgogICAgICBdCiAgICB9CiAgfQp9Cg==
+{
+  "//": "Config para deno check em todas edge functions. Default Deno 2.x assumiria",
+  "//comment": "node_modules/ porque existe package.json na raiz, mas as edges importam via",
+  "//npm-syntax": "'npm:zod@x' diretamente (Supabase pattern). nodeModulesDir=none forca",
+  "//behavior": "Deno a usar seu cache local em vez de exigir node_modules.",
+  "nodeModulesDir": "none",
+  "lock": false,
+  "//imports": "Import map: redireciona esm.sh -> npm: e deno.land -> npm:/jsr: para evitar falhas de TLS/rede no CI. Todas as variantes de Zod redirecionam para npm:zod@3.23.8 (canonico -- issue #52).",
+  "imports": {
+    "https://esm.sh/zod@3.23.8": "npm:zod@3.23.8",
+    "https://esm.sh/zod@3.22.4": "npm:zod@3.23.8",
+    "https://esm.sh/zod@3.22.2": "npm:zod@3.23.8",
+    "https://esm.sh/@supabase/supabase-js@2": "npm:@supabase/supabase-js@2",
+    "https://esm.sh/@supabase/supabase-js@2.45.0": "npm:@supabase/supabase-js@2.45.0",
+    "https://esm.sh/@supabase/supabase-js@2.49.1": "npm:@supabase/supabase-js@2.49.1",
+    "https://esm.sh/@supabase/supabase-js@2.49.4": "npm:@supabase/supabase-js@2.49.4",
+    "https://esm.sh/@supabase/supabase-js@2.95.0": "npm:@supabase/supabase-js@2.95.0",
+    "https://deno.land/x/zod@v3.23.8/mod.ts": "npm:zod@3.23.8",
+    "https://deno.land/x/zod@v3.22.4/mod.ts": "npm:zod@3.23.8",
+    "https://deno.land/std@0.224.0/crypto/mod.ts": "jsr:@std/crypto@^0.224.0",
+    "https://deno.land/std@0.224.0/encoding/hex.ts": "jsr:@std/encoding@^0.224.0/hex",
+    "https://deno.land/std@0.224.0/assert/mod.ts": "jsr:@std/assert@^0.224.0",
+    "https://deno.land/std@0.208.0/assert/mod.ts": "jsr:@std/assert@^0.208.0",
+    "https://deno.land/std@0.224.0/dotenv/load.ts": "jsr:@std/dotenv@^0.224.0/load",
+    "https://deno.land/std@0.224.0/testing/bdd.ts": "jsr:@std/testing@^0.224.0/bdd"
+  },
+  "lint": {
+    "rules": {
+      "tags": [
+        "recommended"
+      ],
+      "include": [
+        "no-floating-promises"
+      ]
+    }
+  }
+}
