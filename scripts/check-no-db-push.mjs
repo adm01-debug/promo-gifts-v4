@@ -50,6 +50,8 @@ const ALLOWLIST = [
   'AUDITORIA_REDEPLOY_PROMO_GIFTS_2026-05-13_15-32 (1).md',
   'docs/AUDITORIA_INDEPENDENTE_PRE_PRODUCAO_2026-05-13.md',
   'docs/AUDIT_INDEPENDENTE.md',
+  // Cita o comando como anti-padrão ao documentar o gap de drift (QA-03 / OPS-01).
+  'docs/AUDITORIA-BACKEND-2026-05-25.md',
 
   // ─── Auto-referências dos próprios scripts ──
   'scripts/check-no-db-push.mjs',
