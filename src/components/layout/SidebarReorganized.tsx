@@ -1,352 +1,333 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useLocation, useNavigate } from 'react-router-dom';
-import {
-  Package, Users, Heart, GitCompare, FolderOpen, ChevronLeft, ChevronRight,
-  ShieldCheck, Calculator, Sparkles, FileText, ShoppingCart, Wrench, Zap,
-  RefreshCw, DollarSign, Plus, Activity, Gauge, Truck, Palette, Brain,
-  Workflow, Layers, SlidersHorizontal, Boxes, ImagePlus, BarChart3,
-  Crosshair, Settings, Plug, ChevronsDownUp,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
-import { SidebarBrandHeader } from './sidebar/SidebarBrandHeader';
-import { FocusTrap } from '@/components/ui/FocusTrap';
-import { useMediaQuery } from '@/hooks/ui/useMediaQuery';
-import { SidebarNavGroup, type NavGroup } from './sidebar/SidebarNavGroup';
-import { RestrictedRouteNotice } from './sidebar/RestrictedRouteNotice';
-import { isDevOnlyPath, isAdminOnlyPath } from '@/lib/navigation/restricted-routes';
-import { isNavItemActive } from '@/lib/navigation/active-match';
-
-interface SidebarProps {
-  isOpen: boolean;
-  onToggle: () => void;
-}
-
-const navGroups: NavGroup[] = [
-  {
-    id: 'quotes',
-    label: 'Orçamentos',
-    icon: FileText,
-    defaultOpen: true,
-    items: [
-      { icon: Plus, label: 'Novo Orçamento', href: '/orcamentos/novo', shortcut: 'Alt+N' },
-      { icon: FileText, label: 'Orçamentos', href: '/orcamentos', tourId: 'quotes', exact: true, shortcut: 'Alt+O' },
-      { icon: ShoppingCart, label: 'Carrinhos', href: '/carrinhos', shortcut: 'Alt+R' },
-    ],
-  },
-  {
-    id: 'catalog',
-    label: 'Catálogo',
-    icon: Package,
-    defaultOpen: true,
-    items: [
-      { icon: Package, label: 'Produtos', href: '/', tourId: 'products', shortcut: 'Alt+P' },
-      { icon: SlidersHorizontal, label: 'Super Filtro', href: '/filtros', shortcut: 'Alt+F' },
-      { icon: Zap, label: 'Novidades', href: '/novidades' },
-      { icon: RefreshCw, label: 'Reposição', href: '/reposicao' },
-      { icon: FolderOpen, label: 'Coleções', href: '/colecoes' },
-      { icon: Layers, label: 'Estoque', href: '/estoque' },
-      { icon: Heart, label: 'Favoritos', href: '/favoritos' },
-      { icon: GitCompare, label: 'Comparar', href: '/comparar' },
-    ],
-  },
-  {
-    id: 'tools',
-    label: 'Ferramentas',
-    icon: Wrench,
-    defaultOpen: false,
-    items: [
-      { icon: ImagePlus, label: 'Mockup', href: '/mockup-generator', shortcut: 'Alt+M' },
-      { icon: Sparkles, label: 'Magic Up', href: '/magic-up' },
-      { icon: Crosshair, label: 'Match', href: '/match' },
-      { icon: Boxes, label: 'Kit Maker', href: '/montar-kit' },
-      { icon: Calculator, label: 'Simulador', href: '/simulador', shortcut: 'Alt+S' },
-      { icon: BarChart3, label: 'Preços por Tiragem', href: '/simulador-precos' },
-      { icon: DollarSign, label: 'Busca por Preço', href: '/busca-preco' },
-    ],
-  },
-  {
-    id: 'intelligence',
-    label: 'Insights',
-    icon: Brain,
-    defaultOpen: false,
-    items: [
-      { icon: Brain, label: 'Inteligência de Mercado', href: '/inteligencia-comercial' },
-      { icon: Sparkles, label: 'Estoque', href: '/estoque' },
-      { icon: Activity, label: 'Tendências', href: '/tendencias' },
-    ],
-  },
-  {
-    id: 'admin',
-    label: 'Admin',
-    icon: ShieldCheck,
-    adminOnly: true,
-    defaultOpen: false,
-    items: [
-      { icon: Users, label: 'Usuários', href: '/admin/usuarios', adminOnly: true },
-      { icon: Settings, label: 'Configurações', href: '/configuracoes', adminOnly: true },
-      { icon: ShieldCheck, label: 'Segurança', href: '/admin/seguranca', devOnly: true },
-      { icon: ShieldCheck, label: 'Acesso & Bots', href: '/admin/seguranca-acesso', devOnly: true },
-      { icon: Plug, label: 'Conexões', href: '/admin/conexoes', devOnly: true },
-      {
-        icon: FolderOpen, label: 'Cadastros', href: '/admin/cadastros', adminOnly: true,
-        children: [
-          { icon: Package, label: 'Produtos', href: '/admin/cadastros?tab=products' },
-          { icon: Truck, label: 'Fornecedores', href: '/admin/cadastros?tab=suppliers' },
-          { icon: Palette, label: 'Gravação', href: '/admin/cadastros?tab=personalizacao' },
-        ],
-      },
-      { icon: Sparkles, label: 'Prompts IA', href: '/admin/prompts-ia', devOnly: true },
-      { icon: Workflow, label: 'Workflows IA', href: '/admin/workflows', devOnly: true },
-      { icon: Activity, label: 'Telemetria', href: '/admin/telemetria', devOnly: true },
-      { icon: Gauge, label: 'Performance UX', href: '/admin/client-performance', devOnly: true },
-      { icon: DollarSign, label: 'Validade de Preços', href: '/admin/validade-precos', devOnly: true },
-      { icon: ShieldCheck, label: 'Auditoria RBAC', href: '/admin/rbac-rotas', devOnly: true },
-      { icon: Activity, label: 'Status do Sistema', href: '/admin/status', devOnly: true },
-    ],
-  },
-];
-
-/**
- * Pure module-level function — no closure, no hooks, no side effects.
- * Called once on mount (useState initializer) and on route change (useEffect).
- * Returns a new object only when values differ, so React bails out via
- * functional-update reference equality check.
- */
-function computeOpenGroups(pathname: string): Record<string, boolean> {
-  const next: Record<string, boolean> = {};
-  navGroups.forEach((group) => {
-    const hasActive = group.items.some((item) =>
-      isNavItemActive(pathname, item.href, item.exact),
-    );
-    next[group.id] = hasActive || (group.defaultOpen ?? false);
-  });
-  return next;
-}
-
-export const SidebarReorganized = React.memo(
-  React.forwardRef<HTMLElement, SidebarProps>(function SidebarReorganized(
-    { isOpen, onToggle },
-    ref,
-  ) {
-    const location = useLocation();
-    const navigate = useNavigate();
-    const [isCollapsed, setIsCollapsed] = useState(false);
-
-    useEffect(() => {
-      document.documentElement.style.setProperty('--sidebar-w', isCollapsed ? '4rem' : '16rem');
-    }, [isCollapsed]);
-
-    // Computed once on mount from current route.
-    // Only changes via user toggle or route-change effect below.
-    const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(
-      () => computeOpenGroups(location.pathname),
-    );
-
-    // Sync when route changes. Functional update with value comparison —
-    // React bails out immediately when nothing changed (same reference).
-    const prevPathRef = React.useRef(location.pathname);
-    useEffect(() => {
-      if (prevPathRef.current === location.pathname) return;
-      prevPathRef.current = location.pathname;
-      const next = computeOpenGroups(location.pathname);
-      setOpenGroups((prev) => {
-        const changed = Object.keys(next).some((k) => prev[k] !== next[k]);
-        return changed ? next : prev;
-      });
-    }, [location.pathname]);
-
-    const { isAdmin, isDev } = useAuth();
-    const isMobile = useMediaQuery('(max-width: 1023px)');
-
-    const { data: pendingApprovalCount } = useQuery({
-      queryKey: ['pending-discount-approvals-count'],
-      queryFn: async () => {
-        // rls-allow: admin-only badge query, guarded by `enabled: isAdmin`
-        const { count } = await supabase
-          .from('discount_approval_requests')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending');
-        return count || 0;
-      },
-      enabled: isAdmin,
-      refetchInterval: 30_000,
-      staleTime: 15_000,
-    });
-
-    const enrichedNavGroups = useMemo(() => {
-      if (!isAdmin || !pendingApprovalCount) return navGroups;
-      return navGroups.map((group) => {
-        if (group.id !== 'admin') return group;
-        return {
-          ...group,
-          items: group.items.map((item) =>
-            item.href === '/admin/usuarios?tab=discounts'
-              ? { ...item, badge: pendingApprovalCount }
-              : item,
-          ),
-        };
-      });
-    }, [isAdmin, pendingApprovalCount]);
-
-    const toggleCollapse = () => setIsCollapsed((c) => !c);
-
-    const collapseAllGroups = () => {
-      setOpenGroups((prev) => {
-        const collapsed: Record<string, boolean> = {};
-        Object.keys(prev).forEach((key) => { collapsed[key] = false; });
-        return collapsed;
-      });
-    };
-
-    useEffect(() => {
-      const shortcutMap: Record<string, string> = {};
-      navGroups.forEach((g) =>
-        g.items.forEach((item) => {
-          if (item.shortcut) {
-            shortcutMap[item.shortcut.replace('Alt+', '').toLowerCase()] = item.href;
-          }
-        }),
-      );
-      const handler = (e: KeyboardEvent) => {
-        if (e.altKey && !e.ctrlKey && !e.metaKey) {
-          const target = e.target as HTMLElement;
-          if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
-          const href = shortcutMap[e.key.toLowerCase()];
-          if (href) { e.preventDefault(); navigate(href); }
-        }
-      };
-      window.addEventListener('keydown', handler);
-      return () => window.removeEventListener('keydown', handler);
-    }, [navigate]);
-
-    const hasAnyGroupOpen = Object.values(openGroups).some(Boolean);
-
-    // Stable callback — empty dep array intentional: setOpenGroups is stable
-    const toggleGroup = useCallback((groupId: string, next: boolean) => {
-      setOpenGroups((prev) => (prev[groupId] === next ? prev : { ...prev, [groupId]: next }));
-    }, []);
-
-    const isItemVisible = useCallback(
-      (item: { href?: string; adminOnly?: boolean; devOnly?: boolean }): boolean => {
-        const href = item.href ?? '';
-        if (item.devOnly && !isDev) return false;
-        if (item.adminOnly && !isAdmin) return false;
-        if (href && isDevOnlyPath(href) && !isDev) return false;
-        if (href && isAdminOnlyPath(href) && !isAdmin) return false;
-        return true;
-      },
-      [isDev, isAdmin],
-    );
-
-    const filteredGroups = useMemo(
-      () =>
-        enrichedNavGroups
-          .filter((g) => (!g.adminOnly || isAdmin) && (!g.devOnly || isDev))
-          .map((g) => ({
-            ...g,
-            items: g.items.filter(isItemVisible).map((i) => ({
-              ...i,
-              children: i.children?.filter(isItemVisible),
-            })),
-          }))
-          .filter((g) => g.items.length > 0),
-      [isAdmin, isDev, enrichedNavGroups, isItemVisible],
-    );
-
-    return (
-      <>
-        {isOpen && (
-          <div
-            className="fixed inset-0 z-40 bg-foreground/20 backdrop-blur-sm lg:hidden"
-            onClick={onToggle}
-            aria-hidden="true"
-          />
-        )}
-        <aside
-          ref={ref}
-          data-tour="sidebar"
-          role="navigation"
-          aria-label="Menu principal"
-          style={{
-            ['--sidebar-w' as string]: isCollapsed ? '4rem' : '16rem',
-            transitionTimingFunction: 'cubic-bezier(0.23,1,0.32,1)',
-          }}
-          className={cn(
-            'theme-transitioning fixed left-0 top-0 z-50 h-full border-r border-sidebar-border/20 bg-sidebar/80 backdrop-blur-3xl transition-all duration-500',
-            isCollapsed ? 'overflow-visible' : 'overflow-hidden',
-            'lg:sticky lg:top-0 lg:z-40 lg:h-screen',
-            isOpen ? 'translate-x-0 shadow-[40px_0_100px_rgba(0,0,0,0.4)]' : '-translate-x-full lg:translate-x-0',
-            isCollapsed ? 'w-16 lg:shadow-[20px_0_50px_rgba(0,0,0,0.15)]' : 'w-64 lg:shadow-[30px_0_80px_rgba(0,0,0,0.2)]',
-          )}
-        >
-          <FocusTrap active={isOpen && isMobile} className="h-full" autoFocus={false}>
-            <div className={cn('flex h-full min-h-0 flex-col pt-16 lg:pt-0', isCollapsed && 'overflow-visible')}>
-              <div className="group/brand relative border-b border-white/[0.05] bg-gradient-to-b from-white/[0.02] to-transparent">
-                <SidebarBrandHeader isCollapsed={isCollapsed} />
-                <div className="pointer-events-none absolute inset-0 rounded-full bg-primary/5 opacity-0 blur-2xl transition-opacity duration-500 group-hover/brand:opacity-100" />
-              </div>
-              <div className="mb-3 mt-4 hidden items-center justify-between gap-2 px-3 lg:flex">
-                {!isCollapsed && (
-                  <Button
-                    variant="ghost" size="sm"
-                    className={cn(
-                      'h-8 flex-1 gap-2 text-[10px] font-bold uppercase tracking-wider',
-                      'text-sidebar-foreground/40 hover:bg-primary/10 hover:text-primary',
-                      'rounded-xl opacity-60 transition-all duration-300 hover:opacity-100',
-                      !hasAnyGroupOpen && 'invisible',
-                    )}
-                    onClick={collapseAllGroups}
-                    aria-label="Recolher todos os grupos de navegação"
-                  >
-                    <ChevronsDownUp className="h-3 w-3" />
-                    Recolher
-                  </Button>
-                )}
-                <Button
-                  variant="ghost" size="icon"
-                  className={cn(
-                    'h-8 w-8 shrink-0 text-sidebar-foreground/30 hover:bg-sidebar-accent/50 hover:text-primary',
-                    'rounded-xl transition-all duration-300 focus-visible:ring-1 focus-visible:ring-primary',
-                    isCollapsed && 'mx-auto',
-                  )}
-                  onClick={toggleCollapse}
-                  aria-label={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
-                  title={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
-                >
-                  {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
-                </Button>
-              </div>
-              <RestrictedRouteNotice isCollapsed={isCollapsed} />
-              <nav
-                className={cn(
-                  'scrollbar-thin min-h-0 flex-1 px-2',
-                  isCollapsed ? 'overflow-visible' : 'overflow-y-auto',
-                  isCollapsed ? 'space-y-0' : 'space-y-0.5',
-                )}
-              >
-                {filteredGroups.map((group, index) => (
-                  <div key={group.id}>
-                    {index > 0 && !isCollapsed && <div className="mx-2 my-2.5 h-px bg-sidebar-border/40" />}
-                    {index > 0 && isCollapsed && <div className="mx-auto my-1.5 h-px w-4 bg-sidebar-border/30" />}
-                    <SidebarNavGroup
-                      group={group}
-                      isOpen={openGroups[group.id] ?? false}
-                      isCollapsed={isCollapsed}
-                      onToggle={(next) => toggleGroup(group.id, next)}
-                      onMobileClose={onToggle}
-                      isMobileSidebarOpen={isOpen}
-                    />
-                  </div>
-                ))}
-              </nav>
-            </div>
-          </FocusTrap>
-        </aside>
-      </>
-    );
-  }),
-);
+aW1wb3J0IFJlYWN0LCB7IHVzZVN0YXRlLCB1c2VNZW1vLCB1c2VFZmZlY3Qs
+IHVzZUNhbGxiYWNrIH0gZnJvbSAncmVhY3QnOwppbXBvcnQgeyB1c2VRdWVy
+eSB9IGZyb20gJ0B0YW5zdGFjay9yZWFjdC1xdWVyeSc7CmltcG9ydCB7IHVz
+ZUxvY2F0aW9uLCB1c2VOYXZpZ2F0ZSB9IGZyb20gJ3JlYWN0LXJvdXRlci1k
+b20nOwppbXBvcnQgewogIFBhY2thZ2UsIFVzZXJzLCBIZWFydCwgR2l0Q29t
+cGFyZSwgRm9sZGVyT3BlbiwgQ2hldnJvbkxlZnQsIENoZXZyb25SaWdodCwK
+ICBTaGllbGRDaGVjaywgQ2FsY3VsYXRvciwgU3BhcmtsZXMsIEZpbGVUZXh0
+LCBTaG9wcGluZ0NhcnQsIFdyZW5jaCwgWmFwLAogIFJlZnJlc2hDdywgRG9s
+bGFyU2lnbiwgUGx1cywgQWN0aXZpdHksIEdhdWdlLCBUcnVjaywgUGFsZXR0
+ZSwgQnJhaW4sCiAgV29ya2Zsb3csIExheWVycywgU2xpZGVyc0hvcml6b250
+YWwsIEJveGVzLCBJbWFnZVBsdXMsIEJhckNoYXJ0MywKICBDcm9zc2hhaXIs
+IFNldHRpbmdzLCBQbHVnLCBDaGV2cm9uc0Rvd25VcCwKfSBmcm9tICdsdWNp
+ZGUtcmVhY3QnOwppbXBvcnQgeyBjbiB9IGZyb20gJ0AvbGliL3V0aWxzJzsK
+aW1wb3J0IHsgc3VwYWJhc2UgfSBmcm9tICdAL2ludGVncmF0aW9ucy9zdXBh
+YmFzZS9jbGllbnQnOwppbXBvcnQgeyBCdXR0b24gfSBmcm9tICdAL2NvbXBv
+bmVudHMvdWkvYnV0dG9uJzsKaW1wb3J0IHsgdXNlQXV0aCB9IGZyb20gJ0Av
+Y29udGV4dHMvQXV0aENvbnRleHQnOwppbXBvcnQgeyBTaWRlYmFyQnJhbmRI
+ZWFkZXIgfSBmcm9tICcuL3NpZGViYXIvU2lkZWJhckJyYW5kSGVhZGVyJzsK
+aW1wb3J0IHsgRm9jdXNUcmFwIH0gZnJvbSAnQC9jb21wb25lbnRzL3VpL0Zv
+Y3VzVHJhcCc7CmltcG9ydCB7IHVzZU1lZGlhUXVlcnkgfSBmcm9tICdAL2hv
+b2tzL3VpL3VzZU1lZGlhUXVlcnknOwppbXBvcnQgeyBTaWRlYmFyTmF2R3Jv
+dXAsIHR5cGUgTmF2R3JvdXAgfSBmcm9tICcuL3NpZGViYXIvU2lkZWJhck5h
+dkdyb3VwJzsKaW1wb3J0IHsgUmVzdHJpY3RlZFJvdXRlTm90aWNlIH0gZnJv
+bSAnLi9zaWRlYmFyL1Jlc3RyaWN0ZWRSb3V0ZU5vdGljZSc7CmltcG9ydCB7
+IGlzRGV2T25seVBhdGgsIGlzQWRtaW5Pbmx5UGF0aCB9IGZyb20gJ0AvbGli
+L25hdmlnYXRpb24vcmVzdHJpY3RlZC1yb3V0ZXMnOwppbXBvcnQgeyBpc05h
+dkl0ZW1BY3RpdmUgfSBmcm9tICdAL2xpYi9uYXZpZ2F0aW9uL2FjdGl2ZS1t
+YXRjaCc7CgppbnRlcmZhY2UgU2lkZWJhclByb3BzIHsKICBpc09wZW46IGJv
+b2xlYW47CiAgb25Ub2dnbGU6ICgpID0+IHZvaWQ7Cn0KCmNvbnN0IG5hdkdy
+b3VwczogTmF2R3JvdXBbXSA9IFsKICB7CiAgICBpZDogJ3F1b3RlcycsCiAg
+ICBsYWJlbDogJ09yw6dhbWVudG9zJywKICAgIGljb246IEZpbGVUZXh0LAog
+ICAgZGVmYXVsdE9wZW46IHRydWUsCiAgICBpdGVtczogWwogICAgICB7IGlj
+b246IFBsdXMsIGxhYmVsOiAnTm92byBPcsOnYW1lbnRvJywgaHJlZjogJy9v
+cmNhbWVudG9zL25vdm8nLCBzaG9ydGN1dDogJ0FsdCtOJyB9LAogICAgICB7
+IGljb246IEZpbGVUZXh0LCBsYWJlbDogJ09yw6dhbWVudG9zJywgaHJlZjog
+Jy9vcmNhbWVudG9zJywgdG91cklkOiAncXVvdGVzJywgZXhhY3Q6IHRydWUs
+IHNob3J0Y3V0OiAnQWx0K08nIH0sCiAgICAgIHsgaWNvbjogU2hvcHBpbmdD
+YXJ0LCBsYWJlbDogJ0NhcnJpbmhvcycsIGhyZWY6ICcvY2FycmluaG9zJywg
+c2hvcnRjdXQ6ICdBbHQrUicgfSwKICAgIF0sCiAgfSwKICB7CiAgICBpZDog
+J2NhdGFsb2cnLAogICAgbGFiZWw6ICdDYXTDoWxvZ28nLAogICAgaWNvbjog
+UGFja2FnZSwKICAgIGRlZmF1bHRPcGVuOiB0cnVlLAogICAgaXRlbXM6IFsK
+ICAgICAgeyBpY29uOiBQYWNrYWdlLCBsYWJlbDogJ1Byb2R1dG9zJywgaHJl
+ZjogJy8nLCB0b3VySWQ6ICdwcm9kdWN0cycsIHNob3J0Y3V0OiAnQWx0K1An
+IH0sCiAgICAgIHsgaWNvbjogU2xpZGVyc0hvcml6b250YWwsIGxhYmVsOiAn
+U3VwZXIgRmlsdHJvJywgaHJlZjogJy9maWx0cm9zJywgc2hvcnRjdXQ6ICdB
+bHQrRicgfSwKICAgICAgeyBpY29uOiBaYXAsIGxhYmVsOiAnTm92aWRhZGVz
+JywgaHJlZjogJy9ub3ZpZGFkZXMnIH0sCiAgICAgIHsgaWNvbjogUmVmcmVz
+aEN3LCBsYWJlbDogJ1JlcG9zacOnw6NvJywgaHJlZjogJy9yZXBvc2ljYW8n
+IH0sCiAgICAgIHsgaWNvbjogRm9sZGVyT3BlbiwgbGFiZWw6ICdDb2xlw6fD
+tWVzJywgaHJlZjogJy9jb2xlY29lcycgfSwKICAgICAgeyBpY29uOiBMYXll
+cnMsIGxhYmVsOiAnRXN0b3F1ZScsIGhyZWY6ICcvZXN0b3F1ZScgfSwKICAg
+ICAgeyBpY29uOiBIZWFydCwgbGFiZWw6ICdGYXZvcml0b3MnLCBocmVmOiAn
+L2Zhdm9yaXRvcycgfSwKICAgICAgeyBpY29uOiBHaXRDb21wYXJlLCBsYWJl
+bDogJ0NvbXBhcmFyJywgaHJlZjogJy9jb21wYXJhcicgfSwKICAgIF0sCiAg
+fSwKICB7CiAgICBpZDogJ3Rvb2xzJywKICAgIGxhYmVsOiAnRmVycmFtZW50
+YXMnLAogICAgaWNvbjogV3JlbmNoLAogICAgZGVmYXVsdE9wZW46IGZhbHNl
+LAogICAgaXRlbXM6IFsKICAgICAgeyBpY29uOiBJbWFnZVBsdXMsIGxhYmVs
+OiAnTW9ja3VwJywgaHJlZjogJy9tb2NrdXAtZ2VuZXJhdG9yJywgc2hvcnRj
+dXQ6ICdBbHQrTScgfSwKICAgICAgeyBpY29uOiBTcGFya2xlcywgbGFiZWw6
+ICdNYWdpYyBVcCcsIGhyZWY6ICcvbWFnaWMtdXAnIH0sCiAgICAgIHsgaWNv
+bjogQ3Jvc3NoYWlyLCBsYWJlbDogJ01hdGNoJywgaHJlZjogJy9tYXRjaCcg
+fSwKICAgICAgeyBpY29uOiBCb3hlcywgbGFiZWw6ICdLaXQgTWFrZXInLCBo
+cmVmOiAnL21vbnRhci1raXQnIH0sCiAgICAgIHsgaWNvbjogQ2FsY3VsYXRv
+ciwgbGFiZWw6ICdTaW11bGFkb3InLCBocmVmOiAnL3NpbXVsYWRvcicsIHNo
+b3J0Y3V0OiAnQWx0K1MnIH0sCiAgICAgIHsgaWNvbjogQmFyQ2hhcnQzLCBs
+YWJlbDogJ1ByZcOnb3MgcG9yIFRpcmFnZW0nLCBocmVmOiAnL3NpbXVsYWRv
+ci1wcmVjb3MnIH0sCiAgICAgIHsgaWNvbjogRG9sbGFyU2lnbiwgbGFiZWw6
+ICdCdXNjYSBwb3IgUHJlw6dvJywgaHJlZjogJy9idXNjYS1wcmVjbycgfSwK
+ICAgIF0sCiAgfSwKICB7CiAgICBpZDogJ2ludGVsbGlnZW5jZScsCiAgICBs
+YWJlbDogJ0luc2lnaHRzJywKICAgIGljb246IEJyYWluLAogICAgZGVmYXVs
+dE9wZW46IGZhbHNlLAogICAgaXRlbXM6IFsKICAgICAgeyBpY29uOiBCcmFp
+biwgbGFiZWw6ICdJbnRlbGlnw6puY2lhIGRlIE1lcmNhZG8nLCBocmVmOiAn
+L2ludGVsaWdlbmNpYS1jb21lcmNpYWwnIH0sCiAgICAgIC8vIE5PVEU6ICcv
+ZXN0b3F1ZScgcmVtb3ZpZG8gZGVzdGUgZ3J1cG8gLS0gZHVwbGljYXRhIGNv
+bSBjYXRhbG9nL0VzdG9xdWUuCiAgICAgIC8vIGhyZWYgw7puaWNvIHBvciBp
+dGVtIGV2aXRhIHF1ZSBjb21wdXRlT3Blbkdyb3VwcyBhYnJhIGRvaXMgZ3J1
+cG9zIHNpbXVsdGFuZWFtZW50ZQogICAgICAvLyAocm9vdCBjYXVzZSBkbyBz
+dGFjayBvdmVyZmxvdyBlbSAyNS8wNS8yMDI2KS4KICAgICAgeyBpY29uOiBB
+Y3Rpdml0eSwgbGFiZWw6ICdUZW5kw6puY2lhcycsIGhyZWY6ICcvdGVuZGVu
+Y2lhcycgfSwKICAgIF0sCiAgfSwKICB7CiAgICBpZDogJ2FkbWluJywKICAg
+IGxhYmVsOiAnQWRtaW4nLAogICAgaWNvbjogU2hpZWxkQ2hlY2ssCiAgICBh
+ZG1pbk9ubHk6IHRydWUsCiAgICBkZWZhdWx0T3BlbjogZmFsc2UsCiAgICBp
+dGVtczogWwogICAgICB7IGljb246IFVzZXJzLCBsYWJlbDogJ1VzdcOhcmlv
+cycsIGhyZWY6ICcvYWRtaW4vdXN1YXJpb3MnLCBhZG1pbk9ubHk6IHRydWUg
+fSwKICAgICAgeyBpY29uOiBTZXR0aW5ncywgbGFiZWw6ICdDb25maWd1cmHD
+p8O1ZXMnLCBocmVmOiAnL2NvbmZpZ3VyYWNvZXMnLCBhZG1pbk9ubHk6IHRy
+dWUgfSwKICAgICAgeyBpY29uOiBTaGllbGRDaGVjaywgbGFiZWw6ICdTZWd1
+cmFuw6dhJywgaHJlZjogJy9hZG1pbi9zZWd1cmFuY2EnLCBkZXZPbmx5OiB0
+cnVlIH0sCiAgICAgIHsgaWNvbjogU2hpZWxkQ2hlY2ssIGxhYmVsOiAnQWNl
+c3NvICYgQm90cycsIGhyZWY6ICcvYWRtaW4vc2VndXJhbmNhLWFjZXNzbycs
+IGRldk9ubHk6IHRydWUgfSwKICAgICAgeyBpY29uOiBQbHVnLCBsYWJlbDog
+J0NvbmV4w7VlcycsIGhyZWY6ICcvYWRtaW4vY29uZXhvZXMnLCBkZXZPbmx5
+OiB0cnVlIH0sCiAgICAgIHsKICAgICAgICBpY29uOiBGb2xkZXJPcGVuLCBs
+YWJlbDogJ0NhZGFzdHJvcycsIGhyZWY6ICcvYWRtaW4vY2FkYXN0cm9zJywg
+YWRtaW5Pbmx5OiB0cnVlLAogICAgICAgIGNoaWxkcmVuOiBbCiAgICAgICAg
+ICB7IGljb246IFBhY2thZ2UsIGxhYmVsOiAnUHJvZHV0b3MnLCBocmVmOiAn
+L2FkbWluL2NhZGFzdHJvcz90YWI9cHJvZHVjdHMnIH0sCiAgICAgICAgICB7
+IGljb246IFRydWNrLCBsYWJlbDogJ0Zvcm5lY2Vkb3JlcycsIGhyZWY6ICcv
+YWRtaW4vY2FkYXN0cm9zP3RhYj1zdXBwbGllcnMnIH0sCiAgICAgICAgICB7
+IGljb246IFBhbGV0dGUsIGxhYmVsOiAnR3JhdmHDp8OjbycsIGhyZWY6ICcv
+YWRtaW4vY2FkYXN0cm9zP3RhYj1wZXJzb25hbGl6YWNhbycgfSwKICAgICAg
+ICBdLAogICAgICB9LAogICAgICB7IGljb246IFNwYXJrbGVzLCBsYWJlbDog
+J1Byb21wdHMgSUEnLCBocmVmOiAnL2FkbWluL3Byb21wdHMtaWEnLCBkZXZP
+bmx5OiB0cnVlIH0sCiAgICAgIHsgaWNvbjogV29ya2Zsb3csIGxhYmVsOiAn
+V29ya2Zsb3dzIElBJywgaHJlZjogJy9hZG1pbi93b3JrZmxvd3MnLCBkZXZP
+bmx5OiB0cnVlIH0sCiAgICAgIHsgaWNvbjogQWN0aXZpdHksIGxhYmVsOiAn
+VGVsZW1ldHJpYScsIGhyZWY6ICcvYWRtaW4vdGVsZW1ldHJpYScsIGRldk9u
+bHk6IHRydWUgfSwKICAgICAgeyBpY29uOiBHYXVnZSwgbGFiZWw6ICdQZXJm
+b3JtYW5jZSBVWCcsIGhyZWY6ICcvYWRtaW4vY2xpZW50LXBlcmZvcm1hbmNl
+JywgZGV2T25seTogdHJ1ZSB9LAogICAgICB7IGljb246IERvbGxhclNpZ24s
+IGxhYmVsOiAnVmFsaWRhZGUgZGUgUHJlw6dvcycsIGhyZWY6ICcvYWRtaW4v
+dmFsaWRhZGUtcHJlY29zJywgZGV2T25seTogdHJ1ZSB9LAogICAgICB7IGlj
+b246IFNoaWVsZENoZWNrLCBsYWJlbDogJ0F1ZGl0b3JpYSBSQkFDJywgaHJl
+ZjogJy9hZG1pbi9yYmFjLXJvdGFzJywgZGV2T25seTogdHJ1ZSB9LAogICAg
+ICB7IGljb246IEFjdGl2aXR5LCBsYWJlbDogJ1N0YXR1cyBkbyBTaXN0ZW1h
+JywgaHJlZjogJy9hZG1pbi9zdGF0dXMnLCBkZXZPbmx5OiB0cnVlIH0sCiAg
+ICBdLAogIH0sCl07CgovKioKICogUHVyZSBtb2R1bGUtbGV2ZWwgZnVuY3Rp
+b24g4oCUIGNhbGxlZCBvbmNlIG9uIG1vdW50IGFuZCBvbiByb3V0ZSBjaGFu
+Z2UuCiAqIFJldHVybnMgYSBuZXcgb2JqZWN0IG9ubHkgd2hlbiB2YWx1ZXMg
+ZGlmZmVyLCBzbyBSZWFjdCBiYWlscyBvdXQgdmlhCiAqIGZ1bmN0aW9uYWwt
+dXBkYXRlIHJlZmVyZW5jZSBlcXVhbGl0eSBjaGVjay4KICovCmZ1bmN0aW9u
+IGNvbXB1dGVPcGVuR3JvdXBzKHBhdGhuYW1lOiBzdHJpbmcpOiBSZWNvcmQ8
+c3RyaW5nLCBib29sZWFuPiB7CiAgY29uc3QgbmV4dDogUmVjb3JkPHN0cmlu
+ZywgYm9vbGVhbj4gPSB7fTsKICBuYXZHcm91cHMuZm9yRWFjaCgoZ3JvdXAp
+ID0+IHsKICAgIGNvbnN0IGhhc0FjdGl2ZSA9IGdyb3VwLml0ZW1zLnNvbWUo
+KGl0ZW0pID0+CiAgICAgIGlzTmF2SXRlbUFjdGl2ZShwYXRobmFtZSwgaXRl
+bS5ocmVmLCBpdGVtLmV4YWN0KSwKICAgICk7CiAgICBuZXh0W2dyb3VwLmlk
+XSA9IGhhc0FjdGl2ZSB8fCAoZ3JvdXAuZGVmYXVsdE9wZW4gPz8gZmFsc2Up
+OwogIH0pOwogIHJldHVybiBuZXh0Owp9CgpleHBvcnQgY29uc3QgU2lkZWJh
+clJlb3JnYW5pemVkID0gUmVhY3QubWVtbygKICBSZWFjdC5mb3J3YXJkUmVm
+PEhUTUxFbGVtZW50LCBTaWRlYmFyUHJvcHM+KGZ1bmN0aW9uIFNpZGViYXJS
+ZW9yZ2FuaXplZCgKICAgIHsgaXNPcGVuLCBvblRvZ2dsZSB9LAogICAgcmVm
+LAogICkgewogICAgY29uc3QgbG9jYXRpb24gPSB1c2VMb2NhdGlvbigpOwog
+ICAgY29uc3QgbmF2aWdhdGUgPSB1c2VOYXZpZ2F0ZSgpOwogICAgY29uc3Qg
+W2lzQ29sbGFwc2VkLCBzZXRJc0NvbGxhcHNlZF0gPSB1c2VTdGF0ZShmYWxz
+ZSk7CgogICAgdXNlRWZmZWN0KCgpID0+IHsKICAgICAgZG9jdW1lbnQuZG9j
+dW1lbnRFbGVtZW50LnN0eWxlLnNldFByb3BlcnR5KCctLXNpZGViYXItdycs
+IGlzQ29sbGFwc2VkID8gJzRyZW0nIDogJzE2cmVtJyk7CiAgICB9LCBbaXND
+b2xsYXBzZWRdKTsKCiAgICBjb25zdCBbb3Blbkdyb3Vwcywgc2V0T3Blbkdy
+b3Vwc10gPSB1c2VTdGF0ZTxSZWNvcmQ8c3RyaW5nLCBib29sZWFuPj4oCiAg
+ICAgICgpID0+IGNvbXB1dGVPcGVuR3JvdXBzKGxvY2F0aW9uLnBhdGhuYW1l
+KSwKICAgICk7CgogICAgY29uc3QgcHJldlBhdGhSZWYgPSBSZWFjdC51c2VS
+ZWYobG9jYXRpb24ucGF0aG5hbWUpOwogICAgdXNlRWZmZWN0KCgpID0+IHsK
+ICAgICAgaWYgKHByZXZQYXRoUmVmLmN1cnJlbnQgPT09IGxvY2F0aW9uLnBh
+dGhuYW1lKSByZXR1cm47CiAgICAgIHByZXZQYXRoUmVmLmN1cnJlbnQgPSBs
+b2NhdGlvbi5wYXRobmFtZTsKICAgICAgY29uc3QgbmV4dCA9IGNvbXB1dGVP
+cGVuR3JvdXBzKGxvY2F0aW9uLnBhdGhuYW1lKTsKICAgICAgc2V0T3Blbkdy
+b3VwcygocHJldikgPT4gewogICAgICAgIGNvbnN0IGNoYW5nZWQgPSBPYmpl
+Y3Qua2V5cyhuZXh0KS5zb21lKChrKSA9PiBwcmV2W2tdICE9PSBuZXh0W2td
+KTsKICAgICAgICByZXR1cm4gY2hhbmdlZCA/IG5leHQgOiBwcmV2OwogICAg
+ICB9KTsKICAgIH0sIFtsb2NhdGlvbi5wYXRobmFtZV0pOwoKICAgIGNvbnN0
+IHsgaXNBZG1pbiwgaXNEZXYgfSA9IHVzZUF1dGgoKTsKICAgIGNvbnN0IGlz
+TW9iaWxlID0gdXNlTWVkaWFRdWVyeSgnKG1heC13aWR0aDogMTAyM3B4KScp
+OwoKICAgIGNvbnN0IHsgZGF0YTogcGVuZGluZ0FwcHJvdmFsQ291bnQgfSA9
+IHVzZVF1ZXJ5KHsKICAgICAgcXVlcnlLZXk6IFsncGVuZGluZy1kaXNjb3Vu
+dC1hcHByb3ZhbHMtY291bnQnXSwKICAgICAgcXVlcnlGbjogYXN5bmMgKCkg
+PT4gewogICAgICAgIC8vIHJscy1hbGxvdzogYWRtaW4tb25seSBiYWRnZSBx
+dWVyeSwgZ3VhcmRlZCBieSBgZW5hYmxlZDogaXNBZG1pbmAKICAgICAgICBj
+b25zdCB7IGNvdW50IH0gPSBhd2FpdCBzdXBhYmFzZQogICAgICAgICAgLmZy
+b20oJ2Rpc2NvdW50X2FwcHJvdmFsX3JlcXVlc3RzJykKICAgICAgICAgIC5z
+ZWxlY3QoJyonLCB7IGNvdW50OiAnZXhhY3QnLCBoZWFkOiB0cnVlIH0pCiAg
+ICAgICAgICAuZXEoJ3N0YXR1cycsICdwZW5kaW5nJyk7CiAgICAgICAgcmV0
+dXJuIGNvdW50IHx8IDA7CiAgICAgIH0sCiAgICAgIGVuYWJsZWQ6IEJvb2xl
+YW4oaXNBZG1pbiksCiAgICAgIHJlZmV0Y2hJbnRlcnZhbDogMzBfMDAwLAog
+ICAgICBzdGFsZVRpbWU6IDE1XzAwMCwKICAgICAgLy8gZml4KDI1LzA1LzIw
+MjYpOiBzZW0gcmV0cnkgcGFyYSBldml0YXIgZmxvb2QgZGUgNDAxIGR1cmFu
+dGUKICAgICAgLy8gaW5pY2lhbGl6YcOnw6NvIGRhIHNlc3PDo28uIEEgYmFk
+Z2UgbsOjbyDDqSBjcsOtdGljYSwgcmVmcmVzaCBkZSAzMHMgc3VmaWNlLgog
+ICAgICByZXRyeTogMCwKICAgICAgcmV0cnlPbk1vdW50OiBmYWxzZSwKICAg
+IH0pOwoKICAgIGNvbnN0IGVucmljaGVkTmF2R3JvdXBzID0gdXNlTWVtbygo
+KSA9PiB7CiAgICAgIGlmICghaXNBZG1pbiB8fCAhcGVuZGluZ0FwcHJvdmFs
+Q291bnQpIHJldHVybiBuYXZHcm91cHM7CiAgICAgIHJldHVybiBuYXZHcm91
+cHMubWFwKChncm91cCkgPT4gewogICAgICAgIGlmIChncm91cC5pZCAhPT0g
+J2FkbWluJykgcmV0dXJuIGdyb3VwOwogICAgICAgIHJldHVybiB7CiAgICAg
+ICAgICAuLi5ncm91cCwKICAgICAgICAgIGl0ZW1zOiBncm91cC5pdGVtcy5t
+YXAoKGl0ZW0pID0+CiAgICAgICAgICAgIGl0ZW0uaHJlZiA9PT0gJy9hZG1p
+bi91c3Vhcmlvcz90YWI9ZGlzY291bnRzJwogICAgICAgICAgICAgID8geyAu
+Li5pdGVtLCBiYWRnZTogcGVuZGluZ0FwcHJvdmFsQ291bnQgfQogICAgICAg
+ICAgICAgIDogaXRlbSwKICAgICAgICAgICksCiAgICAgICAgfTsKICAgICAgfSk7
+CiAgICB9LCBbaXNBZG1pbiwgcGVuZGluZ0FwcHJvdmFsQ291bnRdKTsKCiAg
+ICBjb25zdCB0b2dnbGVDb2xsYXBzZSA9ICgpID0+IHNldElzQ29sbGFwc2Vk
+KChjKSA9PiAhYyk7CgogICAgY29uc3QgY29sbGFwc2VBbGxHcm91cHMgPSAo
+KSA9PiB7CiAgICAgIHNldE9wZW5Hcm91cHMoKHByZXYpID0+IHsKICAgICAg
+ICBjb25zdCBjb2xsYXBzZWQ6IFJlY29yZDxzdHJpbmcsIGJvb2xlYW4+ID0g
+e307CiAgICAgICAgT2JqZWN0LmtleXMocHJldikuZm9yRWFjaCgoa2V5KSA9
+PiB7IGNvbGxhcHNlZFtrZXldID0gZmFsc2U7IH0pOwogICAgICAgIHJldHVy
+biBjb2xsYXBzZWQ7CiAgICAgIH0pOwogICAgfTsKCiAgICB1c2VFZmZlY3Qo
+KCkgPT4gewogICAgICBjb25zdCBzaG9ydGN1dE1hcDogUmVjb3JkPHN0cmlu
+Zywgc3RyaW5nPiA9IHt9OwogICAgICBuYXZHcm91cHMuZm9yRWFjaCgoZykg
+PT4KICAgICAgICBnLml0ZW1zLmZvckVhY2goKGl0ZW0pID0+IHsKICAgICAg
+ICAgIGlmIChpdGVtLnNob3J0Y3V0KSB7CiAgICAgICAgICAgIHNob3J0Y3V0
+TWFwW2l0ZW0uc2hvcnRjdXQucmVwbGFjZSgnQWx0KycsICcnKS50b0xvd2Vy
+Q2FzZSgpXSA9IGl0ZW0uaHJlZjsKICAgICAgICAgIH0KICAgICAgICB9KSwK
+ICAgICAgKTsKICAgICAgY29uc3QgaGFuZGxlciA9IChlOiBLZXlib2FyZEV2
+ZW50KSA9PiB7CiAgICAgICAgaWYgKGUuYWx0S2V5ICYmICFlLmN0cmxLZXkg
+JiYgIWUubWV0YUtleSkgewogICAgICAgICAgY29uc3QgdGFyZ2V0ID0gZS50
+YXJnZXQgYXMgSFRNTEVsZW1lbnQ7CiAgICAgICAgICBpZiAodGFyZ2V0LnRh
+Z05hbWUgPT09ICdJTlBVVCcgfHwgdGFyZ2V0LnRhZ05hbWUgPT09ICdURVhU
+QVJFQScgfHwgdGFyZ2V0LmlzQ29udGVudEVkaXRhYmxlKSByZXR1cm47CiAg
+ICAgICAgICBjb25zdCBocmVmID0gc2hvcnRjdXRNYXBbZS5rZXkudG9Mb3dl
+ckNhc2UoKV07CiAgICAgICAgICBpZiAoaHJlZikgeyBlLnByZXZlbnREZWZh
+dWx0KCk7IG5hdmlnYXRlKGhyZWYpOyB9CiAgICAgICAgfQogICAgICB9Owog
+ICAgICB3aW5kb3cuYWRkRXZlbnRMaXN0ZW5lcigna2V5ZG93bicsIGhhbmRs
+ZXIpOwogICAgICByZXR1cm4gKCkgPT4gd2luZG93LnJlbW92ZUV2ZW50TGlz
+dGVuZXIoJ2tleWRvd24nLCBoYW5kbGVyKTsKICAgIH0sIFtuYXZpZ2F0ZV0p
+OwoKICAgIGNvbnN0IGhhc0FueUdyb3VwT3BlbiA9IE9iamVjdC52YWx1ZXMo
+b3Blbkdyb3Vwcykuc29tZShCb29sZWFuKTsKCiAgICBjb25zdCB0b2dnbGVH
+cm91cCA9IHVzZUNhbGxiYWNrKChncm91cElkOiBzdHJpbmcsIG5leHQ6IGJv
+b2xlYW4pID0+IHsKICAgICAgc2V0T3Blbkdyb3VwcygocHJldikgPT4gKHBy
+ZXZbZ3JvdXBJZF0gPT09IG5leHQgPyBwcmV2IDogeyAuLi5wcmV2LCBbZ3Jv
+dXBJZF06IG5leHQgfSkpOwogICAgfSwgW10pOwoKICAgIGNvbnN0IGlzSXRl
+bVZpc2libGUgPSB1c2VDYWxsYmFjaygKICAgICAgKGl0ZW06IHsgaHJlZj86
+IHN0cmluZzsgYWRtaW5Pbmx5PzogYm9vbGVhbjsgZGV2T25seT86IGJvb2xl
+YW4gfSk6IGJvb2xlYW4gPT4gewogICAgICAgIGNvbnN0IGhyZWYgPSBpdGVt
+LmhyZWYgPz8gJyc7CiAgICAgICAgaWYgKGl0ZW0uZGV2T25seSAmJiAhaXNE
+ZXYpIHJldHVybiBmYWxzZTsKICAgICAgICBpZiAoaXRlbS5hZG1pbk9ubHkg
+JiYgIWlzQWRtaW4pIHJldHVybiBmYWxzZTsKICAgICAgICBpZiAoaHJlZiAm
+JiBpc0Rldk9ubHlQYXRoKGhyZWYpICYmICFpc0RldikgcmV0dXJuIGZhbHNl
+OwogICAgICAgIGlmIChocmVmICYmIGlzQWRtaW5Pbmx5UGF0aChocmVmKSAm
+JiAhaXNBZG1pbikgcmV0dXJuIGZhbHNlOwogICAgICAgIHJldHVybiB0cnVl
+OwogICAgICB9LAogICAgICBbaXNEZXYsIGlzQWRtaW5dLAogICAgKTsKCiAg
+ICBjb25zdCBmaWx0ZXJlZEdyb3VwcyA9IHVzZU1lbW8oCiAgICAgICgpID0+
+CiAgICAgICAgZW5yaWNoZWROYXZHcm91cHMKICAgICAgICAgIC5maWx0ZXIo
+KGcpID0+ICghZy5hZG1pbk9ubHkgfHwgaXNBZG1pbikgJiYgKCFnLmRldk9u
+bHkgfHwgaXNEZXYpKQogICAgICAgICAgLm1hcCgoZykgPT4gKHsKICAgICAg
+ICAgICAgLi4uZywKICAgICAgICAgICAgaXRlbXM6IGcuaXRlbXMuZmlsdGVy
+KGlzSXRlbVZpc2libGUpLm1hcCgoaSkgPT4gKHsKICAgICAgICAgICAgICAu
+Li5pLAogICAgICAgICAgICAgIGNoaWxkcmVuOiBpLmNoaWxkcmVuPy5maWx0
+ZXIoaXNJdGVtVmlzaWJsZSksCiAgICAgICAgICAgIH0pKSwKICAgICAgICAg
+IH0pKQogICAgICAgICAgLmZpbHRlcigoZykgPT4gZy5pdGVtcy5sZW5ndGgg
+PiAwKSwKICAgICAgW2lzQWRtaW4sIGlzRGV2LCBlbnJpY2hlZE5hdkdyb3Vw
+cywgaXNJdGVtVmlzaWJsZV0sCiAgICApOwoKICAgIHJldHVybiAoCiAgICAg
+IDw+CiAgICAgICAge2lzT3BlbiAmJiAoCiAgICAgICAgICA8ZGl2CiAgICAg
+ICAgICAgIGNsYXNzTmFtZT0iZml4ZWQgaW5zZXQtMCB6LTQwIGJnLWZvcmVn
+cm91bmQvMjAgYmFja2Ryb3AtYmx1ci1zbSBsZzpoaWRkZW4iCiAgICAgICAg
+ICAgIG9uQ2xpY2s9e29uVG9nZ2xlfQogICAgICAgICAgICBhcmlhLWhpZGRl
+bj0idHJ1ZSIKICAgICAgICAgIC8+CiAgICAgICAgKX0KICAgICAgICA8YXNp
+ZGUKICAgICAgICAgIHJlZj17cmVmfQogICAgICAgICAgZGF0YS10b3VyPSJz
+aWRlYmFyIgogICAgICAgICAgcm9sZT0ibmF2aWdhdGlvbiIKICAgICAgICAg
+IGFyaWEtbGFiZWw9Ik1lbnUgcHJpbmNpcGFsIgogICAgICAgICAgc3R5bGU9
+e3sKICAgICAgICAgICAgWyctLXNpZGViYXItdycgYXMgc3RyaW5nXTogaXND
+b2xsYXBzZWQgPyAnNHJlbScgOiAnMTZyZW0nLAogICAgICAgICAgICB0cmFu
+c2l0aW9uVGltaW5nRnVuY3Rpb246ICdjdWJpYy1iZXppZXIoMC4yMywxLDAu
+MzIsMSknLAogICAgICAgICAgfX0KICAgICAgICAgIGNsYXNzTmFtZT17Y24o
+CiAgICAgICAgICAgICd0aGVtZS10cmFuc2l0aW9uaW5nIGZpeGVkIGxlZnQt
+MCB0b3AtMCB6LTUwIGgtZnVsbCBib3JkZXItciBib3JkZXItc2lkZWJhci1i
+b3JkZXIvMjAgYmctc2lkZWJhci84MCBiYWNrZHJvcC1ibHVyLTN4bCB0cmFu
+c2l0aW9uLWFsbCBkdXJhdGlvbi01MDAnLAogICAgICAgICAgICBpc0NvbGxh
+cHNlZCA/ICdvdmVyZmxvdy12aXNpYmxlJyA6ICdvdmVyZmxvdy1oaWRkZW4n
+LAogICAgICAgICAgICAnbGc6c3RpY2t5IGxnOnRvcC0wIGxnOnotNDAgbGc6
+aC1zY3JlZW4nLAogICAgICAgICAgICBpc09wZW4gPyAndHJhbnNsYXRlLXgt
+MCBzaGFkb3ctWzQwcHhfMF8xMDBweF9yZ2JhKDAsMCwwLDAuNCldJyA6ICct
+dHJhbnNsYXRlLXgtZnVsbCBsZzp0cmFuc2xhdGUteC0wJywKICAgICAgICAg
+ICAgaXNDb2xsYXBzZWQgPyAndy0xNiBsZzpzaGFkb3ctWzIwcHhfMF81MHB4
+X3JnYmEoMCwwLDAsMC4xNSldJyA6ICd3LTY0IGxnOnNoYWRvdy1bMzBweF8w
+XzgwcHhfcmdiYSgwLDAsMCwwLjIpXScsCiAgICAgICAgICApfQogICAgICAg
+ID4KICAgICAgICAgIDxGb2N1c1RyYXAgYWN0aXZlPXtpc09wZW4gJiYgaXNN
+b2JpbGV9IGNsYXNzTmFtZT0iaC1mdWxsIiBhdXRvRm9jdXM9e2ZhbHNlfT4K
+ICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9e2NuKCdmbGV4IGgtZnVsbCBt
+aW4taC0wIGZsZXgtY29sIHB0LTE2IGxnOnB0LTAnLCBpc0NvbGxhcHNlZCAm
+JiAnb3ZlcmZsb3ctdmlzaWJsZScpfT4KICAgICAgICAgICAgICA8ZGl2IGNs
+YXNzTmFtZT0iZ3JvdXAvYnJhbmQgcmVsYXRpdmUgYm9yZGVyLWIgYm9yZGVy
+LXdoaXRlL1swLjA1XSBiZy1ncmFkaWVudC10by1iIGZyb20td2hpdGUvWzAu
+MDJdIHRvLXRyYW5zcGFyZW50Ij4KICAgICAgICAgICAgICAgIDxTaWRlYmFy
+QnJhbmRIZWFkZXIgaXNDb2xsYXBzZWQ9e2lzQ29sbGFwc2VkfSAvPgogICAg
+ICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9InBvaW50ZXItZXZlbnRzLW5v
+bmUgYWJzb2x1dGUgaW5zZXQtMCByb3VuZGVkLWZ1bGwgYmctcHJpbWFyeS81
+IG9wYWNpdHktMCBibHVyLTJ4bCB0cmFuc2l0aW9uLW9wYWNpdHkgZHVyYXRp
+b24tNTAwIGdyb3VwLWhvdmVyL2JyYW5kOm9wYWNpdHktMTAwIiAvPgogICAg
+ICAgICAgICAgIDwvZGl2PgogICAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1l
+PSJtYi0zIG10LTQgaGlkZGVuIGl0ZW1zLWNlbnRlciBqdXN0aWZ5LWJldHdl
+ZW4gZ2FwLTIgcHgtMyBsZzpmbGV4Ij4KICAgICAgICAgICAgICAgIHshaXND
+b2xsYXBzZWQgJiYgKAogICAgICAgICAgICAgICAgICA8QnV0dG9uCiAgICAg
+ICAgICAgICAgICAgICAgdmFyaWFudD0iZ2hvc3QiIHNpemU9InNtIgogICAg
+ICAgICAgICAgICAgICAgIGNsYXNzTmFtZT17Y24oCiAgICAgICAgICAgICAg
+ICAgICAgICAnaCU4IGZsZXgtMSBnYXAtMiB0ZXh0LVsxMHB4XSBmb250LWJv
+bGQgdXBwZXJjYXNlIHRyYWNraW5nLXdpZGVyJywKICAgICAgICAgICAgICAg
+ICAgICAgICd0ZXh0LXNpZGViYXItZm9yZWdyb3VuZC80MCBob3ZlcjpiZy1w
+cmltYXJ5LzEwIGhvdmVyOnRleHQtcHJpbWFyeScsCiAgICAgICAgICAgICAg
+ICAgICAgICAncm91bmRlZC14bCBvcGFjaXR5LTYwIHRyYW5zaXRpb24tYWxs
+IGR1cmF0aW9uLTMwMCBob3ZlcjpvcGFjaXR5LTEwMCcsCiAgICAgICAgICAg
+ICAgICAgICAgICAhaGFzQW55R3JvdXBPcGVuICYmICdpbnZpc2libGUnLAog
+ICAgICAgICAgICAgICAgICAgICApfQogICAgICAgICAgICAgICAgICAgIG9u
+Q2xpY2s9e2NvbGxhcHNlQWxsR3JvdXBzfQogICAgICAgICAgICAgICAgICAg
+IGFyaWEtbGFiZWw9IlJlY29saGVyIHRvZG9zIG9zIGdydXBvcyBkZSBuYXZl
+Z2HDp8OjbyIKICAgICAgICAgICAgICAgICAgPgogICAgICAgICAgICAgICAgICAg
+IDxDaGV2cm9uc0Rvd25VcCBjbGFzc05hbWU9ImgtMyB3LTMiIC8+CiAgICAg
+ICAgICAgICAgICAgICAgUmVjb2xoZXIKICAgICAgICAgICAgICAgICAgPC9C
+dXR0b24+CiAgICAgICAgICAgICAgICApfQogICAgICAgICAgICAgICAgPEJ1
+dHRvbgogICAgICAgICAgICAgICAgICB2YXJpYW50PSJnaG9zdCIgc2l6ZT0i
+aWNvbiIKICAgICAgICAgICAgICAgICAgY2xhc3NOYW1lPXtjbigKICAgICAg
+ICAgICAgICAgICAgICAnaCU4IHctOCBzaHJpbmstMCB0ZXh0LXNpZGViYXIt
+Zm9yZWdyb3VuZC8zMCBob3ZlcjpiZy1zaWRlYmFyLWFjY2VudC81MCBob3Zl
+cjp0ZXh0LXByaW1hcnknLAogICAgICAgICAgICAgICAgICAgICdyb3VuZGVk
+LXhsIHRyYW5zaXRpb24tYWxsIGR1cmF0aW9uLTMwMCBmb2N1cy12aXNpYmxl
+OnJpbmctMSBmb2N1cy12aXNpYmxlOnJpbmctcHJpbWFyeScsCiAgICAgICAg
+ICAgICAgICAgICAgaXNDb2xsYXBzZWQgJiYgJ214LWF1dG8nLAogICAgICAg
+ICAgICAgICAgICAgKX0KICAgICAgICAgICAgICAgICAgb25DbGljaz17dG9n
+Z2xlQ29sbGFwc2V9CiAgICAgICAgICAgICAgICAgIGFyaWEtbGFiZWw9e2lz
+Q29sbGFwc2VkID8gJ0V4cGFuZGlyIG1lbnUnIDogJ1JlY29saGVyIG1lbnUn
+fQogICAgICAgICAgICAgICAgICB0aXRsZT17aXNDb2xsYXBzZWQgPyAnRXhw
+YW5kaXIgbWVudScgOiAnUmVjb2xoZXIgbWVudSd9CiAgICAgICAgICAgICAg
+ICA+CiAgICAgICAgICAgICAgICAgIHtpc0NvbGxhcHNlZCA/IDxDaGV2cm9u
+UmlnaHQgY2xhc3NOYW1lPSJoLTMuNSB3LTMuNSIgLz4gOiA8Q2hldnJvbkxl
+ZnQgY2xhc3NOYW1lPSJoLTMuNSB3LTMuNSIgLz59CiAgICAgICAgICAgICAg
+ICA8L0J1dHRvbj4KICAgICAgICAgICAgICA8L2Rpdj4KICAgICAgICAgICAg
+ICA8UmVzdHJpY3RlZFJvdXRlTm90aWNlIGlzQ29sbGFwc2VkPXtpc0NvbGxh
+cHNlZH0gLz4KICAgICAgICAgICAgICA8bmF2CiAgICAgICAgICAgICAgICBj
+bGFzc05hbWU9e2NuKAogICAgICAgICAgICAgICAgICAnc2Nyb2xsYmFyLXRo
+aW4gbWluLWgtMCBmbGV4LTEgcHgtMicsCiAgICAgICAgICAgICAgICAgIGlz
+Q29sbGFwc2VkID8gJ292ZXJmbG93LXZpc2libGUnIDogJ292ZXJmbG93LXkt
+YXV0bycsCiAgICAgICAgICAgICAgICAgIGlzQ29sbGFwc2VkID8gJ3NwYWNl
+LXktMCcgOiAnc3BhY2UteS0wLjUnLAogICAgICAgICAgICAgICAgKX0KICAg
+ICAgICAgICAgICA+CiAgICAgICAgICAgICAgICB7ZmlsdGVyZWRHcm91cHMu
+bWFwKChncm91cCwgaW5kZXgpID0+ICgKICAgICAgICAgICAgICAgICAgPGRp
+diBrZXk9e2dyb3VwLmlkfT4KICAgICAgICAgICAgICAgICAgICB7aW5kZXgg
+PiAwICYmICFpc0NvbGxhcHNlZCAmJiA8ZGl2IGNsYXNzTmFtZT0ibXgtMiBt
+eS0yLjUgaC1weCBiZy1zaWRlYmFyLWJvcmRlci80MCIgLz59CiAgICAgICAg
+ICAgICAgICAgICAge2luZGV4ID4gMCAmJiBpc0NvbGxhcHNlZCAmJiA8ZGl2
+IGNsYXNzTmFtZT0ibXgtYXV0byBteS0xLjUgaC1weCB3LTQgYmctc2lkZWJh
+ci1ib3JkZXIvMzAiIC8+fQogICAgICAgICAgICAgICAgICAgIDxTaWRlYmFy
+TmF2R3JvdXAKICAgICAgICAgICAgICAgICAgICAgIGdyb3VwPXtncm91cH0K
+ICAgICAgICAgICAgICAgICAgICAgIGlzT3Blbj17b3Blbkdyb3Vwc1tncm91
+cC5pZF0gPz8gZmFsc2V9CiAgICAgICAgICAgICAgICAgICAgICBpc0NvbGxh
+cHNlZD17aXNDb2xsYXBzZWR9CiAgICAgICAgICAgICAgICAgICAgICBvblRv
+Z2dsZT17KG5leHQpID0+IHRvZ2dsZUdyb3VwKGdyb3VwLmlkLCBuZXh0KX0K
+ICAgICAgICAgICAgICAgICAgICAgIG9uTW9iaWxlQ2xvc2U9e29uVG9nZ2xl
+fQogICAgICAgICAgICAgICAgICAgICAgaXNNb2JpbGVTaWRlYmFyT3Blbj17
+aXNPcGVufQogICAgICAgICAgICAgICAgICAgIC8+CiAgICAgICAgICAgICAg
+ICAgIDwvZGl2PgogICAgICAgICAgICAgICAgKSl9CiAgICAgICAgICAgICAg
+PC9uYXY+CiAgICAgICAgICAgIDwvZGl2PgogICAgICAgICAgPC9Gb2N1c1Ry
+YXA+CiAgICAgICAgPC9hc2lkZT4KICAgICAgPC8+CiAgICApOwogIH0pLAop
+Owo=
