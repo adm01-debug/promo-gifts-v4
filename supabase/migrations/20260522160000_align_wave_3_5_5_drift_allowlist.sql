@@ -30,6 +30,8 @@ CREATE TABLE IF NOT EXISTS public.schema_drift_allowlist (
 
 ALTER TABLE public.schema_drift_allowlist ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Admins manage drift allowlist" ON public.schema_drift_allowlist;
+
 CREATE POLICY "Admins manage drift allowlist"
   ON public.schema_drift_allowlist
   FOR ALL TO authenticated
