@@ -67,6 +67,7 @@ interface DbTechnique {
   description?: string;
   estimatedDays?: number;
   max_colors?: number;
+  /** @deprecated TODO(#339): coluna não existe no DB; RPC nunca retorna. Sempre undefined. */
   is_default?: boolean;
   personalization_techniques?: { id: string; name: string; code: string; description?: string; estimated_days?: number };
 }
@@ -78,6 +79,7 @@ interface DbLocation {
   max_width_cm?: number | null;
   max_height_cm?: number | null;
   max_area_cm2?: number | null;
+  /** @deprecated TODO(#339): coluna não existe em product_*_locations; RPC nunca retorna. */
   area_image_url?: string | null;
   techniques?: DbTechnique[];
   product_group_location_techniques?: DbTechnique[];
@@ -118,7 +120,7 @@ interface ComponentInfo {
   locations: LocationInfo[];
 }
 
-export function ProductPersonalizationRules({ productId, productSku, productName }: ProductPersonalizationRulesProps) {
+export function ProductPersonalizationRules({ productId: _productId, productSku, productName }: ProductPersonalizationRulesProps) {
   // Check if product uses group rules or has custom rules
   const { data: productData, isLoading: loadingProduct } = useQuery({
     queryKey: ["product-personalization-source", productSku],
