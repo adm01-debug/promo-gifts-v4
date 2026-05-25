@@ -2,18 +2,12 @@
  * Integration tests — health-check edge function
  * Valida contratos de entrada/saída, status codes e comportamento sob falhas.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { mockEdgeFunctionFetch, resetExternalMocks, type EdgeFnResponseSpec } from "../../p0/_mocks";
 
 const BASE = "https://nmojwpihnslkssljowjh.supabase.co/functions/v1";
 
 describe("health-check", () => {
-  let fetchMock: ReturnType<typeof mockEdgeFunctionFetch>;
-
-  beforeEach(() => {
-    fetchMock = mockEdgeFunctionFetch({});
-  });
-
   afterEach(() => {
     resetExternalMocks();
   });
@@ -28,7 +22,7 @@ describe("health-check", () => {
           latency_ms: 15,
         },
       };
-      fetchMock = mockEdgeFunctionFetch({ "/health-check": ok });
+      mockEdgeFunctionFetch({ "/health-check": ok });
       const res = await fetch(`${BASE}/health-check`);
       const data = await res.json();
       expect(res.status).toBe(200);
@@ -45,7 +39,7 @@ describe("health-check", () => {
           latency_ms: 10,
         },
       };
-      fetchMock = mockEdgeFunctionFetch({ "/health-check": ok });
+      mockEdgeFunctionFetch({ "/health-check": ok });
       const res = await fetch(`${BASE}/health-check`);
       const data = await res.json();
       expect(typeof data.latency_ms).toBe("number");
@@ -58,7 +52,7 @@ describe("health-check", () => {
         body: { status: "healthy", checks: {}, latency_ms: 5 },
         headers: { "x-request-id": "test-req-001" },
       };
-      fetchMock = mockEdgeFunctionFetch({ "/health-check": ok });
+      mockEdgeFunctionFetch({ "/health-check": ok });
       const res = await fetch(`${BASE}/health-check`);
       expect(res.headers.get("x-request-id")).toBeTruthy();
     });
@@ -74,7 +68,7 @@ describe("health-check", () => {
           latency_ms: 4501,
         },
       };
-      fetchMock = mockEdgeFunctionFetch({ "/health-check": degraded });
+      mockEdgeFunctionFetch({ "/health-check": degraded });
       const res = await fetch(`${BASE}/health-check`);
       const data = await res.json();
       expect(res.status).toBe(200);
@@ -91,7 +85,7 @@ describe("health-check", () => {
           latency_ms: 100,
         },
       };
-      fetchMock = mockEdgeFunctionFetch({ "/health-check": unhealthy });
+      mockEdgeFunctionFetch({ "/health-check": unhealthy });
       const res = await fetch(`${BASE}/health-check`);
       const data = await res.json();
       expect(res.status).toBe(503);
@@ -107,7 +101,7 @@ describe("health-check", () => {
           latency_ms: 50,
         },
       };
-      fetchMock = mockEdgeFunctionFetch({ "/health-check": unhealthy });
+      mockEdgeFunctionFetch({ "/health-check": unhealthy });
       const res = await fetch(`${BASE}/health-check`);
       const data = await res.json();
       const errorStr = JSON.stringify(data);
@@ -126,7 +120,7 @@ describe("health-check", () => {
           "access-control-allow-methods": "GET, POST, OPTIONS",
         },
       };
-      fetchMock = mockEdgeFunctionFetch({ "/health-check": cors });
+      mockEdgeFunctionFetch({ "/health-check": cors });
       const res = await fetch(`${BASE}/health-check`, { method: "OPTIONS" });
       expect([200, 204]).toContain(res.status);
       const origin = res.headers.get("access-control-allow-origin");
@@ -140,7 +134,7 @@ describe("health-check", () => {
         status: 503,
         body: { status: "unhealthy", error: "upstream timeout" },
       };
-      fetchMock = mockEdgeFunctionFetch({ "/health-check": timeout });
+      mockEdgeFunctionFetch({ "/health-check": timeout });
       const res = await fetch(`${BASE}/health-check`);
       expect(res.status).not.toBe(500);
       const ct = res.headers.get("content-type") ?? "";
