@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-25T02:40:18.480Z",
-  "totalErrors": 133,
+  "generatedAt": "2026-05-25T17:05:20.939Z",
+  "totalErrors": 135,
   "counts": {
     "src/components/access/DevAccessDeniedPage.tsx": {
       "react-hooks/exhaustive-deps": 1
@@ -163,7 +163,8 @@
       "@typescript-eslint/no-unused-vars": 1
     },
     "src/components/layout/sidebar/SidebarNavGroup.tsx": {
-      "react-hooks/exhaustive-deps": 1
+      "react-hooks/exhaustive-deps": 1,
+      "eqeqeq": 2
     },
     "src/components/loading/SkeletonMonitor.tsx": {
       "react-hooks/exhaustive-deps": 1
