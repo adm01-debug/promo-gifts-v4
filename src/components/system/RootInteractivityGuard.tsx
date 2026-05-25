@@ -2,25 +2,30 @@ import { useEffect, useState } from 'react';
 import { hasOpenOverlay, isRootInert, forceRootInteractive } from '@/lib/dom/scroll-lock';
 
 /**
- * RootInteractivityGuard — last-resort watchdog that guarantees the app never
+ * RootInteractivityGuard - last-resort watchdog that guarantees the app never
  * gets stuck completely unclickable.
  *
  * Mounted at the very top of the tree (App.tsx, OUTSIDE MainLayout) so it runs
- * on EVERY route — including ones that don't render MainLayout. It recovers
+ * on EVERY route - including ones that don't render MainLayout. It recovers
  * from two whole classes of "the whole UI is frozen to clicks" bugs and logs a
  * precise diagnostic naming the culprit each time it acts:
  *
  *  A) A stuck `pointer-events: none` on <html>/<body>/#root (Radix's
  *     react-remove-scroll race, or any other code that injects it) while no
- *     modal is genuinely open → restored to interactive.
+ *     modal is genuinely open -> restored to interactive.
  *  B) An invisible full-viewport "ghost" element sitting on top and swallowing
  *     every click (orphan backdrop, stray fixed layer, a third-party toolbar
- *     overlay, etc.) → its `pointer-events` is disabled so clicks fall through.
+ *     overlay, etc.) -> its `pointer-events` is disabled so clicks fall through.
  *
  * Conservative by design: never touches the document root elements as "ghosts",
  * never neutralizes an element that belongs to a legitimately-open overlay, and
  * only treats an element as a ghost when it covers the viewport AND is visually
  * empty/transparent.
+ *
+ * BUG FIX: intervalo reduzido de 1500ms -> 300ms para encurtar a janela de
+ * tempo em que a UI pode ficar travada entre dois ciclos do watchdog.
+ * O overhead e negligivel (apenas getComputedStyle em 3 elementos por ciclo).
+ * Boot-time timeouts tambem adensados: [0, 100, 300, 600, 1000].
  */
 
 const COVERAGE = 0.9; // element must span >=90% of the viewport in both axes
@@ -30,8 +35,6 @@ function isElementVisiblyEmpty(el: HTMLElement): boolean {
   const style = getComputedStyle(el);
   if (parseFloat(style.opacity || '1') < 0.05) return true;
   if (style.visibility === 'hidden') return true;
-  // Transparent background AND no rendered text → nothing for the user to see,
-  // yet it still eats clicks.
   const bg = style.backgroundColor || '';
   const transparentBg = bg === 'transparent' || bg === 'rgba(0, 0, 0, 0)' || bg === '';
   const hasText = (el.textContent || '').trim().length > 0;
@@ -45,7 +48,6 @@ function findGhostOverlay(): HTMLElement | null {
   const root = document.getElementById('root');
   const w = window.innerWidth;
   const h = window.innerHeight;
-  // Probe several points; a true full-screen blocker is topmost at all of them.
   const points: [number, number][] = [
     [w / 2, h / 2],
     [w * 0.25, h * 0.35],
@@ -57,16 +59,13 @@ function findGhostOverlay(): HTMLElement | null {
     const el = document.elementFromPoint(x, y) as HTMLElement | null;
     if (!el) return null;
     if (candidate === null) candidate = el;
-    else if (candidate !== el) return null; // not a single covering element
+    else if (candidate !== el) return null;
   }
   if (!candidate) return null;
 
-  // Never treat the document root chain as a ghost — those are handled by the
-  // pointer-events recovery, and disabling them would freeze the app.
   if (candidate === document.body || candidate === document.documentElement || candidate === root) {
     return null;
   }
-  // Skip anything that is part of a genuinely-open overlay.
   if (
     candidate.closest(
       '[data-state="open"],[data-radix-popper-content-wrapper],[role="dialog"],[role="alertdialog"]',
@@ -103,7 +102,7 @@ export function RootInteractivityGuard() {
     let lastLog = '';
     const log = (reason: string, extra: Record<string, unknown>) => {
       const key = reason + JSON.stringify(extra);
-      if (key === lastLog) return; // dedupe identical consecutive events
+      if (key === lastLog) return;
       lastLog = key;
       console.warn(`[InteractivityGuard] recovered: ${reason}`, extra);
       setRecoveries((n) => n + 1);
@@ -121,13 +120,9 @@ export function RootInteractivityGuard() {
       };
     };
 
-    // The ghost must survive two consecutive sweeps before we neutralize it, so
-    // transient transparent click-catchers (tied to a brief interaction) are
-    // never killed mid-use — only a persistent blocker is.
     let pendingGhost: HTMLElement | null = null;
 
     const check = (allowGhost: boolean) => {
-      // A) stuck pointer-events on the root chain (safe, instant)
       if (isRootInert()) {
         const before = snapshot();
         forceRootInteractive();
@@ -135,7 +130,6 @@ export function RootInteractivityGuard() {
         return;
       }
       if (!allowGhost) return;
-      // B) invisible full-viewport ghost overlay swallowing clicks
       const ghost = findGhostOverlay();
       if (ghost && ghost === pendingGhost) {
         ghost.style.pointerEvents = 'none';
@@ -150,7 +144,6 @@ export function RootInteractivityGuard() {
       }
     };
 
-    // Recover instantly when the user tries to click while frozen (root PE only).
     const onPointerDown = () => check(false);
     window.addEventListener('pointerdown', onPointerDown, { capture: true });
 
@@ -159,9 +152,9 @@ export function RootInteractivityGuard() {
     };
     document.addEventListener('visibilitychange', onVisibility);
 
-    // Catch boot-time freezes (run a few times early) + a slow steady sweep.
-    const timeouts = [0, 300, 1000, 2500].map((d) => window.setTimeout(() => check(true), d));
-    const interval = window.setInterval(() => check(true), 1500);
+    // BUG FIX: intervalo reduzido 1500ms -> 300ms. Boot-times adensados.
+    const timeouts = [0, 100, 300, 600, 1000].map((d) => window.setTimeout(() => check(true), d));
+    const interval = window.setInterval(() => check(true), 300);
 
     return () => {
       window.removeEventListener('pointerdown', onPointerDown, { capture: true });
@@ -187,7 +180,7 @@ export function RootInteractivityGuard() {
           borderRadius: 6,
         }}
       >
-        InteractivityGuard agiu {recoveries}× — veja o console
+        InteractivityGuard agiu {recoveries}x - veja o console
       </div>
     );
   }
