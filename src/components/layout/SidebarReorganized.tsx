@@ -2,38 +2,11 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
-  Package,
-  Users,
-  Heart,
-  GitCompare,
-  FolderOpen,
-  ChevronLeft,
-  ChevronRight,
-  ShieldCheck,
-  Calculator,
-  Sparkles,
-  FileText,
-  ShoppingCart,
-  Wrench,
-  Zap,
-  RefreshCw,
-  DollarSign,
-  Plus,
-  Activity,
-  Gauge,
-  Truck,
-  Palette,
-  Brain,
-  Workflow,
-  Layers,
-  SlidersHorizontal,
-  Boxes,
-  ImagePlus,
-  BarChart3,
-  Crosshair,
-  Settings,
-  Plug,
-  ChevronsDownUp,
+  Package, Users, Heart, GitCompare, FolderOpen, ChevronLeft, ChevronRight,
+  ShieldCheck, Calculator, Sparkles, FileText, ShoppingCart, Wrench, Zap,
+  RefreshCw, DollarSign, Plus, Activity, Gauge, Truck, Palette, Brain,
+  Workflow, Layers, SlidersHorizontal, Boxes, ImagePlus, BarChart3,
+  Crosshair, Settings, Plug, ChevronsDownUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -60,14 +33,7 @@ const navGroups: NavGroup[] = [
     defaultOpen: true,
     items: [
       { icon: Plus, label: 'Novo Orçamento', href: '/orcamentos/novo', shortcut: 'Alt+N' },
-      {
-        icon: FileText,
-        label: 'Orçamentos',
-        href: '/orcamentos',
-        tourId: 'quotes',
-        exact: true,
-        shortcut: 'Alt+O',
-      },
+      { icon: FileText, label: 'Orçamentos', href: '/orcamentos', tourId: 'quotes', exact: true, shortcut: 'Alt+O' },
       { icon: ShoppingCart, label: 'Carrinhos', href: '/carrinhos', shortcut: 'Alt+R' },
     ],
   },
@@ -126,10 +92,7 @@ const navGroups: NavGroup[] = [
       { icon: ShieldCheck, label: 'Acesso & Bots', href: '/admin/seguranca-acesso', devOnly: true },
       { icon: Plug, label: 'Conexões', href: '/admin/conexoes', devOnly: true },
       {
-        icon: FolderOpen,
-        label: 'Cadastros',
-        href: '/admin/cadastros',
-        adminOnly: true,
+        icon: FolderOpen, label: 'Cadastros', href: '/admin/cadastros', adminOnly: true,
         children: [
           { icon: Package, label: 'Produtos', href: '/admin/cadastros?tab=products' },
           { icon: Truck, label: 'Fornecedores', href: '/admin/cadastros?tab=suppliers' },
@@ -140,23 +103,25 @@ const navGroups: NavGroup[] = [
       { icon: Workflow, label: 'Workflows IA', href: '/admin/workflows', devOnly: true },
       { icon: Activity, label: 'Telemetria', href: '/admin/telemetria', devOnly: true },
       { icon: Gauge, label: 'Performance UX', href: '/admin/client-performance', devOnly: true },
-      {
-        icon: DollarSign,
-        label: 'Validade de Preços',
-        href: '/admin/validade-precos',
-        devOnly: true,
-      },
+      { icon: DollarSign, label: 'Validade de Preços', href: '/admin/validade-precos', devOnly: true },
       { icon: ShieldCheck, label: 'Auditoria RBAC', href: '/admin/rbac-rotas', devOnly: true },
       { icon: Activity, label: 'Status do Sistema', href: '/admin/status', devOnly: true },
     ],
   },
 ];
 
-/** Compute which groups to open based on current pathname. Pure function, no side effects. */
+/**
+ * Pure module-level function — no closure, no hooks, no side effects.
+ * Called once on mount (useState initializer) and on route change (useEffect).
+ * Returns a new object only when values differ, so React bails out via
+ * functional-update reference equality check.
+ */
 function computeOpenGroups(pathname: string): Record<string, boolean> {
   const next: Record<string, boolean> = {};
   navGroups.forEach((group) => {
-    const hasActive = group.items.some((item) => isNavItemActive(pathname, item.href, item.exact));
+    const hasActive = group.items.some((item) =>
+      isNavItemActive(pathname, item.href, item.exact),
+    );
     next[group.id] = hasActive || (group.defaultOpen ?? false);
   });
   return next;
@@ -175,21 +140,20 @@ export const SidebarReorganized = React.memo(
       document.documentElement.style.setProperty('--sidebar-w', isCollapsed ? '4rem' : '16rem');
     }, [isCollapsed]);
 
-    // Open groups state — computed once on mount from current route.
-    // Updates only on explicit user toggle or route change via the effect below.
-    const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
-      computeOpenGroups(location.pathname),
+    // Computed once on mount from current route.
+    // Only changes via user toggle or route-change effect below.
+    const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(
+      () => computeOpenGroups(location.pathname),
     );
 
-    // Sync when route changes (back/forward nav). Uses functional update + value
-    // comparison so React bails out immediately when nothing changed — no cascade.
+    // Sync when route changes. Functional update with value comparison —
+    // React bails out immediately when nothing changed (same reference).
     const prevPathRef = React.useRef(location.pathname);
     useEffect(() => {
       if (prevPathRef.current === location.pathname) return;
       prevPathRef.current = location.pathname;
       const next = computeOpenGroups(location.pathname);
       setOpenGroups((prev) => {
-        // Only update if at least one group actually changed.
         const changed = Object.keys(next).some((k) => prev[k] !== next[k]);
         return changed ? next : prev;
       });
@@ -201,8 +165,8 @@ export const SidebarReorganized = React.memo(
     const { data: pendingApprovalCount } = useQuery({
       queryKey: ['pending-discount-approvals-count'],
       queryFn: async () => {
+        // rls-allow: admin-only badge query, guarded by `enabled: isAdmin`
         const { count } = await supabase
-          // rls-allow: admin-only badge; RLS filtra por papel
           .from('discount_approval_requests')
           .select('*', { count: 'exact', head: true })
           .eq('status', 'pending');
@@ -233,9 +197,7 @@ export const SidebarReorganized = React.memo(
     const collapseAllGroups = () => {
       setOpenGroups((prev) => {
         const collapsed: Record<string, boolean> = {};
-        Object.keys(prev).forEach((key) => {
-          collapsed[key] = false;
-        });
+        Object.keys(prev).forEach((key) => { collapsed[key] = false; });
         return collapsed;
       });
     };
@@ -245,25 +207,16 @@ export const SidebarReorganized = React.memo(
       navGroups.forEach((g) =>
         g.items.forEach((item) => {
           if (item.shortcut) {
-            const key = item.shortcut.replace('Alt+', '').toLowerCase();
-            shortcutMap[key] = item.href;
+            shortcutMap[item.shortcut.replace('Alt+', '').toLowerCase()] = item.href;
           }
         }),
       );
       const handler = (e: KeyboardEvent) => {
         if (e.altKey && !e.ctrlKey && !e.metaKey) {
           const target = e.target as HTMLElement;
-          if (
-            target.tagName === 'INPUT' ||
-            target.tagName === 'TEXTAREA' ||
-            target.isContentEditable
-          )
-            return;
+          if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
           const href = shortcutMap[e.key.toLowerCase()];
-          if (href) {
-            e.preventDefault();
-            navigate(href);
-          }
+          if (href) { e.preventDefault(); navigate(href); }
         }
       };
       window.addEventListener('keydown', handler);
@@ -272,6 +225,7 @@ export const SidebarReorganized = React.memo(
 
     const hasAnyGroupOpen = Object.values(openGroups).some(Boolean);
 
+    // Stable callback — empty dep array intentional: setOpenGroups is stable
     const toggleGroup = useCallback((groupId: string, next: boolean) => {
       setOpenGroups((prev) => (prev[groupId] === next ? prev : { ...prev, [groupId]: next }));
     }, []);
@@ -325,21 +279,12 @@ export const SidebarReorganized = React.memo(
             'theme-transitioning fixed left-0 top-0 z-50 h-full border-r border-sidebar-border/20 bg-sidebar/80 backdrop-blur-3xl transition-all duration-500',
             isCollapsed ? 'overflow-visible' : 'overflow-hidden',
             'lg:sticky lg:top-0 lg:z-40 lg:h-screen',
-            isOpen
-              ? 'translate-x-0 shadow-[40px_0_100px_rgba(0,0,0,0.4)]'
-              : '-translate-x-full lg:translate-x-0',
-            isCollapsed
-              ? 'w-16 lg:shadow-[20px_0_50px_rgba(0,0,0,0.15)]'
-              : 'w-64 lg:shadow-[30px_0_80px_rgba(0,0,0,0.2)]',
+            isOpen ? 'translate-x-0 shadow-[40px_0_100px_rgba(0,0,0,0.4)]' : '-translate-x-full lg:translate-x-0',
+            isCollapsed ? 'w-16 lg:shadow-[20px_0_50px_rgba(0,0,0,0.15)]' : 'w-64 lg:shadow-[30px_0_80px_rgba(0,0,0,0.2)]',
           )}
         >
           <FocusTrap active={isOpen && isMobile} className="h-full" autoFocus={false}>
-            <div
-              className={cn(
-                'flex h-full min-h-0 flex-col pt-16 lg:pt-0',
-                isCollapsed && 'overflow-visible',
-              )}
-            >
+            <div className={cn('flex h-full min-h-0 flex-col pt-16 lg:pt-0', isCollapsed && 'overflow-visible')}>
               <div className="group/brand relative border-b border-white/[0.05] bg-gradient-to-b from-white/[0.02] to-transparent">
                 <SidebarBrandHeader isCollapsed={isCollapsed} />
                 <div className="pointer-events-none absolute inset-0 rounded-full bg-primary/5 opacity-0 blur-2xl transition-opacity duration-500 group-hover/brand:opacity-100" />
@@ -347,8 +292,7 @@ export const SidebarReorganized = React.memo(
               <div className="mb-3 mt-4 hidden items-center justify-between gap-2 px-3 lg:flex">
                 {!isCollapsed && (
                   <Button
-                    variant="ghost"
-                    size="sm"
+                    variant="ghost" size="sm"
                     className={cn(
                       'h-8 flex-1 gap-2 text-[10px] font-bold uppercase tracking-wider',
                       'text-sidebar-foreground/40 hover:bg-primary/10 hover:text-primary',
@@ -363,8 +307,7 @@ export const SidebarReorganized = React.memo(
                   </Button>
                 )}
                 <Button
-                  variant="ghost"
-                  size="icon"
+                  variant="ghost" size="icon"
                   className={cn(
                     'h-8 w-8 shrink-0 text-sidebar-foreground/30 hover:bg-sidebar-accent/50 hover:text-primary',
                     'rounded-xl transition-all duration-300 focus-visible:ring-1 focus-visible:ring-primary',
@@ -374,11 +317,7 @@ export const SidebarReorganized = React.memo(
                   aria-label={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
                   title={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
                 >
-                  {isCollapsed ? (
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  ) : (
-                    <ChevronLeft className="h-3.5 w-3.5" />
-                  )}
+                  {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
                 </Button>
               </div>
               <RestrictedRouteNotice isCollapsed={isCollapsed} />
@@ -391,12 +330,8 @@ export const SidebarReorganized = React.memo(
               >
                 {filteredGroups.map((group, index) => (
                   <div key={group.id}>
-                    {index > 0 && !isCollapsed && (
-                      <div className="mx-2 my-2.5 h-px bg-sidebar-border/40" />
-                    )}
-                    {index > 0 && isCollapsed && (
-                      <div className="mx-auto my-1.5 h-px w-4 bg-sidebar-border/30" />
-                    )}
+                    {index > 0 && !isCollapsed && <div className="mx-2 my-2.5 h-px bg-sidebar-border/40" />}
+                    {index > 0 && isCollapsed && <div className="mx-auto my-1.5 h-px w-4 bg-sidebar-border/30" />}
                     <SidebarNavGroup
                       group={group}
                       isOpen={openGroups[group.id] ?? false}

@@ -52,6 +52,7 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
     const { isAdmin, isDev } = useAuth();
     const { hasPermission } = useRBAC();
 
+    // Stable active-item checker — only recreated when location changes
     const isItemActive = useCallback((href: string, exact?: boolean) => {
       if (href.includes('?')) {
         const [path, search] = href.split('?');
@@ -64,17 +65,19 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
     const GroupIcon = group.icon;
     const groupToggleLabel = `${isOpen ? 'Recolher' : 'Expandir'} grupo ${group.label}`;
 
+    // Sub-menu state computed on mount — no useEffect to avoid render-loop
     const [openSubMenus, setOpenSubMenus] = useState<Record<string, boolean>>(() => {
-      // Compute initial sub-menu state from current route
       const initial: Record<string, boolean> = {};
       group.items.forEach((item) => {
-        if (item.children?.some((child) => {
-          if (child.href.includes('?')) {
-            const [p, s] = child.href.split('?');
-            return location.pathname === p && location.search === `?${s}`;
-          }
-          return isNavItemActive(location.pathname, child.href, child.exact);
-        })) {
+        if (
+          item.children?.some((child) => {
+            if (child.href.includes('?')) {
+              const [p, s] = child.href.split('?');
+              return location.pathname === p && location.search === `?${s}`;
+            }
+            return isNavItemActive(location.pathname, child.href, child.exact);
+          })
+        ) {
           initial[item.label] = true;
         }
       });
@@ -90,13 +93,16 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
       if (item.adminOnly && !isAdmin) return null;
       if (item.href && isDevOnlyPath(item.href) && !isDev) return null;
       if (item.href && isAdminOnlyPath(item.href) && !isAdmin) return null;
-      if (item.requiredPermission && !hasPermission(item.requiredPermission.action, item.requiredPermission.resource)) return null;
+      if (
+        item.requiredPermission &&
+        !hasPermission(item.requiredPermission.action, item.requiredPermission.resource)
+      )
+        return null;
 
       if (item.children && item.children.length > 0) {
         const hasActiveChild = item.children.some((child) => isItemActive(child.href, child.exact));
         const isSubOpen = openSubMenus[item.label] ?? hasActiveChild;
         const Icon = item.icon;
-
         return (
           <div key={item.label}>
             <button
@@ -148,17 +154,12 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
           onMouseEnter={prefetch.onMouseEnter}
           onTouchStart={prefetch.onTouchStart}
         >
-          <Icon
-            className={cn(
-              'h-[18px] w-[18px] shrink-0 transition-all duration-500',
-              isActive ? 'scale-110 text-primary' : 'group-hover:scale-110 group-hover:text-primary',
-            )}
-          />
+          <Icon className={cn('h-[18px] w-[18px] shrink-0 transition-all duration-500', isActive ? 'scale-110 text-primary' : 'group-hover:scale-110 group-hover:text-primary')} />
           {!isCollapsed && <span className="flex-1 truncate text-sm">{item.label}</span>}
           {!isCollapsed && item.shortcut && (
             <kbd className="ml-auto hidden rounded bg-muted/30 px-1 py-0.5 font-mono text-[9px] text-muted-foreground/40 lg:inline-block">{item.shortcut}</kbd>
           )}
-          {!isCollapsed && item.badge !== undefined && item.badge !== null && (
+          {!isCollapsed && item.badge != null && (
             <span className="ml-auto min-w-[20px] rounded-full bg-primary/20 px-1.5 py-0.5 text-center text-[10px] font-semibold text-white">{item.badge}</span>
           )}
         </NavLink>
@@ -171,12 +172,8 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
             <TooltipContent side="right" className="z-[100] border-border bg-card">
               <div className="flex items-center gap-2">
                 <span>{item.label}</span>
-                {item.shortcut && (
-                  <kbd className="rounded bg-muted/50 px-1 py-0.5 font-mono text-[9px] text-muted-foreground/60">{item.shortcut}</kbd>
-                )}
-                {item.badge !== undefined && item.badge !== null && (
-                  <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-semibold text-white">{item.badge}</span>
-                )}
+                {item.shortcut && <kbd className="rounded bg-muted/50 px-1 py-0.5 font-mono text-[9px] text-muted-foreground/60">{item.shortcut}</kbd>}
+                {item.badge != null && <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-semibold text-white">{item.badge}</span>}
               </div>
             </TooltipContent>
           </Tooltip>
@@ -202,16 +199,12 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
               hasActiveItem && 'bg-primary/[0.03] text-primary/90',
             )}
           >
-            <GroupIcon
-              className={cn(
-                'h-4.5 w-4.5 shrink-0 transition-all duration-300',
-                hasActiveItem ? 'text-primary' : 'text-sidebar-foreground/30 group-hover:text-sidebar-foreground/60',
-              )}
-            />
+            <GroupIcon className={cn('h-4.5 w-4.5 shrink-0 transition-all duration-300', hasActiveItem ? 'text-primary' : 'text-sidebar-foreground/30 group-hover:text-sidebar-foreground/60')} />
             <span className="flex-1 text-left text-xs font-semibold uppercase tracking-wider">{group.label}</span>
             <ChevronDown className={cn('h-3.5 w-3.5 text-sidebar-foreground/30 transition-transform duration-300', isOpen && 'rotate-180')} />
           </button>
         </CollapsibleTrigger>
+        {/* CollapsibleContent sem forceMount nem framer-motion — elimina render loops */}
         <CollapsibleContent>
           <div className="mt-1 space-y-0.5 pb-1 pl-3">
             {group.items.map(renderNavLink)}
