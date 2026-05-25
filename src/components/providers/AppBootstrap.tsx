@@ -1,22 +1,14 @@
 import { type ReactNode, useEffect, useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 /**
- * AppBootstrap — Responsável por inicializações globais que dependem de autenticação.
+ * AppBootstrap — shell global com fallback de manutenção sem bloquear o boot público.
  */
 export function AppBootstrap({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth();
-  const [bootstrapped, setBootstrapped] = useState(false);
   const [maintenanceMode, setMaintenanceMode] = useState(false);
-  const [checkingMaintenance, setCheckingMaintenance] = useState(true);
 
-  
-  // Acessa o tour se disponível para garantir que possamos reiniciar via "?"
-  // mas aqui o objetivo é garantir que o preview "abra" com os dados certos.
-  
   useEffect(() => {
     const checkMaintenance = async () => {
       try {
@@ -31,17 +23,11 @@ export function AppBootstrap({ children }: { children: ReactNode }) {
         }
       } catch (e) {
         console.error("Maintenance check failed:", e);
-      } finally {
-        setCheckingMaintenance(false);
       }
     };
 
     checkMaintenance();
-
-    if (!loading) {
-      setBootstrapped(true);
-    }
-  }, [loading]);
+  }, []);
 
   if (maintenanceMode) {
     return (
@@ -62,14 +48,6 @@ export function AppBootstrap({ children }: { children: ReactNode }) {
             Tentar novamente
           </Button>
         </div>
-      </div>
-    );
-  }
-
-  if (!bootstrapped || checkingMaintenance) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
