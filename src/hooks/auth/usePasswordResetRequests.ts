@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/ui';
+import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
+import { useToast } from '@/hooks/ui/use-toast';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 
 export interface PasswordResetRequest {
@@ -22,6 +22,7 @@ export function usePasswordResetRequests() {
 
   const fetchRequests = async () => {
     try {
+      const supabase = await getSupabaseClient();
       const { data, error } = await supabase
         .from('password_reset_requests')
         .select('*')
@@ -49,6 +50,7 @@ export function usePasswordResetRequests() {
       if (!request) throw new Error('Solicitação não encontrada');
 
       // Atualizar status
+      const supabase = await getSupabaseClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -91,6 +93,7 @@ export function usePasswordResetRequests() {
 
   const rejectRequest = async (requestId: string, notes?: string) => {
     try {
+      const supabase = await getSupabaseClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -127,6 +130,7 @@ export function usePasswordResetRequests() {
   const createRequest = async (email: string) => {
     try {
       // Verificar se já existe uma solicitação pendente para este email
+      const supabase = await getSupabaseClient();
       const { data: existing } = await supabase
         .from('password_reset_requests')
         .select('id')

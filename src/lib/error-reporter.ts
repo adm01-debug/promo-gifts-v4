@@ -2,7 +2,7 @@
  * Centralized error reporting service.
  * Captures unhandled errors and sends them to the database for monitoring.
  */
-import { supabase } from '@/integrations/supabase/client';
+import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 import { logger } from '@/lib/logger';
 import { captureException } from '@/lib/sentry';
 import { onBridgeStatus, isColdStartSignal } from '@/lib/external-db/bridge-status-events';
@@ -93,6 +93,7 @@ async function flushErrors() {
   const batch = ERROR_QUEUE.splice(0, MAX_QUEUE);
 
   try {
+    const supabase = await getSupabaseClient();
     const { data: userData } = await supabase.auth.getUser();
     const userId = userData?.user?.id;
 
