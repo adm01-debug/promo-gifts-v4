@@ -9,8 +9,11 @@ import '@testing-library/jest-dom';
 describe('CatalogToolbar Regression', () => {
   it('SelectTrigger should receive click events despite being inside a Tooltip', async () => {
     const user = userEvent.setup();
-    // Mock scrollIntoView for Radix Select compatibility in JSDOM
+    // Mock scrollIntoView and Pointer Events for Radix Select compatibility in JSDOM
     window.HTMLElement.prototype.scrollIntoView = vi.fn();
+    window.HTMLElement.prototype.hasPointerCapture = vi.fn();
+    window.HTMLElement.prototype.setPointerCapture = vi.fn();
+    window.HTMLElement.prototype.releasePointerCapture = vi.fn();
 
     const setSortBy = vi.fn();
     const mockProps = {
