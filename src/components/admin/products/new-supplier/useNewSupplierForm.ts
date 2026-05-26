@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { searchCrm } from '@/lib/crm-db';
 import { applyPixMask, validatePixKey } from '@/utils/pixMask';
 import { toast } from 'sonner';
@@ -15,6 +15,14 @@ import {
   ORGANIZATION_ID,
 } from './types';
 
+/**
+ * Fixes applied (audit 26/05/2026):
+ *   BUG-01: buildNotesField() no longer serializes phone/fiscal in notes — those use dedicated columns
+ *   BUG-06 + BUG-22: handleCreate payload includes inscricao_estadual, tax_regime, state_uf, phone2
+ *   BUG-14: removed deprecated minimum_order_value from payload
+ *   BUG-19: instagram, facebook, linkedin, youtube, tiktok included in payload
+ *   BUG-24: carrier search timeout cleanup on unmount
+ */
 export function useNewSupplierForm(onCreated: (id: string) => void) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -44,6 +52,13 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
   const [searchingCarriers, setSearchingCarriers] = useState(false);
   const [showCarrierDropdown, setShowCarrierDropdown] = useState(false);
   const carrierSearchTimeout = useRef<ReturnType<typeof setTimeout>>();
+
+  // BUG-24 FIX: cleanup carrier search timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (carrierSearchTimeout.current) clearTimeout(carrierSearchTimeout.current);
+    };
+  }, []);
 
   // Social
   const [instagram, setInstagram] = useState('');
@@ -229,6 +244,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
     setUploadingLogo(true);
     try {
       const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
+      // BUG-20 TODO: after creation, rename this file from new-{ts} to {id}.{ext}
       const filePath = `suppliers/new-${Date.now()}.${ext}`;
       const { error } = await supabase.storage
         .from('supplier-logos')
@@ -255,17 +271,18 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
     try {
       const data = await fetchCnpjData(digits);
       if (data) {
-        if (data.razao_social) setName(data.razao_social);
-        if (data.nome_fantasia) setTradingName(data.nome_fantasia);
-        if (data.logradouro) setLogradouro(data.logradouro);
-        if (data.numero) setNumero(data.numero);
-        if (data.complemento) setComplemento(data.complemento);
-        if (data.bairro) setBairro(data.bairro);
-        if (data.cidade) setCidade(data.cidade);
-        if (data.estado) setEstado(data.estado);
-        if (data.cep) setCep(maskCep(data.cep));
-        if (data.email) updateContact(contacts[0].id, 'email', data.email);
-        if (data.telefone) updateContact(contacts[0].id, 'phone', data.telefone);
+        if (data.razao_social && !name.trim()) setName(data.razao_social);
+        if (data.nome_fantasia && !tradingName.trim()) setTradingName(data.nome_fantasia);
+        if (data.logradouro && !logradouro.trim()) setLogradouro(data.logradouro);
+        if (data.numero && !numero.trim()) setNumero(data.numero);
+        if (data.complemento && !complemento.trim()) setComplemento(data.complemento);
+        if (data.bairro && !bairro.trim()) setBairro(data.bairro);
+        if (data.cidade && !cidade.trim()) setCidade(data.cidade);
+        if (data.estado && !estado.trim()) setEstado(data.estado);
+        if (data.cep && !cep.trim()) setCep(maskCep(data.cep));
+        if (data.email && !contacts[0]?.email?.trim())
+          updateContact(contacts[0].id, 'email', data.email);
+        if (data.telefone && !foneFixo1.trim()) setFoneFixo1(data.telefone);
         toast.success('Dados preenchidos via CNPJ!');
       }
     } catch (err: unknown) {
@@ -398,19 +415,8 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
           .filter(Boolean)
           .join(', ') || null;
 
-      const notesValue = buildNotesField(
-        notes,
-        contacts,
-        formaPagamento,
-        pixKeys,
-        foneFixo1,
-        foneFixo2,
-        inscricaoEstadual,
-        regimeTributario,
-        estadoFaturamento,
-        transportadoraPadrao,
-        transportadoraId,
-      );
+      // BUG-01 FIX: buildNotesField no longer serializes phone/fiscal data — those use dedicated columns
+      const notesValue = buildNotesField(notes, contacts, formaPagamento, pixKeys, transportadoraPadrao, transportadoraId);
 
       const data: Record<string, unknown> = {
         name: name.trim(),
@@ -422,12 +428,14 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
         contact_name: contacts[0]?.name?.trim() || null,
         contact_person: contacts[0]?.role?.trim() || null,
         email: contacts[0]?.email?.trim() || null,
-        phone: contacts[0]?.phone?.trim() || null,
+        phone: foneFixo1.trim() || contacts[0]?.phone?.trim() || null,
+        // BUG-06 FIX: persist phone2 to dedicated column
+        phone2: foneFixo2.trim() || null,
         address: addressParts,
         website: website.trim() || null,
         default_markup_percent: defaultMarkup ? parseFloat(defaultMarkup) : null,
         min_order_value: minOrderValue ? parseFloat(minOrderValue) : null,
-        minimum_order_value: minOrderValue ? parseFloat(minOrderValue) : null,
+        // BUG-14 FIX: removed deprecated minimum_order_value
         delivery_time_days: deliveryTimeDays ? parseInt(deliveryTimeDays) : null,
         payment_terms: paymentTerms.trim() || null,
         shipping_terms: shippingTerms.trim() || null,
@@ -435,6 +443,16 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
         notes: notesValue,
         is_product_supplier: isProductSupplier,
         is_engraving_supplier: isEngravingSupplier,
+        // BUG-22 FIX: persist fiscal fields to dedicated columns
+        inscricao_estadual: inscricaoEstadual.trim() || null,
+        tax_regime: regimeTributario || null,
+        state_uf: estadoFaturamento || null,
+        // BUG-19 FIX: persist social media to dedicated columns
+        instagram: instagram.trim() || null,
+        facebook: facebook.trim() || null,
+        linkedin: linkedin.trim() || null,
+        youtube: youtube.trim() || null,
+        tiktok: tiktok.trim() || null,
         created_at: now,
         updated_at: now,
       };
@@ -581,21 +599,20 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
 
 /**
  * Tipo do objeto retornado por `useNewSupplierForm`, derivado diretamente do
- * hook para permanecer sempre em sincronia. As tabs (`AddressTab`,
- * `BasicDataTab`, ...) recebem este tipo em vez de `Record<string, unknown>`.
+ * hook para permanecer sempre em sincronia.
  */
 export type NewSupplierForm = ReturnType<typeof useNewSupplierForm>;
 
+/**
+ * BUG-01 FIX: buildNotesField no longer serializes phone/fiscal/social data.
+ * Those fields now use dedicated DB columns. Only free-text notes, PIX,
+ * contact extras, and transportadora remain here.
+ */
 function buildNotesField(
   notes: string,
   contacts: SupplierContact[],
   formaPagamento: string[],
   pixKeys: PixKey[],
-  foneFixo1: string,
-  foneFixo2: string,
-  inscricaoEstadual: string,
-  regimeTributario: string,
-  estadoFaturamento: string,
   transportadoraPadrao: string,
   transportadoraId: string,
 ): string | null {
@@ -623,13 +640,9 @@ function buildNotesField(
       `[Financeiro: Forma: ${formaPagamento.join(',') || '-'}, PIX: ${pixData || '-'}, PIX Atualizado: ${now_date}]`,
     );
   }
-  if (foneFixo1.trim() || foneFixo2.trim())
-    parts.push(`[Fones Fixos: 01: ${foneFixo1.trim() || '-'}, 02: ${foneFixo2.trim() || '-'}]`);
-  if (inscricaoEstadual.trim() || regimeTributario || estadoFaturamento)
-    parts.push(
-      `[Fiscal: IE: ${inscricaoEstadual.trim() || '-'}, Regime: ${regimeTributario || '-'}, UF Faturamento: ${estadoFaturamento || '-'}]`,
-    );
   if (transportadoraPadrao.trim())
     parts.push(`[Transportadora: ${transportadoraPadrao.trim()}, ID: ${transportadoraId || '-'}]`);
+  // NOTE: phone, phone2, inscricao_estadual, tax_regime, state_uf, social media
+  // are NO LONGER serialized here — they use dedicated columns.
   return parts.join('\n') || null;
 }
