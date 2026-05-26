@@ -511,19 +511,19 @@ export default function VisualSearchPage() {
             </Card>
 
             {/* Refinement Filters */}
-            <Card className="border-border/50 bg-background/50 backdrop-blur-sm overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-              <CardHeader className="pb-3 relative">
+            <Card className="border-white/5 bg-black/40 backdrop-blur-xl overflow-hidden group shadow-2xl">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+              <CardHeader className="pb-3 relative border-b border-white/5 bg-white/5">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    <Filter className="h-3 w-3" /> Refinar Busca
+                  <CardTitle className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/40 font-mono">
+                    <Filter className="h-3 w-3 text-emerald-400" /> Parâmetros de Redução
                   </CardTitle>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-white/20 hover:text-emerald-400" onClick={toggleListening}>
+                    <Mic className={cn("h-3 w-3", isListening && "text-emerald-400 animate-pulse")} />
+                  </Button>
                 </div>
-                <CardDescription className="text-[11px]">
-                  Pistas extras aumentam em até 40% a precisão
-                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-5 relative">
+              <CardContent className="space-y-5 relative pt-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label className="text-[11px] font-bold uppercase text-muted-foreground">Categoria</Label>
