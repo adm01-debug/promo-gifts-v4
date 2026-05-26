@@ -90,6 +90,8 @@ export default function VisualSearchPage() {
     variations: [],
     nuances: [],
   });
+  const [showHotspots, setShowHotspots] = useState(true);
+  const [hotspotOpacity, setHotspotOpacity] = useState(1);
 
   const { data: categories = [] } = useExternalCategoriesQuery();
   const { data: colorData } = useColorSystem();
@@ -273,8 +275,8 @@ export default function VisualSearchPage() {
                       <img src={previewUrl} alt="Preview" className="aspect-square w-full object-cover" />
                       
                       {/* Visual Highlights Overlay */}
-                      {results?.analysis.visualHighlights && !isSearching && (
-                        <div className="absolute inset-0 pointer-events-none">
+                      {results?.analysis.visualHighlights && !isSearching && showHotspots && (
+                        <div className="absolute inset-0 pointer-events-none" style={{ opacity: hotspotOpacity }}>
                           {results.analysis.visualHighlights.map((hl, idx) => (
                             <motion.div
                               key={idx}
@@ -289,7 +291,7 @@ export default function VisualSearchPage() {
                                 <div className="relative h-3 w-3 rounded-full bg-primary border-2 border-white shadow-lg" />
                                 
                                 {/* Tooltip */}
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover/hl:opacity-100 transition-opacity whitespace-nowrap bg-background/95 border border-border px-2 py-1 rounded text-[10px] font-medium shadow-xl">
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover/hl:opacity-100 transition-opacity whitespace-nowrap bg-background/95 border border-border px-2 py-1 rounded text-[10px] font-medium shadow-xl z-50">
                                   {hl.label}: {hl.description}
                                 </div>
                               </div>
@@ -318,9 +320,36 @@ export default function VisualSearchPage() {
                           <Button variant="secondary" size="sm" onClick={reset} className="gap-2">
                             <RefreshCcw className="h-4 w-4" /> Trocar Foto
                           </Button>
-                          <Button variant="outline" size="sm" className="gap-2 bg-white/10 text-white border-white/20">
-                            <Maximize2 className="h-4 w-4" /> Ver Original
-                          </Button>
+                          <div className="flex flex-col gap-2 bg-background/90 p-2 rounded-lg border border-border shadow-sm">
+                            <div className="flex items-center justify-between gap-4">
+                              <Label className="text-[10px] font-bold uppercase text-muted-foreground whitespace-nowrap">Exibir Pontos</Label>
+                              <Button 
+                                variant={showHotspots ? "default" : "outline"} 
+                                size="icon" 
+                                className="h-6 w-10" 
+                                onClick={() => setShowHotspots(!showHotspots)}
+                              >
+                                {showHotspots ? "ON" : "OFF"}
+                              </Button>
+                            </div>
+                            {showHotspots && (
+                              <div className="space-y-1">
+                                <div className="flex justify-between text-[9px] font-bold uppercase text-muted-foreground">
+                                  <span>Intensidade</span>
+                                  <span>{Math.round(hotspotOpacity * 100)}%</span>
+                                </div>
+                                <input 
+                                  type="range" 
+                                  min="0" 
+                                  max="1" 
+                                  step="0.1" 
+                                  value={hotspotOpacity} 
+                                  onChange={(e) => setHotspotOpacity(parseFloat(e.target.value))}
+                                  className="w-full h-1 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+                                />
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </motion.div>
@@ -468,6 +497,17 @@ export default function VisualSearchPage() {
                     </div>
                   </CardHeader>
                   <CardContent className="p-4 space-y-4">
+                    <div className="space-y-2 border-b border-primary/10 pb-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-[10px] font-bold uppercase text-muted-foreground">Entendendo o Score</Label>
+                        <Info className="h-3 w-3 text-primary/40" />
+                      </div>
+                      <p className="text-[10px] text-muted-foreground leading-relaxed">
+                        O score de confiança combina a análise visual da IA (80%) com a precisão dos filtros manuais (20%). 
+                        Ajustar categoria ou cor recalibra a ordenação priorizando o catálogo disponível.
+                      </p>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold uppercase text-muted-foreground">Produto</p>
@@ -752,13 +792,23 @@ export default function VisualSearchPage() {
                                   <Info className="h-3 w-3" />
                                   <span className="font-bold uppercase tracking-tighter">Por que este match?</span>
                                 </div>
-                                <p className="italic text-foreground/80">{product.matchRationale}</p>
+                                <p className="italic text-foreground/80 leading-snug">{product.matchRationale}</p>
                                 
-                                <div className="mt-2 flex flex-wrap gap-1">
+                                <div className="mt-3 space-y-2 border-t border-primary/5 pt-2">
                                   {results?.analysis.visualEvidence && (
-                                    <>
-                                      <Badge variant="outline" className="text-[8px] h-4 bg-background px-1 border-primary/10">{results.analysis.visualEvidence.material}</Badge>
-                                      <Badge variant="outline" className="text-[8px] h-4 bg-background px-1 border-primary/10">{results.analysis.visualEvidence.silhouette}</Badge>
+                                    <div className="flex flex-col gap-1.5">
+                                      <div className="flex items-center gap-2">
+                                        <Badge variant="outline" className="text-[8px] h-4 bg-background px-1 border-primary/20 text-primary uppercase font-bold">Material</Badge>
+                                        <span className="text-[9px] text-muted-foreground truncate">{results.analysis.visualEvidence.material}</span>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <Badge variant="outline" className="text-[8px] h-4 bg-background px-1 border-primary/20 text-primary uppercase font-bold">Silhueta</Badge>
+                                        <span className="text-[9px] text-muted-foreground truncate">{results.analysis.visualEvidence.silhouette}</span>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <Badge variant="outline" className="text-[8px] h-4 bg-background px-1 border-primary/20 text-primary uppercase font-bold">Acabamento</Badge>
+                                        <span className="text-[9px] text-muted-foreground truncate">{results.analysis.visualEvidence.finish}</span>
+                                      </div>
                                     </>
                                   )}
                                 </div>
