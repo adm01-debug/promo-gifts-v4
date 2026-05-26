@@ -75,6 +75,16 @@ export function useKitAutoSave(
     }
   }, [user?.id, kitState, kitQuantity, autoSavedKitId, currentKitId, onKitIdCreated]);
 
+  // BUG-08 FIX: keep a stable ref to the latest saveToDb so the timeout
+  // always calls the most-recent version WITHOUT putting saveToDb in the
+  // snapshot effect deps. Previously, saveToDb in deps caused the cleanup
+  // (clearTimeout) to run on every kitState change — even when the snapshot
+  // hadn't changed — silently cancelling the pending auto-save timer.
+  const saveToDbRef = useRef(saveToDb);
+  useEffect(() => {
+    saveToDbRef.current = saveToDb;
+  }, [saveToDb]);
+
   // Create a snapshot hash to detect meaningful changes
   useEffect(() => {
     if (isFirstRender.current) {
@@ -101,7 +111,10 @@ export function useKitAutoSave(
     snapshotRef.current = newSnapshot;
 
     if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(saveToDb, AUTO_SAVE_DELAY_MS);
+    // Read saveToDb via ref — this effect intentionally excludes saveToDb
+    // from its deps to prevent the timer from being cleared on non-snapshot
+    // state changes (e.g., price recalculations updating kitState.totalPrice).
+    timerRef.current = setTimeout(() => saveToDbRef.current(), AUTO_SAVE_DELAY_MS);
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
@@ -112,7 +125,7 @@ export function useKitAutoSave(
     kitState.personalization,
     kitState.name,
     kitQuantity,
-    saveToDb,
+    // saveToDb intentionally OMITTED — accessed via saveToDbRef instead
   ]);
 
   // Update autoSavedKitId when currentKitId changes externally
