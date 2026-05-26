@@ -39,8 +39,6 @@ for (const file of allFiles) {
   
   // Rule 1: Avoid direct imports of @/components/ui/skeleton in pages/features
   if (content.includes("@/components/ui/skeleton") && !ALLOWED_IMPORT_SKELETON_UI.includes(file)) {
-    // We treat this as a warning because sometimes fine-grained skeletons are needed
-    // but we want to encourage using ModernSkeletons.
     // console.warn(`⚠️ [WARNING] ${file} imports Skeleton directly.`);
     warnings++;
   }
@@ -48,11 +46,10 @@ for (const file of allFiles) {
   // Rule 2: Check for potential double skeleton (multiple Suspense)
   const suspenseCount = (content.match(/<Suspense/g) || []).length;
   if (suspenseCount > 1) {
-    console.info(`ℹ️ [INFO] ${file} has multiple Suspense blocks (${suspenseCount}).`);
+    // console.info(`ℹ️ [INFO] ${file} has multiple Suspense blocks (${suspenseCount}).`);
   }
 
   // Rule 3: Check for Skeleton without ID (multiline check)
-  // Find all <Skeleton occurrences and check if 'id=' exists until the next '>'
   const skeletonTags = content.match(/<Skeleton[^>]*>/g) || [];
   for (const tag of skeletonTags) {
     if (!tag.includes("id=") && !tag.includes("...props") && !tag.includes("data-testid=")) {
@@ -65,5 +62,4 @@ for (const file of allFiles) {
 console.log(`\n✅ Audit complete: ${errors} errors, ${warnings} warnings.`);
 if (errors > 0) {
   console.log("Please add 'id' props to all <Skeleton /> usages for better traceability.");
-  // process.exit(1); // Don't fail the build yet, just warn
 }
