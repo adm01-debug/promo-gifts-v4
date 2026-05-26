@@ -106,17 +106,18 @@ export default function VisualSearchPage() {
     }
   }, []);
 
+  // Automatic re-analysis when filters change
+  useEffect(() => {
+    if (previewUrl && !isSearching && results) {
+      // Small debounce to avoid multiple calls if multiple filters change at once
+      const timer = setTimeout(() => {
+        processImage(previewUrl);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedCategoryIds, colorSelection]);
+
   const saveToHistory = (imageUrl: string, productType: string) => {
-    const newItem: SearchHistoryItem = {
-      id: crypto.randomUUID(),
-      timestamp: Date.now(),
-      imageUrl,
-      productType
-    };
-    const updatedHistory = [newItem, ...history.slice(0, 9)];
-    setHistory(updatedHistory);
-    localStorage.setItem('visual-search-history', JSON.stringify(updatedHistory));
-  };
 
   const clearHistory = () => {
     setHistory([]);
@@ -742,9 +743,21 @@ export default function VisualSearchPage() {
                             </div>
                             
                             {product.matchRationale && (
-                              <div className="mb-3 rounded bg-primary/5 p-2 text-[9px] leading-tight text-muted-foreground border-l-2 border-primary/20">
-                                <span className="font-bold text-primary block mb-0.5 uppercase tracking-tighter">Por que este match?</span>
-                                {product.matchRationale}
+                              <div className="mb-3 rounded-lg bg-primary/5 p-2.5 text-[10px] leading-relaxed text-muted-foreground border-l-2 border-primary/20 shadow-sm">
+                                <div className="flex items-center gap-1.5 mb-1 text-primary">
+                                  <Info className="h-3 w-3" />
+                                  <span className="font-bold uppercase tracking-tighter">Por que este match?</span>
+                                </div>
+                                <p className="italic text-foreground/80">{product.matchRationale}</p>
+                                
+                                <div className="mt-2 flex flex-wrap gap-1">
+                                  {results?.analysis.visualEvidence && (
+                                    <>
+                                      <Badge variant="outline" className="text-[8px] h-4 bg-background px-1 border-primary/10">{results.analysis.visualEvidence.material}</Badge>
+                                      <Badge variant="outline" className="text-[8px] h-4 bg-background px-1 border-primary/10">{results.analysis.visualEvidence.silhouette}</Badge>
+                                    </>
+                                  )}
+                                </div>
                               </div>
                             )}
                             
