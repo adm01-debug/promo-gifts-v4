@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Percent, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 
 interface SellerRow {
   user_id: string;
@@ -72,7 +73,7 @@ export function SellerDiscountLimitsPanel() {
       toast.success('Limite atualizado');
       qc.invalidateQueries({ queryKey: ['seller-discount-limits'] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(sanitizeError(e)),
   });
 
   return (

@@ -71,18 +71,31 @@ export function useWorkspaceNotifications() {
   const [notifications, setNotifications] = useState<WorkspaceNotification[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefetching, setIsRefetching] = useState(false);
-  // True only while a markAllAsRead/clearAll mutation + its silent re-hydration are in flight.
-  // Distinct from isRefetching, which also turns true for polling and prefetch.
   const [isMutationRehydrating, setIsMutationRehydrating] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const lastFetchAtRef = useRef<number>(0);
   const hydratedRef = useRef<string | null>(null);
   const mountAtRef = useRef<number>(typeof performance !== "undefined" ? performance.now() : Date.now());
   const badgeSourceRef = useRef<"pending" | "cache" | "network">("pending");
-  // In-flight guards: prevent duplicate fetchNotifications when the user
-  // double-clicks markAllAsRead/clearAll before the first call resolves.
   const markAllInFlightRef = useRef(false);
   const clearAllInFlightRef = useRef(false);
+
+  /**
+   * BUG-08 FIX: remover notifications.length das deps de fetchNotifications.
+   *
+   * PROBLEMA ORIGINAL: fetchNotifications tinha [user, notifications.length] nas
+   * dependencias. A cada fetch bem-sucedido, notifications era atualizado ->
+   * fetchNotifications recriado -> o useEffect de polling ([user, fetchNotifications])
+   * cancelava e recriava o setInterval -> timer de 30s RESETADO A CADA FETCH -> o
+   * sino nunca exibia novas notificacoes por polling.
+   *
+   * SOLUCAO: usar ref (notificationsLengthRef) para ler notifications.length dentro
+   * do callback sem precisalo nas deps. O ref e mantido sincronizado via useEffect.
+   */
+  const notificationsLengthRef = useRef(0);
+  useEffect(() => {
+    notificationsLengthRef.current = notifications.length;
+  }, [notifications]);
 
   // Hydrate from sessionStorage immediately on user change
   useEffect(() => {
@@ -124,10 +137,12 @@ export function useWorkspaceNotifications() {
     }
   }, [user]);
 
+  // BUG-08 FIX: deps agora so [user] - sem notifications.length
   const fetchNotifications = useCallback(
     async (opts: { silent?: boolean; source?: FetchSource } = {}) => {
       if (!user) return;
-      const hasData = notifications.length > 0;
+      // FIX: le via ref estavel em vez de closure sobre notifications
+      const hasData = notificationsLengthRef.current > 0;
       const silent = opts.silent ?? hasData;
 
       if (silent) setIsRefetching(true);
@@ -190,7 +205,7 @@ export function useWorkspaceNotifications() {
         else setIsLoading(false);
       }
     },
-    [user, notifications.length]
+    [user] // FIX: removido notifications.length - agora usa notificationsLengthRef
   );
 
   // Initial fetch (always, but in background if cache hydrated)
@@ -199,7 +214,8 @@ export function useWorkspaceNotifications() {
     fetchNotifications();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
-  // Polling every 30s (silent)
+
+  // Polling every 30s - agora estavel: fetchNotifications nao recria com notifications.length
   useEffect(() => {
     if (!user) return;
     const interval = setInterval(() => {
@@ -208,16 +224,13 @@ export function useWorkspaceNotifications() {
     return () => clearInterval(interval);
   }, [user, fetchNotifications]);
 
-  // Final summary on unmount: emits ONE consolidated `[notifications-metrics:badge-budget-summary]`
-  // line with hits/misses/hitRate so QA can eyeball the bell's <16ms budget without
-  // scrolling through every individual badge-render log. No-op if debug is OFF.
+  // Final summary on unmount
   useEffect(() => {
     return () => {
       notificationsMetrics.logBadgeBudgetSummary("hook-unmount");
     };
   }, []);
 
-  // Idempotent prefetch: only re-fetches if last fetch >5s ago
   const prefetch = useCallback(async () => {
     if (!user) return;
     if (Date.now() - lastFetchAtRef.current < PREFETCH_MIN_INTERVAL_MS) return;
@@ -245,7 +258,7 @@ export function useWorkspaceNotifications() {
 
   const markAllAsRead = useCallback(async () => {
     if (!user) return;
-    if (markAllInFlightRef.current) return; // dedupe rapid double-clicks
+    if (markAllInFlightRef.current) return;
     markAllInFlightRef.current = true;
     setIsMutationRehydrating(true);
     try {
@@ -256,18 +269,13 @@ export function useWorkspaceNotifications() {
         .eq("is_read", false);
 
       if (error) return;
-      // Optimistic local update
       setNotifications((prev) => {
         const next = prev.map((n) => ({ ...n, is_read: true }));
         writeCache(user.id, next);
         return next;
       });
       setUnreadCount(0);
-      try {
-        sessionStorage.removeItem(CACHE_PREFIX + user.id);
-      } catch {
-        // ignore
-      }
+      try { sessionStorage.removeItem(CACHE_PREFIX + user.id); } catch { /* ignore */ }
       lastFetchAtRef.current = 0;
       await fetchNotifications({ silent: true, source: "mutation" });
     } finally {
@@ -278,7 +286,7 @@ export function useWorkspaceNotifications() {
 
   const clearAll = useCallback(async () => {
     if (!user) return;
-    if (clearAllInFlightRef.current) return; // dedupe rapid double-clicks
+    if (clearAllInFlightRef.current) return;
     clearAllInFlightRef.current = true;
     setIsMutationRehydrating(true);
     try {
@@ -291,11 +299,7 @@ export function useWorkspaceNotifications() {
       setNotifications([]);
       setUnreadCount(0);
       writeCache(user.id, []);
-      try {
-        sessionStorage.removeItem(CACHE_PREFIX + user.id);
-      } catch {
-        // ignore
-      }
+      try { sessionStorage.removeItem(CACHE_PREFIX + user.id); } catch { /* ignore */ }
       lastFetchAtRef.current = 0;
       await fetchNotifications({ silent: true, source: "mutation" });
     } finally {

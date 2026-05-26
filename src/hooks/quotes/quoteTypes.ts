@@ -1,6 +1,7 @@
 /**
  * quoteTypes — Tipos de domínio para orçamentos
  */
+import type { QuoteStatus } from '@/types/quote';
 
 export interface QuoteItemPersonalization {
   id?: string;
@@ -59,7 +60,7 @@ export interface Quote {
   client_company?: string;
   client_cnpj?: string;
   seller_id?: string;
-  status: "draft" | "pending" | "sent" | "approved" | "rejected" | "expired" | "pending_approval";
+  status: QuoteStatus;
   subtotal: number;
   discount_percent: number;
   discount_amount: number;

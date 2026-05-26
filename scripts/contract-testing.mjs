@@ -306,6 +306,57 @@ async function runScenario(contract, scenario) {
   return { ok: true };
 }
 
+
+
+async function runCriticalConcurrentChecks() {
+  const runs = Number(process.env.CONTRACT_CRITICAL_CONCURRENCY || 20);
+  const rounds = Number(process.env.CONTRACT_CRITICAL_ROUNDS || 3);
+  console.log(`
+⚡ Concurrent critical endpoint checks (runs=${runs}, rounds=${rounds})`);
+
+  const productContract = CONTRACTS.find((c) => c.name === 'product-webhook');
+  const dispatcherContract = CONTRACTS.find((c) => c.name === 'webhook-dispatcher');
+  if (!productContract || !dispatcherContract) return { passed: 0, failed: 1 };
+
+  let passed = 0;
+  let failed = 0;
+
+  for (let round = 1; round <= rounds; round++) {
+    const key = `00000000-0000-4000-8000-${String(round).padStart(12, '0')}`;
+    const idemScenario = {
+      description: `idempotent upsert burst #${round}`,
+      headers: { 'accept-version': '2' },
+      payload: {
+        action: 'upsert',
+        idempotency_key: key,
+        product: { external_id: `critical-${round}`, sku: `CRIT-${round}`, name: 'Critical burst', price: 1.23 },
+      },
+      expect: { status: 200, version: '2' },
+    };
+
+    const dispatcherScenario = {
+      description: `dispatcher burst #${round}`,
+      headers: { 'accept-version': '1' },
+      payload: { event: 'critical.concurrent.test', payload: { round } },
+      expect: { statusIn: [200, 401] },
+    };
+
+    const jobs = [];
+    for (let i = 0; i < runs; i++) {
+      jobs.push(runScenario(productContract, idemScenario));
+      jobs.push(runScenario(dispatcherContract, dispatcherScenario));
+    }
+
+    const results = await Promise.all(jobs);
+    const roundFailed = results.filter((r) => !r.ok).length;
+    const roundPassed = results.length - roundFailed;
+    passed += roundPassed;
+    failed += roundFailed;
+    console.log(`  - round ${round}: ✅ ${roundPassed} / ❌ ${roundFailed}`);
+  }
+
+  return { passed, failed };
+}
 async function main() {
   console.log(`🚀 Contract tests against ${SUPABASE_URL}`);
   let passed = 0;
@@ -325,6 +376,10 @@ async function main() {
       }
     }
   }
+
+  const critical = await runCriticalConcurrentChecks();
+  passed += critical.passed;
+  failed += critical.failed;
 
   console.log(`\n${'='.repeat(50)}`);
   console.log(`Total: ${passed + failed}  passed: ${passed}  failed: ${failed}`);

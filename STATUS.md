@@ -10,6 +10,8 @@
 
 **Última sessão**: 2026-05-26 — **Suíte de integração LIVE das Edge Functions**. Harness em `tests/edge-functions/live/` (`_live-client`/`_authz`/`_schemas`/`_live-suite` + registro `descriptors.ts`) cobrindo **82/82** edge functions com HTTP real (fronteira de auth, CORS, validação de input, contrato de erro, sem-crash 5xx) — 672 casos, validados contra o ambiente deployado. Funções destrutivas em negative-only/dry-run. Fuzz expandido (8→20 endpoints, +imagem/uploads). Gate `check:edge-live-coverage` + passos LIVE plugados em `ci.yml` e `edge-integration-all.yml`. Doc: [`docs/testing/EDGE_LIVE_TESTS.md`](./docs/testing/EDGE_LIVE_TESTS.md). _Nota: gate `typecheck` já acusava drift legado em `useGlobalSearch.ts` (etapa 16 adiada), não relacionado a esta sessão._
 
+**Última sessão**: 2026-05-25 — **Hardening de fluxos de usuário** (`claude/project-comprehensive-audit-555Dk`). Auditoria focada nos fluxos do vendedor (catálogo→carrinho→orçamento→kit). Achados/correções: (1) **carrinho** — 10 mutations de `useSellerCarts.ts` engoliam erros sem feedback (RLS/rede/constraint); adicionado `onError` consistente via `sanitizeError`; reorder agora aborta em falha parcial; `duplicateItemToCart` passou a copiar `sort_order`. (2) **#339** — confirmado via DB ao vivo que 6 colunas de personalização não existem (`area_image_url`, `max_area_cm2`, `is_default`×2, `is_personalizable`); migration aditiva idempotente **redigida** (`20260525232003_fix_339_*`), **não aplicada em prod** (aguarda revisão/deploy). Advisors read-only rodados no banco: 0 ERROR de segurança, estado bate com a doc. Gates: build ✅, baseline TSC ✅ (zero regressão), testes do carrinho 8/8 ✅.
+
 **Sessão anterior**: 2026-05-24 — **Continuação do colapso** (`claude/confident-heisenberg-M03BW`). Achado central: o kill-switch nunca havia sido ligado no código da edge `external-db-bridge` (causa raiz do colapso). Corrigido no código + 5 migrations DB aplicadas via MCP (REVOKE anon, drop de 67 índices ociosos, consolidação de policies, captura de `fn_handle_new_user`, otimização do drift-check). `fn_run_smoke_tests()` 14/14 ✅. Detalhes em [`docs/RUNBOOK_COLAPSO_2026-05-24.md`](./docs/RUNBOOK_COLAPSO_2026-05-24.md).
 
 **Sessão anterior**: 2026-05-23 — **Etapas 9-13** fechadas — refatoração do top-5 do TSC baseline (235 erros eliminados, 0 regressão).
@@ -108,14 +110,129 @@ Refatoração dos 5 arquivos com mais erros no `.tsc-baseline.json` — **235 er
 
 ---
 
+
+## 🌊 Plano de implementação em ondas (P0 primeiro)
+
+> Horizonte sugerido: **4 semanas corridas** a partir de **2026-05-25**.
+> Regra de execução: **não iniciar P1 sem concluir critérios de prontidão de P0**.
+
+### Onda P0 (Semana 1 — 2026-05-25 a 2026-05-31)
+**Objetivo:** eliminar riscos bloqueantes de operação/segurança e estabilizar trilha de validação.
+
+**Escopo foco**
+- Fechar pendências classificadas como bloqueantes no runbook de colapso e auditorias recentes.
+- Garantir smoke tests e gates mínimos de CI verdes no fluxo principal.
+- Confirmar observabilidade mínima para detectar regressão imediatamente após deploy.
+
+**Marcos semanais (milestones)**
+- **M1 (até 2026-05-27):** inventário final de bloqueadores aberto/fechado, com owner por item.
+- **M2 (até 2026-05-29):** validação técnica dos fixes de bloqueadores em ambiente controlado.
+- **M3 (até 2026-05-31):** checklist de produção assinado (go/no-go) para liberar P1.
+
+**Critérios de prontidão (DoR/DoD da etapa)**
+- 100% dos bloqueadores P0 classificados como “fechado” ou com rollback seguro documentado.
+- `fn_run_smoke_tests()` sem falhas (baseline da sessão anterior: 14/14).
+- Gates críticos do CI (typecheck/testes essenciais) sem regressão em relação ao baseline atual.
+- Runbook de incidente atualizado com passos de rollback e owner de plantão.
+
+### Onda P1 (Semana 2 — 2026-06-01 a 2026-06-07)
+**Objetivo:** reduzir dívida técnica que gera risco de regressão funcional e de qualidade.
+
+**Escopo foco**
+- Executar etapas 14-16 (redução de warnings ESLint em arquivos prioritários).
+- Atacar warnings com maior potencial de bug latente (tipagem frouxa, imports ambíguos, fluxos nulos).
+
+**Marcos semanais (milestones)**
+- **M4 (até 2026-06-03):** Etapa 14 concluída + diff de warnings publicado.
+- **M5 (até 2026-06-05):** Etapa 15 concluída + validação de regressão local/CI.
+- **M6 (até 2026-06-07):** Etapa 16 concluída + baseline recalibrado (se aplicável).
+
+**Critérios de prontidão**
+- Etapas 14-16 concluídas com evidência (commits + output de checks).
+- Nenhum aumento líquido nos baselines de ESLint/TSC.
+- Componentes tocados sem TODO bloqueante aberto.
+
+### Onda P2 (Semana 3 — 2026-06-08 a 2026-06-14)
+**Objetivo:** consolidar confiabilidade operacional e preparar escala de manutenção.
+
+**Escopo foco**
+- Fechar itens médios de qualidade runner/coverage (plano 10/10 #3 e #4).
+- Tratar flakiness remanescente de teardown async/helmet/event listeners.
+
+**Marcos semanais (milestones)**
+- **M7 (até 2026-06-10):** estratégia de coverage acordada e aplicada no pipeline.
+- **M8 (até 2026-06-12):** correções de flakiness aplicadas com repetição de testes.
+- **M9 (até 2026-06-14):** estabilidade de suíte validada em execuções consecutivas.
+
+**Critérios de prontidão**
+- Redução perceptível de intermitência de testes (registro em sessão).
+- Pipeline de qualidade executável sem bypass manual.
+- Checklists de troubleshooting atualizados para time de manutenção.
+
+### Onda P3 (Semana 4 — 2026-06-15 a 2026-06-21)
+**Objetivo:** finalizar pendências não-bloqueantes e formalizar estado estável do redeploy.
+
+**Escopo foco**
+- Pendências baixas (ex.: Issue 3 CRM depende de sponsor/chaves).
+- Documentação final de operação contínua e “steady state”.
+
+**Marcos semanais (milestones)**
+- **M10 (até 2026-06-17):** decisão explícita sobre itens dependentes de terceiros.
+- **M11 (até 2026-06-19):** handoff técnico consolidado.
+- **M12 (até 2026-06-21):** STATUS simplificado para modo manutenção (se elegível).
+
+**Critérios de prontidão**
+- Backlog sem item crítico/médio sem owner.
+- Dependências externas com SLA/data alvo registrada.
+- Projeto apto a operar sem “onda de hardening” ativa.
+
+## 🛡️ Plano de mitigação para gaps bloqueantes
+
+### 1) Identificação e classificação rápida (até 24h)
+- Classificar cada gap em: **bloqueante**, **alto não-bloqueante**, **monitorável**.
+- Atribuir owner técnico + owner de negócio por gap.
+- Registrar impacto (segurança, disponibilidade, compliance, dados).
+
+### 2) Contenção imediata (fail-safe)
+- Aplicar feature flag/kill-switch quando houver risco de impacto em produção.
+- Se não houver correção segura no mesmo ciclo, ativar rollback para último estado estável.
+- Congelar mudanças não essenciais no mesmo domínio até estabilização.
+
+### 3) Remediação com janela controlada
+- Corrigir primeiro causa-raiz (não apenas sintoma).
+- Exigir evidência mínima: teste automatizado ou smoke reproduzindo o cenário do gap.
+- Executar validação pós-fix em duas camadas: técnica (CI/smoke) + operacional (runbook).
+
+### 4) Governança e comunicação
+- Abrir registro de incidente interno para todo gap bloqueante.
+- Publicar status diário curto enquanto houver bloqueador aberto.
+- Declarar explicitamente critério de saída: quando o gap deixa de ser bloqueante.
+
+### 5) Prevenção de recorrência
+- Transformar o aprendizado em guard-rail (lint, teste, policy, monitor, alerta).
+- Atualizar documentação de arquitetura/operação na mesma PR do fix.
+- Revisar se há outros pontos homólogos com a mesma vulnerabilidade estrutural.
+
+
 ## 📅 Backlog priorizado (atualizado)
 
-| Prioridade | Item | Origem | Cutoff |
-|------------|------|--------|--------|
-| 🟡 Média | Reduzir top arquivos do ESLint baseline (etapas 14-16) | Auditoria 2026-05-23 | Sem cutoff |
-| 🟡 Média | Plano "10/10" #3, #4 (coverage, quality runner) | Bugs anteriores | Sem cutoff |
-| 🟢 Baixa | Issue 3 do post-mortem CRM — migrar `EXTERNAL_CRM_*` para `integration_credentials` | Post-mortem | Sponsor precisa fornecer chaves |
-| 🟢 Baixa | Flakiness teardown async Helmet/Event listener | Sessão anterior | Sem cutoff |
+### Consolidação de gaps (cobertura, qualidade e fuzz) — priorizada por risco × impacto de negócio
+
+| Prioridade | Gap consolidado | Risco técnico | Impacto no negócio | Owner | Prazo alvo | Critério de verificação pós-correção |
+|------------|------------------|---------------|--------------------|-------|------------|--------------------------------------|
+| 🔴 P0 | **Coverage em fluxos críticos de receita/autorização** (`discountApprovalFlow`, `simulator-wizard-pricing-parity`, contratos webhook/transactional-email) | Regressão silenciosa em regras de preço, aprovação comercial e integração transacional | Orçamento incorreto, atraso de pedidos e risco de perda de venda | **Backend + Pricing guild** | **2026-06-07** | Suite alvo obrigatória verde (`tests/integration/discountApprovalFlow.test.ts`, `tests/integration/simulator-wizard-pricing-parity.test.ts`, `tests/contracts/send-transactional-email.contract.test.ts`, `tests/contracts/webhooks.contract.test.ts`) + cobertura mínima >= baseline atual nesses diretórios |
+| 🔴 P0 | **Quality debt do baseline ESLint (etapas 14-16)** em `SupabaseConnectionsTab`, `CatalogContent`, `ProductQuickView`, `useSimulatorWizard`, `useGlobalSearch` | Warnings mascaram defeitos de tipagem/lógica e dificultam revisão | Aumenta lead time de entrega e chance de hotfix em produção | **Frontend chapter (Admin + Search)** | **2026-06-10** | `npm run lint` sem aumento do baseline e redução líquida nos 5 arquivos-alvo + checklist de revisão sem `eslint-disable` novo não justificado |
+| 🟠 P1 | **Fuzz/property tests para parsing e borda de dados externos** (`price-response.adapter`, máscaras, formatação, mapper de produto, URLs) | Inputs malformados escapam dos testes de exemplo | Falhas intermitentes em cadastro/cotação e suporte reativo | **Quality Enablement + Backend integration** | **2026-06-14** | Novos testes fuzz determinísticos passando (seed fixo) cobrindo parsers críticos + regressão reproduzida por pelo menos 1 caso mínimo por classe de bug |
+| 🟡 P2 | **Runner de qualidade unificado do plano 10/10 (#3 e #4)** com gate explícito de coverage + smoke + contratos prioritários | Sinais de qualidade fragmentados entre scripts | Decisão de release sem visão única (risco de falso verde) | **DevEx/CI** | **2026-06-17** | Pipeline único documentado e executável local/CI; falha obrigatória quando qualquer gate crítico quebrar; evidência em log de execução anexada no PR |
+| 🟢 P3 | Issue 3 do post-mortem CRM — migrar `EXTERNAL_CRM_*` para `integration_credentials` | Persistência de segredo fora do fluxo padrão | Bloqueio de evolução de segurança/compliance | **Plataforma + Sponsor** | **Dependente de chaves do sponsor (sem data firme)** | Migração aplicada em ambiente de teste + rotação de segredo validada + runbook atualizado |
+| 🟢 P3 | Flakiness teardown async Helmet/Event listener | Instabilidade intermitente de testes de UI | Ruído em CI e retrabalho de triagem | **Frontend chapter** | **2026-06-21** | Reexecução 20x dos testes-alvo sem falha intermitente + remoção de skips/workarounds temporários |
+
+### Critérios transversais de aceite (todos os itens acima)
+
+1. **Sem regressão de baseline** (`.tsc-baseline.json` e `.eslint-baseline.json` não podem piorar).
+2. **Evidência no PR**: comando rodado, output resumido e arquivo/teste afetado.
+3. **Owner explícito na issue** com data alvo e status semanal (`on-track`, `at-risk`, `blocked`).
+4. **Pós-correção monitorado por 7 dias** sem reabertura do mesmo bug/sintoma.
 
 > ✅ **Removido do backlog em 2026-05-23**: T-FIX-5b (Etapa 17) — anti-padrão B do guard-rail ESLint resolvido via Opção A. Ver `docs/redeploy/T-FIX-5-LINT-GUARDRAIL.md` → seção "Fase 2 — T-FIX-5b RESOLVIDO".
 >

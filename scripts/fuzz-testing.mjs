@@ -28,7 +28,9 @@ import process from "node:process";
 
 const SUPABASE_URL = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/+$/, "");
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_TEST_BYPASS_TOKEN;
-const CONCURRENCY = Number(process.env.FUZZ_CONCURRENCY) || 3;
+const CONCURRENCY = Number(process.env.FUZZ_CONCURRENCY) || 6;
+const FUNCTION_CONCURRENCY = Number(process.env.FUZZ_FUNCTION_CONCURRENCY) || 3;
+const MAX_COMBINATIONS_PER_FUNCTION = Number(process.env.FUZZ_MAX_COMBINATIONS) || 120;
 const TIMEOUT_MS = 15_000;
 const DRY_RUN = !SUPABASE_URL || !SERVICE_ROLE_KEY;
 
@@ -117,13 +119,38 @@ const NUMERIC_EXTREMES = [
 ];
 
 // ---------------------------------------------------------------------------
-// Geradores por função
+// Geradores por função (campos críticos + regras de negócio)
 // ---------------------------------------------------------------------------
 
+
+function pick(values, count) {
+  return values.slice(0, Math.max(0, count));
+}
+
+function combine(base, variations, maxCombos = MAX_COMBINATIONS_PER_FUNCTION) {
+  const entries = Object.entries(variations);
+  if (entries.length === 0) return [base];
+  const out = [];
+  const walk = (idx, curr) => {
+    if (out.length >= maxCombos) return;
+    if (idx >= entries.length) {
+      out.push(curr);
+      return;
+    }
+    const [key, vals] = entries[idx];
+    for (const val of vals) {
+      walk(idx + 1, { ...curr, [key]: val });
+      if (out.length >= maxCombos) break;
+    }
+  };
+  walk(0, { ...base });
+  return out;
+}
+
 function generateCnpjLookupPayloads() {
-  const p = [];
-  for (const cnpj of INVALID_CNPJS) p.push({ cnpj });
-  for (const sql of SQL_INJECTIONS) p.push({ cnpj: sql });
+  const p = combine({ cnpj: "12.345.678/0001-95" }, {
+    cnpj: [...pick(INVALID_CNPJS, 5), ...pick(SQL_INJECTIONS, 3), ...pick(XSS_PAYLOADS, 2)],
+  });
   for (const xss of XSS_PAYLOADS) p.push({ cnpj: xss });
   for (const path of PATH_TRAVERSALS.slice(0, 4)) p.push({ cnpj: path });
   for (const type of TYPE_CONFUSIONS) p.push({ cnpj: type });
@@ -135,6 +162,15 @@ function generateCnpjLookupPayloads() {
 function generateProductWebhookPayloads() {
   const valid = { action: "upsert", product: { sku: "TEST-001", name: "Produto teste", price: 10.0 } };
   const p = [valid, { ...valid, action: "delete" }];
+  p.push(...combine(valid, {
+    action: ["upsert", "delete", "batch_upsert", "explode"],
+    product: [
+      { sku: "TEST-001", name: "Produto teste", price: 10.0 },
+      { sku: SQL_INJECTIONS[0], name: "Produto teste", price: 10.0 },
+      { sku: "SKU-NEG", name: XSS_PAYLOADS[0], price: -1 },
+      { sku: "SKU-HUGE", name: "A".repeat(5000), price: Number.MAX_SAFE_INTEGER },
+    ],
+  }));
   for (const action of ["explode", "", null, 123, SQL_INJECTIONS[0]]) p.push({ ...valid, action });
   for (const sql of SQL_INJECTIONS.slice(0, 5)) p.push({ ...valid, product: { sku: sql, name: sql, price: 10.0 } });
   for (const xss of XSS_PAYLOADS.slice(0, 4)) p.push({ ...valid, product: { sku: "X", name: xss, price: 10.0 } });
@@ -344,32 +380,20 @@ async function runFuzz() {
   let totalStackLeaks = 0;
   const allIssues = [];
 
-  for (const spec of FUNCTION_SPECS) {
-    const payloads = [
-      ...spec.gen(),
-      ...MALFORMED_JSON_STRINGS.map(s => ({ rawBody: s })),
-    ];
+  async function runFunctionSpec(spec) {
+    const payloads = [...spec.gen(), ...MALFORMED_JSON_STRINGS.map(s => ({ rawBody: s }))];
     totalPayloads += payloads.length;
-
     console.log(`\n📦 [${spec.name}] — ${payloads.length} payloads`);
-
-    if (DRY_RUN) {
-      console.log(`   ✓ Payloads gerados e validados (dry-run)`);
-      continue;
-    }
+    if (DRY_RUN) return { fn: spec.name, crashes: 0, timeouts: 0, stackLeaks: 0, issues: [] };
 
     const url = `${SUPABASE_URL}/functions/v1/${spec.endpoint}`;
     const authToken = spec.authRequired ? SERVICE_ROLE_KEY : null;
     let fnCrashes = 0, fnTimeouts = 0, fnStackLeaks = 0;
+    const fnIssues = [];
 
     for (let i = 0; i < payloads.length; i += CONCURRENCY) {
       const batch = payloads.slice(i, i + CONCURRENCY);
-      const results = await Promise.all(
-        batch.map(p => {
-          const isRaw = p && typeof p === "object" && "rawBody" in p;
-          return execRequest(url, p, isRaw, authToken);
-        })
-      );
+      const results = await Promise.all(batch.map(p => execRequest(url, p, p && typeof p === "object" && "rawBody" in p, authToken)));
       for (let j = 0; j < batch.length; j++) {
         totalRequests++;
         const r = results[j];
@@ -380,17 +404,25 @@ async function runFuzz() {
         if (issues.some(i => i.includes("500"))) fnCrashes++;
         if (issues.some(i => i.includes("STACK"))) fnStackLeaks++;
         if (issues.length > 0) {
-          console.log(`   ❌ ${issues.join(" | ")} — payload: ${JSON.stringify(batch[j])?.substring(0, 80)}`);
-          allIssues.push({ fn: spec.name, issues });
+          fnIssues.push({ payload: batch[j], issues });
         }
       }
     }
 
-    const ok = fnCrashes === 0 && fnStackLeaks === 0;
-    console.log(`   ${ok ? "✅" : "❌"} Crashes: ${fnCrashes} | Timeouts: ${fnTimeouts} | StackLeaks: ${fnStackLeaks}`);
-    totalCrashes += fnCrashes;
-    totalTimeouts += fnTimeouts;
-    totalStackLeaks += fnStackLeaks;
+    return { fn: spec.name, crashes: fnCrashes, timeouts: fnTimeouts, stackLeaks: fnStackLeaks, issues: fnIssues };
+  }
+
+  for (let i = 0; i < FUNCTION_SPECS.length; i += FUNCTION_CONCURRENCY) {
+    const chunk = FUNCTION_SPECS.slice(i, i + FUNCTION_CONCURRENCY);
+    const chunkResults = await Promise.all(chunk.map(runFunctionSpec));
+    for (const result of chunkResults) {
+      const ok = result.crashes === 0 && result.stackLeaks === 0;
+      console.log(`   ${ok ? "✅" : "❌"} [${result.fn}] Crashes: ${result.crashes} | Timeouts: ${result.timeouts} | StackLeaks: ${result.stackLeaks}`);
+      totalCrashes += result.crashes;
+      totalTimeouts += result.timeouts;
+      totalStackLeaks += result.stackLeaks;
+      allIssues.push(...result.issues.map(issue => ({ fn: result.fn, ...issue })));
+    }
   }
 
   console.log("\n" + "=".repeat(60));
@@ -402,6 +434,11 @@ async function runFuzz() {
   console.log(`Timeouts:          ${totalTimeouts}`);
   console.log(`Stack leaks:       ${totalStackLeaks}`);
   console.log("");
+  if (allIssues.length > 0) {
+    const byFunction = allIssues.reduce((acc, i) => { acc[i.fn] = (acc[i.fn] || 0) + 1; return acc; }, {});
+    console.log("Falhas agregadas por função:");
+    Object.entries(byFunction).sort((a, b) => b[1] - a[1]).forEach(([fn, count]) => console.log(` - ${fn}: ${count}`));
+  }
 
   if (totalCrashes > 0 || totalStackLeaks > 0) {
     console.error(`❌ FALHOU — ${totalCrashes} crashes e ${totalStackLeaks} stack leaks.`);

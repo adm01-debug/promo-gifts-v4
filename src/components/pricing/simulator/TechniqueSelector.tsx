@@ -222,7 +222,7 @@ export function TechniqueSelector({
                       <p className="font-medium">{loc.name}</p>
                       <p className="text-xs text-muted-foreground">
                         {maxWidth && maxHeight ? `${maxWidth}x${maxHeight}mm` : 'Área variável'}
-                        {' â€¢ '}
+                        {' • '}
                         {loc.techniques.length}{' '}
                         {loc.techniques.length === 1 ? 'técnica' : 'técnicas'}
                       </p>
@@ -260,8 +260,8 @@ export function TechniqueSelector({
                       <p className="font-medium">{tech.areaName || tech.techniqueCode}</p>
                       <p className="text-xs text-muted-foreground">
                         {tech.techniqueCode && `Código: ${tech.techniqueCode}`}
-                        {tech.maxColors && ` â€¢ Até ${tech.maxColors} cores`}
-                        {tech.areaCm2 && ` â€¢ ${tech.areaCm2}cm²`}
+                        {tech.maxColors && ` • Até ${tech.maxColors} cores`}
+                        {tech.areaCm2 && ` • ${tech.areaCm2}cm²`}
                       </p>
                     </div>
                   </div>

@@ -95,6 +95,14 @@ const numOrNull = (v: unknown): number | null =>
 const asObj = (v: unknown): AnyRec | undefined =>
   isDefined(v) && typeof v === 'object' && !Array.isArray(v) ? (v as AnyRec) : undefined;
 
+/**
+ * Margem real a partir do markup (ambos % sobre custo). Antes `margin_percent`
+ * recebia o próprio markup — markup e margem divergem (markup 115% ≈ margem 53%).
+ * margem% = markup / (100 + markup) * 100.
+ */
+const markupToMargin = (markupPct: number): number =>
+  markupPct > 0 ? Math.round((markupPct / (100 + markupPct)) * 10000) / 100 : 0;
+
 function parseNested(resp: AnyRec): CustomizationPriceFlat {
   const area = asObj(resp.area);
   const tabela = asObj(resp.tabela);
@@ -125,7 +133,7 @@ function parseNested(resp: AnyRec): CustomizationPriceFlat {
     cost_unit_total: num(custos?.custo_unitario_total),
     cost_setup: num(custos?.custo_setup_base),
     markup_percent: num(precos?.markup_percent),
-    margin_percent: num(precos?.markup_percent),
+    margin_percent: markupToMargin(num(precos?.markup_percent)),
     price_by_color: bool(tabela?.cobra_por_cor),
     max_cores: num(tabela?.max_cores) || 1,
     production_days: numOrNull(faixa?.prazo_dias),
@@ -169,7 +177,7 @@ function parseFlat(resp: AnyRec): CustomizationPriceFlat {
     cost_unit_total: num(markup?.custo_unitario),
     cost_setup: num(markup?.custo_setup_tabela),
     markup_percent: num(markup?.markup_pct),
-    margin_percent: num(markup?.markup_pct),
+    margin_percent: markupToMargin(num(markup?.markup_pct)),
     price_by_color: bool(detalhes?.cobra_por_cor),
     max_cores: num(detalhes?.max_cores) || 1,
     production_days: numOrNull(faixa?.prazo_dias ?? resp.prazo_dias),
@@ -223,8 +231,6 @@ export function adaptPriceResponseWithMeta(
  * Versão simplificada — devolve apenas o flat canônico.
  * É a função que os consumidores devem importar.
  */
-export function adaptPriceResponse(
-  resp: Record<string, unknown> | null | undefined,
-): CustomizationPriceFlat {
-  return adaptPriceResponseWithMeta(resp).flat;
+export function adaptPriceResponse(resp: unknown): CustomizationPriceFlat {
+  return adaptPriceResponseWithMeta(resp as Record<string, unknown> | null | undefined).flat;
 }

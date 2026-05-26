@@ -1,7 +1,14 @@
 /**
  * PdfGenerationDialog — Modal com preview, progresso e ações pós-geração
- * 
- * Fluxo: Preview → Gerar com barra de progresso → Action sheet (Download, WhatsApp, Email, Copiar Link)
+ *
+ * Fluxo: Preview → Gerar com barra de progresso → Action sheet (Download, Imprimir, Regenerar)
+ *
+ * FIXES (2026-05):
+ *  Bug #2 — Memory leak: blobUrlRef revogado ao fechar
+ *  Bug #4 — Dialog não fecha durante geração → sem operação assíncrona zumbi
+ *  Bug #5 — progressLabel e pdfVersion resetados ao fechar
+ *  Bug #8 — Props deprecadas marcadas
+ *  Bug #9 — ActionButton variante 'whatsapp' (código morto) removida
  */
 
 import { useState, useCallback, useRef } from "react";
@@ -23,9 +30,13 @@ interface PdfGenerationDialogProps {
   proposalData: ProposalTemplateData | null;
   quoteNumber?: string;
   quoteStatus?: string;
+  /** @deprecated mantido por compatibilidade de interface — não utilizado */
   clientPhone?: string;
+  /** @deprecated mantido por compatibilidade de interface — não utilizado */
   approvalLink?: string | null;
+  /** @deprecated mantido por compatibilidade de interface — não utilizado */
   onWhatsApp?: () => void;
+  /** @deprecated mantido por compatibilidade de interface — não utilizado */
   onShareLink?: () => void;
   trigger?: React.ReactNode;
 }
@@ -40,10 +51,6 @@ export function PdfGenerationDialog({
   proposalData,
   quoteNumber,
   quoteStatus,
-  clientPhone,
-  approvalLink,
-  onWhatsApp,
-  onShareLink,
   trigger,
 }: PdfGenerationDialogProps) {
   const [open, setOpen] = useState(false);
@@ -55,6 +62,14 @@ export function PdfGenerationDialog({
   const blobUrlRef = useRef<string | null>(null);
 
   const isDraft = quoteStatus === "draft";
+
+  /** FIX #2: Revogar blob URL e limpar ref — evita memory leak acumulativo */
+  const revokeBlobUrl = () => {
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
+  };
 
   const handleGenerate = useCallback(async () => {
     if (!proposalData) return;
@@ -82,10 +97,8 @@ export function PdfGenerationDialog({
       await new Promise((r) => setTimeout(r, 300));
       setProgress(100);
 
-      // Cleanup old blob URL
-      if (blobUrlRef.current) {
-        URL.revokeObjectURL(blobUrlRef.current);
-      }
+      // FIX #2: Revogar blob URL anterior antes de criar novo
+      revokeBlobUrl();
 
       setPdfBlob(blob);
       blobUrlRef.current = URL.createObjectURL(blob);
@@ -93,8 +106,9 @@ export function PdfGenerationDialog({
       toast.success("PDF gerado com sucesso!");
     } catch (error) {
       console.error("Error generating PDF:", error);
-      toast.error("Erro ao gerar PDF");
+      toast.error("Erro ao gerar PDF. Tente novamente.");
       setStage("preview");
+      setProgressLabel(""); // FIX #5: resetar label — evita valor antigo ao reabrir
     }
   }, [proposalData]);
 
@@ -102,14 +116,6 @@ export function PdfGenerationDialog({
     if (!pdfBlob) return;
     downloadPDF(pdfBlob, `proposta-${quoteNumber || "sem-numero"}-v${pdfVersion}.pdf`);
     setPdfVersion((v) => v + 1);
-  };
-
-  const _handleEmail = () => {
-    const subject = encodeURIComponent(`Proposta Comercial ${quoteNumber || ""}`);
-    const body = encodeURIComponent(
-      `Olá,\n\nSegue a proposta comercial ${quoteNumber || ""}.\n\nQualquer dúvida, estou à disposição!\n\nAtt.`
-    );
-    window.open(`mailto:?subject=${subject}&body=${body}`, "_self");
   };
 
   const handlePrint = () => {
@@ -123,12 +129,18 @@ export function PdfGenerationDialog({
   };
 
   const handleOpenChange = (newOpen: boolean) => {
+    // FIX #4: Impedir fechamento durante geração — evita operação assíncrona zumbi
+    if (stage === "generating") return;
+
     setOpen(newOpen);
     if (!newOpen) {
-      // Reset state when closing
+      // FIX #5 + FIX #2: Reset COMPLETO ao fechar
       setStage("preview");
       setProgress(0);
+      setProgressLabel("");  // FIX #5
       setPdfBlob(null);
+      setPdfVersion(1);      // FIX #5: versão volta para 1
+      revokeBlobUrl();       // FIX #2
     }
   };
 
@@ -144,7 +156,16 @@ export function PdfGenerationDialog({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0">
+      <DialogContent
+        className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0"
+        // FIX #4: Bloquear interações fora do dialog durante geração
+        onInteractOutside={(e) => {
+          if (stage === "generating") e.preventDefault();
+        }}
+        onEscapeKeyDown={(e) => {
+          if (stage === "generating") e.preventDefault();
+        }}
+      >
         {/* Header */}
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
           <div className="flex items-center justify-between">
@@ -176,13 +197,13 @@ export function PdfGenerationDialog({
                   <div className="relative bg-white rounded-lg shadow-lg overflow-hidden">
                     {/* Watermark for drafts */}
                     {isDraft && (
-                      <div 
+                      <div
                         className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
                         style={{ transform: "rotate(-35deg)" }}
                       >
-                        <span 
+                        <span
                           className="text-[80px] font-black tracking-[0.3em] uppercase select-none"
-                          style={{ 
+                          style={{
                             color: "rgba(200, 0, 0, 0.08)",
                             letterSpacing: "0.3em",
                           }}
@@ -224,7 +245,7 @@ export function PdfGenerationDialog({
                 <Progress value={progress} className="h-2" />
                 <div className="flex justify-between text-xs text-muted-foreground pt-1">
                   {PROGRESS_STEPS.map((step, i) => (
-                    <span 
+                    <span
                       key={i}
                       className={cn(
                         "transition-colors",
@@ -236,6 +257,10 @@ export function PdfGenerationDialog({
                   ))}
                 </div>
               </div>
+              {/* FIX #4: Feedback visual — usuário sabe que não pode fechar */}
+              <p className="text-xs text-muted-foreground">
+                Aguarde, não feche esta janela
+              </p>
             </div>
           )}
 
@@ -247,7 +272,6 @@ export function PdfGenerationDialog({
                   <Check className="h-8 w-8 text-primary" />
                 </div>
                 <p className="font-semibold text-lg">PDF pronto!</p>
-                
               </div>
 
               {/* Action Grid */}
@@ -281,6 +305,7 @@ export function PdfGenerationDialog({
   );
 }
 
+// FIX #9: variante 'whatsapp' removida — era idêntica a 'primary' (código morto)
 function ActionButton({
   icon,
   label,
@@ -291,7 +316,7 @@ function ActionButton({
   icon: React.ReactNode;
   label: string;
   onClick?: () => void;
-  variant?: "default" | "primary" | "whatsapp";
+  variant?: "default" | "primary";
   disabled?: boolean;
 }) {
   return (
@@ -303,7 +328,6 @@ function ActionButton({
         "flex flex-col items-center gap-2 p-4 rounded-xl border transition-all duration-200",
         "hover:scale-105 active:scale-95 disabled:opacity-40 disabled:pointer-events-none",
         variant === "primary" && "bg-primary/10 border-primary/30 text-primary hover:bg-primary/20",
-        variant === "whatsapp" && "bg-primary/10 border-primary/30 text-primary hover:bg-primary/20",
         variant === "default" && "bg-card border-border text-foreground hover:bg-accent",
       )}
     >

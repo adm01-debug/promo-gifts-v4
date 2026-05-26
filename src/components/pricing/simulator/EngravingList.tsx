@@ -83,7 +83,7 @@ export function EngravingList({
                     {engraving.sizeOption && (
                       <Badge variant="secondary" className="text-xs">
                         <Ruler className="mr-1 h-3 w-3" />
-                        {engraving.sizeOption.replace('x', ' Ã— ')} cm
+                        {engraving.sizeOption.replace('x', ' × ')} cm
                       </Badge>
                     )}
                   </div>

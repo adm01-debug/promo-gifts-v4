@@ -52,7 +52,6 @@ export function useQuoteItems(initialItems: QuoteItem[] = []) {
             idx === existingIndex ? { ...item, quantity: item.quantity + 1 } : item,
           );
           setActiveItemIndex(existingIndex);
-          // Auto-expand existing item too
           setExpandedItems((p) => new Set(p).add(existingIndex));
           toast.info(`Quantidade de "${product.name}" aumentada.`);
           return newItems;
@@ -78,14 +77,12 @@ export function useQuoteItems(initialItems: QuoteItem[] = []) {
         ];
         const newIdx = newItems.length - 1;
         setActiveItemIndex(newIdx);
-        // Auto-expand new item so personalization is immediately visible
         setExpandedItems((p) => new Set(p).add(newIdx));
         return newItems;
       });
     },
     [],
   );
-
 
   const updateItemQuantity = useCallback((index: number, quantity: number) => {
     if (quantity < 1) return;
@@ -104,6 +101,23 @@ export function useQuoteItems(initialItems: QuoteItem[] = []) {
       if (prev === index) return null;
       if (prev !== null && prev > index) return prev - 1;
       return prev;
+    });
+    /**
+     * BUG-03 FIX: reindexar expandedItems após remoção.
+     *
+     * PROBLEMA ORIGINAL: o Set<number> não era atualizado ao remover um item.
+     * Itens em posições > removedIndex ficavam com índices desalinhados com o
+     * array real. Resultado visual: painel de personalização aparecia expandido
+     * para o item errado após uma remoção no meio da lista.
+     */
+    setExpandedItems((prev) => {
+      const next = new Set<number>();
+      prev.forEach((i) => {
+        if (i < index) next.add(i);
+        else if (i > index) next.add(i - 1); // reindexar índices subsequentes
+        // i === index: descartar (item removido)
+      });
+      return next;
     });
   }, []);
 

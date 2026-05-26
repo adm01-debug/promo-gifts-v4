@@ -44,7 +44,7 @@ export function useAllowedIPs(targetUserId?: string) {
     try {
       const { data, error } = await db
         .from('user_allowed_ips')
-        .select('*')
+        .select('id, user_id, ip_address, label, is_active, created_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 

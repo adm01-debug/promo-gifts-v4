@@ -1,14 +1,20 @@
-import { supabase } from "@/integrations/supabase/client";
-import { type Quote, type QuoteItem, type PersonalizationTechnique } from "@/hooks/quotes/quoteTypes";
-import { 
-  calculateQuoteTotals, 
-  buildInsertPayload, 
-  buildUpdatePayload, 
-  buildItemsInsertPayload, 
+import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
+import {
+  type Quote,
+  type QuoteItem,
+  type PersonalizationTechnique,
+} from '@/hooks/quotes/quoteTypes';
+import {
+  calculateQuoteTotals,
+  buildInsertPayload,
+  buildUpdatePayload,
+  buildItemsInsertPayload,
   buildPersonalizationsInsertPayload,
-  round2
-} from "@/hooks/quotes/quoteHelpers";
-import { invokeExternalDb } from "@/lib/external-db";
+  round2,
+} from '@/hooks/quotes/quoteHelpers';
+import { invokeExternalDb } from '@/lib/external-db';
+import { sanitizeMessage } from '@/lib/security/sanitize-message';
 
 export const quoteService = {
   async fetchQuotes(userId: string, scope: string) {
@@ -36,7 +42,7 @@ export const quoteService = {
       .select('*')
       .eq('id', quoteId)
       .single();
-    
+
     if (qErr) throw qErr;
     if (!quoteData) return null;
 
@@ -49,7 +55,7 @@ export const quoteService = {
     if (iErr) throw iErr;
 
     const itemIds = (itemsData || []).map((i) => i.id);
-    let allPersonalizations: any[] = [];
+    let allPersonalizations: Array<Record<string, unknown>> = [];
     if (itemIds.length > 0) {
       const { data: persData, error: pErr } = await supabase
         .from('quote_item_personalizations')
@@ -67,54 +73,70 @@ export const quoteService = {
     return { ...quoteData, items } as Quote;
   },
 
-  async createQuote(quote: Partial<Quote>, items: QuoteItem[], userId: string, orgId: string | null): Promise<Quote> {
+  async createQuote(
+    quote: Partial<Quote>,
+    items: QuoteItem[],
+    userId: string,
+    orgId: string | null,
+  ): Promise<Quote> {
     const totals = calculateQuoteTotals(quote, items);
     const insertPayload = buildInsertPayload(quote, userId, orgId, totals);
-    
+
     const { data: inserted, error: insErr } = await supabase
       // rls-allow: INSERT define seller_id no payload (buildInsertPayload com userId); RLS valida
       .from('quotes')
       .insert(insertPayload)
       .select('*')
       .single();
-    
+
     if (insErr) throw insErr;
     if (!inserted) throw new Error('Falha ao inserir orçamento');
 
     await this.insertItemsWithPersonalizations(items, inserted.id);
-    
+
     return { ...inserted, items } as unknown as Quote;
   },
 
   async updateQuote(quoteId: string, quote: Partial<Quote>, items: QuoteItem[]): Promise<Quote> {
     const totals = calculateQuoteTotals(quote, items);
     const updatePayload = buildUpdatePayload(quote, totals);
-    
-    const { data: updated, error: updErr } = await supabase
-      // rls-allow: UPDATE por id; RLS (can_access_quote) valida ownership
-      .from('quotes')
-      .update(updatePayload)
-      .eq('id', quoteId)
-      .select('*')
-      .single();
-    
-    if (updErr) throw updErr;
+    const itemsPayload = buildItemsInsertPayload(items, quoteId).map((item, index) => ({
+      ...item,
+      product_name: item.product_name?.trim().slice(0, 255),
+      unit_price: round2(item.unit_price),
+      notes: item.notes?.trim().slice(0, 1000),
+      personalizations: buildPersonalizationsInsertPayload(
+        items[index]?.personalizations || [],
+        quoteId,
+      ),
+    }));
 
-    // Delete existing items and personalizations (Cascade delete should handle this, but for safety...)
-    const { data: oldItems } = await supabase.from('quote_items').select('id').eq('quote_id', quoteId);
-    if (oldItems?.length) {
-      await supabase.from('quote_item_personalizations').delete().in('quote_item_id', oldItems.map(i => i.id));
-      await supabase.from('quote_items').delete().eq('quote_id', quoteId);
+    const { data: updated, error } = await supabase.rpc(
+      'update_quote_transactional' as never,
+      {
+        _quote_id: quoteId,
+        _quote_patch: updatePayload,
+        _items: itemsPayload,
+      } as never,
+    );
+
+    if (error) {
+      const message = sanitizeMessage(error, {
+        fallback: 'Não foi possível atualizar o orçamento. Tente novamente.',
+      });
+      throw new Error(message);
     }
 
-    await this.insertItemsWithPersonalizations(items, quoteId);
-    
-    return { ...updated, items } as unknown as Quote;
+    if (!updated) {
+      throw new Error('Não foi possível atualizar o orçamento: nenhum dado retornado.');
+    }
+
+    return { ...(updated as Quote), items } as Quote;
   },
 
   async insertItemsWithPersonalizations(items: QuoteItem[], quoteId: string) {
     if (items.length === 0) return;
-    
+
     const itemsPayload = buildItemsInsertPayload(items, quoteId).map((item) => ({
       ...item,
       product_name: item.product_name?.trim().slice(0, 255),
@@ -126,7 +148,7 @@ export const quoteService = {
       .from('quote_items')
       .insert(itemsPayload)
       .select('*');
-    
+
     if (itemsErr) throw itemsErr;
 
     for (let i = 0; i < items.length; i++) {
@@ -137,7 +159,18 @@ export const quoteService = {
           item.personalizations,
           insertedItem.id,
         );
-        await supabase.from('quote_item_personalizations').insert(persPayload);
+        const { error } = await supabase.from('quote_item_personalizations').insert(persPayload);
+
+        if (error) {
+          throw Object.assign(error, {
+            context: {
+              quoteId,
+              quoteItemId: insertedItem.id,
+              personalizationsCount: persPayload.length,
+            },
+            message: `Falha ao inserir personalizações do item ${insertedItem.id} no orçamento ${quoteId}: ${error.message}`,
+          });
+        }
       }
     }
   },
@@ -165,16 +198,22 @@ export const quoteService = {
     return result.records || [];
   },
 
-  async logHistory(quoteId: string, userId: string, action: string, description: string, options?: any) {
+  async logHistory(
+    quoteId: string,
+    userId: string,
+    action: string,
+    description: string,
+    options?: Record<string, unknown>,
+  ) {
     await supabase.from('quote_history').insert({
       quote_id: quoteId,
       user_id: userId,
       action,
       description,
-      field_changed: options?.fieldChanged || null,
-      old_value: options?.oldValue || null,
-      new_value: options?.newValue || null,
-      metadata: options?.metadata || {},
+      field_changed: typeof options?.fieldChanged === 'string' ? options.fieldChanged : null,
+      old_value: typeof options?.oldValue === 'string' ? options.oldValue : null,
+      new_value: typeof options?.newValue === 'string' ? options.newValue : null,
+      metadata: (options?.metadata ?? {}) as Json,
     });
-  }
+  },
 };

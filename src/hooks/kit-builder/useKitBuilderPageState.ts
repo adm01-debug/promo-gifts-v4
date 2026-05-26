@@ -1,7 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import { useSearchParams } from 'react-router-dom';
-import { transformToKitItem, useCustomKitPersistence, useDuplicateKitDetector, useKitAutoSave, useKitBuilder, useKitUndoRedo, useTemplateSnapshot } from "@/hooks/kit-builder";
+import {
+  transformToKitItem,
+  useCustomKitPersistence,
+  useDuplicateKitDetector,
+  useKitAutoSave,
+  useKitBuilder,
+  useKitUndoRedo,
+  useTemplateSnapshot,
+} from '@/hooks/kit-builder';
 import { useKitBuilderQuote } from '@/pages/kit-builder/useKitBuilderQuote';
 import { invokeExternalDb } from '@/lib/external-db';
 import { calculateTotalKitPrice, type ExternalProductForKit } from '@/lib/kit-builder';
@@ -43,6 +51,7 @@ export function useKitBuilderPageState() {
     nextStep,
     prevStep,
     resetKit,
+    restoreKitSnapshot,
   } = useKitBuilder();
 
   const { isSaving } = useCustomKitPersistence();
@@ -53,8 +62,53 @@ export function useKitBuilderPageState() {
     isSaving: isAutoSaving,
     autoSavedKitId,
   } = useKitAutoSave(kitState, kitQuantity, currentKitId, (id) => setCurrentKitId(id));
-  const { undo, redo, canUndo, canRedo } = useKitUndoRedo();
+  const {
+    pushSnapshot,
+    undo: undoSnapshot,
+    redo: redoSnapshot,
+    canUndo,
+    canRedo,
+    isRestoring,
+  } = useKitUndoRedo();
   useDuplicateKitDetector();
+
+  // Captura snapshot a cada mudança significativa do kit. O pushSnapshot
+  // deduplica snapshots idênticos e respeita isRestoring (o próprio undo/redo
+  // não gera novo snapshot). Isto liga o undo/redo, que antes era inerte
+  // (pushSnapshot nunca era chamado → canUndo sempre false).
+  useEffect(() => {
+    if (isRestoring.current) return;
+    pushSnapshot({
+      name: kitState.name,
+      kitType: kitState.kitType,
+      box: kitState.box,
+      items: kitState.items,
+      personalization: kitState.personalization,
+      kitQuantity,
+      identity: kitState.identity,
+    });
+  }, [
+    kitState.name,
+    kitState.kitType,
+    kitState.box,
+    kitState.items,
+    kitState.personalization,
+    kitState.identity,
+    kitQuantity,
+    pushSnapshot,
+    isRestoring,
+  ]);
+
+  // undo/redo aplicam o snapshot retornado de volta no estado do kit.
+  const undo = useCallback(() => {
+    const snap = undoSnapshot();
+    if (snap) restoreKitSnapshot(snap);
+  }, [undoSnapshot, restoreKitSnapshot]);
+
+  const redo = useCallback(() => {
+    const snap = redoSnapshot();
+    if (snap) restoreKitSnapshot(snap);
+  }, [redoSnapshot, restoreKitSnapshot]);
 
   // Load Logic (Simplified for the pattern example)
   useEffect(() => {

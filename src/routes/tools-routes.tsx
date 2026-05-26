@@ -1,8 +1,9 @@
-import { Navigate, Route } from "react-router-dom";
+import { Navigate, Route } from 'react-router-dom';
 import {
   AdvancedPriceSearchPage,
   BusinessIntelligencePage,
   ClientComparatorPage,
+  CoverageInsightsDashboardPage,
   CommercialIntelligencePage,
   DropboxBrowserPage,
   KitBuilderPage,
@@ -15,7 +16,7 @@ import {
   SimuladorWizard,
   StockDashboardPage,
   SimulationPage,
-} from "./lazy-pages";
+} from './lazy-pages';
 
 /**
  * Tools routes — simulador, mockup, BI, magic-up, kit builder, dropbox,
@@ -43,5 +44,6 @@ export const toolsRoutes = (
     <Route path="/match" element={<ProductMatchPage />} />
     <Route path="/dropbox" element={<DropboxBrowserPage />} />
     <Route path="/simulacao" element={<SimulationPage />} />
+    <Route path="/ferramentas/cobertura" element={<CoverageInsightsDashboardPage />} />
   </>
 );

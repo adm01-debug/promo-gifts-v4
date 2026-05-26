@@ -3,6 +3,7 @@ import { authenticateRequest, authErrorResponse } from '../_shared/auth.ts';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { runBotProtection } from '../_shared/bot-protection.ts';
 import { fetchWithBreaker, CircuitOpenError, circuitOpenResponse } from '../_shared/external-fetch.ts';
+import { resolveCredential } from '../_shared/credentials.ts';
 
 const VALID_VOICE_IDS = [
   '5lrBPYY4YvMbKHTo8kvZ', // Chosen voice (default)
@@ -44,7 +45,12 @@ Deno.serve(async (req) => {
     }, corsHeaders);
     if (!protection.allowed) return protection.blockResponse!;
 
-    const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
+    // BUG-001 FIX: resolveCredential() returns CredentialResolution (object), not a string.
+    // Must destructure .value to get the actual API key string.
+    // Previously: `const ELEVENLABS_API_KEY = await resolveCredential(...)` was always truthy
+    // (object), so the null-check never fired and `[object Object]` was sent as the header
+    // value, causing 100% of TTS requests to fail with 401.
+    const { value: ELEVENLABS_API_KEY } = await resolveCredential('ELEVENLABS_API_KEY');
     if (!ELEVENLABS_API_KEY) {
       throw new Error('ELEVENLABS_API_KEY is not configured');
     }

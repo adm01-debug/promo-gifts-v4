@@ -7,6 +7,7 @@ import { useOracleVoiceBridge } from '@/stores/oracleVoiceBridge';
 import Fuse from 'fuse.js';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import { searchCache } from './searchCache';
 import { pushRecentSearch } from './EmptySearchState';
 import { useDebounce, useSearchHistory } from '@/hooks/common';
@@ -342,11 +343,16 @@ export function useGlobalSearch() {
             const colorFiltered = filteredProducts.filter((p) => {
               if (!p.colors) return false;
               const colors = Array.isArray(p.colors) ? p.colors : [];
-              return colors.some(
-                (c: Record<string, string>) =>
-                  c.name?.toLowerCase().includes(colorLower) ||
-                  c.label?.toLowerCase().includes(colorLower),
-              );
+              return colors.some((c) => {
+                const rec = (typeof c === 'string' ? { name: c } : c) as {
+                  name?: string;
+                  label?: string;
+                };
+                return (
+                  rec.name?.toLowerCase().includes(colorLower) ||
+                  rec.label?.toLowerCase().includes(colorLower)
+                );
+              });
             });
             if (colorFiltered.length > 0) filteredProducts = colorFiltered;
           }
@@ -474,9 +480,9 @@ export function useGlobalSearch() {
       for (const q of simpleQueries) {
         if (wants(q.type)) {
           try {
-            let builder = supabase
-              .from(q.table as never)
-              .select(q.select) as unknown as SimpleQueryBuilder;
+
+            let builder = untypedFrom(q.table).select(q.select);
+
             if (q.type === 'category')
               builder = builder
                 .eq('is_active', true)

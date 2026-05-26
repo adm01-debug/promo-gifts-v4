@@ -1,5 +1,5 @@
 ﻿/**
- * TechniqueMultiSelector â€” Grid of available techniques to toggle.
+ * TechniqueMultiSelector — Grid of available techniques to toggle.
  */
 import { useQuery } from '@tanstack/react-query';
 import { invokeExternalRpc } from '@/lib/external-rpc';

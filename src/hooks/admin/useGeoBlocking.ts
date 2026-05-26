@@ -27,17 +27,25 @@ export function useGeoBlocking() {
     mode: 'whitelist',
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [currentCountry, setCurrentCountry] = useState<{ code: string; name: string } | null>(null);
+  const [currentCountry, setCurrentCountry] = useState<{ code: string; name: string } | null>(
+    null,
+  );
 
-  const fetchCurrentCountry = useCallback(async () => {
+  // BUG-17 FIX: accept an AbortSignal so the fetch can be cancelled when the
+  // component unmounts. Without this, setCurrentCountry would be called on an
+  // already-unmounted component if the ipapi.co response arrived after unmount
+  // (typical round-trip is 200-500ms — well within navigation timing).
+  const fetchCurrentCountry = useCallback(async (signal?: AbortSignal) => {
     try {
-      const response = await fetch('https://ipapi.co/json/');
-      const data = await response.json();
+      const response = await fetch('https://ipapi.co/json/', { signal });
+      const data = (await response.json()) as { country_code: string; country_name: string };
       setCurrentCountry({
         code: data.country_code,
         name: data.country_name,
       });
     } catch (error) {
+      // AbortError is expected on unmount — silence it
+      if (error instanceof Error && error.name === 'AbortError') return;
       console.error('Error fetching current country:', error);
     }
   }, []);
@@ -45,8 +53,15 @@ export function useGeoBlocking() {
   const fetchData = useCallback(async () => {
     try {
       const [countriesRes, settingsRes] = await Promise.all([
-        supabase.from('geo_allowed_countries').select('*').order('country_name'),
-        db.from('security_settings').select('*').eq('setting_key', 'geo_blocking').single(),
+        supabase
+          .from('geo_allowed_countries')
+          .select('id, country_code, country_name, is_active, created_at')
+          .order('country_name'),
+        db
+          .from('security_settings')
+          .select('id, setting_key, setting_value')
+          .eq('setting_key', 'geo_blocking')
+          .single(),
       ]);
 
       if (countriesRes.error) throw countriesRes.error;
@@ -66,8 +81,13 @@ export function useGeoBlocking() {
   }, []);
 
   useEffect(() => {
-    fetchCurrentCountry();
+    // Create an AbortController so fetchCurrentCountry can be cancelled on unmount
+    const controller = new AbortController();
+    fetchCurrentCountry(controller.signal);
     fetchData();
+    return () => {
+      controller.abort();
+    };
   }, [fetchCurrentCountry, fetchData]);
 
   const toggleEnabled = useCallback(

@@ -4,6 +4,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { invokeExternalDb } from '@/lib/external-db/bridge';
 import type { KitItem, KitBox } from '@/lib/kit-builder/types';
 
@@ -26,11 +27,11 @@ interface VariantStock {
 export function useKitStockValidation(
   items: KitItem[],
   box: KitBox | null,
-  kitQuantity: number
+  kitQuantity: number,
 ) {
   const productIds = [
     ...(box ? [box.id] : []),
-    ...items.map(i => i.id),
+    ...items.map((i) => i.id),
   ];
 
   const { data: stockData, isLoading } = useQuery({
@@ -53,25 +54,30 @@ export function useKitStockValidation(
     refetchOnWindowFocus: false,
   });
 
-  // Aggregate stock per product (sum all variant stocks)
-  const stockByProduct = new Map<string, number>();
-  if (stockData) {
+  // BUG-13 FIX: stockByProduct (Map) and alerts (Array) were declared as plain
+  // variables outside useMemo, so they were recomputed on EVERY render even
+  // when stockData hadn't changed (e.g., on hover, scroll, or unrelated state).
+  // Now both are derived inside a single useMemo — the O(n) aggregation loop
+  // runs only when stockData, box, items, or kitQuantity actually change.
+  const { stockByProduct, alerts } = useMemo(() => {
+    const map = new Map<string, number>();
+
+    if (!stockData) return { stockByProduct: map, alerts: [] as StockAlert[] };
+
+    // Aggregate stock per product (sum all variant stocks)
     for (const v of stockData) {
-      const current = stockByProduct.get(v.product_id) || 0;
-      stockByProduct.set(v.product_id, current + (v.stock_quantity ?? 0));
+      const current = map.get(v.product_id) || 0;
+      map.set(v.product_id, current + (v.stock_quantity ?? 0));
     }
-  }
 
-  // Build alerts
-  const alerts: StockAlert[] = [];
+    const result: StockAlert[] = [];
 
-  if (stockData) {
     // Check box stock
     if (box) {
-      const available = stockByProduct.get(box.id) ?? 0;
+      const available = map.get(box.id) ?? 0;
       const required = kitQuantity;
       if (available < required) {
-        alerts.push({
+        result.push({
           itemId: box.id,
           itemName: box.name,
           sku: box.sku,
@@ -85,10 +91,10 @@ export function useKitStockValidation(
 
     // Check item stocks
     for (const item of items) {
-      const available = stockByProduct.get(item.id) ?? 0;
+      const available = map.get(item.id) ?? 0;
       const required = item.quantity * kitQuantity;
       if (available < required) {
-        alerts.push({
+        result.push({
           itemId: item.id,
           itemName: item.name,
           sku: item.sku,
@@ -98,7 +104,9 @@ export function useKitStockValidation(
         });
       }
     }
-  }
+
+    return { stockByProduct: map, alerts: result };
+  }, [stockData, box, items, kitQuantity]);
 
   return {
     alerts,

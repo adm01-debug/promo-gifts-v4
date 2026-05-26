@@ -233,7 +233,7 @@ export function MultiEngravingResult({
             </div>
             <div className="flex justify-between pl-6 text-sm">
               <span className="text-muted-foreground">
-                {formatNumber(quantity)} Ã— {formatCurrency(product.price)}
+                {formatNumber(quantity)} × {formatCurrency(product.price)}
               </span>
               <span>{formatCurrency(productTotal)}</span>
             </div>
@@ -294,7 +294,7 @@ export function MultiEngravingResult({
                     <div className="space-y-0.5 text-xs text-muted-foreground">
                       <div className="flex justify-between">
                         <span>
-                          {formatNumber(quantity)} Ã— {formatCurrency(calc.priceData.unit_price)}{' '}
+                          {formatNumber(quantity)} × {formatCurrency(calc.priceData.unit_price)}{' '}
                           (Faixa {calc.priceData.tier_used})
                         </span>
                         <span>{formatCurrency(calc.priceData.subtotal_pecas)}</span>

@@ -39,7 +39,7 @@ export default function ObservabilityDashboard(): JSX.Element {
   const smoke = useSmokeTests();
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-7xl space-y-8">
+    <div className="container mx-auto max-w-7xl space-y-8 px-4 py-6">
       <header className="border-b pb-4">
         <h1 className="text-2xl font-bold">Observabilidade do Sistema</h1>
         <p className="text-sm text-gray-500">
@@ -49,7 +49,7 @@ export default function ObservabilityDashboard(): JSX.Element {
 
       {/* SEÇÃO 1: Switches ativos */}
       <section data-testid="section-switches" className="space-y-3">
-        <h2 className="text-lg font-semibold flex items-center gap-2">
+        <h2 className="flex items-center gap-2 text-lg font-semibold">
           🚦 Kill-Switches
           {ksData.lastRefresh && (
             <span className="text-xs font-normal text-gray-500">
@@ -59,7 +59,7 @@ export default function ObservabilityDashboard(): JSX.Element {
         </h2>
         {ksData.loading && <p className="text-sm text-gray-500">Carregando...</p>}
         {ksData.error && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
+          <p className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
             Erro: {ksData.error}
           </p>
         )}
@@ -70,19 +70,19 @@ export default function ObservabilityDashboard(): JSX.Element {
           {ksData.switches.map((s) => (
             <div
               key={s.switch_name}
-              className="border rounded-md p-3 flex items-center justify-between bg-white"
+              className="flex items-center justify-between rounded-md border bg-white p-3"
             >
               <div className="min-w-0">
                 <div className="font-mono text-sm font-medium">{s.switch_name}</div>
                 {s.legacy_message && (
-                  <div className="text-xs text-gray-600 mt-1">{s.legacy_message}</div>
+                  <div className="mt-1 text-xs text-gray-600">{s.legacy_message}</div>
                 )}
               </div>
               <span
                 className={
                   s.enabled
-                    ? 'shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800'
-                    : 'shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800'
+                    ? 'inline-flex shrink-0 items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800'
+                    : 'inline-flex shrink-0 items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800'
                 }
               >
                 {s.enabled ? '● ATIVO' : '○ DESLIGADO'}
@@ -96,7 +96,7 @@ export default function ObservabilityDashboard(): JSX.Element {
       <section data-testid="section-hits" className="space-y-3">
         <h2 className="text-lg font-semibold">📊 Hits do Kill-Switch (callers bloqueados)</h2>
         {ksData.summary.length === 0 && !ksData.loading && (
-          <p className="text-sm text-gray-500 bg-green-50 border border-green-200 rounded px-3 py-2">
+          <p className="rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-gray-500">
             ✅ Zero hits registrados. Sistema migrado com sucesso ou switches todos ATIVOS.
           </p>
         )}
@@ -120,18 +120,28 @@ export default function ObservabilityDashboard(): JSX.Element {
                   <tr key={`${row.switch_name}-${row.source}-${idx}`} className="hover:bg-gray-50">
                     <td className="px-3 py-2 font-mono text-xs">{row.switch_name}</td>
                     <td className="px-3 py-2">
-                      <span className={
-                        row.source === 'front'
-                          ? 'inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-blue-100 text-blue-800'
-                          : 'inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-purple-100 text-purple-800'
-                      }>{row.source}</span>
+                      <span
+                        className={
+                          row.source === 'front'
+                            ? 'inline-flex items-center rounded bg-blue-100 px-1.5 py-0.5 text-xs text-blue-800'
+                            : 'inline-flex items-center rounded bg-purple-100 px-1.5 py-0.5 text-xs text-purple-800'
+                        }
+                      >
+                        {row.source}
+                      </span>
                     </td>
                     <td className="px-3 py-2 font-mono text-xs">{row.operation ?? '—'}</td>
                     <td className="px-3 py-2 font-mono text-xs">{row.target ?? '—'}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{row.hits_1h}</td>
-                    <td className="px-3 py-2 text-right tabular-nums font-medium">{row.hits_24h}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-gray-500">{row.hits_7d}</td>
-                    <td className="px-3 py-2 text-right text-xs text-gray-500">{formatRelative(row.last_hit)}</td>
+                    <td className="px-3 py-2 text-right font-medium tabular-nums">
+                      {row.hits_24h}
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums text-gray-500">
+                      {row.hits_7d}
+                    </td>
+                    <td className="px-3 py-2 text-right text-xs text-gray-500">
+                      {formatRelative(row.last_hit)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -143,7 +153,7 @@ export default function ObservabilityDashboard(): JSX.Element {
       {/* SEÇÃO 3: Smoke tests */}
       <section data-testid="section-smoke" className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
+          <h2 className="flex items-center gap-2 text-lg font-semibold">
             🧪 Smoke Tests
             {smoke.lastRun && (
               <span className="text-xs font-normal text-gray-500">
@@ -155,41 +165,127 @@ export default function ObservabilityDashboard(): JSX.Element {
             type="button"
             onClick={() => void smoke.runNow()}
             disabled={smoke.running}
-            className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {smoke.running ? 'Rodando...' : 'Rodar agora'}
           </button>
         </div>
 
         {smoke.error && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
+          <p className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
             {smoke.error}
           </p>
         )}
 
+        {smoke.latest.length > 0 && (
+          <div className="grid gap-2 md:grid-cols-4">
+            <div className="rounded border bg-white p-3 text-sm">
+              <div className="text-gray-500">Taxa de flake</div>
+              <div className="text-lg font-semibold">{smoke.summary.flake_rate.toFixed(1)}%</div>
+            </div>
+            <div className="rounded border bg-white p-3 text-sm">
+              <div className="text-gray-500">Tempo médio</div>
+              <div className="text-lg font-semibold">
+                {smoke.summary.avg_duration_ms !== null
+                  ? `${smoke.summary.avg_duration_ms.toFixed(1)}ms`
+                  : '—'}
+              </div>
+            </div>
+            <div className="rounded border bg-white p-3 text-sm">
+              <div className="text-gray-500">Falhas</div>
+              <div className="text-lg font-semibold">
+                {smoke.summary.failed}/{smoke.summary.total}
+              </div>
+            </div>
+            <div className="rounded border bg-white p-3 text-sm">
+              <div className="text-gray-500">Densidade de asserts úteis</div>
+              <div className="text-lg font-semibold">
+                {smoke.summary.useful_assert_density.toFixed(2)} / teste
+              </div>
+            </div>
+          </div>
+        )}
+
+        {smoke.summary.module_failure_rates.length > 0 && (
+          <div className="overflow-x-auto rounded-md border">
+            <table className="min-w-full text-sm">
+              <thead className="bg-gray-50 text-xs uppercase text-gray-600">
+                <tr>
+                  <th className="px-3 py-2 text-left">Módulo</th>
+                  <th className="px-3 py-2 text-right">Falhas</th>
+                  <th className="px-3 py-2 text-right">Total</th>
+                  <th className="px-3 py-2 text-right">Taxa de falha</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {smoke.summary.module_failure_rates.slice(0, 8).map((row) => (
+                  <tr key={row.module} className="hover:bg-gray-50">
+                    <td className="px-3 py-2 font-mono text-xs">{row.module}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{row.failed}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{row.total}</td>
+                    <td className="px-3 py-2 text-right font-medium tabular-nums">
+                      {row.failure_rate.toFixed(1)}%
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {smoke.historical.length > 0 && (
+          <div className="overflow-x-auto rounded-md border">
+            <table className="min-w-full text-sm">
+              <thead className="bg-gray-50 text-xs uppercase text-gray-600">
+                <tr>
+                  <th className="px-3 py-2 text-left">Execução</th>
+                  <th className="px-3 py-2 text-right">Taxa de falha</th>
+                  <th className="px-3 py-2 text-right">Tempo médio</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {smoke.historical.map((item) => (
+                  <tr key={item.ran_at}>
+                    <td className="px-3 py-2 text-xs">{formatDate(item.ran_at)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">
+                      {item.failure_rate.toFixed(1)}%
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums">
+                      {item.avg_duration_ms !== null ? `${item.avg_duration_ms.toFixed(1)}ms` : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
         {/* Tendência: últimas execuções */}
         {smoke.trend.length > 0 && (
-          <div className="flex gap-2 items-center text-xs overflow-x-auto">
-            <span className="text-gray-500 shrink-0">Tendência:</span>
-            {smoke.trend.slice(0, 12).reverse().map((t) => {
-              const allPass = t.failed === 0 && t.warned === 0;
-              const hasFail = t.failed > 0;
-              return (
-                <div
-                  key={t.ran_at}
-                  title={`${formatDate(t.ran_at)}\nPASS:${t.passed} FAIL:${t.failed} WARN:${t.warned}`}
-                  className={
-                    hasFail
-                      ? 'shrink-0 w-8 h-8 rounded bg-red-500 text-white flex items-center justify-center font-medium'
-                      : allPass
-                        ? 'shrink-0 w-8 h-8 rounded bg-green-500 text-white flex items-center justify-center font-medium'
-                        : 'shrink-0 w-8 h-8 rounded bg-amber-500 text-white flex items-center justify-center font-medium'
-                  }
-                >
-                  {t.passed}
-                </div>
-              );
-            })}
+          <div className="flex items-center gap-2 overflow-x-auto text-xs">
+            <span className="shrink-0 text-gray-500">Tendência:</span>
+            {smoke.trend
+              .slice(0, 12)
+              .reverse()
+              .map((t) => {
+                const allPass = t.failed === 0 && t.warned === 0;
+                const hasFail = t.failed > 0;
+                return (
+                  <div
+                    key={t.ran_at}
+                    title={`${formatDate(t.ran_at)}\nPASS:${t.passed} FAIL:${t.failed} WARN:${t.warned}`}
+                    className={
+                      hasFail
+                        ? 'flex h-8 w-8 shrink-0 items-center justify-center rounded bg-red-500 font-medium text-white'
+                        : allPass
+                          ? 'flex h-8 w-8 shrink-0 items-center justify-center rounded bg-green-500 font-medium text-white'
+                          : 'flex h-8 w-8 shrink-0 items-center justify-center rounded bg-amber-500 font-medium text-white'
+                    }
+                  >
+                    {t.passed}
+                  </div>
+                );
+              })}
           </div>
         )}
 
@@ -209,13 +305,16 @@ export default function ObservabilityDashboard(): JSX.Element {
               <tbody className="divide-y">
                 {smoke.latest.map((row, idx) => (
                   <tr key={`${row.test_name}-${idx}`} className="hover:bg-gray-50">
-                    <td className="px-3 py-2 whitespace-nowrap font-medium">{row.result}</td>
+                    <td className="whitespace-nowrap px-3 py-2 font-medium">{row.result}</td>
                     <td className="px-3 py-2 font-mono text-xs">{row.test_name}</td>
                     <td className="px-3 py-2 text-xs text-gray-600">{row.test_category ?? '—'}</td>
-                    <td className="px-3 py-2 text-xs text-gray-600 max-w-md truncate" title={row.details ?? ''}>
+                    <td
+                      className="max-w-md truncate px-3 py-2 text-xs text-gray-600"
+                      title={row.details ?? ''}
+                    >
                       {row.details ?? '—'}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-xs text-gray-500">
+                    <td className="px-3 py-2 text-right text-xs tabular-nums text-gray-500">
                       {row.duration_ms !== null ? `${Number(row.duration_ms).toFixed(1)}ms` : '—'}
                     </td>
                   </tr>

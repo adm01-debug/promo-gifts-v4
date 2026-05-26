@@ -38,25 +38,51 @@ const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
   );
 };
 
+/**
+ * CommandInput — a11y-patched wrapper around cmdk's CommandPrimitive.Input.
+ *
+ * Problems fixed (Chrome DevTools > Problems tab):
+ *   - "A form field element should have an id or name attribute" (19 resources)
+ *   - "No label associated with a form field" (6 resources)
+ *
+ * cmdk's raw <input> bypasses the custom Input component (which auto-generates
+ * id/name via React.useId()). Every CommandInput instance on the page was
+ * emitting both warnings.
+ *
+ * Resolution order (same pattern as Input/Textarea):
+ *   id   -> explicit prop -> React.useId() stable fallback
+ *   name -> explicit prop -> same value as resolved id
+ *   aria-label -> explicit prop -> 'Buscar' default
+ */
 const CommandInput = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Input>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
->(({ className, ...props }, ref) => (
-  <div
-    className="flex items-center border-b px-3 [border-color:hsl(var(--command-border))] [&:has(input:focus)]:ring-0"
-    cmdk-input-wrapper=""
-  >
-    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-    <CommandPrimitive.Input
-      ref={ref}
-      className={cn(
-        'flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none ring-0 placeholder:text-muted-foreground focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:opacity-50',
-        className,
-      )}
-      {...props}
-    />
-  </div>
-));
+>(({ className, id, name, 'aria-label': ariaLabel, ...props }, ref) => {
+  const fallbackId = React.useId();
+  const resolvedId = id ?? fallbackId;
+  const resolvedName = name ?? resolvedId;
+
+  return (
+    <div
+      className="flex items-center border-b px-3 [border-color:hsl(var(--command-border))] [&:has(input:focus)]:ring-0"
+      cmdk-input-wrapper=""
+    >
+      {/* aria-hidden: purely decorative; the aria-label on the input provides the accessible name */}
+      <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" aria-hidden="true" />
+      <CommandPrimitive.Input
+        ref={ref}
+        id={resolvedId}
+        name={resolvedName}
+        aria-label={ariaLabel ?? 'Buscar'}
+        className={cn(
+          'flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none ring-0 placeholder:text-muted-foreground focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:opacity-50',
+          className,
+        )}
+        {...props}
+      />
+    </div>
+  );
+});
 
 CommandInput.displayName = CommandPrimitive.Input.displayName;
 

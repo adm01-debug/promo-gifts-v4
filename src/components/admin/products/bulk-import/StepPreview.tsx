@@ -80,7 +80,7 @@ export function StepPreview({
             <Label htmlFor="mode-upsert" className="cursor-pointer text-sm">
               <span className="font-medium">Upsert</span>
               <span className="ml-1 text-muted-foreground">
-                â€” insere novos, atualiza existentes (por SKU)
+                — insere novos, atualiza existentes (por SKU)
               </span>
             </Label>
           </div>
@@ -89,7 +89,7 @@ export function StepPreview({
             <Label htmlFor="mode-insert" className="cursor-pointer text-sm">
               <span className="font-medium">Inserir</span>
               <span className="ml-1 text-muted-foreground">
-                â€” apenas novos ({newCount}), pula existentes
+                — apenas novos ({newCount}), pula existentes
               </span>
             </Label>
           </div>
@@ -125,17 +125,17 @@ export function StepPreview({
                     (rawData[r.row - 1]?.[
                       Object.entries(mapping).find(([, v]) => v === 'sku')?.[0] || ''
                     ] as string) ||
-                    'â€”'}
+                    '—'}
                 </TableCell>
                 <TableCell className="max-w-[180px] truncate text-sm">
                   {r.data?.name ||
                     (rawData[r.row - 1]?.[
                       Object.entries(mapping).find(([, v]) => v === 'name')?.[0] || ''
                     ] as string) ||
-                    'â€”'}
+                    '—'}
                 </TableCell>
                 <TableCell className="text-sm tabular-nums">
-                  {r.data?.sale_price ? `R$ ${Number(r.data.sale_price).toFixed(2)}` : 'â€”'}
+                  {r.data?.sale_price ? `R$ ${Number(r.data.sale_price).toFixed(2)}` : '—'}
                 </TableCell>
                 <TableCell>
                   {r.existsInDb ? (

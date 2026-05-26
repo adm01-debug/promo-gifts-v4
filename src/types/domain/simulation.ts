@@ -7,6 +7,7 @@ export interface SimulationProduct {
   name: string;
   sku: string;
   price: number;
+  image_url?: string;
   stock?: number;
   images?: string[];
   category?: { id: string; name: string };
@@ -31,35 +32,58 @@ export interface SimulationClient {
   cnpj?: string;
 }
 
+/** Per-technique inputs collected in the wizard (keyed by techniqueId upstream). */
 export interface TechniqueSettings {
+  colors: number;
+  width: number;
+  height: number;
+  positions: number;
+}
+
+/**
+ * Computed pricing option produced by `simulationPriceFetcher` (one per technique).
+ * Mirrors the object literals built there — the source of truth for the simulator UI.
+ */
+export interface SimulationOption {
+  id: string;
   techniqueId: string;
   techniqueName: string;
   techniqueCode: string;
   colors: number;
-  width?: number;
-  height?: number;
-  position?: string;
+  width: number;
+  height: number;
+  positions: number;
+  unitCost: number;
+  setupCost: number;
+  totalPersonalizationCost: number;
+  costPerUnit: number;
+  estimatedDays: number;
+  productUnitPrice: number;
+  totalProductCost: number;
+  grandTotal: number;
+  grandTotalPerUnit: number;
+  priceSource: 'rpc' | 'legacy-fallback' | 'unavailable';
+  unavailableReason?: string;
+  fallbackReason?: string;
+  calculatedAt: string;
+  rpcAvailable: boolean;
 }
 
-export interface SimulationOption {
-  id: string;
-  product: SimulationProduct;
-  client: SimulationClient;
-  techniques: TechniqueSettings[];
-  quantity: number;
-  notes?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
+/** Row of `public.personalization_simulations` (snake_case as stored in Supabase). */
 export interface SavedSimulation {
   id: string;
-  name: string;
-  options: SimulationOption[];
-  totalPrice: number;
-  status: 'draft' | 'sent' | 'approved' | 'rejected';
-  createdAt: Date;
-  updatedAt: Date;
+  seller_id?: string;
+  client_id?: string | null;
+  product_id: string;
+  product_name?: string;
+  product_sku?: string;
+  quantity: number;
+  product_unit_price: number;
+  simulation_data: SimulationOption[];
+  notes?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  bitrix_clients?: { id: string; name: string; ramo?: string } | null;
 }
 
 export type SimulatorStep = 'product' | 'techniques' | 'results';

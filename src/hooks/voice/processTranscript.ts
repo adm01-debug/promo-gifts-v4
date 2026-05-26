@@ -2,7 +2,7 @@
 import type { VoiceAgentAction } from './types';
 
 /**
- * processVoiceTranscript â€” Sends transcript to AI and returns structured action.
+ * processVoiceTranscript — Sends transcript to AI and returns structured action.
  * Uses fetch with AbortController for proper timeout support (15s).
  */
 export async function processVoiceTranscript(transcript: string): Promise<VoiceAgentAction> {

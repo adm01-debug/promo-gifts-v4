@@ -1,1 +1,86 @@
-cHJvamVjdF9pZCA9ICJkb3Vmc3hxbGZqeXV2eHVlenBsbiIKCltmdW5jdGlvbnMuY3JtLWRiLWJyaWRnZV0KdmVyaWZ5X2p3dCA9IGZhbHNlCgpbZnVuY3Rpb25zLmFpLXJlY29tbWVuZGF0aW9uc10KdmVyaWZ5X2p3dCA9IGZhbHNlCgpbZnVuY3Rpb25zLmV4dGVybmFsLWRiLWluc3BlY3RdCnZlcmlmeV9qd3QgPSBmYWxzZQoKW2Z1bmN0aW9ucy5leHRlcm5hbC1kYi1icmlkZ2VdCnZlcmlmeV9qd3QgPSBmYWxzZQoKW2Z1bmN0aW9ucy5pbWFnZS1wcm94eV0KdmVyaWZ5X2p3dCA9IGZhbHNlCgpbZnVuY3Rpb25zLndlYmhvb2stZGlzcGF0Y2hlcl0KdmVyaWZ5X2p3dCA9IGZhbHNlCgpbZnVuY3Rpb25zLndlYmhvb2staW5ib3VuZF0KdmVyaWZ5X2p3dCA9IGZhbHNlCgpbZnVuY3Rpb25zLm1jcC1zZXJ2ZXJdCnZlcmlmeV9qd3QgPSBmYWxzZQoKW2Z1bmN0aW9ucy5jb25uZWN0aW9ucy1hdXRvLXRlc3RdCnZlcmlmeV9qd3QgPSBmYWxzZQoKW2Z1bmN0aW9ucy5lMmUtY2xlYW51cF0KdmVyaWZ5X2p3dCA9IGZhbHNlCgojIGdldC12aXNpdG9yLWluZm86IGNoYW1hZGEgYW50ZXMgZG8gbG9naW4gcGFyYSBkZXRlY3RhciBJUC9nZW8gZG8gdmlzaXRhbnRlLgojIHZlcmlmeV9qd3Q9ZmFsc2UgcG9ycXVlIHVzdWFyaW9zIGFub25pbW9zIG5hbyB0ZW0gc2Vzc2FvIEpXVCBhdGl2YS4KW2Z1bmN0aW9ucy5nZXQtdmlzaXRvci1pbmZvXQp2ZXJpZnlfand0ID0gZmFsc2UKCiMgQ3JvbiBmdW5jdGlvbnMgLSBhdXRlbnRpY2FkYXMgdmlhIHgtY3Jvbi1zZWNyZXQgKHZhdWx0LWJhc2VkLCB2ZXIgX3NoYXJlZC9kaXNwYXRjaGVyLWF1dGgudHMpCiMgTmFvIHVzYW0gSldUIGRvIFN1cGFiYXNlIEF1dGggcG9ycXVlIHBnX2Nyb24gbmFvIHRlbSB1c3VhcmlvL3Nlc3Nhby4KIyBTZWd1cmFuY2E6IGhlYWRlciB4LWNyb24tc2VjcmV0IGNvbXBhcmFkbyBlbSB0ZW1wbyBjb25zdGFudGUgY29tIHZhdWx0LkNST05fU0VDUkVULgoKW2Z1bmN0aW9ucy5jbGVhbnVwLW5vdGlmaWNhdGlvbnNdCnZlcmlmeV9qd3QgPSBmYWxzZQoKW2Z1bmN0aW9ucy5jbGVhbnVwLW5vdmVsdGllc10KdmVyaWZ5X2p3dCA9IGZhbHNlCgpbZnVuY3Rpb25zLmNvbGxlY3Rpb25zLXdhdGNoZXJdCnZlcmlmeV9qd3QgPSBmYWxzZQoKW2Z1bmN0aW9ucy5jb21wYXJpc29uLXByaWNlLXdhdGNoZXJdCnZlcmlmeV9qd3QgPSBmYWxzZQoKW2Z1bmN0aW9ucy5jb25uZWN0aW9ucy1oZWFsdGgtY2hlY2tdCnZlcmlmeV9qd3QgPSBmYWxzZQoKW2Z1bmN0aW9ucy5mYXZvcml0ZXMtd2F0Y2hlcl0KdmVyaWZ5X2p3dCA9IGZhbHNlCgpbZnVuY3Rpb25zLm93bmVyc2hpcC1hdWRpdF0KdmVyaWZ5X2p3dCA9IGZhbHNlCgpbZnVuY3Rpb25zLnByb2Nlc3MtcXVldWVdCnZlcmlmeV9qd3QgPSBmYWxzZQoKW2Z1bmN0aW9ucy5wcm9jZXNzLXNjaGVkdWxlZC1yZXBvcnRzXQp2ZXJpZnlfand0ID0gZmFsc2UKCltmdW5jdGlvbnMucXVvdGUtZm9sbG93dXAtcmVtaW5kZXJzXQp2ZXJpZnlfand0ID0gZmFsc2UKCltmdW5jdGlvbnMuc2VuZC1kaWdlc3RdCnZlcmlmeV9qd3QgPSBmYWxzZQoKW2Z1bmN0aW9ucy5zZW5kLW5vdGlmaWNhdGlvbl0KdmVyaWZ5X2p3dCA9IGZhbHNlCgpbZnVuY3Rpb25zLnNlbmQtc2NoZWR1bGVkLXJlcG9ydHNdCnZlcmlmeV9qd3QgPSBmYWxzZQoKW2Z1bmN0aW9ucy5zeW5jLWV4dGVybmFsLWRiXQp2ZXJpZnlfand0ID0gZmFsc2UKClthdXRoXQplbmFibGVfc2lnbnVwID0gZmFsc2UKZW5hYmxlX2Fub255bW91c19zaWduX2lucyA9IGZhbHNlCg==
+project_id = "doufsxqlfjyuvxuezpln"
+
+[functions.crm-db-bridge]
+verify_jwt = false
+
+[functions.ai-recommendations]
+verify_jwt = false
+
+[functions.external-db-inspect]
+verify_jwt = false
+
+[functions.external-db-bridge]
+verify_jwt = false
+
+[functions.image-proxy]
+verify_jwt = false
+
+[functions.webhook-dispatcher]
+verify_jwt = false
+
+[functions.webhook-inbound]
+verify_jwt = false
+
+[functions.mcp-server]
+verify_jwt = false
+
+[functions.connections-auto-test]
+verify_jwt = false
+
+[functions.e2e-cleanup]
+verify_jwt = false
+
+# get-visitor-info: chamada antes do login para detectar IP/geo do visitante.
+# verify_jwt=false porque usuarios anonimos nao tem sessao JWT ativa.
+[functions.get-visitor-info]
+verify_jwt = false
+
+# Cron functions - autenticadas via x-cron-secret (vault-based, ver _shared/dispatcher-auth.ts)
+# Nao usam JWT do Supabase Auth porque pg_cron nao tem usuario/sessao.
+# Seguranca: header x-cron-secret comparado em tempo constante com vault.CRON_SECRET.
+
+[functions.cleanup-notifications]
+verify_jwt = false
+
+[functions.cleanup-novelties]
+verify_jwt = false
+
+[functions.collections-watcher]
+verify_jwt = false
+
+[functions.comparison-price-watcher]
+verify_jwt = false
+
+[functions.connections-health-check]
+verify_jwt = false
+
+[functions.favorites-watcher]
+verify_jwt = false
+
+[functions.ownership-audit]
+verify_jwt = false
+
+[functions.process-queue]
+verify_jwt = false
+
+[functions.process-scheduled-reports]
+verify_jwt = false
+
+[functions.quote-followup-reminders]
+verify_jwt = false
+
+[functions.send-digest]
+verify_jwt = false
+
+[functions.send-notification]
+verify_jwt = false
+
+[functions.send-scheduled-reports]
+verify_jwt = false
+
+[functions.sync-external-db]
+verify_jwt = false
+
+[auth]
+enable_signup = false
+enable_anonymous_sign_ins = false

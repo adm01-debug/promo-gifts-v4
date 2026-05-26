@@ -1,11 +1,11 @@
 /**
  * usePositionHistory — Undo/Redo for logo positioning
- * 
+ *
  * Tracks position & size changes with a configurable history depth.
  * Supports Ctrl+Z (undo) and Ctrl+Shift+Z / Ctrl+Y (redo).
  */
 
-import { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import { useCallback, useEffect, useRef, useMemo, useReducer } from "react";
 
 interface PositionState {
   positionX: number;
@@ -21,58 +21,91 @@ interface UsePositionHistoryOptions {
   enabled?: boolean;
 }
 
+// BUG-14 FIX: consolidate history + historyIndex into a single state updated
+// atomically via useReducer. Previously both were separate useState calls.
+// pushState captured historyIndex via closure and used it inside setHistory's
+// functional updater — if called twice before re-render (e.g., two rapid
+// mouseMove events during drag), the second call used the SAME stale
+// historyIndex, slicing prev at the wrong point and discarding the first push.
+interface HistoryReducerState {
+  history: PositionState[];
+  historyIndex: number;
+}
+
+type HistoryAction =
+  | { type: 'PUSH'; payload: PositionState; maxHistory: number }
+  | { type: 'UNDO' }
+  | { type: 'REDO' }
+  | { type: 'CLEAR' };
+
+function historyReducer(
+  state: HistoryReducerState,
+  action: HistoryAction,
+): HistoryReducerState {
+  switch (action.type) {
+    case 'PUSH': {
+      const truncated = state.history.slice(0, state.historyIndex + 1);
+      const newHistory = [...truncated, action.payload];
+      if (newHistory.length > action.maxHistory) newHistory.shift();
+      return {
+        history: newHistory,
+        historyIndex: Math.min(state.historyIndex + 1, action.maxHistory - 1),
+      };
+    }
+    case 'UNDO':
+      if (state.historyIndex <= 0) return state;
+      return { ...state, historyIndex: state.historyIndex - 1 };
+    case 'REDO':
+      if (state.historyIndex >= state.history.length - 1) return state;
+      return { ...state, historyIndex: state.historyIndex + 1 };
+    case 'CLEAR':
+      return { history: [], historyIndex: -1 };
+    default:
+      return state;
+  }
+}
+
 export function usePositionHistory(options: UsePositionHistoryOptions = {}) {
   const { maxHistory = 30, enabled = true } = options;
 
-  const [history, setHistory] = useState<PositionState[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [{ history, historyIndex }, dispatch] = useReducer(historyReducer, {
+    history: [],
+    historyIndex: -1,
+  });
+
   const isUndoRedoRef = useRef(false);
 
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
 
-  const pushState = useCallback((state: PositionState) => {
-    if (isUndoRedoRef.current) {
-      isUndoRedoRef.current = false;
-      return;
-    }
-
-    setHistory(prev => {
-      // Truncate future states if we're in the middle of history
-      const truncated = prev.slice(0, historyIndex + 1);
-      const newHistory = [...truncated, state];
-      // Keep within max limit
-      if (newHistory.length > maxHistory) {
-        newHistory.shift();
-        return newHistory;
+  const pushState = useCallback(
+    (state: PositionState) => {
+      if (isUndoRedoRef.current) {
+        isUndoRedoRef.current = false;
+        return;
       }
-      return newHistory;
-    });
-    setHistoryIndex(prev => {
-      const newIndex = Math.min(prev + 1, maxHistory - 1);
-      return newIndex;
-    });
-  }, [historyIndex, maxHistory]);
+      // Dispatch is always safe — reducer runs with current state atomically
+      dispatch({ type: 'PUSH', payload: state, maxHistory });
+    },
+    [maxHistory],
+  );
 
   const undo = useCallback((): PositionState | null => {
     if (!canUndo) return null;
     isUndoRedoRef.current = true;
-    const newIndex = historyIndex - 1;
-    setHistoryIndex(newIndex);
-    return history[newIndex];
+    dispatch({ type: 'UNDO' });
+    return history[historyIndex - 1];
   }, [canUndo, historyIndex, history]);
 
   const redo = useCallback((): PositionState | null => {
     if (!canRedo) return null;
     isUndoRedoRef.current = true;
-    const newIndex = historyIndex + 1;
-    setHistoryIndex(newIndex);
-    return history[newIndex];
+    dispatch({ type: 'REDO' });
+    return history[historyIndex + 1];
   }, [canRedo, historyIndex, history]);
 
   const clear = useCallback(() => {
-    setHistory([]);
-    setHistoryIndex(-1);
+    dispatch({ type: 'CLEAR' });
   }, []);
 
   // Keyboard shortcuts: Ctrl+Z (undo), Ctrl+Shift+Z or Ctrl+Y (redo)
@@ -87,7 +120,12 @@ export function usePositionHistory(options: UsePositionHistoryOptions = {}) {
 
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      )
+        return;
 
       const isCtrl = e.ctrlKey || e.metaKey;
 
@@ -116,15 +154,18 @@ export function usePositionHistory(options: UsePositionHistoryOptions = {}) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [enabled, undo, redo]);
 
-  return useMemo(() => ({
-    pushState,
-    undo,
-    redo,
-    clear,
-    canUndo,
-    canRedo,
-    setOnApply,
-    historyLength: history.length,
-    currentIndex: historyIndex,
-  }), [pushState, undo, redo, clear, canUndo, canRedo, setOnApply, history.length, historyIndex]);
+  return useMemo(
+    () => ({
+      pushState,
+      undo,
+      redo,
+      clear,
+      canUndo,
+      canRedo,
+      setOnApply,
+      historyLength: history.length,
+      currentIndex: historyIndex,
+    }),
+    [pushState, undo, redo, clear, canUndo, canRedo, setOnApply, history.length, historyIndex],
+  );
 }

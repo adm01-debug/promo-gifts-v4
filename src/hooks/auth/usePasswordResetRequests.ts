@@ -25,7 +25,7 @@ export function usePasswordResetRequests() {
       const supabase = await getSupabaseClient();
       const { data, error } = await supabase
         .from('password_reset_requests')
-        .select('*')
+        .select('id, email, user_id, status, requested_at, reviewed_at, reviewed_by, reviewer_notes')
         .order('requested_at', { ascending: false });
 
       if (error) throw error;

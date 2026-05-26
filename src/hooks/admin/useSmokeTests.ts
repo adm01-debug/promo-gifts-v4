@@ -32,6 +32,29 @@ export interface SmokeTestTrend {
   avg_duration_ms: number | null;
 }
 
+export interface SmokeModuleFailureRate {
+  module: string;
+  total: number;
+  failed: number;
+  failure_rate: number;
+}
+
+export interface SmokeSummaryMetrics {
+  total: number;
+  failed: number;
+  warned: number;
+  flake_rate: number;
+  avg_duration_ms: number | null;
+  useful_assert_density: number;
+  module_failure_rates: SmokeModuleFailureRate[];
+}
+
+export interface SmokeTrendPoint {
+  ran_at: string;
+  failure_rate: number;
+  avg_duration_ms: number | null;
+}
+
 export interface SmokeTestsData {
   latest: SmokeTestRow[];
   trend: SmokeTestTrend[];
@@ -39,6 +62,8 @@ export interface SmokeTestsData {
   error: string | null;
   running: boolean;
   lastRun: Date | null;
+  summary: SmokeSummaryMetrics;
+  historical: SmokeTrendPoint[];
   refresh: () => void;
   runNow: () => Promise<void>;
 }
@@ -101,5 +126,73 @@ export function useSmokeTests(): SmokeTestsData {
     void load();
   }, [load]);
 
-  return { latest, trend, loading, error, running, lastRun, refresh: load, runNow };
+  const total = latest.length;
+  const failed = latest.filter((row) => row.result.includes('FAIL')).length;
+  const warned = latest.filter((row) => row.result.includes('WARN')).length;
+  const flakes = latest.filter((row) =>
+    /flake|flaky|intermitente|timeout|retry/i.test(row.details ?? ''),
+  ).length;
+
+  const durationValues = latest
+    .map((row) => row.duration_ms)
+    .filter((value): value is number => typeof value === 'number');
+  const avgDuration =
+    durationValues.length > 0
+      ? durationValues.reduce((acc, value) => acc + value, 0) / durationValues.length
+      : null;
+
+  const usefulAssertSignals = latest.reduce((acc, row) => {
+    const details = row.details ?? '';
+    const matches = details.match(/assert|expect\(|deve|valida|status\s*2\d\d/gi);
+    return acc + (matches?.length ?? 0);
+  }, 0);
+
+  const moduleMap = latest.reduce<Record<string, { total: number; failed: number }>>((acc, row) => {
+    const module = row.test_category ?? 'sem-categoria';
+    if (!acc[module]) acc[module] = { total: 0, failed: 0 };
+    acc[module].total += 1;
+    if (row.result.includes('FAIL')) acc[module].failed += 1;
+    return acc;
+  }, {});
+
+  const module_failure_rates = Object.entries(moduleMap)
+    .map(([module, values]) => ({
+      module,
+      total: values.total,
+      failed: values.failed,
+      failure_rate: values.total > 0 ? (values.failed / values.total) * 100 : 0,
+    }))
+    .sort((a, b) => b.failure_rate - a.failure_rate || b.total - a.total);
+
+  const summary: SmokeSummaryMetrics = {
+    total,
+    failed,
+    warned,
+    flake_rate: total > 0 ? (flakes / total) * 100 : 0,
+    avg_duration_ms: avgDuration,
+    useful_assert_density: total > 0 ? usefulAssertSignals / total : 0,
+    module_failure_rates,
+  };
+
+  const historical: SmokeTrendPoint[] = trend
+    .slice(0, 24)
+    .reverse()
+    .map((item) => ({
+      ran_at: item.ran_at,
+      avg_duration_ms: item.avg_duration_ms,
+      failure_rate: item.total > 0 ? (item.failed / item.total) * 100 : 0,
+    }));
+
+  return {
+    latest,
+    trend,
+    loading,
+    error,
+    running,
+    lastRun,
+    summary,
+    historical,
+    refresh: load,
+    runNow,
+  };
 }

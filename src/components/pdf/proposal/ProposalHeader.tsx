@@ -5,7 +5,7 @@ import { LogoWithTransparentBg } from "./LogoWithTransparentBg";
 interface Props {
   data: ProposalTemplateData;
   isContinuation?: boolean;
-  quoteNumber?: string;
+  // quoteNumber prop removido — sempre lido de data.quoteNumber (era dead prop)
 }
 
 export function ProposalHeader({ data, isContinuation }: Props) {

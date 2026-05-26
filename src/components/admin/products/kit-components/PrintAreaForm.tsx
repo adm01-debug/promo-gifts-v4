@@ -27,7 +27,7 @@ export function PrintAreaForm({ initial, onSave, onCancel, isSaving }: Props) {
     onSave(form);
   };
 
-  const areaNamePreview = [form.location_name, form.technique_name].filter(Boolean).join(' â€” ');
+  const areaNamePreview = [form.location_name, form.technique_name].filter(Boolean).join(' — ');
 
   return (
     <div className="ml-6 space-y-2.5 rounded-md border border-primary/20 bg-primary/5 p-2.5">

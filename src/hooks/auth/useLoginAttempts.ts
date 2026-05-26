@@ -52,6 +52,14 @@ export function useLoginAttempts(options: UseLoginAttemptsOptions = {}) {
         totalPages: Math.ceil((count || 0) / pageSize),
       };
     },
+    /**
+     * BUG-06 FIX: staleTime ausente causava refetch agressivo.
+     *
+     * PROBLEMA ORIGINAL: sem staleTime, qualquer foco na janela ou remount
+     * disparava refetch completo da tabela login_attempts. Para dados de
+     * auditoria histórica, 30s de cache é razoável e reduz carga no banco.
+     */
+    staleTime: 30_000,
   });
 }
 
@@ -77,5 +85,7 @@ export function useLoginAttemptStats() {
       };
     },
     refetchInterval: 60_000,
+    // FIX: staleTime alinhado com refetchInterval para evitar refetch duplo no focus
+    staleTime: 30_000,
   });
 }

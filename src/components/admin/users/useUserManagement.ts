@@ -2,6 +2,24 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { type AppRole, type UserWithRole } from './types';
+import { isDuplicateAccountError } from '@/lib/auth/is-duplicate-account-error';
+
+/**
+ * Forma explícita do row de `profiles` com o embed `user_roles(role)`.
+ * O relacionamento profiles↔user_roles (via user_id) não é reconhecido pelos
+ * tipos gerados do Supabase, então `.returns<T>()` evita a inferência profunda
+ * (TS2589) e tipa o embed corretamente (dispensa o cast que gerava TS2352).
+ */
+type ProfileWithRoles = {
+  id: string;
+  user_id: string | null;
+  full_name: string | null;
+  email: string | null;
+  avatar_url: string | null;
+  is_active: boolean | null;
+  created_at: string;
+  user_roles: { role: string }[] | null;
+};
 
 export function useUserManagement() {
   const [users, setUsers] = useState<UserWithRole[]>([]);
@@ -11,31 +29,34 @@ export function useUserManagement() {
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [{ data: profiles, error: profilesError }, { data: roles, error: rolesError }] =
-        await Promise.all([
-          supabase
-            .from('profiles')
-            .select('id, user_id, full_name, email, avatar_url, is_active, created_at')
-            .order('created_at', { ascending: false }),
-          supabase.from('user_roles').select('user_id, role'),
-        ]);
+      // `select` tipado como `string` (não literal) evita que o parser de tipos
+      // do PostgREST recurra no embed `user_roles(role)` — relacionamento não
+      // reconhecido pelos tipos gerados — que causava TS2589 (instanciação
+      // profunda). `.returns<T>()` fornece a forma final do resultado.
+      const selectCols: string =
+        'id, user_id, full_name, email, avatar_url, is_active, created_at, user_roles(role)';
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select(selectCols)
+        .order('created_at', { ascending: false })
+        .returns<ProfileWithRoles[]>();
 
       if (profilesError) throw profilesError;
-      if (rolesError) throw rolesError;
 
-      const usersWithRoles: UserWithRole[] = (profiles || [])
+      const usersWithRoles: UserWithRole[] = (profiles ?? [])
         .filter(
-          (profile): profile is typeof profile & { user_id: string } => profile.user_id !== null,
+          (profile): profile is ProfileWithRoles & { user_id: string } => profile.user_id !== null,
         )
         .map((profile) => {
-          const userRole = roles?.find((r) => r.user_id === profile.user_id);
+          const roles = profile.user_roles;
+          const primaryRole = roles?.[0]?.role;
           return {
             id: profile.id,
             user_id: profile.user_id,
             full_name: profile.full_name,
             email: profile.email,
             avatar_url: profile.avatar_url,
-            role: (userRole?.role as AppRole) || 'vendedor',
+            role: (primaryRole as AppRole) || 'vendedor',
             created_at: profile.created_at,
             is_active: profile.is_active,
           };
@@ -115,10 +136,7 @@ export function useUserManagement() {
       return true;
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error);
-      if (
-        msg.toLowerCase().includes('already been registered') ||
-        msg.toLowerCase().includes('already exists')
-      ) {
+      if (isDuplicateAccountError(msg)) {
         toast.error('Este e-mail já está cadastrado', {
           description: 'Já existe um usuário com este e-mail no sistema.',
         });

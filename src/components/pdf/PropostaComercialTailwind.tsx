@@ -1,3 +1,12 @@
+/**
+ * PropostaComercialTailwind — Template principal da proposta PDF (multi-página)
+ *
+ * FIX (2026-05):
+ *  Bug #7 — itemIndex mutável em render substituído por startIndices[] pré-computado.
+ *  Em React 18 StrictMode o componente renderiza 2x em desenvolvimento;
+ *  a variável `let itemIndex` acumulava o dobro dos índices na segunda passagem,
+ *  causando numeração errada das linhas na tabela do PDF.
+ */
 import React, { forwardRef } from "react";
 import type { ProposalTemplateData, ProposalItem } from "./ProposalHtmlTemplate";
 import { ProposalHeader } from "./proposal/ProposalHeader";
@@ -103,15 +112,24 @@ export const PropostaComercialTailwind = forwardRef<HTMLDivElement, { data: Prop
   ({ data, isDraft = false }, ref) => {
     const pages = paginateItems(data.items);
     const totalPages = pages.length;
-    let itemIndex = 0;
+
+    // FIX #7: pré-computar índices de forma imutável — seguro em React 18 StrictMode.
+    // ANTES: `let itemIndex = 0` era mutado dentro do .map() do JSX.
+    //   Em StrictMode (dev), React renderiza o componente 2x para detectar side-effects.
+    //   Na segunda passagem, itemIndex já acumulava valores da primeira, dobrando
+    //   os índices e causando numeração errada nas linhas da tabela.
+    // DEPOIS: startIndices[] calculado com reduce() antes do JSX — imutável.
+    const startIndices: number[] = pages.reduce<number[]>((acc, _page, i) => {
+      acc.push(i === 0 ? 0 : acc[i - 1] + pages[i - 1].length);
+      return acc;
+    }, []);
 
     return (
       <div ref={ref} style={{ display: "flex", flexDirection: "column", gap: "0px" }}>
         {pages.map((pageItems, pageIdx) => {
           const isFirst = pageIdx === 0;
           const isLast = pageIdx === totalPages - 1;
-          const startIdx = itemIndex;
-          itemIndex += pageItems.length;
+          const startIdx = startIndices[pageIdx]; // FIX #7: imutável
 
           return (
             <div

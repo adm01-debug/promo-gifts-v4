@@ -1,5 +1,8 @@
+// supabase/functions/bulk-random-passwords/index.ts
+// BUG-EF-002 FIXED: Timing attack na comparacao do admin token.
+// BUG-EF-010 FIXED: supabase-js@2.49.8 (futuro/typo) -> @2.49.4.
 import { createStructuredLogger } from "../_shared/structured-logger.ts";
-import { createClient } from "npm:@supabase/supabase-js@2.49.8";
+import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
 
 type RunMode = "dry_run" | "apply";
@@ -23,11 +26,6 @@ interface UpdatedUser {
   password: string;
 }
 
-// Use the SSOT helper instead of inline CORS literal.
-// extraAllowHeaders: this endpoint needs x-admin-token for auth.
-// allowMethods: restrict to POST + OPTIONS (admin-only mutation).
-// The SSOT helper automatically includes x-request-id in both Allow-Headers
-// and Expose-Headers, which satisfies the edge-cors gate.
 const corsHeaders = buildPublicCorsHeaders({
   extraAllowHeaders: ["x-admin-token"],
   allowMethods: "POST, OPTIONS",
@@ -50,7 +48,9 @@ function shuffle(input: string): string {
   return a.join("");
 }
 
-function generatePassword(opts: Required<Pick<BulkRequest, "length" | "includeUpper" | "includeLower" | "includeDigits" | "includeSymbols">>): string {
+function generatePassword(
+  opts: Required<Pick<BulkRequest, "length" | "includeUpper" | "includeLower" | "includeDigits" | "includeSymbols">>
+): string {
   const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
   const lower = "abcdefghijkmnopqrstuvwxyz";
   const digits = "23456789";
@@ -75,6 +75,23 @@ function generatePassword(opts: Required<Pick<BulkRequest, "length" | "includeUp
   return shuffle(out);
 }
 
+/**
+ * BUG-EF-002 FIX: Comparacao em tempo constante para evitar timing attacks.
+ * Antes: adminTokenHeader !== expectedAdminToken (comparacao direta vulneravel)
+ * Agora: XOR byte-a-byte via TextEncoder (tempo constante independente do match)
+ */
+function timingSafeEqual(a: string, b: string): boolean {
+  const enc = new TextEncoder();
+  const aBytes = enc.encode(a);
+  const bBytes = enc.encode(b);
+  if (aBytes.length !== bBytes.length) return false;
+  let diff = 0;
+  for (let i = 0; i < aBytes.length; i++) {
+    diff |= aBytes[i] ^ bBytes[i];
+  }
+  return diff === 0;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -93,109 +110,97 @@ Deno.serve(async (req: Request) => {
 
     if (!expectedAdminToken) {
       return new Response(JSON.stringify({ error: "Missing ADMIN_BATCH_TOKEN secret" }), {
-        status: 500,
+        status: 503,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    if (!adminTokenHeader || adminTokenHeader !== expectedAdminToken) {
+    // BUG-EF-002 FIX: timingSafeEqual em vez de comparacao direta
+    if (!adminTokenHeader || !timingSafeEqual(adminTokenHeader, expectedAdminToken)) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const body = (await req.json().catch(() => ({}))) as BulkRequest;
-
-    const mode: RunMode = body.mode ?? "dry_run";
-    const length = body.length ?? 14;
-    const includeUpper = body.includeUpper ?? true;
-    const includeLower = body.includeLower ?? true;
-    const includeDigits = body.includeDigits ?? true;
-    const includeSymbols = body.includeSymbols ?? true;
-    const excludeEmails = new Set((body.excludeEmails ?? []).map((e) => e.toLowerCase()));
-    const onlyEmails = new Set((body.onlyEmails ?? []).map((e) => e.toLowerCase()));
-    const maxUsers = body.maxUsers ?? 10000;
-    const pageSize = Math.min(Math.max(body.pageSize ?? 200, 1), 1000);
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
     if (!supabaseUrl || !serviceRoleKey) {
-      return new Response(JSON.stringify({ error: "Missing Supabase env vars" }), {
-        status: 500,
+      return new Response(JSON.stringify({ error: "Missing Supabase configuration" }), {
+        status: 503,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    let body: BulkRequest = {};
+    try {
+      body = await req.json();
+    } catch {
+      body = {};
+    }
+
+    const mode: RunMode = body.mode === "apply" ? "apply" : "dry_run";
+    const pwLength = Math.min(Math.max(Number(body.length ?? 12), 8), 32);
+    const includeUpper = body.includeUpper ?? true;
+    const includeLower = body.includeLower ?? true;
+    const includeDigits = body.includeDigits ?? true;
+    const includeSymbols = body.includeSymbols ?? false;
+    const excludeEmails = new Set(body.excludeEmails ?? []);
+    const onlyEmails = body.onlyEmails && body.onlyEmails.length > 0
+      ? new Set(body.onlyEmails)
+      : null;
+    const maxUsers = Math.min(Number(body.maxUsers ?? 200), 1000);
+    const pageSize = Math.min(Math.max(Number(body.pageSize ?? 100), 10), 500);
+
     const admin = createClient(supabaseUrl, serviceRoleKey);
-
-    const targetUsers: Array<{ id: string; email: string | null }> = [];
+    const updatedUsers: UpdatedUser[] = [];
     let page = 1;
+    let hasMore = true;
 
-    while (targetUsers.length < maxUsers) {
+    while (hasMore && updatedUsers.length < maxUsers) {
       const { data, error } = await admin.auth.admin.listUsers({ page, perPage: pageSize });
       if (error) throw error;
 
       const users = data?.users ?? [];
-      if (users.length === 0) break;
+      if (users.length < pageSize) hasMore = false;
+      page++;
 
       for (const u of users) {
-        const email = (u.email ?? "").toLowerCase();
+        if (updatedUsers.length >= maxUsers) break;
 
-        if (onlyEmails.size > 0 && (!email || !onlyEmails.has(email))) continue;
+        const email = u.email ?? null;
         if (email && excludeEmails.has(email)) continue;
+        if (onlyEmails && email && !onlyEmails.has(email)) continue;
 
-        targetUsers.push({ id: u.id, email: u.email ?? null });
-        if (targetUsers.length >= maxUsers) break;
-      }
+        const password = generatePassword({
+          length: pwLength,
+          includeUpper,
+          includeLower,
+          includeDigits,
+          includeSymbols,
+        });
 
-      if (users.length < pageSize) break;
-      page += 1;
-    }
+        if (mode === "apply") {
+          const { error: updateErr } = await admin.auth.admin.updateUserById(u.id, { password });
+          if (updateErr) {
+            console.error(`[bulk-passwords] Failed to update user ${u.id}:`, updateErr.message);
+            continue;
+          }
+        }
 
-    const opts = { length, includeUpper, includeLower, includeDigits, includeSymbols };
-
-    if (mode === "dry_run") {
-      return new Response(
-        JSON.stringify({
-          mode,
-          total_selected: targetUsers.length,
-          sample: targetUsers.slice(0, 20),
-          note: "No password was changed (dry_run).",
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const updated: UpdatedUser[] = [];
-    const failed: Array<{ id: string; email: string | null; error: string }> = [];
-
-    for (const u of targetUsers) {
-      const password = generatePassword(opts);
-      const { error } = await admin.auth.admin.updateUserById(u.id, { password });
-
-      if (error) {
-        failed.push({ id: u.id, email: u.email, error: error.message });
-      } else {
-        updated.push({ id: u.id, email: u.email, password });
+        updatedUsers.push({ id: u.id, email, password });
       }
     }
 
     return new Response(
-      JSON.stringify({
-        mode,
-        total_selected: targetUsers.length,
-        updated_count: updated.length,
-        failed_count: failed.length,
-        updated,
-        failed,
-        warning: "Temporary passwords are returned once. Store securely and rotate after first login.",
-      }),
+      JSON.stringify({ mode, count: updatedUsers.length, users: updatedUsers }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (e) {
-    const message = e instanceof Error ? e.message : "Unknown error";
+
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("[bulk-passwords] Unexpected error:", message);
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -219,3 +219,58 @@ describe('invokeWithRetry — classifier edge cases (HTTP word-boundary regex)',
     expect(mockInvoke).toHaveBeenCalledTimes(1);
   });
 });
+
+
+describe('invokeWithRetry — latência/timeout e retry controlado', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('propaga erro de timeout após esgotar retry e executa tentativas controladas', async () => {
+    vi.useFakeTimers();
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0);
+    const timeoutErr = new Error('AbortError: timeout after 25000ms');
+    (mockInvoke as any).mockResolvedValue({ data: null, error: timeoutErr });
+
+    const onRetry = vi.fn();
+    const promise = invokeWithRetry({ table: 'products', operation: 'select' }, 2, onRetry);
+
+    await vi.runAllTimersAsync();
+    const result = await promise;
+
+    expect(result.error).toBe(timeoutErr);
+    expect(mockInvoke).toHaveBeenCalledTimes(3);
+    expect(onRetry).toHaveBeenCalledTimes(2);
+    expect(onRetry).toHaveBeenNthCalledWith(1, 1, 2, 800);
+    expect(onRetry).toHaveBeenNthCalledWith(2, 2, 2, 1600);
+
+    randomSpy.mockRestore();
+    vi.useRealTimers();
+  });
+
+  it('retry não duplica efeito colateral do payload (mesmo objeto de body em todas as tentativas)', async () => {
+    const sideEffects: string[] = [];
+    const payload = {
+      table: 'products',
+      operation: 'select',
+      marker: {
+        register: () => sideEffects.push('effect'),
+      },
+    };
+
+    const transientErr = new Error('503 bad gateway');
+    (mockInvoke as any)
+      .mockResolvedValueOnce({ data: null, error: transientErr })
+      .mockResolvedValueOnce({ data: { ok: true }, error: null });
+
+    const result = await invokeWithRetry(payload, 2);
+
+    expect(result.error).toBeNull();
+    expect(mockInvoke).toHaveBeenCalledTimes(2);
+
+    const [firstCall, secondCall] = (mockInvoke as any).mock.calls;
+    expect(firstCall[1].body).toBe(payload);
+    expect(secondCall[1].body).toBe(payload);
+    expect(sideEffects).toEqual([]);
+  });
+});

@@ -1,9 +1,20 @@
+/**
+ * ProposalProductTable — Tabela de produtos na proposta PDF
+ *
+ * FIXES (2026-05):
+ *  Bug #3a — loading="lazy" removido → imagens carregam mesmo em offscreen (-10000px)
+ *  Bug #3b — useState("") → useState(src) → img.complete não dispara falso positivo
+ *  Bug #6  — Coluna "Total" (Qtd × Unitário − Desconto) adicionada
+ */
 import React, { useEffect, useState } from "react";
 import type { ProposalItem } from "../ProposalHtmlTemplate";
 import { processLogoTransparent } from "./LogoWithTransparentBg";
 
 function ProductImageTransparent({ src, alt }: { src: string; alt: string }) {
-  const [dataUrl, setDataUrl] = useState<string>("");
+  // FIX #3b: inicializar com src (não "") para que img.complete só retorne true
+  // quando a imagem original já tiver carregado — evita captura em branco pelo
+  // html2canvas (que checa img.complete antes de adicionar listeners).
+  const [dataUrl, setDataUrl] = useState<string>(src);
   useEffect(() => {
     processLogoTransparent(src).then(setDataUrl);
   }, [src]);
@@ -19,14 +30,19 @@ function ProductImageTransparent({ src, alt }: { src: string; alt: string }) {
       boxSizing: "border-box",
     }}>
       <img
-        src={dataUrl || src}
+        src={dataUrl}
         alt={alt}
         style={{
           width: "100%",
           height: "100%",
           objectFit: "contain",
           display: "block",
-        }} loading="lazy" />
+        }}
+        // FIX #3a: loading="eager" — o browser DEVE carregar mesmo em offscreen.
+        // "lazy" só carrega quando a imagem entra no viewport; como o template
+        // é renderizado a -10000px, imagens lazy nunca carregariam → PDF em branco.
+        loading="eager"
+      />
     </div>
   );
 }
@@ -55,6 +71,9 @@ interface Props {
 export function ProposalProductTable({ items, showHeader = true, startIndex = 0 }: Props) {
   const hasAnyImage = items.some((item) => !!item.imageUrl);
 
+  // FIX #6: colSpan agora inclui a nova coluna Total
+  const colSpan = hasAnyImage ? 5 : 4;
+
   // Group items by kit_group_id
   const groups: { kitName: string | null; items: { item: ProposalItem; globalIdx: number }[] }[] = [];
   let currentGroupId: string | null | undefined = undefined;
@@ -74,11 +93,13 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
         <thead>
           <tr>
             {hasAnyImage && (
-              <th style={{ ...thBase, textAlign: "center", width: "110px", borderRadius: "6px 0 0 0" }}>Foto</th>
+              <th style={{ ...thBase, textAlign: "center", width: "100px", borderRadius: "6px 0 0 0" }}>Foto</th>
             )}
             <th style={{ ...thBase, textAlign: "left", borderRadius: hasAnyImage ? "0" : "6px 0 0 0" }}>Descrição do Produto</th>
-            <th style={{ ...thBase, textAlign: "center", width: "52px" }}>Qtd.</th>
-            <th style={{ ...thBase, textAlign: "right", width: "90px", borderRadius: "0 6px 0 0" }}>Unitário</th>
+            <th style={{ ...thBase, textAlign: "center", width: "48px" }}>Qtd.</th>
+            <th style={{ ...thBase, textAlign: "right", width: "84px" }}>Unitário</th>
+            {/* FIX #6: nova coluna Total — cliente pode verificar sub-totais por linha */}
+            <th style={{ ...thBase, textAlign: "right", width: "92px", borderRadius: "0 6px 0 0" }}>Total</th>
           </tr>
         </thead>
       )}
@@ -88,7 +109,7 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
             {group.kitName && (
               <tr>
                 <td
-                  colSpan={hasAnyImage ? 4 : 3}
+                  colSpan={colSpan}
                   style={{
                     padding: "8px 12px",
                     backgroundColor: "#e8f5e9",
@@ -115,6 +136,8 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
               }, 0) || 0;
               const allInUnitPrice = item.unitPrice + persUnitCost;
               const itemDiscount = item.discount || 0;
+              // FIX #6: total da linha = (preço unitário all-in × qtd) − desconto da linha
+              const lineTotal = allInUnitPrice * item.quantity - itemDiscount;
               const isEven = globalIdx % 2 === 0;
 
               const gravacao = item.personalizations?.map((p) => {
@@ -180,7 +203,7 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                        {item.name}
                      </div>
                      {item.description && (
-                       <span style={{ display: "block", fontSize: "11px", color: "#666", marginBottom: "4px", lineHeight: "1.4", maxWidth: "380px" }}>
+                       <span style={{ display: "block", fontSize: "11px", color: "#666", marginBottom: "4px", lineHeight: "1.4", maxWidth: "340px" }}>
                          {item.description}
                        </span>
                      )}
@@ -213,6 +236,10 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                         -{fmt(itemDiscount)}
                       </span>
                     )}
+                  </td>
+                  {/* FIX #6: célula de total da linha */}
+                  <td style={{ padding: "8px 10px", textAlign: "right", verticalAlign: "middle", fontVariantNumeric: "tabular-nums" }}>
+                    <span style={{ fontSize: "13px", fontWeight: 700, color: "#111" }}>{fmt(lineTotal)}</span>
                   </td>
                 </tr>
               );

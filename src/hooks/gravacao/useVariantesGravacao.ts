@@ -6,6 +6,7 @@ import type {
   VarianteFormData 
 } from '@/types/gravacao-database';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 
 const QUERY_KEY = 'variantes-gravacao';
 
@@ -56,7 +57,7 @@ export function useVariantesGravacao(tecnicaId?: string) {
       toast.success('Variante criada com sucesso!');
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      toast.error(sanitizeError(error));
     },
   });
 
@@ -81,7 +82,7 @@ export function useVariantesGravacao(tecnicaId?: string) {
       toast.success('Variante atualizada com sucesso!');
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      toast.error(sanitizeError(error));
     },
   });
 
@@ -95,7 +96,7 @@ export function useVariantesGravacao(tecnicaId?: string) {
       toast.success('Variante excluída com sucesso!');
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      toast.error(sanitizeError(error));
     },
   });
 
@@ -113,7 +114,7 @@ export function useVariantesGravacao(tecnicaId?: string) {
       toast.success(ativo ? 'Variante ativada!' : 'Variante desativada!');
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      toast.error(sanitizeError(error));
     },
   });
 
@@ -135,7 +136,7 @@ export function useVariantesGravacao(tecnicaId?: string) {
       toast.success('Ordem atualizada!');
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      toast.error(sanitizeError(error));
     },
   });
 

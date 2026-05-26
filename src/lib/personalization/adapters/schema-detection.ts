@@ -47,7 +47,7 @@ const MAX_RECENT = 20;
 const warnedKeys = new Set<string>();
 
 function publishStats() {
-  if (typeof window !== 'undefined') {
+  if (import.meta.env.DEV && typeof window !== 'undefined') {
     (
       window as unknown as { __personalizationSchemaStats?: FullSchemaStats }
     ).__personalizationSchemaStats = {

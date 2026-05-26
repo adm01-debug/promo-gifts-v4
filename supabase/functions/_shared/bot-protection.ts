@@ -83,6 +83,19 @@ export interface BotProtectionResult {
   blockResponse?: Response;
 }
 
+// ─── Admin client singleton ────────────────────────────────────────────────
+// Evita recriar handshake TLS a cada chamada de runBotProtection.
+// Antes: createClient() chamado em TODA request → N handshakes paralelos em burst.
+// Agora: 1 instância por isolate, reusada por todas as requests concorrentes.
+let _botProtectionAdmin: ReturnType<typeof createClient> | null = null;
+function getBotAdminClient(): ReturnType<typeof createClient> {
+  if (_botProtectionAdmin) return _botProtectionAdmin;
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  _botProtectionAdmin = createClient(supabaseUrl, serviceKey);
+  return _botProtectionAdmin;
+}
+
 /**
  * Run all anti-scraping checks. Returns { allowed: false, blockResponse } if blocked.
  * Logs detection events to bot_detection_log.
@@ -94,9 +107,7 @@ export async function runBotProtection(
 ): Promise<BotProtectionResult> {
   const ip = getClientIp(req);
   const ua = req.headers.get('user-agent');
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const admin = createClient(supabaseUrl, serviceKey);
+  const admin = getBotAdminClient();
 
   const logBlock = async (reason: string, blocked: boolean, metadata: Record<string, unknown> = {}) => {
     try {

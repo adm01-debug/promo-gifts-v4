@@ -87,7 +87,7 @@ export function VolumeValidation({
               variant="outline"
               className="gap-1 border-destructive/50 bg-destructive/10 px-1.5 py-0 text-[10px] text-destructive"
             >
-              <XCircle className="h-3 w-3" /> NÃƒO CABE
+              <XCircle className="h-3 w-3" /> NÃO CABE
             </Badge>
           )}
         </div>
@@ -114,9 +114,9 @@ export function VolumeValidation({
 
       <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
         <span>
-          Caixa interna: {boxW?.toFixed(0)}Ã—{boxL?.toFixed(0)}Ã—{boxH?.toFixed(0)} mm
+          Caixa interna: {boxW?.toFixed(0)}×{boxL?.toFixed(0)}×{boxH?.toFixed(0)} mm
         </span>
-        {totalWeight > 0 && <span>â€¢ Peso total: {(totalWeight / 1000).toFixed(2)} kg</span>}
+        {totalWeight > 0 && <span>• Peso total: {(totalWeight / 1000).toFixed(2)} kg</span>}
       </div>
 
       {componentVolumes.length > 0 && (
@@ -128,12 +128,12 @@ export function VolumeValidation({
             return (
               <div key={c.id} className="flex items-center justify-between text-[10px]">
                 <span className="flex-1 truncate text-muted-foreground">
-                  {c.component_name || 'Sem nome'} {(c.quantity ?? 1) > 1 ? `Ã—${c.quantity}` : ''}
+                  {c.component_name || 'Sem nome'} {(c.quantity ?? 1) > 1 ? `×${c.quantity}` : ''}
                 </span>
                 {c.hasDimensions ? (
                   <div className="flex shrink-0 items-center gap-2">
                     <span className="font-mono text-muted-foreground">
-                      {c.width_mm}Ã—{c.length_mm}Ã—{c.height_mm} mm
+                      {c.width_mm}×{c.length_mm}×{c.height_mm} mm
                     </span>
                     {itemFits ? (
                       <CheckCircle2 className="h-3 w-3 text-success" />
@@ -153,7 +153,7 @@ export function VolumeValidation({
       {missingDimensions.length > 0 && (
         <div className="flex items-center gap-1.5 pt-0.5 text-[10px] text-warning">
           <AlertCircle className="h-3 w-3 shrink-0" />
-          {missingDimensions.length} componente(s) sem dimensões â€” o cálculo pode ser impreciso.
+          {missingDimensions.length} componente(s) sem dimensões — o cálculo pode ser impreciso.
         </div>
       )}
     </div>

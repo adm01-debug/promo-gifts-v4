@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,41 @@ import {
   Smartphone
 } from 'lucide-react';
 
+// BUG-NOTIF-006 FIX: preferências controladas com estado + persistência localStorage.
+// Antes: todos os <Switch> tinham `disabled` hardcoded — UX completamente quebrada,
+// usuário não conseguia personalizar quais alertas receber.
+const PREFS_KEY = 'push_notification_prefs';
+
+interface NotificationPrefs {
+  loginFailures: boolean;
+  newDevices: boolean;
+  generalSecurity: boolean;
+}
+
+const DEFAULT_PREFS: NotificationPrefs = {
+  loginFailures: true,
+  newDevices: true,
+  generalSecurity: true,
+};
+
+function loadPrefs(): NotificationPrefs {
+  try {
+    const raw = localStorage.getItem(PREFS_KEY);
+    if (!raw) return DEFAULT_PREFS;
+    return { ...DEFAULT_PREFS, ...JSON.parse(raw) };
+  } catch {
+    return DEFAULT_PREFS;
+  }
+}
+
+function savePrefs(prefs: NotificationPrefs): void {
+  try {
+    localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+  } catch {
+    // localStorage indisponível (ex: modo incognito com bloqueio) — ignora silenciosamente
+  }
+}
+
 export function PushNotificationSettings() {
   const {
     push: {
@@ -26,6 +61,15 @@ export function PushNotificationSettings() {
   } = useNotifications();
   const { toast } = useToast();
   const [isRequesting, setIsRequesting] = useState(false);
+  const [prefs, setPrefs] = useState<NotificationPrefs>(loadPrefs);
+
+  useEffect(() => {
+    savePrefs(prefs);
+  }, [prefs]);
+
+  const togglePref = (key: keyof NotificationPrefs) => {
+    setPrefs((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const handleEnableNotifications = async () => {
     setIsRequesting(true);
@@ -36,7 +80,6 @@ export function PushNotificationSettings() {
           title: 'Notificações ativadas',
           description: 'Você receberá alertas de segurança em tempo real.',
         });
-        // Show test notification
         setTimeout(() => {
           showSecurityAlert(
             'Configuração concluída',
@@ -126,8 +169,8 @@ export function PushNotificationSettings() {
                 {isEnabled ? 'Notificações ativas' : 'Notificações desativadas'}
               </p>
               <p className="text-sm text-muted-foreground">
-                {isEnabled 
-                  ? 'Você receberá alertas de segurança em tempo real' 
+                {isEnabled
+                  ? 'Você receberá alertas de segurança em tempo real'
                   : 'Ative para receber alertas importantes'}
               </p>
             </div>
@@ -162,10 +205,10 @@ export function PushNotificationSettings() {
 
         {isEnabled && (
           <>
-            {/* Notification Types */}
+            {/* Tipos de alerta — BUG-NOTIF-006 FIX: switches controlados */}
             <div className="space-y-4">
               <h4 className="text-sm font-medium">Tipos de alerta</h4>
-              
+
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 rounded-lg border">
                   <div className="flex items-center gap-3">
@@ -177,7 +220,11 @@ export function PushNotificationSettings() {
                       <p className="text-xs text-muted-foreground">Alerta quando houver tentativas inválidas</p>
                     </div>
                   </div>
-                  <Switch defaultChecked disabled />
+                  <Switch
+                    checked={prefs.loginFailures}
+                    onCheckedChange={() => togglePref('loginFailures')}
+                    aria-label="Ativar alertas de login falho"
+                  />
                 </div>
 
                 <div className="flex items-center justify-between p-3 rounded-lg border">
@@ -190,7 +237,11 @@ export function PushNotificationSettings() {
                       <p className="text-xs text-muted-foreground">Alerta quando um novo dispositivo acessar</p>
                     </div>
                   </div>
-                  <Switch defaultChecked disabled />
+                  <Switch
+                    checked={prefs.newDevices}
+                    onCheckedChange={() => togglePref('newDevices')}
+                    aria-label="Ativar alertas de novos dispositivos"
+                  />
                 </div>
 
                 <div className="flex items-center justify-between p-3 rounded-lg border">
@@ -203,15 +254,19 @@ export function PushNotificationSettings() {
                       <p className="text-xs text-muted-foreground">Outras notificações importantes</p>
                     </div>
                   </div>
-                  <Switch defaultChecked disabled />
+                  <Switch
+                    checked={prefs.generalSecurity}
+                    onCheckedChange={() => togglePref('generalSecurity')}
+                    aria-label="Ativar alertas gerais de segurança"
+                  />
                 </div>
               </div>
             </div>
 
             {/* Test Notification */}
             <div className="pt-4 border-t">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={handleTestNotification}
                 className="w-full"
               >
