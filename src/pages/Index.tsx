@@ -51,18 +51,6 @@ export default function Index() {
     ],
   );
 
-  return (
-    <>
-      <PageSEO
-        title={catalog.searchQuery ? `Busca: ${catalog.searchQuery}` : 'Catálogo de Produtos'}
-        description={
-          catalog.searchQuery
-            ? `Resultados de busca para ${catalog.searchQuery} em Brindes Promocionais. Melhores preços e variedades.`
-            : 'Explore nosso catálogo com mais de 15.000 brindes promocionais. Filtre por categoria, cor e preço.'
-        }
-        path="/"
-        jsonLd={structuredData}
-      />
   if (catalog.shouldShowCatalogSkeleton && catalog.filteredProducts.length === 0) {
     return (
       <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-4 px-3 py-3 sm:px-4 sm:py-4 lg:px-6 xl:px-8">
