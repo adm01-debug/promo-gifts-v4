@@ -2,8 +2,9 @@
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-const CONCURRENCY = 10;
-const TOTAL_REQUESTS = 20; // Reduzido para diagnóstico
+const CONCURRENCY = 50;
+const TOTAL_REQUESTS = 500; 
+
 
 async function runLoadTest(name: string, path: string, method = "GET", body: any = null, headers: any = {}) {
   console.log(`\n🚀 Stress test: ${name} (${TOTAL_REQUESTS} req, c=${CONCURRENCY})`);
