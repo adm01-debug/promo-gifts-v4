@@ -188,48 +188,78 @@ export default function VisualSearchPage() {
                   <Filter className="h-4 w-4" /> Refinar Busca
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  Forneça detalhes extras para ajudar a IA
+                  Selecione categorias e cores reais do catálogo para ajudar a IA
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-5">
+                {/* Categoria (banco externo, hierárquica) */}
                 <div className="space-y-2">
-                  <Label htmlFor="category" className="text-xs font-semibold">Categoria Estimada</Label>
-                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger id="category" className="h-9">
-                      <SelectValue placeholder="Selecione a categoria" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.value} value={cat.value}>
-                          {cat.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-semibold">
+                      Categoria Estimada
+                      {selectedCategoryIds.length > 0 && (
+                        <Badge variant="secondary" className="ml-2 text-[10px]">
+                          {selectedCategoryIds.length}
+                        </Badge>
+                      )}
+                    </Label>
+                    {selectedCategoryIds.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-[11px] text-muted-foreground hover:text-destructive"
+                        onClick={() => setSelectedCategoryIds([])}
+                      >
+                        <X className="h-3 w-3 mr-1" /> Limpar
+                      </Button>
+                    )}
+                  </div>
+                  <div className="rounded-md border border-border/60 bg-background/50 p-1">
+                    <ExternalCategoryFilter
+                      selectedCategories={selectedCategoryIds}
+                      onCategoriesChange={setSelectedCategoryIds}
+                      compact
+                    />
+                  </div>
                 </div>
 
+                {/* Cor (color_groups do banco externo) */}
                 <div className="space-y-2">
-                  <Label htmlFor="color" className="text-xs font-semibold">Cor do Produto</Label>
-                  <Select value={selectedColor} onValueChange={setSelectedColor}>
-                    <SelectTrigger id="color" className="h-9">
-                      <SelectValue placeholder="Selecione a cor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {colors.map((color) => (
-                        <SelectItem key={color.value} value={color.value}>
-                          {color.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-semibold">
+                      Cor do Produto
+                      {selectedColorNames.length > 0 && (
+                        <Badge variant="secondary" className="ml-2 text-[10px]">
+                          {selectedColorNames.length}
+                        </Badge>
+                      )}
+                    </Label>
+                    {selectedColorNames.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-[11px] text-muted-foreground hover:text-destructive"
+                        onClick={() => setColorSelection({ groups: [], variations: [], nuances: [] })}
+                      >
+                        <X className="h-3 w-3 mr-1" /> Limpar
+                      </Button>
+                    )}
+                  </div>
+                  <ColorSwatchBar selection={colorSelection} onChange={setColorSelection} />
+                  {selectedColorNames.length > 0 && (
+                    <p className="text-[11px] text-muted-foreground">
+                      {selectedColorNames.join(', ')}
+                    </p>
+                  )}
                 </div>
 
-                {previewUrl && !isSearching && !results && (
-                  <Button 
-                    className="w-full gap-2" 
+                {previewUrl && !isSearching && (
+                  <Button
+                    className="w-full gap-2"
                     onClick={() => processImage(previewUrl)}
                   >
-                    <Search className="h-4 w-4" /> Analisar Imagem
+                    <Search className="h-4 w-4" />
+                    {results ? 'Refinar análise' : 'Analisar Imagem'}
                   </Button>
                 )}
               </CardContent>
