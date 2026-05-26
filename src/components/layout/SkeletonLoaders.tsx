@@ -42,20 +42,18 @@ function makeSkeleton(
 export const CatalogSkeleton = makeSkeleton(
   "Catalog",
   () => (
-    <>
-      <div className="flex flex-col gap-6">
-        <PageHeaderSkeleton />
-        {/* Toolbar simulator */}
-        <div className="flex gap-3">
-          <Skeleton className="h-10 w-full max-w-md rounded-lg" />
-          <Skeleton className="h-10 w-10 rounded-lg" />
-          <Skeleton className="h-10 w-10 rounded-lg" />
-        </div>
-        <ProductGridSkeleton count={10} columns={5} />
+    <div className="flex flex-col gap-6">
+      <PageHeaderSkeleton id="catalog-header" />
+      {/* Toolbar simulator */}
+      <div className="flex gap-3">
+        <Skeleton className="h-10 w-full max-w-md rounded-lg" id="catalog-search-sim" />
+        <Skeleton className="h-10 w-10 rounded-lg" id="catalog-filter-sim" />
+        <Skeleton className="h-10 w-10 rounded-lg" id="catalog-view-sim" />
       </div>
-    </>
+      <ProductGridSkeleton count={10} columns={5} id="catalog-grid" />
+    </div>
   ),
-  "p-3 sm:p-4 lg:p-6 space-y-6",
+  "p-3 sm:p-4 lg:p-6",
 );
 
 /** Product detail page skeleton */
