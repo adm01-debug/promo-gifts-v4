@@ -3,7 +3,9 @@ import {
   getCorsHeaders,
   handleCorsPreflightIfNeeded,
 } from '../_shared/cors.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
+// BUG-011 FIX: Changed from 'https://esm.sh/@supabase/supabase-js@2.49.4' to npm: direct —
+// removes import_map dependency for deployment. Same pattern used by all other edge functions.
+import { createClient } from 'npm:@supabase/supabase-js@2.49.4';
 import { authenticateRequest, authErrorResponse } from '../_shared/auth.ts';
 import { z } from 'npm:zod@3.23.8';
 import { callAiWithTracking, QuotaExceededError } from '../_shared/ai-usage.ts';
@@ -231,135 +233,19 @@ function extractSearchTermsFallback(messages: Message[]): string[] {
 
   const content = lastUserMessage.content.toLowerCase();
   const stopWords = new Set([
-    'o',
-    'a',
-    'os',
-    'as',
-    'um',
-    'uma',
-    'uns',
-    'umas',
-    'de',
-    'da',
-    'do',
-    'das',
-    'dos',
-    'em',
-    'na',
-    'no',
-    'nas',
-    'nos',
-    'por',
-    'para',
-    'com',
-    'sem',
-    'que',
-    'qual',
-    'quais',
-    'como',
-    'onde',
-    'quando',
-    'porque',
-    'se',
-    'ou',
-    'e',
-    'mas',
-    'mais',
-    'menos',
-    'muito',
-    'muita',
-    'muitos',
-    'muitas',
-    'pouco',
-    'pouca',
-    'poucos',
-    'poucas',
-    'esse',
-    'essa',
-    'esses',
-    'essas',
-    'este',
-    'esta',
-    'estes',
-    'estas',
-    'aquele',
-    'aquela',
-    'isso',
-    'isto',
-    'aquilo',
-    'meu',
-    'minha',
-    'seu',
-    'sua',
-    'nosso',
-    'nossa',
-    'algum',
-    'alguma',
-    'alguns',
-    'algumas',
-    'nenhum',
-    'nenhuma',
-    'todo',
-    'toda',
-    'todos',
-    'todas',
-    'outro',
-    'outra',
-    'outros',
-    'outras',
-    'mesmo',
-    'mesma',
-    'próprio',
-    'própria',
-    'você',
-    'vocês',
-    'ele',
-    'ela',
-    'eles',
-    'elas',
-    'nós',
-    'eu',
-    'me',
-    'te',
-    'lhe',
-    'nos',
-    'preciso',
-    'quero',
-    'gostaria',
-    'poderia',
-    'pode',
-    'tem',
-    'tenho',
-    'ter',
-    'haver',
-    'ser',
-    'estar',
-    'fazer',
-    'dar',
-    'ver',
-    'ir',
-    'vir',
-    'saber',
-    'querer',
-    'poder',
-    'cliente',
-    'produto',
-    'produtos',
-    'brinde',
-    'brindes',
-    'recomenda',
-    'recomende',
-    'sugira',
-    'sugere',
-    'melhor',
-    'melhores',
-    'bom',
-    'boa',
-    'bons',
-    'boas',
-    'ótimo',
-    'ótima',
-    'excelente',
+    'o', 'a', 'os', 'as', 'um', 'uma', 'uns', 'umas', 'de', 'da', 'do', 'das', 'dos',
+    'em', 'na', 'no', 'nas', 'nos', 'por', 'para', 'com', 'sem', 'que', 'qual', 'quais',
+    'como', 'onde', 'quando', 'porque', 'se', 'ou', 'e', 'mas', 'mais', 'menos', 'muito',
+    'muita', 'muitos', 'muitas', 'pouco', 'pouca', 'poucos', 'poucas', 'esse', 'essa',
+    'esses', 'essas', 'este', 'esta', 'estes', 'estas', 'aquele', 'aquela', 'isso', 'isto',
+    'aquilo', 'meu', 'minha', 'seu', 'sua', 'nosso', 'nossa', 'algum', 'alguma', 'alguns',
+    'algumas', 'nenhum', 'nenhuma', 'todo', 'toda', 'todos', 'todas', 'outro', 'outra',
+    'outros', 'outras', 'mesmo', 'mesma', 'próprio', 'própria', 'você', 'vocês', 'ele',
+    'ela', 'eles', 'elas', 'nós', 'eu', 'me', 'te', 'lhe', 'nos', 'preciso', 'quero',
+    'gostaria', 'poderia', 'pode', 'tem', 'tenho', 'ter', 'haver', 'ser', 'estar', 'fazer',
+    'dar', 'ver', 'ir', 'vir', 'saber', 'querer', 'poder', 'cliente', 'produto', 'produtos',
+    'brinde', 'brindes', 'recomenda', 'recomende', 'sugira', 'sugere', 'melhor', 'melhores',
+    'bom', 'boa', 'bons', 'boas', 'ótimo', 'ótima', 'excelente',
   ]);
 
   const words = content
@@ -547,7 +433,6 @@ function scoreProductRelevance(
   const tagsText = JSON.stringify(product.tags || {}).toLowerCase();
   const allText = `${name} ${description} ${materials} ${tagsText} ${catName}`;
 
-  // Direct search terms — highest weight
   for (const term of expansion.searchTerms) {
     const t = term.toLowerCase();
     if (name.includes(t)) score += 10;
@@ -555,7 +440,6 @@ function scoreProductRelevance(
     else if (allText.includes(t)) score += 3;
   }
 
-  // Synonyms — high weight (semantic match)
   for (const syn of expansion.synonyms) {
     const s = syn.toLowerCase();
     if (name.includes(s)) score += 8;
@@ -563,18 +447,15 @@ function scoreProductRelevance(
     else if (allText.includes(s)) score += 2;
   }
 
-  // Category match — medium weight
   for (const cat of expansion.categories) {
     if (catName.includes(cat.toLowerCase())) score += 6;
   }
 
-  // Material match — medium weight
   for (const mat of expansion.materials) {
     if (materials.includes(mat.toLowerCase())) score += 5;
     else if (allText.includes(mat.toLowerCase())) score += 2;
   }
 
-  // Use case match — lower weight (contextual)
   for (const uc of expansion.useCases) {
     if (allText.includes(uc.toLowerCase())) score += 3;
   }
@@ -593,7 +474,6 @@ async function semanticProductSearch(
   productCols: string,
   limit: number = 60,
 ): Promise<{ products: any[]; searchMethod: string }> {
-  // Combine all search terms: AI-expanded + fallback
   const allTerms = [
     ...expansion.searchTerms,
     ...expansion.synonyms,
@@ -601,7 +481,6 @@ async function semanticProductSearch(
     ...expansion.useCases,
   ];
 
-  // Deduplicate, limit and SANITIZE (remove PostgREST special chars: , . ( ) )
   const uniqueTerms = [
     ...new Set(
       [...allTerms, ...fallbackTerms].map((t) =>
@@ -621,7 +500,6 @@ async function semanticProductSearch(
 
   console.log('Semantic search terms prepared:', { count: uniqueTerms.length });
 
-  // Strategy 1: Exact phrase match on name (highest precision)
   const exactResults: any[] = [];
   for (const term of expansion.searchTerms.slice(0, 3)) {
     if (term.length < 3) continue;
@@ -634,7 +512,6 @@ async function semanticProductSearch(
     if (data) exactResults.push(...data);
   }
 
-  // Strategy 2: Broad OR search across name + description with all expanded terms
   const orParts: string[] = [];
   for (const term of uniqueTerms.slice(0, 8)) {
     if (term.length < 3) continue;
@@ -658,10 +535,8 @@ async function semanticProductSearch(
     }
   }
 
-  // Strategy 3: Category-based search (if AI identified categories)
   let categoryResults: any[] = [];
   if (expansion.categories.length > 0) {
-    // Fetch category IDs that match
     const catOrFilter = expansion.categories.map((c) => `name.ilike.%${c}%`).join(',');
 
     const { data: cats } = await extClient
@@ -682,11 +557,9 @@ async function semanticProductSearch(
     }
   }
 
-  // Merge and deduplicate
   const seen = new Set<string>();
   const merged: any[] = [];
 
-  // Priority order: exact → broad → category
   for (const p of [...exactResults, ...broadResults, ...categoryResults]) {
     if (!p?.id || seen.has(p.id)) continue;
     seen.add(p.id);
@@ -728,7 +601,6 @@ Deno.serve(async (req) => {
     const auth = await authenticateRequest(req);
     const userId = auth.userId;
 
-    // Anti-scraping/abuse protection
     const protection = await runBotProtection(
       req,
       {
@@ -742,7 +614,6 @@ Deno.serve(async (req) => {
     );
     if (!protection.allowed) return protection.blockResponse!;
 
-    // Rate limit: 20 req/min por usuário
     const rl = await applyRateLimit(req, rateLimiters.ai, () => userId);
     if (rl) {
       const headers = new Headers(rl.headers);
@@ -817,7 +688,6 @@ Deno.serve(async (req) => {
 
     const supabase = auth.localServiceClient;
 
-    // ── Seller profile ──
     let sellerFirstName = '';
     const { data: sellerProfile } = await supabase
       .from('profiles')
@@ -828,7 +698,6 @@ Deno.serve(async (req) => {
       sellerFirstName = sellerProfile.full_name.split(' ')[0];
     }
 
-    // ── AI Query Expansion (runs in parallel with client data fetch) ──
     const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user')?.content || '';
     const conversationSummary = messages
       .slice(-4)
@@ -842,7 +711,6 @@ Deno.serve(async (req) => {
     );
     const fallbackTerms = extractSearchTermsFallback(messages);
 
-    // ── Client data fetch ──
     let clientContext = '';
     let clientData: ClientData | null = null;
     let customerData: CustomerData | null = null;
@@ -850,9 +718,6 @@ Deno.serve(async (req) => {
     if (clientId) {
       console.log('Fetching client data from CRM');
 
-      // SSOT: lê de integration_credentials (DB-first) com fallback para
-      // env vars legadas (CRM_SUPABASE_*). Antes ignorava credenciais
-      // salvas pela UI /admin/conexoes.
       const [urlRes, svcRes, anonRes] = await Promise.all([
         resolveCredential('EXTERNAL_CRM_URL'),
         resolveCredential('EXTERNAL_CRM_SERVICE_ROLE_KEY'),
@@ -918,7 +783,6 @@ Deno.serve(async (req) => {
         console.warn('CRM env vars not set, skipping CRM data');
       }
 
-      // Quote history
       let quoteProductHistory: any[] = [];
       const { data: clientQuotes, error: quotesError } = await supabase
         .from('quotes')
@@ -948,7 +812,6 @@ Deno.serve(async (req) => {
         console.log('Client orders loaded', { count: clientOrders.length });
       }
 
-      // Build client context
       const productPreferences = new Map<
         string,
         { count: number; totalValue: number; lastPurchase: string }
@@ -1123,7 +986,6 @@ ${
       }
     }
 
-    // ── Wait for semantic expansion ──
     const expansion = await expansionPromise;
     console.log('Semantic expansion prepared:', {
       intent: expansion.intent,
@@ -1133,7 +995,6 @@ ${
       materials: expansion.materials.length,
     });
 
-    // ── Product search ──
     let productsContext = '';
     let semanticResults: any[] = [];
 
@@ -1152,7 +1013,6 @@ ${
       const PRODUCT_COLS =
         'id, name, sku, sale_price, primary_image_url, category_id, supplier_id, description, brand, gender, is_kit, stock_quantity, min_quantity, tags, active';
 
-      // ── Resolve category IDs from names (DB-level join) ──
       let resolvedCategoryIds: string[] = [];
       if (normalizedFilters.categoryFilters.length > 0) {
         const catOrFilter = normalizedFilters.categoryFilters
@@ -1166,14 +1026,12 @@ ${
 
         if (matchedCats?.length) {
           const parentIds = matchedCats.map((c: any) => c.id);
-          // Also fetch descendant categories for hierarchical filtering
           const { data: allCats } = await extClient
             .from('categories')
             .select('id, parent_id')
             .limit(1000);
 
           if (allCats) {
-            // BFS to find all descendants
             const childMap = new Map<string, string[]>();
             for (const cat of allCats) {
               if (cat.parent_id) {
@@ -1209,7 +1067,6 @@ ${
         }
       }
 
-      // ── Resolve supplier IDs from names (DB-level join) ──
       let resolvedSupplierIds: string[] = [];
       if (normalizedFilters.supplierFilters.length > 0) {
         const supOrFilter = normalizedFilters.supplierFilters
@@ -1234,7 +1091,6 @@ ${
         }
       }
 
-      // ── Semantic multi-strategy search ──
       const { products: searchProducts, searchMethod } = await semanticProductSearch(
         extClient,
         expansion,
@@ -1245,7 +1101,6 @@ ${
       semanticResults = searchProducts;
       console.log('Semantic search method', { searchMethod });
 
-      // ── General filtered query ──
       let productsQuery = extClient.from('products').select(PRODUCT_COLS).eq('active', true);
 
       if (priceMin !== null && priceMin !== undefined)
@@ -1253,15 +1108,12 @@ ${
       if (priceMax !== null && priceMax !== undefined)
         productsQuery = productsQuery.lte('sale_price', priceMax);
 
-      // Apply resolved category IDs at DB level
       if (resolvedCategoryIds.length > 0) {
         productsQuery = productsQuery.in('category_id', resolvedCategoryIds);
       } else if (normalizedFilters.categoryFilters.length > 0) {
-        // Filter was set but no matches — force empty result
         productsQuery = productsQuery.eq('category_id', '00000000-0000-0000-0000-000000000000');
       }
 
-      // Apply resolved supplier IDs at DB level
       if (resolvedSupplierIds.length > 0) {
         productsQuery = productsQuery.in('supplier_id', resolvedSupplierIds);
       } else if (normalizedFilters.supplierFilters.length > 0) {
@@ -1280,7 +1132,6 @@ ${
       const { data: products, error: productsError } = await productsQuery.limit(120);
       if (productsError) console.error('Error fetching products:', safeErrorFields(productsError));
 
-      // Also fetch products via N:N category assignments if category filter is active
       let categoryAssignProducts: any[] = [];
       if (resolvedCategoryIds.length > 0) {
         const { data: assignments } = await extClient
@@ -1308,7 +1159,6 @@ ${
         }
       }
 
-      // Merge search + general + N:N category, deduplicate
       const allRawProducts = [
         ...(semanticResults || []),
         ...(products || []).filter((p: any) => !semanticResults.some((s: any) => s.id === p.id)),
@@ -1319,7 +1169,6 @@ ${
         ),
       ];
 
-      // Also filter semantic results by category/supplier if filters are active
       let preFiltered = allRawProducts;
       if (resolvedCategoryIds.length > 0) {
         const catSet = new Set(resolvedCategoryIds);
@@ -1335,7 +1184,6 @@ ${
 
       const filteredProducts = applyProductFilters(preFiltered, normalizedFilters);
 
-      // Apply price filter on text-search results
       let finalProducts = filteredProducts;
       if (priceMin !== null && priceMin !== undefined) {
         finalProducts = finalProducts.filter((p: any) => (p.sale_price ?? 0) >= priceMin);
@@ -1346,7 +1194,6 @@ ${
 
       console.log('Total products after all filters', { count: finalProducts.length });
 
-      // ── Enrich with category/supplier names ──
       const categoryIds = [
         ...new Set(finalProducts.map((p: any) => p.category_id).filter(Boolean)),
       ];
@@ -1382,13 +1229,11 @@ ${
       }
       await Promise.all(enrichPromises);
 
-      // ── Relevance scoring and ranking ──
       const scoredProducts = finalProducts.map((p: any) => ({
         ...p,
         _relevanceScore: scoreProductRelevance(p, expansion, categoryMap),
       }));
 
-      // Sort by relevance score (highest first)
       scoredProducts.sort((a: any, b: any) => b._relevanceScore - a._relevanceScore);
 
       const buildProductDescription = (p: any): string => {
@@ -1414,7 +1259,6 @@ ${
         return parts.join(' | ');
       };
 
-      // Top semantic results (score > 0)
       const semanticTop = scoredProducts.filter((p: any) => p._relevanceScore > 0).slice(0, 15);
       const generalPool = scoredProducts.filter((p: any) => p._relevanceScore === 0).slice(0, 15);
 
@@ -1435,7 +1279,6 @@ ${generalPool.map((p) => buildProductDescription(p)).join('\n\n')}
 `;
       }
     } else {
-      // Non-product intent — still load some general products
       const EXT_URL2 = Deno.env.get('EXTERNAL_SUPABASE_URL');
       const EXT_KEY2 = Deno.env.get('EXTERNAL_SUPABASE_SERVICE_KEY');
       if (EXT_URL2 && EXT_KEY2) {
@@ -1460,7 +1303,6 @@ ${bgProducts.map((p: any) => `ID: ${p.id} | Nome: ${p.name} | SKU: ${p.sku} | Pr
       }
     }
 
-    // ── Build filter info for the AI ──
     const filterParts: string[] = [];
     const pushValues = (label: string, values: string[]) => {
       if (values.length > 0) filterParts.push(`${label}: ${values.join(', ')}`);
@@ -1509,7 +1351,6 @@ CATÁLOGO DE PRODUTOS (use o formato [[PRODUTO:id:nome:imageUrl]] para criar lin
 ${productsContext}`;
     }
 
-    // ── System prompt ──
     const sellerGreeting = sellerFirstName || 'parceiro';
 
     const systemPrompt = `Você é o FLOW, assistente pessoal de vendas da Promo Brindes. Você é um parceiro estratégico humano e próximo do vendedor.
@@ -1540,41 +1381,10 @@ PRIORIZE FORTEMENTE os produtos com maior score de relevância.
 ${expansion.intent !== 'general' ? `INTENÇÃO DETECTADA: ${expansion.intent}` : ''}
 ${expansion.searchTerms.length > 0 ? `CONCEITOS SEMÂNTICOS IDENTIFICADOS: ${[...expansion.searchTerms, ...expansion.synonyms].join(', ')}` : ''}
 
-CAPACIDADES DE ASSISTENTE PESSOAL DE VENDAS:
-
-📊 CRM E ANÁLISE DE CLIENTE:
-- Quando perguntado sobre um cliente, forneça um resumo executivo
-- Identifique padrões de compra e sazonalidade
-- Alerte sobre clientes inativos
-
-📝 GERAÇÃO DE PROPOSTAS:
-- Sugira composições de orçamento com produtos específicos
-- Considere o ticket médio e histórico do cliente
-- Inclua argumentos de venda para cada produto
-- Use sempre o formato: [[PRODUTO:id:nome:imageUrl]]
-
- 📞 FOLLOW-UP INTELIGENTE:
-- Identifique orçamentos enviados sem resposta
-- Sugira textos prontos para WhatsApp/email
-- Alerte sobre orçamentos prestes a vencer
-
-🎯 ANÁLISE DE OPORTUNIDADES:
-- Cross-sell baseado no histórico
-- Upgrades para produtos premium
-- Oportunidades sazonais
-- Kits e combos personalizados
-
 FORMATO DE LINKS DE PRODUTOS (OBRIGATÓRIO):
 [[PRODUTO:id_do_produto:Nome do Produto:url_da_imagem]]
 Se não houver imagem: [[PRODUTO:id_do_produto:Nome do Produto]]
-IMPORTANTE: SEMPRE inclua a URL da imagem quando disponível (campo "Imagem").
 REGRA CRÍTICA: SEMPRE que mencionar um produto, use o formato [[PRODUTO:...]] com o ID real do banco de dados.
-NÃO mencione produtos sem usar o formato de link — isso impede o vendedor de navegar até o produto.
-Cada recomendação DEVE ter o link clicável.
-
-FORMATO DE MENSAGENS DE FOLLOW-UP:
-> **WhatsApp/Email sugerido:**
-> Olá [Nome], tudo bem? Vi que enviamos um orçamento para [produtos] no dia [data]...
 
 DIRETRIZES DE COMPORTAMENTO:
 1. Seja proativo — não espere perguntas, ofereça insights
@@ -1584,14 +1394,13 @@ DIRETRIZES DE COMPORTAMENTO:
 5. Linguagem profissional e acessível (português brasileiro informal)
 6. SEMPRE use [[PRODUTO:id:nome:imageUrl]] ao mencionar produtos — NUNCA mencione produtos sem link
 7. Quando gerar propostas, organize em formato de tabela quando possível
-8. REGRA DE FILTROS: Se filtros já estão ativos (preço, categoria, fornecedor, etc.), NÃO pergunte "qual faixa de preço?" ou "qual categoria?" — essas informações já foram definidas. Use os filtros para contextualizar as respostas. APENAS faça perguntas sobre informações que AINDA NÃO ESTÃO nos filtros.
-9. Quando o vendedor pedir recomendações e filtros estão ativos, VÁ DIRETO para as sugestões sem perguntas desnecessárias
-10. Limite suas recomendações a 3-5 produtos bem selecionados, não despeje dezenas
+8. REGRA DE FILTROS: Se filtros já estão ativos, NÃO pergunte sobre eles novamente
+9. Limite suas recomendações a 3-5 produtos bem selecionados
 
 ${clientContext}
 ${productsContext}
 
-IMPORTANTE: Você tem acesso completo aos dados do cliente em tempo real — CRM, orçamentos, pedidos, follow-ups e análise comportamental. Use TODAS essas informações para ser o assistente mais estratégico possível. Seu objetivo é ajudar o vendedor ${sellerGreeting} a fechar mais negócios com mais inteligência.`;
+IMPORTANTE: Você tem acesso completo aos dados do cliente em tempo real — CRM, orçamentos, pedidos, follow-ups e análise comportamental. Seu objetivo é ajudar o vendedor ${sellerGreeting} a fechar mais negócios com mais inteligência.`;
 
     const apiMessages: Message[] = [{ role: 'system', content: systemPrompt }, ...messages];
 

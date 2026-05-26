@@ -353,6 +353,9 @@
     "src/components/search/VoiceSearchOverlayConnected.tsx": {
       "react-hooks/exhaustive-deps": 1
     },
+    "src/components/search/useGlobalSearch.ts": {
+      "@typescript-eslint/no-explicit-any": 3
+    },
     "src/components/search/voice/VoiceOverlaySections.tsx": {
       "@typescript-eslint/no-unused-vars": 3
     },

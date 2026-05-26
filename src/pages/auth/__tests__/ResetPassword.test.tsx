@@ -1,7 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import type * as ReactRouterDom from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import ResetPassword from '@/pages/auth/ResetPassword';
 
@@ -13,7 +12,7 @@ const mockOnAuthStateChange = vi.fn();
 const mockUnsubscribe = vi.fn();
 
 vi.mock('react-router-dom', async (importOriginal) => {
-  const actual = await importOriginal<typeof ReactRouterDom>();
+  const actual = (await importOriginal()) as Record<string, unknown>;
   return {
     ...actual,
     useNavigate: () => mockNavigate,

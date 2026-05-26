@@ -7,7 +7,7 @@
  * restaurar fielmente. `useKitBuilder.restoreKitSnapshot` consome este shape.
  */
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import type { KitBox, KitItem, KitType, KitIdentity, KitPersonalization } from '@/lib/kit-builder';
 
 export interface KitSnapshot {
@@ -26,6 +26,20 @@ export function useKitUndoRedo() {
   const [history, setHistory] = useState<KitSnapshot[]>([]);
   const [future, setFuture] = useState<KitSnapshot[]>([]);
   const isRestoringRef = useRef(false);
+  // BUG-16 FIX: store the restore timer id so it can be cleared on unmount
+  // and before each new undo/redo call. Previously both undo() and redo()
+  // called setTimeout without storing the id — on unmount the 100ms timer
+  // would fire and attempt to mutate a ref on a component that may have been
+  // destroyed. Also: if undo was called rapidly, multiple timers could stack,
+  // each resetting isRestoringRef independently.
+  const restoreTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // Cleanup the restore timer on unmount
+  useEffect(() => {
+    return () => {
+      if (restoreTimerRef.current) clearTimeout(restoreTimerRef.current);
+    };
+  }, []);
 
   const pushSnapshot = useCallback((snapshot: KitSnapshot) => {
     if (isRestoringRef.current) return;
@@ -54,7 +68,10 @@ export function useKitUndoRedo() {
     const prev = newHistory[newHistory.length - 1];
     setHistory(newHistory);
     setFuture((f) => [current, ...f]);
-    setTimeout(() => {
+    // Clear any pending timer before scheduling the reset
+    if (restoreTimerRef.current) clearTimeout(restoreTimerRef.current);
+    restoreTimerRef.current = setTimeout(() => {
+      restoreTimerRef.current = undefined;
       isRestoringRef.current = false;
     }, 100);
     return prev;
@@ -66,13 +83,18 @@ export function useKitUndoRedo() {
     const [next, ...rest] = future;
     setFuture(rest);
     setHistory((prev) => [...prev, next]);
-    setTimeout(() => {
+    // Clear any pending timer before scheduling the reset
+    if (restoreTimerRef.current) clearTimeout(restoreTimerRef.current);
+    restoreTimerRef.current = setTimeout(() => {
+      restoreTimerRef.current = undefined;
       isRestoringRef.current = false;
     }, 100);
     return next;
   }, [future]);
 
   const reset = useCallback(() => {
+    // Clear any pending restore timer when resetting
+    if (restoreTimerRef.current) clearTimeout(restoreTimerRef.current);
     setHistory([]);
     setFuture([]);
   }, []);

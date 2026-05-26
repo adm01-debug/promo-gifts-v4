@@ -45,11 +45,6 @@ export interface ThemeModeColors {
   divider: string;
 
   // === ORANGE (maps to primary) ===
-  orange: string;
-  'orange-hover': string;
-  'orange-active': string;
-  'orange-glow': string;
-  'orange-foreground': string;
 
   // === SIDEBAR ===
   'sidebar-background': string;
@@ -125,11 +120,6 @@ export const CSS_VARS_TO_APPLY: (keyof ThemeModeColors)[] = [
   'text-secondary',
   'interactive',
   'divider',
-  'orange',
-  'orange-hover',
-  'orange-active',
-  'orange-glow',
-  'orange-foreground',
   'sidebar-background',
   'sidebar-foreground',
   'sidebar-primary',
@@ -162,6 +152,14 @@ export const CSS_VARS_TO_APPLY: (keyof ThemeModeColors)[] = [
   'shadow-xl',
   'shadow-header',
   'chart-1',
+  // BUG-04 fix: orange-* tokens ausentes — applyThemePreset() nunca
+  // atualizava --orange-* ao trocar de preset.
+  // @see docs/design-system-audit-2026-05-25.md
+  'orange',
+  'orange-hover',
+  'orange-active',
+  'orange-glow',
+  'orange-foreground',
 ];
 
 export interface ThemePreset {
@@ -259,11 +257,6 @@ function buildPreset(p: PresetParams): ThemePreset {
     'text-secondary': `${h} 12% 42%`,
     interactive: primary,
     divider: `${h} 14% 86%`,
-    orange: primary,
-    'orange-hover': primaryHover,
-    'orange-active': primaryActive,
-    'orange-glow': primaryGlow,
-    'orange-foreground': '0 0% 100%',
     'sidebar-background': `${h} 14% 98%`,
     'sidebar-foreground': '222 25% 10%',
     'sidebar-primary': primary,
@@ -328,11 +321,6 @@ function buildPreset(p: PresetParams): ThemePreset {
     'text-secondary': '215 20% 72%',
     interactive: primary,
     divider: '240 4% 20%',
-    orange: primary,
-    'orange-hover': primaryHover,
-    'orange-active': primaryActive,
-    'orange-glow': primaryGlow,
-    'orange-foreground': '0 0% 100%',
     'sidebar-background': '240 6% 5%',
     'sidebar-foreground': '210 40% 98%',
     'sidebar-primary': primary,
@@ -444,12 +432,6 @@ const diversityPreset: ThemePreset = {
     // Anel de foco e elementos interativos
     ring: PRIDE_PINK,
     interactive: PRIDE_PINK,
-    // Token "orange" do Promo Gifts → mapeia para laranja pride autêntico
-    orange: PRIDE_ORANGE,
-    'orange-hover': '30 90% 50%',
-    'orange-active': '30 90% 45%',
-    'orange-glow': '30 90% 65%',
-    'orange-foreground': '0 0% 100%',
     // Sidebar com identidade pink + accent violeta suave
     'sidebar-primary': PRIDE_PINK,
     'sidebar-primary-foreground': '0 0% 100%',
@@ -488,11 +470,6 @@ const diversityPreset: ThemePreset = {
     'accent-foreground': '290 85% 78%',
     ring: '330 85% 60%',
     interactive: '330 85% 60%',
-    orange: PRIDE_ORANGE,
-    'orange-hover': '30 90% 50%',
-    'orange-active': '30 90% 45%',
-    'orange-glow': '30 90% 65%',
-    'orange-foreground': '0 0% 100%',
     'sidebar-primary': '330 85% 60%',
     'sidebar-primary-foreground': '0 0% 100%',
     'sidebar-accent': '280 50% 18%',
@@ -551,7 +528,7 @@ function applyGxDarkSurfaces(preset: ThemePreset): ThemePreset {
   d.border = '265 18% 22%';
   d.secondary = '265 18% 17%';
   d.accent = '265 18% 17%';
-  
+
   // Tokens específicos mantendo a coesão visual e legibilidade
   d.surface = '265 22% 10%';
   d['surface-hover'] = '265 18% 17%';
@@ -562,7 +539,7 @@ function applyGxDarkSurfaces(preset: ThemePreset): ThemePreset {
   d.elevated = '265 18% 17%';
   d['elevated-hover'] = '265 18% 22%';
   d['gradient-surface'] = 'linear-gradient(180deg, hsl(265 22% 12%), hsl(265 24% 8%))';
-  
+
   // Garantir contraste do foreground em superfícies GX
   d.foreground = '210 40% 98%';
   d['muted-foreground'] = '215 20% 75%';
@@ -636,10 +613,6 @@ function buildGxPreset(p: PresetParams): ThemePreset {
 function withDarkPrimaryFg(preset: ThemePreset): ThemePreset {
   preset.light['primary-foreground'] = '222 25% 10%';
   preset.dark['primary-foreground'] = '222 25% 10%';
-  // Tokens "orange" mapeiam para primary no buildPreset — manter coerência
-  // de foreground para qualquer componente que use orange-foreground.
-  preset.light['orange-foreground'] = '222 25% 10%';
-  preset.dark['orange-foreground'] = '222 25% 10%';
   // Sidebar primary também segue primary — para consistência visual completa
   // (badges/active states no sidebar usando primary background).
   preset.light['sidebar-primary-foreground'] = '222 25% 10%';
@@ -838,21 +811,23 @@ export const THEME_PRESETS: ThemePreset[] = [
     ss: 70,
     sl: 55,
   }),
-  withDarkPrimaryFg(buildGxPreset({
-    id: 'gx-rose-quartz',
-    name: 'Rose Quartz',
-    emoji: '💗',
-    description: 'Rosa quartzo cristalino',
-    h: 345,
-    s: 75,
-    l: 68, // zapp parity (gx-rose-quartz)
-    gh: 355,
-    sh: 320,
-    ss: 60,
-    sl: 70,
-    // hsl(345 75% 68%) vs branco = 2.90:1 (abaixo de WCAG 3:1).
-    // Texto escuro eleva o contraste para 6.18:1 mantendo a cor primária.
-  })),
+  withDarkPrimaryFg(
+    buildGxPreset({
+      id: 'gx-rose-quartz',
+      name: 'Rose Quartz',
+      emoji: '💗',
+      description: 'Rosa quartzo cristalino',
+      h: 345,
+      s: 75,
+      l: 68, // zapp parity (gx-rose-quartz)
+      gh: 355,
+      sh: 320,
+      ss: 60,
+      sl: 70,
+      // hsl(345 75% 68%) vs branco = 2.90:1 (abaixo de WCAG 3:1).
+      // Texto escuro eleva o contraste para 6.18:1 mantendo a cor primária.
+    }),
+  ),
   buildGxPreset({
     id: 'gx-ultraviolet',
     name: 'Ultraviolet',
@@ -866,66 +841,74 @@ export const THEME_PRESETS: ThemePreset[] = [
     ss: 80,
     sl: 55,
   }),
-  withDarkPrimaryFg(buildGxPreset({
-    id: 'gx-hackerman',
-    name: 'Hackerman',
-    emoji: '👨‍💻',
-    description: 'Verde Matrix de hacker',
-    h: 127,
-    s: 65,
-    l: 46, // zapp parity (gx-hackerman)
-    gh: 135,
-    sh: 115,
-    ss: 60,
-    sl: 42,
-    // hsl(127 65% 46%) vs branco = 2.38:1 (abaixo de WCAG 3:1).
-    // Texto escuro eleva o contraste para 7.54:1.
-  })),
-  withDarkPrimaryFg(buildGxPreset({
-    id: 'gx-frutti-di-mare',
-    name: 'Frutti di Mare',
-    emoji: '🐙',
-    description: 'Azul-petróleo do fundo do mar',
-    h: 182,
-    s: 90,
-    l: 42, // zapp parity (gx-frutti-di-mare)
-    gh: 190,
-    sh: 200,
-    ss: 75,
-    sl: 45,
-    // hsl(182 90% 42%) vs branco = 2.13:1 (abaixo de WCAG 3:1).
-    // Texto escuro eleva o contraste para 8.43:1.
-  })),
-  withDarkPrimaryFg(buildGxPreset({
-    id: 'gx-cyberpunk',
-    name: 'Cyberpunk',
-    emoji: '⚡',
-    description: 'Amarelo neon de Night City',
-    h: 55,
-    s: 100,
-    l: 51,
-    gh: 180,
-    sh: 320,
-    ss: 95,
-    sl: 55,
-    // hsl(55 100% 51%) vs branco = 1.07:1 — amarelo neon precisa texto escuro.
-    // Contraste com texto escuro = 14.56:1 (excelente).
-  })),
-  withDarkPrimaryFg(buildGxPreset({
-    id: 'gx-razer',
-    name: 'Razer',
-    emoji: '🐍',
-    description: 'Verde RGB Razer Chroma',
-    h: 113,
-    s: 70,
-    l: 51, // zapp parity (gx-razer)
-    gh: 120,
-    sh: 100,
-    ss: 60,
-    sl: 48,
-    // hsl(113 70% 51%) vs branco = 1.87:1 (abaixo de WCAG 3:1).
-    // Texto escuro eleva o contraste para 9.59:1.
-  })),
+  withDarkPrimaryFg(
+    buildGxPreset({
+      id: 'gx-hackerman',
+      name: 'Hackerman',
+      emoji: '👨‍💻',
+      description: 'Verde Matrix de hacker',
+      h: 127,
+      s: 65,
+      l: 46, // zapp parity (gx-hackerman)
+      gh: 135,
+      sh: 115,
+      ss: 60,
+      sl: 42,
+      // hsl(127 65% 46%) vs branco = 2.38:1 (abaixo de WCAG 3:1).
+      // Texto escuro eleva o contraste para 7.54:1.
+    }),
+  ),
+  withDarkPrimaryFg(
+    buildGxPreset({
+      id: 'gx-frutti-di-mare',
+      name: 'Frutti di Mare',
+      emoji: '🐙',
+      description: 'Azul-petróleo do fundo do mar',
+      h: 182,
+      s: 90,
+      l: 42, // zapp parity (gx-frutti-di-mare)
+      gh: 190,
+      sh: 200,
+      ss: 75,
+      sl: 45,
+      // hsl(182 90% 42%) vs branco = 2.13:1 (abaixo de WCAG 3:1).
+      // Texto escuro eleva o contraste para 8.43:1.
+    }),
+  ),
+  withDarkPrimaryFg(
+    buildGxPreset({
+      id: 'gx-cyberpunk',
+      name: 'Cyberpunk',
+      emoji: '⚡',
+      description: 'Amarelo neon de Night City',
+      h: 55,
+      s: 100,
+      l: 51,
+      gh: 180,
+      sh: 320,
+      ss: 95,
+      sl: 55,
+      // hsl(55 100% 51%) vs branco = 1.07:1 — amarelo neon precisa texto escuro.
+      // Contraste com texto escuro = 14.56:1 (excelente).
+    }),
+  ),
+  withDarkPrimaryFg(
+    buildGxPreset({
+      id: 'gx-razer',
+      name: 'Razer',
+      emoji: '🐍',
+      description: 'Verde RGB Razer Chroma',
+      h: 113,
+      s: 70,
+      l: 51, // zapp parity (gx-razer)
+      gh: 120,
+      sh: 100,
+      ss: 60,
+      sl: 48,
+      // hsl(113 70% 51%) vs branco = 1.87:1 (abaixo de WCAG 3:1).
+      // Texto escuro eleva o contraste para 9.59:1.
+    }),
+  ),
 ];
 
 // =====================================================

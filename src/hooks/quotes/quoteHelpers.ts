@@ -4,6 +4,15 @@
 import type { TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import type { Quote, QuoteItem } from '@/hooks/quotes/quoteTypes';
 
+/**
+ * Hard limit on negotiation markup (%). Attempting to exceed this is a user
+ * error — we throw instead of silently clamping so the UI can show a clear
+ * validation message.
+ * BUG-NEW-03 FIX: previously Math.min(50,...) clamped silently, causing
+ * persisted totals to differ from what the user entered with no error shown.
+ */
+const MARKUP_MAX_PERCENT = 50;
+
 /** Half-up rounding to 2 decimals — SSOT for monetary persistence */
 export const round2 = (n: number | null | undefined): number => {
   const v = typeof n === 'number' && Number.isFinite(n) ? n : 0;
@@ -21,7 +30,6 @@ export function validateDiscount(
     throw new Error('O valor do desconto não pode ser negativo');
   }
   if (totals.discountAmount > totals.subtotal + 0.01) {
-    // Tolerância de arredondamento
     throw new Error(
       `O desconto não pode exceder o subtotal (${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totals.subtotal)})`,
     );
@@ -29,7 +37,6 @@ export function validateDiscount(
 }
 
 export function calculateQuoteTotals(quote: Partial<Quote>, items: QuoteItem[]) {
-  // Subtotal real = soma direta dos itens + personalizações (sem markup)
   const realSubtotal = items.reduce((sum, item) => {
     const baseTotal = item.quantity * item.unit_price;
     const persTotal = (item.personalizations || []).reduce(
@@ -39,13 +46,20 @@ export function calculateQuoteTotals(quote: Partial<Quote>, items: QuoteItem[]) 
     return sum + baseTotal + persTotal;
   }, 0);
 
-  // Margem de negociação (clamp 0–50)
-  const markup = Math.min(50, Math.max(0, quote.negotiation_markup_percent || 0));
+  const rawMarkup = quote.negotiation_markup_percent || 0;
 
-  // Subtotal apresentado = subtotal real * (1 + markup/100). É o que o cliente vê e o que vai para o banco em `subtotal`.
+  // BUG-NEW-03 FIX: previously used Math.min(50, ...) which silently clamped
+  // values above 50% without any feedback to the user. Now throws explicitly
+  // so the UI can show a proper validation message.
+  if (rawMarkup > MARKUP_MAX_PERCENT) {
+    throw new Error(
+      `Margem de negociação não pode exceder ${MARKUP_MAX_PERCENT}%. Valor informado: ${rawMarkup}%.`,
+    );
+  }
+  const markup = Math.max(0, rawMarkup);
+
   const subtotal = markup > 0 ? round2(realSubtotal * (1 + markup / 100)) : realSubtotal;
 
-  // Desconto APARENTE aplicado sobre subtotal apresentado
   const discountAmount = quote.discount_percent
     ? round2(subtotal * (quote.discount_percent / 100))
     : quote.discount_amount || 0;
@@ -53,7 +67,6 @@ export function calculateQuoteTotals(quote: Partial<Quote>, items: QuoteItem[]) 
     quote.shipping_type === 'fob_pre' ? round2(quote.shipping_cost || 0) : 0;
   const total = round2(subtotal - discountAmount + shippingCostValue);
 
-  // Desconto REAL: comparado ao subtotal real (usado para alçada)
   const finalBeforeShipping = subtotal - discountAmount;
   const realDiscountPercent =
     realSubtotal > 0 ? round2(((realSubtotal - finalBeforeShipping) / realSubtotal) * 100) : 0;
@@ -76,7 +89,6 @@ export function buildInsertPayload(
 ): TablesInsert<'quotes'> {
   validateDiscount(quote, totals);
   return {
-    // Empty string lets the `set_quote_number` BEFORE INSERT trigger generate it.
     quote_number: quote.quote_number ?? '',
     client_id: quote.client_id || null,
     client_name: quote.client_name || '',

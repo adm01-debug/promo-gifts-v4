@@ -23,7 +23,6 @@ env:
   VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
   E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
   E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
-  ARTIFACT_RETENTION_DAYS: "14"
 
 jobs:
   e2e-error-boundaries:
@@ -82,7 +81,7 @@ jobs:
         with:
           name: e2e-error-boundaries-report-${{ github.run_id }}
           path: playwright-report/
-          retention-days: ${{ fromJSON(env.ARTIFACT_RETENTION_DAYS) }}
+          retention-days: 7
 
   e2e-full-flows:
     name: E2E — Full User Flows (authed)
@@ -175,7 +174,7 @@ jobs:
         with:
           name: e2e-full-flows-report-${{ github.run_id }}
           path: playwright-report/
-          retention-days: ${{ fromJSON(env.ARTIFACT_RETENTION_DAYS) }}
+          retention-days: 7
           if-no-files-found: ignore
 
   e2e-mobile:
@@ -233,5 +232,5 @@ jobs:
         with:
           name: e2e-mobile-report-${{ github.run_id }}
           path: playwright-report/
-          retention-days: ${{ fromJSON(env.ARTIFACT_RETENTION_DAYS) }}
+          retention-days: 7
           if-no-files-found: ignore

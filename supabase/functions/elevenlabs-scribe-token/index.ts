@@ -2,6 +2,9 @@ import { getCorsHeaders } from '../_shared/cors.ts';
 import { authenticateRequest, authErrorResponse } from '../_shared/auth.ts';
 import { runBotProtection } from '../_shared/bot-protection.ts';
 import { fetchWithBreaker, CircuitOpenError, circuitOpenResponse } from '../_shared/external-fetch.ts';
+// BUG-002 FIX: import resolveCredential for SSOT credential resolution (DB-first -> env fallback).
+// Previously used Deno.env.get() directly, bypassing the credential management system.
+import { resolveCredential } from '../_shared/credentials.ts';
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -28,7 +31,9 @@ Deno.serve(async (req) => {
     }, corsHeaders);
     if (!protection.allowed) return protection.blockResponse!;
 
-    const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
+    // BUG-002 FIX: use resolveCredential (DB-first SSOT) instead of Deno.env.get().
+    // Ensures parity with elevenlabs-tts which already uses resolveCredential.
+    const { value: ELEVENLABS_API_KEY } = await resolveCredential('ELEVENLABS_API_KEY');
     if (!ELEVENLABS_API_KEY) {
       throw new Error('ELEVENLABS_API_KEY is not configured');
     }

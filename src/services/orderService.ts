@@ -43,6 +43,7 @@ function itemSubtotal(item: OrderLookupItem): number {
 export const orderService = {
   async fetchOrderForCurrentSeller(orderId: string): Promise<OrderLookup | null> {
     const { data: order, error: orderError } = await supabase
+      // rls-allow: RLS de orders escopa SELECT por created_by/assigned_to/is_manager_or_admin (+ org) — lookup por id retorna null se não for do vendedor.
       .from('orders')
       .select(
         'id, order_number, status, total, subtotal, shipping_cost, tax_amount, discount_amount, created_at, updated_at',

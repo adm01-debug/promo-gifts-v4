@@ -4,7 +4,7 @@
  * Combina 3 sinais para inferir um estado normalizado:
  *   1. `auth.getSession()`     → API de auth respondendo
  *   2. `pingHealth()`          → bridge externo (edge function) viva
- *   3. GET `/health`           → Supabase instance healthy (auth/rest/storage)
+ *   3. query PostgREST nativa  → Supabase REST respondendo com a key correta
  *
  * Estados:
  *   - `healthy`   3/3 OK (mesmo com latência alta)
@@ -35,7 +35,7 @@ export interface CloudStatusSnapshot {
 }
 
 const CACHE_MS = 15_000;
-const PROBE_TIMEOUT_MS = 5000; // Increased from 2.5s to 5s to avoid false positives on cold starts
+const PROBE_TIMEOUT_MS = 5000;
 
 let cached: CloudStatusSnapshot | null = null;
 let inFlight: Promise<CloudStatusSnapshot> | null = null;
@@ -65,7 +65,7 @@ function saveStatusHistory(entry: StatusHistoryEntry) {
   try {
     const history = getStatusHistory();
     history.push(entry);
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(-100))); // Keep last 100
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(-100)));
   } catch (error) {
     logger.warn('[CloudStatus] failed to persist status history', {
       HISTORY_KEY,
@@ -78,7 +78,7 @@ export function getStatusTimeline() {
   return getStatusHistory();
 }
 
-const FAILURE_THRESHOLD = 2; // Need 2 consecutive full failures to go 'down'
+const FAILURE_THRESHOLD = 2;
 
 const target: EventTarget =
   typeof EventTarget !== 'undefined'
@@ -150,24 +150,25 @@ async function checkBridge(timeoutMs: number): Promise<{ ok: boolean; ms: number
 }
 
 /**
- * Verifica o Supabase instance via endpoint /health (público, sem auth).
+ * Verifica o Supabase REST via query leve no supabase client.
  *
- * FIX: substituído HEAD /rest/v1/ (que retornava 401 e gerava ruído no console)
- * pelo GET /health, que retorna 200 sem precisar de auth header.
- * A lógica de negócio não muda — 401 já era tratado como ok=true antes.
+ * ROOT CAUSE FIX: o endpoint /health deste projeto Supabase também requer apikey.
+ * fetch(`${url}/health`) sem header → 401 → res.ok=false → sinal rest sempre
+ * falso → status nunca chega a "healthy" (fica travado em "warming").
+ *
+ * Solução: usar supabase.from('system_settings')... que:
+ *   - Usa o client já configurado com a key correta (injetada pelo Vite)
+ *   - Retorna 200 confirmado em produção (testado 26/05/2026)
+ *   - Zero 401 no console
  */
 async function checkRest(): Promise<{ ok: boolean; ms: number }> {
   const t0 = performance.now();
-  const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-  if (!url) return { ok: false, ms: 0 };
   try {
-    const res = await withTimeout(
-      // GET /health: endpoint público do Supabase, retorna 200 + JSON com status
-      // de cada serviço (auth, rest, storage, realtime). Sem auth → sem 401 no console.
-      fetch(`${url}/health`),
+    const { error } = await withTimeout(
+      supabase.from('system_settings').select('value').eq('key', 'maintenance_mode').limit(1),
       PROBE_TIMEOUT_MS,
     );
-    return { ok: res.ok, ms: Math.round(performance.now() - t0) };
+    return { ok: !error, ms: Math.round(performance.now() - t0) };
   } catch {
     return { ok: false, ms: Math.round(performance.now() - t0) };
   }
@@ -181,25 +182,17 @@ function deriveStatus(signals: CloudStatusSnapshot['signals']): CloudStatus {
     consecutiveFailures = 0;
     return 'healthy';
   }
-
   if (okCount === 2) {
     consecutiveFailures = 0;
     return 'warming';
   }
-
   if (okCount === 1) {
     consecutiveFailures = 0;
     return 'degraded';
   }
 
-  // okCount === 0: Full failure detected
   consecutiveFailures++;
-
-  // If we don't have enough consecutive failures yet, return 'degraded' instead of 'down'
-  if (consecutiveFailures < FAILURE_THRESHOLD) {
-    return 'degraded';
-  }
-
+  if (consecutiveFailures < FAILURE_THRESHOLD) return 'degraded';
   return 'down';
 }
 
@@ -207,9 +200,7 @@ function deriveStatus(signals: CloudStatusSnapshot['signals']): CloudStatus {
  * Executa a sondagem (ou retorna cache válido).
  */
 export async function probeCloudStatus(force = false): Promise<CloudStatusSnapshot> {
-  if (!force && cached && Date.now() - cached.checkedAt < CACHE_MS) {
-    return cached;
-  }
+  if (!force && cached && Date.now() - cached.checkedAt < CACHE_MS) return cached;
   if (inFlight) return inFlight;
 
   inFlight = (async () => {
@@ -220,11 +211,7 @@ export async function probeCloudStatus(force = false): Promise<CloudStatusSnapsh
     ]);
     const signals = { auth, bridge: bridgeRes, rest };
     const newStatus = deriveStatus(signals);
-    const snapshot: CloudStatusSnapshot = {
-      status: newStatus,
-      signals,
-      checkedAt: Date.now(),
-    };
+    const snapshot: CloudStatusSnapshot = { status: newStatus, signals, checkedAt: Date.now() };
 
     saveStatusHistory({
       status: snapshot.status,
@@ -270,7 +257,7 @@ export function invalidateCloudStatus(): void {
  * Rejeita com `CloudNotReadyError` se persistir `degraded`/`down` após o orçamento.
  *
  * @param totalTimeoutMs orçamento total (default 8s)
- * @param acceptWarming se true, considera `warming` como pronto (default true — não bloqueia UX em cold start de isolate)
+ * @param acceptWarming se true, considera `warming` como pronto (default true)
  */
 export async function ensureCloudReady(
   totalTimeoutMs = 8000,
@@ -290,8 +277,6 @@ export async function ensureCloudReady(
     snap = await probeCloudStatus(true);
   }
 
-  if (!isReady(snap.status)) {
-    throw new CloudNotReadyError(snap.status);
-  }
+  if (!isReady(snap.status)) throw new CloudNotReadyError(snap.status);
   return snap;
 }

@@ -1,14 +1,17 @@
-import { Fragment } from "react";
-import { createRoot } from "react-dom/client";
-import { HelmetProvider } from "react-helmet-async";
-import { registerServiceWorker } from "@/lib/sw-register";
-import { installGlobalErrorHandlers } from "@/lib/error-reporter";
-import { initSentry } from "@/lib/sentry";
-import { installSafeToast } from "@/lib/security/safeToast";
-import EnhancedErrorBoundary from "@/components/errors/EnhancedErrorBoundary";
-import App from "./App.tsx";
-import "./index.css";
-import "./styles/brand-tokens.css";
+import { Fragment } from 'react';
+import { createRoot } from 'react-dom/client';
+import { HelmetProvider } from 'react-helmet-async';
+import { registerServiceWorker } from '@/lib/sw-register';
+import { installGlobalErrorHandlers } from '@/lib/error-reporter';
+import { initSentry } from '@/lib/sentry';
+import { installSafeToast } from '@/lib/security/safeToast';
+import EnhancedErrorBoundary from '@/components/errors/EnhancedErrorBoundary';
+import App from './App.tsx';
+import './index.css';
+import './styles/brand-tokens.css';
+// BUG-02/03/09/14 fix: tokens CSS ausentes do :root em index.css
+// @see docs/design-system-audit-2026-05-25.md
+import './styles/missing-root-tokens.css';
 
 // Initialize Sentry FIRST (no-op if VITE_SENTRY_DSN is unset)
 initSentry();
@@ -20,7 +23,7 @@ installGlobalErrorHandlers();
 // Idempotente; respeita o Dev Infra Messages Gate.
 installSafeToast();
 
-const root = document.getElementById("root");
+const root = document.getElementById('root');
 
 if (!root) {
   throw new Error('❌ Elemento root não encontrado no DOM');
@@ -37,7 +40,7 @@ createRoot(root).render(
         <App />
       </EnhancedErrorBoundary>
     </HelmetProvider>
-  </Fragment>
+  </Fragment>,
 );
 
 // Register Service Worker for PWA support
