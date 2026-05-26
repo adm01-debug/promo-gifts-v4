@@ -48,7 +48,9 @@ async function runWebhookLoad() {
             "Content-Type": "application/json",
             "x-signature-256": `sha256=${signature}`,
             "accept-version": "2",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "X-Internal-Call": "true",
+            "Authorization": `Bearer ${SERVICE_KEY}`
           },
           body: payload,
         });
