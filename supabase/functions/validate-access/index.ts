@@ -57,8 +57,9 @@ Deno.serve(async (req: Request) => {
     const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : null;
 
     // System/Service bypass: only allowed if it's explicitly required or internal
-    // We restrict this to POST only and check for a specific header if needed
-    if (token && token === serviceKey) {
+    const isServiceKey = token === serviceKey || (token?.startsWith("sb_") && serviceKey.startsWith("sb_") && token === serviceKey);
+    
+    if (token && isServiceKey) {
       const isInternal = req.headers.get("X-Internal-Call") === "true";
       
       // Ajuste de bypass: se não houver a flag X-Internal-Call, tratamos como uma tentativa

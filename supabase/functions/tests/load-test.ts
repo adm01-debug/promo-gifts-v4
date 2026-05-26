@@ -1,16 +1,20 @@
+// supabase/functions/tests/load-test.ts
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-const CONCURRENCY = 10;
-const TOTAL_REQUESTS = 50;
+const CONCURRENCY = 50;
+const TOTAL_REQUESTS = 500; 
+
 
 async function runLoadTest(name: string, path: string, method = "GET", body: any = null, headers: any = {}) {
-  console.log(`Starting stress test for ${name} (${TOTAL_REQUESTS} requests, concurrency ${CONCURRENCY})...`);
+  console.log(`\n🚀 Stress test: ${name} (${TOTAL_REQUESTS} req, c=${CONCURRENCY})`);
   
   const start = performance.now();
   let success = 0;
   let failure = 0;
+  let status401 = 0;
   const latencies: number[] = [];
+  let firstResponseBody = "";
 
   const workers = Array.from({ length: CONCURRENCY }).map(async (_, workerId) => {
     for (let i = 0; i < TOTAL_REQUESTS / CONCURRENCY; i++) {
@@ -21,55 +25,38 @@ async function runLoadTest(name: string, path: string, method = "GET", body: any
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${SERVICE_KEY}`,
-            "X-Test-Worker": String(workerId),
+            "X-Internal-Call": "true",
             ...headers
           },
           body: body ? JSON.stringify(body) : undefined,
         });
-        await res.text(); // Always consume body
-        if (res.ok || res.status === 401 || res.status === 400) {
-          // In stress testing, we count expected error codes as "network success" 
-          // because the function handled the request. 5xx would be a failure.
-          if (res.status >= 500) {
-            failure++;
-          } else {
-            success++;
-          }
+        
+        const text = await res.text();
+        if (i === 0 && workerId === 0) firstResponseBody = text;
+        
+        latencies.push(performance.now() - reqStart);
+
+        if (res.status === 200 || res.status === 201 || res.status === 204) {
+          success++;
+        } else if (res.status === 401) {
+          status401++;
         } else {
-          success++; // Still a response
+          failure++;
         }
       } catch (e) {
         failure++;
       }
-      latencies.push(performance.now() - reqStart);
     }
   });
 
   await Promise.all(workers);
   const totalTime = performance.now() - start;
   
-  const sortedLatencies = [...latencies].sort((a, b) => a - b);
-  const avgLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
-  const p95Latency = sortedLatencies[Math.floor(sortedLatencies.length * 0.95)];
-  const p99Latency = sortedLatencies[Math.floor(sortedLatencies.length * 0.99)];
-
-  console.log(`\nResults for ${name}:`);
-  console.log(`- Success (handled): ${success}`);
-  console.log(`- Failure (5xx/Network): ${failure}`);
-  console.log(`- Total Time: ${(totalTime / 1000).toFixed(2)}s`);
-  console.log(`- Throughput: ${(TOTAL_REQUESTS / (totalTime / 1000)).toFixed(1)} req/s`);
-  console.log(`- Avg Latency: ${avgLatency.toFixed(0)}ms`);
-  console.log(`- P95 Latency: ${p95Latency.toFixed(0)}ms`);
-  console.log(`- P99 Latency: ${p99Latency.toFixed(0)}ms`);
+  const avg = latencies.length ? latencies.reduce((a, b) => a + b, 0) / latencies.length : 0;
+  console.log(`✅ ${name}: ${success} OK, ${status401} 401, ${failure} Fail. Avg: ${avg.toFixed(0)}ms`);
+  if (status401 > 0) console.log(`   Sample Error Body: ${firstResponseBody}`);
 }
 
-// Resilience test: Webhook inbound (simulating burst from external service)
-await runLoadTest("webhook-inbound (Burst)", "/webhook-inbound?slug=test", "POST", { event: "ping" }, {
-  "X-Signature-256": "sha256=invalid-but-triggers-logic"
-});
-
-// Stress test: Health check (heavy DB connectivity)
-await runLoadTest("health-check (Stress)", "/health-check");
-
-// Resilience test: Validate access
-await runLoadTest("validate-access (Security Logic)", "/validate-access", "POST", { ip: "127.0.0.1" });
+await runLoadTest("health-check", "/health-check");
+await runLoadTest("validate-access", "/validate-access", "POST", { ip: "127.0.0.1" });
+await runLoadTest("materials-api", "/materials-api", "POST", { action: "groups" });

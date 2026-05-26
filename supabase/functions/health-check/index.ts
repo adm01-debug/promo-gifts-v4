@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { handleCorsPreflight, getCorsHeaders } from "../_shared/cors.ts";
+import { handleCorsPreflight, getCorsHeaders, buildPublicCorsHeaders } from "../_shared/cors.ts";
 import { getOrCreateRequestId } from "../_shared/request-id.ts";
 import { createStructuredLogger } from "../_shared/structured-logger.ts";
 import { getCredential } from "../_shared/credentials.ts";
@@ -86,9 +86,14 @@ Deno.serve(async (req) => {
   const requestId = getOrCreateRequestId(req);
   const log = createStructuredLogger({ fn: "health-check", requestId, req });
 
-  // Handle CORS
+  // Handle CORS (Public endpoint but with security headers)
   const preflight = handleCorsPreflight(req, { public: true });
   if (preflight) return preflight;
+
+  const corsHeaders = {
+    ...buildPublicCorsHeaders(),
+    "Content-Type": "application/json"
+  };
 
   const start = Date.now();
   const checkers: HealthChecker[] = [
@@ -124,11 +129,6 @@ Deno.serve(async (req) => {
   };
 
   log.info(overall === "healthy" ? "health_ok" : "health_degraded", responseBody);
-
-  const corsHeaders = {
-    ...getCorsHeaders(req),
-    "Content-Type": "application/json"
-  };
 
   return log.respond(
     new Response(JSON.stringify(responseBody), {
