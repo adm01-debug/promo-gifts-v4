@@ -40,7 +40,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import { EmptyState } from '@/components/common/EmptyState';
-import { QuoteCardSkeleton } from '@/components/common/ContextualSkeleton';
+import { QuotesSkeleton } from '@/components/layout/SkeletonLoaders';
 import { FadeInView, AnimatedCounter } from '@/components/common/MicroInteractions';
 import { QuotesConfigurableList } from '@/components/quotes/QuotesConfigurableList';
 import { QuotesStatusChips } from '@/components/quotes/QuotesStatusChips';
