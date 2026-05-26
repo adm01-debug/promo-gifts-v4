@@ -391,17 +391,32 @@ export default function VisualSearchPage() {
                       
                       {/* Scanning Line Animation */}
                       {isSearching && (
-                        <motion.div 
-                          className="absolute left-0 top-0 z-10 h-1 w-full bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_20px_rgba(var(--primary),1)]"
-                          animate={{ 
-                            top: ['0%', '100%', '0%'] 
-                          }}
-                          transition={{ 
-                            duration: 2, 
-                            repeat: Infinity, 
-                            ease: "linear" 
-                          }}
-                        />
+                        <>
+                          <motion.div 
+                            className="absolute left-0 top-0 z-10 h-0.5 w-full bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_20px_rgba(52,211,153,1)]"
+                            animate={{ 
+                              top: ['0%', '100%', '0%'] 
+                            }}
+                            transition={{ 
+                              duration: 1.5, 
+                              repeat: Infinity, 
+                              ease: "linear" 
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-emerald-500/5 backdrop-grayscale-[0.5]" />
+                          <div className="absolute bottom-4 left-4 right-4 z-20">
+                            <motion.div 
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="bg-black/80 backdrop-blur-md border border-emerald-500/30 p-2 rounded-lg"
+                            >
+                              <div className="flex items-center gap-2 text-emerald-400 font-mono text-[9px] uppercase tracking-widest">
+                                <Sparkles className="h-3 w-3 animate-spin" />
+                                <span>{scanningStatus}</span>
+                              </div>
+                            </motion.div>
+                          </div>
+                        </>
                       )}
                       
                       <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
