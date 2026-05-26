@@ -24,7 +24,7 @@ import {
 import { useNoveltiesSelectionMode, useNoveltiesWithDetails } from '@/hooks/products';
 import { ProductCardSkeleton } from '@/components/products/ProductCardSkeleton';
 import { LayoutPopover } from '@/components/products/LayoutPopover';
-import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
+import { STORAGE_KEY as GRID_COLS_KEY, getDefaultColumns, type ColumnCount, COLUMN_CLASSES } from '@/components/products/ColumnSelector';
 import { BulkActionBar } from '@/components/products/BulkActionBar';
 import { BulkVariantWizard } from '@/components/catalog/BulkVariantWizard';
 import { BulkAddToCartModal } from '@/components/catalog/BulkAddToCartModal';
@@ -48,20 +48,7 @@ type SortMode =
   | 'best-seller-promo';
 
 function getGridColsClass(cols: ColumnCount): string {
-  switch (cols) {
-    case 3:
-      return 'grid-cols-2 sm:grid-cols-3';
-    case 4:
-      return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4';
-    case 5:
-      return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5';
-    case 6:
-      return 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6';
-    case 8:
-      return 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8';
-    default:
-      return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5';
-  }
+  return COLUMN_CLASSES[cols] || COLUMN_CLASSES[5];
 }
 
 function getGridGapClass(cols: ColumnCount): string {
@@ -73,7 +60,13 @@ function getGridGapClass(cols: ColumnCount): string {
 export function NoveltyProductGrid() {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [gridColumns, setGridColumns] = useState<ColumnCount>(getDefaultColumns);
+  const [gridColumns, setGridColumnsState] = useState<ColumnCount>(getDefaultColumns);
+  const setGridColumns = useCallback((cols: ColumnCount) => {
+    setGridColumnsState(cols);
+    try {
+      localStorage.setItem(GRID_COLS_KEY, String(cols));
+    } catch { /* empty */ }
+  }, []);
   const [sortMode, setSortMode] = useState<SortMode>('newest');
   const [selectedSupplier, setSelectedSupplier] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');

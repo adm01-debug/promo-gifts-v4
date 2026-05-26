@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { type FilterState, defaultFilters } from '@/components/filters/FilterPanel';
-import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
+import { STORAGE_KEY as GRID_COLS_KEY, getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
 import { useColorEnrichment } from '@/hooks/products/useColorEnrichment';
 import { useProductFuzzySearch } from '@/hooks/products/useProductFuzzySearch';
 import { useProductsByCategory } from '@/hooks/products/useProductsByCategory';
@@ -184,20 +184,32 @@ export function useFiltersPageState() {
   const [activePresetId, setActivePresetId] = useState<string | undefined>();
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>('grid');
   const [selectionMode, setSelectionMode] = useState(false);
-  const [gridColumns, setGridColumns] = useState<ColumnCount>(getDefaultColumns);
+  const [gridColumns, setGridColumnsState] = useState<ColumnCount>(getDefaultColumns);
+  const setGridColumns = useCallback((cols: ColumnCount) => {
+    setGridColumnsState(cols);
+    try {
+      localStorage.setItem(GRID_COLS_KEY, String(cols));
+    } catch { /* empty */ }
+  }, []);
 
   // Responsive clamp: force appropriate columns on small screens
   useEffect(() => {
     const handleResize = () => {
       const w = window.innerWidth;
-      if (w < 768 && gridColumns > 3) {
-        setGridColumns(3);
+      let maxCols: ColumnCount = 3;
+      if (w >= 1536) maxCols = 8;
+      else if (w >= 1280) maxCols = 6;
+      else if (w >= 1024) maxCols = 5;
+      else if (w >= 768) maxCols = 4;
+      
+      if (gridColumns > maxCols) {
+        setGridColumns(maxCols);
       }
     };
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [gridColumns]);
+  }, [gridColumns, setGridColumns]);
   const [voiceOverlayOpen, setVoiceOverlayOpen] = useState(false);
   const [commandAction, setCommandAction] = useState<string | null>(null);
   const [appliedFilters, setAppliedFilters] = useState<

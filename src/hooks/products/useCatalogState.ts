@@ -107,20 +107,25 @@ export function useCatalogState() {
     });
   }, []);
 
-  // Responsive clamp
+  // Responsive clamp: garante que o número de colunas não ultrapasse o disponível
+  // para a largura atual da tela, mantendo a consistência visual.
   useEffect(() => {
     const handleResize = () => {
       const w = window.innerWidth;
-      if (w < 640 && gridColumns > 1) {
-        setGridColumnsState(3 as ColumnCount);
-      } else if (w >= 640 && w < 768 && gridColumns > 2) {
-        setGridColumnsState(3 as ColumnCount);
+      let maxCols: ColumnCount = 3;
+      if (w >= 1536) maxCols = 8;
+      else if (w >= 1280) maxCols = 6;
+      else if (w >= 1024) maxCols = 5;
+      else if (w >= 768) maxCols = 4;
+      
+      if (gridColumns > maxCols) {
+        setGridColumns(maxCols);
       }
     };
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [gridColumns]);
+  }, [gridColumns, setGridColumns]);
 
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState(searchQueryFromUrl);

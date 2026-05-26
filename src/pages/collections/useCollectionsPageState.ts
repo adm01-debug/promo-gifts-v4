@@ -10,7 +10,7 @@ import {
   useExternalCollectionProductCounts,
 } from '@/hooks/collections';
 import { toast } from 'sonner';
-import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
+import { STORAGE_KEY as GRID_COLS_KEY, getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
 import type { ViewMode } from '@/hooks/products';
 
 export function useCollectionsPageState() {
@@ -42,7 +42,13 @@ export function useCollectionsPageState() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [gridColumns, setGridColumns] = useState<ColumnCount>(getDefaultColumns);
+  const [gridColumns, setGridColumnsState] = useState<ColumnCount>(getDefaultColumns);
+  const setGridColumns = useCallback((cols: ColumnCount) => {
+    setGridColumnsState(cols);
+    try {
+      localStorage.setItem(GRID_COLS_KEY, String(cols));
+    } catch { /* empty */ }
+  }, []);
   const [selectedCollectionIds, setSelectedCollectionIds] = useState<Set<string>>(new Set());
   const [hintDismissed, setHintDismissed] = useState(false);
   const [formData, setFormData] = useState<{

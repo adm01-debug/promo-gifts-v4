@@ -14,7 +14,7 @@ import { ProductCard } from '@/components/products/ProductCard';
 import { ProductListItem } from '@/components/products/ProductListItem';
 import { ProductTableView } from '@/components/products/ProductTableView';
 import { LayoutPopover } from '@/components/products/LayoutPopover';
-import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
+import { STORAGE_KEY as GRID_COLS_KEY, getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
 import { getGridColsClass, getGridGapClass } from '@/components/replenishments/grid-layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -51,7 +51,6 @@ import type { FavoritesSort } from '@/components/favorites/FavoritesSortBar';
 
 type ViewMode = 'grid' | 'list' | 'table';
 const VIEW_MODE_KEY = 'favorites-view-mode';
-const GRID_COLS_KEY = 'favorites-grid-cols';
 const SELECTED_LIST_KEY = 'favorites-selected-list-id';
 const SORT_KEY = 'favorites-sort';
 const PRICE_DROP_FILTER_KEY = 'favorites-only-drops';
