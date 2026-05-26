@@ -34,6 +34,7 @@ import { useToast } from '@/hooks/ui';
 import { Key, Plus, Edit, Trash2 } from 'lucide-react';
 import { BackButton } from '@/components/common/BackButton';
 import { PageSEO } from '@/components/seo/PageSEO';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 
 interface Permission {
   id: string;
@@ -90,7 +91,7 @@ export default function PermissionsPage() {
       if (isCancelled()) return;
       toast({
         title: 'Erro',
-        description: error instanceof Error ? error.message : String(error),
+        description: sanitizeError(error),
         variant: 'destructive',
       });
     } finally {
@@ -119,7 +120,7 @@ export default function PermissionsPage() {
     } catch (error: unknown) {
       toast({
         title: 'Erro',
-        description: error instanceof Error ? error.message : String(error),
+        description: sanitizeError(error),
         variant: 'destructive',
       });
     }
@@ -145,7 +146,7 @@ export default function PermissionsPage() {
     } catch (error: unknown) {
       toast({
         title: 'Erro',
-        description: error instanceof Error ? error.message : String(error),
+        description: sanitizeError(error),
         variant: 'destructive',
       });
     }

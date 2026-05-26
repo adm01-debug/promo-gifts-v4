@@ -6,7 +6,7 @@
  */
 import { type LucideIcon, Code2, ShieldCheck, User } from "lucide-react";
 
-export type AppRole = "dev" | "supervisor" | "vendedor" | "admin" | "manager";
+export type AppRole = "dev" | "supervisor" | "vendedor" | "agente" | "coordenador" | "admin" | "manager";
 
 export type RoleVisual = {
   /** Rótulo exibido ao usuário (sempre em português). */
@@ -42,6 +42,20 @@ export const ROLE_VISUAL: Record<AppRole, RoleVisual> = {
     variant: "secondary",
     className: "",
     description: "Cria orçamentos e atende clientes dentro de sua alçada.",
+  },
+  agente: {
+    label: "Agente",
+    Icon: User,
+    variant: "secondary",
+    className: "",
+    description: "Cria orçamentos e atende clientes dentro de sua alçada.",
+  },
+  coordenador: {
+    label: "Coordenador",
+    Icon: ShieldCheck,
+    variant: "default",
+    className: "bg-primary/80 text-primary-foreground border-primary/80",
+    description: "Coordena equipe de vendas e gerencia operações de sua área.",
   },
   // ── Aliases legados ──
   admin: {

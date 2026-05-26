@@ -7,6 +7,7 @@ import { useOracleVoiceBridge } from '@/stores/oracleVoiceBridge';
 import Fuse from 'fuse.js';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import { searchCache } from './searchCache';
 import { pushRecentSearch } from './EmptySearchState';
 import { useDebounce, useSearchHistory } from '@/hooks/common';
@@ -76,6 +77,11 @@ export interface AppliedFilter {
   label: string;
 }
 
+export interface QuickSuggestion {
+  label: string;
+  icon: string;
+}
+
 export function useGlobalSearch() {
   const { open, setOpen, voiceOverlayOpen, setVoiceOverlayOpen } = useSearchStore();
   const [query, setQuery] = useState('');
@@ -127,7 +133,6 @@ export function useGlobalSearch() {
         case 'filter':
           if (action.data?.query || action.data?.filters) {
             const searchTerm = action.data?.query || '';
-            // Build search query from filters if no explicit query
             const filterParts: string[] = [];
             if (action.data?.filters?.category) filterParts.push(action.data.filters.category);
             if (action.data?.filters?.color) filterParts.push(action.data.filters.color);
@@ -151,17 +156,14 @@ export function useGlobalSearch() {
           }, 500);
           break;
         case 'sort':
-          // Apply sort — navigate to catalog with sort param
           setTimeout(() => {
             setVoiceOverlayOpen(false);
             if (action.data?.sortBy) {
-              // Navigate to catalog root with sort parameter
               navigate(`/?sort=${action.data.sortBy}`);
             }
           }, 500);
           break;
         case 'answer':
-          // Just spoke the answer, no navigation needed
           break;
         case 'open_oracle':
           setTimeout(() => {
@@ -252,7 +254,6 @@ export function useGlobalSearch() {
   // Keyboard shortcut moved to useGlobalShortcuts.ts for better centralization
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      // Ctrl+Shift+V → open voice assistant (keep here as it is voice-specific)
       if (e.key === 'V' && (e.metaKey || e.ctrlKey) && e.shiftKey) {
         e.preventDefault();
         setVoiceOverlayOpen(true);
@@ -271,7 +272,6 @@ export function useGlobalSearch() {
       return;
     }
 
-    // ── Cache hit ──
     const cached = searchCache.get(searchQuery);
     if (cached) {
       setResults(cached);
@@ -280,7 +280,6 @@ export function useGlobalSearch() {
       return;
     }
 
-    // ── Cancel any in-flight request ──
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -344,11 +343,16 @@ export function useGlobalSearch() {
             const colorFiltered = filteredProducts.filter((p) => {
               if (!p.colors) return false;
               const colors = Array.isArray(p.colors) ? p.colors : [];
-              return colors.some(
-                (c: Record<string, string>) =>
-                  c.name?.toLowerCase().includes(colorLower) ||
-                  c.label?.toLowerCase().includes(colorLower),
-              );
+              return colors.some((c) => {
+                const rec = (typeof c === 'string' ? { name: c } : c) as {
+                  name?: string;
+                  label?: string;
+                };
+                return (
+                  rec.name?.toLowerCase().includes(colorLower) ||
+                  rec.label?.toLowerCase().includes(colorLower)
+                );
+              });
             });
             if (colorFiltered.length > 0) filteredProducts = colorFiltered;
           }
@@ -429,30 +433,76 @@ export function useGlobalSearch() {
       const wants = (t: SearchResultType) =>
         intent.type === t || intent.type === 'mixed' || intent.entities?.includes(t);
 
-      // Collections
-      if (wants('collection')) {
-        try {
-          const { data } = await supabase
-            .from('collections')
-            .select('id, name, description, icon')
-            .ilike('name', `%${term}%`)
-            .limit(5);
-          (data || []).forEach((c) =>
-            allResults.push({
-              id: c.id,
-              title: c.name,
-              subtitle: c.description || 'Coleção',
-              type: 'collection',
-              href: `/colecoes/${c.id}`,
-              metadata: { icon: c.icon },
-            }),
-          );
-        } catch {
-          /* silent */
+      const simpleQueries: Array<{
+        type: SearchResultType;
+        table: string;
+        select: string;
+        filter?: string;
+        titleField: string;
+        subtitleField?: string;
+        hrefPrefix: string;
+      }> = [
+        {
+          type: 'collection',
+          table: 'collections',
+          select: 'id, name, description, icon',
+          titleField: 'name',
+          subtitleField: 'description',
+          hrefPrefix: '/colecoes/',
+        },
+        {
+          type: 'conversation',
+          table: 'expert_conversations',
+          select: 'id, title, updated_at',
+          titleField: 'title',
+          hrefPrefix: '/expert?conversation=',
+        },
+        {
+          type: 'category',
+          table: 'category_icons',
+          select: 'id, category_name, description, icon',
+          titleField: 'category_name',
+          subtitleField: 'description',
+          hrefPrefix: '/?category=',
+        },
+      ];
+
+      for (const q of simpleQueries) {
+        if (wants(q.type)) {
+          try {
+            let builder = untypedFrom(q.table).select(q.select);
+            if (q.type === 'category')
+              builder = builder
+                .eq('is_active', true)
+                .or(`category_name.ilike.%${term}%,description.ilike.%${term}%`);
+            else if (q.type === 'collection') builder = builder.ilike('name', `%${term}%`);
+            else if (q.type === 'conversation')
+              builder = builder
+                .ilike('title', `%${term}%`)
+                .order('updated_at', { ascending: false });
+            const { data } = await builder.limit(5);
+            (data || []).forEach((row: Record<string, unknown>) => {
+              const id = row.id as string;
+              allResults.push({
+                id,
+                type: q.type,
+                title:
+                  ((q.type === 'category' ? row.category_name : row[q.titleField]) as string) || '',
+                subtitle: q.subtitleField ? (row[q.subtitleField] as string) || '' : undefined,
+                href:
+                  q.type === 'category'
+                    ? `${q.hrefPrefix}${encodeURIComponent(row.category_name as string)}`
+                    : `${q.hrefPrefix}${id}`,
+                metadata:
+                  q.type === 'collection' || q.type === 'category' ? { icon: row.icon } : undefined,
+              });
+            });
+          } catch {
+            /* silent */
+          }
         }
       }
 
-      // Custom kits
       if (wants('kit')) {
         try {
           const { data } = await supabase
@@ -473,8 +523,6 @@ export function useGlobalSearch() {
           /* silent */
         }
       }
-
-      // Mockups
       if (wants('mockup')) {
         try {
           const { data } = await supabase
@@ -498,8 +546,6 @@ export function useGlobalSearch() {
           /* silent */
         }
       }
-
-      // Art files
       if (wants('art_file')) {
         try {
           const { data } = await supabase
@@ -522,8 +568,6 @@ export function useGlobalSearch() {
           /* silent */
         }
       }
-
-      // Cart templates
       if (wants('cart_template')) {
         try {
           const { data } = await supabase
@@ -545,31 +589,6 @@ export function useGlobalSearch() {
           /* silent */
         }
       }
-
-      // Expert conversations
-      if (wants('conversation')) {
-        try {
-          const { data } = await supabase
-            .from('expert_conversations')
-            .select('id, title, updated_at')
-            .ilike('title', `%${term}%`)
-            .order('updated_at', { ascending: false })
-            .limit(5);
-          (data || []).forEach((c) =>
-            allResults.push({
-              id: c.id,
-              title: c.title || 'Conversa sem título',
-              subtitle: `Última atualização: ${new Date(c.updated_at).toLocaleDateString('pt-BR')}`,
-              type: 'conversation',
-              href: `/expert?conversation=${c.id}`,
-            }),
-          );
-        } catch {
-          /* silent */
-        }
-      }
-
-      // Magic Up generations
       if (wants('magic_up')) {
         try {
           const { data } = await supabase
@@ -588,7 +607,7 @@ export function useGlobalSearch() {
               title: m.scene_title || m.product_name || 'Magic Up',
               subtitle: `${m.client_name || 'Sem cliente'} • ${m.product_name || ''}${m.scene_category ? ' • ' + m.scene_category : ''}`,
               type: 'magic_up',
-              href: `/magic-up`,
+              href: '/magic-up',
               metadata: { image_url: m.generated_image_url },
             }),
           );
@@ -596,32 +615,6 @@ export function useGlobalSearch() {
           /* silent */
         }
       }
-
-      // Categories (catalog shortcut)
-      if (wants('category')) {
-        try {
-          const { data } = await supabase
-            .from('category_icons')
-            .select('id, category_name, description, icon')
-            .eq('is_active', true)
-            .or(`category_name.ilike.%${term}%,description.ilike.%${term}%`)
-            .limit(5);
-          (data || []).forEach((c) =>
-            allResults.push({
-              id: c.id,
-              title: c.category_name,
-              subtitle: c.description || 'Filtrar catálogo por esta categoria',
-              type: 'category',
-              href: `/?category=${encodeURIComponent(c.category_name)}`,
-              metadata: { icon: c.icon },
-            }),
-          );
-        } catch {
-          /* silent */
-        }
-      }
-
-      // Product components
       if (wants('component')) {
         try {
           const { data } = await supabase
@@ -643,8 +636,6 @@ export function useGlobalSearch() {
           /* silent */
         }
       }
-
-      // Component media
       if (wants('media')) {
         try {
           const { data } = await supabase
@@ -670,7 +661,6 @@ export function useGlobalSearch() {
 
       if (controller.signal.aborted) return;
 
-      // ── Re-rank text-rich entities via pg_trgm RPC ──
       const RERANK_TYPES: SearchResultType[] = ['quote', 'conversation', 'reminder'];
       const candidates = allResults
         .filter((r) => RERANK_TYPES.includes(r.type))
@@ -688,7 +678,6 @@ export function useGlobalSearch() {
             (ranked as Array<{ id: string; score: number }>).forEach((r) =>
               scoreMap.set(r.id, r.score),
             );
-            // Reorder only the rerank-eligible results, keep others in original order
             const others = allResults.filter((r) => !RERANK_TYPES.includes(r.type));
             const reranked = allResults
               .filter((r) => RERANK_TYPES.includes(r.type))
@@ -703,19 +692,18 @@ export function useGlobalSearch() {
       setResults(finalResults);
       searchCache.set(searchQuery, finalResults);
 
-      // ── Telemetry (fire-and-forget) ──
       const latencyMs = Math.round(performance.now() - startedAt);
       void supabase.auth.getUser().then(
         ({ data }) => {
-          const sellerId = data.user?.id;
-          if (!sellerId) return;
+          const userId = data.user?.id;
+          if (!userId) return;
           return supabase
             .from('search_analytics')
             .insert({
-              seller_id: sellerId,
+              user_id: userId,
               search_term: searchQuery.toLowerCase().trim().slice(0, 200),
               results_count: finalResults.length,
-              filters_used: { latency_ms: latencyMs, intent_type: intent.type },
+              search_context: JSON.stringify({ latency_ms: latencyMs, intent_type: intent.type }),
             })
             .then(
               () => undefined,
@@ -748,20 +736,17 @@ export function useGlobalSearch() {
           href: `command:${c.id}`,
           metadata: { iconName: c.icon },
         }));
-
       setResults(matchedCommands);
       setSearchIntent(null);
       setIsSearching(false);
       setIsAIProcessing(false);
       return;
     }
-
     performSemanticSearch(debouncedQuery);
   }, [commands, debouncedQuery, performSemanticSearch]);
 
   const handleSelect = useCallback(
     (href: string, saveToHistory = true) => {
-      // ── Execute Slash Command ──
       if (href.startsWith('command:')) {
         const cmdId = href.split(':')[1];
         const cmd = commands.find((c) => c.id === cmdId);
@@ -775,7 +760,6 @@ export function useGlobalSearch() {
           return;
         }
       }
-
       if (saveToHistory && query.trim()) {
         addGlobalHistoryItem({
           id: `history-${query.trim()}`,
@@ -789,8 +773,6 @@ export function useGlobalSearch() {
       setResults([]);
       setSearchIntent(null);
       setTypingSuggestions([]);
-
-      // Support external URLs (art_file fallback) and "_blank" via Cmd/Ctrl+Enter elsewhere
       if (/^https?:\/\//.test(href)) window.open(href, '_blank', 'noopener,noreferrer');
       else navigate(href);
     },
@@ -829,6 +811,10 @@ export function useGlobalSearch() {
     searchIntent,
     popularProducts,
     typingSuggestions,
+    // quickSuggestions: campo obrigatorio em GlobalSearchIdleState.
+    // Retorna [] por ora — o componente nao renderiza a secao quando vazio.
+    // Futuramente pode ser populado com sugestoes dinamicas.
+    quickSuggestions: [] as QuickSuggestion[],
     voiceOverlayOpen,
     setVoiceOverlayOpen,
     handleOpenVoiceOverlay,

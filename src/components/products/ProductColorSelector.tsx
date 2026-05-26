@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, Sparkles } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { isLightColor } from "@/hooks/products";
+import { isLightColor } from "@/hooks/products/useColorSystem";
 
 // =====================================================
 // TIPOS

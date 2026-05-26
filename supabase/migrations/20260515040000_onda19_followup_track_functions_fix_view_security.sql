@@ -108,9 +108,13 @@ COMMENT ON FUNCTION public.fn_kit_print_area_normalizar_eixos() IS
 --    pg_class.relacl pós-Onda19 confirmou: anon e authenticated com acesso total.
 --    View é interna/service_role-only (REDEPLOY-FASE2-EXECUTION-LOG.md).
 -- ----------------------------------------------------------------
-ALTER VIEW public.v_audit_paradoxos_gravacao SET (security_invoker = true);
+DO $g$ BEGIN
+  IF to_regclass('public.v_audit_paradoxos_gravacao') IS NOT NULL THEN
+    ALTER VIEW public.v_audit_paradoxos_gravacao SET (security_invoker = true);
 
-REVOKE ALL ON public.v_audit_paradoxos_gravacao FROM anon;
-REVOKE ALL ON public.v_audit_paradoxos_gravacao FROM authenticated;
+    REVOKE ALL ON public.v_audit_paradoxos_gravacao FROM anon;
+    REVOKE ALL ON public.v_audit_paradoxos_gravacao FROM authenticated;
+  END IF;
+END $g$;
 
 COMMIT;

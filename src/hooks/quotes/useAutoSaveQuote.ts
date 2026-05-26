@@ -26,10 +26,12 @@ export function migratePayload<T>(
   payload: unknown,
   currentVersion: number = AUTOSAVE_SCHEMA_VERSION,
 ): AutoSavePayload<T> | null {
-  if (!payload) return null;
+  if (!payload || typeof payload !== 'object') return null;
+
+  const versioned = payload as { version?: number };
 
   // Se for um payload antigo sem versão (v1)
-  if (!payload.version) {
+  if (!versioned.version) {
     logger.debug('[AutoSave] Migrating from v1 to v2');
     return {
       version: currentVersion,
@@ -40,7 +42,7 @@ export function migratePayload<T>(
 
   // Se a versão do payload for maior que a atual, tratamos como inseguro
   // e retornamos null para evitar corrupção de estado (o usuário perderá o rascunho, mas não quebrará o app)
-  if (payload.version > currentVersion) {
+  if (versioned.version > currentVersion) {
     console.warn(
       '[AutoSave] Future payload version detected, skipping restore to prevent state corruption',
     );
@@ -64,10 +66,16 @@ export function useAutoSaveQuote<T>({
   key = 'quote_builder_autosave',
 }: AutoSaveOptions<T>) {
   const lastSavedRef = useRef<string>('');
+  // Restaura UMA única vez por montagem. Sem este guard, callers que passam um
+  // `onRestore` inline (identidade nova a cada render) faziam o efeito re-rodar
+  // a cada render e re-aplicar o rascunho salvo POR CIMA das edições ao vivo do
+  // usuário (ex.: o 2º item adicionado era revertido para o estado salvo).
+  const hasRestoredRef = useRef(false);
 
   // Efeito de carregamento inicial (Restaurar)
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || hasRestoredRef.current) return;
+    hasRestoredRef.current = true;
 
     const saved = localStorage.getItem(key);
     if (saved) {

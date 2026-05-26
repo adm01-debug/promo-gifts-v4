@@ -2,17 +2,15 @@
  * useCatalogState — all catalog page state & logic extracted from Index.tsx
  */
 import React, { useState, useMemo, useEffect, useRef, useCallback, useDeferredValue } from 'react';
-import {
-  useCatalogRealStats,
-  useColorEnrichment,
-  useExternalCategoriesQuery,
-  useProductFuzzySearch,
-  useProductsByCategory,
-  useProductsByMaterial,
-  useProductsCatalog,
-  useSupplierSalesRanking,
-  type Product,
-} from '@/hooks/products';
+import { useCatalogRealStats } from '@/hooks/products/useCatalogRealStats';
+import { useColorEnrichment } from '@/hooks/products/useColorEnrichment';
+import { useExternalCategoriesQuery } from '@/hooks/products/useExternalCategoriesQuery';
+import { useProductFuzzySearch } from '@/hooks/products/useProductFuzzySearch';
+import { useProductsByCategory } from '@/hooks/products/useProductsByCategory';
+import { useProductsByMaterial } from '@/hooks/products/useProductsByMaterial';
+import { useProductsCatalog } from '@/hooks/products/useProductsLightweight';
+import { useSupplierSalesRanking } from '@/hooks/products/useSupplierSalesRanking';
+import type { Product } from '@/types/product-catalog';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Package, Heart, Users, Palette, FolderTree } from 'lucide-react';
 
@@ -23,12 +21,13 @@ import {
   type ColumnCount,
 } from '@/components/products/ColumnSelector';
 import { useProductsContext } from '@/contexts/ProductsContext';
-import { useDebounce, useSearch } from '@/hooks/common';
+import { useDebounce } from '@/hooks/common/useDebounce';
+import { useSearch } from '@/hooks/common/useSearch';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useFavoriteQuickAdd } from '@/hooks/favorites';
 import { useComparisonStore } from '@/stores/useComparisonStore';
-import { useToast } from '@/hooks/ui';
-import { usePromoSalesRanking } from '@/hooks/intelligence';
+import { useToast } from '@/hooks/ui/use-toast';
+import { usePromoSalesRanking } from '@/hooks/intelligence/usePromoSalesRanking';
 import { useCatalogFiltering } from '@/hooks/products/useCatalogFiltering';
 
 export type ViewMode = 'grid' | 'list' | 'table';

@@ -50,6 +50,36 @@ function safeCrmErrorFields(error: unknown): Record<string, unknown> {
 }
 
 // ============================================
+// CIRCUIT BREAKER para 429 / rate-limit
+// ============================================
+
+const RATE_LIMIT_COOLDOWN_MS = 30_000; // 30s cooldown quando 429 é detectado
+let rateLimitedUntil = 0; // timestamp em ms
+
+function isRateLimited(): boolean {
+  return Date.now() < rateLimitedUntil;
+}
+
+function activateRateLimitCooldown(): void {
+  rateLimitedUntil = Date.now() + RATE_LIMIT_COOLDOWN_MS;
+  logger.warn(
+    `[CRM-DB] 429 detectado — circuit breaker ativo por ${RATE_LIMIT_COOLDOWN_MS / 1000}s. ` +
+    `Próxima chamada liberada às ${new Date(rateLimitedUntil).toISOString()}`,
+  );
+}
+
+/** Verifica se o erro indica rate-limit (429). */
+function isRateLimitError(msg: string): boolean {
+  const lower = msg.toLowerCase();
+  return (
+    lower.includes('429') ||
+    lower.includes('too many requests') ||
+    lower.includes('rate limit') ||
+    lower.includes('ratelimit')
+  );
+}
+
+// ============================================
 // BATCH SUPPORT — multiple SELECT queries in one call
 // ============================================
 
@@ -77,6 +107,13 @@ export interface CrmBatchResult {
  * Executa múltiplas queries SELECT no CRM em uma única invocação.
  */
 export async function invokeCrmBatch(queries: CrmBatchQuery[]): Promise<CrmBatchResult[]> {
+  // Circuit breaker: bloqueia se em cooldown de 429
+  if (isRateLimited()) {
+    const remainMs = rateLimitedUntil - Date.now();
+    logger.warn(`[CRM-DB] Batch bloqueado pelo circuit breaker (${Math.ceil(remainMs / 1000)}s restantes)`);
+    throw new Error(`CRM rate-limit: aguarde ${Math.ceil(remainMs / 1000)}s antes de tentar novamente`);
+  }
+
   const startedAt = performance.now();
   const body = { operation: 'batch', queries };
   const reqBytes = estimatePayloadBytes(body);
@@ -105,6 +142,8 @@ export async function invokeCrmBatch(queries: CrmBatchQuery[]): Promise<CrmBatch
   });
 
   if (error) {
+    const msg = error.message ?? '';
+    if (isRateLimitError(msg)) activateRateLimitCooldown();
     logger.error('[CRM-DB] Batch error', {
       requestId,
       ...safeCrmErrorFields(error),
@@ -125,6 +164,12 @@ export async function invokeCrmBatch(queries: CrmBatchQuery[]): Promise<CrmBatch
 
 const MAX_RETRIES = 2;
 const INITIAL_BACKOFF_MS = 600;
+
+/**
+ * Padrões que indicam erros TRANSIENTES — vale retry com backoff.
+ * INTENCIONALMENTE excluídos: 'FunctionsHttpError' e 'non-2xx' (muito amplos,
+ * capturavam 429 e geravam loop de retries).
+ */
 const RETRYABLE_PATTERNS = [
   'statement timeout',
   '57014',
@@ -132,8 +177,6 @@ const RETRYABLE_PATTERNS = [
   '503',
   '504',
   'bad gateway',
-  'FunctionsHttpError',
-  'non-2xx',
   'network',
   'fetch',
   'ECONNRESET',
@@ -143,8 +186,31 @@ const RETRYABLE_PATTERNS = [
   'boot',
 ];
 
+/**
+ * Padrões que indicam erros DEFINITIVOS — nunca fazer retry.
+ */
+const NON_RETRYABLE_PATTERNS = [
+  '429',
+  'too many requests',
+  'rate limit',
+  'ratelimit',
+  '400',
+  '401',
+  '403',
+  '404',
+  '410',
+  'permission denied',
+  'jwt',
+  'unauthorized',
+  'duplicate key',
+  'violates',
+  'syntax error',
+];
+
 function isRetryableCrmError(msg: string): boolean {
   const lower = msg.toLowerCase();
+  // Qualquer padrão definitivo bloqueia retry
+  if (NON_RETRYABLE_PATTERNS.some(p => lower.includes(p.toLowerCase()))) return false;
   return RETRYABLE_PATTERNS.some((p) => lower.includes(p.toLowerCase()));
 }
 
@@ -177,9 +243,20 @@ async function extractCrmErrorMessage(error: unknown): Promise<string> {
 // ============================================
 
 /**
- * Invoca o crm-db-bridge para acessar dados do CRM externo (com retry automático)
+ * Invoca o crm-db-bridge para acessar dados do CRM externo (com retry automático).
+ *
+ * Proteções:
+ * - Circuit breaker para 429: bloqueia chamadas por 30s após rate-limit
+ * - NON_RETRYABLE_PATTERNS: 429, 4xx, JWT errors nunca são retentados
  */
 export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
+  // Circuit breaker: bloqueia se em cooldown de 429
+  if (isRateLimited()) {
+    const remainMs = rateLimitedUntil - Date.now();
+    logger.warn(`[CRM-DB] Chamada bloqueada pelo circuit breaker (${Math.ceil(remainMs / 1000)}s restantes)`);
+    throw new Error(`CRM rate-limit: aguarde ${Math.ceil(remainMs / 1000)}s antes de tentar novamente`);
+  }
+
   const startedAt = performance.now();
   const reqBytes = estimatePayloadBytes(query);
   const opLabel = query.operation || 'invoke';
@@ -217,6 +294,14 @@ export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
 
     const msg = error ? await extractCrmErrorMessage(error) : data?.error || 'Unknown CRM error';
 
+    // Rate-limit: ativa circuit breaker e não faz retry
+    if (isRateLimitError(msg)) {
+      activateRateLimitCooldown();
+      record(false, null, msg);
+      logger.error('[CRM-DB] Edge function error', { requestId, message: safeCrmLogMessage(msg) });
+      throw new Error(`CRM DB error: ${msg}`);
+    }
+
     if (attempt < MAX_RETRIES && isRetryableCrmError(msg)) {
       const delay = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
       logger.warn(`[CRM-DB] Retry ${attempt + 1}/${MAX_RETRIES} after ${delay}ms`, {
@@ -229,7 +314,6 @@ export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
 
     record(false, null, msg);
 
-    // Final attempt failed
     if (error) {
       logger.error('[CRM-DB] Edge function error', {
         requestId,

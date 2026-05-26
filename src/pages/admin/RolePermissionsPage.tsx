@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/ui';
 import { Shield, Key, Save, Users, CheckCircle2, XCircle } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 import { PageSEO } from '@/components/seo/PageSEO';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 
 type AppRole = Database['public']['Enums']['app_role'];
 
@@ -79,7 +80,7 @@ export default function RolePermissionsPage() {
       if (isCancelled()) return;
       toast({
         title: 'Erro ao carregar dados',
-        description: error.message,
+        description: sanitizeError(error),
         variant: 'destructive',
       });
     } finally {
@@ -148,7 +149,7 @@ export default function RolePermissionsPage() {
       setPendingChanges(new Map());
       fetchData();
     } catch (error: unknown) {
-      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
+      toast({ title: 'Erro ao salvar', description: sanitizeError(error), variant: 'destructive' });
     } finally {
       setIsSaving(false);
     }

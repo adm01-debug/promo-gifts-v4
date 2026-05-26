@@ -7,9 +7,28 @@
 --      tabela_preco_gravacao_oficial — vaza historico de precos e quem alterou.
 --   - `seo_audit_log`: historico de auditorias SEO — info interna de melhorias.
 --
+-- INVESTIGACAO:
+-- 1. Frontend (src/) NAO consulta nenhuma das 2 (code_search confirmou zero matches).
+-- 2. Edge functions usam service_role que bypassa RLS, entao a mudanca eh transparente.
+-- 3. Sao auditadas apenas via Supabase Dashboard pelo admin.
+-- 4. Convencao: is_supervisor_or_above (alinhada com Ondas 5-10).
+--
 -- MUDANCA:
 -- SELECT em ambas restrito a is_supervisor_or_above (dev, admin, supervisor, manager).
 -- INSERT continua via triggers SECURITY DEFINER que bypassam RLS.
+--
+-- ESTADO DA B-3 APOS ESTA MIGRATION:
+-- Auditoria pre-prod listou 7 tabelas overly-permissive. Estado final:
+--   - audit_log: ja correta (supervisor_or_above) fechada antes
+--   - analytics_events: ja correta (self ou coord) fechada antes
+--   - product_views: ja correta (admin ou seller_id) fechada antes
+--   - search_queries: ja correta (self ou coord) fechada antes
+--   - quote_templates: ja correta (por created_by) fechada antes
+--   - sync_jobs: tabela nao existe mais, N/A
+--   - notification_templates: fechada em Onda 8 (PR #199)
+--   - audit_log_gravacao (esta migration): supervisor_or_above
+--   - seo_audit_log (esta migration): supervisor_or_above
+-- B-3 ENCERRADA.
 --
 -- APLICADA EM PROD via MCP apply_migration (ADR 0006).
 --

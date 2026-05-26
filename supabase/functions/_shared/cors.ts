@@ -80,8 +80,10 @@ function isAllowedOrigin(origin: string): boolean {
 }
 
 function getBestAllowedOrigin(origin: string | null): string {
-  const fallbackOrigin = 'https://criar-together-now.lovable.app';
-  return origin && isAllowedOrigin(origin) ? origin : fallbackOrigin;
+  if (origin && isAllowedOrigin(origin)) return origin;
+  // Unknown origin: return the canonical production origin instead of failing open.
+  // The browser will block the response if the origin doesn't match.
+  return 'https://criar-together-now.lovable.app';
 }
 
 // --- Structured Logging ---

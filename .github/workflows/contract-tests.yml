@@ -80,7 +80,12 @@ jobs:
 
       - name: Serve Edge Functions
         run: |
-          nohup supabase functions serve --no-verify-jwt > /tmp/functions.log 2>&1 &
+          {
+            echo "N8N_PRODUCT_WEBHOOK_SECRET=$N8N_PRODUCT_WEBHOOK_SECRET"
+            echo "WEBHOOK_DISPATCHER_SECRET=$WEBHOOK_DISPATCHER_SECRET"
+          } > /tmp/contract-functions.env
+
+          nohup supabase functions serve --no-verify-jwt --env-file /tmp/contract-functions.env > /tmp/functions.log 2>&1 &
           echo $! > /tmp/functions.pid
 
           for i in $(seq 1 30); do
@@ -95,6 +100,24 @@ jobs:
 
           if [[ "${HTTP:-000}" == "000" ]]; then
             echo "::error::Edge runtime did not become reachable through /functions/v1/health-check"
+            cat /tmp/functions.log || true
+            exit 1
+          fi
+
+          for i in $(seq 1 30); do
+            HTTP=$(curl -sS -o /tmp/product-webhook-ready.json -w "%{http_code}" \
+              -X POST "$SUPABASE_URL/functions/v1/product-webhook" \
+              -H "content-type: application/json" \
+              --data '{}' || true)
+            if [[ "$HTTP" != "000" && "$HTTP" != "502" ]]; then
+              echo "product-webhook ready (HTTP $HTTP)"
+              break
+            fi
+            sleep 1
+          done
+
+          if [[ "${HTTP:-000}" == "000" || "${HTTP:-000}" == "502" ]]; then
+            echo "::error::product-webhook did not become reachable"
             cat /tmp/functions.log || true
             exit 1
           fi

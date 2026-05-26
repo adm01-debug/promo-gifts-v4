@@ -31,18 +31,46 @@
 --   ROLLBACK;
 -- ============================================================================
 
-UPDATE public.quotes
-SET shipping_type = 'fob_pre',
-    updated_at = now()
-WHERE shipping_type = 'fob'
-  AND shipping_cost > 0
-  AND status NOT IN ('approved', 'converted');
-
--- Audit log: registrar conversoes para forensics
 DO $$
 DECLARE
-  _converted_count integer;
+  _converted_count integer := 0;
 BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'quotes'
+      AND column_name = 'shipping_type'
+  ) OR NOT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'quotes'
+      AND column_name = 'shipping_cost'
+  ) OR NOT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'quotes'
+      AND column_name = 'status'
+  ) OR NOT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'quotes'
+      AND column_name = 'updated_at'
+  ) THEN
+    RAISE NOTICE '[backfill_legacy_fob] Skipped: public.quotes legacy shipping columns are not present in this replay state';
+    RETURN;
+  END IF;
+
+  UPDATE public.quotes
+  SET shipping_type = 'fob_pre',
+      updated_at = now()
+  WHERE shipping_type = 'fob'
+    AND shipping_cost > 0
+    AND status NOT IN ('approved', 'converted');
+
   GET DIAGNOSTICS _converted_count = ROW_COUNT;
   RAISE NOTICE '[backfill_legacy_fob] Converted % quotes from fob+cost to fob_pre', _converted_count;
 END $$;

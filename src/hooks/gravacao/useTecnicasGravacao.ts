@@ -7,6 +7,7 @@ import type {
   TecnicaGravacaoWithVariantes 
 } from '@/types/gravacao-database';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 
 const QUERY_KEY = 'tecnicas-gravacao';
 
@@ -66,7 +67,7 @@ export function useTecnicasGravacao() {
       toast.success('Técnica criada com sucesso!');
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      toast.error(sanitizeError(error));
     },
   });
 
@@ -91,7 +92,7 @@ export function useTecnicasGravacao() {
       toast.success('Técnica atualizada com sucesso!');
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      toast.error(sanitizeError(error));
     },
   });
 
@@ -117,7 +118,7 @@ export function useTecnicasGravacao() {
       toast.success('Técnica excluída com sucesso!');
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      toast.error(sanitizeError(error));
     },
   });
 
@@ -135,7 +136,7 @@ export function useTecnicasGravacao() {
       toast.success(ativo ? 'Técnica ativada!' : 'Técnica desativada!');
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      toast.error(sanitizeError(error));
     },
   });
 

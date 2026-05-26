@@ -5,6 +5,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 import {
   DEFAULT_DETAIL_FORM,
   type ExternalTechnique,
@@ -81,7 +82,7 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
       if (!data?.success) throw new Error(data?.error || 'Erro ao criar área');
     },
     onSuccess: () => { invalidate(); toast.success('Área de personalização adicionada'); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(sanitizeError(e)),
   });
 
   const updateMutation = useMutation({
@@ -93,7 +94,7 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
       if (!data?.success) throw new Error(data?.error || 'Erro ao atualizar área');
     },
     onSuccess: () => { invalidate(); toast.success('Área atualizada'); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(sanitizeError(e)),
   });
 
   const deleteMutation = useMutation({
@@ -105,7 +106,7 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
       if (!data?.success) throw new Error(data?.error || 'Erro ao excluir área');
     },
     onSuccess: () => { invalidate(); toast.success('Área removida'); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(sanitizeError(e)),
   });
 
   // Wizard actions

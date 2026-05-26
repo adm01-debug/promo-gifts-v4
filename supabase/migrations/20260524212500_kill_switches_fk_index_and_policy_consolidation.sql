@@ -2,6 +2,9 @@ CREATE INDEX IF NOT EXISTS idx_system_kill_switches_updated_by
   ON public.system_kill_switches (updated_by);
 
 DROP POLICY IF EXISTS kill_switches_write_admin ON public.system_kill_switches;
+DROP POLICY IF EXISTS kill_switches_insert_admin ON public.system_kill_switches;
+DROP POLICY IF EXISTS kill_switches_update_admin ON public.system_kill_switches;
+DROP POLICY IF EXISTS kill_switches_delete_admin ON public.system_kill_switches;
 
 CREATE POLICY kill_switches_insert_admin
   ON public.system_kill_switches FOR INSERT TO authenticated

@@ -12,20 +12,39 @@ import { supabase } from '@/integrations/supabase/client';
 import { logger } from "@/lib/logger";
 import { emitBridgeStatus, isColdStartSignal } from './bridge-status-events';
 import { ensureCloudReady, CloudNotReadyError, getCachedCloudStatus } from '@/lib/cloud-status';
-import { recordBridgeCall, estimatePayloadBytes } from '@/lib/telemetry/bridgeCallMetrics';
+import {
+  recordBridgeCall,
+  estimatePayloadBytes,
+  type BridgeOperation,
+} from '@/lib/telemetry/bridgeCallMetrics';
 import { newRequestId, REQUEST_ID_HEADER } from '@/lib/telemetry/requestId';
 import { getKillSwitchState, invalidateKillSwitchCache, KillSwitchActiveError } from './kill-switch-client';
 import { recordKillSwitchHit } from './kill-switch-telemetry';
 
 const KILL_SWITCH_NAME = 'edge_external_db_bridge';
 
-function deriveExternalOp(body: Record<string, unknown>): { op: string; target?: string } {
+const KNOWN_BRIDGE_OPERATIONS = new Set<BridgeOperation>([
+  'select',
+  'insert',
+  'update',
+  'delete',
+  'upsert',
+  'batch',
+  'rpc',
+  'invoke',
+  'handshake',
+  'health',
+]);
+
+function deriveExternalOp(body: Record<string, unknown>): { op: BridgeOperation; target?: string } {
   const operation = typeof body.operation === 'string' ? body.operation : undefined;
   const table = typeof body.table === 'string' ? body.table : undefined;
   const rpc = typeof body.rpc === 'string' ? body.rpc : undefined;
   if (rpc) return { op: `rpc:${rpc}`, target: rpc };
-  if (operation) return { op: operation, target: table };
-  return { op: 'invoke', target: table };
+  if (operation && KNOWN_BRIDGE_OPERATIONS.has(operation as BridgeOperation)) {
+    return { op: operation as BridgeOperation, target: table };
+  }
+  return { op: 'invoke', target: table ?? operation };
 }
 
 const MAX_RETRIES = 3;

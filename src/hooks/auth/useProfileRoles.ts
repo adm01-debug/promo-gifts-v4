@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 import { authService } from '@/services/authService';
 import { authDebug, authDebugError } from '@/lib/auth/auth-debug';
 import { type AppRole, type Profile } from '@/contexts/AuthContext';
@@ -17,19 +17,11 @@ export function useProfileRoles() {
     }
 
     const doFetch = async () => {
-      authDebug("useProfileRoles.fetchUserData", "start", { userId });
+      authDebug('useProfileRoles.fetchUserData', 'start', { userId });
       try {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const sess = sessionData?.session ?? null;
-        const sessUserId = sess?.user?.id ?? null;
-
-        if (!sess || !sessUserId || sessUserId !== userId) {
-          authDebugError("useProfileRoles.fetchUserData", "ABORT — session mismatch", { 
-            userId, sessUserId, hasSession: !!sess 
-          });
-          return;
-        }
-
+        // PERF: getSession() removido — AuthContext já valida a sessão antes de chamar
+        // fetchUserData(session.user.id), então o round-trip extra ao Supabase Auth é
+        // desnecessário. Economia: ~200–500ms por login (1 HTTP call a menos).
         const [profileResult, firstRoles] = await Promise.all([
           authService.fetchProfile(userId),
           authService.queryRoles(userId),
@@ -37,22 +29,29 @@ export function useProfileRoles() {
 
         let rolesResult = firstRoles;
         if (!rolesResult.error && (!rolesResult.data || rolesResult.data.length === 0)) {
-          authDebug("useProfileRoles.fetchUserData", "user_roles empty — retrying", { userId });
-          await new Promise((r) => setTimeout(r, 250));
+          authDebug('useProfileRoles.fetchUserData', 'user_roles empty — retrying', { userId });
+          // PERF: reduced from 250ms → 100ms
+          await new Promise((r) => setTimeout(r, 100));
           rolesResult = await authService.queryRoles(userId);
         }
 
         if (profileResult.data) {
           setProfile(profileResult.data as Profile);
-          // background update
-          supabase.from("profiles").update({ last_login_at: new Date().toISOString() }).eq("user_id", userId).then();
+          // background update — fire and forget, não bloqueia isLoading
+          getSupabaseClient().then((supabase) =>
+            supabase
+              .from('profiles')
+              .update({ last_login_at: new Date().toISOString() })
+              .eq('user_id', userId)
+              .then(),
+          );
         }
 
         if (rolesResult.data && rolesResult.data.length > 0) {
-          setUserRoles(rolesResult.data.map(r => r.role as AppRole));
+          setUserRoles(rolesResult.data.map((r) => r.role as AppRole));
         }
       } catch (error) {
-        authDebugError("useProfileRoles.fetchUserData", "exception", error);
+        authDebugError('useProfileRoles.fetchUserData', 'exception', error);
       } finally {
         fetchPromiseRef.current = null;
         setIsLoading(false);
@@ -78,6 +77,6 @@ export function useProfileRoles() {
     setIsLoading,
     fetchUserData,
     clearProfileRoles,
-    fetchPromiseRef
+    fetchPromiseRef,
   };
 }

@@ -8,7 +8,9 @@
 
 ## 🎯 Onde estamos hoje
 
-**Última sessão**: 2026-05-24 — **Continuação do colapso** (`claude/confident-heisenberg-M03BW`). Achado central: o kill-switch nunca havia sido ligado no código da edge `external-db-bridge` (causa raiz do colapso). Corrigido no código + 5 migrations DB aplicadas via MCP (REVOKE anon, drop de 67 índices ociosos, consolidação de policies, captura de `fn_handle_new_user`, otimização do drift-check). `fn_run_smoke_tests()` 14/14 ✅. Detalhes em [`docs/RUNBOOK_COLAPSO_2026-05-24.md`](./docs/RUNBOOK_COLAPSO_2026-05-24.md).
+**Última sessão**: 2026-05-25 — **Hardening de fluxos de usuário** (`claude/project-comprehensive-audit-555Dk`). Auditoria focada nos fluxos do vendedor (catálogo→carrinho→orçamento→kit). Achados/correções: (1) **carrinho** — 10 mutations de `useSellerCarts.ts` engoliam erros sem feedback (RLS/rede/constraint); adicionado `onError` consistente via `sanitizeError`; reorder agora aborta em falha parcial; `duplicateItemToCart` passou a copiar `sort_order`. (2) **#339** — confirmado via DB ao vivo que 6 colunas de personalização não existem (`area_image_url`, `max_area_cm2`, `is_default`×2, `is_personalizable`); migration aditiva idempotente **redigida** (`20260525232003_fix_339_*`), **não aplicada em prod** (aguarda revisão/deploy). Advisors read-only rodados no banco: 0 ERROR de segurança, estado bate com a doc. Gates: build ✅, baseline TSC ✅ (zero regressão), testes do carrinho 8/8 ✅.
+
+**Sessão anterior**: 2026-05-24 — **Continuação do colapso** (`claude/confident-heisenberg-M03BW`). Achado central: o kill-switch nunca havia sido ligado no código da edge `external-db-bridge` (causa raiz do colapso). Corrigido no código + 5 migrations DB aplicadas via MCP (REVOKE anon, drop de 67 índices ociosos, consolidação de policies, captura de `fn_handle_new_user`, otimização do drift-check). `fn_run_smoke_tests()` 14/14 ✅. Detalhes em [`docs/RUNBOOK_COLAPSO_2026-05-24.md`](./docs/RUNBOOK_COLAPSO_2026-05-24.md).
 
 **Sessão anterior**: 2026-05-23 — **Etapas 9-13** fechadas — refatoração do top-5 do TSC baseline (235 erros eliminados, 0 regressão).
 
@@ -108,12 +110,23 @@ Refatoração dos 5 arquivos com mais erros no `.tsc-baseline.json` — **235 er
 
 ## 📅 Backlog priorizado (atualizado)
 
-| Prioridade | Item | Origem | Cutoff |
-|------------|------|--------|--------|
-| 🟡 Média | Reduzir top arquivos do ESLint baseline (etapas 14-16) | Auditoria 2026-05-23 | Sem cutoff |
-| 🟡 Média | Plano "10/10" #3, #4 (coverage, quality runner) | Bugs anteriores | Sem cutoff |
-| 🟢 Baixa | Issue 3 do post-mortem CRM — migrar `EXTERNAL_CRM_*` para `integration_credentials` | Post-mortem | Sponsor precisa fornecer chaves |
-| 🟢 Baixa | Flakiness teardown async Helmet/Event listener | Sessão anterior | Sem cutoff |
+### Consolidação de gaps (cobertura, qualidade e fuzz) — priorizada por risco × impacto de negócio
+
+| Prioridade | Gap consolidado | Risco técnico | Impacto no negócio | Owner | Prazo alvo | Critério de verificação pós-correção |
+|------------|------------------|---------------|--------------------|-------|------------|--------------------------------------|
+| 🔴 P0 | **Coverage em fluxos críticos de receita/autorização** (`discountApprovalFlow`, `simulator-wizard-pricing-parity`, contratos webhook/transactional-email) | Regressão silenciosa em regras de preço, aprovação comercial e integração transacional | Orçamento incorreto, atraso de pedidos e risco de perda de venda | **Backend + Pricing guild** | **2026-06-07** | Suite alvo obrigatória verde (`tests/integration/discountApprovalFlow.test.ts`, `tests/integration/simulator-wizard-pricing-parity.test.ts`, `tests/contracts/send-transactional-email.contract.test.ts`, `tests/contracts/webhooks.contract.test.ts`) + cobertura mínima >= baseline atual nesses diretórios |
+| 🔴 P0 | **Quality debt do baseline ESLint (etapas 14-16)** em `SupabaseConnectionsTab`, `CatalogContent`, `ProductQuickView`, `useSimulatorWizard`, `useGlobalSearch` | Warnings mascaram defeitos de tipagem/lógica e dificultam revisão | Aumenta lead time de entrega e chance de hotfix em produção | **Frontend chapter (Admin + Search)** | **2026-06-10** | `npm run lint` sem aumento do baseline e redução líquida nos 5 arquivos-alvo + checklist de revisão sem `eslint-disable` novo não justificado |
+| 🟠 P1 | **Fuzz/property tests para parsing e borda de dados externos** (`price-response.adapter`, máscaras, formatação, mapper de produto, URLs) | Inputs malformados escapam dos testes de exemplo | Falhas intermitentes em cadastro/cotação e suporte reativo | **Quality Enablement + Backend integration** | **2026-06-14** | Novos testes fuzz determinísticos passando (seed fixo) cobrindo parsers críticos + regressão reproduzida por pelo menos 1 caso mínimo por classe de bug |
+| 🟡 P2 | **Runner de qualidade unificado do plano 10/10 (#3 e #4)** com gate explícito de coverage + smoke + contratos prioritários | Sinais de qualidade fragmentados entre scripts | Decisão de release sem visão única (risco de falso verde) | **DevEx/CI** | **2026-06-17** | Pipeline único documentado e executável local/CI; falha obrigatória quando qualquer gate crítico quebrar; evidência em log de execução anexada no PR |
+| 🟢 P3 | Issue 3 do post-mortem CRM — migrar `EXTERNAL_CRM_*` para `integration_credentials` | Persistência de segredo fora do fluxo padrão | Bloqueio de evolução de segurança/compliance | **Plataforma + Sponsor** | **Dependente de chaves do sponsor (sem data firme)** | Migração aplicada em ambiente de teste + rotação de segredo validada + runbook atualizado |
+| 🟢 P3 | Flakiness teardown async Helmet/Event listener | Instabilidade intermitente de testes de UI | Ruído em CI e retrabalho de triagem | **Frontend chapter** | **2026-06-21** | Reexecução 20x dos testes-alvo sem falha intermitente + remoção de skips/workarounds temporários |
+
+### Critérios transversais de aceite (todos os itens acima)
+
+1. **Sem regressão de baseline** (`.tsc-baseline.json` e `.eslint-baseline.json` não podem piorar).
+2. **Evidência no PR**: comando rodado, output resumido e arquivo/teste afetado.
+3. **Owner explícito na issue** com data alvo e status semanal (`on-track`, `at-risk`, `blocked`).
+4. **Pós-correção monitorado por 7 dias** sem reabertura do mesmo bug/sintoma.
 
 > ✅ **Removido do backlog em 2026-05-23**: T-FIX-5b (Etapa 17) — anti-padrão B do guard-rail ESLint resolvido via Opção A. Ver `docs/redeploy/T-FIX-5-LINT-GUARDRAIL.md` → seção "Fase 2 — T-FIX-5b RESOLVIDO".
 >

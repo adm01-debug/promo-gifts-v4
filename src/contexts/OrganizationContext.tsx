@@ -54,9 +54,11 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true);
     try {
-      // Fetch orgs via members join
+      // FIX: usar user_organizations — fonte canônica das RLS policies do projeto.
+      // organization_members era consultada antes mas estava vazia (0 registros),
+      // resultando em currentOrg=null e orgId=null nos INSERTs → erro 42501.
       const { data: members, error: membersError } = await supabase
-        .from("organization_members")
+        .from("user_organizations")
         .select("organization_id, role")
         .eq("user_id", user.id);
 
@@ -112,9 +114,9 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       if (org) {
         setCurrentOrg(org);
         localStorage.setItem(ORG_STORAGE_KEY, orgId);
-        // Update role
+        // FIX: usar user_organizations consistentemente
         supabase
-          .from("organization_members")
+          .from("user_organizations")
           .select("role")
           .eq("organization_id", orgId)
           .eq("user_id", user?.id ?? "")

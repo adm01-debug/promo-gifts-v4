@@ -298,6 +298,9 @@ export function useMagicUpState() {
       setSelectedTechnique(null);
       return;
     }
+    // Guarda contra resposta fora-de-ordem: ao trocar de produto rapidamente, a
+    // resposta mais lenta (produto antigo) não pode sobrescrever o estado atual.
+    let cancelled = false;
     (async () => {
       setLoadingColors(true);
       try {
@@ -318,6 +321,7 @@ export function useMagicUpState() {
             limit: 100,
           }),
         ]);
+        if (cancelled) return;
         const images: ProductImage[] = (imagesResult.records || [])
           .filter((img: Record<string, unknown>) => img.image_type !== 'box')
           .map((img: Record<string, unknown>) => ({
@@ -341,12 +345,16 @@ export function useMagicUpState() {
         });
         setColors(Array.from(uniqueColors.values()));
       } catch {
+        if (cancelled) return;
         setColors([]);
         setProductImages([]);
       } finally {
-        setLoadingColors(false);
+        if (!cancelled) setLoadingColors(false);
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [selectedProduct?.id]);
 
   // ─── Print Areas from customization data ───────────────────────

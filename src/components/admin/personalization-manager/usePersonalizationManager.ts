@@ -286,6 +286,7 @@ export function usePersonalizationManager() {
       max_width_cm?: number | null;
       max_height_cm?: number | null;
       max_area_cm2?: number | null;
+      /** @deprecated TODO(#339): coluna não existe; upload de imagem não persiste. */
       area_image_url?: string | null;
       is_active?: boolean;
     }) => {
@@ -337,6 +338,7 @@ export function usePersonalizationManager() {
       ...data
     }: {
       id: string;
+      /** @deprecated TODO(#339): coluna não existe; toggle não persiste. */
       is_default?: boolean;
       max_colors?: number | null;
       is_active?: boolean;

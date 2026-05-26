@@ -15,63 +15,125 @@ const BodySchema = z.object({
   sceneCategory: z.string().optional(),
   brandColorHex: z.string().optional(),
   brandColorName: z.string().optional(),
-}).refine(data => data.logoBase64 || data.logoUrl, {
+}).refine((data) => data.logoBase64 || data.logoUrl, {
   message: "Either logoBase64 or logoUrl must be provided",
 });
 
+const validBody = {
+  productImageUrl: "https://example.com/img.png",
+  scenePrompt: "Modern office desk",
+  logoBase64: "data:image/png;base64,abc123",
+};
+
+function assertPredictableValidationError(
+  input: unknown,
+  expectedFields: string[] = [],
+  expectedFormErrors: string[] = [],
+) {
+  const result = BodySchema.safeParse(input);
+  assertEquals(result.success, false);
+
+  if (result.success) return;
+
+  const flattened = result.error.flatten();
+  const normalized = {
+    message: "validation_error",
+    fields: Object.fromEntries(
+      Object.entries(flattened.fieldErrors)
+        .filter(([, msgs]) => (msgs?.length ?? 0) > 0)
+        .map(([field, msgs]) => [field, msgs]),
+    ),
+    formErrors: flattened.formErrors,
+  };
+
+  assertEquals(normalized.message, "validation_error");
+  assertEquals(Object.keys(normalized.fields).sort(), expectedFields.sort());
+
+  for (const formError of expectedFormErrors) {
+    assertEquals(normalized.formErrors.includes(formError), true);
+  }
+}
+
 Deno.test("rejects empty body", () => {
-  const result = BodySchema.safeParse({});
-  assertEquals(result.success, false);
+  assertPredictableValidationError({}, ["productImageUrl", "scenePrompt"], [
+    "Either logoBase64 or logoUrl must be provided",
+  ]);
 });
 
-Deno.test("rejects invalid productImageUrl", () => {
-  const result = BodySchema.safeParse({
-    productImageUrl: "not-a-url",
-    scenePrompt: "Office",
-    logoBase64: "abc",
-  });
-  assertEquals(result.success, false);
-  if (!result.success) {
-    const fields = result.error.flatten().fieldErrors;
-    assertEquals("productImageUrl" in fields, true);
+Deno.test("required fields - missing cases", () => {
+  const cases: Array<{ name: string; body: Record<string, unknown>; field: string }> = [
+    {
+      name: "missing productImageUrl",
+      body: { scenePrompt: "Office", logoBase64: "abc" },
+      field: "productImageUrl",
+    },
+    {
+      name: "missing scenePrompt",
+      body: { productImageUrl: "https://example.com/img.png", logoBase64: "abc" },
+      field: "scenePrompt",
+    },
+  ];
+
+  for (const testCase of cases) {
+    assertPredictableValidationError(testCase.body, [testCase.field]);
   }
 });
 
-Deno.test("rejects empty scenePrompt", () => {
-  const result = BodySchema.safeParse({
-    productImageUrl: "https://example.com/img.png",
-    scenePrompt: "",
-    logoBase64: "abc",
-  });
-  assertEquals(result.success, false);
-  if (!result.success) {
-    const fields = result.error.flatten().fieldErrors;
-    assertEquals("scenePrompt" in fields, true);
+Deno.test("required and optional fields - wrong type cases", () => {
+  const cases: Array<{ body: Record<string, unknown>; fields: string[] }> = [
+    { body: { ...validBody, productImageUrl: 123 }, fields: ["productImageUrl"] },
+    { body: { ...validBody, scenePrompt: 999 }, fields: ["scenePrompt"] },
+    { body: { ...validBody, logoBase64: 1000 }, fields: ["logoBase64"] },
+    { body: { ...validBody, logoUrl: true }, fields: ["logoUrl"] },
+    { body: { ...validBody, productName: false }, fields: ["productName"] },
+    { body: { ...validBody, productColor: 10 }, fields: ["productColor"] },
+    { body: { ...validBody, techniqueName: {} }, fields: ["techniqueName"] },
+    { body: { ...validBody, locationName: [] }, fields: ["locationName"] },
+    { body: { ...validBody, sceneCategory: 1 }, fields: ["sceneCategory"] },
+    { body: { ...validBody, brandColorHex: 2 }, fields: ["brandColorHex"] },
+    { body: { ...validBody, brandColorName: 3 }, fields: ["brandColorName"] },
+  ];
+
+  for (const testCase of cases) {
+    assertPredictableValidationError(testCase.body, testCase.fields);
   }
 });
 
-Deno.test("rejects when neither logoBase64 nor logoUrl provided", () => {
-  const result = BodySchema.safeParse({
-    productImageUrl: "https://example.com/img.png",
-    scenePrompt: "Office scene",
-  });
-  assertEquals(result.success, false);
+Deno.test("invalid format cases", () => {
+  const cases: Array<{ body: Record<string, unknown>; fields: string[] }> = [
+    {
+      body: { ...validBody, productImageUrl: "not-a-url" },
+      fields: ["productImageUrl"],
+    },
+    {
+      body: { ...validBody, logoUrl: "not-a-url" },
+      fields: ["logoUrl"],
+    },
+    {
+      body: { ...validBody, scenePrompt: "" },
+      fields: ["scenePrompt"],
+    },
+  ];
+
+  for (const testCase of cases) {
+    assertPredictableValidationError(testCase.body, testCase.fields);
+  }
 });
 
-Deno.test("rejects invalid logoUrl", () => {
-  const result = BodySchema.safeParse({
-    productImageUrl: "https://example.com/img.png",
-    scenePrompt: "Office scene",
-    logoUrl: "not-a-url",
-  });
-  assertEquals(result.success, false);
+Deno.test("cross-field rule - rejects when neither logoBase64 nor logoUrl provided", () => {
+  assertPredictableValidationError(
+    {
+      productImageUrl: "https://example.com/img.png",
+      scenePrompt: "Office scene",
+    },
+    [],
+    ["Either logoBase64 or logoUrl must be provided"],
+  );
 });
 
 Deno.test("accepts valid body with logoBase64", () => {
   const result = BodySchema.safeParse({
-    productImageUrl: "https://example.com/img.png",
-    scenePrompt: "Modern office desk",
-    logoBase64: "data:image/png;base64,abc123",
+    ...validBody,
     productName: "Caneca Premium",
     productColor: "Azul",
     techniqueName: "Serigrafia",

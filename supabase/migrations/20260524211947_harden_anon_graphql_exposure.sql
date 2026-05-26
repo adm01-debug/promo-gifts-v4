@@ -1,27 +1,41 @@
-REVOKE SELECT ON public._unif_pending_log              FROM anon;
-REVOKE SELECT ON public.ai_usage_logs                  FROM anon;
-REVOKE SELECT ON public.api_usage                      FROM anon;
-REVOKE SELECT ON public.audit_log_gravacao             FROM anon;
-REVOKE SELECT ON public.edge_rate_limits               FROM anon;
-REVOKE SELECT ON public.enrichment_log                 FROM anon;
-REVOKE SELECT ON public.external_connections_sync_log  FROM anon;
-REVOKE SELECT ON public.file_scan_logs                 FROM anon;
-REVOKE SELECT ON public.frontend_telemetry             FROM anon;
-REVOKE SELECT ON public.image_import_log               FROM anon;
-REVOKE SELECT ON public.image_validation_log           FROM anon;
-REVOKE SELECT ON public.inbound_webhook_endpoints      FROM anon;
-REVOKE SELECT ON public.inbound_webhook_events         FROM anon;
-REVOKE SELECT ON public.media_sync_log                 FROM anon;
-REVOKE SELECT ON public.outbound_webhooks              FROM anon;
-REVOKE SELECT ON public.ownership_audit_reports        FROM anon;
-REVOKE SELECT ON public.ownership_repair_logs          FROM anon;
-REVOKE SELECT ON public.product_search_logs            FROM anon;
-REVOKE SELECT ON public.product_sync_logs              FROM anon;
-REVOKE SELECT ON public.query_telemetry                FROM anon;
-REVOKE SELECT ON public.request_rate_limits            FROM anon;
-REVOKE SELECT ON public.rls_denial_log                 FROM anon;
-REVOKE SELECT ON public.schema_drift_log               FROM anon;
-REVOKE SELECT ON public.user_known_devices             FROM anon;
-REVOKE SELECT ON public.video_validation_log           FROM anon;
-REVOKE SELECT ON public.voice_command_logs             FROM anon;
-REVOKE SELECT ON public.webhook_deliveries             FROM anon;
+DO $$
+DECLARE
+  v_table text;
+BEGIN
+  FOREACH v_table IN ARRAY ARRAY[
+    '_unif_pending_log',
+    'ai_usage_logs',
+    'api_usage',
+    'audit_log_gravacao',
+    'edge_rate_limits',
+    'enrichment_log',
+    'external_connections_sync_log',
+    'file_scan_logs',
+    'frontend_telemetry',
+    'image_import_log',
+    'image_validation_log',
+    'inbound_webhook_endpoints',
+    'inbound_webhook_events',
+    'media_sync_log',
+    'outbound_webhooks',
+    'ownership_audit_reports',
+    'ownership_repair_logs',
+    'product_search_logs',
+    'product_sync_logs',
+    'query_telemetry',
+    'request_rate_limits',
+    'rls_denial_log',
+    'schema_drift_log',
+    'user_known_devices',
+    'video_validation_log',
+    'voice_command_logs',
+    'webhook_deliveries'
+  ]
+  LOOP
+    IF to_regclass(format('public.%I', v_table)) IS NULL THEN
+      RAISE NOTICE '[harden_anon_graphql_exposure] Skipped anon revoke: public.% does not exist', v_table;
+    ELSE
+      EXECUTE format('REVOKE SELECT ON TABLE public.%I FROM anon', v_table);
+    END IF;
+  END LOOP;
+END $$;

@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 import { crypto } from 'https://deno.land/std@0.224.0/crypto/mod.ts';
 import { encodeHex } from 'https://deno.land/std@0.224.0/encoding/hex.ts';
-import { getCorsHeaders } from '../_shared/cors.ts';
+import { buildPublicCorsHeaders } from '../_shared/cors.ts';
 import { parseContract } from '../_shared/contracts/index.ts';
 import {
   ProductWebhookSchemas,
@@ -41,6 +41,11 @@ const CORS_ALLOW_HEADERS = [
   'x-webhook-timestamp',
   'x-webhook-nonce',
 ];
+
+const PRODUCT_WEBHOOK_CORS_HEADERS = buildPublicCorsHeaders({
+  extraAllowHeaders: CORS_ALLOW_HEADERS,
+  allowMethods: 'POST, OPTIONS',
+});
 
 const UNAUTHORIZED_BODY = JSON.stringify({
   code: 'unauthorized',
@@ -103,25 +108,20 @@ type UpsertOutcome = {
 };
 
 function getRequestCorsHeaders(req: Request): Record<string, string> {
-  const base = getCorsHeaders(req);
   const requestOrigin = req.headers.get('origin') ?? '';
   const isAllowedOrigin = requestOrigin && allowedOrigins.has(requestOrigin);
 
   if (requestOrigin && !isAllowedOrigin) {
     return {
-      ...base,
+      ...PRODUCT_WEBHOOK_CORS_HEADERS,
       'Access-Control-Allow-Origin': 'null',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': CORS_ALLOW_HEADERS.join(', '),
       Vary: 'Origin',
     };
   }
 
   return {
-    ...base,
+    ...PRODUCT_WEBHOOK_CORS_HEADERS,
     'Access-Control-Allow-Origin': requestOrigin || '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': CORS_ALLOW_HEADERS.join(', '),
     Vary: 'Origin',
   };
 }

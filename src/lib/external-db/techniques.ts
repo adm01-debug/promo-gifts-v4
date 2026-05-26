@@ -18,7 +18,17 @@ export interface PromobrindPrintArea {
   technique_code: string | null;
   technique_name: string | null;
   max_colors: number | null;
+  /**
+   * @deprecated TODO(#339): coluna não existe em product_*_location_techniques.
+   * Sempre `undefined` na resposta da RPC. Aguardando decisão de produto
+   * (limpar do front ou expor via RPC usando technique_order=1).
+   */
   is_default: boolean;
+  /**
+   * @deprecated TODO(#339): coluna não existe em product_*_locations.
+   * Sempre `null`. Imagens com image_type='area' existem em product_images
+   * mas não há mapping para location_code.
+   */
   area_image_url: string | null;
 }
 

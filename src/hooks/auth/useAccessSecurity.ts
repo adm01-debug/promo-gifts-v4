@@ -55,12 +55,12 @@ export function useAccessSecurity() {
     setIsLoading(true);
     try {
       const [settingsRes, ipsRes, citiesRes, logsRes] = await Promise.all([
-        db.from('access_security_settings').select('*').limit(1).single(),
-        db.from('ip_whitelist').select('*').order('created_at', { ascending: false }),
-        db.from('city_whitelist').select('*').order('created_at', { ascending: false }),
+        db.from('access_security_settings').select('id, ip_whitelist_enabled, city_whitelist_enabled, block_unknown_locations, max_failed_attempts, lockout_duration_minutes').limit(1).single(),
+        db.from('ip_whitelist').select('id, ip_address, label, is_active, created_at').order('created_at', { ascending: false }),
+        db.from('city_whitelist').select('id, city_name, state, country_code, is_active, created_at').order('created_at', { ascending: false }),
         db
           .from('access_blocked_log')
-          .select('*')
+          .select('id, email, ip_address, city, state, country, block_reason, user_agent, created_at')
           .order('created_at', { ascending: false })
           .limit(50),
       ]);

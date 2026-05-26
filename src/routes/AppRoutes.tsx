@@ -4,8 +4,8 @@ import NProgress from 'nprogress';
 import { performanceTracker } from '@/utils/performance';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 
-import { MainLayout } from '@/components/layout/MainLayout';
 import { getFallback } from '@/components/layout/SkeletonLoaders';
+import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import { adminRoutes } from './admin-routes';
 import { homeAndClientRoutes, notFoundRoute } from './client-routes';
 import { productRoutes } from './product-routes';
@@ -15,6 +15,21 @@ import { toolsRoutes } from './tools-routes';
 
 // NProgress configuration
 NProgress.configure({ showSpinner: false, speed: 400, minimum: 0.1 });
+
+const AppProviders = lazyWithRetry(() =>
+  import('@/components/providers/AppProviders').then((m) => ({ default: m.AppProviders })),
+);
+const MainLayout = lazyWithRetry(() =>
+  import('@/components/layout/MainLayout').then((m) => ({ default: m.MainLayout })),
+);
+
+function ProtectedAppLayout() {
+  return (
+    <AppProviders>
+      <MainLayout />
+    </AppProviders>
+  );
+}
 
 /** Location-aware Suspense that renders route-specific skeletons. */
 function RouteSuspense({ children }: { children: ReactNode }) {
@@ -63,7 +78,7 @@ export function AppRoutes() {
         {publicRoutes}
 
         <Route element={<ProtectedRoute />}>
-          <Route element={<MainLayout />}>
+          <Route element={<ProtectedAppLayout />}>
             {productRoutes}
             {quoteRoutes}
             {adminRoutes}

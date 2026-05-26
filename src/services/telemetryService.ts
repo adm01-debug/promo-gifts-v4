@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 
 export type TelemetryEventType = 'error' | 'performance' | 'ux_action' | 'api_fail';
 
@@ -24,10 +24,10 @@ export interface TelemetryPayload {
 const BATCH_SIZE = 10;
 const FLUSH_INTERVAL_MS = 5000;
 const SAMPLE_RATE: Record<TelemetryEventType, number> = {
-  error: 1.0,       // 100% — todo erro importa
-  api_fail: 1.0,    // 100% — falhas de API são críticas
+  error: 1.0, // 100% — todo erro importa
+  api_fail: 1.0, // 100% — falhas de API são críticas
   performance: 0.1, // 10% — performance é estatística
-  ux_action: 0.2,   // 20% — ações de UX são frequentes mas amostradas
+  ux_action: 0.2, // 20% — ações de UX são frequentes mas amostradas
 };
 
 interface BufferedEvent extends TelemetryPayload {
@@ -46,8 +46,12 @@ class TelemetryService {
     this.sessionId = Math.random().toString(36).substring(2, 15);
     if (typeof window !== 'undefined') {
       // Flush no fechamento da página/aba — eventos pendentes não somem
-      window.addEventListener('pagehide', () => { void this.flush(true); });
-      window.addEventListener('beforeunload', () => { void this.flush(true); });
+      window.addEventListener('pagehide', () => {
+        void this.flush(true);
+      });
+      window.addEventListener('beforeunload', () => {
+        void this.flush(true);
+      });
     }
   }
 
@@ -81,6 +85,7 @@ class TelemetryService {
     }
 
     try {
+      const supabase = await getSupabaseClient();
       const { error } = await supabase.from('frontend_telemetry').insert(batch);
       if (error) {
         // Não re-bufferiza pra evitar loop infinito se erro for RLS/quota
@@ -139,7 +144,11 @@ class TelemetryService {
     });
   }
 
-  async logPerformance(name: string, duration_ms: number, metadata?: Record<string, any>): Promise<void> {
+  async logPerformance(
+    name: string,
+    duration_ms: number,
+    metadata?: Record<string, any>,
+  ): Promise<void> {
     // Mantém o threshold (só >= 100ms importa) ANTES do sampling
     if (duration_ms < 100) return;
     return this.log({

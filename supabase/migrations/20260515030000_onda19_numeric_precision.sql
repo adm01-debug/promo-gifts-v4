@@ -22,6 +22,7 @@
 --
 -- Dependências resolvidas (DROP + ALTER + RECREATE no mesmo migration):
 --   - VIEW v_audit_paradoxos_gravacao (referencia markup_percent)
+--   - TRIGGER trg_validate_quote_real_discount (UPDATE OF discount_percent)
 --   - TRIGGER trg_quotes_calc_real_values (UPDATE OF negotiation_markup_percent)
 --   - TRIGGER trg_kit_print_area_normalizar_eixos (UPDATE OF max_width, max_height)
 --
@@ -30,10 +31,17 @@
 -- migration (out-of-band). Num replay limpo elas não existem; os statements que
 -- dependem delas são guardados por EXCEPTION undefined_table (no-op quando
 -- ausentes). Em produção (onde existem) o comportamento é idêntico ao original.
+--
+-- NAO MEXIDO (decisao pre-flight):
+--   - orders.total (GENERATED ALWAYS AS total_amount, herda precisao)
+--   - app_vitals.metric_value (telemetria livre)
+--   - _asia_api_staging.peso, color_analysis_staging.match_distance (staging)
+--   - tabela_preco_gravacao_oficial.{preco_max,preco_min}_unitario (placeholder)
 -- =================================================================
 
 -- 0. DROP dependências bloqueadoras
 DROP VIEW IF EXISTS public.v_audit_paradoxos_gravacao;
+DROP TRIGGER IF EXISTS trg_validate_quote_real_discount ON public.quotes;
 DROP TRIGGER IF EXISTS trg_quotes_calc_real_values ON public.quotes;
 DO $g$ BEGIN
   DROP TRIGGER IF EXISTS trg_kit_print_area_normalizar_eixos ON public.kit_component_print_areas;
@@ -41,64 +49,104 @@ EXCEPTION WHEN undefined_table THEN NULL; END $g$;
 
 -- 1. PERCENTUAIS (8 colunas)
 ALTER TABLE public.quotes
-  ALTER COLUMN discount_percent           TYPE numeric(5,2),
-  ALTER COLUMN negotiation_markup_percent TYPE numeric(5,2),
-  ALTER COLUMN real_discount_percent      TYPE numeric(5,2);
+  ALTER COLUMN discount_percent           TYPE numeric(5,2) USING ROUND(discount_percent::numeric, 2)::numeric(5,2),
+  ALTER COLUMN negotiation_markup_percent TYPE numeric(5,2) USING ROUND(negotiation_markup_percent::numeric, 2)::numeric(5,2),
+  ALTER COLUMN real_discount_percent      TYPE numeric(5,2) USING ROUND(real_discount_percent::numeric, 2)::numeric(5,2);
 
 ALTER TABLE public.seller_discount_limits
-  ALTER COLUMN max_discount_percent     TYPE numeric(5,2),
-  ALTER COLUMN approval_required_above  TYPE numeric(5,2);
+  ALTER COLUMN max_discount_percent TYPE numeric(5,2) USING ROUND(max_discount_percent::numeric, 2)::numeric(5,2);
+
+DO $g$ BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'seller_discount_limits'
+      AND column_name = 'approval_required_above'
+  ) THEN
+    ALTER TABLE public.seller_discount_limits
+      ALTER COLUMN approval_required_above TYPE numeric(5,2) USING ROUND(approval_required_above::numeric, 2)::numeric(5,2);
+  END IF;
+END $g$;
 
 DO $g$ BEGIN
   ALTER TABLE public.tabela_preco_gravacao_oficial
-    ALTER COLUMN markup_percent TYPE numeric(5,2);
+    ALTER COLUMN markup_percent TYPE numeric(5,2) USING ROUND(markup_percent::numeric, 2)::numeric(5,2);
 EXCEPTION WHEN undefined_table THEN NULL; END $g$;
 
 DO $g$ BEGIN
   ALTER TABLE public.supplier_technique_mappings
-    ALTER COLUMN confidence TYPE numeric(3,2);
+    ALTER COLUMN confidence TYPE numeric(3,2) USING ROUND(confidence::numeric, 2)::numeric(3,2);
 EXCEPTION WHEN undefined_table THEN NULL; END $g$;
 
 DO $g$ BEGIN
   ALTER TABLE public.variant_supplier_sources
-    ALTER COLUMN supplier_ipi_rate TYPE numeric(5,2);
+    ALTER COLUMN supplier_ipi_rate TYPE numeric(5,2) USING ROUND(supplier_ipi_rate::numeric, 2)::numeric(5,2);
 EXCEPTION WHEN undefined_table THEN NULL; END $g$;
 
 -- 2. DINHEIRO (8 colunas)
 ALTER TABLE public.quotes
-  ALTER COLUMN real_subtotal TYPE numeric(10,2);
+  ALTER COLUMN real_subtotal TYPE numeric(10,2) USING ROUND(real_subtotal::numeric, 2)::numeric(10,2);
 
 ALTER TABLE public.quote_item_personalizations
-  ALTER COLUMN unit_cost  TYPE numeric(10,2),
-  ALTER COLUMN setup_cost TYPE numeric(10,2),
-  ALTER COLUMN total_cost TYPE numeric(10,2);
+  ALTER COLUMN unit_cost  TYPE numeric(10,2) USING ROUND(unit_cost::numeric, 2)::numeric(10,2),
+  ALTER COLUMN setup_cost TYPE numeric(10,2) USING ROUND(setup_cost::numeric, 2)::numeric(10,2),
+  ALTER COLUMN total_cost TYPE numeric(10,2) USING ROUND(total_cost::numeric, 2)::numeric(10,2);
 
 ALTER TABLE public.kit_variants
-  ALTER COLUMN total_price TYPE numeric(12,2);
+  ALTER COLUMN total_price TYPE numeric(12,2) USING ROUND(total_price::numeric, 2)::numeric(12,2);
 
 ALTER TABLE public.seller_cart_items
-  ALTER COLUMN product_price TYPE numeric(10,2);
+  ALTER COLUMN product_price TYPE numeric(10,2) USING ROUND(product_price::numeric, 2)::numeric(10,2);
 
 -- collection_items + trash mantêm paridade (favorite_items.price_at_save já é numeric(12,2))
 ALTER TABLE public.collection_items
-  ALTER COLUMN price_at_save TYPE numeric(12,2);
+  ALTER COLUMN price_at_save TYPE numeric(12,2) USING ROUND(price_at_save::numeric, 2)::numeric(12,2);
 
 ALTER TABLE public.collection_items_trash
-  ALTER COLUMN price_at_save TYPE numeric(12,2);
+  ALTER COLUMN price_at_save TYPE numeric(12,2) USING ROUND(price_at_save::numeric, 2)::numeric(12,2);
 
 -- 3. DIMENSÕES (5 colunas)
 ALTER TABLE public.quote_item_personalizations
-  ALTER COLUMN area_cm2  TYPE numeric(8,2),
-  ALTER COLUMN height_cm TYPE numeric(8,2),
-  ALTER COLUMN width_cm  TYPE numeric(8,2);
+  ALTER COLUMN area_cm2 TYPE numeric(8,2) USING ROUND(area_cm2::numeric, 2)::numeric(8,2);
+
+DO $g$ BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'quote_item_personalizations'
+      AND column_name = 'height_cm'
+  ) THEN
+    ALTER TABLE public.quote_item_personalizations
+      ALTER COLUMN height_cm TYPE numeric(8,2) USING ROUND(height_cm::numeric, 2)::numeric(8,2);
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'quote_item_personalizations'
+      AND column_name = 'width_cm'
+  ) THEN
+    ALTER TABLE public.quote_item_personalizations
+      ALTER COLUMN width_cm TYPE numeric(8,2) USING ROUND(width_cm::numeric, 2)::numeric(8,2);
+  END IF;
+END $g$;
 
 DO $g$ BEGIN
   ALTER TABLE public.kit_component_print_areas
-    ALTER COLUMN max_height TYPE numeric(8,2),
-    ALTER COLUMN max_width  TYPE numeric(8,2);
+    ALTER COLUMN max_height TYPE numeric(8,2) USING ROUND(max_height::numeric, 2)::numeric(8,2),
+    ALTER COLUMN max_width  TYPE numeric(8,2) USING ROUND(max_width::numeric, 2)::numeric(8,2);
 EXCEPTION WHEN undefined_table THEN NULL; END $g$;
 
 -- 4. RECREATE triggers (definições idênticas às originais)
+CREATE TRIGGER trg_validate_quote_real_discount
+  BEFORE INSERT OR UPDATE OF subtotal, discount_percent, negotiation_markup_percent, status
+  ON public.quotes
+  FOR EACH ROW
+  EXECUTE FUNCTION public.validate_quote_real_discount();
+
 CREATE TRIGGER trg_quotes_calc_real_values
   BEFORE INSERT OR UPDATE OF subtotal, discount_amount, negotiation_markup_percent
   ON public.quotes

@@ -3,6 +3,10 @@ import { authenticateRequest, requireRole, authErrorResponse } from '../_shared/
 import { parseContract } from '../_shared/contracts/index.ts';
 import { BiCopilotSchemas } from '../_shared/contracts/schemas/bi-copilot.ts';
 import { safeErrorFields } from '../_shared/log-safety.ts';
+import { assertSwitchEnabled } from '../_shared/kill_switch.ts';
+import { createStructuredLogger } from '../_shared/structured-logger.ts';
+import { getOrCreateRequestId, REQUEST_ID_HEADER } from '../_shared/request-id.ts';
+import { fetchWithBreaker, CircuitOpenError, circuitOpenResponse } from '../_shared/external-fetch.ts';
 /**
  * Edge function `bi-copilot` — responde perguntas do vendedor sobre um cliente
  * com base no contexto BI (score, sazonalidade, afinidade, tendências, benchmarks).
@@ -26,6 +30,11 @@ Deno.serve(async (req) => {
   }
 
   const corsHeaders = getCorsHeaders(req);
+  const requestId = getOrCreateRequestId(req);
+  const log = createStructuredLogger({ fn: 'bi-copilot', requestId, req });
+
+  const killResponse = await assertSwitchEnabled('edge_bi_copilot', req, corsHeaders);
+  if (killResponse) return killResponse;
 
   // Auth: exige vendedor autenticado (agente ou acima)
   try {
@@ -37,6 +46,7 @@ Deno.serve(async (req) => {
 
   try {
     if (!LOVABLE_API_KEY) {
+      log.error('missing_config', { reason: 'LOVABLE_API_KEY not set' });
       return new Response(
         JSON.stringify({ error: 'LOVABLE_API_KEY ausente — habilite Lovable AI.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
@@ -69,11 +79,13 @@ ${JSON.stringify(body.context, null, 2)}`;
       { role: 'user' as const, content: body.question },
     ];
 
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    log.info('ai_request', { model: MODEL });
+    const aiResponse = await fetchWithBreaker('lovable-ai', 'https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
+        [REQUEST_ID_HEADER]: requestId,
       },
       body: JSON.stringify({
         model: MODEL,
@@ -85,7 +97,7 @@ ${JSON.stringify(body.context, null, 2)}`;
 
     if (!aiResponse.ok) {
       await aiResponse.text();
-      console.error('AI Gateway error:', { status: aiResponse.status });
+      log.error('ai_gateway_error', { status: aiResponse.status });
       if (aiResponse.status === 429) {
         return new Response(JSON.stringify({ error: 'Muitas requisições. Tente em instantes.' }), {
           status: 429,
@@ -108,12 +120,14 @@ ${JSON.stringify(body.context, null, 2)}`;
     const answer =
       data?.choices?.[0]?.message?.content?.trim() ?? 'Não consegui formular resposta.';
 
-    return new Response(JSON.stringify({ answer }), {
+    log.info('ai_response_ok', { answer_len: answer.length });
+    return log.respond(new Response(JSON.stringify({ answer }), {
       status: 200,
       headers: { ...corsHeaders, ...responseHeaders, 'Content-Type': 'application/json' },
-    });
+    }));
   } catch (e) {
-    console.error('bi-copilot error:', safeErrorFields(e));
+    if (e instanceof CircuitOpenError) return circuitOpenResponse(e, corsHeaders);
+    log.error('unhandled_error', safeErrorFields(e));
     return new Response(JSON.stringify({ error: (e as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

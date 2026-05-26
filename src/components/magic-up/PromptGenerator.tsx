@@ -30,6 +30,7 @@ import {
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 import type { ScenePrompt } from './PromptBank';
 import { OBJECTIVES, TONES, AUDIENCES, SEASONS, getMoodColor } from './promptGeneratorConstants';
 import type { PrintAreaWithTechniques } from '@/types/gravacao';
@@ -208,7 +209,7 @@ export function PromptGenerator({
       }
     } catch (err: unknown) {
       console.error('Prompt generation error:', err);
-      toast.error(err instanceof Error ? err.message : 'Erro ao gerar prompts');
+      toast.error('Erro ao gerar prompts', { description: sanitizeError(err) });
     } finally {
       setGenerating(false);
     }

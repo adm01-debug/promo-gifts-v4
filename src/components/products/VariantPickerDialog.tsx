@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { cn } from '@/lib/utils';
 import { Heart, GitCompare, FolderPlus, MessageCircle, FileText } from 'lucide-react';
 import { SingleVariantPicker } from '@/components/products/SingleVariantPicker';
-import type { ExternalVariantStock } from '@/hooks/products';
+import type { ExternalVariantStock } from '@/hooks/products/useExternalVariantStock';
 import { VisuallyHidden } from '@/components/a11y/VisuallyHidden';
 
 export type VariantActionMode = 'favorite' | 'compare' | 'collection' | 'share' | 'quote';

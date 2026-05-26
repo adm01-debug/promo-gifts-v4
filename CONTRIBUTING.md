@@ -57,6 +57,7 @@ Razão: rastreabilidade + revisão automática (CodeRabbit) + ponto de gate ante
 - Commitar `.env`, tokens, chaves SSH ou qualquer credencial
 - Merge sem revisão do CodeRabbit
 - Renomear ou deletar tabelas/colunas Supabase sem backup `_backup_*_YYYYMMDD`
+- Editar Edge Functions direto no Dashboard do Supabase (ver seção "🔁 Edge Functions")
 
 ## 🔐 Secrets
 
@@ -106,6 +107,32 @@ Rodar `db push` destruiria o banco. Ver `supabase/migrations/README.md`.
 ### Bitrix24
 - `crm.item.get` com `entityTypeId=4` para Smart Companies (não usar `crm.company.get`)
 - OAuth2 sempre — webhook clássico está deprecado para nosso uso
+
+## 🔁 Edge Functions — fonte de verdade
+
+**Regra:** O repositório é a única fonte de verdade. Toda Edge Function vive em `supabase/functions/<slug>/index.ts` e chega ao canônico via CI.
+
+### Como funciona
+
+1. PR mergeado em `main` que toca `supabase/functions/**` dispara o workflow `Deploy Edge Functions` automaticamente.
+2. O workflow faz `supabase functions deploy` para o projeto canônico (`doufsxqlfjyuvxuezpln`).
+3. O workflow `edge-functions-drift-check` roda em cron diário 06:00 BRT, em todo PR que toca `supabase/functions/**`, e por dispatch manual. Compara hash sha256 entre repo e canônico. Falha o build se houver qualquer divergência.
+
+### Proibido
+
+- **Editar uma function direto no Dashboard do Supabase.** Cria drift e dispara issue automática com label `drift-check`.
+- Deletar function via Dashboard sem antes remover a pasta do repo via PR.
+- Disparar `supabase functions deploy` da máquina pessoal contra o canônico sem PR correspondente.
+
+### Permitido
+
+- Inspecionar logs no Dashboard.
+- Disparar `Deploy Edge Functions` manualmente via Actions UI (já roda do código do repo).
+- `supabase functions download` para coleta de evidência ou auditoria local.
+
+### Se você precisar de um hotfix urgente
+
+Mesmo emergência: a) commit no repo na branch `hotfix/<slug>`, b) merge fast-track no main, c) deixar o auto-deploy reconciliar. **Sem janela** para edição direta no Dashboard. O auto-deploy leva tipicamente 1-2 minutos por function.
 
 ## 🛡️ Branch Protection Sentinel
 

@@ -72,6 +72,15 @@ export function GlobalSearchPalette() {
   const handleEmptyRefine = useCallback(() => s.setQuery(""), [s.setQuery]);
   const handleEmptyPickRecent = useCallback((term: string) => s.setQuery(term), [s.setQuery]);
 
+  // Guards defensivos — hooks de inteligência podem retornar undefined antes de carregar
+  const safeHistory = s.history ?? [];
+  const safePopularProducts = s.popularProducts ?? [];
+  const safeContextualSuggestions = s.contextualSuggestions ?? [];
+  const safeQuickSuggestions = s.quickSuggestions ?? [];
+  const safeRouteContext = s.routeContext ?? { section: '' };
+  const safeGroupedResults = s.groupedResults ?? {};
+  const safeTypingSuggestions = s.typingSuggestions ?? [];
+
   return (
     <>
       {/* ── Trigger ── */}
@@ -136,7 +145,7 @@ export function GlobalSearchPalette() {
               )}
               {s.searchIntent.filters.category && <Badge variant="secondary" className="text-[11px] h-5.5 rounded-lg [background-color:hsl(var(--command-accent))] [color:hsl(var(--command-text-muted))]">{s.searchIntent.filters.category}</Badge>}
               {s.searchIntent.filters.color && <Badge variant="secondary" className="text-[11px] h-5.5 rounded-lg [background-color:hsl(var(--command-accent))] [color:hsl(var(--command-text-muted))]">Cor: {s.searchIntent.filters.color}</Badge>}
-              {s.searchIntent.filters.priceRange && <Badge variant="secondary" className="text-[11px] h-5.5 rounded-lg [background-color:hsl(var(--command-accent))] [color:hsl(var(--command-text-muted))]">{{ low: "Preço baixo", medium: "Preço médio", high: "Premium" }[s.searchIntent.filters.priceRange]}</Badge>}
+              {s.searchIntent.filters.priceRange && <Badge variant="secondary" className="text-[11px] h-5.5 rounded-lg [background-color:hsl(var(--command-accent))] [color:hsl(var(--command-text-muted))]\">{{ low: "Preço baixo", medium: "Preço médio", high: "Premium" }[s.searchIntent.filters.priceRange]}</Badge>}
               {s.searchIntent.filters.status && <Badge variant="secondary" className="text-[11px] h-5.5 rounded-lg [background-color:hsl(var(--command-accent))] [color:hsl(var(--command-text-muted))]">Status: {s.searchIntent.filters.status}</Badge>}
               {s.searchIntent.filters.clientName && <Badge variant="secondary" className="text-[11px] h-5.5 rounded-lg [background-color:hsl(var(--command-accent))] [color:hsl(var(--command-text-muted))]">Cliente: {s.searchIntent.filters.clientName}</Badge>}
             </div>
@@ -178,15 +187,15 @@ export function GlobalSearchPalette() {
             </div>
           )}
 
-          {/* Search Results */}
-          {!s.isSearching && Object.entries(s.groupedResults).map(([type, items]) => {
+          {/* Search Results — safeGroupedResults previne crash se groupedResults chegar undefined */}
+          {!s.isSearching && Object.entries(safeGroupedResults).map(([type, items]) => {
             const config = typeConfig[type];
             if (!config) return null;
             const BaseIcon = config.icon;
 
             return (
               <CommandGroup key={type} heading={config.label + "s"} className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 [&_[cmdk-group-heading]]:px-4 [&_[cmdk-group-heading]]:pt-4 [&_[cmdk-group-heading]]:pb-2">
-                {items.map((result, i) => (
+                {(items ?? []).map((result, i) => (
                   <CommandItem
                     key={result.id}
                     value={result.title}
@@ -223,10 +232,10 @@ export function GlobalSearchPalette() {
             );
           })}
 
-          {/* Typing suggestions */}
-          {s.typingSuggestions.length > 0 && s.query.length >= 2 && s.query.length < 5 && !s.isSearching && (
+          {/* Typing suggestions — safeTypingSuggestions previne crash se typingSuggestions for undefined */}
+          {safeTypingSuggestions.length > 0 && s.query.length >= 2 && s.query.length < 5 && !s.isSearching && (
             <CommandGroup heading="Sugestões" className="animate-in fade-in-0 duration-200">
-              {s.typingSuggestions.map((suggestion, i) => (
+              {safeTypingSuggestions.map((suggestion, i) => (
                 <CommandItem
                   key={`sug-${i}`}
                   value={`suggestion-${suggestion}`}
@@ -244,14 +253,14 @@ export function GlobalSearchPalette() {
             </CommandGroup>
           )}
 
-          {/* IDLE STATE */}
+          {/* IDLE STATE — todos os props recebem fallback seguro */}
           {s.query.length < 2 && !s.isSearching && (
             <GlobalSearchIdleState
-              history={s.history}
-              popularProducts={s.popularProducts}
-              contextualSuggestions={s.contextualSuggestions}
-              quickSuggestions={s.quickSuggestions}
-              routeContext={s.routeContext}
+              history={safeHistory}
+              popularProducts={safePopularProducts}
+              contextualSuggestions={safeContextualSuggestions}
+              quickSuggestions={safeQuickSuggestions}
+              routeContext={safeRouteContext}
               quickActionsData={quickActions}
               onSuggestionClick={s.handleSuggestionClick}
               onSelect={s.handleSelect}

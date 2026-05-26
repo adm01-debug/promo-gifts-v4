@@ -7,8 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { useComparisonStore } from "@/stores/useComparisonStore";
-import { exportCollectionPDF } from "@/lib/export-collection-pdf";
-import type { Product } from "@/hooks/products";
+import type { Product } from "@/types/product-catalog";
 import type { BulkVariantSelection, BulkWizardMode } from "@/components/catalog/BulkVariantWizard";
 
 export function useCatalogSelection(
@@ -129,11 +128,11 @@ export function useCatalogSelection(
         }
       });
 
-      void exportCollectionPDF({
+      void import("@/lib/export-collection-pdf").then(({ exportCollectionPDF }) => exportCollectionPDF({
         collectionName: `Catálogo Personalizado - ${new Date().toLocaleDateString("pt-BR")}`,
         products: selections.map(s => s.product),
         variantMap
-      });
+      }));
       
       toast.success(`PDF gerado com ${selections.length} produtos`);
       clearSelection();

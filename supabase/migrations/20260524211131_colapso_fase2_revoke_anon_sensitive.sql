@@ -1,37 +1,51 @@
 -- =============================================================
--- COLAPSO FASE 2 — REVOKE em 20 tabelas críticas (defesa em profundidade)
--- Estratégia conservadora: só REVOKE em tabelas que comprovadamente
--- são uso interno (credenciais, logs admin, tokens MFA).
--- Tabelas que podem ter uso público legítimo via token (kit_share_tokens,
--- quote_approval_tokens, etc.) PRESERVAM SELECT — RLS continua filtrando.
+-- COLAPSO FASE 2 - REVOKE em 20 tabelas criticas
+--
+-- Defesa em profundidade: remove anon das tabelas internas quando elas
+-- existem. O guard por to_regclass mantem o replay limpo funcionando em
+-- ambientes onde uma tabela opcional ainda nao foi criada.
 -- =============================================================
 
--- Credenciais e secrets (CRÍTICO)
-REVOKE ALL ON public.integration_credentials FROM anon;
-REVOKE ALL ON public.secret_rotation_log FROM anon;
-REVOKE ALL ON public.mcp_api_keys FROM anon;
-REVOKE ALL ON public.mcp_access_violations FROM anon;
-REVOKE ALL ON public.mcp_key_auto_revocations FROM anon;
-REVOKE ALL ON public.mcp_full_grantors FROM anon;
+DO $$
+DECLARE
+  v_table text;
+BEGIN
+  FOREACH v_table IN ARRAY ARRAY[
+    -- Credenciais e secrets
+    'integration_credentials',
+    'secret_rotation_log',
+    'mcp_api_keys',
+    'mcp_access_violations',
+    'mcp_key_auto_revocations',
+    'mcp_full_grantors',
 
--- Step-up / 2FA / MFA
-REVOKE ALL ON public.step_up_tokens FROM anon;
-REVOKE ALL ON public.step_up_challenges FROM anon;
-REVOKE ALL ON public.step_up_audit_log FROM anon;
+    -- Step-up / 2FA / MFA
+    'step_up_tokens',
+    'step_up_challenges',
+    'step_up_audit_log',
 
--- Logs de auth / sec
-REVOKE ALL ON public.auth_login_attempts FROM anon;
-REVOKE ALL ON public.bot_detection_log FROM anon;
-REVOKE ALL ON public.user_token_revocations FROM anon;
+    -- Logs de auth / sec
+    'auth_login_attempts',
+    'bot_detection_log',
+    'user_token_revocations',
 
--- Admin / config interna
-REVOKE ALL ON public.admin_audit_log FROM anon;
-REVOKE ALL ON public.admin_settings FROM anon;
-REVOKE ALL ON public.access_security_settings FROM anon;
-REVOKE ALL ON public.security_settings FROM anon;
+    -- Admin / config interna
+    'admin_audit_log',
+    'admin_settings',
+    'access_security_settings',
+    'security_settings',
 
--- Logs internos
-REVOKE ALL ON public.conversation_audit_logs FROM anon;
-REVOKE ALL ON public.e2e_cleanup_rate_limit FROM anon;
-REVOKE ALL ON public.seo_audit_log FROM anon;
-REVOKE ALL ON public.webhook_delivery_metrics FROM anon;
+    -- Logs internos
+    'conversation_audit_logs',
+    'e2e_cleanup_rate_limit',
+    'seo_audit_log',
+    'webhook_delivery_metrics'
+  ]
+  LOOP
+    IF to_regclass(format('public.%I', v_table)) IS NULL THEN
+      RAISE NOTICE '[colapso_fase2] Skipped anon revoke: public.% does not exist', v_table;
+    ELSE
+      EXECUTE format('REVOKE ALL ON TABLE public.%I FROM anon', v_table);
+    END IF;
+  END LOOP;
+END $$;

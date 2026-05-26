@@ -77,9 +77,8 @@ export function useSalesHistoryMacro(days = 30) {
 
       const [quotesRes, ordersRes] = await Promise.all([
         quoteIds.length > 0
-          ? // rls-allow: filtrado por seller_id explícito (já presente na linha)
-            supabase
-              .from('quotes')
+          ? supabase
+              .from('quotes') // rls-allow: filtrado por seller_id explícito
               .select('id, seller_id, status')
               .in('id', quoteIds.slice(0, 500))
               .in('status', ['sent', 'approved', 'rejected', 'expired', 'converted'])

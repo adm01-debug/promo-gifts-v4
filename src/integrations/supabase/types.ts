@@ -12496,6 +12496,60 @@ export type Database = {
           },
         ]
       }
+      product_component_location_techniques: {
+        Row: {
+          component_location_id: string
+          composed_code: string | null
+          composed_location_image_url: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          max_colors: number | null
+          technique_id: string
+          updated_at: string
+        }
+        Insert: {
+          component_location_id: string
+          composed_code?: string | null
+          composed_location_image_url?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          max_colors?: number | null
+          technique_id: string
+          updated_at?: string
+        }
+        Update: {
+          component_location_id?: string
+          composed_code?: string | null
+          composed_location_image_url?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          max_colors?: number | null
+          technique_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_component_location_techniques_component_location_id_fkey"
+            columns: ["component_location_id"]
+            isOneToOne: false
+            referencedRelation: "product_component_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_component_location_techniques_technique_id_fkey"
+            columns: ["technique_id"]
+            isOneToOne: false
+            referencedRelation: "personalization_techniques"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_components: {
         Row: {
           component_code: string
@@ -20040,6 +20094,60 @@ export type Database = {
           filters?: Json
           id?: string
           name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sales_goals: {
+        Row: {
+          achieved_at: string | null
+          created_at: string
+          current_conversions: number
+          current_quotes: number
+          current_value: number
+          end_date: string
+          goal_type: string
+          id: string
+          is_achieved: boolean
+          start_date: string
+          target_conversions: number
+          target_quotes: number
+          target_value: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          achieved_at?: string | null
+          created_at?: string
+          current_conversions?: number
+          current_quotes?: number
+          current_value?: number
+          end_date: string
+          goal_type: string
+          id?: string
+          is_achieved?: boolean
+          start_date: string
+          target_conversions?: number
+          target_quotes?: number
+          target_value?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          achieved_at?: string | null
+          created_at?: string
+          current_conversions?: number
+          current_quotes?: number
+          current_value?: number
+          end_date?: string
+          goal_type?: string
+          id?: string
+          is_achieved?: boolean
+          start_date?: string
+          target_conversions?: number
+          target_quotes?: number
+          target_value?: number
           updated_at?: string
           user_id?: string
         }
@@ -30502,6 +30610,42 @@ export type Database = {
           processados: number | null
           total_produtos: number | null
           ultimo_update: string | null
+        }
+        Relationships: []
+      }
+      v_kill_switch_hits_summary: {
+        Row: {
+          hits: number | null
+          hits_1h: number | null
+          hits_24h: number | null
+          hits_7d: number | null
+          last_hit: string | null
+          operation: string | null
+          source: string | null
+          switch_name: string | null
+          target: string | null
+        }
+        Relationships: []
+      }
+      v_smoke_tests_latest_run: {
+        Row: {
+          details: string | null
+          duration_ms: number | null
+          ran_at: string | null
+          result: string | null
+          test_category: string | null
+          test_name: string | null
+        }
+        Relationships: []
+      }
+      v_smoke_tests_trend: {
+        Row: {
+          avg_duration_ms: number | null
+          failed: number | null
+          passed: number | null
+          ran_at: string | null
+          total: number | null
+          warned: number | null
         }
         Relationships: []
       }

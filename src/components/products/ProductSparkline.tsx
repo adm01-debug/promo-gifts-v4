@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
-import { useSparklineData } from "@/hooks/intelligence";
+import { useSparklineData } from "@/hooks/intelligence/useSparklineSales";
 import { TrendingUp, TrendingDown, Minus, Zap, Activity } from "lucide-react";
 
 interface ProductSparklineProps {
@@ -315,19 +315,6 @@ export function ProductSparkline({ productId, className }: ProductSparklineProps
               </div>
             </div>
 
-            {/* Source legend — sempre visível para deixar claro de onde vem o dado */}
-            <div className="px-3 py-1.5 bg-muted/40 border-t border-border/40">
-              <span className="text-[9px] text-muted-foreground/70 italic leading-tight block">
-                Proxy: unidades depletadas no estoque do fornecedor (não representa vendas da Promo Brindes).
-              </span>
-            </div>
-
-            {/* Demo indicator */}
-            {!hasRealData && (
-              <div className="px-3 py-1 bg-muted/50 border-t border-border/30 text-center">
-                <span className="text-[9px] text-muted-foreground/50 italic">dados estimados</span>
-              </div>
-            )}
           </div>
         </div>
       )}

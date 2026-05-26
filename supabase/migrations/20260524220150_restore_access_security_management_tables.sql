@@ -104,6 +104,9 @@ create policy "user_allowed_ips_delete_own_or_admin" on public.user_allowed_ips
   using (user_id = auth.uid() or public.is_admin_or_above(auth.uid()));
 
 -- Garante 1 linha default em access_security_settings (hook usa .single()).
+alter table public.access_security_settings
+  add column if not exists strict_access_mode boolean not null default false;
+
 insert into public.access_security_settings
   (ip_whitelist_enabled, city_whitelist_enabled, block_unknown_locations,
    max_failed_attempts, lockout_duration_minutes, strict_access_mode)

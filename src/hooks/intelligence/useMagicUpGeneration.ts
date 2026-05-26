@@ -5,6 +5,7 @@ import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 import type { Json, TablesInsert } from '@/integrations/supabase/types';
 import {
   type VariationItem,
@@ -269,7 +270,7 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
         }
       } catch (err: unknown) {
         log.error('generate_failed', { err });
-        toast.error(err instanceof Error ? err.message : 'Erro ao gerar imagem');
+        toast.error('Erro ao gerar imagem', { description: sanitizeError(err) });
       } finally {
         setGenerating(false);
       }

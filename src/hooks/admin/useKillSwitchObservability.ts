@@ -11,8 +11,8 @@
  * Acesso: apenas admin (RLS no banco rejeita não-admin).
  */
 import { useEffect, useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import { untypedFrom } from '@/lib/supabase-untyped';
 
 export interface SwitchState {
   switch_name: string;
@@ -54,12 +54,12 @@ export function useKillSwitchObservability(): KillSwitchObservabilityData {
   const load = useCallback(async () => {
     try {
       // Cast controlado — tabelas novas ainda não estão no gen-types.
-      // deno-lint-ignore no-explicit-any
-      const client = supabase as any;
-
       const [switchesRes, summaryRes] = await Promise.all([
-        client.from('system_kill_switches').select('switch_name, enabled, legacy_message, updated_at'),
-        client.from('v_kill_switch_hits_summary').select('*').order('hits_24h', { ascending: false }).limit(100),
+        untypedFrom<SwitchState>('system_kill_switches').select('switch_name, enabled, legacy_message, updated_at'),
+        untypedFrom<SwitchHitSummary>('v_kill_switch_hits_summary')
+          .select('*')
+          .order('hits_24h', { ascending: false })
+          .limit(100),
       ]);
 
       if (switchesRes.error) throw new Error(`switches: ${switchesRes.error.message}`);

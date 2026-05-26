@@ -12,6 +12,7 @@ import { runBotProtection } from '../_shared/bot-protection.ts';
 import { resolveCredential } from '../_shared/credentials.ts';
 import { extractAndParseAIJSON, safeJson } from '../_shared/json-parser.ts';
 import { safeErrorFields } from '../_shared/log-safety.ts';
+import { assertSwitchEnabled } from '../_shared/kill_switch.ts';
 
 // ============================================
 // SCHEMAS
@@ -719,6 +720,9 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const killResponse = await assertSwitchEnabled('edge_expert_chat', req, corsHeaders);
+  if (killResponse) return killResponse;
 
   try {
     const auth = await authenticateRequest(req);

@@ -24,11 +24,15 @@ SELECT cron.schedule(
   'connections-auto-test',
   '*/15 * * * *', -- a cada 15 minutos (valor permitido pela helper de intervalo)
   $$
+  -- Runtime-only: host e chave vêm de configuração segura em runtime.
+  -- Requer:
+  --   app.supabase_functions_base_url (ex.: https://<project-ref>.supabase.co)
+  --   app.supabase_anon_key
   SELECT net.http_post(
-    url := 'https://nmojwpihnslkssljowjh.supabase.co/functions/v1/connections-auto-test',
+    url := current_setting('app.supabase_functions_base_url', true) || '/functions/v1/connections-auto-test',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
-      'apikey', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tb2p3cGlobnNsa3NzbGpvd2poIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1Nzc0MjgsImV4cCI6MjA4ODE1MzQyOH0.49N47oFn_4O9EGZdoPOYDd_Iez7ft4s9eNITM8N1Eeg'
+      'apikey', current_setting('app.supabase_anon_key', true)
     ),
     body := '{"trigger":"cron"}'::jsonb,
     timeout_milliseconds := 30000

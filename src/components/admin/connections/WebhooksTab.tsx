@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Webhook, Plus, Trash2, Copy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 import {
   Dialog,
   DialogContent,
@@ -87,7 +88,7 @@ export function WebhooksTab() {
       created_by: u.user.id,
     });
     if (error) {
-      toast.error('Erro', { description: error.message });
+      toast.error('Erro ao criar webhook', { description: sanitizeError(error) });
       return;
     }
     toast.success('Webhook criado', {
@@ -118,7 +119,7 @@ export function WebhooksTab() {
       created_by: u.user.id,
     });
     if (error) {
-      toast.error('Erro', { description: error.message });
+      toast.error('Erro ao criar endpoint', { description: sanitizeError(error) });
       return;
     }
     toast.success('Endpoint criado', {
@@ -131,7 +132,7 @@ export function WebhooksTab() {
 
   const remove = async (table: 'outbound_webhooks' | 'inbound_webhook_endpoints', id: string) => {
     const { error } = await supabase.from(table).delete().eq('id', id);
-    if (error) toast.error(error.message);
+    if (error) toast.error('Erro ao remover webhook', { description: sanitizeError(error) });
     else {
       toast.success('Removido');
       load();
@@ -278,7 +279,11 @@ export function WebhooksTab() {
                                   auto_disabled_reason: null,
                                 })
                                 .eq('id', h.id);
-                              if (error) toast.error(error.message);
+                              if (error) {
+                                toast.error('Erro ao reativar webhook', {
+                                  description: sanitizeError(error),
+                                });
+                              }
                               else {
                                 toast.success('Reativado');
                                 load();

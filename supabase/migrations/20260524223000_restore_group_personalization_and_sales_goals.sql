@@ -1,1 +1,228 @@
-LS0gPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQotLSBSZXN0YXVyYSA1IHRhYmVsYXMgcXVlIG8gZnJvbnRlbmQgY2hhbWEgdmlhIHVudHlwZWRGcm9tKCkgbWFzCi0tIG7Do28gZXhpc3RlbSBubyBiYW5jbywgY29udGludWFuZG8gbyB0cmFiYWxobyBkbyBQUiAjMzE1LgotLQotLSBPcmlnZW0gZGEgaW5mZXLDqm5jaWEgKGNydXphbmRvIGPDs2RpZ28gw5cgc2NoZW1hIHJlYWwpOgotLSAgIHNhbGVzX2dvYWxzICAgICAgICAgICAgICAgICAgICAgICAgICAgLT4gaW50ZXJmYWNlIFNhbGVzR29hbCBlbSBzcmMvaG9va3MvaW50ZWxsaWdlbmNlL3VzZVNhbGVzR29hbHMudHMKLS0gICBwcm9kdWN0X2dyb3VwX2NvbXBvbmVudHMgICAgICAgICAgICAgIC0+IGFkZENvbXBvbmVudCBwYXlsb2FkIGVtIHNyYy9jb21wb25lbnRzL2FkbWluL2hvb2tzL3VzZUdyb3VwUGVyc29uYWxpemF0aW9uLnRzCi0tICAgcHJvZHVjdF9ncm91cF9sb2NhdGlvbnMgICAgICAgICAgICAgICAtPiBhZGRMb2NhdGlvbiBwYXlsb2FkIChpZGVtKQotLSAgIHByb2R1Y3RfZ3JvdXBfbG9jYXRpb25fdGVjaG5pcXVlcyAgICAgLT4gYWRkVGVjaG5pcXVlIHBheWxvYWQgKGlkZW0pCi0tICAgcHJvZHVjdF9jb21wb25lbnRfbG9jYXRpb25fdGVjaG5pcXVlcyAtPiBhZGRUZWNobmlxdWVNdXRhdGlvbiBwYXlsb2FkIGVtCi0tICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBzcmMvY29tcG9uZW50cy9hZG1pbi9wZXJzb25hbGl6YXRpb24vdXNlUGVyc29uYWxpemF0aW9uRGF0YS50cyBlCi0tICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBzcmMvY29tcG9uZW50cy9hZG1pbi9wZXJzb25hbGl6YXRpb24tbWFuYWdlci91c2VQZXJzb25hbGl6YXRpb25NYW5hZ2VyLnRzCi0tCi0tIFBhZHLDo28gaWTDqm50aWNvIGFvIFBSICMzMTU6IGlkZW1wb3RlbnRlLCBSTFMsIFJFVk9LRSBhbm9uLCBHUkFOVAotLSBhdXRoZW50aWNhdGVkLCBwb2xpY3kgZGUgbGVpdHVyYSBhbXBsYSBlIGVzY3JpdGEgcG9yIGlzX2FkbWluX29yX2Fib3ZlLgotLSBEREwgasOhIGFwbGljYWRvIGVtIHByb2R1w6fDo28gdmlhIE1DUCAodHJhbnNhw6fDo28gQkVHSU4vQ09NTUlUKSBhbnRlcwotLSBkZXN0ZSBjb21taXQuIFZlcmlmaWNhw6fDo28gcMOzcy1jb21taXQ6IDUvNSB0YWJlbGFzIGNvbSBSTFMgYXRpdmEsCi0tIDIgcG9saWNpZXMgY2FkYSwgY29sdW5hcyBiYXRlbmRvIGNvbSBvIGNvbnRyYXRvIGRvIGZyb250LgotLSA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09CgotLSA9PT09PT09PT09PT0gMSkgc2FsZXNfZ29hbHMgKEJJIC8gbWV0YXMgY29tZXJjaWFpcykgPT09PT09PT09PT09CmNyZWF0ZSB0YWJsZSBpZiBub3QgZXhpc3RzIHB1YmxpYy5zYWxlc19nb2FscyAoCiAgaWQgICAgICAgICAgICAgICAgICB1dWlkIHByaW1hcnkga2V5IGRlZmF1bHQgZ2VuX3JhbmRvbV91dWlkKCksCiAgdXNlcl9pZCAgICAgICAgICAgICB1dWlkIG5vdCBudWxsIHJlZmVyZW5jZXMgYXV0aC51c2VycyhpZCkgb24gZGVsZXRlIGNhc2NhZGUsCiAgZ29hbF90eXBlICAgICAgICAgICB0ZXh0IG5vdCBudWxsIGNoZWNrIChnb2FsX3R5cGUgaW4gKCdtb250aGx5Jywnd2Vla2x5JywncXVhcnRlcmx5JykpLAogIHRhcmdldF92YWx1ZSAgICAgICAgbnVtZXJpYyBub3QgbnVsbCBkZWZhdWx0IDAsCiAgY3VycmVudF92YWx1ZSAgICAgICBudW1lcmljIG5vdCBudWxsIGRlZmF1bHQgMCwKICB0YXJnZXRfcXVvdGVzICAgICAgIGludGVnZXIgbm90IG51bGwgZGVmYXVsdCAwLAogIGN1cnJlbnRfcXVvdGVzICAgICAgaW50ZWdlciBub3QgbnVsbCBkZWZhdWx0IDAsCiAgdGFyZ2V0X2NvbnZlcnNpb25zICBpbnRlZ2VyIG5vdCBudWxsIGRlZmF1bHQgMCwKICBjdXJyZW50X2NvbnZlcnNpb25zIGludGVnZXIgbm90IG51bGwgZGVmYXVsdCAwLAogIHN0YXJ0X2RhdGUgICAgICAgICAgZGF0ZSBub3QgbnVsbCwKICBlbmRfZGF0ZSAgICAgICAgICAgIGRhdGUgbm90IG51bGwsCiAgaXNfYWNoaWV2ZWQgICAgICAgICBib29sZWFuIG5vdCBudWxsIGRlZmF1bHQgZmFsc2UsCiAgYWNoaWV2ZWRfYXQgICAgICAgICB0aW1lc3RhbXB0eiwKICBjcmVhdGVkX2F0ICAgICAgICAgIHRpbWVzdGFtcHR6IG5vdCBudWxsIGRlZmF1bHQgbm93KCksCiAgdXBkYXRlZF9hdCAgICAgICAgICB0aW1lc3RhbXB0eiBub3QgbnVsbCBkZWZhdWx0IG5vdygpCik7CgpjcmVhdGUgaW5kZXggaWYgbm90IGV4aXN0cyBpZHhfc2FsZXNfZ29hbHNfdXNlciAgIG9uIHB1YmxpYy5zYWxlc19nb2FscyAodXNlcl9pZCk7CmNyZWF0ZSBpbmRleCBpZiBub3QgZXhpc3RzIGlkeF9zYWxlc19nb2Fsc19wZXJpb2Qgb24gcHVibGljLnNhbGVzX2dvYWxzICh1c2VyX2lkLCBnb2FsX3R5cGUsIHN0YXJ0X2RhdGUsIGVuZF9kYXRlKTsKCmFsdGVyIHRhYmxlIHB1YmxpYy5zYWxlc19nb2FscyBlbmFibGUgcm93IGxldmVsIHNlY3VyaXR5OwpyZXZva2UgYWxsIG9uIHRhYmxlIHB1YmxpYy5zYWxlc19nb2FscyBmcm9tIGFub247CmdyYW50IHNlbGVjdCwgaW5zZXJ0LCB1cGRhdGUsIGRlbGV0ZSBvbiB0YWJsZSBwdWJsaWMuc2FsZXNfZ29hbHMgdG8gYXV0aGVudGljYXRlZDsKCmRyb3AgcG9saWN5IGlmIGV4aXN0cyAic2FsZXNfZ29hbHNfb3duZXJfYWxsIiBvbiBwdWJsaWMuc2FsZXNfZ29hbHM7CmNyZWF0ZSBwb2xpY3kgInNhbGVzX2dvYWxzX293bmVyX2FsbCIgb24gcHVibGljLnNhbGVzX2dvYWxzCiAgZm9yIGFsbCB0byBhdXRoZW50aWNhdGVkCiAgdXNpbmcgKHVzZXJfaWQgPSBhdXRoLnVpZCgpKQogIHdpdGggY2hlY2sgKHVzZXJfaWQgPSBhdXRoLnVpZCgpKTsKCmRyb3AgcG9saWN5IGlmIGV4aXN0cyAic2FsZXNfZ29hbHNfYWRtaW5fcmVhZCIgb24gcHVibGljLnNhbGVzX2dvYWxzOwpjcmVhdGUgcG9saWN5ICJzYWxlc19nb2Fsc19hZG1pbl9yZWFkIiBvbiBwdWJsaWMuc2FsZXNfZ29hbHMKICBmb3Igc2VsZWN0IHRvIGF1dGhlbnRpY2F0ZWQKICB1c2luZyAocHVibGljLmlzX2FkbWluX29yX2Fib3ZlKGF1dGgudWlkKCkpKTsKCmRyb3AgdHJpZ2dlciBpZiBleGlzdHMgdHJnX3NhbGVzX2dvYWxzX3VwZGF0ZWRfYXQgb24gcHVibGljLnNhbGVzX2dvYWxzOwpjcmVhdGUgdHJpZ2dlciB0cmdfc2FsZXNfZ29hbHNfdXBkYXRlZF9hdAogIGJlZm9yZSB1cGRhdGUgb24gcHVibGljLnNhbGVzX2dvYWxzCiAgZm9yIGVhY2ggcm93IGV4ZWN1dGUgZnVuY3Rpb24gcHVibGljLnVwZGF0ZV91cGRhdGVkX2F0X2NvbHVtbigpOwoKY29tbWVudCBvbiB0YWJsZSBwdWJsaWMuc2FsZXNfZ29hbHMgaXMKICAnTWV0YXMgY29tZXJjaWFpcyBwb3IgdmVuZGVkb3IgKG1lbnNhbC9zZW1hbmFsL3RyaW1lc3RyYWwpLiBDb25zdW1pZGEgcG9yIHVzZVNhbGVzR29hbHMgZW0gc3JjL2hvb2tzL2ludGVsbGlnZW5jZS8uJzsKCi0tID09PT09PT09PT09PSAyKSBwcm9kdWN0X2dyb3VwX2NvbXBvbmVudHMgPT09PT09PT09PT09CmNyZWF0ZSB0YWJsZSBpZiBub3QgZXhpc3RzIHB1YmxpYy5wcm9kdWN0X2dyb3VwX2NvbXBvbmVudHMgKAogIGlkICAgICAgICAgICAgICAgdXVpZCBwcmltYXJ5IGtleSBkZWZhdWx0IGdlbl9yYW5kb21fdXVpZCgpLAogIHByb2R1Y3RfZ3JvdXBfaWQgdXVpZCBub3QgbnVsbCByZWZlcmVuY2VzIHB1YmxpYy5wcm9kdWN0X2dyb3VwcyhpZCkgb24gZGVsZXRlIGNhc2NhZGUsCiAgY29tcG9uZW50X2NvZGUgICB0ZXh0IG5vdCBudWxsLAogIGNvbXBvbmVudF9uYW1lICAgdGV4dCBub3QgbnVsbCwKICBkZXNjcmlwdGlvbiAgICAgIHRleHQsCiAgaXNfYWN0aXZlICAgICAgICBib29sZWFuIG5vdCBudWxsIGRlZmF1bHQgdHJ1ZSwKICBzb3J0X29yZGVyICAgICAgIGludGVnZXIgbm90IG51bGwgZGVmYXVsdCAwLAogIGNyZWF0ZWRfYXQgICAgICAgdGltZXN0YW1wdHogbm90IG51bGwgZGVmYXVsdCBub3coKSwKICB1cGRhdGVkX2F0ICAgICAgIHRpbWVzdGFtcHR6IG5vdCBudWxsIGRlZmF1bHQgbm93KCksCiAgdW5pcXVlIChwcm9kdWN0X2dyb3VwX2lkLCBjb21wb25lbnRfY29kZSkKKTsKCmNyZWF0ZSBpbmRleCBpZiBub3QgZXhpc3RzIGlkeF9wZ2NvbXBfZ3JvdXAgb24gcHVibGljLnByb2R1Y3RfZ3JvdXBfY29tcG9uZW50cyAocHJvZHVjdF9ncm91cF9pZCwgc29ydF9vcmRlcik7CgphbHRlciB0YWJsZSBwdWJsaWMucHJvZHVjdF9ncm91cF9jb21wb25lbnRzIGVuYWJsZSByb3cgbGV2ZWwgc2VjdXJpdHk7CnJldm9rZSBhbGwgb24gdGFibGUgcHVibGljLnByb2R1Y3RfZ3JvdXBfY29tcG9uZW50cyBmcm9tIGFub247CmdyYW50IHNlbGVjdCwgaW5zZXJ0LCB1cGRhdGUsIGRlbGV0ZSBvbiB0YWJsZSBwdWJsaWMucHJvZHVjdF9ncm91cF9jb21wb25lbnRzIHRvIGF1dGhlbnRpY2F0ZWQ7Cgpkcm9wIHBvbGljeSBpZiBleGlzdHMgInBnY29tcF9zZWxlY3RfYXV0aGVudGljYXRlZCIgb24gcHVibGljLnByb2R1Y3RfZ3JvdXBfY29tcG9uZW50czsKY3JlYXRlIHBvbGljeSAicGdjb21wX3NlbGVjdF9hdXRoZW50aWNhdGVkIiBvbiBwdWJsaWMucHJvZHVjdF9ncm91cF9jb21wb25lbnRzCiAgZm9yIHNlbGVjdCB0byBhdXRoZW50aWNhdGVkIHVzaW5nICh0cnVlKTsKCmRyb3AgcG9saWN5IGlmIGV4aXN0cyAicGdjb21wX3dyaXRlX2FkbWluIiBvbiBwdWJsaWMucHJvZHVjdF9ncm91cF9jb21wb25lbnRzOwpjcmVhdGUgcG9saWN5ICJwZ2NvbXBfd3JpdGVfYWRtaW4iIG9uIHB1YmxpYy5wcm9kdWN0X2dyb3VwX2NvbXBvbmVudHMKICBmb3IgYWxsIHRvIGF1dGhlbnRpY2F0ZWQKICB1c2luZyAocHVibGljLmlzX2FkbWluX29yX2Fib3ZlKGF1dGgudWlkKCkpKQogIHdpdGggY2hlY2sgKHB1YmxpYy5pc19hZG1pbl9vcl9hYm92ZShhdXRoLnVpZCgpKSk7Cgpkcm9wIHRyaWdnZXIgaWYgZXhpc3RzIHRyZ19wZ2NvbXBfdXBkYXRlZF9hdCBvbiBwdWJsaWMucHJvZHVjdF9ncm91cF9jb21wb25lbnRzOwpjcmVhdGUgdHJpZ2dlciB0cmdfcGdjb21wX3VwZGF0ZWRfYXQKICBiZWZvcmUgdXBkYXRlIG9uIHB1YmxpYy5wcm9kdWN0X2dyb3VwX2NvbXBvbmVudHMKICBmb3IgZWFjaCByb3cgZXhlY3V0ZSBmdW5jdGlvbiBwdWJsaWMudXBkYXRlX3VwZGF0ZWRfYXRfY29sdW1uKCk7Cgpjb21tZW50IG9uIHRhYmxlIHB1YmxpYy5wcm9kdWN0X2dyb3VwX2NvbXBvbmVudHMgaXMKICAnQ29tcG9uZW50ZXMgZGVmaW5pZG9zIG5vIG7DrXZlbCBkZSBncnVwbyBkZSBwcm9kdXRvcyAoaGVyZGFkb3MgcGVsb3MgZmlsaG9zIGRvIGdydXBvKS4gSXJtw6MgZXN0cnV0dXJhbCBkZSBwcm9kdWN0X2NvbXBvbmVudHMuJzsKCi0tID09PT09PT09PT09PSAzKSBwcm9kdWN0X2dyb3VwX2xvY2F0aW9ucyA9PT09PT09PT09PT0KY3JlYXRlIHRhYmxlIGlmIG5vdCBleGlzdHMgcHVibGljLnByb2R1Y3RfZ3JvdXBfbG9jYXRpb25zICgKICBpZCAgICAgICAgICAgICAgICAgIHV1aWQgcHJpbWFyeSBrZXkgZGVmYXVsdCBnZW5fcmFuZG9tX3V1aWQoKSwKICBncm91cF9jb21wb25lbnRfaWQgIHV1aWQgbm90IG51bGwgcmVmZXJlbmNlcyBwdWJsaWMucHJvZHVjdF9ncm91cF9jb21wb25lbnRzKGlkKSBvbiBkZWxldGUgY2FzY2FkZSwKICBsb2NhdGlvbl9jb2RlICAgICAgIHRleHQgbm90IG51bGwsCiAgbG9jYXRpb25fbmFtZSAgICAgICB0ZXh0IG5vdCBudWxsLAogIGRlc2NyaXB0aW9uICAgICAgICAgdGV4dCwKICBtYXhfd2lkdGhfY20gICAgICAgIG51bWVyaWMsCiAgbWF4X2hlaWdodF9jbSAgICAgICBudW1lcmljLAogIG1heF9hcmVhX2NtMiAgICAgICAgbnVtZXJpYywKICBpc19hY3RpdmUgICAgICAgICAgIGJvb2xlYW4gbm90IG51bGwgZGVmYXVsdCB0cnVlLAogIHNvcnRfb3JkZXIgICAgICAgICAgaW50ZWdlciBub3QgbnVsbCBkZWZhdWx0IDAsCiAgY3JlYXRlZF9hdCAgICAgICAgICB0aW1lc3RhbXB0eiBub3QgbnVsbCBkZWZhdWx0IG5vdygpLAogIHVwZGF0ZWRfYXQgICAgICAgICAgdGltZXN0YW1wdHogbm90IG51bGwgZGVmYXVsdCBub3coKSwKICB1bmlxdWUgKGdyb3VwX2NvbXBvbmVudF9pZCwgbG9jYXRpb25fY29kZSkKKTsKCmNyZWF0ZSBpbmRleCBpZiBub3QgZXhpc3RzIGlkeF9wZ2xvY19jb21wb25lbnQgb24gcHVibGljLnByb2R1Y3RfZ3JvdXBfbG9jYXRpb25zIChncm91cF9jb21wb25lbnRfaWQpOwoKYWx0ZXIgdGFibGUgcHVibGljLnByb2R1Y3RfZ3JvdXBfbG9jYXRpb25zIGVuYWJsZSByb3cgbGV2ZWwgc2VjdXJpdHk7CnJldm9rZSBhbGwgb24gdGFibGUgcHVibGljLnByb2R1Y3RfZ3JvdXBfbG9jYXRpb25zIGZyb20gYW5vbjsKZ3JhbnQgc2VsZWN0LCBpbnNlcnQsIHVwZGF0ZSwgZGVsZXRlIG9uIHRhYmxlIHB1YmxpYy5wcm9kdWN0X2dyb3VwX2xvY2F0aW9ucyB0byBhdXRoZW50aWNhdGVkOwoKZHJvcCBwb2xpY3kgaWYgZXhpc3RzICJwZ2xvY19zZWxlY3RfYXV0aGVudGljYXRlZCIgb24gcHVibGljLnByb2R1Y3RfZ3JvdXBfbG9jYXRpb25zOwpjcmVhdGUgcG9saWN5ICJwZ2xvY19zZWxlY3RfYXV0aGVudGljYXRlZCIgb24gcHVibGljLnByb2R1Y3RfZ3JvdXBfbG9jYXRpb25zCiAgZm9yIHNlbGVjdCB0byBhdXRoZW50aWNhdGVkIHVzaW5nICh0cnVlKTsKCmRyb3AgcG9saWN5IGlmIGV4aXN0cyAicGdsb2Nfd3JpdGVfYWRtaW4iIG9uIHB1YmxpYy5wcm9kdWN0X2dyb3VwX2xvY2F0aW9uczsKY3JlYXRlIHBvbGljeSAicGdsb2Nfd3JpdGVfYWRtaW4iIG9uIHB1YmxpYy5wcm9kdWN0X2dyb3VwX2xvY2F0aW9ucwogIGZvciBhbGwgdG8gYXV0aGVudGljYXRlZAogIHVzaW5nIChwdWJsaWMuaXNfYWRtaW5fb3JfYWJvdmUoYXV0aC51aWQoKSkpCiAgd2l0aCBjaGVjayAocHVibGljLmlzX2FkbWluX29yX2Fib3ZlKGF1dGgudWlkKCkpKTsKCmRyb3AgdHJpZ2dlciBpZiBleGlzdHMgdHJnX3BnbG9jX3VwZGF0ZWRfYXQgb24gcHVibGljLnByb2R1Y3RfZ3JvdXBfbG9jYXRpb25zOwpjcmVhdGUgdHJpZ2dlciB0cmdfcGdsb2NfdXBkYXRlZF9hdAogIGJlZm9yZSB1cGRhdGUgb24gcHVibGljLnByb2R1Y3RfZ3JvdXBfbG9jYXRpb25zCiAgZm9yIGVhY2ggcm93IGV4ZWN1dGUgZnVuY3Rpb24gcHVibGljLnVwZGF0ZV91cGRhdGVkX2F0X2NvbHVtbigpOwoKY29tbWVudCBvbiB0YWJsZSBwdWJsaWMucHJvZHVjdF9ncm91cF9sb2NhdGlvbnMgaXMKICAnw4FyZWFzIGRlIHBlcnNvbmFsaXphw6fDo28gbm8gbsOtdmVsIGRlIGdydXBvLiBJcm3DoyBkZSBwcm9kdWN0X2NvbXBvbmVudF9sb2NhdGlvbnMuJzsKCi0tID09PT09PT09PT09PSA0KSBwcm9kdWN0X2dyb3VwX2xvY2F0aW9uX3RlY2huaXF1ZXMgPT09PT09PT09PT09CmNyZWF0ZSB0YWJsZSBpZiBub3QgZXhpc3RzIHB1YmxpYy5wcm9kdWN0X2dyb3VwX2xvY2F0aW9uX3RlY2huaXF1ZXMgKAogIGlkICAgICAgICAgICAgICAgICAgdXVpZCBwcmltYXJ5IGtleSBkZWZhdWx0IGdlbl9yYW5kb21fdXVpZCgpLAogIGdyb3VwX2xvY2F0aW9uX2lkICAgdXVpZCBub3QgbnVsbCByZWZlcmVuY2VzIHB1YmxpYy5wcm9kdWN0X2dyb3VwX2xvY2F0aW9ucyhpZCkgb24gZGVsZXRlIGNhc2NhZGUsCiAgdGVjaG5pcXVlX2lkICAgICAgICB1dWlkIG5vdCBudWxsIHJlZmVyZW5jZXMgcHVibGljLnBlcnNvbmFsaXphdGlvbl90ZWNobmlxdWVzKGlkKSBvbiBkZWxldGUgcmVzdHJpY3QsCiAgbWF4X2NvbG9ycyAgICAgICAgICBpbnRlZ2VyLAogIGlzX2FjdGl2ZSAgICAgICAgICAgYm9vbGVhbiBub3QgbnVsbCBkZWZhdWx0IHRydWUsCiAgY3JlYXRlZF9hdCAgICAgICAgICB0aW1lc3RhbXB0eiBub3QgbnVsbCBkZWZhdWx0IG5vdygpLAogIHVwZGF0ZWRfYXQgICAgICAgICAgdGltZXN0YW1wdHogbm90IG51bGwgZGVmYXVsdCBub3coKSwKICB1bmlxdWUgKGdyb3VwX2xvY2F0aW9uX2lkLCB0ZWNobmlxdWVfaWQpCik7CgpjcmVhdGUgaW5kZXggaWYgbm90IGV4aXN0cyBpZHhfcGdsb2N0ZWNoX2xvY2F0aW9uICBvbiBwdWJsaWMucHJvZHVjdF9ncm91cF9sb2NhdGlvbl90ZWNobmlxdWVzIChncm91cF9sb2NhdGlvbl9pZCk7CmNyZWF0ZSBpbmRleCBpZiBub3QgZXhpc3RzIGlkeF9wZ2xvY3RlY2hfdGVjaG5pcXVlIG9uIHB1YmxpYy5wcm9kdWN0X2dyb3VwX2xvY2F0aW9uX3RlY2huaXF1ZXMgKHRlY2huaXF1ZV9pZCk7CgphbHRlciB0YWJsZSBwdWJsaWMucHJvZHVjdF9ncm91cF9sb2NhdGlvbl90ZWNobmlxdWVzIGVuYWJsZSByb3cgbGV2ZWwgc2VjdXJpdHk7CnJldm9rZSBhbGwgb24gdGFibGUgcHVibGljLnByb2R1Y3RfZ3JvdXBfbG9jYXRpb25fdGVjaG5pcXVlcyBmcm9tIGFub247CmdyYW50IHNlbGVjdCwgaW5zZXJ0LCB1cGRhdGUsIGRlbGV0ZSBvbiB0YWJsZSBwdWJsaWMucHJvZHVjdF9ncm91cF9sb2NhdGlvbl90ZWNobmlxdWVzIHRvIGF1dGhlbnRpY2F0ZWQ7Cgpkcm9wIHBvbGljeSBpZiBleGlzdHMgInBnbG9jdGVjaF9zZWxlY3RfYXV0aGVudGljYXRlZCIgb24gcHVibGljLnByb2R1Y3RfZ3JvdXBfbG9jYXRpb25fdGVjaG5pcXVlczsKY3JlYXRlIHBvbGljeSAicGdsb2N0ZWNoX3NlbGVjdF9hdXRoZW50aWNhdGVkIiBvbiBwdWJsaWMucHJvZHVjdF9ncm91cF9sb2NhdGlvbl90ZWNobmlxdWVzCiAgZm9yIHNlbGVjdCB0byBhdXRoZW50aWNhdGVkIHVzaW5nICh0cnVlKTsKCmRyb3AgcG9saWN5IGlmIGV4aXN0cyAicGdsb2N0ZWNoX3dyaXRlX2FkbWluIiBvbiBwdWJsaWMucHJvZHVjdF9ncm91cF9sb2NhdGlvbl90ZWNobmlxdWVzOwpjcmVhdGUgcG9saWN5ICJwZ2xvY3RlY2hfd3JpdGVfYWRtaW4iIG9uIHB1YmxpYy5wcm9kdWN0X2dyb3VwX2xvY2F0aW9uX3RlY2huaXF1ZXMKICBmb3IgYWxsIHRvIGF1dGhlbnRpY2F0ZWQKICB1c2luZyAocHVibGljLmlzX2FkbWluX29yX2Fib3ZlKGF1dGgudWlkKCkpKQogIHdpdGggY2hlY2sgKHB1YmxpYy5pc19hZG1pbl9vcl9hYm92ZShhdXRoLnVpZCgpKSk7Cgpkcm9wIHRyaWdnZXIgaWYgZXhpc3RzIHRyZ19wZ2xvY3RlY2hfdXBkYXRlZF9hdCBvbiBwdWJsaWMucHJvZHVjdF9ncm91cF9sb2NhdGlvbl90ZWNobmlxdWVzOwpjcmVhdGUgdHJpZ2dlciB0cmdfcGdsb2N0ZWNoX3VwZGF0ZWRfYXQKICBiZWZvcmUgdXBkYXRlIG9uIHB1YmxpYy5wcm9kdWN0X2dyb3VwX2xvY2F0aW9uX3RlY2huaXF1ZXMKICBmb3IgZWFjaCByb3cgZXhlY3V0ZSBmdW5jdGlvbiBwdWJsaWMudXBkYXRlX3VwZGF0ZWRfYXRfY29sdW1uKCk7Cgpjb21tZW50IG9uIHRhYmxlIHB1YmxpYy5wcm9kdWN0X2dyb3VwX2xvY2F0aW9uX3RlY2huaXF1ZXMgaXMKICAnVMOpY25pY2FzIGRlIGdyYXZhw6fDo28gYXBsaWPDoXZlaXMgYSBjYWRhIMOhcmVhIGRvIGdydXBvLiBGSyBkaXJldGEgZW0gcGVyc29uYWxpemF0aW9uX3RlY2huaXF1ZXMgKGxvY2FsKSBoYWJpbGl0YSBlbWJlZCBQb3N0Z1JFU1QuJzsKCi0tID09PT09PT09PT09PSA1KSBwcm9kdWN0X2NvbXBvbmVudF9sb2NhdGlvbl90ZWNobmlxdWVzID09PT09PT09PT09PQpjcmVhdGUgdGFibGUgaWYgbm90IGV4aXN0cyBwdWJsaWMucHJvZHVjdF9jb21wb25lbnRfbG9jYXRpb25fdGVjaG5pcXVlcyAoCiAgaWQgICAgICAgICAgICAgICAgICAgICB1dWlkIHByaW1hcnkga2V5IGRlZmF1bHQgZ2VuX3JhbmRvbV91dWlkKCksCiAgY29tcG9uZW50X2xvY2F0aW9uX2lkICB1dWlkIG5vdCBudWxsIHJlZmVyZW5jZXMgcHVibGljLnByb2R1Y3RfY29tcG9uZW50X2xvY2F0aW9ucyhpZCkgb24gZGVsZXRlIGNhc2NhZGUsCiAgdGVjaG5pcXVlX2lkICAgICAgICAgICB1dWlkIG5vdCBudWxsIHJlZmVyZW5jZXMgcHVibGljLnBlcnNvbmFsaXphdGlvbl90ZWNobmlxdWVzKGlkKSBvbiBkZWxldGUgcmVzdHJpY3QsCiAgY29tcG9zZWRfY29kZSAgICAgICAgICB0ZXh0LAogIG1heF9jb2xvcnMgICAgICAgICAgICAgaW50ZWdlciwKICBpc19hY3RpdmUgICAgICAgICAgICAgIGJvb2xlYW4gbm90IG51bGwgZGVmYXVsdCB0cnVlLAogIGNyZWF0ZWRfYXQgICAgICAgICAgICAgdGltZXN0YW1wdHogbm90IG51bGwgZGVmYXVsdCBub3coKSwKICB1cGRhdGVkX2F0ICAgICAgICAgICAgIHRpbWVzdGFtcHR6IG5vdCBudWxsIGRlZmF1bHQgbm93KCksCiAgdW5pcXVlIChjb21wb25lbnRfbG9jYXRpb25faWQsIHRlY2huaXF1ZV9pZCkKKTsKCmNyZWF0ZSBpbmRleCBpZiBub3QgZXhpc3RzIGlkeF9wY2xvY3RlY2hfbG9jYXRpb24gIG9uIHB1YmxpYy5wcm9kdWN0X2NvbXBvbmVudF9sb2NhdGlvbl90ZWNobmlxdWVzIChjb21wb25lbnRfbG9jYXRpb25faWQpOwpjcmVhdGUgaW5kZXggaWYgbm90IGV4aXN0cyBpZHhfcGNsb2N0ZWNoX3RlY2huaXF1ZSBvbiBwdWJsaWMucHJvZHVjdF9jb21wb25lbnRfbG9jYXRpb25fdGVjaG5pcXVlcyAodGVjaG5pcXVlX2lkKTsKCmFsdGVyIHRhYmxlIHB1YmxpYy5wcm9kdWN0X2NvbXBvbmVudF9sb2NhdGlvbl90ZWNobmlxdWVzIGVuYWJsZSByb3cgbGV2ZWwgc2VjdXJpdHk7CnJldm9rZSBhbGwgb24gdGFibGUgcHVibGljLnByb2R1Y3RfY29tcG9uZW50X2xvY2F0aW9uX3RlY2huaXF1ZXMgZnJvbSBhbm9uOwpncmFudCBzZWxlY3QsIGluc2VydCwgdXBkYXRlLCBkZWxldGUgb24gdGFibGUgcHVibGljLnByb2R1Y3RfY29tcG9uZW50X2xvY2F0aW9uX3RlY2huaXF1ZXMgdG8gYXV0aGVudGljYXRlZDsKCmRyb3AgcG9saWN5IGlmIGV4aXN0cyAicGNsb2N0ZWNoX3NlbGVjdF9hdXRoZW50aWNhdGVkIiBvbiBwdWJsaWMucHJvZHVjdF9jb21wb25lbnRfbG9jYXRpb25fdGVjaG5pcXVlczsKY3JlYXRlIHBvbGljeSAicGNsb2N0ZWNoX3NlbGVjdF9hdXRoZW50aWNhdGVkIiBvbiBwdWJsaWMucHJvZHVjdF9jb21wb25lbnRfbG9jYXRpb25fdGVjaG5pcXVlcwogIGZvciBzZWxlY3QgdG8gYXV0aGVudGljYXRlZCB1c2luZyAodHJ1ZSk7Cgpkcm9wIHBvbGljeSBpZiBleGlzdHMgInBjbG9jdGVjaF93cml0ZV9hZG1pbiIgb24gcHVibGljLnByb2R1Y3RfY29tcG9uZW50X2xvY2F0aW9uX3RlY2huaXF1ZXM7CmNyZWF0ZSBwb2xpY3kgInBjbG9jdGVjaF93cml0ZV9hZG1pbiIgb24gcHVibGljLnByb2R1Y3RfY29tcG9uZW50X2xvY2F0aW9uX3RlY2huaXF1ZXMKICBmb3IgYWxsIHRvIGF1dGhlbnRpY2F0ZWQKICB1c2luZyAocHVibGljLmlzX2FkbWluX29yX2Fib3ZlKGF1dGgudWlkKCkpKQogIHdpdGggY2hlY2sgKHB1YmxpYy5pc19hZG1pbl9vcl9hYm92ZShhdXRoLnVpZCgpKSk7Cgpkcm9wIHRyaWdnZXIgaWYgZXhpc3RzIHRyZ19wY2xvY3RlY2hfdXBkYXRlZF9hdCBvbiBwdWJsaWMucHJvZHVjdF9jb21wb25lbnRfbG9jYXRpb25fdGVjaG5pcXVlczsKY3JlYXRlIHRyaWdnZXIgdHJnX3BjbG9jdGVjaF91cGRhdGVkX2F0CiAgYmVmb3JlIHVwZGF0ZSBvbiBwdWJsaWMucHJvZHVjdF9jb21wb25lbnRfbG9jYXRpb25fdGVjaG5pcXVlcwogIGZvciBlYWNoIHJvdyBleGVjdXRlIGZ1bmN0aW9uIHB1YmxpYy51cGRhdGVfdXBkYXRlZF9hdF9jb2x1bW4oKTsKCmNvbW1lbnQgb24gdGFibGUgcHVibGljLnByb2R1Y3RfY29tcG9uZW50X2xvY2F0aW9uX3RlY2huaXF1ZXMgaXMKICAnVMOpY25pY2FzIGRlIGdyYXZhw6fDo28gYXBsaWPDoXZlaXMgYSBjYWRhIMOhcmVhIGRvIGNvbXBvbmVudGUuIENvbnN1bWlkYSBwZWxvIFBlcnNvbmFsaXphdGlvbiBNYW5hZ2VyIChhZG1pbikuJzsK
+-- =============================================================
+-- Restores five tables consumed by frontend untypedFrom() calls.
+--
+-- Source of the contract inference:
+--   sales_goals                           -> useSalesGoals
+--   product_group_components              -> useGroupPersonalization.addComponent
+--   product_group_locations               -> useGroupPersonalization.addLocation
+--   product_group_location_techniques     -> useGroupPersonalization.addTechnique
+--   product_component_location_techniques -> admin personalization managers
+--
+-- Keep this migration replay-safe. Some of these tables were created by older
+-- migrations with a narrower shape, so each table section also backfills
+-- columns required by the current frontend contract and updated_at triggers.
+-- =============================================================
+
+-- ============ 1) sales_goals ============
+create table if not exists public.sales_goals (
+  id                  uuid primary key default gen_random_uuid(),
+  user_id             uuid not null references auth.users(id) on delete cascade,
+  goal_type           text not null check (goal_type in ('monthly', 'weekly', 'quarterly')),
+  target_value        numeric not null default 0,
+  current_value       numeric not null default 0,
+  target_quotes       integer not null default 0,
+  current_quotes      integer not null default 0,
+  target_conversions  integer not null default 0,
+  current_conversions integer not null default 0,
+  start_date          date not null,
+  end_date            date not null,
+  is_achieved         boolean not null default false,
+  achieved_at         timestamptz,
+  created_at          timestamptz not null default now(),
+  updated_at          timestamptz not null default now()
+);
+
+create index if not exists idx_sales_goals_user on public.sales_goals (user_id);
+create index if not exists idx_sales_goals_period on public.sales_goals (user_id, goal_type, start_date, end_date);
+
+alter table public.sales_goals enable row level security;
+revoke all on table public.sales_goals from anon;
+grant select, insert, update, delete on table public.sales_goals to authenticated;
+
+drop policy if exists "sales_goals_owner_all" on public.sales_goals;
+create policy "sales_goals_owner_all" on public.sales_goals
+  for all to authenticated
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
+
+drop policy if exists "sales_goals_admin_read" on public.sales_goals;
+create policy "sales_goals_admin_read" on public.sales_goals
+  for select to authenticated
+  using (public.is_admin_or_above(auth.uid()));
+
+drop trigger if exists trg_sales_goals_updated_at on public.sales_goals;
+create trigger trg_sales_goals_updated_at
+  before update on public.sales_goals
+  for each row execute function public.update_updated_at_column();
+
+comment on table public.sales_goals is
+  'Sales goals by seller and period. Consumed by useSalesGoals.';
+
+-- ============ 2) product_group_components ============
+create table if not exists public.product_group_components (
+  id               uuid primary key default gen_random_uuid(),
+  product_group_id uuid not null references public.product_groups(id) on delete cascade,
+  component_code   text not null,
+  component_name   text not null,
+  description      text,
+  is_active        boolean not null default true,
+  sort_order       integer not null default 0,
+  created_at       timestamptz not null default now(),
+  updated_at       timestamptz not null default now(),
+  unique (product_group_id, component_code)
+);
+
+alter table public.product_group_components
+  add column if not exists description text,
+  add column if not exists updated_at timestamptz not null default now();
+
+create index if not exists idx_pgcomp_group on public.product_group_components (product_group_id, sort_order);
+
+alter table public.product_group_components enable row level security;
+revoke all on table public.product_group_components from anon;
+grant select, insert, update, delete on table public.product_group_components to authenticated;
+
+drop policy if exists "pgcomp_select_authenticated" on public.product_group_components;
+create policy "pgcomp_select_authenticated" on public.product_group_components
+  for select to authenticated using (true);
+
+drop policy if exists "pgcomp_write_admin" on public.product_group_components;
+create policy "pgcomp_write_admin" on public.product_group_components
+  for all to authenticated
+  using (public.is_admin_or_above(auth.uid()))
+  with check (public.is_admin_or_above(auth.uid()));
+
+drop trigger if exists trg_pgcomp_updated_at on public.product_group_components;
+create trigger trg_pgcomp_updated_at
+  before update on public.product_group_components
+  for each row execute function public.update_updated_at_column();
+
+comment on table public.product_group_components is
+  'Product-group component templates inherited by products in the group.';
+
+-- ============ 3) product_group_locations ============
+create table if not exists public.product_group_locations (
+  id                  uuid primary key default gen_random_uuid(),
+  group_component_id  uuid not null references public.product_group_components(id) on delete cascade,
+  location_code       text not null,
+  location_name       text not null,
+  description         text,
+  max_width_cm        numeric,
+  max_height_cm       numeric,
+  max_area_cm2        numeric,
+  is_active           boolean not null default true,
+  sort_order          integer not null default 0,
+  created_at          timestamptz not null default now(),
+  updated_at          timestamptz not null default now(),
+  unique (group_component_id, location_code)
+);
+
+alter table public.product_group_locations
+  add column if not exists description text,
+  add column if not exists sort_order integer not null default 0,
+  add column if not exists updated_at timestamptz not null default now();
+
+create index if not exists idx_pgloc_component on public.product_group_locations (group_component_id);
+
+alter table public.product_group_locations enable row level security;
+revoke all on table public.product_group_locations from anon;
+grant select, insert, update, delete on table public.product_group_locations to authenticated;
+
+drop policy if exists "pgloc_select_authenticated" on public.product_group_locations;
+create policy "pgloc_select_authenticated" on public.product_group_locations
+  for select to authenticated using (true);
+
+drop policy if exists "pgloc_write_admin" on public.product_group_locations;
+create policy "pgloc_write_admin" on public.product_group_locations
+  for all to authenticated
+  using (public.is_admin_or_above(auth.uid()))
+  with check (public.is_admin_or_above(auth.uid()));
+
+drop trigger if exists trg_pgloc_updated_at on public.product_group_locations;
+create trigger trg_pgloc_updated_at
+  before update on public.product_group_locations
+  for each row execute function public.update_updated_at_column();
+
+comment on table public.product_group_locations is
+  'Product-group personalization locations inherited by group products.';
+
+-- ============ 4) product_group_location_techniques ============
+create table if not exists public.product_group_location_techniques (
+  id                uuid primary key default gen_random_uuid(),
+  group_location_id uuid not null references public.product_group_locations(id) on delete cascade,
+  technique_id      uuid not null references public.personalization_techniques(id) on delete restrict,
+  max_colors        integer,
+  is_active         boolean not null default true,
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now(),
+  unique (group_location_id, technique_id)
+);
+
+alter table public.product_group_location_techniques
+  add column if not exists updated_at timestamptz not null default now();
+
+create index if not exists idx_pgloctech_location on public.product_group_location_techniques (group_location_id);
+create index if not exists idx_pgloctech_technique on public.product_group_location_techniques (technique_id);
+
+alter table public.product_group_location_techniques enable row level security;
+revoke all on table public.product_group_location_techniques from anon;
+grant select, insert, update, delete on table public.product_group_location_techniques to authenticated;
+
+drop policy if exists "pgloctech_select_authenticated" on public.product_group_location_techniques;
+create policy "pgloctech_select_authenticated" on public.product_group_location_techniques
+  for select to authenticated using (true);
+
+drop policy if exists "pgloctech_write_admin" on public.product_group_location_techniques;
+create policy "pgloctech_write_admin" on public.product_group_location_techniques
+  for all to authenticated
+  using (public.is_admin_or_above(auth.uid()))
+  with check (public.is_admin_or_above(auth.uid()));
+
+drop trigger if exists trg_pgloctech_updated_at on public.product_group_location_techniques;
+create trigger trg_pgloctech_updated_at
+  before update on public.product_group_location_techniques
+  for each row execute function public.update_updated_at_column();
+
+comment on table public.product_group_location_techniques is
+  'Personalization techniques available for each product-group location.';
+
+-- ============ 5) product_component_location_techniques ============
+create table if not exists public.product_component_location_techniques (
+  id                    uuid primary key default gen_random_uuid(),
+  component_location_id uuid not null references public.product_component_locations(id) on delete cascade,
+  technique_id          uuid not null references public.personalization_techniques(id) on delete restrict,
+  composed_code         text,
+  max_colors            integer,
+  is_active             boolean not null default true,
+  created_at            timestamptz not null default now(),
+  updated_at            timestamptz not null default now(),
+  unique (component_location_id, technique_id)
+);
+
+alter table public.product_component_location_techniques
+  add column if not exists updated_at timestamptz not null default now();
+
+create index if not exists idx_pcloctech_location on public.product_component_location_techniques (component_location_id);
+create index if not exists idx_pcloctech_technique on public.product_component_location_techniques (technique_id);
+
+alter table public.product_component_location_techniques enable row level security;
+revoke all on table public.product_component_location_techniques from anon;
+grant select, insert, update, delete on table public.product_component_location_techniques to authenticated;
+
+drop policy if exists "pcloctech_select_authenticated" on public.product_component_location_techniques;
+create policy "pcloctech_select_authenticated" on public.product_component_location_techniques
+  for select to authenticated using (true);
+
+drop policy if exists "pcloctech_write_admin" on public.product_component_location_techniques;
+create policy "pcloctech_write_admin" on public.product_component_location_techniques
+  for all to authenticated
+  using (public.is_admin_or_above(auth.uid()))
+  with check (public.is_admin_or_above(auth.uid()));
+
+drop trigger if exists trg_pcloctech_updated_at on public.product_component_location_techniques;
+create trigger trg_pcloctech_updated_at
+  before update on public.product_component_location_techniques
+  for each row execute function public.update_updated_at_column();
+
+comment on table public.product_component_location_techniques is
+  'Personalization techniques available for each product-component location.';

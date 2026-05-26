@@ -1,8 +1,7 @@
-import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { useState, useEffect, useRef, forwardRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/ui';
+import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
+import { useToast } from '@/hooks/ui/use-toast';
 import { authDebug, authDebugError } from '@/lib/auth/auth-debug';
 import { markOAuthPending, clearOAuthPending, readOAuthPending } from '@/lib/auth/oauth-pending';
 import { resolveOAuthError } from '@/lib/auth/oauth-error-messages';
@@ -29,6 +28,14 @@ function mapOAuthError(raw: string): string {
 const SLOW_REDIRECT_MS = 6000;
 /** Tempo (ms) até considerar que o redirect falhou silenciosamente. */
 const REDIRECT_TIMEOUT_MS = 15000;
+
+const socialButtonClass = (...parts: Array<string | false | null | undefined>) =>
+  [
+    'inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-bold transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
+    ...parts,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
 interface SocialLoginButtonsProps {
   /**
@@ -120,7 +127,11 @@ export const SocialLoginButtons = forwardRef<HTMLDivElement, SocialLoginButtonsP
       clearOAuthPending();
       setIsLoading(null);
       setSlowHint(null);
-      toast({ variant: 'destructive', title: 'Erro ao entrar com Google', description: copy.description });
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao entrar com Google',
+        description: copy.description,
+      });
       onError?.(msg, opts);
     };
 
@@ -149,6 +160,7 @@ export const SocialLoginButtons = forwardRef<HTMLDivElement, SocialLoginButtonsP
       }, REDIRECT_TIMEOUT_MS);
 
       try {
+        const supabase = await getSupabaseClient();
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: { redirectTo: redirect_uri },
@@ -183,10 +195,11 @@ export const SocialLoginButtons = forwardRef<HTMLDivElement, SocialLoginButtonsP
 
     return (
       <div ref={ref} className="space-y-2">
-        <Button
+        <button
           type="button"
-          variant="outline"
-          className="h-11 w-full gap-3 border-white/10 bg-white/5 font-medium text-white shadow-lg backdrop-blur-sm hover:border-white/20 hover:bg-white/10 motion-safe:transition-all motion-safe:hover:scale-[1.01] motion-safe:active:scale-[0.98]"
+          className={socialButtonClass(
+            'h-11 w-full rounded-lg border border-white/10 bg-white/5 font-medium text-white shadow-lg backdrop-blur-sm hover:border-white/20 hover:bg-white/10 motion-safe:hover:scale-[1.01] motion-safe:active:scale-[0.98]',
+          )}
           onClick={handleGoogleLogin}
           disabled={!!isLoading}
           aria-busy={loading}
@@ -215,7 +228,7 @@ export const SocialLoginButtons = forwardRef<HTMLDivElement, SocialLoginButtonsP
             </svg>
           )}
           {loading ? 'Conectando ao Google…' : 'Continuar com Google'}
-        </Button>
+        </button>
         {slowHint && loading && (
           <p
             className="animate-fade-in text-center text-xs text-muted-foreground"

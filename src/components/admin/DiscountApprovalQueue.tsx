@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
+import { sanitizeError } from "@/lib/security/sanitize-error";
 
 export function DiscountApprovalQueue() {
   const qc = useQueryClient();
@@ -49,7 +50,7 @@ export function DiscountApprovalQueue() {
       toast.success("Resposta registrada");
       qc.invalidateQueries({ queryKey: ["discount-approval-queue"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(sanitizeError(e)),
   });
 
   if (isLoading) {

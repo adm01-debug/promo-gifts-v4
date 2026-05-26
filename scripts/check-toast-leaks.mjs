@@ -80,13 +80,22 @@ function loadBaseline() {
 }
 
 function keyOf(entry) {
-  return `${entry.file}::${entry.line}`;
+  return `${entry.file}::${entry.snippet}`;
+}
+
+function countByKey(entries) {
+  const counts = new Map();
+  for (const entry of entries ?? []) {
+    const key = keyOf(entry);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return counts;
 }
 
 function main() {
   const leaks = findLeaks();
   const baseline = loadBaseline();
-  const baselineKeys = new Set((baseline.entries ?? []).map(keyOf));
+  const baselineCounts = countByKey(baseline.entries);
 
   if (process.env.UPDATE_BASELINE === '1') {
     const payload = {
@@ -99,7 +108,13 @@ function main() {
     return;
   }
 
-  const newLeaks = leaks.filter((l) => !baselineKeys.has(keyOf(l)));
+  const seenCounts = new Map();
+  const newLeaks = leaks.filter((l) => {
+    const key = keyOf(l);
+    const seen = (seenCounts.get(key) ?? 0) + 1;
+    seenCounts.set(key, seen);
+    return seen > (baselineCounts.get(key) ?? 0);
+  });
   if (newLeaks.length === 0) {
     console.log(`✅ Toast leaks: ${leaks.length} legado(s), 0 novo(s).`);
     return;

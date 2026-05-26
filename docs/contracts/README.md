@@ -119,6 +119,15 @@ mesma declarada nos schemas de `_shared/contracts/schemas/`.
 | P2 | `e2e-cleanup` | v1 | v1 | 2026-12-31 |
 | P2 | `block-ip-temporarily` | v1 | v1 | 2026-12-31 |
 
+Notas P1 v2:
+
+- `ownership-repair`, `simulation-orchestrator` e `sync-external-db` exigem
+  `idempotency_key` por executarem operacoes com side-effect.
+- `ownership-audit` permanece sem `idempotency_key` porque e leitura/auditoria.
+- `trends-insights` permanece sem `idempotency_key` porque e analise/leitura sem
+  mutacao de dados; v2 strict aceita apenas `days` para limitar o payload do
+  fluxo de IA.
+
 ## Adicionando um novo schema
 
 ```ts

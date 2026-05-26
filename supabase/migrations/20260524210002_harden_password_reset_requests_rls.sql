@@ -40,8 +40,11 @@ COMMENT ON INDEX public.password_reset_requests_one_pending_per_email IS
   'Anti-spam: máximo 1 solicitação pendente por email (case-insensitive). '
   'Conflict 23505 sinaliza ao app "já existe pedido aguardando revisão".';
 
--- 3) Drop policy permissiva atual
+-- 3) Drop policy permissiva atual (nome antigo + novo p/ replay idempotente:
+--    em prod a policy validada já existe, então dropamos antes de recriar)
 DROP POLICY IF EXISTS "Anyone can request a password reset"
+  ON public.password_reset_requests;
+DROP POLICY IF EXISTS "Anyone can request a password reset (validated)"
   ON public.password_reset_requests;
 
 -- 4) Recria policy com validação defensiva

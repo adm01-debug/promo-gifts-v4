@@ -29,6 +29,7 @@ import { useToast } from '@/hooks/ui';
 import { Shield, Plus, Edit, Trash2, Users } from 'lucide-react';
 import { BackButton } from '@/components/common/BackButton';
 import { PageSEO } from '@/components/seo/PageSEO';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 
 interface Role {
   id: string;
@@ -66,7 +67,7 @@ export default function RolesPage() {
       if (isCancelled()) return;
       toast({
         title: 'Erro',
-        description: error instanceof Error ? error.message : String(error),
+        description: sanitizeError(error),
         variant: 'destructive',
       });
     } finally {
@@ -97,7 +98,7 @@ export default function RolesPage() {
     } catch (error: unknown) {
       toast({
         title: 'Erro',
-        description: error instanceof Error ? error.message : String(error),
+        description: sanitizeError(error),
         variant: 'destructive',
       });
     }
@@ -118,7 +119,7 @@ export default function RolesPage() {
     } catch (error: unknown) {
       toast({
         title: 'Erro',
-        description: error instanceof Error ? error.message : String(error),
+        description: sanitizeError(error),
         variant: 'destructive',
       });
     }

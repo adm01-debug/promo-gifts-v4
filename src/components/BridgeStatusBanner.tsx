@@ -7,9 +7,8 @@
  */
 import { memo } from 'react';
 import { AlertTriangle, X, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useDevGate } from '@/hooks/admin';
-import { useBridgeStatusBanner } from '@/hooks/intelligence';
+import { useDevGate } from '@/hooks/admin/useDevGate';
+import { useBridgeStatusBanner } from '@/hooks/intelligence/useBridgeStatusBanner';
 
 export const BridgeStatusBanner = memo(function BridgeStatusBanner() {
   // O hook ainda precisa do flag para suprimir toasts internos.
@@ -57,20 +56,23 @@ export const BridgeStatusBanner = memo(function BridgeStatusBanner() {
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          <Button size="sm" variant="secondary" className="h-7 gap-1.5" onClick={reload}>
+          <button
+            type="button"
+            className="inline-flex h-7 items-center justify-center gap-1.5 rounded-lg border border-divider bg-secondary px-3 text-sm font-bold text-secondary-foreground shadow-sm transition-colors hover:bg-secondary/80"
+            onClick={reload}
+          >
             <RefreshCw className="h-3.5 w-3.5" aria-hidden />
             Recarregar
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-7 w-7 text-destructive-foreground hover:bg-destructive-foreground/10"
+          </button>
+          <button
+            type="button"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-destructive-foreground transition-colors hover:bg-destructive-foreground/10"
             onClick={closeUnavailable}
             aria-label="Fechar aviso"
             title={reason}
           >
             <X className="h-3.5 w-3.5" aria-hidden />
-          </Button>
+          </button>
         </div>
       </div>
     </div>

@@ -15,6 +15,14 @@
 -- INSERT de quotes mantem user_is_org_member (qualquer membro pode criar)
 -- =================================================================
 
+-- Replay guard: algumas bases historicas criaram public.quotes antes da coluna
+-- assigned_to, mas esta migration e hardenings posteriores ja tratam ela como
+-- parte do modelo oficial.
+ALTER TABLE public.quotes
+  ADD COLUMN IF NOT EXISTS assigned_to uuid REFERENCES auth.users(id) ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS idx_quotes_assigned_to ON public.quotes (assigned_to);
+
 -- 1. NOVA FUNCAO: can_access_quote(quote_id)
 --    Encapsula logica em SSOT, SECURITY DEFINER pra evitar recursao RLS
 CREATE OR REPLACE FUNCTION public.can_access_quote(_quote_id uuid)
@@ -52,6 +60,7 @@ GRANT EXECUTE ON FUNCTION public.can_access_quote(uuid) TO authenticated, servic
 
 -- 2. QUOTES - SELECT + UPDATE
 DROP POLICY IF EXISTS "org_members_view_quotes" ON public.quotes;
+DROP POLICY IF EXISTS "quotes_select_scope" ON public.quotes;
 CREATE POLICY "quotes_select_scope" ON public.quotes FOR SELECT
 USING (
   user_is_org_member(organization_id) AND (
@@ -63,6 +72,7 @@ USING (
 );
 
 DROP POLICY IF EXISTS "org_members_update_own_quotes" ON public.quotes;
+DROP POLICY IF EXISTS "quotes_update_scope" ON public.quotes;
 CREATE POLICY "quotes_update_scope" ON public.quotes FOR UPDATE
 USING (
   user_is_org_member(organization_id) AND (
@@ -101,5 +111,6 @@ USING (public.can_access_quote(quote_id));
 
 -- 5. QUOTE_VERSIONS - SELECT (INSERT mantem qv_insert_service para service_role)
 DROP POLICY IF EXISTS "org_members_view_quote_versions" ON public.quote_versions;
+DROP POLICY IF EXISTS "quote_versions_select_scope" ON public.quote_versions;
 CREATE POLICY "quote_versions_select_scope" ON public.quote_versions FOR SELECT
 USING (public.can_access_quote(quote_id));

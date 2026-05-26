@@ -283,9 +283,8 @@ export function useDiscountApproval() {
       const sellerIds = [...new Set(requests.map((r) => r.seller_id))];
 
       const [quotesRes, sellersRes] = await Promise.all([
-        // rls-allow: fluxo de aprovação admin/seller; RLS filtra por papel
         supabase
-          .from('quotes')
+          .from('quotes') // rls-allow: fluxo de aprovação admin/seller; RLS filtra por papel
           .select('id, quote_number, client_name, client_company, total, subtotal')
           .in('id', quoteIds),
         supabase.from('profiles').select('user_id, full_name, email').in('user_id', sellerIds),

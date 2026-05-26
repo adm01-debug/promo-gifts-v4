@@ -19,7 +19,7 @@ import {
   useAIRecommendations,
   type ClientProfile,
   type ProductForRecommendation,
-} from "@/hooks/intelligence";
+} from "@/hooks/intelligence/useAIRecommendations";
 
 // ============================================
 // PROPS

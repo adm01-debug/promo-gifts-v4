@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 
 const DEFAULT_LIMIT = 5;
 
@@ -199,7 +200,7 @@ export default function SellerDiscountLimitsAdminPage() {
       qc.invalidateQueries({ queryKey: ['admin-seller-discount-limits'] });
       qc.invalidateQueries({ queryKey: ['admin-discount-impact'] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(sanitizeError(e)),
   });
 
   const sellerNameById = useMemo(() => {

@@ -30,9 +30,26 @@ ALTER TABLE public.order_items
   DROP COLUMN IF EXISTS size_code,
   DROP COLUMN IF EXISTS total_price;
 
--- 3) Cast product_id text → uuid
+-- 3) Cast product_id text -> uuid
+-- Legacy rows can carry blank, SKU-like, or otherwise non-UUID text in
+-- product_id. Preserve those legacy identifiers in product_sku before the
+-- type change and only cast values that are valid UUIDs.
+UPDATE public.order_items
+SET product_sku = COALESCE(NULLIF(btrim(product_sku), ''), btrim(product_id::text))
+WHERE product_id IS NOT NULL
+  AND btrim(product_id::text) <> ''
+  AND NOT (
+    btrim(product_id::text) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+  );
+
 ALTER TABLE public.order_items
-  ALTER COLUMN product_id TYPE uuid USING NULLIF(product_id, '')::uuid;
+  ALTER COLUMN product_id TYPE uuid USING (
+    CASE
+      WHEN btrim(product_id::text) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+        THEN btrim(product_id::text)::uuid
+      ELSE NULL
+    END
+  );
 
 -- 4) ADD 9 colunas do oficial (B2B)
 ALTER TABLE public.order_items

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, type ReactNode, useCallback } from "react";
 import { useCollections, type Collection, type CollectionVariantInfo, type CollectionProductItem } from "@/hooks/collections";
 import { useProductsContext } from "@/contexts/ProductsContext";
-import { type Product } from "@/hooks/products";
+import type { Product } from "@/types/product-catalog";
 
 interface CollectionsContextType {
   collections: Collection[];

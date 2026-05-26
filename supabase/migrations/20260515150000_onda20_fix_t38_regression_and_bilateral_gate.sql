@@ -50,6 +50,151 @@ GRANT EXECUTE ON FUNCTION public.is_coord_or_above(_user_id uuid) TO authenticat
 REVOKE EXECUTE ON FUNCTION public.org_has_any_members(_org_id uuid) FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION public.org_has_any_members(_org_id uuid) FROM anon;
 
+-- -----------------------------------------------------------------
+-- 2.1. REVOKE excesso em helpers sensiveis criados por reconcile prod
+--      antes do gate fail-fast. Migrations posteriores tambem endurecem
+--      parte desses helpers, mas Onda 20 precisa validar o estado aqui.
+-- -----------------------------------------------------------------
+DO $$
+BEGIN
+  IF to_regprocedure('public.vault_delete_secret(text)') IS NOT NULL THEN
+    REVOKE ALL ON FUNCTION public.vault_delete_secret(text) FROM PUBLIC, anon, authenticated;
+    GRANT EXECUTE ON FUNCTION public.vault_delete_secret(text) TO service_role, postgres;
+  END IF;
+
+  IF to_regprocedure('public.vault_get_secret(text)') IS NOT NULL THEN
+    REVOKE ALL ON FUNCTION public.vault_get_secret(text) FROM PUBLIC, anon, authenticated;
+    GRANT EXECUTE ON FUNCTION public.vault_get_secret(text) TO service_role, postgres;
+  END IF;
+
+  IF to_regprocedure('public.vault_list_secret_names()') IS NOT NULL THEN
+    REVOKE ALL ON FUNCTION public.vault_list_secret_names() FROM PUBLIC, anon, authenticated;
+    GRANT EXECUTE ON FUNCTION public.vault_list_secret_names() TO service_role, postgres;
+  END IF;
+
+  IF to_regprocedure('public.vault_set_secret(text,text,text)') IS NOT NULL THEN
+    REVOKE ALL ON FUNCTION public.vault_set_secret(text, text, text) FROM PUBLIC, anon, authenticated;
+    GRANT EXECUTE ON FUNCTION public.vault_set_secret(text, text, text) TO service_role, postgres;
+  END IF;
+
+  IF to_regprocedure('public.verify_step_up_password(uuid,text)') IS NOT NULL THEN
+    REVOKE EXECUTE ON FUNCTION public.verify_step_up_password(uuid, text) FROM PUBLIC, anon;
+    GRANT EXECUTE ON FUNCTION public.verify_step_up_password(uuid, text) TO authenticated;
+  END IF;
+END $$;
+
+-- -----------------------------------------------------------------
+-- 2.2. Normaliza ACLs SECURITY DEFINER recriadas apos a Onda 1.
+--      O reconcile de prod recriou funcoes e algumas ficaram novamente
+--      executaveis por PUBLIC/anon. A T37d ja classifica o subconjunto
+--      backend-only; aqui completamos o hardening antes do fail-fast.
+-- -----------------------------------------------------------------
+DO $$
+DECLARE
+  r record;
+  fn_signature text;
+  public_intent_names text[] := ARRAY[
+    'submit_quote_response',
+    'get_quote_token_by_value',
+    'check_login_rate_limit'
+  ];
+  backend_only_names text[] := ARRAY[
+    'audit_ownership_orphans',
+    'audit_rls_coverage',
+    'audit_rls_matrix',
+    'auto_block_extreme_offenders',
+    'check_telemetry_regression',
+    'claim_next_optimization',
+    'classify_product_origin',
+    'clean_old_audit_logs',
+    'clean_old_rate_limits',
+    'cleanup_discount_test_data',
+    'cleanup_expired_collection_trash',
+    'cleanup_expired_favorite_trash',
+    'cleanup_expired_novelties',
+    'cleanup_expired_public_comparisons',
+    'cleanup_expired_step_up',
+    'cleanup_expired_step_up_tokens',
+    'cleanup_old_login_attempts',
+    'cleanup_old_logs',
+    'cleanup_old_notifications',
+    'cleanup_orphan_step_up_artifacts',
+    'cleanup_rate_limits',
+    'complete_optimization',
+    'detect_geo_violations',
+    'e2e_cleanup_check_rate_limit',
+    'enqueue_optimization',
+    'execute_role_migration_batch',
+    'fn_aggregate_stock_daily',
+    'fn_claim_ai_description_batch',
+    'fn_complete_ai_description',
+    'fn_enqueue_products_for_ai_description',
+    'fn_expire_novelties_with_stats',
+    'fn_populate_novelties_from_supplier',
+    'fn_sync_all_is_new',
+    'fn_video_link_to_products',
+    'force_logout_all_users',
+    'maintain_webhook_metrics',
+    'notify_hardening_regression',
+    'ownership_check_orphans',
+    'process_supplier_product',
+    'process_supplier_products_batch',
+    'purge_edge_invocations_old',
+    'purge_favorite_trash_old',
+    'purge_old_audit_logs',
+    'register_cloudflare_image',
+    'register_cloudflare_video',
+    'reset_mockup_credit_limits',
+    'seed_discount_test_users',
+    'sincronizar_estoque_spot',
+    'snapshot_hardening_status',
+    'sync_external_connections_from_credentials',
+    'update_image_after_sync',
+    'update_preferred_suppliers',
+    'update_video_after_sync'
+  ];
+BEGIN
+  FOR r IN
+    SELECT
+      n.nspname,
+      p.proname,
+      pg_get_function_identity_arguments(p.oid) AS args,
+      (pg_get_function_result(p.oid) = 'trigger') AS is_trigger
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.prosecdef = true
+  LOOP
+    fn_signature := format('%I.%I(%s)', r.nspname, r.proname, r.args);
+    EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM PUBLIC', fn_signature);
+
+    IF r.proname <> ALL(public_intent_names) THEN
+      EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM anon', fn_signature);
+    END IF;
+
+    IF r.proname = ANY(backend_only_names) THEN
+      EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM authenticated', fn_signature);
+      EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO service_role, postgres', fn_signature);
+    END IF;
+
+    IF r.is_trigger THEN
+      EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM authenticated', fn_signature);
+    END IF;
+  END LOOP;
+
+  FOR r IN
+    SELECT n.nspname, p.proname, pg_get_function_identity_arguments(p.oid) AS args
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.prosecdef = true
+      AND p.proname = ANY(public_intent_names)
+  LOOP
+    fn_signature := format('%I.%I(%s)', r.nspname, r.proname, r.args);
+    EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO anon', fn_signature);
+  END LOOP;
+END $$;
+
 -- ─────────────────────────────────────────────────────────────────
 -- 3. Gate bilateral: reescreve audit_security_definer_acl()
 --    para também reportar funções em policy sem EXECUTE pra
@@ -75,7 +220,7 @@ AS $$
       p.proacl,
       (pg_get_function_result(p.oid) = 'trigger') AS is_trigger,
       -- whitelist de funções intencionalmente acessíveis a anon
-      (p.proname IN ('submit_quote_response', 'get_quote_token_by_value')) AS public_intent
+      (p.proname IN ('submit_quote_response', 'get_quote_token_by_value', 'check_login_rate_limit')) AS public_intent
     FROM pg_proc p
     JOIN pg_namespace n ON n.oid = p.pronamespace
     WHERE n.nspname = 'public' AND p.prosecdef = true
@@ -139,7 +284,7 @@ AS $$
 $$;
 
 COMMENT ON FUNCTION public.audit_security_definer_acl() IS
-'Audit gate bilateral: detecta 4 anti-padrões em funções SECURITY DEFINER de public. (1) PUBLIC EXECUTE; (2) anon EXECUTE fora da whitelist (submit_quote_response, get_quote_token_by_value); (3) trigger function com EXECUTE pra authenticated; (4) função citada em pg_policy SEM EXECUTE pra authenticated (RLS quebra em runtime com 42501 — Caso adicionado em Onda 20 após PR #192/t38 regression). Lints Supabase 0028/0029. Usado por scripts/check-security-definer-acl.mjs. Ver docs/SECURITY-DEFINER-PATTERN.md.';
+'Audit gate bilateral: detecta 4 anti-padrões em funções SECURITY DEFINER de public. (1) PUBLIC EXECUTE; (2) anon EXECUTE fora da whitelist (submit_quote_response, get_quote_token_by_value, check_login_rate_limit); (3) trigger function com EXECUTE pra authenticated; (4) função citada em pg_policy SEM EXECUTE pra authenticated (RLS quebra em runtime com 42501 — Caso adicionado em Onda 20 após PR #192/t38 regression). Lints Supabase 0028/0029. Usado por scripts/check-security-definer-acl.mjs. Ver docs/SECURITY-DEFINER-PATTERN.md.';
 
 GRANT EXECUTE ON FUNCTION public.audit_security_definer_acl() TO authenticated, service_role;
 

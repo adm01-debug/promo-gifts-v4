@@ -39,7 +39,7 @@ jobs:
   unit-tests:
     name: Gate 2 - Unit Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v6
@@ -47,7 +47,9 @@ jobs:
           node-version-file: '.nvmrc'
           cache: 'npm'
       - run: npm ci
-      - run: npm test -- --run 2>/dev/null || npm test --if-present || echo "::warning::test script not defined"
+      # Gate rapido de regressao. Suites amplas seguem no CI principal:
+      # `test:quality`, `Hook tests` e `Test Coverage`.
+      - run: npm run test:deploy-gate
 
   e2e-smoke:
     name: Gate 3 - E2E Smoke

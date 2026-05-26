@@ -24,27 +24,34 @@ import {
   XCircle,
   Rocket,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { AuthBrandingPanel, SpaceScene } from '@/pages/auth/AuthBranding';
 
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { useToast } from '@/hooks/ui';
+import { useToast } from '@/hooks/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
 import { LegalFooter } from '@/components/auth/LegalFooter';
-import { useDevGate, useIPValidation } from '@/hooks/admin';
+import { useDevGate } from '@/hooks/admin/useDevGate';
+import { useIPValidation } from '@/hooks/admin/useIPValidation';
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
-import { supabase } from '@/integrations/supabase/client';
+import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 import { AppLogo } from '@/components/layout/AppLogo';
+import { isSupabaseLighthousePlaceholder } from '@/lib/env/supabase-placeholder';
 import { loginSchema, type LoginFormData } from '@/lib/validations';
 import { logger } from '@/lib/logger';
 
 type LoginForm = LoginFormData;
 
 // ContinuousRockets and AuthBrandingPanel extracted to ./auth/AuthBranding.tsx
+
+const authButtonClass = (...parts: Array<string | false | null | undefined>) =>
+  [
+    'inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-bold transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
+    ...parts,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -152,17 +159,21 @@ export default function Auth() {
     // disparar setDbStatus/setCurrentIP fora do ciclo de vida do React
     // (em testes, isso vaza como "ReferenceError: window is not defined").
     let cancelled = false;
+    const isLighthousePlaceholder = isSupabaseLighthousePlaceholder();
 
     const loadInfo = async () => {
       // 1. IP Info
-      try {
-        const { data, error } = await supabase.functions.invoke('get-visitor-info');
-        if (!cancelled && !error && data) {
-          if (data.ip) setCurrentIP(data.ip);
-          if (data.city) setGeoLocation(`${data.city}, ${data.country_code}`);
+      if (!isLighthousePlaceholder) {
+        try {
+          const supabase = await getSupabaseClient();
+          const { data, error } = await supabase.functions.invoke('get-visitor-info');
+          if (!cancelled && !error && data) {
+            if (data.ip) setCurrentIP(data.ip);
+            if (data.city) setGeoLocation(`${data.city}, ${data.country_code}`);
+          }
+        } catch {
+          // silent fail
         }
-      } catch {
-        // silent fail
       }
 
       if (cancelled) return;
@@ -183,7 +194,13 @@ export default function Auth() {
       }));
 
       // 3. External (Gestão de Produtos) via bridge ping op
+      if (isLighthousePlaceholder) {
+        setDbStatus((prev) => ({ ...prev, external: { ok: false, loading: false } }));
+        return;
+      }
+
       try {
+        const supabase = await getSupabaseClient();
         const { data, error } = await supabase.functions.invoke('external-db-bridge', {
           body: { operation: 'ping' },
         });
@@ -321,14 +338,13 @@ export default function Auth() {
               <div className="rounded-lg border border-white/5 bg-black/40 p-2 font-mono text-[10px] text-white/50">
                 DIAGNÃ“STICO: {diagnosis}
               </div>
-              <Button
-                variant="link"
-                size="sm"
-                className="h-auto p-0 text-xs text-white/60 hover:text-white"
+              <button
+                type="button"
+                className={authButtonClass('h-auto p-0 text-xs text-white/60 hover:text-white')}
                 onClick={() => navigate('/admin/status')}
               >
                 Verificar status do sistema â†’
-              </Button>
+              </button>
             </div>
           ),
         });
@@ -355,6 +371,7 @@ export default function Auth() {
         logger.warn('[AUTH_CRED_STORE] Credential store failed');
       }
 
+      const supabase = await getSupabaseClient();
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData?.session;
       const userId = session?.user?.id;
@@ -512,17 +529,18 @@ export default function Auth() {
                     <p className="text-sm text-muted-foreground">
                       Entre em contato com o administrador do sistema para liberar seu acesso.
                     </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-2"
+                    <button
+                      type="button"
+                      className={authButtonClass(
+                        'mt-2 h-9 rounded-lg border-2 border-primary/30 bg-background px-3 text-primary hover:border-primary hover:bg-primary/5',
+                      )}
                       onClick={() => {
                         setIpBlocked(false);
                         setBlockedIP(null);
                       }}
                     >
                       Tentar novamente
-                    </Button>
+                    </button>
                   </div>
                 </div>
               </CardContent>
@@ -534,301 +552,279 @@ export default function Auth() {
             aria-labelledby="auth-title"
             className={`relative overflow-hidden rounded-[2rem] border-white/10 bg-black/60 shadow-2xl shadow-black/60 backdrop-blur-xl transition-all duration-500 ${ipBlocked ? 'pointer-events-none opacity-50' : ''}`}
           >
-            <AnimatePresence mode="wait">
-              {loginStatus === 'success' ? (
-                <motion.div
-                  key="success"
-                  initial={{ opacity: 0, scale: 0.9, filter: 'blur(10px)' }}
-                  animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-                  exit={{ opacity: 0, scale: 1.1, filter: 'blur(10px)' }}
-                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                  className="flex flex-col items-center justify-center px-8 py-16 text-center"
-                >
-                  <div className="relative mb-8">
-                    <div className="absolute inset-0 animate-ping rounded-full bg-blue-500/30 duration-700" />
-                    <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl bg-blue-500/10 text-blue-400 shadow-[0_0_50px_rgba(59,130,246,0.5)] ring-1 ring-blue-500/20">
-                      <Rocket className="h-12 w-12 -rotate-45 animate-bounce" />
-                    </div>
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.4 }}
-                      className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full border-4 border-[#030508] bg-emerald-500 shadow-lg"
-                    >
-                      <CheckCircle2 className="h-4 w-4 text-white" />
-                    </motion.div>
+            {loginStatus === 'success' ? (
+              <div
+                key="success"
+                className="flex flex-col items-center justify-center px-8 py-16 text-center duration-500 animate-in fade-in zoom-in"
+              >
+                <div className="relative mb-8">
+                  <div className="absolute inset-0 animate-ping rounded-full bg-blue-500/30 duration-700" />
+                  <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl bg-blue-500/10 text-blue-400 shadow-[0_0_50px_rgba(59,130,246,0.5)] ring-1 ring-blue-500/20">
+                    <Rocket className="h-12 w-12 -rotate-45 animate-bounce" />
                   </div>
-                  <motion.h2
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="font-display text-3xl font-bold tracking-tight text-white"
-                  >
-                    Decolagem autorizada!
-                  </motion.h2>
-                  <motion.p
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="mt-3 text-base text-white/50"
-                  >
-                    Bem-vindo a bordo. Iniciando sistemas...
-                  </motion.p>
-                </motion.div>
-              ) : showForgotPassword ? (
-                <motion.div
-                  key="forgot-password"
-                  initial={{ opacity: 0, x: 20, filter: 'blur(5px)' }}
-                  animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-                  exit={{ opacity: 0, x: -20, filter: 'blur(5px)' }}
-                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <CardContent className="pb-7 pt-7">
-                    <ForgotPasswordForm onBack={() => setShowForgotPassword(false)} />
-                  </CardContent>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="login-form"
-                  initial={{ opacity: 0, x: -20, filter: 'blur(5px)' }}
-                  animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-                  exit={{ opacity: 0, x: 20, filter: 'blur(5px)' }}
-                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <CardHeader className="pb-3 pt-9">
-                    <div className="space-y-1 text-center">
-                      <div
-                        className="font-display text-[1.036rem] font-normal tracking-tight text-white"
-                        id="auth-title"
-                      >
-                        Entre com suas credenciais para Brilhar, você nasce para isso!
-                      </div>
-                      <p className="text-[13px] text-white/50">
-                        Inicie sua jornada rumo ao sucesso
-                      </p>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="space-y-5 pb-9">
-                    {socialError && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        role="alert"
-                        className="relative animate-fade-in space-y-3 overflow-hidden rounded-[1.5rem] border border-amber-500/20 bg-gradient-to-br from-amber-500/10 to-transparent p-5 text-sm shadow-2xl backdrop-blur-xl"
-                      >
-                        <div className="absolute right-0 top-0 p-2 opacity-10">
-                          <ShieldAlert className="h-12 w-12 text-amber-500" />
-                        </div>
-
-                        <div className="flex items-start gap-4">
-                          <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-500/20 shadow-inner">
-                            <AlertTriangle className="h-5 w-5 text-amber-500" />
-                          </div>
-                          <div className="flex-1 space-y-2">
-                            <h3
-                              className="font-display text-base font-bold text-amber-200"
-                              data-testid="social-login-error-title"
-                            >
-                              {socialError.title}
-                            </h3>
-                            <p
-                              className="text-[13px] leading-relaxed text-amber-100/70"
-                              data-testid="social-login-error-description"
-                            >
-                              {socialError.description}
-                            </p>
-                            {socialError.code && (
-                              <p
-                                className="font-mono text-[10px] uppercase tracking-wide text-amber-100/40"
-                                data-testid="social-login-error-code"
-                              >
-                                Código: {socialError.code}
-                              </p>
-                            )}
-                            {socialError.hint && (
-                              <div
-                                className="mt-3 rounded-xl border border-white/5 bg-black/40 p-3"
-                                data-testid="social-login-error-hint"
-                              >
-                                <p className="text-[11px] leading-snug text-white/60">
-                                  <span className="mr-2 text-[9px] font-bold uppercase tracking-wider text-amber-500">
-                                    Solução:
-                                  </span>
-                                  {socialError.hint}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col gap-2 pt-3">
-                          <div className="flex items-center gap-2">
-                            {!socialError.isConfig && (
-                              <Button
-                                type="button"
-                                className="h-11 flex-1 gap-2 rounded-xl bg-amber-500 text-xs font-bold text-black shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-600 active:scale-95"
-                                onClick={handleRetryGoogle}
-                              >
-                                <RotateCw className="h-4 w-4" />
-                                Tentar Google Novamente
-                              </Button>
-                            )}
-                            <Button
-                              type="button"
-                              variant="outline"
-                              className="h-11 flex-1 rounded-xl border-white/10 bg-white/5 text-xs font-bold text-white transition-all hover:bg-white/10 active:scale-95"
-                              onClick={focusEmailFallback}
-                            >
-                              Usar E-mail
-                            </Button>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            className="h-8 text-[10px] uppercase tracking-widest text-white/30 hover:bg-transparent hover:text-white/60"
-                            onClick={() => setSocialError(null)}
-                          >
-                            Ignorar aviso
-                          </Button>
-                        </div>
-                      </motion.div>
-                    )}
-
-                    <form
-                      onSubmit={loginForm.handleSubmit(handleLogin)}
-                      className="space-y-4"
-                      data-testid="login-form"
-                      name="login"
-                      noValidate
+                  <div className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full border-4 border-[#030508] bg-emerald-500 shadow-lg duration-300 animate-in zoom-in">
+                    <CheckCircle2 className="h-4 w-4 text-white" />
+                  </div>
+                </div>
+                <h2 className="font-display text-3xl font-bold tracking-tight text-white">
+                  Decolagem autorizada!
+                </h2>
+                <p className="mt-3 text-base text-white/50">
+                  Bem-vindo a bordo. Iniciando sistemas...
+                </p>
+              </div>
+            ) : showForgotPassword ? (
+              <div
+                key="forgot-password"
+                className="duration-300 animate-in fade-in slide-in-from-right-2"
+              >
+                <CardContent className="pb-7 pt-7">
+                  <ForgotPasswordForm onBack={() => setShowForgotPassword(false)} />
+                </CardContent>
+              </div>
+            ) : (
+              <div
+                key="login-form"
+                className="duration-300 animate-in fade-in slide-in-from-left-2"
+              >
+                <CardHeader className="pb-3 pt-9">
+                  <div className="space-y-1 text-center">
+                    <div
+                      className="font-display text-[1.036rem] font-normal tracking-tight text-white"
+                      id="auth-title"
                     >
-                      <div className="space-y-2">
-                        <Label htmlFor="login-email" className="text-foreground">
-                          Email
-                        </Label>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <Input
-                            id="login-email"
-                            data-testid="login-email-input"
-                            type="email"
-                            placeholder="seu@email.com"
-                            autoComplete="email"
-                            inputMode="email"
-                            autoCapitalize="none"
-                            spellCheck={false}
-                            className="border-white/10 bg-white/5 pl-10 lowercase transition-all duration-300 placeholder:text-white/20 focus:border-primary/50 focus:ring-primary/20"
-                            {...loginForm.register('email')}
-                            onChange={(e) => {
-                              const lower = e.target.value.toLowerCase();
-                              if (e.target.value !== lower) e.target.value = lower;
-                              loginForm.register('email').onChange(e);
-                            }}
-                            ref={(el) => {
-                              loginForm.register('email').ref(el);
-                              emailInputRef.current = el;
-                            }}
-                          />
-                        </div>
-                        {loginForm.formState.errors.email && (
-                          <p className="text-sm text-destructive" data-testid="login-error-msg">
-                            {loginForm.formState.errors.email.message}
-                          </p>
-                        )}
+                      Entre com suas credenciais para Brilhar, você nasce para isso!
+                    </div>
+                    <p className="text-[13px] text-white/50">Inicie sua jornada rumo ao sucesso</p>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="space-y-5 pb-9">
+                  {socialError && (
+                    <div
+                      role="alert"
+                      className="relative space-y-3 overflow-hidden rounded-[1.5rem] border border-amber-500/20 bg-gradient-to-br from-amber-500/10 to-transparent p-5 text-sm shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-top-2"
+                    >
+                      <div className="absolute right-0 top-0 p-2 opacity-10">
+                        <ShieldAlert className="h-12 w-12 text-amber-500" />
                       </div>
 
-                      <div className="space-y-2">
-                        <Label
-                          htmlFor="login-password"
-                          title="password"
-                          className="text-foreground"
-                        >
-                          Senha de Acesso
-                        </Label>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <Input
-                            id="login-password"
-                            data-testid="login-password-input"
-                            type={showPassword ? 'text' : 'password'}
-                            placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
-                            autoComplete="current-password"
-                            className="border-white/10 bg-white/5 pl-10 pr-10 transition-all duration-300 placeholder:text-white/20 focus:border-primary/50 focus:ring-primary/20"
-                            {...loginForm.register('password')}
-                          />
+                      <div className="flex items-start gap-4">
+                        <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-500/20 shadow-inner">
+                          <AlertTriangle className="h-5 w-5 text-amber-500" />
+                        </div>
+                        <div className="flex-1 space-y-2">
+                          <h3
+                            className="font-display text-base font-bold text-amber-200"
+                            data-testid="social-login-error-title"
+                          >
+                            {socialError.title}
+                          </h3>
+                          <p
+                            className="text-[13px] leading-relaxed text-amber-100/70"
+                            data-testid="social-login-error-description"
+                          >
+                            {socialError.description}
+                          </p>
+                          {socialError.code && (
+                            <p
+                              className="font-mono text-[10px] uppercase tracking-wide text-amber-100/40"
+                              data-testid="social-login-error-code"
+                            >
+                              Código: {socialError.code}
+                            </p>
+                          )}
+                          {socialError.hint && (
+                            <div
+                              className="mt-3 rounded-xl border border-white/5 bg-black/40 p-3"
+                              data-testid="social-login-error-hint"
+                            >
+                              <p className="text-[11px] leading-snug text-white/60">
+                                <span className="mr-2 text-[9px] font-bold uppercase tracking-wider text-amber-500">
+                                  Solução:
+                                </span>
+                                {socialError.hint}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-2 pt-3">
+                        <div className="flex items-center gap-2">
+                          {!socialError.isConfig && (
+                            <button
+                              type="button"
+                              className={authButtonClass(
+                                'h-11 flex-1 rounded-xl bg-amber-500 text-xs text-black shadow-lg shadow-amber-500/20 hover:bg-amber-600 active:scale-95',
+                              )}
+                              onClick={handleRetryGoogle}
+                            >
+                              <RotateCw className="h-4 w-4" />
+                              Tentar Google Novamente
+                            </button>
+                          )}
                           <button
                             type="button"
-                            data-testid="login-password-toggle"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 -mr-2 flex min-h-[44px] min-w-[44px] -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors hover:text-blue-500"
-                            aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-                            aria-pressed={showPassword}
-                          >
-                            {showPassword ? (
-                              <EyeOff className="h-4 w-4" />
-                            ) : (
-                              <Eye className="h-4 w-4" />
+                            className={authButtonClass(
+                              'h-11 flex-1 rounded-xl border border-white/10 bg-white/5 text-xs text-white hover:bg-white/10 active:scale-95',
                             )}
+                            onClick={focusEmailFallback}
+                          >
+                            Usar E-mail
                           </button>
                         </div>
-                        {loginForm.formState.errors.password && (
-                          <p className="text-sm text-destructive">
-                            {loginForm.formState.errors.password.message}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="flex items-center justify-end">
                         <button
                           type="button"
-                          data-testid="login-forgot-link"
-                          className="h-auto p-0 text-xs font-bold uppercase tracking-wider text-blue-400 transition-colors hover:text-blue-300"
-                          onClick={() => setShowForgotPassword(true)}
+                          className={authButtonClass(
+                            'h-8 rounded-lg px-3 text-[10px] uppercase tracking-widest text-white/30 hover:bg-transparent hover:text-white/60',
+                          )}
+                          onClick={() => setSocialError(null)}
                         >
-                          Esqueci minha senha
+                          Ignorar aviso
                         </button>
                       </div>
+                    </div>
+                  )}
 
-                      <Button
-                        type="submit"
-                        data-testid="login-submit"
-                        className="h-12 w-full rounded-xl border border-white/10 bg-blue-600 text-base font-bold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-500/40 active:scale-[0.98]"
-                        disabled={isSubmitting || loginStatus === 'success'}
+                  <form
+                    onSubmit={loginForm.handleSubmit(handleLogin)}
+                    className="space-y-4"
+                    data-testid="login-form"
+                    name="login"
+                    noValidate
+                  >
+                    <div className="space-y-2">
+                      <label
+                        htmlFor="login-email"
+                        className="text-sm font-medium leading-none text-foreground"
                       >
-                        {isSubmitting ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Iniciando Sistemas...
-                          </>
-                        ) : loginStatus === 'success' ? (
-                          <>
-                            <div className="flex items-center gap-2 duration-300 animate-in zoom-in">
-                              <Rocket className="h-4 w-4 -rotate-45" />
-                              <span>Decolando!</span>
-                            </div>
-                          </>
-                        ) : (
-                          'Entrar na Plataforma'
-                        )}
-                      </Button>
-
-                      <div className="relative py-2">
-                        <div className="absolute inset-0 flex items-center">
-                          <span className="w-full border-t border-white/10" />
-                        </div>
-                        <div className="relative flex justify-center text-[10px] font-bold uppercase tracking-widest">
-                          <span className="rounded-full border border-white/5 bg-black/80 px-4 text-white/30">
-                            ou
-                          </span>
-                        </div>
+                        Email
+                      </label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          id="login-email"
+                          data-testid="login-email-input"
+                          type="email"
+                          placeholder="seu@email.com"
+                          autoComplete="email"
+                          inputMode="email"
+                          autoCapitalize="none"
+                          spellCheck={false}
+                          className="border-white/10 bg-white/5 pl-10 lowercase transition-all duration-300 placeholder:text-white/20 focus:border-primary/50 focus:ring-primary/20"
+                          {...loginForm.register('email')}
+                          onChange={(e) => {
+                            const lower = e.target.value.toLowerCase();
+                            if (e.target.value !== lower) e.target.value = lower;
+                            loginForm.register('email').onChange(e);
+                          }}
+                          ref={(el) => {
+                            loginForm.register('email').ref(el);
+                            emailInputRef.current = el;
+                          }}
+                        />
                       </div>
+                      {loginForm.formState.errors.email && (
+                        <p className="text-sm text-destructive" data-testid="login-error-msg">
+                          {loginForm.formState.errors.email.message}
+                        </p>
+                      )}
+                    </div>
 
-                      <SocialLoginButtons onError={handleSocialError} retryRef={googleRetryRef} />
-                    </form>
-                  </CardContent>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                    <div className="space-y-2">
+                      <label
+                        htmlFor="login-password"
+                        title="password"
+                        className="text-sm font-medium leading-none text-foreground"
+                      >
+                        Senha de Acesso
+                      </label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          id="login-password"
+                          data-testid="login-password-input"
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                          autoComplete="current-password"
+                          className="border-white/10 bg-white/5 pl-10 pr-10 transition-all duration-300 placeholder:text-white/20 focus:border-primary/50 focus:ring-primary/20"
+                          {...loginForm.register('password')}
+                        />
+                        <button
+                          type="button"
+                          data-testid="login-password-toggle"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -mr-2 flex min-h-[44px] min-w-[44px] -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors hover:text-blue-500"
+                          aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                          aria-pressed={showPassword}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
+                      {loginForm.formState.errors.password && (
+                        <p className="text-sm text-destructive">
+                          {loginForm.formState.errors.password.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-end">
+                      <button
+                        type="button"
+                        data-testid="login-forgot-link"
+                        className="h-auto p-0 text-xs font-bold uppercase tracking-wider text-blue-400 transition-colors hover:text-blue-300"
+                        onClick={() => setShowForgotPassword(true)}
+                      >
+                        Esqueci minha senha
+                      </button>
+                    </div>
+
+                    <button
+                      type="submit"
+                      data-testid="login-submit"
+                      className={authButtonClass(
+                        'h-12 w-full rounded-xl border border-white/10 bg-blue-600 text-base text-white shadow-lg shadow-blue-500/25 hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-500/40 active:scale-[0.98]',
+                      )}
+                      disabled={isSubmitting || loginStatus === 'success'}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Iniciando Sistemas...
+                        </>
+                      ) : loginStatus === 'success' ? (
+                        <>
+                          <div className="flex items-center gap-2 duration-300 animate-in zoom-in">
+                            <Rocket className="h-4 w-4 -rotate-45" />
+                            <span>Decolando!</span>
+                          </div>
+                        </>
+                      ) : (
+                        'Entrar na Plataforma'
+                      )}
+                    </button>
+
+                    <div className="relative py-2">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-white/10" />
+                      </div>
+                      <div className="relative flex justify-center text-[10px] font-bold uppercase tracking-widest">
+                        <span className="rounded-full border border-white/5 bg-black/80 px-4 text-white/30">
+                          ou
+                        </span>
+                      </div>
+                    </div>
+
+                    <SocialLoginButtons onError={handleSocialError} retryRef={googleRetryRef} />
+                  </form>
+                </CardContent>
+              </div>
+            )}
           </Card>
 
           {/* IP/Location Widget */}

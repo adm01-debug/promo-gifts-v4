@@ -1,6 +1,6 @@
 # Migration Sync Log
 
-## 2026-05-24 — Fix definitivo sort-order 20250103
+## 2026-05-24 â€” Fix definitivo sort-order 20250103
 
 ### Estado final
 
@@ -25,3 +25,24 @@ O CLI via como remote-only e disparava o erro ciclico.
 ### Estado banco de producao
 
 - `doufsxqlfjyuvxuezpln`: sem orphans. `20250103000000` registrado corretamente.
+
+## 2026-05-25 - Preview markers para PR #314
+
+O check `Supabase Preview` do projeto `jbmxvuccekcxtrdnbwtf` falhou com
+`Remote migration versions not found in local migrations directory` apos renames
+de migrations ja aplicadas em previews anteriores do PR.
+
+Markers no-op adicionados para preservar as versoes remotas antigas sem
+reaplicar DDL duplicada:
+
+- `20260524120000`
+- `20260524120100`
+- `20260524120200`
+- `20260524120300`
+- `20260524120400`
+- `20260524130000`
+
+O marker `20250103` nao foi reintroduzido: esse prefixo curto ja causou drift
+de ordenacao no Supabase CLI. Se ele aparecer novamente como remoto-only, a
+correcao deve ser `migration repair --status reverted` no projeto afetado, nao
+um arquivo local com esse prefixo.

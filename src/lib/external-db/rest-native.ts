@@ -32,6 +32,35 @@ const REST_NATIVE_SAFE_TABLES = new Set<string>([
   'color_groups',
 ]);
 
+type RestError = { message: string };
+type RestCountMode = 'exact' | 'planned' | 'estimated';
+type RestQueryResult = {
+  data: Record<string, unknown>[] | null;
+  error: RestError | null;
+  count: number | null;
+};
+
+type RestQuery = PromiseLike<RestQueryResult> & {
+  eq(column: string, value: unknown): RestQuery;
+  in(column: string, values: readonly unknown[]): RestQuery;
+  is(column: string, value: null): RestQuery;
+  gte(column: string, value: unknown): RestQuery;
+  lte(column: string, value: unknown): RestQuery;
+  gt(column: string, value: unknown): RestQuery;
+  lt(column: string, value: unknown): RestQuery;
+  like(column: string, value: unknown): RestQuery;
+  ilike(column: string, value: unknown): RestQuery;
+  neq(column: string, value: unknown): RestQuery;
+  order(column: string, options: { ascending: boolean }): RestQuery;
+  range(from: number, to: number): RestQuery;
+};
+
+type RestNativeClient = {
+  from(table: string): {
+    select(columns: string, options?: { count?: RestCountMode; head?: boolean }): RestQuery;
+  };
+};
+
 /**
  * Check if an InvokeOptions is eligible for REST-native routing.
  * Conservative: any unknown construct → false.
@@ -56,8 +85,7 @@ export function isRestNativeEligible(options: InvokeOptions): boolean {
  *   { col: null }          → .is(col, null)
  *   { col: { op: 'gte', value: X } } → .gte(col, X)  (future extensibility)
  */
-// deno-lint-ignore no-explicit-any
-function applyFilters(query: any, filters?: Record<string, unknown>): any {
+function applyFilters(query: RestQuery, filters?: Record<string, unknown>): RestQuery {
   if (!filters) return query;
 
   for (const [col, val] of Object.entries(filters)) {
@@ -117,8 +145,7 @@ export async function executeRestNativeSelect<T>(
     countMode === 'planned' ? 'planned' :
     'estimated';
 
-  // deno-lint-ignore no-explicit-any
-  const client = supabase as any;
+  const client = supabase as unknown as RestNativeClient;
 
   let query = countOption
     ? client.from(options.table).select(selectCols, { count: countOption, head: false })

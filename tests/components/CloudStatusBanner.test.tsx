@@ -1,6 +1,6 @@
 /**
  * CloudStatusBanner — gating dev-only vs crítico
- * 
+ *
  * Garante que apenas mensagens estritamente técnicas ("warming") são ocultadas
  * para usuários comuns. Falhas críticas ("down", "degraded") são exibidas a todos.
  */
@@ -54,8 +54,8 @@ const mockIsAllowed = vi.fn();
 vi.mock('@/hooks/admin/useDevGate', () => ({
   useDevGate: () => ({
     isAllowed: mockIsAllowed(),
-    isDev: mockUseAuth().isDev
-  })
+    isDev: mockUseAuth().isDev,
+  }),
 }));
 
 function buildSnapshot(status: CloudStatus): CloudStatusSnapshot | null {
@@ -114,7 +114,7 @@ describe('CloudStatusBanner — visibilidade por papel e criticidade', () => {
 
   it('EXIBE tudo para usuários dev', () => {
     mockUseAuth.mockReturnValue({ isDev: true });
-    
+
     // Test warming
     setStatus('warming');
     const { unmount } = render(<CloudStatusBanner />);
@@ -131,10 +131,10 @@ describe('CloudStatusBanner — visibilidade por papel e criticidade', () => {
     mockUseAuth.mockReturnValue({ isDev: true });
     mockIsAllowed.mockReturnValue(false); // Simula gate fechado em PROD
     setStatus('warming');
-    
+
     const { container } = render(<CloudStatusBanner />);
     expect(container).toBeEmptyDOMElement();
-    
+
     // Mas ainda vê "down"
     setStatus('down');
     render(<CloudStatusBanner />);
@@ -174,7 +174,7 @@ describe('CloudStatusBanner — visibilidade por papel e criticidade', () => {
     expect(screen.getByText(/REST: 160ms/i)).toBeInTheDocument();
   });
 
-  it('abre timeline histórica mostrando falhas consecutivas', () => {
+  it('abre timeline histórica mostrando falhas consecutivas', async () => {
     mockUseAuth.mockReturnValue({ isDev: true });
     mockGetStatusTimeline.mockReturnValue([
       { status: 'healthy', timestamp: Date.now() - 1000, consecutiveFailures: 0 },
@@ -187,8 +187,8 @@ describe('CloudStatusBanner — visibilidade por papel e criticidade', () => {
 
     fireEvent.click(screen.getByTitle(/Ver histórico/i));
 
-    expect(screen.getByText('DOWN')).toBeInTheDocument();
-    expect(screen.getByText('(2 falhas)')).toBeInTheDocument();
+    expect(await screen.findByText('DOWN')).toBeInTheDocument();
+    expect(await screen.findByText('(2 falhas)')).toBeInTheDocument();
   });
 
   it('mostra spinner no botão Tentar novamente quando isChecking=true (cobertura de animate-spin)', () => {
@@ -206,7 +206,7 @@ describe('CloudStatusBanner — visibilidade por papel e criticidade', () => {
     expect(refresh.querySelector('.animate-spin')).not.toBeNull();
   });
 
-  it('renderiza timeline com cores distintas para healthy/down/warming (cobertura do ternário de cores)', () => {
+  it('renderiza timeline com cores distintas para healthy/down/warming (cobertura do ternário de cores)', async () => {
     mockUseAuth.mockReturnValue({ isDev: true });
     mockGetStatusTimeline.mockReturnValue([
       { status: 'healthy', timestamp: Date.now() - 3000, consecutiveFailures: 0 },
@@ -220,9 +220,9 @@ describe('CloudStatusBanner — visibilidade por papel e criticidade', () => {
 
     // Cada status renderiza um pill colorido distinto — exercita os 3 ramos
     // do ternário entry.status === 'healthy' ? bg-green : 'down' ? bg-red : bg-yellow
-    expect(screen.getByText('HEALTHY')).toBeInTheDocument();
-    expect(screen.getByText('WARMING')).toBeInTheDocument();
-    expect(screen.getByText('DEGRADED')).toBeInTheDocument();
-    expect(screen.getByText('DOWN')).toBeInTheDocument();
+    expect(await screen.findByText('HEALTHY')).toBeInTheDocument();
+    expect(await screen.findByText('WARMING')).toBeInTheDocument();
+    expect(await screen.findByText('DEGRADED')).toBeInTheDocument();
+    expect(await screen.findByText('DOWN')).toBeInTheDocument();
   });
 });

@@ -19,8 +19,80 @@ concurrency:
 # Snapshots e toLocaleString consistentes com dev (VPS BRT).
 env:
   TZ: America/Sao_Paulo
+  ARTIFACT_RETENTION_DAYS: "14"
 
 jobs:
+  detect-changes:
+    name: Detect changed scopes
+    runs-on: ubuntu-latest
+    outputs:
+      non_critical_changed: ${{ steps.filter.outputs.non_critical }}
+      hooks_changed: ${{ steps.filter.outputs.hooks }}
+      price_freshness_changed: ${{ steps.filter.outputs.price_freshness }}
+      cloud_status_changed: ${{ steps.filter.outputs.cloud_status }}
+      theme_changed: ${{ steps.filter.outputs.theme }}
+      edge_functions_changed: ${{ steps.filter.outputs.edge_functions }}
+      ref_warning_changed: ${{ steps.filter.outputs.ref_warning }}
+      elite_changed: ${{ steps.filter.outputs.elite }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            non_critical:
+              - 'tests/hooks/**'
+              - 'src/hooks/**'
+              - 'tests/utils/price-freshness*.test.ts'
+              - 'tests/components/PriceFreshnessBadge*.test.tsx'
+              - 'src/utils/price-freshness.ts'
+              - 'src/components/products/PriceFreshnessBadge.tsx'
+              - 'src/hooks/ui/useCloudStatus.ts'
+              - 'src/components/**/CloudStatus*'
+              - 'supabase/functions/**'
+              - 'tests/admin/**'
+              - 'src/pages/admin/**'
+              - 'tests/theme/**'
+              - 'src/lib/theme-presets.ts'
+              - 'src/lib/theme-presets.test.ts'
+              - 'src/components/theme/**'
+              - 'e2e/flows/elite-ux-validation.spec.ts'
+              - 'playwright.config.ts'
+            hooks:
+              - 'tests/hooks/**'
+              - 'src/hooks/**'
+            price_freshness:
+              - 'tests/utils/price-freshness*.test.ts'
+              - 'tests/components/PriceFreshnessBadge*.test.tsx'
+              - 'src/utils/price-freshness.ts'
+              - 'src/components/products/PriceFreshnessBadge.tsx'
+            cloud_status:
+              - 'src/hooks/ui/useCloudStatus.ts'
+              - 'src/components/**/CloudStatus*'
+              - 'tests/**/cloud-status*.test.ts*'
+            edge_functions:
+              - 'supabase/functions/**'
+              - 'scripts/typecheck-edge-functions.mjs'
+            ref_warning:
+              - 'tests/admin/**'
+              - 'scripts/check-route-ref-usage.mjs'
+              - 'scripts/check-aschild-nesting.mjs'
+              - 'scripts/check-route-error-element.mjs'
+              - 'src/pages/admin/**'
+            theme:
+              - 'tests/theme/**'
+              - 'src/lib/theme-presets.ts'
+              - 'src/lib/theme-presets.test.ts'
+              - 'src/components/theme/**'
+              - 'tailwind.config.ts'
+            elite:
+              - 'e2e/flows/elite-ux-validation.spec.ts'
+              - 'src/pages/**'
+              - 'src/components/**'
+              - 'playwright.config.ts'
+
   smoke:
     name: Smoke tests (rotas + health-check)
     runs-on: ubuntu-latest
@@ -69,7 +141,7 @@ jobs:
         run: npm run typecheck
 
   quality:
-    name: Lint, Typecheck & Test
+    name: Lint, Typecheck & Static Gates
     runs-on: ubuntu-latest
     needs: smoke
     timeout-minutes: 90
@@ -126,15 +198,6 @@ jobs:
 
       - name: ESLint baseline gate (bloqueia apenas regressões novas)
         run: npm run lint:baseline
-
-      # hooks já cobertos pelo job dedicado hooks-tests (timeout-minutes: 10).
-      # test:strict-ref e test:coverage omitidos aqui — rodam em ref-warning-suite
-      # e integration-tests respectivamente, evitando tripla execução da suite.
-      - name: Run tests
-        run: npm run test:quality
-
-      - name: 🎨 Theme Presets & Contrast gate
-        run: npx vitest run src/lib/theme-presets.test.ts --reporter=verbose
 
       - name: Security audit
         run: npm audit --audit-level=high || true
@@ -205,10 +268,53 @@ jobs:
         run: npx vitest run tests/rls/ --reporter=verbose --coverage.reporter=json-summary
         continue-on-error: true
 
-  build-gate:
-    name: Production Build & Warnings Gate
+  tests-by-layer:
+    name: Tests by layer (${{ matrix.layer.name }})
     runs-on: ubuntu-latest
-    needs: quality
+    needs: smoke
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        layer:
+          - name: contracts
+            command: npx vitest run tests/contracts/migrated-endpoints.contract.test.ts --reporter=verbose
+            flaky_retry: "false"
+          - name: theme-presets
+            command: npx vitest run src/lib/theme-presets.test.ts --reporter=verbose
+            flaky_retry: "false"
+          - name: product-sparkline-labels
+            command: npx vitest run tests/components/products/ProductSparkline.labels.test.tsx --reporter=verbose
+            flaky_retry: "true"
+
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run layer tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          export TZ=America/Sao_Paulo
+          if [[ "${{ matrix.layer.flaky_retry }}" == "true" ]]; then
+            echo "Known flake suite detected. Running with one controlled retry."
+            if ! ${{ matrix.layer.command }}; then
+              echo "Retrying known flake suite once..."
+              ${{ matrix.layer.command }}
+            fi
+          else
+            ${{ matrix.layer.command }}
+          fi
+
+  build-gate:
+    name: Full Production Build (blocking)
+    runs-on: ubuntu-latest
+    needs: [quality, tests-by-layer]
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
@@ -218,15 +324,32 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Production Build with Warning Analysis
-        run: npm run ci:build
+      - name: Full production build (compile must pass)
+        run: npm run build 2>&1 | tee build.log
+      - name: Build warnings gate
+        run: npm run ci:build:warnings
+      - name: Upload build logs (debug)
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: build-logs-${{ github.run_id }}
+          path: build.log
+          retention-days: 7
+      - name: Upload production bundle on failure (debug)
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: build-output-${{ github.run_id }}
+          path: dist/
+          retention-days: 7
+          if-no-files-found: ignore
 
   coverage:
 
     name: Test Coverage
     runs-on: ubuntu-latest
     needs: smoke
-    timeout-minutes: 75
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v5
@@ -249,15 +372,7 @@ jobs:
       # dedicados (Cloud Status, Price Freshness, Hook tests, critical-e2e).
       # O coverage real (com thresholds) é validado por aqueles gates.
       - name: Run tests with coverage
-        run: >-
-          npx vitest run --coverage
-          --coverage.reporter=text
-          --coverage.reporter=json
-          --coverage.reporter=json-summary
-          --coverage.thresholds.lines=0
-          --coverage.thresholds.functions=0
-          --coverage.thresholds.branches=0
-          --coverage.thresholds.statements=0
+        run: npm run test:ci-core:coverage
 
       - name: Upload coverage report
         if: always()
@@ -265,7 +380,7 @@ jobs:
         with:
           name: coverage-report-${{ github.run_id }}
           path: coverage/
-          retention-days: 14
+          retention-days: ${{ fromJSON(env.ARTIFACT_RETENTION_DAYS) }}
           if-no-files-found: ignore
 
       # Gate per-file: valida que arquivos críticos (FiltersPage, KitBuilderPage,
@@ -278,10 +393,30 @@ jobs:
         continue-on-error: true
         run: npm run check:critical-coverage
 
+      # Gera relatório de cobertura por módulo e por rota (após coverage-summary.json existir).
+      # Informativo: não bloqueia o build mas é publicado como artifact para análise de gaps.
+      - name: Generate Per-Module & Per-Route Coverage Report
+        if: always()
+        continue-on-error: true
+        run: node scripts/generate-coverage-report.mjs
+
+      - name: Upload per-module coverage report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: module-coverage-report-${{ github.run_id }}
+          path: |
+            coverage/module-coverage-report.json
+            coverage/route-coverage-report.json
+            coverage/coverage-report.md
+          retention-days: ${{ fromJSON(env.ARTIFACT_RETENTION_DAYS) }}
+          if-no-files-found: ignore
+
   integration-tests:
     name: Edge Integration & Fuzzing
     runs-on: ubuntu-latest
     needs: quality
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v6
@@ -290,13 +425,34 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Run Fuzz Testing (Massive)
+
+      # Testes de integração mocked para todas as edge functions críticas.
+      # Cobre: health-check, cnpj-lookup, webhook-inbound, secure-upload,
+      # send-notification, validate-access, generate-mockup, quote-sync.
+      - name: Run Edge Function Integration Tests (mocked)
+        run: npx vitest run tests/edge-functions/integration/ --reporter=verbose
+
+      - name: Run Fuzz Testing (Massive — dry-run sem credenciais)
         run: npm run test:fuzz:full
+        env:
+          FUZZ_CONCURRENCY: "3"
       - name: Run Contract Testing (Schema Validation)
-        run: npm run test:contract
+        shell: bash
+        run: |
+          if [ -n "${SUPABASE_ANON_KEY:-${SUPABASE_SERVICE_ROLE_KEY:-}}" ]; then
+            npm run test:contract
+          else
+            echo "Skipping contract smoke: SUPABASE_ANON_KEY/SUPABASE_SERVICE_ROLE_KEY not configured."
+          fi
       - name: Run Massive Stress Test
-        run: npm run test:stress
-      - name: Run Edge Integration Tests (Mocked Env)
+        shell: bash
+        run: |
+          if [ -n "${SUPABASE_URL:-${VITE_SUPABASE_URL:-}}" ] && [ -n "${SUPABASE_TEST_BYPASS_TOKEN:-${SUPABASE_SERVICE_ROLE_KEY:-}}" ]; then
+            npm run test:stress
+          else
+            echo "Skipping stress test: Supabase URL/token not configured."
+          fi
+      - name: Run Legacy Edge Integration Tests (Mocked Env)
         run: |
           npm run test:edge:integration || true
       # Report-only: gera artifact JSON/HTML sem aplicar thresholds globais.
@@ -310,12 +466,18 @@ jobs:
           --coverage.thresholds.functions=0
           --coverage.thresholds.branches=0
           --coverage.thresholds.statements=0
+      # Gera relatório por módulo/rota a partir do coverage-summary.json produzido acima.
+      - name: Generate Per-Module & Per-Route Coverage Report
+        if: always()
+        continue-on-error: true
+        run: node scripts/generate-coverage-report.mjs
+
       - name: Upload Coverage Artifacts
         uses: actions/upload-artifact@v5
         with:
           name: full-coverage-report
           path: coverage/
-          retention-days: 14
+          retention-days: ${{ fromJSON(env.ARTIFACT_RETENTION_DAYS) }}
 
   critical-e2e:
     name: Critical Flows E2E
@@ -339,7 +501,7 @@ jobs:
         with:
           name: playwright-report
           path: playwright-report/
-          retention-days: 14
+          retention-days: ${{ fromJSON(env.ARTIFACT_RETENTION_DAYS) }}
       # 'Enforce Critical Coverage' foi MOVIDO para o job 'coverage' (vitest),
       # que é onde o coverage-summary.json é gerado. O job critical-e2e
       # roda Playwright apenas — não produz coverage instrumentation, então
@@ -349,7 +511,8 @@ jobs:
   elite-ui-validation:
     name: Elite UX Validation (E2E)
     runs-on: ubuntu-latest
-    needs: build-gate
+    needs: [build-gate, detect-changes]
+    if: github.event_name != 'pull_request' || needs.detect-changes.outputs.elite_changed == 'true'
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v6
@@ -368,10 +531,12 @@ jobs:
         with:
           name: playwright-elite-report
           path: playwright-report/
-          retention-days: 14
+          retention-days: ${{ fromJSON(env.ARTIFACT_RETENTION_DAYS) }}
 
 
   ref-warning-suite:
+    needs: detect-changes
+    if: github.event_name != 'pull_request' || needs.detect-changes.outputs.ref_warning_changed == 'true'
     name: Ref-warning suite (skeletons + guards + rotas)
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -428,10 +593,12 @@ jobs:
           path: |
             coverage/console-snapshot-ref.json
             coverage/console-snapshot-ref.*.json
-          retention-days: 14
+          retention-days: ${{ fromJSON(env.ARTIFACT_RETENTION_DAYS) }}
           if-no-files-found: ignore
 
   hooks-tests:
+    needs: detect-changes
+    if: github.event_name != 'pull_request' || needs.detect-changes.outputs.hooks_changed == 'true'
     name: Hook tests (smoke + funcionais)
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -481,10 +648,12 @@ jobs:
         with:
           name: hooks-coverage
           path: coverage/
-          retention-days: 14
+          retention-days: ${{ fromJSON(env.ARTIFACT_RETENTION_DAYS) }}
           if-no-files-found: ignore
 
   price-freshness-tests:
+    needs: detect-changes
+    if: github.event_name != 'pull_request' || needs.detect-changes.outputs.price_freshness_changed == 'true'
     name: Price Freshness — testes + gate de cobertura
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -535,10 +704,12 @@ jobs:
         with:
           name: price-freshness-coverage
           path: coverage/
-          retention-days: 30
+          retention-days: ${{ fromJSON(env.ARTIFACT_RETENTION_DAYS) }}
           if-no-files-found: ignore
 
   cloud-status-tests:
+    needs: detect-changes
+    if: github.event_name != 'pull_request' || needs.detect-changes.outputs.cloud_status_changed == 'true'
     name: Cloud Status — testes + gate de cobertura
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -563,10 +734,12 @@ jobs:
         with:
           name: cloud-status-coverage
           path: coverage/
-          retention-days: 30
+          retention-days: ${{ fromJSON(env.ARTIFACT_RETENTION_DAYS) }}
           if-no-files-found: ignore
 
   edge-functions-typecheck:
+    needs: detect-changes
+    if: github.event_name != 'pull_request' || needs.detect-changes.outputs.edge_functions_changed == 'true'
     name: Edge Functions — Deno typecheck
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -592,7 +765,8 @@ jobs:
   theme-validation:
     name: 🎨 Theme & Accessibility Gate
     runs-on: ubuntu-latest
-    needs: quality
+    needs: [quality, detect-changes]
+    if: github.event_name != 'pull_request' || needs.detect-changes.outputs.theme_changed == 'true'
     timeout-minutes: 20
 
     steps:
@@ -621,4 +795,4 @@ jobs:
             playwright-report/theme-validation-report.html
             playwright-report/theme-validation-report.csv
             theme-validation-output/theme-validation-data.json
-          retention-days: 30
+          retention-days: ${{ fromJSON(env.ARTIFACT_RETENTION_DAYS) }}

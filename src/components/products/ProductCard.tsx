@@ -9,12 +9,10 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { getCdnUrl, getSrcSet } from '@/utils/image-utils';
 import { cn } from '@/lib/utils';
-import {
-  useProductBounds,
-  type ExternalVariantStock,
-  type Product,
-  usePrefetchProduct,
-} from '@/hooks/products';
+import { useProductBounds } from '@/hooks/products/useProductBounds';
+import { usePrefetchProduct } from '@/hooks/products/usePrefetchProduct';
+import type { ExternalVariantStock } from '@/hooks/products/useExternalVariantStock';
+import type { Product } from '@/types/product-catalog';
 import { toast } from 'sonner';
 import { AddToCollectionModal } from '@/components/collections/AddToCollectionModal';
 import { ProductQuickView } from './ProductQuickView';

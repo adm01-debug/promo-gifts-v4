@@ -29,7 +29,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCurrentSection, useIsScrolled, useToast } from '@/hooks/ui';
+import { useCurrentSection } from '@/hooks/ui/useCurrentSection';
+import { useIsScrolled } from '@/hooks/ui/useScroll';
+import { useToast } from '@/hooks/ui/use-toast';
 import { useOnboardingContext } from '@/contexts/OnboardingContext';
 import { OrganizationSwitcher } from '@/components/OrganizationSwitcher';
 import { useSearchStore } from '@/stores/useSearchStore';

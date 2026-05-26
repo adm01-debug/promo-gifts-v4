@@ -3,11 +3,19 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from "./types";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+// Bug fix: suporta tanto VITE_SUPABASE_PUBLISHABLE_KEY (Lovable legacy)
+// quanto VITE_SUPABASE_ANON_KEY (padrão Supabase / Vercel).
+// Se apenas VITE_SUPABASE_ANON_KEY estiver definida (caso comum em novos
+// projetos Vercel), o cliente era criado com key=undefined → 401 em tudo.
+const SUPABASE_PUBLISHABLE_KEY =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
+  import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
   throw new Error(
-    "Missing Supabase environment variables: VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY are required."
+    "Missing Supabase environment variables: VITE_SUPABASE_URL and either " +
+    "VITE_SUPABASE_PUBLISHABLE_KEY or VITE_SUPABASE_ANON_KEY are required."
   );
 }
 

@@ -12,9 +12,10 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { CatalogBulkModals } from './CatalogBulkModals';
 import { useCatalogSelection } from './useCatalogSelection';
 import { cn } from '@/lib/utils';
-import { type Product, type ViewMode } from '@/hooks/products';
+import type { Product } from '@/types/product-catalog';
+import type { ViewMode } from '@/hooks/products/useCatalogState';
 import type { ColumnCount } from '@/components/products/ColumnSelector';
-import { SparklineSalesProvider } from '@/hooks/intelligence';
+import { SparklineSalesProvider } from '@/hooks/intelligence/useSparklineSales';
 import { ScrollToTopButton } from '@/components/common/ScrollToTopButton';
 
 interface CatalogContentProps {

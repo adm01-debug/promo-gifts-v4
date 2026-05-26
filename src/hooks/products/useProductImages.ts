@@ -196,7 +196,7 @@ export function useProductImages(productId: string | null) {
  */
 export function useProductImagesBatch(productIds: string[]) {
   return useQuery({
-    queryKey: ['product-images-batch', productIds.sort().join(',')],
+    queryKey: ['product-images-batch', [...productIds].sort().join(',')],
     queryFn: async () => {
       if (productIds.length === 0) return new Map<string, ProductImage[]>();
       return fetchProductImagesBatch(productIds);

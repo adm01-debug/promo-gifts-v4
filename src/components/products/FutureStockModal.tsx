@@ -24,10 +24,10 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import {
-  useProductVariantsWithStock,
-  processStockEntries,
   calculateColorSummary,
-} from '@/hooks/products';
+  processStockEntries,
+  useProductVariantsWithStock,
+} from '@/hooks/products/useVariantSupplierSources';
 import { sortColorSummary } from '@/utils/colorSorting';
 import { Skeleton } from '@/components/ui/skeleton';
 

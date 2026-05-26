@@ -27,8 +27,6 @@ export async function authenticateRequest(req: Request): Promise<AuthResult> {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const simulationKey = Deno.env.get('SIMULATION_BYPASS_KEY');
-
   const rawToken = authHeader.slice(7).trim();
   const localServiceClient = createClient(supabaseUrl, serviceRoleKey);
 
@@ -79,13 +77,12 @@ export async function authenticateRequest(req: Request): Promise<AuthResult> {
  * Hierarquia: dev > supervisor > agente. `admin` é alias legado de supervisor.
  */
 function isDevRole(auth: AuthResult): boolean {
-  return auth.userRoles.includes('dev') || auth.userRoles.includes('simulation');
+  return auth.userRoles.includes('dev');
 }
 
 function isSupervisorOrAbove(auth: AuthResult): boolean {
   return (
     auth.userRoles.includes('dev') ||
-    auth.userRoles.includes('simulation') ||
     auth.userRoles.includes('supervisor') ||
     auth.userRoles.includes('admin')
   );

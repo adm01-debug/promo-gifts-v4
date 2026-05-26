@@ -1,8 +1,8 @@
 import { ProductCard } from "./ProductCard";
-import type { Product } from "@/hooks/products";
+import type { Product } from "@/types/product-catalog";
 import type { ActiveColorFilter } from "@/utils/color-image-resolver";
 import { useEffect, useState, useRef } from "react";
-import { useReducedMotion } from "@/hooks/ui";
+import { useReducedMotion } from "@/hooks/ui/useReducedMotion";
 import { SelectionCheckbox } from "@/components/common/SelectionCheckbox";
 import { cn } from "@/lib/utils";
 import { ProductCardSkeleton } from "./ProductCardSkeleton";
