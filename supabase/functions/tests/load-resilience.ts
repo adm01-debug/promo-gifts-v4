@@ -37,7 +37,7 @@ async function runWebhookLoad() {
         occurred_at: new Date().toISOString(),
         data: { id: crypto.randomUUID(), value: Math.random() }
       });
-      const signature = await hmacSign(payload, SERVICE_KEY);
+      const signature = await hmacSign(payload, WEBHOOK_SECRET);
       
       const reqStart = performance.now();
       try {
