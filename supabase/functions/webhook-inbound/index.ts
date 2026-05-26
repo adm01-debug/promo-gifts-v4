@@ -78,10 +78,13 @@ Deno.serve(async (req) => {
   // que ultrapassa é blocked por 30min e nunca chega no INSERT.
   // Bypass rate limit for internal calls (like load tests) if authorized.
   const isInternal = req.headers.get("X-Internal-Call") === "true";
-  const authHeader = req.headers.get("Authorization");
-  const isServiceRole = authHeader?.includes(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "never-match");
+  const authHeader = req.headers.get("Authorization") || "";
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "never-match";
+  const isServiceRole = authHeader.includes(serviceKey) || authHeader.slice(7).trim() === serviceKey;
 
-  if (!(isInternal && isServiceRole)) {
+  if (isInternal && isServiceRole) {
+    console.log("Bypassing bot protection for internal service call");
+  } else {
     const protection = await runBotProtection(
       req,
       {
