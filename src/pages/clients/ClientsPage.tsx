@@ -3,7 +3,7 @@ import { PageSEO } from '@/components/seo/PageSEO';
 import { Users, Search, AlertTriangle, RefreshCw, X, History } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { ClientsSkeleton } from '@/components/layout/SkeletonLoaders';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useCrmCompanies } from '@/hooks/crm';
