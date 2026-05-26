@@ -5,9 +5,15 @@ export interface ProductCardSkeletonProps {
   variant?: "default" | "compact" | "detailed";
   className?: string;
   animate?: boolean;
+  hideCategoryBadges?: boolean;
 }
 
-export function ProductCardSkeleton({ variant = "default", className, animate = true }: ProductCardSkeletonProps) {
+export function ProductCardSkeleton({ 
+  variant = "default", 
+  className, 
+  animate = true,
+  hideCategoryBadges = false 
+}: ProductCardSkeletonProps) {
   if (variant === "compact") {
     return (
       <div className={cn("flex items-center gap-3 p-3 rounded-lg bg-card border border-border/40 overflow-hidden", className)}>
@@ -29,7 +35,9 @@ export function ProductCardSkeleton({ variant = "default", className, animate = 
       {/* Info Section - Synchronized with ProductCard.tsx */}
       <div className="relative space-y-2.5 p-3 sm:space-y-4 sm:p-5 flex-1 flex flex-col">
         {/* Category badge */}
-        <Skeleton className="h-5 w-20 rounded-full" animate={animate} />
+        {!hideCategoryBadges && (
+          <Skeleton className="h-5 w-20 rounded-full" animate={animate} />
+        )}
         
         {/* SKU & Meta Row */}
         <div className="flex items-center justify-between gap-2">

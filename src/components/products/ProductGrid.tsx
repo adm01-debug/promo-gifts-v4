@@ -131,7 +131,7 @@ function ProductCardWrapper({
         />
       ) : (
         /* Placeholder leve que espelha exatamente a estrutura do card real para evitar saltos (CLS) */
-        <ProductCardSkeleton variant="default" animate={false} />
+        <ProductCardSkeleton variant="default" animate={false} hideCategoryBadges={hideCategoryBadges} />
       )}
     </div>
   );
