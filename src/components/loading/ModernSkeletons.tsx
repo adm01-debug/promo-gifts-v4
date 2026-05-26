@@ -491,3 +491,171 @@ export function ProductDetailSkeleton() {
     </div>
   );
 }
+
+// ─── Mockup Skeletons ─────────────────────────────────────────────
+
+export interface MockupSkeletonProps {
+  variant?: "config" | "preview" | "result" | "card" | "editor" | "wizard";
+  className?: string;
+  delay?: number;
+}
+
+export function MockupSkeleton({
+  variant = "config",
+  className,
+  delay = 0,
+}: MockupSkeletonProps) {
+  const staggerStyle = delay > 0 ? { animationDelay: `${delay}ms` } : {};
+
+  if (variant === "wizard") {
+    return (
+      <div className={cn("animate-fade-in opacity-0 [animation-fill-mode:forwards]", className)} style={staggerStyle}>
+        <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-xl border">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex items-center gap-2 flex-1">
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <div className="flex-1 hidden md:block space-y-1">
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-2 w-24" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (variant === "editor") {
+    return (
+      <CardSkeleton className={className} style={staggerStyle}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-4 w-4" />
+            <Skeleton className="h-4 w-28" />
+          </div>
+          <Skeleton className="h-8 w-20 rounded-md" />
+        </div>
+        <Skeleton className="aspect-square rounded-xl mb-4" />
+        <div className="flex gap-2 mb-4">
+          <Skeleton className="h-9 flex-1 rounded-md" />
+          <Skeleton className="h-9 flex-1 rounded-md" />
+        </div>
+        <div className="grid grid-cols-2 gap-4 pt-2 border-t">
+          {[1, 2].map((i) => (
+            <div key={i} className="space-y-2">
+              <div className="flex justify-between">
+                <Skeleton className="h-3 w-14" />
+                <Skeleton className="h-3 w-10" />
+              </div>
+              <Skeleton className="h-2 w-full rounded-full" />
+            </div>
+          ))}
+        </div>
+      </CardSkeleton>
+    );
+  }
+
+  if (variant === "config") {
+    return (
+      <CardSkeleton className={className} style={staggerStyle}>
+        <div className="space-y-2 mb-6">
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-4 w-48" />
+        </div>
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="space-y-2 mb-4">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-10 w-full rounded-md" />
+          </div>
+        ))}
+        <div className="flex gap-2 pt-4">
+          <Skeleton className="h-10 flex-1 rounded-md" />
+          <Skeleton className="h-10 w-10 rounded-md" />
+        </div>
+      </CardSkeleton>
+    );
+  }
+
+  if (variant === "preview") {
+    return (
+      <CardSkeleton className={className} style={staggerStyle}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div className="space-y-1.5">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+          </div>
+          <Skeleton className="h-8 w-20 rounded" />
+        </div>
+        <div className="relative mb-4">
+          <Skeleton className="aspect-square rounded-xl" />
+          <div className="absolute inset-0 rounded-xl border-2 border-primary/20 animate-pulse" />
+        </div>
+        <div className="flex items-center gap-2">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-8 w-16 rounded" />
+          ))}
+        </div>
+      </CardSkeleton>
+    );
+  }
+
+  if (variant === "result") {
+    return (
+      <CardSkeleton className={className} style={staggerStyle}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-8 w-8 rounded-full" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+          <Skeleton className="h-8 w-24 rounded" />
+        </div>
+        <div className="relative mb-4">
+          <Skeleton className="aspect-square rounded-xl" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+          </div>
+        </div>
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-6 w-20 rounded-full" />
+          <Skeleton className="h-8 w-32 rounded" />
+        </div>
+      </CardSkeleton>
+    );
+  }
+
+  return (
+    <div className={cn("border rounded-xl overflow-hidden bg-card animate-fade-in opacity-0 [animation-fill-mode:forwards]", className)} style={staggerStyle}>
+      <Skeleton className="aspect-square w-full rounded-none" />
+      <div className="p-3 space-y-2">
+        <Skeleton className="h-4 w-3/4" />
+        <div className="flex gap-1.5">
+          <Skeleton className="h-5 w-16 rounded-full" />
+          <Skeleton className="h-5 w-12 rounded-full" />
+        </div>
+        <Skeleton className="h-3 w-1/3" />
+      </div>
+    </div>
+  );
+}
+
+function CardSkeleton({ children, className, style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
+  return (
+    <div className={cn("rounded-xl border border-border bg-card p-4 sm:p-6 overflow-hidden animate-fade-in opacity-0 [animation-fill-mode:forwards]", className)} style={style}>
+      {children}
+    </div>
+  );
+}
+
+export function MockupHistorySkeleton({ count = 8 }: { count?: number }) {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      {Array.from({ length: count }).map((_, i) => (
+        <MockupSkeleton key={i} variant="card" delay={i * 50} />
+      ))}
+    </div>
+  );
+}
+
