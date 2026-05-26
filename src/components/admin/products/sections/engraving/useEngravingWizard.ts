@@ -1,14 +1,16 @@
 /**
  * useEngravingWizard — Business logic for the engraving wizard
  *
- * Fixes applied (audit 26/05/2026):
- *   BUG-02: table name corrected to 'tecnicas_gravacao' (was 'tecnica_gravacao' singular)
- *   BUG-05: handleDeleteArea uses state instead of confirm() — exposes deleteAreaConfirm/confirmDeleteArea/cancelDeleteArea
- *   BUG-03 NOTE: localAreas are not persisted when creating a new product. This is a known
- *     limitation — fix requires AdminProductFormPage to call flushLocalAreas(productId) after
- *     successful creation. Deferred to Sprint 3. A warning badge is shown in the UI.
+ * Sprint 2 fixes (audit 26/05/2026):
+ *   BUG-02: table name corrected to 'tecnicas_gravacao' (plural)
+ *   BUG-05: handleDeleteArea uses state — exposes deleteAreaConfirm/confirmDeleteArea/cancelDeleteArea
+ *
+ * Sprint 3 fixes (26/05/2026):
+ *   BUG-03: flushLocalAreas(newProductId) — persists localAreas to DB after product creation.
+ *            AdminProductFormPage calls this before navigating to edit mode.
+ *   BUG-28: console.warn when technique not found in cache (likely deleted from DB)
  */
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -27,12 +29,8 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
   const [wizardStep, setWizardStep] = useState<WizardStep>('list');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const [selectedComponent, setSelectedComponent] = useState<{ code: string; name: string } | null>(
-    null,
-  );
-  const [selectedLocation, setSelectedLocation] = useState<{ code: string; name: string } | null>(
-    null,
-  );
+  const [selectedComponent, setSelectedComponent] = useState<{ code: string; name: string } | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<{ code: string; name: string } | null>(null);
   const [selectedTechnique, setSelectedTechnique] = useState<ExternalTechnique | null>(null);
   const [customComponent, setCustomComponent] = useState('');
   const [customLocation, setCustomLocation] = useState('');
@@ -42,14 +40,16 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
     (PrintAreaTechnique & { _techData?: ExternalTechnique })[]
   >([]);
 
-  // BUG-05 FIX: state-based delete confirmation for areas — no more confirm()
+  // BUG-05: state-based delete confirmation — no more confirm()
   const [deleteAreaConfirm, setDeleteAreaConfirm] = useState<EnrichedArea | null>(null);
 
-  // BUG-03 NOTE: exposed via ref so AdminProductFormPage can call flushLocalAreas(id) after creation
+  // BUG-03: ref always holds the latest localAreas so flushLocalAreas (stable useCallback) can read it
   const localAreasRef = useRef(localAreas);
-  localAreasRef.current = localAreas;
+  useEffect(() => {
+    localAreasRef.current = localAreas;
+  }, [localAreas]);
 
-  // BUG-02 FIX: correct table name is 'tecnicas_gravacao' (plural with 's')
+  // BUG-02 FIX: correct table name 'tecnicas_gravacao' (plural)
   const { data: techniques = [], isLoading: loadingTechs } = useQuery({
     queryKey: ['external-techniques-catalog'],
     queryFn: async (): Promise<ExternalTechnique[]> => {
@@ -74,7 +74,6 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
     return map;
   }, [techniques]);
 
-  // Fetch saved areas
   const { data: savedAreas = [], isLoading: loadingAreas } = useQuery({
     queryKey: ['print-area-techniques', productId],
     queryFn: async (): Promise<EnrichedArea[]> => {
@@ -102,7 +101,6 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
 
   const displayAreas: EnrichedArea[] = isEdit && productId ? savedAreas : enrichedLocalAreas;
 
-  // Mutations
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ['print-area-techniques', productId] });
 
@@ -114,10 +112,7 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
       if (error) throw new Error(error.message);
       if (!data?.success) throw new Error(data?.error || 'Erro ao criar área');
     },
-    onSuccess: () => {
-      invalidate();
-      toast.success('Área de personalização adicionada');
-    },
+    onSuccess: () => { invalidate(); toast.success('Área de personalização adicionada'); },
     onError: (e: unknown) => toast.error(sanitizeError(e)),
   });
 
@@ -129,10 +124,7 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
       if (error) throw new Error(error.message);
       if (!data?.success) throw new Error(data?.error || 'Erro ao atualizar área');
     },
-    onSuccess: () => {
-      invalidate();
-      toast.success('Área atualizada');
-    },
+    onSuccess: () => { invalidate(); toast.success('Área atualizada'); },
     onError: (e: unknown) => toast.error(sanitizeError(e)),
   });
 
@@ -144,14 +136,10 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
       if (error) throw new Error(error.message);
       if (!data?.success) throw new Error(data?.error || 'Erro ao excluir área');
     },
-    onSuccess: () => {
-      invalidate();
-      toast.success('Área removida');
-    },
+    onSuccess: () => { invalidate(); toast.success('Área removida'); },
     onError: (e: unknown) => toast.error(sanitizeError(e)),
   });
 
-  // Wizard actions
   const resetWizard = useCallback(() => {
     setWizardStep('list');
     setSelectedComponent(null);
@@ -163,24 +151,15 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
     setDetailForm(DEFAULT_DETAIL_FORM);
   }, []);
 
-  const startWizard = useCallback(() => {
-    resetWizard();
-    setWizardStep('component');
-  }, [resetWizard]);
-
+  const startWizard = useCallback(() => { resetWizard(); setWizardStep('component'); }, [resetWizard]);
   const handleSelectComponent = useCallback((comp: { code: string; name: string }) => {
-    setSelectedComponent(comp);
-    setWizardStep('location');
+    setSelectedComponent(comp); setWizardStep('location');
   }, []);
-
   const handleSelectLocation = useCallback((loc: { code: string; name: string }) => {
-    setSelectedLocation(loc);
-    setWizardStep('technique');
+    setSelectedLocation(loc); setWizardStep('technique');
   }, []);
-
   const handleSelectTechnique = useCallback((tech: ExternalTechnique) => {
-    setSelectedTechnique(tech);
-    setWizardStep('details');
+    setSelectedTechnique(tech); setWizardStep('details');
   }, []);
 
   const handleSaveArea = useCallback(() => {
@@ -205,38 +184,51 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
     if (isEdit && productId) {
       createMutation.mutate(newArea);
     } else {
-      // BUG-03 NOTE: area stored locally with product_id='pending'.
-      // AdminProductFormPage must call flushLocalAreas(productId) after successful creation.
+      // BUG-03: stored locally with product_id='pending'.
+      // AdminProductFormPage calls flushLocalAreas(newId) before navigating to edit mode.
       setLocalAreas((prev) => [
         ...prev,
-        {
-          ...newArea,
-          id: `local-${Date.now()}`,
-          _techData: selectedTechnique,
-        } as PrintAreaTechnique & { _techData?: ExternalTechnique },
+        { ...newArea, id: `local-${Date.now()}`, _techData: selectedTechnique } as PrintAreaTechnique & { _techData?: ExternalTechnique },
       ]);
       toast.success('Área adicionada (será salva junto ao produto)');
     }
     resetWizard();
-  }, [
-    selectedComponent,
-    selectedLocation,
-    selectedTechnique,
-    detailForm,
-    productId,
-    isEdit,
-    displayAreas.length,
-    createMutation,
-    resetWizard,
-  ]);
+  }, [selectedComponent, selectedLocation, selectedTechnique, detailForm, productId, isEdit, displayAreas.length, createMutation, resetWizard]);
 
-  // BUG-05 FIX: requestDeleteArea sets state; confirmDeleteArea performs the delete
-  const handleDeleteArea = useCallback(
-    (area: EnrichedArea) => {
-      setDeleteAreaConfirm(area);
-    },
-    [],
-  );
+  // BUG-03 FIX: flush all pending localAreas to DB using the newly created product's ID.
+  // Called by AdminProductFormPage BEFORE navigate() so areas are available in edit mode.
+  // Uses localAreasRef (always current) so useCallback can have empty deps (stable ref).
+  const flushLocalAreas = useCallback(async (newProductId: string): Promise<void> => {
+    const areas = localAreasRef.current.filter((a) => a.id.startsWith('local-'));
+    if (areas.length === 0) return;
+    const results = await Promise.allSettled(
+      areas.map(async (area) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { id: _id, _techData: _td, ...areaData } = area as PrintAreaTechnique & { _techData?: ExternalTechnique };
+        const { data, error } = await supabase.functions.invoke('external-db-bridge', {
+          body: {
+            table: 'print_area_techniques',
+            operation: 'insert',
+            data: { ...areaData, product_id: newProductId },
+          },
+        });
+        if (error) throw new Error(error.message);
+        if (!data?.success) throw new Error(data?.error || 'Erro ao salvar área de gravação');
+      }),
+    );
+    const failed = results.filter((r) => r.status === 'rejected').length;
+    if (failed > 0) {
+      toast.warning(`${areas.length - failed}/${areas.length} áreas de gravação salvas — ${failed} falha(s).`);
+    } else {
+      toast.success(`${areas.length} área(s) de gravação salvas com o produto`);
+    }
+    setLocalAreas([]); // clear after flush
+  }, []); // stable — reads localAreasRef.current which is always up-to-date
+
+  // BUG-05: state-based delete confirmation
+  const handleDeleteArea = useCallback((area: EnrichedArea) => {
+    setDeleteAreaConfirm(area);
+  }, []);
 
   const confirmDeleteArea = useCallback(() => {
     if (!deleteAreaConfirm) return;
@@ -252,20 +244,14 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
 
   const cancelDeleteArea = useCallback(() => setDeleteAreaConfirm(null), []);
 
-  const handleToggleActive = useCallback(
-    (area: EnrichedArea) => {
-      if (isEdit && area.id && !area.id.startsWith('local-')) {
-        updateMutation.mutate({ id: area.id, is_active: !area.is_active });
-      } else {
-        setLocalAreas((prev) =>
-          prev.map((a) => (a.id === area.id ? { ...a, is_active: !a.is_active } : a)),
-        );
-      }
-    },
-    [isEdit, updateMutation],
-  );
+  const handleToggleActive = useCallback((area: EnrichedArea) => {
+    if (isEdit && area.id && !area.id.startsWith('local-')) {
+      updateMutation.mutate({ id: area.id, is_active: !area.is_active });
+    } else {
+      setLocalAreas((prev) => prev.map((a) => (a.id === area.id ? { ...a, is_active: !a.is_active } : a)));
+    }
+  }, [isEdit, updateMutation]);
 
-  // Filtered techniques
   const filteredTechniques = useMemo(() => {
     if (!techSearch) return techniques.filter((t) => t.ativo !== false);
     const s = techSearch.toLowerCase();
@@ -294,42 +280,25 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
   const isLoading = loadingTechs || (isEdit && loadingAreas);
 
   return {
-    wizardStep,
-    setWizardStep,
-    expandedId,
-    setExpandedId,
-    selectedComponent,
-    selectedLocation,
-    selectedTechnique,
-    customComponent,
-    setCustomComponent,
-    customLocation,
-    setCustomLocation,
-    techSearch,
-    setTechSearch,
-    detailForm,
-    setDetailForm,
-    localAreas,
-    localAreasRef,
+    wizardStep, setWizardStep,
+    expandedId, setExpandedId,
+    selectedComponent, selectedLocation, selectedTechnique,
+    customComponent, setCustomComponent,
+    customLocation, setCustomLocation,
+    techSearch, setTechSearch,
+    detailForm, setDetailForm,
+    localAreas, localAreasRef,
     displayAreas,
-    filteredTechniques,
-    groupedTechniques,
-    wizardStepIndex,
-    isBusy,
-    isLoading,
-    loadingTechs,
-    // Actions
-    resetWizard,
-    startWizard,
-    handleSelectComponent,
-    handleSelectLocation,
-    handleSelectTechnique,
+    filteredTechniques, groupedTechniques,
+    wizardStepIndex, isBusy, isLoading, loadingTechs,
+    resetWizard, startWizard,
+    handleSelectComponent, handleSelectLocation, handleSelectTechnique,
     handleSaveArea,
     handleDeleteArea,
-    // BUG-05: new delete confirmation actions
-    deleteAreaConfirm,
-    confirmDeleteArea,
-    cancelDeleteArea,
+    // BUG-03: flush pending local areas to DB after product creation
+    flushLocalAreas,
+    // BUG-05: state-based delete confirmation
+    deleteAreaConfirm, confirmDeleteArea, cancelDeleteArea,
     handleToggleActive,
   };
 }
@@ -342,6 +311,13 @@ function enrichArea(
   override?: ExternalTechnique,
 ): EnrichedArea {
   const tech = override || techById.get(area.tabela_preco_id);
+  // BUG-28 FIX: warn when technique not found — likely deleted from DB; area shows '—'
+  if (!tech && !override && area.id && !area.id.startsWith('local-')) {
+    console.warn(
+      `[EngravingWizard] Technique id="${area.tabela_preco_id}" not found in cache — ` +
+      'it may have been deleted from the DB. Area will display "—" as technique name.',
+    );
+  }
   return {
     ...area,
     technique_name: tech?.nome || '—',
@@ -349,9 +325,7 @@ function enrichArea(
     technique_group: tech?.grupo_tecnica || '',
     max_colors:
       tech !== null && tech !== undefined && tech.max_cores !== null && tech.max_cores !== undefined
-        ? typeof tech.max_cores === 'string'
-          ? parseInt(tech.max_cores, 10)
-          : tech.max_cores
+        ? typeof tech.max_cores === 'string' ? parseInt(tech.max_cores, 10) : tech.max_cores
         : null,
     setup_cost: tech?.custo_setup ?? null,
     charges_per_color: tech?.cobra_por_cor ?? false,
