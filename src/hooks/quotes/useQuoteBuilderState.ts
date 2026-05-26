@@ -451,7 +451,15 @@ export function useQuoteBuilderState() {
     fetchQuote(quoteId).then((quote) => {
       if (quote) {
         setClientId(quote.client_id || '');
-        setContactId(quote.client_id || '');
+        /**
+         * BUG-02 FIX: usar contact_id (ID do contato) em vez de client_id (ID da empresa).
+         *
+         * PROBLEMA ORIGINAL: setContactId recebia quote.client_id, ou seja, o ID da
+         * empresa. Isso fazia a validação do step 'client' passar (ambos clientId e
+         * contactId != ''), mas semanticamente errada — contactId deveria ser o ID
+         * da pessoa de contato, não da empresa.
+         */
+        setContactId((quote as Record<string, unknown>).contact_id as string || '');
         setValidUntil(quote.valid_until || format(addDays(new Date(), 30), 'yyyy-MM-dd'));
         setNotes(quote.notes || '');
         setInternalNotes(quote.internal_notes || '');
@@ -699,9 +707,15 @@ export function useQuoteBuilderState() {
     placeholderData: (previousData) => previousData,
   });
 
+  /**
+   * BUG-05 FIX: removida dependência fantasma `productSearch`.
+   *
+   * PROBLEMA ORIGINAL: productSearch estava na lista de deps mas nunca era usado
+   * no corpo do useMemo — causava re-computações desnecessárias a cada keystroke.
+   */
   const filteredProducts = useMemo(() => {
     return products || [];
-  }, [products, productSearch]);
+  }, [products]);
 
   // ── Calculations ──
   const formatCurrency = useCallback((value: number) => {
