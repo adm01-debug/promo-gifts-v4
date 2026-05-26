@@ -29,6 +29,11 @@ export function SkeletonMonitor({
     // Only track if we are in the browser
     if (typeof window === 'undefined') return;
 
+    // Log mounting
+    if (process.env.NODE_ENV === 'development') {
+      // console.debug(`[SkeletonMonitor] Mounted: ${name}`);
+    }
+
     const timer = setInterval(() => {
       setElapsed(Math.round(performance.now() - startTime.current));
     }, 100);
@@ -59,17 +64,33 @@ export function SkeletonMonitor({
     };
   }, [name, thresholdMs]);
 
+  // Check for "forced loading" global debug flag
+  const [isForced, setIsForced] = useState(false);
+  useEffect(() => {
+    const checkForced = () => {
+      setIsForced((window as any).__FORCE_SKELETONS__ === true);
+    };
+    checkForced();
+    const interval = setInterval(checkForced, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <div className="relative h-full min-h-[200px] w-full">
+    <div 
+      className="relative h-full min-h-[100px] w-full"
+      data-skeleton-monitor={name}
+      data-skeleton-elapsed={elapsed}
+      data-skeleton-forced={isForced}
+    >
       {children}
 
       {/* Dev-only overlay timer */}
-      {isDev && elapsed > 300 && (
+      {isDev && (elapsed > 300 || isForced) && (
         <div className="pointer-events-none fixed bottom-4 right-4 z-[9999]">
           <div
             className={cn(
               'flex items-center gap-2 rounded-full border px-3 py-1.5 font-mono text-[11px] font-bold shadow-lg backdrop-blur-md',
-              elapsed > thresholdMs
+              elapsed > thresholdMs || isForced
                 ? 'animate-pulse border-destructive/20 bg-destructive text-destructive-foreground'
                 : 'border-border/40 bg-background/80 text-foreground',
             )}
@@ -77,10 +98,10 @@ export function SkeletonMonitor({
             <div
               className={cn(
                 'h-2 w-2 rounded-full',
-                elapsed > thresholdMs ? 'bg-white' : 'animate-pulse bg-primary',
+                elapsed > thresholdMs || isForced ? 'bg-white' : 'animate-pulse bg-primary',
               )}
             />
-            Loading {name}: {(elapsed / 1000).toFixed(1)}s
+            {isForced ? '[DEBUG FORCED] ' : ''}Loading {name}: {(elapsed / 1000).toFixed(1)}s
           </div>
         </div>
       )}

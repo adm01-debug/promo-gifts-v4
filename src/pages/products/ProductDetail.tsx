@@ -250,7 +250,7 @@ export default function ProductDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedVariation, colorAutoSelected]);
 
-  if (isLoading) return <ProductDetailSkeleton />;
+  if (isLoading && !product) return <ProductDetailSkeleton />;
 
   if (isError || !product) {
     return (
