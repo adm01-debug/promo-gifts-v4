@@ -865,6 +865,12 @@ export default function VisualSearchPage() {
                                 }}
                               />
                             
+                            <div className="absolute top-4 left-4">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 backdrop-blur-md border border-white/10 text-[12px] font-black text-emerald-400 font-mono">
+                                #{idx + 1}
+                              </div>
+                            </div>
+
                             {/* Match Overlay */}
                             <div className="absolute top-4 right-4 flex flex-col items-end gap-1.5">
                               <div className={cn(
@@ -878,13 +884,6 @@ export default function VisualSearchPage() {
                                 value={product.relevance * 100} 
                                 className="h-1 w-16 bg-white/10 overflow-hidden" 
                               />
-                            </div>
-
-                            {/* Ranking Indicator */}
-                            <div className="absolute top-4 left-4">
-                              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 backdrop-blur-md border border-white/10 text-[12px] font-black text-emerald-400 font-mono">
-                                #{idx + 1}
-                              </div>
                             </div>
 
                             {/* Ranking Badge for Top 3 */}
