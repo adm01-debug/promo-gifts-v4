@@ -2,11 +2,17 @@
  * mockupGenerationService — Handles mockup generation API calls and history persistence.
  * Extracted from useMockupGenerator to reduce hook complexity.
  *
- * Fixes (audit 26/05/2026):
+ * Fixes (audit 26/05/2026 — Sprint 1):
  * T4: position_x, position_y, logo_url persisted as top-level columns.
  * T7: getTechniquePrompt skips "default" in search loop.
  * T8: fetchMockupHistory limited to 200 records.
  * T10: thumbnail_url now stores mockupUrl (not logoUrl).
+ *
+ * Fixes (audit sprint-2, 26/05/2026):
+ * BUG-C: generateMockupApi wrapped in 60s timeout via Promise.race — UI can no longer
+ *        freeze indefinitely when the edge function hangs.
+ * BUG-E: SVG logos pre-validated BEFORE calling edge function, saving the round-trip.
+ * BUG-I: Single-area path sends only the relevant area in the `areas` array.
  */
 import { supabase } from '@/integrations/supabase/client';
 import { uploadLogoToStorage, downloadImageAsPdfFromUrl } from '@/lib/mockup-storage';
@@ -177,6 +183,36 @@ export interface GenerateMockupResult {
   batchResults: { areaName: string; url: string }[];
 }
 
+/** BUG-C FIX: 60-second timeout for edge function calls. */
+const GENERATE_TIMEOUT_MS = 60_000;
+
+function withGenerateTimeout<T>(promise: Promise<T>): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error('Tempo esgotado ao gerar mockup (60s). Tente novamente.')),
+        GENERATE_TIMEOUT_MS,
+      ),
+    ),
+  ]);
+}
+
+/** BUG-E FIX: detect SVG before calling the edge function to save the round-trip. */
+function assertNotSvg(area: PersonalizationArea): void {
+  if (!area.logoPreview) return;
+  const isSvgDataUrl =
+    area.logoPreview.startsWith('data:image/svg') ||
+    area.logoPreview.startsWith('data:text/xml');
+  const isSvgHttpUrl =
+    area.logoPreview.startsWith('http') && /\.svg(\?|$)/i.test(area.logoPreview);
+  if (isSvgDataUrl || isSvgHttpUrl) {
+    throw new Error(
+      `Logos SVG não são suportados na área "${area.name}". Converta para PNG ou JPG.`,
+    );
+  }
+}
+
 export async function generateMockupApi(
   params: GenerateMockupParams,
 ): Promise<GenerateMockupResult> {
@@ -184,35 +220,45 @@ export async function generateMockupApi(
   const areasWithLogos = areas.filter((a) => a.logoPreview);
   const techniquePrompt = getTechniquePrompt(technique);
 
+  // BUG-E FIX: pre-validate SVG logos before any edge function call.
+  for (const area of areasWithLogos) {
+    assertNotSvg(area);
+  }
+
   if (areasWithLogos.length === 1) {
     const area = areasWithLogos[0];
     const isLogoUrl = area.logoPreview?.startsWith('http');
 
-    const response = await supabase.functions.invoke('generate-mockup', {
-      body: {
-        productImageUrl: productImage,
-        logoBase64: isLogoUrl ? undefined : area.logoPreview,
-        logoUrl: isLogoUrl ? area.logoPreview : undefined,
-        techniqueName: technique.name,
-        techniquePrompt,
-        positionX: area.positionX,
-        positionY: area.positionY,
-        logoWidthCm: area.logoWidth,
-        logoHeightCm: area.logoHeight,
-        logoRotation: area.logoRotation || 0,
-        logoScale: area.logoScale ?? 100,
-        productName,
-        areas: areasWithLogos.map((a) => ({
-          name: a.name,
-          positionX: a.positionX,
-          positionY: a.positionY,
-          logoWidth: a.logoWidth,
-          logoHeight: a.logoHeight,
-          logoRotation: a.logoRotation || 0,
-          logoScale: a.logoScale ?? 100,
-        })),
-      },
-    });
+    // BUG-I FIX: send only the single area (not all areas) in the areas array.
+    const response = await withGenerateTimeout(
+      supabase.functions.invoke('generate-mockup', {
+        body: {
+          productImageUrl: productImage,
+          logoBase64: isLogoUrl ? undefined : area.logoPreview,
+          logoUrl: isLogoUrl ? area.logoPreview : undefined,
+          techniqueName: technique.name,
+          techniquePrompt,
+          positionX: area.positionX,
+          positionY: area.positionY,
+          logoWidthCm: area.logoWidth,
+          logoHeightCm: area.logoHeight,
+          logoRotation: area.logoRotation || 0,
+          logoScale: area.logoScale ?? 100,
+          productName,
+          areas: [
+            {
+              name: area.name,
+              positionX: area.positionX,
+              positionY: area.positionY,
+              logoWidth: area.logoWidth,
+              logoHeight: area.logoHeight,
+              logoRotation: area.logoRotation || 0,
+              logoScale: area.logoScale ?? 100,
+            },
+          ],
+        },
+      }),
+    );
 
     if (response.error) {
       const errData = response.data || response.error;
@@ -233,41 +279,48 @@ export async function generateMockupApi(
     const isLogoUrl = area.logoPreview?.startsWith('http');
     toast.info(`Gerando ${area.name}...`, { duration: 2000 });
 
-    const response = await supabase.functions.invoke('generate-mockup', {
-      body: {
-        productImageUrl: productImage,
-        logoBase64: isLogoUrl ? undefined : area.logoPreview,
-        logoUrl: isLogoUrl ? area.logoPreview : undefined,
-        techniqueName: technique.name,
-        techniquePrompt,
-        positionX: area.positionX,
-        positionY: area.positionY,
-        logoWidthCm: area.logoWidth,
-        logoHeightCm: area.logoHeight,
-        logoRotation: area.logoRotation || 0,
-        logoScale: area.logoScale ?? 100,
-        productName,
-        areas: [
-          {
-            name: area.name,
+    try {
+      const response = await withGenerateTimeout(
+        supabase.functions.invoke('generate-mockup', {
+          body: {
+            productImageUrl: productImage,
+            logoBase64: isLogoUrl ? undefined : area.logoPreview,
+            logoUrl: isLogoUrl ? area.logoPreview : undefined,
+            techniqueName: technique.name,
+            techniquePrompt,
             positionX: area.positionX,
             positionY: area.positionY,
-            logoWidth: area.logoWidth,
-            logoHeight: area.logoHeight,
+            logoWidthCm: area.logoWidth,
+            logoHeightCm: area.logoHeight,
             logoRotation: area.logoRotation || 0,
             logoScale: area.logoScale ?? 100,
+            productName,
+            areas: [
+              {
+                name: area.name,
+                positionX: area.positionX,
+                positionY: area.positionY,
+                logoWidth: area.logoWidth,
+                logoHeight: area.logoHeight,
+                logoRotation: area.logoRotation || 0,
+                logoScale: area.logoScale ?? 100,
+              },
+            ],
           },
-        ],
-      },
-    });
+        }),
+      );
 
-    if (response.error) {
-      console.error(`Error generating ${area.name}:`, response.error);
+      if (response.error) {
+        console.error(`Error generating ${area.name}:`, response.error);
+        failedAreas.push(area.name);
+        continue;
+      }
+      if (response.data?.mockupUrl)
+        results.push({ areaName: area.name, url: response.data.mockupUrl });
+    } catch (timeoutErr) {
+      console.error(`Timeout or error generating ${area.name}:`, timeoutErr);
       failedAreas.push(area.name);
-      continue;
     }
-    if (response.data?.mockupUrl)
-      results.push({ areaName: area.name, url: response.data.mockupUrl });
   }
 
   if (failedAreas.length > 0) {
