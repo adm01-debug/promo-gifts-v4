@@ -116,44 +116,37 @@ export function ColumnSelector({ value, onChange, className }: ColumnSelectorPro
       "inline-flex items-center gap-0.5 p-1 rounded-xl bg-muted/60 border border-border/40",
       className
     )}>
-      <AnimatePresence mode="popLayout">
-        {available.map((opt) => {
-          const isActive = value === opt.value;
-          return (
-            <Tooltip key={opt.value}>
-              <TooltipTrigger asChild>
-                <button
-                  aria-label={opt.label}
-                  className={cn(
-                    "relative flex items-center justify-center h-9 w-9 rounded-lg transition-colors duration-150",
-                    isActive
-                      ? "text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                  onClick={() => {
-                    onChange(opt.value);
-                    try { localStorage.setItem(STORAGE_KEY, String(opt.value)); } catch { /* empty */ }
-                  }}
-                >
-                  {isActive && (
-                    <motion.div
-                      layoutId="column-selector-bg"
-                      className="absolute inset-0 rounded-lg bg-primary shadow-sm"
-                      transition={{ type: "spring", stiffness: 500, damping: 35 }}
-                    />
-                  )}
-                  <span className="relative z-10">
-                    <GridIcon cols={opt.cols} rows={opt.rows} />
-                  </span>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-xs">
-                {opt.label}
-              </TooltipContent>
-            </Tooltip>
-          );
-        })}
-      </AnimatePresence>
+      {available.map((opt) => {
+        const isActive = value === opt.value;
+        return (
+          <Tooltip key={opt.value}>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-label={opt.label}
+                aria-pressed={isActive}
+                className={cn(
+                  "relative flex items-center justify-center h-9 w-9 rounded-lg transition-colors duration-150 cursor-pointer",
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                )}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onChange(opt.value);
+                  try { localStorage.setItem(STORAGE_KEY, String(opt.value)); } catch { /* empty */ }
+                }}
+              >
+                <GridIcon cols={opt.cols} rows={opt.rows} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-xs">
+              {opt.label}
+            </TooltipContent>
+          </Tooltip>
+        );
+      })}
     </div>
   );
 }
