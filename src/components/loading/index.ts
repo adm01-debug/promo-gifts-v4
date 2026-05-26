@@ -17,6 +17,8 @@ export {
   DashboardSkeleton,
   PageHeaderSkeleton,
   ProductTableSkeleton,
+  ProductListItemSkeleton,
+  ProductListSkeleton,
   TextSkeleton,
   ChartSkeleton,
 } from "./ModernSkeletons";
