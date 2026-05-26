@@ -302,18 +302,21 @@ export default function VisualSearchPage() {
         path="/raio-x"
       />
       
-      <div className="mx-auto w-full max-w-[1920px] space-y-6 px-3 py-4 sm:px-4 lg:px-6">
-        {/* Header */}
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-3">
-            <motion.div 
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="group relative flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/60 shadow-lg shadow-primary/20"
-            >
-              <Zap className="h-6 w-6 text-primary-foreground transition-transform group-hover:rotate-12" />
-              <div className="absolute inset-0 animate-ping rounded-xl bg-primary/20" />
-            </motion.div>
+      <div className="min-h-screen bg-[#05070a] text-white/90 selection:bg-emerald-500/30">
+        <div className="mx-auto w-full max-w-[1920px] space-y-6 px-3 py-6 sm:px-4 lg:px-8">
+          {/* Header UI: Lab Identity */}
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between border-b border-white/5 pb-6">
+            <div className="flex items-center gap-4">
+              <motion.div 
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                whileHover={{ rotate: 180 }}
+                transition={{ duration: 0.5 }}
+                className="group relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-600 to-blue-600 shadow-[0_0_30px_rgba(52,211,153,0.3)]"
+              >
+                <Zap className="h-7 w-7 text-white transition-transform group-hover:scale-110" />
+                <div className="absolute inset-0 animate-ping rounded-2xl bg-emerald-500/20" />
+              </motion.div>
             <div>
               <h1 className="font-display text-2xl font-bold tracking-tight text-white/90">Raio X</h1>
               <p className="text-sm text-primary-foreground/60 italic font-mono">Terminal de Inteligência de Produtos v2.5</p>
