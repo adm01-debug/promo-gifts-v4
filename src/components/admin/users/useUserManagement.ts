@@ -1,21 +1,8 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { untypedFrom } from '@/lib/supabase-untyped';
 import { toast } from 'sonner';
 import { type AppRole, type UserWithRole } from './types';
 import { isDuplicateAccountError } from '@/lib/auth/is-duplicate-account-error';
-
-/** Shape da linha de `profiles` + embed `user_roles(role)`. */
-type ProfileWithRoles = {
-  id: string;
-  user_id: string | null;
-  full_name: string | null;
-  email: string | null;
-  avatar_url: string | null;
-  is_active: boolean | null;
-  created_at: string;
-  user_roles: { role: string }[] | null;
-};
 
 /**
  * Forma explícita do row de `profiles` com o embed `user_roles(role)`.
@@ -56,8 +43,7 @@ export function useUserManagement() {
 
       if (profilesError) throw profilesError;
 
-      const profiles = (profilesRaw ?? []) as ProfileWithRoles[];
-      const usersWithRoles: UserWithRole[] = profiles
+      const usersWithRoles: UserWithRole[] = (profiles ?? [])
         .filter(
           (profile): profile is ProfileWithRoles & { user_id: string } => profile.user_id !== null,
         )

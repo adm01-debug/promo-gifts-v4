@@ -5,7 +5,7 @@ import { MemoryRouter, Link, Outlet, Route } from 'react-router-dom';
 import { AppRoutes } from './AppRoutes';
 
 vi.mock('@/lib/lazyWithRetry', () => ({
-  lazyWithRetry: (loader: () => Promise<unknown>) => {
+  lazyWithRetry: (_loader: () => Promise<unknown>) => {
     const Mock = () => (
       <div data-testid="lazy-shell">
         <Outlet />
