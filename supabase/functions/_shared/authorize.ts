@@ -85,6 +85,11 @@ export async function authorize(
   const token = authHeader.slice(7).trim();
 
   // SEC-003: Allow service_role bypass for system/testing
+  // Debug mismatch:
+  if (token !== SERVICE_KEY) {
+     console.log(`[authorize] token_prefix=${token.substring(0, 5)}, service_key_prefix=${SERVICE_KEY.substring(0, 5)}`);
+  }
+
   if (token === SERVICE_KEY) {
     return {
       ok: true,
