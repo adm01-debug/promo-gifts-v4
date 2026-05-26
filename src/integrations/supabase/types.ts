@@ -2315,12 +2315,14 @@ export type Database = {
       }
       inbound_webhook_events: {
         Row: {
+          contract_version: string | null
           created_at: string
           endpoint_id: string
           error_message: string | null
           event_type: string | null
           headers: Json | null
           id: string
+          idempotency_key: string | null
           ip_address: string | null
           payload: Json | null
           processed: boolean
@@ -2328,12 +2330,14 @@ export type Database = {
           signature_valid: boolean
         }
         Insert: {
+          contract_version?: string | null
           created_at?: string
           endpoint_id: string
           error_message?: string | null
           event_type?: string | null
           headers?: Json | null
           id?: string
+          idempotency_key?: string | null
           ip_address?: string | null
           payload?: Json | null
           processed?: boolean
@@ -2341,12 +2345,14 @@ export type Database = {
           signature_valid?: boolean
         }
         Update: {
+          contract_version?: string | null
           created_at?: string
           endpoint_id?: string
           error_message?: string | null
           event_type?: string | null
           headers?: Json | null
           id?: string
+          idempotency_key?: string | null
           ip_address?: string | null
           payload?: Json | null
           processed?: boolean
@@ -7006,6 +7012,10 @@ export type Database = {
       }
       increment_kit_template_usage: {
         Args: { _template_id: string }
+        Returns: undefined
+      }
+      increment_webhook_stats: {
+        Args: { p_endpoint_id: string; p_is_invalid: boolean }
         Returns: undefined
       }
       is_admin:

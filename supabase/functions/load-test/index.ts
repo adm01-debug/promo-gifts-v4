@@ -17,31 +17,38 @@ Deno.serve(async (req: Request) => {
       targetEndpoint = "/health-check",
       method = "GET",
       body = null,
-      headers = {}
+      headers = {},
+      useIdempotency = false
     } = await req.json().catch(() => ({}));
 
     const baseUrl = Deno.env.get("SUPABASE_URL")!.replace(".supabase.co", ".supabase.co/functions/v1");
     const targetUrl = targetEndpoint.startsWith("http") ? targetEndpoint : `${baseUrl}${targetEndpoint}`;
 
-    console.log(`[load-test] Starting: ${totalRequests} ${method} requests to ${targetUrl} (concurrency: ${concurrency})`);
+    console.log(`[load-test] Starting: ${totalRequests} ${method} requests to ${targetUrl} (concurrency: ${concurrency}, idempotency: ${useIdempotency})`);
 
     let successCount = 0;
     let errorCount = 0;
+    let duplicateCount = 0;
     const latencies: number[] = [];
     const errorsByStatus: Record<string, number> = {};
     const errorDetails: any[] = [];
 
     const runBatch = async (batchSize: number) => {
-      const promises = Array.from({ length: batchSize }).map(async () => {
+      const promises = Array.from({ length: batchSize }).map(async (_, idx) => {
         const start = performance.now();
         const requestId = crypto.randomUUID();
+        // Se usar idempotência e for a mesma "chave" (ex: em webhooks), simulamos reenvio
+        const idempotencyKey = useIdempotency ? `load-test-${Math.floor(idx / 2)}` : crypto.randomUUID();
+        
         try {
           const fetchOptions: RequestInit = {
             method,
             headers: {
-              "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+              "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
               "Content-Type": "application/json",
               "X-Request-Id": requestId,
+              "X-Internal-Call": "true",
+              "X-Idempotency-Key": idempotencyKey,
               ...headers,
             },
           };
@@ -54,8 +61,12 @@ Deno.serve(async (req: Request) => {
           const end = performance.now();
           latencies.push(end - start);
 
+          const responseText = await res.text().catch(() => "");
+          const isDuplicate = responseText.includes("Already processed");
+
           if (res.ok) {
             successCount++;
+            if (isDuplicate) duplicateCount++;
           } else {
             errorCount++;
             const status = res.status.toString();
@@ -64,7 +75,7 @@ Deno.serve(async (req: Request) => {
               errorDetails.push({ 
                 requestId, 
                 status: res.status, 
-                text: await res.text().catch(() => "N/A") 
+                text: responseText.slice(0, 100)
               });
             }
           }
@@ -97,6 +108,7 @@ Deno.serve(async (req: Request) => {
         totalRequests,
         successCount,
         errorCount,
+        duplicateCount,
         successRate: `${((successCount / totalRequests) * 100).toFixed(2)}%`,
       },
       performanceMs: {
@@ -108,7 +120,7 @@ Deno.serve(async (req: Request) => {
       sampleErrors: errorDetails,
     };
 
-    console.log(`[load-test] Completed: ${successCount} OK, ${errorCount} ERR. Avg: ${avgLatency.toFixed(2)}ms`);
+    console.log(`[load-test] Completed: ${successCount} OK (${duplicateCount} dupes), ${errorCount} ERR. Avg: ${avgLatency.toFixed(2)}ms`);
 
     return new Response(JSON.stringify(results), {
       headers: { ...corsHeaders, "Content-Type": "application/json" }

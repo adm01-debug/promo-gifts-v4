@@ -56,15 +56,17 @@ Deno.serve(async (req: Request) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : null;
 
-    // System/Service bypass: only allowed if it's explicitly required or internal
+    // System/Service bypass: only allowed if it's explicitly internal via header
     const isServiceKey = token === serviceKey || (token?.startsWith("sb_") && serviceKey.startsWith("sb_") && token === serviceKey);
     
     if (token && isServiceKey) {
-      // Se não houver a flag X-Internal-Call, tratamos como uma tentativa externa
-      // e retornamos 401 para consistência nos testes de auditoria de segurança.
+      // SEC-001: Para evitar que a service_role seja usada indevidamente em endpoints públicos,
+      // exigimos o cabeçalho X-Internal-Call: true. Isso garante que testes que tentam
+      // usar service_role sem o flag recebam 401, mantendo a consistência da auditoria.
       const isInternal = req.headers.get("X-Internal-Call") === "true";
       
       if (!isInternal) {
+        console.warn(`[validate-access] Bloqueada tentativa de service_role sem X-Internal-Call`);
         return new Response(
           JSON.stringify({ 
             error: "unauthorized_service_role", 
