@@ -357,173 +357,114 @@ export default function VisualSearchPage() {
           </div>
         </div>
 
+        {/* Hidden file input — único ponto de upload, acionado pelo CTA principal "Iniciar Scanner" e por drag-and-drop */}
+        <input 
+          ref={fileInputRef}
+          id="visual-search-input" 
+          type="file" 
+          className="hidden" 
+          accept="image/*" 
+          capture="environment"
+          onChange={handleFileUpload} 
+        />
+
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 relative">
           {/* Sidebar Area */}
           <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-20 lg:h-[calc(100vh-120px)] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-primary/10 hover:scrollbar-thumb-primary/20">
-            {/* Upload & Preview */}
-            <Card className={cn(
-              "relative overflow-hidden border-2 border-dashed transition-all duration-300",
-              isDragging ? "border-primary bg-primary/5 scale-[1.02]" : "border-muted-foreground/20 bg-muted/5 hover:border-primary/30"
-            )}>
-              <CardContent className="p-0">
-                <AnimatePresence mode="wait">
-                  {previewUrl ? (
-                    <motion.div 
-                      key="preview"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="relative overflow-hidden group"
-                    >
-                      <img src={previewUrl} alt="Preview" className="aspect-square w-full object-cover" />
-                      
-                      {/* Visual Highlights Overlay */}
-                      {results?.analysis.visualHighlights && !isSearching && showHotspots && (
-                        <div className="absolute inset-0 pointer-events-none" style={{ opacity: hotspotOpacity }}>
-                          {results.analysis.visualHighlights.map((hl, idx) => (
-                            <motion.div
-                              key={idx}
-                              initial={{ scale: 0, opacity: 0 }}
-                              animate={{ scale: 1, opacity: 1 }}
-                              transition={{ delay: 0.5 + idx * 0.1 }}
-                              className="absolute group/hl pointer-events-auto"
-                              style={{ left: `${hl.x}%`, top: `${hl.y}%` }}
-                            >
-                              <div className="relative flex items-center justify-center">
-                                <div className="absolute h-6 w-6 animate-ping rounded-full bg-primary/40" />
-                                <div className="relative h-3 w-3 rounded-full bg-primary border-2 border-white shadow-lg" />
-                                
-                                {/* Tooltip */}
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover/hl:opacity-100 transition-opacity whitespace-nowrap bg-background/95 border border-border px-2 py-1 rounded text-[10px] font-medium shadow-xl z-50">
-                                  {hl.label}: {hl.description}
-                                </div>
+            {/* Preview da foto enviada — só aparece após upload */}
+            {previewUrl && (
+              <Card className="relative overflow-hidden border-2 border-dashed border-muted-foreground/20 bg-muted/5 transition-all duration-300">
+                <CardContent className="p-0">
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="relative overflow-hidden group"
+                  >
+                    <img src={previewUrl} alt="Preview" className="aspect-square w-full object-cover" />
+                    
+                    {/* Visual Highlights Overlay */}
+                    {results?.analysis.visualHighlights && !isSearching && showHotspots && (
+                      <div className="absolute inset-0 pointer-events-none" style={{ opacity: hotspotOpacity }}>
+                        {results.analysis.visualHighlights.map((hl, idx) => (
+                          <motion.div
+                            key={idx}
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: 0.5 + idx * 0.1 }}
+                            className="absolute group/hl pointer-events-auto"
+                            style={{ left: `${hl.x}%`, top: `${hl.y}%` }}
+                          >
+                            <div className="relative flex items-center justify-center">
+                              <div className="absolute h-6 w-6 animate-ping rounded-full bg-primary/40" />
+                              <div className="relative h-3 w-3 rounded-full bg-primary border-2 border-white shadow-lg" />
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover/hl:opacity-100 transition-opacity whitespace-nowrap bg-background/95 border border-border px-2 py-1 rounded text-[10px] font-medium shadow-xl z-50">
+                                {hl.label}: {hl.description}
                               </div>
-                            </motion.div>
-                          ))}
-                        </div>
-                      )}
-                      
-                      {/* Scanning Line Animation with "Shader" effect */}
-                      {isSearching && (
-                        <div className="absolute inset-0 z-10 overflow-hidden pointer-events-none">
-                          <motion.div 
-                            className="absolute left-0 top-0 h-[20%] w-full bg-gradient-to-b from-primary/0 via-primary/40 to-primary/0"
-                            animate={{ 
-                              top: ['-20%', '100%'] 
-                            }}
-                            transition={{ 
-                              duration: 2.5, 
-                              repeat: Infinity, 
-                              ease: "linear" 
-                            }}
-                          />
-                          <motion.div 
-                            className="absolute left-0 top-0 h-1 w-full bg-primary shadow-[0_0_30px_rgba(var(--primary),1)]"
-                            animate={{ 
-                              top: ['0%', '100%'] 
-                            }}
-                            transition={{ 
-                              duration: 2.5, 
-                              repeat: Infinity, 
-                              ease: "linear" 
-                            }}
-                          />
-                          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.15] mix-blend-overlay" />
-                        </div>
-                      )}
-                      
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
-                        <div className="flex flex-col gap-2">
-                          <Button variant="secondary" size="sm" onClick={reset} className="gap-2">
-                            <RefreshCcw className="h-4 w-4" /> Trocar Foto
-                          </Button>
-                          <div className="flex flex-col gap-2 bg-background/90 p-2 rounded-lg border border-border shadow-sm">
-                            <div className="flex items-center justify-between gap-4">
-                              <Label className="text-[10px] font-bold uppercase text-muted-foreground whitespace-nowrap">Exibir Pontos</Label>
-                              <Button 
-                                variant={showHotspots ? "default" : "outline"} 
-                                size="icon" 
-                                className="h-6 w-10" 
-                                onClick={() => setShowHotspots(!showHotspots)}
-                              >
-                                {showHotspots ? "ON" : "OFF"}
-                              </Button>
                             </div>
-                            {showHotspots && (
-                              <div className="space-y-1">
-                                <div className="flex justify-between text-[9px] font-bold uppercase text-muted-foreground">
-                                  <span>Intensidade</span>
-                                  <span>{Math.round(hotspotOpacity * 100)}%</span>
-                                </div>
-                                <input 
-                                  type="range" 
-                                  min="0" 
-                                  max="1" 
-                                  step="0.1" 
-                                  value={hotspotOpacity} 
-                                  onChange={(e) => setHotspotOpacity(parseFloat(e.target.value))}
-                                  className="w-full h-1 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
-                                />
-                              </div>
-                            )}
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Scanning Line Animation */}
+                    {isSearching && (
+                      <div className="absolute inset-0 z-10 overflow-hidden pointer-events-none">
+                        <motion.div 
+                          className="absolute left-0 top-0 h-[20%] w-full bg-gradient-to-b from-primary/0 via-primary/40 to-primary/0"
+                          animate={{ top: ['-20%', '100%'] }}
+                          transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
+                        />
+                        <motion.div 
+                          className="absolute left-0 top-0 h-1 w-full bg-primary shadow-[0_0_30px_rgba(var(--primary),1)]"
+                          animate={{ top: ['0%', '100%'] }}
+                          transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
+                        />
+                        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.15] mix-blend-overlay" />
+                      </div>
+                    )}
+                    
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
+                      <div className="flex flex-col gap-2">
+                        <Button variant="secondary" size="sm" onClick={reset} className="gap-2">
+                          <RefreshCcw className="h-4 w-4" /> Trocar Foto
+                        </Button>
+                        <div className="flex flex-col gap-2 bg-background/90 p-2 rounded-lg border border-border shadow-sm">
+                          <div className="flex items-center justify-between gap-4">
+                            <Label className="text-[10px] font-bold uppercase text-muted-foreground whitespace-nowrap">Exibir Pontos</Label>
+                            <Button 
+                              variant={showHotspots ? "default" : "outline"} 
+                              size="icon" 
+                              className="h-6 w-10" 
+                              onClick={() => setShowHotspots(!showHotspots)}
+                            >
+                              {showHotspots ? "ON" : "OFF"}
+                            </Button>
                           </div>
+                          {showHotspots && (
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-[9px] font-bold uppercase text-muted-foreground">
+                                <span>Intensidade</span>
+                                <span>{Math.round(hotspotOpacity * 100)}%</span>
+                              </div>
+                              <input 
+                                type="range" 
+                                min="0" 
+                                max="1" 
+                                step="0.1" 
+                                value={hotspotOpacity} 
+                                onChange={(e) => setHotspotOpacity(parseFloat(e.target.value))}
+                                className="w-full h-1 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </motion.div>
-                  ) : (
-                    <motion.label 
-                      key="upload"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-4 p-6 text-center"
-                      onDragEnter={() => setIsDragging(true)}
-                      onDragLeave={() => setIsDragging(false)}
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        setIsDragging(true);
-                      }}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        setIsDragging(false);
-                        const file = e.dataTransfer.files?.[0];
-                        if (file) handleFileUpload({ target: { files: [file] } } as any);
-                      }}
-                    >
-                      <div className="relative">
-                        <div className="absolute inset-0 animate-pulse bg-primary/20 blur-xl rounded-full" />
-                        <div className="relative rounded-full bg-primary/10 p-5 transition-transform hover:scale-110">
-                          <Camera className="h-10 w-10 text-primary" />
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-base font-bold">Solte a foto do produto aqui</p>
-                        <p className="text-xs text-muted-foreground">Ou clique para tirar uma foto agora</p>
-                      </div>
-                      <input 
-                        ref={fileInputRef}
-                        id="visual-search-input" 
-                        type="file" 
-                        className="hidden" 
-                        accept="image/*" 
-                        capture="environment" // Habilita câmera nativa no mobile
-                        onChange={handleFileUpload} 
-                      />
-                    </motion.label>
-                  )}
-                </AnimatePresence>
-                
-                {/* Drag Overlay */}
-                {isDragging && (
-                  <div className="absolute inset-0 z-50 flex items-center justify-center bg-primary/20 backdrop-blur-[2px]">
-                    <div className="flex flex-col items-center gap-2 rounded-2xl bg-background/90 p-8 shadow-2xl border border-primary/50">
-                      <ImageIcon className="h-12 w-12 text-primary animate-bounce" />
-                      <p className="font-bold text-primary">Solte para analisar!</p>
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  </motion.div>
+                </CardContent>
+              </Card>
+            )}
+
 
             {/* Refinement Filters */}
             <Card className="border-border/50 bg-background/50 backdrop-blur-sm overflow-hidden group">
@@ -734,7 +675,22 @@ export default function VisualSearchPage() {
           {/* Results Area */}
           <div className="lg:col-span-8 space-y-4">
             {!previewUrl && !isSearching && !analysisError && (
-              <div className="flex h-full min-h-[500px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-muted/5 p-12 text-center group">
+              <div 
+                onDragEnter={() => setIsDragging(true)}
+                onDragLeave={() => setIsDragging(false)}
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDragging(false);
+                  const file = e.dataTransfer.files?.[0];
+                  if (file) handleFileUpload({ target: { files: [file] } } as any);
+                }}
+                onClick={() => fileInputRef.current?.click()}
+                className={cn(
+                  "relative flex h-full min-h-[500px] flex-col items-center justify-center rounded-2xl border-2 border-dashed p-12 text-center group cursor-pointer transition-all duration-300",
+                  isDragging ? "border-primary bg-primary/5 scale-[1.01]" : "border-border bg-muted/5 hover:border-primary/40"
+                )}
+              >
                 <div className="relative mb-6">
                   <div className="absolute inset-0 scale-150 animate-pulse bg-primary/10 blur-2xl rounded-full" />
                   <motion.div 
@@ -753,15 +709,25 @@ export default function VisualSearchPage() {
                 </p>
                 <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
                   <Button 
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
                     className="gap-2 px-10 h-12 text-base shadow-xl shadow-primary/20"
                   >
                     <Camera className="h-5 w-5" /> Iniciar Scanner
                   </Button>
                   <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest block w-full">ou arraste um arquivo aqui</p>
                 </div>
+
+                {isDragging && (
+                  <div className="absolute inset-0 z-50 flex items-center justify-center bg-primary/20 backdrop-blur-[2px] rounded-2xl pointer-events-none">
+                    <div className="flex flex-col items-center gap-2 rounded-2xl bg-background/90 p-8 shadow-2xl border border-primary/50">
+                      <ImageIcon className="h-12 w-12 text-primary animate-bounce" />
+                      <p className="font-bold text-primary">Solte para analisar!</p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
+
 
             {analysisError && !isSearching && (
               <motion.div 
