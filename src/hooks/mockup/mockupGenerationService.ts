@@ -217,7 +217,7 @@ export async function generateMockupApi(
     if (response.error) {
       const errData = response.data || response.error;
       if (errData?.errorCode === 'SVG_NOT_SUPPORTED') {
-        throw new Error(errData.error || 'Logos SVG não são suportados. Use PNG ou JPG.');
+        throw new Error(errData.error || 'Logos SVG nao sao suportados. Use PNG ou JPG.');
       }
       throw response.error;
     }
@@ -225,7 +225,7 @@ export async function generateMockupApi(
     return { singleUrl: response.data.mockupUrl, batchResults: [] };
   }
 
-  // BATCH — API calls sequential (constraint), DB saves handled in parallel by the hook (T5).
+  // BATCH - API calls sequential (constraint), DB saves handled in parallel by the hook (T5).
   const results: { areaName: string; url: string }[] = [];
   const failedAreas: string[] = [];
 
@@ -271,7 +271,7 @@ export async function generateMockupApi(
   }
 
   if (failedAreas.length > 0) {
-    toast.warning(`${failedAreas.length} área(s) falharam: ${failedAreas.join(', ')}`, {
+    toast.warning(`${failedAreas.length} area(s) falharam: ${failedAreas.join(', ')}`, {
       duration: 5000,
     });
   }
