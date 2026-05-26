@@ -46,7 +46,7 @@ describe('CatalogToolbar Regression', () => {
     
     // Tooltip content: "Ordenar produtos (relevância, preço, novidades…)"
     await waitFor(() => {
-      expect(screen.getByText(/Ordenar produtos/i)).toBeInTheDocument();
+      expect(screen.getByRole('tooltip')).toHaveTextContent(/Ordenar produtos/i);
     });
 
     // 2. Click the trigger to open the dropdown while tooltip is likely visible
