@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface MockupSkeletonProps {
   variant?: "config" | "preview" | "result" | "card" | "editor" | "wizard";
@@ -7,19 +8,11 @@ interface MockupSkeletonProps {
   delay?: number; // Stagger delay in ms
 }
 
-// Enhanced shimmer with gradient animation
-const shimmerBase = "relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent";
-
 export function MockupSkeleton({
   variant = "config",
   className,
   delay = 0,
 }: MockupSkeletonProps) {
-  const shimmerClass = cn(
-    "bg-muted/80 rounded",
-    shimmerBase
-  );
-
   const staggerStyle = delay > 0 ? { animationDelay: `${delay}ms` } : {};
 
   if (variant === "wizard") {
@@ -32,10 +25,10 @@ export function MockupSkeleton({
           {/* Step indicators */}
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="flex items-center gap-2 flex-1">
-              <div className={cn("h-8 w-8 rounded-full", shimmerClass)} />
+              <Skeleton className="h-8 w-8 rounded-full" />
               <div className="flex-1 hidden md:block space-y-1">
-                <div className={cn("h-3 w-16 rounded", shimmerClass)} />
-                <div className={cn("h-2 w-24 rounded", shimmerClass)} />
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-2 w-24" />
               </div>
             </div>
           ))}
@@ -54,19 +47,19 @@ export function MockupSkeleton({
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className={cn("h-4 w-4 rounded", shimmerClass)} />
-              <div className={cn("h-4 w-28 rounded", shimmerClass)} />
+              <Skeleton className="h-4 w-4" />
+              <Skeleton className="h-4 w-28" />
             </div>
-            <div className={cn("h-8 w-20 rounded-md", shimmerClass)} />
+            <Skeleton className="h-8 w-20 rounded-md" />
           </div>
 
           {/* Canvas area */}
-          <div className={cn("aspect-square rounded-xl", shimmerClass)} />
+          <Skeleton className="aspect-square rounded-xl" />
 
           {/* Quick actions */}
           <div className="flex gap-2">
-            <div className={cn("h-9 flex-1 rounded-md", shimmerClass)} />
-            <div className={cn("h-9 flex-1 rounded-md", shimmerClass)} />
+            <Skeleton className="h-9 flex-1 rounded-md" />
+            <Skeleton className="h-9 flex-1 rounded-md" />
           </div>
 
           {/* Sliders */}
@@ -74,10 +67,10 @@ export function MockupSkeleton({
             {[1, 2].map((i) => (
               <div key={i} className="space-y-2">
                 <div className="flex justify-between">
-                  <div className={cn("h-3 w-14 rounded", shimmerClass)} />
-                  <div className={cn("h-3 w-10 rounded", shimmerClass)} />
+                  <Skeleton className="h-3 w-14" />
+                  <Skeleton className="h-3 w-10" />
                 </div>
-                <div className={cn("h-2 w-full rounded-full", shimmerClass)} />
+                <Skeleton className="h-2 w-full rounded-full" />
               </div>
             ))}
           </div>
@@ -95,22 +88,22 @@ export function MockupSkeleton({
         <CardContent className="p-6 space-y-6">
           {/* Header skeleton */}
           <div className="space-y-2">
-            <div className={cn("h-6 w-32 rounded", shimmerClass)} />
-            <div className={cn("h-4 w-48 rounded", shimmerClass)} />
+            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-4 w-48" />
           </div>
 
           {/* Select skeletons */}
           {[1, 2, 3].map((i) => (
-            <div key={i} className="space-y-2" style={{ animationDelay: `${i * 100}ms` }}>
-              <div className={cn("h-4 w-24 rounded", shimmerClass)} />
-              <div className={cn("h-10 w-full rounded-md", shimmerClass)} />
+            <div key={i} className="space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-10 w-full rounded-md" />
             </div>
           ))}
 
           {/* Button skeleton */}
           <div className="flex gap-2 pt-4">
-            <div className={cn("h-10 flex-1 rounded-md", shimmerClass)} />
-            <div className={cn("h-10 w-10 rounded-md", shimmerClass)} />
+            <Skeleton className="h-10 flex-1 rounded-md" />
+            <Skeleton className="h-10 w-10 rounded-md" />
           </div>
         </CardContent>
       </Card>
@@ -127,25 +120,25 @@ export function MockupSkeleton({
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className={cn("h-10 w-10 rounded-full", shimmerClass)} />
+              <Skeleton className="h-10 w-10 rounded-full" />
               <div className="space-y-1.5">
-                <div className={cn("h-4 w-32 rounded", shimmerClass)} />
-                <div className={cn("h-3 w-24 rounded", shimmerClass)} />
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-3 w-24" />
               </div>
             </div>
-            <div className={cn("h-8 w-20 rounded", shimmerClass)} />
+            <Skeleton className="h-8 w-20 rounded" />
           </div>
 
           {/* Image area with pulse ring */}
           <div className="relative">
-            <div className={cn("aspect-square rounded-xl", shimmerClass)} />
+            <Skeleton className="aspect-square rounded-xl" />
             <div className="absolute inset-0 rounded-xl border-2 border-primary/20 animate-pulse" />
           </div>
 
           {/* Controls */}
           <div className="flex items-center gap-2">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className={cn("h-8 w-16 rounded", shimmerClass)} style={{ animationDelay: `${i * 50}ms` }} />
+              <Skeleton key={i} className="h-8 w-16 rounded" />
             ))}
           </div>
         </CardContent>
@@ -163,15 +156,15 @@ export function MockupSkeleton({
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className={cn("h-8 w-8 rounded-full", shimmerClass)} />
-              <div className={cn("h-4 w-24 rounded", shimmerClass)} />
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <Skeleton className="h-4 w-24" />
             </div>
-            <div className={cn("h-8 w-24 rounded", shimmerClass)} />
+            <Skeleton className="h-8 w-24 rounded" />
           </div>
 
           {/* Image with loading indicator */}
           <div className="relative">
-            <div className={cn("aspect-square rounded-xl", shimmerClass)} />
+            <Skeleton className="aspect-square rounded-xl" />
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-12 h-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
             </div>
@@ -179,8 +172,8 @@ export function MockupSkeleton({
 
           {/* Info */}
           <div className="flex items-center justify-between">
-            <div className={cn("h-6 w-20 rounded-full", shimmerClass)} />
-            <div className={cn("h-8 w-32 rounded", shimmerClass)} />
+            <Skeleton className="h-6 w-20 rounded-full" />
+            <Skeleton className="h-8 w-32 rounded" />
           </div>
         </CardContent>
       </Card>
@@ -196,14 +189,14 @@ export function MockupSkeleton({
       )}
       style={staggerStyle}
     >
-      <div className={cn("aspect-square", shimmerClass)} />
+      <Skeleton className="aspect-square w-full rounded-none" />
       <div className="p-3 space-y-2">
-        <div className={cn("h-4 w-3/4 rounded", shimmerClass)} />
+        <Skeleton className="h-4 w-3/4" />
         <div className="flex gap-1.5">
-          <div className={cn("h-5 w-16 rounded-full", shimmerClass)} />
-          <div className={cn("h-5 w-12 rounded-full", shimmerClass)} />
+          <Skeleton className="h-5 w-16 rounded-full" />
+          <Skeleton className="h-5 w-12 rounded-full" />
         </div>
-        <div className={cn("h-3 w-1/3 rounded", shimmerClass)} />
+        <Skeleton className="h-3 w-1/3" />
       </div>
     </div>
   );
