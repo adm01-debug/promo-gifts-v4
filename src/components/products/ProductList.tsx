@@ -7,7 +7,7 @@ import type { Product } from "@/hooks/products";
 import type { ActiveColorFilter } from "@/utils/color-image-resolver";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { ProductCardSkeleton } from "./ProductCardSkeleton";
+import { ProductCardSkeleton } from "@/components/loading/ModernSkeletons";
 
 export interface ProductListProps {
   products: Product[];

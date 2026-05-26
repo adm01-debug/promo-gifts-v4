@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, ArrowUp } from "lucide-react";
 import { ProductCard } from "./ProductCard";
 import { ProductListItem } from "./ProductListItem";
-import { ProductCardSkeleton } from "./ProductCardSkeleton";
+import { ProductCardSkeleton } from "@/components/loading/ModernSkeletons";
 import { InlineFilterBar } from "@/components/filters/StickyFilterBar";
 import type { Product } from "@/hooks/products";
 import type { ActiveColorFilter } from "@/utils/color-image-resolver";
