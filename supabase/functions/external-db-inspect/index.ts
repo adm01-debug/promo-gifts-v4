@@ -1,4 +1,5 @@
 import { getCorsHeaders } from '../_shared/cors.ts';
+import { getCredential } from '../_shared/credentials.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { runBotProtection } from '../_shared/bot-protection.ts';
@@ -75,8 +76,9 @@ Deno.serve(async (req) => {
     console.log(`[INSPECT] Mode: ${mode}, Table: ${tableName || 'all'}`);
 
     // External DB connection
-    const externalUrl = Deno.env.get('EXTERNAL_SUPABASE_URL');
-    const externalKey = Deno.env.get('EXTERNAL_SUPABASE_SERVICE_KEY');
+    // fix: ssot-bypass — credential vault
+    const externalUrl = await getCredential('EXTERNAL_PROMOBRIND_URL');
+    const externalKey = await getCredential('EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY');
     if (!externalUrl || !externalKey) {
       console.warn('[external-db-inspect] EXTERNAL_SUPABASE_URL/KEY not configured — returning empty payload');
       return jsonResponse({ data: [], records: [], count: 0, _unconfigured: true, _message: 'Banco externo não configurado' }, 200);
