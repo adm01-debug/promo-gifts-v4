@@ -54,7 +54,6 @@ class ExternalDatabaseChecker implements HealthChecker {
   async check(): Promise<CheckResult> {
     const start = Date.now();
     try {
-      // fix: ssot-bypass + module-scope-credential-read — use credential vault
       const url = await getCredential('EXTERNAL_PROMOBRIND_URL');
       const key = await getCredential('EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY');
       
@@ -63,7 +62,8 @@ class ExternalDatabaseChecker implements HealthChecker {
       }
 
       const client = createClient(url, key);
-      const { error } = await client.from("produto").select("id").limit(1);
+      // Alterado de 'produto' para 'products' para refletir o schema real
+      const { error } = await client.from("products").select("id").limit(1);
       
       return {
         status: error ? "degraded" : "healthy",
