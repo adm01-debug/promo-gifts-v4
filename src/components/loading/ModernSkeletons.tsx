@@ -91,6 +91,44 @@ export function ProductCardInlineSkeleton() {
   );
 }
 
+export function ProductListItemSkeleton() {
+  return (
+    <div className="flex items-center gap-3 sm:gap-4 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-card border border-border/40 overflow-hidden">
+      <Skeleton className="w-14 h-14 sm:w-[72px] sm:h-[72px] rounded-lg shrink-0" />
+      <div className="flex-1 min-w-0 py-0.5 space-y-1.5">
+        <div className="flex items-center gap-1.5">
+          <Skeleton className="h-3 w-16" />
+          <Skeleton className="h-3 w-12" />
+        </div>
+        <Skeleton className="h-4 w-3/5" />
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-3 w-12 hidden sm:block" />
+        </div>
+      </div>
+      <div className="shrink-0 text-right min-w-[80px] sm:min-w-[100px]">
+        <Skeleton className="h-5 w-16 ml-auto" />
+      </div>
+      <div className="shrink-0 flex items-center gap-0.5">
+        <Skeleton className="h-7 w-7 rounded-full" />
+        <Skeleton className="h-7 w-7 rounded-full" />
+        <Skeleton className="h-7 w-7 rounded-full hidden sm:block" />
+      </div>
+    </div>
+  );
+}
+
+export function ProductListSkeleton({ count = 8 }: { count?: number }) {
+  return (
+    <div className="flex flex-col gap-2">
+      {[...Array(count)].map((_, i) => (
+        <ProductListItemSkeleton key={i} />
+      ))}
+    </div>
+  );
+}
+
+
 export function QuoteCardSkeleton() {
   return (
     <div className="rounded-xl border border-border bg-card p-4 space-y-4">
