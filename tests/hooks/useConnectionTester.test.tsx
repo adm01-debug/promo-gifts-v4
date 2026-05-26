@@ -43,6 +43,18 @@ async function runTest(result: ReturnType<typeof makeOkResult>, opts?: { silent?
 }
 
 describe("useConnectionTester", () => {
+  it("HTTP 4xx e 5xx: exibe hints corretos para rejeição e indisponibilidade parcial", async () => {
+    const { r: r404 } = await runTest(makeHttpResult(404));
+    expect(r404.error_kind).toBe("http");
+    expect(toastError.mock.calls[0][0]).toBe("Erro HTTP 404");
+    expect(toastError.mock.calls[0][1].description).toContain("Requisição rejeitada");
+
+    const { r: r503 } = await runTest(makeHttpResult(503));
+    expect(r503.error_kind).toBe("http");
+    expect(toastError.mock.calls[1][0]).toBe("Erro HTTP 503");
+    expect(toastError.mock.calls[1][1].description).toContain("Instabilidade");
+  });
+
   it("Timeout: preserva error_kind, timeout_ms, latency e dispara toast 'Tempo esgotado'", async () => {
     const { r } = await runTest(makeTimeoutResult());
     expect(r.ok).toBe(false);
@@ -124,5 +136,34 @@ describe("useConnectionTester", () => {
       });
       expect(r!.latency_ms).toBe(c.latency_ms);
     }
+  });
+
+  it("Retry e recuperação: falha 5xx seguida de sucesso não corrompe o estado", async () => {
+    invokeMock
+      .mockResolvedValueOnce({ data: { result: makeHttpResult(502, { latency_ms: 980 }) }, error: null })
+      .mockResolvedValueOnce({ data: { result: makeOkResult({ status: 200, latency_ms: 145 }) }, error: null });
+
+    const { result: hook } = renderHook(() => useConnectionTester());
+
+    let first: Awaited<ReturnType<typeof hook.current.test>> | undefined;
+    await act(async () => {
+      first = await hook.current.test("webhook_outbound", { silent: true });
+    });
+
+    expect(first?.ok).toBe(false);
+    expect(first?.status).toBe(502);
+    expect(hook.current.lastResult).toMatchObject({ ok: false, status: 502, error_kind: "http", latency_ms: 980 });
+    expect(hook.current.isTesting).toBe(false);
+
+    let second: Awaited<ReturnType<typeof hook.current.test>> | undefined;
+    await act(async () => {
+      second = await hook.current.test("webhook_outbound", { silent: true });
+    });
+
+    expect(second?.ok).toBe(true);
+    expect(second?.status).toBe(200);
+    expect(second?.error_kind).toBeUndefined();
+    expect(hook.current.lastResult).toMatchObject({ ok: true, status: 200, latency_ms: 145 });
+    expect(hook.current.isTesting).toBe(false);
   });
 });
