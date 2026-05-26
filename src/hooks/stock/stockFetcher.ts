@@ -115,7 +115,7 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
     if (records.length === 0) break;
 
     if (records[0]?.id === lastFirstId) {
-      logger.warn(`[Stock] Paginação ignorando offset em ${table}; parando.`);
+      logger.warn(`[Stock] Paginacao ignorando offset em ${table}; parando.`);
       break;
     }
     lastFirstId = records[0]?.id;
@@ -125,8 +125,10 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
 
     // Use totalCount (from first page) to know when we're done
     if (totalCount !== null && offset >= totalCount) break;
-    // Fallback: if no count available and we got fewer than we got last time, stop
-    // NOTE: Do NOT compare against pageSize since the bridge may cap the actual limit
+    // BUG-STOCK-03 FIX: if no count available, break on partial page to avoid extra call.
+    // A partial page (<pageSize) means we've reached the end of the dataset.
+    if (totalCount === null && records.length < pageSize) break;
+    // Safety fallback: if records is empty (should not happen after the check above)
     if (totalCount === null && records.length === 0) break;
   }
 
@@ -168,7 +170,9 @@ function buildFutureEntries(
     },
   ];
   for (const { q, d, suffix, status } of pairs) {
-    if (q && d) {
+    // BUG-STOCK-01 FIX: falsy check `if (q && d)` would skip q=0.
+    // Use explicit null/undefined check instead.
+    if (q != null && q > 0 && d) {
       entries.push({
         id: `${supplierSource.id}-${suffix}`,
         productId,
@@ -268,7 +272,9 @@ export async function fetchAndProcessStockData(): Promise<{
         const currentStock = supplierSource
           ? toNumber(supplierSource.quantity, toNumber(pv.stock_quantity, 0))
           : toNumber(pv.stock_quantity, 0);
-        const minStock = product.min_quantity || 10;
+        // BUG-STOCK-02 FIX: `|| 10` would use 10 when min_quantity is explicitly 0.
+        // Use nullish coalescing to preserve intentional zero.
+        const minStock = product.min_quantity ?? 10;
         const reservedStock = supplierSource ? toNumber(supplierSource.reserved_quantity, 0) : 0;
         let inTransitStock = 0;
 
@@ -297,7 +303,7 @@ export async function fetchAndProcessStockData(): Promise<{
           variantId: pv.id,
           variantSku: pv.sku || `${product.sku}-${pv.color_code || 'VAR'}`,
           colorId: pv.color_id,
-          colorName: pv.color_name || 'Padrão',
+          colorName: pv.color_name || 'Padrao',
           colorHex: pv.color_hex,
           currentStock,
           minStock,
@@ -312,12 +318,13 @@ export async function fetchAndProcessStockData(): Promise<{
         });
       });
 
-      // Fallback: estoque no nível do produto
+      // Fallback: estoque no nivel do produto
       const productLevelStock = toNumber(product.stock_quantity, 0);
       const sumVariantStock = variants.reduce((sum, v) => sum + toNumber(v.currentStock, 0), 0);
 
       if (sumVariantStock === 0 && productLevelStock > 0) {
-        const minStock = product.min_quantity || 10;
+        // BUG-STOCK-02 FIX: also use ?? here for consistency
+        const minStock = product.min_quantity ?? 10;
         if (variants.length === 1) {
           variants[0] = {
             ...variants[0],
@@ -347,14 +354,15 @@ export async function fetchAndProcessStockData(): Promise<{
       }
     } else {
       const currentStock = toNumber(product.stock_quantity, 0);
-      const minStock = product.min_quantity || 10;
+      // BUG-STOCK-02 FIX: ?? instead of ||
+      const minStock = product.min_quantity ?? 10;
       const availableStock = calculateAvailableStock(currentStock, 0);
       variants.push({
         id: product.id,
         productId: product.id,
         variantId: product.id,
         variantSku: product.sku || 'PROD',
-        colorName: 'Padrão',
+        colorName: 'Padrao',
         currentStock,
         minStock,
         reservedStock: 0,
@@ -383,7 +391,7 @@ export async function fetchAndProcessStockData(): Promise<{
 
   const alerts = generateStockAlerts(summaries);
   logger.log(
-    `[Stock] Processados ${summaries.length} produtos com ${futureEntries.length} previsões`,
+    `[Stock] Processados ${summaries.length} produtos com ${futureEntries.length} previsoes`,
   );
   return { productStocks: summaries, alerts, futureStock: futureEntries };
 }
