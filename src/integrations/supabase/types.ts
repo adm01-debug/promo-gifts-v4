@@ -6291,7 +6291,9 @@ export type Database = {
           id: string
           image_url: string | null
           is_correct: boolean | null
+          match_relevance: number | null
           original_analysis: Json
+          product_id: string | null
           search_terms: string | null
           user_id: string
         }
@@ -6302,7 +6304,9 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_correct?: boolean | null
+          match_relevance?: number | null
           original_analysis: Json
+          product_id?: string | null
           search_terms?: string | null
           user_id?: string
         }
@@ -6313,11 +6317,21 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_correct?: boolean | null
+          match_relevance?: number | null
           original_analysis?: Json
+          product_id?: string | null
           search_terms?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "visual_search_feedback_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       voice_command_logs: {
         Row: {
