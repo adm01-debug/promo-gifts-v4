@@ -832,17 +832,20 @@ export default function VisualSearchPage() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                    {results.products.map((product, idx) => (
-                      <motion.div
-                        key={product.id}
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: idx * 0.04, duration: 0.4 }}
-                        className={cn(
-                          idx === 0 && results.products.length > 2 && !showFocusMode ? "sm:col-span-2 xl:col-span-2 sm:row-span-2" : ""
-                        )}
-                      >
+                    <div className={cn(
+                      "grid gap-6",
+                      showFocusMode ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "sm:grid-cols-2 xl:grid-cols-3"
+                    )}>
+                      {results.products.map((product, idx) => (
+                        <motion.div
+                          key={product.id}
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: idx * 0.04, duration: 0.4 }}
+                          className={cn(
+                            idx === 0 && results.products.length > 2 && !showFocusMode ? "sm:col-span-2 xl:col-span-2 sm:row-span-2" : ""
+                          )}
+                        >
                         <Card 
                           className={cn(
                             "group h-full cursor-pointer overflow-hidden border-white/5 bg-black/40 backdrop-blur-md transition-all duration-500 hover:border-emerald-500/40 active:scale-[0.98] relative",
