@@ -161,10 +161,15 @@ Deno.serve(async (req) => {
       }
 
       case 'products_by_materials': {
-        if ((!materialTypeIds || materialTypeIds.length === 0) && (!materialGroupSlugs || materialGroupSlugs.length === 0)) {
-          return new Response(JSON.stringify({ error: 'materialTypeIds ou materialGroupSlugs é obrigatório' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        if ((!materialTypeIds || materialTypeIds.length === 0) && (!materialTypeSlugs || materialTypeSlugs.length === 0) && (!materialGroupSlugs || materialGroupSlugs.length === 0)) {
+          return new Response(JSON.stringify({ error: 'materialTypeIds, materialTypeSlugs ou materialGroupSlugs é obrigatório' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
         }
         let targetMaterialIds: string[] = materialTypeIds || [];
+        if (materialTypeSlugs && materialTypeSlugs.length > 0) {
+          const { data: types, error: typesError } = await externalSupabase.from('material_types').select('id').in('slug', materialTypeSlugs).eq('is_active', true);
+          if (typesError) throw typesError;
+          targetMaterialIds = [...new Set([...targetMaterialIds, ...(types || []).map((t: any) => t.id)])];
+        }
         if (materialGroupSlugs && materialGroupSlugs.length > 0) {
           const { data: groups, error: groupsError } = await externalSupabase.from('material_groups').select('id').in('slug', materialGroupSlugs).eq('is_active', true);
           if (groupsError) throw groupsError;
