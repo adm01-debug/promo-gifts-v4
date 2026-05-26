@@ -106,9 +106,51 @@ export default function VisualSearchPage() {
   });
   const [showHotspots, setShowHotspots] = useState(true);
   const [hotspotOpacity, setHotspotOpacity] = useState(1);
+  const [isAudioEnabled, setIsAudioEnabled] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [showFocusMode, setShowFocusMode] = useState(false);
+  const [compareProduct, setCompareProduct] = useState<any>(null);
+  const [scanningStatus, setScanningStatus] = useState<string>('');
 
   const { data: categories = [] } = useExternalCategoriesQuery();
   const { data: colorData } = useColorSystem();
+
+  const playSound = useCallback((type: 'scan' | 'match' | 'error') => {
+    if (!isAudioEnabled) return;
+    const audio = new Audio();
+    audio.src = type === 'match' ? '/sounds/success.mp3' : type === 'error' ? '/sounds/error.mp3' : '/sounds/scan.mp3';
+    audio.volume = 0.2;
+    audio.play().catch(() => {});
+  }, [isAudioEnabled]);
+
+  const toggleListening = () => {
+    if (!('webkitSpeechRecognition' in window)) {
+      toast.error('Seu navegador não suporta reconhecimento de voz.');
+      return;
+    }
+    setIsListening(!isListening);
+    if (!isListening) {
+      toast.info('IA ouvindo... Tente "Filtrar por Canetas"');
+    }
+  };
+
+  useEffect(() => {
+    if (isSearching) {
+      const statuses = [
+        "Mapeando curvatura biometral...",
+        "Analisando refração de luz...",
+        "Identificando porosidade superficial...",
+        "Cruzando vetores de silhueta...",
+        "Calculando densidade provável..."
+      ];
+      let i = 0;
+      const interval = setInterval(() => {
+        setScanningStatus(statuses[i % statuses.length]);
+        i++;
+      }, 1500);
+      return () => clearInterval(interval);
+    }
+  }, [isSearching]);
 
   // Load history from localStorage
   useEffect(() => {
