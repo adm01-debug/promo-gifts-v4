@@ -315,20 +315,42 @@ export default function VisualSearchPage() {
               <div className="absolute inset-0 animate-ping rounded-xl bg-primary/20" />
             </motion.div>
             <div>
-              <h1 className="font-display text-2xl font-bold tracking-tight">Raio X</h1>
-              <p className="text-sm text-muted-foreground">O "Shazam" do catálogo: tire uma foto e encontre o produto</p>
+              <h1 className="font-display text-2xl font-bold tracking-tight text-white/90">Raio X</h1>
+              <p className="text-sm text-primary-foreground/60 italic font-mono">Terminal de Inteligência de Produtos v2.5</p>
             </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn("h-9 w-9 rounded-full", isAudioEnabled ? "text-primary" : "text-white/40")}
+              onClick={() => setIsAudioEnabled(!isAudioEnabled)}
+            >
+              {isAudioEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 bg-white/5 border-white/10 text-white hover:bg-white/10"
+              onClick={() => setShowFocusMode(!showFocusMode)}
+            >
+              {showFocusMode ? <LayoutGrid className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+              <span className="hidden sm:inline">{showFocusMode ? 'Ver Tudo' : 'Modo Foco'}</span>
+            </Button>
           </div>
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           {/* Sidebar Area */}
-          <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-20 lg:h-fit">
-            {/* Upload & Preview */}
-            <Card className={cn(
-              "relative overflow-hidden border-2 border-dashed transition-all duration-300",
-              isDragging ? "border-primary bg-primary/5 scale-[1.02]" : "border-muted-foreground/20 bg-muted/5 hover:border-primary/30"
-            )}>
+          {!showFocusMode && (
+            <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-20 lg:h-fit">
+              {/* Upload & Preview */}
+              <Card className={cn(
+                "relative overflow-hidden border-2 border-dashed transition-all duration-500",
+                isDragging ? "border-primary bg-primary/10 scale-[1.02]" : "border-white/10 bg-black/40 hover:border-primary/40",
+                previewUrl ? "border-solid" : ""
+              )}>
               <CardContent className="p-0">
                 <AnimatePresence mode="wait">
                   {previewUrl ? (
