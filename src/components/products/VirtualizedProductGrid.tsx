@@ -188,13 +188,14 @@ export function VirtualizedProductGrid({
 
   return (
     <div className="relative h-full">
-      <div
-        ref={parentRef}
-        className="h-[calc(100vh-200px)] min-h-[600px] overflow-y-auto rounded-xl border border-border/40 
-          bg-gradient-to-b from-background/80 to-background/40 backdrop-blur-sm
-          scrollbar-products shadow-inner overscroll-contain"
-        style={{ contain: "strict", WebkitOverflowScrolling: "touch" }}
-      >
+    <div
+      ref={parentRef}
+      data-testid="virtualized-product-grid"
+      className="h-[calc(100vh-200px)] min-h-[600px] overflow-y-auto rounded-xl border border-border/40 
+        bg-gradient-to-b from-background/80 to-background/40 backdrop-blur-sm
+        scrollbar-products shadow-inner overscroll-contain"
+      style={{ contain: "strict", WebkitOverflowScrolling: "touch" }}
+    >
         {/* Barra de filtros sticky DENTRO do container de scroll */}
         {showFilterBar && onSortChange && onOpenFilters && onClearFilters && onViewModeChange && (
           <div className="sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px))] z-20 bg-background/95 backdrop-blur-md border-b border-border px-4 py-2.5 mb-2">
