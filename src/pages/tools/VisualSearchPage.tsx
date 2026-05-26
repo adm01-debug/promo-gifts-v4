@@ -840,15 +840,15 @@ export default function VisualSearchPage() {
                                     <div className="flex flex-col gap-1.5">
                                       <div className="flex items-center gap-2">
                                         <Badge variant="outline" className="text-[8px] h-4 bg-background px-1 border-primary/20 text-primary uppercase font-bold">Material</Badge>
-                                        <span className="text-[9px] text-muted-foreground truncate">{results.analysis.visualEvidence.material}</span>
+                                        <span className="text-[9px] text-muted-foreground truncate italic">"{results.analysis.visualEvidence.material}"</span>
                                       </div>
                                       <div className="flex items-center gap-2">
                                         <Badge variant="outline" className="text-[8px] h-4 bg-background px-1 border-primary/20 text-primary uppercase font-bold">Silhueta</Badge>
-                                        <span className="text-[9px] text-muted-foreground truncate">{results.analysis.visualEvidence.silhouette}</span>
+                                        <span className="text-[9px] text-muted-foreground truncate italic">"{results.analysis.visualEvidence.silhouette}"</span>
                                       </div>
                                       <div className="flex items-center gap-2">
                                         <Badge variant="outline" className="text-[8px] h-4 bg-background px-1 border-primary/20 text-primary uppercase font-bold">Acabamento</Badge>
-                                        <span className="text-[9px] text-muted-foreground truncate">{results.analysis.visualEvidence.finish}</span>
+                                        <span className="text-[9px] text-muted-foreground truncate italic">"{results.analysis.visualEvidence.finish}"</span>
                                       </div>
                                     </>
                                   )}
