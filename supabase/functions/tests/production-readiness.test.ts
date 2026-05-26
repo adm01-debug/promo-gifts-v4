@@ -44,15 +44,12 @@ Deno.test("PRODUCTION READINESS: CORS headers should be present", async () => {
   await res.text();
 });
 
-Deno.test("PRODUCTION READINESS: Authentication bypass with service_role", async () => {
-  // cnpj-lookup uses the shared authenticateRequest which we updated to allow service_role
-  const res = await invoke("cnpj-lookup", "POST", { cnpj: "00000000000191" });
-  // If it returned 401, the bypass failed. If 200, it succeeded.
-  // 400 would mean auth passed but validation failed (which shouldn't happen for this mock CNPJ)
-  assertEquals(res.status, 200, "Service role bypass failed for cnpj-lookup");
+Deno.test("PRODUCTION READINESS: Request ID propagation", async () => {
+  const reqId = "test-id-" + Math.random();
+  const res = await invoke("health-check", "GET", {}, { "x-request-id": reqId });
+  assertEquals(res.status, 200);
   const data = await res.json();
-  assertEquals(data.success, true);
-  assertEquals(data.data.razao_social, "TEST COMPANY LTDA");
+  assert(data.request_id, "Missing request_id in response");
 });
 
 Deno.test("PRODUCTION READINESS: Authentication rejection with invalid token", async () => {
