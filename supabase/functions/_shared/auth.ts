@@ -31,7 +31,7 @@ export async function authenticateRequest(req: Request): Promise<AuthResult> {
   const localServiceClient = createClient(supabaseUrl, serviceRoleKey);
 
   // SEC-003: Allow service_role bypass for internal/system calls (e.g., tests or bridge)
-  console.log(`[auth] Debug: token_len=${rawToken.length}, service_key_len=${serviceRoleKey?.length || 0}`);
+  console.log(`[auth] Debug: token_len=${rawToken.length}, service_key_len=${serviceRoleKey?.length || 0}, key_prefix=${serviceRoleKey?.substring(0, 5)}`);
   if (rawToken === serviceRoleKey) {
     return {
       userId: 'system',
