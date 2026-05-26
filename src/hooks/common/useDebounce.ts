@@ -54,30 +54,58 @@ export function useDebouncedCallback<T extends (...args: unknown[]) => unknown>(
 }
 
 /**
- * useThrottle - Hook para throttle de valores
+ * useThrottle - Hook para throttle de valores (leading-edge com trailing update).
+ *
+ * BUG-09 FIX: implementacao correta de throttle.
+ *
+ * PROBLEMA ORIGINAL: o cleanup do useEffect (return () => clearTimeout(handler))
+ * cancelava o timer a cada mudanca de `value`, tornando o comportamento identico
+ * ao debounce: nenhuma emissao ocorria ate o usuario parar de digitar.
+ *
+ * SOLUCAO: leading-edge imediato + trailing update via refs.
+ *   - Primeira mudanca -> emitida imediatamente (leading edge).
+ *   - Durante o lock (limit ms) -> valor mais recente salvo em lastValueRef.
+ *   - Apos o lock -> emite lastValueRef.current (trailing edge, se houve mudanca).
+ *   - O timer de unlock NAO tem clearTimeout no cleanup do effect -- caso contrario
+ *     voltariamos ao comportamento de debounce.
  */
 export function useThrottle<T>(value: T, limit = 300): T {
   const [throttledValue, setThrottledValue] = useState<T>(value);
-  const lastRan = useRef(Date.now());
+  const inThrottleRef = useRef(false);
+  const lastValueRef = useRef(value);
+  const limitRef = useRef(limit);
+
+  // Manter limitRef atualizado sem re-rodar o effect de throttle
+  useEffect(() => {
+    limitRef.current = limit;
+  }, [limit]);
 
   useEffect(() => {
-    // Immediate update for very short strings or empty
-    if (typeof value === 'string' && value.length < 2) {
-      setThrottledValue(value);
+    // Sempre mantem o ref com o valor mais recente
+    lastValueRef.current = value;
+
+    if (inThrottleRef.current) {
+      // Dentro do periodo de lock: apenas bufferiza o valor mais recente.
+      // O trailing timer ira emiti-lo ao final.
       return;
     }
-    
-    const handler = setTimeout(() => {
-      if (Date.now() - lastRan.current >= limit) {
-        setThrottledValue(value);
-        lastRan.current = Date.now();
-      }
-    }, limit - (Date.now() - lastRan.current));
 
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, limit]);
+    // Leading edge: emite imediatamente
+    setThrottledValue(value);
+    inThrottleRef.current = true;
+
+    // Trailing update: ao final do lock, emite o ultimo valor recebido.
+    // NOTA CRITICA: este setTimeout NAO deve ser cancelado no cleanup do effect.
+    // Se cancelassemos, o throttle se tornaria debounce (identico ao bug original).
+    setTimeout(() => {
+      inThrottleRef.current = false;
+      // Emite o ultimo valor caso tenha mudado durante o periodo de lock
+      setThrottledValue(lastValueRef.current);
+    }, limitRef.current);
+
+    // Sem return de cleanup aqui -- intencional. O timer de desbloqueio
+    // deve sempre completar para liberar o lock e emitir o trailing value.
+  }, [value]); // limit excluido intencionalmente -- lido via limitRef
 
   return throttledValue;
 }

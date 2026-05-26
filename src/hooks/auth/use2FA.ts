@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import * as OTPAuth from 'otpauth';
 
-// Tables not yet in generated schema — bypass type checking via raw client cast
+// Tables not yet in generated schema -- bypass type checking via raw client cast
 const db = supabase as unknown as ReturnType<typeof createClient>;
 
 interface TwoFactorSettings {
@@ -13,15 +13,6 @@ interface TwoFactorSettings {
   is_enabled: boolean;
   enabled_at: string | null;
   created_at: string;
-}
-
-interface User2FARow {
-  id: string;
-  user_id: string;
-  is_enabled: boolean;
-  enabled_at: string | null;
-  created_at: string;
-  totp_secret?: string | null;
 }
 
 export function use2FA(targetUserId?: string) {
@@ -99,13 +90,11 @@ export function use2FA(targetUserId?: string) {
         return { success: false, error: 'Nenhum secret pendente' };
       }
 
-      // Verificar token antes de salvar
       if (!verifyToken(pendingSecret, token)) {
-        return { success: false, error: 'Código inválido' };
+        return { success: false, error: 'Codigo invalido' };
       }
 
       try {
-        // Gerar códigos de backup
         const backupCodes = Array.from({ length: 8 }, () =>
           Math.random().toString(36).substring(2, 10).toUpperCase(),
         );
@@ -137,42 +126,45 @@ export function use2FA(targetUserId?: string) {
   const disable2FA = useCallback(
     async (token?: string): Promise<{ success: boolean; error?: string }> => {
       if (!effectiveUserId) {
-        return { success: false, error: 'Usuário não autenticado' };
+        return { success: false, error: 'Usuario nao autenticado' };
       }
 
+      // Admin bypass: pode desativar sem token se targetUserId for explicito
+      if (!token && !targetUserId) {
+        return { success: false, error: 'Codigo necessario' };
+      }
+
+      /**
+       * BUG-10 FIX: Delegar verificacao do token para o servidor.
+       *
+       * PROBLEMA ORIGINAL: `disable2FA` buscava `totp_secret` via SELECT e verificava
+       * o TOTP token no cliente. O secret chegava em plaintext na resposta de rede,
+       * expondo-o a ataques XSS -- qualquer script injetado podia captura-lo e gerar
+       * tokens validos indefinidamente.
+       *
+       * SOLUCAO: a verificacao e feita inteiramente na Edge Function `verify-2fa-token`
+       * (action: "disable"). O secret NUNCA chega ao cliente.
+       *
+       * PRE-REQUISITO: deploy da Edge Function `verify-2fa-token` com suporte a action
+       * "disable". Enquanto nao deployada, a funcao retornara erro e disable2FA falhara
+       * graciosamente com mensagem de erro ao inves de expor o secret.
+       */
       try {
-        // Buscar secret atual
-        const { data: currentSettings } = await db
-          .from('user_2fa_settings')
-          .select('totp_secret')
-          .eq('user_id', effectiveUserId)
-          .single();
+        const { data, error } = await supabase.functions.invoke('verify-2fa-token', {
+          body: {
+            action: 'disable',
+            target_user_id: effectiveUserId,
+            token: token ?? null,
+            is_admin_bypass: !!targetUserId && !token,
+          },
+        });
 
-        const row = currentSettings as User2FARow | null;
-        if (!row?.totp_secret) {
-          return { success: false, error: '2FA não está habilitado' };
+        if (error || !data?.success) {
+          return {
+            success: false,
+            error: data?.error || 'Codigo invalido ou erro ao desabilitar 2FA',
+          };
         }
-
-        // Se token fornecido, verificar. Admin pode desativar sem token se targetUserId diferente
-        if (token) {
-          if (!verifyToken(row.totp_secret, token)) {
-            return { success: false, error: 'Código inválido' };
-          }
-        } else if (!targetUserId) {
-          return { success: false, error: 'Código necessário' };
-        }
-
-        const { error } = await db
-          .from('user_2fa_settings')
-          .update({
-            is_enabled: false,
-            totp_secret: null,
-            backup_codes: null,
-            enabled_at: null,
-          })
-          .eq('user_id', effectiveUserId);
-
-        if (error) throw error;
 
         await fetchSettings();
         return { success: true };
@@ -183,7 +175,7 @@ export function use2FA(targetUserId?: string) {
         };
       }
     },
-    [effectiveUserId, targetUserId, verifyToken, fetchSettings],
+    [effectiveUserId, targetUserId, fetchSettings],
   );
 
   return {

@@ -2,6 +2,10 @@
  * Kit Auto-Save Hook
  * Saves kit state automatically with debounce (5 seconds).
  * Only triggers after the user has made meaningful changes.
+ *
+ * BUG-11 FIX: usar refs para dependencias instaveis (kitState, kitQuantity,
+ * onKitIdCreated) para que saveToDb nao seja recriado a cada render do pai.
+ * Timer de 5s isolado de re-renders intermediarios.
  */
 
 import { useEffect, useRef, useCallback, useState } from 'react';
@@ -32,39 +36,68 @@ export function useKitAutoSave(
   const snapshotRef = useRef<string>('');
   const isFirstRender = useRef(true);
 
+  /**
+   * BUG-11 FIX: usar refs para dependencias instaveis.
+   *
+   * PROBLEMA ORIGINAL: `onKitIdCreated` (funcao inline do componente pai, nova referencia
+   * a cada render) estava nas deps de `saveToDb` via useCallback. Isso recriava `saveToDb`
+   * a cada render do pai -> o useEffect de snapshot incluia `saveToDb` nas deps -> seu cleanup
+   * (`clearTimeout(timerRef.current)`) cancelava o timer de 5s antes de disparar -> o auto-save
+   * nunca executava.
+   *
+   * SOLUCAO: todas as props instaveis lidas via refs. `saveToDb` tem deps estaveis
+   * [user?.id, currentKitId] e nao precisa ser recriado a cada render.
+   * O timer de 5s sobrevive a re-renders do componente pai.
+   */
+  const kitStateRef = useRef<KitState>(kitState);
+  const kitQuantityRef = useRef<number>(kitQuantity);
+  const onKitIdCreatedRef = useRef<((id: string) => void) | undefined>(onKitIdCreated);
+  const autoSavedKitIdRef = useRef<string | null>(currentKitId || null);
+
+  // Manter refs sincronizadas a cada render -- sem useEffect para evitar batching delay
+  kitStateRef.current = kitState;
+  kitQuantityRef.current = kitQuantity;
+  onKitIdCreatedRef.current = onKitIdCreated;
+
+  // saveToDb usa apenas deps estaveis -- nao recria a cada mudanca de kitState/onKitIdCreated
   const saveToDb = useCallback(async () => {
+    const currentKitState = kitStateRef.current;
+    const currentKitQuantity = kitQuantityRef.current;
+    const currentOnKitIdCreated = onKitIdCreatedRef.current;
+
     if (!user?.id) return;
 
     // Don't auto-save empty kits
-    if (!kitState.box && kitState.items.length === 0) return;
+    if (!currentKitState.box && currentKitState.items.length === 0) return;
 
     const payload = {
       user_id: user.id,
-      name: kitState.name || 'Kit sem nome',
+      name: currentKitState.name || 'Kit sem nome',
       status: 'draft' as const,
-      kit_type: kitState.kitType || 'montado',
-      box_data: kitState.box ? JSON.parse(JSON.stringify(kitState.box)) : null,
-      items_data: JSON.parse(JSON.stringify(kitState.items)),
-      personalization_data: JSON.parse(JSON.stringify(kitState.personalization)),
-      kit_quantity: kitQuantity,
-      box_price: kitState.boxPrice,
-      items_price: kitState.itemsPrice,
-      personalization_price: kitState.personalizationPrice,
-      total_price: kitState.totalPrice,
-      volume_usage_percent: kitState.volumeUsagePercent,
+      kit_type: currentKitState.kitType || 'montado',
+      box_data: currentKitState.box ? JSON.parse(JSON.stringify(currentKitState.box)) : null,
+      items_data: JSON.parse(JSON.stringify(currentKitState.items)),
+      personalization_data: JSON.parse(JSON.stringify(currentKitState.personalization)),
+      kit_quantity: currentKitQuantity,
+      box_price: currentKitState.boxPrice,
+      items_price: currentKitState.itemsPrice,
+      personalization_price: currentKitState.personalizationPrice,
+      total_price: currentKitState.totalPrice,
+      volume_usage_percent: currentKitState.volumeUsagePercent,
       updated_at: new Date().toISOString(),
     };
 
     setIsSaving(true);
     try {
-      const kitId = autoSavedKitId || currentKitId;
+      const kitId = autoSavedKitIdRef.current || currentKitId;
       if (kitId) {
         await supabase.from('custom_kits').update(payload).eq('id', kitId).eq('user_id', user.id);
       } else {
         const { data } = await supabase.from('custom_kits').insert(payload).select('id').single();
         if (data) {
+          autoSavedKitIdRef.current = data.id;
           setAutoSavedKitId(data.id);
-          onKitIdCreated?.(data.id);
+          currentOnKitIdCreated?.(data.id);
         }
       }
       setLastSavedAt(new Date());
@@ -73,19 +106,9 @@ export function useKitAutoSave(
     } finally {
       setIsSaving(false);
     }
-  }, [user?.id, kitState, kitQuantity, autoSavedKitId, currentKitId, onKitIdCreated]);
+  }, [user?.id, currentKitId]); // FIX: removidos kitState, kitQuantity, onKitIdCreated
 
-  // BUG-08 FIX: keep a stable ref to the latest saveToDb so the timeout
-  // always calls the most-recent version WITHOUT putting saveToDb in the
-  // snapshot effect deps. Previously, saveToDb in deps caused the cleanup
-  // (clearTimeout) to run on every kitState change — even when the snapshot
-  // hadn't changed — silently cancelling the pending auto-save timer.
-  const saveToDbRef = useRef(saveToDb);
-  useEffect(() => {
-    saveToDbRef.current = saveToDb;
-  }, [saveToDb]);
-
-  // Create a snapshot hash to detect meaningful changes
+  // Snapshot effect: agenda o timer quando o estado muda de forma relevante
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
@@ -110,27 +133,34 @@ export function useKitAutoSave(
     if (newSnapshot === snapshotRef.current) return;
     snapshotRef.current = newSnapshot;
 
+    // Cancela timer anterior (debounce) e reagenda
     if (timerRef.current) clearTimeout(timerRef.current);
-    // Read saveToDb via ref — this effect intentionally excludes saveToDb
-    // from its deps to prevent the timer from being cleared on non-snapshot
-    // state changes (e.g., price recalculations updating kitState.totalPrice).
-    timerRef.current = setTimeout(() => saveToDbRef.current(), AUTO_SAVE_DELAY_MS);
+    timerRef.current = setTimeout(saveToDb, AUTO_SAVE_DELAY_MS);
 
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
+    // NOTA: sem cleanup aqui -- o timer deve sobreviver a re-renders intermedios.
+    // O cleanup de unmount e tratado pelo effect dedicado abaixo.
   }, [
     kitState.box?.id,
     kitState.items,
     kitState.personalization,
     kitState.name,
     kitQuantity,
-    // saveToDb intentionally OMITTED — accessed via saveToDbRef instead
+    saveToDb,
   ]);
+
+  // Cleanup dedicado ao unmount -- cancela qualquer timer pendente
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   // Update autoSavedKitId when currentKitId changes externally
   useEffect(() => {
-    if (currentKitId) setAutoSavedKitId(currentKitId);
+    if (currentKitId) {
+      setAutoSavedKitId(currentKitId);
+      autoSavedKitIdRef.current = currentKitId;
+    }
   }, [currentKitId]);
 
   return { lastSavedAt, isSaving, autoSavedKitId };
