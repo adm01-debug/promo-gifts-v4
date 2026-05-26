@@ -55,6 +55,10 @@ async function runWebhookLoad() {
           success++;
         } else {
           failure++;
+          if (success === 0 && failure === 1) {
+             const errorBody = await res.text();
+             console.log(`First error body: ${res.status} - ${errorBody}`);
+          }
         }
       } catch {
         failure++;
