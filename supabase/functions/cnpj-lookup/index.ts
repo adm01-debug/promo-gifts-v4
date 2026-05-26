@@ -41,14 +41,36 @@ Deno.serve(async (req) => {
     }
     const cnpjDigits = parsed.data.cnpj;
 
-    // Simulation/Test mode: return mock if using generic CNPJ
+    // BUG-003 FIX: Mock response format corrected.
+    // Previously returned raw CNPJa format { cnpj, name, alias, status } but the client
+    // fetchCnpjData() in src/utils/cnpj-lookup.ts expects { success: true, data: CnpjData }.
+    // All tests using CNPJ 00000000000191 were throwing 'Erro na consulta do CNPJ'.
     if (cnpjDigits === '00000000000191') {
       return new Response(
         JSON.stringify({
-          cnpj: '00000000000191',
-          name: 'TEST COMPANY LTDA',
-          alias: 'TEST MOCK',
-          status: 'ACTIVE',
+          success: true,
+          data: {
+            razao_social: 'TEST COMPANY LTDA',
+            nome_fantasia: 'TEST MOCK',
+            cnpj: cnpjDigits,
+            logradouro: 'Rua Teste',
+            numero: '123',
+            complemento: null,
+            bairro: 'Bairro Teste',
+            cidade: 'São Paulo',
+            estado: 'SP',
+            cep: '01310100',
+            pais: 'Brasil',
+            cnae_principal: '4755501',
+            cnae_descricao: 'Comércio varejista de tecidos',
+            situacao_cadastral: 'ATIVA',
+            data_abertura: '2000-01-01',
+            natureza_juridica: 'Sociedade Empresária Limitada',
+            porte: 'MEDIO',
+            capital_social: 100000,
+            email: 'contato@test.com.br',
+            telefone: '(11) 99999-9999',
+          },
         }),
         {
           status: 200,
