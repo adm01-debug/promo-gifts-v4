@@ -22,6 +22,18 @@ import {
   createEmptyPixKey,
 } from './types';
 
+/**
+ * Fixes applied (audit 26/05/2026):
+ *   BUG-04: handleDelete uses state instead of confirm() — exposes deleteConfirmSupplier/confirmDelete/cancelDelete
+ *   BUG-07 + BUG-30: social media fields (instagram, facebook, linkedin, youtube, tiktok) added to payload & handleEdit
+ *   BUG-12: fetchSuppliers paginates up to 2000 records (200/page loop)
+ *   BUG-13: removed deprecated minimum_order_value from payload
+ *   BUG-16: JSON.parse of contacts handles both string and already-parsed object
+ *   BUG-17: handleCnpjLookup only fills empty fields (never overwrites existing data)
+ *   BUG-21: name/tradingName dup checks use __ilike_ for case-insensitive comparison
+ *   BUG-23: carrier search timeout cleanup on unmount
+ *   BUG-25: removed dead code for address_details/social_details (fields don't exist in DB)
+ */
 export function useSuppliersManager() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +44,8 @@ export function useSuppliersManager() {
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  // BUG-04 FIX: state-based delete confirmation — no more confirm() blocking dialog
+  const [deleteConfirmSupplier, setDeleteConfirmSupplier] = useState<Supplier | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [fetchingCnpj, setFetchingCnpj] = useState(false);
   const [contacts, setContacts] = useState<SupplierContact[]>([createEmptyContact()]);
@@ -52,6 +66,13 @@ export function useSuppliersManager() {
   const [showCarrierDropdown, setShowCarrierDropdown] = useState(false);
   const carrierSearchTimeout = useRef<ReturnType<typeof setTimeout>>();
   const logoInputRef = useRef<HTMLInputElement>(null);
+
+  // BUG-23 FIX: cleanup carrier search timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (carrierSearchTimeout.current) clearTimeout(carrierSearchTimeout.current);
+    };
+  }, []);
 
   const searchCarriers = useCallback(async (term: string) => {
     if (term.length < 2) {
@@ -123,17 +144,27 @@ export function useSuppliersManager() {
   const removeContact = (id: string) =>
     setContacts((prev) => (prev.length > 1 ? prev.filter((c) => c.id !== id) : prev));
 
+  // BUG-12 FIX: paginate suppliers up to 2000 records (200/page)
   const fetchSuppliers = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await invokeExternalDb<Supplier>({
-        table: 'suppliers',
-        operation: 'select',
-        select: '*',
-        orderBy: { column: 'name', ascending: true },
-        limit: 200,
-      });
-      setSuppliers(result.records || []);
+      const all: Supplier[] = [];
+      const pageSize = 200;
+      const maxPages = 10; // cap at 2000 to prevent runaway
+      for (let page = 0; page < maxPages; page++) {
+        const result = await invokeExternalDb<Supplier>({
+          table: 'suppliers',
+          operation: 'select',
+          select: '*',
+          orderBy: { column: 'name', ascending: true },
+          limit: pageSize,
+          offset: page * pageSize,
+        });
+        const records = result.records || [];
+        all.push(...records);
+        if (records.length < pageSize) break; // last page
+      }
+      setSuppliers(all);
     } catch {
       toast.error('Erro ao carregar fornecedores');
     } finally {
@@ -172,29 +203,20 @@ export function useSuppliersManager() {
   };
 
   const handleEdit = (supplier: Supplier) => {
-    const s = { ...supplier } as unknown as Record<string, unknown>;
-    try {
-      const supplierRecord = supplier as unknown as Record<string, unknown>;
-      const addr = supplierRecord.address_details
-        ? JSON.parse(supplierRecord.address_details as string)
-        : null;
-      if (addr && typeof addr === 'object') Object.assign(s, addr);
-    } catch {
-      /* ignore */
-    }
-    try {
-      const supplierRecord = supplier as unknown as Record<string, unknown>;
-      const social = supplierRecord.social_details
-        ? JSON.parse(supplierRecord.social_details as string)
-        : null;
-      if (social && typeof social === 'object') Object.assign(s, social);
-    } catch {
-      /* ignore */
-    }
-    setEditingSupplier(s as Partial<Supplier>);
+    // BUG-25 FIX: removed dead code blocks for address_details / social_details
+    // (those fields do not exist in the real DB schema)
+    const s: Partial<Supplier> = { ...supplier };
+    setEditingSupplier(s);
 
+    // BUG-16 FIX: contacts may come from DB as parsed object (JSONB) or as JSON string
     try {
-      const parsed = supplier.contacts ? JSON.parse(supplier.contacts) : null;
+      const raw = supplier.contacts;
+      const parsed: unknown =
+        raw === null || raw === undefined
+          ? null
+          : typeof raw === 'string'
+            ? JSON.parse(raw)
+            : raw; // already parsed by PostgREST JSONB
       if (Array.isArray(parsed) && parsed.length > 0) {
         setContacts(
           parsed.map(
@@ -264,14 +286,14 @@ export function useSuppliersManager() {
       setPixKeys([createEmptyPixKey(true)]);
     }
 
-    // ── Read dedicated columns (no more regex for these!) ──
+    // ── Read dedicated columns ──
     setFoneFixo1(supplier.phone || '');
     setFoneFixo2(supplier.phone2 || '');
     setInscricaoEstadual(supplier.inscricao_estadual || '');
     setRegimeTributario(supplier.tax_regime || '');
     setEstadoFaturamento(supplier.state_uf || '');
 
-    // ── Backward compat: migrate legacy notes data if columns are empty ──
+    // ── Backward compat: migrate legacy notes data if dedicated columns are empty ──
     if (!supplier.inscricao_estadual && !supplier.tax_regime && !supplier.state_uf) {
       const fiscalMatch = notesStr.match(
         /\[Fiscal: IE: (.*?), Regime: (.*?), UF Faturamento: (.*?)\]/,
@@ -285,7 +307,6 @@ export function useSuppliersManager() {
     if (!supplier.phone2) {
       const foneMatch = notesStr.match(/\[Fones Fixos: 01: (.*?), 02: (.*?)\]/);
       if (foneMatch) {
-        // phone (fone fixo 1) is already a column — only recover phone2
         setFoneFixo2(foneMatch[2] !== '-' ? foneMatch[2] : '');
       }
     }
@@ -349,13 +370,14 @@ export function useSuppliersManager() {
         logger.warn('[SuppliersManager] CNPJ dup check failed:', err);
       }
     }
+    // BUG-21 FIX: case-insensitive name dup check via __ilike_ prefix
     if (editingSupplier.name?.trim()) {
       try {
         const existingByName = await invokeExternalDb<{ id: string; name: string }>({
           table: 'suppliers',
           operation: 'select',
           select: 'id,name',
-          filters: { name: editingSupplier.name.trim() },
+          filters: { '__ilike_name': editingSupplier.name.trim() },
           limit: 5,
         });
         const dupByName = existingByName.records?.find((r) => r.id !== editingSupplier.id);
@@ -378,7 +400,8 @@ export function useSuppliersManager() {
           table: 'suppliers',
           operation: 'select',
           select: 'id,name,trading_name',
-          filters: { trading_name: editingSupplier.trading_name.trim() },
+          // BUG-21 FIX: case-insensitive trading_name dup check
+          filters: { '__ilike_trading_name': editingSupplier.trading_name.trim() },
           limit: 5,
         });
         const dupByTN = existingByTN.records?.find((r) => r.id !== editingSupplier.id);
@@ -436,7 +459,7 @@ export function useSuppliersManager() {
         website: es.website?.trim() || null,
         default_markup_percent: es.default_markup_percent ?? null,
         min_order_value: es.min_order_value ?? null,
-        minimum_order_value: es.min_order_value ?? null,
+        // BUG-13 FIX: removed deprecated minimum_order_value column
         delivery_time_days: es.delivery_time_days ?? null,
         payment_terms: es.payment_terms?.trim() || null,
         shipping_terms: es.shipping_terms?.trim() || null,
@@ -444,6 +467,12 @@ export function useSuppliersManager() {
         inscricao_estadual: inscricaoEstadual.trim() || null,
         tax_regime: regimeTributario || null,
         state_uf: estadoFaturamento || null,
+        // BUG-07 + BUG-30 FIX: persist social media fields to dedicated columns
+        instagram: es.instagram?.trim() || null,
+        facebook: es.facebook?.trim() || null,
+        linkedin: es.linkedin?.trim() || null,
+        youtube: es.youtube?.trim() || null,
+        tiktok: es.tiktok?.trim() || null,
         notes: buildNotesPayload(
           es,
           contacts,
@@ -459,11 +488,7 @@ export function useSuppliersManager() {
 
       if (editingSupplier.logo_url) payload.logo_url = editingSupplier.logo_url;
       else if (!isNew && editingSupplier.logo_url === null) {
-        try {
-          payload.logo_url = null;
-        } catch {
-          /* ignore */
-        }
+        payload.logo_url = null;
       }
 
       if (isNew) {
@@ -489,8 +514,15 @@ export function useSuppliersManager() {
     }
   };
 
-  const handleDelete = async (supplier: Supplier) => {
-    if (!confirm(`Deseja realmente excluir o fornecedor "${supplier.name}"?`)) return;
+  // BUG-04 FIX: requestDelete sets confirmation state; actual delete in confirmDelete
+  const handleDelete = (supplier: Supplier) => {
+    setDeleteConfirmSupplier(supplier);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmSupplier) return;
+    const supplier = deleteConfirmSupplier;
+    setDeleteConfirmSupplier(null);
     setDeleting(supplier.id);
     try {
       await invokeExternalDbDelete('suppliers', supplier.id);
@@ -502,6 +534,8 @@ export function useSuppliersManager() {
       setDeleting(null);
     }
   };
+
+  const cancelDelete = () => setDeleteConfirmSupplier(null);
 
   const updateField = (field: string, value: unknown) => {
     setEditingSupplier((prev) => (prev ? { ...prev, [field]: value } : null));
@@ -538,6 +572,7 @@ export function useSuppliersManager() {
     }
   };
 
+  // BUG-17 FIX: only fill fields that are currently empty — never overwrite existing data
   const handleCnpjLookup = async () => {
     const digits = editingSupplier?.cnpj?.replace(/\D/g, '') || '';
     if (!validateCnpj(digits)) {
@@ -548,17 +583,21 @@ export function useSuppliersManager() {
     try {
       const data = await fetchCnpjData(digits);
       if (data) {
-        if (data.razao_social) updateField('name', data.razao_social);
-        if (data.nome_fantasia) updateField('trading_name', data.nome_fantasia);
-        if (data.logradouro) updateField('logradouro', data.logradouro);
-        if (data.numero) updateField('numero', data.numero);
-        if (data.complemento) updateField('complemento', data.complemento);
-        if (data.bairro) updateField('bairro', data.bairro);
-        if (data.cidade) updateField('cidade', data.cidade);
-        if (data.estado) updateField('estado', data.estado);
-        if (data.cep) updateField('cep', maskCep(data.cep));
-        if (data.email) updateField('email', data.email);
-        if (data.telefone) updateField('phone', data.telefone);
+        const es = editingSupplier ?? {};
+        if (data.razao_social && !es.name?.trim()) updateField('name', data.razao_social);
+        if (data.nome_fantasia && !es.trading_name?.trim())
+          updateField('trading_name', data.nome_fantasia);
+        if (data.logradouro && !es.logradouro?.trim())
+          updateField('logradouro', data.logradouro);
+        if (data.numero && !es.numero?.trim()) updateField('numero', data.numero);
+        if (data.complemento && !es.complemento?.trim())
+          updateField('complemento', data.complemento);
+        if (data.bairro && !es.bairro?.trim()) updateField('bairro', data.bairro);
+        if (data.cidade && !es.cidade?.trim()) updateField('cidade', data.cidade);
+        if (data.estado && !es.estado?.trim()) updateField('estado', data.estado);
+        if (data.cep && !es.cep?.trim()) updateField('cep', maskCep(data.cep));
+        if (data.email && !es.email?.trim()) updateField('email', data.email);
+        if (data.telefone && !foneFixo1.trim()) setFoneFixo1(data.telefone);
         toast.success('Dados preenchidos via CNPJ!');
       }
     } catch (err: unknown) {
@@ -597,6 +636,10 @@ export function useSuppliersManager() {
     isNew,
     saving,
     deleting,
+    // BUG-04: new delete confirmation state/actions
+    deleteConfirmSupplier,
+    confirmDelete,
+    cancelDelete,
     uploadingLogo,
     fetchingCnpj,
     contacts,
@@ -702,6 +745,7 @@ function buildNotesPayload(
 
   // NOTE: Fones Fixos, Fiscal (IE, Regime, UF) are NO LONGER serialized here.
   // They now use dedicated columns: phone, phone2, inscricao_estadual, tax_regime, state_uf.
+  // Social media (instagram, facebook, etc.) also use dedicated columns now.
 
   return parts.join('\n') || null;
 }
