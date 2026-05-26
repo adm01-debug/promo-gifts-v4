@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Package, Building2, FolderTree, Sparkles } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { NoveltyBadge } from "@/components/products/NoveltyBadge";
 import { ProductSparkline } from "@/components/products/ProductSparkline";
 import { SelectionCheckbox } from "@/components/common/SelectionCheckbox";
@@ -224,10 +225,42 @@ type ViewMode = "grid" | "list" | "table";
 
 export function NoveltyCardSkeleton({ viewMode }: { viewMode: ViewMode }) {
   if (viewMode === "list") {
-    return (<Card className="border-border/50"><CardContent className="p-2.5 flex items-center gap-2.5"><div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg shimmer" /><div className="flex-1 space-y-1.5"><div className="h-3 w-16 rounded shimmer" /><div className="h-3.5 w-full rounded shimmer" style={{ animationDelay: '150ms' }} /><div className="h-3 w-24 rounded shimmer" style={{ animationDelay: '300ms' }} /></div></CardContent></Card>);
+    return (
+      <Card className="border-border/50">
+        <CardContent className="p-2.5 flex items-center gap-2.5">
+          <Skeleton className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg" />
+          <div className="flex-1 space-y-1.5">
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-3.5 w-full" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
   if (viewMode === "table") {
-    return (<div className="flex items-center gap-2 px-2 py-1.5 border-b border-border/30"><div className="w-9 h-9 rounded shimmer" /><div className="flex-1 h-3 rounded shimmer" style={{ animationDelay: '100ms' }} /><div className="w-14 h-3 rounded shimmer" style={{ animationDelay: '200ms' }} /><div className="w-14 h-3 rounded shimmer" style={{ animationDelay: '300ms' }} /></div>);
+    return (
+      <div className="flex items-center gap-2 px-2 py-1.5 border-b border-border/30">
+        <Skeleton className="w-9 h-9" />
+        <Skeleton className="flex-1 h-3" />
+        <Skeleton className="w-14 h-3" />
+        <Skeleton className="w-14 h-3" />
+      </div>
+    );
   }
-  return (<Card className="border-border/50 overflow-hidden"><CardContent className="p-0"><div className="aspect-square shimmer" /><div className="p-2.5 space-y-1.5"><div className="h-3.5 w-full rounded shimmer" style={{ animationDelay: '100ms' }} /><div className="h-3.5 w-3/4 rounded shimmer" style={{ animationDelay: '200ms' }} /><div className="flex justify-between"><div className="h-3 w-14 rounded shimmer" style={{ animationDelay: '300ms' }} /><div className="h-4 w-12 rounded shimmer" style={{ animationDelay: '400ms' }} /></div></div></CardContent></Card>);
+  return (
+    <Card className="border-border/50 overflow-hidden">
+      <CardContent className="p-0">
+        <Skeleton className="aspect-square" />
+        <div className="p-2.5 space-y-1.5">
+          <Skeleton className="h-3.5 w-full" />
+          <Skeleton className="h-3.5 w-3/4" />
+          <div className="flex justify-between">
+            <Skeleton className="h-3 w-14" />
+            <Skeleton className="h-4 w-12" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
