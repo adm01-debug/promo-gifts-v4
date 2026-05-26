@@ -73,20 +73,22 @@ function RouteSuspense({ children }: { children: ReactNode }) {
  */
 export function AppRoutes() {
   return (
-    <Routes>
-      {publicRoutes}
+    <RouteSuspense>
+      <Routes>
+        {publicRoutes}
 
-      <Route element={<ProtectedRoute />}>
-        <Route element={<ProtectedAppLayout />}>
-          {productRoutes}
-          {quoteRoutes}
-          {adminRoutes}
-          {toolsRoutes}
-          {homeAndClientRoutes}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<ProtectedAppLayout />}>
+            {productRoutes}
+            {quoteRoutes}
+            {adminRoutes}
+            {toolsRoutes}
+            {homeAndClientRoutes}
+          </Route>
         </Route>
-      </Route>
 
-      {notFoundRoute}
-    </Routes>
+        {notFoundRoute}
+      </Routes>
+    </RouteSuspense>
   );
 }

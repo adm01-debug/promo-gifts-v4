@@ -8,6 +8,7 @@ import {
   PageHeaderSkeleton,
   DashboardSkeleton as ModernDashboardSkeleton
 } from "@/components/loading/ModernSkeletons";
+import { ProductDetailSkeleton as ModernProductDetailSkeleton } from "@/components/products/ProductDetailSkeleton";
 import { SkeletonMonitor } from "@/components/loading/SkeletonMonitor";
 
 /**
@@ -41,63 +42,24 @@ function makeSkeleton(
 export const CatalogSkeleton = makeSkeleton(
   "Catalog",
   () => (
-    <>
-      <div className="flex flex-col gap-6">
-        <PageHeaderSkeleton />
-        {/* Toolbar simulator */}
-        <div className="flex gap-3">
-          <Skeleton className="h-10 w-full max-w-md rounded-lg" />
-          <Skeleton className="h-10 w-10 rounded-lg" />
-          <Skeleton className="h-10 w-10 rounded-lg" />
-        </div>
-        <ProductGridSkeleton count={10} columns={5} />
+    <div className="flex flex-col gap-6">
+      <PageHeaderSkeleton id="catalog-header" />
+      {/* Toolbar simulator */}
+      <div className="flex gap-3">
+        <Skeleton className="h-10 w-full max-w-md rounded-lg" id="catalog-search-sim" />
+        <Skeleton className="h-10 w-10 rounded-lg" id="catalog-filter-sim" />
+        <Skeleton className="h-10 w-10 rounded-lg" id="catalog-view-sim" />
       </div>
-    </>
+      <ProductGridSkeleton count={10} columns={5} id="catalog-grid" />
+    </div>
   ),
-  "p-3 sm:p-4 lg:p-6 space-y-6",
+  "p-3 sm:p-4 lg:p-6",
 );
 
 /** Product detail page skeleton */
 export const ProductDetailSkeleton = makeSkeleton(
   "ProductDetail",
-  () => (
-    <div className="space-y-8">
-      <div className="flex items-center gap-2">
-        <Skeleton className="h-4 w-24" />
-        <Skeleton className="h-4 w-32" />
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        {/* Left: Image & Thumbnails */}
-        <div className="space-y-4">
-          <Skeleton className="aspect-square w-full rounded-2xl" />
-          <div className="flex gap-3">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-20 w-20 rounded-lg" />
-            ))}
-          </div>
-        </div>
-        {/* Right: Info */}
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <Skeleton className="h-10 w-3/4" />
-            <Skeleton className="h-4 w-1/4" />
-          </div>
-          <div className="flex gap-2">
-            <Skeleton className="h-6 w-20 rounded-full" />
-            <Skeleton className="h-6 w-20 rounded-full" />
-          </div>
-          <Skeleton className="h-24 w-full rounded-xl" />
-          <div className="space-y-4 pt-4 border-t border-border/60">
-            <Skeleton className="h-12 w-full rounded-lg" />
-            <div className="flex gap-4">
-              <Skeleton className="h-14 flex-1 rounded-xl" />
-              <Skeleton className="h-14 flex-1 rounded-xl" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  ),
+  () => <ModernProductDetailSkeleton />,
   "p-3 sm:p-4 lg:p-6",
 );
 

@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, createContext, useContext } from 'react';
 import { logger } from '@/lib/logger';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { getSkeletonThreshold } from '@/config/skeleton.config';
+
+const SkeletonMonitorContext = createContext<string | null>(null);
 
 interface SkeletonMonitorProps {
   name: string;
@@ -19,6 +21,7 @@ export function SkeletonMonitor({
   children,
   thresholdMs: manualThresholdMs,
 }: SkeletonMonitorProps) {
+  const parentName = useContext(SkeletonMonitorContext);
   const thresholdMs = manualThresholdMs || getSkeletonThreshold(name);
   const startTime = useRef<number>(performance.now());
   const [elapsed, setElapsed] = useState(0);
@@ -26,6 +29,11 @@ export function SkeletonMonitor({
   const isDev = isAdmin || isDevRole;
 
   useEffect(() => {
+    // Detect double skeleton (nested monitors)
+    if (parentName && process.env.NODE_ENV === 'development') {
+      console.warn(`[DoubleSkeleton] Detected nested skeleton: "${name}" inside "${parentName}"`);
+    }
+
     // Only track if we are in the browser
     if (typeof window === 'undefined') return;
 
@@ -82,7 +90,9 @@ export function SkeletonMonitor({
       data-skeleton-elapsed={elapsed}
       data-skeleton-forced={isForced}
     >
-      {children}
+      <SkeletonMonitorContext.Provider value={name}>
+        {children}
+      </SkeletonMonitorContext.Provider>
 
       {/* Dev-only overlay timer */}
       {isDev && (elapsed > 300 || isForced) && (

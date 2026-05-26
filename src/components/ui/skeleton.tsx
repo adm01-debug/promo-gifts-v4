@@ -17,23 +17,27 @@ const shimmer = {
 };
 
 const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(
-  ({ className, animate = true, ...props }, ref) => {
+  ({ className, animate = true, id, ...props }, ref) => {
     React.useEffect(() => {
       if (process.env.NODE_ENV === 'development') {
-        const id = props.id || props['data-testid'] || 'generic';
-        // console.debug(`[Skeleton] Mounted: ${id}`);
+        const identifier = id || props['data-testid'] || 'generic';
+        // In console, we can trace which skeletons are mounting
+        if ((window as any).__DEBUG_SKELETONS__) {
+          console.debug(`[Skeleton] Mounted: ${identifier}`, { className, props });
+        }
       }
-    }, [props.id, props['data-testid']]);
+    }, [id, props['data-testid']]);
 
     return (
       <div
         ref={ref}
+        id={id}
         className={cn(
           "relative overflow-hidden rounded-md bg-muted/20",
           className
         )}
         data-skeleton="true"
-        data-skeleton-id={props.id || props['data-testid'] || 'generic'}
+        data-skeleton-id={id || props['data-testid'] || 'generic'}
         {...props}
       >
         {animate && (
