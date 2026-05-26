@@ -120,10 +120,12 @@ export function CatalogToolbar({
           <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <SelectTrigger className="w-10 sm:w-44 h-9 sm:h-10 text-xs sm:text-sm font-medium" aria-label="Ordenar por">
-                  <ArrowUpDown className="h-3.5 w-3.5 sm:mr-2 shrink-0 text-muted-foreground" />
-                  <span className="hidden sm:inline"><SelectValue placeholder="Ordenar" /></span>
-                </SelectTrigger>
+                <span className="inline-flex">
+                  <SelectTrigger className="w-10 sm:w-44 h-9 sm:h-10 text-xs sm:text-sm font-medium" aria-label="Ordenar por">
+                    <ArrowUpDown className="h-3.5 w-3.5 sm:mr-2 shrink-0 text-muted-foreground" />
+                    <span className="hidden sm:inline"><SelectValue placeholder="Ordenar" /></span>
+                  </SelectTrigger>
+                </span>
               </TooltipTrigger>
               <TooltipContent>Ordenar produtos (relevância, preço, novidades…)</TooltipContent>
             </Tooltip>
