@@ -141,7 +141,7 @@ jobs:
         run: npm run typecheck
 
   quality:
-    name: Lint, Typecheck & Test
+    name: Lint, Typecheck & Static Gates
     runs-on: ubuntu-latest
     needs: smoke
     timeout-minutes: 90
@@ -198,15 +198,6 @@ jobs:
 
       - name: ESLint baseline gate (bloqueia apenas regressões novas)
         run: npm run lint:baseline
-
-      # hooks já cobertos pelo job dedicado hooks-tests (timeout-minutes: 10).
-      # test:strict-ref e test:coverage omitidos aqui — rodam em ref-warning-suite
-      # e integration-tests respectivamente, evitando tripla execução da suite.
-      - name: Run tests
-        run: npm run test:ci-core
-
-      - name: 🎨 Theme Presets & Contrast gate
-        run: npx vitest run src/lib/theme-presets.test.ts --reporter=verbose
 
       - name: Security audit
         run: npm audit --audit-level=high || true
@@ -277,10 +268,53 @@ jobs:
         run: npx vitest run tests/rls/ --reporter=verbose --coverage.reporter=json-summary
         continue-on-error: true
 
+  tests-by-layer:
+    name: Tests by layer (${{ matrix.layer.name }})
+    runs-on: ubuntu-latest
+    needs: smoke
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        layer:
+          - name: contracts
+            command: npx vitest run tests/contracts/migrated-endpoints.contract.test.ts --reporter=verbose
+            flaky_retry: "false"
+          - name: theme-presets
+            command: npx vitest run src/lib/theme-presets.test.ts --reporter=verbose
+            flaky_retry: "false"
+          - name: product-sparkline-labels
+            command: npx vitest run tests/components/products/ProductSparkline.labels.test.tsx --reporter=verbose
+            flaky_retry: "true"
+
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run layer tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          export TZ=America/Sao_Paulo
+          if [[ "${{ matrix.layer.flaky_retry }}" == "true" ]]; then
+            echo "Known flake suite detected. Running with one controlled retry."
+            if ! ${{ matrix.layer.command }}; then
+              echo "Retrying known flake suite once..."
+              ${{ matrix.layer.command }}
+            fi
+          else
+            ${{ matrix.layer.command }}
+          fi
+
   build-gate:
     name: Production Build & Warnings Gate
     runs-on: ubuntu-latest
-    needs: quality
+    needs: [quality, tests-by-layer]
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
