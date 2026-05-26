@@ -60,7 +60,7 @@ export function ProductSearch({ onSelect, selectedProduct }: ProductSearchProps)
               <p className="font-medium">{selectedProduct.name}</p>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <span>SKU: {selectedProduct.sku}</span>
-                <span>â€¢</span>
+                <span>•</span>
                 <span className="font-medium text-primary">
                   {formatCurrency(selectedProduct.price)}
                 </span>
@@ -132,7 +132,7 @@ export function ProductSearch({ onSelect, selectedProduct }: ProductSearchProps)
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{product.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {product.sku} â€¢ {formatCurrency(product.price)}
+                    {product.sku} • {formatCurrency(product.price)}
                   </p>
                 </div>
               </button>

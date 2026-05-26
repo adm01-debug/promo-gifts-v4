@@ -19,7 +19,7 @@ import type {
 } from '@/types/tecnica-unificada';
 
 // ============================================
-// RAW DB â†’ PORTUGUESE DOMAIN TYPES (para hooks)
+// RAW DB → PORTUGUESE DOMAIN TYPES (para hooks)
 // ============================================
 
 /**

@@ -50,7 +50,7 @@ export function calculateVolumeUsagePercent(itemsVolume: number, boxVolume: numb
 }
 
 // ============================================
-// VALIDAÃ‡Ã•ES
+// VALIDAÇÕES
 // ============================================
 
 /**
@@ -116,7 +116,7 @@ export function isAtCapacity(usagePercent: number): boolean {
 }
 
 // ============================================
-// FORMATAÃ‡ÃƒO
+// FORMATAÇÃO
 // ============================================
 
 /**
@@ -157,12 +157,12 @@ export function getVolumeStatusLabel(percent: number): string {
 }
 
 // ============================================
-// PARSING DE DIMENSÃ•ES
+// PARSING DE DIMENSÕES
 // ============================================
 
 /**
  * Tenta extrair dimensões de uma string de dimensões
- * Formatos suportados: "10x20x5", "10 x 20 x 5", "10Ã—20Ã—5"
+ * Formatos suportados: "10x20x5", "10 x 20 x 5", "10×20×5"
  */
 export function parseDimensionsString(
   dimensionsStr: string | null | undefined,
@@ -174,7 +174,7 @@ export function parseDimensionsString(
     .toLowerCase()
     .replace(/\s+/g, '')
     .replace(/\u00d7/g, 'x')
-    .replace(/Ã—/g, 'x')
+    .replace(/×/g, 'x')
     .replace(/cm/g, '');
 
   // Tenta match com padrão NxNxN

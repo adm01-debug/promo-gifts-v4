@@ -87,7 +87,7 @@ export default function Auth() {
   const [blockedIP, setBlockedIP] = useState<string | null>(null);
   const [currentIP, setCurrentIP] = useState<string | null>(null);
   const [geoLocation, setGeoLocation] = useState<string | null>(null);
-  // Fallback social â†’ email/senha: mensagem amigável quando OAuth falha.
+  // Fallback social → email/senha: mensagem amigável quando OAuth falha.
   const [socialError, setSocialError] = useState<OAuthErrorCopy | null>(null);
 
   // External Database Check State
@@ -138,7 +138,7 @@ export default function Auth() {
       const copy = resolveOAuthError(message);
       setSocialError(copy);
       // Fallback automático em falhas recuperáveis (timeout/silencioso):
-      // o usuário não precisa clicar â€” o foco vai direto pro e-mail.
+      // o usuário não precisa clicar — o foco vai direto pro e-mail.
       if (opts?.autoFallback && !copy.isConfig) {
         toast({
           title: 'Login com Google indisponível',
@@ -336,14 +336,14 @@ export default function Auth() {
             <div className="space-y-3">
               <p className="font-medium">{description}</p>
               <div className="rounded-lg border border-white/5 bg-black/40 p-2 font-mono text-[10px] text-white/50">
-                DIAGNÃ“STICO: {diagnosis}
+                DIAGNÓSTICO: {diagnosis}
               </div>
               <button
                 type="button"
                 className={authButtonClass('h-auto p-0 text-xs text-white/60 hover:text-white')}
                 onClick={() => navigate('/admin/status')}
               >
-                Verificar status do sistema â†’
+                Verificar status do sistema →
               </button>
             </div>
           ),
@@ -746,7 +746,7 @@ export default function Auth() {
                           id="login-password"
                           data-testid="login-password-input"
                           type={showPassword ? 'text' : 'password'}
-                          placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                          placeholder="••••••••"
                           autoComplete="current-password"
                           className="border-white/10 bg-white/5 pl-10 pr-10 transition-all duration-300 placeholder:text-white/20 focus:border-primary/50 focus:ring-primary/20"
                           {...loginForm.register('password')}
@@ -849,7 +849,7 @@ export default function Auth() {
             </div>
           )}
 
-          {/* Backend Status Widget â€” apenas visível para devs (gate via useDevGate) */}
+          {/* Backend Status Widget — apenas visível para devs (gate via useDevGate) */}
           {isDevAllowed && (
             <div
               className="mx-auto flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 opacity-0 shadow-xl backdrop-blur-md"

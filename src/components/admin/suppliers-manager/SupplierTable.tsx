@@ -103,7 +103,7 @@ export function SupplierTable({
                       {supplier.email && <p>{supplier.email}</p>}
                       {supplier.phone && <p className="text-muted-foreground">{supplier.phone}</p>}
                       {!supplier.email && !supplier.phone && (
-                        <p className="text-muted-foreground">â€”</p>
+                        <p className="text-muted-foreground">—</p>
                       )}
                     </div>
                   </TableCell>
@@ -111,7 +111,7 @@ export function SupplierTable({
                     {supplier.default_markup_percent !== null ? (
                       <span className="font-mono text-sm">{supplier.default_markup_percent}%</span>
                     ) : (
-                      'â€”'
+                      '—'
                     )}
                   </TableCell>
                   <TableCell className="text-center">
@@ -129,7 +129,7 @@ export function SupplierTable({
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    <span className="font-mono text-sm">{supplier.priority ?? 'â€”'}</span>
+                    <span className="font-mono text-sm">{supplier.priority ?? '—'}</span>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">

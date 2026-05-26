@@ -186,7 +186,7 @@ export function QuantityAndResult({
                 {/* Produto */}
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">
-                    Produtos ({formatNumber(quantity)} Ã— {formatCurrency(product.price)})
+                    Produtos ({formatNumber(quantity)} × {formatCurrency(product.price)})
                   </span>
                   <span>{formatCurrency(productTotal)}</span>
                 </div>
@@ -203,7 +203,7 @@ export function QuantityAndResult({
 
                     <div className="flex justify-between pl-4 text-sm">
                       <span className="text-muted-foreground">
-                        {formatNumber(quantity)} Ã— {formatCurrency(priceData.unit_price)}
+                        {formatNumber(quantity)} × {formatCurrency(priceData.unit_price)}
                         <span className="ml-1 text-xs">(Faixa {priceData.tier_used})</span>
                       </span>
                       <span>{formatCurrency(priceData.subtotal_pecas)}</span>
@@ -283,7 +283,7 @@ export function QuantityAndResult({
       {/* Info box sobre a lógica v5.1 */}
       {priceData && (
         <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
-          <p className="mb-1 font-medium">ðŸ“Š Sistema de Preços v5.1</p>
+          <p className="mb-1 font-medium">📊 Sistema de Preços v5.1</p>
           <p>
             O setup é aplicado como <strong>faturamento mínimo</strong>, não é somado ao total.
             Se o subtotal das peças for menor que o mínimo, o total será igual ao faturamento

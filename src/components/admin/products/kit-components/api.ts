@@ -82,7 +82,7 @@ export async function deletePrintArea(id: string): Promise<void> {
   if (!data?.success) throw new Error(data?.error || 'Erro ao excluir área');
 }
 
-// â”€â”€ Kit Component Media (external DB) â”€â”€
+// ── Kit Component Media (external DB) ──
 
 export interface ComponentMedia {
   id: string;

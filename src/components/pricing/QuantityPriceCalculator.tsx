@@ -1,5 +1,5 @@
 ﻿/**
- * QuantityPriceCalculator â€” Main orchestrator.
+ * QuantityPriceCalculator — Main orchestrator.
  * Sub-components extracted to calculator/ folder.
  */
 import { useState, useCallback } from 'react';
