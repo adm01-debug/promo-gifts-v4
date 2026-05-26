@@ -93,12 +93,12 @@ Responda APENAS em JSON com este formato:
   "confidence": 0.0 a 1.0 (seu nível de certeza),
   "rationale": "Breve explicação do porquê desta classificação",
   "visualEvidence": {
-    "material": "evidência visual do material",
-    "silhouette": "evidência visual da forma/silhueta",
-    "finish": "evidência visual do acabamento"
+    "material": "trecho curto (5-7 palavras) da evidência visual do material",
+    "silhouette": "trecho curto (5-7 palavras) da evidência visual da forma/silhueta",
+    "finish": "trecho curto (5-7 palavras) da evidência visual do acabamento"
   },
   "visualHighlights": [
-    {"label": "nome do ponto", "x": 0-100, "y": 0-100, "description": "descrição curta"}
+    {"label": "nome do ponto", "x": 0-100, "y": 0-100, "description": "descrição curta (3-5 palavras)"}
   ]
 }`
           },
