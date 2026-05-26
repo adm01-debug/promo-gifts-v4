@@ -3,13 +3,25 @@
  */
 
 export {
-  SkeletonShimmer,
-  TextSkeleton,
+  ProductCardSkeleton,
+  ProductGridSkeleton,
+  QuoteCardSkeleton,
+  QuoteListSkeleton,
   TableSkeleton,
+  TableRowSkeleton,
+  StatCardSkeleton,
   StatsCardSkeleton,
-  ChartSkeleton,
+  StatsGridSkeleton,
+  ClientCardSkeleton,
+  OrderTimelineSkeleton,
+  DashboardSkeleton,
   PageHeaderSkeleton,
-} from "./SkeletonShimmer";
+  ProductTableSkeleton,
+  ProductListItemSkeleton,
+  ProductListSkeleton,
+  TextSkeleton,
+  ChartSkeleton,
+} from "./ModernSkeletons";
 
 export {
   LoadingOverlay,
