@@ -1009,6 +1009,7 @@ export default function VisualSearchPage() {
           </div>
         </div>
       </div>
+    </div>
     </>
   );
 }
