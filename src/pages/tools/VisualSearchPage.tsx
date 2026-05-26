@@ -963,19 +963,32 @@ export default function VisualSearchPage() {
                               </div>
                             )}
                             
-                            <div className="flex items-center justify-between border-t border-border/50 pt-4">
+                            <div className="flex items-center justify-between border-t border-white/5 pt-4">
                               <div className="flex flex-col">
-                                <span className="text-[9px] font-black text-muted-foreground/60 uppercase tracking-widest">Preço Sugerido</span>
-                                <span className="text-xl font-black tracking-tighter text-foreground">
+                                <span className="text-[8px] font-black text-white/30 uppercase tracking-[0.2em] font-mono">Unidade Fiscal</span>
+                                <span className="text-xl font-black tracking-tighter text-white/90">
                                   {formatCurrency(product.price)}
                                 </span>
                               </div>
-                              <motion.div 
-                                whileHover={{ x: 3 }}
-                                className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/5 text-primary transition-all group-hover:bg-primary group-hover:text-primary-foreground shadow-sm"
-                              >
-                                <ArrowRight className="h-5 w-5" />
-                              </motion.div>
+                              <div className="flex items-center gap-2">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8 rounded-full border border-white/5 text-white/40 hover:text-emerald-400 hover:border-emerald-400/30"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toast.success('Simulação de Orçamento Iniciada');
+                                  }}
+                                >
+                                  <FileText className="h-4 w-4" />
+                                </Button>
+                                <motion.div 
+                                  whileHover={{ x: 3 }}
+                                  className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400 transition-all group-hover:bg-emerald-500 group-hover:text-black shadow-lg shadow-emerald-500/10"
+                                >
+                                  <ArrowRight className="h-5 w-5" />
+                                </motion.div>
+                              </div>
                             </div>
                           </CardContent>
                         </Card>
