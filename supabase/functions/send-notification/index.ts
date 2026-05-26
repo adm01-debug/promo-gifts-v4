@@ -1,3 +1,6 @@
+// supabase/functions/send-notification/index.ts
+// BUG-EF-003 FIXED: Removido o primeiro handler OPTIONS duplicado (sem CORS headers)
+//   que tornava o segundo handler (correto) inacessivel.
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { z } from "npm:zod@3.23.8";
@@ -22,15 +25,21 @@ function jsonRes(corsHeaders: Record<string, string>, body: unknown, status = 20
 }
 
 Deno.serve(async (req) => {
-  // Cron: exige x-cron-secret para evitar chamadas diretas não autorizadas
-  if (req.method === "OPTIONS") return new Response(null, { status: 204 });
-  const cronAuth = await authorizeCron(req, { corsHeaders: {}, secretEnvName: "CRON_SECRET", headerName: "x-cron-secret" });
-  if (!cronAuth.ok) return cronAuth.response;
-
+  // BUG-EF-003 FIX: Apenas UM handler OPTIONS, com getCorsHeaders(req) correto.
+  // Antes havia dois: o primeiro retornava 204 sem headers CORS (bloqueando preflight),
+  // o segundo nunca era alcancado.
   const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
+
+  // Cron: exige x-cron-secret para evitar chamadas diretas nao autorizadas
+  const cronAuth = await authorizeCron(req, {
+    corsHeaders,
+    secretEnvName: "CRON_SECRET",
+    headerName: "x-cron-secret",
+  });
+  if (!cronAuth.ok) return cronAuth.response;
 
   try {
     const supabase = createClient(
@@ -54,10 +63,10 @@ Deno.serve(async (req) => {
 
     // If DND is active and not urgent, skip
     if (isDND && payload.type !== 'urgent') {
-      return jsonRes(corsHeaders, { 
-        success: true, 
+      return jsonRes(corsHeaders, {
+        success: true,
         skipped: true,
-        reason: 'DND active' 
+        reason: 'DND active',
       });
     }
 
@@ -79,13 +88,13 @@ Deno.serve(async (req) => {
 
     if (error) throw error;
 
-    return jsonRes(corsHeaders, { 
-      success: true, 
+    return jsonRes(corsHeaders, {
+      success: true,
       notification_id: notification.id,
     });
 
   } catch (error) {
-    console.error('send-notification error:', error);
+    console.error('[send-notification] error:', error instanceof Error ? error.message : 'unknown');
     return jsonRes(corsHeaders, { error: 'internal_error' }, 500);
   }
 });

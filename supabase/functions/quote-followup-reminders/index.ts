@@ -1,9 +1,11 @@
+// supabase/functions/quote-followup-reminders/index.ts
+// BUG-EF-007 FIXED: supabase-js@2.45.0 -> @2.49.4
 /**
  * quote-followup-reminders
- * Cria notificações para vendedores cujos orçamentos enviados há ≥2 dias
- * ainda não foram visualizados pelo cliente. Idempotente por dia (não duplica).
+ * Cria notificacoes para vendedores cujos orcamentos enviados ha >=2 dias
+ * ainda nao foram visualizados pelo cliente. Idempotente por dia (nao duplica).
  */
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
 import { authorizeCron } from "../_shared/dispatcher-auth.ts";
 
@@ -12,7 +14,7 @@ const corsHeaders = buildPublicCorsHeaders();
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  // Cron: exige x-cron-secret para evitar chamadas diretas não autorizadas
+  // Cron: exige x-cron-secret para evitar chamadas diretas nao autorizadas
   const cronAuth = await authorizeCron(req, {
     corsHeaders: {},
     secretEnvName: "CRON_SECRET",
@@ -28,7 +30,7 @@ Deno.serve(async (req) => {
 
     const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
 
-    // 1) Orçamentos enviados há ≥2d
+    // 1) Orcamentos enviados ha >=2d
     const { data: quotes, error: qErr } = await supabase
       .from("quotes")
       .select("id, quote_number, client_name, seller_id, updated_at")
@@ -43,14 +45,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    const quoteIds = quotes.map((q) => q.id);
-
-    // 2) Todos os orçamentos com ≥2d são candidatos
-    // (Tokens públicos foram removidos em 07/05/2026 — não há mais sinal de "visualização externa".
-    //  A heurística agora é puramente temporal: orçamento parado há ≥2d gera lembrete.)
     const candidates = quotes;
 
-    // 3) Idempotência: ignora os que já têm reminder hoje
+    // 2) Idempotencia: ignora os que ja tem reminder hoje
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const { data: existing } = await supabase
@@ -67,8 +64,8 @@ Deno.serve(async (req) => {
         seller_id: c.seller_id!,
         reminder_type: "no_view",
         scheduled_for: new Date().toISOString(),
-        title: `Orçamento ${c.quote_number} sem visualização`,
-        notes: `Cliente ${c.client_name || "—"} ainda não abriu o link. Considere enviar follow-up.`,
+        title: `Orcamento ${c.quote_number} sem visualizacao`,
+        notes: `Cliente ${c.client_name || "--"} ainda nao abriu o link. Considere enviar follow-up.`,
         is_sent: true,
         sent_at: new Date().toISOString(),
       }));
