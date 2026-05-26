@@ -235,6 +235,7 @@ export default function VisualSearchPage() {
 
   const processImage = async (base64: string, manualKeywords?: string) => {
     setIsSearching(true);
+    setAnalysisError(null);
     // When re-analyzing, we don't clear results immediately to show the "Reanalyzing" state
     if (!results) setResults(null);
 
@@ -254,6 +255,23 @@ export default function VisualSearchPage() {
       toast.success('Análise concluída com sucesso!');
     } catch (err: any) {
       console.error('Visual search error:', err);
+      
+      let friendlyMessage = 'Ocorreu um problema na análise da imagem.';
+      let tip = 'Tente novamente com outra foto ou verifique sua conexão.';
+      
+      if (err.message?.includes('400') || err.message?.includes('payload too large')) {
+        friendlyMessage = 'A imagem é muito grande ou pesada para processar.';
+        tip = 'Dica: Tente usar uma foto com resolução menor ou em formato JPG/PNG.';
+      } else if (err.message?.includes('500') || err.status === 500) {
+        friendlyMessage = 'Nossos servidores de IA estão temporariamente ocupados.';
+        tip = 'Dica: Aguarde alguns segundos e clique em "Tentar Novamente". Verifique se o produto está bem centralizado.';
+      } else if (err.message?.includes('network') || err.name === 'TypeError') {
+        friendlyMessage = 'Houve uma falha de conexão.';
+        tip = 'Dica: Verifique seu sinal de internet e tente reenviar a foto.';
+      }
+
+      setAnalysisError({ message: friendlyMessage, tip });
+      
       toast.error('Erro ao analisar imagem', {
         description: err.message || 'Tente novamente com outra imagem.'
       });
@@ -266,6 +284,7 @@ export default function VisualSearchPage() {
     setPreviewUrl(null);
     setResults(null);
     setIsSearching(false);
+    setAnalysisError(null);
     // Preserving filters can be useful for re-analysis, but let's clear on hard reset
     setSelectedCategoryIds([]);
     setColorSelection({ groups: [], variations: [], nuances: [] });
