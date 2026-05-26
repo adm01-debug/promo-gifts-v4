@@ -54,20 +54,21 @@ export function useOptimizationMetrics() {
 
       const cacheHits24h = hits ?? 0;
       const totalSamples24h = total ?? 0;
-      const cacheHitRate = totalSamples24h > 0
-        ? Math.round((cacheHits24h / totalSamples24h) * 1000) / 10
-        : null;
-      const retriesSaved24h = (retries ?? []).reduce(
-        (sum, r) => sum + (r.retry_count ?? 0),
-        0,
-      );
+      const cacheHitRate =
+        totalSamples24h > 0 ? Math.round((cacheHits24h / totalSamples24h) * 1000) / 10 : null;
+      const retriesSaved24h = (retries ?? []).reduce((sum, r) => sum + (r.retry_count ?? 0), 0);
 
       return { cacheHits24h, totalSamples24h, cacheHitRate, retriesSaved24h };
     },
   });
 
   return {
-    metrics: data ?? { cacheHits24h: 0, totalSamples24h: 0, cacheHitRate: null, retriesSaved24h: 0 },
+    metrics: data ?? {
+      cacheHits24h: 0,
+      totalSamples24h: 0,
+      cacheHitRate: null,
+      retriesSaved24h: 0,
+    },
     isLoading,
     refetch,
   };

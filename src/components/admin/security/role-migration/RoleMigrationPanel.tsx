@@ -50,7 +50,15 @@ import {
   type MigrationItemInput,
 } from '@/hooks/admin';
 
-const ROLES: AppRole[] = ['admin', 'manager', 'supervisor', 'coordenador', 'agente', 'vendedor', 'dev'];
+const ROLES: AppRole[] = [
+  'admin',
+  'manager',
+  'supervisor',
+  'coordenador',
+  'agente',
+  'vendedor',
+  'dev',
+];
 const OPERATIONS = [
   { value: 'add', label: 'Adicionar papel', description: 'INSERT user_roles (mantém os demais)' },
   {

@@ -53,7 +53,11 @@ function safeDecode(path: string): string {
 export function isAuthRoutePath(path: string): boolean {
   const lower = path.toLowerCase();
   return AUTH_BLOCKED_PREFIXES.some(
-    (p) => lower === p || lower.startsWith(`${p}/`) || lower.startsWith(`${p}?`) || lower.startsWith(`${p}#`),
+    (p) =>
+      lower === p ||
+      lower.startsWith(`${p}/`) ||
+      lower.startsWith(`${p}?`) ||
+      lower.startsWith(`${p}#`),
   );
 }
 

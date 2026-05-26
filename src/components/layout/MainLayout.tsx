@@ -85,7 +85,11 @@ export function MainLayout({ children }: MainLayoutProps) {
 
       <div className="flex">
         <div className="print:hidden">
-          <Suspense fallback={<div className="hidden h-screen w-16 lg:w-64 flex-shrink-0 lg:block bg-sidebar/5 border-r border-sidebar-border/10" />}>
+          <Suspense
+            fallback={
+              <div className="hidden h-screen w-16 flex-shrink-0 border-r border-sidebar-border/10 bg-sidebar/5 lg:block lg:w-64" />
+            }
+          >
             <SidebarReorganized
               isOpen={sidebarOpen}
               onToggle={() => setSidebarOpen(!sidebarOpen)}

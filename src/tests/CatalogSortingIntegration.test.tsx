@@ -10,10 +10,37 @@ import React from 'react';
 
 const { mockProducts } = vi.hoisted(() => ({
   mockProducts: [
-    { id: 'p1', name: 'Cheap Product', price: 10, stock: 100, images: [], colors: [], category_id: '1', variations: [] },
-    { id: 'p2', name: 'Expensive Product', price: 1000, stock: 50, images: [], colors: [], category_id: '1', variations: [] },
-    { id: 'p3', name: 'Medium Product', price: 500, stock: 200, images: [], colors: [], category_id: '1', variations: [] },
-  ]
+    {
+      id: 'p1',
+      name: 'Cheap Product',
+      price: 10,
+      stock: 100,
+      images: [],
+      colors: [],
+      category_id: '1',
+      variations: [],
+    },
+    {
+      id: 'p2',
+      name: 'Expensive Product',
+      price: 1000,
+      stock: 50,
+      images: [],
+      colors: [],
+      category_id: '1',
+      variations: [],
+    },
+    {
+      id: 'p3',
+      name: 'Medium Product',
+      price: 500,
+      stock: 200,
+      images: [],
+      colors: [],
+      category_id: '1',
+      variations: [],
+    },
+  ],
 }));
 
 // Mock the products hook
@@ -25,7 +52,7 @@ vi.mock('@/hooks/products/useProductsLightweight', () => ({
     hasNextPage: false,
     fetchNextPage: vi.fn(),
     refetch: vi.fn(),
-  }))
+  })),
 }));
 
 // Mock components to simplify the tree
@@ -33,42 +60,70 @@ vi.mock('@/components/catalog/CatalogContent', () => ({
   CatalogContent: vi.fn(({ paginatedProducts }) => (
     <div data-testid="catalog-content">
       {paginatedProducts.map((p: any) => (
-        <div key={p.id} data-testid="product-item">{p.name}</div>
+        <div key={p.id} data-testid="product-item">
+          {p.name}
+        </div>
       ))}
     </div>
-  ))
+  )),
 }));
 
 vi.mock('@/components/catalog/CatalogHeader', () => ({
-  CatalogHeader: () => <div data-testid="catalog-header" />
+  CatalogHeader: () => <div data-testid="catalog-header" />,
 }));
 
 vi.mock('@/components/compare/FloatingCompareBar', () => ({
-  FloatingCompareBar: () => null
+  FloatingCompareBar: () => null,
 }));
 
 vi.mock('@/components/catalog/CatalogActiveFilters', () => ({
-  CatalogActiveFilters: () => null
+  CatalogActiveFilters: () => null,
 }));
 
 // Mock hooks
-vi.mock('@/hooks/products/useCatalogRealStats', () => ({ useCatalogRealStats: vi.fn(() => ({ data: null })) }));
-vi.mock('@/hooks/products/useColorEnrichment', () => ({ useColorEnrichment: vi.fn(() => ({ data: new Map() })) }));
-vi.mock('@/contexts/AuthContext', () => ({ useAuth: vi.fn(() => ({ user: { id: 'test-user' } })), AuthProvider: ({ children }: any) => <>{children}</> }));
-vi.mock('@/contexts/SellerCartContext', () => ({ useSellerCartContext: vi.fn(() => ({ items: [] })), SellerCartProvider: ({ children }: any) => <>{children}</> }));
-vi.mock('@/contexts/CollectionsContext', () => ({ useCollectionsContext: vi.fn(() => ({ collections: [], defaultColors: [], defaultIcons: [], isProductInCollection: () => false })), CollectionsProvider: ({ children }: any) => <>{children}</> }));
+vi.mock('@/hooks/products/useCatalogRealStats', () => ({
+  useCatalogRealStats: vi.fn(() => ({ data: null })),
+}));
+vi.mock('@/hooks/products/useColorEnrichment', () => ({
+  useColorEnrichment: vi.fn(() => ({ data: new Map() })),
+}));
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: vi.fn(() => ({ user: { id: 'test-user' } })),
+  AuthProvider: ({ children }: any) => <>{children}</>,
+}));
+vi.mock('@/contexts/SellerCartContext', () => ({
+  useSellerCartContext: vi.fn(() => ({ items: [] })),
+  SellerCartProvider: ({ children }: any) => <>{children}</>,
+}));
+vi.mock('@/contexts/CollectionsContext', () => ({
+  useCollectionsContext: vi.fn(() => ({
+    collections: [],
+    defaultColors: [],
+    defaultIcons: [],
+    isProductInCollection: () => false,
+  })),
+  CollectionsProvider: ({ children }: any) => <>{children}</>,
+}));
 vi.mock('@/contexts/ProductsContext', () => {
   const ReactMock = require('react');
-  const mockValue = { registerProducts: vi.fn(), products: mockProducts, getProductsByIds: vi.fn(() => []) };
+  const mockValue = {
+    registerProducts: vi.fn(),
+    products: mockProducts,
+    getProductsByIds: vi.fn(() => []),
+  };
   const Context = ReactMock.createContext(mockValue);
   return {
     useProductsContext: vi.fn(() => mockValue),
     useProductsContextSafe: vi.fn(() => mockValue),
-    ProductsProvider: ({ children }: any) => <Context.Provider value={mockValue}>{children}</Context.Provider>,
+    ProductsProvider: ({ children }: any) => (
+      <Context.Provider value={mockValue}>{children}</Context.Provider>
+    ),
     ProductsContext: Context,
   };
 });
-vi.mock('@/hooks/favorites', () => ({ useFavoriteQuickAdd: vi.fn(() => ({ handleQuickAdd: vi.fn() })) }));
+vi.mock('@/hooks/favorites', () => ({
+  useFavoriteQuickAdd: vi.fn(() => ({ handleQuickAdd: vi.fn() })),
+}));
 vi.mock('@/hooks/intelligence/useSparklineSales', () => ({
   useSparklineSales: vi.fn(() => ({ data: new Map() })),
   useSparklineData: vi.fn(() => ({ data: [], isLoading: false })),
@@ -94,7 +149,7 @@ describe('Catalog Sorting E2E Integration', () => {
             </TooltipProvider>
           </MemoryRouter>
         </QueryClientProvider>
-      </HelmetProvider>
+      </HelmetProvider>,
     );
 
     await waitFor(() => expect(screen.getByText('Cheap Product')).toBeDefined());
@@ -105,7 +160,7 @@ describe('Catalog Sorting E2E Integration', () => {
     await user.click(screen.getByText('Menor Preço'));
 
     await waitFor(() => {
-      const items = screen.getAllByTestId('product-item').map(i => i.textContent);
+      const items = screen.getAllByTestId('product-item').map((i) => i.textContent);
       expect(items[0]).toBe('Cheap Product');
       expect(items[1]).toBe('Medium Product');
       expect(items[2]).toBe('Expensive Product');
@@ -115,7 +170,7 @@ describe('Catalog Sorting E2E Integration', () => {
     await user.click(screen.getByText('Maior Preço'));
 
     await waitFor(() => {
-      const items = screen.getAllByTestId('product-item').map(i => i.textContent);
+      const items = screen.getAllByTestId('product-item').map((i) => i.textContent);
       expect(items[0]).toBe('Expensive Product');
       expect(items[1]).toBe('Medium Product');
       expect(items[2]).toBe('Cheap Product');

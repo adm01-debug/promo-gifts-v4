@@ -10,16 +10,16 @@
  */
 
 export interface TrendingScoreInput {
-  recentCount: number;       // eventos nos últimos N dias
-  baselineCount: number;     // eventos nos N dias anteriores
-  recentDays: number;        // janela "recente" (ex: 7)
-  baselineDays: number;      // janela "baseline" (ex: 23 — para somar 30 dias)
-  totalVolume?: number;      // volume absoluto (para peso mínimo)
+  recentCount: number; // eventos nos últimos N dias
+  baselineCount: number; // eventos nos N dias anteriores
+  recentDays: number; // janela "recente" (ex: 7)
+  baselineDays: number; // janela "baseline" (ex: 23 — para somar 30 dias)
+  totalVolume?: number; // volume absoluto (para peso mínimo)
 }
 
 export interface TrendingScoreResult {
-  score: number;             // 0..∞ (1.0 = estável; >1 cresceu; <1 caiu)
-  growthPercent: number;     // crescimento % vs baseline
+  score: number; // 0..∞ (1.0 = estável; >1 cresceu; <1 caiu)
+  growthPercent: number; // crescimento % vs baseline
   classification: 'rising' | 'stable' | 'falling' | 'new';
 }
 
@@ -74,7 +74,10 @@ export function calculateTrendingScore({
  * Calcula delta percentual entre período atual e anterior.
  * Retorna null quando não há dados suficientes.
  */
-export function calculateDelta(current: number, previous: number): {
+export function calculateDelta(
+  current: number,
+  previous: number,
+): {
   delta: number;
   direction: 'up' | 'down' | 'neutral';
   isSignificant: boolean;

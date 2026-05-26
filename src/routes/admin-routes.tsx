@@ -1,7 +1,7 @@
-import { Navigate, Route } from "react-router-dom";
-import { AdminRoute } from "@/components/layout/AdminRoute";
-import { DevRoute } from "@/components/layout/DevRoute";
-import { DeprecatedRoute } from "@/components/layout/DeprecatedRoute";
+import { Navigate, Route } from 'react-router-dom';
+import { AdminRoute } from '@/components/layout/AdminRoute';
+import { DevRoute } from '@/components/layout/DevRoute';
+import { DeprecatedRoute } from '@/components/layout/DeprecatedRoute';
 import {
   AdminAiUsagePage,
   AdminClientPerformancePage,
@@ -40,7 +40,7 @@ import {
   StorageTestPage,
   SystemStatusPage,
   TrendsPage,
-} from "./lazy-pages";
+} from './lazy-pages';
 
 /**
  * Admin routes — supervisor + dev (gestão de negócio).

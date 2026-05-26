@@ -133,7 +133,10 @@ export function ProductFormStepContent({
             skuManuallyEdited={skuManuallyEdited}
             onSkuManualEdit={onSkuManualEdit}
           />
-          <ProductDimensionsSection {...(formProps as unknown as FormSectionProps)} isBoxProduct={isBoxProduct} />
+          <ProductDimensionsSection
+            {...(formProps as unknown as FormSectionProps)}
+            isBoxProduct={isBoxProduct}
+          />
         </>
       );
     case 'commercial':

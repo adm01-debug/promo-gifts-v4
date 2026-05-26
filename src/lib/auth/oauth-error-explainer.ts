@@ -125,8 +125,7 @@ const REDIRECT_URI_MISMATCH = (desc: string): OAuthErrorExplanation => ({
   description:
     desc ||
     'O endereço de retorno usado neste login não está na lista de URIs autorizadas no console do provedor.',
-  hint:
-    'Peça ao administrador para adicionar a URL de callback do Lovable Cloud à lista de "Authorized redirect URIs" do provedor (ex.: Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client).',
+  hint: 'Peça ao administrador para adicionar a URL de callback do Lovable Cloud à lista de "Authorized redirect URIs" do provedor (ex.: Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client).',
   severity: 'config',
 });
 
@@ -136,8 +135,7 @@ const UNAUTHORIZED_CLIENT = (desc: string): OAuthErrorExplanation => ({
   description:
     desc ||
     'O Client ID configurado não está autorizado a executar este fluxo de login no provedor.',
-  hint:
-    'Confirme com o administrador se o Client ID/Secret no Lovable Cloud bate com o do console do provedor e se o tipo de aplicação é "Web application".',
+  hint: 'Confirme com o administrador se o Client ID/Secret no Lovable Cloud bate com o do console do provedor e se o tipo de aplicação é "Web application".',
   severity: 'config',
 });
 
@@ -147,8 +145,7 @@ const INVALID_CLIENT = (desc: string): OAuthErrorExplanation => ({
   description:
     desc ||
     'O Client ID ou Client Secret usado para esta autenticação não foi reconhecido pelo provedor.',
-  hint:
-    'Peça ao administrador para revalidar as credenciais OAuth no Lovable Cloud (Cloud → Users → Authentication Settings → Sign In Methods).',
+  hint: 'Peça ao administrador para revalidar as credenciais OAuth no Lovable Cloud (Cloud → Users → Authentication Settings → Sign In Methods).',
   severity: 'config',
 });
 
@@ -158,8 +155,7 @@ const PROVIDER_NOT_ENABLED = (desc: string): OAuthErrorExplanation => ({
   description:
     desc ||
     'Este método de login não está habilitado no backend. Nenhuma sessão pode ser criada até que o admin ative o provedor.',
-  hint:
-    'Administrador: ative o provedor em Lovable Cloud → Users → Authentication Settings → Sign In Methods e salve as credenciais antes de tentar novamente.',
+  hint: 'Administrador: ative o provedor em Lovable Cloud → Users → Authentication Settings → Sign In Methods e salve as credenciais antes de tentar novamente.',
   severity: 'config',
 });
 
@@ -178,8 +174,7 @@ const INVALID_REQUEST = (desc: string): OAuthErrorExplanation => ({
   description:
     desc ||
     'A requisição enviada ao provedor estava incompleta ou malformada. Isso geralmente é um problema de configuração.',
-  hint:
-    'Atualize a página e tente novamente. Se persistir, peça ao admin para verificar a URL de callback e os escopos configurados.',
+  hint: 'Atualize a página e tente novamente. Se persistir, peça ao admin para verificar a URL de callback e os escopos configurados.',
   severity: 'config',
 });
 
@@ -199,8 +194,7 @@ const INVALID_GRANT = (desc: string): OAuthErrorExplanation => ({
   description:
     desc ||
     'O código retornado pelo provedor já foi usado, expirou ou não corresponde ao verificador PKCE desta sessão.',
-  hint:
-    'Volte para a tela de login e tente novamente — não reabra a URL de callback diretamente.',
+  hint: 'Volte para a tela de login e tente novamente — não reabra a URL de callback diretamente.',
   severity: 'transient',
 });
 
@@ -223,8 +217,7 @@ const USER_BANNED = (desc: string): OAuthErrorExplanation => ({
 const EXPIRED_FLOW = (desc: string): OAuthErrorExplanation => ({
   code: 'flow_state_expired',
   title: 'Sessão de login expirada',
-  description:
-    desc || 'A janela de login ficou aberta tempo demais e o estado do fluxo expirou.',
+  description: desc || 'A janela de login ficou aberta tempo demais e o estado do fluxo expirou.',
   hint: 'Recarregue a página de login e inicie um novo fluxo.',
   severity: 'transient',
 });
@@ -235,8 +228,7 @@ const TIMEOUT = (desc: string): OAuthErrorExplanation => ({
   description:
     desc ||
     'A sessão não foi confirmada a tempo. O provedor respondeu, mas o backend não conseguiu materializar a sessão.',
-  hint:
-    'Verifique sua conexão e tente novamente. Se persistir, peça ao admin para checar os logs do callback e a configuração do provedor.',
+  hint: 'Verifique sua conexão e tente novamente. Se persistir, peça ao admin para checar os logs do callback e a configuração do provedor.',
   severity: 'transient',
 });
 

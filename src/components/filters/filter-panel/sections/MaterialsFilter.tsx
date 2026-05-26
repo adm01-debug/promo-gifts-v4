@@ -173,7 +173,12 @@ export function MaterialsFilter({
                         className="flex flex-1 items-center justify-between text-left"
                         aria-label={`${isOpen ? 'Recolher' : 'Expandir'} tipos de ${group.group_name}`}
                       >
-                        <span className={cn('text-sm font-medium', hasSelection && 'text-brand-primary')}>
+                        <span
+                          className={cn(
+                            'text-sm font-medium',
+                            hasSelection && 'text-brand-primary',
+                          )}
+                        >
                           {group.group_name}
                         </span>
                         <div className="flex items-center gap-1.5">

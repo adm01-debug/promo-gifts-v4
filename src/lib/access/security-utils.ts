@@ -11,7 +11,7 @@ export function generateSecurityHash(input: string): string {
   let hash = 0;
   for (let i = 0; i < input.length; i++) {
     const char = input.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash; // Converte para inteiro de 32 bits
   }
   // Retorna hash curta em base36 (alfanumérico) e maiúsculas

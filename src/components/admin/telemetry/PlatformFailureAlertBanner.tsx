@@ -42,9 +42,9 @@ export function PlatformFailureAlertBanner({ windowMinutes = 60 }: Props) {
       )}
     >
       {breached ? <AlertTriangle className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
-      <div className="flex items-start justify-between gap-3 flex-wrap">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <AlertTitle className="flex items-center gap-2 flex-wrap">
+          <AlertTitle className="flex flex-wrap items-center gap-2">
             {breached
               ? 'Falhas do external-db-bridge acima do limite'
               : 'Saúde do external-db-bridge dentro do limite'}
@@ -52,27 +52,28 @@ export function PlatformFailureAlertBanner({ windowMinutes = 60 }: Props) {
               janela {windowMinutes}min
             </Badge>
             {!config.enabled && (
-              <Badge variant="outline" className="text-[10px] border-warning/40 text-warning">
+              <Badge variant="outline" className="border-warning/40 text-[10px] text-warning">
                 alerta desativado
               </Badge>
             )}
           </AlertTitle>
-          <AlertDescription className="text-xs mt-1 space-y-0.5">
+          <AlertDescription className="mt-1 space-y-0.5 text-xs">
             {metrics ? (
               <>
                 <div>
-                  503: <strong className="tabular-nums">{metrics.total503}</strong>{' '}
-                  ({metrics.rate503Pct.toFixed(2)}%) · cold-start:{' '}
-                  <strong className="tabular-nums">{metrics.totalColdStarts}</strong>{' '}
-                  ({metrics.rateColdStartPct.toFixed(2)}%) · volume:{' '}
-                  <strong className="tabular-nums">{metrics.totalCalls.toLocaleString('pt-BR')}</strong>
+                  503: <strong className="tabular-nums">{metrics.total503}</strong> (
+                  {metrics.rate503Pct.toFixed(2)}%) · cold-start:{' '}
+                  <strong className="tabular-nums">{metrics.totalColdStarts}</strong> (
+                  {metrics.rateColdStartPct.toFixed(2)}%) · volume:{' '}
+                  <strong className="tabular-nums">
+                    {metrics.totalCalls.toLocaleString('pt-BR')}
+                  </strong>
                 </div>
-                {breached && (
-                  <div className="text-destructive font-medium">⚠ {reason}</div>
-                )}
+                {breached && <div className="font-medium text-destructive">⚠ {reason}</div>}
                 {!breached && metrics.totalCalls < config.minSamples && (
                   <div className="text-muted-foreground">
-                    Volume abaixo de {config.minSamples} chamadas — alerta suspenso para evitar falsos positivos.
+                    Volume abaixo de {config.minSamples} chamadas — alerta suspenso para evitar
+                    falsos positivos.
                   </div>
                 )}
               </>
@@ -85,7 +86,7 @@ export function PlatformFailureAlertBanner({ windowMinutes = 60 }: Props) {
         <Popover onOpenChange={(open) => open && setDraft(config)}>
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm">
-              <Settings2 className="h-3.5 w-3.5 mr-1.5" />
+              <Settings2 className="mr-1.5 h-3.5 w-3.5" />
               Limites
             </Button>
           </PopoverTrigger>
@@ -98,11 +99,13 @@ export function PlatformFailureAlertBanner({ windowMinutes = 60 }: Props) {
             </div>
 
             <div className="flex items-center justify-between">
-              <Label htmlFor="alert-enabled" className="text-xs">Alerta ativado</Label>
+              <Label htmlFor="alert-enabled" className="text-xs">
+                Alerta ativado
+              </Label>
               <Switch
                 id="alert-enabled"
                 checked={draft.enabled}
-                onCheckedChange={(v) => setDraft(d => ({ ...d, enabled: v }))}
+                onCheckedChange={(v) => setDraft((d) => ({ ...d, enabled: v }))}
               />
             </div>
 
@@ -110,18 +113,28 @@ export function PlatformFailureAlertBanner({ windowMinutes = 60 }: Props) {
               <div>
                 <Label className="text-[11px]">Limite 503 (%)</Label>
                 <Input
-                  type="number" min={0} max={100} step={0.5}
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.5}
                   value={draft.threshold503Pct}
-                  onChange={e => setDraft(d => ({ ...d, threshold503Pct: Number(e.target.value) || 0 }))}
+                  onChange={(e) =>
+                    setDraft((d) => ({ ...d, threshold503Pct: Number(e.target.value) || 0 }))
+                  }
                   className="h-8"
                 />
               </div>
               <div>
                 <Label className="text-[11px]">Limite cold-start (%)</Label>
                 <Input
-                  type="number" min={0} max={100} step={0.5}
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.5}
                   value={draft.thresholdColdStartPct}
-                  onChange={e => setDraft(d => ({ ...d, thresholdColdStartPct: Number(e.target.value) || 0 }))}
+                  onChange={(e) =>
+                    setDraft((d) => ({ ...d, thresholdColdStartPct: Number(e.target.value) || 0 }))
+                  }
                   className="h-8"
                 />
               </div>
@@ -130,12 +143,16 @@ export function PlatformFailureAlertBanner({ windowMinutes = 60 }: Props) {
             <div>
               <Label className="text-[11px]">Volume mínimo (amostras)</Label>
               <Input
-                type="number" min={1} step={1}
+                type="number"
+                min={1}
+                step={1}
                 value={draft.minSamples}
-                onChange={e => setDraft(d => ({ ...d, minSamples: Math.max(1, Number(e.target.value) || 1) }))}
+                onChange={(e) =>
+                  setDraft((d) => ({ ...d, minSamples: Math.max(1, Number(e.target.value) || 1) }))
+                }
                 className="h-8"
               />
-              <p className="text-[10px] text-muted-foreground mt-0.5">
+              <p className="mt-0.5 text-[10px] text-muted-foreground">
                 Evita disparo quando há poucas chamadas (ex.: 1/2 = 50%).
               </p>
             </div>
@@ -144,7 +161,10 @@ export function PlatformFailureAlertBanner({ windowMinutes = 60 }: Props) {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => { setDraft(DEFAULT_ALERT_CONFIG); setConfig(DEFAULT_ALERT_CONFIG); }}
+                onClick={() => {
+                  setDraft(DEFAULT_ALERT_CONFIG);
+                  setConfig(DEFAULT_ALERT_CONFIG);
+                }}
               >
                 Restaurar padrões
               </Button>

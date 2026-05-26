@@ -51,7 +51,14 @@ export const VIDEO_TYPES = [
   { value: 'lifestyle', label: 'Lifestyle', icon: Sparkles, color: 'text-primary' },
 ];
 
-export const ACCEPTED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/mpeg', 'video/ogg'];
+export const ACCEPTED_VIDEO_TYPES = [
+  'video/mp4',
+  'video/webm',
+  'video/quicktime',
+  'video/x-msvideo',
+  'video/mpeg',
+  'video/ogg',
+];
 export const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 
 export function formatBytes(bytes: number | null): string {
@@ -69,7 +76,10 @@ export function extractThumbnailFromVideo(file: File): Promise<Blob | null> {
     video.playsInline = true;
     video.preload = 'auto';
 
-    const cleanup = () => { URL.revokeObjectURL(url); video.remove(); };
+    const cleanup = () => {
+      URL.revokeObjectURL(url);
+      video.remove();
+    };
 
     video.addEventListener('loadeddata', () => {
       video.currentTime = Math.min(1, video.duration || 0);
@@ -81,14 +91,34 @@ export function extractThumbnailFromVideo(file: File): Promise<Blob | null> {
         canvas.width = Math.min(video.videoWidth, 640);
         canvas.height = Math.round(canvas.width * (video.videoHeight / video.videoWidth));
         const ctx = canvas.getContext('2d');
-        if (!ctx) { cleanup(); resolve(null); return; }
+        if (!ctx) {
+          cleanup();
+          resolve(null);
+          return;
+        }
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob((blob) => { cleanup(); resolve(blob); }, 'image/jpeg', 0.8);
-      } catch { cleanup(); resolve(null); }
+        canvas.toBlob(
+          (blob) => {
+            cleanup();
+            resolve(blob);
+          },
+          'image/jpeg',
+          0.8,
+        );
+      } catch {
+        cleanup();
+        resolve(null);
+      }
     });
 
-    video.addEventListener('error', () => { cleanup(); resolve(null); });
-    setTimeout(() => { cleanup(); resolve(null); }, 10000);
+    video.addEventListener('error', () => {
+      cleanup();
+      resolve(null);
+    });
+    setTimeout(() => {
+      cleanup();
+      resolve(null);
+    }, 10000);
   });
 }
 

@@ -47,7 +47,8 @@ export function useExternalVariantStock(productId: string | undefined) {
         }>({
           table: 'product_variants',
           operation: 'select',
-          select: 'id, product_id, sku, supplier_sku, color_code, color_name, color_hex, size_code, stock_quantity, selected_thumbnail, images, bitrix_product_id',
+          select:
+            'id, product_id, sku, supplier_sku, color_code, color_name, color_hex, size_code, stock_quantity, selected_thumbnail, images, bitrix_product_id',
           filters: { product_id: productId, is_active: true },
           limit: 100,
         }),
@@ -101,16 +102,17 @@ export function useExternalVariantStock(productId: string | undefined) {
         }
       }
 
-      return variantsResult.records.map(v => {
+      return variantsResult.records.map((v) => {
         // 1) Vínculo direto por variant_id (mais confiável — XBZ e outros)
         const variantImage = imagesByVariantId.get(v.id) || null;
         // 2) Vínculo por color_code → supplier_code (Stricker, Asia, etc.)
         const colorImage = v.color_code ? imagesByCode.get(v.color_code.toUpperCase()) : null;
-        
+
         // selected_thumbnail só é válido se NÃO for a imagem principal do produto
         const isMainImage = v.selected_thumbnail ? primaryImages.has(v.selected_thumbnail) : false;
-        const validSelectedThumb = v.selected_thumbnail && !isMainImage ? v.selected_thumbnail : null;
-        
+        const validSelectedThumb =
+          v.selected_thumbnail && !isMainImage ? v.selected_thumbnail : null;
+
         // Prioridade: variantImage > colorImage > selected_thumbnail válido > null
         const thumbnail = variantImage || colorImage || validSelectedThumb || null;
         const imgs = v.images;

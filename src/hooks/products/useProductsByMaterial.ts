@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-import { materialService } from "@/services/materialService";
-import { useMemo } from "react";
+import { useQuery } from '@tanstack/react-query';
+import { materialService } from '@/services/materialService';
+import { useMemo } from 'react';
 
 export interface UseProductsByMaterialOptions {
   /** Slugs dos tipos de material selecionados (ex: "algodao", "poliester") */
@@ -30,7 +30,9 @@ export interface UseProductsByMaterialReturn {
  * Hook para buscar IDs de produtos que possuem os materiais selecionados.
  * Usa a tabela product_materials do banco externo.
  */
-export function useProductsByMaterial(options: UseProductsByMaterialOptions = {}): UseProductsByMaterialReturn {
+export function useProductsByMaterial(
+  options: UseProductsByMaterialOptions = {},
+): UseProductsByMaterialReturn {
   const { materialTypeSlugs = [], materialGroupSlugs = [], enabled = true } = options;
 
   // Só faz a query se há filtros ativos

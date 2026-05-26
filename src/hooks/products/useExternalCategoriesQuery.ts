@@ -1,6 +1,6 @@
 /**
  * Hook para buscar categorias do banco externo com React Query
- * 
+ *
  * Usa cache persistente para evitar re-fetches em remontagens
  */
 
@@ -77,9 +77,9 @@ export function useExternalCategoriesQuery() {
  */
 export function useCategoryById(categoryId: string | undefined) {
   const { data: categories = [] } = useExternalCategoriesQuery();
-  
+
   if (!categoryId) return null;
-  return categories.find(cat => cat.id === categoryId) || null;
+  return categories.find((cat) => cat.id === categoryId) || null;
 }
 
 /**
@@ -87,7 +87,7 @@ export function useCategoryById(categoryId: string | undefined) {
  */
 export function useCategoriesByIds(categoryIds: string[]) {
   const { data: categories = [] } = useExternalCategoriesQuery();
-  
+
   if (!categoryIds.length) return [];
-  return categories.filter(cat => categoryIds.includes(cat.id));
+  return categories.filter((cat) => categoryIds.includes(cat.id));
 }

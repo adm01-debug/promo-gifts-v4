@@ -1,5 +1,13 @@
-import { Route } from "react-router-dom";
-import { Auth, ResetPassword, ForgotPasswordConfirmation, SSOCallbackPage, Unauthorized, TermsPage, PrivacyPage } from "./lazy-pages";
+import { Route } from 'react-router-dom';
+import {
+  Auth,
+  ResetPassword,
+  ForgotPasswordConfirmation,
+  SSOCallbackPage,
+  Unauthorized,
+  TermsPage,
+  PrivacyPage,
+} from './lazy-pages';
 
 /**
  * Public routes — accessible without authentication.

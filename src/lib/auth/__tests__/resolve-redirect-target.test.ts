@@ -67,7 +67,7 @@ describe('resolveRedirectTarget — precedência pós-login', () => {
     it('state.from inválido (rota de auth) é rejeitado e cai para próxima fonte', () => {
       const result = resolveRedirectTarget({
         fromState: { pathname: '/auth' }, // bloqueado por isSafeRedirectPath
-        queryRedirect: '/produtos',       // fonte #2 assume
+        queryRedirect: '/produtos', // fonte #2 assume
       });
       expect(result).toBe('/produtos');
     });
@@ -167,7 +167,7 @@ describe('resolveRedirectTarget — precedência pós-login', () => {
       '/auth',
       '/auth/callback',
       '/auth?redirect=/x',
-      '/AUTH/callback',           // case-insensitive
+      '/AUTH/callback', // case-insensitive
       '/login',
       '/logout',
       '/signup',
@@ -176,10 +176,10 @@ describe('resolveRedirectTarget — precedência pós-login', () => {
       '/reset-password',
       '/forgot-password',
       '/unauthorized',
-      '/%61uth',                  // URL-encoded 'a' → /auth
-      '/%2Fauth',                 // encoded slash → //auth (protocol-relative)
-      '/%252Fauth',               // doubly-encoded
-      '/auth%2Fcallback',         // /auth/callback após decode
+      '/%61uth', // URL-encoded 'a' → /auth
+      '/%2Fauth', // encoded slash → //auth (protocol-relative)
+      '/%252Fauth', // doubly-encoded
+      '/auth%2Fcallback', // /auth/callback após decode
     ];
 
     it.each(authVariants)('state.from = %s é rejeitado e cai para fallback', (path) => {

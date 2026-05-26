@@ -40,7 +40,11 @@ function emit() {
   setTimeout(() => {
     emitScheduled = false;
     for (const l of listeners) {
-      try { l(); } catch { /* noop */ }
+      try {
+        l();
+      } catch {
+        /* noop */
+      }
     }
   }, EMIT_THROTTLE_MS);
 }
@@ -71,7 +75,9 @@ export function getSecretsManagerSamples(): readonly SecretsManagerCallSample[] 
 
 export function subscribeSecretsManagerCalls(listener: () => void): () => void {
   listeners.add(listener);
-  return () => { listeners.delete(listener); };
+  return () => {
+    listeners.delete(listener);
+  };
 }
 
 export function clearSecretsManagerSamples(): void {

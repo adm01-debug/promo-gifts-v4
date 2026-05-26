@@ -5,12 +5,13 @@
 import { logger } from '@/lib/logger';
 import { invokeExternalDb, invokeBatchBridge, type InvokeResult } from './bridge';
 
-const PRODUCT_SELECT_LIGHTWEIGHT = 'id, name, sku, supplier_reference, sale_price, cost_price, primary_image_url, supplier_id, category_id, main_category_id, brand, is_active, active, stock_quantity, min_quantity, is_kit, gender';
-const LIGHTWEIGHT_PAGE_SIZE = 500;          // antes 100 — reduz round-trips em 5x
-const LIGHTWEIGHT_MAX_CONCURRENCY = 3;       // antes 2 — bridge tem singleton + warmup
+const PRODUCT_SELECT_LIGHTWEIGHT =
+  'id, name, sku, supplier_reference, sale_price, cost_price, primary_image_url, supplier_id, category_id, main_category_id, brand, is_active, active, stock_quantity, min_quantity, is_kit, gender';
+const LIGHTWEIGHT_PAGE_SIZE = 500; // antes 100 — reduz round-trips em 5x
+const LIGHTWEIGHT_MAX_CONCURRENCY = 3; // antes 2 — bridge tem singleton + warmup
 const LIGHTWEIGHT_MIN_SPLIT_PAGE_SIZE = 125;
 const LIGHTWEIGHT_MAX_TOTAL = 15000;
-const LIGHTWEIGHT_INITIAL_BURST = 4;         // 1ª onda paralela; depois sequencial até esvaziar
+const LIGHTWEIGHT_INITIAL_BURST = 4; // 1ª onda paralela; depois sequencial até esvaziar
 
 export interface LightweightProduct {
   id: string;
@@ -39,7 +40,9 @@ export interface LightweightProduct {
 
 function isTimeoutError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error ?? '');
-  return /(statement timeout|canceling statement|57014|bad gateway|boot_error|function failed to start)/i.test(message);
+  return /(statement timeout|canceling statement|57014|bad gateway|boot_error|function failed to start)/i.test(
+    message,
+  );
 }
 
 async function fetchPage(params: {
@@ -50,10 +53,14 @@ async function fetchPage(params: {
   countMode?: 'exact' | 'planned' | 'estimated' | 'none';
 }): Promise<InvokeResult<LightweightProduct>> {
   return invokeExternalDb<LightweightProduct>({
-    table: 'products', operation: 'select',
-    filters: params.filters, select: PRODUCT_SELECT_LIGHTWEIGHT,
-    orderBy: params.orderBy, limit: params.limit,
-    offset: params.offset, countMode: params.countMode ?? 'none',
+    table: 'products',
+    operation: 'select',
+    filters: params.filters,
+    select: PRODUCT_SELECT_LIGHTWEIGHT,
+    orderBy: params.orderBy,
+    limit: params.limit,
+    offset: params.offset,
+    countMode: params.countMode ?? 'none',
   });
 }
 
@@ -70,14 +77,21 @@ async function fetchPageResilient(params: {
     if (!isTimeoutError(error) || params.limit <= LIGHTWEIGHT_MIN_SPLIT_PAGE_SIZE) throw error;
     const firstHalf = Math.ceil(params.limit / 2);
     const secondHalf = params.limit - firstHalf;
-    logger.warn(`[lightweight] Timeout at offset=${params.offset}, splitting ${params.limit} -> ${firstHalf}+${secondHalf}`);
+    logger.warn(
+      `[lightweight] Timeout at offset=${params.offset}, splitting ${params.limit} -> ${firstHalf}+${secondHalf}`,
+    );
     const [left, right] = await Promise.all([
       fetchPageResilient({ ...params, limit: firstHalf, countMode: 'none' }),
-      fetchPageResilient({ ...params, offset: params.offset + firstHalf, limit: secondHalf, countMode: 'none' }),
+      fetchPageResilient({
+        ...params,
+        offset: params.offset + firstHalf,
+        limit: secondHalf,
+        countMode: 'none',
+      }),
     ]);
     return {
       records: [...left.records, ...right.records],
-      count: params.countMode === 'none' ? null : left.count ?? right.count ?? null,
+      count: params.countMode === 'none' ? null : (left.count ?? right.count ?? null),
     };
   }
 }
@@ -95,7 +109,13 @@ export async function fetchPromobrindProductsLightweight(options?: {
   const baseOffset = options?.offset ?? 0;
 
   if (typeof options?.limit === 'number' && options.limit > 0) {
-    const result = await fetchPageResilient({ filters, orderBy, limit: options.limit, offset: baseOffset, countMode: 'none' });
+    const result = await fetchPageResilient({
+      filters,
+      orderBy,
+      limit: options.limit,
+      offset: baseOffset,
+      countMode: 'none',
+    });
     return result.records;
   }
 
@@ -111,9 +131,13 @@ export async function fetchPromobrindProductsLightweight(options?: {
   // sem novo protocolo entre client e bridge; sem mudança de ordenação.
 
   const initialBatch = Array.from({ length: LIGHTWEIGHT_INITIAL_BURST }, (_, i) => ({
-    table: 'products', operation: 'select' as const,
-    select: PRODUCT_SELECT_LIGHTWEIGHT, filters, orderBy,
-    limit: LIGHTWEIGHT_PAGE_SIZE, offset: baseOffset + i * LIGHTWEIGHT_PAGE_SIZE,
+    table: 'products',
+    operation: 'select' as const,
+    select: PRODUCT_SELECT_LIGHTWEIGHT,
+    filters,
+    orderBy,
+    limit: LIGHTWEIGHT_PAGE_SIZE,
+    offset: baseOffset + i * LIGHTWEIGHT_PAGE_SIZE,
   }));
 
   const products: LightweightProduct[] = [];
@@ -143,10 +167,17 @@ export async function fetchPromobrindProductsLightweight(options?: {
     let page: InvokeResult<LightweightProduct>;
     try {
       page = await fetchPageResilient({
-        filters, orderBy, limit: LIGHTWEIGHT_PAGE_SIZE, offset: nextOffset, countMode: 'none',
+        filters,
+        orderBy,
+        limit: LIGHTWEIGHT_PAGE_SIZE,
+        offset: nextOffset,
+        countMode: 'none',
       });
     } catch (err) {
-      logger.warn(`[lightweight] Fase 2 abortada em offset=${nextOffset} (${products.length} produtos):`, err);
+      logger.warn(
+        `[lightweight] Fase 2 abortada em offset=${nextOffset} (${products.length} produtos):`,
+        err,
+      );
       break;
     }
     if (page.records.length === 0) break;
@@ -164,12 +195,20 @@ async function fetchSequential(
   baseOffset: number,
   maxTotal: number,
 ): Promise<LightweightProduct[]> {
-  const firstPage = await fetchPageResilient({ filters, orderBy, limit: LIGHTWEIGHT_PAGE_SIZE, offset: baseOffset, countMode: 'planned' });
+  const firstPage = await fetchPageResilient({
+    filters,
+    orderBy,
+    limit: LIGHTWEIGHT_PAGE_SIZE,
+    offset: baseOffset,
+    countMode: 'planned',
+  });
   const products: LightweightProduct[] = [...firstPage.records];
   if (firstPage.records.length < LIGHTWEIGHT_PAGE_SIZE) return products;
 
-  const estimatedTotal = typeof firstPage.count === 'number' && firstPage.count > firstPage.records.length
-    ? Math.min(firstPage.count, maxTotal) : maxTotal;
+  const estimatedTotal =
+    typeof firstPage.count === 'number' && firstPage.count > firstPage.records.length
+      ? Math.min(firstPage.count, maxTotal)
+      : maxTotal;
   const remaining = estimatedTotal - products.length;
   if (remaining <= 0) return products;
 
@@ -181,7 +220,15 @@ async function fetchSequential(
   for (let i = 0; i < offsets.length; i += LIGHTWEIGHT_MAX_CONCURRENCY) {
     const batch = offsets.slice(i, i + LIGHTWEIGHT_MAX_CONCURRENCY);
     const pages = await Promise.all(
-      batch.map(offset => fetchPageResilient({ filters, orderBy, limit: LIGHTWEIGHT_PAGE_SIZE, offset, countMode: 'none' })),
+      batch.map((offset) =>
+        fetchPageResilient({
+          filters,
+          orderBy,
+          limit: LIGHTWEIGHT_PAGE_SIZE,
+          offset,
+          countMode: 'none',
+        }),
+      ),
     );
     for (const page of pages) products.push(...page.records);
     if (pages[pages.length - 1]?.records.length < LIGHTWEIGHT_PAGE_SIZE) break;

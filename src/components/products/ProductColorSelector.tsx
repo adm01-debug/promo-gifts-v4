@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Check, Sparkles } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { isLightColor } from "@/hooks/products/useColorSystem";
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Check, Sparkles } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { isLightColor } from '@/hooks/products/useColorSystem';
 
 // =====================================================
 // TIPOS
@@ -13,10 +13,10 @@ export interface ProductColor {
   id?: string;
   name: string;
   hex: string;
-  variationName?: string;  // "Azul Royal"
-  nuanceName?: string;     // "Metalizado"
-  groupName?: string;      // "Azul"
-  groupHex?: string;       // Para fallback
+  variationName?: string; // "Azul Royal"
+  nuanceName?: string; // "Metalizado"
+  groupName?: string; // "Azul"
+  groupHex?: string; // Para fallback
 }
 
 interface ProductColorSelectorProps {
@@ -24,7 +24,7 @@ interface ProductColorSelectorProps {
   selectedColorId?: string | null;
   onColorSelect?: (color: ProductColor) => void;
   maxVisible?: number;
-  size?: "sm" | "md" | "lg";
+  size?: 'sm' | 'md' | 'lg';
   showLabel?: boolean;
   className?: string;
 }
@@ -38,7 +38,7 @@ export function ProductColorSelector({
   selectedColorId,
   onColorSelect,
   maxVisible = 8,
-  size = "md",
+  size = 'md',
   showLabel = true,
   className,
 }: ProductColorSelectorProps) {
@@ -46,8 +46,8 @@ export function ProductColorSelector({
 
   const visibleColors = colors.slice(0, maxVisible);
   const hiddenCount = colors.length - maxVisible;
-  
-  const selectedColor = colors.find(c => c.id === selectedColorId);
+
+  const selectedColor = colors.find((c) => c.id === selectedColorId);
   const displayColor = hoveredColor || selectedColor;
 
   // Formata o nome completo da cor
@@ -63,25 +63,23 @@ export function ProductColorSelector({
 
   // Tamanhos dos swatches
   const sizeClasses = {
-    sm: "w-6 h-6",
-    md: "w-8 h-8",
-    lg: "w-10 h-10",
+    sm: 'w-6 h-6',
+    md: 'w-8 h-8',
+    lg: 'w-10 h-10',
   };
 
   const checkSizes = {
-    sm: "h-3 w-3",
-    md: "h-4 w-4",
-    lg: "h-5 w-5",
+    sm: 'h-3 w-3',
+    md: 'h-4 w-4',
+    lg: 'h-5 w-5',
   };
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn('space-y-2', className)}>
       {/* Label com nome da cor selecionada */}
       {showLabel && (
         <div className="flex items-center justify-between">
-          <p className="text-sm font-medium text-foreground">
-            Cores disponíveis ({colors.length})
-          </p>
+          <p className="text-sm font-medium text-foreground">Cores disponíveis ({colors.length})</p>
           <AnimatePresence mode="wait">
             {displayColor && (
               <motion.span
@@ -89,16 +87,14 @@ export function ProductColorSelector({
                 initial={{ opacity: 0, x: 10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -10 }}
-                className="text-sm text-muted-foreground flex items-center gap-1.5"
+                className="flex items-center gap-1.5 text-sm text-muted-foreground"
               >
                 <span
-                  className="w-3 h-3 rounded-full border border-border"
+                  className="h-3 w-3 rounded-full border border-border"
                   style={{ backgroundColor: displayColor.hex }}
                 />
                 {formatColorName(displayColor)}
-                {displayColor.nuanceName && (
-                  <Sparkles className="h-3 w-3 text-primary/60" />
-                )}
+                {displayColor.nuanceName && <Sparkles className="h-3 w-3 text-primary/60" />}
               </motion.span>
             )}
           </AnimatePresence>
@@ -109,9 +105,9 @@ export function ProductColorSelector({
       <div className="flex flex-wrap gap-2">
         {visibleColors.map((color, idx) => {
           const isSelected = selectedColorId === color.id;
-          const colorHex = color.hex || color.groupHex || "#CCCCCC";
+          const colorHex = color.hex || color.groupHex || '#CCCCCC';
           const isLight = isLightColor(colorHex);
-          const isWhite = colorHex.toUpperCase() === "#FFFFFF" || colorHex.toUpperCase() === "#FFF";
+          const isWhite = colorHex.toUpperCase() === '#FFFFFF' || colorHex.toUpperCase() === '#FFF';
 
           return (
             <Tooltip key={color.id || idx} delayDuration={200}>
@@ -121,31 +117,39 @@ export function ProductColorSelector({
                   onMouseEnter={() => setHoveredColor(color)}
                   onMouseLeave={() => setHoveredColor(null)}
                   className={cn(
-                    "rounded-full cursor-pointer relative",
-                    "transition-all duration-200",
-                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                    'relative cursor-pointer rounded-full',
+                    'transition-all duration-200',
+                    'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
                     sizeClasses[size],
-                    isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                    isSelected && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
                   )}
                   style={{
                     backgroundColor: colorHex,
-                    border: isWhite ? "2px solid hsl(var(--border))" : "2px solid transparent",
-                    boxShadow: isSelected 
-                      ? `0 0 12px 3px ${colorHex}80, 0 0 20px 6px ${colorHex}40` 
+                    border: isWhite ? '2px solid hsl(var(--border))' : '2px solid transparent',
+                    boxShadow: isSelected
+                      ? `0 0 12px 3px ${colorHex}80, 0 0 20px 6px ${colorHex}40`
                       : undefined,
                   }}
                   whileHover={{ scale: 1.15 }}
                   whileTap={{ scale: 0.95 }}
-                  animate={isSelected ? {
-                    boxShadow: [
-                      `0 0 12px 3px ${colorHex}80, 0 0 20px 6px ${colorHex}40`,
-                      `0 0 16px 5px ${colorHex}90, 0 0 24px 8px ${colorHex}50`,
-                      `0 0 12px 3px ${colorHex}80, 0 0 20px 6px ${colorHex}40`,
-                    ],
-                  } : {}}
-                  transition={isSelected ? {
-                    boxShadow: { duration: 2, repeat: Infinity, ease: "easeInOut" }
-                  } : {}}
+                  animate={
+                    isSelected
+                      ? {
+                          boxShadow: [
+                            `0 0 12px 3px ${colorHex}80, 0 0 20px 6px ${colorHex}40`,
+                            `0 0 16px 5px ${colorHex}90, 0 0 24px 8px ${colorHex}50`,
+                            `0 0 12px 3px ${colorHex}80, 0 0 20px 6px ${colorHex}40`,
+                          ],
+                        }
+                      : {}
+                  }
+                  transition={
+                    isSelected
+                      ? {
+                          boxShadow: { duration: 2, repeat: Infinity, ease: 'easeInOut' },
+                        }
+                      : {}
+                  }
                 >
                   {/* Check mark para cor selecionada */}
                   <AnimatePresence>
@@ -159,12 +163,12 @@ export function ProductColorSelector({
                         <Check
                           className={cn(
                             checkSizes[size],
-                            isLight ? "text-foreground" : "text-primary-foreground"
+                            isLight ? 'text-foreground' : 'text-primary-foreground',
                           )}
                           strokeWidth={3}
                         />
                       </motion.div>
-                  )}
+                    )}
                   </AnimatePresence>
                 </motion.button>
               </TooltipTrigger>
@@ -172,9 +176,7 @@ export function ProductColorSelector({
                 <div className="text-center">
                   <p>{formatColorName(color)}</p>
                   {color.groupName && color.groupName !== color.variationName && (
-                    <p className="text-xs text-muted-foreground">
-                      Grupo: {color.groupName}
-                    </p>
+                    <p className="text-xs text-muted-foreground">Grupo: {color.groupName}</p>
                   )}
                 </div>
               </TooltipContent>
@@ -188,9 +190,9 @@ export function ProductColorSelector({
             <TooltipTrigger asChild>
               <motion.div
                 className={cn(
-                  "rounded-full bg-muted flex items-center justify-center",
-                  "text-xs font-semibold text-muted-foreground cursor-default",
-                  sizeClasses[size]
+                  'flex items-center justify-center rounded-full bg-muted',
+                  'cursor-default text-xs font-semibold text-muted-foreground',
+                  sizeClasses[size],
                 )}
                 whileHover={{ scale: 1.05 }}
               >
@@ -198,7 +200,7 @@ export function ProductColorSelector({
               </motion.div>
             </TooltipTrigger>
             <TooltipContent>
-              Mais {hiddenCount} {hiddenCount === 1 ? "cor" : "cores"}
+              Mais {hiddenCount} {hiddenCount === 1 ? 'cor' : 'cores'}
             </TooltipContent>
           </Tooltip>
         )}
@@ -216,14 +218,14 @@ export function ProductColorSelector({
             className="flex items-center gap-2 pt-1"
           >
             <span
-              className="w-4 h-4 rounded-full border border-border shadow-sm"
+              className="h-4 w-4 rounded-full border border-border shadow-sm"
               style={{ backgroundColor: selectedColor.hex }}
             />
             <span className="text-sm font-medium text-foreground">
               {formatColorName(selectedColor)}
             </span>
             {selectedColor.nuanceName && (
-              <span className="inline-flex items-center gap-1 text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
                 <Sparkles className="h-3 w-3" />
                 {selectedColor.nuanceName}
               </span>
@@ -242,20 +244,16 @@ export function ProductColorSelector({
 interface CompactColorDotsProps {
   colors: ProductColor[];
   maxVisible?: number;
-  size?: "xs" | "sm";
+  size?: 'xs' | 'sm';
 }
 
-export function CompactColorDots({
-  colors,
-  maxVisible = 5,
-  size = "sm",
-}: CompactColorDotsProps) {
+export function CompactColorDots({ colors, maxVisible = 5, size = 'sm' }: CompactColorDotsProps) {
   const visibleColors = colors.slice(0, maxVisible);
   const hiddenCount = colors.length - maxVisible;
 
   const sizeClasses = {
-    xs: "w-3 h-3",
-    sm: "w-4 h-4",
+    xs: 'w-3 h-3',
+    sm: 'w-4 h-4',
   };
 
   return (
@@ -265,13 +263,11 @@ export function CompactColorDots({
           <TooltipTrigger asChild>
             <span
               className={cn(
-                "rounded-full border",
+                'rounded-full border',
                 sizeClasses[size],
-                color.hex?.toUpperCase() === "#FFFFFF" 
-                  ? "border-border" 
-                  : "border-transparent"
+                color.hex?.toUpperCase() === '#FFFFFF' ? 'border-border' : 'border-transparent',
               )}
-              style={{ backgroundColor: color.hex || "#CCCCCC" }}
+              style={{ backgroundColor: color.hex || '#CCCCCC' }}
             />
           </TooltipTrigger>
           <TooltipContent side="top" className="text-xs">
@@ -281,9 +277,7 @@ export function CompactColorDots({
         </Tooltip>
       ))}
       {hiddenCount > 0 && (
-        <span className="text-xs text-muted-foreground font-medium">
-          +{hiddenCount}
-        </span>
+        <span className="text-xs font-medium text-muted-foreground">+{hiddenCount}</span>
       )}
     </div>
   );

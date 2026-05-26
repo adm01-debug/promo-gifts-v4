@@ -1,3 +1,3 @@
 // Onboarding Components
-export { OnboardingTour } from "./OnboardingTour";
-export { RestartTourButton } from "./RestartTourButton";
+export { OnboardingTour } from './OnboardingTour';
+export { RestartTourButton } from './RestartTourButton';

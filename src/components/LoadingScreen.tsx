@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 
 const MESSAGES = [
-  "Carregando...",
-  "Preparando tudo para você...",
-  "Quase lá...",
-  "Finalizando detalhes...",
+  'Carregando...',
+  'Preparando tudo para você...',
+  'Quase lá...',
+  'Finalizando detalhes...',
 ];
 
 export default function LoadingScreen() {
@@ -19,10 +19,10 @@ export default function LoadingScreen() {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="flex flex-col items-center gap-4">
-        <Loader2 className="h-12 w-12 text-brand-primary animate-[spin_0.7s_linear_infinite]" />
-        <p className="text-muted-foreground animate-fade-in" key={messageIndex}>
+        <Loader2 className="h-12 w-12 animate-[spin_0.7s_linear_infinite] text-brand-primary" />
+        <p className="animate-fade-in text-muted-foreground" key={messageIndex}>
           {MESSAGES[messageIndex]}
         </p>
       </div>

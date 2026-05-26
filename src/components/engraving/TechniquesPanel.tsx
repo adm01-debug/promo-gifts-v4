@@ -1,68 +1,57 @@
-import { useState, useMemo } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { 
+import { useState, useMemo } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { 
+} from '@/components/ui/select';
+import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { 
-  Settings, 
-  Search, 
-  Loader2, 
-  AlertCircle, 
+} from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Settings,
+  Search,
+  Loader2,
+  AlertCircle,
   Palette,
   Ruler,
   Hash,
   RotateCcw,
   Info,
   CheckCircle,
-  XCircle
-} from "lucide-react";
-import { useTecnicasUnificadas, useCategoriasTecnicas } from "@/hooks/simulation";
-import type { TecnicaUnificada, TecnicaFiltros } from "@/types/tecnica-unificada";
+  XCircle,
+} from 'lucide-react';
+import { useTecnicasUnificadas, useCategoriasTecnicas } from '@/hooks/simulation';
+import type { TecnicaUnificada, TecnicaFiltros } from '@/types/tecnica-unificada';
 
 export function TechniquesPanel() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterCategoria, setFilterCategoria] = useState<string>("all");
-  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterCategoria, setFilterCategoria] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
 
   // Construir filtros
   const filtros: TecnicaFiltros = useMemo(() => {
     const f: TecnicaFiltros = {};
-    if (filterStatus === "ativas") f.apenasAtivas = true;
-    if (filterCategoria !== "all") f.categoria = filterCategoria;
+    if (filterStatus === 'ativas') f.apenasAtivas = true;
+    if (filterCategoria !== 'all') f.categoria = filterCategoria;
     if (searchQuery.length >= 2) f.busca = searchQuery;
     return f;
   }, [searchQuery, filterCategoria, filterStatus]);
 
-  const { 
-    tecnicas, 
-    isLoading, 
-    isError, 
-    error,
-    refetch,
-    toggleStatus,
-    isToggling,
-  } = useTecnicasUnificadas(filtros);
+  const { tecnicas, isLoading, isError, error, refetch, toggleStatus, isToggling } =
+    useTecnicasUnificadas(filtros);
 
   const categorias = useCategoriasTecnicas();
 
@@ -72,37 +61,37 @@ export function TechniquesPanel() {
 
   const getCategoriaLabel = (categoria: string) => {
     const labels: Record<string, string> = {
-      impression: "Impressão",
-      engraving: "Gravação",
-      textile: "Têxtil",
-      embroidery: "Bordado",
-      transfer: "Transfer",
+      impression: 'Impressão',
+      engraving: 'Gravação',
+      textile: 'Têxtil',
+      embroidery: 'Bordado',
+      transfer: 'Transfer',
     };
     return labels[categoria] || categoria;
   };
 
   const getCategoriaColor = (categoria: string) => {
     const colors: Record<string, string> = {
-      impression: "bg-info/10 text-info border-info/20",
-      engraving: "bg-warning/10 text-warning border-warning/20",
-      textile: "bg-primary/10 text-primary border-primary/20",
-      embroidery: "bg-primary/10 text-primary border-primary/20",
-      transfer: "bg-success/10 text-success border-success/20",
+      impression: 'bg-info/10 text-info border-info/20',
+      engraving: 'bg-warning/10 text-warning border-warning/20',
+      textile: 'bg-primary/10 text-primary border-primary/20',
+      embroidery: 'bg-primary/10 text-primary border-primary/20',
+      transfer: 'bg-success/10 text-success border-success/20',
     };
-    return colors[categoria] || "bg-muted text-muted-foreground";
+    return colors[categoria] || 'bg-muted text-muted-foreground';
   };
 
   if (isError) {
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
-          <AlertCircle className="h-12 w-12 text-destructive mb-4" />
-          <p className="text-lg font-medium text-destructive mb-2">Erro ao carregar técnicas</p>
-          <p className="text-sm text-muted-foreground text-center max-w-md mb-4">
+          <AlertCircle className="mb-4 h-12 w-12 text-destructive" />
+          <p className="mb-2 text-lg font-medium text-destructive">Erro ao carregar técnicas</p>
+          <p className="mb-4 max-w-md text-center text-sm text-muted-foreground">
             {error?.message || 'Não foi possível conectar ao banco de dados.'}
           </p>
           <Button onClick={() => refetch()} variant="outline">
-            <RotateCcw className="h-4 w-4 mr-2" />
+            <RotateCcw className="mr-2 h-4 w-4" />
             Tentar novamente
           </Button>
         </CardContent>
@@ -113,27 +102,29 @@ export function TechniquesPanel() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5 text-primary" />
               Técnicas de Personalização
             </CardTitle>
             <CardDescription>
-              {isLoading ? "Carregando..." : `${tecnicas.length} técnicas encontradas no banco externo`}
+              {isLoading
+                ? 'Carregando...'
+                : `${tecnicas.length} técnicas encontradas no banco externo`}
             </CardDescription>
           </div>
           <Button onClick={() => refetch()} variant="outline" size="sm" disabled={isLoading}>
-            <RotateCcw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
+            <RotateCcw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             Atualizar
           </Button>
         </div>
       </CardHeader>
       <CardContent>
         {/* Filtros */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Buscar técnicas..."
               value={searchQuery}
@@ -182,20 +173,20 @@ export function TechniquesPanel() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground mt-2">Carregando técnicas...</p>
+                  <TableCell colSpan={7} className="py-12 text-center">
+                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
+                    <p className="mt-2 text-sm text-muted-foreground">Carregando técnicas...</p>
                   </TableCell>
                 </TableRow>
               ) : tecnicas.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                  <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
                     Nenhuma técnica encontrada
                   </TableCell>
                 </TableRow>
               ) : (
                 tecnicas.map((tecnica) => (
-                  <TableRow key={tecnica.id} className={!tecnica.ativo ? "opacity-50" : ""}>
+                  <TableRow key={tecnica.id} className={!tecnica.ativo ? 'opacity-50' : ''}>
                     <TableCell>
                       <Badge variant="outline" className="font-mono text-xs">
                         {tecnica.codigo}
@@ -205,7 +196,7 @@ export function TechniquesPanel() {
                       <div className="flex flex-col">
                         <span className="font-medium">{tecnica.nome}</span>
                         {tecnica.descricao && (
-                          <span className="text-xs text-muted-foreground line-clamp-1">
+                          <span className="line-clamp-1 text-xs text-muted-foreground">
                             {tecnica.descricao}
                           </span>
                         )}
@@ -221,7 +212,9 @@ export function TechniquesPanel() {
                         {tecnica.precoPorCor && (
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <span><Palette className="h-4 w-4 text-primary" /></span>
+                              <span>
+                                <Palette className="h-4 w-4 text-primary" />
+                              </span>
                             </TooltipTrigger>
                             <TooltipContent>Por Cor</TooltipContent>
                           </Tooltip>
@@ -229,7 +222,9 @@ export function TechniquesPanel() {
                         {tecnica.precoPorArea && (
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <span><Ruler className="h-4 w-4 text-warning" /></span>
+                              <span>
+                                <Ruler className="h-4 w-4 text-warning" />
+                              </span>
                             </TooltipTrigger>
                             <TooltipContent>Por Área</TooltipContent>
                           </Tooltip>
@@ -237,7 +232,9 @@ export function TechniquesPanel() {
                         {tecnica.precoPorPontos && (
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <span><Hash className="h-4 w-4 text-primary" /></span>
+                              <span>
+                                <Hash className="h-4 w-4 text-primary" />
+                              </span>
                             </TooltipTrigger>
                             <TooltipContent>Por Pontos</TooltipContent>
                           </Tooltip>
@@ -249,7 +246,7 @@ export function TechniquesPanel() {
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <span>
-                              <Badge variant="secondary" className="text-xs cursor-default">
+                              <Badge variant="secondary" className="cursor-default text-xs">
                                 {tecnica.minCores}-{tecnica.maxCores}
                               </Badge>
                             </span>
@@ -264,9 +261,9 @@ export function TechniquesPanel() {
                     </TableCell>
                     <TableCell className="text-center">
                       {tecnica.aplicaSuperficieCurva ? (
-                        <CheckCircle className="h-4 w-4 text-success mx-auto" />
+                        <CheckCircle className="mx-auto h-4 w-4 text-success" />
                       ) : (
-                        <XCircle className="h-4 w-4 text-muted-foreground mx-auto" />
+                        <XCircle className="mx-auto h-4 w-4 text-muted-foreground" />
                       )}
                     </TableCell>
                     <TableCell className="text-center">

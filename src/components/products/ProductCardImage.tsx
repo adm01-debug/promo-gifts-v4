@@ -105,9 +105,7 @@ export const ProductCardImage = memo(function ProductCardImage({
         src={cardImageUrl}
         alt={activeColorName ? `${product.name} - ${activeColorName}` : product.name}
         title={activeColorName ? `${product.name} - ${activeColorName}` : product.name}
-        className={cn(
-          'h-full w-full object-contain ease-out transition-all duration-300',
-        )}
+        className={cn('h-full w-full object-contain transition-all duration-300 ease-out')}
         style={
           imageLoaded
             ? { transform: `scale(${computedImageScale})`, willChange: 'transform' }

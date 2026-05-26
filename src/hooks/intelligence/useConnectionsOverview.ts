@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface OverviewRow {
   key: string;
   id: string | null;
-  type: "supabase" | "bitrix24" | "n8n" | "mcp" | "webhook_outbound" | string;
+  type: 'supabase' | 'bitrix24' | 'n8n' | 'mcp' | 'webhook_outbound' | string;
   name: string;
-  env_key: "promobrind" | "crm" | null;
+  env_key: 'promobrind' | 'crm' | null;
   status: string;
   last_test_at: string | null;
   last_test_ok: boolean | null;
@@ -23,17 +23,19 @@ export function useConnectionsOverview(pollMs = 30000) {
   const load = useCallback(async (silent = false) => {
     if (!silent) setRefreshing(true);
     const { data, error } = await supabase
-      .from("external_connections")
-      .select("id, type, name, env_key, status, last_test_at, last_test_ok, last_test_message, last_latency_ms, auto_test_enabled")
-      .order("type", { ascending: true })
-      .order("name", { ascending: true });
+      .from('external_connections')
+      .select(
+        'id, type, name, env_key, status, last_test_at, last_test_ok, last_test_message, last_latency_ms, auto_test_enabled',
+      )
+      .order('type', { ascending: true })
+      .order('name', { ascending: true });
     if (!error && data) {
       const mapped: OverviewRow[] = data.map((r) => ({
         key: r.id,
         id: r.id,
         type: r.type,
         name: r.name,
-        env_key: (r.env_key as "promobrind" | "crm" | null) ?? null,
+        env_key: (r.env_key as 'promobrind' | 'crm' | null) ?? null,
         status: r.status,
         last_test_at: r.last_test_at,
         last_test_ok: r.last_test_ok,

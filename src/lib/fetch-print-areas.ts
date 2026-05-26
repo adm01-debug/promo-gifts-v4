@@ -1,11 +1,11 @@
 /**
  * Busca áreas de gravação de um produto do BD externo.
- * 
+ *
  * FONTE ÚNICA: tabela 'print_area_techniques' no BD externo.
  * Dados da técnica vêm via lookup em 'tabela_preco_gravacao_oficial'.
  */
 import { supabase } from '@/integrations/supabase/client';
-import { logger } from "@/lib/logger";
+import { logger } from '@/lib/logger';
 import {
   adaptPrintAreaTechniqueRows,
   adaptTabelaPrecoRows,
@@ -47,7 +47,9 @@ export interface PrintAreaFromProduct {
  * Busca áreas de gravação da tabela print_area_techniques + resolve técnicas.
  * Retorna array vazio se o produto não tiver áreas configuradas.
  */
-export async function fetchPrintAreasFromProduct(productId: string): Promise<PrintAreaFromProduct[]> {
+export async function fetchPrintAreasFromProduct(
+  productId: string,
+): Promise<PrintAreaFromProduct[]> {
   try {
     // 1. Buscar áreas da tabela print_area_techniques
     const { data, error } = await supabase.functions.invoke('external-db-bridge', {
@@ -61,7 +63,10 @@ export async function fetchPrintAreasFromProduct(productId: string): Promise<Pri
     });
 
     if (error || !data?.success) {
-      logger.warn('[fetchPrintAreas] Erro ao buscar print_area_techniques:', error?.message || data?.error);
+      logger.warn(
+        '[fetchPrintAreas] Erro ao buscar print_area_techniques:',
+        error?.message || data?.error,
+      );
       return [];
     }
 
@@ -99,20 +104,23 @@ export async function fetchPrintAreasFromProduct(productId: string): Promise<Pri
       const techId = area.price_table_id ?? area.tabela_preco_id ?? null;
       const tech = techId ? techById.get(techId) : null;
       const techNome = tech?.name ?? tech?.nome ?? null;
-      const techCode = tech?.codigo_curto ?? tech?.codigo_tabela ?? tech?.code ?? tech?.codigo ?? null;
+      const techCode =
+        tech?.codigo_curto ?? tech?.codigo_tabela ?? tech?.code ?? tech?.codigo ?? null;
       const locationCode = area.location_code ?? area.area_code ?? '';
       const locationName = area.location_name ?? area.area_name ?? null;
       const maxW = area.max_width ?? area.largura_max ?? 0;
       const maxH = area.max_height ?? area.altura_max ?? 0;
-      const setupCost = (tech?.custo_setup ?? tech?.setup_price) ?? null;
-      const chargesPerColor = (tech?.charges_per_color ?? tech?.cobra_por_cor) ?? false;
+      const setupCost = tech?.custo_setup ?? tech?.setup_price ?? null;
+      const chargesPerColor = tech?.charges_per_color ?? tech?.cobra_por_cor ?? false;
 
       return {
         id: area.id || `${productId}-area-${idx}`,
         product_id: productId,
         area_code: locationCode,
         area_name: locationName
-          ? (techNome ? `${locationName} — ${techNome}` : locationName)
+          ? techNome
+            ? `${locationName} — ${techNome}`
+            : locationName
           : `Área ${idx + 1}`,
         component_name: null,
         component_code: null,
@@ -126,15 +134,19 @@ export async function fetchPrintAreasFromProduct(productId: string): Promise<Pri
         is_primary: idx === 0,
         is_active: (area.is_active ?? area.ativo) !== false,
         display_order: area.technique_order ?? idx,
-        max_colors: (tech?.max_colors ?? (typeof tech?.max_cores === 'string' ? Number(tech.max_cores) : tech?.max_cores)) ?? null,
+        max_colors:
+          tech?.max_colors ??
+          (typeof tech?.max_cores === 'string' ? Number(tech.max_cores) : tech?.max_cores) ??
+          null,
         allowed_technique_ids: techId ? [techId] : [],
         customization_price_table_id: techId,
         supplier_technique_code: techCode ?? undefined,
         serv_code: tech?.codigo_curto ?? undefined,
-        area_cm2: (maxW && maxH) ? Number((Number(maxW) * Number(maxH)).toFixed(2)) : null,
+        area_cm2: maxW && maxH ? Number((Number(maxW) * Number(maxH)).toFixed(2)) : null,
         technique_name: techNome,
         technique_code: techCode,
-        technique_group: tech?.group_name ?? tech?.nome_grupo ?? tech?.group ?? tech?.grupo_tecnica ?? null,
+        technique_group:
+          tech?.group_name ?? tech?.nome_grupo ?? tech?.group ?? tech?.grupo_tecnica ?? null,
         setup_cost: typeof setupCost === 'number' ? setupCost : null,
         charges_per_color: !!chargesPerColor,
       };

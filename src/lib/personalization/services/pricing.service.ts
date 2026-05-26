@@ -1,6 +1,6 @@
 /**
  * Service: Cálculo de Preços
- * 
+ *
  * Orquestra lógica de negócio para cálculo de preços.
  * Combina repositórios + calculators + validators.
  */
@@ -116,7 +116,9 @@ export async function calculatePricing(request: PricingRequest): Promise<Pricing
 /**
  * Calcula preços para múltiplas quantidades
  */
-export async function calculateBatchPricing(request: BatchPricingRequest): Promise<BatchPricingResponse> {
+export async function calculateBatchPricing(
+  request: BatchPricingRequest,
+): Promise<BatchPricingResponse> {
   const { techniqueName, quantities, colors } = request;
 
   const table = await PriceTableRepository.findBestMatch({
@@ -124,7 +126,7 @@ export async function calculateBatchPricing(request: BatchPricingRequest): Promi
     colors,
   });
 
-  const calculations = quantities.map(quantity => {
+  const calculations = quantities.map((quantity) => {
     if (!table) {
       return { quantity, result: null };
     }
@@ -234,7 +236,7 @@ function validateRequest(
   quantity: number,
   colors?: number,
   widthCm?: number,
-  heightCm?: number
+  heightCm?: number,
 ): ValidationResult {
   const errors: ValidationResult['errors'] = [];
   const warnings: ValidationResult['warnings'] = [];
@@ -267,7 +269,7 @@ function validateRequest(
 
 function calculatePriceFromTable(
   table: TabelaPrecoTecnica,
-  params: PriceCalculationParams
+  params: PriceCalculationParams,
 ): PriceCalculationResult {
   const { quantity, colors } = params;
 
@@ -296,9 +298,8 @@ function calculatePriceFromTable(
 
   // Calcular economia comparando com primeira faixa
   const firstTierPrice = table.faixas[0]?.precoUnitario || unitPrice;
-  const savings = unitPrice < firstTierPrice
-    ? calculateSavings(firstTierPrice, unitPrice, quantity)
-    : undefined;
+  const savings =
+    unitPrice < firstTierPrice ? calculateSavings(firstTierPrice, unitPrice, quantity) : undefined;
 
   return {
     tableId: table.id,
@@ -314,13 +315,14 @@ function calculatePriceFromTable(
     savings,
     slaDays: tierUsed.slaDias,
     maxColors: table.maxCores,
-    maxArea: table.larguraMaxCm && table.alturaMaxCm
-      ? {
-          widthCm: table.larguraMaxCm,
-          heightCm: table.alturaMaxCm,
-          areaCm2: table.larguraMaxCm * table.alturaMaxCm,
-        }
-      : null,
+    maxArea:
+      table.larguraMaxCm && table.alturaMaxCm
+        ? {
+            widthCm: table.larguraMaxCm,
+            heightCm: table.alturaMaxCm,
+            areaCm2: table.larguraMaxCm * table.alturaMaxCm,
+          }
+        : null,
   };
 }
 

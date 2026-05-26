@@ -81,10 +81,10 @@ const RANGE_MS: Record<Exclude<RangePreset, 'custom'>, number> = {
 
 /** Bucket size auto: ~50–80 pontos no eixo X. */
 function pickBucketMs(spanMs: number): number {
-  if (spanMs <= 6 * 3_600_000) return 5 * 60_000;          // 5min
-  if (spanMs <= 36 * 3_600_000) return 30 * 60_000;        // 30min
-  if (spanMs <= 7 * 86_400_000) return 3 * 3_600_000;      // 3h
-  return 12 * 3_600_000;                                   // 12h
+  if (spanMs <= 6 * 3_600_000) return 5 * 60_000; // 5min
+  if (spanMs <= 36 * 3_600_000) return 30 * 60_000; // 30min
+  if (spanMs <= 7 * 86_400_000) return 3 * 3_600_000; // 3h
+  return 12 * 3_600_000; // 12h
 }
 
 function percentile(sorted: number[], p: number): number {
@@ -98,7 +98,10 @@ function resolveRange(filters: HighLimitFiltersState): { fromIso: string; toIso:
   if (filters.range === 'custom' && filters.customFromIso && filters.customToIso) {
     return { fromIso: filters.customFromIso, toIso: filters.customToIso };
   }
-  const span = RANGE_MS[(filters.range === 'custom' ? '24h' : filters.range) as Exclude<RangePreset, 'custom'>];
+  const span =
+    RANGE_MS[
+      (filters.range === 'custom' ? '24h' : filters.range) as Exclude<RangePreset, 'custom'>
+    ];
   return { fromIso: new Date(now - span).toISOString(), toIso: new Date(now).toISOString() };
 }
 
@@ -124,7 +127,12 @@ async function fetchRows(
   return (data ?? []) as TelemetryRow[];
 }
 
-function bucketize(rows: TelemetryRow[], fromMs: number, toMs: number, bucketMs: number): BucketPoint[] {
+function bucketize(
+  rows: TelemetryRow[],
+  fromMs: number,
+  toMs: number,
+  bucketMs: number,
+): BucketPoint[] {
   const buckets = new Map<number, TelemetryRow[]>();
   for (let t = fromMs; t < toMs; t += bucketMs) buckets.set(t, []);
   for (const r of rows) {
@@ -136,9 +144,9 @@ function bucketize(rows: TelemetryRow[], fromMs: number, toMs: number, bucketMs:
 
   const out: BucketPoint[] = [];
   for (const [start, items] of buckets) {
-    const errors = items.filter(i => i.severity === 'error');
-    const okish = items.filter(i => i.severity !== 'error');
-    const durations = okish.map(i => i.duration_ms).sort((a, b) => a - b);
+    const errors = items.filter((i) => i.severity === 'error');
+    const okish = items.filter((i) => i.severity !== 'error');
+    const durations = okish.map((i) => i.duration_ms).sort((a, b) => a - b);
     const errorsByKind: Record<string, number> = {};
     for (const e of errors) {
       const kind = e.error_kind ?? 'unknown';
@@ -162,11 +170,11 @@ function bucketize(rows: TelemetryRow[], fromMs: number, toMs: number, bucketMs:
 
 function summarize(rows: TelemetryRow[]) {
   const samples = rows.length;
-  const errors = rows.filter(r => r.severity === 'error').length;
-  const okish = rows.filter(r => r.severity !== 'error');
-  const durations = okish.map(r => r.duration_ms).sort((a, b) => a - b);
+  const errors = rows.filter((r) => r.severity === 'error').length;
+  const okish = rows.filter((r) => r.severity !== 'error');
+  const durations = okish.map((r) => r.duration_ms).sort((a, b) => a - b);
   const sumMs = durations.reduce((a, v) => a + v, 0);
-  const records = okish.map(r => r.record_count ?? 0).filter(n => n > 0);
+  const records = okish.map((r) => r.record_count ?? 0).filter((n) => n > 0);
   const sumR = records.reduce((a, v) => a + v, 0);
   return {
     samples,

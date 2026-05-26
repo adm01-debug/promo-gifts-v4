@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from 'react';
 
 interface UseSpeechRecognitionOptions {
   onResult?: (transcript: string) => void;
@@ -18,22 +18,23 @@ interface SpeechRecognitionResult {
 export function useSpeechRecognition({
   onResult,
   onError,
-  language = "pt-BR",
+  language = 'pt-BR',
 }: UseSpeechRecognitionOptions = {}): SpeechRecognitionResult {
   const [isListening, setIsListening] = useState(false);
-  const [transcript, setTranscript] = useState("");
+  const [transcript, setTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
 
-  const isSupported = typeof window !== "undefined" && 
-    ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
+  const isSupported =
+    typeof window !== 'undefined' &&
+    ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
 
   useEffect(() => {
     if (!isSupported) return;
 
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognitionInstance = new SpeechRecognitionAPI();
-    
+
     recognitionInstance.continuous = false;
     recognitionInstance.interimResults = true;
     recognitionInstance.lang = language;
@@ -44,8 +45,8 @@ export function useSpeechRecognition({
     };
 
     recognitionInstance.onresult = (event: SpeechRecognitionEvent) => {
-      let finalTranscript = "";
-      let interimTranscript = "";
+      let finalTranscript = '';
+      let interimTranscript = '';
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
@@ -66,13 +67,13 @@ export function useSpeechRecognition({
 
     recognitionInstance.onerror = (event: SpeechRecognitionErrorEvent) => {
       const errorMessages: Record<string, string> = {
-        "not-allowed": "Permissão de microfone negada",
-        "no-speech": "Nenhuma fala detectada",
-        "audio-capture": "Não foi possível capturar áudio",
-        "network": "Erro de rede",
-        "aborted": "Reconhecimento cancelado",
+        'not-allowed': 'Permissão de microfone negada',
+        'no-speech': 'Nenhuma fala detectada',
+        'audio-capture': 'Não foi possível capturar áudio',
+        network: 'Erro de rede',
+        aborted: 'Reconhecimento cancelado',
       };
-      
+
       const message = errorMessages[event.error] || `Erro: ${event.error}`;
       setError(message);
       onError?.(message);
@@ -92,13 +93,13 @@ export function useSpeechRecognition({
 
   const startListening = useCallback(() => {
     if (recognition && !isListening) {
-      setTranscript("");
+      setTranscript('');
       setError(null);
       try {
         recognition.start();
       } catch (e) {
         // Recognition might already be started
-        console.error("Speech recognition error:", e);
+        console.error('Speech recognition error:', e);
       }
     }
   }, [recognition, isListening]);

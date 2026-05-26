@@ -21,11 +21,6 @@ export {
   ProductListSkeleton,
   TextSkeleton,
   ChartSkeleton,
-} from "./ModernSkeletons";
+} from './ModernSkeletons';
 
-export {
-  LoadingOverlay,
-  Spinner,
-  LoadingDots,
-  ProgressLoader
-} from "./LoadingOverlay";
+export { LoadingOverlay, Spinner, LoadingDots, ProgressLoader } from './LoadingOverlay';

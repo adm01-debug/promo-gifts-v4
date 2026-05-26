@@ -53,13 +53,16 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
     const { hasPermission } = useRBAC();
 
     // Stable active-item checker — only recreated when location changes
-    const isItemActive = useCallback((href: string, exact?: boolean) => {
-      if (href.includes('?')) {
-        const [path, search] = href.split('?');
-        return location.pathname === path && location.search === `?${search}`;
-      }
-      return isNavItemActive(location.pathname, href, exact);
-    }, [location.pathname, location.search]);
+    const isItemActive = useCallback(
+      (href: string, exact?: boolean) => {
+        if (href.includes('?')) {
+          const [path, search] = href.split('?');
+          return location.pathname === path && location.search === `?${search}`;
+        }
+        return isNavItemActive(location.pathname, href, exact);
+      },
+      [location.pathname, location.search],
+    );
 
     const hasActiveItem = group.items.some((item) => isItemActive(item.href, item.exact));
     const GroupIcon = group.icon;
@@ -118,11 +121,21 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
                   : 'text-sidebar-foreground/75 hover:text-sidebar-foreground',
               )}
             >
-              <Icon className={cn('h-4 w-4 shrink-0 transition-colors', hasActiveChild ? 'text-primary' : 'group-hover:text-primary/70')} />
+              <Icon
+                className={cn(
+                  'h-4 w-4 shrink-0 transition-colors',
+                  hasActiveChild ? 'text-primary' : 'group-hover:text-primary/70',
+                )}
+              />
               {!isCollapsed && (
                 <>
                   <span className="flex-1 truncate text-left text-sm">{item.label}</span>
-                  <ChevronDown className={cn('h-3 w-3 text-sidebar-foreground/30 transition-transform duration-200', isSubOpen && 'rotate-180')} />
+                  <ChevronDown
+                    className={cn(
+                      'h-3 w-3 text-sidebar-foreground/30 transition-transform duration-200',
+                      isSubOpen && 'rotate-180',
+                    )}
+                  />
                 </>
               )}
             </button>
@@ -154,13 +167,24 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
           onMouseEnter={prefetch.onMouseEnter}
           onTouchStart={prefetch.onTouchStart}
         >
-          <Icon className={cn('h-[18px] w-[18px] shrink-0 transition-all duration-500', isActive ? 'scale-110 text-primary' : 'group-hover:scale-110 group-hover:text-primary')} />
+          <Icon
+            className={cn(
+              'h-[18px] w-[18px] shrink-0 transition-all duration-500',
+              isActive
+                ? 'scale-110 text-primary'
+                : 'group-hover:scale-110 group-hover:text-primary',
+            )}
+          />
           {!isCollapsed && <span className="flex-1 truncate text-sm">{item.label}</span>}
           {!isCollapsed && item.shortcut && (
-            <kbd className="ml-auto hidden rounded bg-muted/30 px-1 py-0.5 font-mono text-[9px] text-muted-foreground/40 lg:inline-block">{item.shortcut}</kbd>
+            <kbd className="ml-auto hidden rounded bg-muted/30 px-1 py-0.5 font-mono text-[9px] text-muted-foreground/40 lg:inline-block">
+              {item.shortcut}
+            </kbd>
           )}
           {!isCollapsed && item.badge != null && (
-            <span className="ml-auto min-w-[20px] rounded-full bg-primary/20 px-1.5 py-0.5 text-center text-[10px] font-semibold text-white">{item.badge}</span>
+            <span className="ml-auto min-w-[20px] rounded-full bg-primary/20 px-1.5 py-0.5 text-center text-[10px] font-semibold text-white">
+              {item.badge}
+            </span>
           )}
         </NavLink>
       );
@@ -168,12 +192,22 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
       if (isCollapsed) {
         return (
           <Tooltip key={item.href} delayDuration={0}>
-            <TooltipTrigger asChild><div>{linkContent}</div></TooltipTrigger>
+            <TooltipTrigger asChild>
+              <div>{linkContent}</div>
+            </TooltipTrigger>
             <TooltipContent side="right" className="z-[100] border-border bg-card">
               <div className="flex items-center gap-2">
                 <span>{item.label}</span>
-                {item.shortcut && <kbd className="rounded bg-muted/50 px-1 py-0.5 font-mono text-[9px] text-muted-foreground/60">{item.shortcut}</kbd>}
-                {item.badge != null && <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-semibold text-white">{item.badge}</span>}
+                {item.shortcut && (
+                  <kbd className="rounded bg-muted/50 px-1 py-0.5 font-mono text-[9px] text-muted-foreground/60">
+                    {item.shortcut}
+                  </kbd>
+                )}
+                {item.badge != null && (
+                  <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                    {item.badge}
+                  </span>
+                )}
               </div>
             </TooltipContent>
           </Tooltip>
@@ -199,16 +233,28 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
               hasActiveItem && 'bg-primary/[0.03] text-primary/90',
             )}
           >
-            <GroupIcon className={cn('h-4.5 w-4.5 shrink-0 transition-all duration-300', hasActiveItem ? 'text-primary' : 'text-sidebar-foreground/30 group-hover:text-sidebar-foreground/60')} />
-            <span className="flex-1 text-left text-xs font-semibold uppercase tracking-wider">{group.label}</span>
-            <ChevronDown className={cn('h-3.5 w-3.5 text-sidebar-foreground/30 transition-transform duration-300', isOpen && 'rotate-180')} />
+            <GroupIcon
+              className={cn(
+                'h-4.5 w-4.5 shrink-0 transition-all duration-300',
+                hasActiveItem
+                  ? 'text-primary'
+                  : 'text-sidebar-foreground/30 group-hover:text-sidebar-foreground/60',
+              )}
+            />
+            <span className="flex-1 text-left text-xs font-semibold uppercase tracking-wider">
+              {group.label}
+            </span>
+            <ChevronDown
+              className={cn(
+                'h-3.5 w-3.5 text-sidebar-foreground/30 transition-transform duration-300',
+                isOpen && 'rotate-180',
+              )}
+            />
           </button>
         </CollapsibleTrigger>
         {/* CollapsibleContent sem forceMount nem framer-motion — elimina render loops */}
         <CollapsibleContent>
-          <div className="mt-1 space-y-0.5 pb-1 pl-3">
-            {group.items.map(renderNavLink)}
-          </div>
+          <div className="mt-1 space-y-0.5 pb-1 pl-3">{group.items.map(renderNavLink)}</div>
         </CollapsibleContent>
       </Collapsible>
     );

@@ -27,8 +27,13 @@ interface ProductTags {
 
 function toArray(value: unknown): string[] {
   if (!value) return [];
-  if (Array.isArray(value)) return value.filter((v): v is string => typeof v === 'string' && !!v.trim());
-  if (typeof value === 'string') return value.split(/[,;|]/).map(v => v.trim()).filter(Boolean);
+  if (Array.isArray(value))
+    return value.filter((v): v is string => typeof v === 'string' && !!v.trim());
+  if (typeof value === 'string')
+    return value
+      .split(/[,;|]/)
+      .map((v) => v.trim())
+      .filter(Boolean);
   return [];
 }
 
@@ -40,9 +45,16 @@ async function fetchProductTags(productId: string): Promise<ProductTags> {
 
   const product = data?.data?.records?.[0] || data?.data;
   const raw = product?.tags;
-  const tags = typeof raw === 'string'
-    ? (() => { try { return JSON.parse(raw); } catch { return {}; } })()
-    : (raw || {});
+  const tags =
+    typeof raw === 'string'
+      ? (() => {
+          try {
+            return JSON.parse(raw);
+          } catch {
+            return {};
+          }
+        })()
+      : raw || {};
 
   return {
     publicoAlvo: toArray(tags.publicoAlvo ?? tags.publico_alvo),
@@ -80,13 +92,32 @@ const CATEGORIES: {
   icon: React.ElementType;
   options: string[];
 }[] = [
-  { key: 'publicoAlvo', label: 'Público-Alvo', icon: Users, options: [...PUBLICO_ALVO].sort((a, b) => a.localeCompare(b, 'pt-BR')) },
-  { key: 'datasComemorativas', label: 'Datas Comemorativas', icon: Calendar, options: [...DATAS_COMEMORATIVAS].sort((a, b) => a.localeCompare(b, 'pt-BR')) },
-  { key: 'endomarketing', label: 'Endomarketing', icon: Megaphone, options: [...ENDOMARKETING].sort((a, b) => a.localeCompare(b, 'pt-BR')) },
+  {
+    key: 'publicoAlvo',
+    label: 'Público-Alvo',
+    icon: Users,
+    options: [...PUBLICO_ALVO].sort((a, b) => a.localeCompare(b, 'pt-BR')),
+  },
+  {
+    key: 'datasComemorativas',
+    label: 'Datas Comemorativas',
+    icon: Calendar,
+    options: [...DATAS_COMEMORATIVAS].sort((a, b) => a.localeCompare(b, 'pt-BR')),
+  },
+  {
+    key: 'endomarketing',
+    label: 'Endomarketing',
+    icon: Megaphone,
+    options: [...ENDOMARKETING].sort((a, b) => a.localeCompare(b, 'pt-BR')),
+  },
 ];
 
 export function ProductMarketingSection({ productId }: ProductMarketingSectionProps) {
-  const [tags, setTags] = useState<ProductTags>({ publicoAlvo: [], datasComemorativas: [], endomarketing: [] });
+  const [tags, setTags] = useState<ProductTags>({
+    publicoAlvo: [],
+    datasComemorativas: [],
+    endomarketing: [],
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [togglingKeys, setTogglingKeys] = useState<Set<string>>(new Set());
@@ -94,39 +125,48 @@ export function ProductMarketingSection({ productId }: ProductMarketingSectionPr
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    fetchProductTags(productId).then(t => {
-      setTags(t);
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    fetchProductTags(productId)
+      .then((t) => {
+        setTags(t);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, [productId]);
 
-  const toggleItem = useCallback(async (category: CategoryKey, item: string) => {
-    const toggleKey = `${category}::${item}`;
-    if (togglingKeys.has(toggleKey)) return;
-    setTogglingKeys(prev => new Set(prev).add(toggleKey));
+  const toggleItem = useCallback(
+    async (category: CategoryKey, item: string) => {
+      const toggleKey = `${category}::${item}`;
+      if (togglingKeys.has(toggleKey)) return;
+      setTogglingKeys((prev) => new Set(prev).add(toggleKey));
 
-    const current = tags[category] || [];
-    const isSelected = current.includes(item);
-    const updated = isSelected ? current.filter(i => i !== item) : [...current, item];
+      const current = tags[category] || [];
+      const isSelected = current.includes(item);
+      const updated = isSelected ? current.filter((i) => i !== item) : [...current, item];
 
-    const newTags = { ...tags, [category]: updated };
-    setTags(newTags);
+      const newTags = { ...tags, [category]: updated };
+      setTags(newTags);
 
-    setSaving(true);
-    try {
-      await saveProductTags(productId, newTags);
-      toast.success(isSelected ? 'Removido' : 'Adicionado');
-    } catch (err) {
-      setTags(tags);
-      toast.error(err instanceof Error ? err.message : 'Erro ao salvar');
-    } finally {
-      setSaving(false);
-      setTogglingKeys(prev => { const next = new Set(prev); next.delete(toggleKey); return next; });
-    }
-  }, [productId, tags, togglingKeys]);
+      setSaving(true);
+      try {
+        await saveProductTags(productId, newTags);
+        toast.success(isSelected ? 'Removido' : 'Adicionado');
+      } catch (err) {
+        setTags(tags);
+        toast.error(err instanceof Error ? err.message : 'Erro ao salvar');
+      } finally {
+        setSaving(false);
+        setTogglingKeys((prev) => {
+          const next = new Set(prev);
+          next.delete(toggleKey);
+          return next;
+        });
+      }
+    },
+    [productId, tags, togglingKeys],
+  );
 
   const toggleGroup = (key: string) => {
-    setOpenGroups(prev => {
+    setOpenGroups((prev) => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
       else next.add(key);
@@ -166,43 +206,48 @@ export function ProductMarketingSection({ productId }: ProductMarketingSectionPr
     <div className="space-y-3">
       {/* Badges dos selecionados */}
       {totalSelected > 0 && (
-        <div className="p-2.5 bg-primary/5 rounded-lg border border-primary/20">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-primary flex items-center gap-1.5">
+        <div className="rounded-lg border border-primary/20 bg-primary/5 p-2.5">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="flex items-center gap-1.5 text-xs font-medium text-primary">
               <Megaphone className="h-3 w-3" />
               Selecionados
-              {saving && <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />}
+              {saving && <span className="h-2 w-2 animate-pulse rounded-full bg-primary" />}
             </span>
             <button
               type="button"
               onClick={clearAll}
-              className="text-[10px] text-muted-foreground hover:text-destructive transition-colors"
+              className="text-[10px] text-muted-foreground transition-colors hover:text-destructive"
             >
               Limpar todos
             </button>
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {CATEGORIES.flatMap(cat =>
-              (tags[cat.key] || []).sort((a, b) => a.localeCompare(b, 'pt-BR')).map(item => (
-                <span
-                  key={`${cat.key}-${item}`}
-                  className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium border border-border bg-background text-foreground hover:bg-muted/50 cursor-pointer transition-all duration-200"
-                  onClick={() => toggleItem(cat.key, item)}
-                >
+            {CATEGORIES.flatMap((cat) =>
+              (tags[cat.key] || [])
+                .sort((a, b) => a.localeCompare(b, 'pt-BR'))
+                .map((item) => (
                   <span
-                    className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: CATEGORY_COLORS[cat.key] }}
-                  />
-                  <span className="truncate max-w-[100px]">{item}</span>
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); toggleItem(cat.key, item); }}
-                    className="rounded-full p-0.5 ml-0.5 hover:bg-destructive/20 hover:text-destructive transition-all duration-150"
+                    key={`${cat.key}-${item}`}
+                    className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium text-foreground transition-all duration-200 hover:bg-muted/50"
+                    onClick={() => toggleItem(cat.key, item)}
                   >
-                    <X className="w-2.5 h-2.5" />
-                  </button>
-                </span>
-              ))
+                    <span
+                      className="h-2 w-2 flex-shrink-0 rounded-full"
+                      style={{ backgroundColor: CATEGORY_COLORS[cat.key] }}
+                    />
+                    <span className="max-w-[100px] truncate">{item}</span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleItem(cat.key, item);
+                      }}
+                      className="ml-0.5 rounded-full p-0.5 transition-all duration-150 hover:bg-destructive/20 hover:text-destructive"
+                    >
+                      <X className="h-2.5 w-2.5" />
+                    </button>
+                  </span>
+                )),
             )}
           </div>
         </div>
@@ -210,12 +255,12 @@ export function ProductMarketingSection({ productId }: ProductMarketingSectionPr
 
       {/* Busca */}
       <div className="relative">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+        <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Buscar classificação..."
           value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="h-8 text-sm pl-8 pr-8"
+          onChange={(e) => setSearch(e.target.value)}
+          className="h-8 pl-8 pr-8 text-sm"
         />
         {search && (
           <button
@@ -229,12 +274,12 @@ export function ProductMarketingSection({ productId }: ProductMarketingSectionPr
       </div>
 
       {/* Estatísticas */}
-      <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1">
+      <div className="flex items-center justify-between px-1 text-[11px] text-muted-foreground">
         <span>{CATEGORIES.length} categorias</span>
         <span>•</span>
         <span>{totalOptions} opções</span>
         <span>•</span>
-        <span className={cn("font-medium", totalSelected > 0 && "text-primary")}>
+        <span className={cn('font-medium', totalSelected > 0 && 'text-primary')}>
           {totalSelected} selecionados
         </span>
       </div>
@@ -246,10 +291,15 @@ export function ProductMarketingSection({ productId }: ProductMarketingSectionPr
             const selected = tags[key] || [];
             const color = CATEGORY_COLORS[key];
             const filteredOptions = search
-              ? options.filter(o => o.toLowerCase().includes(searchLower))
+              ? options.filter((o) => o.toLowerCase().includes(searchLower))
               : options;
 
-            if (search && filteredOptions.length === 0 && !label.toLowerCase().includes(searchLower)) return null;
+            if (
+              search &&
+              filteredOptions.length === 0 &&
+              !label.toLowerCase().includes(searchLower)
+            )
+              return null;
 
             const linkedInCat = selected.length;
             const isOpen = openGroups.has(key) || !!search;
@@ -259,10 +309,10 @@ export function ProductMarketingSection({ productId }: ProductMarketingSectionPr
               <div
                 key={key}
                 className={cn(
-                  "rounded-lg overflow-hidden transition-all duration-200",
+                  'overflow-hidden rounded-lg transition-all duration-200',
                   hasAnySelection
-                    ? "bg-gradient-to-r from-primary/10 to-primary/5 ring-1 ring-primary/30"
-                    : "bg-muted/30 hover:bg-muted/50"
+                    ? 'bg-gradient-to-r from-primary/10 to-primary/5 ring-1 ring-primary/30'
+                    : 'bg-muted/30 hover:bg-muted/50',
                 )}
               >
                 {/* Header */}
@@ -271,20 +321,22 @@ export function ProductMarketingSection({ productId }: ProductMarketingSectionPr
                     type="button"
                     onClick={() => toggleGroup(key)}
                     className={cn(
-                      "p-1 rounded-md transition-all duration-200",
-                      isOpen ? "bg-primary/10" : "bg-muted hover:bg-muted/80"
+                      'rounded-md p-1 transition-all duration-200',
+                      isOpen ? 'bg-primary/10' : 'bg-muted hover:bg-muted/80',
                     )}
                   >
-                    <ChevronDown className={cn(
-                      "h-3.5 w-3.5 transition-transform duration-200",
-                      isOpen ? "rotate-180 text-primary" : "text-muted-foreground"
-                    )} />
+                    <ChevronDown
+                      className={cn(
+                        'h-3.5 w-3.5 transition-transform duration-200',
+                        isOpen ? 'rotate-180 text-primary' : 'text-muted-foreground',
+                      )}
+                    />
                   </button>
 
                   <div
                     className={cn(
-                      "w-4 h-4 rounded-full flex-shrink-0 ring-2 ring-offset-1 ring-offset-background transition-all",
-                      hasAnySelection ? "ring-primary/50 scale-110" : "ring-border/50"
+                      'h-4 w-4 flex-shrink-0 rounded-full ring-2 ring-offset-1 ring-offset-background transition-all',
+                      hasAnySelection ? 'scale-110 ring-primary/50' : 'ring-border/50',
                     )}
                     style={{
                       backgroundColor: color,
@@ -292,30 +344,36 @@ export function ProductMarketingSection({ productId }: ProductMarketingSectionPr
                     }}
                   />
 
-                  <Icon className={cn(
-                    "h-3.5 w-3.5 flex-shrink-0 transition-colors",
-                    hasAnySelection ? "text-primary" : "text-muted-foreground"
-                  )} />
+                  <Icon
+                    className={cn(
+                      'h-3.5 w-3.5 flex-shrink-0 transition-colors',
+                      hasAnySelection ? 'text-primary' : 'text-muted-foreground',
+                    )}
+                  />
 
-                  <span className={cn(
-                    "text-sm font-medium truncate flex-1 transition-colors",
-                    hasAnySelection ? "text-primary" : "text-foreground"
-                  )}>
+                  <span
+                    className={cn(
+                      'flex-1 truncate text-sm font-medium transition-colors',
+                      hasAnySelection ? 'text-primary' : 'text-foreground',
+                    )}
+                  >
                     {label}
                   </span>
 
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <div className="flex flex-shrink-0 items-center gap-1.5">
                     {linkedInCat > 0 && (
-                      <span className="bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                      <span className="min-w-[18px] rounded-full bg-primary px-1.5 py-0.5 text-center text-[10px] font-bold text-primary-foreground">
                         {linkedInCat}
                       </span>
                     )}
-                    <span className={cn(
-                      "text-[11px] px-1.5 py-0.5 rounded-full",
-                      hasAnySelection
-                        ? "bg-primary/20 text-primary font-medium"
-                        : "bg-muted text-muted-foreground"
-                    )}>
+                    <span
+                      className={cn(
+                        'rounded-full px-1.5 py-0.5 text-[11px]',
+                        hasAnySelection
+                          ? 'bg-primary/20 font-medium text-primary'
+                          : 'bg-muted text-muted-foreground',
+                      )}
+                    >
                       {filteredOptions.length}
                     </span>
                   </div>
@@ -323,36 +381,36 @@ export function ProductMarketingSection({ productId }: ProductMarketingSectionPr
 
                 {/* Opções */}
                 {isOpen && filteredOptions.length > 0 && (
-                  <div className="px-2.5 pb-2.5 space-y-0.5">
-                    <div className="border-t border-border/30 pt-2 ml-8">
-                      {filteredOptions.map(opt => {
+                  <div className="space-y-0.5 px-2.5 pb-2.5">
+                    <div className="ml-8 border-t border-border/30 pt-2">
+                      {filteredOptions.map((opt) => {
                         const isSelected = selected.includes(opt);
                         return (
                           <label
                             key={opt}
                             className={cn(
-                              "flex items-center gap-2.5 py-1.5 px-2.5 rounded-md cursor-pointer text-sm transition-all duration-150",
+                              'flex cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-all duration-150',
                               isSelected
-                                ? "bg-primary/15 text-foreground font-medium shadow-sm"
-                                : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                                ? 'bg-primary/15 font-medium text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
                             )}
                           >
                             {togglingKeys.has(`${key}::${opt}`) ? (
-                              <Loader2 className="w-4 h-4 animate-spin text-primary flex-shrink-0" />
+                              <Loader2 className="h-4 w-4 flex-shrink-0 animate-spin text-primary" />
                             ) : (
                               <Checkbox
                                 checked={isSelected}
                                 onCheckedChange={() => toggleItem(key, opt)}
-                                className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                className="data-[state=checked]:border-primary data-[state=checked]:bg-primary"
                               />
                             )}
                             <span
-                              className="w-2 h-2 rounded-full flex-shrink-0"
+                              className="h-2 w-2 flex-shrink-0 rounded-full"
                               style={{ backgroundColor: color }}
                             />
-                            <span className="truncate flex-1">{opt}</span>
+                            <span className="flex-1 truncate">{opt}</span>
                             {isSelected && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
                             )}
                           </label>
                         );
@@ -363,8 +421,8 @@ export function ProductMarketingSection({ productId }: ProductMarketingSectionPr
 
                 {isOpen && filteredOptions.length === 0 && (
                   <div className="px-2.5 pb-2.5">
-                    <div className="border-t border-border/30 pt-2 ml-8">
-                      <p className="text-xs text-muted-foreground italic py-2">
+                    <div className="ml-8 border-t border-border/30 pt-2">
+                      <p className="py-2 text-xs italic text-muted-foreground">
                         Nenhuma opção encontrada
                       </p>
                     </div>

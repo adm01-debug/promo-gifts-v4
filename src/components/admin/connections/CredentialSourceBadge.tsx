@@ -1,13 +1,8 @@
-import { Database, AlertTriangle, Minus } from "lucide-react";
-import { cn } from "@/lib/utils";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { resolveSource } from "./CredentialsSourceFilterContext";
-import type { SecretStatus } from "@/hooks/admin";
+import { Database, AlertTriangle, Minus } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { resolveSource } from './CredentialsSourceFilterContext';
+import type { SecretStatus } from '@/hooks/admin';
 
 interface Props {
   status?: SecretStatus;
@@ -19,23 +14,23 @@ export function CredentialSourceBadge({ status, className }: Props) {
 
   const config = {
     db: {
-      label: "DB",
+      label: 'DB',
       icon: Database,
-      tooltip: "Valor persistido no banco. Auditável e rotacionável pelo painel.",
-      cls: "border-success/30 bg-success/10 text-success",
+      tooltip: 'Valor persistido no banco. Auditável e rotacionável pelo painel.',
+      cls: 'border-success/30 bg-success/10 text-success',
     },
     env: {
-      label: "ENV",
+      label: 'ENV',
       icon: AlertTriangle,
       tooltip:
-        "Valor herdado de variável de ambiente. Salve novamente para migrar para o banco e habilitar rotação/auditoria.",
-      cls: "border-warning/40 bg-warning/10 text-warning",
+        'Valor herdado de variável de ambiente. Salve novamente para migrar para o banco e habilitar rotação/auditoria.',
+      cls: 'border-warning/40 bg-warning/10 text-warning',
     },
     none: {
-      label: "—",
+      label: '—',
       icon: Minus,
-      tooltip: "Credencial ainda não configurada.",
-      cls: "border-border bg-muted text-muted-foreground",
+      tooltip: 'Credencial ainda não configurada.',
+      cls: 'border-border bg-muted text-muted-foreground',
     },
   }[source];
 
@@ -47,7 +42,7 @@ export function CredentialSourceBadge({ status, className }: Props) {
         <TooltipTrigger asChild>
           <span
             className={cn(
-              "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+              'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
               config.cls,
               className,
             )}
@@ -55,7 +50,7 @@ export function CredentialSourceBadge({ status, className }: Props) {
           >
             <Icon className="h-2.5 w-2.5" />
             {config.label}
-            {source === "env" && <span aria-hidden="true">⚠</span>}
+            {source === 'env' && <span aria-hidden="true">⚠</span>}
           </span>
         </TooltipTrigger>
         <TooltipContent className="max-w-xs text-xs">{config.tooltip}</TooltipContent>

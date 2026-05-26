@@ -39,7 +39,7 @@ function RouteSuspense({ children }: { children: ReactNode }) {
     // Start progress and performance tracking on pathname change (navigation)
     NProgress.start();
     performanceTracker.startRouteTransition(pathname);
-    
+
     // Complete progress after a short delay (once the new route should be rendering)
     const timer = setTimeout(() => {
       NProgress.done();
@@ -50,7 +50,6 @@ function RouteSuspense({ children }: { children: ReactNode }) {
       clearTimeout(timer);
       NProgress.done();
     };
-
   }, [pathname]);
 
   return <Suspense fallback={getFallback(pathname)}>{children}</Suspense>;

@@ -13,28 +13,39 @@ import {
   type EnrichedArea,
   type WizardStep,
   type DetailFormState,
-} from "./types";
+} from './types';
 
 export function useEngravingWizard(productId: string | undefined, isEdit: boolean) {
   const queryClient = useQueryClient();
   const [wizardStep, setWizardStep] = useState<WizardStep>('list');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const [selectedComponent, setSelectedComponent] = useState<{ code: string; name: string } | null>(null);
-  const [selectedLocation, setSelectedLocation] = useState<{ code: string; name: string } | null>(null);
+  const [selectedComponent, setSelectedComponent] = useState<{ code: string; name: string } | null>(
+    null,
+  );
+  const [selectedLocation, setSelectedLocation] = useState<{ code: string; name: string } | null>(
+    null,
+  );
   const [selectedTechnique, setSelectedTechnique] = useState<ExternalTechnique | null>(null);
   const [customComponent, setCustomComponent] = useState('');
   const [customLocation, setCustomLocation] = useState('');
   const [techSearch, setTechSearch] = useState('');
   const [detailForm, setDetailForm] = useState<DetailFormState>(DEFAULT_DETAIL_FORM);
-  const [localAreas, setLocalAreas] = useState<(PrintAreaTechnique & { _techData?: ExternalTechnique })[]>([]);
+  const [localAreas, setLocalAreas] = useState<
+    (PrintAreaTechnique & { _techData?: ExternalTechnique })[]
+  >([]);
 
   // Fetch techniques
   const { data: techniques = [], isLoading: loadingTechs } = useQuery({
     queryKey: ['external-techniques-catalog'],
     queryFn: async (): Promise<ExternalTechnique[]> => {
       const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-        body: { table: 'tecnica_gravacao', operation: 'select', orderBy: { column: 'nome', ascending: true }, limit: 200 },
+        body: {
+          table: 'tecnica_gravacao',
+          operation: 'select',
+          orderBy: { column: 'nome', ascending: true },
+          limit: 200,
+        },
       });
       if (error) throw new Error(error.message);
       if (!data?.success) throw new Error(data?.error || 'Erro ao buscar técnicas');
@@ -54,24 +65,32 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
     queryKey: ['print-area-techniques', productId],
     queryFn: async (): Promise<EnrichedArea[]> => {
       const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-        body: { table: 'print_area_techniques', operation: 'select', filters: { product_id: productId }, orderBy: { column: 'technique_order', ascending: true }, limit: 100 },
+        body: {
+          table: 'print_area_techniques',
+          operation: 'select',
+          filters: { product_id: productId },
+          orderBy: { column: 'technique_order', ascending: true },
+          limit: 100,
+        },
       });
       if (error) throw new Error(error.message);
       if (!data?.success) throw new Error(data?.error || 'Erro ao buscar áreas');
       const records: PrintAreaTechnique[] = data.data?.records || [];
-      return records.map(area => enrichArea(area, techById));
+      return records.map((area) => enrichArea(area, techById));
     },
     enabled: !!productId && isEdit && techniques.length > 0,
   });
 
-  const enrichedLocalAreas = useMemo((): EnrichedArea[] =>
-    localAreas.map(area => enrichArea(area, techById, area._techData)),
-  [localAreas, techById]);
+  const enrichedLocalAreas = useMemo(
+    (): EnrichedArea[] => localAreas.map((area) => enrichArea(area, techById, area._techData)),
+    [localAreas, techById],
+  );
 
   const displayAreas: EnrichedArea[] = isEdit && productId ? savedAreas : enrichedLocalAreas;
 
   // Mutations
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['print-area-techniques', productId] });
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: ['print-area-techniques', productId] });
 
   const createMutation = useMutation({
     mutationFn: async (area: Omit<PrintAreaTechnique, 'id' | 'created_at' | 'updated_at'>) => {
@@ -81,7 +100,10 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
       if (error) throw new Error(error.message);
       if (!data?.success) throw new Error(data?.error || 'Erro ao criar área');
     },
-    onSuccess: () => { invalidate(); toast.success('Área de personalização adicionada'); },
+    onSuccess: () => {
+      invalidate();
+      toast.success('Área de personalização adicionada');
+    },
     onError: (e: unknown) => toast.error(sanitizeError(e)),
   });
 
@@ -93,7 +115,10 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
       if (error) throw new Error(error.message);
       if (!data?.success) throw new Error(data?.error || 'Erro ao atualizar área');
     },
-    onSuccess: () => { invalidate(); toast.success('Área atualizada'); },
+    onSuccess: () => {
+      invalidate();
+      toast.success('Área atualizada');
+    },
     onError: (e: unknown) => toast.error(sanitizeError(e)),
   });
 
@@ -105,7 +130,10 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
       if (error) throw new Error(error.message);
       if (!data?.success) throw new Error(data?.error || 'Erro ao excluir área');
     },
-    onSuccess: () => { invalidate(); toast.success('Área removida'); },
+    onSuccess: () => {
+      invalidate();
+      toast.success('Área removida');
+    },
     onError: (e: unknown) => toast.error(sanitizeError(e)),
   });
 
@@ -121,18 +149,24 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
     setDetailForm(DEFAULT_DETAIL_FORM);
   }, []);
 
-  const startWizard = useCallback(() => { resetWizard(); setWizardStep('component'); }, [resetWizard]);
+  const startWizard = useCallback(() => {
+    resetWizard();
+    setWizardStep('component');
+  }, [resetWizard]);
 
   const handleSelectComponent = useCallback((comp: { code: string; name: string }) => {
-    setSelectedComponent(comp); setWizardStep('location');
+    setSelectedComponent(comp);
+    setWizardStep('location');
   }, []);
 
   const handleSelectLocation = useCallback((loc: { code: string; name: string }) => {
-    setSelectedLocation(loc); setWizardStep('technique');
+    setSelectedLocation(loc);
+    setWizardStep('technique');
   }, []);
 
   const handleSelectTechnique = useCallback((tech: ExternalTechnique) => {
-    setSelectedTechnique(tech); setWizardStep('details');
+    setSelectedTechnique(tech);
+    setWizardStep('details');
   }, []);
 
   const handleSaveArea = useCallback(() => {
@@ -157,37 +191,66 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
     if (isEdit && productId) {
       createMutation.mutate(newArea);
     } else {
-      setLocalAreas(prev => [...prev, { ...newArea, id: `local-${Date.now()}`, _techData: selectedTechnique } as PrintAreaTechnique & { _techData?: ExternalTechnique }]);
+      setLocalAreas((prev) => [
+        ...prev,
+        {
+          ...newArea,
+          id: `local-${Date.now()}`,
+          _techData: selectedTechnique,
+        } as PrintAreaTechnique & { _techData?: ExternalTechnique },
+      ]);
       toast.success('Área adicionada (será salva junto ao produto)');
     }
     resetWizard();
-  }, [selectedComponent, selectedLocation, selectedTechnique, detailForm, productId, isEdit, displayAreas.length, createMutation, resetWizard]);
+  }, [
+    selectedComponent,
+    selectedLocation,
+    selectedTechnique,
+    detailForm,
+    productId,
+    isEdit,
+    displayAreas.length,
+    createMutation,
+    resetWizard,
+  ]);
 
-  const handleDeleteArea = useCallback((area: EnrichedArea) => {
-    if (!confirm('Remover esta área de personalização?')) return;
-    if (isEdit && area.id && !area.id.startsWith('local-')) {
-      deleteMutation.mutate(area.id);
-    } else {
-      setLocalAreas(prev => prev.filter(a => a.id !== area.id));
-      toast.success('Área removida');
-    }
-  }, [isEdit, deleteMutation]);
+  const handleDeleteArea = useCallback(
+    (area: EnrichedArea) => {
+      if (!confirm('Remover esta área de personalização?')) return;
+      if (isEdit && area.id && !area.id.startsWith('local-')) {
+        deleteMutation.mutate(area.id);
+      } else {
+        setLocalAreas((prev) => prev.filter((a) => a.id !== area.id));
+        toast.success('Área removida');
+      }
+    },
+    [isEdit, deleteMutation],
+  );
 
-  const handleToggleActive = useCallback((area: EnrichedArea) => {
-    if (isEdit && area.id && !area.id.startsWith('local-')) {
-      updateMutation.mutate({ id: area.id, is_active: !area.is_active });
-    } else {
-      setLocalAreas(prev => prev.map(a => a.id === area.id ? { ...a, is_active: !a.is_active } : a));
-    }
-  }, [isEdit, updateMutation]);
+  const handleToggleActive = useCallback(
+    (area: EnrichedArea) => {
+      if (isEdit && area.id && !area.id.startsWith('local-')) {
+        updateMutation.mutate({ id: area.id, is_active: !area.is_active });
+      } else {
+        setLocalAreas((prev) =>
+          prev.map((a) => (a.id === area.id ? { ...a, is_active: !a.is_active } : a)),
+        );
+      }
+    },
+    [isEdit, updateMutation],
+  );
 
   // Filtered techniques
   const filteredTechniques = useMemo(() => {
-    if (!techSearch) return techniques.filter(t => t.ativo !== false);
+    if (!techSearch) return techniques.filter((t) => t.ativo !== false);
     const s = techSearch.toLowerCase();
-    return techniques.filter(t =>
-      t.ativo !== false &&
-      (t.nome.toLowerCase().includes(s) || (t.codigo_curto || '').toLowerCase().includes(s) || t.nome_grupo?.toLowerCase().includes(s) || t.grupo_tecnica?.toLowerCase().includes(s))
+    return techniques.filter(
+      (t) =>
+        t.ativo !== false &&
+        (t.nome.toLowerCase().includes(s) ||
+          (t.codigo_curto || '').toLowerCase().includes(s) ||
+          t.nome_grupo?.toLowerCase().includes(s) ||
+          t.grupo_tecnica?.toLowerCase().includes(s)),
     );
   }, [techniques, techSearch]);
 
@@ -206,30 +269,60 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
   const isLoading = loadingTechs || (isEdit && loadingAreas);
 
   return {
-    wizardStep, setWizardStep, expandedId, setExpandedId,
-    selectedComponent, selectedLocation, selectedTechnique,
-    customComponent, setCustomComponent, customLocation, setCustomLocation,
-    techSearch, setTechSearch, detailForm, setDetailForm,
-    localAreas, displayAreas,
-    filteredTechniques, groupedTechniques,
-    wizardStepIndex, isBusy, isLoading, loadingTechs,
+    wizardStep,
+    setWizardStep,
+    expandedId,
+    setExpandedId,
+    selectedComponent,
+    selectedLocation,
+    selectedTechnique,
+    customComponent,
+    setCustomComponent,
+    customLocation,
+    setCustomLocation,
+    techSearch,
+    setTechSearch,
+    detailForm,
+    setDetailForm,
+    localAreas,
+    displayAreas,
+    filteredTechniques,
+    groupedTechniques,
+    wizardStepIndex,
+    isBusy,
+    isLoading,
+    loadingTechs,
     // Actions
-    resetWizard, startWizard,
-    handleSelectComponent, handleSelectLocation, handleSelectTechnique,
-    handleSaveArea, handleDeleteArea, handleToggleActive,
+    resetWizard,
+    startWizard,
+    handleSelectComponent,
+    handleSelectLocation,
+    handleSelectTechnique,
+    handleSaveArea,
+    handleDeleteArea,
+    handleToggleActive,
   };
 }
 
 const WIZARD_STEPS_IDS: WizardStep[] = ['component', 'location', 'technique', 'details'];
 
-function enrichArea(area: PrintAreaTechnique, techById: Map<string, ExternalTechnique>, override?: ExternalTechnique): EnrichedArea {
+function enrichArea(
+  area: PrintAreaTechnique,
+  techById: Map<string, ExternalTechnique>,
+  override?: ExternalTechnique,
+): EnrichedArea {
   const tech = override || techById.get(area.tabela_preco_id);
   return {
     ...area,
     technique_name: tech?.nome || '—',
     technique_code: tech?.codigo_curto || '—',
     technique_group: tech?.grupo_tecnica || '',
-    max_colors: tech !== null && tech !== undefined && tech.max_cores !== null && tech.max_cores !== undefined ? (typeof tech.max_cores === 'string' ? parseInt(tech.max_cores, 10) : tech.max_cores) : null,
+    max_colors:
+      tech !== null && tech !== undefined && tech.max_cores !== null && tech.max_cores !== undefined
+        ? typeof tech.max_cores === 'string'
+          ? parseInt(tech.max_cores, 10)
+          : tech.max_cores
+        : null,
     setup_cost: tech?.custo_setup ?? null,
     charges_per_color: tech?.cobra_por_cor ?? false,
   };

@@ -67,7 +67,9 @@ async function flush(): Promise<void> {
 
     if (error) {
       // Em caso de erro, devolve ao buffer (limitado para evitar crescimento)
-      logger.warn(`[kill-switch-telemetry] flush falhou (${toSend.length} eventos descartados ou re-enfileirados): ${error.message}`);
+      logger.warn(
+        `[kill-switch-telemetry] flush falhou (${toSend.length} eventos descartados ou re-enfileirados): ${error.message}`,
+      );
       buffer = [...toSend.slice(0, MAX_RETAINED_ON_FAILURE - buffer.length), ...buffer];
     }
   } catch (e) {

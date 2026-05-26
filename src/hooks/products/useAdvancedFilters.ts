@@ -1,13 +1,13 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { 
-  useExternalCategories, 
-  useExternalTechniques, 
+import {
+  useExternalCategories,
+  useExternalTechniques,
   useExternalSuppliers,
   useExternalDatabase,
   type ExternalCategory,
   type ExternalTechnique,
   type ExternalSupplier,
-} from "@/hooks/intelligence/useExternalDatabase";
+} from '@/hooks/intelligence/useExternalDatabase';
 
 // Re-exportar tipos e constantes dos novos arquivos
 export type {
@@ -22,13 +22,17 @@ export type {
   TagData,
 } from '@/types/advancedFilters';
 
-export {
-  defaultAdvancedFilters,
-  STOCK_FILTER_OPTIONS,
-  SORT_OPTIONS,
-} from '@/constants/filters';
+export { defaultAdvancedFilters, STOCK_FILTER_OPTIONS, SORT_OPTIONS } from '@/constants/filters';
 
-import type { CategoryOption, TechniqueOption, SupplierOption, ColorOption, ColorGroupData, TagData, AdvancedFilterState } from '@/types/advancedFilters';
+import type {
+  CategoryOption,
+  TechniqueOption,
+  SupplierOption,
+  ColorOption,
+  ColorGroupData,
+  TagData,
+  AdvancedFilterState,
+} from '@/types/advancedFilters';
 import { defaultAdvancedFilters } from '@/constants/filters';
 
 // ============================================
@@ -38,7 +42,7 @@ import { defaultAdvancedFilters } from '@/constants/filters';
 export function useAdvancedFilters() {
   const [filters, setFilters] = useState<AdvancedFilterState>(defaultAdvancedFilters);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // Hooks para buscar dados do banco externo
   const categoriesDB = useExternalCategories();
   const techniquesDB = useExternalTechniques();
@@ -84,7 +88,7 @@ export function useAdvancedFilters() {
     const categoryMap = new Map<string, CategoryOption>();
     const roots: CategoryOption[] = [];
 
-    categories.forEach(cat => {
+    categories.forEach((cat) => {
       categoryMap.set(cat.id, {
         id: cat.id,
         name: cat.name,
@@ -95,7 +99,7 @@ export function useAdvancedFilters() {
       });
     });
 
-    categoryMap.forEach(cat => {
+    categoryMap.forEach((cat) => {
       if (cat.parentId) {
         const parent = categoryMap.get(cat.parentId);
         if (parent) {
@@ -113,7 +117,7 @@ export function useAdvancedFilters() {
   // Lista plana de categorias para seleção
   const categoryOptions = useMemo((): CategoryOption[] => {
     const flattenCategories = (cats: CategoryOption[], level = 0): CategoryOption[] => {
-      return cats.flatMap(cat => [
+      return cats.flatMap((cat) => [
         { ...cat, level },
         ...flattenCategories(cat.children || [], level + 1),
       ]);
@@ -124,76 +128,84 @@ export function useAdvancedFilters() {
   // Técnicas de personalização
   const techniqueOptions = useMemo((): TechniqueOption[] => {
     const techniques = techniquesDB.data as ExternalTechnique[];
-    return techniques?.map(tech => ({
-      id: tech.id,
-      name: tech.name,
-      code: tech.code || '',
-      estimatedDays: tech.estimated_days,
-      minQuantity: tech.min_quantity,
-    })) || [];
+    return (
+      techniques?.map((tech) => ({
+        id: tech.id,
+        name: tech.name,
+        code: tech.code || '',
+        estimatedDays: tech.estimated_days,
+        minQuantity: tech.min_quantity,
+      })) || []
+    );
   }, [techniquesDB.data]);
 
   // Fornecedores
   const supplierOptions = useMemo((): SupplierOption[] => {
     const suppliers = suppliersDB.data as ExternalSupplier[];
-    return suppliers?.map(sup => ({
-      id: sup.id,
-      name: sup.name,
-      code: sup.code,
-      leadTimeDays: sup.lead_time_days,
-    })) || [];
+    return (
+      suppliers?.map((sup) => ({
+        id: sup.id,
+        name: sup.name,
+        code: sup.code,
+        leadTimeDays: sup.lead_time_days,
+      })) || []
+    );
   }, [suppliersDB.data]);
 
   // Cores
   const colorOptions = useMemo((): ColorOption[] => {
     const colors = colorGroupsDB.data as ColorGroupData[];
-    return colors?.map(color => ({
-      id: color.id,
-      name: color.name,
-      hex: color.hex_code || '#cccccc',
-    })) || [];
+    return (
+      colors?.map((color) => ({
+        id: color.id,
+        name: color.name,
+        hex: color.hex_code || '#cccccc',
+      })) || []
+    );
   }, [colorGroupsDB.data]);
 
   // Tags
   const tagOptions = useMemo(() => {
     const tags = tagsDB.data as TagData[];
-    return tags?.map(tag => ({
-      id: tag.id,
-      name: tag.name,
-      slug: tag.slug,
-      color: tag.color,
-    })) || [];
+    return (
+      tags?.map((tag) => ({
+        id: tag.id,
+        name: tag.name,
+        slug: tag.slug,
+        color: tag.color,
+      })) || []
+    );
   }, [tagsDB.data]);
 
   // Funções para manipular filtros
-  const updateFilter = useCallback(<K extends keyof AdvancedFilterState>(
-    key: K,
-    value: AdvancedFilterState[K]
-  ) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-  }, []);
+  const updateFilter = useCallback(
+    <K extends keyof AdvancedFilterState>(key: K, value: AdvancedFilterState[K]) => {
+      setFilters((prev) => ({ ...prev, [key]: value }));
+    },
+    [],
+  );
 
-  const toggleArrayFilter = useCallback(<K extends keyof AdvancedFilterState>(
-    key: K,
-    value: string
-  ) => {
-    setFilters(prev => {
-      const currentValues = prev[key] as string[];
-      const newValues = currentValues.includes(value)
-        ? currentValues.filter(v => v !== value)
-        : [...currentValues, value];
-      return { ...prev, [key]: newValues };
-    });
-  }, []);
+  const toggleArrayFilter = useCallback(
+    <K extends keyof AdvancedFilterState>(key: K, value: string) => {
+      setFilters((prev) => {
+        const currentValues = prev[key] as string[];
+        const newValues = currentValues.includes(value)
+          ? currentValues.filter((v) => v !== value)
+          : [...currentValues, value];
+        return { ...prev, [key]: newValues };
+      });
+    },
+    [],
+  );
 
   const resetFilters = useCallback(() => {
     setFilters(defaultAdvancedFilters);
   }, []);
 
   const resetFilterGroup = useCallback((keys: (keyof AdvancedFilterState)[]) => {
-    setFilters(prev => {
+    setFilters((prev) => {
       const updates: Partial<AdvancedFilterState> = {};
-      keys.forEach(key => {
+      keys.forEach((key) => {
         updates[key] = defaultAdvancedFilters[key] as never;
       });
       return { ...prev, ...updates };
@@ -231,20 +243,23 @@ export function useAdvancedFilters() {
   }, [filters]);
 
   // Verificar se há filtros ativos em um grupo específico
-  const hasActiveFiltersInGroup = useCallback((keys: (keyof AdvancedFilterState)[]) => {
-    return keys.some(key => {
-      const value = filters[key];
-      const defaultValue = defaultAdvancedFilters[key];
-      
-      if (Array.isArray(value)) {
-        return value.length > 0;
-      }
-      if (typeof value === 'object' && value !== null) {
-        return JSON.stringify(value) !== JSON.stringify(defaultValue);
-      }
-      return value !== defaultValue;
-    });
-  }, [filters]);
+  const hasActiveFiltersInGroup = useCallback(
+    (keys: (keyof AdvancedFilterState)[]) => {
+      return keys.some((key) => {
+        const value = filters[key];
+        const defaultValue = defaultAdvancedFilters[key];
+
+        if (Array.isArray(value)) {
+          return value.length > 0;
+        }
+        if (typeof value === 'object' && value !== null) {
+          return JSON.stringify(value) !== JSON.stringify(defaultValue);
+        }
+        return value !== defaultValue;
+      });
+    },
+    [filters],
+  );
 
   return {
     filters,

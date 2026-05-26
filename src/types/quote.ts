@@ -1,30 +1,39 @@
 // src/types/quote.ts
 // Orçamentos
 
-export type QuoteStatus = 'draft' | 'pending' | 'pending_approval' | 'sent' | 'viewed' | 'approved' | 'converted' | 'rejected' | 'expired';
+export type QuoteStatus =
+  | 'draft'
+  | 'pending'
+  | 'pending_approval'
+  | 'sent'
+  | 'viewed'
+  | 'approved'
+  | 'converted'
+  | 'rejected'
+  | 'expired';
 export type ClientResponse = 'approved' | 'rejected' | 'changes_requested';
 
 export interface Quote {
   id: string;
-  quote_number: string;                    // "ORC-2026-0001"
-  client_id: string | null;                // FK bitrix_clients
+  quote_number: string; // "ORC-2026-0001"
+  client_id: string | null; // FK bitrix_clients
   client_name: string | null;
   client_email: string | null;
   client_phone: string | null;
   client_company: string | null;
-  seller_id: string | null;                // FK profiles.id
+  seller_id: string | null; // FK profiles.id
   status: QuoteStatus;
   subtotal: number | null;
   discount_percent: number | null;
   discount_amount: number | null;
   total: number | null;
-  valid_until: string | null;              // ISO date
+  valid_until: string | null; // ISO date
   payment_terms: string | null;
   delivery_time: string | null;
-  shipping_type: string | null;            // 'cif' (cortesia) | 'fob' (cliente paga) | 'fob_pre' (pré-negociado com cost)
+  shipping_type: string | null; // 'cif' (cortesia) | 'fob' (cliente paga) | 'fob_pre' (pré-negociado com cost)
   shipping_cost: number | null;
-  notes: string | null;                    // Notas para cliente
-  internal_notes: string | null;           // Notas internas
+  notes: string | null; // Notas para cliente
+  internal_notes: string | null; // Notas internas
   bitrix_deal_id: string | null;
   bitrix_quote_id: string | null;
   synced_to_bitrix: boolean | null;

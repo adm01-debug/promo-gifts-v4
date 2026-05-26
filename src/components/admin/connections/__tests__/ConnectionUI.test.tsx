@@ -66,7 +66,10 @@ describe('ConnectionsOverviewTable Interações e Acessibilidade', () => {
       loading: false,
       refresh: vi.fn(),
     } as unknown as ReturnType<typeof useConnectionsOverview>);
-    useConnectionTesterMock.mockReturnValue({ test: vi.fn(), isTesting: false } as unknown as ReturnType<typeof useConnectionTester>);
+    useConnectionTesterMock.mockReturnValue({
+      test: vi.fn(),
+      isTesting: false,
+    } as unknown as ReturnType<typeof useConnectionTester>);
   });
 
   it('deve permitir focar e navegar nos botões de ação via teclado', () => {

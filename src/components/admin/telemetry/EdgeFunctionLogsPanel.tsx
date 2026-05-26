@@ -1,22 +1,16 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Table,
   TableBody,
@@ -24,12 +18,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Activity,
   AlertCircle,
@@ -40,22 +30,22 @@ import {
   Filter,
   Trash2,
   XCircle,
-} from "lucide-react";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import {
   getBridgeSamples,
   subscribeBridgeCalls,
   clearBridgeSamples,
   type BridgeCallSample,
-} from "@/lib/telemetry/bridgeCallMetrics";
+} from '@/lib/telemetry/bridgeCallMetrics';
 import {
   getSecretsManagerSamples,
   subscribeSecretsManagerCalls,
   clearSecretsManagerSamples,
   type SecretsManagerCallSample,
-} from "@/lib/telemetry/secretsManagerCallMetrics";
-import { shortRequestId } from "@/lib/telemetry/requestId";
+} from '@/lib/telemetry/secretsManagerCallMetrics';
+import { shortRequestId } from '@/lib/telemetry/requestId';
 
 /**
  * EdgeFunctionLogsPanel — painel de logs ao vivo das edge functions críticas:
@@ -73,7 +63,7 @@ import { shortRequestId } from "@/lib/telemetry/requestId";
 type UnifiedSample = {
   uid: string;
   ts: number;
-  source: "external-db-bridge" | "crm-db-bridge" | "secrets-manager";
+  source: 'external-db-bridge' | 'crm-db-bridge' | 'secrets-manager';
   op: string;
   target?: string;
   durationMs: number;
@@ -88,29 +78,29 @@ type UnifiedSample = {
 };
 
 const SOURCE_OPTIONS = [
-  { value: "all", label: "Todas as funções" },
-  { value: "external-db-bridge", label: "external-db-bridge" },
-  { value: "crm-db-bridge", label: "crm-db-bridge" },
-  { value: "secrets-manager", label: "secrets-manager" },
+  { value: 'all', label: 'Todas as funções' },
+  { value: 'external-db-bridge', label: 'external-db-bridge' },
+  { value: 'crm-db-bridge', label: 'crm-db-bridge' },
+  { value: 'secrets-manager', label: 'secrets-manager' },
 ] as const;
 
 const STATUS_OPTIONS = [
-  { value: "all", label: "Todos" },
-  { value: "ok", label: "Sucesso" },
-  { value: "error", label: "Erro" },
+  { value: 'all', label: 'Todos' },
+  { value: 'ok', label: 'Sucesso' },
+  { value: 'error', label: 'Erro' },
 ] as const;
 
 function fmtTime(ts: number): string {
   const d = new Date(ts);
-  return d.toLocaleTimeString("pt-BR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
+  return d.toLocaleTimeString('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
   });
 }
 
 function fmtBytes(n: number | undefined): string {
-  if (!n || n <= 0) return "—";
+  if (!n || n <= 0) return '—';
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
   return `${(n / (1024 * 1024)).toFixed(2)} MB`;
@@ -121,7 +111,7 @@ async function copyText(text: string, label: string) {
     await navigator.clipboard.writeText(text);
     toast.success(`${label} copiado`);
   } catch {
-    toast.error("Falha ao copiar");
+    toast.error('Falha ao copiar');
   }
 }
 
@@ -137,9 +127,9 @@ export function EdgeFunctionLogsPanel() {
     () => getSecretsManagerSamples(),
   );
 
-  const [sourceFilter, setSourceFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [search, setSearch] = useState("");
+  const [sourceFilter, setSourceFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [search, setSearch] = useState('');
   const [expandedUid, setExpandedUid] = useState<string | null>(null);
   const [autoScroll, setAutoScroll] = useState(true);
 
@@ -161,7 +151,7 @@ export function EdgeFunctionLogsPanel() {
     const fromSecrets: UnifiedSample[] = secretsSamples.map((s) => ({
       uid: `s-${s.id}`,
       ts: s.ts,
-      source: "secrets-manager",
+      source: 'secrets-manager',
       op: s.action,
       target: s.target,
       durationMs: s.durationMs,
@@ -178,9 +168,9 @@ export function EdgeFunctionLogsPanel() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return unified.filter((row) => {
-      if (sourceFilter !== "all" && row.source !== sourceFilter) return false;
-      if (statusFilter === "ok" && !row.ok) return false;
-      if (statusFilter === "error" && row.ok) return false;
+      if (sourceFilter !== 'all' && row.source !== sourceFilter) return false;
+      if (statusFilter === 'ok' && !row.ok) return false;
+      if (statusFilter === 'error' && row.ok) return false;
       if (q) {
         const haystack = [
           row.op,
@@ -191,7 +181,7 @@ export function EdgeFunctionLogsPanel() {
           row.serverRequestId,
         ]
           .filter(Boolean)
-          .join(" ")
+          .join(' ')
           .toLowerCase();
         if (!haystack.includes(q)) return false;
       }
@@ -210,7 +200,7 @@ export function EdgeFunctionLogsPanel() {
   // por causa do sort desc; basta resetar a posição da ScrollArea).
   useEffect(() => {
     if (!autoScroll) return;
-    const el = document.getElementById("edge-logs-scroll");
+    const el = document.getElementById('edge-logs-scroll');
     if (el) el.scrollTop = 0;
   }, [filtered.length, autoScroll]);
 
@@ -218,7 +208,7 @@ export function EdgeFunctionLogsPanel() {
     clearBridgeSamples();
     clearSecretsManagerSamples();
     setExpandedUid(null);
-    toast.info("Logs limpos");
+    toast.info('Logs limpos');
   };
 
   return (
@@ -231,8 +221,8 @@ export function EdgeFunctionLogsPanel() {
               Logs Edge Functions (ao vivo)
             </CardTitle>
             <CardDescription className="text-xs">
-              external-db-bridge · crm-db-bridge · secrets-manager — correlacione com
-              os edge logs pelo <code className="font-mono">request_id</code>.
+              external-db-bridge · crm-db-bridge · secrets-manager — correlacione com os edge logs
+              pelo <code className="font-mono">request_id</code>.
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -292,12 +282,12 @@ export function EdgeFunctionLogsPanel() {
           />
           <Button
             size="sm"
-            variant={autoScroll ? "secondary" : "outline"}
+            variant={autoScroll ? 'secondary' : 'outline'}
             className="h-8 text-xs"
             onClick={() => setAutoScroll((v) => !v)}
             title="Mantém o topo da lista visível ao receber nova amostra"
           >
-            Auto-scroll: {autoScroll ? "ON" : "OFF"}
+            Auto-scroll: {autoScroll ? 'ON' : 'OFF'}
           </Button>
         </div>
       </CardHeader>
@@ -319,33 +309,26 @@ export function EdgeFunctionLogsPanel() {
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell
-                    colSpan={7}
-                    className="py-8 text-center text-xs text-muted-foreground"
-                  >
+                  <TableCell colSpan={7} className="py-8 text-center text-xs text-muted-foreground">
                     {unified.length === 0
-                      ? "Nenhuma chamada registrada ainda. Interaja com a app para popular o painel."
-                      : "Nenhuma amostra corresponde aos filtros."}
+                      ? 'Nenhuma chamada registrada ainda. Interaja com a app para popular o painel.'
+                      : 'Nenhuma amostra corresponde aos filtros.'}
                   </TableCell>
                 </TableRow>
               ) : (
                 filtered.map((row) => {
                   const expanded = expandedUid === row.uid;
-                  const isBridge = row.source !== "secrets-manager";
-                  const bridgeRaw = isBridge
-                    ? (row.raw as BridgeCallSample)
-                    : null;
+                  const isBridge = row.source !== 'secrets-manager';
+                  const bridgeRaw = isBridge ? (row.raw as BridgeCallSample) : null;
                   return (
                     <>
                       <TableRow
                         key={row.uid}
                         className={cn(
-                          "cursor-pointer hover:bg-muted/40",
-                          !row.ok && "bg-destructive/5",
+                          'cursor-pointer hover:bg-muted/40',
+                          !row.ok && 'bg-destructive/5',
                         )}
-                        onClick={() =>
-                          setExpandedUid(expanded ? null : row.uid)
-                        }
+                        onClick={() => setExpandedUid(expanded ? null : row.uid)}
                       >
                         <TableCell className="py-1.5">
                           {expanded ? (
@@ -358,10 +341,7 @@ export function EdgeFunctionLogsPanel() {
                           {fmtTime(row.ts)}
                         </TableCell>
                         <TableCell className="py-1.5">
-                          <Badge
-                            variant="outline"
-                            className="font-mono text-[10px]"
-                          >
+                          <Badge variant="outline" className="font-mono text-[10px]">
                             {row.source}
                           </Badge>
                         </TableCell>
@@ -377,20 +357,18 @@ export function EdgeFunctionLogsPanel() {
                           {row.ok ? (
                             <span className="inline-flex items-center gap-1 text-xs text-success">
                               <CheckCircle2 className="h-3 w-3" />
-                              {row.status ?? "ok"}
+                              {row.status ?? 'ok'}
                             </span>
                           ) : (
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <span className="inline-flex items-center gap-1 text-xs text-destructive">
                                   <XCircle className="h-3 w-3" />
-                                  {row.status ?? "err"}
+                                  {row.status ?? 'err'}
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs">
-                                <p className="text-xs">
-                                  {row.errorMessage ?? "Erro sem mensagem"}
-                                </p>
+                                <p className="text-xs">{row.errorMessage ?? 'Erro sem mensagem'}</p>
                               </TooltipContent>
                             </Tooltip>
                           )}
@@ -399,72 +377,62 @@ export function EdgeFunctionLogsPanel() {
                           {row.durationMs} ms
                         </TableCell>
                         <TableCell className="py-1.5">
-                          {row.requestId ? (() => {
-                            const rid = row.requestId;
-                            return (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  copyText(rid, "request_id");
-                                }}
-                                className="inline-flex items-center gap-1 font-mono text-[10px] text-muted-foreground hover:text-foreground"
-                                title={rid}
-                              >
-                                {shortRequestId(rid)}
-                                <Copy className="h-2.5 w-2.5" />
-                              </button>
-                            );
-                          })() : (
-                            <span className="text-[10px] text-muted-foreground">
-                              —
-                            </span>
+                          {row.requestId ? (
+                            (() => {
+                              const rid = row.requestId;
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    copyText(rid, 'request_id');
+                                  }}
+                                  className="inline-flex items-center gap-1 font-mono text-[10px] text-muted-foreground hover:text-foreground"
+                                  title={rid}
+                                >
+                                  {shortRequestId(rid)}
+                                  <Copy className="h-2.5 w-2.5" />
+                                </button>
+                              );
+                            })()
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground">—</span>
                           )}
                         </TableCell>
                       </TableRow>
                       {expanded && (
-                        <TableRow
-                          key={`${row.uid}-detail`}
-                          className="bg-muted/20"
-                        >
+                        <TableRow key={`${row.uid}-detail`} className="bg-muted/20">
                           <TableCell colSpan={7} className="py-3">
                             <dl className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-[11px] md:grid-cols-3">
-                              <dt className="text-muted-foreground">
-                                Timestamp
-                              </dt>
+                              <dt className="text-muted-foreground">Timestamp</dt>
                               <dd className="col-span-2 font-mono">
                                 {new Date(row.ts).toISOString()}
                               </dd>
-                              <dt className="text-muted-foreground">
-                                request_id (cliente)
-                              </dt>
+                              <dt className="text-muted-foreground">request_id (cliente)</dt>
                               <dd className="col-span-2 flex items-center gap-2 font-mono">
-                                {row.requestId ?? "—"}
-                                {row.requestId && (() => {
-                                  const rid = row.requestId;
-                                  return (
-                                    <Button
-                                      size="icon"
-                                      variant="ghost"
-                                      className="h-5 w-5"
-                                      onClick={() => copyText(rid, "request_id")}
-                                    >
-                                      <Copy className="h-3 w-3" />
-                                    </Button>
-                                  );
-                                })()}
+                                {row.requestId ?? '—'}
+                                {row.requestId &&
+                                  (() => {
+                                    const rid = row.requestId;
+                                    return (
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-5 w-5"
+                                        onClick={() => copyText(rid, 'request_id')}
+                                      >
+                                        <Copy className="h-3 w-3" />
+                                      </Button>
+                                    );
+                                  })()}
                               </dd>
                               {row.serverRequestId && (
                                 <>
-                                  <dt className="text-muted-foreground">
-                                    request_id (servidor)
-                                  </dt>
+                                  <dt className="text-muted-foreground">request_id (servidor)</dt>
                                   <dd
                                     className={cn(
-                                      "col-span-2 font-mono",
-                                      row.serverRequestId === row.requestId
-                                        ? ""
-                                        : "text-warning",
+                                      'col-span-2 font-mono',
+                                      row.serverRequestId === row.requestId ? '' : 'text-warning',
                                     )}
                                   >
                                     {row.serverRequestId}
@@ -478,44 +446,32 @@ export function EdgeFunctionLogsPanel() {
                               )}
                               {bridgeRaw && (
                                 <>
-                                  <dt className="text-muted-foreground">
-                                    Payload req / resp
-                                  </dt>
+                                  <dt className="text-muted-foreground">Payload req / resp</dt>
                                   <dd className="col-span-2 font-mono">
-                                    {fmtBytes(bridgeRaw.reqBytes)} →{" "}
-                                    {fmtBytes(bridgeRaw.respBytes)}
+                                    {fmtBytes(bridgeRaw.reqBytes)} → {fmtBytes(bridgeRaw.respBytes)}
                                   </dd>
                                 </>
                               )}
                               {row.errorCode && (
                                 <>
-                                  <dt className="text-muted-foreground">
-                                    Código erro
-                                  </dt>
-                                  <dd className="col-span-2 font-mono">
-                                    {row.errorCode}
-                                  </dd>
+                                  <dt className="text-muted-foreground">Código erro</dt>
+                                  <dd className="col-span-2 font-mono">{row.errorCode}</dd>
                                 </>
                               )}
                               {row.errorMessage && (
                                 <>
-                                  <dt className="text-muted-foreground">
-                                    Mensagem
-                                  </dt>
+                                  <dt className="text-muted-foreground">Mensagem</dt>
                                   <dd className="col-span-2 break-all font-mono text-destructive">
                                     {row.errorMessage}
                                   </dd>
                                 </>
                               )}
-                              <dt className="text-muted-foreground">
-                                Como debugar
-                              </dt>
+                              <dt className="text-muted-foreground">Como debugar</dt>
                               <dd className="col-span-2 text-muted-foreground">
                                 <AlertCircle className="mr-1 inline h-3 w-3" />
-                                Filtre os logs da função{" "}
-                                <code className="font-mono">{row.source}</code>{" "}
-                                pelo request_id acima para ver o trace completo
-                                no servidor.
+                                Filtre os logs da função{' '}
+                                <code className="font-mono">{row.source}</code> pelo request_id
+                                acima para ver o trace completo no servidor.
                               </dd>
                             </dl>
                           </TableCell>

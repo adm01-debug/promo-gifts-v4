@@ -2,7 +2,7 @@
  * Web Speech API fallback for when ElevenLabs Scribe is unavailable.
  * Provides browser-native speech recognition as a reliable fallback.
  */
-import { logger } from "@/lib/logger";
+import { logger } from '@/lib/logger';
 
 // Extend Window to include webkit prefixed SpeechRecognition
 interface SpeechRecognitionEvent extends Event {
@@ -38,10 +38,7 @@ export interface WebSpeechCallbacks {
 let recognition: SpeechRecognition | null = null;
 
 export function isWebSpeechSupported(): boolean {
-  return !!(
-    window.SpeechRecognition ||
-    window.webkitSpeechRecognition
-  );
+  return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
 }
 
 export function startWebSpeech(callbacks: WebSpeechCallbacks): boolean {
@@ -49,7 +46,7 @@ export function startWebSpeech(callbacks: WebSpeechCallbacks): boolean {
     window.SpeechRecognition || window.webkitSpeechRecognition;
 
   if (!SpeechRecognitionClass) {
-    callbacks.onError(new Error("Web Speech API não suportada neste navegador."));
+    callbacks.onError(new Error('Web Speech API não suportada neste navegador.'));
     return false;
   }
 
@@ -60,20 +57,20 @@ export function startWebSpeech(callbacks: WebSpeechCallbacks): boolean {
     recognition = new SpeechRecognitionClass();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = "pt-BR";
+    recognition.lang = 'pt-BR';
     recognition.maxAlternatives = 1;
 
-    let finalTranscriptBuffer = "";
+    let finalTranscriptBuffer = '';
     let commitTimer: ReturnType<typeof setTimeout> | null = null;
 
     recognition.onstart = () => {
-      logger.log("[Voice] Web Speech API started (fallback)");
+      logger.log('[Voice] Web Speech API started (fallback)');
       callbacks.onSessionStarted();
     };
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let interimTranscript = "";
-      let finalText = "";
+      let interimTranscript = '';
+      let finalText = '';
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
@@ -97,22 +94,22 @@ export function startWebSpeech(callbacks: WebSpeechCallbacks): boolean {
         commitTimer = setTimeout(() => {
           if (finalTranscriptBuffer.trim()) {
             callbacks.onCommittedTranscript(finalTranscriptBuffer.trim());
-            finalTranscriptBuffer = "";
+            finalTranscriptBuffer = '';
           }
         }, 600);
       }
     };
 
     recognition.onerror = (event: Event & { error: string }) => {
-      logger.warn("[Voice] Web Speech error:", event.error);
-      if (event.error === "no-speech") {
+      logger.warn('[Voice] Web Speech error:', event.error);
+      if (event.error === 'no-speech') {
         // Not critical — user just didn't speak
         return;
       }
-      if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-        callbacks.onError(new Error("Permissão do microfone negada."));
-      } else if (event.error === "network") {
-        callbacks.onError(new Error("Erro de rede no reconhecimento de voz."));
+      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        callbacks.onError(new Error('Permissão do microfone negada.'));
+      } else if (event.error === 'network') {
+        callbacks.onError(new Error('Erro de rede no reconhecimento de voz.'));
       } else {
         callbacks.onError(new Error(`Erro de reconhecimento: ${event.error}`));
       }
@@ -123,9 +120,9 @@ export function startWebSpeech(callbacks: WebSpeechCallbacks): boolean {
       if (finalTranscriptBuffer.trim()) {
         if (commitTimer) clearTimeout(commitTimer);
         callbacks.onCommittedTranscript(finalTranscriptBuffer.trim());
-        finalTranscriptBuffer = "";
+        finalTranscriptBuffer = '';
       }
-      logger.log("[Voice] Web Speech API ended");
+      logger.log('[Voice] Web Speech API ended');
       callbacks.onDisconnect();
       recognition = null;
     };
@@ -133,8 +130,10 @@ export function startWebSpeech(callbacks: WebSpeechCallbacks): boolean {
     recognition.start();
     return true;
   } catch (err) {
-    logger.error("[Voice] Failed to start Web Speech:", err);
-    callbacks.onError(err instanceof Error ? err : new Error("Falha ao iniciar reconhecimento de voz."));
+    logger.error('[Voice] Failed to start Web Speech:', err);
+    callbacks.onError(
+      err instanceof Error ? err : new Error('Falha ao iniciar reconhecimento de voz.'),
+    );
     recognition = null;
     return false;
   }

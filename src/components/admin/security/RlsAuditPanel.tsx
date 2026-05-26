@@ -1,17 +1,17 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, ShieldAlert, Loader2, Play } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ShieldCheck, ShieldAlert, Loader2, Play } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface ScenarioResult {
   table: string;
-  op: "SELECT" | "INSERT" | "UPDATE" | "DELETE";
+  op: 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE';
   scenario: string;
-  expected: "allow" | "deny";
-  actual: "allow" | "deny" | "error";
+  expected: 'allow' | 'deny';
+  actual: 'allow' | 'deny' | 'error';
   passed: boolean;
   detail?: string;
 }
@@ -28,14 +28,14 @@ export function RlsAuditPanel() {
   const run = async () => {
     setLoading(true);
     try {
-      const { data: resp, error } = await supabase.functions.invoke<AuditResponse>("rls-audit");
+      const { data: resp, error } = await supabase.functions.invoke<AuditResponse>('rls-audit');
       if (error) throw error;
       setData(resp ?? null);
       const failed = resp?.summary.failed ?? 0;
       if (failed === 0) toast.success(`Todos os ${resp?.summary.total} cenários passaram ✅`);
       else toast.error(`${failed} cenário(s) falharam ❌`);
     } catch (e) {
-      toast.error("Falha ao executar auditoria: " + (e as Error).message);
+      toast.error('Falha ao executar auditoria: ' + (e as Error).message);
     } finally {
       setLoading(false);
     }
@@ -55,20 +55,24 @@ export function RlsAuditPanel() {
             Auditoria de RLS — Vendedor
           </CardTitle>
           <CardDescription>
-            Executa SELECT/INSERT/UPDATE/DELETE em <code>quotes</code>, <code>orders</code> e{" "}
+            Executa SELECT/INSERT/UPDATE/DELETE em <code>quotes</code>, <code>orders</code> e{' '}
             <code>discount_approval_requests</code> com seu JWT, garantindo que apenas registros com
             <code> seller_id = auth.uid()</code> são acessíveis.
           </CardDescription>
         </div>
         <Button onClick={run} disabled={loading} size="sm">
-          {loading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Play className="h-4 w-4 mr-1" />}
+          {loading ? (
+            <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+          ) : (
+            <Play className="mr-1 h-4 w-4" />
+          )}
           Executar
         </Button>
       </CardHeader>
       <CardContent className="space-y-4">
         {data && (
           <div className="flex flex-wrap items-center gap-2 text-sm">
-            <Badge variant={data.summary.failed === 0 ? "default" : "destructive"}>
+            <Badge variant={data.summary.failed === 0 ? 'default' : 'destructive'}>
               {data.summary.passed}/{data.summary.total} OK
             </Badge>
             <span className="text-muted-foreground">
@@ -82,29 +86,38 @@ export function RlsAuditPanel() {
 
         {grouped &&
           Object.entries(grouped).map(([table, rows]) => (
-            <div key={table} className="border rounded-lg overflow-hidden">
-              <div className="px-3 py-2 bg-muted/40 font-medium text-sm flex items-center justify-between">
-                <span><code>{table}</code></span>
+            <div key={table} className="overflow-hidden rounded-lg border">
+              <div className="flex items-center justify-between bg-muted/40 px-3 py-2 text-sm font-medium">
+                <span>
+                  <code>{table}</code>
+                </span>
                 <span className="text-xs text-muted-foreground">
                   {rows.filter((r) => r.passed).length}/{rows.length}
                 </span>
               </div>
               <ul className="divide-y">
                 {rows.map((r, i) => (
-                  <li key={i} className="px-3 py-2 flex items-start gap-3 text-sm">
+                  <li key={i} className="flex items-start gap-3 px-3 py-2 text-sm">
                     {r.passed ? (
-                      <ShieldCheck className="h-4 w-4 mt-0.5 text-emerald-600 shrink-0" />
+                      <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
                     ) : (
-                      <ShieldAlert className="h-4 w-4 mt-0.5 text-destructive shrink-0" />
+                      <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
                     )}
-                    <div className="flex-1 min-w-0">
+                    <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="outline" className="text-[10px]">{r.op}</Badge>
+                        <Badge variant="outline" className="text-[10px]">
+                          {r.op}
+                        </Badge>
                         <span>{r.scenario}</span>
                       </div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
+                      <div className="mt-0.5 text-xs text-muted-foreground">
                         esperado: <b>{r.expected}</b> · obtido: <b>{r.actual}</b>
-                        {r.detail && <> · <span className="break-all">{r.detail}</span></>}
+                        {r.detail && (
+                          <>
+                            {' '}
+                            · <span className="break-all">{r.detail}</span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </li>

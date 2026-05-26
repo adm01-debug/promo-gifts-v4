@@ -1,10 +1,10 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase/client';
 import type {
   RamoAtividade,
   RamoAtividadeFilho,
   RamoAtividadeGroup,
   SegmentoComplete,
-} from "@/types/ramo-atividade";
+} from '@/types/ramo-atividade';
 
 // Service para chamadas à API de Ramos de Atividade (banco externo)
 class RamoAtividadeService {
@@ -15,19 +15,25 @@ class RamoAtividadeService {
   }
 
   private async getAuthHeaders(): Promise<HeadersInit> {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     return {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${session?.access_token || ''}`,
-      'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${session?.access_token || ''}`,
+      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
     };
   }
 
-  private async callApi<T>(table: string, operation: string, params: Record<string, unknown> = {}): Promise<T> {
+  private async callApi<T>(
+    table: string,
+    operation: string,
+    params: Record<string, unknown> = {},
+  ): Promise<T> {
     const headers = await this.getAuthHeaders();
 
     const response = await fetch(this.baseUrl, {
-      method: "POST",
+      method: 'POST',
       headers,
       body: JSON.stringify({ table, operation, ...params }),
     });
@@ -35,11 +41,11 @@ class RamoAtividadeService {
     const result = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      throw new Error(result?.error || "Erro ao acessar ramos de atividade");
+      throw new Error(result?.error || 'Erro ao acessar ramos de atividade');
     }
 
     if (result?.success === false) {
-      throw new Error(result?.error || "Erro ao acessar ramos de atividade");
+      throw new Error(result?.error || 'Erro ao acessar ramos de atividade');
     }
 
     return (result?.data ?? result) as T;
@@ -55,15 +61,15 @@ class RamoAtividadeService {
     const res = await this.callApi<{ records: RamoAtividade[]; count: number }>(
       'ramo_atividade',
       'select',
-      { 
+      {
         filters,
-        orderBy: { column: 'ordem', ascending: true }
-      }
+        orderBy: { column: 'ordem', ascending: true },
+      },
     );
 
-    return { 
-      ramos: res.records || [], 
-      count: res.count ?? (res.records?.length || 0) 
+    return {
+      ramos: res.records || [],
+      count: res.count ?? (res.records?.length || 0),
     };
   }
 
@@ -71,18 +77,18 @@ class RamoAtividadeService {
   async getRamosComEstatisticas(): Promise<{ groups: RamoAtividadeGroup[]; count: number }> {
     // Buscar ramos
     const { ramos } = await this.getRamos(false);
-    
+
     // Buscar todos os segmentos para contar
     const { segmentos } = await this.getSegmentos(false);
-    
+
     // Contar segmentos por ramo
     const countByRamo = new Map<string, number>();
-    segmentos.forEach(seg => {
+    segmentos.forEach((seg) => {
       const count = countByRamo.get(seg.ramo_atividade_id) || 0;
       countByRamo.set(seg.ramo_atividade_id, count + 1);
     });
 
-    const groups: RamoAtividadeGroup[] = ramos.map(ramo => ({
+    const groups: RamoAtividadeGroup[] = ramos.map((ramo) => ({
       group_id: ramo.id,
       group_name: ramo.nome,
       group_slug: ramo.slug,
@@ -98,41 +104,27 @@ class RamoAtividadeService {
 
   // Buscar ramo por ID
   async getRamoById(id: string): Promise<RamoAtividade | null> {
-    const res = await this.callApi<{ records: RamoAtividade[] }>(
-      'ramo_atividade',
-      'select',
-      { id }
-    );
+    const res = await this.callApi<{ records: RamoAtividade[] }>('ramo_atividade', 'select', {
+      id,
+    });
     return res.records?.[0] || null;
   }
 
   // Criar ramo
   async createRamo(data: Partial<RamoAtividade>): Promise<RamoAtividade> {
-    const res = await this.callApi<RamoAtividade>(
-      'ramo_atividade',
-      'insert',
-      { data }
-    );
+    const res = await this.callApi<RamoAtividade>('ramo_atividade', 'insert', { data });
     return res;
   }
 
   // Atualizar ramo
   async updateRamo(id: string, data: Partial<RamoAtividade>): Promise<RamoAtividade> {
-    const res = await this.callApi<RamoAtividade>(
-      'ramo_atividade',
-      'update',
-      { id, data }
-    );
+    const res = await this.callApi<RamoAtividade>('ramo_atividade', 'update', { id, data });
     return res;
   }
 
   // Deletar ramo
   async deleteRamo(id: string): Promise<void> {
-    await this.callApi(
-      'ramo_atividade',
-      'delete',
-      { id }
-    );
+    await this.callApi('ramo_atividade', 'delete', { id });
   }
 
   // ============================================================
@@ -140,42 +132,47 @@ class RamoAtividadeService {
   // ============================================================
 
   // Buscar todos os segmentos
-  async getSegmentos(apenasAtivos = true): Promise<{ segmentos: RamoAtividadeFilho[]; count: number }> {
+  async getSegmentos(
+    apenasAtivos = true,
+  ): Promise<{ segmentos: RamoAtividadeFilho[]; count: number }> {
     const filters = apenasAtivos ? { ativo: true } : {};
     const res = await this.callApi<{ records: RamoAtividadeFilho[]; count: number }>(
       'ramo_atividade_filho',
       'select',
-      { 
+      {
         filters,
-        orderBy: { column: 'ordem', ascending: true }
-      }
+        orderBy: { column: 'ordem', ascending: true },
+      },
     );
 
-    return { 
-      segmentos: res.records || [], 
-      count: res.count ?? (res.records?.length || 0) 
+    return {
+      segmentos: res.records || [],
+      count: res.count ?? (res.records?.length || 0),
     };
   }
 
   // Buscar segmentos por ramo pai
-  async getSegmentosPorRamo(ramoId: string, apenasAtivos = true): Promise<{ segmentos: RamoAtividadeFilho[]; count: number }> {
+  async getSegmentosPorRamo(
+    ramoId: string,
+    apenasAtivos = true,
+  ): Promise<{ segmentos: RamoAtividadeFilho[]; count: number }> {
     const filters: Record<string, unknown> = { ramo_atividade_id: ramoId };
     if (apenasAtivos) {
       filters.ativo = true;
     }
-    
+
     const res = await this.callApi<{ records: RamoAtividadeFilho[]; count: number }>(
       'ramo_atividade_filho',
       'select',
-      { 
+      {
         filters,
-        orderBy: { column: 'ordem', ascending: true }
-      }
+        orderBy: { column: 'ordem', ascending: true },
+      },
     );
 
-    return { 
-      segmentos: res.records || [], 
-      count: res.count ?? (res.records?.length || 0) 
+    return {
+      segmentos: res.records || [],
+      count: res.count ?? (res.records?.length || 0),
     };
   }
 
@@ -184,18 +181,18 @@ class RamoAtividadeService {
     // Buscar ramos e segmentos
     const [{ ramos }, { segmentos }] = await Promise.all([
       this.getRamos(true),
-      this.getSegmentos(true)
+      this.getSegmentos(true),
     ]);
 
     // Criar mapa de ramos
-    const ramoMap = new Map(ramos.map(r => [r.id, r]));
+    const ramoMap = new Map(ramos.map((r) => [r.id, r]));
 
     // Combinar dados
     const segmentosCompletos: SegmentoComplete[] = segmentos
-      .map(seg => {
+      .map((seg) => {
         const ramo = ramoMap.get(seg.ramo_atividade_id);
         if (!ramo) return null;
-        
+
         return {
           segmento_id: seg.id,
           segmento_name: seg.nome,
@@ -222,38 +219,29 @@ class RamoAtividadeService {
     const res = await this.callApi<{ records: RamoAtividadeFilho[] }>(
       'ramo_atividade_filho',
       'select',
-      { id }
+      { id },
     );
     return res.records?.[0] || null;
   }
 
   // Criar segmento
   async createSegmento(data: Partial<RamoAtividadeFilho>): Promise<RamoAtividadeFilho> {
-    const res = await this.callApi<RamoAtividadeFilho>(
-      'ramo_atividade_filho',
-      'insert',
-      { data }
-    );
+    const res = await this.callApi<RamoAtividadeFilho>('ramo_atividade_filho', 'insert', { data });
     return res;
   }
 
   // Atualizar segmento
   async updateSegmento(id: string, data: Partial<RamoAtividadeFilho>): Promise<RamoAtividadeFilho> {
-    const res = await this.callApi<RamoAtividadeFilho>(
-      'ramo_atividade_filho',
-      'update',
-      { id, data }
-    );
+    const res = await this.callApi<RamoAtividadeFilho>('ramo_atividade_filho', 'update', {
+      id,
+      data,
+    });
     return res;
   }
 
   // Deletar segmento
   async deleteSegmento(id: string): Promise<void> {
-    await this.callApi(
-      'ramo_atividade_filho',
-      'delete',
-      { id }
-    );
+    await this.callApi('ramo_atividade_filho', 'delete', { id });
   }
 
   // ============================================================
@@ -261,47 +249,40 @@ class RamoAtividadeService {
   // ============================================================
 
   // Buscar ramos de um produto
-  async getRamosDoProduto(produtoId: string): Promise<{ associacoes: { id: string; ramo_atividade_filho_id: string }[]; count: number }> {
-    const res = await this.callApi<{ records: { id: string; ramo_atividade_filho_id: string }[]; count: number }>(
-      'produto_ramo_atividade',
-      'select',
-      { 
-        filters: { produto_id: produtoId },
-      }
-    );
+  async getRamosDoProduto(
+    produtoId: string,
+  ): Promise<{ associacoes: { id: string; ramo_atividade_filho_id: string }[]; count: number }> {
+    const res = await this.callApi<{
+      records: { id: string; ramo_atividade_filho_id: string }[];
+      count: number;
+    }>('produto_ramo_atividade', 'select', {
+      filters: { produto_id: produtoId },
+    });
 
-    return { 
-      associacoes: res.records || [], 
-      count: res.count ?? (res.records?.length || 0) 
+    return {
+      associacoes: res.records || [],
+      count: res.count ?? (res.records?.length || 0),
     };
   }
 
   // Adicionar ramo a um produto
   async addRamoAoProduto(produtoId: string, segmentoId: string): Promise<void> {
-    await this.callApi(
-      'produto_ramo_atividade',
-      'insert',
-      { 
-        data: {
-          produto_id: produtoId,
-          ramo_atividade_filho_id: segmentoId
-        }
-      }
-    );
+    await this.callApi('produto_ramo_atividade', 'insert', {
+      data: {
+        produto_id: produtoId,
+        ramo_atividade_filho_id: segmentoId,
+      },
+    });
   }
 
   // Remover ramo de um produto (busca o ID primeiro)
   async removeRamoDoProduto(produtoId: string, segmentoId: string): Promise<void> {
     // Primeiro buscar a associação
     const { associacoes } = await this.getRamosDoProduto(produtoId);
-    const assoc = associacoes.find(a => a.ramo_atividade_filho_id === segmentoId);
-    
+    const assoc = associacoes.find((a) => a.ramo_atividade_filho_id === segmentoId);
+
     if (assoc) {
-      await this.callApi(
-        'produto_ramo_atividade',
-        'delete',
-        { id: assoc.id }
-      );
+      await this.callApi('produto_ramo_atividade', 'delete', { id: assoc.id });
     }
   }
 
@@ -309,16 +290,18 @@ class RamoAtividadeService {
   async updateRamosDoProduto(produtoId: string, segmentoIds: string[]): Promise<void> {
     // Buscar associações atuais
     const { associacoes } = await this.getRamosDoProduto(produtoId);
-    const currentIds = associacoes.map(a => a.ramo_atividade_filho_id);
+    const currentIds = associacoes.map((a) => a.ramo_atividade_filho_id);
 
     // Calcular diferenças
-    const toAdd = segmentoIds.filter(id => !currentIds.includes(id));
-    const toRemove = associacoes.filter(a => !segmentoIds.includes(a.ramo_atividade_filho_id));
+    const toAdd = segmentoIds.filter((id) => !currentIds.includes(id));
+    const toRemove = associacoes.filter((a) => !segmentoIds.includes(a.ramo_atividade_filho_id));
 
     // Executar operações
     await Promise.all([
-      ...toAdd.map(segId => this.addRamoAoProduto(produtoId, segId)),
-      ...toRemove.map(assoc => this.callApi('produto_ramo_atividade', 'delete', { id: assoc.id }))
+      ...toAdd.map((segId) => this.addRamoAoProduto(produtoId, segId)),
+      ...toRemove.map((assoc) =>
+        this.callApi('produto_ramo_atividade', 'delete', { id: assoc.id }),
+      ),
     ]);
   }
 }

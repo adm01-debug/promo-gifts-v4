@@ -8,10 +8,10 @@ describe('Integridade do Sistema de Skeletons', () => {
       '@/components/products/ProductListItemSkeleton',
       '@/components/products/ProductTableSkeleton',
       '@/components/products/ProductDetailSkeleton',
-      '@/components/common/ContextualSkeleton'
+      '@/components/common/ContextualSkeleton',
     ];
 
-    forbiddenPatterns.forEach(pattern => {
+    forbiddenPatterns.forEach((pattern) => {
       try {
         const command = `rg -l "${pattern}" src/ --glob '!src/components/loading/ModernSkeletons.tsx' --glob '!src/tests/*' --glob '!src/components/layout/SkeletonLoaders.tsx'`;
         const result = execSync(command).toString().trim();
@@ -41,20 +41,24 @@ describe('Integridade do Sistema de Skeletons', () => {
         'src/pages/tools/DropboxBrowserPage.tsx',
         'src/pages/kit-builder/KitLibraryPage.tsx',
         'src/components/bi/*',
-        'src/components/common/LoadingOverlay.tsx'
-      ].map(e => `--glob '!${e}'`).join(' ');
+        'src/components/common/LoadingOverlay.tsx',
+      ]
+        .map((e) => `--glob '!${e}'`)
+        .join(' ');
 
       const command = `rg -l "Skeleton" src/ --glob "*.tsx" ${globExclusions}`;
       const result = execSync(command).toString().trim();
       if (!result) return;
 
-      result.split('\n').forEach(file => {
+      result.split('\n').forEach((file) => {
         if (!file) return;
         const content = execSync(`cat ${file}`).toString();
-        const hasValidImport = 
-          content.includes('@/components/ui/skeleton') || 
+        const hasValidImport =
+          content.includes('@/components/ui/skeleton') ||
           content.includes('@/components/loading/ModernSkeletons');
-        expect(hasValidImport, `O arquivo ${file} usa Skeletons sem importação centralizada.`).toBe(true);
+        expect(hasValidImport, `O arquivo ${file} usa Skeletons sem importação centralizada.`).toBe(
+          true,
+        );
       });
     } catch (error: any) {
       if (error.status !== 1) throw error;

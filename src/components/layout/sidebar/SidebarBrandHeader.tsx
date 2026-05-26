@@ -21,15 +21,28 @@ export const SidebarBrandHeader = forwardRef<HTMLDivElement, SidebarBrandHeaderP
 
     if (isCollapsed) {
       return (
-        <div ref={ref} className="flex flex-col items-center justify-center py-5 transition-all duration-300">
-          <AppLogo showText={false} variant="sidebar" onClick={handleLogoClick} iconClassName="shadow-none border-none bg-transparent" />
+        <div
+          ref={ref}
+          className="flex flex-col items-center justify-center py-5 transition-all duration-300"
+        >
+          <AppLogo
+            showText={false}
+            variant="sidebar"
+            onClick={handleLogoClick}
+            iconClassName="shadow-none border-none bg-transparent"
+          />
         </div>
       );
     }
 
     return (
       <div ref={ref} className="px-5 py-5 transition-all duration-300">
-        <AppLogo variant="sidebar" textClassName="text-base" onClick={handleLogoClick} iconClassName="shadow-none border-none bg-transparent" />
+        <AppLogo
+          variant="sidebar"
+          textClassName="text-base"
+          onClick={handleLogoClick}
+          iconClassName="shadow-none border-none bg-transparent"
+        />
       </div>
     );
   },

@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import type { ConnectionType, ErrorKind } from "@/hooks/intelligence/useConnectionTester";
-import { inferErrorKind } from "@/lib/error-kind-inference";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import type { ConnectionType, ErrorKind } from '@/hooks/intelligence/useConnectionTester';
+import { inferErrorKind } from '@/lib/error-kind-inference';
 
 export interface TestDetails {
   id: string;
   tested_at: string;
   ok: boolean;
-  triggered_by: "manual" | "cron" | "webhook";
+  triggered_by: 'manual' | 'cron' | 'webhook';
   triggered_by_user_email?: string | null;
   request: { method: string | null; url: string | null };
   response: {
@@ -30,7 +30,7 @@ export interface TestDetails {
 interface Args {
   open: boolean;
   type: ConnectionType;
-  envKey?: "promobrind" | "crm";
+  envKey?: 'promobrind' | 'crm';
   connectionId?: string;
   /** Quando presente, busca este registro específico em vez do mais recente. */
   historyId?: string;
@@ -44,16 +44,16 @@ export function useConnectionTestDetails({ open, type, envKey, connectionId, his
   const [details, setDetails] = useState<TestDetails | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const reqKey = `${type}:${historyId ?? envKey ?? connectionId ?? "*"}`;
+  const reqKey = `${type}:${historyId ?? envKey ?? connectionId ?? '*'}`;
   const lastKeyRef = useRef<string | null>(null);
 
   const fetchDetails = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error: invokeError } = await supabase.functions.invoke("connection-tester", {
+      const { data, error: invokeError } = await supabase.functions.invoke('connection-tester', {
         body: {
-          action: "last_test_full",
+          action: 'last_test_full',
           type,
           env_key: envKey,
           connection_id: connectionId,
@@ -75,7 +75,7 @@ export function useConnectionTestDetails({ open, type, envKey, connectionId, his
       }
       setDetails(raw);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro");
+      setError(e instanceof Error ? e.message : 'Erro');
       setDetails(null);
     } finally {
       setLoading(false);

@@ -1,5 +1,5 @@
-import { useEffect, useCallback } from "react";
-import { toast } from "sonner";
+import { useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 
 interface KeyboardShortcutsProps {
   onGenerate: () => void;
@@ -24,16 +24,12 @@ export function useKeyboardShortcuts({
     (e: KeyboardEvent) => {
       // Ignore if user is typing in an input/textarea
       const target = e.target as HTMLElement;
-      if (
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.isContentEditable
-      ) {
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
         return;
       }
 
       // Number keys 1-6: Navigate steps
-      if (e.key >= "1" && e.key <= "6" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      if (e.key >= '1' && e.key <= '6' && !e.ctrlKey && !e.metaKey && !e.altKey) {
         const step = parseInt(e.key);
         if (onStepChange) {
           onStepChange(step);
@@ -42,49 +38,49 @@ export function useKeyboardShortcuts({
       }
 
       // Ctrl/Cmd + Enter: Generate mockup
-      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         e.preventDefault();
         if (canGenerate && !isLoading) {
           onGenerate();
-          toast.info("⌨️ Gerando mockup...", { duration: 1500 });
+          toast.info('⌨️ Gerando mockup...', { duration: 1500 });
         } else if (!canGenerate) {
-          toast.warning("Complete todos os campos antes de gerar");
+          toast.warning('Complete todos os campos antes de gerar');
         }
         return;
       }
 
       // Ctrl/Cmd + D: Download mockup
-      if ((e.ctrlKey || e.metaKey) && e.key === "d") {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
         e.preventDefault();
         if (canDownload) {
           onDownload();
-          toast.info("⌨️ Baixando mockup...", { duration: 1500 });
+          toast.info('⌨️ Baixando mockup...', { duration: 1500 });
         }
         return;
       }
 
       // Ctrl/Cmd + R (without shift): Reset form (prevent page refresh)
-      if ((e.ctrlKey || e.metaKey) && e.key === "r" && !e.shiftKey) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'r' && !e.shiftKey) {
         e.preventDefault();
         onReset();
-        toast.info("⌨️ Formulário limpo", { duration: 1500 });
+        toast.info('⌨️ Formulário limpo', { duration: 1500 });
         return;
       }
 
       // Escape: Reset/cancel
-      if (e.key === "Escape" && !isLoading) {
+      if (e.key === 'Escape' && !isLoading) {
         e.preventDefault();
         onReset();
-        toast.info("⌨️ Formulário limpo", { duration: 1500 });
+        toast.info('⌨️ Formulário limpo', { duration: 1500 });
         return;
       }
     },
-    [canGenerate, canDownload, isLoading, onGenerate, onDownload, onReset]
+    [canGenerate, canDownload, isLoading, onGenerate, onDownload, onReset],
   );
 
   useEffect(() => {
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 }
 
@@ -94,23 +90,23 @@ export function KeyboardShortcutsHint({ className }: { className?: string }) {
     <div className={className}>
       <div className="flex flex-wrap gap-4 text-[10px] text-muted-foreground">
         <span className="flex items-center gap-1">
-          <kbd className="px-1.5 py-0.5 bg-muted rounded text-[9px] font-mono">Ctrl</kbd>
+          <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[9px]">Ctrl</kbd>
           <span>+</span>
-          <kbd className="px-1.5 py-0.5 bg-muted rounded text-[9px] font-mono">Enter</kbd>
+          <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[9px]">Enter</kbd>
           <span className="ml-1">Gerar</span>
         </span>
         <span className="flex items-center gap-1">
-          <kbd className="px-1.5 py-0.5 bg-muted rounded text-[9px] font-mono">Ctrl</kbd>
+          <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[9px]">Ctrl</kbd>
           <span>+</span>
-          <kbd className="px-1.5 py-0.5 bg-muted rounded text-[9px] font-mono">D</kbd>
+          <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[9px]">D</kbd>
           <span className="ml-1">Baixar</span>
         </span>
         <span className="flex items-center gap-1">
-          <kbd className="px-1.5 py-0.5 bg-muted rounded text-[9px] font-mono">1-6</kbd>
+          <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[9px]">1-6</kbd>
           <span className="ml-1">Passos</span>
         </span>
         <span className="flex items-center gap-1">
-          <kbd className="px-1.5 py-0.5 bg-muted rounded text-[9px] font-mono">Esc</kbd>
+          <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[9px]">Esc</kbd>
           <span className="ml-1">Limpar</span>
         </span>
       </div>

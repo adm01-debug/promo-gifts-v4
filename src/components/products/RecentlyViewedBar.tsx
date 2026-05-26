@@ -1,12 +1,12 @@
-import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { Clock, X, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useRecentlyViewedStore } from "@/stores/useRecentlyViewedStore";
-import { useProductsContext } from "@/contexts/ProductsContext";
-import { cn } from "@/lib/utils";
+import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Clock, X, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useRecentlyViewedStore } from '@/stores/useRecentlyViewedStore';
+import { useProductsContext } from '@/contexts/ProductsContext';
+import { cn } from '@/lib/utils';
 
 interface RecentlyViewedBarProps {
   className?: string;
@@ -15,17 +15,13 @@ interface RecentlyViewedBarProps {
 
 export function RecentlyViewedBar({ className, maxVisible = 6 }: RecentlyViewedBarProps) {
   const navigate = useNavigate();
-  const { 
-    items, 
-    itemCount, 
-    removeFromRecentlyViewed,
-    clearRecentlyViewed 
-  } = useRecentlyViewedStore();
+  const { items, itemCount, removeFromRecentlyViewed, clearRecentlyViewed } =
+    useRecentlyViewedStore();
   const { getProductsByIds } = useProductsContext();
 
   const products = useMemo(
     () => getProductsByIds(items.map((i) => i.productId)).slice(0, maxVisible),
-    [getProductsByIds, items, maxVisible]
+    [getProductsByIds, items, maxVisible],
   );
 
   if (itemCount === 0) return null;
@@ -37,19 +33,19 @@ export function RecentlyViewedBar({ className, maxVisible = 6 }: RecentlyViewedB
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
         className={cn(
-          "bg-card/80 backdrop-blur-md border border-border/50 rounded-xl p-3 shadow-md",
-          className
+          'rounded-xl border border-border/50 bg-card/80 p-3 shadow-md backdrop-blur-md',
+          className,
         )}
       >
         <div className="flex items-center gap-3">
           {/* Header */}
-          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground flex-shrink-0">
+          <div className="flex flex-shrink-0 items-center gap-2 text-sm font-medium text-muted-foreground">
             <Clock className="h-4 w-4" />
             <span className="hidden sm:inline">Vistos recentemente</span>
           </div>
 
           {/* Products */}
-          <div className="flex items-center gap-2 flex-1 overflow-x-auto scrollbar-none">
+          <div className="scrollbar-none flex flex-1 items-center gap-2 overflow-x-auto">
             {products.map((product, idx) => (
               <motion.div
                 key={product.id}
@@ -57,30 +53,32 @@ export function RecentlyViewedBar({ className, maxVisible = 6 }: RecentlyViewedB
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
                 transition={{ delay: idx * 0.03 }}
-                className="relative flex-shrink-0 group"
+                className="group relative flex-shrink-0"
               >
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => navigate(`/produto/${product.id}`)}
                       className={cn(
-                        "w-10 h-10 rounded-lg overflow-hidden border-2 border-border/50",
-                        "bg-muted cursor-pointer hover:border-primary/50 transition-all duration-200",
-                        "hover:scale-110 hover:shadow-md"
+                        'h-10 w-10 overflow-hidden rounded-lg border-2 border-border/50',
+                        'cursor-pointer bg-muted transition-all duration-200 hover:border-primary/50',
+                        'hover:scale-110 hover:shadow-md',
                       )}
                     >
                       <img
                         src={product.images[0]}
                         alt={product.name}
-                        className="w-full h-full object-cover" loading="lazy" />
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="max-w-[200px]">
-                    <p className="font-medium truncate">{product.name}</p>
+                    <p className="truncate font-medium">{product.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {new Intl.NumberFormat("pt-BR", {
-                        style: "currency",
-                        currency: "BRL",
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
                       }).format(product.price)}
                     </p>
                   </TooltipContent>
@@ -93,11 +91,11 @@ export function RecentlyViewedBar({ className, maxVisible = 6 }: RecentlyViewedB
                     removeFromRecentlyViewed(product.id);
                   }}
                   className={cn(
-                    "absolute -top-1 -right-1 w-4 h-4 rounded-full",
-                    "bg-muted-foreground/80 text-background",
-                    "flex items-center justify-center",
-                    "opacity-0 group-hover:opacity-100 transition-opacity",
-                    "hover:bg-destructive"
+                    'absolute -right-1 -top-1 h-4 w-4 rounded-full',
+                    'bg-muted-foreground/80 text-background',
+                    'flex items-center justify-center',
+                    'opacity-0 transition-opacity group-hover:opacity-100',
+                    'hover:bg-destructive',
                   )}
                 >
                   <X className="h-2.5 w-2.5" />
@@ -107,8 +105,8 @@ export function RecentlyViewedBar({ className, maxVisible = 6 }: RecentlyViewedB
 
             {itemCount > maxVisible && (
               <button
-                onClick={() => navigate("/favoritos")}
-                className="w-10 h-10 rounded-lg border-2 border-dashed border-border/50 flex items-center justify-center flex-shrink-0 hover:border-primary/50 transition-colors"
+                onClick={() => navigate('/favoritos')}
+                className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-border/50 transition-colors hover:border-primary/50"
               >
                 <span className="text-xs font-medium text-muted-foreground">
                   +{itemCount - maxVisible}
@@ -118,7 +116,7 @@ export function RecentlyViewedBar({ className, maxVisible = 6 }: RecentlyViewedB
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-1 flex-shrink-0">
+          <div className="flex flex-shrink-0 items-center gap-1">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -126,7 +124,9 @@ export function RecentlyViewedBar({ className, maxVisible = 6 }: RecentlyViewedB
                   size="icon"
                   className="h-8 w-8 text-muted-foreground hover:text-destructive"
                   onClick={clearRecentlyViewed}
-                 aria-label="Excluir"><Trash2 className="h-4 w-4" />
+                  aria-label="Excluir"
+                >
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Limpar histórico</TooltipContent>

@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
-import { useRetestCooldownSetting } from "@/hooks/admin";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import { useRetestCooldownSetting } from '@/hooks/admin';
 
 interface RetestButtonProps {
   onRetest: () => Promise<void> | void;
@@ -24,12 +24,12 @@ interface RetestButtonProps {
   timeoutMs?: number;
 }
 
-type DisabledKind = "running" | "cooldown" | "credentials" | null;
+type DisabledKind = 'running' | 'cooldown' | 'credentials' | null;
 
-const STORAGE_PREFIX = "retest:cooldown:";
+const STORAGE_PREFIX = 'retest:cooldown:';
 
 function readPersistedCooldown(key: string | undefined): number {
-  if (!key || typeof window === "undefined") return 0;
+  if (!key || typeof window === 'undefined') return 0;
   try {
     const raw = window.sessionStorage.getItem(STORAGE_PREFIX + key);
     if (!raw) return 0;
@@ -47,7 +47,7 @@ function readPersistedCooldown(key: string | undefined): number {
 }
 
 function writePersistedCooldown(key: string | undefined, until: number): void {
-  if (!key || typeof window === "undefined") return;
+  if (!key || typeof window === 'undefined') return;
   try {
     if (until <= Date.now()) {
       window.sessionStorage.removeItem(STORAGE_PREFIX + key);
@@ -65,7 +65,7 @@ export function RetestButton({
   cooldownMs,
   disabledReason,
   cooldownKey,
-  shortcutKey = "r",
+  shortcutKey = 'r',
   timeoutMs = 30_000,
 }: RetestButtonProps) {
   // Global admin-controlled cooldown; explicit prop wins when provided.
@@ -73,7 +73,9 @@ export function RetestButton({
   const effectiveCooldownMs = cooldownMs ?? globalCooldownMs;
   const [isRunning, setIsRunning] = useState(false);
   // Lazy init from sessionStorage so cooldown survives a remount.
-  const [cooldownUntil, setCooldownUntil] = useState<number>(() => readPersistedCooldown(cooldownKey));
+  const [cooldownUntil, setCooldownUntil] = useState<number>(() =>
+    readPersistedCooldown(cooldownKey),
+  );
   const [now, setNow] = useState<number>(() => Date.now());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wrapperRef = useRef<HTMLSpanElement | null>(null);
@@ -134,21 +136,25 @@ export function RetestButton({
 
     // Watchdog: race onRetest against a hard timeout so the button never gets
     // stuck on "Testando…" when the upstream tester (or edge function) hangs.
-    const watchdog = timeoutMs > 0
-      ? new Promise<"__retest_timeout__">((resolve) => {
-          timeoutRef.current = setTimeout(() => {
-            timedOutRef.current = true;
-            resolve("__retest_timeout__");
-          }, timeoutMs);
-        })
-      : null;
+    const watchdog =
+      timeoutMs > 0
+        ? new Promise<'__retest_timeout__'>((resolve) => {
+            timeoutRef.current = setTimeout(() => {
+              timedOutRef.current = true;
+              resolve('__retest_timeout__');
+            }, timeoutMs);
+          })
+        : null;
 
     try {
       const result = watchdog
-        ? await Promise.race([Promise.resolve(onRetest()).then(() => "__retest_done__" as const), watchdog])
+        ? await Promise.race([
+            Promise.resolve(onRetest()).then(() => '__retest_done__' as const),
+            watchdog,
+          ])
         : await onRetest();
-      if (result === "__retest_timeout__") {
-        toast.error("Tempo esgotado", {
+      if (result === '__retest_timeout__') {
+        toast.error('Tempo esgotado', {
           description: `O teste não respondeu em ${Math.round(timeoutMs / 1000)}s. O servidor pode estar fora do ar — tente novamente em instantes.`,
         });
       }
@@ -190,60 +196,60 @@ export function RetestButton({
       const active = document.activeElement as HTMLElement | null;
       if (active) {
         const tag = active.tagName;
-        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
         if (active.isContentEditable) return;
       }
       const wrapper = wrapperRef.current;
       if (!wrapper) return;
-      const scope = wrapper.closest<HTMLElement>("[data-retest-scope]");
+      const scope = wrapper.closest<HTMLElement>('[data-retest-scope]');
       if (!scope) return;
       // Only fire if focus is inside this scope (or scope itself is focused).
       if (!scope.contains(active) && active !== scope) return;
       e.preventDefault();
       handleClick();
     };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
   }, [shortcutKey, handleClick]);
 
   const disabledKind: DisabledKind = isRunning
-    ? "running"
+    ? 'running'
     : disabled
-      ? "credentials"
+      ? 'credentials'
       : inCooldown
-        ? "cooldown"
+        ? 'cooldown'
         : null;
 
   const tooltip = (() => {
     switch (disabledKind) {
-      case "running":
+      case 'running':
         return {
-          title: "Teste em andamento",
-          body: "Aguarde a resposta do serviço antes de disparar novamente.",
+          title: 'Teste em andamento',
+          body: 'Aguarde a resposta do serviço antes de disparar novamente.',
         };
-      case "credentials":
+      case 'credentials':
         return {
-          title: "Credenciais inválidas ou ausentes",
-          body: disabledReason ?? "Preencha e salve as credenciais obrigatórias antes de testar.",
+          title: 'Credenciais inválidas ou ausentes',
+          body: disabledReason ?? 'Preencha e salve as credenciais obrigatórias antes de testar.',
         };
-      case "cooldown":
+      case 'cooldown':
         return {
           title: `Aguarde ${secondsLeft}s (debounce)`,
-          body: "Pequena pausa entre testes para evitar disparos acidentais e respeitar limites do serviço externo.",
+          body: 'Pequena pausa entre testes para evitar disparos acidentais e respeitar limites do serviço externo.',
         };
       default:
         return {
-          title: "Disparar novo teste",
-          body: "Executa imediatamente um teste manual e grava no histórico.",
+          title: 'Disparar novo teste',
+          body: 'Executa imediatamente um teste manual e grava no histórico.',
         };
     }
   })();
 
   const label = isRunning
-    ? "Testando…"
+    ? 'Testando…'
     : inCooldown
       ? `Aguarde ${secondsLeft}s`
-      : "Testar novamente";
+      : 'Testar novamente';
 
   const isDisabled = disabledKind !== null;
 
@@ -252,12 +258,12 @@ export function RetestButton({
       type="button"
       variant="ghost"
       size="sm"
-      className="h-7 px-2 text-xs gap-1.5"
+      className="h-7 gap-1.5 px-2 text-xs"
       disabled={isDisabled}
       onClick={handleClick}
       aria-label={tooltip.title}
     >
-      <RefreshCw className={cn("h-3.5 w-3.5", isRunning && "animate-spin")} />
+      <RefreshCw className={cn('h-3.5 w-3.5', isRunning && 'animate-spin')} />
       {label}
     </Button>
   );
@@ -266,18 +272,20 @@ export function RetestButton({
     <TooltipProvider delayDuration={150}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span ref={wrapperRef} className="inline-flex">{button}</span>
+          <span ref={wrapperRef} className="inline-flex">
+            {button}
+          </span>
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-xs text-xs leading-snug">
           <div className="flex items-center justify-between gap-2">
             <p className="font-medium">{tooltip.title}</p>
             {shortcutKey && !isDisabled ? (
-              <kbd className="ml-2 inline-flex h-4 min-w-4 items-center justify-center rounded border bg-muted px-1 text-[10px] font-mono uppercase text-muted-foreground">
+              <kbd className="ml-2 inline-flex h-4 min-w-4 items-center justify-center rounded border bg-muted px-1 font-mono text-[10px] uppercase text-muted-foreground">
                 {shortcutKey}
               </kbd>
             ) : null}
           </div>
-          <p className="text-muted-foreground mt-0.5">{tooltip.body}</p>
+          <p className="mt-0.5 text-muted-foreground">{tooltip.body}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

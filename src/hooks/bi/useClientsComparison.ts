@@ -2,14 +2,14 @@
  * useClientsComparison — paraleliza dados de até 3 clientes para comparação lado-a-lado.
  * Composição de hooks BI existentes (sem novas RPCs).
  */
-import { useClientHealthScore } from "@/hooks/bi/useClientHealthScore";
-import { useClientBI } from "@/hooks/bi/useClientBI";
-import { useClientSeasonality } from "@/hooks/bi/useClientSeasonality";
-import { useClientAffinity } from "@/hooks/bi/useClientAffinity";
-import { useClientCategoryAffinity } from "@/hooks/bi/useClientCategoryAffinity";
-import { useIndustryCategoryTrends } from "@/hooks/bi/useIndustryCategoryTrends";
-import { useCrmCompany } from "@/hooks/crm";
-import { getCompanyDisplayName } from "@/types/crm";
+import { useClientHealthScore } from '@/hooks/bi/useClientHealthScore';
+import { useClientBI } from '@/hooks/bi/useClientBI';
+import { useClientSeasonality } from '@/hooks/bi/useClientSeasonality';
+import { useClientAffinity } from '@/hooks/bi/useClientAffinity';
+import { useClientCategoryAffinity } from '@/hooks/bi/useClientCategoryAffinity';
+import { useIndustryCategoryTrends } from '@/hooks/bi/useIndustryCategoryTrends';
+import { useCrmCompany } from '@/hooks/crm';
+import { getCompanyDisplayName } from '@/types/crm';
 
 export interface ClientComparisonRow {
   clientId: string;
@@ -17,7 +17,7 @@ export interface ClientComparisonRow {
   ramoAtividade: string | null;
   isLoading: boolean;
   score: number;
-  tier: "healthy" | "attention" | "risk" | "unknown";
+  tier: 'healthy' | 'attention' | 'risk' | 'unknown';
   ltv: number;
   avgTicket: number;
   ordersCount: number;
@@ -64,16 +64,21 @@ export function useSingleClientComparisonRow(clientId: string): ClientComparison
 
   const nextPeakLabel =
     seas.daysToNextPeak === 0
-      ? "Hoje"
+      ? 'Hoje'
       : seas.daysToNextPeak !== null && seas.nextPeakMonth !== null
         ? `${seas.daysToNextPeak}d`
-        : "—";
+        : '—';
 
   return {
     clientId,
-    clientName: company ? getCompanyDisplayName(company) : "Cliente",
+    clientName: company ? getCompanyDisplayName(company) : 'Cliente',
     ramoAtividade: ramo,
-    isLoading: health.isLoading || bi.isLoading || seas.isLoading || catAffinity.isLoading || catIndustry.isLoading,
+    isLoading:
+      health.isLoading ||
+      bi.isLoading ||
+      seas.isLoading ||
+      catAffinity.isLoading ||
+      catIndustry.isLoading,
     score: health.score,
     tier: health.tier,
     ltv: bi.ltv,

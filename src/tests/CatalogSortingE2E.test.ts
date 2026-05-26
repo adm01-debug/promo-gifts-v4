@@ -12,19 +12,21 @@ const mockProducts = [
 
 describe('Catalog Sorting Logic (E2E simulation)', () => {
   it('should correctly sort by price ascending', () => {
-    const { result } = renderHook(() => useCatalogFiltering({
-      realProducts: mockProducts as any,
-      filters: defaultFilters,
-      sortBy: 'price-asc',
-      hasFuzzySearch: false,
-      fuzzySearchResults: [],
-      hasMaterialFilter: false,
-      materialFilteredProductIds: new Set(),
-      isLoadingMaterialFilter: false,
-      hasCategoryFilter: false,
-      categoryFilteredProductIds: new Set(),
-      isLoadingCategoryFilter: false,
-    }));
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        realProducts: mockProducts as any,
+        filters: defaultFilters,
+        sortBy: 'price-asc',
+        hasFuzzySearch: false,
+        fuzzySearchResults: [],
+        hasMaterialFilter: false,
+        materialFilteredProductIds: new Set(),
+        isLoadingMaterialFilter: false,
+        hasCategoryFilter: false,
+        categoryFilteredProductIds: new Set(),
+        isLoadingCategoryFilter: false,
+      }),
+    );
 
     expect(result.current[0].id).toBe('2'); // Price 50
     expect(result.current[1].id).toBe('1'); // Price 100
@@ -32,19 +34,21 @@ describe('Catalog Sorting Logic (E2E simulation)', () => {
   });
 
   it('should correctly sort by price descending', () => {
-    const { result } = renderHook(() => useCatalogFiltering({
-      realProducts: mockProducts as any,
-      filters: defaultFilters,
-      sortBy: 'price-desc',
-      hasFuzzySearch: false,
-      fuzzySearchResults: [],
-      hasMaterialFilter: false,
-      materialFilteredProductIds: new Set(),
-      isLoadingMaterialFilter: false,
-      hasCategoryFilter: false,
-      categoryFilteredProductIds: new Set(),
-      isLoadingCategoryFilter: false,
-    }));
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        realProducts: mockProducts as any,
+        filters: defaultFilters,
+        sortBy: 'price-desc',
+        hasFuzzySearch: false,
+        fuzzySearchResults: [],
+        hasMaterialFilter: false,
+        materialFilteredProductIds: new Set(),
+        isLoadingMaterialFilter: false,
+        hasCategoryFilter: false,
+        categoryFilteredProductIds: new Set(),
+        isLoadingCategoryFilter: false,
+      }),
+    );
 
     expect(result.current[0].id).toBe('3'); // Price 150
     expect(result.current[1].id).toBe('1'); // Price 100
@@ -52,19 +56,21 @@ describe('Catalog Sorting Logic (E2E simulation)', () => {
   });
 
   it('should correctly sort by name (A-Z)', () => {
-    const { result } = renderHook(() => useCatalogFiltering({
-      realProducts: mockProducts as any,
-      filters: defaultFilters,
-      sortBy: 'name',
-      hasFuzzySearch: false,
-      fuzzySearchResults: [],
-      hasMaterialFilter: false,
-      materialFilteredProductIds: new Set(),
-      isLoadingMaterialFilter: false,
-      hasCategoryFilter: false,
-      categoryFilteredProductIds: new Set(),
-      isLoadingCategoryFilter: false,
-    }));
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        realProducts: mockProducts as any,
+        filters: defaultFilters,
+        sortBy: 'name',
+        hasFuzzySearch: false,
+        fuzzySearchResults: [],
+        hasMaterialFilter: false,
+        materialFilteredProductIds: new Set(),
+        isLoadingMaterialFilter: false,
+        hasCategoryFilter: false,
+        categoryFilteredProductIds: new Set(),
+        isLoadingCategoryFilter: false,
+      }),
+    );
 
     expect(result.current[0].name).toBe('Product A');
     expect(result.current[1].name).toBe('Product B');

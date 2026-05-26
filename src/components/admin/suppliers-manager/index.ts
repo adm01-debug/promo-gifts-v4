@@ -1,1 +1,1 @@
-export { SuppliersManager } from "./SuppliersManager";
+export { SuppliersManager } from './SuppliersManager';

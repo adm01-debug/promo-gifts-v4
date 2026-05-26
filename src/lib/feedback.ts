@@ -28,5 +28,5 @@ export const feedback = {
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       navigator.vibrate([30, 50, 30]);
     }
-  }
+  },
 };

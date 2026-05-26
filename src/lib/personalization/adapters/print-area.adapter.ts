@@ -64,7 +64,9 @@ export function adaptPrintAreaRow(raw: Raw, productId: string, idx = 0): Normali
     is_curved: toBool(pick(raw, 'is_curved', 'curved')),
     is_active: toBool(pick(raw, 'is_active', 'ativo'), true),
     technique_order: toNumber(pick(raw, 'technique_order', 'display_order', 'order'), idx),
-    tabela_preco_id: (pick<string>(raw, 'tabela_preco_id', 'price_table_id') ?? null) as string | null,
+    tabela_preco_id: (pick<string>(raw, 'tabela_preco_id', 'price_table_id') ?? null) as
+      | string
+      | null,
   };
 }
 

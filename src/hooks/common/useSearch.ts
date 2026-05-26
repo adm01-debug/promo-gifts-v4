@@ -1,13 +1,13 @@
-import { useState, useMemo, useCallback, useContext } from "react";
-import Fuse from "fuse.js";
-import { type Product } from "@/hooks/products";
-import { CATEGORIES, SUPPLIERS } from "@/data/mockData";
-import { ProductsContext } from "@/contexts/ProductsContext";
-import { createProductFuseOptions, rankProductSearchResults } from "@/utils/product-search";
-import { useSearchHistory } from "@/hooks/common/useSearchHistory";
+import { useState, useMemo, useCallback, useContext } from 'react';
+import Fuse from 'fuse.js';
+import { type Product } from '@/hooks/products';
+import { CATEGORIES, SUPPLIERS } from '@/data/mockData';
+import { ProductsContext } from '@/contexts/ProductsContext';
+import { createProductFuseOptions, rankProductSearchResults } from '@/utils/product-search';
+import { useSearchHistory } from '@/hooks/common/useSearchHistory';
 
 export interface SearchResult {
-  type: "product" | "category" | "supplier" | "history";
+  type: 'product' | 'category' | 'supplier' | 'history';
   id: string;
   label: string;
   sublabel?: string;
@@ -17,45 +17,63 @@ export interface SearchResult {
 
 export function useSearch(products: Product[] = []) {
   const productsContext = useContext(ProductsContext);
-  const [query, setQuery] = useState("");
-  const { 
-    history: searchHistory, 
-    addToHistory: addHistoryItem, 
-    removeFromHistory, 
-    clearHistory 
-  } = useSearchHistory("general");
+  const [query, setQuery] = useState('');
+  const {
+    history: searchHistory,
+    addToHistory: addHistoryItem,
+    removeFromHistory,
+    clearHistory,
+  } = useSearchHistory('general');
 
-  const history = useMemo(() => searchHistory.map(h => h.label), [searchHistory]);
+  const history = useMemo(() => searchHistory.map((h) => h.label), [searchHistory]);
 
-  const availableProducts = products.length > 0 ? products : (productsContext?.products || []);
+  const availableProducts = products.length > 0 ? products : productsContext?.products || [];
 
-  const addToHistory = useCallback((term: string) => {
-    if (!term.trim()) return;
-    addHistoryItem({
-      id: `history-${term}`,
-      label: term,
-      type: "general"
-    });
-  }, [addHistoryItem]);
+  const addToHistory = useCallback(
+    (term: string) => {
+      if (!term.trim()) return;
+      addHistoryItem({
+        id: `history-${term}`,
+        label: term,
+        type: 'general',
+      });
+    },
+    [addHistoryItem],
+  );
 
   // Criar instância Fuse.js para busca fuzzy de produtos
-  const productFuse = useMemo(() => new Fuse(availableProducts, createProductFuseOptions<Product>({
-    threshold: 0.35,
-  })), [availableProducts]);
+  const productFuse = useMemo(
+    () =>
+      new Fuse(
+        availableProducts,
+        createProductFuseOptions<Product>({
+          threshold: 0.35,
+        }),
+      ),
+    [availableProducts],
+  );
 
   // Criar instância Fuse.js para busca fuzzy de categorias
-  const categoryFuse = useMemo(() => new Fuse(CATEGORIES, {
-    keys: ['name'],
-    threshold: 0.35,
-    ignoreLocation: true,
-  }), []);
+  const categoryFuse = useMemo(
+    () =>
+      new Fuse(CATEGORIES, {
+        keys: ['name'],
+        threshold: 0.35,
+        ignoreLocation: true,
+      }),
+    [],
+  );
 
   // Criar instância Fuse.js para busca fuzzy de fornecedores
-  const supplierFuse = useMemo(() => new Fuse(SUPPLIERS, {
-    keys: ['name'],
-    threshold: 0.35,
-    ignoreLocation: true,
-  }), []);
+  const supplierFuse = useMemo(
+    () =>
+      new Fuse(SUPPLIERS, {
+        keys: ['name'],
+        threshold: 0.35,
+        ignoreLocation: true,
+      }),
+    [],
+  );
 
   // Generate suggestions based on query - usando busca fuzzy
   const suggestions = useMemo((): SearchResult[] => {
@@ -66,10 +84,10 @@ export function useSearch(products: Product[] = []) {
     if (!searchTerm) {
       history.slice(0, 5).forEach((term) => {
         results.push({
-          type: "history",
+          type: 'history',
           id: `history-${term}`,
           label: term,
-          icon: "🕐",
+          icon: '🕐',
         });
       });
       return results;
@@ -84,33 +102,36 @@ export function useSearch(products: Product[] = []) {
     const searchLower = searchTerm.toLowerCase();
 
     // Priority 0: Exact SKU match (most precise)
-      const exactSkuMatch = availableProducts.find(p => 
-        p.sku?.toLowerCase() === searchLower || 
-        p.supplier_reference?.toLowerCase() === searchLower
-      );
+    const exactSkuMatch = availableProducts.find(
+      (p) =>
+        p.sku?.toLowerCase() === searchLower || p.supplier_reference?.toLowerCase() === searchLower,
+    );
     if (exactSkuMatch) {
       results.push({
-        type: "product",
+        type: 'product',
         id: exactSkuMatch.id,
         label: exactSkuMatch.name,
         sublabel: `SKU: ${exactSkuMatch.sku || ''} • ${exactSkuMatch.category_name || ''}`,
-        icon: "📦",
+        icon: '📦',
         data: exactSkuMatch,
       });
     }
-    
-    const orderedProducts = rankProductSearchResults(availableProducts, searchTerm, productFuse)
-      .slice(0, 6);
+
+    const orderedProducts = rankProductSearchResults(
+      availableProducts,
+      searchTerm,
+      productFuse,
+    ).slice(0, 6);
 
     orderedProducts.forEach((product) => {
       // Skip if already added as exact SKU match
-      if (results.some(r => r.id === product.id)) return;
+      if (results.some((r) => r.id === product.id)) return;
       results.push({
-        type: "product",
+        type: 'product',
         id: product.id,
         label: product.name,
         sublabel: `${product.sku || ''} • ${product.category_name || ''}`,
-        icon: "📦",
+        icon: '📦',
         data: product,
       });
     });
@@ -120,16 +141,16 @@ export function useSearch(products: Product[] = []) {
 
     matchingCategories.forEach((result) => {
       const category = result.item;
-      const productCount = availableProducts.filter((p) => 
-        p.category_id === String(category.id) || 
-        parseInt(p.category_id || '0') === category.id
+      const productCount = availableProducts.filter(
+        (p) =>
+          p.category_id === String(category.id) || parseInt(p.category_id || '0') === category.id,
       ).length;
       results.push({
-        type: "category",
+        type: 'category',
         id: String(category.id),
         label: category.name,
         sublabel: `${productCount} produtos`,
-        icon: category.icon || "📁",
+        icon: category.icon || '📁',
       });
     });
 
@@ -138,15 +159,15 @@ export function useSearch(products: Product[] = []) {
 
     matchingSuppliers.forEach((result) => {
       const supplier = result.item;
-      const productCount = availableProducts.filter((p) => 
-        p.brand === supplier.id || p.supplier_reference === supplier.id
+      const productCount = availableProducts.filter(
+        (p) => p.brand === supplier.id || p.supplier_reference === supplier.id,
       ).length;
       results.push({
-        type: "supplier",
+        type: 'supplier',
         id: supplier.id,
         label: supplier.name,
         sublabel: `${productCount} produtos`,
-        icon: "🏭",
+        icon: '🏭',
       });
     });
 
@@ -156,11 +177,11 @@ export function useSearch(products: Product[] = []) {
   // Quick suggestions (popular/trending)
   const quickSuggestions = useMemo(() => {
     return [
-      { label: "Canetas", icon: "🖊️" },
-      { label: "Garrafas", icon: "🍶" },
-      { label: "Ecológico", icon: "🌱" },
-      { label: "Tecnologia", icon: "💻" },
-      { label: "Kits", icon: "🎁" },
+      { label: 'Canetas', icon: '🖊️' },
+      { label: 'Garrafas', icon: '🍶' },
+      { label: 'Ecológico', icon: '🌱' },
+      { label: 'Tecnologia', icon: '💻' },
+      { label: 'Kits', icon: '🎁' },
     ];
   }, []);
 

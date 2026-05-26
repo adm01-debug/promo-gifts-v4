@@ -1,16 +1,16 @@
-import { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Move } from "lucide-react";
-import { useProductBounds } from "@/hooks/products";
-import { logger } from "@/lib/logger";
-import type { TechniqueColorConfig } from "./techniqueColorUtils";
-import { getTechniqueFilter } from "./logo-editor/logoTechniqueFilters";
-import { useElementSize } from "./logo-editor/useElementSize";
-import { useLogoProcessing } from "./logo-editor/useLogoProcessing";
-import { useLogoDrag } from "./logo-editor/useLogoDrag";
-import { LogoPreviewCanvas } from "./logo-editor/LogoPreviewCanvas";
-import { LogoQuickActions } from "./logo-editor/LogoQuickActions";
-import { LogoSizeControls } from "./logo-editor/LogoSizeControls";
+import { useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Move } from 'lucide-react';
+import { useProductBounds } from '@/hooks/products';
+import { logger } from '@/lib/logger';
+import type { TechniqueColorConfig } from './techniqueColorUtils';
+import { getTechniqueFilter } from './logo-editor/logoTechniqueFilters';
+import { useElementSize } from './logo-editor/useElementSize';
+import { useLogoProcessing } from './logo-editor/useLogoProcessing';
+import { useLogoDrag } from './logo-editor/useLogoDrag';
+import { LogoPreviewCanvas } from './logo-editor/LogoPreviewCanvas';
+import { LogoQuickActions } from './logo-editor/LogoQuickActions';
+import { LogoSizeControls } from './logo-editor/LogoSizeControls';
 
 interface LogoPositionEditorProps {
   productImageUrl: string;
@@ -66,19 +66,19 @@ export function LogoPositionEditor({
 
   const techniqueFilter = useMemo(
     () => getTechniqueFilter(techniqueCode, techniqueName),
-    [techniqueCode, techniqueName]
+    [techniqueCode, techniqueName],
   );
 
   const colorConfigFilter = useMemo(() => {
     if (!techniqueColorConfig) return null;
-    if (techniqueColorConfig.category === "laser") {
-      const tone = techniqueColorConfig.laserTone || "escuro";
-      return tone === "claro"
-        ? { filter: "grayscale(1) brightness(1.4)", opacity: 0.75 }
-        : { filter: "grayscale(1) brightness(0.6)", opacity: 0.88 };
+    if (techniqueColorConfig.category === 'laser') {
+      const tone = techniqueColorConfig.laserTone || 'escuro';
+      return tone === 'claro'
+        ? { filter: 'grayscale(1) brightness(1.4)', opacity: 0.75 }
+        : { filter: 'grayscale(1) brightness(0.6)', opacity: 0.88 };
     }
-    if (techniqueColorConfig.category === "serigrafia") {
-      return { filter: "contrast(1.2)", opacity: 0.92 };
+    if (techniqueColorConfig.category === 'serigrafia') {
+      return { filter: 'contrast(1.2)', opacity: 0.92 };
     }
     return null;
   }, [techniqueColorConfig]);
@@ -106,11 +106,14 @@ export function LogoPositionEditor({
       renderedImgW = containerH * imgAR;
     }
 
-    const physW = prodW || (prodH ? prodH * 0.4 : (effectiveMaxW ? effectiveMaxW * 2 : 8));
-    const physH = prodH || (prodW ? prodW * 2.5 : (effectiveMaxH ? effectiveMaxH * 2.5 : 20));
+    const physW = prodW || (prodH ? prodH * 0.4 : effectiveMaxW ? effectiveMaxW * 2 : 8);
+    const physH = prodH || (prodW ? prodW * 2.5 : effectiveMaxH ? effectiveMaxH * 2.5 : 20);
 
     if (!prodH && !prodW) {
-      logger.warn("[LogoPositionEditor] Product physical dims missing — using estimates:", { physW, physH });
+      logger.warn('[LogoPositionEditor] Product physical dims missing — using estimates:', {
+        physW,
+        physH,
+      });
     }
 
     const scaleByW = (renderedImgW * productBounds.fractionX) / physW;
@@ -126,7 +129,18 @@ export function LogoPositionEditor({
     }
 
     return { widthPx: rawW, heightPx: rawH };
-  }, [boundsReady, logoWidth, logoHeight, containerSize.width, containerSize.height, maxWidth, maxHeight, productHeightCm, productWidthCm, productBounds]);
+  }, [
+    boundsReady,
+    logoWidth,
+    logoHeight,
+    containerSize.width,
+    containerSize.height,
+    maxWidth,
+    maxHeight,
+    productHeightCm,
+    productWidthCm,
+    productBounds,
+  ]);
 
   const userScaleFactor = (logoScale || 100) / 100;
 

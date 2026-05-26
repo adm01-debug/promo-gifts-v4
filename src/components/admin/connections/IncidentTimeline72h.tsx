@@ -8,30 +8,30 @@
  *
  * Respeita o filtro global de severidade (SeverityFilterContext).
  */
-import { useMemo } from "react";
-import { AlertTriangle, Clock } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { useIncidentTimeline72h, type TimelineEvent } from "./useIncidentTimeline72h";
-import { useSeverityFilter } from "./SeverityFilterContext";
-import type { IncidentSeverity } from "./useRecentIncidents";
+import { useMemo } from 'react';
+import { AlertTriangle, Clock } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { useIncidentTimeline72h, type TimelineEvent } from './useIncidentTimeline72h';
+import { useSeverityFilter } from './SeverityFilterContext';
+import type { IncidentSeverity } from './useRecentIncidents';
 
 const SEV_DOT: Record<IncidentSeverity, string> = {
-  P0: "bg-destructive ring-destructive/30",
-  P1: "bg-amber-500 ring-amber-500/30 dark:bg-amber-400 dark:ring-amber-400/30",
-  P2: "bg-sky-500 ring-sky-500/30 dark:bg-sky-400 dark:ring-sky-400/30",
+  P0: 'bg-destructive ring-destructive/30',
+  P1: 'bg-amber-500 ring-amber-500/30 dark:bg-amber-400 dark:ring-amber-400/30',
+  P2: 'bg-sky-500 ring-sky-500/30 dark:bg-sky-400 dark:ring-sky-400/30',
 };
 
 const SEV_LABEL: Record<IncidentSeverity, string> = {
-  P0: "Crítico (P0)",
-  P1: "Alto (P1)",
-  P2: "Informativo (P2)",
+  P0: 'Crítico (P0)',
+  P1: 'Alto (P1)',
+  P2: 'Informativo (P2)',
 };
 
 function formatRelative(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
   const mins = Math.round(diffMs / 60_000);
-  if (mins < 1) return "agora";
+  if (mins < 1) return 'agora';
   if (mins < 60) return `há ${mins}min`;
   const hours = Math.round(mins / 60);
   if (hours < 24) return `há ${hours}h`;
@@ -46,9 +46,9 @@ function TimelineMarker({ ev }: { ev: TimelineEvent }) {
         <button
           type="button"
           className={cn(
-            "absolute -translate-x-1/2 top-1/2 -translate-y-1/2",
-            "h-2.5 w-2.5 rounded-full ring-2 ring-offset-1 ring-offset-background",
-            "transition-transform hover:scale-150 focus-visible:scale-150 focus:outline-none",
+            'absolute top-1/2 -translate-x-1/2 -translate-y-1/2',
+            'h-2.5 w-2.5 rounded-full ring-2 ring-offset-1 ring-offset-background',
+            'transition-transform hover:scale-150 focus:outline-none focus-visible:scale-150',
             SEV_DOT[ev.severity],
           )}
           style={{ left: `${ev.position * 100}%` }}
@@ -58,16 +58,16 @@ function TimelineMarker({ ev }: { ev: TimelineEvent }) {
       <TooltipContent side="top" className="max-w-xs">
         <div className="space-y-1">
           <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide">
-            <span className={cn("inline-block h-2 w-2 rounded-full", SEV_DOT[ev.severity])} />
+            <span className={cn('inline-block h-2 w-2 rounded-full', SEV_DOT[ev.severity])} />
             {SEV_LABEL[ev.severity]}
           </div>
           <div className="text-xs font-medium leading-tight">{ev.title}</div>
           {ev.subtitle && (
-            <div className="text-[11px] text-muted-foreground line-clamp-2">{ev.subtitle}</div>
+            <div className="line-clamp-2 text-[11px] text-muted-foreground">{ev.subtitle}</div>
           )}
-          <div className="flex items-center gap-1 text-[10px] text-muted-foreground pt-0.5">
+          <div className="flex items-center gap-1 pt-0.5 text-[10px] text-muted-foreground">
             <Clock className="h-2.5 w-2.5" />
-            {formatRelative(ev.occurredAt)} · {new Date(ev.occurredAt).toLocaleString("pt-BR")}
+            {formatRelative(ev.occurredAt)} · {new Date(ev.occurredAt).toLocaleString('pt-BR')}
           </div>
         </div>
       </TooltipContent>
@@ -92,9 +92,9 @@ export function IncidentTimeline72h() {
 
   if (isLoading) {
     return (
-      <div className="rounded-lg border bg-card px-4 py-3 animate-pulse" aria-busy="true">
-        <div className="h-3 w-40 bg-muted rounded mb-3" />
-        <div className="h-2 w-full bg-muted rounded-full" />
+      <div className="animate-pulse rounded-lg border bg-card px-4 py-3" aria-busy="true">
+        <div className="mb-3 h-3 w-40 rounded bg-muted" />
+        <div className="h-2 w-full rounded-full bg-muted" />
       </div>
     );
   }
@@ -106,39 +106,41 @@ export function IncidentTimeline72h() {
     <TooltipProvider delayDuration={150}>
       <section
         aria-label="Timeline de incidentes nas últimas 72 horas"
-        className="rounded-lg border bg-card px-4 py-3 space-y-2"
+        className="space-y-2 rounded-lg border bg-card px-4 py-3"
       >
-        <header className="flex items-center justify-between gap-3 flex-wrap">
+        <header className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
             <AlertTriangle className="h-3.5 w-3.5" />
-            <span>Últimas 72h · {filteredEvents.length} evento{filteredEvents.length === 1 ? "" : "s"}</span>
+            <span>
+              Últimas 72h · {filteredEvents.length} evento{filteredEvents.length === 1 ? '' : 's'}
+            </span>
           </div>
           <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-1">
-              <span className={cn("h-2 w-2 rounded-full", SEV_DOT.P0)} /> P0 {counts.P0}
+              <span className={cn('h-2 w-2 rounded-full', SEV_DOT.P0)} /> P0 {counts.P0}
             </span>
             <span className="inline-flex items-center gap-1">
-              <span className={cn("h-2 w-2 rounded-full", SEV_DOT.P1)} /> P1 {counts.P1}
+              <span className={cn('h-2 w-2 rounded-full', SEV_DOT.P1)} /> P1 {counts.P1}
             </span>
             <span className="inline-flex items-center gap-1">
-              <span className={cn("h-2 w-2 rounded-full", SEV_DOT.P2)} /> P2 {counts.P2}
+              <span className={cn('h-2 w-2 rounded-full', SEV_DOT.P2)} /> P2 {counts.P2}
             </span>
           </div>
         </header>
 
         {filteredEvents.length === 0 ? (
-          <p className="text-xs text-muted-foreground py-2">
+          <p className="py-2 text-xs text-muted-foreground">
             Sem incidentes na janela atual. Sistema estável. ✨
           </p>
         ) : (
-          <div className="relative pt-2 pb-5">
+          <div className="relative pb-5 pt-2">
             {/* Trilha */}
             <div className="relative h-2 rounded-full bg-muted/60">
               {/* Ticks verticais */}
               {ticks.map((t) => (
                 <div
                   key={t}
-                  className="absolute top-0 bottom-0 w-px bg-border/60"
+                  className="absolute bottom-0 top-0 w-px bg-border/60"
                   style={{ left: `${t * 100}%` }}
                 />
               ))}
@@ -150,9 +152,9 @@ export function IncidentTimeline72h() {
             {/* Labels de tick */}
             <div className="relative mt-1.5 h-3 text-[10px] text-muted-foreground">
               {[
-                { pos: 0, label: "-72h" },
-                { pos: 0.5, label: "-36h" },
-                { pos: 1, label: "agora" },
+                { pos: 0, label: '-72h' },
+                { pos: 0.5, label: '-36h' },
+                { pos: 1, label: 'agora' },
               ].map((t) => (
                 <span
                   key={t.label}

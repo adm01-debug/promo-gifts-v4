@@ -170,7 +170,6 @@ function formatValue(value: unknown): string | number {
  * Formata moeda brasileira
  */
 
-
 /**
  * Formata porcentagem
  */

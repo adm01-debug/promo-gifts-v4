@@ -1,21 +1,25 @@
 /**
  * ConfigurationPanel — Etapa 4: Configurar tamanho, cores e calcular preço
- * 
+ *
  * Verifica se a tabela de preço usa faixas dimensionais (Laser).
  * Se sim, mostra inputs de largura/altura.
  * Se cobra_por_cor, mostra seletor de cores.
  * Calcula preço somente quando todos os campos obrigatórios estão preenchidos.
  */
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Loader2, Palette, Clock, Ruler, AlertCircle, Check } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
-import { invokeExternalDb } from "@/lib/external-db";
-import { invokeExternalRpc } from "@/lib/external-rpc";
-import type { PrintAreaV2, CustomizationPriceResponse, CustomizationPriceFlat } from "@/hooks/simulation";
-import { adaptPriceResponse } from "@/lib/personalization/adapters";
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { Loader2, Palette, Clock, Ruler, AlertCircle, Check } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
+import { invokeExternalDb } from '@/lib/external-db';
+import { invokeExternalRpc } from '@/lib/external-rpc';
+import type {
+  PrintAreaV2,
+  CustomizationPriceResponse,
+  CustomizationPriceFlat,
+} from '@/hooks/simulation';
+import { adaptPriceResponse } from '@/lib/personalization/adapters';
 
 interface ConfigurationPanelProps {
   area: PrintAreaV2;
@@ -34,8 +38,8 @@ export function ConfigurationPanel({ area, quantity, onPriceCalculated }: Config
   // Dimension state
   const [usaDimensao, setUsaDimensao] = useState<boolean | null>(null);
   const [checkingDimensao, setCheckingDimensao] = useState(true);
-  const [largura, setLargura] = useState<string>("");
-  const [altura, setAltura] = useState<string>("");
+  const [largura, setLargura] = useState<string>('');
+  const [altura, setAltura] = useState<string>('');
 
   // Color state
   const [numCores, setNumCores] = useState(1);
@@ -54,8 +58,8 @@ export function ConfigurationPanel({ area, quantity, onPriceCalculated }: Config
     setCheckingDimensao(true);
     setUsaDimensao(null);
     setPriceData(null);
-    setLargura("");
-    setAltura("");
+    setLargura('');
+    setAltura('');
     setNumCores(1);
     setError(null);
 
@@ -80,7 +84,9 @@ export function ConfigurationPanel({ area, quantity, onPriceCalculated }: Config
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [area.area_id, area.customization_price_table_id]);
 
   // Determine if we can calculate price
@@ -91,8 +97,12 @@ export function ConfigurationPanel({ area, quantity, onPriceCalculated }: Config
     if (quantity <= 0) return false;
     if (usaDimensao === null) return false;
     if (usaDimensao) {
-      return larguraNum > 0 && alturaNum > 0 &&
-        larguraNum <= area.max_width && alturaNum <= area.max_height;
+      return (
+        larguraNum > 0 &&
+        alturaNum > 0 &&
+        larguraNum <= area.max_width &&
+        alturaNum <= area.max_height
+      );
     }
     return true; // No dimension needed
   }, [quantity, usaDimensao, larguraNum, alturaNum, area.max_width, area.max_height]);
@@ -112,7 +122,7 @@ export function ConfigurationPanel({ area, quantity, onPriceCalculated }: Config
           p_num_cores: numCores,
           p_largura_cm: usaDimensao ? larguraNum : null,
           p_altura_cm: usaDimensao ? alturaNum : null,
-        }
+        },
       );
 
       if (result?.success) {
@@ -131,7 +141,16 @@ export function ConfigurationPanel({ area, quantity, onPriceCalculated }: Config
     } finally {
       setLoading(false);
     }
-  }, [canCalculate, area.area_id, quantity, numCores, usaDimensao, larguraNum, alturaNum, onPriceCalculated]);
+  }, [
+    canCalculate,
+    area.area_id,
+    quantity,
+    numCores,
+    usaDimensao,
+    larguraNum,
+    alturaNum,
+    onPriceCalculated,
+  ]);
 
   const calculatePriceRef = useRef(calculatePrice);
   calculatePriceRef.current = calculatePrice;
@@ -143,10 +162,9 @@ export function ConfigurationPanel({ area, quantity, onPriceCalculated }: Config
     if (canCalculate) {
       const timer = setTimeout(() => calculatePriceRef.current(), 400);
       return () => clearTimeout(timer);
-    } 
-      setPriceData(null);
-      onPriceCalculatedRef.current(area.area_id, null);
-    
+    }
+    setPriceData(null);
+    onPriceCalculatedRef.current(area.area_id, null);
   }, [canCalculate, numCores, larguraNum, alturaNum, quantity, area.area_id]);
 
   if (checkingDimensao) {
@@ -159,8 +177,8 @@ export function ConfigurationPanel({ area, quantity, onPriceCalculated }: Config
   }
 
   return (
-    <div className="space-y-4 p-4 rounded-lg bg-secondary/30 border border-border/50">
-      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+    <div className="space-y-4 rounded-lg border border-border/50 bg-secondary/30 p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         Etapa 4 · Configure a gravação
       </p>
 
@@ -188,7 +206,7 @@ export function ConfigurationPanel({ area, quantity, onPriceCalculated }: Config
                 className="h-9 text-sm"
               />
             </div>
-            <span className="text-muted-foreground mt-5">×</span>
+            <span className="mt-5 text-muted-foreground">×</span>
             <div className="flex-1">
               <Label className="text-xs text-muted-foreground">Altura (cm)</Label>
               <Input
@@ -220,14 +238,14 @@ export function ConfigurationPanel({ area, quantity, onPriceCalculated }: Config
             <span className="font-medium">Nº de cores</span>
           </div>
           <div className="flex gap-1.5">
-            {Array.from({ length: maxColors }, (_, i) => i + 1).map(n => (
+            {Array.from({ length: maxColors }, (_, i) => i + 1).map((n) => (
               <button
                 key={n}
                 className={cn(
-                  "w-9 h-9 rounded-md text-sm font-medium transition-colors",
+                  'h-9 w-9 rounded-md text-sm font-medium transition-colors',
                   n === numCores
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
                 )}
                 onClick={() => setNumCores(n)}
               >
@@ -242,33 +260,33 @@ export function ConfigurationPanel({ area, quantity, onPriceCalculated }: Config
       {!area.cobra_por_cor && (
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Palette className="h-3 w-3" />
-          {maxColors === 1 ? "1 cor (fixa)" : "Full Color — sem limite de cores"}
+          {maxColors === 1 ? '1 cor (fixa)' : 'Full Color — sem limite de cores'}
         </div>
       )}
 
       {/* Price result */}
       {loading && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
           Calculando preço...
         </div>
       )}
 
       {error && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm text-destructive">
+        <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
           <AlertCircle className="h-3.5 w-3.5" />
           {error}
         </div>
       )}
 
       {priceData && !loading && (
-        <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 space-y-2">
+        <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-3">
           {/* Redirect notice */}
           {priceData.redirected_from && priceData.redirected_to && (
-            <div className="flex items-center gap-1.5 text-xs text-warning bg-warning/10 p-2 rounded-md border border-warning/20">
+            <div className="flex items-center gap-1.5 rounded-md border border-warning/20 bg-warning/10 p-2 text-xs text-warning">
               <AlertCircle className="h-3 w-3 flex-shrink-0" />
               <span>
-                Redirecionado automaticamente: as dimensões excedem o limite da técnica original. 
+                Redirecionado automaticamente: as dimensões excedem o limite da técnica original.
                 Usando <strong>{priceData.technique}</strong> (compatível com o formato do produto).
               </span>
             </div>
@@ -276,22 +294,20 @@ export function ConfigurationPanel({ area, quantity, onPriceCalculated }: Config
 
           <div className="flex items-center gap-2">
             <Check className="h-4 w-4 text-primary" />
-            <span className="text-sm font-semibold text-foreground">
-              {priceData.technique}
-            </span>
-          </div>
-          
-          <div className="text-xs text-muted-foreground space-y-0.5">
-            {usaDimensao && larguraNum > 0 && alturaNum > 0 && (
-              <p>Gravação: {larguraNum} × {alturaNum} cm</p>
-            )}
-            <p>Quantidade: {quantity} peças</p>
-            {priceData.num_cores > 1 && (
-              <p>Cores: {priceData.num_cores}</p>
-            )}
+            <span className="text-sm font-semibold text-foreground">{priceData.technique}</span>
           </div>
 
-          <div className="border-t border-border/50 pt-2 space-y-1">
+          <div className="space-y-0.5 text-xs text-muted-foreground">
+            {usaDimensao && larguraNum > 0 && alturaNum > 0 && (
+              <p>
+                Gravação: {larguraNum} × {alturaNum} cm
+              </p>
+            )}
+            <p>Quantidade: {quantity} peças</p>
+            {priceData.num_cores > 1 && <p>Cores: {priceData.num_cores}</p>}
+          </div>
+
+          <div className="space-y-1 border-t border-border/50 pt-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Preço unitário:</span>
               <span className="font-semibold text-primary">
@@ -322,10 +338,10 @@ export function ConfigurationPanel({ area, quantity, onPriceCalculated }: Config
 
       {/* Waiting for inputs */}
       {!canCalculate && !loading && !priceData && (
-        <div className="p-3 rounded-lg bg-muted/30 text-xs text-muted-foreground text-center">
+        <div className="rounded-lg bg-muted/30 p-3 text-center text-xs text-muted-foreground">
           {usaDimensao
-            ? "Preencha largura e altura para calcular o preço"
-            : "Aguardando configuração..."}
+            ? 'Preencha largura e altura para calcular o preço'
+            : 'Aguardando configuração...'}
         </div>
       )}
     </div>

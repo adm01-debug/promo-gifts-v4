@@ -7,7 +7,8 @@ const REPLENISHMENT_WINDOW_DAYS = 30;
 /** Minimum time (ms) between created_at and updated_at to qualify as replenishment (24h) */
 const MIN_REPLENISHMENT_DELTA_MS = 86_400_000;
 
-const REPLENISHMENT_SELECT = 'id, name, sku, primary_image_url, sale_price, category_id, supplier_id, created_at, updated_at, stock_quantity, min_quantity' as const;
+const REPLENISHMENT_SELECT =
+  'id, name, sku, primary_image_url, sale_price, category_id, supplier_id, created_at, updated_at, stock_quantity, min_quantity' as const;
 
 // ─── Date Utilities ──────────────────────────────────────────────
 
@@ -117,13 +118,15 @@ function isReplenishment(p: RawProduct): boolean {
   const created = new Date(p.created_at).getTime();
   const updated = new Date(p.updated_at).getTime();
   if (Number.isNaN(created) || Number.isNaN(updated)) return false;
-  return (updated - created) >= MIN_REPLENISHMENT_DELTA_MS;
+  return updated - created >= MIN_REPLENISHMENT_DELTA_MS;
 }
 
 function toReplenishment(p: RawProduct): ReplenishmentWithDetails {
   const daysRemaining = calcDaysRemaining(p.updated_at);
   const daysSince = calcDaysSinceReplenishment(p.updated_at);
-  const expiresAt = new Date(new Date(p.updated_at).getTime() + REPLENISHMENT_WINDOW_DAYS * 86_400_000).toISOString();
+  const expiresAt = new Date(
+    new Date(p.updated_at).getTime() + REPLENISHMENT_WINDOW_DAYS * 86_400_000,
+  ).toISOString();
   const stock = p.stock_quantity ?? 0;
   const minQty = p.min_quantity ?? 10;
 
@@ -157,23 +160,43 @@ function toReplenishment(p: RawProduct): ReplenishmentWithDetails {
 
 // ─── Enrichment ──────────────────────────────────────────────────
 
-async function enrichReplenishments(items: ReplenishmentWithDetails[]): Promise<ReplenishmentWithDetails[]> {
-  const categoryIds = [...new Set(items.map(n => n.category_id).filter((id): id is string => id !== null))];
-  const supplierIds = [...new Set(items.map(n => n.supplier_id).filter((id): id is string => id !== null))];
+async function enrichReplenishments(
+  items: ReplenishmentWithDetails[],
+): Promise<ReplenishmentWithDetails[]> {
+  const categoryIds = [
+    ...new Set(items.map((n) => n.category_id).filter((id): id is string => id !== null)),
+  ];
+  const supplierIds = [
+    ...new Set(items.map((n) => n.supplier_id).filter((id): id is string => id !== null)),
+  ];
 
   const [catResult, supResult] = await Promise.all([
     categoryIds.length > 0
-      ? invokeExternalDb<CategoryRecord>({ table: 'categories', operation: 'select', select: 'id, name', filters: { id: `in.(${categoryIds.join(',')})` }, limit: 500 })
+      ? invokeExternalDb<CategoryRecord>({
+          table: 'categories',
+          operation: 'select',
+          select: 'id, name',
+          filters: { id: `in.(${categoryIds.join(',')})` },
+          limit: 500,
+        })
       : { records: [] as CategoryRecord[] },
     supplierIds.length > 0
-      ? invokeExternalDb<SupplierRecord>({ table: 'suppliers', operation: 'select', select: 'id, name, code', filters: { id: `in.(${supplierIds.join(',')})` }, limit: 200 })
+      ? invokeExternalDb<SupplierRecord>({
+          table: 'suppliers',
+          operation: 'select',
+          select: 'id, name, code',
+          filters: { id: `in.(${supplierIds.join(',')})` },
+          limit: 200,
+        })
       : { records: [] as SupplierRecord[] },
   ]);
 
-  const catMap = new Map(catResult.records.map(c => [c.id, c.name]));
-  const supMap = new Map(supResult.records.map(s => [s.id, { name: s.name, code: s.code ?? null }]));
+  const catMap = new Map(catResult.records.map((c) => [c.id, c.name]));
+  const supMap = new Map(
+    supResult.records.map((s) => [s.id, { name: s.name, code: s.code ?? null }]),
+  );
 
-  return items.map(n => ({
+  return items.map((n) => ({
     ...n,
     category_name: (n.category_id ? catMap.get(n.category_id) : undefined) ?? null,
     supplier_name: (n.supplier_id ? supMap.get(n.supplier_id)?.name : undefined) ?? null,
@@ -208,10 +231,10 @@ export function useReplenishmentsWithDetails(options: UseReplenishmentsOptions =
       let items = result.records
         .filter(isReplenishment)
         .map(toReplenishment)
-        .filter(n => n.is_active);
+        .filter((n) => n.is_active);
 
       if (onlyHighlighted) {
-        items = items.filter(n => n.is_highlighted);
+        items = items.filter((n) => n.is_highlighted);
       }
 
       return enrichReplenishments(items);
@@ -251,19 +274,17 @@ export function useReplenishmentStats() {
       const weekStart = todayStart - 6 * 86_400_000;
       const fifteenDaysStart = todayStart - 14 * 86_400_000;
 
-      const replenishments = repResult.records
-        .filter(isReplenishment)
-        .map(p => ({
-          daysRemaining: calcDaysRemaining(p.updated_at),
-          updatedTime: new Date(p.updated_at).getTime(),
-          supplierId: p.supplier_id,
-        }));
+      const replenishments = repResult.records.filter(isReplenishment).map((p) => ({
+        daysRemaining: calcDaysRemaining(p.updated_at),
+        updatedTime: new Date(p.updated_at).getTime(),
+        supplierId: p.supplier_id,
+      }));
 
-      const active = replenishments.filter(n => n.daysRemaining > 0);
-      const expiring = active.filter(n => n.daysRemaining <= 7);
-      const restockedToday = active.filter(n => n.updatedTime >= todayStart).length;
-      const restockedThisWeek = active.filter(n => n.updatedTime >= weekStart).length;
-      const restockedLast15Days = active.filter(n => n.updatedTime >= fifteenDaysStart).length;
+      const active = replenishments.filter((n) => n.daysRemaining > 0);
+      const expiring = active.filter((n) => n.daysRemaining <= 7);
+      const restockedToday = active.filter((n) => n.updatedTime >= todayStart).length;
+      const restockedThisWeek = active.filter((n) => n.updatedTime >= weekStart).length;
+      const restockedLast15Days = active.filter((n) => n.updatedTime >= fifteenDaysStart).length;
       const totalProducts = totalResult.count ?? 0;
       const activeCount = active.length;
 

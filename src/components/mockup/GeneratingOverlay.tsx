@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
-import { Sparkles, Wand2, Palette, Layers, Cpu, Check } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
+import { useEffect, useState } from 'react';
+import { cn } from '@/lib/utils';
+import { Sparkles, Wand2, Palette, Layers, Cpu, Check } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 
 interface GeneratingOverlayProps {
   isVisible: boolean;
@@ -10,11 +10,11 @@ interface GeneratingOverlayProps {
 }
 
 const GENERATION_STEPS = [
-  { icon: Layers, label: "Analisando produto", duration: 1500 },
-  { icon: Palette, label: "Aplicando técnica", duration: 2000 },
-  { icon: Wand2, label: "Posicionando logo", duration: 1500 },
-  { icon: Cpu, label: "Gerando com IA", duration: 3000 },
-  { icon: Sparkles, label: "Finalizando", duration: 1000 },
+  { icon: Layers, label: 'Analisando produto', duration: 1500 },
+  { icon: Palette, label: 'Aplicando técnica', duration: 2000 },
+  { icon: Wand2, label: 'Posicionando logo', duration: 1500 },
+  { icon: Cpu, label: 'Gerando com IA', duration: 3000 },
+  { icon: Sparkles, label: 'Finalizando', duration: 1000 },
 ];
 
 export function GeneratingOverlay({
@@ -59,45 +59,46 @@ export function GeneratingOverlay({
   const CurrentIcon = GENERATION_STEPS[currentStep]?.icon || Sparkles;
 
   return (
-    <div 
+    <div
       className={cn(
-        "fixed inset-0 z-50 flex items-center justify-center",
-        "bg-background/80 backdrop-blur-md",
-        "animate-fade-in"
+        'fixed inset-0 z-50 flex items-center justify-center',
+        'bg-background/80 backdrop-blur-md',
+        'animate-fade-in',
       )}
       role="alert"
       aria-live="polite"
       aria-busy="true"
       data-testid="generating-overlay"
     >
-      <div className="relative max-w-md w-full mx-4 p-8 rounded-2xl bg-card border shadow-2xl animate-scale-in">
+      <div className="relative mx-4 w-full max-w-md animate-scale-in rounded-2xl border bg-card p-8 shadow-2xl">
         {/* Decorative background elements */}
-        <div className="absolute -top-12 -right-12 w-32 h-32 bg-primary/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-primary/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '0.5s' }} />
-        
+        <div className="absolute -right-12 -top-12 h-32 w-32 animate-pulse rounded-full bg-primary/20 blur-3xl" />
+        <div
+          className="absolute -bottom-12 -left-12 h-32 w-32 animate-pulse rounded-full bg-primary/10 blur-3xl"
+          style={{ animationDelay: '0.5s' }}
+        />
+
         <div className="relative space-y-6">
           {/* Header */}
           <div className="text-center">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-4 relative">
-              <CurrentIcon className="h-10 w-10 text-primary animate-bounce" />
-              <div className="absolute inset-0 rounded-full border-2 border-primary/30 animate-pulse-ring" />
+            <div className="relative mb-4 inline-flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
+              <CurrentIcon className="h-10 w-10 animate-bounce text-primary" />
+              <div className="absolute inset-0 animate-pulse-ring rounded-full border-2 border-primary/30" />
             </div>
-            <h2 className="font-display text-xl font-semibold text-foreground mb-1">
+            <h2 className="mb-1 font-display text-xl font-semibold text-foreground">
               Gerando Mockup
             </h2>
             <p className="text-sm text-muted-foreground">
               {productName && techniqueName
                 ? `${productName} com ${techniqueName}`
-                : "Processando sua imagem..."}
+                : 'Processando sua imagem...'}
             </p>
           </div>
 
           {/* Progress */}
           <div className="space-y-2">
             <Progress value={progress} className="h-2" />
-            <p className="text-xs text-center text-muted-foreground">
-              {Math.round(progress)}%
-            </p>
+            <p className="text-center text-xs text-muted-foreground">{Math.round(progress)}%</p>
           </div>
 
           {/* Steps */}
@@ -111,39 +112,44 @@ export function GeneratingOverlay({
                 <div
                   key={index}
                   className={cn(
-                    "flex items-center gap-3 p-2 rounded-lg transition-all duration-300",
-                    isCurrent && "bg-primary/10",
-                    isComplete && "opacity-60"
+                    'flex items-center gap-3 rounded-lg p-2 transition-all duration-300',
+                    isCurrent && 'bg-primary/10',
+                    isComplete && 'opacity-60',
                   )}
                 >
                   <div
                     className={cn(
-                      "flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300",
-                      isComplete && "bg-success text-success-foreground",
-                      isCurrent && "bg-primary text-primary-foreground animate-pulse",
-                      !isComplete && !isCurrent && "bg-muted text-muted-foreground"
+                      'flex h-8 w-8 items-center justify-center rounded-full transition-all duration-300',
+                      isComplete && 'bg-success text-success-foreground',
+                      isCurrent && 'animate-pulse bg-primary text-primary-foreground',
+                      !isComplete && !isCurrent && 'bg-muted text-muted-foreground',
                     )}
                   >
-                    {isComplete ? (
-                      <Check className="h-4 w-4" />
-                    ) : (
-                      <StepIcon className="h-4 w-4" />
-                    )}
+                    {isComplete ? <Check className="h-4 w-4" /> : <StepIcon className="h-4 w-4" />}
                   </div>
                   <span
                     className={cn(
-                      "text-sm transition-colors duration-300",
-                      isCurrent && "font-medium text-foreground",
-                      !isCurrent && "text-muted-foreground"
+                      'text-sm transition-colors duration-300',
+                      isCurrent && 'font-medium text-foreground',
+                      !isCurrent && 'text-muted-foreground',
                     )}
                   >
                     {step.label}
                   </span>
                   {isCurrent && (
                     <div className="ml-auto flex gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }} />
+                      <span
+                        className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary"
+                        style={{ animationDelay: '0ms' }}
+                      />
+                      <span
+                        className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary"
+                        style={{ animationDelay: '150ms' }}
+                      />
+                      <span
+                        className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary"
+                        style={{ animationDelay: '300ms' }}
+                      />
                     </div>
                   )}
                 </div>
@@ -152,7 +158,7 @@ export function GeneratingOverlay({
           </div>
 
           {/* Tip */}
-          <p className="text-[10px] text-center text-muted-foreground">
+          <p className="text-center text-[10px] text-muted-foreground">
             Isso pode levar alguns segundos...
           </p>
         </div>

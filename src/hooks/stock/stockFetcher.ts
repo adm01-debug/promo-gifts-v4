@@ -13,7 +13,7 @@ import {
   calculateAvailableStock,
   aggregateVariantsToProduct,
 } from '@/types/stock';
-import { generateStockAlerts } from "@/hooks/stock/stockAlerts";
+import { generateStockAlerts } from '@/hooks/stock/stockAlerts';
 
 // ============================================
 // TIPOS PARA API EXTERNA
@@ -76,7 +76,7 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
   select: string,
   pageSize = 1000,
   maxRecords = 100000,
-  filters?: Record<string, unknown>
+  filters?: Record<string, unknown>,
 ): Promise<T[]> {
   const all: T[] = [];
   let offset = 0;
@@ -86,7 +86,12 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
   while (all.length < maxRecords) {
     // Always request countMode on first page to know total records
     const body: Record<string, unknown> = {
-      table, operation: 'select', select, limit: pageSize, offset, filters,
+      table,
+      operation: 'select',
+      select,
+      limit: pageSize,
+      offset,
+      filters,
     };
     if (offset === 0) {
       body.countMode = 'exact';
@@ -139,21 +144,42 @@ function buildFutureEntries(
   variantId: string,
   colorName?: string,
   productName?: string,
-  productSku?: string
+  productSku?: string,
 ): FutureStockEntry[] {
   const entries: FutureStockEntry[] = [];
   const pairs = [
-    { q: supplierSource.next_quantity_1, d: supplierSource.next_date_1, suffix: '1', status: 'confirmed' as const },
-    { q: supplierSource.next_quantity_2, d: supplierSource.next_date_2, suffix: '2', status: 'pending' as const },
-    { q: supplierSource.next_quantity_3, d: supplierSource.next_date_3, suffix: '3', status: 'pending' as const },
+    {
+      q: supplierSource.next_quantity_1,
+      d: supplierSource.next_date_1,
+      suffix: '1',
+      status: 'confirmed' as const,
+    },
+    {
+      q: supplierSource.next_quantity_2,
+      d: supplierSource.next_date_2,
+      suffix: '2',
+      status: 'pending' as const,
+    },
+    {
+      q: supplierSource.next_quantity_3,
+      d: supplierSource.next_date_3,
+      suffix: '3',
+      status: 'pending' as const,
+    },
   ];
   for (const { q, d, suffix, status } of pairs) {
     if (q && d) {
       entries.push({
-        id: `${supplierSource.id}-${suffix}`, productId, variantId,
-        colorName, productName, productSku,
-        expectedQuantity: q, expectedDate: d,
-        source: 'purchase_order', status,
+        id: `${supplierSource.id}-${suffix}`,
+        productId,
+        variantId,
+        colorName,
+        productName,
+        productSku,
+        expectedQuantity: q,
+        expectedDate: d,
+        source: 'purchase_order',
+        status,
         createdAt: supplierSource.updated_at || new Date().toISOString(),
         updatedAt: supplierSource.updated_at || new Date().toISOString(),
       });
@@ -167,34 +193,50 @@ export async function fetchAndProcessStockData(): Promise<{
   alerts: StockAlert[];
   futureStock: FutureStockEntry[];
 }> {
-  const [allProducts, allVariants, allSupplierSources, allCategories, allSuppliers] = await Promise.all([
-    fetchPaginatedFromBridge<ExternalProductWithVariants>(
-      'products', 'id,name,sku,min_quantity,stock_quantity,updated_at,category_id,supplier_id,brand', 1000, 100000, { active: true }
-    ),
-    fetchPaginatedFromBridge<ExternalVariantStock>(
-      'product_variants', 'id,product_id,sku,name,color_id,color_name,color_hex,color_code,stock_quantity,is_active,updated_at', 1000, 100000, { is_active: true }
-    ),
-    fetchPaginatedFromBridge<ExternalSupplierSource>(
-      'variant_supplier_sources', 'id,variant_id,supplier_id,supplier_sku,quantity,next_quantity_1,next_date_1,next_quantity_2,next_date_2,next_quantity_3,next_date_3,is_active,updated_at', 1000, 100000, { is_active: true }
-    ),
-    fetchPaginatedFromBridge<{ id: string; name: string }>(
-      'categories', 'id,name', 1000, 100000
-    ),
-    fetchPaginatedFromBridge<{ id: string; name: string; code?: string }>(
-      'suppliers', 'id,name,code', 1000, 100000
-    ),
-  ]);
+  const [allProducts, allVariants, allSupplierSources, allCategories, allSuppliers] =
+    await Promise.all([
+      fetchPaginatedFromBridge<ExternalProductWithVariants>(
+        'products',
+        'id,name,sku,min_quantity,stock_quantity,updated_at,category_id,supplier_id,brand',
+        1000,
+        100000,
+        { active: true },
+      ),
+      fetchPaginatedFromBridge<ExternalVariantStock>(
+        'product_variants',
+        'id,product_id,sku,name,color_id,color_name,color_hex,color_code,stock_quantity,is_active,updated_at',
+        1000,
+        100000,
+        { is_active: true },
+      ),
+      fetchPaginatedFromBridge<ExternalSupplierSource>(
+        'variant_supplier_sources',
+        'id,variant_id,supplier_id,supplier_sku,quantity,next_quantity_1,next_date_1,next_quantity_2,next_date_2,next_quantity_3,next_date_3,is_active,updated_at',
+        1000,
+        100000,
+        { is_active: true },
+      ),
+      fetchPaginatedFromBridge<{ id: string; name: string }>('categories', 'id,name', 1000, 100000),
+      fetchPaginatedFromBridge<{ id: string; name: string; code?: string }>(
+        'suppliers',
+        'id,name,code',
+        1000,
+        100000,
+      ),
+    ]);
 
   // Build lookup maps for category and supplier names
   const categoryMap = new Map<string, string>();
-  allCategories.forEach(c => categoryMap.set(c.id, c.name));
+  allCategories.forEach((c) => categoryMap.set(c.id, c.name));
   const supplierMap = new Map<string, string>();
-  allSuppliers.forEach(s => supplierMap.set(s.id, s.name));
+  allSuppliers.forEach((s) => supplierMap.set(s.id, s.name));
 
-  logger.log(`[Stock] Carregados: ${allProducts.length} produtos, ${allVariants.length} variantes, ${allSupplierSources.length} sources`);
+  logger.log(
+    `[Stock] Carregados: ${allProducts.length} produtos, ${allVariants.length} variantes, ${allSupplierSources.length} sources`,
+  );
 
   const variantsByProduct = new Map<string, ExternalVariantStock[]>();
-  allVariants.forEach(v => {
+  allVariants.forEach((v) => {
     if (!v.product_id) return;
     const existing = variantsByProduct.get(v.product_id) || [];
     existing.push(v);
@@ -202,7 +244,7 @@ export async function fetchAndProcessStockData(): Promise<{
   });
 
   const sourcesByVariant = new Map<string, ExternalSupplierSource>();
-  allSupplierSources.forEach(s => {
+  allSupplierSources.forEach((s) => {
     if (!s.variant_id) return;
     const existing = sourcesByVariant.get(s.variant_id);
     if (!existing || (s.updated_at && existing.updated_at && s.updated_at > existing.updated_at)) {
@@ -216,12 +258,12 @@ export async function fetchAndProcessStockData(): Promise<{
     return { productStocks: [], alerts: [], futureStock: [] };
   }
 
-  const summaries: ProductStockSummary[] = allProducts.map(product => {
+  const summaries: ProductStockSummary[] = allProducts.map((product) => {
     const productVariants = variantsByProduct.get(product.id) || [];
     const variants: VariantStock[] = [];
 
     if (productVariants.length > 0) {
-      productVariants.forEach(pv => {
+      productVariants.forEach((pv) => {
         const supplierSource = sourcesByVariant.get(pv.id);
         const currentStock = supplierSource
           ? toNumber(supplierSource.quantity, toNumber(pv.stock_quantity, 0))
@@ -234,17 +276,35 @@ export async function fetchAndProcessStockData(): Promise<{
           if (supplierSource.next_quantity_1) inTransitStock += supplierSource.next_quantity_1;
           if (supplierSource.next_quantity_2) inTransitStock += supplierSource.next_quantity_2;
           if (supplierSource.next_quantity_3) inTransitStock += supplierSource.next_quantity_3;
-          futureEntries.push(...buildFutureEntries(supplierSource, product.id, pv.id, pv.color_name || undefined, product.name, product.sku));
+          futureEntries.push(
+            ...buildFutureEntries(
+              supplierSource,
+              product.id,
+              pv.id,
+              pv.color_name || undefined,
+              product.name,
+              product.sku,
+            ),
+          );
         }
 
         const availableStock = calculateAvailableStock(currentStock, reservedStock);
         const status = calculateStockStatus(currentStock, minStock, undefined, inTransitStock);
 
         variants.push({
-          id: pv.id, productId: product.id, variantId: pv.id,
+          id: pv.id,
+          productId: product.id,
+          variantId: pv.id,
           variantSku: pv.sku || `${product.sku}-${pv.color_code || 'VAR'}`,
-          colorId: pv.color_id, colorName: pv.color_name || 'Padrão', colorHex: pv.color_hex,
-          currentStock, minStock, reservedStock, inTransitStock, availableStock, status,
+          colorId: pv.color_id,
+          colorName: pv.color_name || 'Padrão',
+          colorHex: pv.color_hex,
+          currentStock,
+          minStock,
+          reservedStock,
+          inTransitStock,
+          availableStock,
+          status,
           daysUntilStockout: calculateDaysUntilStockout(availableStock),
           futureStock: inTransitStock > 0 ? inTransitStock : undefined,
           futureStockDate: supplierSource?.next_date_1 || undefined,
@@ -269,10 +329,16 @@ export async function fetchAndProcessStockData(): Promise<{
         } else {
           const availableStock = calculateAvailableStock(productLevelStock, 0);
           variants.push({
-            id: `${product.id}::product_total`, productId: product.id,
-            variantId: `${product.id}::product_total`, variantSku: product.sku || 'PROD',
-            colorName: 'Total do Produto', currentStock: productLevelStock, minStock,
-            reservedStock: 0, inTransitStock: 0, availableStock,
+            id: `${product.id}::product_total`,
+            productId: product.id,
+            variantId: `${product.id}::product_total`,
+            variantSku: product.sku || 'PROD',
+            colorName: 'Total do Produto',
+            currentStock: productLevelStock,
+            minStock,
+            reservedStock: 0,
+            inTransitStock: 0,
+            availableStock,
             status: calculateStockStatus(productLevelStock, minStock),
             daysUntilStockout: calculateDaysUntilStockout(availableStock),
             updatedAt: product.updated_at || new Date().toISOString(),
@@ -284,9 +350,16 @@ export async function fetchAndProcessStockData(): Promise<{
       const minStock = product.min_quantity || 10;
       const availableStock = calculateAvailableStock(currentStock, 0);
       variants.push({
-        id: product.id, productId: product.id, variantId: product.id,
-        variantSku: product.sku || 'PROD', colorName: 'Padrão',
-        currentStock, minStock, reservedStock: 0, inTransitStock: 0, availableStock,
+        id: product.id,
+        productId: product.id,
+        variantId: product.id,
+        variantSku: product.sku || 'PROD',
+        colorName: 'Padrão',
+        currentStock,
+        minStock,
+        reservedStock: 0,
+        inTransitStock: 0,
+        availableStock,
         status: calculateStockStatus(currentStock, minStock),
         daysUntilStockout: calculateDaysUntilStockout(availableStock),
         updatedAt: product.updated_at || new Date().toISOString(),
@@ -295,15 +368,22 @@ export async function fetchAndProcessStockData(): Promise<{
 
     const aggregated = aggregateVariantsToProduct(variants);
     const categoryName = product.category_id ? categoryMap.get(product.category_id) : undefined;
-    const supplierName = product.supplier_id ? supplierMap.get(product.supplier_id) : (product.brand || undefined);
+    const supplierName = product.supplier_id
+      ? supplierMap.get(product.supplier_id)
+      : product.brand || undefined;
     return {
-      productId: product.id, productName: product.name, productSku: product.sku || '',
-      categoryName, supplierName,
+      productId: product.id,
+      productName: product.name,
+      productSku: product.sku || '',
+      categoryName,
+      supplierName,
       ...aggregated,
     };
   });
 
   const alerts = generateStockAlerts(summaries);
-  logger.log(`[Stock] Processados ${summaries.length} produtos com ${futureEntries.length} previsões`);
+  logger.log(
+    `[Stock] Processados ${summaries.length} produtos com ${futureEntries.length} previsões`,
+  );
   return { productStocks: summaries, alerts, futureStock: futureEntries };
 }

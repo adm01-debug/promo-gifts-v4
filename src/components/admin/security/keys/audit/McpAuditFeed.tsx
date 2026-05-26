@@ -1,32 +1,46 @@
 /**
  * Feed de auditoria de chaves MCP. Combina filtros, linhas e exportação CSV.
  */
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ClipboardList } from "lucide-react";
-import { McpAuditFilters } from "./McpAuditFilters";
-import { McpAuditRow } from "./McpAuditRow";
-import { useMcpAuditFeed } from "./useMcpAuditFeed";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ClipboardList } from 'lucide-react';
+import { McpAuditFilters } from './McpAuditFilters';
+import { McpAuditRow } from './McpAuditRow';
+import { useMcpAuditFeed } from './useMcpAuditFeed';
 
-function toCsv(rows: ReturnType<typeof useMcpAuditFeed>["rows"]): string {
-  const headers = ["created_at", "action", "actor_email", "actor_name", "key_prefix", "ip_address", "is_full", "escalated", "details"];
-  const esc = (s: unknown) => `"${String(s ?? "").replace(/"/g, '""')}"`;
-  const lines = [headers.join(",")];
+function toCsv(rows: ReturnType<typeof useMcpAuditFeed>['rows']): string {
+  const headers = [
+    'created_at',
+    'action',
+    'actor_email',
+    'actor_name',
+    'key_prefix',
+    'ip_address',
+    'is_full',
+    'escalated',
+    'details',
+  ];
+  const esc = (s: unknown) => `"${String(s ?? '').replace(/"/g, '""')}"`;
+  const lines = [headers.join(',')];
   for (const r of rows) {
-    lines.push([
-      r.created_at,
-      r.action,
-      r.actor_email ?? "",
-      r.actor_name ?? "",
-      r.key_prefix ?? "",
-      r.ip_address ?? "",
-      r.is_full ? "1" : "0",
-      r.escalated ? "1" : "0",
-      JSON.stringify(r.details ?? {}),
-    ].map(esc).join(","));
+    lines.push(
+      [
+        r.created_at,
+        r.action,
+        r.actor_email ?? '',
+        r.actor_name ?? '',
+        r.key_prefix ?? '',
+        r.ip_address ?? '',
+        r.is_full ? '1' : '0',
+        r.escalated ? '1' : '0',
+        JSON.stringify(r.details ?? {}),
+      ]
+        .map(esc)
+        .join(','),
+    );
   }
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 export function McpAuditFeed() {
@@ -34,9 +48,9 @@ export function McpAuditFeed() {
 
   const onExport = () => {
     const csv = toCsv(rows);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = url;
     a.download = `mcp-audit-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
@@ -61,16 +75,20 @@ export function McpAuditFeed() {
 
         {loading ? (
           <div className="space-y-2">
-            {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-20 w-full" />
+            ))}
           </div>
         ) : rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-8 text-center">
+          <p className="py-8 text-center text-sm text-muted-foreground">
             Nenhum evento encontrado com os filtros atuais.
           </p>
         ) : (
           <ScrollArea className="h-[600px] pr-3">
             <ul className="space-y-2">
-              {rows.map((r) => <McpAuditRow key={r.id} row={r} />)}
+              {rows.map((r) => (
+                <McpAuditRow key={r.id} row={r} />
+              ))}
             </ul>
           </ScrollArea>
         )}

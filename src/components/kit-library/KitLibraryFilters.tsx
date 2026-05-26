@@ -5,14 +5,18 @@ import { ArrowUpDown, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
 export type SortOption = 'recent' | 'price-desc' | 'name-asc' | 'usage-desc' | 'last-used';
 
 export const SORT_LABELS: Record<SortOption, string> = {
-  'recent': 'Mais recentes',
+  recent: 'Mais recentes',
   'price-desc': 'Maior valor',
   'name-asc': 'Nome (A-Z)',
   'usage-desc': 'Mais usados',
@@ -33,8 +37,16 @@ interface Props {
 }
 
 export function KitLibraryFilters({
-  tags, colors, selectedTag, selectedColor, sort,
-  onTagChange, onColorChange, onSortChange, showUsageSort, showLastUsedSort,
+  tags,
+  colors,
+  selectedTag,
+  selectedColor,
+  sort,
+  onTagChange,
+  onColorChange,
+  onSortChange,
+  showUsageSort,
+  showLastUsedSort,
 }: Props) {
   const hasFilters = !!selectedTag || !!selectedColor;
 
@@ -64,7 +76,7 @@ export function KitLibraryFilters({
 
       {/* Color dots */}
       {colors.length > 0 && (
-        <div className="flex items-center gap-1.5 px-2 border-l border-border/60">
+        <div className="flex items-center gap-1.5 border-l border-border/60 px-2">
           {colors.slice(0, 8).map((c) => (
             <button
               key={c}
@@ -72,7 +84,7 @@ export function KitLibraryFilters({
               onClick={() => onColorChange(selectedColor === c ? null : c)}
               aria-label={`Filtrar por cor ${c}`}
               className={cn(
-                'w-5 h-5 rounded-full border-2 transition-transform hover:scale-110',
+                'h-5 w-5 rounded-full border-2 transition-transform hover:scale-110',
                 selectedColor === c ? 'border-foreground ring-2 ring-primary/30' : 'border-border',
               )}
               style={{ background: c }}
@@ -85,7 +97,10 @@ export function KitLibraryFilters({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => { onTagChange(null); onColorChange(null); }}
+          onClick={() => {
+            onTagChange(null);
+            onColorChange(null);
+          }}
           className="h-7 gap-1 text-xs"
         >
           <X className="h-3 w-3" /> Limpar

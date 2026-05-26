@@ -4,8 +4,8 @@
  * Conta os incidentes recentes agrupados por severidade. Usado pelo
  * SeverityFilterControl para exibir badges de contagem nas pills.
  */
-import { useMemo } from "react";
-import { useRecentIncidents } from "./useRecentIncidents";
+import { useMemo } from 'react';
+import { useRecentIncidents } from './useRecentIncidents';
 
 export function useIncidentSeverityCounts() {
   const { data } = useRecentIncidents();

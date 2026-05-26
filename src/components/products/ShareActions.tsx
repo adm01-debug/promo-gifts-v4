@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo } from 'react';
 import {
   MessageCircle,
   Copy,
@@ -7,8 +7,8 @@ import {
   Image as ImageIcon,
   Palette,
   ChevronDown,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,21 +16,29 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useToast } from "@/hooks/ui";
-import type { Product } from "@/hooks/products";
-import { SharePreviewDialog } from "./share/SharePreviewDialog";
-import { ShareAllColorsDialog } from "./share/ShareAllColorsDialog";
-import { usePhotoDownload } from "./share/usePhotoDownload";
-import { MESSAGE_TEMPLATES } from "./share/MessageTemplates";
+} from '@/components/ui/dropdown-menu';
+import { useToast } from '@/hooks/ui';
+import type { Product } from '@/hooks/products';
+import { SharePreviewDialog } from './share/SharePreviewDialog';
+import { ShareAllColorsDialog } from './share/ShareAllColorsDialog';
+import { usePhotoDownload } from './share/usePhotoDownload';
+import { MESSAGE_TEMPLATES } from './share/MessageTemplates';
 
 interface ShareActionsProps {
   product: Product;
   selectedPhotosCount?: number;
-  selectedVariant?: { variantName?: string | null; colorHex?: string | null; thumbnailUrl?: string | null } | null;
+  selectedVariant?: {
+    variantName?: string | null;
+    colorHex?: string | null;
+    thumbnailUrl?: string | null;
+  } | null;
 }
 
-export function ShareActions({ product, selectedPhotosCount = 0, selectedVariant }: ShareActionsProps) {
+export function ShareActions({
+  product,
+  selectedPhotosCount = 0,
+  selectedVariant,
+}: ShareActionsProps) {
   const { toast } = useToast();
   const [showPreview, setShowPreview] = useState(false);
   const [showAllColors, setShowAllColors] = useState(false);
@@ -54,8 +62,8 @@ export function ShareActions({ product, selectedPhotosCount = 0, selectedVariant
     await navigator.clipboard.writeText(message);
     setCopied(true);
     toast({
-      title: "Copiado!",
-      description: "Descrição copiada para a área de transferência",
+      title: 'Copiado!',
+      description: 'Descrição copiada para a área de transferência',
     });
     setTimeout(() => setCopied(false), 2000);
   };
@@ -70,19 +78,19 @@ export function ShareActions({ product, selectedPhotosCount = 0, selectedVariant
     <>
       <div className="inline-flex rounded-md shadow-sm">
         <Button
-          className="gap-2 rounded-r-none border-r border-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground"
+          className="gap-2 rounded-r-none border-r border-primary/20 bg-primary text-primary-foreground hover:bg-primary/90"
           onClick={() => setShowPreview(true)}
         >
           <MessageCircle className="h-4 w-4" />
           Enviar - WhatsApp
-          <span className="bg-primary-foreground/20 text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+          <span className="rounded-full bg-primary-foreground/20 px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">
             {mainPhotosCount}
           </span>
         </Button>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button className="rounded-l-none px-2 bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Button className="rounded-l-none bg-primary px-2 text-primary-foreground hover:bg-primary/90">
               <ChevronDown className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -91,16 +99,16 @@ export function ShareActions({ product, selectedPhotosCount = 0, selectedVariant
             <DropdownMenuSeparator />
 
             <DropdownMenuItem onClick={() => setShowPreview(true)}>
-              <MessageCircle className="h-4 w-4 mr-2" />
+              <MessageCircle className="mr-2 h-4 w-4" />
               Enviar Produto Simples
               <span className="ml-auto text-[10px] text-muted-foreground">
-                {mainPhotosCount} foto{mainPhotosCount !== 1 ? "s" : ""}
+                {mainPhotosCount} foto{mainPhotosCount !== 1 ? 's' : ''}
               </span>
             </DropdownMenuItem>
 
             {hasColors && (
               <DropdownMenuItem onClick={() => setShowAllColors(true)}>
-                <Palette className="h-4 w-4 mr-2" />
+                <Palette className="mr-2 h-4 w-4" />
                 Enviar Todas as Cores
                 <span className="ml-auto text-[10px] text-muted-foreground">
                   {product.colors.length}
@@ -113,23 +121,23 @@ export function ShareActions({ product, selectedPhotosCount = 0, selectedVariant
                 <DropdownMenuItem
                   onClick={() => {
                     toast({
-                      title: "KIT Completo",
-                      description: "Preparando fotos do kit montado...",
+                      title: 'KIT Completo',
+                      description: 'Preparando fotos do kit montado...',
                     });
                   }}
                 >
-                  <ImageIcon className="h-4 w-4 mr-2" />
+                  <ImageIcon className="mr-2 h-4 w-4" />
                   Enviar KIT Completo
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => {
                     toast({
-                      title: "Itens do KIT",
-                      description: "Preparando fotos individuais dos itens...",
+                      title: 'Itens do KIT',
+                      description: 'Preparando fotos individuais dos itens...',
                     });
                   }}
                 >
-                  <ImageIcon className="h-4 w-4 mr-2" />
+                  <ImageIcon className="mr-2 h-4 w-4" />
                   Enviar Itens Separados
                 </DropdownMenuItem>
               </>
@@ -140,17 +148,17 @@ export function ShareActions({ product, selectedPhotosCount = 0, selectedVariant
 
             <DropdownMenuItem onClick={handleCopyDescription}>
               {copied ? (
-                <Check className="h-4 w-4 mr-2 text-success" />
+                <Check className="mr-2 h-4 w-4 text-success" />
               ) : (
-                <Copy className="h-4 w-4 mr-2" />
+                <Copy className="mr-2 h-4 w-4" />
               )}
               Copiar Descrição
             </DropdownMenuItem>
 
             <DropdownMenuItem onClick={handleDownloadPhotos} disabled={downloading}>
-              <Download className="h-4 w-4 mr-2" />
+              <Download className="mr-2 h-4 w-4" />
               {downloading
-                ? "Baixando..."
+                ? 'Baixando...'
                 : `Download (${selectedPhotosCount || product.images.length} fotos)`}
             </DropdownMenuItem>
           </DropdownMenuContent>

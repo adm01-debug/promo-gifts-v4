@@ -12,13 +12,13 @@
  *  - Frase de confirmação "CONCEDER FULL" obrigatória.
  *  - Banner vermelho de aviso.
  */
-import { useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useMemo, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,16 +28,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Copy, Key, ShieldAlert, AlertTriangle } from "lucide-react";
-import { toast } from "sonner";
-import { invokeFullScopeFunction } from "@/lib/auth/invoke-full-scope";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from '@/components/ui/alert-dialog';
+import { Copy, Key, ShieldAlert, AlertTriangle } from 'lucide-react';
+import { toast } from 'sonner';
+import { invokeFullScopeFunction } from '@/lib/auth/invoke-full-scope';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   KNOWN_SCOPES,
   FULL_SCOPE,
@@ -48,10 +43,10 @@ import {
   SCOPE_DESCRIPTIONS,
   isFullAccess,
   type McpScope,
-} from "@/lib/mcp/scopes";
-import { useCanGrantMcpFull } from "@/components/admin/security/keys/useCanGrantMcpFull";
-import { useDevChallenge } from "@/contexts/DevChallengeContext";
-import { sanitizeError } from "@/lib/security/sanitize-error";
+} from '@/lib/mcp/scopes';
+import { useCanGrantMcpFull } from '@/components/admin/security/keys/useCanGrantMcpFull';
+import { useDevChallenge } from '@/contexts/DevChallengeContext';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 
 interface Props {
   onIssued: () => void;
@@ -61,22 +56,22 @@ function isoDaysFromNow(days: number): string {
   const d = new Date();
   d.setDate(d.getDate() + days);
   // datetime-local input format: YYYY-MM-DDTHH:mm
-  const pad = (n: number) => n.toString().padStart(2, "0");
+  const pad = (n: number) => n.toString().padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 export function IssueMcpKeyForm({ onIssued }: Props) {
-  const [name, setName] = useState("");
-  const [scopes, setScopes] = useState<McpScope[]>(["quotes:read"]);
-  const [expiresLocal, setExpiresLocal] = useState<string>("");
-  const [justification, setJustification] = useState("");
-  const [targetRepo, setTargetRepo] = useState("");
-  const [targetTool, setTargetTool] = useState("");
-  const [confirmation, setConfirmation] = useState("");
+  const [name, setName] = useState('');
+  const [scopes, setScopes] = useState<McpScope[]>(['quotes:read']);
+  const [expiresLocal, setExpiresLocal] = useState<string>('');
+  const [justification, setJustification] = useState('');
+  const [targetRepo, setTargetRepo] = useState('');
+  const [targetTool, setTargetTool] = useState('');
+  const [confirmation, setConfirmation] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [generated, setGenerated] = useState<string | null>(null);
   const [confirmRootOpen, setConfirmRootOpen] = useState(false);
-  const [rootNameEcho, setRootNameEcho] = useState("");
+  const [rootNameEcho, setRootNameEcho] = useState('');
 
   const full = isFullAccess(scopes);
   const { canGrant: canGrantFull, loading: grantorLoading } = useCanGrantMcpFull();
@@ -95,16 +90,14 @@ export function IssueMcpKeyForm({ onIssued }: Props) {
   };
 
   const validation = useMemo(() => {
-    if (name.trim().length < 3) return "Informe um nome (mín. 3 caracteres).";
-    if (scopes.length === 0) return "Selecione ao menos um escopo.";
+    if (name.trim().length < 3) return 'Informe um nome (mín. 3 caracteres).';
+    if (scopes.length === 0) return 'Selecione ao menos um escopo.';
     if (full) {
-      if (!expiresLocal) return "Defina uma data de expiração.";
+      if (!expiresLocal) return 'Defina uma data de expiração.';
       const exp = new Date(expiresLocal).getTime();
-      if (Number.isNaN(exp) || exp <= Date.now())
-        return "Expiração precisa ser no futuro.";
+      if (Number.isNaN(exp) || exp <= Date.now()) return 'Expiração precisa ser no futuro.';
       const maxMs = FULL_SCOPE_MAX_TTL_DAYS * 24 * 60 * 60 * 1000;
-      if (exp - Date.now() > maxMs)
-        return `Janela máxima é ${FULL_SCOPE_MAX_TTL_DAYS} dias.`;
+      if (exp - Date.now() > maxMs) return `Janela máxima é ${FULL_SCOPE_MAX_TTL_DAYS} dias.`;
       if (justification.trim().length < FULL_SCOPE_MIN_JUSTIFICATION)
         return `Justificativa precisa de ao menos ${FULL_SCOPE_MIN_JUSTIFICATION} caracteres.`;
       if (confirmation !== FULL_SCOPE_CONFIRMATION)
@@ -113,7 +106,7 @@ export function IssueMcpKeyForm({ onIssued }: Props) {
     return null;
   }, [name, scopes, full, expiresLocal, justification, confirmation]);
 
-  const submitWithChallenge = async (action: "mcp_full_issue" | "mcp_key_rotate") => {
+  const submitWithChallenge = async (action: 'mcp_full_issue' | 'mcp_key_rotate') => {
     setSubmitting(true);
     try {
       const result = await invokeFullScopeFunction<
@@ -121,11 +114,9 @@ export function IssueMcpKeyForm({ onIssued }: Props) {
         { ok: boolean; key?: string }
       >({
         challenge,
-        functionName: "mcp-keys-issue",
+        functionName: 'mcp-keys-issue',
         action,
-        actionLabel: full
-          ? `Emitir chave MCP FULL "${name}"`
-          : `Emitir chave MCP "${name}"`,
+        actionLabel: full ? `Emitir chave MCP FULL "${name}"` : `Emitir chave MCP "${name}"`,
         targetRef: null, // chave ainda não existe
         body: {
           name: name.trim(),
@@ -138,22 +129,22 @@ export function IssueMcpKeyForm({ onIssued }: Props) {
         },
       });
 
-      if (result.status === "cancelled" || result.status === "step_up_error") return;
-      if (result.status === "error") {
-        toast.error("Falha ao emitir chave", {
+      if (result.status === 'cancelled' || result.status === 'step_up_error') return;
+      if (result.status === 'error') {
+        toast.error('Falha ao emitir chave', {
           description: sanitizeError(result.error ?? result.data),
         });
         return;
       }
       if (!result.data.key) {
-        toast.error("Não foi possível emitir a chave", {
+        toast.error('Não foi possível emitir a chave', {
           description: sanitizeError(result.data),
         });
         return;
       }
       setGenerated(result.data.key);
       setConfirmRootOpen(false);
-      toast.success("Chave emitida com sucesso");
+      toast.success('Chave emitida com sucesso');
       onIssued();
     } finally {
       setSubmitting(false);
@@ -167,26 +158,25 @@ export function IssueMcpKeyForm({ onIssued }: Props) {
     }
     if (full) {
       // Gate extra para acesso root: confirmação por nome → modal step-up dedicado.
-      setRootNameEcho("");
+      setRootNameEcho('');
       setConfirmRootOpen(true);
       return;
     }
     // Chaves limitadas: step-up server-side com action: mcp_key_rotate.
-    await submitWithChallenge("mcp_key_rotate");
+    await submitWithChallenge('mcp_key_rotate');
   };
 
   const handleRootConfirmed = async () => {
     // Após confirmar nome (gate visual), dispara verificação dupla via helper.
     setConfirmRootOpen(false);
-    await submitWithChallenge("mcp_full_issue");
+    await submitWithChallenge('mcp_full_issue');
   };
 
-  const rootNameMatches =
-    rootNameEcho.trim() === name.trim() && name.trim().length >= 3;
+  const rootNameMatches = rootNameEcho.trim() === name.trim() && name.trim().length >= 3;
 
   const copy = (s: string) => {
     navigator.clipboard.writeText(s);
-    toast.success("Copiado!");
+    toast.success('Copiado!');
   };
 
   if (generated) {
@@ -196,15 +186,13 @@ export function IssueMcpKeyForm({ onIssued }: Props) {
           <Key className="h-4 w-4" />
           <AlertTitle>Chave emitida</AlertTitle>
           <AlertDescription>
-            Copie agora — esta é a única vez que ela será exibida em texto
-            puro. Apenas o hash fica armazenado no banco.
+            Copie agora — esta é a única vez que ela será exibida em texto puro. Apenas o hash fica
+            armazenado no banco.
           </AlertDescription>
         </Alert>
-        <div className="p-3 rounded-md bg-muted font-mono text-xs break-all">
-          {generated}
-        </div>
+        <div className="break-all rounded-md bg-muted p-3 font-mono text-xs">{generated}</div>
         <Button onClick={() => copy(generated)} className="w-full">
-          <Copy className="h-4 w-4 mr-1" /> Copiar chave
+          <Copy className="mr-1 h-4 w-4" /> Copiar chave
         </Button>
       </div>
     );
@@ -224,7 +212,7 @@ export function IssueMcpKeyForm({ onIssued }: Props) {
       </div>
 
       <div>
-        <Label className="block mb-2">Escopos</Label>
+        <Label className="mb-2 block">Escopos</Label>
         <TooltipProvider delayDuration={200}>
           <div className="flex flex-wrap gap-2">
             {KNOWN_SCOPES.map((s) => {
@@ -239,18 +227,18 @@ export function IssueMcpKeyForm({ onIssued }: Props) {
                       onClick={() => handleScopeToggle(s)}
                       disabled={isFull && !canGrantFull && !grantorLoading}
                       className={[
-                        "px-2 py-1 rounded text-xs border font-mono transition",
+                        'rounded border px-2 py-1 font-mono text-xs transition',
                         isFull && !canGrantFull && !grantorLoading
-                          ? "bg-muted text-muted-foreground border-border cursor-not-allowed opacity-60"
+                          ? 'cursor-not-allowed border-border bg-muted text-muted-foreground opacity-60'
                           : active
                             ? isFull
-                              ? "bg-destructive text-destructive-foreground border-destructive"
-                              : "bg-primary text-primary-foreground border-primary"
-                            : "bg-background border-border hover:border-primary/40",
-                      ].join(" ")}
+                              ? 'border-destructive bg-destructive text-destructive-foreground'
+                              : 'border-primary bg-primary text-primary-foreground'
+                            : 'border-border bg-background hover:border-primary/40',
+                      ].join(' ')}
                     >
                       {s}
-                      {isFull && !canGrantFull && !grantorLoading && " 🔒"}
+                      {isFull && !canGrantFull && !grantorLoading && ' 🔒'}
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-xs">
@@ -259,7 +247,9 @@ export function IssueMcpKeyForm({ onIssued }: Props) {
                       <p className="text-muted-foreground">Tools habilitadas:</p>
                       <ul className="space-y-0.5">
                         {desc.tools.map((t) => (
-                          <li key={t} className="font-mono">• {t}</li>
+                          <li key={t} className="font-mono">
+                            • {t}
+                          </li>
                         ))}
                       </ul>
                     </div>
@@ -271,8 +261,9 @@ export function IssueMcpKeyForm({ onIssued }: Props) {
         </TooltipProvider>
         {!grantorLoading && !canGrantFull && (
           <p className="mt-2 text-[11px] text-muted-foreground">
-            🔒 Você não está autorizado a conceder o escopo <code className="font-mono">*</code> (FULL).
-            Solicite a um admin já listado em <code className="font-mono">mcp_full_grantors</code> para te incluir.
+            🔒 Você não está autorizado a conceder o escopo <code className="font-mono">*</code>{' '}
+            (FULL). Solicite a um admin já listado em{' '}
+            <code className="font-mono">mcp_full_grantors</code> para te incluir.
           </p>
         )}
       </div>
@@ -284,9 +275,8 @@ export function IssueMcpKeyForm({ onIssued }: Props) {
             Acesso total (FULL) <Badge variant="destructive">*</Badge>
           </AlertTitle>
           <AlertDescription>
-            Esta chave poderá <strong>ler e escrever</strong> em código-fonte,
-            CRM, orçamentos e catálogo. Exige expiração, justificativa e
-            confirmação explícita.
+            Esta chave poderá <strong>ler e escrever</strong> em código-fonte, CRM, orçamentos e
+            catálogo. Exige expiração, justificativa e confirmação explícita.
           </AlertDescription>
         </Alert>
       )}
@@ -301,16 +291,16 @@ export function IssueMcpKeyForm({ onIssued }: Props) {
           value={expiresLocal}
           onChange={(e) => setExpiresLocal(e.target.value)}
         />
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="mt-1 text-xs text-muted-foreground">
           {full
             ? `Obrigatório para chave FULL. Default: ${FULL_SCOPE_DEFAULT_TTL_DAYS} dias. Máximo: ${FULL_SCOPE_MAX_TTL_DAYS} dias.`
-            : "Opcional para chaves restritas — em branco = sem expiração."}
+            : 'Opcional para chaves restritas — em branco = sem expiração.'}
         </p>
       </div>
 
       {full && (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="mcp-key-target-repo">Repo / sistema alvo</Label>
               <Input
@@ -345,9 +335,9 @@ export function IssueMcpKeyForm({ onIssued }: Props) {
               rows={3}
               maxLength={1000}
             />
-            <p className="text-xs text-muted-foreground mt-1">
-              {justification.length}/{FULL_SCOPE_MIN_JUSTIFICATION} mínimo —
-              registrado no audit log.
+            <p className="mt-1 text-xs text-muted-foreground">
+              {justification.length}/{FULL_SCOPE_MIN_JUSTIFICATION} mínimo — registrado no audit
+              log.
             </p>
           </div>
 
@@ -368,8 +358,8 @@ export function IssueMcpKeyForm({ onIssued }: Props) {
 
       <div className="flex justify-end pt-2">
         <Button onClick={requestSubmit} disabled={submitting || !!validation}>
-          <Key className="h-4 w-4 mr-1" />
-          {submitting ? "Emitindo…" : full ? "Revisar e emitir FULL" : "Gerar chave"}
+          <Key className="mr-1 h-4 w-4" />
+          {submitting ? 'Emitindo…' : full ? 'Revisar e emitir FULL' : 'Gerar chave'}
         </Button>
       </div>
 
@@ -383,40 +373,38 @@ export function IssueMcpKeyForm({ onIssued }: Props) {
             <AlertDialogDescription asChild>
               <div className="space-y-3 text-sm">
                 <p>
-                  O escopo <code className="font-mono bg-muted px-1 rounded">*</code> concede
-                  acesso <strong>total</strong> a este sistema, equivalente ao papel de{" "}
+                  O escopo <code className="rounded bg-muted px-1 font-mono">*</code> concede acesso{' '}
+                  <strong>total</strong> a este sistema, equivalente ao papel de{' '}
                   <strong>superusuário</strong>:
                 </p>
-                <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
                   <li>Ler e escrever em qualquer tabela (CRM, orçamentos, catálogo, usuários)</li>
                   <li>Disparar funções administrativas e jobs internos</li>
                   <li>Modificar configurações de segurança e integrações</li>
                   <li>Agir em nome de qualquer usuário autenticado</li>
                 </ul>
                 <p className="text-foreground">
-                  Esta chave aparecerá em <strong>todos os logs de auditoria</strong> com seu
-                  nome como emissor. Você é <strong>responsável</strong> por seu uso e
-                  armazenamento seguro.
+                  Esta chave aparecerá em <strong>todos os logs de auditoria</strong> com seu nome
+                  como emissor. Você é <strong>responsável</strong> por seu uso e armazenamento
+                  seguro.
                 </p>
                 <div className="pt-2">
                   <Label htmlFor="mcp-key-root-echo" className="text-foreground">
-                    Para confirmar, digite o nome exato da chave:{" "}
-                    <code className="font-mono bg-muted px-1 rounded">{name.trim()}</code>
+                    Para confirmar, digite o nome exato da chave:{' '}
+                    <code className="rounded bg-muted px-1 font-mono">{name.trim()}</code>
                   </Label>
                   <Input
                     id="mcp-key-root-echo"
                     value={rootNameEcho}
                     onChange={(e) => setRootNameEcho(e.target.value)}
                     placeholder={name.trim()}
-                    className="font-mono mt-2"
+                    className="mt-2 font-mono"
                     autoComplete="off"
                     autoFocus
                     maxLength={100}
                   />
                   {rootNameEcho.length > 0 && !rootNameMatches && (
-                    <p className="text-xs text-destructive mt-1">
-                      O nome digitado não confere.
-                    </p>
+                    <p className="mt-1 text-xs text-destructive">O nome digitado não confere.</p>
                   )}
                 </div>
               </div>

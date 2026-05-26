@@ -1,8 +1,8 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Shield, Wifi, MapPin } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Shield, Wifi, MapPin } from 'lucide-react';
 
 interface SecuritySettings {
   ip_whitelist_enabled: boolean;
@@ -24,30 +24,26 @@ export function SecuritySettingsCard({ settings, onUpdate }: SecuritySettingsCar
           <Shield className="h-5 w-5 text-primary" />
           Configurações de Segurança de Acesso
         </CardTitle>
-        <CardDescription>
-          Ative ou desative as restrições de acesso por IP e cidade
-        </CardDescription>
+        <CardDescription>Ative ou desative as restrições de acesso por IP e cidade</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="flex items-center justify-between p-4 rounded-lg border border-border/50 bg-muted/20">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="flex items-center justify-between rounded-lg border border-border/50 bg-muted/20 p-4">
             <div className="space-y-1">
-              <Label className="font-medium flex items-center gap-2">
+              <Label className="flex items-center gap-2 font-medium">
                 <Wifi className="h-4 w-4" />
                 Whitelist de IPs
               </Label>
-              <p className="text-xs text-muted-foreground">
-                Apenas IPs cadastrados podem acessar
-              </p>
+              <p className="text-xs text-muted-foreground">Apenas IPs cadastrados podem acessar</p>
             </div>
             <Switch
               checked={settings?.ip_whitelist_enabled ?? false}
               onCheckedChange={(checked) => onUpdate({ ip_whitelist_enabled: checked })}
             />
           </div>
-          <div className="flex items-center justify-between p-4 rounded-lg border border-border/50 bg-muted/20">
+          <div className="flex items-center justify-between rounded-lg border border-border/50 bg-muted/20 p-4">
             <div className="space-y-1">
-              <Label className="font-medium flex items-center gap-2">
+              <Label className="flex items-center gap-2 font-medium">
                 <MapPin className="h-4 w-4" />
                 Whitelist de Cidades
               </Label>
@@ -61,7 +57,7 @@ export function SecuritySettingsCard({ settings, onUpdate }: SecuritySettingsCar
             />
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label>Máx. tentativas falhadas antes do bloqueio</Label>
             <Input
@@ -78,7 +74,9 @@ export function SecuritySettingsCard({ settings, onUpdate }: SecuritySettingsCar
               type="number"
               min={1}
               value={settings?.lockout_duration_minutes ?? 15}
-              onChange={(e) => onUpdate({ lockout_duration_minutes: parseInt(e.target.value) || 15 })}
+              onChange={(e) =>
+                onUpdate({ lockout_duration_minutes: parseInt(e.target.value) || 15 })
+              }
               className="w-32"
             />
           </div>

@@ -3,13 +3,7 @@ import { Globe, Plus, Trash2, ToggleLeft, ToggleRight, Loader2, AlertCircle } fr
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -36,18 +30,14 @@ interface IPRestrictionManagerProps {
   readOnly?: boolean;
 }
 
-export function IPRestrictionManager({ targetUserId, readOnly = false }: IPRestrictionManagerProps) {
+export function IPRestrictionManager({
+  targetUserId,
+  readOnly = false,
+}: IPRestrictionManagerProps) {
   const { toast } = useToast();
-  const { 
-    allowedIPs, 
-    isLoading, 
-    currentIP, 
-    hasIPRestriction,
-    addIP, 
-    removeIP, 
-    toggleIP 
-  } = useAllowedIPs(targetUserId);
-  
+  const { allowedIPs, isLoading, currentIP, hasIPRestriction, addIP, removeIP, toggleIP } =
+    useAllowedIPs(targetUserId);
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newIP, setNewIP] = useState('');
   const [newLabel, setNewLabel] = useState('');
@@ -62,9 +52,10 @@ export function IPRestrictionManager({ targetUserId, readOnly = false }: IPRestr
 
   const handleAddIP = async () => {
     if (!newIP.trim()) return;
-    
+
     // Validação básica de IP
-    const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+    const ipRegex =
+      /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
     if (!ipRegex.test(newIP.trim())) {
       toast({
         title: 'IP Inválido',
@@ -97,7 +88,7 @@ export function IPRestrictionManager({ targetUserId, readOnly = false }: IPRestr
 
   const handleRemoveIP = async (ipId: string) => {
     const result = await removeIP(ipId);
-    
+
     if (result.success) {
       toast({
         title: 'IP Removido',
@@ -114,7 +105,7 @@ export function IPRestrictionManager({ targetUserId, readOnly = false }: IPRestr
 
   const handleToggleIP = async (ipId: string, currentStatus: boolean) => {
     const result = await toggleIP(ipId, !currentStatus);
-    
+
     if (!result.success) {
       toast({
         title: 'Erro',
@@ -193,7 +184,8 @@ export function IPRestrictionManager({ targetUserId, readOnly = false }: IPRestr
                       <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"
-                          size="icon" aria-label="ToggleRight"
+                          size="icon"
+                          aria-label="ToggleRight"
                           onClick={() => handleToggleIP(ip.id, ip.is_active)}
                         >
                           {ip.is_active ? (
@@ -204,7 +196,8 @@ export function IPRestrictionManager({ targetUserId, readOnly = false }: IPRestr
                         </Button>
                         <Button
                           variant="ghost"
-                          size="icon" aria-label="Excluir"
+                          size="icon"
+                          aria-label="Excluir"
                           onClick={() => handleRemoveIP(ip.id)}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
@@ -217,7 +210,7 @@ export function IPRestrictionManager({ targetUserId, readOnly = false }: IPRestr
             </TableBody>
           </Table>
         ) : (
-          <div className="text-sm text-muted-foreground text-center py-4">
+          <div className="py-4 text-center text-sm text-muted-foreground">
             Nenhum IP configurado. O acesso está liberado de qualquer endereço.
           </div>
         )}
@@ -226,7 +219,7 @@ export function IPRestrictionManager({ targetUserId, readOnly = false }: IPRestr
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline">
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="mr-2 h-4 w-4" />
                 Adicionar IP
               </Button>
             </DialogTrigger>
@@ -246,16 +239,12 @@ export function IPRestrictionManager({ targetUserId, readOnly = false }: IPRestr
                       value={newIP}
                       onChange={(e) => setNewIP(e.target.value)}
                     />
-                    <Button
-                      variant="outline"
-                      onClick={handleAddCurrentIP}
-                      disabled={!currentIP}
-                    >
+                    <Button variant="outline" onClick={handleAddCurrentIP} disabled={!currentIP}>
                       Usar Meu IP
                     </Button>
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label>Descrição (opcional)</Label>
                   <Input
@@ -270,9 +259,7 @@ export function IPRestrictionManager({ targetUserId, readOnly = false }: IPRestr
                   disabled={!newIP.trim() || isSubmitting}
                   className="w-full"
                 >
-                  {isSubmitting ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : null}
+                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   Adicionar IP
                 </Button>
               </div>

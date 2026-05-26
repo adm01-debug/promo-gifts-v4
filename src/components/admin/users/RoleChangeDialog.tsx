@@ -1,14 +1,24 @@
-import { useState } from "react";
+import { useState } from 'react';
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import { Code2, ShieldCheck, Shield } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { type AppRole, type UserWithRole } from "./types";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Code2, ShieldCheck, Shield } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { type AppRole, type UserWithRole } from './types';
 
 interface RoleChangeDialogProps {
   user: UserWithRole | null;
@@ -36,11 +46,15 @@ export function RoleChangeDialog({ user, onClose, onConfirm }: RoleChangeDialogP
         <AlertDialogHeader>
           <AlertDialogTitle>Alterar papel do usuário</AlertDialogTitle>
           <AlertDialogDescription>
-            Selecione o novo papel para <span className="font-semibold">{user?.full_name || "este usuário"}</span>
+            Selecione o novo papel para{' '}
+            <span className="font-semibold">{user?.full_name || 'este usuário'}</span>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="py-4">
-          <Select value={selectedRole || undefined} onValueChange={(value) => setSelectedRole(value as AppRole)}>
+          <Select
+            value={selectedRole || undefined}
+            onValueChange={(value) => setSelectedRole(value as AppRole)}
+          >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Selecione um papel" />
             </SelectTrigger>
@@ -52,7 +66,9 @@ export function RoleChangeDialog({ user, onClose, onConfirm }: RoleChangeDialogP
                     <Code2 className="h-4 w-4 text-purple-600" />
                     <div>
                       <div className="font-medium">Dev</div>
-                      <div className="text-xs text-muted-foreground">Acesso total, incluindo área técnica</div>
+                      <div className="text-xs text-muted-foreground">
+                        Acesso total, incluindo área técnica
+                      </div>
                     </div>
                   </div>
                 </SelectItem>
@@ -62,7 +78,9 @@ export function RoleChangeDialog({ user, onClose, onConfirm }: RoleChangeDialogP
                   <ShieldCheck className="h-4 w-4 text-primary" />
                   <div>
                     <div className="font-medium">Supervisor</div>
-                    <div className="text-xs text-muted-foreground">Gestão comercial, descontos e cadastros</div>
+                    <div className="text-xs text-muted-foreground">
+                      Gestão comercial, descontos e cadastros
+                    </div>
                   </div>
                 </div>
               </SelectItem>
@@ -71,7 +89,9 @@ export function RoleChangeDialog({ user, onClose, onConfirm }: RoleChangeDialogP
                   <Shield className="h-4 w-4" />
                   <div>
                     <div className="font-medium">Agente</div>
-                    <div className="text-xs text-muted-foreground">Acesso somente aos próprios dados</div>
+                    <div className="text-xs text-muted-foreground">
+                      Acesso somente aos próprios dados
+                    </div>
                   </div>
                 </div>
               </SelectItem>

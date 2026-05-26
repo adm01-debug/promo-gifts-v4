@@ -9,17 +9,17 @@
  * - Fallback silencioso se IA falhar (não polui UX)
  * - Limite configurável (`maxResults`)
  */
-import { useEffect, useMemo, useRef } from "react";
-import { Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { useEffect, useMemo, useRef } from 'react';
+import { Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import {
   useAIRecommendations,
   type ClientProfile,
   type ProductForRecommendation,
-} from "@/hooks/intelligence/useAIRecommendations";
+} from '@/hooks/intelligence/useAIRecommendations';
 
 // ============================================
 // PROPS
@@ -59,17 +59,17 @@ function MiniCard({ product, score, reason, onClick }: MiniCardProps) {
   return (
     <Card
       className={cn(
-        "min-w-[240px] max-w-[240px] shrink-0 border-[1.5px] border-border rounded-xl overflow-hidden",
-        "animate-fade-in transition-all duration-200",
-        interactive && "cursor-pointer hover:border-primary hover:shadow-md hover:-translate-y-0.5"
+        'min-w-[240px] max-w-[240px] shrink-0 overflow-hidden rounded-xl border-[1.5px] border-border',
+        'animate-fade-in transition-all duration-200',
+        interactive && 'cursor-pointer hover:-translate-y-0.5 hover:border-primary hover:shadow-md',
       )}
       onClick={onClick}
-      role={interactive ? "button" : undefined}
+      role={interactive ? 'button' : undefined}
       tabIndex={interactive ? 0 : undefined}
       onKeyDown={
         interactive
           ? (e) => {
-              if (e.key === "Enter" || e.key === " ") {
+              if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 onClick?.();
               }
@@ -78,17 +78,17 @@ function MiniCard({ product, score, reason, onClick }: MiniCardProps) {
       }
       aria-label={interactive ? `Ver ${product.name}` : undefined}
     >
-      <CardContent className="p-3 space-y-2">
+      <CardContent className="space-y-2 p-3">
         <div className="flex items-start justify-between gap-2">
-          <h4 className="text-sm font-semibold font-display line-clamp-2 flex-1">{product.name}</h4>
+          <h4 className="line-clamp-2 flex-1 font-display text-sm font-semibold">{product.name}</h4>
           <span
-            className="shrink-0 rounded-full border-[1.5px] border-primary/30 bg-primary/5 px-1.5 py-0.5 text-[10px] font-bold text-primary font-display"
+            className="shrink-0 rounded-full border-[1.5px] border-primary/30 bg-primary/5 px-1.5 py-0.5 font-display text-[10px] font-bold text-primary"
             aria-label={`Score ${scorePct} por cento`}
           >
             {scorePct}%
           </span>
         </div>
-        <p className="text-xs text-muted-foreground font-display line-clamp-3">{reason}</p>
+        <p className="line-clamp-3 font-display text-xs text-muted-foreground">{reason}</p>
       </CardContent>
     </Card>
   );
@@ -98,8 +98,11 @@ function CarouselSkeleton({ count }: { count: number }) {
   return (
     <div className="flex gap-3 overflow-hidden">
       {Array.from({ length: count }).map((_, i) => (
-        <Card key={i} className="min-w-[240px] max-w-[240px] shrink-0 border-[1.5px] border-border rounded-xl">
-          <CardContent className="p-3 space-y-2">
+        <Card
+          key={i}
+          className="min-w-[240px] max-w-[240px] shrink-0 rounded-xl border-[1.5px] border-border"
+        >
+          <CardContent className="space-y-2 p-3">
             <Skeleton className="h-4 w-3/4" />
             <Skeleton className="h-3 w-1/2" />
             <Skeleton className="h-10 w-full" />
@@ -119,7 +122,7 @@ export function SmartRecommendations({
   candidateProducts,
   client,
   maxResults = 4,
-  title = "Recomendações inteligentes",
+  title = 'Recomendações inteligentes',
   onProductClick,
   className,
 }: SmartRecommendationsProps) {
@@ -129,7 +132,7 @@ export function SmartRecommendations({
   // Filtra o produto atual da lista de candidatos
   const filteredCandidates = useMemo(
     () => candidateProducts.filter((p) => p.id !== currentProductId),
-    [candidateProducts, currentProductId]
+    [candidateProducts, currentProductId],
   );
 
   // Mapa rápido para resolver produto por ID
@@ -144,21 +147,21 @@ export function SmartRecommendations({
     if (filteredCandidates.length === 0) return;
 
     const profile: ClientProfile = client ?? {
-      name: "Cliente genérico",
+      name: 'Cliente genérico',
       industry: filteredCandidates[0]?.category,
     };
 
     fetchRecommendations(profile, filteredCandidates);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredCandidates.map((p) => p.id).join(","), client?.name]);
+  }, [filteredCandidates.map((p) => p.id).join(','), client?.name]);
 
   const visibleRecs = useMemo(
     () => recommendations.slice(0, maxResults),
-    [recommendations, maxResults]
+    [recommendations, maxResults],
   );
 
   const scrollBy = (delta: number) => {
-    scrollerRef.current?.scrollBy({ left: delta, behavior: "smooth" });
+    scrollerRef.current?.scrollBy({ left: delta, behavior: 'smooth' });
   };
 
   // Fallback silencioso: nada para mostrar
@@ -167,10 +170,7 @@ export function SmartRecommendations({
   if (!isLoading && data && visibleRecs.length === 0) return null;
 
   return (
-    <section
-      className={cn("space-y-3 font-display animate-fade-in", className)}
-      aria-label={title}
-    >
+    <section className={cn('animate-fade-in space-y-3 font-display', className)} aria-label={title}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-primary" aria-hidden="true" />
@@ -204,7 +204,7 @@ export function SmartRecommendations({
 
       <div
         ref={scrollerRef}
-        className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-thin"
+        className="scrollbar-thin flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2"
         role="list"
       >
         {isLoading ? (

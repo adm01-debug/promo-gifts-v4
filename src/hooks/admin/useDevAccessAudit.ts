@@ -8,9 +8,9 @@
  * Não consome dados reais; apenas dispara o gate de RLS. Roda uma vez ao
  * montar e pode ser re-executado sob demanda.
  */
-import { useCallback, useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface DevAccessProbeResult {
   table: string;
@@ -20,15 +20,15 @@ export interface DevAccessProbeResult {
 
 /** Tabelas sensíveis que um dev DEVE conseguir ler. */
 export const DEV_EXPECTED_TABLES = [
-  "admin_audit_log",
-  "ai_usage_logs",
-  "ai_usage_quotas",
-  "bot_detection_log",
-  "external_connections_sync_log",
-  "integration_credentials",
-  "inbound_webhook_endpoints",
-  "inbound_webhook_events",
-  "ip_access_control",
+  'admin_audit_log',
+  'ai_usage_logs',
+  'ai_usage_quotas',
+  'bot_detection_log',
+  'external_connections_sync_log',
+  'integration_credentials',
+  'inbound_webhook_endpoints',
+  'inbound_webhook_events',
+  'ip_access_control',
 ] as const;
 
 type ExpectedTable = (typeof DEV_EXPECTED_TABLES)[number];
@@ -66,15 +66,15 @@ export function useDevAccessAudit() {
           const { error } = await supabase
             // dynamic table name validated against fixed allowlist
             .from(table as ExpectedTable)
-            .select("id", { head: true, count: "exact" })
+            .select('id', { head: true, count: 'exact' })
             .limit(1);
 
           if (error) {
             // Códigos típicos de RLS / permissão
-            const msg = error.message ?? "unknown error";
+            const msg = error.message ?? 'unknown error';
             const isDenial =
-              error.code === "42501" || // insufficient_privilege
-              error.code === "PGRST301" || // RLS denial
+              error.code === '42501' || // insufficient_privilege
+              error.code === 'PGRST301' || // RLS denial
               /permission denied|row-level security|rls/i.test(msg);
             return { table, ok: !isDenial, error: msg };
           }
@@ -86,7 +86,7 @@ export function useDevAccessAudit() {
             error: e instanceof Error ? e.message : String(e),
           };
         }
-      })
+      }),
     );
 
     setState({

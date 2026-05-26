@@ -9,7 +9,7 @@
  *      docs/PATCH_external_db_bridge_kill_switch.md.
  */
 import { supabase } from '@/integrations/supabase/client';
-import { logger } from "@/lib/logger";
+import { logger } from '@/lib/logger';
 import { emitBridgeStatus, isColdStartSignal } from './bridge-status-events';
 import { ensureCloudReady, CloudNotReadyError, getCachedCloudStatus } from '@/lib/cloud-status';
 import {
@@ -18,7 +18,11 @@ import {
   type BridgeOperation,
 } from '@/lib/telemetry/bridgeCallMetrics';
 import { newRequestId, REQUEST_ID_HEADER } from '@/lib/telemetry/requestId';
-import { getKillSwitchState, invalidateKillSwitchCache, KillSwitchActiveError } from './kill-switch-client';
+import {
+  getKillSwitchState,
+  invalidateKillSwitchCache,
+  KillSwitchActiveError,
+} from './kill-switch-client';
 import { recordKillSwitchHit } from './kill-switch-telemetry';
 
 const KILL_SWITCH_NAME = 'edge_external_db_bridge';
@@ -50,13 +54,24 @@ function deriveExternalOp(body: Record<string, unknown>): { op: BridgeOperation;
 const MAX_RETRIES = 3;
 const INITIAL_BACKOFF_MS = 800;
 const RETRYABLE_PATTERNS = [
-  'statement timeout', '57014', '502', '503', '504',
-  'bad gateway', 'FunctionsHttpError',
-  'network', 'fetch', 'ECONNRESET', 'socket hang up',
-  'AbortError', 'Failed to fetch',
+  'statement timeout',
+  '57014',
+  '502',
+  '503',
+  '504',
+  'bad gateway',
+  'FunctionsHttpError',
+  'network',
+  'fetch',
+  'ECONNRESET',
+  'socket hang up',
+  'AbortError',
+  'Failed to fetch',
   // Cold-start / runtime boot do isolate da edge function (plataforma)
-  'supabase_edge_runtime_error', 'service is temporarily unavailable',
-  'boot_error', 'function failed to start',
+  'supabase_edge_runtime_error',
+  'service is temporarily unavailable',
+  'boot_error',
+  'function failed to start',
 ];
 
 // Erros determinísticos do Postgres/PostgREST: retry NUNCA muda o resultado.
@@ -80,7 +95,7 @@ const NON_RETRYABLE_HTTP_RE = /(?:returned\s+|status[: ]\s*|http[:/ ])(400|401|4
 
 function matches(msg: string, patterns: string[]): boolean {
   const lower = msg.toLowerCase();
-  return patterns.some(p => lower.includes(p.toLowerCase()));
+  return patterns.some((p) => lower.includes(p.toLowerCase()));
 }
 
 function isNonRetryableError(msg: string): boolean {
@@ -112,11 +127,21 @@ export async function extractFunctionErrorMessage(error: unknown): Promise<strin
         if (raw) {
           try {
             const parsed = JSON.parse(raw) as {
-              error?: string; details?: string; hint?: string;
-              message?: string; code?: string;
+              error?: string;
+              details?: string;
+              hint?: string;
+              message?: string;
+              code?: string;
             };
-            const detailed = [parsed.error, parsed.code, parsed.message, parsed.details, parsed.hint]
-              .filter(Boolean).join(' | ');
+            const detailed = [
+              parsed.error,
+              parsed.code,
+              parsed.message,
+              parsed.details,
+              parsed.hint,
+            ]
+              .filter(Boolean)
+              .join(' | ');
             if (detailed) return `${error.message} | ${detailed}`;
           } catch {
             return `${error.message} | ${raw}`;
@@ -135,7 +160,7 @@ export async function extractFunctionErrorMessage(error: unknown): Promise<strin
 export async function invokeWithRetry(
   body: Record<string, unknown>,
   retries = MAX_RETRIES,
-  onRetry?: (attempt: number, maxRetries: number, delayMs: number) => void
+  onRetry?: (attempt: number, maxRetries: number, delayMs: number) => void,
 ): Promise<{ data: unknown; error: Error | null }> {
   let sawColdStart = false;
   const startedAt = performance.now();
@@ -185,7 +210,10 @@ export async function invokeWithRetry(
       target,
     });
 
-    return finalize({ data: null, error: new KillSwitchActiveError(KILL_SWITCH_NAME, friendlyMsg) });
+    return finalize({
+      data: null,
+      error: new KillSwitchActiveError(KILL_SWITCH_NAME, friendlyMsg),
+    });
   }
 
   // Gate best-effort: só bloqueia se uma sondagem recente confirmou estado ruim.
@@ -218,9 +246,15 @@ export async function invokeWithRetry(
     // 410 GONE — back-end aplicou kill-switch. NÃO retry; invalida cache e desiste.
     // ============================================================
     if (isKillSwitch410(error)) {
-      logger.warn(`[external-db] Back-end retornou 410 Gone — kill-switch ativado server-side, invalidando cache.`);
+      logger.warn(
+        `[external-db] Back-end retornou 410 Gone — kill-switch ativado server-side, invalidando cache.`,
+      );
       invalidateKillSwitchCache(KILL_SWITCH_NAME);
-      emitBridgeStatus({ type: 'unavailable', reason: 'back-end kill-switch (410 Gone)', attempts: attempt + 1 });
+      emitBridgeStatus({
+        type: 'unavailable',
+        reason: 'back-end kill-switch (410 Gone)',
+        attempts: attempt + 1,
+      });
 
       // Telemetria: registra hit do back-end
       recordKillSwitchHit({
@@ -229,7 +263,8 @@ export async function invokeWithRetry(
         target,
       });
 
-      const friendlyMsg = 'external-db-bridge foi descontinuada (410 Gone). Migrar para REST nativo /rest/v1/.';
+      const friendlyMsg =
+        'external-db-bridge foi descontinuada (410 Gone). Migrar para REST nativo /rest/v1/.';
       return finalize({ data, error: new KillSwitchActiveError(KILL_SWITCH_NAME, friendlyMsg) });
     }
 
@@ -244,7 +279,9 @@ export async function invokeWithRetry(
       const base = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
       const jitter = Math.floor(Math.random() * 200);
       const delay = Math.min(base + jitter, 4000);
-      logger.warn(`[external-db] Retry ${attempt + 1}/${retries} after ${delay}ms (base=${base}+jitter=${jitter}): ${msg}`);
+      logger.warn(
+        `[external-db] Retry ${attempt + 1}/${retries} after ${delay}ms (base=${base}+jitter=${jitter}): ${msg}`,
+      );
       onRetry?.(attempt + 1, retries, delay);
       if (isColdStartSignal(msg)) {
         sawColdStart = true;
@@ -258,7 +295,7 @@ export async function invokeWithRetry(
           reason: msg,
         });
       }
-      await new Promise(r => setTimeout(r, delay));
+      await new Promise((r) => setTimeout(r, delay));
       continue;
     }
 

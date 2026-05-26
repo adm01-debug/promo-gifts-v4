@@ -23,12 +23,18 @@ const BUFFER_DAYS = 3;
 
 export function useKitStockForecast(items: KitItem[], kitQuantity: number) {
   return useQuery({
-    queryKey: ['kit-stock-forecast', items.map(i => `${i.id}:${i.quantity}`).join('|'), kitQuantity],
+    queryKey: [
+      'kit-stock-forecast',
+      items.map((i) => `${i.id}:${i.quantity}`).join('|'),
+      kitQuantity,
+    ],
     queryFn: async (): Promise<KitStockForecast> => {
-      if (items.length === 0) return { idealClosingDate: null, bufferDays: BUFFER_DAYS, itemsAtRisk: [], ready: true };
+      if (items.length === 0)
+        return { idealClosingDate: null, bufferDays: BUFFER_DAYS, itemsAtRisk: [], ready: true };
 
-      const productIds = Array.from(new Set(items.map(i => i.id).filter(Boolean)));
-      if (productIds.length === 0) return { idealClosingDate: null, bufferDays: BUFFER_DAYS, itemsAtRisk: [], ready: true };
+      const productIds = Array.from(new Set(items.map((i) => i.id).filter(Boolean)));
+      if (productIds.length === 0)
+        return { idealClosingDate: null, bufferDays: BUFFER_DAYS, itemsAtRisk: [], ready: true };
 
       // Busca fontes de fornecimento
       const result = await invokeExternalDb<{
@@ -44,7 +50,10 @@ export function useKitStockForecast(items: KitItem[], kitQuantity: number) {
         limit: 500,
       }).catch(() => ({ records: [] }));
 
-      const stockByProduct = new Map<string, { current: number; nextDate: string | null; nextQty: number }>();
+      const stockByProduct = new Map<
+        string,
+        { current: number; nextDate: string | null; nextQty: number }
+      >();
       for (const r of result.records) {
         const cur = stockByProduct.get(r.product_id) || { current: 0, nextDate: null, nextQty: 0 };
         cur.current += r.stock_quantity || 0;

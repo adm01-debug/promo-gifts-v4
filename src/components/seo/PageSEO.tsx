@@ -1,5 +1,5 @@
-import React from "react";
-import { Helmet } from "react-helmet-async";
+import React from 'react';
+import { Helmet } from 'react-helmet-async';
 
 interface PageSEOProps {
   title: string;
@@ -17,11 +17,10 @@ interface PageSEOProps {
  * o canonical sai correto. NUNCA voltar a apontar para *.lovable.app.
  */
 const BASE_URL =
-  (import.meta.env.VITE_PUBLIC_URL as string | undefined) ??
-  "https://www.promogifts.com.br";
-const SITE_NAME = "Promo Gifts";
+  (import.meta.env.VITE_PUBLIC_URL as string | undefined) ?? 'https://www.promogifts.com.br';
+const SITE_NAME = 'Promo Gifts';
 const DEFAULT_DESC =
-  "Plataforma de Produtos completa para vendedores de brindes promocionais. Catálogo, orçamentos, simulador de preços e muito mais.";
+  'Plataforma de Produtos completa para vendedores de brindes promocionais. Catálogo, orçamentos, simulador de preços e muito mais.';
 const DEFAULT_OG_IMAGE = `${BASE_URL}/og-image.png`;
 
 /**
@@ -53,7 +52,7 @@ export const PageSEO = React.forwardRef<HTMLElement, PageSEOProps>(function Page
       {/* Open Graph */}
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={desc} />
-      <meta property="og:type" content={ogType || "website"} />
+      <meta property="og:type" content={ogType || 'website'} />
       <meta property="og:site_name" content={SITE_NAME} />
       <meta property="og:image" content={image} />
       <meta property="og:locale" content="pt_BR" />
@@ -68,11 +67,7 @@ export const PageSEO = React.forwardRef<HTMLElement, PageSEOProps>(function Page
 
       <link rel="canonical" href={url} />
 
-      {jsonLd && (
-        <script type="application/ld+json">
-          {JSON.stringify(jsonLd)}
-        </script>
-      )}
+      {jsonLd && <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>}
     </Helmet>
   );
 });

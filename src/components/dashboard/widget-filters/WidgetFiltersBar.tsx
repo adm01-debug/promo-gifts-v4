@@ -5,24 +5,24 @@
  * Provê: busca textual, seleção de status (multi via Select com "Todos") e
  * intervalo de datas (DateRange popover). Tudo controlado pelo pai.
  */
-import { useMemo, useState } from "react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon, Search, X } from "lucide-react";
-import type { DateRange } from "react-day-picker";
+import { useMemo, useState } from 'react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Calendar as CalendarIcon, Search, X } from 'lucide-react';
+import type { DateRange } from 'react-day-picker';
 
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 
 export interface WidgetFiltersValue {
   search: string;
@@ -47,8 +47,8 @@ interface Props {
 }
 
 export const EMPTY_FILTERS: WidgetFiltersValue = {
-  search: "",
-  status: "all",
+  search: '',
+  status: 'all',
   dateRange: undefined,
 };
 
@@ -56,28 +56,26 @@ export function WidgetFiltersBar({
   value,
   onChange,
   statusOptions,
-  searchPlaceholder = "Buscar…",
-  allStatusLabel = "Todos os status",
+  searchPlaceholder = 'Buscar…',
+  allStatusLabel = 'Todos os status',
   showDateRange = true,
 }: Props) {
   const [open, setOpen] = useState(false);
 
   const dateLabel = useMemo(() => {
     const r = value.dateRange;
-    if (!r?.from) return "Período";
-    if (r.to) return `${format(r.from, "dd/MM")} – ${format(r.to, "dd/MM")}`;
-    return format(r.from, "dd/MM/yyyy");
+    if (!r?.from) return 'Período';
+    if (r.to) return `${format(r.from, 'dd/MM')} – ${format(r.to, 'dd/MM')}`;
+    return format(r.from, 'dd/MM/yyyy');
   }, [value.dateRange]);
 
   const hasAnyFilter =
-    value.search.trim().length > 0 ||
-    value.status !== "all" ||
-    !!value.dateRange?.from;
+    value.search.trim().length > 0 || value.status !== 'all' || !!value.dateRange?.from;
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      <div className="relative flex-1 min-w-[140px]">
-        <Search className="h-3.5 w-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+      <div className="relative min-w-[140px] flex-1">
+        <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={value.search}
           onChange={(e) => onChange({ ...value, search: e.target.value })}
@@ -86,10 +84,7 @@ export function WidgetFiltersBar({
         />
       </div>
 
-      <Select
-        value={value.status}
-        onValueChange={(s) => onChange({ ...value, status: s })}
-      >
+      <Select value={value.status} onValueChange={(s) => onChange({ ...value, status: s })}>
         <SelectTrigger className="h-8 w-auto min-w-[110px] text-xs">
           <SelectValue placeholder={allStatusLabel} />
         </SelectTrigger>
@@ -110,8 +105,8 @@ export function WidgetFiltersBar({
               variant="outline"
               size="sm"
               className={cn(
-                "h-8 px-2 text-xs gap-1.5 font-normal",
-                !value.dateRange?.from && "text-muted-foreground",
+                'h-8 gap-1.5 px-2 text-xs font-normal',
+                !value.dateRange?.from && 'text-muted-foreground',
               )}
             >
               <CalendarIcon className="h-3.5 w-3.5" />
@@ -126,7 +121,7 @@ export function WidgetFiltersBar({
               onSelect={(r) => onChange({ ...value, dateRange: r })}
               locale={ptBR}
               initialFocus
-              className={cn("p-3 pointer-events-auto")}
+              className={cn('pointer-events-auto p-3')}
             />
           </PopoverContent>
         </Popover>
@@ -163,8 +158,11 @@ export function withinDateRange(iso: string | null | undefined, range?: DateRang
   return t >= from && t <= to;
 }
 
-export function matchesSearch(haystacks: Array<string | null | undefined>, search: string): boolean {
+export function matchesSearch(
+  haystacks: Array<string | null | undefined>,
+  search: string,
+): boolean {
   const q = search.trim().toLowerCase();
   if (!q) return true;
-  return haystacks.some((h) => (h ?? "").toLowerCase().includes(q));
+  return haystacks.some((h) => (h ?? '').toLowerCase().includes(q));
 }

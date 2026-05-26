@@ -1,6 +1,6 @@
 /**
  * useProductCustomizationOptions — Hook para buscar opções de personalização
- * 
+ *
  * Chama fn_get_product_customization_options via external-db-bridge.
  * Retorna todos os locais e técnicas disponíveis para um produto.
  *
@@ -19,12 +19,12 @@ export function useProductCustomizationOptions(productId: string | null) {
     queryKey: ['product-customization-options', productId],
     queryFn: async (): Promise<CustomizationOptionsResponse | null> => {
       if (!productId) return null;
-      
+
       const result = await invokeExternalRpc<Record<string, unknown>>(
         'fn_get_product_customization_options',
-        { p_product_id: productId }
+        { p_product_id: productId },
       );
-      
+
       return adaptCustomizationOptions(result);
     },
     enabled: !!productId,

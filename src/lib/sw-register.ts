@@ -4,14 +4,14 @@ import { logger } from '@/lib/logger';
 
 /**
  * Registra Service Worker para PWA
- * 
+ *
  * Deve ser chamado no main.tsx após setupLocale()
  */
 export async function registerServiceWorker(): Promise<void> {
   if ('serviceWorker' in navigator) {
     try {
       const registration = await navigator.serviceWorker.register('/sw.js', {
-        scope: '/'
+        scope: '/',
       });
 
       logger.log('✅ Service Worker registrado:', registration.scope);
@@ -20,7 +20,7 @@ export async function registerServiceWorker(): Promise<void> {
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
         if (newWorker) {
-        newWorker.addEventListener('statechange', () => {
+          newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
               logger.log('🔄 Nova versão do Service Worker disponível');
               // Reload automático removido para evitar auto-refresh intermitente
@@ -31,7 +31,6 @@ export async function registerServiceWorker(): Promise<void> {
 
       // Controllerchange listener removido para evitar auto-refresh
       logger.log('✅ Service Worker configurado sem auto-reload');
-
     } catch (error) {
       logger.error('❌ Falha ao registrar Service Worker:', error);
     }
@@ -57,8 +56,9 @@ export async function unregisterServiceWorker(): Promise<void> {
  * Verifica se app está instalado como PWA
  */
 export function isPWA(): boolean {
-  return window.matchMedia('(display-mode: standalone)').matches ||
-         window.navigator.standalone === true;
+  return (
+    window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true
+  );
 }
 
 /**

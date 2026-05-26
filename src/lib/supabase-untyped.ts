@@ -28,8 +28,8 @@
  *   Supabase types. That is the exact condition that caused silent failures
  *   on 2026-05-24.
  */
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- required for the permissive SupabaseClient cast above.
 type AnyClient = SupabaseClient<any, any, any>;
@@ -41,9 +41,9 @@ type AnyClient = SupabaseClient<any, any, any>;
  * `.update()`. Without `T`, this falls back to `Record<string, unknown>`.
  */
 export function untypedFrom<T = Record<string, unknown>>(table: string) {
-  return (supabase as unknown as AnyClient).from(table) as ReturnType<
-    AnyClient["from"]
-  > & { _row?: T };
+  return (supabase as unknown as AnyClient).from(table) as ReturnType<AnyClient['from']> & {
+    _row?: T;
+  };
 }
 
 /**

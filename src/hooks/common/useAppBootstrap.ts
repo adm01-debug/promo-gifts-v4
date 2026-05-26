@@ -1,13 +1,13 @@
-import { useEffect, useRef } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { useLocation } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { useTheme } from "@/contexts/ThemeContext";
-import { useGlobalErrorCatcher } from "@/hooks/ui/useErrorHandler";
-import { markBootSuccessful } from "@/lib/chunk-recovery";
-import { loadThemeConfig, applyRadius, applyThemePreset } from "@/lib/theme-presets";
-import { startBridgeTelemetry } from "@/lib/external-db/bridge-telemetry-client";
-import { startColdStartRecorder } from "@/lib/external-db/cold-start-recorder";
+import { useEffect, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useLocation } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useGlobalErrorCatcher } from '@/hooks/ui/useErrorHandler';
+import { markBootSuccessful } from '@/lib/chunk-recovery';
+import { loadThemeConfig, applyRadius, applyThemePreset } from '@/lib/theme-presets';
+import { startBridgeTelemetry } from '@/lib/external-db/bridge-telemetry-client';
+import { startColdStartRecorder } from '@/lib/external-db/cold-start-recorder';
 
 /**
  * useAppBootstrap centralizes global initialization used by App.tsx.
@@ -45,12 +45,12 @@ export function useAppBootstrap() {
       // Reserved for global offline/online notifications.
     };
 
-    window.addEventListener("online", handleStatusChange);
-    window.addEventListener("offline", handleStatusChange);
+    window.addEventListener('online', handleStatusChange);
+    window.addEventListener('offline', handleStatusChange);
 
     return () => {
-      window.removeEventListener("online", handleStatusChange);
-      window.removeEventListener("offline", handleStatusChange);
+      window.removeEventListener('online', handleStatusChange);
+      window.removeEventListener('offline', handleStatusChange);
     };
   }, []);
 
@@ -60,10 +60,10 @@ export function useAppBootstrap() {
 
     const timer = window.setTimeout(() => {
       catalogPrefetchedRef.current = true;
-      import("@/hooks/products/useCatalogPrefetch")
+      import('@/hooks/products/useCatalogPrefetch')
         .then(({ prefetchCatalog }) => prefetchCatalog(queryClient))
         .catch((error) => {
-          console.warn("[app-bootstrap] catalog prefetch skipped:", error);
+          console.warn('[app-bootstrap] catalog prefetch skipped:', error);
         });
     }, 400);
 
@@ -71,9 +71,9 @@ export function useAppBootstrap() {
   }, [authLoading, isAuthenticated, queryClient]);
 
   // 5. Progressive scroll/breadcrumb CSS var.
-  const isHome = location.pathname === "/";
+  const isHome = location.pathname === '/';
   useEffect(() => {
-    document.documentElement.style.setProperty("--breadcrumb-h", isHome ? "0px" : "40px");
+    document.documentElement.style.setProperty('--breadcrumb-h', isHome ? '0px' : '40px');
   }, [isHome]);
 
   return {

@@ -1,11 +1,11 @@
 /**
  * useSimilarProducts — Fetches similar products via the external DB.
- * 
+ *
  * Strategy:
  * 1. Query `product_relationships` (107k+ cross-supplier pairs) for direct similar matches
  * 2. Fallback: Query `product_group_members` for group-based siblings
  * 3. Last resort: Related products from same supplier/category
- * 
+ *
  * All levels use lightweight batch queries (no individual product detail fetches).
  */
 import { useQuery } from '@tanstack/react-query';
@@ -27,7 +27,8 @@ export interface SimilarProductItem {
 }
 
 /** Lightweight product columns needed for similar product cards */
-const SIMILAR_PRODUCT_SELECT = 'id,name,sku,sale_price,primary_image_url,supplier_id,stock_quantity,brand,category_id';
+const SIMILAR_PRODUCT_SELECT =
+  'id,name,sku,sale_price,primary_image_url,supplier_id,stock_quantity,brand,category_id';
 
 interface LightweightProduct {
   id: string;
@@ -68,9 +69,7 @@ async function fetchProductsByIds(ids: string[]): Promise<SimilarProductItem[]> 
     limit: ids.length,
   });
 
-  return (records || [])
-    .filter(p => p.sale_price > 0)
-    .map(mapLightweightToSimilarItem);
+  return (records || []).filter((p) => p.sale_price > 0).map(mapLightweightToSimilarItem);
 }
 
 export function useSimilarProducts(product: Product | null | undefined) {
@@ -99,7 +98,7 @@ export function useSimilarProducts(product: Product | null | undefined) {
         });
 
         if (relationships && relationships.length > 0) {
-          const relatedIds = relationships.map(r => r.related_product_id);
+          const relatedIds = relationships.map((r) => r.related_product_id);
           const items = await fetchProductsByIds(relatedIds);
           if (items.length > 0) return items;
         }
@@ -121,9 +120,9 @@ export function useSimilarProducts(product: Product | null | undefined) {
         });
 
         if (memberships && memberships.length > 0) {
-          const groupIds = [...new Set(memberships.map(m => m.product_group_id))].filter(Boolean);
+          const groupIds = [...new Set(memberships.map((m) => m.product_group_id))].filter(Boolean);
           if (groupIds.length === 0) throw new Error('No valid group IDs');
-          
+
           const { records: allMembers } = await invokeExternalDb<{
             product_id: string;
           }>({
@@ -136,11 +135,11 @@ export function useSimilarProducts(product: Product | null | undefined) {
             limit: 100,
           });
 
-          const siblingIds = [...new Set(
-            (allMembers || [])
-              .map(m => m.product_id)
-              .filter(id => id !== productId)
-          )];
+          const siblingIds = [
+            ...new Set(
+              (allMembers || []).map((m) => m.product_id).filter((id) => id !== productId),
+            ),
+          ];
 
           if (siblingIds.length > 0) {
             const items = await fetchProductsByIds(siblingIds);
@@ -148,7 +147,10 @@ export function useSimilarProducts(product: Product | null | undefined) {
           }
         }
       } catch (err) {
-        logger.warn('[useSimilarProducts] product_group_members query failed, using fallback:', err);
+        logger.warn(
+          '[useSimilarProducts] product_group_members query failed, using fallback:',
+          err,
+        );
       }
 
       // 3. Fallback: fetch related products from same supplier or category (lightweight)
@@ -170,7 +172,7 @@ export function useSimilarProducts(product: Product | null | undefined) {
         });
 
         return (fallbackProducts || [])
-          .filter(p => p.id !== productId && p.sale_price > 0)
+          .filter((p) => p.id !== productId && p.sale_price > 0)
           .map(mapLightweightToSimilarItem);
       } catch (err) {
         logger.warn('[useSimilarProducts] Fallback query failed:', err);

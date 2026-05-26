@@ -2,21 +2,20 @@ import { describe, it, expect } from 'vitest';
 import { calculateQuoteTotals } from '../hooks/quotes/quoteHelpers';
 import { type QuoteItem } from '../hooks/quotes/quoteTypes';
 
-// Mock Supabase to avoid real network calls if needed, 
+// Mock Supabase to avoid real network calls if needed,
 // but since the user asked for "Integration tests to ensure it's persisted correctly",
-// we usually want to test the full loop if possible. 
-// However, in this environment, we should probably mock the DB response 
+// we usually want to test the full loop if possible.
+// However, in this environment, we should probably mock the DB response
 // but test the logic that prepares the payload.
 // Actually, I can use a real-ish integration if I have the SUPABASE_URL/KEY.
 
 describe('Quote Module - Integration (Frontend Totals vs Backend Persistence)', () => {
-  
   it('should calculate totals consistently with rounding rules', () => {
     const quoteData = {
       negotiation_markup_percent: 10.5,
       discount_percent: 5,
       shipping_type: 'fob_pre',
-      shipping_cost: 250.75
+      shipping_cost: 250.75,
     };
 
     const items: QuoteItem[] = [
@@ -26,9 +25,9 @@ describe('Quote Module - Integration (Frontend Totals vs Backend Persistence)', 
         quantity: 100,
         unit_price: 15.55, // subtotal: 1555.00
         personalizations: [
-          { technique_id: 't1', total_cost: 45.33 } // total: 1600.33
-        ]
-      }
+          { technique_id: 't1', total_cost: 45.33 }, // total: 1600.33
+        ],
+      },
     ];
 
     const totals = calculateQuoteTotals(quoteData, items);
@@ -54,19 +53,19 @@ describe('Quote Module - Integration (Frontend Totals vs Backend Persistence)', 
         product_name: 'P1',
         quantity: 10,
         unit_price: 10.55,
-        personalizations: []
-      }
+        personalizations: [],
+      },
     ];
-    
+
     const quoteInput = {
       discount_percent: 10,
     };
 
     const frontendTotals = calculateQuoteTotals(quoteInput, items);
-    
+
     // Simulating what the service does internally before inserting
     const totalsForPayload = calculateQuoteTotals(quoteInput, items);
-    
+
     expect(totalsForPayload.subtotal).toBe(frontendTotals.subtotal);
     expect(totalsForPayload.total).toBe(frontendTotals.total);
     expect(totalsForPayload.discountAmount).toBe(frontendTotals.discountAmount);

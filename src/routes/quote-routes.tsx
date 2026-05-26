@@ -1,4 +1,4 @@
-import { Route } from "react-router-dom";
+import { Route } from 'react-router-dom';
 import {
   QuoteBuilderPage,
   QuoteTemplatesPage,
@@ -6,7 +6,7 @@ import {
   QuotesDashboardPage,
   QuotesKanbanPage,
   QuotesListPage,
-} from "./lazy-pages";
+} from './lazy-pages';
 
 /**
  * Quote (orçamentos) routes — list, dashboard, kanban, templates, builder

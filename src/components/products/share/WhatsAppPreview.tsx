@@ -1,6 +1,6 @@
-import { useMemo } from "react";
-import { CheckCheck } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useMemo } from 'react';
+import { CheckCheck } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface WhatsAppPreviewProps {
   message: string;
@@ -21,14 +21,14 @@ export function WhatsAppPreview({
 }: WhatsAppPreviewProps) {
   const selectedPhotos = useMemo(
     () => images.filter((_, i) => selectedImages.has(i)),
-    [images, selectedImages]
+    [images, selectedImages],
   );
 
   // Parse WhatsApp-style bold (*text*) and line breaks
   const formattedMessage = useMemo(() => {
-    return message.split("\n").map((line, li) => {
+    return message.split('\n').map((line, li) => {
       const parts = line.split(/(\*[^*]+\*)/g).map((part, pi) => {
-        if (part.startsWith("*") && part.endsWith("*")) {
+        if (part.startsWith('*') && part.endsWith('*')) {
           return (
             <strong key={pi} className="font-semibold">
               {part.slice(1, -1)}
@@ -47,40 +47,39 @@ export function WhatsAppPreview({
   }, [message]);
 
   const now = new Date();
-  const timeStr = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+  const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
 
   // WhatsApp dark mode palette
-  const header = "hsl(200, 12%, 13%)";       // #1F2C33
-  const chatBg = "hsl(200, 15%, 8%)";        // #0B141A
-  const bubbleOut = "hsl(153, 18%, 18%)";     // #005C4B → outgoing bubble
-  const bubbleText = "hsl(0, 0%, 91%)";       // #E9EDEF
-  const metaText = "hsla(0, 0%, 100%, 0.45)";
-  const tickColor = "hsl(199, 80%, 55%)";
+  const header = 'hsl(200, 12%, 13%)'; // #1F2C33
+  const chatBg = 'hsl(200, 15%, 8%)'; // #0B141A
+  const bubbleOut = 'hsl(153, 18%, 18%)'; // #005C4B → outgoing bubble
+  const bubbleText = 'hsl(0, 0%, 91%)'; // #E9EDEF
+  const metaText = 'hsla(0, 0%, 100%, 0.45)';
+  const tickColor = 'hsl(199, 80%, 55%)';
 
   return (
-    <div className="rounded-xl overflow-hidden border border-border">
+    <div className="overflow-hidden rounded-xl border border-border">
       {/* Chat header — dark */}
-      <div
-        className="flex items-center gap-3 px-4 py-2.5"
-        style={{ backgroundColor: header }}
-      >
+      <div className="flex items-center gap-3 px-4 py-2.5" style={{ backgroundColor: header }}>
         <div
-          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-          style={{ backgroundColor: "hsl(153, 30%, 30%)", color: bubbleText }}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+          style={{ backgroundColor: 'hsl(153, 30%, 30%)', color: bubbleText }}
         >
-          {(contactName || "C")[0].toUpperCase()}
+          {(contactName || 'C')[0].toUpperCase()}
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate" style={{ color: bubbleText }}>
-            {contactName || "Cliente"}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium" style={{ color: bubbleText }}>
+            {contactName || 'Cliente'}
           </p>
-          <p className="text-[10px]" style={{ color: metaText }}>online</p>
+          <p className="text-[10px]" style={{ color: metaText }}>
+            online
+          </p>
         </div>
       </div>
 
       {/* Chat body — dark wallpaper */}
       <div
-        className="p-2 min-h-[80px] max-h-[150px] overflow-y-auto"
+        className="max-h-[150px] min-h-[80px] overflow-y-auto p-2"
         style={{
           backgroundColor: chatBg,
           backgroundImage:
@@ -89,35 +88,37 @@ export function WhatsAppPreview({
       >
         {/* Photo gallery bubble */}
         {selectedPhotos.length > 0 && (
-          <div className="flex justify-end mb-1">
+          <div className="mb-1 flex justify-end">
             <div
-              className="rounded-lg p-1 max-w-[65%] shadow-sm"
+              className="max-w-[65%] rounded-lg p-1 shadow-sm"
               style={{ backgroundColor: bubbleOut }}
             >
               <div
                 className={cn(
-                  "grid gap-0.5 rounded-md overflow-hidden",
-                  selectedPhotos.length === 1 && "grid-cols-1",
-                  selectedPhotos.length === 2 && "grid-cols-2",
-                  selectedPhotos.length >= 3 && "grid-cols-2"
+                  'grid gap-0.5 overflow-hidden rounded-md',
+                  selectedPhotos.length === 1 && 'grid-cols-1',
+                  selectedPhotos.length === 2 && 'grid-cols-2',
+                  selectedPhotos.length >= 3 && 'grid-cols-2',
                 )}
               >
                 {selectedPhotos.slice(0, 4).map((img, idx) => (
                   <div
                     key={idx}
                     className={cn(
-                      "relative bg-black/20 overflow-hidden",
-                      selectedPhotos.length === 1 ? "aspect-[4/3]" : "aspect-square",
-                      selectedPhotos.length === 3 && idx === 0 && "col-span-2 aspect-[2/1]"
+                      'relative overflow-hidden bg-black/20',
+                      selectedPhotos.length === 1 ? 'aspect-[4/3]' : 'aspect-square',
+                      selectedPhotos.length === 3 && idx === 0 && 'col-span-2 aspect-[2/1]',
                     )}
                   >
                     <img
                       src={img}
                       alt={`Foto ${idx + 1}`}
-                      className="w-full h-full object-cover" loading="lazy" />
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
                     {selectedPhotos.length > 4 && idx === 3 && (
-                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                        <span className="text-primary-foreground text-lg font-bold">
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                        <span className="text-lg font-bold text-primary-foreground">
                           +{selectedPhotos.length - 4}
                         </span>
                       </div>
@@ -125,8 +126,10 @@ export function WhatsAppPreview({
                   </div>
                 ))}
               </div>
-              <div className="flex justify-end items-center gap-1 px-1 pt-0.5">
-                <span className="text-[10px]" style={{ color: metaText }}>{timeStr}</span>
+              <div className="flex items-center justify-end gap-1 px-1 pt-0.5">
+                <span className="text-[10px]" style={{ color: metaText }}>
+                  {timeStr}
+                </span>
                 <CheckCheck className="h-3 w-3" style={{ color: tickColor }} />
               </div>
             </div>
@@ -136,25 +139,27 @@ export function WhatsAppPreview({
         {/* Text message bubble */}
         <div className="flex justify-end">
           <div
-            className="rounded-lg px-3 py-2 max-w-[85%] shadow-sm relative"
+            className="relative max-w-[85%] rounded-lg px-3 py-2 shadow-sm"
             style={{ backgroundColor: bubbleOut }}
           >
             {/* Tail */}
             <div
-              className="absolute -right-1.5 top-0 w-3 h-3"
+              className="absolute -right-1.5 top-0 h-3 w-3"
               style={{
                 backgroundColor: bubbleOut,
-                clipPath: "polygon(0 0, 100% 0, 0 100%)",
+                clipPath: 'polygon(0 0, 100% 0, 0 100%)',
               }}
             />
             <p
-              className="text-[13px] leading-relaxed whitespace-pre-wrap break-words"
+              className="whitespace-pre-wrap break-words text-[13px] leading-relaxed"
               style={{ color: bubbleText }}
             >
               {formattedMessage}
             </p>
-            <div className="flex justify-end items-center gap-1 mt-1">
-              <span className="text-[10px]" style={{ color: metaText }}>{timeStr}</span>
+            <div className="mt-1 flex items-center justify-end gap-1">
+              <span className="text-[10px]" style={{ color: metaText }}>
+                {timeStr}
+              </span>
               <CheckCheck className="h-3 w-3" style={{ color: tickColor }} />
             </div>
           </div>

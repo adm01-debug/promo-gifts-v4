@@ -53,41 +53,41 @@ export interface AdvancedFilterState {
   materials: string[];
   techniques: string[];
   tags: string[];
-  
+
   // Sistema hierárquico de cores
   colorGroups: string[];
   colorVariations: string[];
   colorNuances: string[];
-  
+
   // Filtros de marketing
   datasComemorativas: string[];
   publicoAlvo: string[];
   endomarketing: string[];
   ramosAtividade: string[];
   segmentosAtividade: string[];
-  
+
   // Faixa de preço
   priceRange: [number, number];
-  
+
   // Tiragem/Quantidade
   quantityRange: [number, number];
-  
+
   // Estoque
   stockStatus: StockFilterOption['value'];
   minStock: number;
-  
+
   // Características
   isKit: boolean;
   isFeatured: boolean;
   isNew: boolean;
   hasPersonalization: boolean;
-  
+
   // Gênero
   gender: string[];
-  
+
   // Prazo de entrega
   maxLeadTimeDays: number | null;
-  
+
   // Ordenação
   sortBy: 'name' | 'price_asc' | 'price_desc' | 'newest' | 'stock' | 'popularity';
 }

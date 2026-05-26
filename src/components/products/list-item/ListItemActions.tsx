@@ -1,13 +1,13 @@
 /**
  * Action buttons bar for ProductListItem — desktop & mobile
  */
-import { Heart, GitCompare, Share2, FolderPlus, Eye, FileText } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { QuickAddToQuote } from "../QuickAddToQuote";
-import type { Product } from "@/hooks/products";
-import type { VariantActionMode } from "../VariantPickerDialog";
+import { Heart, GitCompare, Share2, FolderPlus, Eye, FileText } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { QuickAddToQuote } from '../QuickAddToQuote';
+import type { Product } from '@/hooks/products';
+import type { VariantActionMode } from '../VariantPickerDialog';
 
 interface ListItemActionsProps {
   product: Product;
@@ -21,38 +21,63 @@ interface ListItemActionsProps {
 }
 
 export function ListItemActions({
-  product, isFavorited, isInCompare, canAddToCompare,
-  onFavorite, onCompare, onVariantAction, onQuickView,
+  product,
+  isFavorited,
+  isInCompare,
+  canAddToCompare,
+  onFavorite,
+  onCompare,
+  onVariantAction,
+  onQuickView,
 }: ListItemActionsProps) {
   return (
-    <div className={cn(
-      "shrink-0 flex items-center gap-0.5",
-      "opacity-100 sm:opacity-0 sm:group-hover:opacity-100",
-      "transition-opacity duration-200"
-    )}>
+    <div
+      className={cn(
+        'flex shrink-0 items-center gap-0.5',
+        'opacity-100 sm:opacity-0 sm:group-hover:opacity-100',
+        'transition-opacity duration-200',
+      )}
+    >
       {/* Favoritar */}
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            variant="ghost" size="icon"
-            className={cn("h-8 w-8 rounded-full", isFavorited ? "text-destructive bg-destructive/10" : "text-muted-foreground hover:text-destructive")}
-            onClick={onFavorite} aria-label="Favoritar"
+            variant="ghost"
+            size="icon"
+            className={cn(
+              'h-8 w-8 rounded-full',
+              isFavorited
+                ? 'bg-destructive/10 text-destructive'
+                : 'text-muted-foreground hover:text-destructive',
+            )}
+            onClick={onFavorite}
+            aria-label="Favoritar"
             data-testid="product-favorite"
             aria-pressed={isFavorited}
           >
-            <Heart className={cn("h-3.5 w-3.5", isFavorited && "fill-current")} />
+            <Heart className={cn('h-3.5 w-3.5', isFavorited && 'fill-current')} />
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="bottom">{isFavorited ? "Remover favorito" : "Favoritar"}</TooltipContent>
+        <TooltipContent side="bottom">
+          {isFavorited ? 'Remover favorito' : 'Favoritar'}
+        </TooltipContent>
       </Tooltip>
 
       {/* Comparar */}
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            variant="ghost" size="icon"
-            className={cn("h-8 w-8 rounded-full", isInCompare ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-primary")}
-            onClick={onCompare} disabled={!isInCompare && !canAddToCompare} aria-label="Comparar"
+            variant="ghost"
+            size="icon"
+            className={cn(
+              'h-8 w-8 rounded-full',
+              isInCompare
+                ? 'bg-primary/10 text-primary'
+                : 'text-muted-foreground hover:text-primary',
+            )}
+            onClick={onCompare}
+            disabled={!isInCompare && !canAddToCompare}
+            aria-label="Comparar"
           >
             <GitCompare className="h-3.5 w-3.5" />
           </Button>
@@ -61,11 +86,16 @@ export function ListItemActions({
       </Tooltip>
 
       {/* Desktop-only actions */}
-      <div className="hidden sm:flex items-center gap-0.5">
+      <div className="hidden items-center gap-0.5 sm:flex">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
-              onClick={(e) => onVariantAction('share', e)} aria-label="Compartilhar">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
+              onClick={(e) => onVariantAction('share', e)}
+              aria-label="Compartilhar"
+            >
               <Share2 className="h-3.5 w-3.5" />
             </Button>
           </TooltipTrigger>
@@ -74,8 +104,13 @@ export function ListItemActions({
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
-              onClick={(e) => onVariantAction('collection', e)} aria-label="Adicionar à coleção">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
+              onClick={(e) => onVariantAction('collection', e)}
+              aria-label="Adicionar à coleção"
+            >
               <FolderPlus className="h-3.5 w-3.5" />
             </Button>
           </TooltipTrigger>
@@ -84,8 +119,13 @@ export function ListItemActions({
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
-              onClick={(e) => onVariantAction('quote', e)} aria-label="Orçamento">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
+              onClick={(e) => onVariantAction('quote', e)}
+              aria-label="Orçamento"
+            >
               <FileText className="h-3.5 w-3.5" />
             </Button>
           </TooltipTrigger>
@@ -95,16 +135,26 @@ export function ListItemActions({
 
       {/* Carrinho */}
       <QuickAddToQuote
-        productId={product.id} productName={product.name} productSku={product.sku}
-        productImageUrl={product.og_image_url || product.images[0]} productPrice={product.price}
-        minQuantity={product.minQuantity || 1} variant="icon" className="h-8 w-8"
+        productId={product.id}
+        productName={product.name}
+        productSku={product.sku}
+        productImageUrl={product.og_image_url || product.images[0]}
+        productPrice={product.price}
+        minQuantity={product.minQuantity || 1}
+        variant="icon"
+        className="h-8 w-8"
       />
 
       {/* Quick View */}
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hidden sm:flex"
-            onClick={onQuickView} aria-label="Visualização rápida">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden h-8 w-8 rounded-full text-muted-foreground hover:text-foreground sm:flex"
+            onClick={onQuickView}
+            aria-label="Visualização rápida"
+          >
             <Eye className="h-3.5 w-3.5" />
           </Button>
         </TooltipTrigger>

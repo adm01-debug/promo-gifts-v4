@@ -57,7 +57,9 @@ describe('EnhancedErrorBoundary — DevOnly gating', () => {
     expect(screen.queryByText(SECRET)).not.toBeInTheDocument();
     expect(screen.queryByText(/Mensagem do erro/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Detalhes técnicos/i)).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Copiar detalhes do erro/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Copiar detalhes do erro/i }),
+    ).not.toBeInTheDocument();
   });
 
   it('não vaza mesmo quando admin (isAllowed=true, isDev=false) — gate padrão sem strict', () => {

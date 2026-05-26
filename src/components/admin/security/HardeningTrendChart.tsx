@@ -1,18 +1,11 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { TrendingUp } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import {
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { TrendingUp } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 interface Snapshot {
   id: string;
@@ -30,10 +23,10 @@ export function HardeningTrendChart() {
     const load = async () => {
       const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       const { data: rows } = await supabase
-        .from("hardening_health_snapshots")
-        .select("id, snapshot_at, score, max_score, failures")
-        .gte("snapshot_at", since)
-        .order("snapshot_at", { ascending: true });
+        .from('hardening_health_snapshots')
+        .select('id, snapshot_at, score, max_score, failures')
+        .gte('snapshot_at', since)
+        .order('snapshot_at', { ascending: true });
       setData((rows || []) as Snapshot[]);
       setLoading(false);
     };
@@ -41,7 +34,7 @@ export function HardeningTrendChart() {
   }, []);
 
   const chartData = data.map((d) => ({
-    label: format(new Date(d.snapshot_at), "dd/MM", { locale: ptBR }),
+    label: format(new Date(d.snapshot_at), 'dd/MM', { locale: ptBR }),
     score: d.score,
     max: d.max_score,
   }));
@@ -60,7 +53,7 @@ export function HardeningTrendChart() {
         </div>
         {last && (
           <div className="flex flex-col items-end gap-1">
-            <Badge variant={last.score === last.max_score ? "default" : "destructive"}>
+            <Badge variant={last.score === last.max_score ? 'default' : 'destructive'}>
               Atual {last.score}/{last.max_score}
             </Badge>
             {min !== null && min < (last?.max_score ?? 5) && (
@@ -84,8 +77,8 @@ export function HardeningTrendChart() {
                 <YAxis domain={[0, 5]} tick={{ fontSize: 11 }} width={24} />
                 <Tooltip
                   contentStyle={{
-                    background: "hsl(var(--popover))",
-                    border: "1px solid hsl(var(--border))",
+                    background: 'hsl(var(--popover))',
+                    border: '1px solid hsl(var(--border))',
                     borderRadius: 6,
                     fontSize: 12,
                   }}

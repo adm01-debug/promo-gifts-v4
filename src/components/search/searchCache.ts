@@ -6,7 +6,7 @@
  * - TTL: 60 segundos
  * - Chave: query normalizada (lowercase, trim, espaços colapsados)
  */
-import type { SearchResult } from "./useGlobalSearch";
+import type { SearchResult } from './useGlobalSearch';
 
 const MAX_ENTRIES = 50;
 const TTL_MS = 60_000;
@@ -19,7 +19,7 @@ interface CacheEntry {
 const store = new Map<string, CacheEntry>();
 
 function normalizeKey(query: string): string {
-  return query.toLowerCase().trim().replace(/\s+/g, " ");
+  return query.toLowerCase().trim().replace(/\s+/g, ' ');
 }
 
 export const searchCache = {

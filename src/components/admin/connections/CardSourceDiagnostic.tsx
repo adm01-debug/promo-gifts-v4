@@ -1,15 +1,10 @@
-import { Database, AlertTriangle, Bug, ShieldAlert, Lock } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { resolveSource } from "./CredentialsSourceFilterContext";
-import { useExplainMode } from "./ExplainModeContext";
-import type { SecretStatus, SecretError } from "@/hooks/admin";
+import { Database, AlertTriangle, Bug, ShieldAlert, Lock } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { resolveSource } from './CredentialsSourceFilterContext';
+import { useExplainMode } from './ExplainModeContext';
+import type { SecretStatus, SecretError } from '@/hooks/admin';
 
 /**
  * CardSourceDiagnostic — modo debug por card.
@@ -43,54 +38,56 @@ interface Props {
 
 const SOURCE_META = {
   db: {
-    label: "DB",
-    cls: "border-success/40 bg-success/10 text-success",
-    description: "integration_credentials",
+    label: 'DB',
+    cls: 'border-success/40 bg-success/10 text-success',
+    description: 'integration_credentials',
     tooltip: {
-      title: "Origem: banco (SSOT)",
-      body: "Valor lido de integration_credentials via secrets-manager. Auditável e rotacionável.",
-      action: "Nada a fazer — basta usar.",
+      title: 'Origem: banco (SSOT)',
+      body: 'Valor lido de integration_credentials via secrets-manager. Auditável e rotacionável.',
+      action: 'Nada a fazer — basta usar.',
     },
   },
   env: {
-    label: "ENV",
-    cls: "border-warning/40 bg-warning/10 text-warning",
-    description: "Deno.env (fallback legado)",
+    label: 'ENV',
+    cls: 'border-warning/40 bg-warning/10 text-warning',
+    description: 'Deno.env (fallback legado)',
     tooltip: {
-      title: "Origem: variável de ambiente (legado)",
-      body: "Resolvido por Deno.env.get() porque ainda não há registro em integration_credentials.",
-      action: "Edite o campo e clique em Salvar para migrar para o banco.",
+      title: 'Origem: variável de ambiente (legado)',
+      body: 'Resolvido por Deno.env.get() porque ainda não há registro em integration_credentials.',
+      action: 'Edite o campo e clique em Salvar para migrar para o banco.',
     },
   },
   none: {
-    label: "AUSENTE",
-    cls: "border-destructive/40 bg-destructive/10 text-destructive",
-    description: "não configurado",
+    label: 'AUSENTE',
+    cls: 'border-destructive/40 bg-destructive/10 text-destructive',
+    description: 'não configurado',
     tooltip: {
-      title: "Sem valor em DB nem em ENV",
-      body: "secrets-manager não encontrou esta credencial em nenhuma fonte. A integração ficará inativa.",
-      action: "Preencha o campo e salve para gravar em integration_credentials.",
+      title: 'Sem valor em DB nem em ENV',
+      body: 'secrets-manager não encontrou esta credencial em nenhuma fonte. A integração ficará inativa.',
+      action: 'Preencha o campo e salve para gravar em integration_credentials.',
     },
   },
 } as const;
 
 function describeLoadError(err: SecretError): { title: string; hint: string } {
   switch (err.code) {
-    case "unauthenticated":
+    case 'unauthenticated':
       return {
-        title: "Sessão expirada — não foi possível ler as credenciais",
-        hint: "Faça login novamente para que o secrets-manager possa retornar o status real.",
+        title: 'Sessão expirada — não foi possível ler as credenciais',
+        hint: 'Faça login novamente para que o secrets-manager possa retornar o status real.',
       };
-    case "forbidden":
-    case "permission_denied":
+    case 'forbidden':
+    case 'permission_denied':
       return {
-        title: "Sem permissão para ler credenciais",
-        hint: "Apenas administradores podem visualizar/editar credenciais. Solicite acesso ou peça a alguém com papel de admin para configurar este card.",
+        title: 'Sem permissão para ler credenciais',
+        hint: 'Apenas administradores podem visualizar/editar credenciais. Solicite acesso ou peça a alguém com papel de admin para configurar este card.',
       };
     default:
       return {
-        title: "Falha ao carregar credenciais do secrets-manager",
-        hint: err.message || "Tente novamente em instantes. Se persistir, verifique os logs da função secrets-manager.",
+        title: 'Falha ao carregar credenciais do secrets-manager',
+        hint:
+          err.message ||
+          'Tente novamente em instantes. Se persistir, verifique os logs da função secrets-manager.',
       };
   }
 }
@@ -106,17 +103,12 @@ export function CardSourceDiagnostic({ fields, readOnly, loadError, className }:
   if (loadError) {
     const { title, hint } = describeLoadError(loadError);
     return (
-      <Alert
-        variant="destructive"
-        className={className}
-        role="alert"
-        aria-live="polite"
-      >
+      <Alert variant="destructive" className={className} role="alert" aria-live="polite">
         <Lock className="h-4 w-4" />
         <AlertTitle className="text-sm">{title}</AlertTitle>
         <AlertDescription>
           <p className="text-xs">{hint}</p>
-          <p className="mt-2 text-[10px] font-mono text-muted-foreground">
+          <p className="mt-2 font-mono text-[10px] text-muted-foreground">
             código: {loadError.code}
           </p>
         </AlertDescription>
@@ -130,28 +122,28 @@ export function CardSourceDiagnostic({ fields, readOnly, loadError, className }:
     suffix: f.status?.masked_suffix ?? null,
   }));
 
-  const hasMissing = rows.some((r) => r.source === "none");
-  const usesEnvFallback = rows.some((r) => r.source === "env");
+  const hasMissing = rows.some((r) => r.source === 'none');
+  const usesEnvFallback = rows.some((r) => r.source === 'env');
 
   // Só renderiza se houver problema OU explain mode ligado
   if (!hasMissing && !usesEnvFallback && !explainOn) return null;
 
-  const tone = hasMissing ? "destructive" : usesEnvFallback ? "warning" : "info";
+  const tone = hasMissing ? 'destructive' : usesEnvFallback ? 'warning' : 'info';
   const Icon = hasMissing ? ShieldAlert : usesEnvFallback ? AlertTriangle : Bug;
   const title = hasMissing
-    ? "Credencial faltando — diagnóstico de origem"
+    ? 'Credencial faltando — diagnóstico de origem'
     : usesEnvFallback
-      ? "Usando fallback ENV — recomenda-se migrar para o banco"
-      : "Diagnóstico de origem (modo debug)";
+      ? 'Usando fallback ENV — recomenda-se migrar para o banco'
+      : 'Diagnóstico de origem (modo debug)';
 
   return (
     <Alert
-      variant={tone === "destructive" ? "destructive" : "default"}
+      variant={tone === 'destructive' ? 'destructive' : 'default'}
       className={
-        tone === "warning"
-          ? `border-warning/40 bg-warning/5 ${className ?? ""}`
-          : tone === "info"
-            ? `border-primary/30 bg-primary/5 ${className ?? ""}`
+        tone === 'warning'
+          ? `border-warning/40 bg-warning/5 ${className ?? ''}`
+          : tone === 'info'
+            ? `border-primary/30 bg-primary/5 ${className ?? ''}`
             : className
       }
     >
@@ -169,13 +161,13 @@ export function CardSourceDiagnostic({ fields, readOnly, loadError, className }:
                       <Badge
                         variant="outline"
                         tabIndex={0}
-                        className={`text-[10px] font-mono uppercase cursor-help focus:outline-none focus:ring-2 focus:ring-ring ${meta.cls}`}
+                        className={`cursor-help font-mono text-[10px] uppercase focus:outline-none focus:ring-2 focus:ring-ring ${meta.cls}`}
                         aria-label={`${r.label}: origem ${meta.label}`}
                       >
                         {meta.label}
                       </Badge>
                     </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-xs text-xs space-y-1">
+                    <TooltipContent side="top" className="max-w-xs space-y-1 text-xs">
                       <p className="font-semibold">{meta.tooltip.title}</p>
                       <p>{meta.tooltip.body}</p>
                       <p className="text-muted-foreground">{meta.tooltip.action}</p>
@@ -184,9 +176,7 @@ export function CardSourceDiagnostic({ fields, readOnly, loadError, className }:
                   <span className="font-medium">{r.label}</span>
                   <span className="text-muted-foreground">→ {meta.description}</span>
                   {r.suffix && (
-                    <span className="ml-auto font-mono text-muted-foreground">
-                      ••••{r.suffix}
-                    </span>
+                    <span className="ml-auto font-mono text-muted-foreground">••••{r.suffix}</span>
                   )}
                 </li>
               );
@@ -195,8 +185,10 @@ export function CardSourceDiagnostic({ fields, readOnly, loadError, className }:
         </ul>
         {hasMissing && (
           <p className="mt-2 text-xs text-muted-foreground">
-            <Database className="inline h-3 w-3 mr-1" aria-hidden="true" />
-            Adicione o valor abaixo no campo correspondente — ele será gravado em <code className="text-[10px]">integration_credentials</code> e usado tanto pela UI quanto pelo catálogo.
+            <Database className="mr-1 inline h-3 w-3" aria-hidden="true" />
+            Adicione o valor abaixo no campo correspondente — ele será gravado em{' '}
+            <code className="text-[10px]">integration_credentials</code> e usado tanto pela UI
+            quanto pelo catálogo.
           </p>
         )}
         {!hasMissing && usesEnvFallback && (

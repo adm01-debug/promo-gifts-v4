@@ -9,10 +9,10 @@
  *   - Espaçamento interno padronizado (space-y-4)
  *   - Suporte opcional a actions à direita do header
  */
-import { type LucideIcon, ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { type LucideIcon, ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ZoneSectionProps {
   id: string;
@@ -20,7 +20,7 @@ interface ZoneSectionProps {
   title: string;
   description?: string;
   /** Tom semântico do header — afeta apenas o ícone + barra lateral */
-  tone?: "primary" | "info" | "neutral";
+  tone?: 'primary' | 'info' | 'neutral';
   actions?: React.ReactNode;
   /** Quando true, aplica anel + glow temporário (ex: deep-link de incidente) */
   highlight?: boolean;
@@ -33,9 +33,13 @@ interface ZoneSectionProps {
 }
 
 const TONE_CLS = {
-  primary: { iconBg: "bg-primary/10", iconColor: "text-primary", bar: "bg-primary/40" },
-  info: { iconBg: "bg-sky-500/10", iconColor: "text-sky-600 dark:text-sky-400", bar: "bg-sky-500/40" },
-  neutral: { iconBg: "bg-muted", iconColor: "text-muted-foreground", bar: "bg-border" },
+  primary: { iconBg: 'bg-primary/10', iconColor: 'text-primary', bar: 'bg-primary/40' },
+  info: {
+    iconBg: 'bg-sky-500/10',
+    iconColor: 'text-sky-600 dark:text-sky-400',
+    bar: 'bg-sky-500/40',
+  },
+  neutral: { iconBg: 'bg-muted', iconColor: 'text-muted-foreground', bar: 'bg-border' },
 } as const;
 
 export function ZoneSection({
@@ -43,7 +47,7 @@ export function ZoneSection({
   icon: Icon,
   title,
   description,
-  tone = "primary",
+  tone = 'primary',
   actions,
   highlight = false,
   collapsed = false,
@@ -60,40 +64,33 @@ export function ZoneSection({
       id={id}
       aria-labelledby={headingId}
       className={cn(
-        "scroll-mt-24 space-y-4 rounded-xl transition-shadow duration-500 -mx-2 px-2 py-1",
-        highlight && "ring-2 ring-primary/60 ring-offset-2 ring-offset-background shadow-[0_0_0_4px_hsl(var(--primary)/0.15)]",
+        '-mx-2 scroll-mt-24 space-y-4 rounded-xl px-2 py-1 transition-shadow duration-500',
+        highlight &&
+          'shadow-[0_0_0_4px_hsl(var(--primary)/0.15)] ring-2 ring-primary/60 ring-offset-2 ring-offset-background',
         className,
       )}
     >
       <header className="flex items-start gap-3">
-        <span
-          className={cn("h-8 w-1 rounded-full shrink-0 mt-1", tcls.bar)}
-          aria-hidden="true"
-        />
+        <span className={cn('mt-1 h-8 w-1 shrink-0 rounded-full', tcls.bar)} aria-hidden="true" />
         <div
           className={cn(
-            "h-9 w-9 rounded-lg flex items-center justify-center shrink-0",
+            'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
             tcls.iconBg,
           )}
           aria-hidden="true"
         >
-          <Icon className={cn("h-4 w-4", tcls.iconColor)} />
+          <Icon className={cn('h-4 w-4', tcls.iconColor)} />
         </div>
-        <div className="flex-1 min-w-0">
-          <h2
-            id={headingId}
-            className="text-base font-semibold leading-tight tracking-tight"
-          >
+        <div className="min-w-0 flex-1">
+          <h2 id={headingId} className="text-base font-semibold leading-tight tracking-tight">
             {title}
           </h2>
           {description && (
-            <p className="text-xs text-muted-foreground leading-snug mt-0.5">
-              {description}
-            </p>
+            <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{description}</p>
           )}
         </div>
         {(actions || onToggleCollapse) && (
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex shrink-0 items-center gap-2">
             {actions}
             {onToggleCollapse && (
               <Tooltip>
@@ -110,25 +107,21 @@ export function ZoneSection({
                   >
                     <ChevronDown
                       className={cn(
-                        "h-4 w-4 transition-transform duration-200",
-                        collapsed && "-rotate-90",
+                        'h-4 w-4 transition-transform duration-200',
+                        collapsed && '-rotate-90',
                       )}
                     />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="top">
-                  {collapsed ? "Expandir zona" : "Colapsar zona"}
+                  {collapsed ? 'Expandir zona' : 'Colapsar zona'}
                 </TooltipContent>
               </Tooltip>
             )}
           </div>
         )}
       </header>
-      <div
-        id={contentId}
-        hidden={collapsed}
-        className="space-y-4"
-      >
+      <div id={contentId} hidden={collapsed} className="space-y-4">
         {children}
       </div>
     </section>

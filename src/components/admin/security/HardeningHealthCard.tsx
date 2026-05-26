@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, ShieldCheck, RefreshCw } from "lucide-react";
-import { useToast } from "@/hooks/ui";
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { CheckCircle2, XCircle, ShieldCheck, RefreshCw } from 'lucide-react';
+import { useToast } from '@/hooks/ui';
 
 interface HardeningStatus {
   private_buckets_count: number;
@@ -30,12 +30,12 @@ export function HardeningHealthCard() {
   const load = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc("check_hardening_status" as never);
+      const { data, error } = await supabase.rpc('check_hardening_status' as never);
       if (error) throw error;
       setStatus(data as unknown as HardeningStatus);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Erro desconhecido";
-      toast({ title: "Erro ao verificar hardening", description: msg, variant: "destructive" });
+      const msg = err instanceof Error ? err.message : 'Erro desconhecido';
+      toast({ title: 'Erro ao verificar hardening', description: msg, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -48,34 +48,34 @@ export function HardeningHealthCard() {
   const checks: CheckItem[] = status
     ? [
         {
-          label: "Buckets privados",
+          label: 'Buckets privados',
           ok: status.private_buckets_ok,
           detail: `${status.private_buckets_count}/4 buckets sensíveis privados`,
         },
         {
-          label: "Realtime isolado",
+          label: 'Realtime isolado',
           ok: status.realtime_isolation_ok,
           detail:
             status.sensitive_realtime_count === 0
-              ? "Nenhuma tabela sensível em supabase_realtime"
+              ? 'Nenhuma tabela sensível em supabase_realtime'
               : `${status.sensitive_realtime_count} tabela(s) sensível(is) ainda expostas`,
         },
         {
-          label: "pg_trgm em schema extensions",
+          label: 'pg_trgm em schema extensions',
           ok: status.pg_trgm_in_extensions,
-          detail: status.pg_trgm_in_extensions ? "Isolada de public" : "Ainda em public",
+          detail: status.pg_trgm_in_extensions ? 'Isolada de public' : 'Ainda em public',
         },
         {
-          label: "MFA admin obrigatório",
+          label: 'MFA admin obrigatório',
           ok: status.mfa_enforced_in_app,
-          detail: "Enforced no AdminRoute",
+          detail: 'Enforced no AdminRoute',
         },
         {
-          label: "Limpeza automática diária",
+          label: 'Limpeza automática diária',
           ok: status.cleanup_job_active,
           detail: status.cleanup_job_active
-            ? "cleanup-security-logs-daily ativo"
-            : "Job de cron não está ativo",
+            ? 'cleanup-security-logs-daily ativo'
+            : 'Job de cron não está ativo',
         },
       ]
     : [];
@@ -95,12 +95,12 @@ export function HardeningHealthCard() {
         </div>
         <div className="flex items-center gap-2">
           {status && (
-            <Badge variant={allGood ? "default" : "destructive"} className="text-xs">
+            <Badge variant={allGood ? 'default' : 'destructive'} className="text-xs">
               {okCount}/{total}
             </Badge>
           )}
           <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
         </div>
       </CardHeader>
@@ -115,13 +115,13 @@ export function HardeningHealthCard() {
                 className="flex items-start gap-2 rounded-md border border-border/50 p-2.5"
               >
                 {c.ok ? (
-                  <CheckCircle2 className="h-4 w-4 mt-0.5 text-success shrink-0" />
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
                 ) : (
-                  <XCircle className="h-4 w-4 mt-0.5 text-destructive shrink-0" />
+                  <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
                 )}
                 <div className="min-w-0">
                   <p className="text-sm font-medium leading-tight">{c.label}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{c.detail}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{c.detail}</p>
                 </div>
               </li>
             ))}

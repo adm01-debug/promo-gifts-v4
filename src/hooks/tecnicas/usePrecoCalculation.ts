@@ -4,7 +4,7 @@
  * Responsável por: Lógica de cálculo e simulação de preços
  */
 import { useState, useCallback, useMemo } from 'react';
-import { useTabelasPreco } from "@/hooks/tecnicas/useTabelasPreco";
+import { useTabelasPreco } from '@/hooks/tecnicas/useTabelasPreco';
 import type { TabelaPrecoTecnica, ResultadoCalculoPreco } from '@/types/tecnica-unificada';
 
 // ============================================

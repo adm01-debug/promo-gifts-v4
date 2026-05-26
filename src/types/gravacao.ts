@@ -1,9 +1,9 @@
 /**
  * Types: Sistema de Gravação e Personalização
- * 
+ *
  * Tipos para áreas de gravação e técnicas de personalização.
  * Baseado na documentação oficial do backend (DOC_SISTEMA_GRAVACAO_LOVABLE).
- * 
+ *
  * SSOT: BD Externo (Promobrind) é o master.
  */
 

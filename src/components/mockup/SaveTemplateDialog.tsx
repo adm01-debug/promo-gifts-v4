@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Save } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Save } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -8,8 +8,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import type { PersonalizationArea } from "./MultiAreaManager";
+} from '@/components/ui/dialog';
+import type { PersonalizationArea } from './MultiAreaManager';
 
 interface SaveTemplateDialogProps {
   open: boolean;
@@ -44,12 +44,12 @@ export function SaveTemplateDialog({
               value={templateName}
               onChange={(e) => onTemplateNameChange(e.target.value)}
               placeholder="Ex: Minha Camiseta Personalizada"
-              onKeyDown={(e) => e.key === "Enter" && onSave()}
+              onKeyDown={(e) => e.key === 'Enter' && onSave()}
             />
           </div>
           <div className="text-sm text-muted-foreground">
             <p>Áreas que serão salvas:</p>
-            <ul className="list-disc list-inside mt-1">
+            <ul className="mt-1 list-inside list-disc">
               {areas.map((area) => (
                 <li key={area.id}>
                   {area.name} ({area.logoWidth}x{area.logoHeight}cm)
@@ -63,7 +63,7 @@ export function SaveTemplateDialog({
             Cancelar
           </Button>
           <Button onClick={onSave}>
-            <Save className="h-4 w-4 mr-1" />
+            <Save className="mr-1 h-4 w-4" />
             Salvar Template
           </Button>
         </DialogFooter>

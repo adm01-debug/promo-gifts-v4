@@ -14,9 +14,15 @@ import { isInstrumentationPaused } from './instrumentationControl';
 export type BridgeName = 'external-db-bridge' | 'crm-db-bridge';
 
 /** Operações permitidas para cada bridge, garantindo consistência em compile-time. */
-export type BridgeOperation = 
-  | 'select' | 'insert' | 'update' | 'delete' | 'upsert' | 'batch' | 'rpc'
-  | `rpc:${string}` 
+export type BridgeOperation =
+  | 'select'
+  | 'insert'
+  | 'update'
+  | 'delete'
+  | 'upsert'
+  | 'batch'
+  | 'rpc'
+  | `rpc:${string}`
   | `auth:${string}`
   | 'invoke'
   | 'handshake'
@@ -67,7 +73,11 @@ function emit() {
   const flush = () => {
     emitScheduled = false;
     for (const l of listeners) {
-      try { l(); } catch { /* noop */ }
+      try {
+        l();
+      } catch {
+        /* noop */
+      }
     }
   };
   // setTimeout em vez de requestAnimationFrame: funciona em abas em background
@@ -98,14 +108,14 @@ export function estimatePayloadBytes(value: unknown): number {
       for (let i = 0; i < sampleCount; i++) {
         sampleBytes += estimatePayloadBytes(value[i]);
       }
-      return Math.round((sampleBytes / sampleCount) * value.length) + (value.length * 2);
+      return Math.round((sampleBytes / sampleCount) * value.length) + value.length * 2;
     }
 
     // Heurística para objetos
     if (type === 'object') {
       const keys = Object.keys(value as object);
       if (keys.length === 0) return 2;
-      
+
       const obj = value as Record<string, unknown>;
       const records = (obj.data as Record<string, unknown>)?.records || obj.records;
       if (Array.isArray(records)) {
@@ -126,7 +136,9 @@ export function estimatePayloadBytes(value: unknown): number {
   return 0;
 }
 
-export function recordBridgeCall(sample: Omit<BridgeCallSample, 'id' | 'ts'> & { ts?: number }): void {
+export function recordBridgeCall(
+  sample: Omit<BridgeCallSample, 'id' | 'ts'> & { ts?: number },
+): void {
   // Kill-switch global — descarta sem alocar/notificar.
   if (isInstrumentationPaused()) return;
   const entry: BridgeCallSample = {
@@ -155,7 +167,9 @@ export function getBridgeSamples(): readonly BridgeCallSample[] {
 
 export function subscribeBridgeCalls(listener: () => void): () => void {
   listeners.add(listener);
-  return () => { listeners.delete(listener); };
+  return () => {
+    listeners.delete(listener);
+  };
 }
 
 export function clearBridgeSamples(): void {
@@ -199,7 +213,7 @@ export function aggregateByEndpoint(input: readonly BridgeCallSample[]): BridgeA
 
   const rows: BridgeAggregateRow[] = [];
   for (const [key, arr] of groups.entries()) {
-    const durations = arr.map(s => s.durationMs).sort((a, b) => a - b);
+    const durations = arr.map((s) => s.durationMs).sort((a, b) => a - b);
     const sumDur = durations.reduce((a, b) => a + b, 0);
     const errors = arr.reduce((acc, s) => acc + (s.ok ? 0 : 1), 0);
     const totalReq = arr.reduce((acc, s) => acc + s.reqBytes, 0);

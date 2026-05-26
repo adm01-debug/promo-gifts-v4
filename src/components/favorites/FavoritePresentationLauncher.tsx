@@ -2,9 +2,12 @@
  * FavoritePresentationLauncher — Wrapper que monta os slides da lista
  * e renderiza o PresentationMode existente.
  */
-import { useMemo } from "react";
-import { PresentationMode, type PresentationSlide } from "@/components/presentation/PresentationMode";
-import type { Product } from "@/types/product";
+import { useMemo } from 'react';
+import {
+  PresentationMode,
+  type PresentationSlide,
+} from '@/components/presentation/PresentationMode';
+import type { Product } from '@/types/product';
 
 interface Props {
   products: Product[];
@@ -24,9 +27,9 @@ export function FavoritePresentationLauncher({ products, listName, curatorName, 
         imageUrl: p.images?.[0] ?? null,
         description: p.description ?? null,
         details: [
-          p.sku ? { label: "SKU", value: p.sku } : null,
+          p.sku ? { label: 'SKU', value: p.sku } : null,
           // @ts-expect-error - brand opcional
-          p.brand ? { label: "Marca", value: p.brand } : null,
+          p.brand ? { label: 'Marca', value: p.brand } : null,
         ].filter((x): x is { label: string; value: string } => !!x),
       })),
     [products],

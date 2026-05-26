@@ -1,16 +1,24 @@
-import React, { createContext, useContext, type ReactNode, useMemo, useCallback, useState, useEffect, useRef } from "react";
-import type { Product } from "@/types/product-catalog";
-import { mapPromobrindToProduct } from "@/utils/product-mapper";
-import { fetchPromobrindProducts } from "@/lib/external-db/products";
-import { logger } from "@/lib/logger";
+import React, {
+  createContext,
+  useContext,
+  type ReactNode,
+  useMemo,
+  useCallback,
+  useState,
+  useEffect,
+  useRef,
+} from 'react';
+import type { Product } from '@/types/product-catalog';
+import { mapPromobrindToProduct } from '@/utils/product-mapper';
+import { fetchPromobrindProducts } from '@/lib/external-db/products';
+import { logger } from '@/lib/logger';
 
 // HMR Module Duplication Guard
 // We use a global symbol to detect if multiple instances of this module are loaded
-const INSTANCE_KEY = Symbol.for("lovable_products_context_instance");
+const INSTANCE_KEY = Symbol.for('lovable_products_context_instance');
 const globalObj = (typeof window !== 'undefined' ? window : {}) as Record<symbol, unknown>;
 const isDuplicateModule = globalObj[INSTANCE_KEY] && globalObj[INSTANCE_KEY] !== Math.random();
 globalObj[INSTANCE_KEY] = globalObj[INSTANCE_KEY] || Math.random();
-
 
 interface ProductsContextType {
   /** Cached products (only those that have been requested) */
@@ -38,11 +46,10 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
   // HMR Recovery: If we detect a duplicate module via Global Symbol, force a re-mount
   useEffect(() => {
     if (isDuplicateModule) {
-      logger.warn("[ProductsContext] HMR duplication detected. Forcing Provider re-mount.");
-      setKey(prev => prev + 1);
+      logger.warn('[ProductsContext] HMR duplication detected. Forcing Provider re-mount.');
+      setKey((prev) => prev + 1);
     }
   }, []);
-
 
   // Refs for stable callbacks
   const cacheRef = useRef<Map<string, Product>>(cache);
@@ -78,7 +85,7 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
 
       if (idsToFetch.length === 0) return;
 
-      idsToFetch.forEach(id => fetchingRef.current.add(id));
+      idsToFetch.forEach((id) => fetchingRef.current.add(id));
       if (mountedRef.current) setIsLoading(true);
 
       try {
@@ -89,31 +96,35 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
         const mapped = raw.map(mapPromobrindToProduct);
 
         if (mountedRef.current) {
-          setCache(prev => {
+          setCache((prev) => {
             const next = new Map(prev);
-            mapped.forEach(p => next.set(p.id, p));
+            mapped.forEach((p) => next.set(p.id, p));
             return next;
           });
         }
       } catch (err) {
         logger.warn('[ProductsContext] Failed to fetch products by IDs:', err);
       } finally {
-        idsToFetch.forEach(id => fetchingRef.current.delete(id));
+        idsToFetch.forEach((id) => fetchingRef.current.delete(id));
         if (mountedRef.current) setIsLoading(false);
       }
     }, 50); // 50ms batching window
   }, []);
 
   // Queue IDs for lazy fetching
-  const queueFetch = useCallback((ids: string[]) => {
-    const missing = ids.filter(
-      id => !cacheRef.current.has(id) && !fetchingRef.current.has(id) && !batchIdsRef.current.has(id)
-    );
-    if (missing.length === 0) return;
+  const queueFetch = useCallback(
+    (ids: string[]) => {
+      const missing = ids.filter(
+        (id) =>
+          !cacheRef.current.has(id) && !fetchingRef.current.has(id) && !batchIdsRef.current.has(id),
+      );
+      if (missing.length === 0) return;
 
-    missing.forEach(id => batchIdsRef.current.add(id));
-    scheduleBatchFetch();
-  }, [scheduleBatchFetch]);
+      missing.forEach((id) => batchIdsRef.current.add(id));
+      scheduleBatchFetch();
+    },
+    [scheduleBatchFetch],
+  );
 
   const getProductById = useCallback(
     (id: string): Product | undefined => {
@@ -123,7 +134,7 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
       }
       return cached;
     },
-    [queueFetch]
+    [queueFetch],
   );
 
   const getProductsByIds = useCallback(
@@ -146,13 +157,13 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
 
       return found;
     },
-    [queueFetch]
+    [queueFetch],
   );
 
   // Register products from external sources (e.g. page-level useProducts queries)
   const registerProducts = useCallback((products: Product[]) => {
     if (products.length === 0) return;
-    setCache(prev => {
+    setCache((prev) => {
       const next = new Map(prev);
       let changed = false;
       for (const p of products) {
@@ -169,11 +180,13 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
   const products = useMemo(() => [...cache.values()], [cache]);
 
   return (
-    <ProductsContext.Provider key={key} value={{ products, isLoading, getProductById, getProductsByIds, registerProducts }}>
+    <ProductsContext.Provider
+      key={key}
+      value={{ products, isLoading, getProductById, getProductsByIds, registerProducts }}
+    >
       {children}
     </ProductsContext.Provider>
   );
-
 }
 
 /**
@@ -195,8 +208,8 @@ export function useProductsContext(): ProductsContextType {
   if (context === undefined) {
     if (import.meta.env.DEV) {
       logger.warn(
-        "[ProductsContext] useProductsContext called outside ProductsProvider — using fallback. " +
-        "This usually indicates an HMR module-duplication race; a full reload should fix it."
+        '[ProductsContext] useProductsContext called outside ProductsProvider — using fallback. ' +
+          'This usually indicates an HMR module-duplication race; a full reload should fix it.',
       );
     }
     return FALLBACK_CONTEXT;

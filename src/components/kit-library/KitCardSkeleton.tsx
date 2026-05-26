@@ -8,9 +8,9 @@ export function KitCardSkeleton() {
   return (
     <Card className="overflow-hidden">
       <Skeleton className="h-1.5 w-full rounded-none" />
-      <CardContent className="p-4 space-y-3">
+      <CardContent className="space-y-3 p-4">
         <div className="flex items-start gap-3">
-          <Skeleton className="w-12 h-12 rounded-xl" />
+          <Skeleton className="h-12 w-12 rounded-xl" />
           <div className="flex-1 space-y-2">
             <Skeleton className="h-4 w-3/4" />
             <Skeleton className="h-3 w-full" />
@@ -21,7 +21,7 @@ export function KitCardSkeleton() {
           <Skeleton className="h-5 w-16 rounded-full" />
           <Skeleton className="h-5 w-12 rounded-full" />
         </div>
-        <div className="flex justify-between items-end pt-2 border-t border-border/40">
+        <div className="flex items-end justify-between border-t border-border/40 pt-2">
           <div className="space-y-1.5">
             <Skeleton className="h-2 w-10" />
             <Skeleton className="h-5 w-20" />
@@ -38,8 +38,10 @@ export function KitCardSkeleton() {
 
 export function KitCardSkeletonGrid({ count = 8 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      {Array.from({ length: count }).map((_, i) => <KitCardSkeleton key={i} />)}
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {Array.from({ length: count }).map((_, i) => (
+        <KitCardSkeleton key={i} />
+      ))}
     </div>
   );
 }

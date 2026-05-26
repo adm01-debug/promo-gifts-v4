@@ -2,13 +2,13 @@
  * MockupAnnotations — Simple comment layer on generated mockup
  */
 
-import { useState, useRef, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { MessageSquarePlus, X, Trash2, Save } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+import { useState, useRef, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { MessageSquarePlus, X, Trash2, Save } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 export interface Annotation {
   id: string;
@@ -32,60 +32,65 @@ export function MockupAnnotations({
 }: MockupAnnotationsProps) {
   const [isAnnotating, setIsAnnotating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editText, setEditText] = useState("");
+  const [editText, setEditText] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleClick = useCallback((e: React.MouseEvent) => {
-    if (!isAnnotating || !containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (!isAnnotating || !containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
 
-    const newAnnotation: Annotation = {
-      id: crypto.randomUUID(),
-      x: Math.round(x * 10) / 10,
-      y: Math.round(y * 10) / 10,
-      text: "",
-    };
-    onAnnotationsChange([...annotations, newAnnotation]);
-    setEditingId(newAnnotation.id);
-    setEditText("");
-    setIsAnnotating(false);
-  }, [isAnnotating, annotations, onAnnotationsChange]);
+      const newAnnotation: Annotation = {
+        id: crypto.randomUUID(),
+        x: Math.round(x * 10) / 10,
+        y: Math.round(y * 10) / 10,
+        text: '',
+      };
+      onAnnotationsChange([...annotations, newAnnotation]);
+      setEditingId(newAnnotation.id);
+      setEditText('');
+      setIsAnnotating(false);
+    },
+    [isAnnotating, annotations, onAnnotationsChange],
+  );
 
   const saveAnnotationText = () => {
     if (!editingId) return;
     if (!editText.trim()) {
       // Remove empty annotation
-      onAnnotationsChange(annotations.filter(a => a.id !== editingId));
+      onAnnotationsChange(annotations.filter((a) => a.id !== editingId));
     } else {
-      onAnnotationsChange(annotations.map(a => a.id === editingId ? { ...a, text: editText.trim() } : a));
+      onAnnotationsChange(
+        annotations.map((a) => (a.id === editingId ? { ...a, text: editText.trim() } : a)),
+      );
     }
     setEditingId(null);
-    setEditText("");
+    setEditText('');
   };
 
   const removeAnnotation = (id: string) => {
-    onAnnotationsChange(annotations.filter(a => a.id !== id));
-    toast.success("Anotação removida");
+    onAnnotationsChange(annotations.filter((a) => a.id !== id));
+    toast.success('Anotação removida');
   };
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn('space-y-2', className)}>
       {/* Controls */}
       <div className="flex items-center gap-2">
         <Button
-          variant={isAnnotating ? "default" : "outline"}
+          variant={isAnnotating ? 'default' : 'outline'}
           size="sm"
           onClick={() => setIsAnnotating(!isAnnotating)}
           className="gap-1.5"
         >
           <MessageSquarePlus className="h-3.5 w-3.5" />
-          {isAnnotating ? "Clique na imagem..." : "Anotar"}
+          {isAnnotating ? 'Clique na imagem...' : 'Anotar'}
         </Button>
         {annotations.length > 0 && (
           <Badge variant="secondary" className="text-xs">
-            {annotations.length} {annotations.length === 1 ? "nota" : "notas"}
+            {annotations.length} {annotations.length === 1 ? 'nota' : 'notas'}
           </Badge>
         )}
       </div>
@@ -94,8 +99,8 @@ export function MockupAnnotations({
       <div
         ref={containerRef}
         className={cn(
-          "relative rounded-lg border",
-          isAnnotating && "cursor-crosshair ring-2 ring-primary"
+          'relative rounded-lg border',
+          isAnnotating && 'cursor-crosshair ring-2 ring-primary',
         )}
         onClick={handleClick}
       >
@@ -103,47 +108,59 @@ export function MockupAnnotations({
           src={imageUrl}
           alt="Mockup com anotações"
           className="w-full object-contain"
-          draggable={false} loading="lazy" />
+          draggable={false}
+          loading="lazy"
+        />
 
         {/* Annotation pins */}
         {annotations.map((ann, idx) => (
           <div
             key={ann.id}
-            className="absolute z-10 group"
-            style={{ left: `${ann.x}%`, top: `${ann.y}%`, transform: "translate(-50%, -100%)" }}
+            className="group absolute z-10"
+            style={{ left: `${ann.x}%`, top: `${ann.y}%`, transform: 'translate(-50%, -100%)' }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Pin */}
             <div className="relative">
-              <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shadow-lg cursor-pointer"
-                onClick={() => { setEditingId(ann.id); setEditText(ann.text); }}
+              <div
+                className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground shadow-lg"
+                onClick={() => {
+                  setEditingId(ann.id);
+                  setEditText(ann.text);
+                }}
               >
                 {idx + 1}
               </div>
               {/* Tooltip */}
               {ann.text && editingId !== ann.id && (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-background/95 backdrop-blur-sm border rounded-md shadow-md text-xs max-w-[200px] whitespace-pre-wrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                <div className="pointer-events-none absolute bottom-full left-1/2 mb-1 max-w-[200px] -translate-x-1/2 whitespace-pre-wrap rounded-md border bg-background/95 px-2 py-1 text-xs opacity-0 shadow-md backdrop-blur-sm transition-opacity group-hover:opacity-100">
                   {ann.text}
                 </div>
               )}
               {/* Edit form */}
               {editingId === ann.id && (
-                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-background border rounded-lg shadow-lg p-2 z-20 min-w-[200px]"
+                <div
+                  className="absolute left-1/2 top-full z-20 mt-1 min-w-[200px] -translate-x-1/2 rounded-lg border bg-background p-2 shadow-lg"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <Input
                     value={editText}
                     onChange={(e) => setEditText(e.target.value)}
                     placeholder="Ex: ajustar 1cm à esquerda"
-                    className="h-8 text-xs mb-2"
+                    className="mb-2 h-8 text-xs"
                     autoFocus
-                    onKeyDown={(e) => e.key === "Enter" && saveAnnotationText()}
+                    onKeyDown={(e) => e.key === 'Enter' && saveAnnotationText()}
                   />
                   <div className="flex gap-1">
-                    <Button size="sm" className="h-7 text-xs flex-1" onClick={saveAnnotationText}>
-                      <Save className="h-3 w-3 mr-1" /> Salvar
+                    <Button size="sm" className="h-7 flex-1 text-xs" onClick={saveAnnotationText}>
+                      <Save className="mr-1 h-3 w-3" /> Salvar
                     </Button>
-                    <Button size="sm" variant="destructive" className="h-7 w-7 p-0" onClick={() => removeAnnotation(ann.id)}>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="h-7 w-7 p-0"
+                      onClick={() => removeAnnotation(ann.id)}
+                    >
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
@@ -158,14 +175,20 @@ export function MockupAnnotations({
       {annotations.length > 0 && (
         <div className="space-y-1">
           {annotations.map((ann, idx) => (
-            <div key={ann.id} className="flex items-center gap-2 text-xs p-1.5 rounded bg-muted/50">
-              <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+            <div key={ann.id} className="flex items-center gap-2 rounded bg-muted/50 p-1.5 text-xs">
+              <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
                 {idx + 1}
               </span>
               <span className="flex-1 truncate text-muted-foreground">
                 {ann.text || <em>Sem texto</em>}
               </span>
-              <Button variant="ghost" size="icon" aria-label="Fechar" className="h-5 w-5" onClick={() => removeAnnotation(ann.id)}>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Fechar"
+                className="h-5 w-5"
+                onClick={() => removeAnnotation(ann.id)}
+              >
                 <X className="h-3 w-3" />
               </Button>
             </div>

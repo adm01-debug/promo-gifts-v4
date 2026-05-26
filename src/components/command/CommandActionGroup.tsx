@@ -6,9 +6,9 @@ import {
   CommandItem,
   CommandSeparator,
   CommandShortcut,
-} from "@/components/ui/command";
-import { Badge } from "@/components/ui/badge";
-import type { CommandAction } from "./commandActions";
+} from '@/components/ui/command';
+import { Badge } from '@/components/ui/badge';
+import type { CommandAction } from './commandActions';
 
 interface CommandActionGroupProps {
   heading: string;
@@ -17,7 +17,12 @@ interface CommandActionGroupProps {
   showSeparator?: boolean;
 }
 
-export function CommandActionGroup({ heading, actions, iconColor = "text-muted-foreground", showSeparator = true }: CommandActionGroupProps) {
+export function CommandActionGroup({
+  heading,
+  actions,
+  iconColor = 'text-muted-foreground',
+  showSeparator = true,
+}: CommandActionGroupProps) {
   if (actions.length === 0) return null;
 
   return (
@@ -28,14 +33,17 @@ export function CommandActionGroup({ heading, actions, iconColor = "text-muted-f
           <CommandItem
             key={action.id}
             onSelect={action.action}
-            className="flex items-center gap-3 p-2 cursor-pointer"
+            className="flex cursor-pointer items-center gap-3 p-2"
           >
             <span className={iconColor}>{action.icon}</span>
-            <div className="flex flex-col flex-1">
+            <div className="flex flex-1 flex-col">
               <div className="flex items-center gap-2">
                 <span>{action.label}</span>
                 {action.badge && (
-                  <Badge variant={action.badgeVariant || "secondary"} className="text-[10px] px-1.5 py-0">
+                  <Badge
+                    variant={action.badgeVariant || 'secondary'}
+                    className="px-1.5 py-0 text-[10px]"
+                  >
                     {action.badge}
                   </Badge>
                 )}

@@ -1,47 +1,37 @@
-import * as React from "react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { 
+import * as React from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
   ProductGridSkeleton,
-  TableSkeleton, 
-  StatsCardSkeleton, 
+  TableSkeleton,
+  StatsCardSkeleton,
   PageHeaderSkeleton,
   DashboardSkeleton as ModernDashboardSkeleton,
   ProductDetailSkeleton as ModernProductDetailSkeleton,
   ClientCardSkeleton,
-  QuoteCardSkeleton
-} from "@/components/loading/ModernSkeletons";
-import { SkeletonMonitor } from "@/components/loading/SkeletonMonitor";
+  QuoteCardSkeleton,
+} from '@/components/loading/ModernSkeletons';
+import { SkeletonMonitor } from '@/components/loading/SkeletonMonitor';
 
 /**
  * Helper para criar skeletons como forwardRef divs.
  */
 type SkeletonRootProps = React.HTMLAttributes<HTMLDivElement>;
 
-function makeSkeleton(
-  displayName: string,
-  render: () => React.ReactNode,
-  rootClassName: string,
-) {
-  const Cmp = React.forwardRef<HTMLDivElement, SkeletonRootProps>(
-    ({ className, ...rest }, ref) => (
-      <SkeletonMonitor name={displayName}>
-        <div
-          ref={ref}
-          className={[rootClassName, className].filter(Boolean).join(" ")}
-          {...rest}
-        >
-          {render()}
-        </div>
-      </SkeletonMonitor>
-    ),
-  );
+function makeSkeleton(displayName: string, render: () => React.ReactNode, rootClassName: string) {
+  const Cmp = React.forwardRef<HTMLDivElement, SkeletonRootProps>(({ className, ...rest }, ref) => (
+    <SkeletonMonitor name={displayName}>
+      <div ref={ref} className={[rootClassName, className].filter(Boolean).join(' ')} {...rest}>
+        {render()}
+      </div>
+    </SkeletonMonitor>
+  ));
   Cmp.displayName = displayName;
   return Cmp;
 }
 
 /** Catalog / Products page skeleton */
 export const CatalogSkeleton = makeSkeleton(
-  "Catalog",
+  'Catalog',
   () => (
     <div className="flex flex-col gap-6">
       <PageHeaderSkeleton />
@@ -53,19 +43,19 @@ export const CatalogSkeleton = makeSkeleton(
       <ProductGridSkeleton count={15} columns={5} />
     </div>
   ),
-  "p-3 sm:p-4 lg:p-6 space-y-6",
+  'p-3 sm:p-4 lg:p-6 space-y-6',
 );
 
 /** Product detail page skeleton */
 export const ProductDetailSkeleton = makeSkeleton(
-  "ProductDetail",
+  'ProductDetail',
   () => <ModernProductDetailSkeleton />,
-  "p-3 sm:p-4 lg:p-6",
+  'p-3 sm:p-4 lg:p-6',
 );
 
 /** Quotes list page skeleton */
 export const QuotesSkeleton = makeSkeleton(
-  "Quotes",
+  'Quotes',
   () => (
     <div className="space-y-6">
       <PageHeaderSkeleton />
@@ -81,16 +71,16 @@ export const QuotesSkeleton = makeSkeleton(
       </div>
     </div>
   ),
-  "p-3 sm:p-4 lg:p-6",
+  'p-3 sm:p-4 lg:p-6',
 );
 
 /** Clients (CRM) skeleton */
 export const ClientsSkeleton = makeSkeleton(
-  "Clients",
+  'Clients',
   () => (
     <div className="space-y-6">
       <PageHeaderSkeleton />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {[1, 2, 3].map((i) => (
           <StatsCardSkeleton key={i} />
         ))}
@@ -105,16 +95,16 @@ export const ClientsSkeleton = makeSkeleton(
       </div>
     </div>
   ),
-  "p-3 sm:p-4 lg:p-6",
+  'p-3 sm:p-4 lg:p-6',
 );
 
 /** Admin pages skeleton */
 export const AdminSkeleton = makeSkeleton(
-  "Admin",
+  'Admin',
   () => (
     <div className="space-y-6">
       <PageHeaderSkeleton />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[1, 2, 3, 4].map((i) => (
           <StatsCardSkeleton key={i} />
         ))}
@@ -122,23 +112,23 @@ export const AdminSkeleton = makeSkeleton(
       <TableSkeleton rows={10} columns={5} />
     </div>
   ),
-  "p-3 sm:p-4 lg:p-6",
+  'p-3 sm:p-4 lg:p-6',
 );
 
 /** Dashboard / home skeleton */
 export const DashboardSkeleton = makeSkeleton(
-  "Dashboard",
+  'Dashboard',
   () => <ModernDashboardSkeleton />,
-  "p-3 sm:p-4 lg:p-6",
+  'p-3 sm:p-4 lg:p-6',
 );
 
 /** Tools page skeleton */
 export const ToolsSkeleton = makeSkeleton(
-  "Tools",
+  'Tools',
   () => (
     <div className="space-y-6">
       <PageHeaderSkeleton />
-      <div className="flex gap-2 justify-center py-4">
+      <div className="flex justify-center gap-2 py-4">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="flex flex-col items-center gap-2">
             <Skeleton className="h-8 w-8 rounded-full" />
@@ -146,23 +136,23 @@ export const ToolsSkeleton = makeSkeleton(
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="lg:col-span-8">
           <Skeleton className="aspect-video w-full rounded-2xl" />
         </div>
-        <div className="lg:col-span-4 space-y-4">
+        <div className="space-y-4 lg:col-span-4">
           <Skeleton className="h-40 w-full rounded-xl" />
           <Skeleton className="h-64 w-full rounded-xl" />
         </div>
       </div>
     </div>
   ),
-  "p-3 sm:p-4 lg:p-6",
+  'p-3 sm:p-4 lg:p-6',
 );
 
 /** Generic page skeleton */
 export const GenericSkeleton = makeSkeleton(
-  "Generic",
+  'Generic',
   () => (
     <div className="space-y-6">
       <PageHeaderSkeleton />
@@ -172,12 +162,12 @@ export const GenericSkeleton = makeSkeleton(
       </div>
     </div>
   ),
-  "p-3 sm:p-4 lg:p-6",
+  'p-3 sm:p-4 lg:p-6',
 );
 
 /** Auth / login page skeleton */
 export const AuthSkeleton = makeSkeleton(
-  "Auth",
+  'Auth',
   () => (
     <div className="w-full max-w-sm space-y-5">
       <div className="flex flex-col items-center gap-3">
@@ -190,12 +180,12 @@ export const AuthSkeleton = makeSkeleton(
       </div>
     </div>
   ),
-  "min-h-[60vh] flex items-center justify-center p-6",
+  'min-h-[60vh] flex items-center justify-center p-6',
 );
 
 /** Modal loading skeleton */
 export const ModalSkeleton = makeSkeleton(
-  "Modal",
+  'Modal',
   () => (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
@@ -211,45 +201,44 @@ export const ModalSkeleton = makeSkeleton(
       </div>
     </div>
   ),
-  "p-6",
+  'p-6',
 );
 
 /**
  * Returns the appropriate skeleton component based on the current route.
  */
 export function getFallback(pathname: string): React.ReactNode {
-  if (pathname.startsWith("/produto/")) return <ProductDetailSkeleton />;
+  if (pathname.startsWith('/produto/')) return <ProductDetailSkeleton />;
   if (
-    pathname === "/produtos" ||
-    pathname === "/filtros" ||
-    pathname === "/" ||
-    pathname === "/novidades" ||
-    pathname === "/reposicao" ||
-    pathname === "/favoritos"
+    pathname === '/produtos' ||
+    pathname === '/filtros' ||
+    pathname === '/' ||
+    pathname === '/novidades' ||
+    pathname === '/reposicao' ||
+    pathname === '/favoritos'
   )
     return <CatalogSkeleton />;
-  if (pathname.startsWith("/orcamentos")) return <QuotesSkeleton />;
-  if (pathname.startsWith("/clientes")) return <ClientsSkeleton />;
-  if (pathname.startsWith("/admin") || pathname === "/status")
-    return <AdminSkeleton />;
-  if (pathname === "/dashboard") return <DashboardSkeleton />;
+  if (pathname.startsWith('/orcamentos')) return <QuotesSkeleton />;
+  if (pathname.startsWith('/clientes')) return <ClientsSkeleton />;
+  if (pathname.startsWith('/admin') || pathname === '/status') return <AdminSkeleton />;
+  if (pathname === '/dashboard') return <DashboardSkeleton />;
 
   if (
-    pathname.startsWith("/auth") ||
-    pathname === "/login" ||
-    pathname === "/reset-password" ||
-    pathname === "/forgot-password-confirmation" ||
-    pathname === "/unauthorized"
+    pathname.startsWith('/auth') ||
+    pathname === '/login' ||
+    pathname === '/reset-password' ||
+    pathname === '/forgot-password-confirmation' ||
+    pathname === '/unauthorized'
   )
     return <AuthSkeleton />;
 
   if (
-    pathname === "/mockup-generator" ||
-    pathname === "/montar-kit" ||
-    pathname === "/simulador" ||
-    pathname === "/magic-up" ||
-    pathname === "/simulador-precos" ||
-    pathname === "/busca-preco"
+    pathname === '/mockup-generator' ||
+    pathname === '/montar-kit' ||
+    pathname === '/simulador' ||
+    pathname === '/magic-up' ||
+    pathname === '/simulador-precos' ||
+    pathname === '/busca-preco'
   )
     return <ToolsSkeleton />;
   return <GenericSkeleton />;

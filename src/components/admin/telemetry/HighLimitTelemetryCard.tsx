@@ -1,7 +1,13 @@
 import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Activity, AlertTriangle, BarChart3, Filter } from 'lucide-react';
 import {
@@ -36,12 +42,19 @@ const RANGE_LABEL: Record<RangePreset, string> = {
 function formatTick(iso: string, bucketMs: number): string {
   const d = new Date(iso);
   if (bucketMs < 3_600_000) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  if (bucketMs < 86_400_000) return d.toLocaleString([], { month: '2-digit', day: '2-digit', hour: '2-digit' });
+  if (bucketMs < 86_400_000)
+    return d.toLocaleString([], { month: '2-digit', day: '2-digit', hour: '2-digit' });
   return d.toLocaleDateString([], { month: '2-digit', day: '2-digit' });
 }
 
 const ERROR_KINDS_FOR_STACK: Exclude<ErrorKindFilter, 'all'>[] = [
-  'timeout', 'postgrest_error', 'validation', 'network', 'rate_limit', 'auth', 'unknown',
+  'timeout',
+  'postgrest_error',
+  'validation',
+  'network',
+  'rate_limit',
+  'auth',
+  'unknown',
 ];
 
 const ERROR_COLORS: Record<string, string> = {
@@ -64,7 +77,7 @@ export function HighLimitTelemetryCard() {
 
   const chartData = useMemo(() => {
     if (!data) return [];
-    return data.points.map(p => ({
+    return data.points.map((p) => ({
       x: formatTick(p.bucketStartIso, data.bucketMs),
       p50: p.p50,
       p95: p.p95,
@@ -81,61 +94,82 @@ export function HighLimitTelemetryCard() {
   return (
     <Card className="border-2 border-primary/20">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <CardTitle className="text-base flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <CardTitle className="flex items-center gap-2 text-base">
             <BarChart3 className="h-4 w-4" />
             Listings com limit &gt; 50 — gráficos segmentados
-            {isRefetching && <Badge variant="secondary" className="text-[10px]">atualizando…</Badge>}
+            {isRefetching && (
+              <Badge variant="secondary" className="text-[10px]">
+                atualizando…
+              </Badge>
+            )}
           </CardTitle>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2">
             <Filter className="h-3.5 w-3.5 text-muted-foreground" />
             <Select
               value={filters.operation}
-              onValueChange={v => setFilters(f => ({ ...f, operation: v as OperationFilter }))}
+              onValueChange={(v) => setFilters((f) => ({ ...f, operation: v as OperationFilter }))}
             >
-              <SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 w-40 text-xs">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                {(Object.keys(OPERATION_LABEL) as OperationFilter[]).map(k => (
-                  <SelectItem key={k} value={k}>{OPERATION_LABEL[k]}</SelectItem>
+                {(Object.keys(OPERATION_LABEL) as OperationFilter[]).map((k) => (
+                  <SelectItem key={k} value={k}>
+                    {OPERATION_LABEL[k]}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <Select
               value={filters.range}
-              onValueChange={v => setFilters(f => ({ ...f, range: v as RangePreset }))}
+              onValueChange={(v) => setFilters((f) => ({ ...f, range: v as RangePreset }))}
             >
-              <SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 w-40 text-xs">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 {(Object.keys(RANGE_LABEL) as RangePreset[])
-                  .filter(k => k !== 'custom')
-                  .map(k => (
-                    <SelectItem key={k} value={k}>{RANGE_LABEL[k]}</SelectItem>
+                  .filter((k) => k !== 'custom')
+                  .map((k) => (
+                    <SelectItem key={k} value={k}>
+                      {RANGE_LABEL[k]}
+                    </SelectItem>
                   ))}
               </SelectContent>
             </Select>
             <Select
               value={filters.errorKind}
-              onValueChange={v => setFilters(f => ({ ...f, errorKind: v as ErrorKindFilter }))}
+              onValueChange={(v) => setFilters((f) => ({ ...f, errorKind: v as ErrorKindFilter }))}
             >
-              <SelectTrigger className="h-8 w-44 text-xs"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 w-44 text-xs">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                {(Object.keys(ERROR_KIND_LABEL) as ErrorKindFilter[]).map(k => (
-                  <SelectItem key={k} value={k}>{ERROR_KIND_LABEL[k]}</SelectItem>
+                {(Object.keys(ERROR_KIND_LABEL) as ErrorKindFilter[]).map((k) => (
+                  <SelectItem key={k} value={k}>
+                    {ERROR_KIND_LABEL[k]}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
         </div>
         {data && (
-          <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1 flex-wrap">
-            <span>{new Date(data.fromIso).toLocaleString()} → {new Date(data.toIso).toLocaleString()}</span>
+          <div className="flex flex-wrap items-center gap-4 pt-1 text-xs text-muted-foreground">
+            <span>
+              {new Date(data.fromIso).toLocaleString()} → {new Date(data.toIso).toLocaleString()}
+            </span>
             <span>·</span>
             <span>bucket: {Math.round(data.bucketMs / 60000)}min</span>
             <span>·</span>
-            <span><Activity className="inline h-3 w-3 mr-1" />{data.totals.samples} amostras</span>
+            <span>
+              <Activity className="mr-1 inline h-3 w-3" />
+              {data.totals.samples} amostras
+            </span>
             <span>·</span>
             <span className={data.totals.errorRate > 0.05 ? 'text-destructive' : ''}>
-              <AlertTriangle className="inline h-3 w-3 mr-1" />
+              <AlertTriangle className="mr-1 inline h-3 w-3" />
               {(data.totals.errorRate * 100).toFixed(1)}% erro
             </span>
             <span>·</span>
@@ -149,15 +183,17 @@ export function HighLimitTelemetryCard() {
       <CardContent className="space-y-6">
         {isLoading ? (
           <Skeleton className="h-[680px] w-full" />
-        ) : !data || data.points.every(p => p.samples === 0) ? (
-          <div className="text-center py-12 text-muted-foreground text-sm">
+        ) : !data || data.points.every((p) => p.samples === 0) ? (
+          <div className="py-12 text-center text-sm text-muted-foreground">
             Sem amostras nesta janela com os filtros aplicados.
           </div>
         ) : (
           <>
             {/* Gráfico 1: Latência p50/p95/p99 */}
             <div>
-              <p className="text-xs font-medium text-muted-foreground mb-2">Latência (ms) — p50 / p95 / p99</p>
+              <p className="mb-2 text-xs font-medium text-muted-foreground">
+                Latência (ms) — p50 / p95 / p99
+              </p>
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={chartData}>
@@ -174,7 +210,12 @@ export function HighLimitTelemetryCard() {
                     <Legend wrapperStyle={{ fontSize: '11px' }} />
                     <Line type="monotone" dataKey="p50" stroke="hsl(var(--primary))" dot={false} />
                     <Line type="monotone" dataKey="p95" stroke="hsl(var(--warning))" dot={false} />
-                    <Line type="monotone" dataKey="p99" stroke="hsl(var(--destructive))" dot={false} />
+                    <Line
+                      type="monotone"
+                      dataKey="p99"
+                      stroke="hsl(var(--destructive))"
+                      dot={false}
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -182,7 +223,7 @@ export function HighLimitTelemetryCard() {
 
             {/* Gráfico 2: Erros empilhados por kind */}
             <div>
-              <p className="text-xs font-medium text-muted-foreground mb-2">
+              <p className="mb-2 text-xs font-medium text-muted-foreground">
                 Erros por bucket — empilhados por tipo
               </p>
               <div className="h-56">
@@ -199,7 +240,7 @@ export function HighLimitTelemetryCard() {
                       }}
                     />
                     <Legend wrapperStyle={{ fontSize: '11px' }} />
-                    {ERROR_KINDS_FOR_STACK.map(kind => (
+                    {ERROR_KINDS_FOR_STACK.map((kind) => (
                       <Bar
                         key={kind}
                         dataKey={kind}
@@ -215,7 +256,7 @@ export function HighLimitTelemetryCard() {
 
             {/* Gráfico 3: Volume (records médios + amostras) */}
             <div>
-              <p className="text-xs font-medium text-muted-foreground mb-2">
+              <p className="mb-2 text-xs font-medium text-muted-foreground">
                 Volume — registros médios por query e amostras por bucket
               </p>
               <div className="h-56">

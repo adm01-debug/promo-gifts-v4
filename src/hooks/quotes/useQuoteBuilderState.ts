@@ -521,7 +521,9 @@ export function useQuoteBuilderState() {
       }
       setLoadingQuote(false);
     });
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, [isEditMode, quoteId, fetchQuote]);
 
   // ── Pre-fill from simulator ──

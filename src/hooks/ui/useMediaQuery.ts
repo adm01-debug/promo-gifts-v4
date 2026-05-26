@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
 /**
  * useMediaQuery — boolean reativo para uma CSS media query.
@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
  */
 export function useMediaQuery(query: string): boolean {
   const getMatches = (): boolean => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
       return false;
     }
     return window.matchMedia(query).matches;
@@ -21,7 +21,7 @@ export function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState<boolean>(getMatches);
 
   useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
       return;
     }
     const mql = window.matchMedia(query);
@@ -30,9 +30,9 @@ export function useMediaQuery(query: string): boolean {
     // Garantir sync se o valor inicial divergiu (ex.: hydration)
     setMatches(mql.matches);
 
-    if (typeof mql.addEventListener === "function") {
-      mql.addEventListener("change", onChange);
-      return () => mql.removeEventListener("change", onChange);
+    if (typeof mql.addEventListener === 'function') {
+      mql.addEventListener('change', onChange);
+      return () => mql.removeEventListener('change', onChange);
     }
     // Fallback Safari < 14
     mql.addListener(onChange);

@@ -5,9 +5,9 @@ import type { ProductStockSummary, StockAlert } from '@/types/stock';
 
 export function generateStockAlerts(products: ProductStockSummary[]): StockAlert[] {
   const alerts: StockAlert[] = [];
-  
-  products.forEach(product => {
-    product.variants.forEach(variant => {
+
+  products.forEach((product) => {
+    product.variants.forEach((variant) => {
       const baseAlert = {
         productId: product.productId,
         productName: product.productName,
@@ -18,7 +18,7 @@ export function generateStockAlerts(products: ProductStockSummary[]): StockAlert
         threshold: variant.minStock,
         createdAt: new Date().toISOString(),
       };
-      
+
       if (variant.status === 'out_of_stock') {
         alerts.push({
           id: `alert-${variant.id}-out`,
@@ -50,8 +50,12 @@ export function generateStockAlerts(products: ProductStockSummary[]): StockAlert
           ...baseAlert,
         });
       }
-      
-      if (variant.daysUntilStockout !== undefined && variant.daysUntilStockout <= 7 && variant.status !== 'out_of_stock') {
+
+      if (
+        variant.daysUntilStockout !== undefined &&
+        variant.daysUntilStockout <= 7 &&
+        variant.status !== 'out_of_stock'
+      ) {
         alerts.push({
           id: `alert-${variant.id}-predict`,
           type: 'stockout_predicted',
@@ -64,7 +68,7 @@ export function generateStockAlerts(products: ProductStockSummary[]): StockAlert
       }
     });
   });
-  
+
   return alerts.sort((a, b) => {
     const severityOrder = { error: 0, warning: 1, info: 2 };
     return severityOrder[a.severity] - severityOrder[b.severity];

@@ -1,38 +1,53 @@
-import { Database, Briefcase, Workflow, Plug, Webhook, Filter as FilterIcon, X, AlertTriangle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
-import { CONSECUTIVE_FAILURE_THRESHOLD } from "@/lib/connections-config";
+import {
+  Database,
+  Briefcase,
+  Workflow,
+  Plug,
+  Webhook,
+  Filter as FilterIcon,
+  X,
+  AlertTriangle,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+import { CONSECUTIVE_FAILURE_THRESHOLD } from '@/lib/connections-config';
 import type {
   OverviewFilters,
   OverviewStatusFilter,
   OverviewWindowFilter,
-} from "@/hooks/intelligence";
+} from '@/hooks/intelligence';
 
 const TYPE_OPTIONS: { value: string; label: string; Icon: typeof Database }[] = [
-  { value: "supabase", label: "Supabase", Icon: Database },
-  { value: "bitrix24", label: "Bitrix24", Icon: Briefcase },
-  { value: "n8n", label: "n8n", Icon: Workflow },
-  { value: "mcp", label: "MCP", Icon: Plug },
-  { value: "webhook_outbound", label: "Webhook Outbound", Icon: Webhook },
+  { value: 'supabase', label: 'Supabase', Icon: Database },
+  { value: 'bitrix24', label: 'Bitrix24', Icon: Briefcase },
+  { value: 'n8n', label: 'n8n', Icon: Workflow },
+  { value: 'mcp', label: 'MCP', Icon: Plug },
+  { value: 'webhook_outbound', label: 'Webhook Outbound', Icon: Webhook },
 ];
 
 const STATUS_OPTIONS: { value: OverviewStatusFilter; label: string }[] = [
-  { value: "all", label: "Todos" },
-  { value: "ok", label: "OK" },
-  { value: "fail", label: "Falha" },
+  { value: 'all', label: 'Todos' },
+  { value: 'ok', label: 'OK' },
+  { value: 'fail', label: 'Falha' },
 ];
 
 const WINDOW_OPTIONS: { value: OverviewWindowFilter; label: string }[] = [
-  { value: "any", label: "Qualquer momento" },
-  { value: "5m", label: "Últimos 5 min" },
-  { value: "1h", label: "Última hora" },
-  { value: "24h", label: "Últimas 24h" },
-  { value: "7d", label: "Últimos 7 dias" },
-  { value: "never", label: "Nunca testado" },
+  { value: 'any', label: 'Qualquer momento' },
+  { value: '5m', label: 'Últimos 5 min' },
+  { value: '1h', label: 'Última hora' },
+  { value: '24h', label: 'Últimas 24h' },
+  { value: '7d', label: 'Últimos 7 dias' },
+  { value: 'never', label: 'Nunca testado' },
 ];
 
 interface Props {
@@ -125,10 +140,10 @@ export function ConnectionsOverviewFilters({
               aria-checked={filters.status === opt.value}
               onClick={() => setStatus(opt.value)}
               className={cn(
-                "h-8 rounded-sm px-3 text-xs font-medium transition-colors",
+                'h-8 rounded-sm px-3 text-xs font-medium transition-colors',
                 filters.status === opt.value
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground',
               )}
             >
               {opt.label}
@@ -159,10 +174,10 @@ export function ConnectionsOverviewFilters({
           onClick={() => setOnlyConsecutiveFailures(!filters.onlyConsecutiveFailures)}
           aria-pressed={filters.onlyConsecutiveFailures}
           className={cn(
-            "inline-flex h-9 items-center gap-1.5 rounded-md border px-3 text-xs font-medium transition-colors",
+            'inline-flex h-9 items-center gap-1.5 rounded-md border px-3 text-xs font-medium transition-colors',
             filters.onlyConsecutiveFailures
-              ? "border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/15"
-              : "bg-background text-muted-foreground hover:text-foreground",
+              ? 'border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/15'
+              : 'bg-background text-muted-foreground hover:text-foreground',
           )}
         >
           <AlertTriangle className="h-3.5 w-3.5" />
@@ -172,7 +187,7 @@ export function ConnectionsOverviewFilters({
 
         <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
           <span className="tabular-nums">
-            {filteredCount} de {totalCount} {totalCount === 1 ? "conexão" : "conexões"}
+            {filteredCount} de {totalCount} {totalCount === 1 ? 'conexão' : 'conexões'}
           </span>
           {activeCount > 0 && (
             <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={reset}>
@@ -190,7 +205,7 @@ export function ConnectionsOverviewFilters({
               key={t}
               onClick={() => removeType(t)}
               onKeyDown={(e) => {
-                if (e.key === "Backspace" || e.key === "Delete") {
+                if (e.key === 'Backspace' || e.key === 'Delete') {
                   e.preventDefault();
                   removeType(t);
                 }
@@ -202,29 +217,29 @@ export function ConnectionsOverviewFilters({
               <X className="h-3 w-3" />
             </button>
           ))}
-          {filters.status !== "all" && (
+          {filters.status !== 'all' && (
             <button
-              onClick={() => setStatus("all")}
+              onClick={() => setStatus('all')}
               onKeyDown={(e) => {
-                if (e.key === "Backspace" || e.key === "Delete") {
+                if (e.key === 'Backspace' || e.key === 'Delete') {
                   e.preventDefault();
-                  setStatus("all");
+                  setStatus('all');
                 }
               }}
               className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-xs text-primary transition-colors hover:bg-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/40"
               aria-label="Remover filtro de status"
             >
-              Status: {filters.status === "ok" ? "OK" : "Falha"}
+              Status: {filters.status === 'ok' ? 'OK' : 'Falha'}
               <X className="h-3 w-3" />
             </button>
           )}
-          {filters.window !== "any" && (
+          {filters.window !== 'any' && (
             <button
-              onClick={() => setWindow("any")}
+              onClick={() => setWindow('any')}
               onKeyDown={(e) => {
-                if (e.key === "Backspace" || e.key === "Delete") {
+                if (e.key === 'Backspace' || e.key === 'Delete') {
                   e.preventDefault();
-                  setWindow("any");
+                  setWindow('any');
                 }
               }}
               className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-xs text-primary transition-colors hover:bg-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/40"
@@ -238,7 +253,7 @@ export function ConnectionsOverviewFilters({
             <button
               onClick={() => setOnlyConsecutiveFailures(false)}
               onKeyDown={(e) => {
-                if (e.key === "Backspace" || e.key === "Delete") {
+                if (e.key === 'Backspace' || e.key === 'Delete') {
                   e.preventDefault();
                   setOnlyConsecutiveFailures(false);
                 }

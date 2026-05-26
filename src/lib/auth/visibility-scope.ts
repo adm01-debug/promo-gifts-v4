@@ -10,20 +10,20 @@
  * decidir se aplica filtros adicionais por seller_id e para exibir o
  * badge "Apenas seus dados".
  */
-import { useMemo } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useMemo } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 
-export type SalesScope = "all" | "team" | "self";
+export type SalesScope = 'all' | 'team' | 'self';
 
 export function useSalesScope(): SalesScope {
   const { role, isDev, isSupervisorOrAbove } = useAuth();
   return useMemo<SalesScope>(() => {
-    if (isDev || role === "admin" || role === "manager") return "all";
-    if (isSupervisorOrAbove || role === "supervisor") return "team";
-    return "self";
+    if (isDev || role === 'admin' || role === 'manager') return 'all';
+    if (isSupervisorOrAbove || role === 'supervisor') return 'team';
+    return 'self';
   }, [role, isDev, isSupervisorOrAbove]);
 }
 
 export function isOnlySelf(scope: SalesScope): boolean {
-  return scope === "self";
+  return scope === 'self';
 }

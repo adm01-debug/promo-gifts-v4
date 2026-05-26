@@ -55,7 +55,9 @@ export function useKillSwitchObservability(): KillSwitchObservabilityData {
     try {
       // Cast controlado — tabelas novas ainda não estão no gen-types.
       const [switchesRes, summaryRes] = await Promise.all([
-        untypedFrom<SwitchState>('system_kill_switches').select('switch_name, enabled, legacy_message, updated_at'),
+        untypedFrom<SwitchState>('system_kill_switches').select(
+          'switch_name, enabled, legacy_message, updated_at',
+        ),
         untypedFrom<SwitchHitSummary>('v_kill_switch_hits_summary')
           .select('*')
           .order('hits_24h', { ascending: false })

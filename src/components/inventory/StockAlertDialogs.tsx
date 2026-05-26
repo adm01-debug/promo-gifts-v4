@@ -1,17 +1,17 @@
-import { useMemo } from "react";
-import { AlertTriangle, TrendingDown, X, CheckCircle2, XCircle } from "lucide-react";
+import { useMemo } from 'react';
+import { AlertTriangle, TrendingDown, X, CheckCircle2, XCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { AlertCard } from "./StockAlertCard";
-import type { StockAlert } from "@/types/stock";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { AlertCard } from './StockAlertCard';
+import type { StockAlert } from '@/types/stock';
 
 interface StockAlertDialogProps {
   open: boolean;
@@ -22,12 +22,18 @@ interface StockAlertDialogProps {
 }
 
 // Summary bar for alert dialogs
-function AlertSummaryBar({ alerts, variant }: { alerts: StockAlert[]; variant: 'critical' | 'warning' }) {
+function AlertSummaryBar({
+  alerts,
+  variant,
+}: {
+  alerts: StockAlert[];
+  variant: 'critical' | 'warning';
+}) {
   const stats = useMemo(() => {
-    const products = new Set(alerts.map(a => a.productId)).size;
+    const products = new Set(alerts.map((a) => a.productId)).size;
     const totalAffected = alerts.reduce((s, a) => s + (a.threshold - a.currentStock), 0);
-    const outOfStock = alerts.filter(a => a.type === 'out_of_stock').length;
-    const lowStock = alerts.filter(a => a.type === 'low_stock' || a.type === 'critical').length;
+    const outOfStock = alerts.filter((a) => a.type === 'out_of_stock').length;
+    const lowStock = alerts.filter((a) => a.type === 'low_stock' || a.type === 'critical').length;
     return { products, totalAffected, outOfStock, lowStock };
   }, [alerts]);
 
@@ -36,24 +42,36 @@ function AlertSummaryBar({ alerts, variant }: { alerts: StockAlert[]; variant: '
   const isCritical = variant === 'critical';
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-      <div className={`rounded-lg border p-2.5 text-center ${isCritical ? 'bg-destructive/5 border-destructive/15' : 'bg-warning/5 border-warning/15'}`}>
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div
+        className={`rounded-lg border p-2.5 text-center ${isCritical ? 'border-destructive/15 bg-destructive/5' : 'border-warning/15 bg-warning/5'}`}
+      >
         <p className="text-xs text-muted-foreground">Alertas</p>
-        <p className={`text-xl font-bold tabular-nums ${isCritical ? 'text-destructive' : 'text-warning'}`}>{alerts.length}</p>
+        <p
+          className={`text-xl font-bold tabular-nums ${isCritical ? 'text-destructive' : 'text-warning'}`}
+        >
+          {alerts.length}
+        </p>
       </div>
       <div className="rounded-lg border bg-muted/30 p-2.5 text-center">
         <p className="text-xs text-muted-foreground">Produtos</p>
         <p className="text-xl font-bold tabular-nums">{stats.products}</p>
       </div>
       {stats.outOfStock > 0 && (
-        <div className="rounded-lg border bg-destructive/5 border-destructive/15 p-2.5 text-center">
-          <p className="text-xs text-muted-foreground flex items-center justify-center gap-1"><XCircle className="h-3 w-3" />Esgotados</p>
+        <div className="rounded-lg border border-destructive/15 bg-destructive/5 p-2.5 text-center">
+          <p className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+            <XCircle className="h-3 w-3" />
+            Esgotados
+          </p>
           <p className="text-xl font-bold tabular-nums text-destructive">{stats.outOfStock}</p>
         </div>
       )}
       {stats.lowStock > 0 && (
-        <div className="rounded-lg border bg-warning/5 border-warning/15 p-2.5 text-center">
-          <p className="text-xs text-muted-foreground flex items-center justify-center gap-1"><TrendingDown className="h-3 w-3" />Baixo</p>
+        <div className="rounded-lg border border-warning/15 bg-warning/5 p-2.5 text-center">
+          <p className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+            <TrendingDown className="h-3 w-3" />
+            Baixo
+          </p>
           <p className="text-xl font-bold tabular-nums text-warning">{stats.lowStock}</p>
         </div>
       )}
@@ -65,13 +83,13 @@ function AlertSummaryBar({ alerts, variant }: { alerts: StockAlert[]; variant: '
 function AlertEmptyState({ variant }: { variant: 'critical' | 'warning' }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-      <div className="h-16 w-16 rounded-full bg-success/10 flex items-center justify-center mb-4">
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
         <CheckCircle2 className="h-8 w-8 text-success" />
       </div>
-      <p className="font-semibold text-foreground mb-1">
+      <p className="mb-1 font-semibold text-foreground">
         {variant === 'critical' ? 'Nenhum alerta crítico' : 'Nenhum alerta de estoque baixo'}
       </p>
-      <p className="text-sm text-center max-w-xs">
+      <p className="max-w-xs text-center text-sm">
         {variant === 'critical'
           ? 'Todos os produtos estão com estoque disponível. Continue monitorando!'
           : 'Todos os produtos estão com níveis adequados de estoque.'}
@@ -80,13 +98,19 @@ function AlertEmptyState({ variant }: { variant: 'critical' | 'warning' }) {
   );
 }
 
-export function OutOfStockDialog({ open, onOpenChange, alerts, onDismiss, onDismissAll }: StockAlertDialogProps) {
+export function OutOfStockDialog({
+  open,
+  onOpenChange,
+  alerts,
+  onDismiss,
+  onDismissAll,
+}: StockAlertDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[85vh] flex flex-col">
+      <DialogContent className="flex max-h-[85vh] max-w-5xl flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-destructive">
-            <div className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10">
               <AlertTriangle className="h-4 w-4" />
             </div>
             Alertas Críticos
@@ -105,7 +129,7 @@ export function OutOfStockDialog({ open, onOpenChange, alerts, onDismiss, onDism
           <Button
             variant="ghost"
             size="sm"
-            className="text-xs text-muted-foreground hover:text-foreground gap-1.5"
+            className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
             onClick={onDismissAll}
             disabled={alerts.length === 0}
             aria-label="Dispensar todos os alertas críticos"
@@ -114,10 +138,10 @@ export function OutOfStockDialog({ open, onOpenChange, alerts, onDismiss, onDism
             Limpar Todos
           </Button>
         </div>
-        <ScrollArea className="flex-1 max-h-[50vh]">
+        <ScrollArea className="max-h-[50vh] flex-1">
           {alerts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {alerts.map(alert => (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {alerts.map((alert) => (
                 <AlertCard key={alert.id} alert={alert} onDismiss={() => onDismiss(alert.id)} />
               ))}
             </div>
@@ -130,17 +154,26 @@ export function OutOfStockDialog({ open, onOpenChange, alerts, onDismiss, onDism
   );
 }
 
-export function LowStockDialog({ open, onOpenChange, alerts, onDismiss, onDismissAll }: StockAlertDialogProps) {
+export function LowStockDialog({
+  open,
+  onOpenChange,
+  alerts,
+  onDismiss,
+  onDismissAll,
+}: StockAlertDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[85vh] flex flex-col">
+      <DialogContent className="flex max-h-[85vh] max-w-5xl flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-warning">
-            <div className="h-8 w-8 rounded-full bg-warning/10 flex items-center justify-center">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-warning/10">
               <TrendingDown className="h-4 w-4" />
             </div>
             Alertas de Estoque Baixo
-            <Badge variant="outline" className="ml-1 font-normal bg-warning/10 text-warning border-warning/20">
+            <Badge
+              variant="outline"
+              className="ml-1 border-warning/20 bg-warning/10 font-normal text-warning"
+            >
               {alerts.length}
             </Badge>
           </DialogTitle>
@@ -155,7 +188,7 @@ export function LowStockDialog({ open, onOpenChange, alerts, onDismiss, onDismis
           <Button
             variant="ghost"
             size="sm"
-            className="text-xs text-muted-foreground hover:text-foreground gap-1.5"
+            className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
             onClick={onDismissAll}
             disabled={alerts.length === 0}
             aria-label="Dispensar todos os alertas de estoque baixo"
@@ -164,10 +197,10 @@ export function LowStockDialog({ open, onOpenChange, alerts, onDismiss, onDismis
             Limpar Todos
           </Button>
         </div>
-        <ScrollArea className="flex-1 max-h-[50vh]">
+        <ScrollArea className="max-h-[50vh] flex-1">
           {alerts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {alerts.map(alert => (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {alerts.map((alert) => (
                 <AlertCard key={alert.id} alert={alert} onDismiss={() => onDismiss(alert.id)} />
               ))}
             </div>

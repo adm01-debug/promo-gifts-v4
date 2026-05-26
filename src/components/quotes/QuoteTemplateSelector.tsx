@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -7,20 +7,17 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { FileText } from "lucide-react";
-import { type QuoteTemplate } from "@/hooks/quotes";
-import { QuoteTemplatesList } from "./QuoteTemplatesList";
+} from '@/components/ui/dialog';
+import { FileText } from 'lucide-react';
+import { type QuoteTemplate } from '@/hooks/quotes';
+import { QuoteTemplatesList } from './QuoteTemplatesList';
 
 interface QuoteTemplateSelectorProps {
   onSelectTemplate: (template: QuoteTemplate) => void;
   trigger?: React.ReactNode;
 }
 
-export function QuoteTemplateSelector({ 
-  onSelectTemplate,
-  trigger,
-}: QuoteTemplateSelectorProps) {
+export function QuoteTemplateSelector({ onSelectTemplate, trigger }: QuoteTemplateSelectorProps) {
   const [open, setOpen] = useState(false);
 
   const handleSelectTemplate = (template: QuoteTemplate) => {
@@ -33,22 +30,19 @@ export function QuoteTemplateSelector({
       <DialogTrigger asChild>
         {trigger || (
           <Button variant="outline">
-            <FileText className="h-4 w-4 mr-2" />
+            <FileText className="mr-2 h-4 w-4" />
             Usar Template
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Selecionar Template</DialogTitle>
           <DialogDescription>
             Escolha um template para preencher automaticamente o orçamento
           </DialogDescription>
         </DialogHeader>
-        <QuoteTemplatesList
-          onApplyTemplate={handleSelectTemplate}
-          selectionMode
-        />
+        <QuoteTemplatesList onApplyTemplate={handleSelectTemplate} selectionMode />
       </DialogContent>
     </Dialog>
   );

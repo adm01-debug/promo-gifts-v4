@@ -55,12 +55,14 @@
 
 /* ===== HOVER STATES ===== */
 .card-hover {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .card-hover:hover {
   transform: translateY(-4px);
-  box-shadow: 
+  box-shadow:
     0 12px 24px -4px rgba(0, 0, 0, 0.08),
     0 4px 8px -2px rgba(0, 0, 0, 0.04);
 }
@@ -91,7 +93,9 @@
   width: 0;
   height: 2px;
   background: hsl(var(--primary));
-  transition: width 0.3s ease, left 0.3s ease;
+  transition:
+    width 0.3s ease,
+    left 0.3s ease;
 }
 
 .input-focus:focus-within::after {
@@ -118,7 +122,8 @@
 
 /* ===== PULSE & GLOW ANIMATIONS ===== */
 @keyframes pulse-glow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 5px hsl(var(--primary) / 0.3);
   }
   50% {
@@ -184,8 +189,12 @@
 
 /* ===== FADE ANIMATIONS ===== */
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .animate-fade-in {
@@ -230,7 +239,8 @@
 
 /* ===== BOUNCE ANIMATION ===== */
 @keyframes bounce-subtle {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -279,13 +289,21 @@
 
 /* ===== SHAKE ANIMATION (for errors) ===== */
 @keyframes shake {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateX(0);
   }
-  10%, 30%, 50%, 70%, 90% {
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
     transform: translateX(-4px);
   }
-  20%, 40%, 60%, 80% {
+  20%,
+  40%,
+  60%,
+  80% {
     transform: translateX(4px);
   }
 }
@@ -314,14 +332,30 @@
   animation: fade-in-up 0.4s ease-out forwards;
 }
 
-.stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
-.stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
-.stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
-.stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
-.stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
-.stagger-children > *:nth-child(6) { animation-delay: 0.3s; }
-.stagger-children > *:nth-child(7) { animation-delay: 0.35s; }
-.stagger-children > *:nth-child(8) { animation-delay: 0.4s; }
+.stagger-children > *:nth-child(1) {
+  animation-delay: 0.05s;
+}
+.stagger-children > *:nth-child(2) {
+  animation-delay: 0.1s;
+}
+.stagger-children > *:nth-child(3) {
+  animation-delay: 0.15s;
+}
+.stagger-children > *:nth-child(4) {
+  animation-delay: 0.2s;
+}
+.stagger-children > *:nth-child(5) {
+  animation-delay: 0.25s;
+}
+.stagger-children > *:nth-child(6) {
+  animation-delay: 0.3s;
+}
+.stagger-children > *:nth-child(7) {
+  animation-delay: 0.35s;
+}
+.stagger-children > *:nth-child(8) {
+  animation-delay: 0.4s;
+}
 
 /* ===== SPRING PHYSICS ===== */
 .spring-bounce {
@@ -355,24 +389,52 @@
 }
 
 @keyframes rocketShake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-0.5px); }
-  75% { transform: translateX(0.5px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-0.5px);
+  }
+  75% {
+    transform: translateX(0.5px);
+  }
 }
 
 @keyframes flameTrail {
-  0% { transform: translateX(-50%) scaleY(1); opacity: 0.8; }
-  100% { transform: translateX(-50%) scaleY(1.4); opacity: 0.4; }
+  0% {
+    transform: translateX(-50%) scaleY(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateX(-50%) scaleY(1.4);
+    opacity: 0.4;
+  }
 }
 
 @keyframes smokeRise {
-  0% { transform: translateX(-50%) scale(0.8); opacity: 0.5; filter: blur(8px); }
-  100% { transform: translateX(-50%) translateY(40px) scale(2.5); opacity: 0; filter: blur(24px); }
+  0% {
+    transform: translateX(-50%) scale(0.8);
+    opacity: 0.5;
+    filter: blur(8px);
+  }
+  100% {
+    transform: translateX(-50%) translateY(40px) scale(2.5);
+    opacity: 0;
+    filter: blur(24px);
+  }
 }
 
 @keyframes twinkle {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.15); }
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
 }
 
 @keyframes scale-fade-in {
@@ -385,4 +447,3 @@
     transform: scale(1);
   }
 }
-

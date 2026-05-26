@@ -1,5 +1,5 @@
-import { Link } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import { Link } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 
 interface LegalFooterProps {
   className?: string;
@@ -21,16 +21,16 @@ export function LegalFooter({ className, withDivider = true }: LegalFooterProps)
   return (
     <footer
       className={cn(
-        "w-full space-y-1.5 px-2 pt-1 sm:space-y-2 sm:px-4 sm:pt-2 -mt-4 sm:-mt-6",
-        withDivider && "border-t border-white/10",
+        '-mt-4 w-full space-y-1.5 px-2 pt-1 sm:-mt-6 sm:space-y-2 sm:px-4 sm:pt-2',
+        withDivider && 'border-t border-white/10',
         className,
       )}
       aria-label="Rodapé legal"
     >
       <p className="mx-auto max-w-md text-center text-[9px] leading-relaxed text-muted-foreground/80 opacity-90 sm:text-[10px]">
-        Este sistema é propriedade intelectual exclusiva da Brasil Marcas, sendo
-        protegido pela Lei nº 9.609/98 e demais normas aplicáveis. É proibida sua
-        reprodução, cópia, modificação, distribuição ou uso não autorizado.
+        Este sistema é propriedade intelectual exclusiva da Brasil Marcas, sendo protegido pela Lei
+        nº 9.609/98 e demais normas aplicáveis. É proibida sua reprodução, cópia, modificação,
+        distribuição ou uso não autorizado.
       </p>
 
       <nav
@@ -39,7 +39,7 @@ export function LegalFooter({ className, withDivider = true }: LegalFooterProps)
       >
         <Link
           to="/termos"
-          className="font-medium text-muted-foreground transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+          className="rounded font-medium text-muted-foreground transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           Termos de Uso
         </Link>
@@ -48,7 +48,7 @@ export function LegalFooter({ className, withDivider = true }: LegalFooterProps)
         </span>
         <Link
           to="/privacidade"
-          className="font-medium text-muted-foreground transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+          className="rounded font-medium text-muted-foreground transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           Política de Privacidade
         </Link>

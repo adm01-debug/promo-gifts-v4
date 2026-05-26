@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
-import { AlertTriangle, ShieldAlert, KeyRound, Activity } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { BlockIpButton } from "./BlockIpButton";
-import { TopOffenderIpsCard } from "./TopOffenderIpsCard";
+import { useEffect, useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
+import { AlertTriangle, ShieldAlert, KeyRound, Activity } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { BlockIpButton } from './BlockIpButton';
+import { TopOffenderIpsCard } from './TopOffenderIpsCard';
 
 interface AnomalyStats {
   loginFailures24h: number;
@@ -31,30 +31,30 @@ export function AnomalyCards() {
 
       const [loginRes, botRes, tokenRes, tokenIpsRes] = await Promise.all([
         supabase
-          .from("login_attempts")
-          .select("*", { count: "exact", head: true })
-          .eq("success", false)
-          .gte("created_at", since),
+          .from('login_attempts')
+          .select('*', { count: 'exact', head: true })
+          .eq('success', false)
+          .gte('created_at', since),
         supabase
-          .from("bot_detection_log")
-          .select("*", { count: "exact", head: true })
-          .eq("blocked", true)
-          .gte("created_at", since),
+          .from('bot_detection_log')
+          .select('*', { count: 'exact', head: true })
+          .eq('blocked', true)
+          .gte('created_at', since),
         supabase
-          .from("public_token_failures")
-          .select("*", { count: "exact", head: true })
-          .gte("created_at", since),
+          .from('public_token_failures')
+          .select('*', { count: 'exact', head: true })
+          .gte('created_at', since),
         supabase
-          .from("public_token_failures")
-          .select("ip_address")
-          .gte("created_at", since)
+          .from('public_token_failures')
+          .select('ip_address')
+          .gte('created_at', since)
           .limit(1000),
       ]);
 
       if (cancelled) return;
 
       const distinctIps = new Set(
-        ((tokenIpsRes.data as Array<{ ip_address: string }> | null) || []).map((r) => r.ip_address)
+        ((tokenIpsRes.data as Array<{ ip_address: string }> | null) || []).map((r) => r.ip_address),
       ).size;
 
       setStats({
@@ -76,28 +76,31 @@ export function AnomalyCards() {
 
   const cards = [
     {
-      label: "Falhas de login",
+      label: 'Falhas de login',
       value: stats.loginFailures24h,
       icon: <KeyRound className="h-4 w-4" />,
-      severity: stats.loginFailures24h > 50 ? "high" : stats.loginFailures24h > 10 ? "medium" : "low",
+      severity:
+        stats.loginFailures24h > 50 ? 'high' : stats.loginFailures24h > 10 ? 'medium' : 'low',
     },
     {
-      label: "Bots bloqueados",
+      label: 'Bots bloqueados',
       value: stats.botHits24h,
       icon: <ShieldAlert className="h-4 w-4" />,
-      severity: stats.botHits24h > 100 ? "high" : stats.botHits24h > 20 ? "medium" : "low",
+      severity: stats.botHits24h > 100 ? 'high' : stats.botHits24h > 20 ? 'medium' : 'low',
     },
     {
-      label: "Falhas de token público",
+      label: 'Falhas de token público',
       value: stats.tokenFailures24h,
       icon: <AlertTriangle className="h-4 w-4" />,
-      severity: stats.tokenFailures24h > 20 ? "high" : stats.tokenFailures24h > 5 ? "medium" : "low",
+      severity:
+        stats.tokenFailures24h > 20 ? 'high' : stats.tokenFailures24h > 5 ? 'medium' : 'low',
     },
     {
-      label: "IPs distintos em tokens",
+      label: 'IPs distintos em tokens',
       value: stats.distinctTokenIps24h,
       icon: <Activity className="h-4 w-4" />,
-      severity: stats.distinctTokenIps24h > 30 ? "high" : stats.distinctTokenIps24h > 10 ? "medium" : "low",
+      severity:
+        stats.distinctTokenIps24h > 30 ? 'high' : stats.distinctTokenIps24h > 10 ? 'medium' : 'low',
     },
   ] as const;
 
@@ -114,10 +117,10 @@ export function AnomalyCards() {
                 <p className="text-xs font-medium text-muted-foreground">{c.label}</p>
                 <div
                   className={cn(
-                    "rounded-md p-1.5",
-                    c.severity === "high" && "bg-destructive/10 text-destructive",
-                    c.severity === "medium" && "bg-warning/10 text-warning",
-                    c.severity === "low" && "bg-muted text-muted-foreground"
+                    'rounded-md p-1.5',
+                    c.severity === 'high' && 'bg-destructive/10 text-destructive',
+                    c.severity === 'medium' && 'bg-warning/10 text-warning',
+                    c.severity === 'low' && 'bg-muted text-muted-foreground',
                   )}
                 >
                   {c.icon}
@@ -125,14 +128,16 @@ export function AnomalyCards() {
               </div>
               <p
                 className={cn(
-                  "mt-2 font-display text-2xl font-bold tabular-nums",
-                  c.severity === "high" && "text-destructive",
-                  c.severity === "medium" && "text-warning"
+                  'mt-2 font-display text-2xl font-bold tabular-nums',
+                  c.severity === 'high' && 'text-destructive',
+                  c.severity === 'medium' && 'text-warning',
                 )}
               >
-                {stats.loading ? "—" : c.value}
+                {stats.loading ? '—' : c.value}
               </p>
-              <p className="mt-1 text-[10px] uppercase tracking-wide text-muted-foreground">Últimas 24h</p>
+              <p className="mt-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                Últimas 24h
+              </p>
             </CardContent>
           </Card>
         ))}
@@ -146,7 +151,10 @@ export function AnomalyCards() {
               Identifique o IP nas tabelas abaixo e bloqueie temporariamente.
             </p>
           </div>
-          <BlockIpButton variant="destructive" defaultReason="Bloqueio rápido — anomalia detectada no Security Center" />
+          <BlockIpButton
+            variant="destructive"
+            defaultReason="Bloqueio rápido — anomalia detectada no Security Center"
+          />
         </div>
       )}
 

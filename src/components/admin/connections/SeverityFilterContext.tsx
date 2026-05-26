@@ -11,29 +11,30 @@
  *   - ConnectionsPulseBar permanece global (mostra status real do sistema)
  *   - Outras tabelas que opte usar `useSeverityFilter()` aplicam o mesmo critério
  */
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
-export type SeverityFilter = "all" | "P0" | "P1" | "P2";
+export type SeverityFilter = 'all' | 'P0' | 'P1' | 'P2';
 
-const STORAGE_KEY = "connections.severityFilter";
-const VALID: SeverityFilter[] = ["all", "P0", "P1", "P2"];
+const STORAGE_KEY = 'connections.severityFilter';
+const VALID: SeverityFilter[] = ['all', 'P0', 'P1', 'P2'];
 
 function readInitial(searchParams: URLSearchParams): SeverityFilter {
-  const fromUrl = searchParams.get("severity");
+  const fromUrl = searchParams.get('severity');
   if (fromUrl && (VALID as string[]).includes(fromUrl)) return fromUrl as SeverityFilter;
-  if (typeof window !== "undefined") {
+  if (typeof window !== 'undefined') {
     const fromStorage = window.localStorage.getItem(STORAGE_KEY);
-    if (fromStorage && (VALID as string[]).includes(fromStorage)) return fromStorage as SeverityFilter;
+    if (fromStorage && (VALID as string[]).includes(fromStorage))
+      return fromStorage as SeverityFilter;
   }
-  return "all";
+  return 'all';
 }
 
 interface Ctx {
   filter: SeverityFilter;
   setFilter: (f: SeverityFilter) => void;
   /** True quando o filtro inclui a severidade dada. */
-  matches: (sev: "P0" | "P1" | "P2") => boolean;
+  matches: (sev: 'P0' | 'P1' | 'P2') => boolean;
 }
 
 const SeverityFilterContext = createContext<Ctx | undefined>(undefined);
@@ -44,7 +45,7 @@ export function SeverityFilterProvider({ children }: { children: React.ReactNode
 
   // Sincroniza URL ↔ estado quando o usuário navega via querystring externa.
   useEffect(() => {
-    const fromUrl = searchParams.get("severity");
+    const fromUrl = searchParams.get('severity');
     if (fromUrl && (VALID as string[]).includes(fromUrl) && fromUrl !== filter) {
       setFilterState(fromUrl as SeverityFilter);
     }
@@ -62,8 +63,8 @@ export function SeverityFilterProvider({ children }: { children: React.ReactNode
       setSearchParams(
         (prev) => {
           const sp = new URLSearchParams(prev);
-          if (next === "all") sp.delete("severity");
-          else sp.set("severity", next);
+          if (next === 'all') sp.delete('severity');
+          else sp.set('severity', next);
           return sp;
         },
         { replace: true },
@@ -73,8 +74,8 @@ export function SeverityFilterProvider({ children }: { children: React.ReactNode
   );
 
   const matches = useCallback(
-    (sev: "P0" | "P1" | "P2") => {
-      if (filter === "all") return true;
+    (sev: 'P0' | 'P1' | 'P2') => {
+      if (filter === 'all') return true;
       return filter === sev;
     },
     [filter],
@@ -91,7 +92,7 @@ export function useSeverityFilter() {
     // Fallback no-op para componentes usados fora do provider (ex: testes
     // unitários ou montagem isolada). Mantém o módulo previsível.
     return {
-      filter: "all" as SeverityFilter,
+      filter: 'all' as SeverityFilter,
       setFilter: () => {},
       matches: () => true,
     };

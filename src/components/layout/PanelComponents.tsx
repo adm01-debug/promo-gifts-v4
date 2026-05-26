@@ -70,7 +70,7 @@ export function SidePanel({
             className={cn(
               'fixed top-0 z-50 h-full bg-background shadow-2xl',
               sizeClasses[size],
-              side === 'left' ? 'left-0' : 'right-0'
+              side === 'left' ? 'left-0' : 'right-0',
             )}
           >
             <div className="flex h-full flex-col">
@@ -78,16 +78,16 @@ export function SidePanel({
               <div className="flex items-start justify-between border-b p-4">
                 <div>
                   {title && <h2 className="font-display text-lg font-semibold">{title}</h2>}
-                  {description && (
-                    <p className="text-sm text-muted-foreground">{description}</p>
-                  )}
+                  {description && <p className="text-sm text-muted-foreground">{description}</p>}
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={onClose}
                   className="shrink-0"
-                 aria-label="Fechar"><X className="h-4 w-4" />
+                  aria-label="Fechar"
+                >
+                  <X className="h-4 w-4" />
                 </Button>
               </div>
 
@@ -95,9 +95,7 @@ export function SidePanel({
               <ScrollArea className="flex-1 p-4">{children}</ScrollArea>
 
               {/* Footer */}
-              {footer && (
-                <div className="border-t p-4">{footer}</div>
-              )}
+              {footer && <div className="border-t p-4">{footer}</div>}
             </div>
           </motion.div>
         </>
@@ -133,17 +131,18 @@ export function CollapsibleSidebar({
       className={cn(
         'relative flex h-full flex-col border-r bg-background',
         side === 'right' && 'border-l border-r-0',
-        className
+        className,
       )}
     >
       {/* Toggle Button */}
       <Button
         variant="ghost"
-        size="icon" aria-label="Avançar"
+        size="icon"
+        aria-label="Avançar"
         onClick={onToggle}
         className={cn(
           'absolute top-4 z-10 h-6 w-6 rounded-full border bg-background shadow-sm',
-          side === 'left' ? '-right-3' : '-left-3'
+          side === 'left' ? '-right-3' : '-left-3',
         )}
       >
         {isCollapsed ? (
@@ -206,7 +205,7 @@ export function ResizablePanelGroup({
       className={cn(
         'flex h-full w-full',
         direction === 'horizontal' ? 'flex-row' : 'flex-col',
-        className
+        className,
       )}
     >
       {children}
@@ -233,14 +232,8 @@ export function ExpandablePanel({
   className,
 }: ExpandablePanelProps) {
   return (
-    <motion.div
-      layout
-      className={cn('rounded-lg border bg-card', className)}
-    >
-      <button
-        onClick={onToggle}
-        className="flex w-full items-center justify-between p-4 text-left"
-      >
+    <motion.div layout className={cn('rounded-lg border bg-card', className)}>
+      <button onClick={onToggle} className="flex w-full items-center justify-between p-4 text-left">
         <span className="font-medium">{title}</span>
         {isExpanded ? (
           <Minimize2 className="h-4 w-4 text-muted-foreground" />
@@ -248,7 +241,7 @@ export function ExpandablePanel({
           <Maximize2 className="h-4 w-4 text-muted-foreground" />
         )}
       </button>
-      
+
       <AnimatePresence>
         {isExpanded && (
           <motion.div

@@ -1,9 +1,9 @@
-import { useRef } from "react";
-import { useVirtualizer } from "@tanstack/react-virtual";
-import type { ReplenishmentWithDetails } from "@/hooks/products";
-import type { ColumnCount } from "@/components/products/ColumnSelector";
-import { colsToNum, getGridColsClass, getGridGapClass } from "./grid-layout";
-import { ReplenishmentGridCard } from "./ReplenishmentCards";
+import { useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import type { ReplenishmentWithDetails } from '@/hooks/products';
+import type { ColumnCount } from '@/components/products/ColumnSelector';
+import { colsToNum, getGridColsClass, getGridGapClass } from './grid-layout';
+import { ReplenishmentGridCard } from './ReplenishmentCards';
 
 interface VirtualizedGridProps {
   products: ReplenishmentWithDetails[];
@@ -39,15 +39,15 @@ export function VirtualizedReplenishmentGrid({
     <div
       ref={parentRef}
       className="overflow-auto"
-      style={{ maxHeight: "calc(100vh - 280px)" }}
+      style={{ maxHeight: 'calc(100vh - 280px)' }}
       role="list"
       aria-label="Grade de produtos repostos"
     >
       <div
         style={{
           height: `${virtualizer.getTotalSize()}px`,
-          width: "100%",
-          position: "relative",
+          width: '100%',
+          position: 'relative',
         }}
       >
         {virtualizer.getVirtualItems().map((virtualRow) => {
@@ -58,10 +58,10 @@ export function VirtualizedReplenishmentGrid({
             <div
               key={virtualRow.key}
               style={{
-                position: "absolute",
+                position: 'absolute',
                 top: 0,
                 left: 0,
-                width: "100%",
+                width: '100%',
                 height: `${virtualRow.size}px`,
                 transform: `translateY(${virtualRow.start}px)`,
               }}

@@ -91,25 +91,28 @@ export function useCatalogState() {
   const initialSortBy = (searchParams.get('sort') as SortOption) || 'relevance';
   const [sortBy, setSortByState] = useState<SortOption>(initialSortBy);
 
-  const setSortBy = useCallback((s: SortOption) => {
-    setIsTransitioning(true);
-    React.startTransition(() => {
-      setSortByState(s);
-      
-      // Update URL query string
-      const newParams = new URLSearchParams(window.location.search);
-      if (s === 'relevance') {
-        newParams.delete('sort');
-      } else {
-        newParams.set('sort', s);
-      }
-      
-      const newPath = `${window.location.pathname}${newParams.toString() ? '?' + newParams.toString() : ''}`;
-      navigate(newPath, { replace: true });
-      
-      setIsTransitioning(false);
-    });
-  }, [navigate]);
+  const setSortBy = useCallback(
+    (s: SortOption) => {
+      setIsTransitioning(true);
+      React.startTransition(() => {
+        setSortByState(s);
+
+        // Update URL query string
+        const newParams = new URLSearchParams(window.location.search);
+        if (s === 'relevance') {
+          newParams.delete('sort');
+        } else {
+          newParams.set('sort', s);
+        }
+
+        const newPath = `${window.location.pathname}${newParams.toString() ? '?' + newParams.toString() : ''}`;
+        navigate(newPath, { replace: true });
+
+        setIsTransitioning(false);
+      });
+    },
+    [navigate],
+  );
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedCount, setSelectedCount] = useState(0);
   const [activeProductId, setActiveProductId] = useState<string | null>(null);
@@ -131,13 +134,13 @@ export function useCatalogState() {
       // 5 colunas (min 1024)
       // 6 colunas (min 1280)
       // 8 colunas (min 1536)
-      
+
       let maxCols: ColumnCount = 3;
       if (w >= 1536) maxCols = 8;
       else if (w >= 1280) maxCols = 6;
       else if (w >= 1024) maxCols = 5;
       else if (w >= 768) maxCols = 4;
-      
+
       if (gridColumns > maxCols) {
         setGridColumns(maxCols);
       }

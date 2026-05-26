@@ -12,7 +12,10 @@ async function sha1Hash(message: string): Promise<string> {
   const msgBuffer = new TextEncoder().encode(message);
   const hashBuffer = await crypto.subtle.digest('SHA-1', msgBuffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+  return hashArray
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+    .toUpperCase();
 }
 
 export function usePasswordBreachCheck() {
@@ -29,7 +32,7 @@ export function usePasswordBreachCheck() {
       return false;
     }
 
-    setResult(prev => ({ ...prev, isChecking: true, error: null }));
+    setResult((prev) => ({ ...prev, isChecking: true, error: null }));
 
     try {
       const hash = await sha1Hash(password);
@@ -48,7 +51,7 @@ export function usePasswordBreachCheck() {
 
       const text = await response.text();
       const hashes = text.split('\n');
-      
+
       for (const line of hashes) {
         const [hashSuffix, count] = line.split(':');
         if (hashSuffix.trim() === suffix) {

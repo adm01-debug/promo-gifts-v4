@@ -123,11 +123,14 @@ export function useStockChartData(productId: string) {
   const bestVelocity = useMemo(() => {
     if (effectiveVelocities.length) {
       if (selectedSupplier !== 'all') {
-        const match = effectiveVelocities.find((v: StockVelocity) => v.supplier_id === selectedSupplier);
+        const match = effectiveVelocities.find(
+          (v: StockVelocity) => v.supplier_id === selectedSupplier,
+        );
         if (match) return match;
       }
       return effectiveVelocities.reduce(
-        (best: StockVelocity, v: StockVelocity) => (v.avg_daily_depletion_7d > (best?.avg_daily_depletion_7d ?? 0) ? v : best),
+        (best: StockVelocity, v: StockVelocity) =>
+          v.avg_daily_depletion_7d > (best?.avg_daily_depletion_7d ?? 0) ? v : best,
         effectiveVelocities[0],
       );
     }

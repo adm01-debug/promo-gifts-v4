@@ -1,6 +1,6 @@
 /**
  * Tipos para o fluxo de personalização v6
- * 
+ *
  * Baseado no briefing técnico de 12/02/2026.
  * Fonte de dados: RPCs fn_get_product_customization_options e fn_get_customization_price.
  */
@@ -12,18 +12,18 @@
 /** Opção de técnica retornada pela RPC */
 export interface TechniqueOption {
   technique_id: string;
-  codigo_tabela: string;       // "FIBER-PL-01"
-  tecnica_nome: string;        // "Fiber Laser | Plana"
-  grupo_tecnica: string;       // "LASER" | "SERIGRAFIA" | "UV_DIGITAL"
+  codigo_tabela: string; // "FIBER-PL-01"
+  tecnica_nome: string; // "Fiber Laser | Plana"
+  grupo_tecnica: string; // "LASER" | "SERIGRAFIA" | "UV_DIGITAL"
   variacao_label: string;
 
   // Dimensões
-  max_width: number;           // largura da área física (cm)
-  max_height: number;          // altura da área física (cm)
+  max_width: number; // largura da área física (cm)
+  max_height: number; // altura da área física (cm)
   gravacao_largura_max: number | null;
   gravacao_altura_max: number | null;
   efetiva_largura_max: number; // MIN(max_width, gravacao_largura_max)
-  efetiva_altura_max: number;  // MIN(max_height, gravacao_altura_max)
+  efetiva_altura_max: number; // MIN(max_height, gravacao_altura_max)
 
   // Forma
   shape: 'rectangle' | 'circle';
@@ -32,13 +32,13 @@ export interface TechniqueOption {
   // Cores e preço
   usa_dimensao: boolean;
   cobra_por_cor: boolean;
-  max_cores: number;           // máximo de cores (1-3)
+  max_cores: number; // máximo de cores (1-3)
 }
 
 /** Local de gravação */
 export interface GravacaoLocation {
-  location_code: string;       // "LADO-A" | "LADO-B" | "CIRCULAR"
-  location_name: string;       // "Lado A" | "Lado B" | "Circular"
+  location_code: string; // "LADO-A" | "LADO-B" | "CIRCULAR"
+  location_name: string; // "Lado A" | "Lado B" | "Circular"
   location_order: number;
   options: TechniqueOption[];
 }
@@ -99,9 +99,9 @@ export interface PriceDetalhes {
   max_cores: number;
 
   is_curved?: boolean;
-  desconto_2cor?: number;        // % desconto para 2ª cor (ex: 10)
-  desconto_3cor?: number;        // % desconto para 3ª cor (ex: 15)
-  desconto_4cor_plus?: number;   // % desconto para 4ª cor+ (quando informado)
+  desconto_2cor?: number; // % desconto para 2ª cor (ex: 10)
+  desconto_3cor?: number; // % desconto para 3ª cor (ex: 15)
+  desconto_4cor_plus?: number; // % desconto para 4ª cor+ (quando informado)
 
   // Aliases EN (forward-compat)
   charges_per_color?: boolean;
@@ -114,11 +114,11 @@ export interface PriceDetalhes {
  * presente, `markup_pct` e os custos base devem vir.
  */
 export interface MarkupInfo {
-  markup_pct: number;            // % markup aplicado (ex: 115)
-  preco_min_unit: number;        // piso mínimo por unidade (R$)
-  custo_unitario: number;        // custo ANTES do markup
-  custo_setup_tabela: number;    // setup original da tabela
-  setup_proprio: number | null;  // setup da organização (prevalece)
+  markup_pct: number; // % markup aplicado (ex: 115)
+  preco_min_unit: number; // piso mínimo por unidade (R$)
+  custo_unitario: number; // custo ANTES do markup
+  custo_setup_tabela: number; // setup original da tabela
+  setup_proprio: number | null; // setup da organização (prevalece)
 
   // Aliases EN (forward-compat)
   markup_percent?: number;
@@ -139,9 +139,9 @@ export interface CustomizationPriceResponseV6 {
   error?: string;
 
   // Identificação da tabela / técnica
-  tabela?: string;               // "FIBER-PL-01"
-  nome_tabela?: string;          // "Fiber Laser | Plana"
-  grupo_tecnica?: string;        // "LASER"
+  tabela?: string; // "FIBER-PL-01"
+  nome_tabela?: string; // "Fiber Laser | Plana"
+  grupo_tecnica?: string; // "LASER"
 
   // Parâmetros ecoados
   quantidade?: number;
@@ -150,14 +150,14 @@ export interface CustomizationPriceResponseV6 {
   // Blocos de detalhamento
   faixa?: PriceFaixa;
   detalhes?: PriceDetalhes;
-  markup?: MarkupInfo;           // (v6.3) info de markup aplicado
+  markup?: MarkupInfo; // (v6.3) info de markup aplicado
 
   // Totais (em PT — canônicos)
-  preco_unitario?: number;       // preço de VENDA por peça (com markup)
-  preco_por_unidade?: number;    // alias
-  valor_gravacao?: number;       // preco_unitario × qtd
-  setup_total?: number;          // setup com markup aplicado
-  total_cobrado?: number;        // MAX(valor_gravacao, setup_total)
+  preco_unitario?: number; // preço de VENDA por peça (com markup)
+  preco_por_unidade?: number; // alias
+  valor_gravacao?: number; // preco_unitario × qtd
+  setup_total?: number; // setup com markup aplicado
+  total_cobrado?: number; // MAX(valor_gravacao, setup_total)
 
   // Auditoria / redirecionamento de área
   codigo_orcamento?: string;

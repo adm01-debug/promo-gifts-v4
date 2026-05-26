@@ -12,30 +12,54 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
 import { ComponentForm } from './ComponentForm';
 import { ComponentMediaManager } from './ComponentMediaManager';
 import { PrintAreasManager } from './PrintAreasManager';
 import { VolumeValidation } from './VolumeValidation';
-import { fetchKitComponents, fetchPrintAreas, createComponent, updateComponent, deleteComponent } from './api';
-import { type KitComponent, type ComponentFormData, type BoxInternalDimensions, EMPTY_FORM } from "./types";
+import {
+  fetchKitComponents,
+  fetchPrintAreas,
+  createComponent,
+  updateComponent,
+  deleteComponent,
+} from './api';
+import {
+  type KitComponent,
+  type ComponentFormData,
+  type BoxInternalDimensions,
+  EMPTY_FORM,
+} from './types';
 
 interface ProductKitComponentsSectionProps {
   productId: string;
   boxInternalDimensions?: BoxInternalDimensions;
 }
 
-export function ProductKitComponentsSection({ productId, boxInternalDimensions }: ProductKitComponentsSectionProps) {
+export function ProductKitComponentsSection({
+  productId,
+  boxInternalDimensions,
+}: ProductKitComponentsSectionProps) {
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<KitComponent | null>(null);
 
-  const { data: components = [], isLoading, error } = useQuery({
+  const {
+    data: components = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['kit-components', productId],
     queryFn: () => fetchKitComponents(productId),
     enabled: !!productId,
@@ -47,8 +71,8 @@ export function ProductKitComponentsSection({ productId, boxInternalDimensions }
   const prefetchedRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     components
-      .filter(c => c.allows_personalization && !prefetchedRef.current.has(c.id))
-      .forEach(c => {
+      .filter((c) => c.allows_personalization && !prefetchedRef.current.has(c.id))
+      .forEach((c) => {
         prefetchedRef.current.add(c.id);
         queryClient.prefetchQuery({
           queryKey: ['kit-print-areas', c.id],
@@ -132,7 +156,9 @@ export function ProductKitComponentsSection({ productId, boxInternalDimensions }
   if (isLoading) {
     return (
       <div className="space-y-2">
-        {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-lg" />)}
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-16 rounded-lg" />
+        ))}
       </div>
     );
   }
@@ -153,23 +179,45 @@ export function ProductKitComponentsSection({ productId, boxInternalDimensions }
             <>
               <span className="font-medium text-foreground">{components.length} componentes</span>
               <span>•</span>
-              <span>Total itens: <span className="font-medium text-foreground">{components.reduce((s, c) => s + (c.quantity ?? 1), 0)}</span></span>
+              <span>
+                Total itens:{' '}
+                <span className="font-medium text-foreground">
+                  {components.reduce((s, c) => s + (c.quantity ?? 1), 0)}
+                </span>
+              </span>
             </>
           ) : (
-            <span className="flex items-center gap-2"><Boxes className="h-4 w-4" /> Nenhum componente cadastrado</span>
+            <span className="flex items-center gap-2">
+              <Boxes className="h-4 w-4" /> Nenhum componente cadastrado
+            </span>
           )}
         </div>
         {!isCreating && (
-          <Button type="button" variant="outline" size="sm" onClick={() => { setIsCreating(true); setEditingId(null); }}>
-            <Plus className="h-3.5 w-3.5 mr-1" /> Novo Componente
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setIsCreating(true);
+              setEditingId(null);
+            }}
+          >
+            <Plus className="mr-1 h-3.5 w-3.5" /> Novo Componente
           </Button>
         )}
       </div>
 
-      {components.length > 0 && <VolumeValidation components={components} boxDimensions={boxInternalDimensions} />}
+      {components.length > 0 && (
+        <VolumeValidation components={components} boxDimensions={boxInternalDimensions} />
+      )}
 
       {isCreating && (
-        <ComponentForm initial={{ ...EMPTY_FORM, display_order: components.length }} onSave={handleCreate} onCancel={() => setIsCreating(false)} isSaving={isSaving} />
+        <ComponentForm
+          initial={{ ...EMPTY_FORM, display_order: components.length }}
+          onSave={handleCreate}
+          onCancel={() => setIsCreating(false)}
+          isSaving={isSaving}
+        />
       )}
 
       <ScrollArea className={components.length > 5 ? 'h-[500px]' : ''}>
@@ -180,15 +228,26 @@ export function ProductKitComponentsSection({ productId, boxInternalDimensions }
                 <ComponentForm
                   key={comp.id}
                   initial={{
-                    component_name: comp.component_name || '', component_type_code: comp.component_type_code || '',
-                    component_code: comp.component_code || '', component_sku: comp.component_sku || '',
-                    supplier_component_code: comp.supplier_component_code || '', component_description: comp.component_description || '',
-                    quantity: comp.quantity ?? 1, display_order: comp.display_order ?? 0,
-                    material: comp.material || '', color: comp.color || '',
-                    height_mm: comp.height_mm, width_mm: comp.width_mm, length_mm: comp.length_mm, weight_g: comp.weight_g,
-                    is_optional: comp.is_optional ?? false, is_packaging: comp.is_packaging ?? false,
-                    is_replaceable: comp.is_replaceable ?? false, allows_personalization: comp.allows_personalization ?? true,
-                    personalization_notes: comp.personalization_notes || '', primary_image_url: comp.primary_image_url || '',
+                    component_name: comp.component_name || '',
+                    component_type_code: comp.component_type_code || '',
+                    component_code: comp.component_code || '',
+                    component_sku: comp.component_sku || '',
+                    supplier_component_code: comp.supplier_component_code || '',
+                    component_description: comp.component_description || '',
+                    quantity: comp.quantity ?? 1,
+                    display_order: comp.display_order ?? 0,
+                    material: comp.material || '',
+                    color: comp.color || '',
+                    height_mm: comp.height_mm,
+                    width_mm: comp.width_mm,
+                    length_mm: comp.length_mm,
+                    weight_g: comp.weight_g,
+                    is_optional: comp.is_optional ?? false,
+                    is_packaging: comp.is_packaging ?? false,
+                    is_replaceable: comp.is_replaceable ?? false,
+                    allows_personalization: comp.allows_personalization ?? true,
+                    personalization_notes: comp.personalization_notes || '',
+                    primary_image_url: comp.primary_image_url || '',
                     notes: comp.notes || '',
                   }}
                   onSave={(data) => handleUpdate(comp.id, data)}
@@ -200,43 +259,92 @@ export function ProductKitComponentsSection({ productId, boxInternalDimensions }
 
             return (
               <div key={comp.id} className="space-y-0.5">
-                <div className={cn('flex items-center gap-2.5 rounded-lg border p-2.5 transition-colors group', 'hover:bg-accent/50')}>
+                <div
+                  className={cn(
+                    'group flex items-center gap-2.5 rounded-lg border p-2.5 transition-colors',
+                    'hover:bg-accent/50',
+                  )}
+                >
                   {comp.primary_image_url ? (
-                    
-<img src={comp.primary_image_url} alt={comp.component_name || ''} className="w-10 h-10 rounded-md object-contain border shrink-0 bg-muted/30"  loading="lazy" />
+                    <img
+                      src={comp.primary_image_url}
+                      alt={comp.component_name || ''}
+                      className="h-10 w-10 shrink-0 rounded-md border bg-muted/30 object-contain"
+                      loading="lazy"
+                    />
                   ) : (
-                    <div className="w-10 h-10 rounded-md border shrink-0 bg-muted flex items-center justify-center">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border bg-muted">
                       <Package className="h-4 w-4 text-muted-foreground" />
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <p className="text-xs font-medium truncate">{comp.component_name || 'Sem nome'}</p>
-                      {comp.component_type_code && <Badge variant="secondary" className="text-[9px] px-1 py-0 uppercase">{comp.component_type_code}</Badge>}
+                      <p className="truncate text-xs font-medium">
+                        {comp.component_name || 'Sem nome'}
+                      </p>
+                      {comp.component_type_code && (
+                        <Badge variant="secondary" className="px-1 py-0 text-[9px] uppercase">
+                          {comp.component_type_code}
+                        </Badge>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                      {comp.component_sku && <span className="font-mono">{comp.component_sku}</span>}
+                      {comp.component_sku && (
+                        <span className="font-mono">{comp.component_sku}</span>
+                      )}
                       <span>Qtd: {comp.quantity ?? 1}</span>
                       {comp.material && <span>• {comp.material}</span>}
                       {comp.color && <span>• {comp.color}</span>}
                     </div>
-                    <div className="flex flex-wrap gap-1 mt-0.5">
-                      {comp.is_optional && <Badge variant="outline" className="text-[9px] px-1 py-0">Opcional</Badge>}
-                      {comp.is_packaging && <Badge variant="outline" className="text-[9px] px-1 py-0">Embalagem</Badge>}
-                      {comp.allows_personalization && <Badge className="bg-primary/15 text-primary border-primary/30 text-[9px] px-1 py-0">Personalizável</Badge>}
+                    <div className="mt-0.5 flex flex-wrap gap-1">
+                      {comp.is_optional && (
+                        <Badge variant="outline" className="px-1 py-0 text-[9px]">
+                          Opcional
+                        </Badge>
+                      )}
+                      {comp.is_packaging && (
+                        <Badge variant="outline" className="px-1 py-0 text-[9px]">
+                          Embalagem
+                        </Badge>
+                      )}
+                      {comp.allows_personalization && (
+                        <Badge className="border-primary/30 bg-primary/15 px-1 py-0 text-[9px] text-primary">
+                          Personalizável
+                        </Badge>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                    <Button type="button" variant="ghost" size="icon" aria-label="Editar" className="h-7 w-7" onClick={() => { setEditingId(comp.id); setIsCreating(false); }}>
+                  <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Editar"
+                      className="h-7 w-7"
+                      onClick={() => {
+                        setEditingId(comp.id);
+                        setIsCreating(false);
+                      }}
+                    >
                       <Pencil className="h-3 w-3" />
                     </Button>
-                    <Button type="button" variant="ghost" size="icon" aria-label="Excluir" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(comp)}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Excluir"
+                      className="h-7 w-7 text-destructive hover:text-destructive"
+                      onClick={() => setDeleteTarget(comp)}
+                    >
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
                 </div>
                 {comp.allows_personalization && (
-                  <PrintAreasManager componentId={comp.id} componentName={comp.component_name || ''} />
+                  <PrintAreasManager
+                    componentId={comp.id}
+                    componentName={comp.component_name || ''}
+                  />
                 )}
                 <ComponentMediaManager
                   componentId={comp.id}
@@ -254,13 +362,18 @@ export function ProductKitComponentsSection({ productId, boxInternalDimensions }
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir componente?</AlertDialogTitle>
             <AlertDialogDescription>
-              O componente <strong>{deleteTarget?.component_name}</strong> e suas áreas de gravação serão removidos permanentemente.
+              O componente <strong>{deleteTarget?.component_name}</strong> e suas áreas de gravação
+              serão removidos permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isSaving}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={isSaving} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isSaving}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>

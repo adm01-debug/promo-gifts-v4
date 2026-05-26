@@ -66,14 +66,14 @@ export function BridgeAlertsCard() {
       fn(`[${a.bridge}] ${a.message}`, { description: `${a.count} amostras` });
     }
     // Remove chaves resolvidas para que voltem a alertar caso reincidam
-    const active = new Set(alerts.map(a => a.key));
+    const active = new Set(alerts.map((a) => a.key));
     for (const k of Array.from(seenRef.current)) {
       if (!active.has(k)) seenRef.current.delete(k);
     }
   }, [alerts, thresholds]);
 
-  const critCount = alerts.filter(a => a.severity === 'crit').length;
-  const warnCount = alerts.filter(a => a.severity === 'warn').length;
+  const critCount = alerts.filter((a) => a.severity === 'crit').length;
+  const warnCount = alerts.filter((a) => a.severity === 'warn').length;
 
   return (
     <Card
@@ -85,28 +85,33 @@ export function BridgeAlertsCard() {
             : ''
       }
     >
-      <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
-        <CardTitle className="text-base flex items-center gap-2">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
           <Bell className="h-4 w-4" />
           Alertas das Bridges
           {critCount > 0 && (
-            <Badge variant="destructive" className="text-[10px]">{critCount} crítico{critCount > 1 ? 's' : ''}</Badge>
+            <Badge variant="destructive" className="text-[10px]">
+              {critCount} crítico{critCount > 1 ? 's' : ''}
+            </Badge>
           )}
           {warnCount > 0 && (
-            <Badge className="text-[10px] bg-warning/20 text-warning border-warning/30">
+            <Badge className="border-warning/30 bg-warning/20 text-[10px] text-warning">
               {warnCount} aviso{warnCount > 1 ? 's' : ''}
             </Badge>
           )}
           {alerts.length === 0 && (
-            <Badge variant="secondary" className="text-[10px]">tudo ok</Badge>
+            <Badge variant="secondary" className="text-[10px]">
+              tudo ok
+            </Badge>
           )}
         </CardTitle>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => resetThresholds()}>
-            <RotateCcw className="h-3.5 w-3.5 mr-1.5" />Padrão
+            <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+            Padrão
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setShowSettings(s => !s)}>
-            <Settings2 className="h-3.5 w-3.5 mr-1.5" />
+          <Button variant="outline" size="sm" onClick={() => setShowSettings((s) => !s)}>
+            <Settings2 className="mr-1.5 h-3.5 w-3.5" />
             {showSettings ? 'Fechar' : 'Configurar'}
           </Button>
         </div>
@@ -120,7 +125,7 @@ export function BridgeAlertsCard() {
           </div>
         ) : (
           <ul className="space-y-2">
-            {alerts.map(a => (
+            {alerts.map((a) => (
               <AlertRow key={a.key} alert={a} />
             ))}
           </ul>
@@ -142,25 +147,29 @@ export function BridgeAlertsCard() {
 function AlertRow({ alert }: { alert: BridgeAlert }) {
   const isCrit = alert.severity === 'crit';
   const valueStr = alert.metric === 'p95' ? formatMs(alert.value) : formatBytes(alert.value);
-  const limitStr = alert.metric === 'p95' ? formatMs(alert.threshold) : formatBytes(alert.threshold);
+  const limitStr =
+    alert.metric === 'p95' ? formatMs(alert.threshold) : formatBytes(alert.threshold);
   return (
     <li
-      className={`flex items-center gap-3 p-2.5 rounded-md border ${
-        isCrit
-          ? 'border-destructive/40 bg-destructive/10'
-          : 'border-warning/40 bg-warning/10'
+      className={`flex items-center gap-3 rounded-md border p-2.5 ${
+        isCrit ? 'border-destructive/40 bg-destructive/10' : 'border-warning/40 bg-warning/10'
       }`}
     >
-      <AlertTriangle className={`h-4 w-4 shrink-0 ${isCrit ? 'text-destructive' : 'text-warning'}`} />
-      <div className="flex-1 min-w-0">
+      <AlertTriangle
+        className={`h-4 w-4 shrink-0 ${isCrit ? 'text-destructive' : 'text-warning'}`}
+      />
+      <div className="min-w-0 flex-1">
         <p className="text-sm font-medium">
-          <Badge variant="outline" className="text-[10px] mr-2">{alert.bridge.replace('-db-bridge', '')}</Badge>
+          <Badge variant="outline" className="mr-2 text-[10px]">
+            {alert.bridge.replace('-db-bridge', '')}
+          </Badge>
           <code className="font-mono text-xs">{alert.op}</code>
           {' — '}
           {alert.metric === 'p95' ? 'p95 latência' : 'tam. médio resp.'}
         </p>
         <p className="text-xs text-muted-foreground">
-          atual <span className="font-mono">{valueStr}</span> · limite <span className="font-mono">{limitStr}</span> · {alert.count} amostras
+          atual <span className="font-mono">{valueStr}</span> · limite{' '}
+          <span className="font-mono">{limitStr}</span> · {alert.count} amostras
         </p>
       </div>
       <Badge variant={isCrit ? 'destructive' : 'secondary'} className="text-[10px]">
@@ -171,15 +180,21 @@ function AlertRow({ alert }: { alert: BridgeAlert }) {
 }
 
 function ThresholdEditor({
-  bridge, label, t,
-}: { bridge: BridgeName; label: string; t: ReturnType<typeof getThresholds>[BridgeName] }) {
+  bridge,
+  label,
+  t,
+}: {
+  bridge: BridgeName;
+  label: string;
+  t: ReturnType<typeof getThresholds>[BridgeName];
+}) {
   const update = (patch: Partial<typeof t>) => setThresholds(bridge, patch);
   const numInput = (val: number, onChange: (n: number) => void, min = 0) => (
     <Input
       type="number"
       value={val}
       min={min}
-      onChange={e => {
+      onChange={(e) => {
         const n = Number(e.target.value);
         if (Number.isFinite(n) && n >= min) onChange(n);
       }}
@@ -191,43 +206,46 @@ function ThresholdEditor({
   const respCritKb = Math.round(t.avgRespCritBytes / 1024);
 
   return (
-    <div className="rounded-lg border border-border/60 p-3 bg-muted/20 space-y-3">
+    <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-3">
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-semibold">{label}</h4>
         <Button variant="ghost" size="sm" onClick={() => resetThresholds(bridge)}>
-          <RotateCcw className="h-3 w-3 mr-1" />reset
+          <RotateCcw className="mr-1 h-3 w-3" />
+          reset
         </Button>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
           <Label className="text-[11px] text-muted-foreground">p95 aviso (ms)</Label>
-          {numInput(t.p95WarnMs, n => update({ p95WarnMs: n }))}
+          {numInput(t.p95WarnMs, (n) => update({ p95WarnMs: n }))}
         </div>
         <div className="space-y-1">
           <Label className="text-[11px] text-muted-foreground">p95 crítico (ms)</Label>
-          {numInput(t.p95CritMs, n => update({ p95CritMs: n }))}
+          {numInput(t.p95CritMs, (n) => update({ p95CritMs: n }))}
         </div>
         <div className="space-y-1">
           <Label className="text-[11px] text-muted-foreground">resp. aviso (KB)</Label>
-          {numInput(respWarnKb, n => update({ avgRespWarnBytes: n * 1024 }))}
+          {numInput(respWarnKb, (n) => update({ avgRespWarnBytes: n * 1024 }))}
         </div>
         <div className="space-y-1">
           <Label className="text-[11px] text-muted-foreground">resp. crítico (KB)</Label>
-          {numInput(respCritKb, n => update({ avgRespCritBytes: n * 1024 }))}
+          {numInput(respCritKb, (n) => update({ avgRespCritBytes: n * 1024 }))}
         </div>
-        <div className="space-y-1 col-span-2">
+        <div className="col-span-2 space-y-1">
           <Label className="text-[11px] text-muted-foreground">amostras mínimas</Label>
-          {numInput(t.minSamples, n => update({ minSamples: Math.max(1, n) }), 1)}
+          {numInput(t.minSamples, (n) => update({ minSamples: Math.max(1, n) }), 1)}
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-1 border-t border-border/40">
-        <Label htmlFor={`toast-${bridge}`} className="text-xs">Notificar via toast</Label>
+      <div className="flex items-center justify-between border-t border-border/40 pt-1">
+        <Label htmlFor={`toast-${bridge}`} className="text-xs">
+          Notificar via toast
+        </Label>
         <Switch
           id={`toast-${bridge}`}
           checked={t.toastEnabled}
-          onCheckedChange={checked => update({ toastEnabled: checked })}
+          onCheckedChange={(checked) => update({ toastEnabled: checked })}
         />
       </div>
     </div>

@@ -10,7 +10,7 @@ import { AuthFlowTracer } from '@/lib/auth/auth-flow-tracer';
 import { consumePostLoginRedirect } from '@/lib/auth/post-login-redirect';
 import { clearOAuthPending } from '@/lib/auth/oauth-pending';
 import { explainOAuthError, type OAuthErrorExplanation } from '@/lib/auth/oauth-error-explainer';
-import { SpaceScene } from "@/pages/auth/AuthBranding";
+import { SpaceScene } from '@/pages/auth/AuthBranding';
 
 /**
  * Callback do login social via Supabase Auth.
@@ -254,7 +254,7 @@ export default function SSOCallbackPage() {
   }, [navigate, searchParams, refreshSession]);
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-[#030508] px-4 overflow-hidden">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#030508] px-4">
       <SpaceScene />
       <PageSEO
         title="Autenticação SSO"
@@ -271,18 +271,20 @@ export default function SSOCallbackPage() {
       >
         <StatusIcon status={status} />
         <div className="space-y-1">
-          <h1 className="text-xl font-bold text-white tracking-tight" data-testid="sso-callback-title">
+          <h1
+            className="text-xl font-bold tracking-tight text-white"
+            data-testid="sso-callback-title"
+          >
             {status === 'failed' && errorDetail ? errorDetail.title : STATUS_TITLE[status]}
           </h1>
-          <p className="text-[13px] text-white/50 leading-relaxed" data-testid="sso-callback-description">
-            {status === 'failed' && errorMessage
-              ? errorMessage
-              : STATUS_DESCRIPTION[status]}
+          <p
+            className="text-[13px] leading-relaxed text-white/50"
+            data-testid="sso-callback-description"
+          >
+            {status === 'failed' && errorMessage ? errorMessage : STATUS_DESCRIPTION[status]}
           </p>
           {(status === 'confirming' || status === 'confirmed') && userEmail && (
-            <p className="pt-1 text-xs text-muted-foreground/80">
-              {userEmail}
-            </p>
+            <p className="pt-1 text-xs text-muted-foreground/80">{userEmail}</p>
           )}
         </div>
         {status === 'failed' && errorDetail && (
@@ -333,7 +335,7 @@ const SEVERITY_STYLES: Record<OAuthErrorExplanation['severity'], string> = {
 
 function StatusIcon({ status }: { status: CallbackStatus }) {
   if (status === 'confirmed') {
-    return <CheckCircle2 className="h-12 w-12 text-blue-400 animate-fade-in" />;
+    return <CheckCircle2 className="h-12 w-12 animate-fade-in text-blue-400" />;
   }
   if (status === 'failed') {
     return <AlertCircle className="h-12 w-12 text-destructive" />;
@@ -358,10 +360,7 @@ function StatusSteps({ status }: { status: CallbackStatus }) {
         return (
           <li
             key={s.key}
-            className={
-              'flex flex-1 flex-col items-center gap-2 ' +
-              (done ? 'text-white' : '')
-            }
+            className={'flex flex-1 flex-col items-center gap-2 ' + (done ? 'text-white' : '')}
           >
             <span
               className={

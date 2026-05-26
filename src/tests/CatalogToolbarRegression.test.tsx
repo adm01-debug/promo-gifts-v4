@@ -37,7 +37,7 @@ describe('CatalogToolbar Regression', () => {
     render(
       <TooltipProvider>
         <CatalogToolbar {...mockProps} />
-      </TooltipProvider>
+      </TooltipProvider>,
     );
 
     // Find the select trigger
@@ -46,7 +46,7 @@ describe('CatalogToolbar Regression', () => {
 
     // 1. Verify Tooltip works
     await user.hover(trigger);
-    
+
     // Tooltip content: "Ordenar produtos (relevância, preço, novidades…)"
     await waitFor(() => {
       expect(screen.getByRole('tooltip')).toHaveTextContent(/Ordenar produtos/i);

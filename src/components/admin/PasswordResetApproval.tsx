@@ -14,10 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  usePasswordResetRequests,
-  type PasswordResetRequest,
-} from '@/hooks/auth';
+import { usePasswordResetRequests, type PasswordResetRequest } from '@/hooks/auth';
 
 export function PasswordResetApproval() {
   const { requests, isLoading, approveRequest, rejectRequest } = usePasswordResetRequests();

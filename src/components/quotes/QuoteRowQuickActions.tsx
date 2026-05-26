@@ -3,12 +3,12 @@
  * Duplicar · Compartilhar link · WhatsApp · Marcar ganho.
  * Visíveis no hover da linha (desktop) ou sempre (mobile).
  */
-import type { MouseEvent as ReactMouseEvent } from "react";
-import { Copy, Share2, MessageCircle, Trophy } from "lucide-react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import type { Quote } from "@/hooks/quotes";
+import type { MouseEvent as ReactMouseEvent } from 'react';
+import { Copy, Share2, MessageCircle, Trophy } from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import type { Quote } from '@/hooks/quotes';
 
 interface QuoteRowQuickActionsProps {
   quote: Quote;
@@ -16,7 +16,7 @@ interface QuoteRowQuickActionsProps {
   onMarkApproved: (id: string) => void;
 }
 
-const APP_BASE_URL = typeof window !== "undefined" ? window.location.origin : "";
+const APP_BASE_URL = typeof window !== 'undefined' ? window.location.origin : '';
 
 function buildShareUrl(quote: Quote) {
   return `${APP_BASE_URL}/orcamentos/${quote.id}`;
@@ -24,31 +24,36 @@ function buildShareUrl(quote: Quote) {
 
 function buildWhatsappUrl(quote: Quote) {
   const link = buildShareUrl(quote);
-  const name = quote.client_name || quote.client_company || "Cliente";
-  const number = quote.quote_number || "";
+  const name = quote.client_name || quote.client_company || 'Cliente';
+  const number = quote.quote_number || '';
   const text = encodeURIComponent(
-    `Olá ${name}! Segue o orçamento ${number} para sua avaliação:\n${link}`
+    `Olá ${name}! Segue o orçamento ${number} para sua avaliação:\n${link}`,
   );
-  const phone = (quote.client_phone || "").replace(/\D/g, "");
+  const phone = (quote.client_phone || '').replace(/\D/g, '');
   return phone ? `https://wa.me/55${phone}?text=${text}` : `https://wa.me/?text=${text}`;
 }
 
-export function QuoteRowQuickActions({ quote, onDuplicate, onMarkApproved }: QuoteRowQuickActionsProps) {
-  const isClosed = quote.status === "approved" || quote.status === "converted" || quote.status === "rejected";
+export function QuoteRowQuickActions({
+  quote,
+  onDuplicate,
+  onMarkApproved,
+}: QuoteRowQuickActionsProps) {
+  const isClosed =
+    quote.status === 'approved' || quote.status === 'converted' || quote.status === 'rejected';
 
   const handleCopyLink = async (e: ReactMouseEvent) => {
     e.stopPropagation();
     try {
       await navigator.clipboard.writeText(buildShareUrl(quote));
-      toast.success("Link copiado", { description: "Cole onde precisar." });
+      toast.success('Link copiado', { description: 'Cole onde precisar.' });
     } catch {
-      toast.error("Falha ao copiar link");
+      toast.error('Falha ao copiar link');
     }
   };
 
   const handleWhatsapp = (e: ReactMouseEvent) => {
     e.stopPropagation();
-    window.open(buildWhatsappUrl(quote), "_blank", "noopener,noreferrer");
+    window.open(buildWhatsappUrl(quote), '_blank', 'noopener,noreferrer');
   };
 
   const handleDuplicate = (e: ReactMouseEvent) => {
@@ -65,7 +70,7 @@ export function QuoteRowQuickActions({ quote, onDuplicate, onMarkApproved }: Quo
 
   return (
     <div
-      className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
+      className="flex items-center gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100"
       onClick={(e) => e.stopPropagation()}
     >
       <Tooltip>

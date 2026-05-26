@@ -3,10 +3,44 @@
  */
 
 export const SIZE_ORDER = [
-  "PP", "P", "M", "G", "GG", "XG", "XXG", "EG", "EGG",
-  "XS", "S", "L", "XL", "XXL", "2XL", "3XL",
-  "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46",
-  "100ml", "200ml", "300ml", "350ml", "400ml", "500ml", "600ml", "750ml", "1L",
+  'PP',
+  'P',
+  'M',
+  'G',
+  'GG',
+  'XG',
+  'XXG',
+  'EG',
+  'EGG',
+  'XS',
+  'S',
+  'L',
+  'XL',
+  'XXL',
+  '2XL',
+  '3XL',
+  '34',
+  '35',
+  '36',
+  '37',
+  '38',
+  '39',
+  '40',
+  '41',
+  '42',
+  '43',
+  '44',
+  '45',
+  '46',
+  '100ml',
+  '200ml',
+  '300ml',
+  '350ml',
+  '400ml',
+  '500ml',
+  '600ml',
+  '750ml',
+  '1L',
 ];
 
 export function getSizeOrder(code: string): number {
@@ -20,7 +54,7 @@ export function getSizeOrder(code: string): number {
 
 export function isLightColor(hex?: string | null): boolean {
   if (!hex) return true;
-  const c = hex.replace("#", "");
+  const c = hex.replace('#', '');
   if (c.length < 6) return true;
   const r = parseInt(c.substring(0, 2), 16);
   const g = parseInt(c.substring(2, 4), 16);
@@ -29,13 +63,13 @@ export function isLightColor(hex?: string | null): boolean {
 }
 
 export function formatStock(stock: number): string {
-  if (stock === 0) return "0";
+  if (stock === 0) return '0';
   if (stock >= 1000) return `${(stock / 1000).toFixed(1)}k`;
-  return stock.toLocaleString("pt-BR");
+  return stock.toLocaleString('pt-BR');
 }
 
 export function stockColor(stock: number): string {
-  if (stock === 0) return "text-destructive";
-  if (stock < 100) return "text-warning";
-  return "text-success";
+  if (stock === 0) return 'text-destructive';
+  if (stock < 100) return 'text-warning';
+  return 'text-success';
 }

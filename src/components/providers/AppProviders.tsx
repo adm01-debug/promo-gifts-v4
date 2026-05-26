@@ -1,15 +1,15 @@
 /**
  * AppProviders — Consolidates all context providers to reduce nesting in App.tsx.
  * Providers are grouped by domain for clarity and maintainability.
- * 
+ *
  * NOTE: Comparison, Favorites, and RecentlyViewed have been migrated to Zustand stores
  * and no longer need providers. Their context files export no-op providers for compat.
  */
-import { type ReactNode } from "react";
-import { CollectionsProvider } from "@/contexts/CollectionsContext";
-import { ProductsProvider } from "@/contexts/ProductsContext";
-import { OrganizationProvider } from "@/contexts/OrganizationContext";
-import { DevChallengeProvider } from "@/contexts/DevChallengeContext";
+import { type ReactNode } from 'react';
+import { CollectionsProvider } from '@/contexts/CollectionsContext';
+import { ProductsProvider } from '@/contexts/ProductsContext';
+import { OrganizationProvider } from '@/contexts/OrganizationContext';
+import { DevChallengeProvider } from '@/contexts/DevChallengeContext';
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -25,9 +25,7 @@ export function AppProviders({ children }: AppProvidersProps) {
     <OrganizationProvider>
       <ProductsProvider>
         <CollectionsProvider>
-          <DevChallengeProvider>
-            {children}
-          </DevChallengeProvider>
+          <DevChallengeProvider>{children}</DevChallengeProvider>
         </CollectionsProvider>
       </ProductsProvider>
     </OrganizationProvider>

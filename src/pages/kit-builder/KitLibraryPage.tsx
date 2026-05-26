@@ -30,7 +30,12 @@ import { KitCardSkeletonGrid } from '@/components/kit-library/KitCardSkeleton';
 import { KitLibraryFilters, type SortOption } from '@/components/kit-library/KitLibraryFilters';
 import { KitTemplatePreviewDialog } from '@/components/kit-library/KitTemplatePreviewDialog';
 import { KitCategoryChips } from '@/components/kit-library/KitCategoryChips';
-import { useCustomKitPersistence, useKitTemplates, type CustomKitRow, type KitTemplateRow } from "@/hooks/kit-builder";
+import {
+  useCustomKitPersistence,
+  useKitTemplates,
+  type CustomKitRow,
+  type KitTemplateRow,
+} from '@/hooks/kit-builder';
 import { buildCustomKitInsert } from '@/lib/kit-library/buildCustomKitInsert';
 
 function getItemsCount(items: unknown): number {
@@ -263,7 +268,7 @@ export default function KitLibraryPage() {
   };
 
   return (
-    <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
+    <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
       <PageSEO
         title="Biblioteca de Kits — Seus kits salvos e templates do sistema"
         description="Acesse seu banco pessoal de kits e clone templates curados pelo sistema para acelerar a montagem de propostas."

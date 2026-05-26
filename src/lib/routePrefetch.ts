@@ -51,9 +51,10 @@ export function prefetchRoute(path: string): void {
 
   prefetched.add(path);
   // Use requestIdleCallback when available for non-blocking prefetch
-  const schedule = typeof requestIdleCallback === 'function'
-    ? requestIdleCallback
-    : (fn: () => void) => setTimeout(fn, 0);
+  const schedule =
+    typeof requestIdleCallback === 'function'
+      ? requestIdleCallback
+      : (fn: () => void) => setTimeout(fn, 0);
 
   schedule(() => {
     importer().catch(() => {

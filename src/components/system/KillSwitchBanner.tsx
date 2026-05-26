@@ -54,11 +54,11 @@ export function KillSwitchBanner(): JSX.Element | null {
     <div
       role="alert"
       aria-live="polite"
-      className="w-full bg-amber-50 border-b border-amber-200 px-4 py-2 text-sm text-amber-900 flex items-center justify-between gap-4"
+      className="flex w-full items-center justify-between gap-4 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900"
       data-testid="kill-switch-banner"
     >
-      <div className="flex items-center gap-2 min-w-0">
-        <span className="font-medium shrink-0">⚠️ Aviso do sistema:</span>
+      <div className="flex min-w-0 items-center gap-2">
+        <span className="shrink-0 font-medium">⚠️ Aviso do sistema:</span>
         <span className="truncate">{banner.message}</span>
       </div>
       <button
@@ -67,7 +67,7 @@ export function KillSwitchBanner(): JSX.Element | null {
           markDismissed();
           setDismissed(true);
         }}
-        className="shrink-0 text-amber-700 hover:text-amber-900 underline text-xs"
+        className="shrink-0 text-xs text-amber-700 underline hover:text-amber-900"
         aria-label="Dispensar aviso"
       >
         Dispensar

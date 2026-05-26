@@ -5,7 +5,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ProductGrid } from '@/components/products/ProductGrid';
 import { ProductList } from '@/components/products/ProductList';
 import { ProductTableView } from '@/components/products/ProductTableView';
-import { ProductCardSkeleton, ProductListItemSkeleton, ProductTableSkeleton } from '@/components/loading/ModernSkeletons';
+import {
+  ProductCardSkeleton,
+  ProductListItemSkeleton,
+  ProductTableSkeleton,
+} from '@/components/loading/ModernSkeletons';
 import { EmptyState } from '@/components/common/EmptyState';
 import { CatalogBulkModals } from './CatalogBulkModals';
 import { useCatalogSelection } from './useCatalogSelection';
@@ -102,10 +106,10 @@ export const CatalogContent = memo(function CatalogContent({
       return <ProductTableSkeleton rows={10} selectionMode={selectionMode} />;
     }
     return (
-      <ProductGridSkeleton 
-        count={12} 
-        columns={gridColumns} 
-        variant="default" 
+      <ProductGridSkeleton
+        count={12}
+        columns={gridColumns}
+        variant="default"
         hideCategoryBadges={hideCategoryBadges}
         selectionMode={selectionMode}
       />

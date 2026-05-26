@@ -6,7 +6,7 @@
  * across the PDP, catalog cards, quick view, sticky header and quote builder.
  */
 
-export type PriceFreshnessStatus = "fresh" | "aging" | "stale" | "unknown";
+export type PriceFreshnessStatus = 'fresh' | 'aging' | 'stale' | 'unknown';
 
 export interface PriceFreshness {
   status: PriceFreshnessStatus;
@@ -31,10 +31,10 @@ const MS_PER_DAY = 1000 * 60 * 60 * 24;
  * tabela de orçamento, cards). Ex.: "20/03/2026".
  */
 export function formatPriceDateShort(date: Date): string {
-  return new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
   }).format(date);
 }
 
@@ -43,16 +43,16 @@ export function formatPriceDateShort(date: Date): string {
  * tooltips, avisos). Ex.: "20 de março de 2026".
  */
 export function formatPriceDateLong(date: Date): string {
-  return new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
   }).format(date);
 }
 
 function formatRelativeDays(days: number): string {
-  if (days <= 0) return "hoje";
-  if (days === 1) return "há 1 dia";
+  if (days <= 0) return 'hoje';
+  if (days === 1) return 'há 1 dia';
   return `há ${days} dias`;
 }
 
@@ -61,34 +61,33 @@ export function getPriceFreshness(
   thresholdDays: number | null | undefined,
 ): PriceFreshness {
   const threshold =
-    typeof thresholdDays === "number" && thresholdDays > 0
+    typeof thresholdDays === 'number' && thresholdDays > 0
       ? Math.floor(thresholdDays)
       : DEFAULT_PRICE_FRESHNESS_THRESHOLD_DAYS;
 
   if (!priceUpdatedAt) {
     return {
-      status: "unknown",
+      status: 'unknown',
       daysSinceUpdate: null,
       thresholdDays: threshold,
-      label: "Data de atualização não informada",
+      label: 'Data de atualização não informada',
       tooltip:
-        "O fornecedor não informou quando este preço foi atualizado pela última vez. Confirme o valor diretamente com o fornecedor antes de enviar o orçamento ao cliente.",
+        'O fornecedor não informou quando este preço foi atualizado pela última vez. Confirme o valor diretamente com o fornecedor antes de enviar o orçamento ao cliente.',
       shouldWarn: false,
       isStale: false,
     };
   }
 
-  const date =
-    priceUpdatedAt instanceof Date ? priceUpdatedAt : new Date(priceUpdatedAt);
+  const date = priceUpdatedAt instanceof Date ? priceUpdatedAt : new Date(priceUpdatedAt);
 
   if (Number.isNaN(date.getTime())) {
     return {
-      status: "unknown",
+      status: 'unknown',
       daysSinceUpdate: null,
       thresholdDays: threshold,
-      label: "Data de atualização inválida",
+      label: 'Data de atualização inválida',
       tooltip:
-        "A data informada pelo fornecedor é inválida. Confirme o valor diretamente com o fornecedor antes de enviar o orçamento ao cliente.",
+        'A data informada pelo fornecedor é inválida. Confirme o valor diretamente com o fornecedor antes de enviar o orçamento ao cliente.',
       shouldWarn: false,
       isStale: false,
     };
@@ -100,9 +99,9 @@ export function getPriceFreshness(
   const relative = formatRelativeDays(days);
 
   let status: PriceFreshnessStatus;
-  if (days > threshold) status = "stale";
-  else if (days > Math.floor(threshold / 2)) status = "aging";
-  else status = "fresh";
+  if (days > threshold) status = 'stale';
+  else if (days > Math.floor(threshold / 2)) status = 'aging';
+  else status = 'fresh';
 
   // Copy curto e consistente entre PDP e Quick View: apenas o relativo.
   // A data absoluta fica no tooltip para evitar poluição visual.
@@ -112,7 +111,7 @@ export function getPriceFreshness(
   // direta, sem jargão técnico, sem repetir o número de dias.
   const baseTooltip = `Última atualização do preço pelo fornecedor: ${absoluteLong} (${relative}). Validade configurada: ${threshold} dias.`;
 
-  if (status === "stale") {
+  if (status === 'stale') {
     return {
       status,
       daysSinceUpdate: days,
@@ -124,7 +123,7 @@ export function getPriceFreshness(
     };
   }
 
-  if (status === "aging") {
+  if (status === 'aging') {
     return {
       status,
       daysSinceUpdate: days,

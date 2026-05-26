@@ -15,58 +15,61 @@ export function useBridgeStatusBanner(isAllowed: boolean) {
     unavailableRef.current = unavailable;
   }, [unavailable]);
 
-  const handleStatusEvent = useCallback((e: BridgeStatusEvent) => {
-    if (e.type === 'degraded') {
-      if (!isAllowed) return;
+  const handleStatusEvent = useCallback(
+    (e: BridgeStatusEvent) => {
+      if (e.type === 'degraded') {
+        if (!isAllowed) return;
 
-      const now = Date.now();
-      if (now - lastDegradedAt.current < 8000) return;
-      lastDegradedAt.current = now;
-      
-      toast.loading('Reconectando ao catálogo externo…', {
-        id: TOAST_ID_DEGRADED,
-        description: `Tentativa ${e.attempt}/${e.maxAttempts}. O sistema está se recuperando automaticamente.`,
-        duration: 4000,
-      });
-    } else if (e.type === 'unavailable') {
-      setUnavailable(true);
-      setReason(e.reason);
-      toast.dismiss(TOAST_ID_DEGRADED);
+        const now = Date.now();
+        if (now - lastDegradedAt.current < 8000) return;
+        lastDegradedAt.current = now;
 
-      // Toast técnico só para DEV — usuários finais não devem ver mensagens de infra.
-      if (!isAllowed) return;
-
-      toast.error('Catálogo temporariamente indisponível', {
-        id: TOAST_ID_UNAVAILABLE,
-        description: 'O serviço está reiniciando. Aguarde alguns segundos e tente novamente.',
-        duration: Infinity,
-        action: {
-          label: 'Recarregar',
-          onClick: () => window.location.reload(),
-        },
-      });
-    } else if (e.type === 'recovered') {
-      toast.dismiss(TOAST_ID_DEGRADED);
-      if (unavailableRef.current) {
-        if (isAllowed) {
-          toast.success('Conexão restabelecida', {
-            id: TOAST_ID_UNAVAILABLE,
-            description: 'O catálogo voltou a responder normalmente.',
-            duration: 4000,
-          });
-        } else {
-          toast.dismiss(TOAST_ID_UNAVAILABLE);
-        }
-        setUnavailable(false);
-        setReason('');
-      } else if (isAllowed) {
-        toast.success('Conexão normalizada', {
+        toast.loading('Reconectando ao catálogo externo…', {
           id: TOAST_ID_DEGRADED,
-          duration: 3000,
+          description: `Tentativa ${e.attempt}/${e.maxAttempts}. O sistema está se recuperando automaticamente.`,
+          duration: 4000,
         });
+      } else if (e.type === 'unavailable') {
+        setUnavailable(true);
+        setReason(e.reason);
+        toast.dismiss(TOAST_ID_DEGRADED);
+
+        // Toast técnico só para DEV — usuários finais não devem ver mensagens de infra.
+        if (!isAllowed) return;
+
+        toast.error('Catálogo temporariamente indisponível', {
+          id: TOAST_ID_UNAVAILABLE,
+          description: 'O serviço está reiniciando. Aguarde alguns segundos e tente novamente.',
+          duration: Infinity,
+          action: {
+            label: 'Recarregar',
+            onClick: () => window.location.reload(),
+          },
+        });
+      } else if (e.type === 'recovered') {
+        toast.dismiss(TOAST_ID_DEGRADED);
+        if (unavailableRef.current) {
+          if (isAllowed) {
+            toast.success('Conexão restabelecida', {
+              id: TOAST_ID_UNAVAILABLE,
+              description: 'O catálogo voltou a responder normalmente.',
+              duration: 4000,
+            });
+          } else {
+            toast.dismiss(TOAST_ID_UNAVAILABLE);
+          }
+          setUnavailable(false);
+          setReason('');
+        } else if (isAllowed) {
+          toast.success('Conexão normalizada', {
+            id: TOAST_ID_DEGRADED,
+            duration: 3000,
+          });
+        }
       }
-    }
-  }, [isAllowed]);
+    },
+    [isAllowed],
+  );
 
   useEffect(() => {
     const unsubscribe = onBridgeStatus(handleStatusEvent);
@@ -85,6 +88,6 @@ export function useBridgeStatusBanner(isAllowed: boolean) {
     unavailable,
     reason,
     closeUnavailable,
-    reload: () => window.location.reload()
+    reload: () => window.location.reload(),
   };
 }

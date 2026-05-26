@@ -12,32 +12,73 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-  Play, Pause, Plus, Trash2, RotateCcw, ListChecks, CheckCircle2, AlertTriangle, Loader2, Clock, Zap,
+  Play,
+  Pause,
+  Plus,
+  Trash2,
+  RotateCcw,
+  ListChecks,
+  CheckCircle2,
+  AlertTriangle,
+  Loader2,
+  Clock,
+  Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useOptimizationQueue, type OptimizationItem } from '@/pages/admin/telemetry/useOptimizationQueue';
+import {
+  useOptimizationQueue,
+  type OptimizationItem,
+} from '@/pages/admin/telemetry/useOptimizationQueue';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 function StatusBadge({ status }: { status: OptimizationItem['status'] }) {
-  const map: Record<OptimizationItem['status'], { label: string; cls: string; Icon: typeof Clock }> = {
+  const map: Record<
+    OptimizationItem['status'],
+    { label: string; cls: string; Icon: typeof Clock }
+  > = {
     pending: { label: 'Pendente', cls: 'bg-muted text-muted-foreground', Icon: Clock },
-    running: { label: 'Executando', cls: 'bg-primary/15 text-primary border-primary/30', Icon: Loader2 },
-    done: { label: 'Concluído', cls: 'bg-success/15 text-success border-success/30', Icon: CheckCircle2 },
-    failed: { label: 'Falhou', cls: 'bg-destructive/15 text-destructive border-destructive/30', Icon: AlertTriangle },
-    blocked: { label: 'Bloqueado', cls: 'bg-warning/15 text-warning border-warning/30', Icon: AlertTriangle },
+    running: {
+      label: 'Executando',
+      cls: 'bg-primary/15 text-primary border-primary/30',
+      Icon: Loader2,
+    },
+    done: {
+      label: 'Concluído',
+      cls: 'bg-success/15 text-success border-success/30',
+      Icon: CheckCircle2,
+    },
+    failed: {
+      label: 'Falhou',
+      cls: 'bg-destructive/15 text-destructive border-destructive/30',
+      Icon: AlertTriangle,
+    },
+    blocked: {
+      label: 'Bloqueado',
+      cls: 'bg-warning/15 text-warning border-warning/30',
+      Icon: AlertTriangle,
+    },
     skipped: { label: 'Ignorado', cls: 'bg-muted text-muted-foreground', Icon: Clock },
   };
   // Fallback defensivo para status fora do union (pode acontecer com dados
   // legados, hooks mockados parcialmente em testes, ou novos status no DB
   // antes do client ser atualizado).
-  const entry = map[status] ?? { label: String(status ?? '—'), cls: 'bg-muted text-muted-foreground', Icon: Clock };
+  const entry = map[status] ?? {
+    label: String(status ?? '—'),
+    cls: 'bg-muted text-muted-foreground',
+    Icon: Clock,
+  };
   const { label, cls, Icon } = entry;
   return (
-    <Badge variant="outline" className={cn('text-[10px] gap-1', cls)}>
+    <Badge variant="outline" className={cn('gap-1 text-[10px]', cls)}>
       <Icon className={cn('h-3 w-3', status === 'running' && 'animate-spin')} aria-hidden />
       {label}
     </Badge>
@@ -46,15 +87,27 @@ function StatusBadge({ status }: { status: OptimizationItem['status'] }) {
 
 export function OptimizationQueuePanel() {
   const {
-    items, isLoading, enqueue, remove, resetStuck,
-    startAuto, stopAuto, isExecuting, counts,
-    requeueLastBridgeFailure, lastBridgeFailure,
+    items,
+    isLoading,
+    enqueue,
+    remove,
+    resetStuck,
+    startAuto,
+    stopAuto,
+    isExecuting,
+    counts,
+    requeueLastBridgeFailure,
+    lastBridgeFailure,
   } = useOptimizationQueue();
   const [requeuing, setRequeuing] = useState(false);
 
   const handleRequeue = async () => {
     setRequeuing(true);
-    try { await requeueLastBridgeFailure(); } finally { setRequeuing(false); }
+    try {
+      await requeueLastBridgeFailure();
+    } finally {
+      setRequeuing(false);
+    }
   };
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -70,7 +123,9 @@ export function OptimizationQueuePanel() {
       priority: Number(priority) || 100,
     });
     if (ok) {
-      setTitle(''); setDescription(''); setPriority('100');
+      setTitle('');
+      setDescription('');
+      setPriority('100');
       setDialogOpen(false);
     }
   };
@@ -78,8 +133,8 @@ export function OptimizationQueuePanel() {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <CardTitle className="text-base flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <CardTitle className="flex items-center gap-2 text-base">
             <ListChecks className="h-4 w-4" />
             Fila automática de otimizações
             <span className="text-xs font-normal text-muted-foreground">
@@ -90,7 +145,8 @@ export function OptimizationQueuePanel() {
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
-                  <Plus className="h-3.5 w-3.5 mr-1.5" />Adicionar
+                  <Plus className="mr-1.5 h-3.5 w-3.5" />
+                  Adicionar
                 </Button>
               </DialogTrigger>
               <DialogContent>
@@ -100,26 +156,52 @@ export function OptimizationQueuePanel() {
                 <div className="space-y-3">
                   <div>
                     <label className="text-xs font-medium text-muted-foreground">Título</label>
-                    <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Ex: Habilitar índice idx_products_active_category_created" />
+                    <Input
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="Ex: Habilitar índice idx_products_active_category_created"
+                    />
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground">Descrição (opcional)</label>
-                    <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Detalhes técnicos, links, comandos…" />
+                    <label className="text-xs font-medium text-muted-foreground">
+                      Descrição (opcional)
+                    </label>
+                    <Textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Detalhes técnicos, links, comandos…"
+                    />
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground">Prioridade (menor = antes)</label>
-                    <Input type="number" value={priority} onChange={e => setPriority(e.target.value)} />
+                    <label className="text-xs font-medium text-muted-foreground">
+                      Prioridade (menor = antes)
+                    </label>
+                    <Input
+                      type="number"
+                      value={priority}
+                      onChange={(e) => setPriority(e.target.value)}
+                    />
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-                  <Button onClick={handleAdd} disabled={!title.trim()}>Enfileirar</Button>
+                  <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleAdd} disabled={!title.trim()}>
+                    Enfileirar
+                  </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
 
-            <Button variant="outline" size="sm" onClick={resetStuck} title="Reiniciar itens travados/falhos">
-              <RotateCcw className="h-3.5 w-3.5 mr-1.5" />Reset
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={resetStuck}
+              title="Reiniciar itens travados/falhos"
+            >
+              <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+              Reset
             </Button>
 
             <Button
@@ -128,7 +210,8 @@ export function OptimizationQueuePanel() {
               onClick={handleRequeue}
               disabled={!lastBridgeFailure || requeuing || isExecuting}
               className={cn(
-                lastBridgeFailure && 'border-warning/50 text-warning hover:bg-warning/10 hover:text-warning',
+                lastBridgeFailure &&
+                  'border-warning/50 text-warning hover:bg-warning/10 hover:text-warning',
               )}
               title={
                 lastBridgeFailure
@@ -136,19 +219,25 @@ export function OptimizationQueuePanel() {
                   : 'Sem falhas de 503/SUPABASE_EDGE_RUNTIME_ERROR para retry'
               }
             >
-              {requeuing
-                ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                : <Zap className="h-3.5 w-3.5 mr-1.5" />}
+              {requeuing ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Zap className="mr-1.5 h-3.5 w-3.5" />
+              )}
               Retry 503
               {lastBridgeFailure && (
-                <Badge variant="outline" className="ml-1.5 h-4 px-1 text-[9px] bg-warning/10 border-warning/30 text-warning">
+                <Badge
+                  variant="outline"
+                  className="ml-1.5 h-4 border-warning/30 bg-warning/10 px-1 text-[9px] text-warning"
+                >
                   1
                 </Badge>
               )}
             </Button>
             {isExecuting ? (
               <Button variant="destructive" size="sm" onClick={stopAuto}>
-                <Pause className="h-3.5 w-3.5 mr-1.5" />Parar
+                <Pause className="mr-1.5 h-3.5 w-3.5" />
+                Parar
               </Button>
             ) : (
               <Button
@@ -157,7 +246,8 @@ export function OptimizationQueuePanel() {
                 onClick={startAuto}
                 disabled={counts.pending === 0}
               >
-                <Play className="h-3.5 w-3.5 mr-1.5" />Executar tudo
+                <Play className="mr-1.5 h-3.5 w-3.5" />
+                Executar tudo
               </Button>
             )}
           </div>
@@ -165,38 +255,63 @@ export function OptimizationQueuePanel() {
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <p className="text-xs text-muted-foreground py-4">Carregando fila…</p>
+          <p className="py-4 text-xs text-muted-foreground">Carregando fila…</p>
         ) : items.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <ListChecks className="h-10 w-10 mx-auto mb-2 opacity-30" />
+          <div className="py-8 text-center text-muted-foreground">
+            <ListChecks className="mx-auto mb-2 h-10 w-10 opacity-30" />
             <p className="text-sm font-medium">Nenhuma otimização na fila</p>
-            <p className="text-xs mt-1">Adicione itens e clique em "Executar tudo" para rodar em sequência.</p>
+            <p className="mt-1 text-xs">
+              Adicione itens e clique em "Executar tudo" para rodar em sequência.
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/30">
-                  <th className="text-left p-2 font-medium text-muted-foreground text-xs">#</th>
-                  <th className="text-left p-2 font-medium text-muted-foreground text-xs">Título</th>
-                  <th className="text-left p-2 font-medium text-muted-foreground text-xs">Status</th>
-                  <th className="text-left p-2 font-medium text-muted-foreground text-xs">Guardrail</th>
-                  <th className="text-left p-2 font-medium text-muted-foreground text-xs">Atualizado</th>
-                  <th className="text-right p-2 font-medium text-muted-foreground text-xs">Ações</th>
+                  <th className="p-2 text-left text-xs font-medium text-muted-foreground">#</th>
+                  <th className="p-2 text-left text-xs font-medium text-muted-foreground">
+                    Título
+                  </th>
+                  <th className="p-2 text-left text-xs font-medium text-muted-foreground">
+                    Status
+                  </th>
+                  <th className="p-2 text-left text-xs font-medium text-muted-foreground">
+                    Guardrail
+                  </th>
+                  <th className="p-2 text-left text-xs font-medium text-muted-foreground">
+                    Atualizado
+                  </th>
+                  <th className="p-2 text-right text-xs font-medium text-muted-foreground">
+                    Ações
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((it, idx) => (
-                  <tr key={it.id} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
-                    <td className="p-2 text-xs text-muted-foreground tabular-nums">{idx + 1}</td>
+                  <tr
+                    key={it.id}
+                    className="border-b border-border/30 transition-colors hover:bg-muted/20"
+                  >
+                    <td className="p-2 text-xs tabular-nums text-muted-foreground">{idx + 1}</td>
                     <td className="p-2">
-                      <p className="font-medium text-sm">{it.title}</p>
-                      {it.description && <p className="text-[11px] text-muted-foreground line-clamp-1">{it.description}</p>}
-                      {it.error && <p className="text-[11px] text-destructive mt-0.5">⚠ {it.error}</p>}
+                      <p className="text-sm font-medium">{it.title}</p>
+                      {it.description && (
+                        <p className="line-clamp-1 text-[11px] text-muted-foreground">
+                          {it.description}
+                        </p>
+                      )}
+                      {it.error && (
+                        <p className="mt-0.5 text-[11px] text-destructive">⚠ {it.error}</p>
+                      )}
                     </td>
-                    <td className="p-2"><StatusBadge status={it.status} /></td>
-                    <td className="p-2 text-xs text-muted-foreground">{it.guardrail_status ?? '—'}</td>
-                    <td className="p-2 text-[11px] text-muted-foreground whitespace-nowrap">
+                    <td className="p-2">
+                      <StatusBadge status={it.status} />
+                    </td>
+                    <td className="p-2 text-xs text-muted-foreground">
+                      {it.guardrail_status ?? '—'}
+                    </td>
+                    <td className="whitespace-nowrap p-2 text-[11px] text-muted-foreground">
                       {(() => {
                         if (!it.updated_at) return '—';
                         const d = new Date(it.updated_at);

@@ -11,15 +11,15 @@ export type { PersonalizationArea };
 export interface MockupDraft {
   id: string;
   user_id: string;
-  draft_key: string;                       // default: 'default'
+  draft_key: string; // default: 'default'
   product_id: string | null;
   product_name: string | null;
   technique_id: string | null;
   technique_name: string | null;
   client_id: string | null;
   client_name: string | null;
-  personalization_areas: PersonalizationArea[];  // JSONB
-  logo_data: string | null;                // JSONB stringified
+  personalization_areas: PersonalizationArea[]; // JSONB
+  logo_data: string | null; // JSONB stringified
   created_at: string;
   updated_at: string;
 }

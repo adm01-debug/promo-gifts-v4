@@ -1,5 +1,5 @@
 import { renderHook, act } from '@testing-library/react';
-import { useSearchHistory } from "@/hooks/common/useSearchHistory";
+import { useSearchHistory } from '@/hooks/common/useSearchHistory';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 describe('useSearchHistory', () => {
@@ -15,13 +15,13 @@ describe('useSearchHistory', () => {
 
   it('should add items to history', () => {
     const { result } = renderHook(() => useSearchHistory('company'));
-    
+
     act(() => {
       result.current.addToHistory({
         id: '1',
         label: 'Company 1',
         type: 'company',
-        metadata: { cnpj: '123' }
+        metadata: { cnpj: '123' },
       });
     });
 
@@ -31,11 +31,11 @@ describe('useSearchHistory', () => {
 
   it('should not allow duplicates by ID and type', () => {
     const { result } = renderHook(() => useSearchHistory('company'));
-    
+
     act(() => {
       result.current.addToHistory({ id: '1', label: 'Company A', type: 'company' });
     });
-    
+
     act(() => {
       result.current.addToHistory({ id: '1', label: 'Company A Updated', type: 'company' });
     });
@@ -46,11 +46,11 @@ describe('useSearchHistory', () => {
 
   it('should prioritize latest additions', () => {
     const { result } = renderHook(() => useSearchHistory('company'));
-    
+
     act(() => {
       result.current.addToHistory({ id: '1', label: 'Company 1', type: 'company' });
     });
-    
+
     act(() => {
       result.current.addToHistory({ id: '2', label: 'Company 2', type: 'company' });
     });
@@ -61,11 +61,11 @@ describe('useSearchHistory', () => {
 
   it('should remove items from history', () => {
     const { result } = renderHook(() => useSearchHistory('company'));
-    
+
     act(() => {
       result.current.addToHistory({ id: '1', label: 'Company 1', type: 'company' });
     });
-    
+
     act(() => {
       result.current.removeFromHistory('1');
     });
@@ -75,7 +75,7 @@ describe('useSearchHistory', () => {
 
   it('should clear history for a specific type', () => {
     const { result: companyHistory } = renderHook(() => useSearchHistory('company'));
-    
+
     act(() => {
       companyHistory.current.addToHistory({ id: '1', label: 'C1', type: 'company' });
     });

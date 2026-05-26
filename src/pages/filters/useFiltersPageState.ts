@@ -602,11 +602,9 @@ export function useFiltersPageState() {
     else if (key === 'ramosAtividade')
       setFilters({ ...filters, ramosAtividade: [], segmentosAtividade: [] });
     // FIX-02: priceRange precisa de valor sentinela [0,9999], não [] (que causaria crash downstream).
-    else if (key === 'priceRange')
-      setFilters({ ...filters, priceRange: [0, 9999] });
+    else if (key === 'priceRange') setFilters({ ...filters, priceRange: [0, 9999] });
     // FIX-02 (cont): search é string, não boolean nem array.
-    else if (key === 'search')
-      setFilters({ ...filters, search: '' });
+    else if (key === 'search') setFilters({ ...filters, search: '' });
     else if (Array.isArray(filters[key])) setFilters({ ...filters, [key]: [] });
     else if (typeof filters[key] === 'boolean') setFilters({ ...filters, [key]: false });
     else if (typeof filters[key] === 'number') setFilters({ ...filters, [key]: 0 });

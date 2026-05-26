@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { invokeExternalDb } from '@/lib/external-db/bridge';
-import { getProductImageUrl, type PromobrindProduct } from "@/lib/external-db/product-types";
+import { getProductImageUrl, type PromobrindProduct } from '@/lib/external-db/product-types';
 
 export type AlertLevel = 'low' | 'critical' | 'out';
 
@@ -15,7 +15,8 @@ export interface StockAlert {
   supplier: string;
 }
 
-const STOCK_ALERT_SELECT = 'id, name, sku, stock_quantity, min_quantity, brand, primary_image_url, images';
+const STOCK_ALERT_SELECT =
+  'id, name, sku, stock_quantity, min_quantity, brand, primary_image_url, images';
 
 export function useStockAlerts(lowStockThreshold = 50, criticalStockThreshold = 10) {
   return useQuery<StockAlert[], Error>({
@@ -25,15 +26,15 @@ export function useStockAlerts(lowStockThreshold = 50, criticalStockThreshold = 
         table: 'products',
         operation: 'select',
         select: STOCK_ALERT_SELECT,
-        filters: { 
-          is_active: true, 
-          stock_quantity: `lt.${lowStockThreshold}` 
+        filters: {
+          is_active: true,
+          stock_quantity: `lt.${lowStockThreshold}`,
         },
         orderBy: { column: 'stock_quantity', ascending: true },
         limit: 50,
       });
 
-      return result.records.map(p => {
+      return result.records.map((p) => {
         const stock = p.stock_quantity ?? 0;
         let alertLevel: AlertLevel = 'low';
         if (stock === 0) alertLevel = 'out';
@@ -47,7 +48,7 @@ export function useStockAlerts(lowStockThreshold = 50, criticalStockThreshold = 
           imageUrl: getProductImageUrl(p),
           currentStock: stock,
           alertLevel,
-          supplier: p.brand || "",
+          supplier: p.brand || '',
         };
       });
     },

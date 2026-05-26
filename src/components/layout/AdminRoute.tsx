@@ -1,18 +1,18 @@
-import { type ReactNode, Suspense, useState, useEffect } from "react";
-import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { Loader2 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { EnhancedErrorBoundary } from "@/components/errors/EnhancedErrorBoundary";
-import { EmptyState } from "@/components/common/EmptyState";
-import { lazyWithRetry } from "@/lib/lazyWithRetry";
+import { type ReactNode, Suspense, useState, useEffect } from 'react';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { EnhancedErrorBoundary } from '@/components/errors/EnhancedErrorBoundary';
+import { EmptyState } from '@/components/common/EmptyState';
+import { lazyWithRetry } from '@/lib/lazyWithRetry';
 
 const MfaEnrollmentDialog = lazyWithRetry(() =>
-  import("@/components/security/MfaEnrollmentDialog").then((m) => ({
+  import('@/components/security/MfaEnrollmentDialog').then((m) => ({
     default: m.MfaEnrollmentDialog,
   })),
 );
 const MfaChallengeDialog = lazyWithRetry(() =>
-  import("@/components/security/MfaChallengeDialog").then((m) => ({
+  import('@/components/security/MfaChallengeDialog').then((m) => ({
     default: m.MfaChallengeDialog,
   })),
 );
@@ -45,7 +45,7 @@ export function AdminRoute({ children }: AdminRouteProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -57,11 +57,11 @@ export function AdminRoute({ children }: AdminRouteProps) {
 
   if (!canManage) {
     return (
-      <EmptyState 
-        variant="security" 
-        title="Área Administrativa" 
+      <EmptyState
+        variant="security"
+        title="Área Administrativa"
         description="Acesso restrito a gestores e administradores."
-        action={{ label: "Voltar ao início", onClick: () => window.location.href = "/" }}
+        action={{ label: 'Voltar ao início', onClick: () => (window.location.href = '/') }}
       />
     );
   }
@@ -70,7 +70,7 @@ export function AdminRoute({ children }: AdminRouteProps) {
   if (!hasMFA) {
     return (
       <>
-        <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex min-h-screen items-center justify-center bg-background">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
         <Suspense fallback={<DialogFallback />}>
@@ -81,10 +81,10 @@ export function AdminRoute({ children }: AdminRouteProps) {
   }
 
   // Admin/manager com MFA mas sessão em aal1 → exige challenge antes de renderizar filhos
-  if (mfaRequired && currentAAL === "aal1") {
+  if (mfaRequired && currentAAL === 'aal1') {
     return (
       <>
-        <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex min-h-screen items-center justify-center bg-background">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
         <Suspense fallback={<DialogFallback />}>
@@ -98,11 +98,11 @@ export function AdminRoute({ children }: AdminRouteProps) {
     <EnhancedErrorBoundary
       fallback={
         <div className="p-8">
-          <EmptyState 
-            variant="error" 
-            title="Erro Administrativo" 
+          <EmptyState
+            variant="error"
+            title="Erro Administrativo"
             description="Não foi possível carregar o painel administrativo. Tente novamente."
-            action={{ label: "Recarregar", onClick: () => window.location.reload() }}
+            action={{ label: 'Recarregar', onClick: () => window.location.reload() }}
           />
         </div>
       }

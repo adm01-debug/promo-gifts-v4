@@ -17,7 +17,9 @@
 .page-transition-enter-active {
   opacity: 1;
   transform: translateY(0);
-  transition: opacity 200ms ease-out, transform 200ms ease-out;
+  transition:
+    opacity 200ms ease-out,
+    transform 200ms ease-out;
 }
 
 .page-transition-exit {
@@ -28,7 +30,9 @@
 .page-transition-exit-active {
   opacity: 0;
   transform: translateY(-8px);
-  transition: opacity 150ms ease-in, transform 150ms ease-in;
+  transition:
+    opacity 150ms ease-in,
+    transform 150ms ease-in;
 }
 
 /* ===== Optimized Skeleton Loading ===== */
@@ -107,7 +111,10 @@
 
 /* ===== Optimized Card Hover ===== */
 .card-hover-lift {
-  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease,
+    border-color 200ms ease;
 }
 
 .card-hover-lift:hover {
@@ -127,7 +134,9 @@
 }
 
 .focus-ring:focus-visible {
-  box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--primary));
+  box-shadow:
+    0 0 0 2px hsl(var(--background)),
+    0 0 0 4px hsl(var(--primary));
 }
 
 /* ===== Loading States ===== */
@@ -204,15 +213,10 @@
 }
 
 .img-loading::after {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    hsl(var(--muted-foreground) / 0.1),
-    transparent
-  );
+  background: linear-gradient(90deg, transparent, hsl(var(--muted-foreground) / 0.1), transparent);
   animation: skeleton-shimmer 1.5s infinite;
   background-size: 200% 100%;
 }
@@ -264,12 +268,16 @@
 }
 
 .grid-animate > * {
-  transition: transform 300ms ease, opacity 300ms ease;
+  transition:
+    transform 300ms ease,
+    opacity 300ms ease;
 }
 
 /* ===== Form Field Focus ===== */
 .form-field-focus {
-  transition: border-color 200ms ease, box-shadow 200ms ease;
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease;
 }
 
 .form-field-focus:focus {
@@ -283,7 +291,7 @@
 }
 
 .badge-pulse::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: -2px;
   border-radius: inherit;

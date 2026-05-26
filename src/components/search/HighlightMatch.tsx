@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo } from 'react';
 
 interface HighlightMatchProps {
   text: string;
@@ -15,20 +15,20 @@ interface HighlightMatchProps {
 export const HighlightMatch = memo(function HighlightMatch({
   text,
   query,
-  className = "",
-  highlightClassName = "bg-primary/20 text-primary font-semibold rounded-sm px-0.5",
+  className = '',
+  highlightClassName = 'bg-primary/20 text-primary font-semibold rounded-sm px-0.5',
 }: HighlightMatchProps) {
   if (!query || query.length < 2) {
     return <span className={className}>{text}</span>;
   }
 
   // Remove diacritics for comparison
-  const normalize = (str: string) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const normalize = (str: string) => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
   const words = query
     .trim()
     .split(/\s+/)
-    .filter(w => w.length >= 2);
+    .filter((w) => w.length >= 2);
 
   if (words.length === 0) {
     return <span className={className}>{text}</span>;
@@ -37,21 +37,24 @@ export const HighlightMatch = memo(function HighlightMatch({
   // To highlight diacritic-insensitive, we need a smarter approach than simple split
   // We'll create a regex that matches the words even with accents
   const createDiacriticRegex = (word: string) => {
-    return word.split('').map(char => {
-      const normalized = normalize(char);
-      if (normalized === 'a') return '[aàáâãäå]';
-      if (normalized === 'e') return '[eèéêë]';
-      if (normalized === 'i') return '[iìíîï]';
-      if (normalized === 'o') return '[oòóôõö]';
-      if (normalized === 'u') return '[uùúûü]';
-      if (normalized === 'c') return '[cç]';
-      if (normalized === 'n') return '[nñ]';
-      return char.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    }).join('');
+    return word
+      .split('')
+      .map((char) => {
+        const normalized = normalize(char);
+        if (normalized === 'a') return '[aàáâãäå]';
+        if (normalized === 'e') return '[eèéêë]';
+        if (normalized === 'i') return '[iìíîï]';
+        if (normalized === 'o') return '[oòóôõö]';
+        if (normalized === 'u') return '[uùúûü]';
+        if (normalized === 'c') return '[cç]';
+        if (normalized === 'n') return '[nñ]';
+        return char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      })
+      .join('');
   };
 
-  const regexStr = words.map(createDiacriticRegex).join("|");
-  const regex = new RegExp(`(${regexStr})`, "gi");
+  const regexStr = words.map(createDiacriticRegex).join('|');
+  const regex = new RegExp(`(${regexStr})`, 'gi');
   const parts = text.split(regex);
 
   return (
@@ -63,7 +66,7 @@ export const HighlightMatch = memo(function HighlightMatch({
           </mark>
         ) : (
           <span key={i}>{part}</span>
-        )
+        ),
       )}
     </span>
   );

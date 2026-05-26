@@ -3,10 +3,10 @@
  * G X → navega /comparar | Shift+X → limpa | 1-4 → foca produto N
  * D → toggle differences | R → toggle radar
  */
-import { useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { useComparisonStore } from "@/stores/useComparisonStore";
-import { toast } from "sonner";
+import { useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useComparisonStore } from '@/stores/useComparisonStore';
+import { toast } from 'sonner';
 
 interface Options {
   onToggleDifferences?: () => void;
@@ -28,44 +28,48 @@ export function useComparisonShortcuts(options: Options = {}) {
     if (options.enabled === false) return;
     const handler = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
-      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
       const now = Date.now();
 
       // G X sequence (within 800ms) → navigate
-      if (e.key.toLowerCase() === "g") {
-        lastKeyRef.current = { key: "g", at: now };
+      if (e.key.toLowerCase() === 'g') {
+        lastKeyRef.current = { key: 'g', at: now };
         return;
       }
-      if (lastKeyRef.current?.key === "g" && now - lastKeyRef.current.at < 800 && e.key.toLowerCase() === "x") {
+      if (
+        lastKeyRef.current?.key === 'g' &&
+        now - lastKeyRef.current.at < 800 &&
+        e.key.toLowerCase() === 'x'
+      ) {
         e.preventDefault();
         lastKeyRef.current = null;
-        navigate("/comparar");
+        navigate('/comparar');
         return;
       }
       lastKeyRef.current = null;
 
       // Shift+X → clear
-      if (e.shiftKey && e.key.toLowerCase() === "x") {
+      if (e.shiftKey && e.key.toLowerCase() === 'x') {
         e.preventDefault();
         clearCompare();
-        toast.success("Comparação limpa");
+        toast.success('Comparação limpa');
         return;
       }
 
       // 1-4 → focus product N
-      if (["1", "2", "3", "4"].includes(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      if (['1', '2', '3', '4'].includes(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey) {
         const idx = parseInt(e.key, 10) - 1;
         const el = document.querySelector(`[data-compare-product="${idx}"]`) as HTMLElement | null;
         if (el) {
           e.preventDefault();
-          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
           el.focus?.();
         }
         return;
       }
 
       // D → toggle differences
-      if (e.key.toLowerCase() === "d" && !e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      if (e.key.toLowerCase() === 'd' && !e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey) {
         if (optsRef.current.onToggleDifferences) {
           e.preventDefault();
           optsRef.current.onToggleDifferences();
@@ -74,14 +78,14 @@ export function useComparisonShortcuts(options: Options = {}) {
       }
 
       // R → toggle radar
-      if (e.key.toLowerCase() === "r" && !e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      if (e.key.toLowerCase() === 'r' && !e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey) {
         if (optsRef.current.onToggleRadar) {
           e.preventDefault();
           optsRef.current.onToggleRadar();
         }
       }
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
   }, [navigate, clearCompare, options.enabled]);
 }

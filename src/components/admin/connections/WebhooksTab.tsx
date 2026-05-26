@@ -283,8 +283,7 @@ export function WebhooksTab() {
                                 toast.error('Erro ao reativar webhook', {
                                   description: sanitizeError(error),
                                 });
-                              }
-                              else {
+                              } else {
                                 toast.success('Reativado');
                                 load();
                               }

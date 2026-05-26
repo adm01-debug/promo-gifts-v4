@@ -9,10 +9,7 @@ import { ptBR } from 'date-fns/locale';
  * @param pattern - Padrão de formatação (default: dd/MM/yyyy)
  * @returns String formatada em português
  */
-export function formatDate(
-  date: Date | string | number,
-  pattern: string = 'dd/MM/yyyy'
-): string {
+export function formatDate(date: Date | string | number, pattern: string = 'dd/MM/yyyy'): string {
   const parsedDate = typeof date === 'string' ? parseISO(date) : new Date(date);
   return format(parsedDate, pattern, { locale: ptBR });
 }
@@ -43,12 +40,12 @@ export function formatTime(date: Date | string | number): string {
  */
 export function formatDateRelative(
   date: Date | string | number,
-  baseDate: Date = new Date()
+  baseDate: Date = new Date(),
 ): string {
   const parsedDate = typeof date === 'string' ? parseISO(date) : new Date(date);
-  return formatDistance(parsedDate, baseDate, { 
+  return formatDistance(parsedDate, baseDate, {
     locale: ptBR,
-    addSuffix: true 
+    addSuffix: true,
   });
 }
 
@@ -58,7 +55,7 @@ export function formatDateRelative(
  */
 export function formatDateRelativeFull(
   date: Date | string | number,
-  baseDate: Date = new Date()
+  baseDate: Date = new Date(),
 ): string {
   const parsedDate = typeof date === 'string' ? parseISO(date) : new Date(date);
   return formatRelative(parsedDate, baseDate, { locale: ptBR });
@@ -69,7 +66,7 @@ export function formatDateRelativeFull(
  * Ex: "25 Dez 2025, 14:30"
  */
 export function formatDateCompact(date: Date | string | number): string {
-  return formatDate(date, "dd MMM yyyy, HH:mm");
+  return formatDate(date, 'dd MMM yyyy, HH:mm');
 }
 
 /**

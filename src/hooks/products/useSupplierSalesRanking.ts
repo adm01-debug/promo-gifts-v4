@@ -4,9 +4,9 @@
  * turnover_score e avg_velocity_7d de todos os produtos.
  * Cache de 10 minutos — dados de MV não mudam em tempo real.
  */
-import { useQuery } from "@tanstack/react-query";
-import { invokeExternalDb } from "@/lib/external-db";
-import { logger } from "@/lib/logger";
+import { useQuery } from '@tanstack/react-query';
+import { invokeExternalDb } from '@/lib/external-db';
+import { logger } from '@/lib/logger';
 
 interface ProductIntelligenceRanking {
   product_id: string;
@@ -53,12 +53,18 @@ export function useSupplierSalesRanking() {
           });
         }
 
-        logger.info(`[SupplierSalesRanking] Loaded ${map.size} products from mv_product_intelligence`);
+        logger.info(
+          `[SupplierSalesRanking] Loaded ${map.size} products from mv_product_intelligence`,
+        );
         return map;
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : '';
         // Graceful fallback if MV not populated
-        if (msg.includes('not been populated') || msg.includes('não mapeada') || msg.includes('does not exist')) {
+        if (
+          msg.includes('not been populated') ||
+          msg.includes('não mapeada') ||
+          msg.includes('does not exist')
+        ) {
           logger.warn('[SupplierSalesRanking] MV not populated yet, returning empty map');
           return new Map();
         }

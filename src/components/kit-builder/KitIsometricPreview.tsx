@@ -46,7 +46,7 @@ function packItems(
   boxW: number,
   boxH: number,
   boxD: number,
-  items: { id: string; name: string; w: number; h: number; d: number; quantity: number }[]
+  items: { id: string; name: string; w: number; h: number; d: number; quantity: number }[],
 ): PlacedItem[] {
   const placed: PlacedItem[] = [];
   let cursorX = 0;
@@ -117,7 +117,7 @@ export function KitIsometricPreview({ kitState, className }: KitIsometricPreview
         h: Math.max(i.height, 1),
         d: Math.max(i.depth, 1),
         quantity: i.quantity,
-      }))
+      })),
     );
     return { placed, totalRequested: items.reduce((s, i) => s + i.quantity, 0) };
   }, [box, items]);
@@ -125,20 +125,28 @@ export function KitIsometricPreview({ kitState, className }: KitIsometricPreview
   if (!box) {
     return (
       <Card className={cn('flex items-center justify-center p-8 text-muted-foreground', className)}>
-        <Package className="h-5 w-5 mr-2" /> Selecione uma caixa para visualizar
+        <Package className="mr-2 h-5 w-5" /> Selecione uma caixa para visualizar
       </Card>
     );
   }
 
   const { internalWidth: bw, internalHeight: bh, internalDepth: bd } = box;
   const corners = [
-    iso(0, 0, 0), iso(bw, 0, 0), iso(bw, 0, bd), iso(0, 0, bd),
-    iso(0, bh, 0), iso(bw, bh, 0), iso(bw, bh, bd), iso(0, bh, bd),
+    iso(0, 0, 0),
+    iso(bw, 0, 0),
+    iso(bw, 0, bd),
+    iso(0, 0, bd),
+    iso(0, bh, 0),
+    iso(bw, bh, 0),
+    iso(bw, bh, bd),
+    iso(0, bh, bd),
   ];
   const xs = corners.map((c) => c.px);
   const ys = corners.map((c) => c.py);
-  const minX = Math.min(...xs), maxX = Math.max(...xs);
-  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const minX = Math.min(...xs),
+    maxX = Math.max(...xs);
+  const minY = Math.min(...ys),
+    maxY = Math.max(...ys);
   const pad = 12;
   const vbW = maxX - minX + pad * 2;
   const vbH = maxY - minY + pad * 2;
@@ -147,17 +155,27 @@ export function KitIsometricPreview({ kitState, className }: KitIsometricPreview
 
   // Cor semântica do status
   const statusColor =
-    volumeUsagePercent > 100 ? 'destructive' :
-    volumeUsagePercent > 85 ? 'warning' :
-    volumeUsagePercent > 50 ? 'primary' : 'muted';
+    volumeUsagePercent > 100
+      ? 'destructive'
+      : volumeUsagePercent > 85
+        ? 'warning'
+        : volumeUsagePercent > 50
+          ? 'primary'
+          : 'muted';
   const statusLabel =
-    volumeUsagePercent > 100 ? 'Excedido' :
-    volumeUsagePercent > 85 ? 'Quase cheio' :
-    volumeUsagePercent > 50 ? 'Bom uso' : 'Sobra espaço';
+    volumeUsagePercent > 100
+      ? 'Excedido'
+      : volumeUsagePercent > 85
+        ? 'Quase cheio'
+        : volumeUsagePercent > 50
+          ? 'Bom uso'
+          : 'Sobra espaço';
 
   // Helpers para faces de cubo
   const facePath = (pts: { px: number; py: number }[]) =>
-    pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${(p.px + tx).toFixed(1)},${(p.py + ty).toFixed(1)}`).join(' ') + ' Z';
+    pts
+      .map((p, i) => `${i === 0 ? 'M' : 'L'}${(p.px + tx).toFixed(1)},${(p.py + ty).toFixed(1)}`)
+      .join(' ') + ' Z';
 
   // Caixa: face traseira-direita + base + lateral
   const boxBack = facePath([corners[1], corners[2], corners[6], corners[5]]);
@@ -166,10 +184,7 @@ export function KitIsometricPreview({ kitState, className }: KitIsometricPreview
 
   // Itens — desenhar do mais distante (z+x maior) ao mais próximo, baixo→alto
   const sorted = layout
-    ? [...layout.placed].sort((a, b) =>
-        a.y - b.y ||
-        (b.x + b.d) - (a.x + a.d)
-      )
+    ? [...layout.placed].sort((a, b) => a.y - b.y || b.x + b.d - (a.x + a.d))
     : [];
 
   const placedCount = sorted.length;
@@ -178,9 +193,9 @@ export function KitIsometricPreview({ kitState, className }: KitIsometricPreview
 
   return (
     <Card className={cn('overflow-hidden', className)}>
-      <CardContent className="p-4 space-y-3">
+      <CardContent className="space-y-3 p-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-display font-semibold text-sm flex items-center gap-2">
+          <h3 className="flex items-center gap-2 font-display text-sm font-semibold">
             <Package className="h-4 w-4 text-primary" />
             Preview da Caixa
           </h3>
@@ -190,24 +205,42 @@ export function KitIsometricPreview({ kitState, className }: KitIsometricPreview
               'text-[10px]',
               statusColor === 'destructive' && 'border-destructive text-destructive',
               statusColor === 'warning' && 'border-warning text-warning',
-              statusColor === 'primary' && 'border-primary text-primary'
+              statusColor === 'primary' && 'border-primary text-primary',
             )}
           >
             {volumeUsagePercent.toFixed(0)}% — {statusLabel}
           </Badge>
         </div>
 
-        <div className="bg-muted/30 rounded-lg p-2 flex items-center justify-center">
+        <div className="flex items-center justify-center rounded-lg bg-muted/30 p-2">
           <svg
             viewBox={`0 0 ${vbW} ${vbH}`}
-            className="w-full h-auto max-h-[280px]"
+            className="h-auto max-h-[280px] w-full"
             role="img"
             aria-label={`Visualização isométrica da caixa ${box.name} com ${placedCount} itens`}
           >
             {/* Faces da caixa (vazia/wireframe) */}
-            <path d={boxBottom} fill="hsl(var(--muted))" fillOpacity="0.4" stroke="hsl(var(--border))" strokeWidth="1" />
-            <path d={boxBack} fill="hsl(var(--muted))" fillOpacity="0.25" stroke="hsl(var(--border))" strokeWidth="1" />
-            <path d={boxLeft} fill="hsl(var(--muted))" fillOpacity="0.3" stroke="hsl(var(--border))" strokeWidth="1" />
+            <path
+              d={boxBottom}
+              fill="hsl(var(--muted))"
+              fillOpacity="0.4"
+              stroke="hsl(var(--border))"
+              strokeWidth="1"
+            />
+            <path
+              d={boxBack}
+              fill="hsl(var(--muted))"
+              fillOpacity="0.25"
+              stroke="hsl(var(--border))"
+              strokeWidth="1"
+            />
+            <path
+              d={boxLeft}
+              fill="hsl(var(--muted))"
+              fillOpacity="0.3"
+              stroke="hsl(var(--border))"
+              strokeWidth="1"
+            />
 
             {/* Itens empilhados */}
             {sorted.map((p) => {
@@ -227,9 +260,27 @@ export function KitIsometricPreview({ kitState, className }: KitIsometricPreview
               return (
                 <g key={p.id}>
                   <title>{p.name}</title>
-                  <path d={right} fill={p.color} fillOpacity="0.65" stroke="hsl(var(--background))" strokeWidth="0.6" />
-                  <path d={front} fill={p.color} fillOpacity="0.85" stroke="hsl(var(--background))" strokeWidth="0.6" />
-                  <path d={top} fill={p.color} fillOpacity="1" stroke="hsl(var(--background))" strokeWidth="0.6" />
+                  <path
+                    d={right}
+                    fill={p.color}
+                    fillOpacity="0.65"
+                    stroke="hsl(var(--background))"
+                    strokeWidth="0.6"
+                  />
+                  <path
+                    d={front}
+                    fill={p.color}
+                    fillOpacity="0.85"
+                    stroke="hsl(var(--background))"
+                    strokeWidth="0.6"
+                  />
+                  <path
+                    d={top}
+                    fill={p.color}
+                    fillOpacity="1"
+                    stroke="hsl(var(--background))"
+                    strokeWidth="0.6"
+                  />
                 </g>
               );
             })}
@@ -252,7 +303,7 @@ export function KitIsometricPreview({ kitState, className }: KitIsometricPreview
           <span>
             {placedCount}/{totalRequested} itens visíveis
             {overflowCount > 0 && (
-              <span className="text-destructive ml-1">(+{overflowCount} fora)</span>
+              <span className="ml-1 text-destructive">(+{overflowCount} fora)</span>
             )}
           </span>
         </div>

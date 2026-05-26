@@ -1,10 +1,14 @@
-import { Badge } from "@/components/ui/badge";
-import type { FilterState } from "@/components/filters/FilterPanel";
-import { getCategoryIcon, useCategoryIcons, type CategoryIcon } from "@/hooks/products/useCategoryIcons";
-import { useExternalCategoriesQuery } from "@/hooks/products/useExternalCategoriesQuery";
-import { useSupplierNames } from "@/hooks/products/useSupplierNames";
-import { toTitleCase } from "@/lib/textUtils";
-import { X } from "lucide-react";
+import { Badge } from '@/components/ui/badge';
+import type { FilterState } from '@/components/filters/FilterPanel';
+import {
+  getCategoryIcon,
+  useCategoryIcons,
+  type CategoryIcon,
+} from '@/hooks/products/useCategoryIcons';
+import { useExternalCategoriesQuery } from '@/hooks/products/useExternalCategoriesQuery';
+import { useSupplierNames } from '@/hooks/products/useSupplierNames';
+import { toTitleCase } from '@/lib/textUtils';
+import { X } from 'lucide-react';
 
 interface CatalogActiveFiltersProps {
   filters: FilterState;
@@ -12,7 +16,11 @@ interface CatalogActiveFiltersProps {
   activeFiltersCount: number;
 }
 
-export function CatalogActiveFilters({ filters, setFilters, activeFiltersCount }: CatalogActiveFiltersProps) {
+export function CatalogActiveFilters({
+  filters,
+  setFilters,
+  activeFiltersCount,
+}: CatalogActiveFiltersProps) {
   const { data: categories = [] } = useExternalCategoriesQuery();
   const { data: iconsRaw } = useCategoryIcons();
   const icons = (iconsRaw ?? []) as CategoryIcon[];
@@ -21,25 +29,29 @@ export function CatalogActiveFilters({ filters, setFilters, activeFiltersCount }
   if (activeFiltersCount === 0) return null;
 
   return (
-    <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-top-1 duration-300">
+    <div className="flex flex-wrap gap-2 duration-300 animate-in fade-in slide-in-from-top-1">
       {filters.colors.map((color) => (
         <Badge
           key={color}
           variant="secondary"
           className="cursor-pointer hover:bg-destructive/10"
-          onClick={() => setFilters({ ...filters, colors: filters.colors.filter((c) => c !== color) })}
+          onClick={() =>
+            setFilters({ ...filters, colors: filters.colors.filter((c) => c !== color) })
+          }
         >
           🎨 {color}
           <span className="ml-1">×</span>
         </Badge>
       ))}
-      
+
       {filters.colorGroups?.map((group) => (
         <Badge
           key={`group-${group}`}
           variant="secondary"
           className="cursor-pointer hover:bg-destructive/10"
-          onClick={() => setFilters({ ...filters, colorGroups: filters.colorGroups?.filter((g) => g !== group) })}
+          onClick={() =>
+            setFilters({ ...filters, colorGroups: filters.colorGroups?.filter((g) => g !== group) })
+          }
         >
           🌈 {toTitleCase(group)}
           <span className="ml-1">×</span>
@@ -51,7 +63,12 @@ export function CatalogActiveFilters({ filters, setFilters, activeFiltersCount }
           key={`var-${variation}`}
           variant="secondary"
           className="cursor-pointer hover:bg-destructive/10"
-          onClick={() => setFilters({ ...filters, colorVariations: filters.colorVariations?.filter((v) => v !== variation) })}
+          onClick={() =>
+            setFilters({
+              ...filters,
+              colorVariations: filters.colorVariations?.filter((v) => v !== variation),
+            })
+          }
         >
           🖌️ {toTitleCase(variation.replace(/-/g, ' '))}
           <span className="ml-1">×</span>
@@ -61,14 +78,16 @@ export function CatalogActiveFilters({ filters, setFilters, activeFiltersCount }
       {filters.categories.map((catId) => {
         const cat = categories.find((c) => c.id === catId);
         if (!cat) return null;
-        
+
         const icon = getCategoryIcon(cat.name, icons);
         return (
           <Badge
             key={catId}
             variant="secondary"
             className="cursor-pointer hover:bg-destructive/10"
-            onClick={() => setFilters({ ...filters, categories: filters.categories.filter((c) => c !== catId) })}
+            onClick={() =>
+              setFilters({ ...filters, categories: filters.categories.filter((c) => c !== catId) })
+            }
           >
             <span className="mr-1">{icon}</span>
             {toTitleCase(cat.name)}
@@ -84,7 +103,12 @@ export function CatalogActiveFilters({ filters, setFilters, activeFiltersCount }
             key={supplierId}
             variant="secondary"
             className="cursor-pointer hover:bg-destructive/10"
-            onClick={() => setFilters({ ...filters, suppliers: filters.suppliers.filter((s) => s !== supplierId) })}
+            onClick={() =>
+              setFilters({
+                ...filters,
+                suppliers: filters.suppliers.filter((s) => s !== supplierId),
+              })
+            }
           >
             🏭 {toTitleCase(name)}
             <span className="ml-1">×</span>
@@ -115,7 +139,7 @@ export function CatalogActiveFilters({ filters, setFilters, activeFiltersCount }
       {filters.inStock && (
         <Badge
           variant="secondary"
-          className="cursor-pointer hover:bg-destructive/10 border-success/30 text-success-foreground"
+          className="cursor-pointer border-success/30 text-success-foreground hover:bg-destructive/10"
           onClick={() => setFilters({ ...filters, inStock: false })}
         >
           ✅ Em estoque

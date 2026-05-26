@@ -3,7 +3,7 @@
  * Returns a promise that resolves when audio finishes or rejects on error.
  * Includes user auth token for authenticated edge functions.
  */
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase/client';
 
 function createSilentWavUrl(durationMs = 120) {
   const sampleRate = 8000;
@@ -21,10 +21,10 @@ function createSilentWavUrl(durationMs = 120) {
     }
   };
 
-  writeString(0, "RIFF");
+  writeString(0, 'RIFF');
   view.setUint32(4, 36 + dataSize, true);
-  writeString(8, "WAVE");
-  writeString(12, "fmt ");
+  writeString(8, 'WAVE');
+  writeString(12, 'fmt ');
   view.setUint32(16, 16, true);
   view.setUint16(20, 1, true);
   view.setUint16(22, channelCount, true);
@@ -32,29 +32,35 @@ function createSilentWavUrl(durationMs = 120) {
   view.setUint32(28, sampleRate * channelCount * bytesPerSample, true);
   view.setUint16(32, channelCount * bytesPerSample, true);
   view.setUint16(34, bitsPerSample, true);
-  writeString(36, "data");
+  writeString(36, 'data');
   view.setUint32(40, dataSize, true);
 
-  return URL.createObjectURL(new Blob([buffer], { type: "audio/wav" }));
+  return URL.createObjectURL(new Blob([buffer], { type: 'audio/wav' }));
 }
 
 export function playTtsAudio(
   text: string,
-  options?: { onStart?: () => void }
-): { promise: Promise<void>; stop: () => void; pause: () => void; resume: () => void; isPaused: () => boolean } {
+  options?: { onStart?: () => void },
+): {
+  promise: Promise<void>;
+  stop: () => void;
+  pause: () => void;
+  resume: () => void;
+  isPaused: () => boolean;
+} {
   let audio: HTMLAudioElement | null = new Audio();
   let objectUrl: string | null = null;
   let primingUrl: string | null = null;
   let paused = false;
   let stopped = false;
 
-  audio.preload = "auto";
-  audio.setAttribute("playsinline", "true");
+  audio.preload = 'auto';
+  audio.setAttribute('playsinline', 'true');
 
   const clearPrimingUrl = () => {
     if (!primingUrl) return;
     if (audio && audio.src === primingUrl) {
-      audio.removeAttribute("src");
+      audio.removeAttribute('src');
       audio.load();
     }
     URL.revokeObjectURL(primingUrl);
@@ -85,15 +91,16 @@ export function playTtsAudio(
   })();
 
   const promise = (async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (stopped) return;
 
     const authToken = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
     const maxLen = 800;
-    const ttsText = text.length > maxLen
-      ? text.substring(0, maxLen).replace(/\s+\S*$/, "") + "..."
-      : text;
+    const ttsText =
+      text.length > maxLen ? text.substring(0, maxLen).replace(/\s+\S*$/, '') + '...' : text;
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 60000);
@@ -103,28 +110,28 @@ export function playTtsAudio(
       ttsResponse = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
         {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
             apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
             Authorization: `Bearer ${authToken}`,
           },
           body: JSON.stringify({ text: ttsText }),
           signal: controller.signal,
-        }
+        },
       );
     } finally {
       clearTimeout(timeout);
     }
-    
+
     if (!ttsResponse.ok) {
-      const errBody = await ttsResponse.text().catch(() => "");
+      const errBody = await ttsResponse.text().catch(() => '');
       throw new Error(`TTS failed: ${ttsResponse.status} - ${errBody}`);
     }
 
     const blob = await ttsResponse.blob();
     if (blob.size === 0) {
-      throw new Error("Empty audio response");
+      throw new Error('Empty audio response');
     }
 
     await primingPromise;
@@ -134,8 +141,8 @@ export function playTtsAudio(
 
     if (!audio) {
       audio = new Audio();
-      audio.preload = "auto";
-      audio.setAttribute("playsinline", "true");
+      audio.preload = 'auto';
+      audio.setAttribute('playsinline', 'true');
     }
 
     audio.src = objectUrl;
@@ -157,7 +164,7 @@ export function playTtsAudio(
 
       activeAudio.onerror = () => {
         cleanup();
-        reject(new Error("Audio playback error"));
+        reject(new Error('Audio playback error'));
       };
 
       Promise.resolve(activeAudio.play())

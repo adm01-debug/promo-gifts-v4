@@ -1,5 +1,5 @@
 import { renderHook, act } from '@testing-library/react';
-import { useQuoteBuilderState } from "@/hooks/quotes/useQuoteBuilderState";
+import { useQuoteBuilderState } from '@/hooks/quotes/useQuoteBuilderState';
 import { toast } from 'sonner';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -49,15 +49,11 @@ vi.mock('@/hooks/quotes', () => ({
   useAutoSaveQuote: () => ({ clearAutoSave: vi.fn() }),
 }));
 
-
-
-
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
     user: { id: 'user-123' },
   }),
 }));
-
 
 const queryClient = new QueryClient({
   defaultOptions: {

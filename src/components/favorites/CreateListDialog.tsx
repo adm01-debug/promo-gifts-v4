@@ -1,42 +1,70 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
-import { FavoritesClientPicker } from "./FavoritesClientPicker";
-import type { FavoriteList } from "@/hooks/favorites";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
+import { FavoritesClientPicker } from './FavoritesClientPicker';
+import type { FavoriteList } from '@/hooks/favorites';
 
 const COLORS = [
-  "#EF4444", "#F97316", "#F59E0B", "#EAB308",
-  "#84CC16", "#22C55E", "#10B981", "#06B6D4",
-  "#3B82F6", "#6366F1", "#8B5CF6", "#A855F7",
-  "#EC4899", "#F43F5E", "#64748B", "#0F172A",
+  '#EF4444',
+  '#F97316',
+  '#F59E0B',
+  '#EAB308',
+  '#84CC16',
+  '#22C55E',
+  '#10B981',
+  '#06B6D4',
+  '#3B82F6',
+  '#6366F1',
+  '#8B5CF6',
+  '#A855F7',
+  '#EC4899',
+  '#F43F5E',
+  '#64748B',
+  '#0F172A',
 ];
 
 interface Props {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   existing?: FavoriteList;
-  onCreate: (data: { name: string; color: string; icon: string; description?: string; client_id?: string | null; client_name?: string | null }) => Promise<void>;
+  onCreate: (data: {
+    name: string;
+    color: string;
+    icon: string;
+    description?: string;
+    client_id?: string | null;
+    client_name?: string | null;
+  }) => Promise<void>;
 }
 
 export function CreateListDialog({ open, onOpenChange, existing, onCreate }: Props) {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
   const [color, setColor] = useState(COLORS[8]);
   const [client, setClient] = useState<{ id: string; name: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (open) {
-      setName(existing?.name ?? "");
-      setDescription(existing?.description ?? "");
+      setName(existing?.name ?? '');
+      setDescription(existing?.description ?? '');
       setColor(existing?.color ?? COLORS[8]);
-      setClient(existing?.client_id && existing?.client_name ? { id: existing.client_id, name: existing.client_name } : null);
+      setClient(
+        existing?.client_id && existing?.client_name
+          ? { id: existing.client_id, name: existing.client_name }
+          : null,
+      );
     }
   }, [open, existing]);
 
@@ -48,7 +76,7 @@ export function CreateListDialog({ open, onOpenChange, existing, onCreate }: Pro
         name: name.trim(),
         description: description.trim() || undefined,
         color,
-        icon: "Heart",
+        icon: 'Heart',
         client_id: client?.id ?? null,
         client_name: client?.name ?? null,
       });
@@ -62,7 +90,7 @@ export function CreateListDialog({ open, onOpenChange, existing, onCreate }: Pro
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{existing ? "Editar lista" : "Nova lista de favoritos"}</DialogTitle>
+          <DialogTitle>{existing ? 'Editar lista' : 'Nova lista de favoritos'}</DialogTitle>
           <DialogDescription>
             Organize seus favoritos por cliente, projeto ou tema.
           </DialogDescription>
@@ -111,8 +139,10 @@ export function CreateListDialog({ open, onOpenChange, existing, onCreate }: Pro
                   type="button"
                   onClick={() => setColor(c)}
                   className={cn(
-                    "w-8 h-8 rounded-lg border-2 transition-all",
-                    color === c ? "border-foreground scale-110 shadow-md" : "border-transparent hover:scale-105"
+                    'h-8 w-8 rounded-lg border-2 transition-all',
+                    color === c
+                      ? 'scale-110 border-foreground shadow-md'
+                      : 'border-transparent hover:scale-105',
                   )}
                   style={{ backgroundColor: c }}
                   aria-label={`Cor ${c}`}
@@ -127,7 +157,7 @@ export function CreateListDialog({ open, onOpenChange, existing, onCreate }: Pro
             Cancelar
           </Button>
           <Button onClick={handleSave} disabled={!name.trim() || busy}>
-            {busy ? "Salvando…" : existing ? "Salvar" : "Criar lista"}
+            {busy ? 'Salvando…' : existing ? 'Salvar' : 'Criar lista'}
           </Button>
         </DialogFooter>
       </DialogContent>

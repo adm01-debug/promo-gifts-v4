@@ -10,7 +10,7 @@
  */
 import { useCallback, useMemo, useRef } from 'react';
 
-import { type CartStatus, type CartTemplateItem } from "@/hooks/products";
+import { type CartStatus, type CartTemplateItem } from '@/hooks/products';
 import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
 import { CartTabsRich } from '@/components/cart/CartTabsRich';
 import { CartEmptyStateSmart } from '@/components/cart/CartEmptyStateSmart';
@@ -46,20 +46,20 @@ import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { PageSEO } from '@/components/seo/PageSEO';
-import { useSellerCartsPage } from "@/pages/products/seller-carts/useSellerCartsPage";
-import { CartSidebar } from "@/pages/products/seller-carts/CartSidebar";
+import { useSellerCartsPage } from '@/pages/products/seller-carts/useSellerCartsPage';
+import { CartSidebar } from '@/pages/products/seller-carts/CartSidebar';
 
 export default function SellerCartsPage() {
   return (
-      <>
-        <PageSEO
-          title="Carrinhos"
-          description="Gerencie carrinhos de seleção de produtos para seus clientes."
-          path="/carrinhos"
-          noIndex
-        />
-        <SellerCartsContent />
-      </>
+    <>
+      <PageSEO
+        title="Carrinhos"
+        description="Gerencie carrinhos de seleção de produtos para seus clientes."
+        path="/carrinhos"
+        noIndex
+      />
+      <SellerCartsContent />
+    </>
   );
 }
 
@@ -118,7 +118,7 @@ function SellerCartsContent() {
   );
 
   return (
-    <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
+    <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
       {/* Header compactado */}
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-2.5">

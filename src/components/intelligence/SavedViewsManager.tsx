@@ -1,17 +1,24 @@
 /**
  * SavedViewsManager — salva/aplica combinações de filtros do módulo de tendências.
  */
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Bookmark, Plus, Trash2, Check } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/ui";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Bookmark, Plus, Trash2, Check } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/ui';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface SavedView {
   id: string;
@@ -26,17 +33,17 @@ export function SavedViewsManager() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const queryClient = useQueryClient();
-  const [name, setName] = useState("");
+  const [name, setName] = useState('');
   const [open, setOpen] = useState(false);
 
   const { data: views = [] } = useQuery({
-    queryKey: ["saved-trends-views", user?.id],
+    queryKey: ['saved-trends-views', user?.id],
     enabled: !!user,
     queryFn: async (): Promise<SavedView[]> => {
       const { data, error } = await supabase
-        .from("saved_trends_views" as never)
-        .select("id, name, filters, created_at")
-        .order("created_at", { ascending: false });
+        .from('saved_trends_views' as never)
+        .select('id, name, filters, created_at')
+        .order('created_at', { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as SavedView[];
     },
@@ -44,39 +51,45 @@ export function SavedViewsManager() {
 
   const saveMutation = useMutation({
     mutationFn: async (viewName: string) => {
-      if (!user) throw new Error("Não autenticado");
+      if (!user) throw new Error('Não autenticado');
       const filters: Record<string, string> = {};
-      params.forEach((v, k) => { filters[k] = v; });
+      params.forEach((v, k) => {
+        filters[k] = v;
+      });
       const { error } = await supabase
-        .from("saved_trends_views" as never)
+        .from('saved_trends_views' as never)
         .insert({ user_id: user.id, name: viewName, filters } as never);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["saved-trends-views"] });
-      toast({ title: "Visão salva", description: "Você pode aplicá-la novamente a qualquer momento." });
-      setName("");
+      queryClient.invalidateQueries({ queryKey: ['saved-trends-views'] });
+      toast({
+        title: 'Visão salva',
+        description: 'Você pode aplicá-la novamente a qualquer momento.',
+      });
+      setName('');
       setOpen(false);
     },
-    onError: (e: Error) => toast({ title: "Erro ao salvar", description: e.message, variant: "destructive" }),
+    onError: (e: Error) =>
+      toast({ title: 'Erro ao salvar', description: e.message, variant: 'destructive' }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from("saved_trends_views" as never)
+        .from('saved_trends_views' as never)
         .delete()
-        .eq("id", id);
+        .eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["saved-trends-views"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['saved-trends-views'] }),
   });
 
   const applyView = (view: SavedView) => {
     const sp = new URLSearchParams();
     Object.entries(view.filters).forEach(([k, v]) => sp.set(k, v));
     navigate(`/tendencias?${sp.toString()}`, { replace: true });
-    toast({ title: "Visão aplicada", description: view.name });
+    toast({ title: 'Visão aplicada', description: view.name });
   };
 
   return (
@@ -91,19 +104,26 @@ export function SavedViewsManager() {
         <DropdownMenuLabel>Minhas visões salvas</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {views.length === 0 ? (
-          <p className="px-2 py-3 text-xs text-muted-foreground text-center">
+          <p className="px-2 py-3 text-center text-xs text-muted-foreground">
             Nenhuma visão salva ainda
           </p>
         ) : (
-          views.map(v => (
-            <DropdownMenuItem key={v.id} className="flex items-center justify-between gap-2" onSelect={(e) => e.preventDefault()}>
-              <button onClick={() => applyView(v)} className="flex-1 text-left text-sm flex items-center gap-2">
+          views.map((v) => (
+            <DropdownMenuItem
+              key={v.id}
+              className="flex items-center justify-between gap-2"
+              onSelect={(e) => e.preventDefault()}
+            >
+              <button
+                onClick={() => applyView(v)}
+                className="flex flex-1 items-center gap-2 text-left text-sm"
+              >
                 <Check className="h-3.5 w-3.5 text-muted-foreground" />
                 <span className="truncate">{v.name}</span>
               </button>
               <button
                 onClick={() => deleteMutation.mutate(v.id)}
-                className="text-destructive hover:text-destructive/80 p-1"
+                className="p-1 text-destructive hover:text-destructive/80"
                 title="Excluir"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -114,14 +134,17 @@ export function SavedViewsManager() {
         <DropdownMenuSeparator />
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
-            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="gap-2 cursor-pointer">
+            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="cursor-pointer gap-2">
               <Plus className="h-3.5 w-3.5" />
               Salvar visão atual
             </DropdownMenuItem>
           </PopoverTrigger>
           <PopoverContent side="left" className="w-56 p-3">
             <form
-              onSubmit={(e) => { e.preventDefault(); if (name.trim()) saveMutation.mutate(name.trim()); }}
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (name.trim()) saveMutation.mutate(name.trim());
+              }}
               className="space-y-2"
             >
               <Input
@@ -131,7 +154,12 @@ export function SavedViewsManager() {
                 autoFocus
                 className="h-8 text-sm"
               />
-              <Button type="submit" size="sm" className="w-full" disabled={!name.trim() || saveMutation.isPending}>
+              <Button
+                type="submit"
+                size="sm"
+                className="w-full"
+                disabled={!name.trim() || saveMutation.isPending}
+              >
                 Salvar
               </Button>
             </form>

@@ -2,19 +2,19 @@
  * useBIDossierExport — orquestra todos os hooks do BI e gera o PDF do dossiê.
  * Aguarda todos resolverem antes de exportar (nada de PDF parcial).
  */
-import { useCallback, useMemo, useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { useCrmCompany } from "@/hooks/crm";
-import { useClientBI } from "@/hooks/bi/useClientBI";
-import { useClientVsIndustry } from "@/hooks/bi/useClientVsIndustry";
-import { useClientAffinity } from "@/hooks/bi/useClientAffinity";
-import { useIndustryTrends } from "@/hooks/bi/useIndustryTrends";
-import { useClientCategoryAffinity } from "@/hooks/bi/useClientCategoryAffinity";
-import { useIndustryCategoryTrends } from "@/hooks/bi/useIndustryCategoryTrends";
-import { resolveIndustryRecommendation } from "@/lib/bi/industryRecommendations";
-import { generateBIDossierPDF, buildDossierFileName } from "@/lib/bi/dossierPdfGenerator";
-import { buildCategorySection } from "@/lib/bi/executive-summary";
-import { getCompanyDisplayName } from "@/types/crm";
+import { useCallback, useMemo, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCrmCompany } from '@/hooks/crm';
+import { useClientBI } from '@/hooks/bi/useClientBI';
+import { useClientVsIndustry } from '@/hooks/bi/useClientVsIndustry';
+import { useClientAffinity } from '@/hooks/bi/useClientAffinity';
+import { useIndustryTrends } from '@/hooks/bi/useIndustryTrends';
+import { useClientCategoryAffinity } from '@/hooks/bi/useClientCategoryAffinity';
+import { useIndustryCategoryTrends } from '@/hooks/bi/useIndustryCategoryTrends';
+import { resolveIndustryRecommendation } from '@/lib/bi/industryRecommendations';
+import { generateBIDossierPDF, buildDossierFileName } from '@/lib/bi/dossierPdfGenerator';
+import { buildCategorySection } from '@/lib/bi/executive-summary';
+import { getCompanyDisplayName } from '@/types/crm';
 
 interface UseBIDossierExport {
   isReady: boolean;
@@ -68,7 +68,7 @@ export function useBIDossierExport(clientId: string | null): UseBIDossierExport 
           cidade: company.cidade,
           estado: company.estado,
         },
-        sellerName: profile?.full_name || user?.email || "—",
+        sellerName: profile?.full_name || user?.email || '—',
         clientBI,
         vsIndustry,
         affinity: affinityQ.data ?? {
@@ -87,7 +87,7 @@ export function useBIDossierExport(clientId: string | null): UseBIDossierExport 
       });
 
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = url;
       a.download = buildDossierFileName(getCompanyDisplayName(company));
       document.body.appendChild(a);

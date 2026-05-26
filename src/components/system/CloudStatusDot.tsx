@@ -16,9 +16,10 @@ const CloudStatusDotInner = memo(function CloudStatusDotInner() {
   if (status !== 'healthy' && status !== 'unknown') return null;
 
   const color = status === 'healthy' ? 'bg-green-500' : 'bg-muted-foreground';
-  const label = status === 'healthy'
-    ? 'Cloud saudável — modo debug ativo'
-    : 'Cloud status aguardando primeira sondagem';
+  const label =
+    status === 'healthy'
+      ? 'Cloud saudável — modo debug ativo'
+      : 'Cloud status aguardando primeira sondagem';
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -28,7 +29,12 @@ const CloudStatusDotInner = memo(function CloudStatusDotInner() {
             className="fixed bottom-3 right-3 z-40 inline-flex h-2.5 w-2.5 items-center justify-center"
             aria-label={label}
           >
-            <span className={cn('absolute inline-flex h-full w-full rounded-full opacity-40 animate-ping', color)} />
+            <span
+              className={cn(
+                'absolute inline-flex h-full w-full animate-ping rounded-full opacity-40',
+                color,
+              )}
+            />
             <span className={cn('relative inline-flex h-2.5 w-2.5 rounded-full', color)} />
           </span>
         </TooltipTrigger>

@@ -1,11 +1,11 @@
-import { logger } from "@/lib/logger";
+import { logger } from '@/lib/logger';
 /**
  * Product Bounds Detector
- * 
+ *
  * Detects the actual bounding box of a product within its catalog image
  * using an offscreen canvas. Works best with white/transparent backgrounds
  * (standard for catalog photos).
- * 
+ *
  * Returns the fraction of the image that the product occupies, which is
  * then used to calculate accurate cm-to-px scaling.
  */
@@ -41,7 +41,7 @@ const boundsCache = new Map<string, ProductBounds>();
  * Detect the product's bounding box in the image by scanning for
  * non-background pixels. Background is identified as near-white or
  * near-transparent pixels.
- * 
+ *
  * @param imageUrl URL of the product image
  * @param options.whiteThreshold Pixel brightness above which is "background" (0-255, default 245)
  * @param options.alphaThreshold Alpha below which is "transparent" (0-255, default 10)
@@ -55,22 +55,17 @@ export async function detectProductBounds(
     alphaThreshold?: number;
     margin?: number;
     maxSize?: number;
-  }
+  },
 ): Promise<ProductBounds> {
   // Check cache
   const cached = boundsCache.get(imageUrl);
   if (cached) return cached;
 
-  const {
-    whiteThreshold = 245,
-    alphaThreshold = 10,
-    margin = 0.02,
-    maxSize = 512,
-  } = options || {};
+  const { whiteThreshold = 245, alphaThreshold = 10, margin = 0.02, maxSize = 512 } = options || {};
 
   try {
     const img = await loadImageCors(imageUrl);
-    
+
     // Capture natural aspect ratio before scaling
     const natW = img.naturalWidth || img.width;
     const natH = img.naturalHeight || img.height;
@@ -85,17 +80,20 @@ export async function detectProductBounds(
     w = Math.round(w * scale);
     h = Math.round(h * scale);
 
-    const canvas = document.createElement("canvas");
+    const canvas = document.createElement('canvas');
     canvas.width = w;
     canvas.height = h;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return DEFAULT_BOUNDS;
 
     ctx.drawImage(img, 0, 0, w, h);
     const imageData = ctx.getImageData(0, 0, w, h);
     const { data } = imageData;
 
-    let minX = w, maxX = 0, minY = h, maxY = 0;
+    let minX = w,
+      maxX = 0,
+      minY = h,
+      maxY = 0;
     let productPixels = 0;
 
     for (let y = 0; y < h; y++) {
@@ -148,8 +146,8 @@ export async function detectProductBounds(
     // Calculate fractions with margin
     const boundsW = maxX - minX;
     const boundsH = maxY - minY;
-    const fractionX = Math.min(1, (boundsW / w) + margin * 2);
-    const fractionY = Math.min(1, (boundsH / h) + margin * 2);
+    const fractionX = Math.min(1, boundsW / w + margin * 2);
+    const fractionY = Math.min(1, boundsH / h + margin * 2);
     const centerX = (minX + boundsW / 2) / w;
     const centerY = (minY + boundsH / 2) / h;
 
@@ -164,9 +162,8 @@ export async function detectProductBounds(
 
     boundsCache.set(imageUrl, result);
     return result;
-
   } catch (err) {
-    logger.warn("[ProductBoundsDetector] Failed to detect bounds, using fallback:", err);
+    logger.warn('[ProductBoundsDetector] Failed to detect bounds, using fallback:', err);
     return DEFAULT_BOUNDS;
   }
 }
@@ -178,7 +175,7 @@ export async function detectProductBounds(
 function loadImageCors(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    img.crossOrigin = 'anonymous';
     img.onload = () => resolve(img);
     img.onerror = async () => {
       // Fallback: fetch as blob to bypass CORS
@@ -193,7 +190,7 @@ function loadImageCors(url: string): Promise<HTMLImageElement> {
         };
         img2.onerror = () => {
           URL.revokeObjectURL(blobUrl);
-          reject(new Error("Failed to load image via blob fallback"));
+          reject(new Error('Failed to load image via blob fallback'));
         };
         img2.src = blobUrl;
       } catch (e) {

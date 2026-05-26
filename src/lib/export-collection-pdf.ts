@@ -1,9 +1,9 @@
 /**
  * Exporta a lista de produtos de uma coleção como PDF.
  */
-import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
-import type { Product } from "@/hooks/products";
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import type { Product } from '@/hooks/products';
 
 interface ExportOptions {
   collectionName: string;
@@ -18,28 +18,28 @@ export async function exportCollectionPDF({
   products,
   variantMap,
 }: ExportOptions) {
-  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
   // Header
   doc.setFontSize(20);
-  doc.setFont("helvetica", "bold");
+  doc.setFont('helvetica', 'bold');
   doc.text(collectionName, 14, 18);
 
   if (collectionDescription) {
     doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
+    doc.setFont('helvetica', 'normal');
     doc.setTextColor(100, 100, 100);
     doc.text(collectionDescription, 14, 26);
     doc.setTextColor(0, 0, 0);
   }
 
   doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
+  doc.setFont('helvetica', 'normal');
   doc.setTextColor(150, 150, 150);
   doc.text(
-    `${products.length} produtos • Gerado em ${new Date().toLocaleDateString("pt-BR")}`,
+    `${products.length} produtos • Gerado em ${new Date().toLocaleDateString('pt-BR')}`,
     14,
-    collectionDescription ? 32 : 26
+    collectionDescription ? 32 : 26,
   );
   doc.setTextColor(0, 0, 0);
 
@@ -50,37 +50,37 @@ export async function exportCollectionPDF({
     const variant = variantMap?.get(p.id);
     return [
       String(idx + 1),
-      p.sku || "-",
+      p.sku || '-',
       p.name,
-      p.brand || "-",
-      p.category_name || "-",
-      variant?.color_name || "-",
-      p.price ? `R$ ${p.price.toFixed(2)}` : "-",
+      p.brand || '-',
+      p.category_name || '-',
+      variant?.color_name || '-',
+      p.price ? `R$ ${p.price.toFixed(2)}` : '-',
     ];
   });
 
   autoTable(doc, {
     startY,
-    head: [["#", "SKU", "Produto", "Marca", "Categoria", "Cor", "Preço"]],
+    head: [['#', 'SKU', 'Produto', 'Marca', 'Categoria', 'Cor', 'Preço']],
     body: tableRows,
-    theme: "striped",
+    theme: 'striped',
     headStyles: {
       fillColor: [59, 130, 246],
       textColor: 255,
-      fontStyle: "bold",
+      fontStyle: 'bold',
       fontSize: 9,
     },
     bodyStyles: {
       fontSize: 8,
     },
     columnStyles: {
-      0: { cellWidth: 10, halign: "center" },
+      0: { cellWidth: 10, halign: 'center' },
       1: { cellWidth: 28 },
       2: { cellWidth: 80 },
       3: { cellWidth: 35 },
       4: { cellWidth: 35 },
       5: { cellWidth: 30 },
-      6: { cellWidth: 25, halign: "right" },
+      6: { cellWidth: 25, halign: 'right' },
     },
     margin: { left: 14, right: 14 },
   });
@@ -95,11 +95,11 @@ export async function exportCollectionPDF({
       `Página ${i} de ${pageCount}`,
       doc.internal.pageSize.getWidth() - 14,
       doc.internal.pageSize.getHeight() - 8,
-      { align: "right" }
+      { align: 'right' },
     );
-    doc.text("Promo Gifts", 14, doc.internal.pageSize.getHeight() - 8);
+    doc.text('Promo Gifts', 14, doc.internal.pageSize.getHeight() - 8);
   }
 
-  const fileName = `colecao-${collectionName.toLowerCase().replace(/\s+/g, "-")}.pdf`;
+  const fileName = `colecao-${collectionName.toLowerCase().replace(/\s+/g, '-')}.pdf`;
   doc.save(fileName);
 }

@@ -1,8 +1,8 @@
-import { telemetryService } from "@/services/telemetryService";
+import { telemetryService } from '@/services/telemetryService';
 
 /**
  * Utility for tracking application performance metrics.
- * 
+ *
  * 🚀 ELITE TRACKING:
  * - Real-time metrics collection
  * - In-memory history with rotation
@@ -54,7 +54,7 @@ class PerformanceTracker {
     if (typeof performance !== 'undefined' && performance.measure) {
       try {
         const measure = performance.measure(name, startMark, endMark);
-        
+
         const metric: PerformanceMetric = {
           name,
           duration: measure.duration,
@@ -65,7 +65,7 @@ class PerformanceTracker {
         if (this.history.length > MAX_HISTORY) {
           this.history.shift();
         }
-        
+
         this.saveHistory();
 
         // Push to remote telemetry if it's an outlier
@@ -74,7 +74,7 @@ class PerformanceTracker {
         if (process.env.NODE_ENV === 'development') {
           console.log(`[Performance] ${name}: ${measure.duration.toFixed(2)}ms`);
         }
-        
+
         return measure;
       } catch (_e) {
         // Mark might not exist yet
@@ -88,7 +88,7 @@ class PerformanceTracker {
   }
 
   getAverage(namePattern: string) {
-    const relevant = this.history.filter(m => m.name.includes(namePattern));
+    const relevant = this.history.filter((m) => m.name.includes(namePattern));
     if (relevant.length === 0) return 0;
     const sum = relevant.reduce((acc, m) => acc + m.duration, 0);
     return sum / relevant.length;
@@ -105,11 +105,7 @@ class PerformanceTracker {
 
   endRouteTransition(pathname: string) {
     this.mark(`route-end:${pathname}`);
-    this.measure(
-      `Route: ${pathname}`,
-      `route-start:${pathname}`,
-      `route-end:${pathname}`
-    );
+    this.measure(`Route: ${pathname}`, `route-start:${pathname}`, `route-end:${pathname}`);
   }
 
   startThemeChange(theme: string) {
@@ -118,11 +114,7 @@ class PerformanceTracker {
 
   endThemeChange(theme: string) {
     this.mark(`theme-end:${theme}`);
-    this.measure(
-      `Theme: ${theme}`,
-      `theme-start:${theme}`,
-      `theme-end:${theme}`
-    );
+    this.measure(`Theme: ${theme}`, `theme-start:${theme}`, `theme-end:${theme}`);
   }
 }
 

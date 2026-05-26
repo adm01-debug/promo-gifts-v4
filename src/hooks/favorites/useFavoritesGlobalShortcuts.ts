@@ -4,8 +4,8 @@
  * - `Shift+F`: navega para /favoritos
  * Ignora quando o foco está em input/textarea/contentEditable.
  */
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export function useFavoritesGlobalShortcuts() {
   const navigate = useNavigate();
@@ -16,7 +16,7 @@ export function useFavoritesGlobalShortcuts() {
     function isTyping(e: KeyboardEvent): boolean {
       const t = e.target as HTMLElement | null;
       if (!t) return false;
-      if (t.tagName === "INPUT" || t.tagName === "TEXTAREA") return true;
+      if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA') return true;
       if (t.isContentEditable) return true;
       return false;
     }
@@ -27,25 +27,25 @@ export function useFavoritesGlobalShortcuts() {
       const k = e.key.toLowerCase();
 
       // Shift+F: ir para favoritos
-      if (e.shiftKey && k === "f") {
+      if (e.shiftKey && k === 'f') {
         e.preventDefault();
-        navigate("/favoritos");
+        navigate('/favoritos');
         return;
       }
 
       // Sequência G L
-      if (k === "g") {
+      if (k === 'g') {
         lastG = Date.now();
         return;
       }
-      if (k === "l" && Date.now() - lastG < 800) {
+      if (k === 'l' && Date.now() - lastG < 800) {
         e.preventDefault();
         lastG = 0;
-        navigate("/favoritos");
+        navigate('/favoritos');
       }
     }
 
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, [navigate]);
 }

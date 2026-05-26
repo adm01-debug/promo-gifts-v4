@@ -7,27 +7,20 @@
  * Grava em `public.product_price_freshness_overrides` (RLS admin-only).
  * O override local sempre tem precedência sobre o valor do BD externo.
  */
-import { useState } from "react";
-import { Settings2, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  RadioGroup,
-  RadioGroupItem,
-} from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { useAuth } from "@/contexts/AuthContext";
+import { useState } from 'react';
+import { Settings2, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   ALLOWED_FRESHNESS_THRESHOLDS,
   type FreshnessThreshold,
   useDeleteFreshnessOverride,
   useProductFreshnessOverride,
   useUpsertFreshnessOverride,
-} from "@/hooks/products/useProductFreshnessOverride";
+} from '@/hooks/products/useProductFreshnessOverride';
 
 interface Props {
   productId: string;
@@ -35,10 +28,7 @@ interface Props {
   currentEffectiveDays: number;
 }
 
-export function PriceFreshnessThresholdEditor({
-  productId,
-  currentEffectiveDays,
-}: Props) {
+export function PriceFreshnessThresholdEditor({ productId, currentEffectiveDays }: Props) {
   const { isAdmin } = useAuth();
   const [open, setOpen] = useState(false);
   const { data: override, isLoading } = useProductFreshnessOverride(productId);
@@ -48,9 +38,7 @@ export function PriceFreshnessThresholdEditor({
   // Estado local controla a seleção dentro do popover.
   const initial: FreshnessThreshold =
     (override?.threshold_days as FreshnessThreshold | undefined) ??
-    (ALLOWED_FRESHNESS_THRESHOLDS.includes(
-      currentEffectiveDays as FreshnessThreshold,
-    )
+    (ALLOWED_FRESHNESS_THRESHOLDS.includes(currentEffectiveDays as FreshnessThreshold)
       ? (currentEffectiveDays as FreshnessThreshold)
       : 60);
   const [selected, setSelected] = useState<FreshnessThreshold>(initial);
@@ -87,12 +75,9 @@ export function PriceFreshnessThresholdEditor({
       <PopoverContent className="w-72" align="start">
         <div className="space-y-3">
           <div>
-            <h4 className="text-sm font-semibold text-foreground">
-              Validade do preço
-            </h4>
+            <h4 className="text-sm font-semibold text-foreground">Validade do preço</h4>
             <p className="mt-1 text-xs text-muted-foreground">
-              Define quando o sistema avisará que o preço pode estar defasado
-              para este produto.
+              Define quando o sistema avisará que o preço pode estar defasado para este produto.
             </p>
           </div>
 
@@ -109,11 +94,7 @@ export function PriceFreshnessThresholdEditor({
                   className="flex flex-1 cursor-pointer items-center justify-between text-sm"
                 >
                   <span>{days} dias</span>
-                  {days === 60 && (
-                    <span className="text-[10px] text-muted-foreground">
-                      padrão
-                    </span>
-                  )}
+                  {days === 60 && <span className="text-[10px] text-muted-foreground">padrão</span>}
                 </Label>
               </div>
             ))}
@@ -125,9 +106,7 @@ export function PriceFreshnessThresholdEditor({
               size="sm"
               className="text-xs"
               disabled={!isOverride || busy}
-              onClick={() =>
-                remove.mutate(productId, { onSuccess: () => setOpen(false) })
-              }
+              onClick={() => remove.mutate(productId, { onSuccess: () => setOpen(false) })}
             >
               Restaurar padrão
             </Button>
@@ -142,9 +121,7 @@ export function PriceFreshnessThresholdEditor({
                 )
               }
             >
-              {upsert.isPending ? (
-                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-              ) : null}
+              {upsert.isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : null}
               Salvar
             </Button>
           </div>

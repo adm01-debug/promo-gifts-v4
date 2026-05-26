@@ -2,9 +2,9 @@
  * Badge canônico de role — usar em Header, tabelas e qualquer lugar
  * que precise representar visualmente uma role do usuário.
  */
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { getRoleVisual } from "@/lib/roles";
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { getRoleVisual } from '@/lib/roles';
 
 interface RoleBadgeProps {
   role: string | null | undefined;
@@ -22,7 +22,7 @@ export function RoleBadge({ role, iconOnly = false, hideIcon = false, className 
   return (
     <Badge
       variant={visual.variant}
-      className={cn("gap-1 font-medium", visual.className, className)}
+      className={cn('gap-1 font-medium', visual.className, className)}
       title={visual.description}
       aria-label={visual.label}
     >

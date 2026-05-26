@@ -5,15 +5,15 @@
  * e dobra o resultado por categoria. Quando vazio, cai para mock derivado
  * de getMockIndustryTrends.
  */
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { selectCrm } from "@/lib/crm-db";
-import { resolveBICategory, type BICategorySlug } from "@/lib/bi/categoryResolver";
-import { getMockIndustryTrends } from "@/lib/bi/mockData";
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { selectCrm } from '@/lib/crm-db';
+import { resolveBICategory, type BICategorySlug } from '@/lib/bi/categoryResolver';
+import { getMockIndustryTrends } from '@/lib/bi/mockData';
 
 export interface IndustryCategoryAggregate {
-  slug: BICategorySlug | "outros";
+  slug: BICategorySlug | 'outros';
   label: string;
   totalQuantity: number;
   uniqueClients: number;
@@ -87,7 +87,7 @@ function buildMockResult(ramo?: string | null): IndustryCategoryTrendsResult {
 
 export function useIndustryCategoryTrends(ramoAtividade?: string | null) {
   const query = useQuery<IndustryCategoryTrendsResult>({
-    queryKey: ["bi-industry-category-trends", ramoAtividade],
+    queryKey: ['bi-industry-category-trends', ramoAtividade],
     enabled: !!ramoAtividade,
     staleTime: 10 * 60 * 1000,
     queryFn: async () => {
@@ -95,8 +95,8 @@ export function useIndustryCategoryTrends(ramoAtividade?: string | null) {
 
       let companyIds: string[] = [];
       try {
-        const companies = await selectCrm<{ id: string }>("companies", {
-          select: "id",
+        const companies = await selectCrm<{ id: string }>('companies', {
+          select: 'id',
           filters: { ramo_atividade: ramoAtividade, deleted_at: null },
           limit: 500,
         });
@@ -107,7 +107,7 @@ export function useIndustryCategoryTrends(ramoAtividade?: string | null) {
 
       if (companyIds.length === 0) return buildMockResult(ramoAtividade);
 
-      const { data, error } = await supabase.rpc("get_industry_top_products", {
+      const { data, error } = await supabase.rpc('get_industry_top_products', {
         _company_ids: companyIds,
         _days: 90,
         _limit: 50,

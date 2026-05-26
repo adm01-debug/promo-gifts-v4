@@ -2,10 +2,10 @@
  * QuotesStatusChips — chips horizontais com contador por status.
  * Sticky abaixo do header, scroll horizontal em mobile.
  */
-import { useMemo } from "react";
-import { cn } from "@/lib/utils";
-import { QUOTE_STATUS_CONFIG } from "@/lib/quote-status-config";
-import type { Quote } from "@/hooks/quotes";
+import { useMemo } from 'react';
+import { cn } from '@/lib/utils';
+import { QUOTE_STATUS_CONFIG } from '@/lib/quote-status-config';
+import type { Quote } from '@/hooks/quotes';
 
 interface QuotesStatusChipsProps {
   quotes: Quote[];
@@ -13,7 +13,7 @@ interface QuotesStatusChipsProps {
   onChange: (status: string) => void;
 }
 
-const ORDER = ["all", "draft", "pending", "sent", "approved", "rejected", "expired"] as const;
+const ORDER = ['all', 'draft', 'pending', 'sent', 'approved', 'rejected', 'expired'] as const;
 
 export function QuotesStatusChips({ quotes, value, onChange }: QuotesStatusChipsProps) {
   const counts = useMemo(() => {
@@ -25,13 +25,13 @@ export function QuotesStatusChips({ quotes, value, onChange }: QuotesStatusChips
   }, [quotes]);
 
   return (
-    <div className="sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px))] z-20 -mx-1 px-1 py-2 bg-background/85 backdrop-blur-md border-b border-border/40">
-      <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-thin">
+    <div className="sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px))] z-20 -mx-1 border-b border-border/40 bg-background/85 px-1 py-2 backdrop-blur-md">
+      <div className="scrollbar-thin flex items-center gap-1.5 overflow-x-auto">
         {ORDER.map((key) => {
           const isActive = value === key;
-          const label = key === "all" ? "Todos" : QUOTE_STATUS_CONFIG[key]?.label ?? key;
+          const label = key === 'all' ? 'Todos' : (QUOTE_STATUS_CONFIG[key]?.label ?? key);
           const count = counts[key] || 0;
-          if (key !== "all" && count === 0 && !isActive) return null;
+          if (key !== 'all' && count === 0 && !isActive) return null;
 
           return (
             <button
@@ -39,19 +39,21 @@ export function QuotesStatusChips({ quotes, value, onChange }: QuotesStatusChips
               type="button"
               onClick={() => onChange(key)}
               className={cn(
-                "shrink-0 inline-flex items-center gap-1.5 h-7 px-3 rounded-full text-xs font-medium transition-all",
-                "border whitespace-nowrap",
+                'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-all',
+                'whitespace-nowrap border',
                 isActive
-                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                  : "bg-background text-muted-foreground border-border/60 hover:border-primary/40 hover:text-foreground"
+                  ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                  : 'border-border/60 bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
               )}
               aria-pressed={isActive}
             >
               <span>{label}</span>
               <span
                 className={cn(
-                  "inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold tabular-nums",
-                  isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-foreground/70"
+                  'inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold tabular-nums',
+                  isActive
+                    ? 'bg-primary-foreground/20 text-primary-foreground'
+                    : 'bg-muted text-foreground/70',
                 )}
               >
                 {count}

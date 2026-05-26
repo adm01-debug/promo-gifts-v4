@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Save, X } from 'lucide-react';
-import { type ExternalVideo, VIDEO_TYPES } from "./types";
+import { type ExternalVideo, VIDEO_TYPES } from './types';
 
 interface Props {
   video: ExternalVideo;

@@ -194,15 +194,15 @@ export interface CrmAddress {
 // ============================================
 
 export type SocialPlatform =
-  | "instagram"
-  | "linkedin"
-  | "facebook"
-  | "twitter"
-  | "youtube"
-  | "tiktok"
-  | "whatsapp"
-  | "telegram"
-  | "outro";
+  | 'instagram'
+  | 'linkedin'
+  | 'facebook'
+  | 'twitter'
+  | 'youtube'
+  | 'tiktok'
+  | 'whatsapp'
+  | 'telegram'
+  | 'outro';
 
 export interface CrmSocialMedia {
   id: string;
@@ -348,14 +348,23 @@ export interface LegacyClientFormat {
 }
 
 /** Converte CrmCompany para o formato legado BitrixClient */
-export function toLegacyClient(company: CrmCompany, customer?: CrmCustomer | null): LegacyClientFormat {
-  const address = [company.logradouro, company.numero, company.bairro, company.cidade, company.estado]
+export function toLegacyClient(
+  company: CrmCompany,
+  customer?: CrmCustomer | null,
+): LegacyClientFormat {
+  const address = [
+    company.logradouro,
+    company.numero,
+    company.bairro,
+    company.cidade,
+    company.estado,
+  ]
     .filter(Boolean)
-    .join(", ");
+    .join(', ');
 
   return {
     id: company.id,
-    bitrix_id: company.bitrix_company_id || "",
+    bitrix_id: company.bitrix_company_id || '',
     name: getCompanyDisplayName(company),
     email: company._deprecated_email || null,
     phone: company._deprecated_phone || null,

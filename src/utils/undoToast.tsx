@@ -1,6 +1,6 @@
-import { toast as sonnerToast } from "sonner";
-import { Undo2, Check, X, AlertTriangle, Info } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { toast as sonnerToast } from 'sonner';
+import { Undo2, Check, X, AlertTriangle, Info } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface UndoToastOptions {
   title: string;
@@ -22,12 +22,10 @@ export function showUndoToast({ title, description, onUndo, duration = 5000 }: U
   let undone = false;
 
   const toastId = sonnerToast(
-    <div className="flex items-center gap-3 w-full">
-      <div className="flex-1 min-w-0">
+    <div className="flex w-full items-center gap-3">
+      <div className="min-w-0 flex-1">
         <p className="font-medium text-foreground">{title}</p>
-        {description && (
-          <p className="text-sm text-muted-foreground mt-0.5">{description}</p>
-        )}
+        {description && <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>}
       </div>
       <button
         onClick={() => {
@@ -35,17 +33,17 @@ export function showUndoToast({ title, description, onUndo, duration = 5000 }: U
             undone = true;
             onUndo();
             sonnerToast.dismiss(toastId);
-            sonnerToast.success("Ação desfeita!", {
+            sonnerToast.success('Ação desfeita!', {
               duration: 2000,
               icon: <Undo2 className="h-4 w-4" />,
             });
           }
         }}
         className={cn(
-          "flex items-center gap-1.5 px-3 py-1.5 rounded-lg",
-          "bg-primary/10 hover:bg-primary/20 text-primary",
-          "font-medium text-sm transition-colors",
-          "focus:outline-none focus:ring-2 focus:ring-primary/50"
+          'flex items-center gap-1.5 rounded-lg px-3 py-1.5',
+          'bg-primary/10 text-primary hover:bg-primary/20',
+          'text-sm font-medium transition-colors',
+          'focus:outline-none focus:ring-2 focus:ring-primary/50',
         )}
       >
         <Undo2 className="h-4 w-4" />
@@ -54,8 +52,8 @@ export function showUndoToast({ title, description, onUndo, duration = 5000 }: U
     </div>,
     {
       duration,
-      className: "!bg-card !border-border",
-    }
+      className: '!bg-card !border-border',
+    },
   );
 
   return toastId;
@@ -120,7 +118,7 @@ export function createUndoableAction<T>({
   undoMessage?: string;
 }) {
   const result = action();
-  
+
   showUndoToast({
     title: successMessage,
     description: undoMessage,

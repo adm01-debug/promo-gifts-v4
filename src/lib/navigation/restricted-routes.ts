@@ -12,38 +12,31 @@
 
 /** Prefixos de rota considerados "técnicas" (devOnly). */
 export const DEV_ONLY_ROUTE_PREFIXES = [
-  "/admin/telemetria",
-  "/admin/conexoes",
-  "/admin/seguranca",
-  "/admin/seguranca-acesso",
-  "/admin/workflows",
-  "/admin/prompts-ia",
-  "/admin/validade-precos",
-  "/admin/rate-limit",
-  "/admin/login-attempts",
-  "/admin/status",
-  "/admin/rbac-rotas",
-  "/admin/qa",
+  '/admin/telemetria',
+  '/admin/conexoes',
+  '/admin/seguranca',
+  '/admin/seguranca-acesso',
+  '/admin/workflows',
+  '/admin/prompts-ia',
+  '/admin/validade-precos',
+  '/admin/rate-limit',
+  '/admin/login-attempts',
+  '/admin/status',
+  '/admin/rbac-rotas',
+  '/admin/qa',
 ] as const;
 
 /** Prefixos `/admin/*` administrativos (não técnicos) — exigem `admin` ou `dev`. */
-export const ADMIN_ONLY_ROUTE_PREFIXES = [
-  "/admin/usuarios",
-  "/admin/cadastros",
-] as const;
+export const ADMIN_ONLY_ROUTE_PREFIXES = ['/admin/usuarios', '/admin/cadastros'] as const;
 
 export function isDevOnlyPath(pathname: string): boolean {
-  return DEV_ONLY_ROUTE_PREFIXES.some(
-    (p) => pathname === p || pathname.startsWith(`${p}/`)
-  );
+  return DEV_ONLY_ROUTE_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
 export function isAdminOnlyPath(pathname: string): boolean {
   if (isDevOnlyPath(pathname)) return true;
-  if (pathname === "/admin" || pathname.startsWith("/admin/")) return true;
-  return ADMIN_ONLY_ROUTE_PREFIXES.some(
-    (p) => pathname === p || pathname.startsWith(`${p}/`)
-  );
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) return true;
+  return ADMIN_ONLY_ROUTE_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
 /**
@@ -52,7 +45,7 @@ export function isAdminOnlyPath(pathname: string): boolean {
  */
 export function canNavigateTo(
   pathname: string,
-  opts: { isDev: boolean; isAdmin: boolean }
+  opts: { isDev: boolean; isAdmin: boolean },
 ): boolean {
   if (isDevOnlyPath(pathname)) return opts.isDev;
   if (isAdminOnlyPath(pathname)) return opts.isAdmin || opts.isDev;

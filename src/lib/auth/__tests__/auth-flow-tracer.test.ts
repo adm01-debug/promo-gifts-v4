@@ -30,11 +30,7 @@ describe('AuthFlowTracer', () => {
     expect(snap?.outcome).toBe('success');
     expect(snap?.redirectTarget).toBe('/dashboard');
     expect(snap?.flow).toBe('pkce');
-    expect(snap?.steps.map((s) => s.phase)).toEqual([
-      'mount',
-      'url-parsed',
-      'pkce-exchange-ok',
-    ]);
+    expect(snap?.steps.map((s) => s.phase)).toEqual(['mount', 'url-parsed', 'pkce-exchange-ok']);
     expect(snap?.durationMs).toBeGreaterThanOrEqual(0);
   });
 

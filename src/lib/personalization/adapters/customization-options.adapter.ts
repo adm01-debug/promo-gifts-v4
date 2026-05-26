@@ -18,7 +18,11 @@
  *   - `gravacao_altura_max`   ← `print_max_height`
  */
 
-import type { CustomizationOptionsResponse, GravacaoLocation, TechniqueOption } from '@/types/customization';
+import type {
+  CustomizationOptionsResponse,
+  GravacaoLocation,
+  TechniqueOption,
+} from '@/types/customization';
 import { validateRpcPayload } from '@/lib/personalization/rpc-validator';
 import { OPTIONS_CONTRACT } from '@/lib/personalization/rpc-contracts';
 

@@ -2,7 +2,13 @@
  * Global keyboard shortcuts modal — opens with `?` key.
  */
 import { useEffect, useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Keyboard } from 'lucide-react';
 
 const SHORTCUTS: { keys: string[]; label: string; section: string }[] = [
@@ -21,17 +27,22 @@ export function KitShortcutsDialog() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable) return;
+      if (
+        target?.tagName === 'INPUT' ||
+        target?.tagName === 'TEXTAREA' ||
+        target?.isContentEditable
+      )
+        return;
       if (e.key === '?' || (e.shiftKey && e.key === '/')) {
         e.preventDefault();
-        setOpen(prev => !prev);
+        setOpen((prev) => !prev);
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
-  const sections = Array.from(new Set(SHORTCUTS.map(s => s.section)));
+  const sections = Array.from(new Set(SHORTCUTS.map((s) => s.section)));
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -43,18 +54,23 @@ export function KitShortcutsDialog() {
           <DialogDescription>Acelere seu fluxo de trabalho</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
-          {sections.map(section => (
+          {sections.map((section) => (
             <div key={section}>
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{section}</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {section}
+              </p>
               <div className="space-y-1.5">
-                {SHORTCUTS.filter(s => s.section === section).map(shortcut => (
-                  <div key={shortcut.label} className="flex items-center justify-between py-1.5 px-2 rounded-md hover:bg-muted/40">
+                {SHORTCUTS.filter((s) => s.section === section).map((shortcut) => (
+                  <div
+                    key={shortcut.label}
+                    className="flex items-center justify-between rounded-md px-2 py-1.5 hover:bg-muted/40"
+                  >
                     <span className="text-sm">{shortcut.label}</span>
                     <div className="flex items-center gap-1">
                       {shortcut.keys.map((key, i) => (
                         <kbd
                           key={i}
-                          className="px-1.5 py-0.5 text-[10px] font-display font-semibold tabular-nums bg-muted border border-border rounded shadow-sm"
+                          className="rounded border border-border bg-muted px-1.5 py-0.5 font-display text-[10px] font-semibold tabular-nums shadow-sm"
                         >
                           {key}
                         </kbd>

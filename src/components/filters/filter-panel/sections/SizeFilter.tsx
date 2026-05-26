@@ -2,16 +2,50 @@
  * SizeFilter — Filtro de tamanho no Super Filtro
  * Extrai size_codes únicos das variações dos produtos carregados.
  */
-import { useMemo, useState } from "react";
-import { Search, X } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
+import { useMemo, useState } from 'react';
+import { Search, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
 
 const SIZE_ORDER = [
-  "PP", "P", "M", "G", "GG", "XG", "XXG", "EG", "EGG",
-  "XS", "S", "L", "XL", "XXL", "2XL", "3XL",
-  "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46",
-  "100ml", "200ml", "300ml", "350ml", "400ml", "500ml", "600ml", "750ml", "1L",
+  'PP',
+  'P',
+  'M',
+  'G',
+  'GG',
+  'XG',
+  'XXG',
+  'EG',
+  'EGG',
+  'XS',
+  'S',
+  'L',
+  'XL',
+  'XXL',
+  '2XL',
+  '3XL',
+  '34',
+  '35',
+  '36',
+  '37',
+  '38',
+  '39',
+  '40',
+  '41',
+  '42',
+  '43',
+  '44',
+  '45',
+  '46',
+  '100ml',
+  '200ml',
+  '300ml',
+  '350ml',
+  '400ml',
+  '500ml',
+  '600ml',
+  '750ml',
+  '1L',
 ];
 
 function getSizeOrder(code: string): number {
@@ -31,7 +65,7 @@ interface SizeFilterProps {
 }
 
 export function SizeFilter({ selectedSizes, onToggleSize, products = [] }: SizeFilterProps) {
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
 
   const availableSizes = useMemo(() => {
     const sizeSet = new Set<string>();
@@ -51,7 +85,7 @@ export function SizeFilter({ selectedSizes, onToggleSize, products = [] }: SizeF
 
   if (availableSizes.length === 0) {
     return (
-      <p className="text-xs text-muted-foreground px-1">
+      <p className="px-1 text-xs text-muted-foreground">
         Nenhum tamanho disponível nos produtos carregados.
       </p>
     );
@@ -61,7 +95,7 @@ export function SizeFilter({ selectedSizes, onToggleSize, products = [] }: SizeF
     <div className="space-y-2 px-1">
       {availableSizes.length > 10 && (
         <div className="relative">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -69,7 +103,10 @@ export function SizeFilter({ selectedSizes, onToggleSize, products = [] }: SizeF
             className="h-7 pl-7 pr-7 text-xs"
           />
           {search && (
-            <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2">
+            <button
+              onClick={() => setSearch('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2"
+            >
               <X className="h-3 w-3 text-muted-foreground" />
             </button>
           )}
@@ -83,10 +120,10 @@ export function SizeFilter({ selectedSizes, onToggleSize, products = [] }: SizeF
               key={size}
               onClick={() => onToggleSize(size)}
               className={cn(
-                "px-2.5 py-1 rounded-md text-xs font-medium border transition-all",
+                'rounded-md border px-2.5 py-1 text-xs font-medium transition-all',
                 isSelected
-                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                  : "bg-card border-border text-foreground hover:border-primary/40 hover:bg-accent"
+                  ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                  : 'border-border bg-card text-foreground hover:border-primary/40 hover:bg-accent',
               )}
             >
               {size}

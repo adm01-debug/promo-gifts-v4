@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Check, X, Pencil } from "lucide-react";
-import { cn } from "@/lib/utils";
+import React, { useState, useRef, useEffect } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Check, X, Pencil } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface InlineEditFieldProps {
   value: string;
@@ -10,7 +10,7 @@ interface InlineEditFieldProps {
   className?: string;
   inputClassName?: string;
   placeholder?: string;
-  type?: "text" | "number";
+  type?: 'text' | 'number';
   disabled?: boolean;
 }
 
@@ -20,7 +20,7 @@ export function InlineEditField({
   className,
   inputClassName,
   placeholder,
-  type = "text",
+  type = 'text',
   disabled = false,
 }: InlineEditFieldProps) {
   const [isEditing, setIsEditing] = useState(false);
@@ -51,16 +51,16 @@ export function InlineEditField({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       handleSave();
-    } else if (e.key === "Escape") {
+    } else if (e.key === 'Escape') {
       handleCancel();
     }
   };
 
   if (isEditing) {
     return (
-      <div className={cn("flex items-center gap-1", className)}>
+      <div className={cn('flex items-center gap-1', className)}>
         <Input
           ref={inputRef}
           type={type}
@@ -68,7 +68,7 @@ export function InlineEditField({
           onChange={(e) => setEditValue(e.target.value)}
           onKeyDown={handleKeyDown}
           onBlur={handleSave}
-          className={cn("h-7 text-sm", inputClassName)}
+          className={cn('h-7 text-sm', inputClassName)}
           placeholder={placeholder}
         />
         <Button
@@ -76,14 +76,18 @@ export function InlineEditField({
           variant="ghost"
           className="h-6 w-6 text-success hover:text-success/80"
           onClick={handleSave}
-         aria-label="Confirmar"><Check className="h-3 w-3" />
+          aria-label="Confirmar"
+        >
+          <Check className="h-3 w-3" />
         </Button>
         <Button
           size="icon"
           variant="ghost"
           className="h-6 w-6 text-destructive"
           onClick={handleCancel}
-         aria-label="Fechar"><X className="h-3 w-3" />
+          aria-label="Fechar"
+        >
+          <X className="h-3 w-3" />
         </Button>
       </div>
     );
@@ -92,17 +96,17 @@ export function InlineEditField({
   return (
     <div
       className={cn(
-        "group flex items-center gap-1 cursor-pointer hover:bg-muted/50 rounded px-1 -mx-1 transition-colors",
-        disabled && "cursor-default hover:bg-transparent",
-        className
+        'group -mx-1 flex cursor-pointer items-center gap-1 rounded px-1 transition-colors hover:bg-muted/50',
+        disabled && 'cursor-default hover:bg-transparent',
+        className,
       )}
       onClick={() => !disabled && setIsEditing(true)}
     >
-      <span className={cn("text-sm", !value && "text-muted-foreground")}>
-        {value || placeholder || "—"}
+      <span className={cn('text-sm', !value && 'text-muted-foreground')}>
+        {value || placeholder || '—'}
       </span>
       {!disabled && (
-        <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
+        <Pencil className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-50" />
       )}
     </div>
   );

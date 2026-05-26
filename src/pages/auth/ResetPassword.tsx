@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { LegalFooter } from '@/components/auth/LegalFooter';
-import { SpaceScene } from "@/pages/auth/AuthBranding";
+import { SpaceScene } from '@/pages/auth/AuthBranding';
 
 const resetPasswordSchema = z
   .object({
@@ -143,10 +143,10 @@ export default function ResetPassword() {
 
   if (!isValidToken) {
     return (
-      <div className="relative flex min-h-screen items-center justify-center bg-[#030508] p-6 overflow-hidden">
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#030508] p-6">
         <SpaceScene />
-        <Card className="relative z-10 w-full max-w-md border-white/10 bg-black/60 shadow-2xl backdrop-blur-xl rounded-[2rem]">
-          <CardContent className="space-y-6 pb-10 pt-10 text-center px-8">
+        <Card className="relative z-10 w-full max-w-md rounded-[2rem] border-white/10 bg-black/60 shadow-2xl backdrop-blur-xl">
+          <CardContent className="space-y-6 px-8 pb-10 pt-10 text-center">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10">
               <Lock className="h-8 w-8 text-destructive" />
             </div>
@@ -158,8 +158,8 @@ export default function ResetPassword() {
                 Este link de recuperação de senha não é mais válido ou já foi utilizado.
               </p>
             </div>
-            <Button 
-              className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-xl" 
+            <Button
+              className="h-12 w-full rounded-xl bg-blue-600 text-white hover:bg-blue-700"
               onClick={() => navigate('/login')}
             >
               Solicitar novo link
@@ -172,10 +172,10 @@ export default function ResetPassword() {
 
   if (isSuccess) {
     return (
-      <div className="relative flex min-h-screen items-center justify-center bg-[#030508] p-6 overflow-hidden">
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#030508] p-6">
         <SpaceScene />
-        <Card className="relative z-10 w-full max-w-md border-white/10 bg-black/60 shadow-2xl backdrop-blur-xl rounded-[2rem]">
-          <CardContent className="space-y-8 pb-10 pt-10 text-center px-8">
+        <Card className="relative z-10 w-full max-w-md rounded-[2rem] border-white/10 bg-black/60 shadow-2xl backdrop-blur-xl">
+          <CardContent className="space-y-8 px-8 pb-10 pt-10 text-center">
             <div className="relative mx-auto h-20 w-20">
               <div className="absolute inset-0 animate-ping rounded-full bg-success/20 duration-1000" />
               <div className="relative flex h-full w-full items-center justify-center rounded-3xl bg-success/10 text-success shadow-[0_0_30px_rgba(34,197,94,0.3)]">
@@ -183,15 +183,14 @@ export default function ResetPassword() {
               </div>
             </div>
             <div className="space-y-2">
-              <h2 className="font-display text-2xl font-bold text-white">
-                Senha redefinida!
-              </h2>
-              <p className="text-sm text-white/50 leading-relaxed">
-                Sua senha foi alterada com sucesso. Em instantes você será redirecionado para decolar conosco!
+              <h2 className="font-display text-2xl font-bold text-white">Senha redefinida!</h2>
+              <p className="text-sm leading-relaxed text-white/50">
+                Sua senha foi alterada com sucesso. Em instantes você será redirecionado para
+                decolar conosco!
               </p>
             </div>
-            <Button 
-              className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-xl" 
+            <Button
+              className="h-12 w-full rounded-xl bg-blue-600 text-white hover:bg-blue-700"
               onClick={() => navigate('/login')}
             >
               Ir para o início
@@ -203,7 +202,7 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-[#030508] p-6 overflow-hidden">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#030508] p-6">
       <SpaceScene />
       <div className="relative z-10 w-full max-w-md animate-fade-in space-y-8">
         {/* Logo */}
@@ -211,17 +210,15 @@ export default function ResetPassword() {
           <AppLogo />
         </div>
 
-        <Card className="border-white/10 bg-black/60 shadow-2xl backdrop-blur-xl rounded-[2rem] overflow-hidden">
+        <Card className="overflow-hidden rounded-[2rem] border-white/10 bg-black/60 shadow-2xl backdrop-blur-xl">
           <CardHeader className="pb-4 pt-8">
             <div className="space-y-1 text-center">
-              <h1 className="font-display text-2xl font-bold text-white">
-                Nova Senha
-              </h1>
+              <h1 className="font-display text-2xl font-bold text-white">Nova Senha</h1>
               <p className="text-sm text-white/50">Defina sua nova chave de acesso</p>
             </div>
           </CardHeader>
 
-          <CardContent className="pt-2 pb-10 px-8">
+          <CardContent className="px-8 pb-10 pt-2">
             <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="password" title="password" className="text-white">
@@ -234,7 +231,7 @@ export default function ResetPassword() {
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     autoComplete="new-password"
-                    className="border-white/10 bg-white/5 pl-10 pr-10 text-white focus:border-blue-500/50 focus:ring-blue-500/20 rounded-xl h-11 transition-all"
+                    className="h-11 rounded-xl border-white/10 bg-white/5 pl-10 pr-10 text-white transition-all focus:border-blue-500/50 focus:ring-blue-500/20"
                     {...form.register('password')}
                   />
                   <button
@@ -242,13 +239,13 @@ export default function ResetPassword() {
                     onClick={() => setShowPassword(!showPassword)}
                     aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                     aria-pressed={showPassword}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 flex min-h-[44px] min-w-[44px] -mr-2 items-center justify-center text-white/40 transition-colors hover:text-blue-400"
+                    className="absolute right-3 top-1/2 -mr-2 flex min-h-[44px] min-w-[44px] -translate-y-1/2 items-center justify-center text-white/40 transition-colors hover:text-blue-400"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
                 {form.formState.errors.password && (
-                  <p className="text-sm text-destructive font-medium">
+                  <p className="text-sm font-medium text-destructive">
                     {form.formState.errors.password.message}
                   </p>
                 )}
@@ -268,12 +265,12 @@ export default function ResetPassword() {
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     autoComplete="new-password"
-                    className="border-white/10 bg-white/5 pl-10 text-white focus:border-blue-500/50 focus:ring-blue-500/20 rounded-xl h-11 transition-all"
+                    className="h-11 rounded-xl border-white/10 bg-white/5 pl-10 text-white transition-all focus:border-blue-500/50 focus:ring-blue-500/20"
                     {...form.register('confirmPassword')}
                   />
                 </div>
                 {form.formState.errors.confirmPassword && (
-                  <p className="text-sm text-destructive font-medium">
+                  <p className="text-sm font-medium text-destructive">
                     {form.formState.errors.confirmPassword.message}
                   </p>
                 )}
@@ -281,7 +278,7 @@ export default function ResetPassword() {
 
               <Button
                 type="submit"
-                className="h-12 w-full text-base font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 rounded-xl border border-white/10 transition-all active:scale-[0.98]"
+                className="h-12 w-full rounded-xl border border-white/10 bg-blue-600 text-base font-bold text-white shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-700 active:scale-[0.98]"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (

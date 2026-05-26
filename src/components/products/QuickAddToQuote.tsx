@@ -1,14 +1,14 @@
-import { useState } from "react";
-import { Plus, Check, ShoppingCart, ShoppingBag, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { useSellerCartContext } from "@/contexts/SellerCartContext";
-import { CartCompanyPicker } from "@/components/cart/CartCompanyPicker";
-import { SingleVariantPicker } from "@/components/products/SingleVariantPicker";
-import type { ExternalVariantStock } from "@/hooks/products";
+import { useState } from 'react';
+import { Plus, Check, ShoppingCart, ShoppingBag, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { useSellerCartContext } from '@/contexts/SellerCartContext';
+import { CartCompanyPicker } from '@/components/cart/CartCompanyPicker';
+import { SingleVariantPicker } from '@/components/products/SingleVariantPicker';
+import type { ExternalVariantStock } from '@/hooks/products';
 
 interface QuickAddToQuoteProps {
   productId: string;
@@ -18,10 +18,10 @@ interface QuickAddToQuoteProps {
   productPrice?: number;
   minQuantity?: number;
   className?: string;
-  variant?: "icon" | "button" | "badge";
+  variant?: 'icon' | 'button' | 'badge';
   labelOverride?: string;
-  iconOverride?: "cart" | "plus";
-  buttonSize?: "default" | "sm" | "lg" | "xl" | "icon";
+  iconOverride?: 'cart' | 'plus';
+  buttonSize?: 'default' | 'sm' | 'lg' | 'xl' | 'icon';
 }
 
 export function QuickAddToQuote({
@@ -32,7 +32,7 @@ export function QuickAddToQuote({
   productPrice = 0,
   minQuantity = 1,
   className,
-  variant = "button",
+  variant = 'button',
   labelOverride,
   iconOverride,
   buttonSize,
@@ -40,7 +40,9 @@ export function QuickAddToQuote({
   const [quantity, setQuantity] = useState(minQuantity);
   const [isOpen, setIsOpen] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
-  const [selectedVariant, setSelectedVariant] = useState<ExternalVariantStock | null | undefined>(undefined);
+  const [selectedVariant, setSelectedVariant] = useState<ExternalVariantStock | null | undefined>(
+    undefined,
+  );
   const { activeCart, addToActiveCart } = useSellerCartContext();
 
   const handleVariantSelect = (v: ExternalVariantStock | null) => {
@@ -87,29 +89,29 @@ export function QuickAddToQuote({
   return (
     <Popover open={isOpen} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
-        {variant === "badge" ? (
+        {variant === 'badge' ? (
           <Badge
             variant="outline"
             className={cn(
-              "px-2.5 py-1 text-sm font-medium cursor-pointer",
-              "border-primary/50 bg-primary/10 hover:bg-primary/20",
-              "text-primary hover:text-primary/80",
-              "transition-all duration-200 hover:scale-105 hover:border-primary",
+              'cursor-pointer px-2.5 py-1 text-sm font-medium',
+              'border-primary/50 bg-primary/10 hover:bg-primary/20',
+              'text-primary hover:text-primary/80',
+              'transition-all duration-200 hover:scale-105 hover:border-primary',
               className,
             )}
             onClick={(e) => e.stopPropagation()}
           >
-            <ShoppingCart className="h-3.5 w-3.5 mr-1.5" />
+            <ShoppingCart className="mr-1.5 h-3.5 w-3.5" />
             <span className="text-xs">Orçar</span>
           </Badge>
-        ) : variant === "icon" ? (
+        ) : variant === 'icon' ? (
           <Button
             variant="secondary"
             size="icon"
             aria-label="ShoppingCart"
             className={cn(
-              "h-10 w-10 rounded-full bg-card/95 backdrop-blur-md shadow-lg border border-border/50 text-foreground",
-              "hover:bg-primary hover:text-primary-foreground hover:scale-110 transition-all duration-200",
+              'h-10 w-10 rounded-full border border-border/50 bg-card/95 text-foreground shadow-lg backdrop-blur-md',
+              'transition-all duration-200 hover:scale-110 hover:bg-primary hover:text-primary-foreground',
               className,
             )}
             onClick={(e) => e.stopPropagation()}
@@ -117,21 +119,26 @@ export function QuickAddToQuote({
             <ShoppingCart className="h-4 w-4" />
           </Button>
         ) : (
-          <Button
-            size={buttonSize}
-            className={cn(className)}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {iconOverride === "cart" ? <ShoppingBag className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-            {labelOverride || "Orçar"}
+          <Button size={buttonSize} className={cn(className)} onClick={(e) => e.stopPropagation()}>
+            {iconOverride === 'cart' ? (
+              <ShoppingBag className="h-4 w-4" />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
+            {labelOverride || 'Orçar'}
           </Button>
         )}
       </PopoverTrigger>
 
-      <PopoverContent className="w-80 p-4 relative" align="end" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+      <PopoverContent
+        className="relative w-80 p-4"
+        align="end"
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
         <button
           aria-label="Fechar"
-          className="absolute top-2 right-2 h-6 w-6 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors z-10"
+          className="absolute right-2 top-2 z-10 flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
           onClick={() => setIsOpen(false)}
         >
           <X className="h-3.5 w-3.5" />
@@ -141,14 +148,10 @@ export function QuickAddToQuote({
         {!variantChosen ? (
           <div className="space-y-3">
             <div>
-              <h4 className="font-medium text-sm mb-1 pr-6">Escolha a cor</h4>
-              <p className="text-xs text-muted-foreground line-clamp-1">{productName}</p>
+              <h4 className="mb-1 pr-6 text-sm font-medium">Escolha a cor</h4>
+              <p className="line-clamp-1 text-xs text-muted-foreground">{productName}</p>
             </div>
-            <SingleVariantPicker
-              productId={productId}
-              onSelect={handleVariantSelect}
-              compact
-            />
+            <SingleVariantPicker productId={productId} onSelect={handleVariantSelect} compact />
           </div>
         ) : needsCompanyPicker ? (
           /* Step 2: Company picker (only if no active cart) */
@@ -157,32 +160,37 @@ export function QuickAddToQuote({
           /* Step 3: Quantity + Add */
           <div className="space-y-3">
             <div>
-              <h4 className="font-medium text-sm mb-1 pr-6">Adicionar ao carrinho</h4>
-              <p className="text-xs text-muted-foreground line-clamp-1">{productName}</p>
+              <h4 className="mb-1 pr-6 text-sm font-medium">Adicionar ao carrinho</h4>
+              <p className="line-clamp-1 text-xs text-muted-foreground">{productName}</p>
               {activeCart && (
-                <p className="text-[10px] text-primary mt-1 font-medium truncate">→ {activeCart.company_name}</p>
+                <p className="mt-1 truncate text-[10px] font-medium text-primary">
+                  → {activeCart.company_name}
+                </p>
               )}
             </div>
 
             {/* Selected variant summary */}
             {selectedVariant && (
-              <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/40 border border-border/50">
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-muted/40 p-2">
                 {selectedVariant.selected_thumbnail ? (
                   <img
                     src={`${selectedVariant.selected_thumbnail}/thumbnail`}
                     alt={selectedVariant.color_name ?? ''}
-                    className="w-7 h-7 rounded-md object-cover border border-border/50"
+                    className="h-7 w-7 rounded-md border border-border/50 object-cover"
                   />
                 ) : selectedVariant.color_hex ? (
-                  <div className="w-7 h-7 rounded-md border border-border/50" style={{ backgroundColor: selectedVariant.color_hex }} />
+                  <div
+                    className="h-7 w-7 rounded-md border border-border/50"
+                    style={{ backgroundColor: selectedVariant.color_hex }}
+                  />
                 ) : null}
-                <span className="text-xs font-medium flex-1 truncate">
+                <span className="flex-1 truncate text-xs font-medium">
                   {selectedVariant.color_name}
                   {selectedVariant.size_code && ` — ${selectedVariant.size_code}`}
                 </span>
                 <button
                   onClick={() => setSelectedVariant(undefined)}
-                  className="text-[10px] text-primary hover:underline shrink-0"
+                  className="shrink-0 text-[10px] text-primary hover:underline"
                 >
                   Trocar
                 </button>
@@ -205,7 +213,9 @@ export function QuickAddToQuote({
                   type="number"
                   min={minQuantity}
                   value={quantity}
-                  onChange={(e) => setQuantity(Math.max(minQuantity, parseInt(e.target.value) || minQuantity))}
+                  onChange={(e) =>
+                    setQuantity(Math.max(minQuantity, parseInt(e.target.value) || minQuantity))
+                  }
                   className="h-8 text-center"
                 />
                 <Button
@@ -221,7 +231,12 @@ export function QuickAddToQuote({
               <p className="text-xs text-muted-foreground">Mínimo: {minQuantity} un.</p>
             </div>
 
-            <Button data-testid="product-card-add-to-cart" className="w-full gap-2" onClick={handleAddToQuote} disabled={isAdded || !activeCart}>
+            <Button
+              data-testid="product-card-add-to-cart"
+              className="w-full gap-2"
+              onClick={handleAddToQuote}
+              disabled={isAdded || !activeCart}
+            >
               {isAdded ? (
                 <>
                   <Check className="h-4 w-4" />

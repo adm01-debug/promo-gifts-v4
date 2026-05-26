@@ -2,13 +2,13 @@
  * ExpertChatDialog — Refactored to compose smaller components
  * Original: 1418 lines → Now: ~80 lines (orchestrator only)
  */
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { FlowFilterPanel } from "./FlowFilterPanel";
-import { useExpertChat } from "./chat/useExpertChat";
-import { ChatHeader } from "./chat/ChatHeader";
-import { ChatHistoryPanel } from "./chat/ChatHistoryPanel";
-import { ChatMessageList } from "./chat/ChatMessageList";
-import { ChatInputBar } from "./chat/ChatInputBar";
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { FlowFilterPanel } from './FlowFilterPanel';
+import { useExpertChat } from './chat/useExpertChat';
+import { ChatHeader } from './chat/ChatHeader';
+import { ChatHistoryPanel } from './chat/ChatHistoryPanel';
+import { ChatMessageList } from './chat/ChatMessageList';
+import { ChatInputBar } from './chat/ChatInputBar';
 
 interface ExpertChatDialogProps {
   isOpen: boolean;
@@ -18,12 +18,18 @@ interface ExpertChatDialogProps {
   initialMessage?: string | null;
 }
 
-export function ExpertChatDialog({ isOpen, onClose, clientId, clientName, initialMessage }: ExpertChatDialogProps) {
+export function ExpertChatDialog({
+  isOpen,
+  onClose,
+  clientId,
+  clientName,
+  initialMessage,
+}: ExpertChatDialogProps) {
   const chat = useExpertChat({ isOpen, onClose, clientId, clientName, initialMessage });
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-full sm:max-w-[480px] h-[100dvh] sm:h-[640px] flex flex-col p-0 gap-0 rounded-none sm:rounded-3xl overflow-hidden border-0 sm:border sm:border-border/50 shadow-xl [&>button.absolute]:hidden">
+      <DialogContent className="flex h-[100dvh] max-w-full flex-col gap-0 overflow-hidden rounded-none border-0 p-0 shadow-xl sm:h-[640px] sm:max-w-[480px] sm:rounded-3xl sm:border sm:border-border/50 [&>button.absolute]:hidden">
         <FlowFilterPanel
           isOpen={chat.showFilters}
           onClose={() => chat.setShowFilters(false)}
@@ -42,7 +48,10 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName, initia
           flowFilters={chat.flowFilters}
           setFlowFilters={chat.setFlowFilters}
           showHistory={chat.showHistory}
-          onToggleHistory={() => { chat.setShowHistory(!chat.showHistory); chat.setHistorySearch(""); }}
+          onToggleHistory={() => {
+            chat.setShowHistory(!chat.showHistory);
+            chat.setHistorySearch('');
+          }}
           onNewConversation={chat.startNewConversation}
           onOpenFilters={() => chat.setShowFilters(true)}
           onClose={onClose}

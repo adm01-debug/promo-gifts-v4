@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { logger } from "@/lib/logger";
+import { logger } from '@/lib/logger';
 
 // =====================================================
 // TIPOS DO SISTEMA DE CORES (3 Níveis)
@@ -48,7 +48,7 @@ async function fetchExternalColors() {
       filters: { is_active: true },
       orderBy: { column: 'sort_order', ascending: true },
       countMode: 'none',
-    }
+    },
   });
 
   if (groupsResponse.error) {
@@ -66,7 +66,7 @@ async function fetchExternalColors() {
       filters: { is_active: true },
       orderBy: { column: 'sort_order', ascending: true },
       countMode: 'none',
-    }
+    },
   });
 
   if (variationsResponse.error) {
@@ -90,8 +90,8 @@ async function fetchExternalColors() {
         slug: v.slug || v.name.toLowerCase().replace(/\s+/g, '-'),
         hex_code: v.hex_code,
         internal_code: v.internal_code,
-        group_id: v.group_id
-      }))
+        group_id: v.group_id,
+      })),
   }));
 
   return groupsWithVariations;
@@ -106,7 +106,7 @@ export function useColorSystem() {
     queryKey: ['color-system-external'],
     queryFn: async () => {
       const groups = await fetchExternalColors();
-      
+
       // Nuances são mantidas localmente (acabamentos como Fosco, Brilhante, etc.)
       const { data: nuances, error: nuancesError } = await supabase
         .from('color_nuances')
@@ -120,7 +120,7 @@ export function useColorSystem() {
 
       return {
         groups,
-        nuances: (nuances || []) as ColorNuance[]
+        nuances: (nuances || []) as ColorNuance[],
       } satisfies ColorFilters;
     },
     staleTime: 60 * 60 * 1000, // 1 hora
@@ -136,14 +136,14 @@ export function useColorSystem() {
  * Encontra um grupo pelo slug
  */
 export function findGroupBySlug(groups: ColorGroup[], slug: string): ColorGroup | undefined {
-  return groups.find(g => g.slug === slug);
+  return groups.find((g) => g.slug === slug);
 }
 
 /**
  * Encontra uma variação pelo slug dentro de um grupo
  */
 export function findVariationBySlug(group: ColorGroup, slug: string): ColorVariation | undefined {
-  return group.variations.find(v => v.slug === slug);
+  return group.variations.find((v) => v.slug === slug);
 }
 
 /**
@@ -161,12 +161,12 @@ export function formatColorName(variationName: string, nuanceName?: string): str
  */
 export function isLightColor(hexCode: string | null): boolean {
   if (!hexCode) return true;
-  
+
   const hex = hexCode.replace('#', '');
   const r = parseInt(hex.substring(0, 2), 16);
   const g = parseInt(hex.substring(2, 4), 16);
   const b = parseInt(hex.substring(4, 6), 16);
-  
+
   // Fórmula de luminosidade
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   return luminance > 0.5;

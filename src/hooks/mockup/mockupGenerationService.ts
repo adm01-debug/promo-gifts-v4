@@ -72,8 +72,8 @@ export async function fetchMockupHistory(userId?: string): Promise<GeneratedMock
     .from('generated_mockups')
     .select(
       'id, product_id, product_name, product_sku, technique_id, technique_name, ' +
-      'mockup_url, logo_url, position_x, position_y, logo_width_cm, logo_height_cm, ' +
-      'client_id, client_name, location_name, colors_count, annotations, created_at',
+        'mockup_url, logo_url, position_x, position_y, logo_width_cm, logo_height_cm, ' +
+        'client_id, client_name, location_name, colors_count, annotations, created_at',
     )
     .order('created_at', { ascending: false });
   if (userId) query = query.eq('user_id', userId);
@@ -241,15 +241,17 @@ export async function generateMockupApi(
         logoRotation: area.logoRotation || 0,
         logoScale: area.logoScale ?? 100,
         productName,
-        areas: [{
-          name: area.name,
-          positionX: area.positionX,
-          positionY: area.positionY,
-          logoWidth: area.logoWidth,
-          logoHeight: area.logoHeight,
-          logoRotation: area.logoRotation || 0,
-          logoScale: area.logoScale ?? 100,
-        }],
+        areas: [
+          {
+            name: area.name,
+            positionX: area.positionX,
+            positionY: area.positionY,
+            logoWidth: area.logoWidth,
+            logoHeight: area.logoHeight,
+            logoRotation: area.logoRotation || 0,
+            logoScale: area.logoScale ?? 100,
+          },
+        ],
       },
     });
 
@@ -263,10 +265,9 @@ export async function generateMockupApi(
   }
 
   if (failedAreas.length > 0) {
-    toast.warning(
-      `${failedAreas.length} área(s) falharam: ${failedAreas.join(', ')}`,
-      { duration: 5000 },
-    );
+    toast.warning(`${failedAreas.length} área(s) falharam: ${failedAreas.join(', ')}`, {
+      duration: 5000,
+    });
   }
 
   if (results.length === 0) throw new Error('Nenhum mockup gerado no batch');

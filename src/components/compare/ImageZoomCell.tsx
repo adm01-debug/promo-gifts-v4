@@ -1,7 +1,7 @@
 /**
  * ImageZoomCell (C6 #6) — Hover ativa lupa flutuante 2× sobre a imagem.
  */
-import { useRef, useState } from "react";
+import { useRef, useState } from 'react';
 
 interface Props {
   src: string;
@@ -10,7 +10,7 @@ interface Props {
   zoomLevel?: number;
 }
 
-export function ImageZoomCell({ src, alt, className = "", zoomLevel = 2 }: Props) {
+export function ImageZoomCell({ src, alt, className = '', zoomLevel = 2 }: Props) {
   const [show, setShow] = useState(false);
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const ref = useRef<HTMLDivElement>(null);
@@ -31,14 +31,14 @@ export function ImageZoomCell({ src, alt, className = "", zoomLevel = 2 }: Props
       onMouseLeave={() => setShow(false)}
       onMouseMove={onMove}
     >
-      <img src={src} alt={alt} loading="lazy" className="w-full h-full object-contain" />
+      <img src={src} alt={alt} loading="lazy" className="h-full w-full object-contain" />
       {show && (
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 transition-opacity"
           style={{
             backgroundImage: `url(${src})`,
-            backgroundRepeat: "no-repeat",
+            backgroundRepeat: 'no-repeat',
             backgroundSize: `${zoomLevel * 100}%`,
             backgroundPosition: `${pos.x}% ${pos.y}%`,
           }}

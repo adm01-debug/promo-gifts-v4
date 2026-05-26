@@ -35,7 +35,11 @@ let started = false;
 
 function notify() {
   for (const fn of listeners) {
-    try { fn(); } catch { /* ignore */ }
+    try {
+      fn();
+    } catch {
+      /* ignore */
+    }
   }
 }
 
@@ -103,7 +107,9 @@ export function getColdStartIncidents(): ColdStartIncident[] {
 
 export function subscribeColdStartIncidents(fn: () => void): () => void {
   listeners.add(fn);
-  return () => { listeners.delete(fn); };
+  return () => {
+    listeners.delete(fn);
+  };
 }
 
 export function clearColdStartIncidents(): void {

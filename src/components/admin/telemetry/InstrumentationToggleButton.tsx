@@ -40,12 +40,12 @@ export function InstrumentationToggleButton() {
           >
             {paused ? (
               <>
-                <Play className="h-3.5 w-3.5 mr-1.5" />
+                <Play className="mr-1.5 h-3.5 w-3.5" />
                 Retomar instrumentação
               </>
             ) : (
               <>
-                <Pause className="h-3.5 w-3.5 mr-1.5" />
+                <Pause className="mr-1.5 h-3.5 w-3.5" />
                 Pausar instrumentação
               </>
             )}

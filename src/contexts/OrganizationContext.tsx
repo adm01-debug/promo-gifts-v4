@@ -1,6 +1,6 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface Organization {
   id: string;
@@ -18,14 +18,14 @@ export interface OrgMember {
   id: string;
   organization_id: string;
   user_id: string;
-  role: "owner" | "admin" | "member";
+  role: 'owner' | 'admin' | 'member';
   joined_at: string;
 }
 
 interface OrganizationContextType {
   organizations: Organization[];
   currentOrg: Organization | null;
-  currentRole: OrgMember["role"] | null;
+  currentRole: OrgMember['role'] | null;
   isLoading: boolean;
   switchOrganization: (orgId: string) => void;
   createOrganization: (name: string, slug: string) => Promise<Organization | null>;
@@ -34,13 +34,13 @@ interface OrganizationContextType {
 
 const OrganizationContext = createContext<OrganizationContextType | null>(null);
 
-const ORG_STORAGE_KEY = "selected_org_id";
+const ORG_STORAGE_KEY = 'selected_org_id';
 
 export function OrganizationProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [currentOrg, setCurrentOrg] = useState<Organization | null>(null);
-  const [currentRole, setCurrentRole] = useState<OrgMember["role"] | null>(null);
+  const [currentRole, setCurrentRole] = useState<OrgMember['role'] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchOrganizations = useCallback(async () => {
@@ -58,9 +58,9 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       // organization_members era consultada antes mas estava vazia (0 registros),
       // resultando em currentOrg=null e orgId=null nos INSERTs → erro 42501.
       const { data: members, error: membersError } = await supabase
-        .from("user_organizations")
-        .select("organization_id, role")
-        .eq("user_id", user.id);
+        .from('user_organizations')
+        .select('organization_id, role')
+        .eq('user_id', user.id);
 
       if (membersError) throw membersError;
 
@@ -75,10 +75,10 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       const orgIds = members.map((m) => m.organization_id);
 
       const { data: orgs, error: orgsError } = await supabase
-        .from("organizations")
-        .select("*")
-        .in("id", orgIds)
-        .eq("is_active", true);
+        .from('organizations')
+        .select('*')
+        .in('id', orgIds)
+        .eq('is_active', true);
 
       if (orgsError) throw orgsError;
 
@@ -94,11 +94,11 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
 
       if (selected) {
         const membership = members.find((m) => m.organization_id === selected.id);
-        setCurrentRole((membership?.role as OrgMember["role"]) || null);
+        setCurrentRole((membership?.role as OrgMember['role']) || null);
         localStorage.setItem(ORG_STORAGE_KEY, selected.id);
       }
     } catch (err) {
-      console.error("Failed to fetch organizations:", err);
+      console.error('Failed to fetch organizations:', err);
     } finally {
       setIsLoading(false);
     }
@@ -116,17 +116,17 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
         localStorage.setItem(ORG_STORAGE_KEY, orgId);
         // FIX: usar user_organizations consistentemente
         supabase
-          .from("user_organizations")
-          .select("role")
-          .eq("organization_id", orgId)
-          .eq("user_id", user?.id ?? "")
+          .from('user_organizations')
+          .select('role')
+          .eq('organization_id', orgId)
+          .eq('user_id', user?.id ?? '')
           .single()
           .then(({ data }) => {
-            setCurrentRole((data?.role as OrgMember["role"]) || null);
+            setCurrentRole((data?.role as OrgMember['role']) || null);
           });
       }
     },
-    [organizations, user]
+    [organizations, user],
   );
 
   const createOrganization = useCallback(
@@ -134,13 +134,13 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       if (!user) return null;
 
       // Use atomic RPC to create org + add owner in a single transaction
-      const { data: orgId, error } = await supabase.rpc(
-        "create_organization_with_owner",
-        { _name: name, _slug: slug }
-      );
+      const { data: orgId, error } = await supabase.rpc('create_organization_with_owner', {
+        _name: name,
+        _slug: slug,
+      });
 
       if (error) {
-        console.error("Failed to create organization:", error);
+        console.error('Failed to create organization:', error);
         return null;
       }
 
@@ -148,9 +148,11 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       switchOrganization(orgId);
 
       // Return the org from the freshly fetched list
-      return organizations.find((o) => o.id === orgId) || ({ id: orgId, name, slug } as Organization);
+      return (
+        organizations.find((o) => o.id === orgId) || ({ id: orgId, name, slug } as Organization)
+      );
     },
-    [user, fetchOrganizations, switchOrganization, organizations]
+    [user, fetchOrganizations, switchOrganization, organizations],
   );
 
   return (
@@ -173,7 +175,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
 export function useOrganization() {
   const ctx = useContext(OrganizationContext);
   if (!ctx) {
-    throw new Error("useOrganization must be used within OrganizationProvider");
+    throw new Error('useOrganization must be used within OrganizationProvider');
   }
   return ctx;
 }

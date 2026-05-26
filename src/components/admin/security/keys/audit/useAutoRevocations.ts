@@ -5,15 +5,15 @@
  * do emissor para exibir no painel de observabilidade do mecanismo de defesa
  * (revogação automática de chaves FULL quando o emissor perde o papel dev).
  */
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface AutoRevocationRow {
   id: string;
   key_id: string;
   created_by: string;
   revoked_at: string;
-  source: "trigger" | "cron" | "manual";
+  source: 'trigger' | 'cron' | 'manual';
   reason: string;
   key_name: string | null;
   key_prefix: string | null;
@@ -25,19 +25,21 @@ interface RawRow {
   key_id: string;
   created_by: string;
   revoked_at: string;
-  source: AutoRevocationRow["source"];
+  source: AutoRevocationRow['source'];
   reason: string;
   mcp_api_keys: { name: string | null; key_prefix: string | null } | null;
 }
 
 export function useAutoRevocations() {
   return useQuery({
-    queryKey: ["mcp-key-auto-revocations"],
+    queryKey: ['mcp-key-auto-revocations'],
     queryFn: async (): Promise<AutoRevocationRow[]> => {
       const { data, error } = await supabase
-        .from("mcp_key_auto_revocations")
-        .select("id, key_id, created_by, revoked_at, source, reason, mcp_api_keys(name, key_prefix)")
-        .order("revoked_at", { ascending: false })
+        .from('mcp_key_auto_revocations')
+        .select(
+          'id, key_id, created_by, revoked_at, source, reason, mcp_api_keys(name, key_prefix)',
+        )
+        .order('revoked_at', { ascending: false })
         .limit(200);
       if (error) throw error;
 
@@ -48,9 +50,9 @@ export function useAutoRevocations() {
       const emailMap = new Map<string, string>();
       if (userIds.length > 0) {
         const { data: profiles } = await supabase
-          .from("profiles")
-          .select("user_id, email")
-          .in("user_id", userIds);
+          .from('profiles')
+          .select('user_id, email')
+          .in('user_id', userIds);
         for (const p of (profiles ?? []) as Array<{ user_id: string; email: string | null }>) {
           if (p.email) emailMap.set(p.user_id, p.email);
         }

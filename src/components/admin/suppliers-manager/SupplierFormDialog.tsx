@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import { maskCnpj, maskPhone, ESTADOS_BR } from '@/utils/masks';
 import { applyPixMask, pixPlaceholder, validatePixKey } from '@/utils/pixMask';
-import { type Supplier, type SupplierContact, type PixKey, CONTACT_ROLES } from "./types";
+import { type Supplier, type SupplierContact, type PixKey, CONTACT_ROLES } from './types';
 import React from 'react';
 
 interface SupplierFormDialogProps {

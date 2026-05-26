@@ -1,4 +1,4 @@
-import { type Product, type SupplierSalesEntry } from "@/hooks/products";
+import { type Product, type SupplierSalesEntry } from '@/hooks/products';
 
 /**
  * Centralized product sorting logic.
@@ -11,33 +11,33 @@ export function sortProducts(
     promoSalesMap?: Map<string, number>;
     supplierSalesMap?: Map<string, SupplierSalesEntry>;
     skipSort?: boolean;
-  }
+  },
 ): Product[] {
   if (options?.skipSort) return products;
 
   switch (sortBy) {
-    case "relevance":
+    case 'relevance':
       // In relevance mode, we preserve the search ranking order
       // (rankProductSearchResults already handles the hierarchy)
       break;
-    case "name":
+    case 'name':
       products.sort((a, b) => a.name.localeCompare(b.name));
       break;
-    case "price-asc":
+    case 'price-asc':
       products.sort((a, b) => a.price - b.price);
       break;
-    case "price-desc":
+    case 'price-desc':
       products.sort((a, b) => b.price - a.price);
       break;
-    case "stock":
+    case 'stock':
       products.sort((a, b) => (b.stock || 0) - (a.stock || 0));
       break;
-    case "newest":
-      products.sort((a, b) =>
-        new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+    case 'newest':
+      products.sort(
+        (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime(),
       );
       break;
-    case "best-seller-supplier": {
+    case 'best-seller-supplier': {
       const sMap = options?.supplierSalesMap;
       if (sMap && sMap.size > 0) {
         // Real data from external DB (mv_product_intelligence)
@@ -66,8 +66,8 @@ export function sortProducts(
     }
     // FIX-06+13: "popularity" era mapeado no voice agent mas nao tinha case aqui.
     // Adicionado alias para best-seller-promo (semanticamente equivalente).
-    case "best-seller-promo":
-    case "popularity":
+    case 'best-seller-promo':
+    case 'popularity':
       products.sort((a, b) => {
         const map = options?.promoSalesMap;
         const aCount = map?.get(a.id) || 0;

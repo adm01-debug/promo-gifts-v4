@@ -1,21 +1,13 @@
-import { useState, useEffect, useMemo } from "react";
-import Fuse from "fuse.js";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Sparkles,
-  TrendingUp,
-  Clock,
-  Lightbulb,
-  ArrowRight,
-  Tag,
-  Percent,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
+import { useState, useEffect, useMemo } from 'react';
+import Fuse from 'fuse.js';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles, TrendingUp, Clock, Lightbulb, ArrowRight, Tag, Percent } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 interface Suggestion {
   id: string;
-  type: "trending" | "recent" | "recommended" | "related" | "promotion";
+  type: 'trending' | 'recent' | 'recommended' | 'related' | 'promotion';
   title: string;
   description?: string;
   category?: string;
@@ -28,7 +20,7 @@ interface Suggestion {
 }
 
 interface SmartSuggestionsProps {
-  context?: "products" | "quotes" | "clients" | "general";
+  context?: 'products' | 'quotes' | 'clients' | 'general';
   currentItem?: string;
   maxItems?: number;
   showHeader?: boolean;
@@ -37,15 +29,25 @@ interface SmartSuggestionsProps {
 }
 
 const typeConfig = {
-  trending: { icon: TrendingUp, label: "Em alta", color: "text-brand-primary", bg: "bg-brand-primary/10" },
-  recent: { icon: Clock, label: "Recente", color: "text-primary", bg: "bg-primary/10" },
-  recommended: { icon: Sparkles, label: "Recomendado", color: "text-primary", bg: "bg-primary/10" },
-  related: { icon: Tag, label: "Relacionado", color: "text-primary", bg: "bg-primary/10" },
-  promotion: { icon: Percent, label: "Promoção", color: "text-destructive", bg: "bg-destructive/10" },
+  trending: {
+    icon: TrendingUp,
+    label: 'Em alta',
+    color: 'text-brand-primary',
+    bg: 'bg-brand-primary/10',
+  },
+  recent: { icon: Clock, label: 'Recente', color: 'text-primary', bg: 'bg-primary/10' },
+  recommended: { icon: Sparkles, label: 'Recomendado', color: 'text-primary', bg: 'bg-primary/10' },
+  related: { icon: Tag, label: 'Relacionado', color: 'text-primary', bg: 'bg-primary/10' },
+  promotion: {
+    icon: Percent,
+    label: 'Promoção',
+    color: 'text-destructive',
+    bg: 'bg-destructive/10',
+  },
 };
 
 export function SmartSuggestions({
-  context = "general",
+  context = 'general',
   currentItem,
   maxItems = 5,
   showHeader = true,
@@ -59,53 +61,53 @@ export function SmartSuggestions({
   useEffect(() => {
     const loadSuggestions = async () => {
       setIsLoading(true);
-      
+
       // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
       const mockSuggestions: Suggestion[] = [
         {
-          id: "1",
-          type: "trending",
-          title: "Caneta Esferográfica Touch",
-          description: "Mais vendido este mês",
-          category: "Escritório",
-          url: "/produtos/1",
+          id: '1',
+          type: 'trending',
+          title: 'Caneta Esferográfica Touch',
+          description: 'Mais vendido este mês',
+          category: 'Escritório',
+          url: '/produtos/1',
           metadata: { views: 1250, popularity: 95 },
         },
         {
-          id: "2",
-          type: "recommended",
-          title: "Kit Executivo Premium",
-          description: "Baseado nas suas vendas",
-          category: "Kits",
-          url: "/produtos/2",
+          id: '2',
+          type: 'recommended',
+          title: 'Kit Executivo Premium',
+          description: 'Baseado nas suas vendas',
+          category: 'Kits',
+          url: '/produtos/2',
           metadata: { popularity: 88 },
         },
         {
-          id: "3",
-          type: "promotion",
-          title: "Agenda 2025 Personalizada",
-          description: "20% OFF até sexta",
-          category: "Papelaria",
-          url: "/produtos/3",
+          id: '3',
+          type: 'promotion',
+          title: 'Agenda 2025 Personalizada',
+          description: '20% OFF até sexta',
+          category: 'Papelaria',
+          url: '/produtos/3',
           metadata: { discount: 20 },
         },
         {
-          id: "4",
-          type: "related",
-          title: "Bloco de Notas Sustentável",
-          description: "Combina com sua seleção",
-          category: "Eco",
-          url: "/produtos/4",
+          id: '4',
+          type: 'related',
+          title: 'Bloco de Notas Sustentável',
+          description: 'Combina com sua seleção',
+          category: 'Eco',
+          url: '/produtos/4',
         },
         {
-          id: "5",
-          type: "recent",
-          title: "Garrafa Térmica 500ml",
-          description: "Visualizado há 2h",
-          category: "Drinkware",
-          url: "/produtos/5",
+          id: '5',
+          type: 'recent',
+          title: 'Garrafa Térmica 500ml',
+          description: 'Visualizado há 2h',
+          category: 'Drinkware',
+          url: '/produtos/5',
         },
       ];
 
@@ -118,14 +120,14 @@ export function SmartSuggestions({
 
   if (isLoading) {
     return (
-      <div className={cn("space-y-3", className)}>
+      <div className={cn('space-y-3', className)}>
         {showHeader && (
           <div className="flex items-center gap-2">
-            <div className="h-4 w-32 bg-muted rounded animate-pulse" />
+            <div className="h-4 w-32 animate-pulse rounded bg-muted" />
           </div>
         )}
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="h-16 bg-muted rounded-lg animate-pulse" />
+          <div key={i} className="h-16 animate-pulse rounded-lg bg-muted" />
         ))}
       </div>
     );
@@ -136,13 +138,11 @@ export function SmartSuggestions({
   }
 
   return (
-    <div className={cn("space-y-3", className)}>
+    <div className={cn('space-y-3', className)}>
       {showHeader && (
         <div className="flex items-center gap-2">
           <Lightbulb className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium text-foreground">
-            Sugestões inteligentes
-          </span>
+          <span className="text-sm font-medium text-foreground">Sugestões inteligentes</span>
           <Badge variant="secondary" className="text-[10px]">
             IA
           </Badge>
@@ -164,22 +164,19 @@ export function SmartSuggestions({
                 transition={{ delay: index * 0.05 }}
                 onClick={() => onSelect?.(suggestion)}
                 className={cn(
-                  "w-full flex items-center gap-3 p-3 rounded-xl",
-                  "bg-card border border-border",
-                  "hover:border-primary/30 hover:shadow-md",
-                  "transition-all duration-200 text-left group"
+                  'flex w-full items-center gap-3 rounded-xl p-3',
+                  'border border-border bg-card',
+                  'hover:border-primary/30 hover:shadow-md',
+                  'group text-left transition-all duration-200',
                 )}
               >
-                <div className={cn(
-                  "p-2 rounded-lg flex-shrink-0",
-                  config.bg
-                )}>
-                  <Icon className={cn("h-4 w-4", config.color)} />
+                <div className={cn('flex-shrink-0 rounded-lg p-2', config.bg)}>
+                  <Icon className={cn('h-4 w-4', config.color)} />
                 </div>
 
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm text-foreground truncate">
+                    <span className="truncate text-sm font-medium text-foreground">
                       {suggestion.title}
                     </span>
                     {suggestion.metadata?.discount && (
@@ -189,13 +186,13 @@ export function SmartSuggestions({
                     )}
                   </div>
                   {suggestion.description && (
-                    <p className="text-xs text-muted-foreground truncate">
+                    <p className="truncate text-xs text-muted-foreground">
                       {suggestion.description}
                     </p>
                   )}
                 </div>
 
-                <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
               </motion.button>
             );
           })}
@@ -215,18 +212,18 @@ interface InlineSuggestionsProps {
 export function InlineSuggestions({ query, onSelect, className }: InlineSuggestionsProps) {
   const suggestions = useMemo(() => {
     if (!query || query.length < 2) return [];
-    
+
     // Mock autocomplete - replace with actual API
     const allSuggestions = [
-      "caneta personalizada",
-      "caneta esferográfica",
-      "caneta touch screen",
-      "camiseta polo",
-      "camiseta dry fit",
-      "caderno espiral",
-      "caderno personalizado",
-      "garrafa térmica",
-      "garrafa squeeze",
+      'caneta personalizada',
+      'caneta esferográfica',
+      'caneta touch screen',
+      'camiseta polo',
+      'camiseta dry fit',
+      'caderno espiral',
+      'caderno personalizado',
+      'garrafa térmica',
+      'garrafa squeeze',
     ];
 
     // Usar Fuse.js para busca fuzzy
@@ -244,17 +241,17 @@ export function InlineSuggestions({ query, onSelect, className }: InlineSuggesti
   if (suggestions.length === 0) return null;
 
   return (
-    <div className={cn("py-1 border-b border-border", className)}>
+    <div className={cn('border-b border-border py-1', className)}>
       <div className="flex flex-wrap gap-1.5 px-4">
         {suggestions.map((suggestion) => (
           <button
             key={suggestion}
             onClick={() => onSelect(suggestion)}
             className={cn(
-              "px-3 py-1 text-sm rounded-full",
-              "bg-muted/50 text-muted-foreground",
-              "hover:bg-primary/10 hover:text-primary",
-              "transition-colors"
+              'rounded-full px-3 py-1 text-sm',
+              'bg-muted/50 text-muted-foreground',
+              'hover:bg-primary/10 hover:text-primary',
+              'transition-colors',
             )}
           >
             {suggestion}
@@ -273,25 +270,27 @@ interface SmartFiltersProps {
   className?: string;
 }
 
-export function SmartFilters({ 
-  context, 
-  activeFilters, 
+export function SmartFilters({
+  context,
+  activeFilters,
   onFilterChange,
-  className 
+  className,
 }: SmartFiltersProps) {
-  const [suggestedFilters, setSuggestedFilters] = useState<Array<{
-    key: string;
-    label: string;
-    value: string;
-    reason: string;
-  }>>([]);
+  const [suggestedFilters, setSuggestedFilters] = useState<
+    Array<{
+      key: string;
+      label: string;
+      value: string;
+      reason: string;
+    }>
+  >([]);
 
   useEffect(() => {
     // Mock AI-suggested filters
     setSuggestedFilters([
-      { key: "category", label: "Escritório", value: "escritorio", reason: "Mais popular" },
-      { key: "price", label: "Até R$ 10", value: "0-10", reason: "Dentro do orçamento médio" },
-      { key: "stock", label: "Pronta entrega", value: "in_stock", reason: "Entrega rápida" },
+      { key: 'category', label: 'Escritório', value: 'escritorio', reason: 'Mais popular' },
+      { key: 'price', label: 'Até R$ 10', value: '0-10', reason: 'Dentro do orçamento médio' },
+      { key: 'stock', label: 'Pronta entrega', value: 'in_stock', reason: 'Entrega rápida' },
     ]);
   }, [context]);
 
@@ -302,28 +301,28 @@ export function SmartFilters({
   const toggleFilter = (key: string, value: string) => {
     const currentValues = activeFilters[key] || [];
     const newValues = isFilterActive(key, value)
-      ? currentValues.filter(v => v !== value)
+      ? currentValues.filter((v) => v !== value)
       : [...currentValues, value];
     onFilterChange(key, newValues);
   };
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn('space-y-2', className)}>
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <Sparkles className="h-3 w-3 text-primary" />
         <span>Filtros sugeridos</span>
       </div>
-      
+
       <div className="flex flex-wrap gap-2">
         {suggestedFilters.map((filter) => (
           <button
             key={`${filter.key}-${filter.value}`}
             onClick={() => toggleFilter(filter.key, filter.value)}
             className={cn(
-              "px-3 py-1.5 text-xs rounded-lg border transition-all",
+              'rounded-lg border px-3 py-1.5 text-xs transition-all',
               isFilterActive(filter.key, filter.value)
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border bg-card text-muted-foreground hover:border-primary/30"
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-border bg-card text-muted-foreground hover:border-primary/30',
             )}
             title={filter.reason}
           >

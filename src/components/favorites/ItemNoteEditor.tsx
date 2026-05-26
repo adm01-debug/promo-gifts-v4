@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { StickyNote } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useState } from 'react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { StickyNote } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Props {
   initialNote: string | null;
@@ -13,7 +13,7 @@ interface Props {
 
 export function ItemNoteEditor({ initialNote, onSave, triggerClassName }: Props) {
   const [open, setOpen] = useState(false);
-  const [note, setNote] = useState(initialNote ?? "");
+  const [note, setNote] = useState(initialNote ?? '');
   const [busy, setBusy] = useState(false);
 
   const hasNote = !!initialNote?.trim();
@@ -34,12 +34,12 @@ export function ItemNoteEditor({ initialNote, onSave, triggerClassName }: Props)
       <PopoverTrigger asChild>
         <Button
           size="icon"
-          variant={hasNote ? "default" : "secondary"}
-          aria-label={hasNote ? "Editar nota" : "Adicionar nota"}
+          variant={hasNote ? 'default' : 'secondary'}
+          aria-label={hasNote ? 'Editar nota' : 'Adicionar nota'}
           className={cn(
-            "h-7 w-7 backdrop-blur-sm",
-            hasNote ? "bg-primary text-primary-foreground" : "bg-card/90 hover:bg-primary/20",
-            triggerClassName
+            'h-7 w-7 backdrop-blur-sm',
+            hasNote ? 'bg-primary text-primary-foreground' : 'bg-card/90 hover:bg-primary/20',
+            triggerClassName,
           )}
           onClick={(e) => e.stopPropagation()}
         >
@@ -57,14 +57,16 @@ export function ItemNoteEditor({ initialNote, onSave, triggerClassName }: Props)
             autoFocus
           />
           <div className="flex items-center justify-between">
-            <span className={cn(
-              "text-[11px]",
-              remaining < 30 ? "text-warning" : "text-muted-foreground"
-            )}>
+            <span
+              className={cn(
+                'text-[11px]',
+                remaining < 30 ? 'text-warning' : 'text-muted-foreground',
+              )}
+            >
               {remaining} caracteres restantes
             </span>
             <Button size="sm" onClick={handleSave} disabled={busy} className="h-7 text-xs">
-              {busy ? "Salvando…" : "Salvar"}
+              {busy ? 'Salvando…' : 'Salvar'}
             </Button>
           </div>
         </div>

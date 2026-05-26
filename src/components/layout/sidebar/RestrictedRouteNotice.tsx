@@ -1,18 +1,10 @@
-import { ShieldAlert, KeyRound, Lock } from "lucide-react";
-import { useLocation, Link } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import {
-  isDevOnlyPath,
-  isAdminOnlyPath,
-} from "@/lib/navigation/restricted-routes";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { ShieldAlert, KeyRound, Lock } from 'lucide-react';
+import { useLocation, Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { isDevOnlyPath, isAdminOnlyPath } from '@/lib/navigation/restricted-routes';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface RestrictedRouteNoticeProps {
   isCollapsed: boolean;
@@ -27,9 +19,7 @@ interface RestrictedRouteNoticeProps {
  * - No modo colapsado, vira só o ícone com tooltip explicativo.
  * - Dev nunca vê (tem acesso).
  */
-export function RestrictedRouteNotice({
-  isCollapsed,
-}: RestrictedRouteNoticeProps) {
+export function RestrictedRouteNotice({ isCollapsed }: RestrictedRouteNoticeProps) {
   const location = useLocation();
   const { isAdmin, isDev, rolesLoaded } = useAuth();
   const path = location.pathname;
@@ -42,16 +32,15 @@ export function RestrictedRouteNotice({
 
   // Rota técnica: precisa de dev. Bloqueia tanto vendedor quanto admin.
   // Rota admin: bloqueia só vendedor.
-  const blocked =
-    (isDevRoute && !isDev) || (isAdminRoute && !isAdmin && !isDev);
+  const blocked = (isDevRoute && !isDev) || (isAdminRoute && !isAdmin && !isDev);
   if (!blocked) return null;
 
-  const requiredRole = isDevRoute ? "dev" : "admin";
-  const title = "Acesso Restrito";
+  const requiredRole = isDevRoute ? 'dev' : 'admin';
+  const title = 'Acesso Restrito';
   const description = isDevRoute
-    ? "Esta funcionalidade é exclusiva para a equipe técnica de engenharia."
-    : "Esta funcionalidade exige permissões de supervisão ou administração.";
-  
+    ? 'Esta funcionalidade é exclusiva para a equipe técnica de engenharia.'
+    : 'Esta funcionalidade exige permissões de supervisão ou administração.';
+
   const icon = isDevRoute ? KeyRound : Lock;
   const Icon = icon;
 
@@ -64,27 +53,36 @@ export function RestrictedRouteNotice({
               role="status"
               aria-label={`${title}: ${description}`}
               className={cn(
-                "mx-auto my-2 flex h-8 w-8 items-center justify-center rounded-md",
-                "bg-amber-500/10 text-amber-500 border border-amber-500/30 transition-all duration-300",
-                "hover:bg-amber-500/20 hover:border-amber-500/50"
+                'mx-auto my-2 flex h-8 w-8 items-center justify-center rounded-md',
+                'border border-amber-500/30 bg-amber-500/10 text-amber-500 transition-all duration-300',
+                'hover:border-amber-500/50 hover:bg-amber-500/20',
               )}
             >
               <Icon className="h-4 w-4" aria-hidden="true" />
             </div>
           </TooltipTrigger>
-          <TooltipContent side="right" className="max-w-xs border-amber-500/20 bg-background/95 backdrop-blur-md">
-            <p className="font-bold text-amber-500 text-xs flex items-center gap-1.5">
+          <TooltipContent
+            side="right"
+            className="max-w-xs border-amber-500/20 bg-background/95 backdrop-blur-md"
+          >
+            <p className="flex items-center gap-1.5 text-xs font-bold text-amber-500">
               <ShieldAlert className="h-3 w-3" />
               {title}
             </p>
-            <p className="text-[11px] mt-1 text-muted-foreground leading-relaxed">
-              {description}
-            </p>
-            <div className="mt-2 pt-2 border-t border-border/40 flex items-center justify-between gap-4">
+            <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{description}</p>
+            <div className="mt-2 flex items-center justify-between gap-4 border-t border-border/40 pt-2">
               <span className="text-[10px] text-muted-foreground">
-                Nível: <span className="font-mono font-bold text-amber-600/80 uppercase">{requiredRole}</span>
+                Nível:{' '}
+                <span className="font-mono font-bold uppercase text-amber-600/80">
+                  {requiredRole}
+                </span>
               </span>
-              <Button asChild size="sm" variant="ghost" className="h-6 text-[10px] px-2 hover:bg-amber-500/10 hover:text-amber-600">
+              <Button
+                asChild
+                size="sm"
+                variant="ghost"
+                className="h-6 px-2 text-[10px] hover:bg-amber-500/10 hover:text-amber-600"
+              >
                 <Link to="/">Sair</Link>
               </Button>
             </div>
@@ -105,23 +103,27 @@ export function RestrictedRouteNotice({
         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-500/20 text-amber-500 shadow-inner">
           <Icon className="h-4 w-4" aria-hidden="true" />
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
-            <p className="font-bold text-amber-500 text-[11px] uppercase tracking-wider">
-              {title}
-            </p>
-            <span className="rounded bg-amber-500/20 px-1.5 py-0.5 font-mono text-[9px] font-bold text-amber-600 uppercase">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-amber-500">{title}</p>
+            <span className="rounded bg-amber-500/20 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase text-amber-600">
               {requiredRole}
             </span>
           </div>
-          <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
-            {description}
-          </p>
+          <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{description}</p>
           <div className="mt-2.5 flex items-center gap-2">
-            <Button asChild size="sm" className="h-7 px-3 bg-amber-500 hover:bg-amber-600 text-white font-bold text-[10px] rounded-lg transition-all duration-300">
+            <Button
+              asChild
+              size="sm"
+              className="h-7 rounded-lg bg-amber-500 px-3 text-[10px] font-bold text-white transition-all duration-300 hover:bg-amber-600"
+            >
               <Link to="/">Voltar ao Início</Link>
             </Button>
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-[10px] text-muted-foreground hover:text-foreground">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-[10px] text-muted-foreground hover:text-foreground"
+            >
               Solicitar Acesso
             </Button>
           </div>
@@ -130,4 +132,3 @@ export function RestrictedRouteNotice({
     </div>
   );
 }
-

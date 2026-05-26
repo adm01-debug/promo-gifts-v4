@@ -55,7 +55,7 @@ const SUPPLIER_COLORS: Record<string, SupplierColorConfig> = {
  */
 export function getSupplierColors(supplierName: string): SupplierColorConfig {
   const nameLower = supplierName.toLowerCase();
-  
+
   // Verifica cada palavra-chave
   if (nameLower.includes('xbz')) {
     return SUPPLIER_COLORS.xbz;
@@ -66,7 +66,7 @@ export function getSupplierColors(supplierName: string): SupplierColorConfig {
   if (nameLower.includes('asia')) {
     return SUPPLIER_COLORS.asia;
   }
-  
+
   // Retorna laranja como padrão
   return SUPPLIER_COLORS.default;
 }

@@ -1,12 +1,12 @@
-import { useRef, useState, useCallback, forwardRef, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Layers, Loader2, TrendingDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { useExternalCategoriesQuery } from "@/hooks/products/useExternalCategoriesQuery";
-import { useSimilarProducts, type SimilarProductItem } from "@/hooks/products/useSimilarProducts";
-import type { Product } from "@/types/product-catalog";
+import { useRef, useState, useCallback, forwardRef, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ChevronLeft, ChevronRight, Layers, Loader2, TrendingDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { useExternalCategoriesQuery } from '@/hooks/products/useExternalCategoriesQuery';
+import { useSimilarProducts, type SimilarProductItem } from '@/hooks/products/useSimilarProducts';
+import type { Product } from '@/types/product-catalog';
 
 interface SimilarProductsProps {
   currentProduct: Product;
@@ -26,16 +26,16 @@ const SimilarProductCard = forwardRef<
     <div
       ref={ref}
       className={cn(
-        "group relative min-w-0 shrink-0 snap-start",
-        "rounded-xl bg-card border border-border/50 overflow-hidden",
-        "transition-all duration-300 cursor-pointer",
-        "hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1",
-        "animate-fade-in"
+        'group relative min-w-0 shrink-0 snap-start',
+        'overflow-hidden rounded-xl border border-border/50 bg-card',
+        'cursor-pointer transition-all duration-300',
+        'hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5',
+        'animate-fade-in',
       )}
       style={{
         animationDelay: `${index * 60}ms`,
-        flex: "0 0 calc((100% - 5.25rem) / 8)",
-        maxWidth: "calc((100% - 5.25rem) / 8)",
+        flex: '0 0 calc((100% - 5.25rem) / 8)',
+        maxWidth: 'calc((100% - 5.25rem) / 8)',
       }}
       onClick={onClick}
     >
@@ -43,12 +43,12 @@ const SimilarProductCard = forwardRef<
         <img
           src={item.image_url}
           alt={item.name}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
           loading="lazy"
         />
         {isLowestPrice && (
-          <div className="absolute top-1.5 right-1.5">
-            <Badge className="text-[9px] px-1.5 py-0.5 bg-primary/90 text-primary-foreground backdrop-blur-sm border-none shadow-sm gap-0.5">
+          <div className="absolute right-1.5 top-1.5">
+            <Badge className="gap-0.5 border-none bg-primary/90 px-1.5 py-0.5 text-[9px] text-primary-foreground shadow-sm backdrop-blur-sm">
               <TrendingDown className="h-2.5 w-2.5" />
               Menor preço
             </Badge>
@@ -57,29 +57,31 @@ const SimilarProductCard = forwardRef<
         <div className="absolute bottom-1.5 left-1.5">
           <Badge
             variant="secondary"
-            className="text-[9px] px-1.5 py-0 bg-background/80 backdrop-blur-sm border-none shadow-sm"
+            className="border-none bg-background/80 px-1.5 py-0 text-[9px] shadow-sm backdrop-blur-sm"
           >
             {item.supplier_name}
           </Badge>
         </div>
       </div>
 
-      <div className="p-2.5 xl:p-3.5 space-y-1 xl:space-y-1.5 min-w-0">
-        <p className="text-[10px] xl:text-xs text-muted-foreground truncate">{item.category_name}</p>
-        <h4 className="font-medium text-xs xl:text-sm text-foreground line-clamp-2 leading-tight group-hover:text-primary transition-colors min-h-[2rem]">
+      <div className="min-w-0 space-y-1 p-2.5 xl:space-y-1.5 xl:p-3.5">
+        <p className="truncate text-[10px] text-muted-foreground xl:text-xs">
+          {item.category_name}
+        </p>
+        <h4 className="line-clamp-2 min-h-[2rem] text-xs font-medium leading-tight text-foreground transition-colors group-hover:text-primary xl:text-sm">
           {item.name}
         </h4>
         <div className="flex items-center justify-between gap-2 pt-0.5">
-          <span className="font-display font-bold text-sm xl:text-base text-foreground truncate">
+          <span className="truncate font-display text-sm font-bold text-foreground xl:text-base">
             R$ {item.price.toFixed(2).replace('.', ',')}
           </span>
           {item.colors_count && item.colors_count > 0 && (
-            <span className="text-[10px] xl:text-xs text-muted-foreground shrink-0">
+            <span className="shrink-0 text-[10px] text-muted-foreground xl:text-xs">
               {item.colors_count} cores
             </span>
           )}
         </div>
-        <p className="text-[10px] xl:text-xs text-muted-foreground font-mono truncate">
+        <p className="truncate font-mono text-[10px] text-muted-foreground xl:text-xs">
           REF: {item.sku}
         </p>
       </div>
@@ -87,12 +89,9 @@ const SimilarProductCard = forwardRef<
   );
 });
 
-SimilarProductCard.displayName = "SimilarProductCard";
+SimilarProductCard.displayName = 'SimilarProductCard';
 
-export function SimilarProducts({
-  currentProduct,
-  maxItems = 12,
-}: SimilarProductsProps) {
+export function SimilarProducts({ currentProduct, maxItems = 12 }: SimilarProductsProps) {
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -103,8 +102,8 @@ export function SimilarProducts({
 
   // Enrich items with category names and find lowest price
   const { similarItems, lowestPriceId } = useMemo(() => {
-    const catMap = new Map(categories.map(c => [c.id, c.name]));
-    const enriched = dbItems.map(item => ({
+    const catMap = new Map(categories.map((c) => [c.id, c.name]));
+    const enriched = dbItems.map((item) => ({
       ...item,
       category_name: catMap.get(item.category_id || '') || item.category_name || '',
     }));
@@ -126,16 +125,19 @@ export function SimilarProducts({
     setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 10);
   }, []);
 
-  const scroll = useCallback((direction: "left" | "right") => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const scrollAmount = el.clientWidth;
-    el.scrollBy({
-      left: direction === "left" ? -scrollAmount : scrollAmount,
-      behavior: "smooth",
-    });
-    setTimeout(updateScrollButtons, 400);
-  }, [updateScrollButtons]);
+  const scroll = useCallback(
+    (direction: 'left' | 'right') => {
+      const el = scrollRef.current;
+      if (!el) return;
+      const scrollAmount = el.clientWidth;
+      el.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
+      });
+      setTimeout(updateScrollButtons, 400);
+    },
+    [updateScrollButtons],
+  );
 
   if (!isLoading && similarItems.length === 0) return null;
 
@@ -143,12 +145,12 @@ export function SimilarProducts({
     return (
       <section className="space-y-4">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-accent/50 flex items-center justify-center shrink-0">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/50">
             <Layers className="h-4.5 w-4.5 text-foreground" />
           </div>
           <h2 className="font-display text-lg font-bold text-foreground">Produtos Semelhantes</h2>
         </div>
-        <div className="flex items-center justify-center py-8 text-muted-foreground gap-2">
+        <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
           <span className="text-sm">Buscando produtos semelhantes...</span>
         </div>
@@ -159,35 +161,37 @@ export function SimilarProducts({
   return (
     <section className="space-y-4 overflow-hidden">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="w-9 h-9 rounded-lg bg-accent/50 flex items-center justify-center shrink-0">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/50">
             <Layers className="h-4.5 w-4.5 text-foreground" />
           </div>
           <div className="min-w-0">
-            <h2 className="font-display text-lg font-bold text-foreground truncate">
+            <h2 className="truncate font-display text-lg font-bold text-foreground">
               Produtos Semelhantes
             </h2>
-            <p className="text-xs text-muted-foreground truncate">
+            <p className="truncate text-xs text-muted-foreground">
               {similarItems.length} produtos com aparência similar de diferentes fornecedores
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0 ml-4">
+        <div className="ml-4 flex shrink-0 items-center gap-2">
           <Button
             variant="outline"
-            size="icon" aria-label="Voltar"
-            className="h-10 w-10 rounded-xl border-2 border-primary/40 bg-primary/10 hover:bg-primary/20 hover:border-primary/60 transition-all duration-200 shadow-md"
-            onClick={() => scroll("left")}
+            size="icon"
+            aria-label="Voltar"
+            className="h-10 w-10 rounded-xl border-2 border-primary/40 bg-primary/10 shadow-md transition-all duration-200 hover:border-primary/60 hover:bg-primary/20"
+            onClick={() => scroll('left')}
             disabled={!canScrollLeft}
           >
             <ChevronLeft className="h-5 w-5 text-primary" />
           </Button>
           <Button
             variant="outline"
-            size="icon" aria-label="Avançar"
-            className="h-10 w-10 rounded-xl border-2 border-primary/40 bg-primary/10 hover:bg-primary/20 hover:border-primary/60 transition-all duration-200 shadow-md"
-            onClick={() => scroll("right")}
+            size="icon"
+            aria-label="Avançar"
+            className="h-10 w-10 rounded-xl border-2 border-primary/40 bg-primary/10 shadow-md transition-all duration-200 hover:border-primary/60 hover:bg-primary/20"
+            onClick={() => scroll('right')}
             disabled={!canScrollRight}
           >
             <ChevronRight className="h-5 w-5 text-primary" />
@@ -197,17 +201,17 @@ export function SimilarProducts({
 
       <div className="relative overflow-hidden">
         {canScrollLeft && (
-          <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+          <div className="pointer-events-none absolute bottom-0 left-0 top-0 z-10 w-8 bg-gradient-to-r from-background to-transparent" />
         )}
 
         <div
           ref={scrollRef}
           onScroll={updateScrollButtons}
           className={cn(
-            "flex w-full max-w-full gap-3 overflow-x-auto overflow-y-hidden scrollbar-hide snap-x snap-mandatory",
-            "pb-2 -mb-2"
+            'scrollbar-hide flex w-full max-w-full snap-x snap-mandatory gap-3 overflow-x-auto overflow-y-hidden',
+            '-mb-2 pb-2',
           )}
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {similarItems.map((item, index) => (
             <SimilarProductCard
@@ -221,7 +225,7 @@ export function SimilarProducts({
         </div>
 
         {canScrollRight && (
-          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+          <div className="pointer-events-none absolute bottom-0 right-0 top-0 z-10 w-8 bg-gradient-to-l from-background to-transparent" />
         )}
       </div>
     </section>

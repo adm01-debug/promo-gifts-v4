@@ -1,6 +1,6 @@
 /**
  * Pricing Simulator Types
- * 
+ *
  * Tipos específicos para o componente de simulador de preços.
  * Utiliza tipos de domínio como base.
  */

@@ -107,55 +107,67 @@ export function ColdVsWarmCrmCard() {
   }, [fetchDiag]);
 
   const warmBadge = snap?.warm ? (
-    <Badge className="bg-success/15 text-success border-success/30 text-[10px]">
-      <Flame className="h-3 w-3 mr-1" />warm
+    <Badge className="border-success/30 bg-success/15 text-[10px] text-success">
+      <Flame className="mr-1 h-3 w-3" />
+      warm
     </Badge>
   ) : (
-    <Badge className="bg-muted text-muted-foreground border-border text-[10px]">
-      <Snowflake className="h-3 w-3 mr-1" />cold / aquecendo
+    <Badge className="border-border bg-muted text-[10px] text-muted-foreground">
+      <Snowflake className="mr-1 h-3 w-3" />
+      cold / aquecendo
     </Badge>
   );
 
   return (
     <Card>
-      <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
-        <CardTitle className="text-base flex items-center gap-2">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
           <Thermometer className="h-4 w-4" />
           Cold vs Warm — <span className="font-mono text-sm">crm-db-bridge</span>
           {snap && warmBadge}
-          <Badge variant="secondary" className="text-[10px]">isolate atual · poll 30s</Badge>
+          <Badge variant="secondary" className="text-[10px]">
+            isolate atual · poll 30s
+          </Badge>
         </CardTitle>
         <Button variant="outline" size="sm" onClick={fetchDiag} disabled={loading}>
-          <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
           Atualizar
         </Button>
       </CardHeader>
       <CardContent>
         {error && (
-          <div className="mb-3 p-2 rounded border border-destructive/30 bg-destructive/5 text-xs text-destructive">
+          <div className="mb-3 rounded border border-destructive/30 bg-destructive/5 p-2 text-xs text-destructive">
             Erro ao consultar diag: {error}
           </div>
         )}
         {!snap ? (
-          <div className="text-center py-6 text-sm text-muted-foreground">
+          <div className="py-6 text-center text-sm text-muted-foreground">
             {loading ? 'Carregando snapshot…' : 'Sem dados.'}
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              <div className="p-3 rounded-lg border border-border/50 bg-muted/30">
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">client_build_ms</p>
-                <p className={`font-display text-2xl font-bold tabular-nums ${tone(snap.boot.client_build_ms, 50, 200)}`}>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+              <div className="rounded-lg border border-border/50 bg-muted/30 p-3">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  client_build_ms
+                </p>
+                <p
+                  className={`font-display text-2xl font-bold tabular-nums ${tone(snap.boot.client_build_ms, 50, 200)}`}
+                >
                   {fmtMs(snap.boot.client_build_ms)}
                 </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">instanciação do client</p>
+                <p className="mt-0.5 text-[10px] text-muted-foreground">instanciação do client</p>
               </div>
-              <div className="p-3 rounded-lg border border-border/50 bg-muted/30">
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">warmup_ms</p>
-                <p className={`font-display text-2xl font-bold tabular-nums ${tone(snap.boot.warmup_ms, 1000, 3000)}`}>
+              <div className="rounded-lg border border-border/50 bg-muted/30 p-3">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  warmup_ms
+                </p>
+                <p
+                  className={`font-display text-2xl font-bold tabular-nums ${tone(snap.boot.warmup_ms, 1000, 3000)}`}
+                >
                   {fmtMs(snap.boot.warmup_ms)}
                 </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
+                <p className="mt-0.5 text-[10px] text-muted-foreground">
                   {snap.boot.warmup_ok
                     ? '1ª query pós-boot (TLS+schema)'
                     : snap.boot.warmup_error
@@ -163,36 +175,52 @@ export function ColdVsWarmCrmCard() {
                       : 'aguardando…'}
                 </p>
               </div>
-              <div className="p-3 rounded-lg border border-border/50 bg-muted/30">
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">first_request_ms</p>
-                <p className={`font-display text-2xl font-bold tabular-nums ${tone(snap.runtime.first_request_ms, 800, 2500)}`}>
+              <div className="rounded-lg border border-border/50 bg-muted/30 p-3">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  first_request_ms
+                </p>
+                <p
+                  className={`font-display text-2xl font-bold tabular-nums ${tone(snap.runtime.first_request_ms, 800, 2500)}`}
+                >
                   {fmtMs(snap.runtime.first_request_ms)}
                 </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">1ª request real (was_cold)</p>
+                <p className="mt-0.5 text-[10px] text-muted-foreground">
+                  1ª request real (was_cold)
+                </p>
               </div>
-              <div className="p-3 rounded-lg border border-border/50 bg-muted/30">
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">isolate idade</p>
-                <p className="font-display text-2xl font-bold tabular-nums">{fmtAge(snap.isolate.age_ms)}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
+              <div className="rounded-lg border border-border/50 bg-muted/30 p-3">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  isolate idade
+                </p>
+                <p className="font-display text-2xl font-bold tabular-nums">
+                  {fmtAge(snap.isolate.age_ms)}
+                </p>
+                <p className="mt-0.5 text-[10px] text-muted-foreground">
                   desde {new Date(snap.isolate.booted_at).toLocaleTimeString()}
                 </p>
               </div>
-              <div className="p-3 rounded-lg border border-border/50 bg-muted/30">
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">requests no isolate</p>
-                <p className="font-display text-2xl font-bold tabular-nums">{snap.isolate.request_count}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
+              <div className="rounded-lg border border-border/50 bg-muted/30 p-3">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  requests no isolate
+                </p>
+                <p className="font-display text-2xl font-bold tabular-nums">
+                  {snap.isolate.request_count}
+                </p>
+                <p className="mt-0.5 text-[10px] text-muted-foreground">
                   {snap.isolate.cold_request_count} marcadas was_cold
                 </p>
               </div>
-              <div className="p-3 rounded-lg border border-border/50 bg-muted/30">
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">warmup começou em</p>
+              <div className="rounded-lg border border-border/50 bg-muted/30 p-3">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  warmup começou em
+                </p>
                 <p className="font-display text-2xl font-bold tabular-nums">
                   {fmtMs(snap.boot.warmup_started_at_ms)}
                 </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">delta desde boot</p>
+                <p className="mt-0.5 text-[10px] text-muted-foreground">delta desde boot</p>
               </div>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-3">
+            <p className="mt-3 text-[10px] text-muted-foreground">
               Snapshot do isolate atual · valores resetam em cada cold start
               {lastFetched && ` · atualizado ${new Date(lastFetched).toLocaleTimeString()}`}
             </p>

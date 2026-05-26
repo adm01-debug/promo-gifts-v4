@@ -21,10 +21,10 @@
  * camada (helpers, error boundaries, error reporter).
  */
 
-import { logger } from "@/lib/logger";
+import { logger } from '@/lib/logger';
 import NProgress from 'nprogress';
 
-const STORAGE_KEY = "__chunk_recovery__";
+const STORAGE_KEY = '__chunk_recovery__';
 const WINDOW_MS = 30_000;
 const MAX_HARD_RELOADS = 2;
 
@@ -74,26 +74,21 @@ export function isChunkLoadError(error: unknown): boolean {
   if (!error) return false;
 
   // Response de fetch direto (raro neste path mas suportado)
-  if (typeof Response !== "undefined" && error instanceof Response) {
+  if (typeof Response !== 'undefined' && error instanceof Response) {
     return error.status === 502 || error.status === 503 || error.status === 504;
   }
 
-  const message =
-    error instanceof Error
-      ? error.message
-      : typeof error === "string"
-        ? error
-        : "";
+  const message = error instanceof Error ? error.message : typeof error === 'string' ? error : '';
 
   if (!message) return false;
 
   return (
-    message.includes("Failed to fetch dynamically imported module") ||
-    message.includes("error loading dynamically imported module") ||
-    message.includes("Loading chunk") ||
-    message.includes("ChunkLoadError") ||
-    message.includes("Importing a module script failed") ||
-    message.includes("Unable to preload CSS") ||
+    message.includes('Failed to fetch dynamically imported module') ||
+    message.includes('error loading dynamically imported module') ||
+    message.includes('Loading chunk') ||
+    message.includes('ChunkLoadError') ||
+    message.includes('Importing a module script failed') ||
+    message.includes('Unable to preload CSS') ||
     /\b(502|503|504)\b/.test(message)
   );
 }
@@ -104,15 +99,15 @@ export function isChunkLoadError(error: unknown): boolean {
  * Retorna true se o servidor parece OK (status 2xx/3xx), false caso contrário.
  */
 async function probeAsset(url: string, timeoutMs = 3000): Promise<boolean> {
-  if (typeof fetch === "undefined") return false;
+  if (typeof fetch === 'undefined') return false;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const bustUrl = appendCacheBust(url);
     const res = await fetch(bustUrl, {
-      method: "HEAD",
-      cache: "no-store",
-      credentials: "same-origin",
+      method: 'HEAD',
+      cache: 'no-store',
+      credentials: 'same-origin',
       signal: controller.signal,
     });
     return res.ok || (res.status >= 300 && res.status < 400);
@@ -126,10 +121,10 @@ async function probeAsset(url: string, timeoutMs = 3000): Promise<boolean> {
 function appendCacheBust(url: string): string {
   try {
     const u = new URL(url, window.location.origin);
-    u.searchParams.set("_cb", String(Date.now()));
+    u.searchParams.set('_cb', String(Date.now()));
     return u.toString();
   } catch {
-    return url + (url.includes("?") ? "&" : "?") + "_cb=" + Date.now();
+    return url + (url.includes('?') ? '&' : '?') + '_cb=' + Date.now();
   }
 }
 
@@ -139,12 +134,7 @@ function appendCacheBust(url: string): string {
  *   "Failed to fetch dynamically imported module: https://.../assets/foo-abc.js"
  */
 export function extractChunkUrl(error: unknown): string | undefined {
-  const message =
-    error instanceof Error
-      ? error.message
-      : typeof error === "string"
-        ? error
-        : "";
+  const message = error instanceof Error ? error.message : typeof error === 'string' ? error : '';
   if (!message) return undefined;
   const match = message.match(/https?:\/\/[^\s)'"]+/);
   return match?.[0];
@@ -159,22 +149,22 @@ export function extractChunkUrl(error: unknown): string | undefined {
  */
 async function purgeBrowserAssetCaches(): Promise<void> {
   // 1. Cache API
-  if (typeof caches !== "undefined") {
+  if (typeof caches !== 'undefined') {
     try {
       const names = await caches.keys();
       await Promise.all(names.map((n) => caches.delete(n).catch(() => false)));
     } catch (e) {
-      logger.warn("[chunk-recovery] caches.keys/delete falhou", { error: String(e) });
+      logger.warn('[chunk-recovery] caches.keys/delete falhou', { error: String(e) });
     }
   }
 
   // 2. Service Workers
-  if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+  if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
     try {
       const regs = await navigator.serviceWorker.getRegistrations();
       await Promise.all(regs.map((r) => r.unregister().catch(() => false)));
     } catch (e) {
-      logger.warn("[chunk-recovery] serviceWorker.getRegistrations falhou", {
+      logger.warn('[chunk-recovery] serviceWorker.getRegistrations falhou', {
         error: String(e),
       });
     }
@@ -190,7 +180,7 @@ async function hardReload(): Promise<void> {
   await purgeBrowserAssetCaches();
   try {
     const u = new URL(window.location.href);
-    u.searchParams.set("_cb", String(Date.now()));
+    u.searchParams.set('_cb', String(Date.now()));
     window.location.replace(u.toString());
   } catch {
     window.location.reload();
@@ -226,16 +216,16 @@ export function attemptChunkRecovery(error: unknown): Promise<boolean> {
     });
 
     if (attempts > MAX_HARD_RELOADS) {
-      logger.error(
-        "[chunk-recovery] limite de hard-reloads atingido — exibindo tela de erro",
-        { attempts, windowMs: WINDOW_MS },
-      );
+      logger.error('[chunk-recovery] limite de hard-reloads atingido — exibindo tela de erro', {
+        attempts,
+        windowMs: WINDOW_MS,
+      });
       NProgress.done();
       return false;
     }
 
     const url = extractChunkUrl(error);
-    logger.warn("[chunk-recovery] disparando hard reload", {
+    logger.warn('[chunk-recovery] disparando hard reload', {
       attempt: attempts,
       max: MAX_HARD_RELOADS,
       url,
@@ -272,11 +262,11 @@ export function attemptChunkRecovery(error: unknown): Promise<boolean> {
  */
 export function markBootSuccessful(): void {
   // Pequeno delay garante que módulos lazy iniciais já carregaram.
-  if (typeof window === "undefined") return;
+  if (typeof window === 'undefined') return;
   window.setTimeout(() => {
     const state = readState();
     if (state.attempts > 0) {
-      logger.info("[chunk-recovery] boot bem-sucedido após reload — limpando estado", {
+      logger.info('[chunk-recovery] boot bem-sucedido após reload — limpando estado', {
         previousAttempts: state.attempts,
       });
     }

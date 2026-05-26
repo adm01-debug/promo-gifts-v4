@@ -55,7 +55,10 @@ function loadFromStorage(): Record<BridgeName, BridgeThresholds> {
     if (!raw) return { ...DEFAULT_THRESHOLDS };
     const parsed = JSON.parse(raw) as Partial<Record<BridgeName, Partial<BridgeThresholds>>>;
     return {
-      'external-db-bridge': { ...DEFAULT_THRESHOLDS['external-db-bridge'], ...parsed['external-db-bridge'] },
+      'external-db-bridge': {
+        ...DEFAULT_THRESHOLDS['external-db-bridge'],
+        ...parsed['external-db-bridge'],
+      },
       'crm-db-bridge': { ...DEFAULT_THRESHOLDS['crm-db-bridge'], ...parsed['crm-db-bridge'] },
     };
   } catch {
@@ -65,12 +68,20 @@ function loadFromStorage(): Record<BridgeName, BridgeThresholds> {
 
 function persist() {
   if (typeof window === 'undefined') return;
-  try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(current)); } catch { /* noop */ }
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+  } catch {
+    /* noop */
+  }
 }
 
 function emit() {
   for (const l of listeners) {
-    try { l(); } catch { /* noop */ }
+    try {
+      l();
+    } catch {
+      /* noop */
+    }
   }
 }
 
@@ -99,7 +110,9 @@ export function resetThresholds(bridge?: BridgeName): void {
 
 export function subscribeThresholds(listener: () => void): () => void {
   listeners.add(listener);
-  return () => { listeners.delete(listener); };
+  return () => {
+    listeners.delete(listener);
+  };
 }
 
 // ---------- Avaliação ----------
@@ -131,15 +144,25 @@ export function evaluateAlerts(
     if (row.p95Ms >= t.p95CritMs) {
       alerts.push({
         key: `${row.bridge}::${row.op}::p95`,
-        bridge: row.bridge, op: row.op, metric: 'p95', severity: 'crit',
-        value: row.p95Ms, threshold: t.p95CritMs, count: row.count,
+        bridge: row.bridge,
+        op: row.op,
+        metric: 'p95',
+        severity: 'crit',
+        value: row.p95Ms,
+        threshold: t.p95CritMs,
+        count: row.count,
         message: `p95 crítico em ${row.op}: ${row.p95Ms}ms ≥ ${t.p95CritMs}ms`,
       });
     } else if (row.p95Ms >= t.p95WarnMs) {
       alerts.push({
         key: `${row.bridge}::${row.op}::p95`,
-        bridge: row.bridge, op: row.op, metric: 'p95', severity: 'warn',
-        value: row.p95Ms, threshold: t.p95WarnMs, count: row.count,
+        bridge: row.bridge,
+        op: row.op,
+        metric: 'p95',
+        severity: 'warn',
+        value: row.p95Ms,
+        threshold: t.p95WarnMs,
+        count: row.count,
         message: `p95 elevado em ${row.op}: ${row.p95Ms}ms ≥ ${t.p95WarnMs}ms`,
       });
     }
@@ -147,15 +170,25 @@ export function evaluateAlerts(
     if (row.avgRespBytes >= t.avgRespCritBytes) {
       alerts.push({
         key: `${row.bridge}::${row.op}::avgResp`,
-        bridge: row.bridge, op: row.op, metric: 'avgResp', severity: 'crit',
-        value: row.avgRespBytes, threshold: t.avgRespCritBytes, count: row.count,
+        bridge: row.bridge,
+        op: row.op,
+        metric: 'avgResp',
+        severity: 'crit',
+        value: row.avgRespBytes,
+        threshold: t.avgRespCritBytes,
+        count: row.count,
         message: `payload crítico em ${row.op}: ${row.avgRespBytes}B ≥ ${t.avgRespCritBytes}B`,
       });
     } else if (row.avgRespBytes >= t.avgRespWarnBytes) {
       alerts.push({
         key: `${row.bridge}::${row.op}::avgResp`,
-        bridge: row.bridge, op: row.op, metric: 'avgResp', severity: 'warn',
-        value: row.avgRespBytes, threshold: t.avgRespWarnBytes, count: row.count,
+        bridge: row.bridge,
+        op: row.op,
+        metric: 'avgResp',
+        severity: 'warn',
+        value: row.avgRespBytes,
+        threshold: t.avgRespWarnBytes,
+        count: row.count,
         message: `payload elevado em ${row.op}: ${row.avgRespBytes}B ≥ ${t.avgRespWarnBytes}B`,
       });
     }

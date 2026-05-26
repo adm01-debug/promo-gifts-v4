@@ -2,20 +2,20 @@
  * ShareCollectionDialog — Generates public share token for a collection.
  * Espelha o fluxo de favoritos.
  */
-import { useState } from "react";
-import { Copy, Link2, RefreshCw, Loader2, ShieldOff } from "lucide-react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useState } from 'react';
+import { Copy, Link2, RefreshCw, Loader2, ShieldOff } from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { supabase } from "@/integrations/supabase/client";
-import { useCollectionsContext } from "@/contexts/CollectionsContext";
+} from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
+import { useCollectionsContext } from '@/contexts/CollectionsContext';
 
 interface Props {
   open: boolean;
@@ -39,9 +39,7 @@ export function ShareCollectionDialog({
   const { updateCollection } = useCollectionsContext();
   const [busy, setBusy] = useState(false);
 
-  const publicUrl = shareToken
-    ? `${window.location.origin}/colecao-publica/${shareToken}`
-    : null;
+  const publicUrl = shareToken ? `${window.location.origin}/colecao-publica/${shareToken}` : null;
 
   const generateToken = async () => {
     setBusy(true);
@@ -49,14 +47,14 @@ export function ShareCollectionDialog({
       const expires = new Date();
       expires.setDate(expires.getDate() + 30);
       const { data, error } = await supabase
-        .from("collections")
+        .from('collections')
         .update({
           share_token: crypto.randomUUID(),
           share_expires_at: expires.toISOString(),
           is_public: true,
         })
-        .eq("id", collectionId)
-        .select("share_token, share_expires_at, is_public")
+        .eq('id', collectionId)
+        .select('share_token, share_expires_at, is_public')
         .single();
       if (error) throw error;
       updateCollection(collectionId, {
@@ -66,7 +64,7 @@ export function ShareCollectionDialog({
       });
       const url = `${window.location.origin}/colecao-publica/${data.share_token}`;
       await navigator.clipboard.writeText(url);
-      toast.success("Link público gerado e copiado!");
+      toast.success('Link público gerado e copiado!');
     } catch (e) {
       toast.error(`Erro ao gerar link: ${(e as Error).message}`);
     } finally {
@@ -78,16 +76,16 @@ export function ShareCollectionDialog({
     setBusy(true);
     try {
       const { error } = await supabase
-        .from("collections")
+        .from('collections')
         .update({ share_token: null, share_expires_at: null, is_public: false })
-        .eq("id", collectionId);
+        .eq('id', collectionId);
       if (error) throw error;
       updateCollection(collectionId, {
         shareToken: null,
         shareExpiresAt: null,
         isPublic: false,
       });
-      toast.success("Link público revogado");
+      toast.success('Link público revogado');
     } catch (e) {
       toast.error(`Erro ao revogar: ${(e as Error).message}`);
     } finally {
@@ -98,7 +96,7 @@ export function ShareCollectionDialog({
   const copyUrl = async () => {
     if (!publicUrl) return;
     await navigator.clipboard.writeText(publicUrl);
-    toast.success("Link copiado!");
+    toast.success('Link copiado!');
   };
 
   return (
@@ -110,8 +108,8 @@ export function ShareCollectionDialog({
             Compartilhar coleção
           </DialogTitle>
           <DialogDescription>
-            Gere um link público (válido por 30 dias) para "{collectionName}". Qualquer
-            pessoa com o link poderá visualizar e reagir aos produtos.
+            Gere um link público (válido por 30 dias) para "{collectionName}". Qualquer pessoa com o
+            link poderá visualizar e reagir aos produtos.
           </DialogDescription>
         </DialogHeader>
 
@@ -125,11 +123,11 @@ export function ShareCollectionDialog({
             </div>
             {shareExpiresAt && (
               <p className="text-xs text-muted-foreground">
-                Expira em{" "}
-                {new Date(shareExpiresAt).toLocaleDateString("pt-BR", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
+                Expira em{' '}
+                {new Date(shareExpiresAt).toLocaleDateString('pt-BR', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
                 })}
               </p>
             )}

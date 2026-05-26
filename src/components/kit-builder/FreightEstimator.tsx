@@ -9,7 +9,13 @@ import { Truck, AlertCircle, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatCurrency } from '@/lib/kit-builder';
 
@@ -21,25 +27,25 @@ interface FreightEstimatorProps {
 // Tabela interna estimada por faixa de peso (SP Capital como referência)
 const FREIGHT_TABLE = {
   sedex: [
-    { maxKg: 1, price: 22.50 },
-    { maxKg: 5, price: 35.00 },
-    { maxKg: 10, price: 55.00 },
-    { maxKg: 30, price: 95.00 },
-    { maxKg: Infinity, price: 150.00 },
+    { maxKg: 1, price: 22.5 },
+    { maxKg: 5, price: 35.0 },
+    { maxKg: 10, price: 55.0 },
+    { maxKg: 30, price: 95.0 },
+    { maxKg: Infinity, price: 150.0 },
   ],
   pac: [
-    { maxKg: 1, price: 15.00 },
-    { maxKg: 5, price: 22.00 },
-    { maxKg: 10, price: 35.00 },
-    { maxKg: 30, price: 60.00 },
-    { maxKg: Infinity, price: 95.00 },
+    { maxKg: 1, price: 15.0 },
+    { maxKg: 5, price: 22.0 },
+    { maxKg: 10, price: 35.0 },
+    { maxKg: 30, price: 60.0 },
+    { maxKg: Infinity, price: 95.0 },
   ],
   transportadora: [
-    { maxKg: 5, price: 18.00 },
-    { maxKg: 10, price: 28.00 },
-    { maxKg: 30, price: 45.00 },
-    { maxKg: 100, price: 80.00 },
-    { maxKg: Infinity, price: 120.00 },
+    { maxKg: 5, price: 18.0 },
+    { maxKg: 10, price: 28.0 },
+    { maxKg: 30, price: 45.0 },
+    { maxKg: 100, price: 80.0 },
+    { maxKg: Infinity, price: 120.0 },
   ],
 };
 
@@ -54,23 +60,27 @@ export function FreightEstimator({ totalWeightGrams, kitQuantity }: FreightEstim
 
   const totalWeightKg = (totalWeightGrams * kitQuantity) / 1000;
   const table = FREIGHT_TABLE[method as keyof typeof FREIGHT_TABLE] || FREIGHT_TABLE.transportadora;
-  const perShipmentCost = table.find(r => totalWeightKg <= r.maxKg)?.price || table[table.length - 1].price;
+  const perShipmentCost =
+    table.find((r) => totalWeightKg <= r.maxKg)?.price || table[table.length - 1].price;
 
   const noWeight = totalWeightGrams === 0;
 
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-base">
           <Truck className="h-4 w-4 text-primary" />
           Estimativa de Frete
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                <Info className="h-3.5 w-3.5 cursor-help text-muted-foreground" />
               </TooltipTrigger>
               <TooltipContent className="max-w-[260px]">
-                <p className="text-xs">Valores estimados com base em tabela interna (referência: SP Capital). Para cotação exata, consulte sua transportadora com o CEP de destino.</p>
+                <p className="text-xs">
+                  Valores estimados com base em tabela interna (referência: SP Capital). Para
+                  cotação exata, consulte sua transportadora com o CEP de destino.
+                </p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -78,7 +88,7 @@ export function FreightEstimator({ totalWeightGrams, kitQuantity }: FreightEstim
       </CardHeader>
       <CardContent className="space-y-3">
         {noWeight && (
-          <div className="flex items-center gap-2 text-xs text-warning bg-warning/10 border border-warning/20 rounded-lg p-2.5">
+          <div className="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/10 p-2.5 text-xs text-warning">
             <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
             <span>Peso dos itens não informado. Estimativa pode ser imprecisa.</span>
           </div>
@@ -101,20 +111,22 @@ export function FreightEstimator({ totalWeightGrams, kitQuantity }: FreightEstim
         <div className="grid grid-cols-3 gap-2 text-center">
           <div className="rounded-lg bg-secondary/50 p-2">
             <p className="text-[11px] text-muted-foreground">Peso Total</p>
-            <p className="font-bold text-sm">{totalWeightKg.toFixed(1)}kg</p>
+            <p className="text-sm font-bold">{totalWeightKg.toFixed(1)}kg</p>
           </div>
           <div className="rounded-lg bg-secondary/50 p-2">
             <p className="text-[11px] text-muted-foreground">{METHOD_LABELS[method]}</p>
-            <p className="font-bold text-sm text-primary">{formatCurrency(perShipmentCost)}</p>
+            <p className="text-sm font-bold text-primary">{formatCurrency(perShipmentCost)}</p>
           </div>
           <div className="rounded-lg bg-primary/10 p-2">
             <p className="text-[11px] text-muted-foreground">Por Kit</p>
-            <p className="font-bold text-sm text-primary">{formatCurrency(perShipmentCost / kitQuantity)}</p>
+            <p className="text-sm font-bold text-primary">
+              {formatCurrency(perShipmentCost / kitQuantity)}
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 justify-center">
-          <Badge variant="outline" className="text-[10px] gap-1 text-muted-foreground font-normal">
+        <div className="flex items-center justify-center gap-1.5">
+          <Badge variant="outline" className="gap-1 text-[10px] font-normal text-muted-foreground">
             <AlertCircle className="h-2.5 w-2.5" />
             Valores estimados — consulte transportadora para cotação exata
           </Badge>

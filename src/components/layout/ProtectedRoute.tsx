@@ -30,7 +30,7 @@ export function ProtectedRoute({
         <div className="relative flex items-center justify-center">
           <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="h-1.5 w-1.5 rounded-full bg-primary animate-ping" />
+            <div className="h-1.5 w-1.5 animate-ping rounded-full bg-primary" />
           </div>
         </div>
       </div>

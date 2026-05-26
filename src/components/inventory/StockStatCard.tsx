@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from "react";
-import { TrendingUp, TrendingDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import React, { useEffect, useRef, useState } from 'react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // Animated counter hook
 function useCountUp(target: number, duration = 600) {
@@ -82,16 +82,26 @@ const variantStyles = {
   },
 };
 
-export function StatCard({ title, value, icon, trend, variant = 'default', onClick, clickHint, isActive, subtitle }: StatCardProps) {
+export function StatCard({
+  title,
+  value,
+  icon,
+  trend,
+  variant = 'default',
+  onClick,
+  clickHint,
+  isActive,
+  subtitle,
+}: StatCardProps) {
   const styles = variantStyles[variant];
 
   const numericValue = typeof value === 'string' ? parseInt(value.replace(/\D/g, ''), 10) : value;
-  const isNumeric = typeof numericValue === 'number' && !isNaN(numericValue) && typeof value !== 'string' || (typeof value === 'string' && /^\d/.test(value));
+  const isNumeric =
+    (typeof numericValue === 'number' && !isNaN(numericValue) && typeof value !== 'string') ||
+    (typeof value === 'string' && /^\d/.test(value));
   const animatedValue = useCountUp(isNumeric ? numericValue : 0);
-  
-  const displayValue = isNumeric
-    ? animatedValue.toLocaleString('pt-BR')
-    : value;
+
+  const displayValue = isNumeric ? animatedValue.toLocaleString('pt-BR') : value;
 
   return (
     <button
@@ -102,13 +112,13 @@ export function StatCard({ title, value, icon, trend, variant = 'default', onCli
         onClick?.();
       }}
       className={cn(
-        "group relative w-full overflow-hidden rounded-xl border text-left",
-        "transition-all duration-300 ease-out",
+        'group relative w-full overflow-hidden rounded-xl border text-left',
+        'transition-all duration-300 ease-out',
         styles.base,
-        onClick && "cursor-pointer",
+        onClick && 'cursor-pointer',
         styles.hover,
-        "active:scale-[0.97]",
-        isActive && "ring-2 ring-offset-2 ring-offset-background shadow-lg scale-[1.02]",
+        'active:scale-[0.97]',
+        isActive && 'scale-[1.02] shadow-lg ring-2 ring-offset-2 ring-offset-background',
         isActive && styles.active,
         isActive && styles.glowColor,
       )}
@@ -116,35 +126,48 @@ export function StatCard({ title, value, icon, trend, variant = 'default', onCli
       aria-pressed={isActive}
     >
       {/* Top accent line */}
-      <div className={cn(
-        "absolute top-0 left-0 right-0 h-[3px] transition-all duration-300",
-        styles.accentLine,
-        isActive ? "opacity-100" : "opacity-0 group-hover:opacity-60",
-      )} />
+      <div
+        className={cn(
+          'absolute left-0 right-0 top-0 h-[3px] transition-all duration-300',
+          styles.accentLine,
+          isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-60',
+        )}
+      />
 
       <div className="p-4">
         <div className="flex items-center justify-between gap-3">
-          <div className="space-y-1 text-left min-w-0 flex-1">
-            <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">{title}</p>
+          <div className="min-w-0 flex-1 space-y-1 text-left">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              {title}
+            </p>
             <p className="text-2xl font-bold tabular-nums tracking-tight">{displayValue}</p>
             {subtitle && (
-              <p className="text-[10px] text-muted-foreground/70 truncate">{subtitle}</p>
+              <p className="truncate text-[10px] text-muted-foreground/70">{subtitle}</p>
             )}
             {trend && (
-              <p className={cn(
-                "text-xs flex items-center gap-1 font-medium",
-                trend.value >= 0 ? "text-success" : "text-destructive"
-              )}>
-                {trend.value >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+              <p
+                className={cn(
+                  'flex items-center gap-1 text-xs font-medium',
+                  trend.value >= 0 ? 'text-success' : 'text-destructive',
+                )}
+              >
+                {trend.value >= 0 ? (
+                  <TrendingUp className="h-3 w-3" />
+                ) : (
+                  <TrendingDown className="h-3 w-3" />
+                )}
                 <span className="truncate">{trend.label}</span>
               </p>
             )}
           </div>
-          <div className={cn(
-            "h-12 w-12 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300",
-            isActive ? `${styles.iconBg} shadow-sm` : "bg-muted/50 group-hover:scale-110",
-            styles.iconColor,
-          )} aria-hidden="true">
+          <div
+            className={cn(
+              'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-all duration-300',
+              isActive ? `${styles.iconBg} shadow-sm` : 'bg-muted/50 group-hover:scale-110',
+              styles.iconColor,
+            )}
+            aria-hidden="true"
+          >
             {icon}
           </div>
         </div>
@@ -152,7 +175,7 @@ export function StatCard({ title, value, icon, trend, variant = 'default', onCli
 
       {/* Click hint on hover */}
       {clickHint && onClick && (
-        <div className="absolute bottom-0 left-0 right-0 text-center text-[9px] text-muted-foreground/0 group-hover:text-muted-foreground/60 transition-colors pb-1">
+        <div className="absolute bottom-0 left-0 right-0 pb-1 text-center text-[9px] text-muted-foreground/0 transition-colors group-hover:text-muted-foreground/60">
           {clickHint}
         </div>
       )}

@@ -16,9 +16,17 @@ interface Props extends FormSectionProps {
 }
 
 export function ProductPriceSection({
-  register, setValue, watch, errors, numericProps,
-  supplierMarkup, costPriceDisplay, salePriceDisplay,
-  onCostPriceDisplayChange, onSalePriceDisplayChange, onSalePriceManualEdit,
+  register,
+  setValue,
+  watch,
+  errors,
+  numericProps,
+  supplierMarkup,
+  costPriceDisplay,
+  salePriceDisplay,
+  onCostPriceDisplayChange,
+  onSalePriceDisplayChange,
+  onSalePriceManualEdit,
 }: Props) {
   const salePrice = watch('sale_price') ?? 0;
   const suggestedPrice = watch('suggested_price') ?? 0;
@@ -30,9 +38,18 @@ export function ProductPriceSection({
       icon={Tag}
       subtitle={`Preço atual: R$ ${salePrice.toFixed(2)}${supplierMarkup ? ` · Markup ${supplierMarkup}%` : ''}`}
     >
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div>
-          <FieldLabel htmlFor="cost_price" hint={supplierMarkup ? `Markup do fornecedor: ${supplierMarkup}%. Preço sugerido e venda serão calculados automaticamente.` : 'Informe o preço de custo do produto'}>Preço Custo (R$)</FieldLabel>
+          <FieldLabel
+            htmlFor="cost_price"
+            hint={
+              supplierMarkup
+                ? `Markup do fornecedor: ${supplierMarkup}%. Preço sugerido e venda serão calculados automaticamente.`
+                : 'Informe o preço de custo do produto'
+            }
+          >
+            Preço Custo (R$)
+          </FieldLabel>
           <Input
             id="cost_price"
             type="text"
@@ -52,11 +69,29 @@ export function ProductPriceSection({
           />
         </div>
         <div>
-          <FieldLabel htmlFor="suggested_price" hint="Calculado automaticamente pelo markup do fornecedor. Valor de referência (não editável).">Preço Sugerido (R$)</FieldLabel>
-          <Input id="suggested_price" type="text" value={suggestedPrice.toFixed(2)} className="h-9 bg-muted/50 cursor-not-allowed" readOnly tabIndex={-1} />
+          <FieldLabel
+            htmlFor="suggested_price"
+            hint="Calculado automaticamente pelo markup do fornecedor. Valor de referência (não editável)."
+          >
+            Preço Sugerido (R$)
+          </FieldLabel>
+          <Input
+            id="suggested_price"
+            type="text"
+            value={suggestedPrice.toFixed(2)}
+            className="h-9 cursor-not-allowed bg-muted/50"
+            readOnly
+            tabIndex={-1}
+          />
         </div>
         <div>
-          <FieldLabel htmlFor="sale_price" required hint="Inicia com o valor sugerido pelo markup, mas pode ser editado livremente.">Preço Venda (R$)</FieldLabel>
+          <FieldLabel
+            htmlFor="sale_price"
+            required
+            hint="Inicia com o valor sugerido pelo markup, mas pode ser editado livremente."
+          >
+            Preço Venda (R$)
+          </FieldLabel>
           <Input
             id="sale_price"
             type="text"
@@ -75,16 +110,28 @@ export function ProductPriceSection({
             }}
             className={cn('h-9', errors.sale_price && 'border-destructive')}
           />
-          {errors.sale_price && <p className="text-[10px] text-destructive mt-1">{errors.sale_price.message}</p>}
+          {errors.sale_price && (
+            <p className="mt-1 text-[10px] text-destructive">{errors.sale_price.message}</p>
+          )}
         </div>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div>
-          <FieldLabel htmlFor="stock_quantity" hint="Quantidade atual em estoque. Atualizado automaticamente por sincronizações.">Estoque</FieldLabel>
+          <FieldLabel
+            htmlFor="stock_quantity"
+            hint="Quantidade atual em estoque. Atualizado automaticamente por sincronizações."
+          >
+            Estoque
+          </FieldLabel>
           <Input id="stock_quantity" {...numericProps('stock_quantity')} min="0" className="h-9" />
         </div>
         <div>
-          <FieldLabel htmlFor="product_type" hint="Produto unitário, kit montado ou embalagem avulsa">Tipo</FieldLabel>
+          <FieldLabel
+            htmlFor="product_type"
+            hint="Produto unitário, kit montado ou embalagem avulsa"
+          >
+            Tipo
+          </FieldLabel>
           <select
             id="product_type"
             {...register('product_type', {
@@ -100,12 +147,27 @@ export function ProductPriceSection({
           </select>
         </div>
         <div>
-          <FieldLabel htmlFor="min_quantity" hint="Quantidade mínima que o cliente precisa comprar desse produto no pedido">Qtd. Mín. Venda</FieldLabel>
+          <FieldLabel
+            htmlFor="min_quantity"
+            hint="Quantidade mínima que o cliente precisa comprar desse produto no pedido"
+          >
+            Qtd. Mín. Venda
+          </FieldLabel>
           <Input id="min_quantity" {...numericProps('min_quantity')} min="1" className="h-9" />
         </div>
         <div>
-          <FieldLabel htmlFor="min_order_quantity" hint="Quantidade mínima exigida pelo fornecedor para compra/reposição">Qtd. Mín. Compra</FieldLabel>
-          <Input id="min_order_quantity" {...numericProps('min_order_quantity')} min="0" className="h-9" />
+          <FieldLabel
+            htmlFor="min_order_quantity"
+            hint="Quantidade mínima exigida pelo fornecedor para compra/reposição"
+          >
+            Qtd. Mín. Compra
+          </FieldLabel>
+          <Input
+            id="min_order_quantity"
+            {...numericProps('min_order_quantity')}
+            min="0"
+            className="h-9"
+          />
         </div>
       </div>
     </SectionCard>

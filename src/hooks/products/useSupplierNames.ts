@@ -20,7 +20,7 @@ export function useSupplierNames(supplierIds: string[]) {
 
       try {
         // Batch all supplier lookups in one bridge call
-        const queries: BatchQuery[] = uniqueIds.map(id => ({
+        const queries: BatchQuery[] = uniqueIds.map((id) => ({
           table: 'suppliers',
           select: 'id,name',
           filters: { id },
@@ -43,7 +43,7 @@ export function useSupplierNames(supplierIds: string[]) {
         return map;
       } catch {
         // Fallback: use truncated IDs as names
-        return new Map(uniqueIds.map(id => [id, `Fornecedor ${id.slice(0, 6)}`]));
+        return new Map(uniqueIds.map((id) => [id, `Fornecedor ${id.slice(0, 6)}`]));
       }
     },
     enabled: uniqueIds.length > 0,

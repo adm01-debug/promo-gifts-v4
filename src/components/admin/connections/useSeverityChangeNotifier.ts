@@ -19,11 +19,11 @@
  *  - Mudança de P0→P1 (downgrade) — apenas escalations geram toast
  *  - Loading inicial (data === undefined)
  */
-import { useEffect, useRef } from "react";
-import { toast } from "sonner";
-import { usePulseBarStatus, type PulseSeverity } from "./usePulseBarStatus";
+import { useEffect, useRef } from 'react';
+import { toast } from 'sonner';
+import { usePulseBarStatus, type PulseSeverity } from './usePulseBarStatus';
 
-const STORAGE_KEY = "connections.severity-notifier.v1";
+const STORAGE_KEY = 'connections.severity-notifier.v1';
 const SNOOZE_MS = 60 * 60 * 1000; // 1h
 
 interface NotifierState {
@@ -69,9 +69,9 @@ function saveState(s: NotifierState) {
   }
 }
 
-const SEV_TITLE: Record<"P0" | "P1", string> = {
-  P0: "🚨 Incidente crítico em integrações (P0)",
-  P1: "⚠️ Degradação detectada em integrações (P1)",
+const SEV_TITLE: Record<'P0' | 'P1', string> = {
+  P0: '🚨 Incidente crítico em integrações (P0)',
+  P1: '⚠️ Degradação detectada em integrações (P1)',
 };
 
 export function useSeverityChangeNotifier() {
@@ -87,7 +87,7 @@ export function useSeverityChangeNotifier() {
     // Atualiza lastSeen sempre
     if (prev !== sev) {
       // Reset de ack ao voltar para P2 — permite novo alerta na próxima escalada
-      if (sev === "P2") {
+      if (sev === 'P2') {
         state.acked = { P0: false, P1: false };
       }
       state.lastSeen = sev;
@@ -95,7 +95,7 @@ export function useSeverityChangeNotifier() {
     }
 
     // Só notifica para P0/P1
-    if (sev !== "P0" && sev !== "P1") return;
+    if (sev !== 'P0' && sev !== 'P1') return;
 
     // Regras de supressão
     if (state.muted[sev]) return;
@@ -109,14 +109,14 @@ export function useSeverityChangeNotifier() {
 
     // Dispara toast com ações de confirmação
     const headline = data.headline;
-    const reason = data.reasons[0] ?? "Veja detalhes na barra de status";
+    const reason = data.reasons[0] ?? 'Veja detalhes na barra de status';
 
     const toastId = toast(SEV_TITLE[sev], {
       description: `${headline}\n${reason}`,
-      duration: sev === "P0" ? Infinity : 30_000,
+      duration: sev === 'P0' ? Infinity : 30_000,
       // important: sev === "P0", // Not in ExternalToast type
       action: {
-        label: "Reconhecer",
+        label: 'Reconhecer',
         onClick: () => {
           state.acked[sev] = true;
           saveState(state);
@@ -124,13 +124,13 @@ export function useSeverityChangeNotifier() {
         },
       },
       cancel: {
-        label: "Adiar 1h",
+        label: 'Adiar 1h',
         onClick: () => {
           state.snoozedUntil[sev] = Date.now() + SNOOZE_MS;
           saveState(state);
           toast.message(`Alerta ${sev} adiado por 1h.`, {
             action: {
-              label: "Não mostrar mais",
+              label: 'Não mostrar mais',
               onClick: () => {
                 state.muted[sev] = true;
                 saveState(state);

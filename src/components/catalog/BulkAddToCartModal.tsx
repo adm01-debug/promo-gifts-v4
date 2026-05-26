@@ -2,15 +2,15 @@
  * BulkAddToCartModal — Modal para adicionar múltiplos produtos ao carrinho.
  * Aceita seleções de variantes do BulkVariantWizard.
  */
-import { useState, useCallback, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Check, ShoppingBag, Loader2 } from "lucide-react";
-import { useSellerCartContext } from "@/contexts/SellerCartContext";
-import { CartCompanyPicker } from "@/components/cart/CartCompanyPicker";
-import { toast } from "sonner";
-import type { Product } from "@/hooks/products";
-import type { BulkVariantSelection } from "./BulkVariantWizard";
+import { useState, useCallback, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Check, ShoppingBag, Loader2 } from 'lucide-react';
+import { useSellerCartContext } from '@/contexts/SellerCartContext';
+import { CartCompanyPicker } from '@/components/cart/CartCompanyPicker';
+import { toast } from 'sonner';
+import type { Product } from '@/hooks/products';
+import type { BulkVariantSelection } from './BulkVariantWizard';
 
 interface BulkAddToCartModalProps {
   open: boolean;
@@ -20,21 +20,31 @@ interface BulkAddToCartModalProps {
   onDone?: () => void;
 }
 
-export function BulkAddToCartModal({ open, onOpenChange, products, variantSelections, onDone }: BulkAddToCartModalProps) {
+export function BulkAddToCartModal({
+  open,
+  onOpenChange,
+  products,
+  variantSelections,
+  onDone,
+}: BulkAddToCartModalProps) {
   const { activeCart, addToActiveCart } = useSellerCartContext();
   const [adding, setAdding] = useState(false);
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    if (open) { setAdding(false); setDone(false); }
+    if (open) {
+      setAdding(false);
+      setDone(false);
+    }
   }, [open]);
 
   const handleAdd = useCallback(async () => {
     if (!activeCart) return;
 
-    const items = variantSelections && variantSelections.length > 0
-      ? variantSelections
-      : products.map(p => ({ product: p, variant: null }));
+    const items =
+      variantSelections && variantSelections.length > 0
+        ? variantSelections
+        : products.map((p) => ({ product: p, variant: null }));
 
     if (items.length === 0) return;
     setAdding(true);
@@ -54,15 +64,18 @@ export function BulkAddToCartModal({ open, onOpenChange, products, variantSelect
         });
       }
       setDone(true);
-      toast.success(`${items.length} produto${items.length > 1 ? 's' : ''} adicionado${items.length > 1 ? 's' : ''} ao carrinho`, {
-        description: activeCart.company_name,
-      });
+      toast.success(
+        `${items.length} produto${items.length > 1 ? 's' : ''} adicionado${items.length > 1 ? 's' : ''} ao carrinho`,
+        {
+          description: activeCart.company_name,
+        },
+      );
       setTimeout(() => {
         onOpenChange(false);
         onDone?.();
       }, 1000);
     } catch {
-      toast.error("Erro ao adicionar produtos ao carrinho");
+      toast.error('Erro ao adicionar produtos ao carrinho');
     } finally {
       setAdding(false);
     }
@@ -82,30 +95,27 @@ export function BulkAddToCartModal({ open, onOpenChange, products, variantSelect
         </DialogHeader>
 
         {!hasCart ? (
-          <CartCompanyPicker
-            onCreated={() => {}}
-            onCancel={() => onOpenChange(false)}
-          />
+          <CartCompanyPicker onCreated={() => {}} onCancel={() => onOpenChange(false)} />
         ) : (
           <div className="space-y-4 py-2">
-            <div className="rounded-lg bg-muted/40 border border-border/50 p-3">
-              <p className="text-xs text-muted-foreground mb-1">Carrinho ativo</p>
+            <div className="rounded-lg border border-border/50 bg-muted/40 p-3">
+              <p className="mb-1 text-xs text-muted-foreground">Carrinho ativo</p>
               <p className="text-sm font-medium">{activeCart.company_name}</p>
             </div>
 
             {/* Show variant selections summary */}
-            {variantSelections && variantSelections.some(s => s.variant) && (
-              <div className="space-y-1 max-h-32 overflow-y-auto">
+            {variantSelections && variantSelections.some((s) => s.variant) && (
+              <div className="max-h-32 space-y-1 overflow-y-auto">
                 {variantSelections.map((s, i) => (
                   <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span className="truncate flex-1">{s.product.name}</span>
+                    <span className="flex-1 truncate">{s.product.name}</span>
                     {s.variant ? (
-                      <span className="text-foreground font-medium shrink-0">
+                      <span className="shrink-0 font-medium text-foreground">
                         {s.variant.color_name}
                         {s.variant.size_code && ` — ${s.variant.size_code}`}
                       </span>
                     ) : (
-                      <span className="text-muted-foreground/60 shrink-0">Sem cor</span>
+                      <span className="shrink-0 text-muted-foreground/60">Sem cor</span>
                     )}
                   </div>
                 ))}
@@ -113,14 +123,11 @@ export function BulkAddToCartModal({ open, onOpenChange, products, variantSelect
             )}
 
             <div className="text-sm text-muted-foreground">
-              {count} produto{count > 1 ? 's' : ''} será{count > 1 ? 'ão' : ''} adicionado{count > 1 ? 's' : ''} com quantidade 1.
+              {count} produto{count > 1 ? 's' : ''} será{count > 1 ? 'ão' : ''} adicionado
+              {count > 1 ? 's' : ''} com quantidade 1.
             </div>
 
-            <Button
-              className="w-full gap-2"
-              onClick={handleAdd}
-              disabled={adding || done}
-            >
+            <Button className="w-full gap-2" onClick={handleAdd} disabled={adding || done}>
               {done ? (
                 <>
                   <Check className="h-4 w-4" />

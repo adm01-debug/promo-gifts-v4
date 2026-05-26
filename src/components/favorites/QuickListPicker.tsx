@@ -1,13 +1,11 @@
-import { useState } from "react";
-import { Heart, Plus, Check } from "lucide-react";
-import {
-  Popover, PopoverContent, PopoverTrigger,
-} from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
-import type { FavoriteList } from "@/hooks/favorites";
+import { useState } from 'react';
+import { Heart, Plus, Check } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
+import type { FavoriteList } from '@/hooks/favorites';
 
 interface Props {
   open: boolean;
@@ -30,18 +28,25 @@ interface Props {
  * Mostra lista atual, permite criar nova lista inline.
  */
 export function QuickListPicker({
-  open, onOpenChange, lists, existingListIds, onPick, onCreateAndPick, children,
-  productName, variantInfo,
+  open,
+  onOpenChange,
+  lists,
+  existingListIds,
+  onPick,
+  onCreateAndPick,
+  children,
+  productName,
+  variantInfo,
 }: Props) {
   const [creating, setCreating] = useState(false);
-  const [newName, setNewName] = useState("");
+  const [newName, setNewName] = useState('');
 
   const handleCreate = async () => {
     const name = newName.trim();
     if (!name) return;
     const id = await onCreateAndPick(name);
     onPick(id);
-    setNewName("");
+    setNewName('');
     setCreating(false);
     onOpenChange(false);
   };
@@ -55,22 +60,22 @@ export function QuickListPicker({
         side="bottom"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-2 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+        <div className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Salvar em qual lista?
         </div>
         {(productName || variantInfo?.color_name) && (
-          <div className="px-2 pb-1.5 -mt-1 flex items-center gap-1.5 text-[11px] text-foreground/80 border-b mb-1">
+          <div className="-mt-1 mb-1 flex items-center gap-1.5 border-b px-2 pb-1.5 text-[11px] text-foreground/80">
             {variantInfo?.color_hex && (
               <span
-                className="inline-block w-3 h-3 rounded-full border border-border shrink-0"
+                className="inline-block h-3 w-3 shrink-0 rounded-full border border-border"
                 style={{ backgroundColor: variantInfo.color_hex }}
                 aria-hidden
               />
             )}
             <span className="truncate">
               {productName ? <strong className="font-medium">{productName}</strong> : null}
-              {productName && variantInfo?.color_name ? " — " : ""}
-              {variantInfo?.color_name ?? ""}
+              {productName && variantInfo?.color_name ? ' — ' : ''}
+              {variantInfo?.color_name ?? ''}
             </span>
           </div>
         )}
@@ -82,18 +87,25 @@ export function QuickListPicker({
                 <button
                   key={l.id}
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); onPick(l.id); onOpenChange(false); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPick(l.id);
+                    onOpenChange(false);
+                  }}
                   className={cn(
-                    "w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-left transition-colors",
-                    "hover:bg-muted",
-                    exists && "bg-success/10 text-success-foreground"
+                    'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors',
+                    'hover:bg-muted',
+                    exists && 'bg-success/10 text-success-foreground',
                   )}
                 >
                   <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                    className="h-2.5 w-2.5 shrink-0 rounded-full"
                     style={{ backgroundColor: l.color }}
                   />
-                  <Heart className="h-3.5 w-3.5 shrink-0 opacity-60" fill={exists ? "currentColor" : "none"} />
+                  <Heart
+                    className="h-3.5 w-3.5 shrink-0 opacity-60"
+                    fill={exists ? 'currentColor' : 'none'}
+                  />
                   <span className="flex-1 truncate">{l.name}</span>
                   {l.is_default && (
                     <span className="text-[9px] uppercase text-muted-foreground">padrão</span>
@@ -104,7 +116,7 @@ export function QuickListPicker({
             })}
           </div>
         </ScrollArea>
-        <div className="border-t mt-1 pt-1">
+        <div className="mt-1 border-t pt-1">
           {creating ? (
             <div className="flex gap-1 p-1">
               <Input
@@ -112,27 +124,36 @@ export function QuickListPicker({
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") handleCreate();
-                  if (e.key === "Escape") { setCreating(false); setNewName(""); }
+                  if (e.key === 'Enter') handleCreate();
+                  if (e.key === 'Escape') {
+                    setCreating(false);
+                    setNewName('');
+                  }
                 }}
                 placeholder="Nome da nova lista"
                 className="h-7 text-xs"
               />
-              <Button size="sm" className="h-7 px-2 text-xs" onClick={handleCreate}>OK</Button>
+              <Button size="sm" className="h-7 px-2 text-xs" onClick={handleCreate}>
+                OK
+              </Button>
             </div>
           ) : (
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); setCreating(true); }}
-              className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                setCreating(true);
+              }}
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               <Plus className="h-3.5 w-3.5" />
               Nova lista…
             </button>
           )}
         </div>
-        <div className="text-[10px] text-muted-foreground px-2 pt-1.5 border-t mt-1">
-          Dica: <kbd className="px-1 rounded bg-muted">Shift</kbd>+clique salva direto na lista padrão.
+        <div className="mt-1 border-t px-2 pt-1.5 text-[10px] text-muted-foreground">
+          Dica: <kbd className="rounded bg-muted px-1">Shift</kbd>+clique salva direto na lista
+          padrão.
         </div>
       </PopoverContent>
     </Popover>

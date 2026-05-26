@@ -12,31 +12,36 @@
  *    estão implementadas aqui com a mesma arquitetura de variante/cor:
  *    Favoritar, Comparar, Coleção, Share, Orçamento, Carrinho, QuickView
  */
-import { memo, useState, useCallback, useRef, useEffect } from "react";
-import { Package, Building2 } from "lucide-react";
-import { NoveltyBadge } from "./NoveltyBadge";
-import { ListItemActions } from "./list-item/ListItemActions";
-import { useNavigate } from "react-router-dom";
-import { getCdnUrl } from "@/utils/image-utils";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { isLightColor } from "@/hooks/products/useColorSystem";
-import type { ExternalVariantStock } from "@/hooks/products/useExternalVariantStock";
-import type { Product } from "@/types/product-catalog";
-import { toast } from "sonner";
-import { GenderBadge } from "./GenderBadge";
-import { getSupplierColors } from "@/lib/supplier-colors";
-import { resolveColorImage, resolveColorStock, getActiveColorName, type ActiveColorFilter } from "@/utils/color-image-resolver";
-import { resolveHighlightHex } from "@/utils/color-group-hex";
-import { PriceFreshnessBadge } from "./PriceFreshnessBadge";
-import { resolveAllMatchingColors } from "@/utils/color-variant-carousel";
-import { showUndoToast, showErrorToast } from "@/utils/undoToast";
-import { AddToCollectionModal } from "@/components/collections/AddToCollectionModal";
-import { ProductQuickView } from "./ProductQuickView";
-import { SharePreviewDialog } from "./share/SharePreviewDialog";
-import { VariantPickerDialog, type VariantActionMode } from "./VariantPickerDialog";
-import { useFavoritesStore } from "@/stores/useFavoritesStore";
-import { useComparisonStore } from "@/stores/useComparisonStore";
+import { memo, useState, useCallback, useRef, useEffect } from 'react';
+import { Package, Building2 } from 'lucide-react';
+import { NoveltyBadge } from './NoveltyBadge';
+import { ListItemActions } from './list-item/ListItemActions';
+import { useNavigate } from 'react-router-dom';
+import { getCdnUrl } from '@/utils/image-utils';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { isLightColor } from '@/hooks/products/useColorSystem';
+import type { ExternalVariantStock } from '@/hooks/products/useExternalVariantStock';
+import type { Product } from '@/types/product-catalog';
+import { toast } from 'sonner';
+import { GenderBadge } from './GenderBadge';
+import { getSupplierColors } from '@/lib/supplier-colors';
+import {
+  resolveColorImage,
+  resolveColorStock,
+  getActiveColorName,
+  type ActiveColorFilter,
+} from '@/utils/color-image-resolver';
+import { resolveHighlightHex } from '@/utils/color-group-hex';
+import { PriceFreshnessBadge } from './PriceFreshnessBadge';
+import { resolveAllMatchingColors } from '@/utils/color-variant-carousel';
+import { showUndoToast, showErrorToast } from '@/utils/undoToast';
+import { AddToCollectionModal } from '@/components/collections/AddToCollectionModal';
+import { ProductQuickView } from './ProductQuickView';
+import { SharePreviewDialog } from './share/SharePreviewDialog';
+import { VariantPickerDialog, type VariantActionMode } from './VariantPickerDialog';
+import { useFavoritesStore } from '@/stores/useFavoritesStore';
+import { useComparisonStore } from '@/stores/useComparisonStore';
 
 interface ProductListItemProps {
   product: Product;
@@ -72,10 +77,22 @@ export const ProductListItem = memo(function ProductListItem({
 }: ProductListItemProps) {
   const navigate = useNavigate();
   const [collectionModalOpen, setCollectionModalOpen] = useState(false);
-  const [collectionVariant, setCollectionVariant] = useState<{ color_name?: string | null; color_hex?: string | null; variant_id?: string | null; thumbnail?: string | null } | undefined>(undefined);
+  const [collectionVariant, setCollectionVariant] = useState<
+    | {
+        color_name?: string | null;
+        color_hex?: string | null;
+        variant_id?: string | null;
+        thumbnail?: string | null;
+      }
+    | undefined
+  >(undefined);
   const [quickViewOpen, setQuickViewOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
-  const [shareVariant, setShareVariant] = useState<{ variantName?: string | null; colorHex?: string | null; thumbnailUrl?: string | null } | null>(null);
+  const [shareVariant, setShareVariant] = useState<{
+    variantName?: string | null;
+    colorHex?: string | null;
+    thumbnailUrl?: string | null;
+  } | null>(null);
   const [variantPickerOpen, setVariantPickerOpen] = useState(false);
   const [variantPickerMode, setVariantPickerMode] = useState<VariantActionMode>('favorite');
   const actionBusyRef = useRef(false);
@@ -97,78 +114,109 @@ export const ProductListItem = memo(function ProductListItem({
 
   const markBusy = () => {
     actionBusyRef.current = true;
-    setTimeout(() => { actionBusyRef.current = false; }, 500);
+    setTimeout(() => {
+      actionBusyRef.current = false;
+    }, 500);
   };
 
-  const handleVariantComplete = useCallback((variant: ExternalVariantStock | null) => {
-    const variantInfo = variant ? {
-      color_name: variant.color_name,
-      color_hex: variant.color_hex,
-      size_code: variant.size_code,
-      variant_id: variant.id,
-      thumbnail: variant.selected_thumbnail,
-    } : undefined;
+  const handleVariantComplete = useCallback(
+    (variant: ExternalVariantStock | null) => {
+      const variantInfo = variant
+        ? {
+            color_name: variant.color_name,
+            color_hex: variant.color_hex,
+            size_code: variant.size_code,
+            variant_id: variant.id,
+            thumbnail: variant.selected_thumbnail,
+          }
+        : undefined;
 
-    if (variantPickerMode === 'favorite') {
-      favStore.addFavorite(product.id, variantInfo);
-      toast.success(`"${product.name}" favoritado${variant?.color_name ? ` — ${variant.color_name}` : ''}`);
-    } else if (variantPickerMode === 'compare') {
-      const result = compStore.addToCompare(product.id, variantInfo);
-      if (!result) {
-        showErrorToast({ title: "Limite de 4 produtos para comparação atingido" });
-      } else {
-        toast.success(`"${product.name}" adicionado à comparação${variant?.color_name ? ` — ${variant.color_name}` : ''}`);
+      if (variantPickerMode === 'favorite') {
+        favStore.addFavorite(product.id, variantInfo);
+        toast.success(
+          `"${product.name}" favoritado${variant?.color_name ? ` — ${variant.color_name}` : ''}`,
+        );
+      } else if (variantPickerMode === 'compare') {
+        const result = compStore.addToCompare(product.id, variantInfo);
+        if (!result) {
+          showErrorToast({ title: 'Limite de 4 produtos para comparação atingido' });
+        } else {
+          toast.success(
+            `"${product.name}" adicionado à comparação${variant?.color_name ? ` — ${variant.color_name}` : ''}`,
+          );
+        }
+      } else if (variantPickerMode === 'collection') {
+        setCollectionVariant(variantInfo);
+        setCollectionModalOpen(true);
+      } else if (variantPickerMode === 'quote') {
+        const params = new URLSearchParams({
+          product_id: product.id,
+          product_name: product.name,
+          product_sku: product.sku || '',
+          product_price: String(product.price ?? 0),
+        });
+        if (variant?.color_name) params.set('color_name', variant.color_name);
+        if (variant?.color_hex) params.set('color_hex', variant.color_hex);
+        if (variant?.selected_thumbnail) params.set('product_image', variant.selected_thumbnail);
+        if (product.images?.[0])
+          params.set('product_image', variant?.selected_thumbnail || product.images[0]);
+        setTimeout(() => navigate(`/orcamentos/novo?${params.toString()}`), 0);
+      } else if (variantPickerMode === 'share') {
+        setShareVariant(
+          variant
+            ? {
+                variantName: variant.color_name,
+                colorHex: variant.color_hex,
+                thumbnailUrl: variant.selected_thumbnail,
+              }
+            : null,
+        );
+        setShareDialogOpen(true);
       }
-    } else if (variantPickerMode === 'collection') {
-      setCollectionVariant(variantInfo);
-      setCollectionModalOpen(true);
-    } else if (variantPickerMode === 'quote') {
-      const params = new URLSearchParams({
-        product_id: product.id,
-        product_name: product.name,
-        product_sku: product.sku || '',
-        product_price: String(product.price ?? 0),
-      });
-      if (variant?.color_name) params.set('color_name', variant.color_name);
-      if (variant?.color_hex) params.set('color_hex', variant.color_hex);
-      if (variant?.selected_thumbnail) params.set('product_image', variant.selected_thumbnail);
-      if (product.images?.[0]) params.set('product_image', variant?.selected_thumbnail || product.images[0]);
-      setTimeout(() => navigate(`/orcamentos/novo?${params.toString()}`), 0);
-    } else if (variantPickerMode === 'share') {
-      setShareVariant(variant ? {
-        variantName: variant.color_name,
-        colorHex: variant.color_hex,
-        thumbnailUrl: variant.selected_thumbnail,
-      } : null);
-      setShareDialogOpen(true);
-    }
-  }, [variantPickerMode, product, favStore, compStore, navigate]);
+    },
+    [variantPickerMode, product, favStore, compStore, navigate],
+  );
 
   const formatPrice = (price: number) =>
-    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(price);
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
 
   const getStockColor = (status: string) => {
     switch (status) {
-      case "in-stock": return "text-success";
-      case "low-stock": return "text-warning";
-      case "out-of-stock": return "text-destructive";
-      default: return "text-success";
+      case 'in-stock':
+        return 'text-success';
+      case 'low-stock':
+        return 'text-warning';
+      case 'out-of-stock':
+        return 'text-destructive';
+      default:
+        return 'text-success';
     }
   };
 
   const getStockLabel = (status: string) => {
     switch (status) {
-      case "in-stock": return "Em estoque";
-      case "low-stock": return "Estoque baixo";
-      case "out-of-stock": return "Sem estoque";
-      default: return "Em estoque";
+      case 'in-stock':
+        return 'Em estoque';
+      case 'low-stock':
+        return 'Estoque baixo';
+      case 'out-of-stock':
+        return 'Sem estoque';
+      default:
+        return 'Em estoque';
     }
   };
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (actionBusyRef.current || variantPickerOpen || collectionModalOpen || quickViewOpen || shareDialogOpen) return;
-    
+    if (
+      actionBusyRef.current ||
+      variantPickerOpen ||
+      collectionModalOpen ||
+      quickViewOpen ||
+      shareDialogOpen
+    )
+      return;
+
     // Use provided onClick if available, otherwise default to navigation
     if (onClick) {
       onClick();
@@ -225,13 +273,15 @@ export const ProductListItem = memo(function ProductListItem({
   // Multi-variant carousel
   const allMatchingVariants = resolveAllMatchingColors(product.colors, activeColorFilter);
   const hasMultipleVariants = allMatchingVariants.length > 1;
-  const safeVariantIdx = hasMultipleVariants ? Math.min(activeVariantIdx, allMatchingVariants.length - 1) : 0;
+  const safeVariantIdx = hasMultipleVariants
+    ? Math.min(activeVariantIdx, allMatchingVariants.length - 1)
+    : 0;
   const currentVariant = hasMultipleVariants ? allMatchingVariants[safeVariantIdx] : null;
 
   const variantImage = currentVariant?.image;
   const colorSpecificImage = variantImage || resolveColorImage(product, activeColorFilter);
   const rawImageUrl = colorSpecificImage || product.og_image_url || product.images[0] || null;
-  const thumbUrl = rawImageUrl ? getCdnUrl(rawImageUrl, "card") : "/placeholder.svg";
+  const thumbUrl = rawImageUrl ? getCdnUrl(rawImageUrl, 'card') : '/placeholder.svg';
 
   const colorStock = resolveColorStock(product, activeColorFilter);
   const displayStock = colorStock?.stock ?? product.stock;
@@ -239,41 +289,48 @@ export const ProductListItem = memo(function ProductListItem({
 
   const activeColorName = currentVariant?.name || getActiveColorName(product, activeColorFilter);
 
-  const matchedHighlightColor = currentVariant?.hex || resolveHighlightHex(product.colors, activeColorFilter, highlightColors);
+  const matchedHighlightColor =
+    currentVariant?.hex || resolveHighlightHex(product.colors, activeColorFilter, highlightColors);
 
-  const hasColorMatch = !!matchedHighlightColor || (highlightColors.length > 0 &&
-    product.colors.some((c) => highlightColors.includes(c.group))) ||
+  const hasColorMatch =
+    !!matchedHighlightColor ||
+    (highlightColors.length > 0 && product.colors.some((c) => highlightColors.includes(c.group))) ||
     !!activeColorName;
 
   return (
     <>
       <article
-        
         className={cn(
-          "group relative flex items-center gap-3 sm:gap-4 px-3 sm:px-4 py-2 sm:py-2.5",
-          "rounded-xl bg-card cursor-pointer",
-          "transition-all duration-200 ease-out",
-          "active:scale-[0.997] touch-manipulation",
-          hasColorMatch && matchedHighlightColor ? "border-2" : "border border-border/50 hover:border-primary/30 hover:bg-accent/30 hover:shadow-md",
+          'group relative flex items-center gap-3 px-3 py-2 sm:gap-4 sm:px-4 sm:py-2.5',
+          'cursor-pointer rounded-xl bg-card',
+          'transition-all duration-200 ease-out',
+          'touch-manipulation active:scale-[0.997]',
+          hasColorMatch && matchedHighlightColor
+            ? 'border-2'
+            : 'border border-border/50 hover:border-primary/30 hover:bg-accent/30 hover:shadow-md',
         )}
-        style={hasColorMatch && matchedHighlightColor ? {
-          borderColor: `${matchedHighlightColor}70`,
-          boxShadow: `inset 0 0 30px -6px ${matchedHighlightColor}40, 0 0 8px -2px ${matchedHighlightColor}20`,
-        } as React.CSSProperties : undefined}
+        style={
+          hasColorMatch && matchedHighlightColor
+            ? ({
+                borderColor: `${matchedHighlightColor}70`,
+                boxShadow: `inset 0 0 30px -6px ${matchedHighlightColor}40, 0 0 8px -2px ${matchedHighlightColor}20`,
+              } as React.CSSProperties)
+            : undefined
+        }
         onClick={handleClick}
       >
         {/* Thumbnail — compact square */}
-        <div className="relative shrink-0 w-14 h-14 sm:w-[72px] sm:h-[72px] rounded-lg overflow-hidden bg-muted/30 border border-border/30">
+        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-border/30 bg-muted/30 sm:h-[72px] sm:w-[72px]">
           <img
             src={thumbUrl}
             alt={product.name}
-            className="w-full h-full object-contain"
+            className="h-full w-full object-contain"
             loading="lazy"
             onError={(e) => {
               const img = e.currentTarget;
               if (!img.dataset.fallback) {
-                img.dataset.fallback = "1";
-                img.src = product.images[0] || "/placeholder.svg";
+                img.dataset.fallback = '1';
+                img.src = product.images[0] || '/placeholder.svg';
               }
             }}
           />
@@ -282,7 +339,7 @@ export const ProductListItem = memo(function ProductListItem({
             <div
               role="tablist"
               aria-label="Variantes de cor"
-              className="absolute bottom-0.5 left-0 right-0 flex justify-center gap-1 z-10"
+              className="absolute bottom-0.5 left-0 right-0 z-10 flex justify-center gap-1"
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => {
                 if (e.key === 'ArrowRight') {
@@ -290,7 +347,9 @@ export const ProductListItem = memo(function ProductListItem({
                   setActiveVariantIdx((safeVariantIdx + 1) % allMatchingVariants.length);
                 } else if (e.key === 'ArrowLeft') {
                   e.preventDefault();
-                  setActiveVariantIdx((safeVariantIdx - 1 + allMatchingVariants.length) % allMatchingVariants.length);
+                  setActiveVariantIdx(
+                    (safeVariantIdx - 1 + allMatchingVariants.length) % allMatchingVariants.length,
+                  );
                 }
               }}
             >
@@ -301,19 +360,30 @@ export const ProductListItem = memo(function ProductListItem({
                   type="button"
                   tabIndex={i === safeVariantIdx ? 0 : -1}
                   aria-selected={i === safeVariantIdx}
-                  onClick={(e) => { e.stopPropagation(); setActiveVariantIdx(i); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveVariantIdx(i);
+                  }}
                   className={cn(
-                    "w-3 h-3 rounded-full border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                    i === safeVariantIdx ? "ring-1 ring-offset-1 ring-offset-card scale-110" : "opacity-60 border-border/50"
+                    'h-3 w-3 rounded-full border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                    i === safeVariantIdx
+                      ? 'scale-110 ring-1 ring-offset-1 ring-offset-card'
+                      : 'border-border/50 opacity-60',
                   )}
                   style={{
                     backgroundColor: v.hex,
-                    borderColor: i === safeVariantIdx
-                      ? (isLightColor(v.hex) ? 'hsl(var(--muted-foreground))' : v.hex)
-                      : undefined,
-                    ['--tw-ring-color' as string]: i === safeVariantIdx
-                      ? (isLightColor(v.hex) ? 'hsl(var(--muted-foreground) / 0.6)' : v.hex)
-                      : v.hex,
+                    borderColor:
+                      i === safeVariantIdx
+                        ? isLightColor(v.hex)
+                          ? 'hsl(var(--muted-foreground))'
+                          : v.hex
+                        : undefined,
+                    ['--tw-ring-color' as string]:
+                      i === safeVariantIdx
+                        ? isLightColor(v.hex)
+                          ? 'hsl(var(--muted-foreground) / 0.6)'
+                          : v.hex
+                        : v.hex,
                   }}
                   aria-label={`Ver ${v.name}`}
                   title={v.name}
@@ -324,59 +394,78 @@ export const ProductListItem = memo(function ProductListItem({
         </div>
 
         {/* Info — main content block */}
-        <div className="flex-1 min-w-0 py-0.5">
+        <div className="min-w-0 flex-1 py-0.5">
           {/* Top meta row */}
-          <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground mb-0.5">
+          <div className="mb-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground sm:text-xs">
             {isNovelty && noveltyDaysRemaining !== undefined && (
               <NoveltyBadge daysRemaining={noveltyDaysRemaining} size="sm" />
             )}
-            <span className="truncate max-w-[120px]">{product.category?.name || "Sem categoria"}</span>
+            <span className="max-w-[120px] truncate">
+              {product.category?.name || 'Sem categoria'}
+            </span>
             <span className="text-border">•</span>
-            <span className={cn("flex items-center gap-0.5 shrink-0", getSupplierColors(product.supplier.name).text)}>
+            <span
+              className={cn(
+                'flex shrink-0 items-center gap-0.5',
+                getSupplierColors(product.supplier.name).text,
+              )}
+            >
               <Building2 className="h-2.5 w-2.5" />
-              <span className="truncate max-w-[80px]">{product.supplier.name}</span>
+              <span className="max-w-[80px] truncate">{product.supplier.name}</span>
             </span>
             <GenderBadge gender={product.gender} size="sm" />
           </div>
 
           {/* Product name */}
-          <h3 data-testid="product-list-name" className="font-display font-semibold text-foreground text-sm sm:text-[15px] leading-snug line-clamp-1 group-hover:text-primary transition-colors">
+          <h3
+            data-testid="product-list-name"
+            className="line-clamp-1 font-display text-sm font-semibold leading-snug text-foreground transition-colors group-hover:text-primary sm:text-[15px]"
+          >
             {product.name}
           </h3>
 
           {/* Active color badge */}
           {activeColorName && (
-            <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-primary/30 text-primary/80 w-fit mt-0.5">
+            <Badge
+              variant="outline"
+              className="mt-0.5 h-4 w-fit border-primary/30 px-1.5 py-0 text-[9px] text-primary/80"
+            >
               {activeColorName}
             </Badge>
           )}
 
           {/* Stock + SKU row */}
-          <div className="flex items-center gap-2 mt-0.5">
-            <span className={cn("flex items-center gap-1 text-[10px] sm:text-xs font-medium", getStockColor(displayStatus))}>
+          <div className="mt-0.5 flex items-center gap-2">
+            <span
+              className={cn(
+                'flex items-center gap-1 text-[10px] font-medium sm:text-xs',
+                getStockColor(displayStatus),
+              )}
+            >
               <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-              {getStockLabel(displayStatus)} ({displayStock.toLocaleString("pt-BR")})
+              {getStockLabel(displayStatus)} ({displayStock.toLocaleString('pt-BR')})
             </span>
             {product.sku && (
-              <span className="text-[10px] text-muted-foreground/50 font-mono hidden sm:inline">
+              <span className="hidden font-mono text-[10px] text-muted-foreground/50 sm:inline">
                 {product.sku}
               </span>
             )}
             {/* Inline color dots */}
             {product.colors.length > 0 && (
-              <div className="hidden md:flex items-center gap-1 ml-1">
+              <div className="ml-1 hidden items-center gap-1 md:flex">
                 {product.colors.slice(0, 5).map((color, idx) => {
-                  const isHighlighted = highlightColors.includes(color.group) ||
+                  const isHighlighted =
+                    highlightColors.includes(color.group) ||
                     (activeColorFilter?.groups?.includes(color.groupSlug || '') ?? false) ||
                     (activeColorFilter?.variations?.includes(color.variationSlug || '') ?? false);
                   return (
                     <div
                       key={idx}
                       className={cn(
-                        "w-3 h-3 rounded-full border",
+                        'h-3 w-3 rounded-full border',
                         isHighlighted
-                          ? "border-success ring-1 ring-success/30 scale-110"
-                          : "border-border/50"
+                          ? 'scale-110 border-success ring-1 ring-success/30'
+                          : 'border-border/50',
                       )}
                       style={{ backgroundColor: color.hex }}
                       title={color.name}
@@ -384,7 +473,9 @@ export const ProductListItem = memo(function ProductListItem({
                   );
                 })}
                 {product.colors.length > 5 && (
-                  <span className="text-[9px] text-muted-foreground">+{product.colors.length - 5}</span>
+                  <span className="text-[9px] text-muted-foreground">
+                    +{product.colors.length - 5}
+                  </span>
                 )}
               </div>
             )}
@@ -392,8 +483,8 @@ export const ProductListItem = memo(function ProductListItem({
         </div>
 
         {/* Price column — right-aligned, always visible */}
-        <div className="shrink-0 text-right min-w-[80px] sm:min-w-[100px]">
-          <span className="text-base sm:text-lg font-display font-bold text-foreground whitespace-nowrap">
+        <div className="min-w-[80px] shrink-0 text-right sm:min-w-[100px]">
+          <span className="whitespace-nowrap font-display text-base font-bold text-foreground sm:text-lg">
             {formatPrice(product.price)}
           </span>
           <div className="mt-0.5 flex justify-end">

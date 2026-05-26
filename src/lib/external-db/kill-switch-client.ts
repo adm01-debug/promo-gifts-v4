@@ -49,7 +49,10 @@ type KillSwitchRpcResult = {
 type KillSwitchTableClient = {
   from(table: 'system_kill_switches'): {
     select(columns: 'enabled, legacy_message'): {
-      eq(column: 'switch_name', value: string): {
+      eq(
+        column: 'switch_name',
+        value: string,
+      ): {
         maybeSingle(): Promise<KillSwitchQueryResult>;
       };
     };
@@ -159,7 +162,9 @@ export async function getKillSwitchState(switchName: string): Promise<KillSwitch
       .maybeSingle();
 
     if (error) {
-      logger.warn(`[kill-switch-client] consulta falhou para "${switchName}" — fail-open: ${error.message}`);
+      logger.warn(
+        `[kill-switch-client] consulta falhou para "${switchName}" — fail-open: ${error.message}`,
+      );
       return { enabled: true, source: 'fail-open' };
     }
 
@@ -202,21 +207,26 @@ export async function getKillSwitchState(switchName: string): Promise<KillSwitch
 
     return resolveEffectiveState(check, 'network');
   } catch (e) {
-    logger.warn(`[kill-switch-client] erro inesperado para "${switchName}" — fail-open: ${(e as Error).message}`);
+    logger.warn(
+      `[kill-switch-client] erro inesperado para "${switchName}" — fail-open: ${(e as Error).message}`,
+    );
     return { enabled: true, source: 'fail-open' };
   }
 }
 
 /**
  * Combina enabled (banco) + shouldApply (rollout) para um estado efetivo.
- * 
+ *
  * Tabela verdade:
  *   enabled=true                       → effective enabled=true (sempre permite)
  *   enabled=false, shouldApply=undef   → effective enabled=false (sem rollout, modo legado)
  *   enabled=false, shouldApply=true    → effective enabled=false (no bucket de teste, bloqueado)
  *   enabled=false, shouldApply=false   → effective enabled=true (fora do rollout, permite)
  */
-function resolveEffectiveState(check: SwitchCheck, source: KillSwitchState['source']): KillSwitchState {
+function resolveEffectiveState(
+  check: SwitchCheck,
+  source: KillSwitchState['source'],
+): KillSwitchState {
   // Switch ATIVO — sempre permite
   if (check.enabled) {
     return { enabled: true, source };

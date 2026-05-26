@@ -2,25 +2,19 @@
  * UpsellPlusPlus — Componente visual de sugestões inteligentes de upsell/cross-sell.
  * Design 10/10 com animações premium via framer-motion.
  */
-import { useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  TrendingUp,
-  Sparkles,
-  PackagePlus,
-  ArrowUpRight,
-  Zap,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import type { ProductTechnique, ConfiguredEngraving } from "../types";
+import { useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { TrendingUp, Sparkles, PackagePlus, ArrowUpRight, Zap } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import type { ProductTechnique, ConfiguredEngraving } from '../types';
 import {
   generateSuggestions,
   type UpsellSuggestion,
   type UpsellType,
   type UpsellPriority,
-} from "./upsell-engine";
+} from './upsell-engine';
 
 // ============================================
 // PROPS
@@ -54,9 +48,9 @@ const ICON_MAP: Record<UpsellType, typeof Sparkles> = {
 };
 
 const PRIORITY_STYLES: Record<UpsellPriority, string> = {
-  high: "border-l-accent bg-accent/10",
-  medium: "border-l-primary bg-primary/5",
-  low: "border-l-muted bg-muted/30",
+  high: 'border-l-accent bg-accent/10',
+  medium: 'border-l-primary bg-primary/5',
+  low: 'border-l-muted bg-muted/30',
 };
 
 // ============================================
@@ -77,7 +71,7 @@ const itemVariants = {
     opacity: 1,
     x: 0,
     scale: 1,
-    transition: { type: "spring", stiffness: 400, damping: 25 },
+    transition: { type: 'spring', stiffness: 400, damping: 25 },
   },
   exit: {
     opacity: 0,
@@ -102,13 +96,8 @@ export function UpsellPlusPlus({
 }: UpsellPlusPlusProps) {
   const suggestions = useMemo(
     () =>
-      generateSuggestions(
-        currentEngravings,
-        availableTechniques,
-        quantity,
-        product.category_name
-      ),
-    [currentEngravings, availableTechniques, quantity, product.category_name]
+      generateSuggestions(currentEngravings, availableTechniques, quantity, product.category_name),
+    [currentEngravings, availableTechniques, quantity, product.category_name],
   );
 
   if (suggestions.length === 0) return null;
@@ -117,9 +106,9 @@ export function UpsellPlusPlus({
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ type: "spring", stiffness: 300, damping: 24 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 24 }}
     >
-      <Card className={cn("border-dashed", className)}>
+      <Card className={cn('border-dashed', className)}>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-sm font-medium">
             <motion.div
@@ -154,19 +143,15 @@ export function UpsellPlusPlus({
                     whileHover={{ scale: 1.01, x: 2 }}
                     whileTap={{ scale: 0.99 }}
                     className={cn(
-                      "w-full text-left rounded-md border-l-4 p-3 transition-colors",
-                      PRIORITY_STYLES[s.priority]
+                      'w-full rounded-md border-l-4 p-3 text-left transition-colors',
+                      PRIORITY_STYLES[s.priority],
                     )}
                   >
                     <div className="flex items-start gap-2">
                       <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium leading-tight">
-                          {s.title}
-                        </p>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          {s.description}
-                        </p>
+                        <p className="text-sm font-medium leading-tight">{s.title}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">{s.description}</p>
                         <Badge variant="outline" className="mt-1 text-[10px]">
                           {s.impact}
                         </Badge>

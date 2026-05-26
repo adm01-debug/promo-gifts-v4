@@ -9,12 +9,12 @@
  *   (memory: features/ai/flow-product-integration-spec)
  * - Tokens de design semânticos (Outfit, var(--primary), border-[1.5px], rounded-xl)
  */
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { Send, Loader2, Bot, User as UserIcon, AlertCircle, RotateCcw } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { Send, Loader2, Bot, User as UserIcon, AlertCircle, RotateCcw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 // ============================================
 // TIPOS
@@ -22,7 +22,7 @@ import { toast } from "sonner";
 
 export interface ChatMessage {
   id: string;
-  role: "user" | "assistant";
+  role: 'user' | 'assistant';
   content: string;
   createdAt: number;
 }
@@ -79,25 +79,20 @@ interface MessageBubbleProps {
 }
 
 function MessageBubble({ message }: MessageBubbleProps) {
-  const isUser = message.role === "user";
+  const isUser = message.role === 'user';
   const cleanContent = useMemo(
     () => message.content.replace(PRODUCT_PATTERN, (_, _id, name) => `**${name}**`),
-    [message.content]
+    [message.content],
   );
 
   return (
-    <div
-      className={cn(
-        "flex gap-3 animate-fade-in",
-        isUser ? "flex-row-reverse" : "flex-row"
-      )}
-    >
+    <div className={cn('flex animate-fade-in gap-3', isUser ? 'flex-row-reverse' : 'flex-row')}>
       <div
         className={cn(
-          "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-[1.5px]",
+          'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-[1.5px]',
           isUser
-            ? "bg-primary text-primary-foreground border-primary"
-            : "bg-muted text-muted-foreground border-border"
+            ? 'border-primary bg-primary text-primary-foreground'
+            : 'border-border bg-muted text-muted-foreground',
         )}
         aria-hidden="true"
       >
@@ -105,10 +100,10 @@ function MessageBubble({ message }: MessageBubbleProps) {
       </div>
       <div
         className={cn(
-          "max-w-[80%] rounded-xl border-[1.5px] px-4 py-2.5 text-sm leading-relaxed font-display",
+          'max-w-[80%] rounded-xl border-[1.5px] px-4 py-2.5 font-display text-sm leading-relaxed',
           isUser
-            ? "bg-primary text-primary-foreground border-primary"
-            : "bg-card text-card-foreground border-border"
+            ? 'border-primary bg-primary text-primary-foreground'
+            : 'border-border bg-card text-card-foreground',
         )}
       >
         <p className="whitespace-pre-wrap break-words">{cleanContent}</p>
@@ -119,8 +114,12 @@ function MessageBubble({ message }: MessageBubbleProps) {
 
 function TypingIndicator() {
   return (
-    <div className="flex gap-3 animate-fade-in" aria-live="polite" aria-label="Assistente digitando">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-[1.5px] bg-muted text-muted-foreground border-border">
+    <div
+      className="flex animate-fade-in gap-3"
+      aria-live="polite"
+      aria-label="Assistente digitando"
+    >
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-[1.5px] border-border bg-muted text-muted-foreground">
         <Bot className="h-4 w-4" />
       </div>
       <div className="rounded-xl border-[1.5px] border-border bg-card px-4 py-2.5">
@@ -140,19 +139,17 @@ function TypingIndicator() {
 
 export function AIChat({
   systemPrompt,
-  placeholder = "Digite sua mensagem...",
+  placeholder = 'Digite sua mensagem...',
   greeting,
-  maxHeight = "500px",
+  maxHeight = '500px',
   onProductMention,
   className,
   contextId,
 }: AIChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(() =>
-    greeting
-      ? [{ id: makeId(), role: "assistant", content: greeting, createdAt: Date.now() }]
-      : []
+    greeting ? [{ id: makeId(), role: 'assistant', content: greeting, createdAt: Date.now() }] : [],
   );
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -162,7 +159,7 @@ export function AIChat({
 
   // Auto-scroll para a última mensagem
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, isLoading]);
 
   // Cleanup ao desmontar
@@ -176,14 +173,14 @@ export function AIChat({
 
     const userMsg: ChatMessage = {
       id: makeId(),
-      role: "user",
+      role: 'user',
       content: trimmed,
       createdAt: Date.now(),
     };
 
     const nextMessages = [...messages, userMsg];
     setMessages(nextMessages);
-    setInput("");
+    setInput('');
     setError(null);
     setIsLoading(true);
 
@@ -194,14 +191,14 @@ export function AIChat({
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
-      if (!token) throw new Error("Usuário não autenticado");
+      if (!token) throw new Error('Usuário não autenticado');
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/expert-chat`,
         {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
             apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
             Authorization: `Bearer ${token}`,
           },
@@ -211,25 +208,26 @@ export function AIChat({
             contextId,
           }),
           signal: controller.signal,
-        }
+        },
       );
 
       if (!response.ok) {
-        if (response.status === 429) throw new Error("Limite de requisições atingido. Aguarde alguns instantes.");
-        if (response.status === 402) throw new Error("Créditos de IA esgotados. Contate o administrador.");
-        const txt = await response.text().catch(() => "");
-        throw new Error(`Erro ${response.status}: ${txt || "falha ao consultar IA"}`);
+        if (response.status === 429)
+          throw new Error('Limite de requisições atingido. Aguarde alguns instantes.');
+        if (response.status === 402)
+          throw new Error('Créditos de IA esgotados. Contate o administrador.');
+        const txt = await response.text().catch(() => '');
+        throw new Error(`Erro ${response.status}: ${txt || 'falha ao consultar IA'}`);
       }
 
       const data = await response.json();
-      const assistantContent: string =
-        data?.message?.content ?? data?.content ?? data?.reply ?? "";
+      const assistantContent: string = data?.message?.content ?? data?.content ?? data?.reply ?? '';
 
-      if (!assistantContent) throw new Error("Resposta vazia do assistente");
+      if (!assistantContent) throw new Error('Resposta vazia do assistente');
 
       const assistantMsg: ChatMessage = {
         id: makeId(),
-        role: "assistant",
+        role: 'assistant',
         content: assistantContent,
         createdAt: Date.now(),
       };
@@ -240,8 +238,8 @@ export function AIChat({
         extractProductMentions(assistantContent).forEach(onProductMention);
       }
     } catch (err) {
-      if (err instanceof DOMException && err.name === "AbortError") return;
-      const msg = err instanceof Error ? err.message : "Erro desconhecido";
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      const msg = err instanceof Error ? err.message : 'Erro desconhecido';
       setError(msg);
       toast.error(msg);
     } finally {
@@ -251,20 +249,20 @@ export function AIChat({
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === "Enter" && !e.shiftKey) {
+      if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         sendMessage();
       }
     },
-    [sendMessage]
+    [sendMessage],
   );
 
   const handleReset = useCallback(() => {
     abortRef.current?.abort();
     setMessages(
       greeting
-        ? [{ id: makeId(), role: "assistant", content: greeting, createdAt: Date.now() }]
-        : []
+        ? [{ id: makeId(), role: 'assistant', content: greeting, createdAt: Date.now() }]
+        : [],
     );
     setError(null);
     setIsLoading(false);
@@ -274,8 +272,8 @@ export function AIChat({
   return (
     <div
       className={cn(
-        "flex flex-col rounded-2xl border-[1.5px] border-border bg-background overflow-hidden",
-        className
+        'flex flex-col overflow-hidden rounded-2xl border-[1.5px] border-border bg-background',
+        className,
       )}
     >
       {/* Header */}
@@ -302,7 +300,7 @@ export function AIChat({
       {/* Mensagens */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto px-4 py-4 space-y-4"
+        className="flex-1 space-y-4 overflow-y-auto px-4 py-4"
         style={{ maxHeight }}
         role="log"
         aria-live="polite"
@@ -310,7 +308,7 @@ export function AIChat({
       >
         {messages.length === 0 && !isLoading && (
           <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
-            <Bot className="h-10 w-10 mb-3 opacity-40" aria-hidden="true" />
+            <Bot className="mb-3 h-10 w-10 opacity-40" aria-hidden="true" />
             <p className="font-display text-sm">Inicie uma conversa com o assistente</p>
           </div>
         )}
@@ -326,7 +324,7 @@ export function AIChat({
           role="alert"
           className="flex items-start gap-2 border-t-[1.5px] border-destructive/30 bg-destructive/5 px-4 py-2 text-sm text-destructive"
         >
-          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" aria-hidden="true" />
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           <span className="font-display">{error}</span>
         </div>
       )}
@@ -344,13 +342,13 @@ export function AIChat({
             disabled={isLoading}
             aria-label="Mensagem para o assistente"
             className={cn(
-              "flex-1 resize-none rounded-xl border-[1.5px] border-input bg-background px-3 py-2 text-sm",
-              "font-display ring-offset-background transition-all duration-200",
-              "placeholder:text-muted-foreground",
-              "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 focus-visible:border-primary",
-              "hover:border-primary/50",
-              "disabled:cursor-not-allowed disabled:opacity-50",
-              "min-h-[40px] max-h-32"
+              'flex-1 resize-none rounded-xl border-[1.5px] border-input bg-background px-3 py-2 text-sm',
+              'font-display ring-offset-background transition-all duration-200',
+              'placeholder:text-muted-foreground',
+              'focus-visible:border-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20',
+              'hover:border-primary/50',
+              'disabled:cursor-not-allowed disabled:opacity-50',
+              'max-h-32 min-h-[40px]',
             )}
           />
           <Button
@@ -368,9 +366,11 @@ export function AIChat({
             )}
           </Button>
         </div>
-        <p className="mt-1.5 text-[11px] text-muted-foreground/70 font-display">
-          Pressione <kbd className="px-1 rounded border border-border bg-background">Enter</kbd> para enviar •{" "}
-          <kbd className="px-1 rounded border border-border bg-background">Shift+Enter</kbd> para quebrar linha
+        <p className="mt-1.5 font-display text-[11px] text-muted-foreground/70">
+          Pressione <kbd className="rounded border border-border bg-background px-1">Enter</kbd>{' '}
+          para enviar •{' '}
+          <kbd className="rounded border border-border bg-background px-1">Shift+Enter</kbd> para
+          quebrar linha
         </p>
       </div>
     </div>

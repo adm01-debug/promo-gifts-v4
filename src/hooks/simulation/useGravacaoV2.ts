@@ -1,6 +1,6 @@
 /**
  * useGravacaoV2 - Hooks para Sistema de Gravação/Personalização v2
- * 
+ *
  * Tipos e helpers extraídos para gravacao/ subfolder.
  * Este arquivo mantém apenas os hooks React.
  */
@@ -10,14 +10,32 @@ import { invokeExternalDb } from '@/lib/external-db';
 import { invokeExternalRpc } from '@/lib/external-rpc';
 
 // Re-export types & helpers for backward compat
-export type { TabelaPrecoOficial, FaixaPrecoOficial, CustomizationPriceV2, PrintAreaWithTechniques } from "@/hooks/gravacao/gravacao-types";
+export type {
+  TabelaPrecoOficial,
+  FaixaPrecoOficial,
+  CustomizationPriceV2,
+  PrintAreaWithTechniques,
+} from '@/hooks/gravacao/gravacao-types';
 export {
-  TECHNIQUE_COLORS, TECHNIQUE_ICONS, AREA_SHAPES, QUANTITY_TIERS_REFERENCE,
-  getTechniqueColor, getTechniqueIcon, formatPrice,
-  calculateTotalWithColorDiscount, calculateSetupCost, findPriceTier, calculateCustomizationTotal,
-} from "@/hooks/gravacao/gravacao-constants";
+  TECHNIQUE_COLORS,
+  TECHNIQUE_ICONS,
+  AREA_SHAPES,
+  QUANTITY_TIERS_REFERENCE,
+  getTechniqueColor,
+  getTechniqueIcon,
+  formatPrice,
+  calculateTotalWithColorDiscount,
+  calculateSetupCost,
+  findPriceTier,
+  calculateCustomizationTotal,
+} from '@/hooks/gravacao/gravacao-constants';
 
-import type { TabelaPrecoOficial, FaixaPrecoOficial, CustomizationPriceV2, PrintAreaWithTechniques } from "@/hooks/gravacao/gravacao-types";
+import type {
+  TabelaPrecoOficial,
+  FaixaPrecoOficial,
+  CustomizationPriceV2,
+  PrintAreaWithTechniques,
+} from '@/hooks/gravacao/gravacao-types';
 
 // Row shape returned by 'tabela_preco_gravacao_oficial' table queries.
 type TecnicaRow = {
@@ -31,8 +49,11 @@ type TecnicaRow = {
 type RpcCustomizationPriceResult = {
   success: boolean;
   area?: {
-    id: string; code: string; name: string;
-    max_width: number | null; max_height: number | null;
+    id: string;
+    code: string;
+    name: string;
+    max_width: number | null;
+    max_height: number | null;
   };
   faixa?: {
     ordem: number;
@@ -87,9 +108,14 @@ export function useProductPrintAreas(productId: string | null) {
 
       return areas.map((area) => {
         const techniques: { id: string; nome: string; codigo: string }[] = [];
-        for (const tid of (area.allowed_technique_ids || [])) {
+        for (const tid of area.allowed_technique_ids || []) {
           const tech = techById.get(tid);
-          if (tech) techniques.push({ id: tech.id, nome: tech.nome, codigo: tech.codigo_curto || tech.codigo_tabela || '' });
+          if (tech)
+            techniques.push({
+              id: tech.id,
+              nome: tech.nome,
+              codigo: tech.codigo_curto || tech.codigo_tabela || '',
+            });
         }
         return {
           area_id: area.id,
@@ -148,61 +174,76 @@ export function useCustomizationPriceLegacy() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const calculatePriceByArea = useCallback(async (
-    areaId: string, quantidade: number, numCores: number = 1,
-    larguraCm?: number | null, alturaCm?: number | null
-  ): Promise<CustomizationPriceV2 | null> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const rawResult = await invokeExternalRpc<RpcCustomizationPriceResult>(
-        'fn_get_customization_price',
-        { p_area_id: areaId, p_quantidade: quantidade, p_num_cores: numCores, p_largura_cm: larguraCm ?? null, p_altura_cm: alturaCm ?? null }
-      );
-      if (!rawResult?.success) { setLoading(false); return null; }
+  const calculatePriceByArea = useCallback(
+    async (
+      areaId: string,
+      quantidade: number,
+      numCores: number = 1,
+      larguraCm?: number | null,
+      alturaCm?: number | null,
+    ): Promise<CustomizationPriceV2 | null> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const rawResult = await invokeExternalRpc<RpcCustomizationPriceResult>(
+          'fn_get_customization_price',
+          {
+            p_area_id: areaId,
+            p_quantidade: quantidade,
+            p_num_cores: numCores,
+            p_largura_cm: larguraCm ?? null,
+            p_altura_cm: alturaCm ?? null,
+          },
+        );
+        if (!rawResult?.success) {
+          setLoading(false);
+          return null;
+        }
 
-      const result: CustomizationPriceV2 = {
-        success: true,
-        area_id: rawResult.area?.id || areaId,
-        area_code: rawResult.area?.code || '',
-        area_name: rawResult.area?.name || '',
-        area_order: rawResult.faixa?.ordem || 0,
-        tabela_id: rawResult.tabela?.id || '',
-        tabela_codigo: rawResult.tabela?.codigo_tabela || '',
-        tabela_codigo_curto: rawResult.tabela?.codigo_tabela?.split('-')[0] || '',
-        technique: rawResult.tabela?.nome || '',
-        codigo_orcamento: rawResult.codigo_orcamento || '',
-        quantity: rawResult.parametros?.quantidade || quantidade,
-        num_cores: rawResult.parametros?.num_cores || numCores,
-        tier_used: rawResult.faixa?.ordem || 0,
-        tier_min_qty: rawResult.faixa?.quantidade_minima || 0,
-        tier_max_qty: rawResult.faixa?.quantidade_maxima || 0,
-        cost_base_unit: rawResult.custos?.custo_base_unitario || 0,
-        cost_unit_total: rawResult.custos?.custo_unitario_total || 0,
-        cost_setup: rawResult.custos?.custo_setup_base || 0,
-        cost_total: (rawResult.custos?.custo_unitario_total || 0) * quantidade,
-        markup_percent: rawResult.precos?.markup_percent || 0,
-        preco_minimo_unitario: 0,
-        unit_price: rawResult.precos?.preco_unitario_final || 0,
-        subtotal_pecas: rawResult.precos?.subtotal_pecas || 0,
-        faturamento_minimo_gravacao: rawResult.precos?.faturamento_minimo_gravacao || 0,
-        minimum_applied: rawResult.precos?.aplica_minimo || false,
-        total_price: rawResult.precos?.total_final || 0,
-        margin_percent: rawResult.precos?.markup_percent || 0,
-        price_by_color: rawResult.tabela?.cobra_por_cor || false,
-        setup_by_color: false,
-        production_days: rawResult.faixa?.prazo_dias ?? null,
-        largura_max_tecnica: rawResult.area?.max_width ?? null,
-        altura_max_tecnica: rawResult.area?.max_height ?? null,
-      };
-      setLoading(false);
-      return result;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao calcular preço');
-      setLoading(false);
-      return null;
-    }
-  }, []);
+        const result: CustomizationPriceV2 = {
+          success: true,
+          area_id: rawResult.area?.id || areaId,
+          area_code: rawResult.area?.code || '',
+          area_name: rawResult.area?.name || '',
+          area_order: rawResult.faixa?.ordem || 0,
+          tabela_id: rawResult.tabela?.id || '',
+          tabela_codigo: rawResult.tabela?.codigo_tabela || '',
+          tabela_codigo_curto: rawResult.tabela?.codigo_tabela?.split('-')[0] || '',
+          technique: rawResult.tabela?.nome || '',
+          codigo_orcamento: rawResult.codigo_orcamento || '',
+          quantity: rawResult.parametros?.quantidade || quantidade,
+          num_cores: rawResult.parametros?.num_cores || numCores,
+          tier_used: rawResult.faixa?.ordem || 0,
+          tier_min_qty: rawResult.faixa?.quantidade_minima || 0,
+          tier_max_qty: rawResult.faixa?.quantidade_maxima || 0,
+          cost_base_unit: rawResult.custos?.custo_base_unitario || 0,
+          cost_unit_total: rawResult.custos?.custo_unitario_total || 0,
+          cost_setup: rawResult.custos?.custo_setup_base || 0,
+          cost_total: (rawResult.custos?.custo_unitario_total || 0) * quantidade,
+          markup_percent: rawResult.precos?.markup_percent || 0,
+          preco_minimo_unitario: 0,
+          unit_price: rawResult.precos?.preco_unitario_final || 0,
+          subtotal_pecas: rawResult.precos?.subtotal_pecas || 0,
+          faturamento_minimo_gravacao: rawResult.precos?.faturamento_minimo_gravacao || 0,
+          minimum_applied: rawResult.precos?.aplica_minimo || false,
+          total_price: rawResult.precos?.total_final || 0,
+          margin_percent: rawResult.precos?.markup_percent || 0,
+          price_by_color: rawResult.tabela?.cobra_por_cor || false,
+          setup_by_color: false,
+          production_days: rawResult.faixa?.prazo_dias ?? null,
+          largura_max_tecnica: rawResult.area?.max_width ?? null,
+          altura_max_tecnica: rawResult.area?.max_height ?? null,
+        };
+        setLoading(false);
+        return result;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erro ao calcular preço');
+        setLoading(false);
+        return null;
+      }
+    },
+    [],
+  );
 
   /** @deprecated Use calculatePriceByArea instead */
   const calculatePrice = calculatePriceByArea;

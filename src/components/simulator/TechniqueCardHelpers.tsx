@@ -3,34 +3,32 @@
  */
 import { Clock, DollarSign, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatCurrency, type TechniqueWithRecommendation } from "@/hooks/simulation";
+import { formatCurrency, type TechniqueWithRecommendation } from '@/hooks/simulation';
 
 // Miniaturas de exemplo por categoria de técnica
 export const TECHNIQUE_THUMBNAILS: Record<string, string> = {
-  'SILK': 'https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?w=100&h=100&fit=crop',
-  'SERIGRAFIA': 'https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?w=100&h=100&fit=crop',
-  'DTF': 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=100&h=100&fit=crop',
-  'SUB': 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=100&h=100&fit=crop',
-  'BORD': 'https://images.unsplash.com/photo-1558171813-4c088753af8f?w=100&h=100&fit=crop',
-  'LASER': 'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=100&h=100&fit=crop',
-  'TRANSFER': 'https://images.unsplash.com/photo-1562157873-818bc0726f68?w=100&h=100&fit=crop',
-  'UV': 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=100&h=100&fit=crop',
+  SILK: 'https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?w=100&h=100&fit=crop',
+  SERIGRAFIA: 'https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?w=100&h=100&fit=crop',
+  DTF: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=100&h=100&fit=crop',
+  SUB: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=100&h=100&fit=crop',
+  BORD: 'https://images.unsplash.com/photo-1558171813-4c088753af8f?w=100&h=100&fit=crop',
+  LASER: 'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=100&h=100&fit=crop',
+  TRANSFER: 'https://images.unsplash.com/photo-1562157873-818bc0726f68?w=100&h=100&fit=crop',
+  UV: 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=100&h=100&fit=crop',
 };
 
 export function getTechniqueStyle(code: string) {
   const c = code?.toUpperCase() || '';
   if (c.includes('SILK') || c.includes('SERIGRAFIA'))
     return { color: 'bg-primary', textColor: 'text-primary', icon: '🎨' };
-  if (c.includes('DTF'))
-    return { color: 'bg-info', textColor: 'text-info', icon: '🖨️' };
+  if (c.includes('DTF')) return { color: 'bg-info', textColor: 'text-info', icon: '🖨️' };
   if (c.includes('SUB') || c.includes('TRANSFER'))
     return { color: 'bg-primary', textColor: 'text-primary', icon: '🌈' };
   if (c.includes('BORD') || c.includes('EMBROID'))
     return { color: 'bg-warning', textColor: 'text-warning', icon: '🧵' };
   if (c.includes('LASER'))
     return { color: 'bg-destructive', textColor: 'text-destructive', icon: '⚡' };
-  if (c.includes('UV'))
-    return { color: 'bg-primary', textColor: 'text-primary', icon: '💜' };
+  if (c.includes('UV')) return { color: 'bg-primary', textColor: 'text-primary', icon: '💜' };
   return { color: 'bg-muted-foreground', textColor: 'text-muted-foreground', icon: '✨' };
 }
 
@@ -63,23 +61,28 @@ export function TechniquePreview({
   return (
     <div className="space-y-3">
       {thumbnail && (
-        <div className="w-full aspect-video rounded-lg overflow-hidden bg-muted">
+        <div className="aspect-video w-full overflow-hidden rounded-lg bg-muted">
           <img
             src={thumbnail.replace('w=100&h=100', 'w=400&h=225')}
             alt={technique.name}
-            className="w-full h-full object-cover" loading="lazy" />
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
         </div>
       )}
 
       <div className="flex items-center gap-2">
-        <div className={cn(
-          'w-8 h-8 rounded-lg flex items-center justify-center text-lg',
-          style.color, 'text-primary-foreground'
-        )}>
+        <div
+          className={cn(
+            'flex h-8 w-8 items-center justify-center rounded-lg text-lg',
+            style.color,
+            'text-primary-foreground',
+          )}
+        >
           {style.icon}
         </div>
         <div>
-          <h4 className="font-semibold text-sm">{technique.name}</h4>
+          <h4 className="text-sm font-semibold">{technique.name}</h4>
           <p className="text-xs text-muted-foreground">{technique.code}</p>
         </div>
       </div>
@@ -102,7 +105,7 @@ export function TechniquePreview({
           </div>
 
           {technique.recommendation.isRecommended && (
-            <div className="flex items-center gap-2 p-2 bg-warning/5 rounded-lg">
+            <div className="flex items-center gap-2 rounded-lg bg-warning/5 p-2">
               <Sparkles className="h-4 w-4 text-warning" />
               <p className="text-xs text-warning">
                 {technique.recommendation.recommendationReason}

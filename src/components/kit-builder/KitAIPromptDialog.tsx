@@ -3,7 +3,13 @@
  * e aplica a sugestão de kit_type + filtros de busca.
  */
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -84,30 +90,48 @@ export function KitAIPromptDialog({ onApply }: KitAIPromptDialogProps) {
             disabled={loading}
             maxLength={2000}
           />
-          <Button onClick={handleGenerate} disabled={loading || prompt.trim().length < 6} className="w-full">
-            {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wand2 className="h-4 w-4 mr-2" />}
+          <Button
+            onClick={handleGenerate}
+            disabled={loading || prompt.trim().length < 6}
+            className="w-full"
+          >
+            {loading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Wand2 className="mr-2 h-4 w-4" />
+            )}
             {loading ? 'Gerando...' : 'Gerar sugestão'}
           </Button>
 
           {suggestion && (
-            <div className="rounded-lg border p-3 space-y-2 bg-muted/30 animate-fade-in">
+            <div className="animate-fade-in space-y-2 rounded-lg border bg-muted/30 p-3">
               <p className="text-sm">{suggestion.narrative}</p>
               <div className="flex flex-wrap gap-1">
-                <Badge variant="outline" className="text-[10px]">Tipo: {suggestion.kit_type}</Badge>
-                <Badge variant="outline" className="text-[10px] border-primary text-primary">
+                <Badge variant="outline" className="text-[10px]">
+                  Tipo: {suggestion.kit_type}
+                </Badge>
+                <Badge variant="outline" className="border-primary text-[10px] text-primary">
                   R$ {suggestion.target_price_brl.min}–{suggestion.target_price_brl.max}/kit
                 </Badge>
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground mb-1">Caixa:</p>
+                <p className="mb-1 text-[10px] text-muted-foreground">Caixa:</p>
                 <div className="flex flex-wrap gap-1">
-                  {suggestion.box_keywords.map((k) => <Badge key={k} variant="secondary" className="text-[10px]">{k}</Badge>)}
+                  {suggestion.box_keywords.map((k) => (
+                    <Badge key={k} variant="secondary" className="text-[10px]">
+                      {k}
+                    </Badge>
+                  ))}
                 </div>
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground mb-1">Itens sugeridos:</p>
+                <p className="mb-1 text-[10px] text-muted-foreground">Itens sugeridos:</p>
                 <div className="flex flex-wrap gap-1">
-                  {suggestion.item_keywords.map((k) => <Badge key={k} variant="secondary" className="text-[10px]">{k}</Badge>)}
+                  {suggestion.item_keywords.map((k) => (
+                    <Badge key={k} variant="secondary" className="text-[10px]">
+                      {k}
+                    </Badge>
+                  ))}
                 </div>
               </div>
               <Button onClick={handleApply} className="w-full" size="sm">

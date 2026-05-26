@@ -7,8 +7,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { AlertTriangle, Info, CheckCircle2, XCircle } from "lucide-react";
+} from '@/components/ui/alert-dialog';
+import { AlertTriangle, Info, CheckCircle2, XCircle } from 'lucide-react';
 
 type ConfirmVariant = 'default' | 'destructive' | 'warning' | 'success';
 
@@ -53,8 +53,8 @@ export function ConfirmDialog({
   onConfirm,
   title,
   description,
-  confirmText = "Confirmar",
-  cancelText = "Cancelar",
+  confirmText = 'Confirmar',
+  cancelText = 'Cancelar',
   variant = 'default',
   loading = false,
 }: ConfirmDialogProps) {
@@ -66,25 +66,27 @@ export function ConfirmDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <div className="flex items-start gap-3">
-            <div className={`h-10 w-10 rounded-full ${config.iconBg} flex items-center justify-center shrink-0`}>
+            <div
+              className={`h-10 w-10 rounded-full ${config.iconBg} flex shrink-0 items-center justify-center`}
+            >
               <Icon className={`h-5 w-5 ${config.iconColor}`} />
             </div>
             <div className="flex-1">
               <AlertDialogTitle>{title}</AlertDialogTitle>
-              <AlertDialogDescription className="mt-2">
-                {description}
-              </AlertDialogDescription>
+              <AlertDialogDescription className="mt-2">{description}</AlertDialogDescription>
             </div>
           </div>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={loading}>
-            {cancelText}
-          </AlertDialogCancel>
+          <AlertDialogCancel disabled={loading}>{cancelText}</AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             disabled={loading}
-            className={variant === 'destructive' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
+            className={
+              variant === 'destructive'
+                ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                : ''
+            }
           >
             {loading ? 'Processando...' : confirmText}
           </AlertDialogAction>
@@ -116,7 +118,7 @@ export function useConfirm() {
     title: string,
     description: string,
     onConfirm: () => void,
-    variant: ConfirmVariant = 'default'
+    variant: ConfirmVariant = 'default',
   ) => {
     setState({ open: true, title, description, variant, onConfirm });
   };
