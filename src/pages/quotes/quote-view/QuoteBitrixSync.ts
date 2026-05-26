@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import { selectCrmById } from '@/lib/crm-db';
 import type { ProposalTemplateData } from '@/components/pdf/ProposalHtmlTemplate';
+import type { TablesUpdate } from '@/integrations/supabase/types';
 import type { Quote } from '@/hooks/quotes';
 
 interface SyncBitrixParams {
@@ -34,6 +35,12 @@ export async function syncQuoteToBitrix({
   success: boolean;
   updatedQuote?: Partial<Quote>;
 }> {
+  if (!quote.id) {
+    toast.error('Orçamento sem identificador válido');
+    return { success: false };
+  }
+  const quoteId = quote.id;
+
   let effectiveBitrixCompanyId = bitrixCompanyId;
 
   if (!effectiveBitrixCompanyId && quote.client_id) {
@@ -77,8 +84,8 @@ export async function syncQuoteToBitrix({
     });
   }
 
-  logQuoteHistory(quote.id, 'sync_started', 'Sincronização com Bitrix24 iniciada').catch((err) => {
-    logger.warn('logQuoteHistory(sync_started) failed', { err, quoteId: quote.id });
+  logQuoteHistory(quoteId, 'sync_started', 'Sincronização com Bitrix24 iniciada').catch((err) => {
+    logger.warn('logQuoteHistory(sync_started) failed', { err, quoteId });
   });
 
   // Generate PDF and upload
@@ -86,8 +93,8 @@ export async function syncQuoteToBitrix({
   let filename: string | undefined;
   try {
     const blob = await generateProposalPDFv2(proposalData, { isDraft: quote.status === 'draft' });
-    filename = `proposta-${(quote.quote_number || quote.id).replace(/\s+/g, '')}.pdf`;
-    const storagePath = `quotes/${quote.id}/${filename}`;
+    filename = `proposta-${(quote.quote_number || quoteId).replace(/\s+/g, '')}.pdf`;
+    const storagePath = `quotes/${quoteId}/${filename}`;
     const { error: uploadError } = await supabase.storage
       .from('art-files')
       .upload(storagePath, blob, { contentType: 'application/pdf', upsert: true });
@@ -117,30 +124,30 @@ export async function syncQuoteToBitrix({
 
   if (error || !data?.success) {
     const msg = data?.error || error?.message || 'Erro desconhecido';
-    await logQuoteHistory(quote.id, 'sync_error', `Falha: ${msg}`);
+    await logQuoteHistory(quoteId, 'sync_error', `Falha: ${msg}`);
     throw new Error(msg);
   }
 
   const result = data.result;
   const parsedBitrixId = result?.quote_id ? Number(result.quote_id) : null;
   const bitrixQuoteIdFromResponse =
-    parsedBitrixId && !isNaN(parsedBitrixId) ? parsedBitrixId : null;
+    parsedBitrixId && !isNaN(parsedBitrixId) ? String(parsedBitrixId) : null;
 
-  const crmUpdates: Record<string, unknown> = { status: 'sent' };
+  const crmUpdates: TablesUpdate<'quotes'> = { status: 'sent' };
   if (bitrixQuoteIdFromResponse) crmUpdates.bitrix_quote_id = bitrixQuoteIdFromResponse;
 
   try {
     // rls-allow: update por id; RLS valida ownership
-    await supabase.from('quotes').update(crmUpdates).eq('id', quote.id);
+    await supabase.from('quotes').update(crmUpdates).eq('id', quoteId);
   } catch {
     /* ignore */
   }
 
   await logQuoteHistory(
-    quote.id,
+    quoteId,
     'sync_success',
     `Sincronizado com Bitrix24${bitrixQuoteIdFromResponse ? ` — ID Bitrix: ${bitrixQuoteIdFromResponse}` : ''}`,
-    { newValue: bitrixQuoteIdFromResponse ? String(bitrixQuoteIdFromResponse) : undefined },
+    { newValue: bitrixQuoteIdFromResponse ?? undefined },
   );
 
   toast.success(result?.message || 'Orçamento sincronizado com Bitrix24!');

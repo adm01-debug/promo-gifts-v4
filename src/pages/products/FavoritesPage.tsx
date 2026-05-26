@@ -15,10 +15,7 @@ import { ProductListItem } from '@/components/products/ProductListItem';
 import { ProductTableView } from '@/components/products/ProductTableView';
 import { LayoutPopover } from '@/components/products/LayoutPopover';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
-import {
-  getGridColsClass,
-  getGridGapClass,
-} from '@/components/replenishments/grid-layout';
+import { getGridColsClass, getGridGapClass } from '@/components/replenishments/grid-layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -145,6 +142,8 @@ export default function FavoritesPage() {
   const [gridColumns, setGridColumns] = useState<ColumnCount>(() => loadGridColumns());
   const [sort, setSort] = useState<FavoritesSort>(() => loadSort());
   const [selectionMode, setSelectionMode] = useState(false);
+  const [clearAllDialogOpen, setClearAllDialogOpen] = useState(false);
+  const [removeSelectedDialogOpen, setRemoveSelectedDialogOpen] = useState(false);
   const [onlyPriceDrops, setOnlyPriceDrops] = useState<boolean>(() => {
     try {
       return localStorage.getItem(PRICE_DROP_FILTER_KEY) === '1';
@@ -469,22 +468,24 @@ export default function FavoritesPage() {
             {headerTotalCount > 0 && !showTrash && (
               <>
                 {!isRemoteListView && (
-                  <DeleteConfirmDialog
-                    trigger={
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Limpar Tudo
-                      </Button>
-                    }
-                    title="Limpar todos os favoritos?"
-                    description={`Esta ação irá remover todos os ${favoriteCount} produtos.`}
-                    onConfirm={handleClearAll}
-                    itemName="favoritos"
-                  />
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => setClearAllDialogOpen(true)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Limpar Tudo
+                    </Button>
+                    <DeleteConfirmDialog
+                      open={clearAllDialogOpen}
+                      onOpenChange={setClearAllDialogOpen}
+                      entityName="favoritos"
+                      itemName={`todos os ${favoriteCount} produtos favoritos`}
+                      onConfirm={handleClearAll}
+                    />
+                  </>
                 )}
                 <Button
                   variant={selectionMode ? 'default' : 'outline'}
@@ -651,17 +652,21 @@ export default function FavoritesPage() {
                         <X className="mr-1 h-3.5 w-3.5" />
                         Limpar
                       </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        disabled={selectedIds.size === 0}
+                        onClick={() => setRemoveSelectedDialogOpen(true)}
+                      >
+                        <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                        Remover ({selectedIds.size})
+                      </Button>
                       <DeleteConfirmDialog
-                        trigger={
-                          <Button variant="destructive" size="sm" disabled={selectedIds.size === 0}>
-                            <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                            Remover ({selectedIds.size})
-                          </Button>
-                        }
-                        title="Remover selecionados?"
-                        description={`Esta ação irá remover ${selectedIds.size} ${selectedIds.size === 1 ? 'item' : 'itens'}.`}
+                        open={removeSelectedDialogOpen}
+                        onOpenChange={setRemoveSelectedDialogOpen}
+                        entityName="itens selecionados"
+                        itemName={`${selectedIds.size} ${selectedIds.size === 1 ? 'item' : 'itens'}`}
                         onConfirm={handleRemoveSelected}
-                        itemName="itens selecionados"
                       />
                     </div>
                   </div>

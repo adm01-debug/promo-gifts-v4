@@ -1,26 +1,26 @@
-import { type ExternalTechnique } from "@/types/external-db";
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { invokeExternalDb } from "@/lib/external-db";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { 
-  Clock, 
-  Palette, 
-  Info, 
-  ChevronDown, 
+import { type ExternalTechnique } from '@/types/external-db';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { invokeExternalDb } from '@/lib/external-db';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Clock,
+  Palette,
+  Info,
+  ChevronDown,
   ChevronUp,
   Zap,
   AlertTriangle,
   CheckCircle2,
   DollarSign,
-  Package
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+  Package,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Technique {
   id: string;
@@ -43,21 +43,28 @@ interface TechniqueSLACardProps {
 }
 
 function getSLAColor(days: number | null): { color: string; label: string; icon: React.ReactNode } {
-  if (!days) return { color: "bg-muted", label: "Não informado", icon: <Info className="h-3 w-3" /> };
-  if (days <= 3) return { color: "bg-primary", label: "Entrega Rápida", icon: <Zap className="h-3 w-3" /> };
-  if (days <= 7) return { color: "bg-warning", label: "Prazo Normal", icon: <Clock className="h-3 w-3" /> };
-  return { color: "bg-destructive", label: "Prazo Estendido", icon: <AlertTriangle className="h-3 w-3" /> };
+  if (!days)
+    return { color: 'bg-muted', label: 'Não informado', icon: <Info className="h-3 w-3" /> };
+  if (days <= 3)
+    return { color: 'bg-primary', label: 'Entrega Rápida', icon: <Zap className="h-3 w-3" /> };
+  if (days <= 7)
+    return { color: 'bg-warning', label: 'Prazo Normal', icon: <Clock className="h-3 w-3" /> };
+  return {
+    color: 'bg-destructive',
+    label: 'Prazo Estendido',
+    icon: <AlertTriangle className="h-3 w-3" />,
+  };
 }
 
 function formatCurrency(value: number | null): string {
-  if (!value) return "—";
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+  if (!value) return '—';
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 }
 
 function calculateTotalCost(technique: Technique, quantity: number): number {
   const setup = technique.setup_cost || 0;
   const unit = technique.unit_cost || 0;
-  return setup + (unit * quantity);
+  return setup + unit * quantity;
 }
 
 export function TechniqueSLACard({
@@ -68,28 +75,31 @@ export function TechniqueSLACard({
   className,
 }: TechniqueSLACardProps) {
   const [isExpanded, setIsExpanded] = useState(true);
-  const [sortBy, setSortBy] = useState<"sla" | "cost">("sla");
+  const [sortBy, setSortBy] = useState<'sla' | 'cost'>('sla');
 
   const { data: techniques, isLoading } = useQuery({
-    queryKey: ["techniques-sla-external", productId],
+    queryKey: ['techniques-sla-external', productId],
     queryFn: async () => {
       const result = await invokeExternalDb<Technique>({
-        table: "personalization_techniques",
-        operation: "select",
+        table: 'personalization_techniques',
+        operation: 'select',
         filters: { is_active: true },
-        orderBy: { column: "estimated_days", ascending: true },
+        orderBy: { column: 'estimated_days', ascending: true },
         limit: 100,
       });
-      return result.records.map(t => ({
-        ...t,
-        setup_cost: (t as ExternalTechnique).setup_price ?? t.setup_cost,
-        unit_cost: (t as ExternalTechnique).handling_price ?? t.unit_cost,
-      }));
+      return result.records.map((t) => {
+        const ext = t as Technique & Pick<ExternalTechnique, 'setup_price' | 'handling_price'>;
+        return {
+          ...t,
+          setup_cost: ext.setup_price ?? t.setup_cost,
+          unit_cost: ext.handling_price ?? t.unit_cost,
+        };
+      });
     },
   });
 
   const sortedTechniques = techniques?.slice().sort((a, b) => {
-    if (sortBy === "sla") {
+    if (sortBy === 'sla') {
       return (a.estimated_days || 999) - (b.estimated_days || 999);
     }
     return calculateTotalCost(a, quantity) - calculateTotalCost(b, quantity);
@@ -116,7 +126,7 @@ export function TechniqueSLACard({
       <Card className={className}>
         <CardContent className="py-8">
           <div className="text-center text-muted-foreground">
-            <Palette className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <Palette className="mx-auto mb-4 h-12 w-12 opacity-50" />
             <p>Nenhuma técnica disponível</p>
           </div>
         </CardContent>
@@ -138,31 +148,27 @@ export function TechniqueSLACard({
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex bg-muted rounded-lg p-1">
+            <div className="flex rounded-lg bg-muted p-1">
               <Button
-                variant={sortBy === "sla" ? "secondary" : "ghost"}
+                variant={sortBy === 'sla' ? 'secondary' : 'ghost'}
                 size="sm"
                 className="h-7 px-2 text-xs"
-                onClick={() => setSortBy("sla")}
+                onClick={() => setSortBy('sla')}
               >
-                <Clock className="h-3 w-3 mr-1" />
+                <Clock className="mr-1 h-3 w-3" />
                 Prazo
               </Button>
               <Button
-                variant={sortBy === "cost" ? "secondary" : "ghost"}
+                variant={sortBy === 'cost' ? 'secondary' : 'ghost'}
                 size="sm"
                 className="h-7 px-2 text-xs"
-                onClick={() => setSortBy("cost")}
+                onClick={() => setSortBy('cost')}
               >
-                <DollarSign className="h-3 w-3 mr-1" />
+                <DollarSign className="mr-1 h-3 w-3" />
                 Custo
               </Button>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsExpanded(!isExpanded)}
-            >
+            <Button variant="ghost" size="sm" onClick={() => setIsExpanded(!isExpanded)}>
               {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
           </div>
@@ -181,33 +187,33 @@ export function TechniqueSLACard({
               <TooltipProvider key={technique.id}>
                 <div
                   className={cn(
-                    "relative border rounded-lg p-4 transition-all cursor-pointer hover:shadow-md",
+                    'relative cursor-pointer rounded-lg border p-4 transition-all hover:shadow-md',
                     isSelected
-                      ? "border-primary bg-primary/5 shadow-sm"
-                      : "border-border hover:border-primary/50",
-                    !minQtyMet && "opacity-60"
+                      ? 'border-primary bg-primary/5 shadow-sm'
+                      : 'border-border hover:border-primary/50',
+                    !minQtyMet && 'opacity-60',
                   )}
                   onClick={() => minQtyMet && onSelectTechnique?.(technique)}
                 >
                   {isSelected && (
-                    <div className="absolute top-2 right-2">
+                    <div className="absolute right-2 top-2">
                       <CheckCircle2 className="h-5 w-5 text-primary" />
                     </div>
                   )}
 
                   <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex items-center gap-2">
                         <h4 className="font-semibold text-foreground">{technique.name}</h4>
                         {technique.code && (
-                          <Badge variant="outline" className="text-xs font-mono">
+                          <Badge variant="outline" className="font-mono text-xs">
                             {technique.code}
                           </Badge>
                         )}
                       </div>
 
                       {technique.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                        <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">
                           {technique.description}
                         </p>
                       )}
@@ -215,12 +221,14 @@ export function TechniqueSLACard({
                       <div className="flex flex-wrap items-center gap-3 text-sm">
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Badge 
-                              variant="secondary" 
-                              className={cn("gap-1", sla.color, "text-primary-foreground")}
+                            <Badge
+                              variant="secondary"
+                              className={cn('gap-1', sla.color, 'text-primary-foreground')}
                             >
                               {sla.icon}
-                              {technique.estimated_days ? `${technique.estimated_days} dias` : "N/A"}
+                              {technique.estimated_days
+                                ? `${technique.estimated_days} dias`
+                                : 'N/A'}
                             </Badge>
                           </TooltipTrigger>
                           <TooltipContent>
@@ -231,20 +239,21 @@ export function TechniqueSLACard({
                         {technique.min_quantity && (
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <span className={cn(
-                                "flex items-center gap-1 text-muted-foreground",
-                                !minQtyMet && "text-destructive"
-                              )}>
+                              <span
+                                className={cn(
+                                  'flex items-center gap-1 text-muted-foreground',
+                                  !minQtyMet && 'text-destructive',
+                                )}
+                              >
                                 <Package className="h-3 w-3" />
                                 Mín. {technique.min_quantity} un.
                               </span>
                             </TooltipTrigger>
                             <TooltipContent>
                               <p>
-                                {minQtyMet 
-                                  ? "Quantidade mínima atendida" 
-                                  : `Quantidade mínima não atingida (${quantity}/${technique.min_quantity})`
-                                }
+                                {minQtyMet
+                                  ? 'Quantidade mínima atendida'
+                                  : `Quantidade mínima não atingida (${quantity}/${technique.min_quantity})`}
                               </p>
                             </TooltipContent>
                           </Tooltip>
@@ -252,15 +261,13 @@ export function TechniqueSLACard({
                       </div>
                     </div>
 
-                    <div className="text-right shrink-0">
+                    <div className="shrink-0 text-right">
                       <div className="text-lg font-bold text-foreground">
                         {formatCurrency(totalCost)}
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        p/ {quantity} un.
-                      </div>
+                      <div className="text-xs text-muted-foreground">p/ {quantity} un.</div>
                       {technique.setup_cost ? (
-                        <div className="text-xs text-muted-foreground mt-1">
+                        <div className="mt-1 text-xs text-muted-foreground">
                           Setup: {formatCurrency(technique.setup_cost)}
                         </div>
                       ) : null}
@@ -269,12 +276,12 @@ export function TechniqueSLACard({
 
                   {technique.estimated_days && (
                     <div className="mt-3">
-                      <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                      <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
                         <span>SLA de Entrega</span>
                         <span>{sla.label}</span>
                       </div>
-                      <Progress 
-                        value={Math.max(10, 100 - (technique.estimated_days * 10))} 
+                      <Progress
+                        value={Math.max(10, 100 - technique.estimated_days * 10)}
                         className="h-1.5"
                       />
                     </div>
@@ -284,8 +291,8 @@ export function TechniqueSLACard({
             );
           })}
 
-          <div className="pt-2 border-t">
-            <p className="text-xs text-muted-foreground text-center">
+          <div className="border-t pt-2">
+            <p className="text-center text-xs text-muted-foreground">
               💡 Dica: Técnicas com menor prazo podem ter custo adicional para produção expressa
             </p>
           </div>

@@ -3,6 +3,7 @@
  * Refatorado: lógica em useQuoteBuilderState, UI em sub-componentes.
  */
 
+import { useState } from 'react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { cn } from '@/lib/utils';
 
@@ -51,8 +52,9 @@ import { UnsavedChangesDialog } from '@/components/common/UnsavedChangesDialog';
 
 export default function QuoteBuilderPage() {
   const s = useQuoteBuilderState();
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const { showDialog, confirmLeave, cancelLeave, message } = useUnsavedChangesGuard({
-    hasUnsavedChanges: s.hasUnsavedData,
+    hasUnsavedChanges,
   });
 
   if (s.loadingQuote) {
@@ -89,6 +91,7 @@ export default function QuoteBuilderPage() {
           internalNotes: s.internalNotes,
           items: s.items,
         }}
+        onChange={setHasUnsavedChanges}
         className="fixed right-4 top-20 z-40"
       />
 

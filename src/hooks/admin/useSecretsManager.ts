@@ -77,14 +77,21 @@ type InvokeBody = {
   [key: string]: unknown;
 };
 
+type InvokeSecretsData = {
+  ok?: boolean;
+  secrets?: unknown;
+  history?: unknown;
+  message?: string;
+  was_update?: boolean;
+  previous_suffix?: string | null;
+  masked_suffix?: string | null;
+  length?: number;
+  secret?: SecretStatus;
+  [k: string]: unknown;
+};
+
 async function invokeSecretsManager(body: InvokeBody): Promise<{
-  data: {
-    ok?: boolean;
-    secrets?: unknown;
-    history?: unknown;
-    message?: string;
-    [k: string]: unknown;
-  } | null;
+  data: InvokeSecretsData | null;
   error: { message: string; context?: Response } | null;
   requestId: string;
   status?: number;
@@ -122,7 +129,7 @@ async function invokeSecretsManager(body: InvokeBody): Promise<{
   });
 
   return {
-    data: data as Record<string, unknown> | null,
+    data: data as InvokeSecretsData | null,
     error: error as { message: string; context?: Response } | null,
     requestId,
     status,

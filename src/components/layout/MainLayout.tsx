@@ -114,7 +114,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             style={{ top: 'var(--header-h, 56px)' }}
             data-testid="breadcrumb-bar"
           >
-            <div className="mx-auto max-w-[1920px] px-3 py-2 sm:px-4 lg:px-6">
+            <div className="mx-auto max-w-[1920px] px-3 py-1 sm:px-4 lg:px-6">
               <Suspense fallback={<div className="h-6" />}>
                 <PersistentBreadcrumbs showBackButton />
               </Suspense>

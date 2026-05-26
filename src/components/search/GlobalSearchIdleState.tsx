@@ -173,7 +173,7 @@ function NavCard({
 interface GlobalSearchIdleStateProps {
   history: string[];
   popularProducts: Array<{ id: string; name: string; sku: string; view_count: number }>;
-  contextualSuggestions: Array<{ id: string; text: string; icon: string; type: string }>;
+  contextualSuggestions: Array<{ id: string; text: string; icon?: string; type: string }>;
   quickSuggestions: Array<{ label: string; icon: string }>;
   routeContext: { section: string };
   quickActionsData: Array<QuickAction>;

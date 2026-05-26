@@ -66,7 +66,10 @@ export function isRestNativeEligible(options: InvokeOptions): boolean {
 function applyFilters(query: RestQuery, filters?: Record<string, unknown>): RestQuery {
   if (!filters) return query;
   for (const [col, val] of Object.entries(filters)) {
-    if (val === null) { query = query.is(col, null); continue; }
+    if (val === null) {
+      query = query.is(col, null);
+      continue;
+    }
     if (Array.isArray(val)) {
       query = val.length === 0 ? query.in(col, ['__no_match__']) : query.in(col, val);
       continue;
@@ -89,9 +92,7 @@ function applyFilters(query: RestQuery, filters?: Record<string, unknown>): Rest
   return query;
 }
 
-export async function executeRestNativeSelect<T>(
-  options: InvokeOptions,
-): Promise<InvokeResult<T>> {
+export async function executeRestNativeSelect<T>(options: InvokeOptions): Promise<InvokeResult<T>> {
   if (!isRestNativeEligible(options)) {
     throw new Error(`rest-native: not eligible for table=${options.table} op=${options.operation}`);
   }
@@ -99,10 +100,13 @@ export async function executeRestNativeSelect<T>(
   const countMode = options.countMode ?? 'none';
   const selectCols = options.select ?? '*';
   const countOption =
-    countMode === 'none' ? undefined :
-    countMode === 'exact' ? 'exact' :
-    countMode === 'planned' ? 'planned' :
-    'estimated';
+    countMode === 'none'
+      ? undefined
+      : countMode === 'exact'
+        ? 'exact'
+        : countMode === 'planned'
+          ? 'planned'
+          : 'estimated';
 
   const client = supabase as unknown as RestNativeClient;
   let query = countOption
@@ -124,8 +128,8 @@ export async function executeRestNativeSelect<T>(
     // (999 rows) — callers should always specify limit alongside offset.
     logger.warn(
       `[rest-native] offset=${options.offset} without limit on table=${options.table}. ` +
-      `Using fallback upper=${OFFSET_WITHOUT_LIMIT_FALLBACK_UPPER}. ` +
-      'Specify limit for predictable pagination.'
+        `Using fallback upper=${OFFSET_WITHOUT_LIMIT_FALLBACK_UPPER}. ` +
+        'Specify limit for predictable pagination.',
     );
     query = query.range(options.offset, options.offset + OFFSET_WITHOUT_LIMIT_FALLBACK_UPPER);
   }
@@ -145,10 +149,14 @@ export async function tryExecuteRestNative<T>(
   if (!isRestNativeEligible(options)) return null;
   try {
     const result = await executeRestNativeSelect<T>(options);
-    logger.debug(`[rest-native] OK table=${options.table} rows=${result.records.length} count=${result.count}`);
+    logger.debug(
+      `[rest-native] OK table=${options.table} rows=${result.records.length} count=${result.count}`,
+    );
     return result;
   } catch (e) {
-    logger.warn(`[rest-native] failed for table=${options.table}, falling back to bridge: ${(e as Error).message}`);
+    logger.warn(
+      `[rest-native] failed for table=${options.table}, falling back to bridge: ${(e as Error).message}`,
+    );
     return null;
   }
 }

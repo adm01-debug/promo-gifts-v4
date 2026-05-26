@@ -16,11 +16,11 @@ import { sanitizeError } from '@/lib/security/sanitize-error';
 type AppRole = Database['public']['Enums']['app_role'];
 
 interface Permission {
-  id: string;
   code: string;
-  name: string;
+  label: string;
   description: string | null;
   category: string;
+  created_at: string;
 }
 
 interface RolePermission {
@@ -162,9 +162,9 @@ export default function RolePermissionsPage() {
       : permissions;
 
     permsToSelect.forEach((perm) => {
-      const key = `${role}-${perm.id}`;
+      const key = `${role}-${perm.code}`;
       const alreadyHas = rolePermissions.some(
-        (rp) => rp.role === role && rp.permission_code === perm.id,
+        (rp) => rp.role === role && rp.permission_code === perm.code,
       );
       if (!alreadyHas) {
         newChanges.set(key, true);
@@ -181,9 +181,9 @@ export default function RolePermissionsPage() {
       : permissions;
 
     permsToDeselect.forEach((perm) => {
-      const key = `${role}-${perm.id}`;
+      const key = `${role}-${perm.code}`;
       const alreadyHas = rolePermissions.some(
-        (rp) => rp.role === role && rp.permission_code === perm.id,
+        (rp) => rp.role === role && rp.permission_code === perm.code,
       );
       if (alreadyHas) {
         newChanges.set(key, false);
@@ -206,12 +206,12 @@ export default function RolePermissionsPage() {
 
   const getCategoryStats = (category: string, role: AppRole) => {
     const categoryPerms = groupedPermissions[category] || [];
-    const assigned = categoryPerms.filter((p) => hasPermission(p.id, role)).length;
+    const assigned = categoryPerms.filter((p) => hasPermission(p.code, role)).length;
     return { assigned, total: categoryPerms.length };
   };
 
   const getTotalStats = (role: AppRole) => {
-    const assigned = permissions.filter((p) => hasPermission(p.id, role)).length;
+    const assigned = permissions.filter((p) => hasPermission(p.code, role)).length;
     return { assigned, total: permissions.length };
   };
 
@@ -358,26 +358,28 @@ export default function RolePermissionsPage() {
                         <ScrollArea className="max-h-[400px]">
                           <div className="divide-y">
                             {perms.map((perm) => {
-                              const isChecked = hasPermission(perm.id, selectedRole);
-                              const key = `${selectedRole}-${perm.id}`;
+                              const isChecked = hasPermission(perm.code, selectedRole);
+                              const key = `${selectedRole}-${perm.code}`;
                               const hasChange = pendingChanges.has(key);
 
                               return (
                                 <div
-                                  key={perm.id}
+                                  key={perm.code}
                                   className={`flex items-center gap-4 px-4 py-3 transition-colors hover:bg-muted/30 ${hasChange ? 'bg-primary/5' : ''}`}
                                 >
                                   <Checkbox
-                                    id={perm.id}
+                                    id={perm.code}
                                     checked={isChecked}
-                                    onCheckedChange={() => togglePermission(perm.id, selectedRole)}
+                                    onCheckedChange={() =>
+                                      togglePermission(perm.code, selectedRole)
+                                    }
                                   />
                                   <div className="min-w-0 flex-1">
                                     <label
-                                      htmlFor={perm.id}
+                                      htmlFor={perm.code}
                                       className="block cursor-pointer font-medium"
                                     >
-                                      {perm.name}
+                                      {perm.label}
                                     </label>
                                     <p className="truncate text-sm text-muted-foreground">
                                       {perm.description || perm.code}
@@ -425,21 +427,21 @@ export default function RolePermissionsPage() {
                   </thead>
                   <tbody className="divide-y">
                     {permissions.map((perm) => (
-                      <tr key={perm.id} className="hover:bg-muted/30">
+                      <tr key={perm.code} className="hover:bg-muted/30">
                         <td className="px-3 py-2">
-                          <div className="font-medium">{perm.name}</div>
+                          <div className="font-medium">{perm.label}</div>
                           <div className="text-xs text-muted-foreground">{perm.code}</div>
                         </td>
                         {ROLES.map((role) => {
-                          const has = hasPermission(perm.id, role.value);
-                          const key = `${role.value}-${perm.id}`;
+                          const has = hasPermission(perm.code, role.value);
+                          const key = `${role.value}-${perm.code}`;
                           const hasChange = pendingChanges.has(key);
 
                           return (
                             <td key={role.value} className="px-3 py-2 text-center">
                               <Checkbox
                                 checked={has}
-                                onCheckedChange={() => togglePermission(perm.id, role.value)}
+                                onCheckedChange={() => togglePermission(perm.code, role.value)}
                                 className={hasChange ? 'border-primary' : ''}
                               />
                             </td>

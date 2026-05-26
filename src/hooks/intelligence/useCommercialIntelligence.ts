@@ -610,15 +610,15 @@ export function useCategoryRanking(
       try {
         const { invokeExternalDb } = await import('@/lib/external-db');
         const sinceDate = since.split('T')[0];
-        const result = await invokeExternalDb({
+        const result = await invokeExternalDb<{ product_id: string; units_depleted: number }>({
           table: 'stock_daily_summary',
           operation: 'select',
           select: 'product_id,units_depleted',
           filters: { summary_date: `gte.${sinceDate}` },
           limit: 5000,
         });
-        (result?.records || []).forEach((snap: Record<string, unknown>) => {
-          const cat = productCategoryMap.get(snap.product_id as string);
+        (result?.records || []).forEach((snap) => {
+          const cat = productCategoryMap.get(snap.product_id);
           if (!cat) return;
           const e = categoryMap.get(cat.catId) || {
             categoryId: cat.catId,
@@ -629,7 +629,7 @@ export function useCategoryRanking(
             marketDepleted: 0,
             totalScore: 0,
           };
-          e.marketDepleted += (snap.units_depleted as number) ?? 0;
+          e.marketDepleted += snap.units_depleted ?? 0;
           categoryMap.set(cat.catId, e);
         });
       } catch (e) {

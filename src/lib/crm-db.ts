@@ -112,7 +112,7 @@ const MAX_CONCURRENT_REQUESTS = 3;
 let _concurrentActive = 0;
 const _concurrentQueue: Array<{ resolve: () => void; reject: (e: Error) => void }> = [];
 
-function _acquireCrmSlot(): Promise<void> {
+function acquireCrmSlot(): Promise<void> {
   if (_concurrentActive < MAX_CONCURRENT_REQUESTS) {
     _concurrentActive++;
     return Promise.resolve();
@@ -122,7 +122,7 @@ function _acquireCrmSlot(): Promise<void> {
   });
 }
 
-function _releaseCrmSlot(): void {
+function releaseCrmSlot(): void {
   _concurrentActive = Math.max(0, _concurrentActive - 1);
   const next = _concurrentQueue.shift();
   if (next) {
@@ -130,9 +130,11 @@ function _releaseCrmSlot(): void {
     if (isRateLimited()) {
       const remainMs = rateLimitedUntil - Date.now();
       next.reject(
-        new Error(`CRM rate-limit: aguarde ${Math.ceil(remainMs / 1000)}s antes de tentar novamente`),
+        new Error(
+          `CRM rate-limit: aguarde ${Math.ceil(remainMs / 1000)}s antes de tentar novamente`,
+        ),
       );
-      _releaseCrmSlot(); // continua drenando
+      releaseCrmSlot(); // continua drenando
     } else {
       _concurrentActive++;
       next.resolve();
@@ -186,17 +188,23 @@ export async function invokeCrmBatch(queries: CrmBatchQuery[]): Promise<CrmBatch
   // Circuit breaker: bloqueia se em cooldown de 429
   if (isRateLimited()) {
     const remainMs = rateLimitedUntil - Date.now();
-    logger.warn(`[CRM-DB] Batch bloqueado pelo circuit breaker (${Math.ceil(remainMs / 1000)}s restantes)`);
-    throw new Error(`CRM rate-limit: aguarde ${Math.ceil(remainMs / 1000)}s antes de tentar novamente`);
+    logger.warn(
+      `[CRM-DB] Batch bloqueado pelo circuit breaker (${Math.ceil(remainMs / 1000)}s restantes)`,
+    );
+    throw new Error(
+      `CRM rate-limit: aguarde ${Math.ceil(remainMs / 1000)}s antes de tentar novamente`,
+    );
   }
 
   // Semaforo de concorrencia
-  await _acquireCrmSlot();
+  await acquireCrmSlot();
   try {
     // Re-check apos adquirir slot (pode ter aguardado na fila)
     if (isRateLimited()) {
       const remainMs = rateLimitedUntil - Date.now();
-      throw new Error(`CRM rate-limit: aguarde ${Math.ceil(remainMs / 1000)}s antes de tentar novamente`);
+      throw new Error(
+        `CRM rate-limit: aguarde ${Math.ceil(remainMs / 1000)}s antes de tentar novamente`,
+      );
     }
 
     const startedAt = performance.now();
@@ -244,7 +252,7 @@ export async function invokeCrmBatch(queries: CrmBatchQuery[]): Promise<CrmBatch
     consecutiveRateLimitHits = 0;
     return data.results as CrmBatchResult[];
   } finally {
-    _releaseCrmSlot();
+    releaseCrmSlot();
   }
 }
 
@@ -300,7 +308,7 @@ const NON_RETRYABLE_PATTERNS = [
 function isRetryableCrmError(msg: string): boolean {
   const lower = msg.toLowerCase();
   // Qualquer padrao definitivo bloqueia retry
-  if (NON_RETRYABLE_PATTERNS.some(p => lower.includes(p.toLowerCase()))) return false;
+  if (NON_RETRYABLE_PATTERNS.some((p) => lower.includes(p.toLowerCase()))) return false;
   return RETRYABLE_PATTERNS.some((p) => lower.includes(p.toLowerCase()));
 }
 
@@ -345,17 +353,23 @@ export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
   // Circuit breaker: bloqueia se em cooldown de 429
   if (isRateLimited()) {
     const remainMs = rateLimitedUntil - Date.now();
-    logger.warn(`[CRM-DB] Chamada bloqueada pelo circuit breaker (${Math.ceil(remainMs / 1000)}s restantes)`);
-    throw new Error(`CRM rate-limit: aguarde ${Math.ceil(remainMs / 1000)}s antes de tentar novamente`);
+    logger.warn(
+      `[CRM-DB] Chamada bloqueada pelo circuit breaker (${Math.ceil(remainMs / 1000)}s restantes)`,
+    );
+    throw new Error(
+      `CRM rate-limit: aguarde ${Math.ceil(remainMs / 1000)}s antes de tentar novamente`,
+    );
   }
 
   // Semaforo de concorrencia — bloqueia ate ter slot disponivel
-  await _acquireCrmSlot();
+  await acquireCrmSlot();
   try {
     // Re-check apos adquirir slot (pode ter aguardado na fila enquanto outro request ativava 429)
     if (isRateLimited()) {
       const remainMs = rateLimitedUntil - Date.now();
-      throw new Error(`CRM rate-limit: aguarde ${Math.ceil(remainMs / 1000)}s antes de tentar novamente`);
+      throw new Error(
+        `CRM rate-limit: aguarde ${Math.ceil(remainMs / 1000)}s antes de tentar novamente`,
+      );
     }
 
     const startedAt = performance.now();
@@ -400,7 +414,10 @@ export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
       if (isRateLimitError(msg)) {
         activateRateLimitCooldown();
         record(false, null, msg);
-        logger.error('[CRM-DB] Edge function error', { requestId, message: safeCrmLogMessage(msg) });
+        logger.error('[CRM-DB] Edge function error', {
+          requestId,
+          message: safeCrmLogMessage(msg),
+        });
         throw new Error(`CRM DB error: ${msg}`);
       }
 
@@ -434,7 +451,7 @@ export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
     record(false, null, 'max retries exceeded');
     throw new Error('CRM DB: max retries exceeded');
   } finally {
-    _releaseCrmSlot();
+    releaseCrmSlot();
   }
 }
 

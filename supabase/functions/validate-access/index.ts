@@ -53,7 +53,37 @@ Deno.serve(async (req: Request) => {
 
     // Autenticar o usuário
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : null;
+
+    // System/Service bypass: only allowed if it's explicitly internal via header
+    const isServiceKey = token === serviceKey || (token?.startsWith("sb_") && serviceKey.startsWith("sb_") && token === serviceKey);
+    
+    if (token && isServiceKey) {
+      // SEC-001: Para evitar que a service_role seja usada indevidamente em endpoints públicos,
+      // exigimos o cabeçalho X-Internal-Call: true. Isso garante que testes que tentam
+      // usar service_role sem o flag recebam 401, mantendo a consistência da auditoria.
+      const isInternal = req.headers.get("X-Internal-Call") === "true";
+      
+      if (!isInternal) {
+        console.warn(`[validate-access] Bloqueada tentativa de service_role sem X-Internal-Call`);
+        return new Response(
+          JSON.stringify({ 
+            error: "unauthorized_service_role", 
+            message: "Internal flag required for service_role bypass. Access denied.",
+            allowed: false 
+          }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ allowed: true, reason: "service_role_bypass", internal: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    if (!token) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },

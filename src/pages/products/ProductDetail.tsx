@@ -109,11 +109,7 @@ export default function ProductDetail() {
     [product?.featured, product?.newArrival, product?.onSale, product?.stockStatus, product?.stock],
   );
 
-  const {
-    badges: intellBadges,
-    turnoverScore: intellTurnover,
-    isDemo: intellIsDemo,
-  } = useProductIntelligenceBadges(id, catalogFlags);
+  const { badges: intellBadges } = useProductIntelligenceBadges(id, catalogFlags);
 
   const { data: viewCount = 0 } = useQuery({
     queryKey: ['product-views-count', id],
@@ -325,11 +321,7 @@ export default function ProductDetail() {
       />
 
       <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-4 px-3 py-3 sm:px-4 sm:py-4 lg:px-6 xl:px-8">
-        <IntelligenceBadges
-          badges={intellBadges}
-          turnoverScore={intellTurnover}
-          isDemo={intellIsDemo}
-        />
+        <IntelligenceBadges badges={intellBadges} />
 
         <ProductDetailHero
           product={product}

@@ -182,7 +182,7 @@ export function NoveltyProductGrid() {
     isInCompare,
     addToCompare,
     removeFromCompare,
-    canAdd: canAddToCompare,
+    canAddMore: canAddToCompare,
   } = useComparisonStore();
   const onToggleCompare = useCallback(
     (productId: string) => {
@@ -248,7 +248,7 @@ export function NoveltyProductGrid() {
               : 'Nenhuma novidade encontrada'}
           </p>
           {hasActiveFilters ? (
-            <Button variant="link-primary" className="mt-1 text-xs" onClick={clearFilters}>
+            <Button variant="link" className="mt-1 text-xs" onClick={clearFilters}>
               Limpar filtros
             </Button>
           ) : (

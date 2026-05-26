@@ -37,7 +37,7 @@ let cachedColorVariations: Array<{
   name: string;
   slug: string;
   group_id: string;
-  hex_code?: string;
+  hex_code?: string | null;
 }> | null = null;
 
 /**

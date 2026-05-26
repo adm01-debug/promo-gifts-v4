@@ -184,7 +184,6 @@ const renderWithProviders = (ui: React.ReactElement) => {
   );
 };
 
-
 describe('Mockup Deletion Flow', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -197,7 +196,7 @@ describe('Mockup Deletion Flow', () => {
     renderWithProviders(<MockupGenerator />);
 
     // Encontrar e clicar no botão de excluir
-    const deleteButton = await screen.findByTestId("delete-mockup-button");
+    const deleteButton = await screen.findByTestId('delete-mockup-button');
     fireEvent.click(deleteButton);
 
     // Verificar se o diálogo apareceu
@@ -208,7 +207,7 @@ describe('Mockup Deletion Flow', () => {
     mockMg.activeTab = 'history';
     renderWithProviders(<MockupGenerator />);
 
-    const deleteButton = await screen.findByTestId("delete-mockup-button");
+    const deleteButton = await screen.findByTestId('delete-mockup-button');
     fireEvent.click(deleteButton);
 
     const confirmButton = screen.getByRole('button', {
@@ -230,12 +229,11 @@ describe('Mockup Deletion Flow', () => {
 
     renderWithProviders(<MockupGenerator />);
 
-    const deleteButton = await screen.findByTestId("delete-mockup-button");
+    const deleteButton = await screen.findByTestId('delete-mockup-button');
     fireEvent.click(deleteButton);
 
     const confirmButton = screen.getByRole('button', {
       name: /excluir/i,
-      className: /bg-destructive/i,
     });
     fireEvent.click(confirmButton);
 

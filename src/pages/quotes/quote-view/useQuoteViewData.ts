@@ -95,7 +95,8 @@ export function useQuoteViewData(id: string | undefined) {
       seller: {
         name: profile?.full_name || user?.email || 'Vendedor',
         email: user?.email || undefined,
-        signatureUrl: profile?.signature_url || undefined,
+        // Profile has no signature URL field; left undefined until one exists.
+        signatureUrl: undefined,
       },
       items:
         quote.items?.map((item) => ({
@@ -117,7 +118,7 @@ export function useQuoteViewData(id: string | undefined) {
           kit_name: item.kit_name || null,
 
           personalizations:
-            item.personalizations?.map((p: Record<string, unknown>) => ({
+            item.personalizations?.map((p) => ({
               technique_name: p.technique_name || 'Personalizacao',
               colors_count: p.colors_count || 1,
               width_cm: p.width_cm || undefined,

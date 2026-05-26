@@ -84,11 +84,7 @@ const CloudStatusBannerInner = memo(function CloudStatusBannerInner() {
   // o pragma de cobertura v8.
   /* v8 ignore next 5 */
   const Icon = config?.icon ?? CheckCircle2;
-  const message =
-    config?.message ??
-    (status === 'unknown'
-      ? 'Cloud status aguardando primeira sondagem.'
-      : 'Cloud saudável — modo debug ativo.');
+  const message = config?.message ?? 'Cloud saudável — modo debug ativo.';
   const className = config?.className ?? 'bg-card text-foreground border-border';
 
   return (

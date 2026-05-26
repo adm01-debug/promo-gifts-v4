@@ -1,10 +1,15 @@
 // Hook CRUD para Técnicas de Gravação (via external-db-bridge)
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { invokeExternalDb, invokeExternalDbSingle, invokeExternalDbDelete } from '@/lib/external-db';
-import type { 
-  TecnicaGravacao, 
+import {
+  invokeExternalDb,
+  invokeExternalDbSingle,
+  invokeExternalDbDelete,
+} from '@/lib/external-db';
+import type {
+  TecnicaGravacao,
+  TecnicaGravacaoVariante,
   TecnicaGravacaoFormData,
-  TecnicaGravacaoWithVariantes 
+  TecnicaGravacaoWithVariantes,
 } from '@/types/gravacao-database';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
@@ -72,9 +77,9 @@ export function useTecnicasGravacao() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ 
-      id, 
-      ...updates 
+    mutationFn: async ({
+      id,
+      ...updates
     }: Partial<TecnicaGravacaoFormData> & { id: string }): Promise<TecnicaGravacao> => {
       const updateData: Record<string, unknown> = { ...updates };
       if (updates.nome) {
@@ -107,8 +112,10 @@ export function useTecnicasGravacao() {
         limit: 1,
       });
 
-      if (variantesResult.count > 0) {
-        throw new Error(`Não é possível excluir: existem ${variantesResult.count} variante(s) vinculada(s)`);
+      if ((variantesResult.count ?? 0) > 0) {
+        throw new Error(
+          `Não é possível excluir: existem ${variantesResult.count} variante(s) vinculada(s)`,
+        );
       }
 
       await invokeExternalDbDelete('tecnica_gravacao', id);
@@ -169,7 +176,7 @@ export function useTecnicaGravacao(id: string | undefined) {
           filters: { id },
           limit: 1,
         }),
-        invokeExternalDb<TecnicaGravacao>({
+        invokeExternalDb<TecnicaGravacaoVariante>({
           table: 'tecnica_gravacao_variante',
           operation: 'select',
           filters: { tecnica_gravacao_id: id },
@@ -183,7 +190,7 @@ export function useTecnicaGravacao(id: string | undefined) {
       return {
         ...tecnica,
         variantes: variantesResult.records,
-        variantes_count: variantesResult.count,
+        variantes_count: variantesResult.count ?? undefined,
       };
     },
     enabled: !!id,

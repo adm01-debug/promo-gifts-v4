@@ -1,10 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { type createClient } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
-// Tables not yet in generated schema — bypass type checking via raw client cast
-const db = supabase as unknown as ReturnType<typeof createClient>;
 
 export interface IpWhitelistEntry {
   id: string;
@@ -55,12 +51,26 @@ export function useAccessSecurity() {
     setIsLoading(true);
     try {
       const [settingsRes, ipsRes, citiesRes, logsRes] = await Promise.all([
-        db.from('access_security_settings').select('id, ip_whitelist_enabled, city_whitelist_enabled, block_unknown_locations, max_failed_attempts, lockout_duration_minutes').limit(1).single(),
-        db.from('ip_whitelist').select('id, ip_address, label, is_active, created_at').order('created_at', { ascending: false }),
-        db.from('city_whitelist').select('id, city_name, state, country_code, is_active, created_at').order('created_at', { ascending: false }),
-        db
+        supabase
+          .from('access_security_settings')
+          .select(
+            'id, ip_whitelist_enabled, city_whitelist_enabled, block_unknown_locations, max_failed_attempts, lockout_duration_minutes',
+          )
+          .limit(1)
+          .single(),
+        supabase
+          .from('ip_whitelist')
+          .select('id, ip_address, label, is_active, created_at')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('city_whitelist')
+          .select('id, city_name, state, country_code, is_active, created_at')
+          .order('created_at', { ascending: false }),
+        supabase
           .from('access_blocked_log')
-          .select('id, email, ip_address, city, state, country, block_reason, user_agent, created_at')
+          .select(
+            'id, email, ip_address, city, state, country, block_reason, user_agent, created_at',
+          )
           .order('created_at', { ascending: false })
           .limit(50),
       ]);
@@ -83,9 +93,9 @@ export function useAccessSecurity() {
 
   const updateSettings = async (updates: Partial<AccessSecuritySettings>) => {
     if (!settings) return;
-    const { error } = await db
+    const { error } = await supabase
       .from('access_security_settings')
-      .update(updates as Record<string, unknown>)
+      .update(updates)
       .eq('id', settings.id);
     if (error) {
       toast.error('Erro ao atualizar configurações');
@@ -96,9 +106,9 @@ export function useAccessSecurity() {
   };
 
   const addIp = async (ip_address: string, label?: string) => {
-    const { data, error } = await db
+    const { data, error } = await supabase
       .from('ip_whitelist')
-      .insert({ ip_address, label: label || null } as never)
+      .insert({ ip_address, label: label || null })
       .select()
       .single();
     if (error) {
@@ -112,7 +122,7 @@ export function useAccessSecurity() {
   };
 
   const removeIp = async (id: string) => {
-    const { error } = await db.from('ip_whitelist').delete().eq('id', id);
+    const { error } = await supabase.from('ip_whitelist').delete().eq('id', id);
     if (error) {
       toast.error('Erro ao remover IP');
       return;
@@ -122,7 +132,7 @@ export function useAccessSecurity() {
   };
 
   const toggleIp = async (id: string, is_active: boolean) => {
-    const { error } = await db.from('ip_whitelist').update({ is_active }).eq('id', id);
+    const { error } = await supabase.from('ip_whitelist').update({ is_active }).eq('id', id);
     if (error) {
       toast.error('Erro ao atualizar IP');
       return;
@@ -131,9 +141,9 @@ export function useAccessSecurity() {
   };
 
   const addCity = async (city_name: string, state?: string, country_code = 'BR') => {
-    const { data, error } = await db
+    const { data, error } = await supabase
       .from('city_whitelist')
-      .insert({ city_name, state: state || null, country_code } as never)
+      .insert({ city_name, state: state || null, country_code })
       .select()
       .single();
     if (error) {
@@ -147,7 +157,7 @@ export function useAccessSecurity() {
   };
 
   const removeCity = async (id: string) => {
-    const { error } = await db.from('city_whitelist').delete().eq('id', id);
+    const { error } = await supabase.from('city_whitelist').delete().eq('id', id);
     if (error) {
       toast.error('Erro ao remover cidade');
       return;
@@ -157,7 +167,7 @@ export function useAccessSecurity() {
   };
 
   const toggleCity = async (id: string, is_active: boolean) => {
-    const { error } = await db.from('city_whitelist').update({ is_active }).eq('id', id);
+    const { error } = await supabase.from('city_whitelist').update({ is_active }).eq('id', id);
     if (error) {
       toast.error('Erro ao atualizar cidade');
       return;

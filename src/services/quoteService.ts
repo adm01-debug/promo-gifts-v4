@@ -65,10 +65,12 @@ export const quoteService = {
       allPersonalizations = persData || [];
     }
 
-    const items: QuoteItem[] = (itemsData || []).map((item) => ({
+    // DB rows are a superset of QuoteItem and carry a runtime-only `personalizations`
+    // array; assert to the curated QuoteItem shape.
+    const items = (itemsData || []).map((item) => ({
       ...item,
       personalizations: allPersonalizations.filter((p) => p.quote_item_id === item.id),
-    }));
+    })) as unknown as QuoteItem[];
 
     return { ...quoteData, items } as Quote;
   },

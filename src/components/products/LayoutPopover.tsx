@@ -6,7 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Separator } from "@/components/ui/separator";
 import { ColumnSelector, type ColumnCount } from "@/components/products/ColumnSelector";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+
 
 const viewModes = [
   { value: "grid" as const, label: "Grid", icon: LayoutGrid },
@@ -53,25 +53,22 @@ export const LayoutPopover = React.forwardRef<HTMLDivElement, LayoutPopoverProps
                     return (
                       <button
                         key={mode.value}
+                        type="button"
+                        aria-pressed={isActive}
                         className={cn(
-                          "relative flex-1 flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs font-medium transition-colors duration-150 z-10",
+                          "relative flex-1 flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer",
                           isActive
-                            ? "text-primary-foreground"
-                            : "text-muted-foreground hover:text-foreground"
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground hover:bg-background/50"
                         )}
-                        onClick={() => setViewMode(mode.value)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setViewMode(mode.value);
+                        }}
                       >
-                        {isActive && (
-                          <motion.div
-                            layoutId="viewmode-pill"
-                            className="absolute inset-0 rounded-lg bg-primary shadow-sm"
-                            transition={{ type: "spring", stiffness: 500, damping: 35 }}
-                          />
-                        )}
-                        <span className="relative z-10 flex items-center gap-1.5">
-                          <Icon className="h-3.5 w-3.5" />
-                          {mode.label}
-                        </span>
+                        <Icon className="h-3.5 w-3.5" />
+                        {mode.label}
                       </button>
                     );
                   })}

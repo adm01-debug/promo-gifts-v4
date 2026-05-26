@@ -139,7 +139,7 @@ export function CatalogHeader({
                     </span>
                     <Button
                       variant="ghost"
-                      size="xs"
+                      size="sm"
                       onClick={onClearHistory}
                       className="h-6 gap-1 px-1.5 text-[10px] text-muted-foreground hover:text-destructive"
                     >

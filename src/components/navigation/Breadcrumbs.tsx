@@ -1,8 +1,9 @@
-import { Home } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import { useAuth } from "@/contexts/AuthContext";
-import { canNavigateTo, isDevOnlyPath } from "@/lib/navigation/restricted-routes";
+import { Fragment } from 'react';
+import { Home } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { canNavigateTo, isDevOnlyPath } from '@/lib/navigation/restricted-routes';
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -10,7 +11,7 @@ import {
   BreadcrumbLink,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+} from '@/components/ui/breadcrumb';
 
 export interface BreadcrumbItem {
   label: string;
@@ -25,38 +26,38 @@ interface BreadcrumbsProps {
 
 // Auto-generate breadcrumbs from route if items not provided
 const routeLabels: Record<string, string> = {
-  "": "Início",
-  "produtos": "Produtos",
-  "produto": "Produto",
-  "clientes": "Clientes",
-  "orcamentos": "Orçamentos",
-  "pedidos": "Pedidos",
-  "simulador": "Simulador",
-  "mockup-generator": "Mockups",
-  "magic-up": "Magic Up",
-  "filtros": "Filtros",
-  "favoritos": "Favoritos",
-  "comparar": "Comparar",
-  "colecoes": "Coleções",
-  "bi": "Estoque",
-  "tendencias": "Tendências",
-  
-  "perfil": "Meu Perfil",
-  "seguranca": "Segurança",
-  "admin": "Administração",
-  "personalizacao": "Personalização",
-  "permissoes": "Permissões",
-  "roles": "Papéis",
-  "role-permissoes": "Permissões de Papéis",
-  "rate-limit": "Rate Limit",
-  "bitrix-sync": "Sincronização Bitrix",
-  "status": "Status do Sistema",
-  "novo": "Novo",
-  "editar": "Editar",
-  "dashboard": "Dashboard",
-  "kanban": "Kanban",
-  "lista": "Lista",
-  "templates": "Templates",
+  '': 'Início',
+  produtos: 'Produtos',
+  produto: 'Produto',
+  clientes: 'Clientes',
+  orcamentos: 'Orçamentos',
+  pedidos: 'Pedidos',
+  simulador: 'Simulador',
+  'mockup-generator': 'Mockups',
+  'magic-up': 'Magic Up',
+  filtros: 'Filtros',
+  favoritos: 'Favoritos',
+  comparar: 'Comparar',
+  colecoes: 'Coleções',
+  bi: 'Estoque',
+  tendencias: 'Tendências',
+
+  perfil: 'Meu Perfil',
+  seguranca: 'Segurança',
+  admin: 'Administração',
+  personalizacao: 'Personalização',
+  permissoes: 'Permissões',
+  roles: 'Papéis',
+  'role-permissoes': 'Permissões de Papéis',
+  'rate-limit': 'Rate Limit',
+  'bitrix-sync': 'Sincronização Bitrix',
+  status: 'Status do Sistema',
+  novo: 'Novo',
+  editar: 'Editar',
+  dashboard: 'Dashboard',
+  kanban: 'Kanban',
+  lista: 'Lista',
+  templates: 'Templates',
 };
 
 export function Breadcrumbs({ items, className, showHome = true }: BreadcrumbsProps) {
@@ -64,12 +65,13 @@ export function Breadcrumbs({ items, className, showHome = true }: BreadcrumbsPr
   const { isDev, isAdmin } = useAuth();
 
   // Generate breadcrumbs from route if not provided
-  const breadcrumbItems: BreadcrumbItem[] = items || generateBreadcrumbs(location.pathname, { isDev, isAdmin });
+  const breadcrumbItems: BreadcrumbItem[] =
+    items || generateBreadcrumbs(location.pathname, { isDev, isAdmin });
 
   if (breadcrumbItems.length === 0) return null;
-  
+
   return (
-    <Breadcrumb className={cn("text-sm", className)}>
+    <Breadcrumb className={cn('text-sm', className)}>
       <BreadcrumbList>
         {showHome && (
           <>
@@ -83,27 +85,23 @@ export function Breadcrumbs({ items, className, showHome = true }: BreadcrumbsPr
             {breadcrumbItems.length > 0 && <BreadcrumbSeparator />}
           </>
         )}
-        
+
         {breadcrumbItems.map((item, index) => {
           const isLast = index === breadcrumbItems.length - 1;
-          
+
           return (
-            <React.Fragment key={index}>
+            <Fragment key={index}>
               <BreadcrumbItem>
                 {isLast ? (
-                  <BreadcrumbPage>
-                    {item.label}
-                  </BreadcrumbPage>
+                  <BreadcrumbPage>{item.label}</BreadcrumbPage>
                 ) : (
                   <BreadcrumbLink asChild>
-                    <Link to={item.href || "#"}>
-                      {item.label}
-                    </Link>
+                    <Link to={item.href || '#'}>{item.label}</Link>
                   </BreadcrumbLink>
                 )}
               </BreadcrumbItem>
               {!isLast && <BreadcrumbSeparator />}
-            </React.Fragment>
+            </Fragment>
           );
         })}
       </BreadcrumbList>
@@ -115,12 +113,12 @@ function generateBreadcrumbs(
   pathname: string,
   roles: { isDev: boolean; isAdmin: boolean } = { isDev: false, isAdmin: false },
 ): BreadcrumbItem[] {
-  const segments = pathname.split("/").filter(Boolean);
+  const segments = pathname.split('/').filter(Boolean);
 
   if (segments.length === 0) return [];
 
   const breadcrumbs: BreadcrumbItem[] = [];
-  let currentPath = "";
+  let currentPath = '';
 
   for (let i = 0; i < segments.length; i++) {
     const segment = segments[i];

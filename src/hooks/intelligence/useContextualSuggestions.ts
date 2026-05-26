@@ -1,137 +1,163 @@
 import { useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAdvancedFilters } from '@/hooks/products';
-import type { AdvancedFilterState, AdvancedFilterOption } from '@/types/advancedFilters';
+import type { AdvancedFilterState } from '@/types/advancedFilters';
 
 export interface ContextualSuggestion {
   id: string;
   text: string;
+  icon?: string;
   type: 'filter' | 'search' | 'action';
   priority: number;
   filterKey?: keyof AdvancedFilterState;
   filterValue?: unknown;
 }
 
+export interface RouteContext {
+  section: string;
+}
+
 interface UseContextualSuggestionsOptions {
-  query?: string;
+  searchQuery?: string;
   activeFilters?: Partial<AdvancedFilterState>;
   enabled?: boolean;
 }
 
-// Helper: get filter label by key
-function getFilterLabel(key: keyof AdvancedFilterState): string {
-  const labels: Partial<Record<keyof AdvancedFilterState, string>> = {
-    categoria: 'Categoria',
-    fornecedor: 'Fornecedor',
-    cor: 'Cor',
-    precoMin: 'Preço mínimo',
-    precoMax: 'Preço máximo',
-    estoque: 'Estoque',
-    tecnica: 'Técnica',
-    material: 'Material',
-    ramo: 'Ramo de atividade',
-  };
-  return labels[key] ?? key;
+const FILTER_LABELS: Partial<Record<keyof AdvancedFilterState, string>> = {
+  categories: 'Categoria',
+  suppliers: 'Fornecedor',
+  colors: 'Cor',
+  techniques: 'Técnica',
+  materials: 'Material',
+  tags: 'Tag',
+  ramosAtividade: 'Ramo de atividade',
+  priceRange: 'Faixa de preço',
+  stockStatus: 'Estoque',
+};
+
+function deriveSection(pathname: string): string {
+  if (/produto|catalogo|catálogo/i.test(pathname)) return 'products';
+  if (/orcamento|orçamento|quote/i.test(pathname)) return 'quotes';
+  return '';
 }
 
-// Helper: get display value for filter value
-function getFilterValueDisplay(key: keyof AdvancedFilterState, value: unknown): string {
-  if (key === 'estoque') {
-    const stockLabels: Record<string, string> = {
-      'em_estoque': 'Em estoque',
-      'baixo_estoque': 'Baixo estoque',
-      'sem_estoque': 'Sem estoque',
-    };
-    return stockLabels[value as string] ?? String(value);
-  }
-  if (key === 'precoMin' || key === 'precoMax') {
-    return `R$ ${Number(value).toFixed(2)}`;
-  }
-  const opt = value as AdvancedFilterOption;
-  return opt?.label ?? String(value);
+function isActiveValue(value: unknown): boolean {
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === 'string') return value.trim() !== '' && value !== 'all';
+  if (typeof value === 'number') return value > 0;
+  if (typeof value === 'boolean') return value;
+  return value !== null && value !== undefined;
 }
 
-// Contextual suggestions based on applied filters
-export function useContextualSuggestions(
-  { query = '', activeFilters = {}, enabled = true }: UseContextualSuggestionsOptions = {}
-) {
-  const { data: filtersData } = useAdvancedFilters();
+/**
+ * Sugestões contextuais para a busca global: deriva a seção da rota atual
+ * ({ section }) e propõe filtros complementares / remoção de filtros ativos
+ * a partir do AdvancedFilterState real.
+ */
+export function useContextualSuggestions({
+  searchQuery = '',
+  activeFilters = {},
+  enabled = true,
+}: UseContextualSuggestionsOptions = {}) {
+  const location = useLocation();
+  const routeContext: RouteContext = useMemo(
+    () => ({ section: deriveSection(location.pathname) }),
+    [location.pathname],
+  );
 
-  const suggestions: ContextualSuggestion[] = useMemo(() => {
+  const { techniqueOptions } = useAdvancedFilters();
+
+  const allSuggestions = useMemo<ContextualSuggestion[]>(() => {
     if (!enabled) return [];
-    const suggestions: ContextualSuggestion[] = [];
+    const out: ContextualSuggestion[] = [];
 
-    // Suggest complementary filters based on active ones
-    if (activeFilters.categoria && !activeFilters.fornecedor) {
-      suggestions.push({
+    const hasCategories = isActiveValue(activeFilters.categories);
+    const hasSuppliers = isActiveValue(activeFilters.suppliers);
+    const hasColors = isActiveValue(activeFilters.colors);
+    const hasTechniques = isActiveValue(activeFilters.techniques);
+
+    if (hasCategories && !hasSuppliers) {
+      out.push({
         id: 'suggest-supplier',
-        text: `Filtrar por fornecedor em ${(activeFilters.categoria as AdvancedFilterOption)?.label ?? ''}`,
+        text: 'Filtrar por fornecedor',
+        icon: '🏭',
         type: 'filter',
         priority: 8,
+        filterKey: 'suppliers',
       });
     }
 
-    if (activeFilters.fornecedor && !activeFilters.categoria) {
-      suggestions.push({
+    if (hasSuppliers && !hasCategories) {
+      out.push({
         id: 'suggest-category',
-        text: `Ver categorias de ${(activeFilters.fornecedor as AdvancedFilterOption)?.label ?? ''}`,
+        text: 'Ver categorias do fornecedor',
+        icon: '📁',
         type: 'filter',
         priority: 7,
+        filterKey: 'categories',
       });
     }
 
-    if (activeFilters.cor && !activeFilters.tecnica && filtersData?.tecnicas?.length) {
-      suggestions.push({
+    if (hasColors && !hasTechniques && techniqueOptions.length > 0) {
+      out.push({
         id: 'suggest-technique',
-        text: `Selecionar técnica de personalização`,
+        text: 'Selecionar técnica de personalização',
+        icon: '🎨',
         type: 'filter',
         priority: 6,
+        filterKey: 'techniques',
       });
     }
 
-    if (Object.keys(activeFilters).length > 0) {
-      suggestions.push({
+    (Object.entries(activeFilters) as [keyof AdvancedFilterState, unknown][]).forEach(
+      ([key, value]) => {
+        if (isActiveValue(value)) {
+          out.push({
+            id: `remove-${key}`,
+            text: `Remover filtro: ${FILTER_LABELS[key] ?? key}`,
+            icon: '✕',
+            type: 'action',
+            priority: 5,
+            filterKey: key,
+            filterValue: value,
+          });
+        }
+      },
+    );
+
+    if (Object.values(activeFilters).some(isActiveValue)) {
+      out.push({
         id: 'clear-filters',
         text: 'Limpar todos os filtros',
+        icon: '🧹',
         type: 'action',
         priority: 3,
       });
     }
 
-    // Active filter removal suggestions
-    (Object.entries(activeFilters) as [keyof AdvancedFilterState, unknown][]).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        suggestions.push({
-          id: `remove-${key}`,
-          text: `Remover filtro: ${getFilterLabel(key)} = ${getFilterValueDisplay(key, value)}`,
-          type: 'action',
-          priority: 5,
-          filterKey: key,
-        });
-      }
-    });
+    return out.sort((a, b) => b.priority - a.priority);
+  }, [enabled, activeFilters, techniqueOptions]);
 
-    return suggestions.sort((a, b) => b.priority - a.priority);
-  }, [enabled, activeFilters, filtersData]);
+  const suggestions = useMemo<ContextualSuggestion[]>(() => {
+    if (!searchQuery.trim()) return allSuggestions;
+    const normalizedQuery = searchQuery.toLowerCase().trim();
 
-  const filteredSuggestions = useMemo(() => {
-    if (!query.trim()) return suggestions;
-    const normalizedQuery = query.toLowerCase().trim();
-    
-    return suggestions
-      .filter(s => s.text.toLowerCase().includes(normalizedQuery))
+    return allSuggestions
+      .filter((s) => s.text.toLowerCase().includes(normalizedQuery))
       .sort((a, b) => {
-        // Prioritize starts-with matches
-        const aStartsWith = (s: ContextualSuggestion) => s.text.toLowerCase().startsWith(normalizedQuery);
-        if (aStartsWith(a) && !aStartsWith(b)) return -1;
-        if (!aStartsWith(a) && aStartsWith(b)) return 1;
+        const startsWith = (s: ContextualSuggestion) =>
+          s.text.toLowerCase().startsWith(normalizedQuery);
+        if (startsWith(a) && !startsWith(b)) return -1;
+        if (!startsWith(a) && startsWith(b)) return 1;
         return b.priority - a.priority;
       })
       .slice(0, 5);
-  }, [suggestions, query]);
+  }, [allSuggestions, searchQuery]);
 
   return {
-    suggestions: filteredSuggestions,
-    allSuggestions: suggestions,
-    hasSuggestions: filteredSuggestions.length > 0,
+    suggestions,
+    allSuggestions,
+    hasSuggestions: suggestions.length > 0,
+    routeContext,
   };
 }

@@ -454,10 +454,10 @@ export default function FiltersPage() {
                     <VirtualizedProductGrid
                       products={state.filteredProducts}
                       isLoading={state.isLoadingProducts}
-                      onProductClick={(product) =>
+                      onProductClick={(productId) =>
                         state.selectionMode
-                          ? sel.toggleSelect(product.id)
-                          : navigate(`/produto/${product.id}`)
+                          ? sel.toggleSelect(productId)
+                          : navigate(`/produto/${productId}`)
                       }
                       isFavorited={isFavorite}
                       onToggleFavorite={toggleFavorite}

@@ -26,7 +26,7 @@ export function ProductSearch({ onSelect, selectedProduct }: ProductSearchProps)
       id: p.id,
       name: p.name,
       sku: p.sku,
-      price: p.sale_price ?? p.base_price ?? 0,
+      price: p.sale_price ?? 0,
       images: p.images || (p.primary_image_url ? [p.primary_image_url] : []),
       category_name: null,
       supplier_reference: p.supplier_reference,

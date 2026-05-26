@@ -55,8 +55,7 @@ interface LabeledFieldBaseProps {
 // LabeledField  (wraps <Input>)
 // ─────────────────────────────────────────────
 
-export type LabeledFieldProps = LabeledFieldBaseProps &
-  Omit<React.ComponentProps<'input'>, 'id'>;
+export type LabeledFieldProps = LabeledFieldBaseProps & Omit<React.ComponentProps<'input'>, 'id'>;
 
 /**
  * Renders a <Label> + <Input> pair with a shared `id` so the browser
@@ -83,18 +82,14 @@ export const LabeledField = React.forwardRef<HTMLInputElement, LabeledFieldProps
     const descriptionId = description ? `${fieldId}-description` : undefined;
     const errorId = error ? `${fieldId}-error` : undefined;
 
-    const ariaDescribedBy =
-      [descriptionId, errorId].filter(Boolean).join(' ') || undefined;
+    const ariaDescribedBy = [descriptionId, errorId].filter(Boolean).join(' ') || undefined;
 
     return (
       <div className={cn('space-y-2', wrapperClassName)}>
-        <Label
-          htmlFor={fieldId}
-          className={cn(error && 'text-destructive', labelClassName)}
-        >
+        <Label htmlFor={fieldId} className={cn(error && 'text-destructive', labelClassName)}>
           {label}
           {required && (
-            <span className="text-destructive ml-1" aria-hidden="true">
+            <span className="ml-1 text-destructive" aria-hidden="true">
               *
             </span>
           )}
@@ -138,10 +133,7 @@ export type LabeledTextareaProps = LabeledFieldBaseProps &
 /**
  * Renders a <Label> + <Textarea> pair with a shared `id`.
  */
-export const LabeledTextarea = React.forwardRef<
-  HTMLTextAreaElement,
-  LabeledTextareaProps
->(
+export const LabeledTextarea = React.forwardRef<HTMLTextAreaElement, LabeledTextareaProps>(
   (
     {
       label,
@@ -160,18 +152,14 @@ export const LabeledTextarea = React.forwardRef<
     const fieldId = name ? `field-${name}` : autoId;
     const descriptionId = description ? `${fieldId}-description` : undefined;
     const errorId = error ? `${fieldId}-error` : undefined;
-    const ariaDescribedBy =
-      [descriptionId, errorId].filter(Boolean).join(' ') || undefined;
+    const ariaDescribedBy = [descriptionId, errorId].filter(Boolean).join(' ') || undefined;
 
     return (
       <div className={cn('space-y-2', wrapperClassName)}>
-        <Label
-          htmlFor={fieldId}
-          className={cn(error && 'text-destructive', labelClassName)}
-        >
+        <Label htmlFor={fieldId} className={cn(error && 'text-destructive', labelClassName)}>
           {label}
           {required && (
-            <span className="text-destructive ml-1" aria-hidden="true">
+            <span className="ml-1 text-destructive" aria-hidden="true">
               *
             </span>
           )}

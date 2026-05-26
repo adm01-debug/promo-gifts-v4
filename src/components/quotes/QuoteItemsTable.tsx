@@ -1,11 +1,11 @@
 /**
  * QuoteItemsTable — Items table with kit grouping for QuoteViewPage
  */
-import React from "react";
-import { Package } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { QuoteItemDetailSheet } from "./QuoteItemDetailSheet";
-import { PriceFreshnessBadge } from "@/components/products/PriceFreshnessBadge";
+import React from 'react';
+import { Package } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { QuoteItemDetailSheet } from './QuoteItemDetailSheet';
+import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 
 /** Recalculate personalization total using rounded unit price to match UI display */
 function calcPersTotal(totalCost: number, qty: number): number {
@@ -15,7 +15,7 @@ function calcPersTotal(totalCost: number, qty: number): number {
 }
 
 function formatCurrency(value: number): string {
-  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
 interface QuoteItem {
@@ -44,13 +44,15 @@ interface QuoteItemsTableProps {
 }
 
 export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
-  const hasPersonalizations = items.some(item => item.personalizations && item.personalizations.length > 0);
+  const hasPersonalizations = items.some(
+    (item) => item.personalizations && item.personalizations.length > 0,
+  );
 
   // Group items: kit groups first, then loose items
   const kitGroups = new Map<string, { name: string; items: QuoteItem[] }>();
   const looseItems: QuoteItem[] = [];
 
-  items.forEach(item => {
+  items.forEach((item) => {
     if (item.kit_group_id && item.kit_name) {
       const group = kitGroups.get(item.kit_group_id) || { name: item.kit_name, items: [] };
       group.items.push(item);
@@ -65,87 +67,111 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
   const renderItemRow = (item: QuoteItem, index: number) => {
     const allPersonalizations = item.personalizations || [];
     const personalizationCost = allPersonalizations.reduce(
-      (acc: number, p: { total_cost?: number }) => acc + calcPersTotal(p.total_cost || 0, item.quantity), 0
+      (acc: number, p: { total_cost?: number }) =>
+        acc + calcPersTotal(p.total_cost || 0, item.quantity),
+      0,
     );
     const itemTotal = item.quantity * item.unit_price + personalizationCost;
 
     return (
-      <tr 
-        key={item.id || `item-${index}`} 
+      <tr
+        key={item.id || `item-${index}`}
         className={`border-b border-border/50 transition-colors hover:bg-muted/40 ${index % 2 === 1 ? 'bg-muted/20' : ''}`}
       >
         <td className="p-3">
           <div className="flex items-center gap-3">
             {item.product_image_url && (
-              <img src={item.product_image_url} 
+              <img
+                src={item.product_image_url}
                 alt={item.product_name}
-                className="w-16 h-16 object-cover rounded border border-border print:hidden"
+                className="h-16 w-16 rounded border border-border object-cover print:hidden"
                 loading="lazy"
               />
             )}
             <div>
               {item.product_sku && (
-                <span 
-                  className="inline-flex items-center gap-1 font-mono text-xs font-semibold px-2 py-0.5 rounded-md border mb-1"
-                  style={{ 
+                <span
+                  className="mb-1 inline-flex items-center gap-1 rounded-md border px-2 py-0.5 font-mono text-xs font-semibold"
+                  style={{
                     backgroundColor: item.color_hex ? `${item.color_hex}22` : undefined,
                     borderColor: item.color_hex || 'hsl(var(--border))',
-                    color: item.color_hex || 'hsl(var(--foreground))'
+                    color: item.color_hex || 'hsl(var(--foreground))',
                   }}
                 >
                   {item.color_hex && (
-                    <span className="w-2.5 h-2.5 rounded-full border border-border/50" style={{ backgroundColor: item.color_hex }} />
+                    <span
+                      className="h-2.5 w-2.5 rounded-full border border-border/50"
+                      style={{ backgroundColor: item.color_hex }}
+                    />
                   )}
-                  {item.product_sku}{item.color_name ? `-${item.color_name}` : ''}
+                  {item.product_sku}
+                  {item.color_name ? `-${item.color_name}` : ''}
                 </span>
               )}
               <p className="font-medium">{item.product_name}</p>
             </div>
           </div>
         </td>
-        
+
         {hasPersonalizations && (
           <td className="p-3">
             {allPersonalizations.length > 0 ? (
               <div className="space-y-1.5">
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {allPersonalizations.map((p: any, pIdx: number) => {
-                  const notesRaw = p.notes || "";
-                  const [locationPart, dimPart] = notesRaw.split(" | ");
-                  const locationLabel = locationPart ? locationPart.split(" — ")[0] : null;
+                  const notesRaw = p.notes || '';
+                  const [locationPart, dimPart] = notesRaw.split(' | ');
+                  const locationLabel = locationPart ? locationPart.split(' — ')[0] : null;
                   let dimLabel: string | null = null;
                   if (dimPart) {
-                    dimLabel = dimPart.replace("cm", " cm");
+                    dimLabel = dimPart.replace('cm', ' cm');
                   } else if (p.width_cm && p.height_cm) {
                     dimLabel = `${p.width_cm} × ${p.height_cm} cm`;
                   }
                   return (
-                    <div key={pIdx} className={`${pIdx > 0 ? 'pt-1.5 border-t border-border/30' : ''}`}>
-                      <div className="inline-flex flex-col gap-0.5 bg-primary/8 border border-primary/20 rounded-md px-2 py-1.5">
-                        <span className="text-xs font-semibold text-primary flex items-center gap-1">
+                    <div
+                      key={pIdx}
+                      className={`${pIdx > 0 ? 'border-t border-border/30 pt-1.5' : ''}`}
+                    >
+                      <div className="bg-primary/8 inline-flex flex-col gap-0.5 rounded-md border border-primary/20 px-2 py-1.5">
+                        <span className="flex items-center gap-1 text-xs font-semibold text-primary">
                           ✦ {p.technique_name}
                         </span>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-                          {locationLabel && <span className="font-medium text-foreground/70">{locationLabel}</span>}
-                          {dimLabel && <span className="font-medium text-foreground/80">{dimLabel}</span>}
-                          <span>{p.colors_count || 1} cor{(p.colors_count || 1) > 1 ? "es" : ""}</span>
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                          {locationLabel && (
+                            <span className="font-medium text-foreground/70">{locationLabel}</span>
+                          )}
+                          {dimLabel && (
+                            <span className="font-medium text-foreground/80">{dimLabel}</span>
+                          )}
+                          <span>
+                            {p.colors_count || 1} cor{(p.colors_count || 1) > 1 ? 'es' : ''}
+                          </span>
                         </div>
                       </div>
                     </div>
                   );
                 })}
               </div>
-            ) : <span className="text-muted-foreground text-sm">—</span>}
+            ) : (
+              <span className="text-sm text-muted-foreground">—</span>
+            )}
           </td>
         )}
-        <td className="p-3 text-center font-semibold text-sm w-20">{item.quantity}</td>
-        <td className="p-3 text-left text-muted-foreground tabular-nums w-28">
+        <td className="w-20 p-3 text-center text-sm font-semibold">{item.quantity}</td>
+        <td className="w-28 p-3 text-left tabular-nums text-muted-foreground">
           <div className="flex flex-col gap-0.5">
             <span>
-              {formatCurrency(item.unit_price + (allPersonalizations.reduce((sum: number, p: { total_cost?: number }) => {
-                const pTotal = p.total_cost || 0;
-                return sum + (item.quantity > 0 ? Math.round((pTotal / item.quantity) * 100) / 100 : 0);
-              }, 0)))}
+              {formatCurrency(
+                item.unit_price +
+                  allPersonalizations.reduce((sum: number, p: { total_cost?: number }) => {
+                    const pTotal = p.total_cost || 0;
+                    return (
+                      sum +
+                      (item.quantity > 0 ? Math.round((pTotal / item.quantity) * 100) / 100 : 0)
+                    );
+                  }, 0),
+              )}
             </span>
             <PriceFreshnessBadge
               priceUpdatedAt={item.price_updated_at}
@@ -154,9 +180,23 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             />
           </div>
         </td>
-        <td className="p-3 text-left font-bold text-base tabular-nums w-32">{formatCurrency(itemTotal)}</td>
+        <td className="w-32 p-3 text-left text-base font-bold tabular-nums">
+          {formatCurrency(itemTotal)}
+        </td>
         <td className="p-3 text-center print:hidden">
-          <QuoteItemDetailSheet item={item} />
+          <QuoteItemDetailSheet
+            item={{
+              product_name: item.product_name,
+              product_sku: item.product_sku ?? undefined,
+              product_image_url: item.product_image_url ?? undefined,
+              color_name: item.color_name ?? undefined,
+              color_hex: item.color_hex ?? undefined,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              notes: typeof item.notes === 'string' ? item.notes : undefined,
+              personalizations: item.personalizations,
+            }}
+          />
         </td>
       </tr>
     );
@@ -164,30 +204,32 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
 
   return (
     <div>
-      <h3 className="font-display font-semibold mb-4">Itens do Orçamento</h3>
+      <h3 className="mb-4 font-display font-semibold">Itens do Orçamento</h3>
       <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-primary/15">
-              <th className="text-left p-3 font-semibold text-primary text-sm">Produto</th>
+              <th className="p-3 text-left text-sm font-semibold text-primary">Produto</th>
               {hasPersonalizations && (
-                <th className="text-left p-3 font-semibold text-primary text-sm">Personalização</th>
+                <th className="p-3 text-left text-sm font-semibold text-primary">Personalização</th>
               )}
-              <th className="text-center p-3 font-semibold text-primary text-sm w-20">Qtd</th>
-              <th className="text-left p-3 font-semibold text-primary text-sm w-28">Unitário</th>
-              <th className="text-left p-3 font-semibold text-primary text-sm w-32">Total</th>
-              <th className="text-center p-3 font-semibold text-primary text-sm print:hidden w-24"></th>
+              <th className="w-20 p-3 text-center text-sm font-semibold text-primary">Qtd</th>
+              <th className="w-28 p-3 text-left text-sm font-semibold text-primary">Unitário</th>
+              <th className="w-32 p-3 text-left text-sm font-semibold text-primary">Total</th>
+              <th className="w-24 p-3 text-center text-sm font-semibold text-primary print:hidden"></th>
             </tr>
           </thead>
           <tbody>
             {Array.from(kitGroups.entries()).map(([groupId, group]) => (
               <React.Fragment key={groupId}>
-                <tr className="bg-accent/60 border-b border-border">
+                <tr className="border-b border-border bg-accent/60">
                   <td colSpan={colCount} className="p-3">
                     <div className="flex items-center gap-2">
                       <Package className="h-4 w-4 text-primary" />
-                      <span className="font-bold text-sm text-primary">Kit: {group.name}</span>
-                      <Badge variant="outline" className="text-xs ml-1">{group.items.length} itens</Badge>
+                      <span className="text-sm font-bold text-primary">Kit: {group.name}</span>
+                      <Badge variant="outline" className="ml-1 text-xs">
+                        {group.items.length} itens
+                      </Badge>
                     </div>
                   </td>
                 </tr>
@@ -195,9 +237,11 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
               </React.Fragment>
             ))}
             {kitGroups.size > 0 && looseItems.length > 0 && (
-              <tr className="bg-muted/30 border-b border-border">
+              <tr className="border-b border-border bg-muted/30">
                 <td colSpan={colCount} className="p-2 px-3">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Itens Avulsos</span>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Itens Avulsos
+                  </span>
                 </td>
               </tr>
             )}

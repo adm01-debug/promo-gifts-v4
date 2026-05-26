@@ -17,13 +17,10 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
-import {
-  createMemoryRouter,
-  RouterProvider,
-  Outlet,
-  useLocation,
-  type Router,
-} from 'react-router-dom';
+import { createMemoryRouter, RouterProvider, Outlet, useLocation } from 'react-router-dom';
+// react-router-dom exports `Router` as a component value, not a type. Derive the
+// data-router type from the factory's return instead.
+type Router = ReturnType<typeof createMemoryRouter>;
 import { Plus, FileText, ShoppingCart } from 'lucide-react';
 import { type NavGroup, SidebarNavGroup } from '../SidebarNavGroup';
 import { isNavItemActive } from '@/lib/navigation/active-match';

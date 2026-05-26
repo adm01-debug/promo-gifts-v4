@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import type { TechniqueSettings } from '@/types/simulation';
+import type { Json } from '@/integrations/supabase/types';
 
 interface SimulatorPreferences {
   lastQuantity: number;
@@ -81,10 +82,11 @@ export function useSimulatorPreferences() {
       const { error } = await supabase
         .from('profiles')
         .update({
+          // merged JSON-serializable preferences persisted in profiles.preferences
           preferences: {
             ...existingPrefs,
             simulator: prefs,
-          } as Record<string, unknown>,
+          } as unknown as Json,
         })
         .eq('user_id', user.id);
 

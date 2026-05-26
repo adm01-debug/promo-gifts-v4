@@ -101,82 +101,73 @@ export function useStepUpAuth() {
     return true;
   }, []);
 
-  const verifyPassword = useCallback(
-    async (password: string) => {
-      setState((s) => ({ ...s, loading: true, error: null }));
-      const { action, targetRef, actionLabel } = ctxRef.current;
-      // FIX: usa challengeIdRef.current em vez de state.challengeId (stale closure)
-      const { data, error } = await supabase.functions.invoke('step-up-verify', {
-        body: {
-          step: 'verify_password',
-          challenge_id: challengeIdRef.current,
-          password,
-          action,
-          target_ref: targetRef,
-          action_label: actionLabel,
-        },
-      });
-      if (error || data?.error) {
-        // Mensagem genérica — não diferencia "senha errada" de outros erros (anti-enumeration)
-        setState((s) => ({ ...s, loading: false, error: SAFE_MESSAGES.AUTH_GENERIC }));
-        return false;
-      }
-      setState((s) => ({ ...s, loading: false, passwordVerified: true }));
-      return true;
-    },
-    [],
-  );
+  const verifyPassword = useCallback(async (password: string) => {
+    setState((s) => ({ ...s, loading: true, error: null }));
+    const { action, targetRef, actionLabel } = ctxRef.current;
+    // FIX: usa challengeIdRef.current em vez de state.challengeId (stale closure)
+    const { data, error } = await supabase.functions.invoke('step-up-verify', {
+      body: {
+        step: 'verify_password',
+        challenge_id: challengeIdRef.current,
+        password,
+        action,
+        target_ref: targetRef,
+        action_label: actionLabel,
+      },
+    });
+    if (error || data?.error) {
+      // Mensagem genérica — não diferencia "senha errada" de outros erros (anti-enumeration)
+      setState((s) => ({ ...s, loading: false, error: SAFE_MESSAGES.AUTH_GENERIC }));
+      return false;
+    }
+    setState((s) => ({ ...s, loading: false, passwordVerified: true }));
+    return true;
+  }, []);
 
-  const verifyOtp = useCallback(
-    async (otp: string) => {
-      setState((s) => ({ ...s, loading: true, error: null }));
-      const { action, targetRef, actionLabel } = ctxRef.current;
-      // FIX: usa challengeIdRef.current em vez de state.challengeId (stale closure)
-      const { data, error } = await supabase.functions.invoke('step-up-verify', {
-        body: {
-          step: 'verify_otp',
-          challenge_id: challengeIdRef.current,
-          otp,
-          action,
-          target_ref: targetRef,
-          action_label: actionLabel,
-        },
-      });
-      if (error || data?.error) {
-        setState((s) => ({ ...s, loading: false, error: SAFE_MESSAGES.STEP_UP_FAILED }));
-        return null;
-      }
-      setState((s) => ({ ...s, loading: false, token: data.token, expiresAt: data.expires_at }));
-      return data.token as string;
-    },
-    [],
-  );
+  const verifyOtp = useCallback(async (otp: string) => {
+    setState((s) => ({ ...s, loading: true, error: null }));
+    const { action, targetRef, actionLabel } = ctxRef.current;
+    // FIX: usa challengeIdRef.current em vez de state.challengeId (stale closure)
+    const { data, error } = await supabase.functions.invoke('step-up-verify', {
+      body: {
+        step: 'verify_otp',
+        challenge_id: challengeIdRef.current,
+        otp,
+        action,
+        target_ref: targetRef,
+        action_label: actionLabel,
+      },
+    });
+    if (error || data?.error) {
+      setState((s) => ({ ...s, loading: false, error: SAFE_MESSAGES.STEP_UP_FAILED }));
+      return null;
+    }
+    setState((s) => ({ ...s, loading: false, token: data.token, expiresAt: data.expires_at }));
+    return data.token as string;
+  }, []);
 
   /**
    * Registra cancelamento server-side. Best-effort: nunca propaga erro.
    */
-  const cancel = useCallback(
-    async (reason: string = 'user_dismissed') => {
-      const { action, targetRef, actionLabel } = ctxRef.current;
-      // FIX: usa challengeIdRef.current em vez de state.challengeId (stale closure)
-      if (!action && !challengeIdRef.current) return;
-      try {
-        await supabase.functions.invoke('step-up-verify', {
-          body: {
-            step: 'cancel',
-            challenge_id: challengeIdRef.current,
-            action,
-            target_ref: targetRef,
-            action_label: actionLabel,
-            cancel_reason: reason,
-          },
-        });
-      } catch {
-        // Audit best-effort
-      }
-    },
-    [],
-  );
+  const cancel = useCallback(async (reason: string = 'user_dismissed') => {
+    const { action, targetRef, actionLabel } = ctxRef.current;
+    // FIX: usa challengeIdRef.current em vez de state.challengeId (stale closure)
+    if (!action && !challengeIdRef.current) return;
+    try {
+      await supabase.functions.invoke('step-up-verify', {
+        body: {
+          step: 'cancel',
+          challenge_id: challengeIdRef.current,
+          action,
+          target_ref: targetRef,
+          action_label: actionLabel,
+          cancel_reason: reason,
+        },
+      });
+    } catch {
+      // Audit best-effort
+    }
+  }, []);
 
   return { state, reset, requestChallenge, verifyPassword, verifyOtp, cancel };
 }

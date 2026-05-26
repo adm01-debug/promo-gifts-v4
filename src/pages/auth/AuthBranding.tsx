@@ -28,7 +28,7 @@ interface AstronautData {
   id: number;
   left: number;
   top: number;
-  size: number;
+  size?: number;
   rotation: number;
   zIndex: number;
   depth: number;

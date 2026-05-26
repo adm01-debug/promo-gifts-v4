@@ -13,6 +13,8 @@ export interface Technique {
   id: string;
   name: string;
   code: string | null;
+  /** Allows Technique to carry arbitrary bridge fields (matches useMockupTechniques.Technique). */
+  [key: string]: unknown;
 }
 
 export interface GeneratedMockup {

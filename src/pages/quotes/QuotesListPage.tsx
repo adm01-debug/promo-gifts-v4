@@ -301,8 +301,17 @@ export default function QuotesListPage() {
                 onBulkExport={(ids) => {
                   const selected = filteredQuotes.filter((q) => q.id && ids.includes(q.id));
                   import('@/utils/excelExport').then(({ exportToExcel }) => {
-                    exportToExcel(
-                      selected.map((q) => ({
+                    exportToExcel({
+                      filename: 'orcamentos_selecionados',
+                      columns: [
+                        { key: 'Número', header: 'Número' },
+                        { key: 'Empresa', header: 'Empresa' },
+                        { key: 'Contato', header: 'Contato' },
+                        { key: 'Status', header: 'Status' },
+                        { key: 'Valor', header: 'Valor' },
+                        { key: 'Data', header: 'Data' },
+                      ],
+                      data: selected.map((q) => ({
                         Número: q.quote_number,
                         Empresa: q.client_company || '',
                         Contato: q.client_name || '',
@@ -310,8 +319,7 @@ export default function QuotesListPage() {
                         Valor: q.total || 0,
                         Data: q.created_at ? format(new Date(q.created_at), 'dd/MM/yyyy') : '',
                       })),
-                      'orcamentos_selecionados',
-                    );
+                    });
                     toast.success(`${ids.length} orçamento(s) exportado(s)`);
                   });
                 }}

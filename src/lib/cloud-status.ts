@@ -107,8 +107,14 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const t = setTimeout(() => reject(new Error(`timeout ${ms}ms`)), ms);
     p.then(
-      (v) => { clearTimeout(t); resolve(v); },
-      (e) => { clearTimeout(t); reject(e); },
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(t);
+        reject(e);
+      },
     );
   });
 }
@@ -159,11 +165,7 @@ async function checkRest(): Promise<{ ok: boolean; ms: number }> {
   const t0 = performance.now();
   try {
     const { error } = await withTimeout(
-      supabase
-        .from('system_settings')
-        .select('value')
-        .eq('key', 'maintenance_mode')
-        .limit(1),
+      supabase.from('system_settings').select('value').eq('key', 'maintenance_mode').limit(1),
       PROBE_TIMEOUT_MS,
     );
     return { ok: !error, ms: Math.round(performance.now() - t0) };
@@ -176,9 +178,18 @@ function deriveStatus(signals: CloudStatusSnapshot['signals']): CloudStatus {
   const okSignals = [signals.auth.ok, signals.bridge.ok, signals.rest.ok];
   const okCount = okSignals.filter(Boolean).length;
 
-  if (okCount === 3) { consecutiveFailures = 0; return 'healthy'; }
-  if (okCount === 2) { consecutiveFailures = 0; return 'warming'; }
-  if (okCount === 1) { consecutiveFailures = 0; return 'degraded'; }
+  if (okCount === 3) {
+    consecutiveFailures = 0;
+    return 'healthy';
+  }
+  if (okCount === 2) {
+    consecutiveFailures = 0;
+    return 'warming';
+  }
+  if (okCount === 1) {
+    consecutiveFailures = 0;
+    return 'degraded';
+  }
 
   consecutiveFailures++;
   if (consecutiveFailures < FAILURE_THRESHOLD) return 'degraded';
@@ -202,21 +213,34 @@ export async function probeCloudStatus(force = false): Promise<CloudStatusSnapsh
     const newStatus = deriveStatus(signals);
     const snapshot: CloudStatusSnapshot = { status: newStatus, signals, checkedAt: Date.now() };
 
-    saveStatusHistory({ status: snapshot.status, timestamp: snapshot.checkedAt, consecutiveFailures });
+    saveStatusHistory({
+      status: snapshot.status,
+      timestamp: snapshot.checkedAt,
+      consecutiveFailures,
+    });
 
     const previous = cached?.status;
     cached = snapshot;
     if (previous !== snapshot.status) {
-      logger.warn(`[CloudStatus] state change ${previous ?? 'unknown'} → ${snapshot.status}`, signals);
+      logger.warn(
+        `[CloudStatus] state change ${previous ?? 'unknown'} → ${snapshot.status}`,
+        signals,
+      );
       target.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: snapshot }));
     }
     return snapshot;
   })();
 
-  try { return await inFlight; } finally { inFlight = null; }
+  try {
+    return await inFlight;
+  } finally {
+    inFlight = null;
+  }
 }
 
-export function getCachedCloudStatus(): CloudStatusSnapshot | null { return cached; }
+export function getCachedCloudStatus(): CloudStatusSnapshot | null {
+  return cached;
+}
 
 export function onCloudStatusChange(cb: (snapshot: CloudStatusSnapshot) => void): () => void {
   const handler = (e: Event) => cb((e as CustomEvent<CloudStatusSnapshot>).detail);
@@ -224,7 +248,9 @@ export function onCloudStatusChange(cb: (snapshot: CloudStatusSnapshot) => void)
   return () => target.removeEventListener(EVENT_NAME, handler);
 }
 
-export function invalidateCloudStatus(): void { cached = null; }
+export function invalidateCloudStatus(): void {
+  cached = null;
+}
 
 /**
  * Gate: aguarda o backend ficar `healthy` (ou `warming`) antes de prosseguir.

@@ -10,6 +10,7 @@ import { AlertCircle, Package, Paintbrush, Palette, Ruler, Sparkles } from 'luci
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import type { ProductTechnique, SelectedTechniqueConfig } from './types';
+import type { CustomizationOptionsResponse } from '@/types/customization';
 
 interface Props {
   productId: string;
@@ -30,9 +31,10 @@ export function TechniqueMultiSelector({
     queryKey: ['product-techniques-multi', productId],
     queryFn: async (): Promise<ProductTechnique[]> => {
       try {
-        const result = await invokeExternalRpc<{
-          locations?: { techniques?: Record<string, unknown>[] }[];
-        }>('fn_get_product_customization_options', { p_product_id: productId });
+        const result = await invokeExternalRpc<CustomizationOptionsResponse>(
+          'fn_get_product_customization_options',
+          { p_product_id: productId },
+        );
         if (!result?.locations?.length) return [];
         const techList: ProductTechnique[] = [];
         for (const loc of result.locations) {

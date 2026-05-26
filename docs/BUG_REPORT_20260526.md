@@ -1,1 +1,176 @@
-IyDwn5SNIFJlbGF0w7NyaW8gZGUgQXVkaXRvcmlhIEV4YXVzdGl2YSBkZSBJbnRlZ3Jhw6fDtWVzCgoqKkRhdGE6KiogMjYvMDUvMjAyNiAgCioqRXhlY3V0b3I6KiogQ2xhdWRlIFNvbm5ldCA0LjYgKFRJUFJPTU8vQWJuZXIpICAKKipUb3RhbCBkZSBidWdzOioqIDE3ICgxIGNyw610aWNvIMK3IDUgYWx0b3MgwrcgNyBtw6lkaW9zIMK3IDQgYmFpeG8vaW5mbykgIAoqKlBSOioqIGBmaXgvaW50ZWdyYXRpb24tYXVkaXQtMjAyNjA1MjZgCgotLS0KCiMjIE1ldG9kb2xvZ2lhCgpBbsOhbGlzZSBlc3TDoXRpY2EgY29tcGxldGEgZGUgNC4xNTMgYXJxdWl2b3MgKHNyYywgc3VwYWJhc2UvZnVuY3Rpb25zLCBtaWdyYXRpb25zLCBlMmUsIHRlc3RzKToKLSBgc3JjL2ludGVncmF0aW9ucy9zdXBhYmFzZS9jbGllbnQudHNgLCBgc3JjL2xpYi9leHRlcm5hbC1kYi9icmlkZ2UudHNgCi0gYHN1cGFiYXNlL2Z1bmN0aW9ucy9leHRlcm5hbC1kYi1icmlkZ2UvaW5kZXgudHNgICg4Ni42S0IpCi0gVG9kYXMgYXMgbWlncmF0aW9ucyBkZSAyNi8wNS8yMDI2IChmaXhfMDAxIGEgZml4XzAwNSArIGJ1Z2ZpeF9hdWRpdCkKLSBgLmVudi5leGFtcGxlYCwgYHZlcmNlbC5qc29uYCwgYHBhY2thZ2UuanNvbmAKCi0tLQoKIyMg8J+aqCBCVUctMDAxIOKAlCBDUsONVElDTyDigJQgYW5vbiBrZXkgcmVhbCBleHBvc3RhIG5vIC5lbnYuZXhhbXBsZQoKKipBcnF1aXZvOioqIGAuZW52LmV4YW1wbGVgIGxpbmhhIDI4IOKAlCBgVklURV9TVVBBQkFTRV9QVUJMSVNIQUJMRV9LRVk9c2JfcHVibGlzaGFibGVfdGpINXFBYlowZTVIVFRkODcyTmlqUV9zOW02SnZZVWAgIAoqKkZpeCBuZXN0ZSBQUjoqKiBTdWJzdGl0dcOtZG8gcG9yIHBsYWNlaG9sZGVyIGBzYl9wdWJsaXNoYWJsZV88eW91ci1hbm9uLWtleS1oZXJlPmAKCioqQcOnw6NvIElNRURJQVRBIG9icmlnYXTDs3JpYSAoYW50ZXMgZG8gbWVyZ2UpOioqCjEuIERhc2hib2FyZCDihpIgU2V0dGluZ3Mg4oaSIEFQSSDihpIgUmVnZW5lcmF0ZSBhbm9uIGtleQoyLiBBdHVhbGl6YXIgbm92YSBrZXk6IFZlcmNlbCDihpIgRW52aXJvbm1lbnQgVmFyaWFibGVzIOKGkiBgVklURV9TVVBBQkFTRV9QVUJMSVNIQUJMRV9LRVlgCjMuIENvbXVuaWNhciBkZXZzIHBhcmEgYXR1YWxpemFyIGAuZW52LmxvY2FsYAoKLS0tCgojIyDwn5S0IEJVRy0wMDIg4oCUIEFMVE8g4oCUIElET1I6IGFwcC5jdXJyZW50X29yZ19pZCBmb3JnZWFibGUKCioqTWlncmF0aW9uIHBlbmRlbnRlOioqIGAyMDI2MDUyNl9maXhfMDA0X2N1cnJlbnRfb3JnX2lkX2ZvcmdlYWJsZS5zcWxgICAKKipUYWJlbGFzIGFmZXRhZGFzOioqIGNvbG9yX2dyb3VwcywgY29sb3JfbnVhbmNlcywgY29sb3JfdmFyaWF0aW9ucywgbWF0ZXJpYWxfZ3JvdXBzLCBwcm9kdWN0X21hdGVyaWFscyAoMTIgcG9sw610aWNhcykKClVtIHVzdcOhcmlvIGF1dGVudGljYWRvIHBvZGUgZm9yamFyIGBhcHAuY3VycmVudF9vcmdfaWRgIHBhcmEgYWNlc3NhciBkYWRvcyBkZSBvdXRyYSBvcmdhbml6YcOnw6NvLgoKKipGaXg6KiogVHJvY2FyIGBjdXJyZW50X3NldHRpbmcoKWAgcG9yIGB1c2VyX2JlbG9uZ3NfdG9fb3JnKClgIOKAlCB2YWxpZGEgdmlhIGBhdXRoLnVpZCgpYC4gIAoqKkNvbWFuZG86KiogYHN1cGFiYXNlIGRiIHB1c2hgCgotLS0KCiMjIPCflLQgQlVHLTAwMyDigJQgQUxUTyDigJQgUHJpdmlsZWdlIGVzY2FsYXRpb246IG1hbmFnZXIgcG9kZSBjb25jZWRlciByb2xlIGRldgoKKipNaWdyYXRpb24gcGVuZGVudGU6KiogYDIwMjYwNTI2X2ZpeF8wMDVfdXNlcl9yb2xlc19wcml2aWxlZ2VfZXNjYWxhdGlvbi5zcWxgCgpgaXNfYWRtaW5fb3JfYWJvdmUoKWAgaW5jbHXDrWEgYG1hbmFnZXJgLCBxdWUgcG9kaWEgaW5zZXJpciBge3JvbGU6ICdkZXYnfWAgZW0gYHVzZXJfcm9sZXNgLgoKKipGaXg6KiogYENBU0UgV0hFTiByb2xlID0gJ2RldicgVEhFTiBpc19kZXYoYXV0aC51aWQoKSkgRUxTRSBpc19hZG1pbl9vcl9hYm92ZShhdXRoLnVpZCgpKSBFTkRgCgotLS0KCiMjIPCflLQgQlVHLTAwNCDigJQgQUxUTyDigJQgbWFya3VwX2NvbmZpZ3VyYXRpb25zIHNlbSBwb2zDrXRpY2FzIGRlIGVzY3JpdGEKCioqTWlncmF0aW9uIHBlbmRlbnRlOioqIGAyMDI2MDUyNl9maXhfMDAxX21hcmt1cF9jb25maWd1cmF0aW9uc193cml0ZV9wb2xpY2llcy5zcWxgCgpBZG1pbi9vd25lciBuw6NvIGNvbnNlZ3VpYSBjcmlhciwgZWRpdGFyIG91IGRlbGV0YXIgbWFya3VwIGNvbmZpZ3VyYXRpb25zLiBGYWxoYSBzaWxlbmNpb3NhICgwIHJvd3MgYWZmZWN0ZWQpLgoKLS0tCgojIyDwn5S0IEJVRy0wMDUg4oCUIEFMVE8g4oCUIHN0ZXBfdXBfdG9rZW5zIGUgc3RlcF91cF9jaGFsbGVuZ2VzIHNlbSBwb2zDrXRpY2FzCgoqKk1pZ3JhdGlvbnMgcGVuZGVudGVzOioqIGBmaXhfMDAyX3N0ZXBfdXBfdG9rZW5zX3BvbGljaWVzLnNxbGAgZSBgZml4XzAwM19zdGVwX3VwX2NoYWxsZW5nZXNfcG9saWNpZXMuc3FsYAoKVG9rZW5zIE1GQS9zdGVwLXVwIHBvdGVuY2lhbG1lbnRlIGFjZXNzw612ZWlzIHBvciB1c3XDoXJpb3MgbsOjby1hdXRvcml6YWRvcy4KCi0tLQoKIyMg8J+foSBCVUctMDA2IOKAlCBNw4lESU8g4oCUIG5lZ290aWF0aW9uX21hcmt1cF9wZXJjZW50IHplcmFkbyBlbSAzIGNvdGHDp8O1ZXMKCioqQ290YcOnw7VlczoqKiBPUkMtMjAyNi0wMDEsIE9SQy0yMDI2LTAwMiwgT1JDLTIwMjYtMDAzICAKKipJbXBhY3RvOioqIFJlbGF0w7NyaW9zIGRlIG1hcmdlbSBtb3N0cmFtIDAlIG9uZGUgaMOhIG1hcmt1cCByZWFsICAKKipDYXVzYSByYWl6OioqIEZsdXhvIGRlIGFwcm92YcOnw6NvIGF0dWFsaXphdmEgYHRvdGFsYCBtYXMgbsOjbyByZWNhbGN1bGF2YSBgbmVnb3RpYXRpb25fbWFya3VwX3BlcmNlbnRgICAKKipGaXg6KiogQmFja2ZpbGwgdmlhIGAyMDI2MDUyNl9idWdmaXhfYXVkaXRfZGJfZnVsbC5zcWxgCgotLS0KCiMjIPCfn6EgQlVHLTAwNyDigJQgTcOJRElPIOKAlCA0IHByb2R1dG9zIGF0aXZvcyBzZW0gcHJlw6dvCgoqKkZvcm5lY2Vkb3I6KiogQXNpYSBJbXBvcnQgIAoqKklEczoqKiBjMzFlM2VhZSwgYWEwMWM5YzEsIDZkY2U3YjRmLCBlMzZjMDcxNyAoTW9jaGlsYXMgZSBDYW5ldGFzIE1ldMOhbGljYXMpICAKKipGaXg6KiogRGVzYXRpdmFkb3MgdmlhIG1pZ3JhdGlvbiBkZSBhdWRpdG9yaWEKCi0tLQoKIyMg8J+foSBCVUctMDA4IOKAlCBNw4lESU8g4oCUIFRhYmVsYXMgZHVwbGljYWRhczogc21va2UgdGVzdHMKCioqc21va2VfdGVzdF9ydW5zKiogKDAgcmVnaXN0cm9zLCBkZXByZWNhdGVkKSB2cyAqKnNtb2tlX3Rlc3RzX3J1bnMqKiAoMjggcmVnaXN0cm9zLCBhdGl2YSkgIApSaXNjbzogd29ya2VycyBwb2RlbSBncmF2YXIgbmEgdGFiZWxhIGVycmFkYSwgdG9ybmFuZG8gZGFkb3MgaW52aXPDrXZlaXMgbm8gbW9uaXRvcmFtZW50by4KCi0tLQoKIyMg8J+foSBCVUctMDA5IOKAlCBNw4lESU8g4oCUIFRhYmVsYXMgZHVwbGljYWRhczogbG9naW4gYXR0ZW1wdHMKCioqbG9naW5fYXR0ZW1wdHMqKiAoMjAzIHJlZ2lzdHJvcykgdnMgKiphdXRoX2xvZ2luX2F0dGVtcHRzKiogKDAgcmVnaXN0cm9zLCBtYWlzIG5vdmEpICAKUmlzY286IHJhdGUgbGltaXRpbmcgcG9kZSBjb25zdWx0YXIgdGFiZWxhIGVycmFkYSDihpIgYnJ1dGUgZm9yY2UgbsOjbyBkZXRlY3RhZG8uICAKQcOnw6NvOiB2ZXJpZmljYXIgcXVhbCB0YWJlbGEgYXMgZWRnZSBmdW5jdGlvbnMgYGxvZy1sb2dpbi1hdHRlbXB0YCBlIGByYXRlLWxpbWl0LWNoZWNrYCB1c2FtLgoKLS0tCgojIyDwn5+hIEJVRy0wMTAg4oCUIE3DiURJTyDigJQgVGFiZWxhcyBkdXBsaWNhZGFzOiBhdWRpdCBsb2cKCioqYXVkaXRfbG9nKiogKDMgcmVnaXN0cm9zLCBsZWdhZGEpIHZzICoqYWRtaW5fYXVkaXRfbG9nKiogKDE4ayssIHByaW5jaXBhbCkgdnMgKiphdWRpdF9sb2dzKiogKHZhemlhKSAgCmBhdWRpdF9sb2dzYCBwb2RlIHNlciBkZXNjb250aW51YWRhLgoKLS0tCgojIyDwn5+hIEJVRy0wMTEg4oCUIE3DiURJTyDigJQgcXVvdGVfaXRlbXMgc2VtIENIRUNLIGNvbnN0cmFpbnQgZGUgc3VidG90YWwKCioqRml4OioqIGBDSEVDSyAoc3VidG90YWwgPj0gMClgIGFkaWNpb25hZG8gdmlhIG1pZ3JhdGlvbiBkZSBhdWRpdG9yaWEKCi0tLQoKIyMg8J+foSBCVUctMDEyIOKAlCBNw4lESU8g4oCUIDEzNiBwcm9kdXRvcyBjb20gY2F0ZWdvcnlfaWQgIT0gbWFpbl9jYXRlZ29yeV9pZCBzZW0gZG9jdW1lbnRhw6fDo28KClNlbWFudGljYW1lbnRlIGNvcnJldG8gKHN1YmNhdGVnb3JpYSB2cyByYWl6KSwgbWFzIG7Do28gZG9jdW1lbnRhZG8uICAKKipGaXg6KiogYENPTU1FTlQgT04gQ09MVU1OYCBhZGljaW9uYWRvIGVtIGFtYm9zIG9zIGNhbXBvcy4KCi0tLQoKIyMg8J+foiBCVUctMDEzIOKAlCBCQUlYTyDigJQgQ1NQOiB1bnNhZmUtZXZhbCBkZXNuZWNlc3PDoXJpbwoKKipGaXggbmVzdGUgUFI6KiogUmVtb3ZpZG8gYCd1bnNhZmUtZXZhbCdgIGRvIGBzY3JpcHQtc3JjYCBlbSB2ZXJjZWwuanNvbiAgCioqVmFsaWRhciBhcMOzcyBkZXBsb3k6KiogUERGIGdlbmVyYXRpb24sIHJlY2hhcnRzLCB2b2ljZSBhZ2VudAoKLS0tCgojIyDwn5+iIEJVRy0wMTQg4oCUIEJBSVhPIOKAlCBFc3RhZG8gZG8ga2lsbC1zd2l0Y2ggZWRnZV9leHRlcm5hbF9kYl9icmlkZ2UKClZlcmlmaWNhcjoKYGBgc3FsClNFTEVDVCBuYW1lLCBlbmFibGVkIEZST00ga2lsbF9zd2l0Y2hlcyBXSEVSRSBuYW1lID0gJ2VkZ2VfZXh0ZXJuYWxfZGJfYnJpZGdlJzsKYGBgCkVzcGVyYWRvOiBgZW5hYmxlZCA9IGZhbHNlYCAoQ2FtaW5obyBCIGF0aXZvKS4KCi0tLQoKIyMg8J+foiBCVUctMDE1IOKAlCBCQUlYTyDigJQgQ2FjaGUgVFRMIGN1cnRvIHZzIHdhcm0tdXAKCmBDQUNIRV9UVExfTVMgPSA2MF8wMDBtc2AgdnMgY3JvbiBkZSB3YXJtLXVwIGEgY2FkYSA0bWluLiBDb25zaWRlcmFyIGF1bWVudGFyIHBhcmEgMTIwcyBlbSByZXZpc8OjbyBmdXR1cmEuCgotLS0KCiMjIPCfn6IgQlVHLTAxNiDigJQgQkFJWE8g4oCUIFNjaGVtYSBjYWNoZSBhcMOzcyBwZXJzb25hbGl6YXRpb24gbWlncmF0aW9uCgpWZXJpZmljYXIgcXVlIGAyMDI2MDUyNV8yMzIwMDNfZml4XzMzOV9wZXJzb25hbGl6YXRpb25fbWlzc2luZ19jb2x1bW5zLnNxbGAgZm9pIGFwbGljYWRhOgpgYGBzcWwKU0VMRUNUIGNvbHVtbl9uYW1lIEZST00gaW5mb3JtYXRpb25fc2NoZW1hLmNvbHVtbnMgV0hFUkUgdGFibGVfbmFtZSA9ICdwcmludF9hcmVhX3RlY2huaXF1ZXMnOwpgYGAKCi0tLQoKIyMg8J+foiBCVUctMDE3IOKAlCBJTkZPIOKAlCBWaWV3IGRlIG1vbml0b3JhbWVudG8gdl9kYl9oZWFsdGhfYXVkaXQKClVzbyBjb250w61udW86CmBgYHNxbApTRUxFQ1QgKiBGUk9NIHB1YmxpYy52X2RiX2hlYWx0aF9hdWRpdCBPUkRFUiBCWSBzZXZlcmlkYWRlIERFU0M7Ci0tIERldmUgcmV0b3JuYXIgMCBpc3N1ZXMgQ1JJVElDQUwgYXDDs3MgYXBsaWNhw6fDo28gZGFzIG1pZ3JhdGlvbnMKYGBgCgotLS0KCiMjIPCfk4sgQ2hlY2tsaXN0IFDDs3MtTWVyZ2UKCi0gWyBdICoqSU1FRElBVE8qKiDigJQgUmV2b2dhciBhbm9uIGtleTogRGFzaGJvYXJkIOKGkiBTZXR0aW5ncyDihpIgQVBJIOKGkiBSZWdlbmVyYXRlCi0gWyBdICoqSU1FRElBVE8qKiDigJQgQXR1YWxpemFyIG5vdmEgYW5vbiBrZXk6IFZlcmNlbCArIC5lbnYubG9jYWwgZG9zIGRldnMKLSBbIF0gKipVUkdFTlRFKiog4oCUIGBzdXBhYmFzZSBkYiBwdXNoYCBwYXJhIGFwbGljYXIgZml4XzAwMSBhIGZpeF8wMDUgKyBidWdmaXhfYXVkaXQKLSBbIF0gVGVzdGFyIENTUCBzZW0gdW5zYWZlLWV2YWwgZW0gcHJvZHXDp8OjbyAoUERGLCBjaGFydHMsIHZvaWNlKQotIFsgXSBDb25maXJtYXIga2lsbC1zd2l0Y2ggZWRnZV9leHRlcm5hbF9kYl9icmlkZ2UgYXRpdm8KLSBbIF0gRXhlY3V0YXIgYFNFTEVDVCAqIEZST00gdl9kYl9oZWFsdGhfYXVkaXRgIOKAlCB2YWxpZGFyIDAgaXNzdWVzIGNyw610aWNvcwotIFsgXSBSZXZpc2FyIGNvbnNvbGlkYcOnw6NvIGRlIHRhYmVsYXMgZHVwbGljYWRhcyBuYSBwcsOzeGltYSBzcHJpbnQKCi0tLQoKKkdlcmFkbyBwb3IgQ2xhdWRlIFNvbm5ldCA0LjYgKFRJUFJPTU8pIGVtIDI2LzA1LzIwMjYqCg==
+# 🔍 Relatório de Auditoria Exaustiva de Integrações
+
+**Data:** 26/05/2026  
+**Executor:** Claude Sonnet 4.6 (TIPROMO/Abner)  
+**Total de bugs:** 17 (1 crítico · 5 altos · 7 médios · 4 baixo/info)  
+**PR:** `fix/integration-audit-20260526`
+
+---
+
+## Metodologia
+
+Análise estática completa de 4.153 arquivos (src, supabase/functions, migrations, e2e, tests):
+- `src/integrations/supabase/client.ts`, `src/lib/external-db/bridge.ts`
+- `supabase/functions/external-db-bridge/index.ts` (86.6KB)
+- Todas as migrations de 26/05/2026 (fix_001 a fix_005 + bugfix_audit)
+- `.env.example`, `vercel.json`, `package.json`
+
+---
+
+## 🚨 BUG-001 — CRÍTICO — anon key real exposta no .env.example
+
+**Arquivo:** `.env.example` linha 28 — `VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU`  
+**Fix neste PR:** Substituído por placeholder `sb_publishable_<your-anon-key-here>`
+
+**Ação IMEDIATA obrigatória (antes do merge):**
+1. Dashboard → Settings → API → Regenerate anon key
+2. Atualizar nova key: Vercel → Environment Variables → `VITE_SUPABASE_PUBLISHABLE_KEY`
+3. Comunicar devs para atualizar `.env.local`
+
+---
+
+## 🔴 BUG-002 — ALTO — IDOR: app.current_org_id forgeable
+
+**Migration pendente:** `20260526_fix_004_current_org_id_forgeable.sql`  
+**Tabelas afetadas:** color_groups, color_nuances, color_variations, material_groups, product_materials (12 políticas)
+
+Um usuário autenticado pode forjar `app.current_org_id` para acessar dados de outra organização.
+
+**Fix:** Trocar `current_setting()` por `user_belongs_to_org()` — valida via `auth.uid()`.  
+**Comando:** `supabase db push`
+
+---
+
+## 🔴 BUG-003 — ALTO — Privilege escalation: manager pode conceder role dev
+
+**Migration pendente:** `20260526_fix_005_user_roles_privilege_escalation.sql`
+
+`is_admin_or_above()` incluía `manager`, que podia inserir `{role: 'dev'}` em `user_roles`.
+
+**Fix:** `CASE WHEN role = 'dev' THEN is_dev(auth.uid()) ELSE is_admin_or_above(auth.uid()) END`
+
+---
+
+## 🔴 BUG-004 — ALTO — markup_configurations sem políticas de escrita
+
+**Migration pendente:** `20260526_fix_001_markup_configurations_write_policies.sql`
+
+Admin/owner não conseguia criar, editar ou deletar markup configurations. Falha silenciosa (0 rows affected).
+
+---
+
+## 🔴 BUG-005 — ALTO — step_up_tokens e step_up_challenges sem políticas
+
+**Migrations pendentes:** `fix_002_step_up_tokens_policies.sql` e `fix_003_step_up_challenges_policies.sql`
+
+Tokens MFA/step-up potencialmente acessíveis por usuários não-autorizados.
+
+---
+
+## 🟡 BUG-006 — MÉDIO — negotiation_markup_percent zerado em 3 cotações
+
+**Cotações:** ORC-2026-001, ORC-2026-002, ORC-2026-003  
+**Impacto:** Relatórios de margem mostram 0% onde há markup real  
+**Causa raiz:** Fluxo de aprovação atualizava `total` mas não recalculava `negotiation_markup_percent`  
+**Fix:** Backfill via `20260526_bugfix_audit_db_full.sql`
+
+---
+
+## 🟡 BUG-007 — MÉDIO — 4 produtos ativos sem preço
+
+**Fornecedor:** Asia Import  
+**IDs:** c31e3eae, aa01c9c1, 6dce7b4f, e36c0717 (Mochilas e Canetas Metálicas)  
+**Fix:** Desativados via migration de auditoria
+
+---
+
+## 🟡 BUG-008 — MÉDIO — Tabelas duplicadas: smoke tests
+
+**smoke_test_runs** (0 registros, deprecated) vs **smoke_tests_runs** (28 registros, ativa)  
+Risco: workers podem gravar na tabela errada, tornando dados invisíveis no monitoramento.
+
+---
+
+## 🟡 BUG-009 — MÉDIO — Tabelas duplicadas: login attempts
+
+**login_attempts** (203 registros) vs **auth_login_attempts** (0 registros, mais nova)  
+Risco: rate limiting pode consultar tabela errada → brute force não detectado.  
+Ação: verificar qual tabela as edge functions `log-login-attempt` e `rate-limit-check` usam.
+
+---
+
+## 🟡 BUG-010 — MÉDIO — Tabelas duplicadas: audit log
+
+**audit_log** (3 registros, legada) vs **admin_audit_log** (18k+, principal) vs **audit_logs** (vazia)  
+`audit_logs` pode ser descontinuada.
+
+---
+
+## 🟡 BUG-011 — MÉDIO — quote_items sem CHECK constraint de subtotal
+
+**Fix:** `CHECK (subtotal >= 0)` adicionado via migration de auditoria
+
+---
+
+## 🟡 BUG-012 — MÉDIO — 136 produtos com category_id != main_category_id sem documentação
+
+Semanticamente correto (subcategoria vs raiz), mas não documentado.  
+**Fix:** `COMMENT ON COLUMN` adicionado em ambos os campos.
+
+---
+
+## 🟢 BUG-013 — BAIXO — CSP: unsafe-eval desnecessário
+
+**Fix neste PR:** Removido `'unsafe-eval'` do `script-src` em vercel.json  
+**Validar após deploy:** PDF generation, recharts, voice agent
+
+---
+
+## 🟢 BUG-014 — BAIXO — Estado do kill-switch edge_external_db_bridge
+
+Verificar:
+```sql
+SELECT name, enabled FROM kill_switches WHERE name = 'edge_external_db_bridge';
+```
+Esperado: `enabled = false` (Caminho B ativo).
+
+---
+
+## 🟢 BUG-015 — BAIXO — Cache TTL curto vs warm-up
+
+`CACHE_TTL_MS = 60_000ms` vs cron de warm-up a cada 4min. Considerar aumentar para 120s em revisão futura.
+
+---
+
+## 🟢 BUG-016 — BAIXO — Schema cache após personalization migration
+
+Verificar que `20260525_232003_fix_339_personalization_missing_columns.sql` foi aplicada:
+```sql
+SELECT column_name FROM information_schema.columns WHERE table_name = 'print_area_techniques';
+```
+
+---
+
+## 🟢 BUG-017 — INFO — View de monitoramento v_db_health_audit
+
+Uso contínuo:
+```sql
+SELECT * FROM public.v_db_health_audit ORDER BY severidade DESC;
+-- Deve retornar 0 issues CRITICAL após aplicação das migrations
+```
+
+---
+
+## 📋 Checklist Pós-Merge
+
+- [ ] **IMEDIATO** — Revogar anon key: Dashboard → Settings → API → Regenerate
+- [ ] **IMEDIATO** — Atualizar nova anon key: Vercel + .env.local dos devs
+- [ ] **URGENTE** — `supabase db push` para aplicar fix_001 a fix_005 + bugfix_audit
+- [ ] Testar CSP sem unsafe-eval em produção (PDF, charts, voice)
+- [ ] Confirmar kill-switch edge_external_db_bridge ativo
+- [ ] Executar `SELECT * FROM v_db_health_audit` — validar 0 issues críticos
+- [ ] Revisar consolidação de tabelas duplicadas na próxima sprint
+
+---
+
+*Gerado por Claude Sonnet 4.6 (TIPROMO) em 26/05/2026*

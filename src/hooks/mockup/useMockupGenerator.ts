@@ -28,6 +28,7 @@ import { adaptTabelaPrecoRows } from '@/lib/personalization/adapters';
 import type { PersonalizationArea } from '@/components/mockup/MultiAreaManager';
 import type { MockupProductSelection } from '@/components/mockup/MockupProductSelector';
 import type { MockupClient } from '@/components/mockup/MockupConfigPanel';
+import type { ArtFileAttachment } from '@/components/mockup/ArtFileUpload';
 import {
   type Technique,
   type GeneratedMockup,
@@ -76,7 +77,7 @@ export function useMockupGenerator() {
   const [generatedBatchMockups, setGeneratedBatchMockups] = useState<
     { areaName: string; url: string }[]
   >([]);
-  const [artAttachments, setArtAttachments] = useState<unknown[]>([]);
+  const [artAttachments, setArtAttachments] = useState<ArtFileAttachment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [mockupAnnotations, setMockupAnnotations] = useState<
@@ -360,9 +361,12 @@ export function useMockupGenerator() {
         toast.error('Erro ao carregar técnicas. Tente recarregar a página.');
         return;
       }
-      const records = adaptTabelaPrecoRows(
-        techniquesRes?.data?.records || techniquesRes?.records || [],
-      );
+      // Bridge response may be { data: { records } } or { records }; narrow the unknown payload.
+      const res = techniquesRes as
+        | { data?: { records?: Record<string, unknown>[] }; records?: Record<string, unknown>[] }
+        | null
+        | undefined;
+      const records = adaptTabelaPrecoRows(res?.data?.records || res?.records || []);
       const techniquesData = records.map((r) => ({
         id: r.id,
         name: r.name ?? r.nome ?? '',

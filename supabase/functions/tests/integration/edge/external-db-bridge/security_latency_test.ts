@@ -7,6 +7,7 @@ registerCase({ functionName: "external-db-bridge", caseId: "EDB-001", businessRu
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query: "SELECT 1" }),
   });
+  const _body = await res.text();
   assert(res.status === 401 || res.status === 403);
 }});
 

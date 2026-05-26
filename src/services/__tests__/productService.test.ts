@@ -27,9 +27,10 @@ describe('productService', () => {
       stock: 100,
     };
 
-    fetchPromobrindProductsMock.mockResolvedValue([
-      mockRawProduct,
-    ] as unknown as PromobrindProduct[]);
+    fetchPromobrindProductsMock.mockResolvedValue({
+      products: [mockRawProduct] as unknown as PromobrindProduct[],
+      count: 1,
+    });
 
     const products = await productService.fetchProducts();
 
@@ -53,7 +54,10 @@ describe('productService', () => {
       { id: '1', name: 'A', price: 10, category_name: 'Tech', stock: 10 },
       { id: '2', name: 'B', price: 50, category_name: 'Office', stock: 0 },
     ];
-    fetchPromobrindProductsMock.mockResolvedValue(mockProducts as unknown as PromobrindProduct[]);
+    fetchPromobrindProductsMock.mockResolvedValue({
+      products: mockProducts as unknown as PromobrindProduct[],
+      count: mockProducts.length,
+    });
 
     // Filter by price
     let result = await productService.fetchProducts({ minPrice: 20 });
@@ -71,7 +75,10 @@ describe('productService', () => {
       { id: '1', name: 'A', price: 10, category_name: 'Tech', stock: 10 },
       { id: '2', name: 'B', price: 50, category_name: 'Office', stock: 0 },
     ];
-    fetchPromobrindProductsMock.mockResolvedValue(mockProducts as unknown as PromobrindProduct[]);
+    fetchPromobrindProductsMock.mockResolvedValue({
+      products: mockProducts as unknown as PromobrindProduct[],
+      count: mockProducts.length,
+    });
 
     const result = await productService.fetchProducts({
       minPrice: Number.NaN,

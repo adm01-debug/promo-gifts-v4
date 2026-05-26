@@ -1,12 +1,18 @@
-import React, { useState, useMemo } from "react";
-import { ChevronDown, ChevronRight, Search, X, Layers, RefreshCw } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { getCategoryIcon, useCategoryIcons, useExternalCategoriesQuery, type ExternalCategory } from "@/hooks/products";
+import React, { useState, useMemo } from 'react';
+import { ChevronDown, ChevronRight, Search, X, Layers, RefreshCw } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import {
+  getCategoryIcon,
+  useCategoryIcons,
+  useExternalCategoriesQuery,
+  type CategoryIcon,
+  type ExternalCategory,
+} from '@/hooks/products';
 
 interface ExternalCategoryFilterProps {
   selectedCategories: string[]; // UUIDs
@@ -18,17 +24,17 @@ interface CategoryNode extends ExternalCategory {
   children: CategoryNode[];
 }
 
-import { toTitleCase } from "@/lib/textUtils";
+import { toTitleCase } from '@/lib/textUtils';
 
 export function ExternalCategoryFilter({
   selectedCategories,
   onCategoriesChange,
   compact = false,
 }: ExternalCategoryFilterProps) {
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-  
-  const { data: categoryIcons = [] } = useCategoryIcons();
+
+  const { data: categoryIcons = [] as CategoryIcon[] } = useCategoryIcons();
   const { data: categories = [], isLoading, refetch, isFetching } = useExternalCategoriesQuery();
 
   // Construir árvore hierárquica
@@ -87,9 +93,7 @@ export function ExternalCategoryFilter({
       return null;
     };
 
-    return categoryTree
-      .map(filterNode)
-      .filter((n): n is CategoryNode => n !== null);
+    return categoryTree.map(filterNode).filter((n): n is CategoryNode => n !== null);
   }, [categoryTree, search]);
 
   const toggleCategory = (categoryId: string) => {
@@ -134,10 +138,10 @@ export function ExternalCategoryFilter({
       <div key={node.id} className="select-none">
         <div
           className={cn(
-            "flex items-center gap-2 py-1.5 px-2 rounded-md transition-colors",
+            'flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors',
             isSelected
-              ? "bg-brand-primary/10 ring-1 ring-inset ring-brand-primary/20"
-              : "hover:bg-muted/50"
+              ? 'bg-brand-primary/10 ring-1 ring-inset ring-brand-primary/20'
+              : 'hover:bg-muted/50',
           )}
           style={{ paddingLeft: `${8 + level * 16}px` }}
         >
@@ -147,8 +151,8 @@ export function ExternalCategoryFilter({
               type="button"
               onClick={() => toggleExpand(node.id)}
               className={cn(
-                "p-0.5 rounded transition-colors",
-                isSelected ? "hover:bg-brand-primary/10" : "hover:bg-muted"
+                'rounded p-0.5 transition-colors',
+                isSelected ? 'hover:bg-brand-primary/10' : 'hover:bg-muted',
               )}
             >
               {isExpanded ? (
@@ -172,7 +176,7 @@ export function ExternalCategoryFilter({
           {/* Label */}
           <Label
             htmlFor={`ext-cat-${node.id}`}
-            className="flex-1 text-sm cursor-pointer flex items-center gap-1.5 min-w-0"
+            className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 text-sm"
           >
             <span className="flex-shrink-0">{icon}</span>
             <span className="truncate">{toTitleCase(node.name)}</span>
@@ -182,10 +186,10 @@ export function ExternalCategoryFilter({
           {totalCount > 0 && (
             <span
               className={cn(
-                "flex-shrink-0 text-[10px] font-medium tabular-nums px-1.5 py-0.5 rounded-full",
+                'flex-shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium tabular-nums',
                 isSelected
-                  ? "bg-brand-primary/20 text-brand-primary"
-                  : "bg-muted text-muted-foreground"
+                  ? 'bg-brand-primary/20 text-brand-primary'
+                  : 'bg-muted text-muted-foreground',
               )}
               title={`${totalCount} produtos${hasChildren ? ` (${node.products_count ?? 0} diretos)` : ''}`}
             >
@@ -219,16 +223,16 @@ export function ExternalCategoryFilter({
     <div className="space-y-3">
       {/* Categorias selecionadas */}
       {selectedCategories.length > 0 && (
-        <div className="p-2 bg-brand-primary/5 rounded-lg border border-brand-primary/20">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-brand-primary flex items-center gap-1.5">
+        <div className="rounded-lg border border-brand-primary/20 bg-brand-primary/5 p-2">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="flex items-center gap-1.5 text-xs font-medium text-brand-primary">
               <Layers className="h-3 w-3" />
               Selecionadas ({selectedCategories.length})
             </span>
             <button
               type="button"
               onClick={clearAll}
-              className="text-[10px] text-muted-foreground hover:text-destructive transition-colors"
+              className="text-[10px] text-muted-foreground transition-colors hover:text-destructive"
             >
               Limpar
             </button>
@@ -240,11 +244,11 @@ export function ExternalCategoryFilter({
                 <Badge
                   key={catId}
                   variant="secondary"
-                  className="text-xs cursor-pointer hover:bg-destructive/20"
+                  className="cursor-pointer text-xs hover:bg-destructive/20"
                   onClick={() => toggleCategory(catId)}
                 >
                   {toTitleCase(cat.name)}
-                  <X className="h-3 w-3 ml-1" />
+                  <X className="ml-1 h-3 w-3" />
                 </Badge>
               ) : null;
             })}
@@ -259,17 +263,17 @@ export function ExternalCategoryFilter({
 
       {/* Busca */}
       <div className="relative">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+        <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Buscar categoria..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="h-8 text-sm pl-8 pr-8"
+          className="h-8 pl-8 pr-8 text-sm"
         />
         {search && (
           <button
             type="button"
-            onClick={() => setSearch("")}
+            onClick={() => setSearch('')}
             className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           >
             <X className="h-3.5 w-3.5" />
@@ -278,36 +282,39 @@ export function ExternalCategoryFilter({
       </div>
 
       {/* Estatísticas */}
-      <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1">
+      <div className="flex items-center justify-between px-1 text-[11px] text-muted-foreground">
         <span>{categories.length} categorias</span>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => refetch()}
             disabled={isFetching}
-            className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition-colors disabled:opacity-50"
+            className="flex items-center gap-1 text-[11px] text-muted-foreground transition-colors hover:text-primary disabled:opacity-50"
             title="Atualizar categorias"
           >
-            <RefreshCw className={cn("h-3 w-3", isFetching && "animate-spin")} />
-            {isFetching ? "Atualizando..." : "Atualizar"}
+            <RefreshCw className={cn('h-3 w-3', isFetching && 'animate-spin')} />
+            {isFetching ? 'Atualizando...' : 'Atualizar'}
           </button>
-          <span className="text-brand-primary font-medium">
+          <span className="font-medium text-brand-primary">
             {selectedCategories.length} selecionadas
           </span>
         </div>
       </div>
 
       {/* Árvore de categorias */}
-      <div 
-        className={cn("pr-2 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent", compact ? "max-h-52" : "max-h-[55vh]")}
+      <div
+        className={cn(
+          'scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent overflow-y-auto overscroll-contain pr-2',
+          compact ? 'max-h-52' : 'max-h-[55vh]',
+        )}
         style={{ overscrollBehavior: 'contain' }}
       >
         <div className="space-y-0.5">
           {filteredTree.length > 0 ? (
             filteredTree.map((node) => renderCategoryNode(node))
           ) : (
-            <p className="text-xs text-muted-foreground text-center py-4">
-              {search ? "Nenhuma categoria encontrada" : "Nenhuma categoria disponível"}
+            <p className="py-4 text-center text-xs text-muted-foreground">
+              {search ? 'Nenhuma categoria encontrada' : 'Nenhuma categoria disponível'}
             </p>
           )}
         </div>

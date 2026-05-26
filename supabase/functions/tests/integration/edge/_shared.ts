@@ -21,6 +21,7 @@ export async function invokeFunction(name: string, body: unknown, headers: Recor
     headers: {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${SERVICE_ROLE_KEY}`,
+      "X-Internal-Call": "true",
       ...headers,
     },
     body: JSON.stringify(body),

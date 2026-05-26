@@ -10,6 +10,8 @@ export type { RamoAtividadeFilterState };
 
 export interface UseRamoAtividadeFilterReturn {
   groups: RamoAtividadeGroup[];
+  totalGroups: number;
+  totalSegmentos: number;
   segmentos: SegmentoComplete[];
   byRamo: Map<string, SegmentoComplete[]>;
   filterState: RamoAtividadeFilterState;
@@ -29,10 +31,14 @@ export interface UseRamoAtividadeFilterReturn {
 
 export function useRamoAtividadeFilter(): UseRamoAtividadeFilterReturn {
   const {
-    data: groups = [],
+    data: groupsData,
     isLoading: groupsLoading,
     error: groupsError,
   } = useRamoAtividadeGroups();
+
+  const groups = useMemo(() => groupsData?.groups ?? [], [groupsData?.groups]);
+  const totalGroups = groupsData?.totalGroups ?? 0;
+  const totalSegmentos = groupsData?.totalSegmentos ?? 0;
   const {
     data: segmentosData,
     isLoading: segmentosLoading,
@@ -40,11 +46,15 @@ export function useRamoAtividadeFilter(): UseRamoAtividadeFilterReturn {
   } = useSegmentosCompletos();
 
   const segmentos = useMemo(() => segmentosData?.segmentos || [], [segmentosData?.segmentos]);
-  const byRamo = useMemo(() => segmentosData?.byRamo || new Map(), [segmentosData?.byRamo]);
+  const byRamo = useMemo(
+    () => segmentosData?.byRamo || new Map<string, SegmentoComplete[]>(),
+    [segmentosData?.byRamo],
+  );
 
   const [filterState, setFilterState] = useState<RamoAtividadeFilterState>({
     selectedRamos: [],
     selectedSegmentos: [],
+    searchTerm: '',
   });
 
   const isLoading = groupsLoading || segmentosLoading;
@@ -98,7 +108,7 @@ export function useRamoAtividadeFilter(): UseRamoAtividadeFilterReturn {
   }, []);
 
   const clearAll = useCallback(() => {
-    setFilterState({ selectedRamos: [], selectedSegmentos: [] });
+    setFilterState({ selectedRamos: [], selectedSegmentos: [], searchTerm: '' });
   }, []);
 
   const hasActiveFilters =
@@ -159,6 +169,8 @@ export function useRamoAtividadeFilter(): UseRamoAtividadeFilterReturn {
 
   return {
     groups,
+    totalGroups,
+    totalSegmentos,
     segmentos: filteredSegmentos,
     byRamo,
     filterState,

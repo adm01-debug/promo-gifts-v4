@@ -36,7 +36,7 @@ export function PriceSparkline({ productId, className }: Props) {
           .limit(60);
         if (cancelled) return;
         const points = (rows ?? []).map((r) => ({
-          date: r.changed_at,
+          date: r.changed_at ?? '',
           price: Number((r.new_values as Record<string, unknown>)?.price ?? 0),
         }));
         setData(points);

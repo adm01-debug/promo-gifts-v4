@@ -81,7 +81,7 @@ export async function logAccessDenied(input: LogAccessDeniedInput): Promise<void
     .rpc('log_access_denied', {
       _blocked_path: input.blockedPath,
       _required_role: input.requiredRole,
-      _user_role: input.userRole ?? null,
+      _user_role: input.userRole ?? undefined,
       _reason: 'frontend_guard_block',
     })
     .then(

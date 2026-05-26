@@ -5,12 +5,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { searchCrm, selectCrm } from '@/lib/crm-db';
-import {
-  getCompanyDisplayName,
-  type CrmContact,
-  type CrmContactEmail,
-  type CrmContactPhone,
-} from '@/types/crm';
+import { type CrmContact, type CrmContactEmail, type CrmContactPhone } from '@/types/crm';
 
 interface CompanyOption {
   id: string;
@@ -82,7 +77,7 @@ export function ShareContactSelector({ onSelect, selection }: ShareContactSelect
       return results.map(
         (c: { id: string; razao_social?: string; nome_fantasia?: string; cnpj?: string }) => ({
           id: c.id,
-          name: getCompanyDisplayName(c),
+          name: c.nome_fantasia || c.razao_social || '',
           razao_social: c.razao_social,
           nome_fantasia: c.nome_fantasia,
           cnpj: c.cnpj,
@@ -121,11 +116,11 @@ export function ShareContactSelector({ onSelect, selection }: ShareContactSelect
           }
           try {
             const phones = await selectCrm<CrmContactPhone>('contact_phones', {
-              select: 'phone',
+              select: 'numero',
               filters: { contact_id: c.id, is_primary: true },
               limit: 1,
             });
-            phone = phones[0]?.phone ?? null;
+            phone = phones[0]?.numero ?? null;
           } catch {
             /* empty */
           }

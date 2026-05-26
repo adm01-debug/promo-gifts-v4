@@ -5,7 +5,7 @@
  * Supports Ctrl+Z (undo) and Ctrl+Shift+Z / Ctrl+Y (redo).
  */
 
-import { useCallback, useEffect, useRef, useMemo, useReducer } from "react";
+import { useCallback, useEffect, useRef, useMemo, useReducer } from 'react';
 
 interface PositionState {
   positionX: number;
@@ -38,10 +38,7 @@ type HistoryAction =
   | { type: 'REDO' }
   | { type: 'CLEAR' };
 
-function historyReducer(
-  state: HistoryReducerState,
-  action: HistoryAction,
-): HistoryReducerState {
+function historyReducer(state: HistoryReducerState, action: HistoryAction): HistoryReducerState {
   switch (action.type) {
     case 'PUSH': {
       const truncated = state.history.slice(0, state.historyIndex + 1);
@@ -120,17 +117,13 @@ export function usePositionHistory(options: UsePositionHistoryOptions = {}) {
 
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      if (
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.isContentEditable
-      )
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
         return;
 
       const isCtrl = e.ctrlKey || e.metaKey;
 
       // Ctrl+Z → Undo
-      if (isCtrl && e.key === "z" && !e.shiftKey) {
+      if (isCtrl && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
         const state = undo();
         if (state && onUndoRedoRef.current) {
@@ -140,7 +133,7 @@ export function usePositionHistory(options: UsePositionHistoryOptions = {}) {
       }
 
       // Ctrl+Shift+Z or Ctrl+Y → Redo
-      if (isCtrl && ((e.key === "z" && e.shiftKey) || e.key === "y")) {
+      if (isCtrl && ((e.key === 'z' && e.shiftKey) || e.key === 'y')) {
         e.preventDefault();
         const state = redo();
         if (state && onUndoRedoRef.current) {
@@ -150,8 +143,8 @@ export function usePositionHistory(options: UsePositionHistoryOptions = {}) {
       }
     };
 
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [enabled, undo, redo]);
 
   return useMemo(

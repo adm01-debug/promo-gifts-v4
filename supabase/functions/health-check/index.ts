@@ -1,7 +1,8 @@
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { handleCorsPreflight } from "../_shared/cors.ts";
+import { handleCorsPreflight, getCorsHeaders, buildPublicCorsHeaders } from "../_shared/cors.ts";
 import { getOrCreateRequestId } from "../_shared/request-id.ts";
 import { createStructuredLogger } from "../_shared/structured-logger.ts";
+import { getCredential } from "../_shared/credentials.ts";
 
 // --- Types ---
 
@@ -53,15 +54,16 @@ class ExternalDatabaseChecker implements HealthChecker {
   async check(): Promise<CheckResult> {
     const start = Date.now();
     try {
-      const url = Deno.env.get("EXTERNAL_SUPABASE_URL");
-      const key = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY");
+      const url = await getCredential('EXTERNAL_PROMOBRIND_URL');
+      const key = await getCredential('EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY');
       
       if (!url || !key) {
         return { status: "skipped", error: "No credentials" };
       }
 
       const client = createClient(url, key);
-      const { error } = await client.from("produto").select("id").limit(1);
+      // Alterado de 'produto' para 'products' para refletir o schema real
+      const { error } = await client.from("products").select("id").limit(1);
       
       return {
         status: error ? "degraded" : "healthy",
@@ -84,9 +86,15 @@ Deno.serve(async (req) => {
   const requestId = getOrCreateRequestId(req);
   const log = createStructuredLogger({ fn: "health-check", requestId, req });
 
-  // Handle CORS
+  // Handle CORS (Public endpoint but with security headers)
   const preflight = handleCorsPreflight(req, { public: true });
   if (preflight) return preflight;
+
+  const corsHeaders = {
+    ...buildPublicCorsHeaders(),
+    "Content-Type": "application/json",
+    "X-Health-Version": "1.1.0"
+  };
 
   const start = Date.now();
   const checkers: HealthChecker[] = [
@@ -126,8 +134,7 @@ Deno.serve(async (req) => {
   return log.respond(
     new Response(JSON.stringify(responseBody), {
       status: overall === "unhealthy" ? 503 : 200,
-      headers: { "Content-Type": "application/json" },
+      headers: corsHeaders,
     })
   );
 });
-

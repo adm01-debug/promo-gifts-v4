@@ -95,7 +95,10 @@ export async function checkExistingSkus(skus: string[]): Promise<Set<string>> {
   for (let i = 0; i < uniqueSkus.length; i += 100) {
     const chunk = uniqueSkus.slice(i, i + 100);
     try {
-      const response = await invokeBridge<{ records: Array<{ sku: string }>; count: number | null }>({
+      const response = await invokeBridge<{
+        records: Array<{ sku: string }>;
+        count: number | null;
+      }>({
         table: 'products',
         operation: 'select',
         select: 'sku',
@@ -103,7 +106,9 @@ export async function checkExistingSkus(skus: string[]): Promise<Set<string>> {
         limit: 100,
       });
 
-      const records = response?.data?.records ?? (response as Record<string, unknown>)?.records ?? [];
+      // Defensive: bridge normally nests under `data`, but tolerate a flat shape.
+      const records =
+        response?.data?.records ?? (response as unknown as Record<string, unknown>)?.records ?? [];
       if (Array.isArray(records)) {
         records.forEach((r: { sku: string }) => {
           if (r.sku) existingSkus.add(r.sku);
@@ -149,14 +154,19 @@ export async function executeBatchImport(
     progress.currentChunk = chunkIndex + 1;
 
     try {
-      const response = await invokeBridge<{ records: Array<{ id: string; sku: string; name: string }>; count: number }>({
+      const response = await invokeBridge<{
+        records: Array<{ id: string; sku: string; name: string }>;
+        count: number;
+      }>({
         table: 'products',
         operation: 'batch_insert',
         data: chunk,
         ...(mode === 'upsert' ? { onConflict: 'sku' } : {}),
       });
 
-      const records = response?.data?.records ?? (response as Record<string, unknown>)?.records ?? [];
+      // Defensive: bridge normally nests under `data`, but tolerate a flat shape.
+      const records =
+        response?.data?.records ?? (response as unknown as Record<string, unknown>)?.records ?? [];
       const insertedCount = Array.isArray(records) ? records.length : 0;
 
       result.succeeded += insertedCount;

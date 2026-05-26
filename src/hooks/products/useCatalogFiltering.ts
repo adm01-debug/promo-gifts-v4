@@ -1,11 +1,11 @@
 /**
  * useCatalogFiltering — Filtering and sorting logic extracted from useCatalogState
  */
-import { useMemo } from "react";
-import type { Product } from "@/hooks/products";
-import type { FilterState } from "@/components/filters/FilterPanel";
-import type { SortOption } from "@/hooks/products/useCatalogState";
-import { sortProducts } from "@/utils/product-sorting";
+import { useMemo } from 'react';
+import type { Product, SupplierSalesEntry } from '@/hooks/products';
+import type { FilterState } from '@/components/filters/FilterPanel';
+import type { SortOption } from '@/hooks/products/useCatalogState';
+import { sortProducts } from '@/utils/product-sorting';
 
 interface CatalogFilteringOptions {
   realProducts: Product[];
@@ -24,19 +24,38 @@ interface CatalogFilteringOptions {
 }
 
 export function useCatalogFiltering({
-  realProducts, filters, sortBy, hasFuzzySearch, fuzzySearchResults,
-  hasMaterialFilter, materialFilteredProductIds, isLoadingMaterialFilter,
-  hasCategoryFilter, categoryFilteredProductIds, isLoadingCategoryFilter,
-  promoSalesMap, supplierSalesMap,
+  realProducts,
+  filters,
+  sortBy,
+  hasFuzzySearch,
+  fuzzySearchResults,
+  hasMaterialFilter,
+  materialFilteredProductIds,
+  isLoadingMaterialFilter,
+  hasCategoryFilter,
+  categoryFilteredProductIds,
+  isLoadingCategoryFilter,
+  promoSalesMap,
+  supplierSalesMap,
 }: CatalogFilteringOptions): Product[] {
   // Otimização: Memoizamos conjuntos de filtros para lookup O(1)
   const colorFilterSet = useMemo(() => new Set(filters.colors), [filters.colors]);
   const colorGroupSet = useMemo(() => new Set(filters.colorGroups), [filters.colorGroups]);
-  const colorVariationSet = useMemo(() => new Set(filters.colorVariations), [filters.colorVariations]);
-  const hasColorFilters = colorFilterSet.size > 0 || colorGroupSet.size > 0 || colorVariationSet.size > 0;
-  const categoryFilterSet = useMemo(() => new Set(filters.categories.map(String)), [filters.categories]);
+  const colorVariationSet = useMemo(
+    () => new Set(filters.colorVariations),
+    [filters.colorVariations],
+  );
+  const hasColorFilters =
+    colorFilterSet.size > 0 || colorGroupSet.size > 0 || colorVariationSet.size > 0;
+  const categoryFilterSet = useMemo(
+    () => new Set(filters.categories.map(String)),
+    [filters.categories],
+  );
   const supplierFilterSet = useMemo(() => new Set(filters.suppliers), [filters.suppliers]);
-  const genderFilterSet = useMemo(() => new Set(filters.gender?.map(g => g.toLowerCase().trim())), [filters.gender]);
+  const genderFilterSet = useMemo(
+    () => new Set(filters.gender?.map((g) => g.toLowerCase().trim())),
+    [filters.gender],
+  );
 
   return useMemo(() => {
     if (realProducts.length === 0) return [];
@@ -60,28 +79,29 @@ export function useCatalogFiltering({
 
     // Optimized Color Filtering: Process once per product
     if (hasColorFilters) {
-      const groupArray = colorGroupSet.size > 0 ? Array.from(colorGroupSet).map(s => s.toLowerCase()) : null;
-      
+      const groupArray =
+        colorGroupSet.size > 0 ? Array.from(colorGroupSet).map((s) => s.toLowerCase()) : null;
+
       result = result.filter((p) => {
         if (!p.colors?.length) return false;
-        
+
         // Use for...of for slightly better performance on large sets
         for (const c of p.colors) {
           if (colorFilterSet.size > 0 && colorFilterSet.has(c.name)) return true;
-          
+
           if (colorVariationSet.size > 0) {
             const vSlug = (c.variationSlug || '').toLowerCase().trim();
             if (colorVariationSet.has(vSlug)) return true;
           }
-          
+
           if (groupArray) {
             const gSlug = (c.groupSlug || '').toLowerCase().trim();
             const gName = (c.group || '').toLowerCase().trim();
             const cName = (c.name || '').toLowerCase().trim();
-            
+
             if (colorGroupSet.has(gSlug) || colorGroupSet.has(gName)) return true;
             // groupArray is small, so some is fine
-            if (groupArray.some(s => cName.includes(s))) return true;
+            if (groupArray.some((s) => cName.includes(s))) return true;
           }
         }
         return false;
@@ -91,9 +111,9 @@ export function useCatalogFiltering({
     if (result.length === 0) return result;
 
     if (supplierFilterSet.size > 0) {
-      result = result.filter((p) =>
-        supplierFilterSet.has(p.brand || '') ||
-        supplierFilterSet.has(p.supplier_reference || '')
+      result = result.filter(
+        (p) =>
+          supplierFilterSet.has(p.brand || '') || supplierFilterSet.has(p.supplier_reference || ''),
       );
     }
 
@@ -117,24 +137,50 @@ export function useCatalogFiltering({
         return [];
       }
     } else if (filters.materiais.length) {
-      const lowerMateriais = filters.materiais.map(m => m.toLowerCase());
+      const lowerMateriais = filters.materiais.map((m) => m.toLowerCase());
       result = result.filter((p) => {
-        const mats = Array.isArray(p.materials) ? p.materials.join(' ').toLowerCase() : (p.materials || '').toLowerCase();
+        const mats = (
+          Array.isArray(p.materials) ? p.materials.join(' ') : (p.materials ?? '')
+        ).toLowerCase();
         return lowerMateriais.some((m) => mats.includes(m));
       });
     }
 
     // Business Logic - Do not change sorting behavior
-    const skipSort = (hasFuzzySearch && sortBy === 'relevance') || (hasFuzzySearch && sortBy === 'name');
-    sortProducts(result, sortBy, { promoSalesMap, supplierSalesMap, skipSort });
+    const skipSort =
+      (hasFuzzySearch && sortBy === 'relevance') || (hasFuzzySearch && sortBy === 'name');
+    // supplierSalesMap arrives typed as Map<string, number> via an upstream cast,
+    // but its runtime entries are SupplierSalesEntry (from useSupplierSalesRanking).
+    sortProducts(result, sortBy, {
+      promoSalesMap,
+      supplierSalesMap: supplierSalesMap as unknown as Map<string, SupplierSalesEntry> | undefined,
+      skipSort,
+    });
 
     return result;
   }, [
-    filters.priceRange[0], filters.priceRange[1], filters.inStock, filters.materiais, 
-    sortBy, hasFuzzySearch, fuzzySearchResults, realProducts, 
-    hasMaterialFilter, materialFilteredProductIds, isLoadingMaterialFilter, 
-    hasCategoryFilter, categoryFilteredProductIds, isLoadingCategoryFilter, 
-    promoSalesMap, supplierSalesMap, colorFilterSet, colorGroupSet, colorVariationSet, 
-    categoryFilterSet, supplierFilterSet, genderFilterSet, hasColorFilters
+    filters.priceRange[0],
+    filters.priceRange[1],
+    filters.inStock,
+    filters.materiais,
+    sortBy,
+    hasFuzzySearch,
+    fuzzySearchResults,
+    realProducts,
+    hasMaterialFilter,
+    materialFilteredProductIds,
+    isLoadingMaterialFilter,
+    hasCategoryFilter,
+    categoryFilteredProductIds,
+    isLoadingCategoryFilter,
+    promoSalesMap,
+    supplierSalesMap,
+    colorFilterSet,
+    colorGroupSet,
+    colorVariationSet,
+    categoryFilterSet,
+    supplierFilterSet,
+    genderFilterSet,
+    hasColorFilters,
   ]);
 }

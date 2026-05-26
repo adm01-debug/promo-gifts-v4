@@ -27,9 +27,7 @@ export function useGeoBlocking() {
     mode: 'whitelist',
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [currentCountry, setCurrentCountry] = useState<{ code: string; name: string } | null>(
-    null,
-  );
+  const [currentCountry, setCurrentCountry] = useState<{ code: string; name: string } | null>(null);
 
   // BUG-17 FIX: accept an AbortSignal so the fetch can be cancelled when the
   // component unmounts. Without this, setCurrentCountry would be called on an

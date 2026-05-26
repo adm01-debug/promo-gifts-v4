@@ -1,13 +1,8 @@
-import { useNavigate } from "react-router-dom";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { useNavigate } from 'react-router-dom';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Table,
   TableBody,
@@ -15,7 +10,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 import {
   Building2,
   TrendingDown,
@@ -24,10 +19,10 @@ import {
   Crown,
   ArrowRight,
   Minus,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useSupplierComparison, type Product } from "@/hooks/products";
-import { Skeleton } from "@/components/ui/skeleton";
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useSupplierComparison, type Product } from '@/hooks/products';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface SupplierComparisonModalProps {
   product?: Product | null;
@@ -38,42 +33,41 @@ interface SupplierComparisonModalProps {
 
 export function SupplierComparisonModal({
   product,
-  productId,
   open,
   onOpenChange,
 }: SupplierComparisonModalProps) {
   const navigate = useNavigate();
-  const { data: comparison, isLoading } = useSupplierComparison(product ?? null);
+  const { result: comparison, isLoading } = useSupplierComparison(product ?? null);
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
     }).format(value);
   };
 
   const formatPercent = (value: number) => {
-    const sign = value > 0 ? "+" : "";
+    const sign = value > 0 ? '+' : '';
     return `${sign}${value.toFixed(1)}%`;
   };
 
   const getStockStatusLabel = (status: string) => {
     switch (status) {
-      case "in-stock":
-        return { label: "Em estoque", color: "text-success" };
-      case "low-stock":
-        return { label: "Estoque baixo", color: "text-warning" };
-      case "out-of-stock":
-        return { label: "Sem estoque", color: "text-destructive" };
+      case 'in-stock':
+        return { label: 'Em estoque', color: 'text-success' };
+      case 'low-stock':
+        return { label: 'Estoque baixo', color: 'text-warning' };
+      case 'out-of-stock':
+        return { label: 'Sem estoque', color: 'text-destructive' };
       default:
-        return { label: "Em estoque", color: "text-success" };
+        return { label: 'Em estoque', color: 'text-success' };
     }
   };
 
   if (isLoading || !comparison) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[85vh]">
+        <DialogContent className="max-h-[85vh] max-w-4xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Building2 className="h-5 w-5 text-primary" />
@@ -81,7 +75,7 @@ export function SupplierComparisonModal({
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-6 p-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
               {[...Array(4)].map((_, i) => (
                 <Skeleton key={i} className="h-20 w-full rounded-lg" />
               ))}
@@ -116,7 +110,7 @@ export function SupplierComparisonModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[85vh]">
+      <DialogContent className="max-h-[85vh] max-w-4xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5 text-primary" />
@@ -129,31 +123,25 @@ export function SupplierComparisonModal({
 
         <ScrollArea className="h-[60vh]">
           {/* Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            <div className="p-3 rounded-lg bg-success/10 border border-success/20">
-              <p className="text-xs text-muted-foreground mb-1">Menor Preço</p>
-              <p className="text-lg font-bold text-success">
-                {formatCurrency(lowestPrice)}
-              </p>
+          <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="rounded-lg border border-success/20 bg-success/10 p-3">
+              <p className="mb-1 text-xs text-muted-foreground">Menor Preço</p>
+              <p className="text-lg font-bold text-success">{formatCurrency(lowestPrice)}</p>
             </div>
-            <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
-              <p className="text-xs text-muted-foreground mb-1">Maior Estoque</p>
+            <div className="rounded-lg border border-primary/20 bg-primary/10 p-3">
+              <p className="mb-1 text-xs text-muted-foreground">Maior Estoque</p>
               <p className="text-lg font-bold text-primary">
-                {highestStock.toLocaleString("pt-BR")} un.
+                {highestStock.toLocaleString('pt-BR')} un.
               </p>
             </div>
-            <div className="p-3 rounded-lg bg-muted border border-border">
-              <p className="text-xs text-muted-foreground mb-1">Fornecedores</p>
+            <div className="rounded-lg border border-border bg-muted p-3">
+              <p className="mb-1 text-xs text-muted-foreground">Fornecedores</p>
               <p className="text-lg font-bold">{allProducts.length}</p>
             </div>
-            <div className="p-3 rounded-lg bg-muted border border-border">
-              <p className="text-xs text-muted-foreground mb-1">
-                Economia Máx.
-              </p>
+            <div className="rounded-lg border border-border bg-muted p-3">
+              <p className="mb-1 text-xs text-muted-foreground">Economia Máx.</p>
               <p className="text-lg font-bold text-success">
-                {formatCurrency(
-                  Math.max(...alternatives.map((a) => -a.priceDiff), 0)
-                )}
+                {formatCurrency(Math.max(...alternatives.map((a) => -a.priceDiff), 0))}
               </p>
             </div>
           </div>
@@ -173,35 +161,27 @@ export function SupplierComparisonModal({
             </TableHeader>
             <TableBody>
               {allProducts.map(
-                ({
-                  product,
-                  priceDiff,
-                  priceDiffPercent,
-                  isLowestPrice,
-                  isBestStock,
-                  isBase,
-                }) => {
+                ({ product, priceDiff, priceDiffPercent, isLowestPrice, isBestStock, isBase }) => {
                   const status = getStockStatusLabel(product.stockStatus);
 
                   return (
                     <TableRow
                       key={product.id}
-                      className={cn(
-                        isBase && "bg-primary/5 border-l-2 border-l-primary"
-                      )}
+                      className={cn(isBase && 'border-l-2 border-l-primary bg-primary/5')}
                     >
                       <TableCell>
-                        <div className="relative w-16 h-16 rounded-lg bg-muted flex items-center justify-center overflow-hidden border border-border">
+                        <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted">
                           {product.images?.[0] ? (
                             <img
                               src={product.images[0]}
                               alt={product.name}
-                              className="w-full h-full object-cover transition-opacity duration-300"
+                              className="h-full w-full object-cover transition-opacity duration-300"
                               onError={(e) => {
                                 (e.target as HTMLImageElement).src = '/placeholder.svg';
-                                (e.target as HTMLImageElement).className = "w-8 h-8 opacity-20 object-contain";
+                                (e.target as HTMLImageElement).className =
+                                  'w-8 h-8 opacity-20 object-contain';
                               }}
-                              loading="lazy" 
+                              loading="lazy"
                             />
                           ) : (
                             <Package className="h-6 w-6 text-muted-foreground/30" />
@@ -209,7 +189,7 @@ export function SupplierComparisonModal({
                           {isBase && (
                             <Badge
                               variant="default"
-                              className="absolute -top-2 -left-2 text-[10px] px-1"
+                              className="absolute -left-2 -top-2 px-1 text-[10px]"
                             >
                               Atual
                             </Badge>
@@ -218,43 +198,33 @@ export function SupplierComparisonModal({
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <p className="font-medium line-clamp-1">
-                            {product.name}
-                          </p>
+                          <p className="line-clamp-1 font-medium">{product.name}</p>
                           <div className="flex items-center gap-2">
                             <Badge variant="outline" className="text-xs">
-                              <Building2 className="h-3 w-3 mr-1" />
+                              <Building2 className="mr-1 h-3 w-3" />
                               {product.supplier.name}
                             </Badge>
                             {isLowestPrice && (
-                              <Badge
-                                variant="default"
-                                className="text-xs bg-success"
-                              >
-                                <Crown className="h-3 w-3 mr-1" />
+                              <Badge variant="default" className="bg-success text-xs">
+                                <Crown className="mr-1 h-3 w-3" />
                                 Melhor Preço
                               </Badge>
                             )}
                             {isBestStock && !isLowestPrice && (
-                              <Badge
-                                variant="default"
-                                className="text-xs bg-primary"
-                              >
-                                <Package className="h-3 w-3 mr-1" />
+                              <Badge variant="default" className="bg-primary text-xs">
+                                <Package className="mr-1 h-3 w-3" />
                                 Melhor Estoque
                               </Badge>
                             )}
                           </div>
-                          <p className="text-xs text-muted-foreground font-mono">
-                            {product.sku}
-                          </p>
+                          <p className="font-mono text-xs text-muted-foreground">{product.sku}</p>
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <span
                           className={cn(
-                            "text-lg font-bold",
-                            isLowestPrice ? "text-success" : "text-foreground"
+                            'text-lg font-bold',
+                            isLowestPrice ? 'text-success' : 'text-foreground',
                           )}
                         >
                           {formatCurrency(product.price)}
@@ -286,52 +256,48 @@ export function SupplierComparisonModal({
                       </TableCell>
                       <TableCell className="text-center">
                         <div className="flex flex-col items-center gap-1">
-                          <span className={cn("font-medium", status.color)}>
-                            {status.label}
-                          </span>
+                          <span className={cn('font-medium', status.color)}>{status.label}</span>
                           <span className="text-sm text-muted-foreground">
-                            {product.stock.toLocaleString("pt-BR")} un.
+                            {product.stock.toLocaleString('pt-BR')} un.
                           </span>
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
-                        <span className="text-sm">
-                          {product.minQuantity} un.
-                        </span>
+                        <span className="text-sm">{product.minQuantity} un.</span>
                       </TableCell>
                       <TableCell>
                         <Button
                           size="sm"
-                          variant={isBase ? "outline" : "default"}
+                          variant={isBase ? 'outline' : 'default'}
                           onClick={() => {
                             onOpenChange(false);
                             navigate(`/produto/${product.id}`);
                           }}
                         >
-                          {isBase ? "Ver" : "Trocar"}
-                          <ArrowRight className="h-4 w-4 ml-1" />
+                          {isBase ? 'Ver' : 'Trocar'}
+                          <ArrowRight className="ml-1 h-4 w-4" />
                         </Button>
                       </TableCell>
                     </TableRow>
                   );
-                }
+                },
               )}
             </TableBody>
           </Table>
 
           {/* Materials Comparison */}
-          <div className="mt-6 p-4 rounded-lg bg-muted/50 border border-border">
-            <h4 className="font-medium mb-3">Materiais Comparados</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="mt-6 rounded-lg border border-border bg-muted/50 p-4">
+            <h4 className="mb-3 font-medium">Materiais Comparados</h4>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {allProducts.map(({ product, isBase }) => (
                 <div
                   key={product.id}
                   className={cn(
-                    "p-3 rounded-lg bg-background border",
-                    isBase ? "border-primary" : "border-border"
+                    'rounded-lg border bg-background p-3',
+                    isBase ? 'border-primary' : 'border-border',
                   )}
                 >
-                  <p className="text-sm font-medium mb-2 flex items-center gap-2">
+                  <p className="mb-2 flex items-center gap-2 text-sm font-medium">
                     {product.supplier.name}
                     {isBase && (
                       <Badge variant="secondary" className="text-xs">
@@ -342,11 +308,7 @@ export function SupplierComparisonModal({
                   {Array.isArray(product.materials) && product.materials.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {product.materials.map((material) => (
-                        <Badge
-                          key={material}
-                          variant="outline"
-                          className="text-xs"
-                        >
+                        <Badge key={material} variant="outline" className="text-xs">
                           {material}
                         </Badge>
                       ))}
@@ -358,28 +320,26 @@ export function SupplierComparisonModal({
           </div>
 
           {/* Colors Comparison */}
-          <div className="mt-4 p-4 rounded-lg bg-muted/50 border border-border">
-            <h4 className="font-medium mb-3">Cores Disponíveis</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="mt-4 rounded-lg border border-border bg-muted/50 p-4">
+            <h4 className="mb-3 font-medium">Cores Disponíveis</h4>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {allProducts.map(({ product, isBase }) => (
                 <div
                   key={product.id}
                   className={cn(
-                    "p-3 rounded-lg bg-background border",
-                    isBase ? "border-primary" : "border-border"
+                    'rounded-lg border bg-background p-3',
+                    isBase ? 'border-primary' : 'border-border',
                   )}
                 >
-                  <p className="text-sm font-medium mb-2 flex items-center gap-2">
+                  <p className="mb-2 flex items-center gap-2 text-sm font-medium">
                     {product.supplier.name}
-                    <span className="text-muted-foreground">
-                      ({product.colors.length} cores)
-                    </span>
+                    <span className="text-muted-foreground">({product.colors.length} cores)</span>
                   </p>
                   <div className="flex flex-wrap gap-1">
                     {product.colors.map((color, idx) => (
                       <div
                         key={idx}
-                        className="w-6 h-6 rounded-full border border-border"
+                        className="h-6 w-6 rounded-full border border-border"
                         style={{ backgroundColor: color.hex }}
                         title={color.name}
                       />
