@@ -1,1 +1,233 @@
-aW1wb3J0IHsgZ2V0Q29yc0hlYWRlcnMgfSBmcm9tICIuLi9fc2hhcmVkL2NvcnMudHMiOwppbXBvcnQgeyBhdXRoZW50aWNhdGVSZXF1ZXN0LCBhdXRoRXJyb3JSZXNwb25zZSB9IGZyb20gIi4uL19zaGFyZWQvYXV0aC50cyI7CmltcG9ydCB7IGNyZWF0ZUNsaWVudCB9IGZyb20gIm5wbTpAc3VwYWJhc2Uvc3VwYWJhc2UtanNAMi40OS40IjsKaW1wb3J0IHsgYXNzZXJ0U3dpdGNoRW5hYmxlZCB9IGZyb20gIi4uL19zaGFyZWQva2lsbF9zd2l0Y2gudHMiOwoKLy8g4pSAIFR5cGVzIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgAoKaW50ZXJmYWNlIEdlbmVyYXRlTW9ja3VwQm9keSB7CiAgcHJvZHVjdEltYWdlVXJsPzogc3RyaW5nOwogIGxvZ29CYXNlNjQ/OiBzdHJpbmc7CiAgbG9nb1VybD86IHN0cmluZzsKICB0ZWNobmlxdWVOYW1lPzogc3RyaW5nOwogIHRlY2huaXF1ZVByb21wdD86IHN0cmluZzsKICBwb3NpdGlvblg/OiBudW1iZXI7CiAgcG9zaXRpb25ZPzogbnVtYmVyOwogIGxvZ29XaWR0aENtPzogbnVtYmVyOwogIGxvZ29IZWlnaHRDbT86IG51bWJlcjsKICBsb2dvUm90YXRpb24/OiBudW1iZXI7CiAgbG9nb1NjYWxlPzogbnVtYmVyOwogIHByb2R1Y3ROYW1lPzogc3RyaW5nOwp9CgovLyDilIAgVmFsaWRhdGlvbiDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIAKCmZ1bmN0aW9uIHZhbGlkYXRpb25FcnJvcihtZXNzYWdlOiBzdHJpbmcsIGNvcnNIZWFkZXJzOiBSZWNvcmQ8c3RyaW5nLCBzdHJpbmc+KTogUmVzcG9uc2UgewogIHJldHVybiBuZXcgUmVzcG9uc2UoCiAgICBKU09OLnN0cmluZ2lmeSh7IGVycm9yOiAidmFsaWRhdGlvbl9mYWlsZWQiLCBtZXNzYWdlIH0pLAogICAgeyBzdGF0dXM6IDQwMCwgaGVhZGVyczogeyAuLi5jb3JzSGVhZGVycywgIkNvbnRlbnQtVHlwZSI6ICJhcHBsaWNhdGlvbi9qc29uIiB9IH0sCiAgKTsKfQoKZnVuY3Rpb24gaXNWYWxpZEh0dHBVcmwodmFsdWU6IHVua25vd24pOiB2YWx1ZSBpcyBzdHJpbmcgewogIGlmICh0eXBlb2YgdmFsdWUgIT09ICJzdHJpbmciKSByZXR1cm4gZmFsc2U7CiAgdHJ5IHsKICAgIGNvbnN0IHUgPSBuZXcgVVJMKHZhbHVlKTsKICAgIHJldHVybiB1LnByb3RvY29sID09PSAiaHR0cHM6IiB8fCB1LnByb3RvY29sID09PSAiaHR0cDoiOwogIH0gY2F0Y2ggeyByZXR1cm4gZmFsc2U7IH0KfQoKLy8g4pSAIEltYWdlIGhlbHBlcnMg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSACgphc3luYyBmdW5jdGlvbiBmZXRjaEJ5dGVzKHVybDogc3RyaW5nLCBtcyA9IDE0XzAwMCk6IFByb21pc2U8VWludDhBcnJheT4gewogIGNvbnN0IGN0cmwgPSBuZXcgQWJvcnRDb250cm9sbGVyKCk7CiAgY29uc3QgdCA9IHNldFRpbWVvdXQoKCkgPT4gY3RybC5hYm9ydCgpLCBtcyk7CiAgdHJ5IHsKICAgIGNvbnN0IHJlcyA9IGF3YWl0IGZldGNoKHVybCwgeyBzaWduYWw6IGN0cmwuc2lnbmFsIH0pOwogICAgaWYgKCFyZXMub2spIHRocm93IG5ldyBFcnJvcihgSFRUUCAke3Jlcy5zdGF0dXN9IGZldGNoaW5nIGltYWdlYCk7CiAgICByZXR1cm4gbmV3IFVpbnQ4QXJyYXkoYXdhaXQgcmVzLmFycmF5QnVmZmVyKCkpOwogIH0gZmluYWxseSB7IGNsZWFyVGltZW91dCh0KTsgfQp9CgpmdW5jdGlvbiBiYXNlNjRUb0J5dGVzKGRhdGFVcmw6IHN0cmluZyk6IFVpbnQ4QXJyYXkgewogIGNvbnN0IGI2NCA9IGRhdGFVcmwuaW5jbHVkZXMoIiwiKSA/IGRhdGFVcmwuc3BsaXQoIiwiKVsxXSA6IGRhdGFVcmw7CiAgY29uc3QgYmluID0gYXRvYihiNjQpOwogIGNvbnN0IGFyciA9IG5ldyBVaW50OEFycmF5KGJpbi5sZW5ndGgpOwogIGZvciAobGV0IGkgPSAwOyBpIDwgYmluLmxlbmd0aDsgaSsrKSBhcnJbaV0gPSBiaW4uY2hhckNvZGVBdChpKTsKICByZXR1cm4gYXJyOwp9CgovLyDilIAgQ2FudmFzIGNvbXBvc2l0aW9uIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgAoKY29uc3QgQ0FOVkFTX1BYID0gMTAyNDsKCmFzeW5jIGZ1bmN0aW9uIGNvbXBvc2l0ZUltYWdlcygKICBwcm9kdWN0Qnl0ZXM6IFVpbnQ4QXJyYXksCiAgbG9nb0J5dGVzOiBVaW50OEFycmF5LAogIHBvc1hQY3Q6IG51bWJlciwKICBwb3NZUGN0OiBudW1iZXIsCiAgbG9nb1dSYXRpbzogbnVtYmVyLAogIGxvZ29IUmF0aW86IG51bWJlciwKICByb3REZWc6IG51bWJlciwKICBzY2FsZVBjdDogbnVtYmVyLAopOiBQcm9taXNlPEJsb2I+IHsKICBjb25zdCBjYW52YXMgPSBuZXcgT2Zmc2NyZWVuQ2FudmFzKENBTlZBU19QWCwgQ0FOVkFTX1BYKTsKICBjb25zdCBjdHggPSBjYW52YXMuZ2V0Q29udGV4dCgiMmQiKTsKICBpZiAoIWN0eCkgdGhyb3cgbmV3IEVycm9yKCJPZmZzY3JlZW5DYW52YXMgMmQgY29udGV4dCB1bmF2YWlsYWJsZSIpOwoKICBjb25zdCBbcHJvZEJtcCwgbG9nb0JtcF0gPSBhd2FpdCBQcm9taXNlLmFsbChbCiAgICBjcmVhdGVJbWFnZUJpdG1hcChuZXcgQmxvYihbcHJvZHVjdEJ5dGVzXSkpLAogICAgY3JlYXRlSW1hZ2VCaXRtYXAobmV3IEJsb2IoW2xvZ29CeXRlc10pKSwKICBdKTsKCiAgLy8gUHJvZHVjdCAtLSBjb3Zlci1maWxsIGNyb3AKICB2YXIgcGEgPSBwcm9kQm1wLndpZHRoIC8gcHJvZEJtcC5oZWlnaHQ7CiAgdmFyIHN4ID0gMCwgc3kgPSAwLCBzdyA9IHByb2RCbXAud2lkdGgsIHNoID0gcHJvZEJtcC5oZWlnaHQ7CiAgaWYgKHBhID4gMSkgeyBzdyA9IHByb2RCbXAuaGVpZ2h0OyBzeCA9IChwcm9kQm1wLndpZHRoIC0gc3cpIC8gMjsgfQogIGVsc2UgICAgICAgIHsgc2ggPSBwcm9kQm1wLndpZHRoOyAgc3kgPSAocHJvZEJtcC5oZWlnaHQgLSBzaCkgLyAyOyB9CiAgY3R4LmRyYXdJbWFnZShwcm9kQm1wLCBzeCwgc3ksIHN3LCBzaCwgMCwgMCwgQ0FOVkFTX1BYLCBDQU5WQVNfUFgpOwoKICAvLyBMb2dvIC0tIHBvc2l0aW9uZWQsIHJvdGF0ZWQsIHNjYWxlZAogIHZhciBjeCA9IChwb3NYUGN0IC8gMTAwKSAqIENBTlZBU19QWDsKICB2YXIgY3kgPSAocG9zWVBjdCAvIDEwMCkgKiBDQU5WQVNfUFg7CiAgdmFyIHMgID0gc2NhbGVQY3QgLyAxMDA7CiAgdmFyIGx3ID0gbG9nb1dSYXRpbyAqIENBTlZBU19QWCAqIHM7CiAgdmFyIGxoID0gbG9nb0hSYXRpbyAqIENBTlZBU19QWCAqIHM7CiAgY3R4LnNhdmUoKTsKICBjdHgudHJhbnNsYXRlKGN4LCBjeSk7CiAgY3R4LnJvdGF0ZSgocm90RGVnICogTWF0aC5QSSkgLyAxODApOwogIGN0eC5kcmF3SW1hZ2UobG9nb0JtcCwgLWx3IC8gMiwgLWxoIC8gMiwgbHcsIGxoKTsKICBjdHgucmVzdG9yZSgpOwoKICByZXR1cm4gYXdhaXQgY2FudmFzLmNvbnZlcnRUb0Jsb2IoeyB0eXBlOiAiaW1hZ2UvcG5nIiB9KTsKfQoKLy8g4pSAIEhhbmRsZXIg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSACgpEZW5vLnNlcnZlKGFzeW5jIChyZXEpID0+IHsKICBjb25zdCBjb3JzSGVhZGVycyA9IGdldENvcnNIZWFkZXJzKHJlcSk7CgogIGlmIChyZXEubWV0aG9kID09PSAiT1BUSU9OUyIpIHJldHVybiBuZXcgUmVzcG9uc2UobnVsbCwgeyBoZWFkZXJzOiBjb3JzSGVhZGVycyB9KTsKCiAgY29uc3Qga2lsbFJlc3BvbnNlID0gYXdhaXQgYXNzZXJ0U3dpdGNoRW5hYmxlZCgiZWRnZV9nZW5lcmF0ZV9tb2NrdXAiLCByZXEsIGNvcnNIZWFkZXJzKTsKICBpZiAoa2lsbFJlc3BvbnNlKSByZXR1cm4ga2lsbFJlc3BvbnNlOwoKICBsZXQgYXV0aDogQXdhaXRlZDxSZXR1cm5UeXBlPHR5cGVvZiBhdXRoZW50aWNhdGVSZXF1ZXN0Pj47CiAgdHJ5IHsgYXV0aCA9IGF3YWl0IGF1dGhlbnRpY2F0ZVJlcXVlc3QocmVxKTsgfQogIGNhdGNoIChlKSB7IHJldHVybiBhdXRoRXJyb3JSZXNwb25zZShlLCBjb3JzSGVhZGVycyk7IH0KCiAgaWYgKHJlcS5tZXRob2QgIT09ICJQT1NUIikgewogICAgcmV0dXJuIG5ldyBSZXNwb25zZShKU09OLnN0cmluZ2lmeSh7IGVycm9yOiAibWV0aG9kX25vdF9hbGxvd2VkIiB9KSwKICAgICAgeyBzdGF0dXM6IDQwNSwgaGVhZGVyczogeyAuLi5jb3JzSGVhZGVycywgIkNvbnRlbnQtVHlwZSI6ICJhcHBsaWNhdGlvbi9qc29uIiB9IH0pOwogIH0KCiAgbGV0IGJvZHk6IEdlbmVyYXRlTW9ja3VwQm9keTsKICB0cnkgeyBib2R5ID0gYXdhaXQgcmVxLmpzb24oKTsgfQogIGNhdGNoIHsgcmV0dXJuIHZhbGlkYXRpb25FcnJvcigiUmVxdWVzdCBib2R5IG11c3QgYmUgdmFsaWQgSlNPTiIsIGNvcnNIZWFkZXJzKTsgfQoKICBpZiAoIWlzVmFsaWRIdHRwVXJsKGJvZHkucHJvZHVjdEltYWdlVXJsKSkKICAgIHJldHVybiB2YWxpZGF0aW9uRXJyb3IoInByb2R1Y3RJbWFnZVVybCBpcyByZXF1aXJlZCBhbmQgbXVzdCBiZSBhIHZhbGlkIEhUVFBTIFVSTCIsIGNvcnNIZWFkZXJzKTsKCiAgY29uc3QgaGFzTG9nbyA9IGJvZHkubG9nb0Jhc2U2NCB8fCBpc1ZhbGlkSHR0cFVybChib2R5LmxvZ29VcmwpOwogIGlmICghaGFzTG9nbykKICAgIHJldHVybiB2YWxpZGF0aW9uRXJyb3IoIkVpdGhlciBsb2dvQmFzZTY0IG9yIGEgdmFsaWQgbG9nb1VybCBpcyByZXF1aXJlZCIsIGNvcnNIZWFkZXJzKTsKCiAgY29uc3QgcG9zWCAgICA9IE1hdGgubWF4KDAsIE1hdGgubWluKDEwMCwgYm9keS5wb3NpdGlvblggPz8gNTApKTsKICBjb25zdCBwb3NZICAgID0gTWF0aC5tYXgoMCwgTWF0aC5taW4oMTAwLCBib2R5LnBvc2l0aW9uWSA/PyA1MCkpOwogIGNvbnN0IGxvZ29XUiAgPSBNYXRoLm1heCgwLjA1LCBNYXRoLm1pbigwLjksIChib2R5LmxvZ29XaWR0aENtICA/PyA1KSAvIDIwKSk7CiAgY29uc3QgbG9nb0hSICA9IE1hdGgubWF4KDAuMDUsIE1hdGgubWluKDAuOSwgKGJvZHkubG9nb0hlaWdodENtID8/IDMpIC8gMjApKTsKICBjb25zdCByb3RhdGlvbiA9IGJvZHkubG9nb1JvdGF0aW9uID8/IDA7CiAgY29uc3Qgc2NhbGUgICAgPSBNYXRoLm1heCgxMCwgTWF0aC5taW4oMzAwLCBib2R5LmxvZ29TY2FsZSA/PyAxMDApKTsKCiAgY29uc3QgdDAgPSBEYXRlLm5vdygpOwoKICB0cnkgewogICAgbGV0IHByb2R1Y3RCeXRlczogVWludDhBcnJheTsKICAgIHRyeSB7IHByb2R1Y3RCeXRlcyA9IGF3YWl0IGZldGNoQnl0ZXMoYm9keS5wcm9kdWN0SW1hZ2VVcmwhLCAxMl8wMDApOyB9CiAgICBjYXRjaCAoZSkgewogICAgICByZXR1cm4gbmV3IFJlc3BvbnNlKAogICAgICAgIEpTT04uc3RyaW5naWZ5KHsgZXJyb3I6ICJwcm9kdWN0X2ltYWdlX3VuYXZhaWxhYmxlIiwgbWVzc2FnZTogKGUgYXMgRXJyb3IpLm1lc3NhZ2UgfSksCiAgICAgICAgeyBzdGF0dXM6IDQyMiwgaGVhZGVyczogeyAuLi5jb3JzSGVhZGVycywgIkNvbnRlbnQtVHlwZSI6ICJhcHBsaWNhdGlvbi9qc29uIiB9IH0pOwogICAgfQoKICAgIGxldCBsb2dvQnl0ZXM6IFVpbnQ4QXJyYXk7CiAgICB0cnkgewogICAgICBsb2dvQnl0ZXMgPSBib2R5LmxvZ29CYXNlNjQKICAgICAgICA/IGJhc2U2NFRvQnl0ZXMoYm9keS5sb2dvQmFzZTY0KQogICAgICAgIDogYXdhaXQgZmV0Y2hCeXRlcyhib2R5LmxvZ29VcmwhLCAxMl8wMDApOwogICAgfSBjYXRjaCAoZSkgewogICAgICByZXR1cm4gbmV3IFJlc3BvbnNlKAogICAgICAgIEpTT04uc3RyaW5naWZ5KHsgZXJyb3I6ICJsb2dvX3VuYXZhaWxhYmxlIiwgbWVzc2FnZTogKGUgYXMgRXJyb3IpLm1lc3NhZ2UgfSksCiAgICAgICAgeyBzdGF0dXM6IDQyMiwgaGVhZGVyczogeyAuLi5jb3JzSGVhZGVycywgIkNvbnRlbnQtVHlwZSI6ICJhcHBsaWNhdGlvbi9qc29uIiB9IH0pOwogICAgfQoKICAgIGlmIChEYXRlLm5vdygpIC0gdDAgPiAyMF8wMDApIHsKICAgICAgcmV0dXJuIG5ldyBSZXNwb25zZSgKICAgICAgICBKU09OLnN0cmluZ2lmeSh7IGVycm9yOiAiYWlfZ2VuZXJhdGlvbl90aW1lb3V0IiwgbWVzc2FnZTogIlRlbXBvIGxpbWl0ZSBleGNlZGlkbyIgfSksCiAgICAgICAgeyBzdGF0dXM6IDUwNCwgaGVhZGVyczogeyAuLi5jb3JzSGVhZGVycywgIkNvbnRlbnQtVHlwZSI6ICJhcHBsaWNhdGlvbi9qc29uIiB9IH0pOwogICAgfQoKICAgIGxldCBjb21wb3NpdGVCbG9iOiBCbG9iOwogICAgdHJ5IHsKICAgICAgY29tcG9zaXRlQmxvYiA9IGF3YWl0IGNvbXBvc2l0ZUltYWdlcygKICAgICAgICBwcm9kdWN0Qnl0ZXMsIGxvZ29CeXRlcywgcG9zWCwgcG9zWSwgbG9nb1dSLCBsb2dvSFIsIHJvdGF0aW9uLCBzY2FsZSwKICAgICAgKTsKICAgIH0gY2F0Y2ggKGUpIHsKICAgICAgY29uc29sZS5lcnJvcigiW2dlbmVyYXRlLW1vY2t1cF0gY2FudmFzIGVycm9yOiIsIGUpOwogICAgICByZXR1cm4gbmV3IFJlc3BvbnNlKAogICAgICAgIEpTT04uc3RyaW5naWZ5KHsgZXJyb3I6ICJjb21wb3NpdGlvbl9mYWlsZWQiLCBtZXNzYWdlOiAoZSBhcyBFcnJvcikubWVzc2FnZSB9KSwKICAgICAgICB7IHN0YXR1czogNTAwLCBoZWFkZXJzOiB7IC4uLmNvcnNIZWFkZXJzLCAiQ29udGVudC1UeXBlIjogImFwcGxpY2F0aW9uL2pzb24iIH0gfSk7CiAgICB9CgogICAgY29uc3Qgc3VwYWJhc2UgPSBjcmVhdGVDbGllbnQoCiAgICAgIERlbm8uZW52LmdldCgiU1VQQUJBU0VfVVJMIikhLAogICAgICBEZW5vLmVudi5nZXQoIlNVUEFCQVNFX1NFUlZJQ0VfUk9MRV9LRVkiKSEsCiAgICApOwoKICAgIGNvbnN0IGZpbGVQYXRoID0gYCR7YXV0aC51c2VySWR9L21vY2t1cHMvJHtEYXRlLm5vdygpfS0ke2NyeXB0by5yYW5kb21VVUlEKCl9LnBuZ2A7CiAgICBjb25zdCB7IGVycm9yOiB1cEVyciB9ID0gYXdhaXQgc3VwYWJhc2Uuc3RvcmFnZQogICAgICAuZnJvbSgibW9ja3VwLWFzc2V0cyIpCiAgICAgIC51cGxvYWQoZmlsZVBhdGgsIGF3YWl0IGNvbXBvc2l0ZUJsb2IuYXJyYXlCdWZmZXIoKSwgewogICAgICAgIGNvbnRlbnRUeXBlOiAiaW1hZ2UvcG5nIiwKICAgICAgICB1cHNlcnQ6IGZhbHNlLAogICAgICB9KTsKCiAgICBpZiAodXBFcnIpIHsKICAgICAgY29uc29sZS5lcnJvcigiW2dlbmVyYXRlLW1vY2t1cF0gc3RvcmFnZSB1cGxvYWQgZXJyb3I6IiwgdXBFcnIpOwogICAgICByZXR1cm4gbmV3IFJlc3BvbnNlKAogICAgICAgIEpTT04uc3RyaW5naWZ5KHsgZXJyb3I6ICJzdG9yYWdlX3VwbG9hZF9mYWlsZWQiLCBtZXNzYWdlOiB1cEVyci5tZXNzYWdlIH0pLAogICAgICAgIHsgc3RhdHVzOiA1MDAsIGhlYWRlcnM6IHsgLi4uY29yc0hlYWRlcnMsICJDb250ZW50LVR5cGUiOiAiYXBwbGljYXRpb24vanNvbiIgfSB9KTsKICAgIH0KCiAgICBjb25zdCB7IGRhdGE6IHVybERhdGEgfSA9IHN1cGFiYXNlLnN0b3JhZ2UuZnJvbSgibW9ja3VwLWFzc2V0cyIpLmdldFB1YmxpY1VybChmaWxlUGF0aCk7CiAgICBjb25zdCBtb2NrdXBVcmwgPSB1cmxEYXRhPy5wdWJsaWNVcmw7CiAgICBpZiAoIW1vY2t1cFVybCkgewogICAgICByZXR1cm4gbmV3IFJlc3BvbnNlKAogICAgICAgIEpTT04uc3RyaW5naWZ5KHsgZXJyb3I6ICJ1cmxfcmVzb2x1dGlvbl9mYWlsZWQiIH0pLAogICAgICAgIHsgc3RhdHVzOiA1MDAsIGhlYWRlcnM6IHsgLi4uY29yc0hlYWRlcnMsICJDb250ZW50LVR5cGUiOiAiYXBwbGljYXRpb24vanNvbiIgfSB9KTsKICAgIH0KCiAgICBjb25zdCBtcyA9IERhdGUubm93KCkgLSB0MDsKICAgIGNvbnNvbGUubG9nKGBbZ2VuZXJhdGUtbW9ja3VwXSBvayB1c2VyPSR7YXV0aC51c2VySWR9IG1zPSR7bXN9YCk7CgogICAgcmV0dXJuIG5ldyBSZXNwb25zZSgKICAgICAgSlNPTi5zdHJpbmdpZnkoewogICAgICAgIG9rOiB0cnVlLAogICAgICAgIG1vY2t1cFVybCwKICAgICAgICBtb2NrdXBfdXJsOiBtb2NrdXBVcmwsCiAgICAgICAgbW9ja3VwX2lkOiBmaWxlUGF0aC5zcGxpdCgiLyIpLnBvcCgpPy5yZXBsYWNlKCIucG5nIiwgIiIpID8/IG51bGwsCiAgICAgICAgZ2VuZXJhdGVkX2F0OiBuZXcgRGF0ZSgpLnRvSVNPU3RyaW5nKCksCiAgICAgICAgZ2VuZXJhdGlvbl9tczogbXMsCiAgICAgICAgdGVjaG5pcXVlOiBib2R5LnRlY2huaXF1ZU5hbWUgPz8gImN1c3RvbSIsCiAgICAgIH0pLAogICAgICB7IHN0YXR1czogMjAwLCBoZWFkZXJzOiB7IC4uLmNvcnNIZWFkZXJzLCAiQ29udGVudC1UeXBlIjogImFwcGxpY2F0aW9uL2pzb24iIH0gfSwKICAgICk7CgogIH0gY2F0Y2ggKGVycjogdW5rbm93bikgewogICAgY29uc29sZS5lcnJvcigiW2dlbmVyYXRlLW1vY2t1cF0gdW5oYW5kbGVkIGVycm9yOiIsIGVycik7CiAgICByZXR1cm4gbmV3IFJlc3BvbnNlKAogICAgICBKU09OLnN0cmluZ2lmeSh7IGVycm9yOiAiaW50ZXJuYWxfZXJyb3IiLCBtZXNzYWdlOiBlcnIgaW5zdGFuY2VvZiBFcnJvciA/IGVyci5tZXNzYWdlIDogIkludGVybmFsIHNlcnZlciBlcnJvciIgfSksCiAgICAgIHsgc3RhdHVzOiA1MDAsIGhlYWRlcnM6IHsgLi4uY29yc0hlYWRlcnMsICJDb250ZW50LVR5cGUiOiAiYXBwbGljYXRpb24vanNvbiIgfSB9LAogICAgKTsKICB9Cn0pOwo=
+import { getCorsHeaders } from "../_shared/cors.ts";
+import { authenticateRequest, authErrorResponse } from "../_shared/auth.ts";
+import { createClient } from "npm:@supabase/supabase-js@2.49.4";
+import { assertSwitchEnabled } from "../_shared/kill_switch.ts";
+
+// ─ Types ─────────────────────────────────────────────────────────────────
+
+interface GenerateMockupBody {
+  productImageUrl?: string;
+  logoBase64?: string;
+  logoUrl?: string;
+  techniqueName?: string;
+  techniquePrompt?: string;
+  positionX?: number;
+  positionY?: number;
+  logoWidthCm?: number;
+  logoHeightCm?: number;
+  logoRotation?: number;
+  logoScale?: number;
+  productName?: string;
+}
+
+// ─ Validation ──────────────────────────────────────────────────────────────
+
+function validationError(message: string, corsHeaders: Record<string, string>): Response {
+  return new Response(
+    JSON.stringify({ error: "validation_failed", message }),
+    { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+  );
+}
+
+function isValidHttpUrl(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  try {
+    const u = new URL(value);
+    return u.protocol === "https:" || u.protocol === "http:";
+  } catch { return false; }
+}
+
+// ─ Image helpers ────────────────────────────────────────────────────────────
+
+async function fetchBytes(url: string, ms = 14_000): Promise<Uint8Array> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const res = await fetch(url, { signal: ctrl.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status} fetching image`);
+    return new Uint8Array(await res.arrayBuffer());
+  } finally { clearTimeout(t); }
+}
+
+function base64ToBytes(dataUrl: string): Uint8Array {
+  const b64 = dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl;
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return arr;
+}
+
+// ─ Canvas composition ───────────────────────────────────────────────────────
+
+const CANVAS_PX = 1024;
+
+async function compositeImages(
+  productBytes: Uint8Array,
+  logoBytes: Uint8Array,
+  posXPct: number,
+  posYPct: number,
+  logoWRatio: number,
+  logoHRatio: number,
+  rotDeg: number,
+  scalePct: number,
+): Promise<Blob> {
+  const canvas = new OffscreenCanvas(CANVAS_PX, CANVAS_PX);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("OffscreenCanvas 2d context unavailable");
+
+  const [prodBmp, logoBmp] = await Promise.all([
+    createImageBitmap(new Blob([productBytes])),
+    createImageBitmap(new Blob([logoBytes])),
+  ]);
+
+  // Product -- cover-fill crop
+  var pa = prodBmp.width / prodBmp.height;
+  var sx = 0, sy = 0, sw = prodBmp.width, sh = prodBmp.height;
+  if (pa > 1) { sw = prodBmp.height; sx = (prodBmp.width - sw) / 2; }
+  else        { sh = prodBmp.width;  sy = (prodBmp.height - sh) / 2; }
+  ctx.drawImage(prodBmp, sx, sy, sw, sh, 0, 0, CANVAS_PX, CANVAS_PX);
+
+  // Logo -- positioned, rotated, scaled
+  var cx = (posXPct / 100) * CANVAS_PX;
+  var cy = (posYPct / 100) * CANVAS_PX;
+  var s  = scalePct / 100;
+  var lw = logoWRatio * CANVAS_PX * s;
+  var lh = logoHRatio * CANVAS_PX * s;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate((rotDeg * Math.PI) / 180);
+  ctx.drawImage(logoBmp, -lw / 2, -lh / 2, lw, lh);
+  ctx.restore();
+
+  return await canvas.convertToBlob({ type: "image/png" });
+}
+
+// ─ Handler ─────────────────────────────────────────────────────────────────
+
+Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  const killResponse = await assertSwitchEnabled("edge_generate_mockup", req, corsHeaders);
+  if (killResponse) return killResponse;
+
+  let auth: Awaited<ReturnType<typeof authenticateRequest>>;
+  try { auth = await authenticateRequest(req); }
+  catch (e) { return authErrorResponse(e, corsHeaders); }
+
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "method_not_allowed" }),
+      { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  }
+
+  let body: GenerateMockupBody;
+  try { body = await req.json(); }
+  catch { return validationError("Request body must be valid JSON", corsHeaders); }
+
+  if (!isValidHttpUrl(body.productImageUrl))
+    return validationError("productImageUrl is required and must be a valid HTTPS URL", corsHeaders);
+
+  const hasLogo = body.logoBase64 || isValidHttpUrl(body.logoUrl);
+  if (!hasLogo)
+    return validationError("Either logoBase64 or a valid logoUrl is required", corsHeaders);
+
+  const posX    = Math.max(0, Math.min(100, body.positionX ?? 50));
+  const posY    = Math.max(0, Math.min(100, body.positionY ?? 50));
+  const logoWR  = Math.max(0.05, Math.min(0.9, (body.logoWidthCm  ?? 5) / 20));
+  const logoHR  = Math.max(0.05, Math.min(0.9, (body.logoHeightCm ?? 3) / 20));
+  const rotation = body.logoRotation ?? 0;
+  const scale    = Math.max(10, Math.min(300, body.logoScale ?? 100));
+
+  const t0 = Date.now();
+
+  try {
+    let productBytes: Uint8Array;
+    try { productBytes = await fetchBytes(body.productImageUrl!, 12_000); }
+    catch (e) {
+      return new Response(
+        JSON.stringify({ error: "product_image_unavailable", message: (e as Error).message }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    let logoBytes: Uint8Array;
+    try {
+      logoBytes = body.logoBase64
+        ? base64ToBytes(body.logoBase64)
+        : await fetchBytes(body.logoUrl!, 12_000);
+    } catch (e) {
+      return new Response(
+        JSON.stringify({ error: "logo_unavailable", message: (e as Error).message }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    if (Date.now() - t0 > 20_000) {
+      return new Response(
+        JSON.stringify({ error: "ai_generation_timeout", message: "Tempo limite excedido" }),
+        { status: 504, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    let compositeBlob: Blob;
+    try {
+      compositeBlob = await compositeImages(
+        productBytes, logoBytes, posX, posY, logoWR, logoHR, rotation, scale,
+      );
+    } catch (e) {
+      console.error("[generate-mockup] canvas error:", e);
+      return new Response(
+        JSON.stringify({ error: "composition_failed", message: (e as Error).message }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    const filePath = `${auth.userId}/mockups/${Date.now()}-${crypto.randomUUID()}.png`;
+    const { error: upErr } = await supabase.storage
+      .from("mockup-assets")
+      .upload(filePath, await compositeBlob.arrayBuffer(), {
+        contentType: "image/png",
+        upsert: false,
+      });
+
+    if (upErr) {
+      console.error("[generate-mockup] storage upload error:", upErr);
+      return new Response(
+        JSON.stringify({ error: "storage_upload_failed", message: upErr.message }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const { data: urlData } = supabase.storage.from("mockup-assets").getPublicUrl(filePath);
+    const mockupUrl = urlData?.publicUrl;
+    if (!mockupUrl) {
+      return new Response(
+        JSON.stringify({ error: "url_resolution_failed" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const ms = Date.now() - t0;
+    console.log(`[generate-mockup] ok user=${auth.userId} ms=${ms}`);
+
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        mockupUrl,
+        mockup_url: mockupUrl,
+        mockup_id: filePath.split("/").pop()?.replace(".png", "") ?? null,
+        generated_at: new Date().toISOString(),
+        generation_ms: ms,
+        technique: body.techniqueName ?? "custom",
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+
+  } catch (err: unknown) {
+    console.error("[generate-mockup] unhandled error:", err);
+    return new Response(
+      JSON.stringify({ error: "internal_error", message: err instanceof Error ? err.message : "Internal server error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
+});
