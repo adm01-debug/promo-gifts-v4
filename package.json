@@ -93,7 +93,9 @@
     "coverage:report": "node scripts/generate-coverage-report.mjs",
     "coverage:report:check": "node scripts/generate-coverage-report.mjs --check",
     "test:fuzz:dry": "node scripts/fuzz-testing.mjs",
-    "types:generate:supabase": "supabase gen types typescript --project-id doufsxqlfjyuvxuezpln --schema public > src/integrations/supabase/types.ts"
+    "types:generate:supabase": "supabase gen types typescript --project-id doufsxqlfjyuvxuezpln --schema public > src/integrations/supabase/types.ts",
+    "coverage:ci:collect": "node scripts/collect-coverage-ci.mjs",
+    "coverage:ci:report": "node scripts/collect-coverage-ci.mjs --skip-run"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [
