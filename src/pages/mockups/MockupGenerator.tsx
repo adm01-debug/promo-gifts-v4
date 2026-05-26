@@ -182,7 +182,7 @@ export default function MockupGenerator() {
 
 
         {mg.activeTab !== "history" && (
-          <div className="sticky top-0 z-[40] bg-background/80 backdrop-blur-md pt-5 pb-3 -mx-2 pl-2 pr-8 rounded-xl transition-all duration-300 border border-transparent hover:border-border/40 flex items-center">
+          <div className="sticky top-0 z-[40] bg-background/80 backdrop-blur-md pt-5 pb-3 -mx-2 pl-0 pr-24 rounded-xl transition-all duration-300 border border-transparent hover:border-border/40 flex items-center">
             <Suspense fallback={null}>
               <MockupWizard
                 currentStep={mg.wizardStep}
