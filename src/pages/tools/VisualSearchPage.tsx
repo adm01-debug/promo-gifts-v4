@@ -396,14 +396,27 @@ export default function VisualSearchPage() {
                       ) : (
                         <motion.label key="upload" className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-6 p-8 text-center" onClick={() => fileInputRef.current?.click()}>
                           <div className="relative">
-                            <div className="absolute inset-0 animate-pulse bg-emerald-500/20 blur-3xl rounded-full" />
-                            <div className="relative rounded-3xl bg-white/5 p-8 border border-white/10 hover:border-emerald-500/40 transition-all">
+                            <motion.div 
+                              className="absolute inset-0 bg-emerald-500/20 blur-3xl rounded-full"
+                              animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
+                              transition={{ duration: 4, repeat: Infinity }}
+                            />
+                            <div className="relative rounded-3xl bg-white/5 p-8 border border-white/10 hover:border-emerald-500/40 transition-all group-hover:bg-white/10">
                               <Camera className="h-12 w-12 text-emerald-400" />
+                              <motion.div 
+                                className="absolute -inset-4 border border-emerald-500/20 rounded-[40px] pointer-events-none"
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                              />
                             </div>
                           </div>
                           <div className="space-y-2">
                             <p className="text-sm font-black uppercase tracking-widest text-white/80">Capturar Amostra</p>
                             <p className="text-[9px] text-white/20 font-mono">JPG, PNG / MAX 10MB</p>
+                            <div className="pt-4 flex items-center justify-center gap-2">
+                              <Badge variant="outline" className="text-[7px] border-white/10 text-white/40">ANÁLISE BIOMÉTRICA</Badge>
+                              <Badge variant="outline" className="text-[7px] border-white/10 text-white/40">REFRAÇÃO LIGHT</Badge>
+                            </div>
                           </div>
                           <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
                         </motion.label>
@@ -435,7 +448,7 @@ export default function VisualSearchPage() {
                   </CardContent>
                 </Card>
 
-{results && (
+                {results && (
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
                     <Card className="border-emerald-500/20 bg-emerald-500/5 backdrop-blur-xl shadow-[0_0_50px_rgba(52,211,153,0.1)]">
                       <CardHeader className="pb-4 border-b border-white/5">
@@ -452,20 +465,44 @@ export default function VisualSearchPage() {
                           </div>
                           <p className="text-[10px] text-white/40 leading-relaxed font-mono">{results.analysis.rationale}</p>
                         </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <span className="text-[8px] font-bold text-white/20 uppercase font-mono">Silhueta</span>
+                            <p className="text-[10px] font-bold text-emerald-400 truncate uppercase">{results.analysis.productType}</p>
+                          </div>
+                          <div className="space-y-1">
+                            <span className="text-[8px] font-bold text-white/20 uppercase font-mono">Material Base</span>
+                            <p className="text-[10px] font-bold text-emerald-400 truncate uppercase">{results.analysis.material}</p>
+                          </div>
+                        </div>
+
+                        {results.analysis.technicalPitch && (
+                          <div className="p-3 border-l-2 border-emerald-500 bg-emerald-500/10 rounded-r-lg">
+                            <p className="text-[11px] italic text-white/80 leading-snug">"{results.analysis.technicalPitch}"</p>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
 
                     <div className="space-y-4">
-                      <h3 className="text-[10px] font-black uppercase text-white/40 tracking-widest font-mono">Evidências Técnicas</h3>
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-[10px] font-black uppercase text-white/40 tracking-widest font-mono">Evidências Técnicas</h3>
+                        <TrendingUp className="h-3 w-3 text-emerald-400/50" />
+                      </div>
                       <div className="grid grid-cols-1 gap-3">
                          {results.analysis.visualEvidence && Object.entries(results.analysis.visualEvidence).map(([key, val]) => (
-                           <div key={key} className="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
-                              <div className="h-1.5 w-1.5 mt-1.5 rounded-full bg-blue-400" />
+                           <motion.div 
+                            key={key} 
+                            whileHover={{ x: 5 }}
+                            className="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors"
+                           >
+                              <div className="h-1.5 w-1.5 mt-1.5 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.5)]" />
                               <div>
-                                <p className="text-[9px] font-bold uppercase text-white/40">{key}</p>
-                                <p className="text-xs text-white/80">{val}</p>
+                                <p className="text-[9px] font-bold uppercase text-white/40 mb-0.5">{key}</p>
+                                <p className="text-[11px] text-white/80 font-medium italic">"{val}"</p>
                               </div>
-                           </div>
+                           </motion.div>
                          ))}
                       </div>
                     </div>
@@ -594,6 +631,12 @@ export default function VisualSearchPage() {
                               <div className="space-y-1">
                                 <span className="text-[9px] font-black text-white/20 uppercase font-mono tracking-widest">Valor de Ativo</span>
                                 <p className="text-3xl font-black text-white italic tracking-tighter">{formatCurrency(product.price)}</p>
+                                <div className="flex items-center gap-2">
+                                  <div className="h-1 w-12 bg-white/5 rounded-full overflow-hidden">
+                                    <div className="h-full bg-emerald-500 w-[85%]" />
+                                  </div>
+                                  <span className="text-[8px] font-black text-emerald-500/60 font-mono uppercase">Em Estoque</span>
+                                </div>
                               </div>
                               <div className="flex items-center gap-3">
                                 <Dialog>
