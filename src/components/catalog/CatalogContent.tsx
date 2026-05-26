@@ -5,15 +5,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ProductGrid } from '@/components/products/ProductGrid';
 import { ProductList } from '@/components/products/ProductList';
 import { ProductTableView } from '@/components/products/ProductTableView';
-import {
-  ProductCardSkeleton,
-  ProductListItemSkeleton,
-  ProductTableSkeleton,
-} from '@/components/loading/ModernSkeletons';
+import { ProductCardSkeleton, ProductTableSkeleton } from '@/components/loading/ModernSkeletons';
 import { EmptyState } from '@/components/common/EmptyState';
 import { CatalogBulkModals } from './CatalogBulkModals';
 import { useCatalogSelection } from './useCatalogSelection';
-import { cn } from '@/lib/utils';
 import type { Product } from '@/types/product-catalog';
 import type { ViewMode } from '@/hooks/products/useCatalogState';
 import type { ColumnCount } from '@/components/products/ColumnSelector';

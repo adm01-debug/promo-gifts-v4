@@ -157,9 +157,7 @@ export function useCatalogFiltering({
     // BUG-CF-03 FIX: inStock agora verifica estoque de variantes (p.colors[].stock)
     if (filters.inStock) {
       result = result.filter(
-        (p) =>
-          (p.stock || 0) > 0 ||
-          p.colors?.some((c: { stock?: number }) => (c.stock || 0) > 0),
+        (p) => (p.stock || 0) > 0 || p.colors?.some((c: { stock?: number }) => (c.stock || 0) > 0),
       );
     }
 
@@ -170,7 +168,9 @@ export function useCatalogFiltering({
     // BUG-CF-01 FIX: featured filter agora aplicado
     if (filters.featured) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      result = result.filter((p) => (p as any).featured === true || (p as any).is_featured === true);
+      result = result.filter(
+        (p) => (p as any).featured === true || (p as any).is_featured === true,
+      );
     }
 
     // BUG-CF-01 FIX: isKit filter agora aplicado

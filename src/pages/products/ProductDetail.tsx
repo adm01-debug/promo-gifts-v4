@@ -49,7 +49,6 @@ import { useToast } from '@/hooks/ui';
 import type { Product, ProductVariation } from '@/types/product-catalog';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { ProductDetailSkeleton } from '@/components/layout/SkeletonLoaders';
 import { EmptyState } from '@/components/common/EmptyState';
 import { IntelligenceBadges } from '@/components/common/IntelligenceBadges';
 import { FloatingCompareBar } from '@/components/compare/FloatingCompareBar';
@@ -60,7 +59,7 @@ import { ProductDetailHero } from '@/pages/products/product-detail/ProductDetail
 import { ScrollToTopButton } from '@/components/common/ScrollToTopButton';
 import { formatCurrency } from '@/lib/format';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ModalSkeleton } from '@/components/layout/SkeletonLoaders';
+import { ProductDetailSkeleton, ModalSkeleton } from '@/components/layout/SkeletonLoaders';
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();

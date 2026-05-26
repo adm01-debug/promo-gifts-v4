@@ -149,7 +149,7 @@ describe('sortProducts — Lançamentos (newest)', () => {
 
   it('tolera created_at ausente (trata como 0/epoch)', () => {
     const input: Product[] = [
-      makeProduct({ id: 'a', created_at: undefined as any }),
+      makeProduct({ id: 'a', created_at: undefined as unknown as string }),
       makeProduct({ id: 'b', created_at: '2025-01-01' }),
     ];
     const result = sortProducts(input, 'newest').map((p) => p.id);
@@ -165,7 +165,7 @@ describe('sortProducts — Maior Estoque', () => {
 
   it('produtos sem stock (undefined) vão para o final', () => {
     const input: Product[] = [
-      makeProduct({ id: 'a', stock: undefined as any }),
+      makeProduct({ id: 'a', stock: undefined as unknown as number }),
       makeProduct({ id: 'b', stock: 10 }),
     ];
     const result = sortProducts(input, 'stock').map((p) => p.id);
@@ -282,9 +282,9 @@ describe('sortProducts — robustez e edge cases', () => {
       makeProduct({
         id: 'p1',
         name: 'A',
-        price: undefined as any,
-        stock: undefined as any,
-        created_at: undefined as any,
+        price: undefined as unknown as number,
+        stock: undefined as unknown as number,
+        created_at: undefined as unknown as string,
       }),
       makeProduct({ id: 'p2', name: 'B', price: 10, stock: 1, created_at: '2025-01-01' }),
     ];

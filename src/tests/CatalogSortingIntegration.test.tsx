@@ -59,7 +59,7 @@ vi.mock('@/hooks/products/useProductsLightweight', () => ({
 vi.mock('@/components/catalog/CatalogContent', () => ({
   CatalogContent: vi.fn(({ paginatedProducts }) => (
     <div data-testid="catalog-content">
-      {paginatedProducts.map((p: any) => (
+      {paginatedProducts.map((p: { id: string; name: string }) => (
         <div key={p.id} data-testid="product-item">
           {p.name}
         </div>
@@ -89,11 +89,11 @@ vi.mock('@/hooks/products/useColorEnrichment', () => ({
 }));
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: vi.fn(() => ({ user: { id: 'test-user' } })),
-  AuthProvider: ({ children }: any) => <>{children}</>,
+  AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 vi.mock('@/contexts/SellerCartContext', () => ({
   useSellerCartContext: vi.fn(() => ({ items: [] })),
-  SellerCartProvider: ({ children }: any) => <>{children}</>,
+  SellerCartProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 vi.mock('@/contexts/CollectionsContext', () => ({
   useCollectionsContext: vi.fn(() => ({
@@ -102,9 +102,10 @@ vi.mock('@/contexts/CollectionsContext', () => ({
     defaultIcons: [],
     isProductInCollection: () => false,
   })),
-  CollectionsProvider: ({ children }: any) => <>{children}</>,
+  CollectionsProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 vi.mock('@/contexts/ProductsContext', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const ReactMock = require('react');
   const mockValue = {
     registerProducts: vi.fn(),
@@ -115,7 +116,7 @@ vi.mock('@/contexts/ProductsContext', () => {
   return {
     useProductsContext: vi.fn(() => mockValue),
     useProductsContextSafe: vi.fn(() => mockValue),
-    ProductsProvider: ({ children }: any) => (
+    ProductsProvider: ({ children }: { children: React.ReactNode }) => (
       <Context.Provider value={mockValue}>{children}</Context.Provider>
     ),
     ProductsContext: Context,
@@ -127,7 +128,7 @@ vi.mock('@/hooks/favorites', () => ({
 vi.mock('@/hooks/intelligence/useSparklineSales', () => ({
   useSparklineSales: vi.fn(() => ({ data: new Map() })),
   useSparklineData: vi.fn(() => ({ data: [], isLoading: false })),
-  SparklineSalesProvider: ({ children }: any) => <>{children}</>,
+  SparklineSalesProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 describe('Catalog Sorting E2E Integration', () => {

@@ -32,7 +32,7 @@ export interface ProductGridProps {
 function ProductCardWrapper({
   product,
   index,
-  isVisible,
+  isVisible: _isVisible,
   hideCategoryBadges,
   selectionMode,
   selectedIds,
@@ -214,7 +214,9 @@ export function ProductGrid({
 
   const displayProducts =
     isLoading && products.length === 0
-      ? Array.from({ length: 15 }).map((_, i) => ({ id: `skeleton-${i}`, isSkeleton: true }) as any)
+      ? Array.from({ length: 15 }).map(
+          (_, i) => ({ id: `skeleton-${i}`, isSkeleton: true }) as Record<string, unknown>,
+        )
       : products;
 
   return (
@@ -223,7 +225,7 @@ export function ProductGrid({
       className={`grid ${columnClasses[columns] || columnClasses[5]} ${columns >= 8 ? 'gap-x-4 gap-y-8' : columns >= 6 ? 'gap-x-6 gap-y-8' : 'gap-x-4 gap-y-8 sm:gap-x-6 lg:gap-x-8'}`}
     >
       {displayProducts.map((product, index) =>
-        (product as any).isSkeleton ? (
+        (product as Record<string, unknown>).isSkeleton ? (
           <ProductCardSkeleton
             key={product.id}
             variant="default"

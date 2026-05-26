@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { renderHook } from '@testing-library/react';
 import { useCatalogFiltering } from '../hooks/products/useCatalogFiltering';
 import { defaultFilters } from '../components/filters/FilterPanel';
 
@@ -14,7 +14,9 @@ describe('Catalog Sorting Logic (E2E simulation)', () => {
   it('should correctly sort by price ascending', () => {
     const { result } = renderHook(() =>
       useCatalogFiltering({
-        realProducts: mockProducts as any,
+        realProducts: mockProducts as unknown as Parameters<
+          typeof useCatalogFiltering
+        >[0]['realProducts'],
         filters: defaultFilters,
         sortBy: 'price-asc',
         hasFuzzySearch: false,
@@ -36,7 +38,9 @@ describe('Catalog Sorting Logic (E2E simulation)', () => {
   it('should correctly sort by price descending', () => {
     const { result } = renderHook(() =>
       useCatalogFiltering({
-        realProducts: mockProducts as any,
+        realProducts: mockProducts as unknown as Parameters<
+          typeof useCatalogFiltering
+        >[0]['realProducts'],
         filters: defaultFilters,
         sortBy: 'price-desc',
         hasFuzzySearch: false,
@@ -58,7 +62,9 @@ describe('Catalog Sorting Logic (E2E simulation)', () => {
   it('should correctly sort by name (A-Z)', () => {
     const { result } = renderHook(() =>
       useCatalogFiltering({
-        realProducts: mockProducts as any,
+        realProducts: mockProducts as unknown as Parameters<
+          typeof useCatalogFiltering
+        >[0]['realProducts'],
         filters: defaultFilters,
         sortBy: 'name',
         hasFuzzySearch: false,

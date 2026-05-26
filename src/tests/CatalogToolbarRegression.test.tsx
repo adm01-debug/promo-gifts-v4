@@ -28,7 +28,7 @@ describe('CatalogToolbar Regression', () => {
       statBadges: [],
       viewMode: 'grid' as const,
       setViewMode: vi.fn(),
-      gridColumns: 4 as any,
+      gridColumns: 4 as unknown as never,
       setGridColumns: vi.fn(),
       selectionMode: false,
       onToggleSelectionMode: vi.fn(),

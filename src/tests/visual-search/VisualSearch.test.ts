@@ -51,21 +51,17 @@ describe('Módulo Raio X - Validação Funcional', () => {
           visualEvidence: {
             material: 'Brilho metálico característico de inox',
             silhouette: 'Forma cilíndrica ergonômica',
-            finish: 'Acabamento fosco'
+            finish: 'Acabamento fosco',
           },
-          visualHighlights: [
-            { label: 'Tampa', x: 50, y: 10, description: 'Vedação hermética' }
-          ]
+          visualHighlights: [{ label: 'Tampa', x: 50, y: 10, description: 'Vedação hermética' }],
         },
-        products: [
-          { id: '1', name: 'Squeeze Premium', relevance: 0.98, price: 45.9 }
-        ],
-        searchTerms: 'squeeze metal azul'
+        products: [{ id: '1', name: 'Squeeze Premium', relevance: 0.98, price: 45.9 }],
+        searchTerms: 'squeeze metal azul',
       };
 
       // Injetando mock no Supabase
       const { supabase } = await import('@/integrations/supabase/client');
-      (supabase.functions.invoke as any).mockResolvedValue({ data: mockResult, error: null });
+      vi.mocked(supabase.functions.invoke).mockResolvedValue({ data: mockResult, error: null });
 
       // Aqui validaríamos a lógica de processamento
       expect(mockResult.analysis.productType).toBe('Squeeze Térmico');
@@ -74,7 +70,10 @@ describe('Módulo Raio X - Validação Funcional', () => {
 
     it('deve lidar com erros na Edge Function graciosamente', async () => {
       const { supabase } = await import('@/integrations/supabase/client');
-      (supabase.functions.invoke as any).mockResolvedValue({ data: null, error: new Error('AI analysis failed: 403') });
+      vi.mocked(supabase.functions.invoke).mockResolvedValue({
+        data: null,
+        error: new Error('AI analysis failed: 403'),
+      });
 
       // Verificação de erro
       try {
@@ -91,7 +90,7 @@ describe('Módulo Raio X - Validação Funcional', () => {
       const baseRelevance = 0.5;
       const categoryMatchBonus = 0.2;
       const colorMatchBonus = 0.2;
-      
+
       // Simulação da lógica que está no backend mas espelhada no entendimento do sistema
       const calculateRelevance = (hasCategory: boolean, hasColor: boolean) => {
         let rel = baseRelevance;
@@ -108,10 +107,10 @@ describe('Módulo Raio X - Validação Funcional', () => {
   describe('Persistência e Histórico', () => {
     it('deve salvar e carregar histórico do localStorage', () => {
       const mockHistory = [
-        { id: '1', productType: 'Caneta', imageUrl: 'data:image/png;base64...' }
+        { id: '1', productType: 'Caneta', imageUrl: 'data:image/png;base64...' },
       ];
       localStorage.setItem('visual-search-history', JSON.stringify(mockHistory));
-      
+
       const saved = JSON.parse(localStorage.getItem('visual-search-history') || '[]');
       expect(saved[0].productType).toBe('Caneta');
     });
@@ -121,12 +120,12 @@ describe('Módulo Raio X - Validação Funcional', () => {
     it('deve registrar feedback positivo no banco de dados', async () => {
       const { supabase } = await import('@/integrations/supabase/client');
       const insertMock = vi.fn().mockResolvedValue({ error: null });
-      (supabase.from as any).mockReturnValue({ insert: insertMock });
+      vi.mocked(supabase.from).mockReturnValue({ insert: insertMock });
 
       const feedbackData = {
         product_id: '123',
         is_correct: true,
-        match_relevance: 0.95
+        match_relevance: 0.95,
       };
 
       await supabase.from('visual_search_feedback').insert(feedbackData);

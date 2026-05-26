@@ -11,15 +11,17 @@ describe('Integridade do Sistema de Skeletons', () => {
       '@/components/common/ContextualSkeleton',
     ];
 
-    forbiddenPatterns.forEach((pattern) => {
+    expect(forbiddenPatterns).not.toHaveLength(0);
+    for (const pattern of forbiddenPatterns) {
       try {
         const command = `rg -l "${pattern}" src/ --glob '!src/components/loading/ModernSkeletons.tsx' --glob '!src/tests/*' --glob '!src/components/layout/SkeletonLoaders.tsx'`;
         const result = execSync(command).toString().trim();
         if (result) throw new Error(`Importação legada encontrada (${pattern}):\n${result}`);
-      } catch (error: any) {
-        if (error.status !== 1) expect(error.message).toBe('');
+      } catch (error: unknown) {
+        const e = error as { status?: number; message?: string };
+        if (e.status !== 1) expect(e.message).toBe('');
       }
-    });
+    }
   });
 
   it('uso de Skeletons customizados deve seguir o padrão centralizado', () => {
@@ -50,7 +52,9 @@ describe('Integridade do Sistema de Skeletons', () => {
       const result = execSync(command).toString().trim();
       if (!result) return;
 
-      result.split('\n').forEach((file) => {
+      const files = result.split('\n');
+      expect(files.filter(Boolean)).not.toHaveLength(0);
+      for (const file of files) {
         if (!file) return;
         const content = execSync(`cat ${file}`).toString();
         const hasValidImport =
@@ -59,9 +63,9 @@ describe('Integridade do Sistema de Skeletons', () => {
         expect(hasValidImport, `O arquivo ${file} usa Skeletons sem importação centralizada.`).toBe(
           true,
         );
-      });
-    } catch (error: any) {
-      if (error.status !== 1) throw error;
+      }
+    } catch (error: unknown) {
+      if ((error as { status?: number }).status !== 1) throw error;
     }
   });
 
