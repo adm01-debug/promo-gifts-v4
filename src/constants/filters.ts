@@ -16,7 +16,9 @@ export const defaultAdvancedFilters: AdvancedFilterState = {
   endomarketing: [],
   ramosAtividade: [],
   segmentosAtividade: [],
-  priceRange: [0, 1000],
+  // FIX-11: era [0, 1000] — inconsistente com defaultFilters.priceRange [0, 9999]
+  // e com a lógica de filtro que usa 9999 como "sem limite superior".
+  priceRange: [0, 9999],
   quantityRange: [1, 10000],
   stockStatus: 'all',
   minStock: 0,
