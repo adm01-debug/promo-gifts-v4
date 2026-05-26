@@ -447,8 +447,22 @@ export function useQuoteBuilderState() {
   // ── Load existing quote ──
   useEffect(() => {
     if (!isEditMode || !quoteId) return;
+    /**
+     * BUG-18 FIX: isMounted guard prevents ~15 setState calls on an unmounted
+     * component when the user navigates away before fetchQuote resolves.
+     *
+     * WITHOUT THIS FIX: If the user opens a quote edit page and immediately
+     * navigates away (e.g. back button on slow network, ~200ms latency), the
+     * .then() callback fires after unmount, calling setClientId, setContactId,
+     * setNotes, etc. on a dead component — React warning + potential state
+     * corruption on remount.
+     *
+     * fetchQuote also added to deps array to prevent stale closure.
+     */
+    let isMounted = true;
     setLoadingQuote(true);
     fetchQuote(quoteId).then((quote) => {
+      if (!isMounted) return;
       if (quote) {
         setClientId(quote.client_id || '');
         /**
@@ -507,7 +521,8 @@ export function useQuoteBuilderState() {
       }
       setLoadingQuote(false);
     });
-  }, [isEditMode, quoteId]);
+    return () => { isMounted = false; };
+  }, [isEditMode, quoteId, fetchQuote]);
 
   // ── Pre-fill from simulator ──
   useEffect(() => {
