@@ -797,11 +797,21 @@ export default function VisualSearchPage() {
                     </div>
                     <div className="space-y-4 max-w-md">
                       <div>
-                        <p className="text-xl font-black text-primary tracking-tighter uppercase italic">Análise Biométrica Ativa</p>
-                        <p className="text-[10px] text-muted-foreground font-mono">MAPEO DINÂMICO DE TEXTURAS v2.5</p>
+                        <p className="text-2xl font-black text-primary tracking-tighter uppercase italic drop-shadow-[0_0_10px_rgba(var(--primary),0.5)]">Análise Biométrica Ativa</p>
+                        <div className="flex items-center justify-center gap-4 mt-1">
+                          <p className="text-[9px] text-primary/60 font-mono tracking-widest uppercase">Mapeamento v2.5</p>
+                          <div className="h-1 w-1 rounded-full bg-primary/40" />
+                          <p className="text-[9px] text-primary/60 font-mono tracking-widest uppercase">Core: Neural-X</p>
+                        </div>
                       </div>
-                      <Progress value={65} className="h-1.5 w-full bg-primary/10" />
-                      <p className="text-xs text-muted-foreground italic animate-pulse">
+                      <div className="w-full space-y-1">
+                        <div className="flex justify-between text-[8px] font-mono text-primary/60 uppercase">
+                          <span>Sincronizando...</span>
+                          <span>{Math.round(65)}%</span>
+                        </div>
+                        <Progress value={65} className="h-1 w-full bg-primary/10" />
+                      </div>
+                      <p className="text-xs text-primary/80 font-medium italic animate-pulse">
                         "Extraindo silhueta, identificando porosidade do material e mapeando cores secundárias..."
                       </p>
                     </div>
