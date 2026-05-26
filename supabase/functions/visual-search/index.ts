@@ -210,6 +210,16 @@ Use essas dicas para refinar sua percepção, mas priorize o que você vê visua
       matchRationale: `Este produto foi selecionado por possuir características de ${productAnalysis.productType} em ${productAnalysis.material}, alinhado com a silhueta identificada.`
     }));
 
+    // Re-calculate confidence based on user filters if provided
+    if (category || color) {
+      finalProducts = finalProducts.map(p => {
+        let bonus = 0;
+        if (category && p.category_name?.toLowerCase().includes(category.toLowerCase())) bonus += 0.2;
+        if (color && p.colors?.some(c => color.toLowerCase().includes(c.toLowerCase()))) bonus += 0.2;
+        return { ...p, relevance: Math.min(1, (p.relevance || 0) + bonus) };
+      });
+    }
+
     // Sort by relevance (some might be from RPC, some from fallback)
     finalProducts.sort((a, b) => (b.relevance || 0) - (a.relevance || 0));
 
