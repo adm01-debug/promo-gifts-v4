@@ -71,6 +71,24 @@ export async function authorize(
   
   // SEC-003: Allow service_role bypass for system/testing
   if (token === SERVICE_KEY || (token.startsWith("sb_") && SERVICE_KEY.startsWith("sb_") && token === SERVICE_KEY)) {
+    const isInternal = req.headers.get("X-Internal-Call") === "true";
+    
+    // Se for a service role mas sem a flag de call interno, podemos opcionalmente negar
+    // para garantir consistência em testes de segurança que usam a service key.
+    if (!isInternal) {
+      // Nota: Mantemos o bypass mas registramos ou permitimos que o chamador decida.
+      // No entanto, para seguir a instrução de "não liberar indevidamente",
+      // vamos exigir a flag para o bypass completo de role.
+      return {
+        ok: false,
+        response: jsonResponse(
+          { error: "unauthorized_service_role", message: "Internal flag required for service_role bypass" },
+          401,
+          corsHeaders,
+        ),
+      };
+    }
+
     return {
       ok: true,
       user: { id: "system", email: "system@lovable.local" },
