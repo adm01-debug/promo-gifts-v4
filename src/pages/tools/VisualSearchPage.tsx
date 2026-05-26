@@ -732,15 +732,66 @@ export default function VisualSearchPage() {
                     <span className="text-xs font-bold text-primary uppercase tracking-wider">Recalculando matches com novos filtros...</span>
                   </div>
                 )}
-                <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-primary/5 p-8">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(var(--primary),0.1),transparent)]" />
-                  <div className="relative flex flex-col items-center gap-6 text-center">
+                <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-primary/5 p-8 min-h-[300px] flex items-center justify-center">
+                  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    <motion.div 
+                      animate={{ 
+                        scale: [1, 2, 1],
+                        opacity: [0.1, 0.3, 0.1]
+                      }}
+                      transition={{ duration: 4, repeat: Infinity }}
+                      className="absolute inset-0 bg-primary/20 rounded-full blur-3xl -translate-y-1/2"
+                    />
+                    {/* Scanning Line with Glitch Effect */}
+                    <motion.div 
+                      animate={{ top: ['0%', '100%', '0%'] }}
+                      transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                      className="absolute left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_15px_rgba(var(--primary),0.8)] z-10"
+                    />
+                  </div>
+
+                  {/* Orbiting Labels */}
+                  <div className="absolute inset-0 pointer-events-none">
+                    {[
+                      "DENSIDADE: ALTA", 
+                      "FORMA: CILÍNDRICA", 
+                      "REFLEXO: METÁLICO", 
+                      "MATERIAL: ALUMÍNIO"
+                    ].map((text, i) => (
+                      <motion.div
+                        key={i}
+                        animate={{ 
+                          rotate: 360,
+                        }}
+                        transition={{ 
+                          duration: 10 + i * 2, 
+                          repeat: Infinity, 
+                          ease: "linear" 
+                        }}
+                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                        style={{ width: `${200 + i * 60}px`, height: `${200 + i * 60}px` }}
+                      >
+                        <motion.div 
+                          className="absolute top-0 left-1/2 -translate-x-1/2 bg-primary/10 backdrop-blur-sm border border-primary/30 px-2 py-0.5 rounded text-[8px] font-mono text-primary whitespace-nowrap"
+                          animate={{ rotate: -360 }}
+                          transition={{ duration: 10 + i * 2, repeat: Infinity, ease: "linear" }}
+                        >
+                          {text}
+                        </motion.div>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  <div className="relative flex flex-col items-center gap-6 text-center z-20">
                     <div className="relative">
-                      <div className="h-16 w-16 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
-                      <Target className="absolute left-1/2 top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 text-primary animate-pulse" />
+                      <div className="h-24 w-24 animate-spin rounded-full border-4 border-primary/10 border-t-primary border-r-primary/40" />
+                      <Target className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 text-primary animate-pulse" />
                     </div>
-                    <div className="space-y-2 max-w-md">
-                      <p className="text-xl font-bold text-primary">Análise Biométrica do Produto</p>
+                    <div className="space-y-4 max-w-md">
+                      <div>
+                        <p className="text-xl font-black text-primary tracking-tighter uppercase italic">Análise Biométrica Ativa</p>
+                        <p className="text-[10px] text-muted-foreground font-mono">MAPEO DINÂMICO DE TEXTURAS v2.5</p>
+                      </div>
                       <Progress value={65} className="h-1.5 w-full bg-primary/10" />
                       <p className="text-xs text-muted-foreground italic animate-pulse">
                         "Extraindo silhueta, identificando porosidade do material e mapeando cores secundárias..."
