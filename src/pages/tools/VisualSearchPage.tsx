@@ -447,6 +447,7 @@ export default function VisualSearchPage() {
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
+                className="space-y-4"
               >
                 <Card className="overflow-hidden border-primary/20 bg-primary/5 shadow-inner">
                   <CardHeader className="pb-2 border-b border-primary/10 bg-primary/10">
@@ -481,6 +482,23 @@ export default function VisualSearchPage() {
                       </div>
                     </div>
                     
+                    {results.analysis.visualEvidence && (
+                      <div className="grid grid-cols-3 gap-2 py-2">
+                        <div className="space-y-1">
+                          <p className="text-[9px] font-bold uppercase text-muted-foreground/70">Material</p>
+                          <p className="text-[10px] leading-tight text-foreground/80">{results.analysis.visualEvidence.material}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[9px] font-bold uppercase text-muted-foreground/70">Silhueta</p>
+                          <p className="text-[10px] leading-tight text-foreground/80">{results.analysis.visualEvidence.silhouette}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[9px] font-bold uppercase text-muted-foreground/70">Acabamento</p>
+                          <p className="text-[10px] leading-tight text-foreground/80">{results.analysis.visualEvidence.finish}</p>
+                        </div>
+                      </div>
+                    )}
+
                     {results.analysis.rationale && (
                       <div className="rounded-lg bg-background/50 border border-primary/5 p-2 text-[11px] text-muted-foreground italic leading-relaxed">
                         <div className="flex items-start gap-1.5">
@@ -501,6 +519,18 @@ export default function VisualSearchPage() {
                           {kw}
                         </Badge>
                       ))}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-primary/10">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase">A IA acertou?</p>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" className="h-7 px-2 text-[10px] gap-1 hover:bg-emerald-50 hover:text-emerald-600 border-emerald-100" onClick={() => handleFeedback(true)}>
+                          <CheckCircle2 className="h-3 w-3" /> Sim
+                        </Button>
+                        <Button variant="outline" size="sm" className="h-7 px-2 text-[10px] gap-1 hover:bg-rose-50 hover:text-rose-600 border-rose-100" onClick={() => handleFeedback(false)}>
+                          <AlertCircle className="h-3 w-3" /> Não
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -710,6 +740,13 @@ export default function VisualSearchPage() {
                                 {product.name}
                               </h3>
                             </div>
+                            
+                            {product.matchRationale && (
+                              <div className="mb-3 rounded bg-primary/5 p-2 text-[9px] leading-tight text-muted-foreground border-l-2 border-primary/20">
+                                <span className="font-bold text-primary block mb-0.5 uppercase tracking-tighter">Por que este match?</span>
+                                {product.matchRationale}
+                              </div>
+                            )}
                             
                             <div className="flex items-center justify-between border-t border-border/50 pt-4">
                               <div className="flex flex-col">
