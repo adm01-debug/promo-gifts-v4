@@ -49,7 +49,7 @@ function hasReadPolicy(policies: PolicyRow[], substring: string): boolean {
 // ============================================
 // CROSS: RLS enabled on ALL critical tables
 // ============================================
-Deno.test({ name: "CROSS: all 9 critical tables have RLS enabled", sanitizeOps: false, sanitizeResources: false, fn: async () => {
+Deno.test({ name: "CROSS: all 9 critical tables have RLS enabled", fn: async () => {
   for (const t of ["profiles","user_roles","quotes","orders","order_items","organizations","organization_members","admin_audit_log","quote_items"]) {
     assertEquals(await isRlsEnabled(t), true, `RLS must be enabled on ${t}`);
   }

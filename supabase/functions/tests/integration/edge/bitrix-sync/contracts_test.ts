@@ -3,6 +3,7 @@ import { invokeFunction, registerCase } from "../_shared.ts";
 
 registerCase({ functionName: "bitrix-sync", caseId: "BSY-001", businessRule: "payload malformado deve falhar", testName: "erro de payload", run: async () => {
   const res = await invokeFunction("bitrix-sync", { malformed: true });
+  await res.text();
   assert(res.status >= 400);
 }});
 
