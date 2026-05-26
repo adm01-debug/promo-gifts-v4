@@ -19,6 +19,7 @@ concurrency:
 # Snapshots e toLocaleString consistentes com dev (VPS BRT).
 env:
   TZ: America/Sao_Paulo
+  ARTIFACT_RETENTION_DAYS: "14"
 
 jobs:
   smoke:
@@ -257,7 +258,7 @@ jobs:
         with:
           name: coverage-report-${{ github.run_id }}
           path: coverage/
-          retention-days: 14
+          retention-days: ${{ fromJSON(env.ARTIFACT_RETENTION_DAYS) }}
           if-no-files-found: ignore
 
       # Gate per-file: valida que arquivos críticos (FiltersPage, KitBuilderPage,
@@ -286,7 +287,7 @@ jobs:
             coverage/module-coverage-report.json
             coverage/route-coverage-report.json
             coverage/coverage-report.md
-          retention-days: 30
+          retention-days: ${{ fromJSON(env.ARTIFACT_RETENTION_DAYS) }}
           if-no-files-found: ignore
 
   integration-tests:
@@ -354,7 +355,7 @@ jobs:
         with:
           name: full-coverage-report
           path: coverage/
-          retention-days: 14
+          retention-days: ${{ fromJSON(env.ARTIFACT_RETENTION_DAYS) }}
 
   critical-e2e:
     name: Critical Flows E2E
@@ -378,7 +379,7 @@ jobs:
         with:
           name: playwright-report
           path: playwright-report/
-          retention-days: 14
+          retention-days: ${{ fromJSON(env.ARTIFACT_RETENTION_DAYS) }}
       # 'Enforce Critical Coverage' foi MOVIDO para o job 'coverage' (vitest),
       # que é onde o coverage-summary.json é gerado. O job critical-e2e
       # roda Playwright apenas — não produz coverage instrumentation, então
@@ -407,7 +408,7 @@ jobs:
         with:
           name: playwright-elite-report
           path: playwright-report/
-          retention-days: 14
+          retention-days: ${{ fromJSON(env.ARTIFACT_RETENTION_DAYS) }}
 
 
   ref-warning-suite:
@@ -467,7 +468,7 @@ jobs:
           path: |
             coverage/console-snapshot-ref.json
             coverage/console-snapshot-ref.*.json
-          retention-days: 14
+          retention-days: ${{ fromJSON(env.ARTIFACT_RETENTION_DAYS) }}
           if-no-files-found: ignore
 
   hooks-tests:
@@ -520,7 +521,7 @@ jobs:
         with:
           name: hooks-coverage
           path: coverage/
-          retention-days: 14
+          retention-days: ${{ fromJSON(env.ARTIFACT_RETENTION_DAYS) }}
           if-no-files-found: ignore
 
   price-freshness-tests:
@@ -574,7 +575,7 @@ jobs:
         with:
           name: price-freshness-coverage
           path: coverage/
-          retention-days: 30
+          retention-days: ${{ fromJSON(env.ARTIFACT_RETENTION_DAYS) }}
           if-no-files-found: ignore
 
   cloud-status-tests:
@@ -602,7 +603,7 @@ jobs:
         with:
           name: cloud-status-coverage
           path: coverage/
-          retention-days: 30
+          retention-days: ${{ fromJSON(env.ARTIFACT_RETENTION_DAYS) }}
           if-no-files-found: ignore
 
   edge-functions-typecheck:
@@ -660,4 +661,4 @@ jobs:
             playwright-report/theme-validation-report.html
             playwright-report/theme-validation-report.csv
             theme-validation-output/theme-validation-data.json
-          retention-days: 30
+          retention-days: ${{ fromJSON(env.ARTIFACT_RETENTION_DAYS) }}
