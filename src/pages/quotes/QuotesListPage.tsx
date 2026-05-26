@@ -40,7 +40,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import { EmptyState } from '@/components/common/EmptyState';
-import { QuoteCardSkeleton } from '@/components/common/ContextualSkeleton';
+import { QuotesSkeleton } from '@/components/layout/SkeletonLoaders';
 import { FadeInView, AnimatedCounter } from '@/components/common/MicroInteractions';
 import { QuotesConfigurableList } from '@/components/quotes/QuotesConfigurableList';
 import { QuotesStatusChips } from '@/components/quotes/QuotesStatusChips';
@@ -76,27 +76,7 @@ export default function QuotesListPage() {
   } = useQuotesListPage();
 
   if (isLoading) {
-    return (
-      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-4 px-3 py-3 pb-24 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-foreground lg:text-3xl">
-              <FileText className="h-7 w-7" />
-              Orçamentos
-            </h1>
-            <p className="mt-1 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              Carregando orçamentos…
-            </p>
-          </div>
-        </div>
-        <div className="grid gap-3">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <QuoteCardSkeleton key={i} />
-          ))}
-        </div>
-      </div>
-    );
+    return <QuotesSkeleton />;
   }
 
   const hasActiveFilters = !!searchTerm || statusFilter !== 'all';

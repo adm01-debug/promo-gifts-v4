@@ -128,7 +128,6 @@ export function ProductListSkeleton({ count = 8 }: { count?: number }) {
   );
 }
 
-
 export function QuoteCardSkeleton() {
   return (
     <div className="rounded-xl border border-border bg-card p-4 space-y-4">
@@ -283,7 +282,6 @@ export function StatsGridSkeleton({ count = 4 }: { count?: number }) {
   );
 }
 
-// Aliases for compatibility
 export { StatCardSkeleton as StatsCardSkeleton };
 
 export function PageHeaderSkeleton({ className }: { className?: string }) {
@@ -345,7 +343,39 @@ export function ChartSkeleton({ className }: { className?: string }) {
 }
 
 export function ClientCardSkeleton() {
-... (keep existing ClientCardSkeleton and others) ...
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 flex items-center gap-4">
+      <Skeleton className="h-11 w-11 rounded-full shrink-0" />
+      <div className="min-w-0 flex-1 space-y-2">
+        <Skeleton className="h-5 w-40" />
+        <Skeleton className="h-3 w-32" />
+      </div>
+      <div className="flex gap-1">
+        <Skeleton className="h-5 w-16 rounded-full" />
+      </div>
+    </div>
+  );
+}
+
+export function OrderTimelineSkeleton() {
+  return (
+    <div className="space-y-6">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="flex gap-4">
+          <div className="flex flex-col items-center">
+            <Skeleton className="h-3 w-3 rounded-full" />
+            <div className="w-0.5 flex-1 bg-border/40 my-1" />
+          </div>
+          <div className="flex-1 pb-6 space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-16 w-full rounded-lg" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function DashboardSkeleton() {
   return (
     <div className="space-y-6">
@@ -362,6 +392,47 @@ export function DashboardSkeleton() {
       <div className="rounded-xl border border-border bg-card p-4">
         <Skeleton className="h-6 w-48 mb-4" />
         <TableSkeleton rows={4} columns={5} />
+      </div>
+    </div>
+  );
+}
+
+export function ProductDetailSkeleton() {
+  return (
+    <div className="mx-auto w-full max-w-[1920px] space-y-8 animate-fade-in">
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-4 w-32" />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+        {/* Left: Image & Thumbnails */}
+        <div className="space-y-4">
+          <Skeleton className="aspect-square w-full rounded-2xl" />
+          <div className="flex gap-3">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-20 w-20 rounded-lg" />
+            ))}
+          </div>
+        </div>
+        {/* Right: Info */}
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <Skeleton className="h-10 w-3/4" />
+            <Skeleton className="h-4 w-1/4" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-6 w-20 rounded-full" />
+            <Skeleton className="h-6 w-20 rounded-full" />
+          </div>
+          <Skeleton className="h-24 w-full rounded-xl" />
+          <div className="space-y-4 pt-4 border-t border-border/60">
+            <Skeleton className="h-12 w-full rounded-lg" />
+            <div className="flex gap-4">
+              <Skeleton className="h-14 flex-1 rounded-xl" />
+              <Skeleton className="h-14 flex-1 rounded-xl" />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

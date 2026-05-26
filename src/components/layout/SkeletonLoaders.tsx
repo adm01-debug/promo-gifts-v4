@@ -4,9 +4,11 @@ import {
   ProductGridSkeleton,
   TableSkeleton, 
   StatsCardSkeleton, 
-  ChartSkeleton, 
   PageHeaderSkeleton,
-  DashboardSkeleton as ModernDashboardSkeleton
+  DashboardSkeleton as ModernDashboardSkeleton,
+  ProductDetailSkeleton as ModernProductDetailSkeleton,
+  ClientCardSkeleton,
+  QuoteCardSkeleton
 } from "@/components/loading/ModernSkeletons";
 import { SkeletonMonitor } from "@/components/loading/SkeletonMonitor";
 
@@ -41,18 +43,15 @@ function makeSkeleton(
 export const CatalogSkeleton = makeSkeleton(
   "Catalog",
   () => (
-    <>
-      <div className="flex flex-col gap-6">
-        <PageHeaderSkeleton />
-        {/* Toolbar simulator */}
-        <div className="flex gap-3">
-          <Skeleton className="h-10 w-full max-w-md rounded-lg" />
-          <Skeleton className="h-10 w-10 rounded-lg" />
-          <Skeleton className="h-10 w-10 rounded-lg" />
-        </div>
-        <ProductGridSkeleton count={10} columns={5} />
+    <div className="flex flex-col gap-6">
+      <PageHeaderSkeleton />
+      <div className="flex gap-3">
+        <Skeleton className="h-10 w-full max-w-md rounded-lg" />
+        <Skeleton className="h-10 w-10 rounded-lg" />
+        <Skeleton className="h-10 w-10 rounded-lg" />
       </div>
-    </>
+      <ProductGridSkeleton count={10} columns={5} />
+    </div>
   ),
   "p-3 sm:p-4 lg:p-6 space-y-6",
 );
@@ -60,44 +59,7 @@ export const CatalogSkeleton = makeSkeleton(
 /** Product detail page skeleton */
 export const ProductDetailSkeleton = makeSkeleton(
   "ProductDetail",
-  () => (
-    <div className="space-y-8">
-      <div className="flex items-center gap-2">
-        <Skeleton className="h-4 w-24" />
-        <Skeleton className="h-4 w-32" />
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        {/* Left: Image & Thumbnails */}
-        <div className="space-y-4">
-          <Skeleton className="aspect-square w-full rounded-2xl" />
-          <div className="flex gap-3">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-20 w-20 rounded-lg" />
-            ))}
-          </div>
-        </div>
-        {/* Right: Info */}
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <Skeleton className="h-10 w-3/4" />
-            <Skeleton className="h-4 w-1/4" />
-          </div>
-          <div className="flex gap-2">
-            <Skeleton className="h-6 w-20 rounded-full" />
-            <Skeleton className="h-6 w-20 rounded-full" />
-          </div>
-          <Skeleton className="h-24 w-full rounded-xl" />
-          <div className="space-y-4 pt-4 border-t border-border/60">
-            <Skeleton className="h-12 w-full rounded-lg" />
-            <div className="flex gap-4">
-              <Skeleton className="h-14 flex-1 rounded-xl" />
-              <Skeleton className="h-14 flex-1 rounded-xl" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  ),
+  () => <ModernProductDetailSkeleton />,
   "p-3 sm:p-4 lg:p-6",
 );
 
@@ -112,7 +74,11 @@ export const QuotesSkeleton = makeSkeleton(
           <Skeleton key={i} className="h-9 w-28 rounded-full" />
         ))}
       </div>
-      <TableSkeleton rows={8} columns={6} />
+      <div className="grid gap-3">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <QuoteCardSkeleton key={i} />
+        ))}
+      </div>
     </div>
   ),
   "p-3 sm:p-4 lg:p-6",
@@ -131,9 +97,12 @@ export const ClientsSkeleton = makeSkeleton(
       </div>
       <div className="flex gap-3">
         <Skeleton className="h-10 w-full max-w-sm rounded-lg" />
-        <Skeleton className="h-10 w-32 rounded-lg" />
       </div>
-      <TableSkeleton rows={10} columns={5} />
+      <div className="grid gap-3">
+        {[1, 2, 3, 4].map((i) => (
+          <ClientCardSkeleton key={i} />
+        ))}
+      </div>
     </div>
   ),
   "p-3 sm:p-4 lg:p-6",
@@ -163,7 +132,7 @@ export const DashboardSkeleton = makeSkeleton(
   "p-3 sm:p-4 lg:p-6",
 );
 
-/** Tools page skeleton (Mockup, Kit Builder, Simulador) */
+/** Tools page skeleton */
 export const ToolsSkeleton = makeSkeleton(
   "Tools",
   () => (
@@ -191,32 +160,7 @@ export const ToolsSkeleton = makeSkeleton(
   "p-3 sm:p-4 lg:p-6",
 );
 
-/** Profile page skeleton */
-export const ProfileSkeleton = makeSkeleton(
-  "Profile",
-  () => (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <div className="flex items-center gap-6">
-        <Skeleton className="h-24 w-24 rounded-full" />
-        <div className="space-y-3">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-4 w-48" />
-        </div>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="p-4 border border-border/60 rounded-xl space-y-3">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-10 w-full rounded-lg" />
-          </div>
-        ))}
-      </div>
-    </div>
-  ),
-  "p-3 sm:p-4 lg:p-6",
-);
-
-/** Generic page skeleton (fallback) */
+/** Generic page skeleton */
 export const GenericSkeleton = makeSkeleton(
   "Generic",
   () => (
@@ -225,14 +169,13 @@ export const GenericSkeleton = makeSkeleton(
       <div className="space-y-4">
         <Skeleton className="h-40 w-full rounded-xl" />
         <Skeleton className="h-40 w-full rounded-xl" />
-        <Skeleton className="h-40 w-full rounded-xl" />
       </div>
     </div>
   ),
   "p-3 sm:p-4 lg:p-6",
 );
 
-/** Auth / login page skeleton — leve, card centralizado */
+/** Auth / login page skeleton */
 export const AuthSkeleton = makeSkeleton(
   "Auth",
   () => (
@@ -240,14 +183,11 @@ export const AuthSkeleton = makeSkeleton(
       <div className="flex flex-col items-center gap-3">
         <Skeleton className="h-12 w-12 rounded-xl" />
         <Skeleton className="h-5 w-40" />
-        <Skeleton className="h-4 w-56" />
       </div>
       <div className="space-y-3 pt-2">
         <Skeleton className="h-10 w-full rounded-md" />
         <Skeleton className="h-10 w-full rounded-md" />
-        <Skeleton className="h-10 w-full rounded-md" />
       </div>
-      <Skeleton className="h-4 w-32 mx-auto" />
     </div>
   ),
   "min-h-[60vh] flex items-center justify-center p-6",
@@ -275,7 +215,6 @@ export const ModalSkeleton = makeSkeleton(
 );
 
 /**
-
  * Returns the appropriate skeleton component based on the current route.
  */
 export function getFallback(pathname: string): React.ReactNode {
