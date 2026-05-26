@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
 
     console.log("Analyzing image with AI...");
 
-    const model = "google/gemini-1.5-flash";
+    const model = "google/gemini-2.5-flash";
 
     // Step 1: Analyze image to extract product characteristics
     const analysisResponse = await callAiWithTracking({
