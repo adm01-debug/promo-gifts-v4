@@ -238,8 +238,8 @@ export async function callAiWithTracking(options: {
     } catch (err) {
       // Router-known errors that mean "not configured" → fall through to legacy
       const errMsg = (err as Error)?.message ?? "";
-      const isNoRouting = errMsg.includes("No active routing");
-      const isNoCapabilityMatch = errMsg.includes("No valid models satisfy");
+      const isNoRouting = errMsg.includes("No active routing") || errMsg.includes("Nenhum routing ativo");
+      const isNoCapabilityMatch = errMsg.includes("No valid models satisfy") || errMsg.includes("Nenhum modelo satisfaz");
 
       if (isNoRouting || isNoCapabilityMatch) {
         console.log(
