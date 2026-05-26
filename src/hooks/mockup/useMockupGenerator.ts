@@ -16,8 +16,8 @@ import {
   useProductCustomizationOptionsForMockup,
   type CustomizationOption,
   type TechniqueWithLimits,
-} from '@/hooks/mockup/useMockupTechniques';
-import { useMockupDraft } from '@/hooks/mockup/useMockupDraft';
+} from './useMockupTechniques';
+import { useMockupDraft } from './useMockupDraft';
 import { useLogoColorAnalysis, usePositionHistory } from '@/hooks/simulation';
 import { useProductsContext } from '@/contexts/ProductsContext';
 import { getMockupWizardStep } from '@/components/mockup/mockupWizardStep';
