@@ -65,6 +65,8 @@ interface VisualSearchResult {
     images: string[];
     relevance: number;
     matchRationale?: string;
+    stock?: number;
+    totalFound?: number;
   }>;
   searchTerms: string;
 }
