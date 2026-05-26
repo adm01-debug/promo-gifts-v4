@@ -12405,6 +12405,7 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean
+          is_default: boolean
           max_colors: number | null
           technique_id: string
           updated_at: string
@@ -12415,6 +12416,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          is_default?: boolean
           max_colors?: number | null
           technique_id: string
           updated_at?: string
@@ -12425,6 +12427,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          is_default?: boolean
           max_colors?: number | null
           technique_id?: string
           updated_at?: string
@@ -12448,6 +12451,7 @@ export type Database = {
       }
       product_component_locations: {
         Row: {
+          area_image_url: string | null
           component_id: string
           created_at: string
           description: string | null
@@ -12455,12 +12459,14 @@ export type Database = {
           is_active: boolean
           location_code: string
           location_name: string
+          max_area_cm2: number | null
           max_height_cm: number | null
           max_width_cm: number | null
           sort_order: number | null
           updated_at: string
         }
         Insert: {
+          area_image_url?: string | null
           component_id: string
           created_at?: string
           description?: string | null
@@ -12468,12 +12474,14 @@ export type Database = {
           is_active?: boolean
           location_code: string
           location_name: string
+          max_area_cm2?: number | null
           max_height_cm?: number | null
           max_width_cm?: number | null
           sort_order?: number | null
           updated_at?: string
         }
         Update: {
+          area_image_url?: string | null
           component_id?: string
           created_at?: string
           description?: string | null
@@ -12481,6 +12489,7 @@ export type Database = {
           is_active?: boolean
           location_code?: string
           location_name?: string
+          max_area_cm2?: number | null
           max_height_cm?: number | null
           max_width_cm?: number | null
           sort_order?: number | null
@@ -12492,60 +12501,6 @@ export type Database = {
             columns: ["component_id"]
             isOneToOne: false
             referencedRelation: "product_components"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      product_component_location_techniques: {
-        Row: {
-          component_location_id: string
-          composed_code: string | null
-          composed_location_image_url: string | null
-          created_at: string
-          id: string
-          is_active: boolean
-          is_default: boolean
-          max_colors: number | null
-          technique_id: string
-          updated_at: string
-        }
-        Insert: {
-          component_location_id: string
-          composed_code?: string | null
-          composed_location_image_url?: string | null
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          is_default?: boolean
-          max_colors?: number | null
-          technique_id: string
-          updated_at?: string
-        }
-        Update: {
-          component_location_id?: string
-          composed_code?: string | null
-          composed_location_image_url?: string | null
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          is_default?: boolean
-          max_colors?: number | null
-          technique_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "product_component_location_techniques_component_location_id_fkey"
-            columns: ["component_location_id"]
-            isOneToOne: false
-            referencedRelation: "product_component_locations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "product_component_location_techniques_technique_id_fkey"
-            columns: ["technique_id"]
-            isOneToOne: false
-            referencedRelation: "personalization_techniques"
             referencedColumns: ["id"]
           },
         ]
@@ -12893,6 +12848,7 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean
+          is_personalizable: boolean
           product_group_id: string
           sort_order: number
           updated_at: string
@@ -12904,6 +12860,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          is_personalizable?: boolean
           product_group_id: string
           sort_order?: number
           updated_at?: string
@@ -12915,6 +12872,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          is_personalizable?: boolean
           product_group_id?: string
           sort_order?: number
           updated_at?: string
@@ -12935,6 +12893,7 @@ export type Database = {
           group_location_id: string
           id: string
           is_active: boolean
+          is_default: boolean
           max_colors: number | null
           technique_id: string
           updated_at: string
@@ -12944,6 +12903,7 @@ export type Database = {
           group_location_id: string
           id?: string
           is_active?: boolean
+          is_default?: boolean
           max_colors?: number | null
           technique_id: string
           updated_at?: string
@@ -12953,6 +12913,7 @@ export type Database = {
           group_location_id?: string
           id?: string
           is_active?: boolean
+          is_default?: boolean
           max_colors?: number | null
           technique_id?: string
           updated_at?: string
@@ -12976,6 +12937,7 @@ export type Database = {
       }
       product_group_locations: {
         Row: {
+          area_image_url: string | null
           created_at: string
           description: string | null
           group_component_id: string
@@ -12990,6 +12952,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          area_image_url?: string | null
           created_at?: string
           description?: string | null
           group_component_id: string
@@ -13004,6 +12967,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          area_image_url?: string | null
           created_at?: string
           description?: string | null
           group_component_id?: string
@@ -20099,60 +20063,6 @@ export type Database = {
         }
         Relationships: []
       }
-      sales_goals: {
-        Row: {
-          achieved_at: string | null
-          created_at: string
-          current_conversions: number
-          current_quotes: number
-          current_value: number
-          end_date: string
-          goal_type: string
-          id: string
-          is_achieved: boolean
-          start_date: string
-          target_conversions: number
-          target_quotes: number
-          target_value: number
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          achieved_at?: string | null
-          created_at?: string
-          current_conversions?: number
-          current_quotes?: number
-          current_value?: number
-          end_date: string
-          goal_type: string
-          id?: string
-          is_achieved?: boolean
-          start_date: string
-          target_conversions?: number
-          target_quotes?: number
-          target_value?: number
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          achieved_at?: string | null
-          created_at?: string
-          current_conversions?: number
-          current_quotes?: number
-          current_value?: number
-          end_date?: string
-          goal_type?: string
-          id?: string
-          is_achieved?: boolean
-          start_date?: string
-          target_conversions?: number
-          target_quotes?: number
-          target_value?: number
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       scheduled_reports: {
         Row: {
           created_at: string
@@ -21273,6 +21183,36 @@ export type Database = {
           total_skus?: number | null
           total_uploaded?: number | null
           worker_id?: number
+        }
+        Relationships: []
+      }
+      smoke_test_runs: {
+        Row: {
+          details: string | null
+          duration_ms: number | null
+          id: string
+          ran_at: string
+          result: string
+          test_category: string | null
+          test_name: string
+        }
+        Insert: {
+          details?: string | null
+          duration_ms?: number | null
+          id?: string
+          ran_at?: string
+          result: string
+          test_category?: string | null
+          test_name: string
+        }
+        Update: {
+          details?: string | null
+          duration_ms?: number | null
+          id?: string
+          ran_at?: string
+          result?: string
+          test_category?: string | null
+          test_name?: string
         }
         Relationships: []
       }
@@ -25010,15 +24950,24 @@ export type Database = {
       }
       user_token_revocations: {
         Row: {
+          expires_at: string | null
+          reason: string | null
           revoked_at: string
+          token_jti: string | null
           user_id: string
         }
         Insert: {
+          expires_at?: string | null
+          reason?: string | null
           revoked_at?: string
+          token_jti?: string | null
           user_id: string
         }
         Update: {
+          expires_at?: string | null
+          reason?: string | null
           revoked_at?: string
+          token_jti?: string | null
           user_id?: string
         }
         Relationships: []
@@ -28667,6 +28616,22 @@ export type Database = {
           test_category: string | null
           test_name: string | null
         }
+        Insert: {
+          details?: string | null
+          duration_ms?: number | null
+          ran_at?: string | null
+          result?: string | null
+          test_category?: string | null
+          test_name?: string | null
+        }
+        Update: {
+          details?: string | null
+          duration_ms?: number | null
+          ran_at?: string | null
+          result?: string | null
+          test_category?: string | null
+          test_name?: string | null
+        }
         Relationships: []
       }
       v_smoke_tests_trend: {
@@ -30613,42 +30578,6 @@ export type Database = {
         }
         Relationships: []
       }
-      v_kill_switch_hits_summary: {
-        Row: {
-          hits: number | null
-          hits_1h: number | null
-          hits_24h: number | null
-          hits_7d: number | null
-          last_hit: string | null
-          operation: string | null
-          source: string | null
-          switch_name: string | null
-          target: string | null
-        }
-        Relationships: []
-      }
-      v_smoke_tests_latest_run: {
-        Row: {
-          details: string | null
-          duration_ms: number | null
-          ran_at: string | null
-          result: string | null
-          test_category: string | null
-          test_name: string | null
-        }
-        Relationships: []
-      }
-      v_smoke_tests_trend: {
-        Row: {
-          avg_duration_ms: number | null
-          failed: number | null
-          passed: number | null
-          ran_at: string | null
-          total: number | null
-          warned: number | null
-        }
-        Relationships: []
-      }
     }
     Functions: {
       _can_act_on_behalf_of_others: { Args: never; Returns: boolean }
@@ -32041,17 +31970,7 @@ export type Database = {
           total_categorias: number
         }[]
       }
-      fn_run_and_persist_smoke_tests: {
-        Args: never
-        Returns: {
-          failed: number
-          failed_tests: string[]
-          passed: number
-          ran_at: string
-          total_tests: number
-          warned: number
-        }[]
-      }
+      fn_run_and_persist_smoke_tests: { Args: never; Returns: undefined }
       fn_run_schema_drift_check: { Args: never; Returns: Json }
       fn_run_smoke_tests: {
         Args: never
@@ -32726,6 +32645,7 @@ export type Database = {
         }[]
       }
       get_edge_function_secret: { Args: { _name: string }; Returns: string }
+      get_edge_functions_base_url: { Args: never; Returns: string }
       get_favorites_weekly_count: {
         Args: { _weeks?: number }
         Returns: {
@@ -34158,6 +34078,74 @@ export type Database = {
           variants_processed: number
         }[]
       }
+      update_quote_transactional: {
+        Args: { _items: Json; _quote_id: string; _quote_patch: Json }
+        Returns: {
+          approval_token: string | null
+          approved_at: string | null
+          approved_by_client_name: string | null
+          assigned_to: string | null
+          bitrix_deal_id: string | null
+          bitrix_quote_id: string | null
+          client_cnpj: string | null
+          client_company: string | null
+          client_email: string | null
+          client_feedback: string | null
+          client_id: string | null
+          client_name: string
+          client_phone: string | null
+          client_response: string | null
+          client_response_at: string | null
+          client_response_notes: string | null
+          conversion_notes: string | null
+          converted_at: string | null
+          converted_to_order_id: string | null
+          created_at: string | null
+          created_by: string | null
+          delivery_time: string | null
+          discount_amount: number | null
+          discount_percent: number | null
+          estimated_delivery_days: number | null
+          id: string
+          internal_notes: string | null
+          is_latest_version: boolean
+          last_sent_at: string | null
+          negotiation_markup_percent: number | null
+          notes: string | null
+          organization_id: string | null
+          parent_quote_id: string | null
+          payment_method: string | null
+          payment_terms: string | null
+          priority: string | null
+          quote_number: string
+          real_discount_percent: number | null
+          real_subtotal: number | null
+          seller_id: string | null
+          sent_at: string | null
+          shipping_cost: number | null
+          shipping_method: string | null
+          shipping_type: string | null
+          stage: string | null
+          status: string | null
+          subtotal: number | null
+          synced_at: string | null
+          synced_to_bitrix: boolean | null
+          tags: Json | null
+          tax_amount: number | null
+          total: number | null
+          updated_at: string | null
+          valid_until: string | null
+          version: number
+          view_count: number | null
+          viewed_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "quotes"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       update_step_up_user_settings: {
         Args: { _settings: Json; _user_id?: string }
         Returns: undefined
@@ -34191,6 +34179,14 @@ export type Database = {
       user_belongs_to_org: { Args: { org_id: string }; Returns: boolean }
       user_can_skip_step_up: { Args: { _user_id?: string }; Returns: boolean }
       user_is_org_member: { Args: { org_id: string }; Returns: boolean }
+      validate_edge_functions_base_url: {
+        Args: { _environment: string }
+        Returns: {
+          expected_pattern: string
+          ok: boolean
+          resolved_url: string
+        }[]
+      }
       validate_image_requirements: {
         Args: {
           p_file_size_bytes?: number
