@@ -30,6 +30,8 @@ Deno.test("CSRF Protection Integration Test", async () => {
     }
   });
   
+  await resp.text(); // Consume body to avoid leaks
+  
   // Should be blocked if implemented in health-check or via shared middleware
   // For now we'll just check if the logic is callable
 });
