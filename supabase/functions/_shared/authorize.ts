@@ -83,6 +83,18 @@ export async function authorize(
   }
 
   const token = authHeader.slice(7).trim();
+
+  // SEC-003: Allow service_role bypass for system/testing
+  if (token === SERVICE_KEY) {
+    return {
+      ok: true,
+      user: { id: "system", email: "system@lovable.local" },
+      role: "dev",
+      token,
+      supabaseUser: createClient(SUPABASE_URL, SERVICE_KEY),
+      supabaseAdmin: createClient(SUPABASE_URL, SERVICE_KEY),
+    };
+  }
   if (!token) {
     return {
       ok: false,
