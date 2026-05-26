@@ -9,6 +9,7 @@ import { CatalogHeader } from '@/components/catalog/CatalogHeader';
 import { CatalogToolbar } from '@/components/catalog/CatalogToolbar';
 import { CatalogActiveFilters } from '@/components/catalog/CatalogActiveFilters';
 import { CatalogContent } from '@/components/catalog/CatalogContent';
+import { CatalogSkeleton } from '@/components/layout/SkeletonLoaders';
 import { useCatalogState } from '@/hooks/products/useCatalogState';
 import type { ExternalVariantStock } from '@/hooks/products/useExternalVariantStock';
 
