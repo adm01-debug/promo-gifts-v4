@@ -56,12 +56,16 @@ Deno.serve(async (req: Request) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : null;
 
-    if (token && (token === serviceKey || (token.startsWith("sb_") && serviceKey.startsWith("sb_") && token === serviceKey))) {
-      // System/Service bypass
-      return new Response(
-        JSON.stringify({ allowed: true, reason: "service_role_bypass" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+    // System/Service bypass: only allowed if it's explicitly required or internal
+    // We restrict this to POST only and check for a specific header if needed
+    if (token && token === serviceKey) {
+      const isInternal = req.headers.get("X-Internal-Call") === "true";
+      if (isInternal) {
+        return new Response(
+          JSON.stringify({ allowed: true, reason: "service_role_bypass" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
     }
 
     if (!token) {

@@ -58,8 +58,8 @@ const CORS_HEADERS_BASE = {
   'Access-Control-Expose-Headers': 'x-request-id',
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
-  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
-  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'strict-dynamic'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self';",
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'strict-dynamic'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;",
 } as const;
 
 // --- Internal Utilities ---
@@ -217,7 +217,8 @@ export function buildPublicCorsHeaders(opts: PublicCorsOptions = {}): Record<str
     'Access-Control-Expose-Headers': 'x-request-id',
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'DENY',
-    'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'; sandbox",
+    'Strict-Transport-Security': CORS_HEADERS_BASE['Strict-Transport-Security'],
+    'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'; sandbox; upgrade-insecure-requests;",
   };
 }
 
