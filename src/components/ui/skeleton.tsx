@@ -18,9 +18,13 @@ const shimmer = {
 
 const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(
   ({ className, animate = true, ...props }, ref) => {
+    // Generate a simple hash/id from className to help identify which skeleton part this is
+    const skeletonId = `sk-${className?.split(" ").filter(c => !c.includes("h-") && !c.includes("w-")).join("-") || "base"}`;
+    
     return (
       <div
         ref={ref}
+        data-skeleton-id={skeletonId}
         className={cn(
           "relative overflow-hidden rounded-md bg-muted",
           className
