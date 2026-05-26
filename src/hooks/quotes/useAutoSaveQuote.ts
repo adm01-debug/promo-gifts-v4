@@ -41,16 +41,12 @@ export function migratePayload<T>(
   }
 
   // Se a versão do payload for maior que a atual, tratamos como inseguro
-  // e retornamos null para evitar corrupção de estado (o usuário perderá o rascunho, mas não quebrará o app)
   if (versioned.version > currentVersion) {
     console.warn(
       '[AutoSave] Future payload version detected, skipping restore to prevent state corruption',
     );
     return null;
   }
-
-  // Adicione futuras migrações aqui:
-  // if (payload.version === 2) { ... migrate to 3 ... }
 
   return payload as AutoSavePayload<T>;
 }
@@ -66,11 +62,26 @@ export function useAutoSaveQuote<T>({
   key = 'quote_builder_autosave',
 }: AutoSaveOptions<T>) {
   const lastSavedRef = useRef<string>('');
+
   // Restaura UMA única vez por montagem. Sem este guard, callers que passam um
   // `onRestore` inline (identidade nova a cada render) faziam o efeito re-rodar
   // a cada render e re-aplicar o rascunho salvo POR CIMA das edições ao vivo do
   // usuário (ex.: o 2º item adicionado era revertido para o estado salvo).
   const hasRestoredRef = useRef(false);
+
+  /**
+   * BUG-07 FIX: capturar onRestore em ref para estabilizar as deps do useEffect.
+   *
+   * PROBLEMA ORIGINAL: onRestore estava nas dependências do useEffect de restore.
+   * Se o caller passava a função inline (nova identidade a cada render), o efeito
+   * era re-agendado a cada render. O hasRestoredRef protegia a execução efetiva,
+   * mas o agendamento era desnecessário.
+   *
+   * SOLUÇÃO: capturar em ref — o efeito usa sempre a versão mais recente de
+   * onRestore sem precisar dela como dependência.
+   */
+  const onRestoreRef = useRef(onRestore);
+  onRestoreRef.current = onRestore;
 
   // Efeito de carregamento inicial (Restaurar)
   useEffect(() => {
@@ -81,12 +92,10 @@ export function useAutoSaveQuote<T>({
     if (saved) {
       try {
         const payload = JSON.parse(saved);
-
-        // Aplica migrações se necessário
         const migrated = migratePayload<T>(payload);
 
-        if (migrated && migrated.data && onRestore) {
-          onRestore(migrated.data);
+        if (migrated && migrated.data && onRestoreRef.current) {
+          onRestoreRef.current(migrated.data);
           // Atualiza o lastSavedRef para evitar salvar logo em seguida se nada mudou
           lastSavedRef.current = JSON.stringify(migrated.data);
         }
@@ -94,7 +103,9 @@ export function useAutoSaveQuote<T>({
         console.error('Failed to parse/migrate autosave data', e);
       }
     }
-  }, [enabled, key, onRestore]); // Adicionado dependências seguras
+    // FIX: removido onRestore das deps (estabilizado via ref acima)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, key]);
 
   // Efeito de salvamento (Debounced)
   useEffect(() => {

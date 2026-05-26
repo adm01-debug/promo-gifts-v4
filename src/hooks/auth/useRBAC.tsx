@@ -84,6 +84,14 @@ export function useRBAC() {
 
   const dbRole = toDbRole(roleName);
 
+  /**
+   * BUG-04 FIX: dev nunca consulta role_permissions — já tem wildcard hardcoded.
+   *
+   * PROBLEMA ORIGINAL: a query era habilitada para todos os usuários autenticados
+   * (`enabled: !!user`), incluindo dev. Isso causava uma consulta desnecessária
+   * ao banco e mantinha `permissionsLoading: true` transitório para admins dev,
+   * podendo flickar guards de UI.
+   */
   const { data: dbPermissions, isLoading: permissionsLoading } = useQuery({
     queryKey: ['role-permissions', dbRole],
     queryFn: async () => {
@@ -98,7 +106,8 @@ export function useRBAC() {
       }
       return data.map((row: { permission_code: string }) => row.permission_code);
     },
-    enabled: !!user,
+    // FIX: dev sempre tem wildcard — não precisa consultar o banco
+    enabled: !!user && roleName !== 'dev',
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
@@ -149,7 +158,8 @@ export function useRBAC() {
 
   return {
     role,
-    isLoading: authLoading || permissionsLoading,
+    // FIX: dev nunca terá permissionsLoading=true (query desabilitada)
+    isLoading: authLoading || (roleName !== 'dev' && permissionsLoading),
     hasPermission,
     hasPermissionByCode,
     hasRole,

@@ -39,8 +39,7 @@ const initial: StepUpState = {
 
 export function useStepUpAuth() {
   const [state, setState] = useState<StepUpState>(initial);
-  // Mantemos o último contexto (action + label) para enviá-lo em verify_*
-  // e cancel sem que o caller precise repetir.
+
   const ctxRef = useRef<{
     action: StepUpAction | null;
     targetRef: string | null;
@@ -51,9 +50,24 @@ export function useStepUpAuth() {
     actionLabel: null,
   });
 
+  /**
+   * BUG-01 FIX: useRef para challengeId evita stale closure.
+   *
+   * PROBLEMA ORIGINAL: verifyPassword, verifyOtp e cancel capturavam
+   * state.challengeId via closure. Como requestChallenge atualiza o estado
+   * via setState (assíncrono), essas closures ainda tinham challengeId = null
+   * quando chamadas logo após requestChallenge — enviando challenge_id: null
+   * para a Edge Function e fazendo o MFA falhar silenciosamente.
+   *
+   * SOLUÇÃO: challengeIdRef é atualizado sincronamente em requestChallenge,
+   * antes do re-render. Os callbacks leem .current diretamente.
+   */
+  const challengeIdRef = useRef<string | null>(null);
+
   const reset = useCallback(() => {
     setState(initial);
     ctxRef.current = { action: null, targetRef: null, actionLabel: null };
+    challengeIdRef.current = null;
   }, []);
 
   const requestChallenge = useCallback(async ({ action, targetRef, actionLabel }: StartParams) => {
@@ -75,6 +89,9 @@ export function useStepUpAuth() {
       setState((s) => ({ ...s, loading: false, error: sanitizeError(data ?? error) }));
       return false;
     }
+    // FIX: atualiza ref ANTES do setState para que verifyPassword/Otp já
+    // tenham o valor correto caso chamados antes do próximo render.
+    challengeIdRef.current = data.challenge_id;
     setState((s) => ({
       ...s,
       loading: false,
@@ -88,10 +105,11 @@ export function useStepUpAuth() {
     async (password: string) => {
       setState((s) => ({ ...s, loading: true, error: null }));
       const { action, targetRef, actionLabel } = ctxRef.current;
+      // FIX: usa challengeIdRef.current em vez de state.challengeId (stale closure)
       const { data, error } = await supabase.functions.invoke('step-up-verify', {
         body: {
           step: 'verify_password',
-          challenge_id: state.challengeId,
+          challenge_id: challengeIdRef.current,
           password,
           action,
           target_ref: targetRef,
@@ -106,17 +124,18 @@ export function useStepUpAuth() {
       setState((s) => ({ ...s, loading: false, passwordVerified: true }));
       return true;
     },
-    [state.challengeId],
+    [],
   );
 
   const verifyOtp = useCallback(
     async (otp: string) => {
       setState((s) => ({ ...s, loading: true, error: null }));
       const { action, targetRef, actionLabel } = ctxRef.current;
+      // FIX: usa challengeIdRef.current em vez de state.challengeId (stale closure)
       const { data, error } = await supabase.functions.invoke('step-up-verify', {
         body: {
           step: 'verify_otp',
-          challenge_id: state.challengeId,
+          challenge_id: challengeIdRef.current,
           otp,
           action,
           target_ref: targetRef,
@@ -130,24 +149,22 @@ export function useStepUpAuth() {
       setState((s) => ({ ...s, loading: false, token: data.token, expiresAt: data.expires_at }));
       return data.token as string;
     },
-    [state.challengeId],
+    [],
   );
 
   /**
-   * Registra cancelamento server-side (ex.: usuário fechou o modal antes de
-   * concluir). Best-effort: nunca propaga erro.
+   * Registra cancelamento server-side. Best-effort: nunca propaga erro.
    */
   const cancel = useCallback(
     async (reason: string = 'user_dismissed') => {
       const { action, targetRef, actionLabel } = ctxRef.current;
-      // Só registra se houve um challenge ativo OU pelo menos um contexto definido,
-      // para evitar logs vazios em re-renders.
-      if (!action && !state.challengeId) return;
+      // FIX: usa challengeIdRef.current em vez de state.challengeId (stale closure)
+      if (!action && !challengeIdRef.current) return;
       try {
         await supabase.functions.invoke('step-up-verify', {
           body: {
             step: 'cancel',
-            challenge_id: state.challengeId,
+            challenge_id: challengeIdRef.current,
             action,
             target_ref: targetRef,
             action_label: actionLabel,
@@ -158,7 +175,7 @@ export function useStepUpAuth() {
         // Audit best-effort
       }
     },
-    [state.challengeId],
+    [],
   );
 
   return { state, reset, requestChallenge, verifyPassword, verifyOtp, cancel };
