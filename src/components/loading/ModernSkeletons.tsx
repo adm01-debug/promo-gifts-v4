@@ -354,12 +354,13 @@ export function ProductListSkeleton({ count = 8 }: { count?: number }) {
   );
 }
 
-export function ProductTableSkeleton({ rows = 10, className }: { rows?: number; className?: string }) {
+export function ProductTableSkeleton({ rows = 10, className, selectionMode = false }: { rows?: number; className?: string; selectionMode?: boolean }) {
   return (
     <div className={cn("w-full border border-border/40 rounded-xl overflow-hidden bg-card/50 backdrop-blur-sm", className)}>
       {/* Table Header Skeleton - Matches ProductTableView.tsx sticky header */}
       <div className="flex items-center px-4 py-2.5 bg-muted/90 border-b border-border/50">
-        <div className="w-12 px-2"><Skeleton className="h-4 w-4" /></div>
+        {selectionMode && <div className="w-10 px-2" />}
+        <div className="w-12 px-2" />
         <div className="flex-1 px-3"><Skeleton className="h-3 w-20" /></div>
         <div className="w-32 px-3 hidden md:block"><Skeleton className="h-3 w-12" /></div>
         <div className="w-40 px-3 hidden lg:block"><Skeleton className="h-3 w-24" /></div>
@@ -373,6 +374,12 @@ export function ProductTableSkeleton({ rows = 10, className }: { rows?: number; 
       <div className="divide-y divide-border/20">
         {Array.from({ length: rows }).map((_, i) => (
           <div key={i} className="flex items-center px-4 h-14 relative overflow-hidden bg-card/30">
+            {selectionMode && (
+              <div className="w-10 px-2 flex justify-center">
+                <Skeleton className="h-4 w-4 rounded" />
+              </div>
+            )}
+            
             {/* Image thumb */}
             <div className="w-12 px-2">
               <Skeleton className="w-10 h-10 rounded-md" />
