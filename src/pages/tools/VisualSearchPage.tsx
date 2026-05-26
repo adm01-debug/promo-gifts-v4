@@ -857,6 +857,11 @@ export default function VisualSearchPage() {
                                     </div>
                                   )}
 
+                                  {product.totalFound && product.totalFound > 10 && (
+                                    <div className="mt-2 flex items-center gap-1.5 text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
+                                      <TrendingUp className="h-3 w-3" /> Tendência: Encontrado {product.totalFound} vezes esta semana
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             )}
