@@ -4,6 +4,23 @@ import { callAiWithTracking, QuotaExceededError } from '../_shared/ai-usage.ts';
 import { z } from '../_shared/zod-validate.ts';
 import { runBotProtection } from '../_shared/bot-protection.ts';
 import { safeErrorFields } from '../_shared/log-safety.ts';
+import { resolveCredential } from '../_shared/credentials.ts';
+
+// BUG-A02 FIX (26/05/2026): SSRF — validação de URL antes de fetch externo.
+const ALLOWED_IMAGE_DOMAINS = [
+  'supabase.co', 'supabase.com', 'cloudflare.com', 'imagedelivery.net',
+  'promobrindes.com.br', 'promogifts.com.br', 'storage.googleapis.com',
+  'amazonaws.com', 's3.amazonaws.com', 'spotgifts.com.br',
+  'asiaimport.com.br', 'somarcas.com.br', 'minhaxbz.com.br',
+];
+
+function isAllowedImageUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    if (u.protocol !== 'https:') return false;
+    return ALLOWED_IMAGE_DOMAINS.some(d => u.hostname === d || u.hostname.endsWith('.' + d));
+  } catch { return false; }
+}
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -12,7 +29,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Authenticate
     const auth = await authenticateRequest(req);
 
     const protection = await runBotProtection(
@@ -27,6 +43,7 @@ Deno.serve(async (req) => {
       corsHeaders,
     );
     if (!protection.allowed) return protection.blockResponse!;
+
     const LogoSchema = z.object({
       imageBase64: z.string().min(10, 'imageBase64 is required').max(10_000_000, 'Image too large'),
     });
@@ -40,21 +57,26 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
     const parsed = LogoSchema.safeParse(rawBody);
     if (!parsed.success) {
       return new Response(
         JSON.stringify({ error: parsed.error.issues[0]?.message || 'Invalid input' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
+
     const { imageBase64 } = parsed.data;
 
-    // Handle HTTP URLs: fetch the image and convert to base64
     let imageContent = imageBase64;
     if (imageBase64.startsWith('http://') || imageBase64.startsWith('https://')) {
+      // BUG-A02 FIX: validação SSRF antes de fetch externo
+      if (!isAllowedImageUrl(imageBase64)) {
+        return new Response(
+          JSON.stringify({ error: 'URL de imagem não permitida. Use URLs de fornecedores autorizados.' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
       try {
         const imgResponse = await fetch(imageBase64);
         if (!imgResponse.ok) throw new Error(`Failed to fetch image: ${imgResponse.status}`);
@@ -62,14 +84,8 @@ Deno.serve(async (req) => {
 
         if (contentType.includes('svg')) {
           return new Response(
-            JSON.stringify({
-              error:
-                'Formato SVG não é suportado para análise de cores. Por favor, envie a logo em PNG, JPG ou WEBP.',
-            }),
-            {
-              status: 400,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            },
+            JSON.stringify({ error: 'Formato SVG não é suportado para análise de cores. Por favor, envie a logo em PNG, JPG ou WEBP.' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
           );
         }
 
@@ -92,20 +108,16 @@ Deno.serve(async (req) => {
 
     if (imageContent.startsWith('data:image/svg')) {
       return new Response(
-        JSON.stringify({
-          error:
-            'Formato SVG não é suportado para análise de cores. Por favor, envie a logo em PNG, JPG ou WEBP.',
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
+        JSON.stringify({ error: 'Formato SVG não é suportado para análise de cores. Por favor, envie a logo em PNG, JPG ou WEBP.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    // BUG-A03 FIX (26/05/2026): LOVABLE_API_KEY via Deno.env.get() direto — sem SSOT.
+    // Agora usa resolveCredential() para buscar do banco (integration_credentials).
+    const { value: LOVABLE_API_KEY } = await resolveCredential('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured');
+      throw new Error('LOVABLE_API_KEY not configured. Configure em /admin/conexoes > AI Models.');
     }
 
     const model = 'google/gemini-2.5-flash';
@@ -155,10 +167,7 @@ Return ONLY a JSON array, no markdown, no explanation. Example:
       if (aiResponse.status === 429) {
         return new Response(
           JSON.stringify({ error: 'Rate limit exceeded, tente novamente em alguns segundos.' }),
-          {
-            status: 429,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          },
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         );
       }
       if (aiResponse.status === 402) {
@@ -187,6 +196,7 @@ Return ONLY a JSON array, no markdown, no explanation. Example:
     return new Response(JSON.stringify({ colors }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+
   } catch (e) {
     if (e instanceof QuotaExceededError) {
       return new Response(JSON.stringify({ error: 'Cota de IA excedida este mês.' }), {
@@ -200,10 +210,7 @@ Return ONLY a JSON array, no markdown, no explanation. Example:
     console.error('analyze-logo-colors error:', safeErrorFields(e));
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : 'Unknown error' }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   }
 });
