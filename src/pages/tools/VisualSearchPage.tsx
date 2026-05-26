@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
+import { Slider } from '@/components/ui/slider';
 import { 
   Search, 
   Camera, 
@@ -22,7 +23,20 @@ import {
   AlertCircle,
   History,
   Trash2,
-  Maximize2
+  Maximize2,
+  Volume2,
+  VolumeX,
+  Mic,
+  Maximize,
+  ChevronDown,
+  LayoutGrid,
+  Sparkles,
+  FileText,
+  Clock,
+  ExternalLink,
+  ChevronRight,
+  TrendingUp,
+  Award
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -32,7 +46,7 @@ import { cn } from '@/lib/utils';
 import { ExternalCategoryFilter } from '@/components/filters/ExternalCategoryFilter';
 import { ColorSwatchBar, type ColorFilterSelection } from '@/components/filters/ColorGroupFilter';
 import { useExternalCategoriesQuery, useColorSystem } from '@/hooks/products';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 
 interface VisualSearchResult {
   analysis: {
