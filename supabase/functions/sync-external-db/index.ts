@@ -9,6 +9,7 @@ import { SyncExternalDbSchemas } from "../_shared/contracts/schemas/sync-externa
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
 import { authorizeCron } from "../_shared/dispatcher-auth.ts";
 import { getOrCreateRequestId } from "../_shared/request-id.ts";
+import { getCredential } from "../_shared/credentials.ts";
 
 const corsHeaders = buildPublicCorsHeaders();
 
@@ -52,8 +53,9 @@ Deno.serve(async (req) => {
     const internalSupabase = createClient(internalUrl, internalKey);
 
     // 2. Conexao com Supabase Externo
-    const externalUrl = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("VITE_EXTERNAL_SUPABASE_URL");
-    const externalKey = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY");
+    // fix: ssot-bypass — credential vault
+    const externalUrl = await getCredential('EXTERNAL_PROMOBRIND_URL');
+    const externalKey = await getCredential('EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY');
 
     if (!externalUrl || !externalKey) {
       log.error("missing_external_config", {});
