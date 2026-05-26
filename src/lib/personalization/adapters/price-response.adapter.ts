@@ -231,8 +231,6 @@ export function adaptPriceResponseWithMeta(
  * Versão simplificada — devolve apenas o flat canônico.
  * É a função que os consumidores devem importar.
  */
-export function adaptPriceResponse(
-  resp: Record<string, unknown> | null | undefined,
-): CustomizationPriceFlat {
-  return adaptPriceResponseWithMeta(resp).flat;
+export function adaptPriceResponse(resp: unknown): CustomizationPriceFlat {
+  return adaptPriceResponseWithMeta(resp as Record<string, unknown> | null | undefined).flat;
 }

@@ -85,9 +85,9 @@ async function extractErrorMessage(response: Response): Promise<string> {
     try {
       const json = JSON.parse(text);
       const msg = json.message ?? json.error ?? json.msg ?? null;
-      return msg ? String(msg) : text;
+      return msg ? String(msg) : `${text} (HTTP ${response.status})`;
     } catch {
-      return text;
+      return `${text} (HTTP ${response.status})`;
     }
   } catch {
     return `Erro interno no serviço de recomendações (HTTP ${response.status}). Tente novamente mais tarde.`;

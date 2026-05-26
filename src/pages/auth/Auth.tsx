@@ -790,19 +790,12 @@ export default function Auth() {
                       className={authButtonClass(
                         'h-12 w-full rounded-xl border border-white/10 bg-blue-600 text-base text-white shadow-lg shadow-blue-500/25 hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-500/40 active:scale-[0.98]',
                       )}
-                      disabled={isSubmitting || loginStatus === 'success'}
+                      disabled={isSubmitting}
                     >
                       {isSubmitting ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           Iniciando Sistemas...
-                        </>
-                      ) : loginStatus === 'success' ? (
-                        <>
-                          <div className="flex items-center gap-2 duration-300 animate-in zoom-in">
-                            <Rocket className="h-4 w-4 -rotate-45" />
-                            <span>Decolando!</span>
-                          </div>
                         </>
                       ) : (
                         'Entrar na Plataforma'

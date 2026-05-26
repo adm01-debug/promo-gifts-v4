@@ -46,6 +46,7 @@ import { QuotesConfigurableList } from '@/components/quotes/QuotesConfigurableLi
 import { QuotesStatusChips } from '@/components/quotes/QuotesStatusChips';
 import { QuotesFunnelChart } from '@/components/quotes/QuotesFunnelChart';
 import { useQuotesListPage, sortOptions, type SortOption } from '@/pages/quotes/useQuotesListPage';
+import type { QuoteStatus } from '@/types/quote';
 
 export default function QuotesListPage() {
   const {
@@ -284,7 +285,7 @@ export default function QuotesListPage() {
                 onBulkStatusChange={async (ids, status) => {
                   let successCount = 0;
                   for (const id of ids) {
-                    const ok = await updateQuoteStatus(id, status as string);
+                    const ok = await updateQuoteStatus(id, status as QuoteStatus);
                     if (ok) successCount++;
                   }
                   toast.success(`${successCount} orçamento(s) atualizado(s)`);
