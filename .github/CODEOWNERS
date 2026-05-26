@@ -1,13 +1,1 @@
-# CODEOWNERS — protege edge functions críticas de sobrescrita pelo lovable-dev[bot]
-# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
-
-# Arquivos de segurança e autenticação — requerem review manual
-supabase/functions/send-transactional-email/   @adm01-debug
-supabase/functions/analyze-logo-colors/         @adm01-debug
-supabase/functions/webhook-inbound/             @adm01-debug
-supabase/functions/_shared/external-fetch.ts    @adm01-debug
-supabase/functions/_shared/ai-router/           @adm01-debug
-supabase/functions/sync-quote-bitrix/           @adm01-debug
-supabase/functions/dropbox-list/                @adm01-debug
-supabase/functions/elevenlabs-tts/              @adm01-debug
-supabase/functions/generate-mockup/             @adm01-debug
+IyBDT0RFT1dORVJTIOKAlCBwcm90ZWdlIGVkZ2UgZnVuY3Rpb25zIGNyw610aWNhcyBkZSBzb2JyZXNjcml0YSBwZWxvIGxvdmFibGUtZGV2W2JvdF0KIyBEb2NzOiBodHRwczovL2RvY3MuZ2l0aHViLmNvbS9lbi9yZXBvc2l0b3JpZXMvbWFuYWdpbmcteW91ci1yZXBvc2l0b3J5cy1zZXR0aW5ncy1hbmQtZmVhdHVyZXMvY3VzdG9taXppbmcteW91ci1yZXBvc2l0b3J5L2Fib3V0LWNvZGUtb3duZXJzCgojIEFycXVpdm9zIGRlIHNlZ3VyYW7Dp2EgZSBhdXRlbnRpY2HDp8OjbyDigJQgcmVxdWVyZW0gcmV2aWV3IG1hbnVhbApzdXBhYmFzZS9mdW5jdGlvbnMvc2VuZC10cmFuc2FjdGlvbmFsLWVtYWlsLyAgIEBhZG0wMS1kZWJ1ZwpzdXBhYmFzZS9mdW5jdGlvbnMvYW5hbHl6ZS1sb2dvLWNvbG9ycy8gICAgICAgICBAYWRtMDEtZGVidWcKc3VwYWJhc2UvZnVuY3Rpb25zL3dlYmhvb2staW5ib3VuZC8gICAgICAgICAgICAgQGFkbTAxLWRlYnVnCnN1cGFiYXNlL2Z1bmN0aW9ucy9fc2hhcmVkL2V4dGVybmFsLWZldGNoLnRzICAgIEBhZG0wMS1kZWJ1ZwpzdXBhYmFzZS9mdW5jdGlvbnMvX3NoYXJlZC9haS1yb3V0ZXIvICAgICAgICAgICBAYWRtMDEtZGVidWcKc3VwYWJhc2UvZnVuY3Rpb25zL19zaGFyZWQvYWktdXNhZ2UudHMgICAgICAgICAgQGFkbTAxLWRlYnVnCnN1cGFiYXNlL2Z1bmN0aW9ucy9fc2hhcmVkL2NyZWRlbnRpYWxzLnRzICAgICAgIEBhZG0wMS1kZWJ1ZwpzdXBhYmFzZS9mdW5jdGlvbnMvc3luYy1xdW90ZS1iaXRyaXgvICAgICAgICAgICBAYWRtMDEtZGVidWcKc3VwYWJhc2UvZnVuY3Rpb25zL2Ryb3Bib3gtbGlzdC8gICAgICAgICAgICAgICAgQGFkbTAxLWRlYnVnCnN1cGFiYXNlL2Z1bmN0aW9ucy9lbGV2ZW5sYWJzLXR0cy8gICAgICAgICAgICAgIEBhZG0wMS1kZWJ1ZwpzdXBhYmFzZS9mdW5jdGlvbnMvZ2VuZXJhdGUtbW9ja3VwLyAgICAgICAgICAgICBAYWRtMDEtZGVidWcK
