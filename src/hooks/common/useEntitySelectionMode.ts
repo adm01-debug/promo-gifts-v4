@@ -185,19 +185,19 @@ export function useEntitySelectionMode<TEntity extends SelectableEntity>({
     [wizardMode, navigate, clearSelection],
   );
 
-  const bulkCartProducts = useMemo(() => {
-    const ids = Array.from(selectedIds);
-    return filteredProducts
-      .filter((p) => ids.includes(p.product_id))
-      .map(entityToProduct);
-  }, [selectedIds, filteredProducts, entityToProduct]);
-
+  // BUG-09 FIX: previously bulkCartProducts and selectedProducts were two
+  // separate useMemo calls with identical code and deps — double computation
+  // on every render with active selection. Now selectedProducts is the single
+  // source of truth and bulkCartProducts is a plain alias with zero overhead.
   const selectedProducts = useMemo(() => {
     const ids = Array.from(selectedIds);
     return filteredProducts
       .filter((p) => ids.includes(p.product_id))
       .map(entityToProduct);
   }, [selectedIds, filteredProducts, entityToProduct]);
+
+  // Alias for backward compatibility with consumers expecting bulkCartProducts
+  const bulkCartProducts = selectedProducts;
 
   const firstSelectedId =
     selectedIds.size > 0 ? Array.from(selectedIds)[0] : "";
