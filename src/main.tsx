@@ -1,7 +1,6 @@
-import { Fragment, useEffect } from 'react';
+import { Fragment } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HelmetProvider } from 'react-helmet-async';
-import { supabase } from '@/integrations/supabase/client';
 import { registerServiceWorker } from '@/lib/sw-register';
 import { installGlobalErrorHandlers } from '@/lib/error-reporter';
 import { initSentry } from '@/lib/sentry';
@@ -30,45 +29,19 @@ if (!root) {
   throw new Error('❌ Elemento root não encontrado no DOM');
 }
 
-function Root() {
-  useEffect(() => {
-    // -------------------------------------------------------------------------
-    // SIMULAÇÃO DE LATÊNCIA E ERRO (DESATIVAR ANTES DE PROD)
-    // -------------------------------------------------------------------------
-    const originalInvoke = supabase.functions.invoke;
-    supabase.functions.invoke = async function (functionName: string, options?: any) {
-      console.log(`[Simulation] Intercepting call to edge function: ${functionName}`);
-      
-      // Simulate latency (3 seconds)
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      // Simulate random error (20% chance)
-      if (Math.random() < 0.2) {
-        console.error("[Simulation] Injecting artificial API error!");
-        return { data: null, error: { message: "Artificial latency/error simulation active", status: 500 } as any };
-      }
-      
-      return originalInvoke.apply(this, [functionName, options]);
-    };
-    // -------------------------------------------------------------------------
-  }, []);
-
-  return (
-    <Fragment>
-      <HelmetProvider>
-        <EnhancedErrorBoundary>
-          <App />
-        </EnhancedErrorBoundary>
-      </HelmetProvider>
-    </Fragment>
-  );
-}
-
 // O overlay BridgeMetrics agora é montado DENTRO do <App /> (após o
 // AuthProvider) para poder ser gateado por papel `dev` + SSOT
 // `shouldShowDevInfraMessages`. Em build de produção, o componente
 // retorna null no topo e o chunk é tree-shaken pelo bundler.
-createRoot(root).render(<Root />);
+createRoot(root).render(
+  <Fragment>
+    <HelmetProvider>
+      <EnhancedErrorBoundary>
+        <App />
+      </EnhancedErrorBoundary>
+    </HelmetProvider>
+  </Fragment>,
+);
 
 // Register Service Worker for PWA support
 // Performance Note: This enables caching and offline support
