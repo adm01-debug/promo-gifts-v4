@@ -99,7 +99,8 @@ Responda APENAS em JSON com este formato:
   },
   "visualHighlights": [
     {"label": "nome do ponto", "x": 0-100, "y": 0-100, "description": "descrição curta (3-5 palavras)"}
-  ]
+  ],
+  "technicalPitch": "Um script de venda curto (15 palavras) focado no material/acabamento identificado."
 }`
           },
           {
@@ -170,7 +171,8 @@ Use essas dicas para refinar sua percepção, mas priorize o que você vê visua
         confidence: 0.5,
         rationale: "Erro no processamento da estrutura de dados da IA.",
         visualEvidence: { material: "", silhouette: "", finish: "" },
-        visualHighlights: []
+        visualHighlights: [],
+        technicalPitch: "Análise incompleta."
       };
     }
 
