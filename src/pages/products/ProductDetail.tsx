@@ -49,7 +49,7 @@ import { useToast } from '@/hooks/ui';
 import type { Product, ProductVariation } from '@/types/product-catalog';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { ProductDetailSkeleton } from '@/components/products/ProductDetailSkeleton';
+import { ProductDetailSkeleton } from '@/components/layout/SkeletonLoaders';
 import { EmptyState } from '@/components/common/EmptyState';
 import { IntelligenceBadges } from '@/components/common/IntelligenceBadges';
 import { FloatingCompareBar } from '@/components/compare/FloatingCompareBar';
