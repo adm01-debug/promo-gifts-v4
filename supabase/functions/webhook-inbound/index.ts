@@ -157,6 +157,13 @@ Deno.serve(async (req) => {
     );
 
     if (insertError) {
+      // If it's a duplicate key error, we treat it as already processed (idempotency)
+      if (insertError.code === '23505') { // PostgreSQL unique_violation
+        log.info('webhook_duplicate_race_skipped', { idempotencyKey });
+        return new Response(JSON.stringify({ ok: true, received: true, message: 'Already processed' }), { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        });
+      }
       log.error('db_insert_failed', { error: insertError });
       throw insertError;
     }
