@@ -98,19 +98,14 @@ export default function VisualSearchPage() {
       <div className="mx-auto w-full max-w-[1920px] space-y-6 px-3 py-4 sm:px-4 lg:px-6">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/60 shadow-lg shadow-primary/20 cursor-pointer" id="debug-trigger" onClick={() => setDebugMode(!debugMode)}>
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/60 shadow-lg shadow-primary/20">
               <Zap className="h-6 w-6 text-primary-foreground" />
             </div>
             <div>
               <h1 className="font-display text-2xl font-bold tracking-tight">Raio X</h1>
-              <p className="text-sm text-muted-foreground">Identificação instantânea de produtos por imagem {debugMode && "(Debug ON)"}</p>
+              <p className="text-sm text-muted-foreground">Identificação instantânea de produtos por imagem</p>
             </div>
           </div>
-          {debugMode && (
-            <Button variant="outline" size="sm" id="simulate-btn" onClick={simulateSuccess} className="mt-2 w-fit border-primary text-primary hover:bg-primary/10">
-              Simular Resultado (QA)
-            </Button>
-          )}
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
