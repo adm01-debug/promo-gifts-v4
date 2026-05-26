@@ -52,11 +52,7 @@ export default function Index() {
   );
 
   if (catalog.shouldShowCatalogSkeleton && catalog.filteredProducts.length === 0) {
-    return (
-      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-4 px-3 py-3 sm:px-4 sm:py-4 lg:px-6 xl:px-8">
-        <CatalogSkeleton />
-      </div>
-    );
+    return <CatalogSkeleton />;
   }
 
   return (
