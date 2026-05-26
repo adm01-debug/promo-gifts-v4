@@ -805,9 +805,33 @@ export default function VisualSearchPage() {
                             
                             {product.matchRationale && (
                               <div className="mb-3 rounded-lg bg-primary/5 p-2.5 text-[10px] leading-relaxed text-muted-foreground border-l-2 border-primary/20 shadow-sm">
-                                <div className="flex items-center gap-1.5 mb-1 text-primary">
-                                  <Info className="h-3 w-3" />
-                                  <span className="font-bold uppercase tracking-tighter">Por que este match?</span>
+                                <div className="flex items-center justify-between mb-1">
+                                  <div className="flex items-center gap-1.5 text-primary">
+                                    <Info className="h-3 w-3" />
+                                    <span className="font-bold uppercase tracking-tighter">Por que este match?</span>
+                                  </div>
+                                  <div className="flex gap-1">
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleFeedback(true, product.id, product.relevance);
+                                      }}
+                                      className="p-1 hover:bg-emerald-500/10 rounded transition-colors text-emerald-500"
+                                      title="Confirmar match"
+                                    >
+                                      <CheckCircle2 className="h-3 w-3" />
+                                    </button>
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleFeedback(false, product.id, product.relevance);
+                                      }}
+                                      className="p-1 hover:bg-rose-500/10 rounded transition-colors text-rose-500"
+                                      title="Corrigir match"
+                                    >
+                                      <AlertCircle className="h-3 w-3" />
+                                    </button>
+                                  </div>
                                 </div>
                                 <p className="italic text-foreground/80 leading-snug">{product.matchRationale}</p>
                                 
