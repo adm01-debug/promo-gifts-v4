@@ -4,9 +4,10 @@ const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const WEBHOOK_SLUG = "test-automated";
 const WEBHOOK_SECRET = Deno.env.get("SIMULATION_BYPASS_KEY") || SERVICE_KEY;
-const CONCURRENCY = 20;
-const TOTAL_WEBHOOKS = 200; // Total webhooks to simulate
-const TOTAL_QUERY_REQ = 300; // Total PostgREST queries
+const CONCURRENCY = 50;
+const TOTAL_WEBHOOKS = 100; 
+const TOTAL_QUERY_REQ = 1000; 
+
 
 async function hmacSign(payload: string, secret: string): Promise<string> {
   const enc = new TextEncoder();
