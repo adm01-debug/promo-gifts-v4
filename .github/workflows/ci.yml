@@ -21,6 +21,42 @@ env:
   TZ: America/Sao_Paulo
 
 jobs:
+
+  lint-gate:
+    name: Lint gate (style, tipos e regras de projeto)
+    runs-on: ubuntu-latest
+    needs: smoke
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prettier style check (bloqueante)
+        run: npm run format:check
+
+      - name: TypeScript type check (bloqueante)
+        run: npm run typecheck
+
+      - name: ESLint annotations (legível no PR)
+        run: npx eslint src --format=github --max-warnings=500
+
+      - name: ESLint baseline gate (bloqueia regressões novas)
+        run: npm run lint:baseline
+
+      - name: Regras de projeto (guards críticos)
+        run: |
+          node scripts/check-seller-scope.mjs
+          node scripts/check-route-error-element.mjs
+          node scripts/check-aschild-nesting.mjs
+          node scripts/check-route-ref-usage.mjs
   smoke:
     name: Smoke tests (rotas + health-check)
     runs-on: ubuntu-latest
@@ -69,9 +105,9 @@ jobs:
         run: npm run typecheck
 
   quality:
-    name: Lint, Typecheck & Test
+    name: Tests & Security
     runs-on: ubuntu-latest
-    needs: smoke
+    needs: lint-gate
     timeout-minutes: 90
 
     steps:
@@ -102,30 +138,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Seller-scope checker (RLS defesa em profundidade)
-        run: node scripts/check-seller-scope.mjs
-
-      - name: Route data-router APIs checker (errorElement + useRouteError fora de data router)
-        run: node scripts/check-route-error-element.mjs
-
-      - name: Radix asChild nesting checker (forwardRef safety)
-        run: node scripts/check-aschild-nesting.mjs
-
-      - name: Route ref usage checker (guards + pages)
-        run: node scripts/check-route-ref-usage.mjs
-
-      # ESLint baseline gate — único step de lint: roda ESLint internamente
-      # e falha SOMENTE para erros NOVOS vs .eslint-baseline.json.
-      # Step informacional separado removido (era redundante e dobrava o tempo de CI).
-      # TypeScript gate ANTES do lint — fail-fast: se houver regressao de tipo,
-      # mata o job sem gastar os ~5min de testes. Com baseline zerado (0 erros),
-      # qualquer erro novo (mesmo 1) falha imediatamente.
-      - name: TypeScript type check (fail-fast gate)
-        run: npm run typecheck
-
-      - name: ESLint baseline gate (bloqueia apenas regressões novas)
-        run: npm run lint:baseline
 
       # hooks já cobertos pelo job dedicado hooks-tests (timeout-minutes: 10).
       # test:strict-ref e test:coverage omitidos aqui — rodam em ref-warning-suite
