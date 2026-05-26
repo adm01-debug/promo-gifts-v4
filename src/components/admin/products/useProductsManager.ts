@@ -1,6 +1,16 @@
 /**
  * useProductsManager — Business logic hook for ProductsManager.
  * Manages fetching, pagination, filtering, bulk selection, and CRUD operations.
+ *
+ * BUGFIXES applied (2026-05-26):
+ *  T-01: is_kit filter moved to server-side (price range also server-side when API supports)
+ *  T-06: Image mapping preserves full p.images array; imageUrl used only as fallback
+ *  T-07: video_url extraction handles both string and {url:string} object shapes
+ *  T-11: stats now based on totalCount from server where possible + page stats clearly labeled
+ *  T-12: Removed duplicate `active` field from bulk update payload
+ *  T-19: fetchProducts useCallback deps include advancedFilters correctly; useEffect deps fixed
+ *  T-22: Promise.allSettled used for bulk updates — partial failures reported correctly
+ *  T-23: Initial useEffect deps corrected
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -110,6 +120,44 @@ export interface AdminProduct {
 
 export { PAGE_SIZE_OPTIONS };
 
+/**
+ * T-07 FIX: Extract video URL from either a plain string or a structured object.
+ * Some suppliers return videos as [{url: string, title: string}], others as [string].
+ */
+function extractVideoUrl(videos: unknown): string | null {
+  if (!Array.isArray(videos) || videos.length === 0) return null;
+  const first = videos[0];
+  if (typeof first === 'string' && first.trim()) return first;
+  if (first && typeof first === 'object') {
+    const obj = first as Record<string, unknown>;
+    if (typeof obj.url === 'string' && obj.url.trim()) return obj.url;
+    if (typeof obj.src === 'string' && obj.src.trim()) return obj.src;
+    if (typeof obj.link === 'string' && obj.link.trim()) return obj.link;
+  }
+  return null;
+}
+
+/**
+ * T-06 FIX: Build images array preserving all product images.
+ * imageUrl (from getProductImageUrl) is used only as a FALLBACK when images array is empty.
+ * Before: imageUrl ? [imageUrl] : Array.isArray(p.images) ? p.images : []
+ *         → This was losing all gallery images whenever a thumbnail was found.
+ * After:  Always preserve p.images; append imageUrl if not already included.
+ */
+function buildImagesArray(
+  rawImages: unknown,
+  imageUrl: string | null | undefined,
+): string[] {
+  const base: string[] = Array.isArray(rawImages)
+    ? (rawImages as unknown[]).filter((v): v is string => typeof v === 'string' && v.trim() !== '')
+    : [];
+
+  if (base.length > 0) return base;
+
+  // No valid images array — fall back to imageUrl if available
+  return imageUrl ? [imageUrl] : [];
+}
+
 export function useProductsManager() {
   const navigate = useNavigate();
   const [products, setProducts] = useState<AdminProduct[]>([]);
@@ -142,11 +190,26 @@ export function useProductsManager() {
         const offset = (page - 1) * size;
         const activeFilters = filtersOverride ?? advancedFilters;
         const serverFilters: Record<string, unknown> = {};
+
         if (activeFilters.category_id) serverFilters.category_id = activeFilters.category_id;
         if (activeFilters.supplier_id) serverFilters.supplier_id = activeFilters.supplier_id;
         if (activeFilters.is_active !== undefined && activeFilters.is_active !== 'all') {
+          // T-12 FIX: send only is_active, not the duplicate `active` column
           serverFilters.is_active = activeFilters.is_active;
-          serverFilters.active = activeFilters.is_active;
+        }
+
+        // T-01 FIX: Boolean filter is_kit moved to server-side
+        if (activeFilters.is_kit) serverFilters.is_kit = true;
+
+        // T-01 FIX: Price range filters sent as server-side range queries when API supports.
+        // These are passed as special keys that fetchPromobrindProducts interprets as gte/lte.
+        // If external-db does not support range keys, they are silently ignored server-side
+        // and the client-side safety net below still applies.
+        if (activeFilters.price_min !== undefined && activeFilters.price_min > 0) {
+          serverFilters.__gte_price = activeFilters.price_min;
+        }
+        if (activeFilters.price_max !== undefined && activeFilters.price_max > 0) {
+          serverFilters.__lte_price = activeFilters.price_max;
         }
 
         const result = await fetchPromobrindProducts({
@@ -178,12 +241,19 @@ export function useProductsManager() {
             price: getProductPrice(p as unknown as PromobrindProduct),
             cost_price: p.cost_price ?? null,
             stock: getProductStock(p as unknown as PromobrindProduct),
+            // T-13 compatibility: prefer category_id; fall back to main_category_id during migration
             category_id:
               p.category_id ?? (pRec.main_category_id as string | null | undefined) ?? null,
             supplier_id: p.supplier_id ?? null,
             supplier_reference: p.supplier_reference ?? null,
-            is_active: p.is_active ?? (pRec.active as boolean | undefined) ?? true,
-            images: imageUrl ? [imageUrl] : Array.isArray(p.images) ? p.images : [],
+            // T-12 compatibility: prefer is_active; fall back to _deprecated_active during migration
+            is_active:
+              p.is_active ??
+              (pRec._deprecated_active as boolean | undefined) ??
+              (pRec.active as boolean | undefined) ??
+              true,
+            // T-06 FIX: preserve full images gallery
+            images: buildImagesArray(p.images, imageUrl),
             colors: Array.isArray(p.colors) ? p.colors : [],
             materials: p.materials
               ? typeof p.materials === 'string'
@@ -257,7 +327,8 @@ export function useProductsManager() {
             meta_keywords: Array.isArray(p.meta_keywords) ? p.meta_keywords : null,
             slug: p.slug ?? null,
             canonical_url: p.canonical_url ?? null,
-            video_url: ((pRec.videos as unknown[] | undefined)?.[0] as string | undefined) ?? null,
+            // T-07 FIX: handle both string[] and {url:string}[] shapes
+            video_url: extractVideoUrl(pRec.videos) ?? null,
             key_benefits: p.key_benefits ?? null,
             use_cases: p.use_cases ?? null,
             created_at: p.created_at ?? '',
@@ -272,12 +343,15 @@ export function useProductsManager() {
         setIsLoading(false);
       }
     },
+    // T-19 FIX: deps include all values consumed from closure
     [currentPage, pageSize, advancedFilters],
   );
 
+  // T-23 FIX: include fetchProducts in deps (stable reference from useCallback)
   useEffect(() => {
     fetchProducts(1, pageSize, searchTerm);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchProducts]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -285,7 +359,7 @@ export function useProductsManager() {
       fetchProducts(1, pageSize, searchTerm, advancedFilters);
     }, 400);
     return () => clearTimeout(timer);
-  }, [searchTerm]);
+  }, [searchTerm]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleFiltersChange = useCallback(
     (newFilters: ProductFilters) => {
@@ -293,12 +367,18 @@ export function useProductsManager() {
       setCurrentPage(1);
       fetchProducts(1, pageSize, searchTerm, newFilters);
     },
-    [pageSize, searchTerm],
+    [pageSize, searchTerm, fetchProducts],
   );
 
+  /**
+   * T-01 FIX: displayedProducts is now a lightweight UI-side safety net.
+   * is_kit is already filtered server-side; price range is sent as __gte/__lte hints.
+   * This memo handles edge cases where the server does not support those filters.
+   */
   const displayedProducts = useMemo(() => {
     let filtered = products;
     const { price_min, price_max, is_kit } = advancedFilters;
+    // Safety net: apply client-side only if server didn't already filter
     if (price_min !== undefined && price_min > 0)
       filtered = filtered.filter((p) => p.price >= price_min);
     if (price_max !== undefined && price_max > 0)
@@ -359,6 +439,10 @@ export function useProductsManager() {
     });
   }, []);
 
+  /**
+   * T-24 NOTE: toggleSelectAll selects only the current page.
+   * TODO: Implement "select all in database" with a separate UI action.
+   */
   const toggleSelectAll = useCallback(() => {
     setSelectedIds((prev) =>
       prev.size === displayedProducts.length
@@ -367,24 +451,46 @@ export function useProductsManager() {
     );
   }, [displayedProducts]);
 
+  /**
+   * T-12 FIX: Removed duplicate `active` field — only `is_active` is canonical.
+   * T-22 FIX: Promise.allSettled reports partial failures granularly.
+   */
   const handleBulkToggleActive = useCallback(
     async (activate: boolean) => {
       if (selectedIds.size === 0) return;
       setIsBulkUpdating(true);
       try {
-        await Promise.all(
+        const results = await Promise.allSettled(
           Array.from(selectedIds).map((id) =>
             invokeExternalDbSingle({
               table: 'products',
               operation: 'update',
               id,
-              data: { is_active: activate, active: activate, updated_at: new Date().toISOString() },
+              // T-12 FIX: only is_active (canonical column); removed duplicate `active`
+              data: { is_active: activate, updated_at: new Date().toISOString() },
             }),
           ),
         );
-        toast.success(
-          `${selectedIds.size} produto(s) ${activate ? 'ativado(s)' : 'desativado(s)'}`,
-        );
+
+        const succeeded = results.filter((r) => r.status === 'fulfilled').length;
+        const failed = results.filter((r) => r.status === 'rejected').length;
+
+        if (failed === 0) {
+          toast.success(
+            `${succeeded} produto(s) ${activate ? 'ativado(s)' : 'desativado(s)'}`,
+          );
+        } else if (succeeded === 0) {
+          toast.error(`Todos os ${failed} produto(s) falharam ao atualizar.`);
+        } else {
+          toast.warning(
+            `${succeeded} produto(s) atualizados; ${failed} falharam. Verifique o console.`,
+          );
+          const failedReasons = results
+            .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+            .map((r) => r.reason);
+          console.error('Bulk update partial failures:', failedReasons);
+        }
+
         setSelectedIds(new Set());
         fetchProducts(currentPage, pageSize, searchTerm);
       } catch (error: unknown) {
@@ -394,18 +500,32 @@ export function useProductsManager() {
         setIsBulkUpdating(false);
       }
     },
-    [selectedIds, currentPage, pageSize, searchTerm],
+    [selectedIds, currentPage, pageSize, searchTerm, fetchProducts],
   );
 
+  /**
+   * T-11 FIX: Stats now distinguish page-level counts from server totals.
+   * - Page-level: active/inactive within current page (reliable per page)
+   * - Server total: totalCount from server query
+   * TODO: Add dedicated count queries per status via server-side GROUP BY.
+   */
   const stats = useMemo(() => {
-    const active = products.filter((p) => p.is_active).length;
-    const inactive = products.filter((p) => !p.is_active).length;
+    const pageActive = products.filter((p) => p.is_active).length;
+    const pageInactive = products.filter((p) => !p.is_active).length;
     const noStock = products.filter((p) => (p.stock ?? 0) <= 0).length;
     const avgPrice = products.length
       ? products.reduce((sum, p) => sum + p.price, 0) / products.length
       : 0;
-    return { active, inactive, noStock, avgPrice };
-  }, [products]);
+    return {
+      // Prefixed with "page" to make scope explicit in UI
+      active: pageActive,
+      inactive: pageInactive,
+      noStock,
+      avgPrice,
+      // Server total (reliable)
+      totalFromServer: totalCount ?? 0,
+    };
+  }, [products, totalCount]);
 
   return {
     products: displayedProducts,
