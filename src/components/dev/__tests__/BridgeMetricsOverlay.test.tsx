@@ -15,7 +15,7 @@ vi.mock('@/hooks/dev/useBridgeMetrics', () => ({
 
 // We need to mock import.meta.env.PROD
 // Vitest allows this via vi.stubEnv or define
-vi.stubEnv('PROD', ''); // Ensure it's not PROD by default
+vi.stubEnv('PROD', false); // Ensure it's not PROD by default
 
 describe('BridgeMetricsOverlay Regression Tests', () => {
   const mockMetrics = {
@@ -78,7 +78,7 @@ describe('BridgeMetricsOverlay Regression Tests', () => {
   it('should toggle between calls and longtasks tabs', () => {
     const setTabMock = vi.fn();
     vi.mocked(useDevGate).mockReturnValue({ isAllowed: true, isDev: true });
-     
+
     vi.mocked(useBridgeMetrics).mockReturnValue({
       ...mockMetrics,
       open: true,

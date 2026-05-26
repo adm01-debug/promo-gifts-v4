@@ -12,13 +12,14 @@ export function ProductCardResult({
   quantity: number;
 }) {
   const { priceBreakdown, matchingTechnique } = product;
+  const productImage = product.image_url ?? product.images?.[0];
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="group">
       <Card className="overflow-hidden border-border/50 transition-all duration-300 hover:border-primary/30 hover:shadow-lg">
         <div className="relative aspect-square bg-muted/30">
-          {product.image ? (
+          {productImage ? (
             <img
-              src={product.image}
+              src={productImage}
               alt={product.name}
               className="h-full w-full object-contain p-4"
               loading="lazy"
@@ -124,56 +125,59 @@ export function ProductTableResult({
             </tr>
           </thead>
           <tbody className="divide-y">
-            {products.map((product) => (
-              <motion.tr
-                key={product.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="transition-colors hover:bg-muted/30"
-              >
-                <td className="p-3">
-                  <div className="flex items-center gap-3">
-                    {product.image && (
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="h-10 w-10 rounded object-contain"
-                        loading="lazy"
-                      />
+            {products.map((product) => {
+              const productImage = product.image_url ?? product.images?.[0];
+              return (
+                <motion.tr
+                  key={product.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="transition-colors hover:bg-muted/30"
+                >
+                  <td className="p-3">
+                    <div className="flex items-center gap-3">
+                      {productImage && (
+                        <img
+                          src={productImage}
+                          alt={product.name}
+                          className="h-10 w-10 rounded object-contain"
+                          loading="lazy"
+                        />
+                      )}
+                      <span className="line-clamp-1 max-w-[200px] text-sm font-medium">
+                        {product.name}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="p-3 text-sm text-muted-foreground">{product.sku}</td>
+                  <td className="p-3">
+                    {product.matchingTechnique && (
+                      <Badge variant="outline" className="text-xs">
+                        {product.matchingTechnique.technique_name ||
+                          product.matchingTechnique.customization_type_name}
+                      </Badge>
                     )}
-                    <span className="line-clamp-1 max-w-[200px] text-sm font-medium">
-                      {product.name}
+                  </td>
+                  <td className="p-3 text-right text-sm">
+                    {formatCurrency(product.priceBreakdown.productPrice)}
+                  </td>
+                  <td className="p-3 text-right text-sm">
+                    {formatCurrency(product.priceBreakdown.customizationPrice)}
+                  </td>
+                  <td className="p-3 text-right text-sm text-muted-foreground">
+                    {formatCurrency(product.priceBreakdown.setupPrice / quantity)}
+                  </td>
+                  <td className="p-3 text-right">
+                    <span className="font-semibold text-primary">
+                      {formatCurrency(product.priceBreakdown.totalPerUnit)}
                     </span>
-                  </div>
-                </td>
-                <td className="p-3 text-sm text-muted-foreground">{product.sku}</td>
-                <td className="p-3">
-                  {product.matchingTechnique && (
-                    <Badge variant="outline" className="text-xs">
-                      {product.matchingTechnique.technique_name ||
-                        product.matchingTechnique.customization_type_name}
-                    </Badge>
-                  )}
-                </td>
-                <td className="p-3 text-right text-sm">
-                  {formatCurrency(product.priceBreakdown.productPrice)}
-                </td>
-                <td className="p-3 text-right text-sm">
-                  {formatCurrency(product.priceBreakdown.customizationPrice)}
-                </td>
-                <td className="p-3 text-right text-sm text-muted-foreground">
-                  {formatCurrency(product.priceBreakdown.setupPrice / quantity)}
-                </td>
-                <td className="p-3 text-right">
-                  <span className="font-semibold text-primary">
-                    {formatCurrency(product.priceBreakdown.totalPerUnit)}
-                  </span>
-                </td>
-                <td className="p-3 text-right font-medium">
-                  {formatCurrency(product.priceBreakdown.totalPerUnit * quantity)}
-                </td>
-              </motion.tr>
-            ))}
+                  </td>
+                  <td className="p-3 text-right font-medium">
+                    {formatCurrency(product.priceBreakdown.totalPerUnit * quantity)}
+                  </td>
+                </motion.tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -190,56 +194,59 @@ export function ProductListResult({
 }) {
   return (
     <div className="space-y-3">
-      {products.map((product, index) => (
-        <motion.div
-          key={product.id}
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: index * 0.05 }}
-        >
-          <Card className="transition-shadow hover:shadow-md">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary/10">
-                  <span className="text-sm font-bold text-primary">{index + 1}</span>
+      {products.map((product, index) => {
+        const productImage = product.image_url ?? product.images?.[0];
+        return (
+          <motion.div
+            key={product.id}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.05 }}
+          >
+            <Card className="transition-shadow hover:shadow-md">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary/10">
+                    <span className="text-sm font-bold text-primary">{index + 1}</span>
+                  </div>
+                  <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-muted/50">
+                    {productImage ? (
+                      <img
+                        src={productImage}
+                        alt={product.name}
+                        className="h-full w-full object-contain p-1"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <Package className="h-6 w-6 text-muted-foreground/30" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="line-clamp-1 text-sm font-medium">{product.name}</h4>
+                    <p className="text-xs text-muted-foreground">SKU: {product.sku}</p>
+                    {product.matchingTechnique && (
+                      <Badge variant="outline" className="mt-1 text-xs">
+                        {product.matchingTechnique.technique_name ||
+                          product.matchingTechnique.customization_type_name}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-primary">
+                      {formatCurrency(product.priceBreakdown.totalPerUnit)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Total: {formatCurrency(product.priceBreakdown.totalPerUnit * quantity)}
+                    </p>
+                  </div>
                 </div>
-                <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-muted/50">
-                  {product.image ? (
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="h-full w-full object-contain p-1"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center">
-                      <Package className="h-6 w-6 text-muted-foreground/30" />
-                    </div>
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h4 className="line-clamp-1 text-sm font-medium">{product.name}</h4>
-                  <p className="text-xs text-muted-foreground">SKU: {product.sku}</p>
-                  {product.matchingTechnique && (
-                    <Badge variant="outline" className="mt-1 text-xs">
-                      {product.matchingTechnique.technique_name ||
-                        product.matchingTechnique.customization_type_name}
-                    </Badge>
-                  )}
-                </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-primary">
-                    {formatCurrency(product.priceBreakdown.totalPerUnit)}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Total: {formatCurrency(product.priceBreakdown.totalPerUnit * quantity)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      ))}
+              </CardContent>
+            </Card>
+          </motion.div>
+        );
+      })}
     </div>
   );
 }

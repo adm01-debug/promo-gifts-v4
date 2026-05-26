@@ -53,10 +53,10 @@ export function countActiveFilters(filters: FilterState): number {
   if (filters.gender?.length) count += filters.gender.length;
   if (filters.sizes?.length) count += filters.sizes.length;
   if (filters.priceRange?.[0] > 0 || filters.priceRange?.[1] < 500) count++;
-  if (filters.stockRange?.[0] > 0) count++;
-  if (filters.onlyInStock) count++;
+  if (filters.minStock > 0) count++;
+  if (filters.inStock) count++;
   if (filters.featured) count++;
-  if (filters.onlyNew) count++;
+  if (filters.isNew) count++;
   return count;
 }
 
@@ -77,8 +77,8 @@ export function summarizeFilters(filters: FilterState): string {
     parts.push(`${filters.sizes.length} tamanho${filters.sizes.length > 1 ? 's' : ''}`);
   if (filters.priceRange?.[0] > 0 || filters.priceRange?.[1] < 500)
     parts.push('faixa de pre\u00e7o');
-  if (filters.onlyInStock) parts.push('em estoque');
+  if (filters.inStock) parts.push('em estoque');
   if (filters.featured) parts.push('destaques');
-  if (filters.onlyNew) parts.push('novidades');
+  if (filters.isNew) parts.push('novidades');
   return parts.length > 0 ? parts.join(' \u00b7 ') : 'Sem filtros';
 }

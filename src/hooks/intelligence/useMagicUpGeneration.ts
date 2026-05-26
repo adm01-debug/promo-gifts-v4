@@ -216,7 +216,7 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
                 variantBrief.objective,
                 variantBrief.tone,
                 batchVariant?.id,
-              ].filter(Boolean),
+              ].filter((tag): tag is string => Boolean(tag)),
               copy_pack: deps.copyPack,
               export_presets: ['png', 'jpg-whatsapp', variantControls.aspectRatio],
               metadata: {

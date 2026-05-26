@@ -8,7 +8,12 @@
  * falls back to seeded mock data for demo/loading states.
  */
 import { useMemo } from 'react';
-import { useProductIntelligenceData, useStockVelocity, type StockVelocity } from '@/hooks/intelligence';
+import {
+  useProductIntelligenceData,
+  useStockVelocity,
+  type StockVelocity,
+  type ProductIntelligenceData,
+} from '@/hooks/intelligence';
 import { generateMockVelocities, generateMockIntelligence } from '@/lib/stock-chart-utils';
 
 type BadgeType =
@@ -20,7 +25,7 @@ type BadgeType =
   | 'frequent-restock'
   | 'last-units' // low stock + high velocity (stockout risk)
   | 'best-seller' // top tier velocity
-  | 'class-a';   // ABC classification A
+  | 'class-a'; // ABC classification A
 
 export interface IntelligenceBadge {
   type: BadgeType;
@@ -35,17 +40,21 @@ export function useProductIntelligenceBadges(
   catalogFlags?: {
     featured?: boolean;
     new_arrival?: boolean;
-  }
+  },
 ) {
   const { data: intelligence, isLoading: loadingIntel } = useProductIntelligenceData(productId);
   const { data: velocity, isLoading: loadingVel } = useStockVelocity(productId);
 
   const badges = useMemo((): IntelligenceBadge[] => {
-    const mockVels = productId ? generateMockVelocities(productId) : [];
-    const mockIntel = productId ? generateMockIntelligence(productId) : null;
+    // Mock types are structural supersets of the real types, so they assign
+    // cleanly. Annotating avoids the union collapsing to `{}`.
+    const mockVels: StockVelocity[] = productId ? generateMockVelocities(productId) : [];
+    const mockIntel: ProductIntelligenceData | null = productId
+      ? generateMockIntelligence(productId)
+      : null;
 
-    const effectiveIntel = intelligence ?? mockIntel;
-    const effectiveVels = velocity?.length ? velocity : mockVels;
+    const effectiveIntel: ProductIntelligenceData | null = intelligence ?? mockIntel;
+    const effectiveVels: StockVelocity[] = velocity?.length ? velocity : mockVels;
 
     const badges: IntelligenceBadge[] = [];
 
@@ -83,7 +92,8 @@ export function useProductIntelligenceBadges(
     // === 3. Emergente (trend > 1.3) ===
     const bestVel = effectiveVels.length
       ? effectiveVels.reduce(
-          (best: StockVelocity, v: StockVelocity) => (v.avg_daily_depletion_7d > (best?.avg_daily_depletion_7d ?? 0) ? v : best),
+          (best: StockVelocity, v: StockVelocity) =>
+            v.avg_daily_depletion_7d > (best?.avg_daily_depletion_7d ?? 0) ? v : best,
           effectiveVels[0],
         )
       : null;

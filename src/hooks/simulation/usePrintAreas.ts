@@ -12,7 +12,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { PrintAreaWithTechniques, TecnicaGravacao } from '@/types/gravacao';
-import { logger } from "@/lib/logger";
+import { logger } from '@/lib/logger';
 import {
   adaptPrintAreaTechniqueRows,
   adaptTabelaPrecoRows,
@@ -74,7 +74,7 @@ export function usePrintAreas(productId: string | null) {
       if (techError) throw new Error(techError.message);
 
       const allTechs: TabelaPrecoCanonical[] = adaptTabelaPrecoRows(techRaw || []);
-      const techById = new Map(allTechs.map(t => [t.id, t]));
+      const techById = new Map(allTechs.map((t) => [t.id, t]));
 
       return areas.map((area, idx) => {
         const techId = area.price_table_id ?? area.tabela_preco_id ?? null;
@@ -97,7 +97,9 @@ export function usePrintAreas(productId: string | null) {
           area_id: area.id,
           area_code: locationCode,
           area_name: locationName
-            ? (techNomeForLabel ? `${locationName} -- ${techNomeForLabel}` : locationName)
+            ? techNomeForLabel
+              ? `${locationName} -- ${techNomeForLabel}`
+              : locationName
             : `Area ${idx + 1}`,
           component_name: null,
           location_name: locationName,
@@ -177,7 +179,9 @@ export function useHasPrintAreas(productId: string | null) {
 
         if (error) return false;
         return (data || []).length > 0;
-      } catch { return false; }
+      } catch {
+        return false;
+      }
     },
     enabled: !!productId,
     staleTime: 60000,

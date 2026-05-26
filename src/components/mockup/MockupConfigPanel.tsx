@@ -1,30 +1,30 @@
 /**
  * MockupConfigPanel — Configuration form for mockup generation
- * 
+ *
  * Extracted from MockupGenerator.tsx to reduce god-component size.
  * Handles: Client, Product, Technique selection + Areas.
  */
 
+import { Loader2, Paintbrush, RefreshCw, Info, ChevronDown, Wand2 } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import {
-  Loader2,
-  Paintbrush,
-  RefreshCw,
-  Info,
-  ChevronDown, Wand2
-} from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { TechniqueTooltip } from "./TechniqueTooltip";
-import { MockupClientSelector } from "./MockupClientSelector";
-import { MockupProductSelector, type MockupProductSelection } from "./MockupProductSelector";
-import { MultiAreaManager, type PersonalizationArea } from "./MultiAreaManager";
-import { ArtFileUpload, type ArtFileAttachment } from "./ArtFileUpload";
-import { LogoColorAnalyzer } from "./LogoColorAnalyzer";
-import type { DetectedColor } from "@/hooks/simulation";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { TechniqueTooltip } from './TechniqueTooltip';
+import { MockupClientSelector } from './MockupClientSelector';
+import { MockupProductSelector, type MockupProductSelection } from './MockupProductSelector';
+import { MultiAreaManager, type PersonalizationArea } from './MultiAreaManager';
+import { ArtFileUpload, type ArtFileAttachment } from './ArtFileUpload';
+import { LogoColorAnalyzer } from './LogoColorAnalyzer';
+import type { DetectedColor } from '@/hooks/simulation';
 
 interface Technique {
   id: string;
@@ -70,7 +70,7 @@ interface MockupConfigPanelProps {
   // Multi-area props
   activeAreaId: string | null;
   onAreasChange: (areas: PersonalizationArea[]) => void;
-  onActiveAreaChange: (id: string) => void;
+  onActiveAreaChange: (id: string | null) => void;
   onLogoUpload: (areaId: string, file: File) => void;
   onLogoRemove?: (areaId: string) => void;
   /** Real product locations from DB — if provided, locks areas to these */
@@ -111,8 +111,7 @@ export function MockupConfigPanel({
   onArtAttachmentsChange,
   userId,
 }: MockupConfigPanelProps) {
-  const hasLogo = personalizationAreas.some(a => a.logoPreview);
-  
+  const hasLogo = personalizationAreas.some((a) => a.logoPreview);
 
   return (
     <Card className="border-border/30">
@@ -129,7 +128,7 @@ export function MockupConfigPanel({
         {isLoadingData && (
           <div className="flex items-center justify-center py-8">
             <div className="text-center">
-              <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
+              <Loader2 className="mx-auto mb-2 h-8 w-8 animate-spin text-primary" />
               <p className="text-sm text-muted-foreground">Carregando dados...</p>
             </div>
           </div>
@@ -158,10 +157,7 @@ export function MockupConfigPanel({
               isCompleted={!!productSelection}
               summary={productSelection?.product.name}
             >
-              <MockupProductSelector
-                selection={productSelection}
-                onSelect={onProductSelect}
-              />
+              <MockupProductSelector selection={productSelection} onSelect={onProductSelect} />
             </MobileCollapsibleSection>
 
             {/* Step 3: Technique Selection */}
@@ -170,14 +166,16 @@ export function MockupConfigPanel({
               label="Técnica de Personalização"
               isCompleted={!!selectedTechnique}
               summary={selectedTechnique?.name}
-              trailing={selectedTechnique && (
-                <TechniqueTooltip technique={selectedTechnique}>
-                  <Info className="h-3.5 w-3.5 text-muted-foreground hover:text-primary transition-colors cursor-help" />
-                </TechniqueTooltip>
-              )}
+              trailing={
+                selectedTechnique && (
+                  <TechniqueTooltip technique={selectedTechnique}>
+                    <Info className="h-3.5 w-3.5 cursor-help text-muted-foreground transition-colors hover:text-primary" />
+                  </TechniqueTooltip>
+                )
+              }
             >
               <Select
-                value={selectedTechnique?.id || ""}
+                value={selectedTechnique?.id || ''}
                 onValueChange={(value) => {
                   const technique = filteredTechniques.find((t) => t.id === value);
                   onTechniqueSelect(technique || null);
@@ -190,27 +188,39 @@ export function MockupConfigPanel({
                   {filteredTechniques.length > 0 ? (
                     <>
                       {productSelection && filteredTechniques.length < techniques.length && (
-                        <div className="px-2 py-1.5 text-[10px] text-muted-foreground bg-muted/50">
+                        <div className="bg-muted/50 px-2 py-1.5 text-[10px] text-muted-foreground">
                           Técnicas compatíveis com {productSelection.product.name}
                         </div>
                       )}
                       {filteredTechniques.map((technique) => (
                         <TechniqueTooltip key={technique.id} technique={technique}>
                           <SelectItem value={technique.id} className="cursor-pointer">
-                            <div className="flex flex-col gap-0.5 w-full">
+                            <div className="flex w-full flex-col gap-0.5">
                               <div className="flex items-center gap-2">
                                 <Paintbrush className="h-3.5 w-3.5 text-primary" />
                                 <span>{technique.name}</span>
                                 {technique.maxWidth && technique.maxHeight ? (
-                                  <span className="text-[10px] text-muted-foreground ml-auto tabular-nums">
+                                  <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">
                                     {technique.maxWidth}×{technique.maxHeight}cm
                                   </span>
                                 ) : null}
                               </div>
-                              {(technique.variationLabel || technique.maxColors || technique.isCurved || technique.usesDimension) && (
-                                <div className="flex items-center gap-1.5 ml-5 text-[10px] text-muted-foreground">
-                                  {technique.variationLabel && <span className="truncate max-w-[140px]">{technique.variationLabel}</span>}
-                                  {technique.maxColors ? <span>· {technique.maxColors} cor{technique.maxColors > 1 ? 'es' : ''}</span> : null}
+                              {(technique.variationLabel ||
+                                technique.maxColors ||
+                                technique.isCurved ||
+                                technique.usesDimension) && (
+                                <div className="ml-5 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                  {technique.variationLabel && (
+                                    <span className="max-w-[140px] truncate">
+                                      {technique.variationLabel}
+                                    </span>
+                                  )}
+                                  {technique.maxColors ? (
+                                    <span>
+                                      · {technique.maxColors} cor
+                                      {technique.maxColors > 1 ? 'es' : ''}
+                                    </span>
+                                  ) : null}
                                   {technique.isCurved ? <span>· curvo</span> : null}
                                   {technique.usesDimension ? <span>· por área</span> : null}
                                 </div>
@@ -223,25 +233,51 @@ export function MockupConfigPanel({
                   ) : (
                     <div className="px-2 py-4 text-center text-sm text-muted-foreground">
                       {productSelection
-                        ? "Nenhuma técnica disponível para este produto"
-                        : "Selecione um produto primeiro"}
+                        ? 'Nenhuma técnica disponível para este produto'
+                        : 'Selecione um produto primeiro'}
                     </div>
                   )}
                 </SelectContent>
               </Select>
-              {selectedTechnique && (selectedTechnique.locationName || selectedTechnique.maxWidth || selectedTechnique.maxColors) && (
-                <p className="text-[11px] text-muted-foreground">
-                  {selectedTechnique.locationName ? <>Local: <strong className="text-foreground/80">{selectedTechnique.locationName}</strong></> : null}
-                  {selectedTechnique.maxWidth && selectedTechnique.maxHeight ? <> · Máx {selectedTechnique.maxWidth}×{selectedTechnique.maxHeight}cm</> : null}
-                  {selectedTechnique.maxColors ? <> · {selectedTechnique.maxColors} cor{selectedTechnique.maxColors > 1 ? 'es' : ''}{selectedTechnique.chargesPerColor ? ' (cobra por cor)' : ''}</> : null}
-                  {selectedTechnique.setupCost ? <> · Setup R$ {selectedTechnique.setupCost.toFixed(2)}</> : null}
-                </p>
-              )}
-              {productSelection && filteredTechniques.length > 0 && filteredTechniques.length < techniques.length && (
-                <p className="text-[10px] text-muted-foreground">
-                  {filteredTechniques.length} de {techniques.length} técnicas compatíveis
-                </p>
-              )}
+              {selectedTechnique &&
+                (selectedTechnique.locationName ||
+                  selectedTechnique.maxWidth ||
+                  selectedTechnique.maxColors) && (
+                  <p className="text-[11px] text-muted-foreground">
+                    {selectedTechnique.locationName ? (
+                      <>
+                        Local:{' '}
+                        <strong className="text-foreground/80">
+                          {selectedTechnique.locationName}
+                        </strong>
+                      </>
+                    ) : null}
+                    {selectedTechnique.maxWidth && selectedTechnique.maxHeight ? (
+                      <>
+                        {' '}
+                        · Máx {selectedTechnique.maxWidth}×{selectedTechnique.maxHeight}cm
+                      </>
+                    ) : null}
+                    {selectedTechnique.maxColors ? (
+                      <>
+                        {' '}
+                        · {selectedTechnique.maxColors} cor
+                        {selectedTechnique.maxColors > 1 ? 'es' : ''}
+                        {selectedTechnique.chargesPerColor ? ' (cobra por cor)' : ''}
+                      </>
+                    ) : null}
+                    {selectedTechnique.setupCost ? (
+                      <> · Setup R$ {selectedTechnique.setupCost.toFixed(2)}</>
+                    ) : null}
+                  </p>
+                )}
+              {productSelection &&
+                filteredTechniques.length > 0 &&
+                filteredTechniques.length < techniques.length && (
+                  <p className="text-[10px] text-muted-foreground">
+                    {filteredTechniques.length} de {techniques.length} técnicas compatíveis
+                  </p>
+                )}
             </MobileCollapsibleSection>
 
             {/* Step 4: Areas */}
@@ -249,7 +285,11 @@ export function MockupConfigPanel({
               id="step-logo"
               label="Áreas de Personalização"
               isCompleted={hasLogo}
-              summary={hasLogo ? `${personalizationAreas.filter(a => a.logoPreview).length} logo(s)` : undefined}
+              summary={
+                hasLogo
+                  ? `${personalizationAreas.filter((a) => a.logoPreview).length} logo(s)`
+                  : undefined
+              }
             >
               <MultiAreaManager
                 areas={personalizationAreas}
@@ -267,31 +307,40 @@ export function MockupConfigPanel({
               id="step-art-files"
               label="Arquivos de Arte (Vetor)"
               isCompleted={artAttachments.length > 0}
-              summary={artAttachments.length > 0 ? `${artAttachments.length} arquivo(s)` : undefined}
+              summary={
+                artAttachments.length > 0 ? `${artAttachments.length} arquivo(s)` : undefined
+              }
             >
               <ArtFileUpload
-                userId={userId || ""}
+                userId={userId || ''}
                 attachments={artAttachments}
                 onAttachmentsChange={onArtAttachmentsChange}
               />
             </MobileCollapsibleSection>
 
             {/* Logo Color Analysis — auto-appears after logo upload */}
-            {logoColorAnalysis && (logoColorAnalysis.colors.length > 0 || logoColorAnalysis.isAnalyzing) && (
-              <MobileCollapsibleSection
-                id="step-colors"
-                label="Cores da Logo"
-                isCompleted={logoColorAnalysis.colors.length > 0 && !logoColorAnalysis.isAnalyzing}
-                summary={logoColorAnalysis.colors.length > 0 ? `${logoColorAnalysis.colors.length} Pantone` : undefined}
-              >
-                <LogoColorAnalyzer
-                  colors={logoColorAnalysis.colors}
-                  isAnalyzing={logoColorAnalysis.isAnalyzing}
-                  error={logoColorAnalysis.error}
-                  onPantoneChange={logoColorAnalysis.updatePantone}
-                />
-              </MobileCollapsibleSection>
-            )}
+            {logoColorAnalysis &&
+              (logoColorAnalysis.colors.length > 0 || logoColorAnalysis.isAnalyzing) && (
+                <MobileCollapsibleSection
+                  id="step-colors"
+                  label="Cores da Logo"
+                  isCompleted={
+                    logoColorAnalysis.colors.length > 0 && !logoColorAnalysis.isAnalyzing
+                  }
+                  summary={
+                    logoColorAnalysis.colors.length > 0
+                      ? `${logoColorAnalysis.colors.length} Pantone`
+                      : undefined
+                  }
+                >
+                  <LogoColorAnalyzer
+                    colors={logoColorAnalysis.colors}
+                    isAnalyzing={logoColorAnalysis.isAnalyzing}
+                    error={logoColorAnalysis.error}
+                    onPantoneChange={logoColorAnalysis.updatePantone}
+                  />
+                </MobileCollapsibleSection>
+              )}
 
             {/* Reset Button */}
             <div className="flex gap-2 pt-4">
@@ -334,9 +383,9 @@ function MobileCollapsibleSection({
 }: MobileCollapsibleSectionProps) {
   // Desktop: always expanded. Mobile: collapsible, auto-collapse when completed.
   return (
-    <div id={id} className="space-y-2 scroll-mt-20">
+    <div id={id} className="scroll-mt-20 space-y-2">
       {/* Desktop view — always visible */}
-      <div className="hidden md:block space-y-2">
+      <div className="hidden space-y-2 md:block">
         <Label className="flex items-center gap-2">
           {label} {required && <span className="text-destructive">*</span>}
           {trailing}
@@ -348,15 +397,15 @@ function MobileCollapsibleSection({
       <div className="md:hidden">
         <Collapsible defaultOpen={!isCompleted}>
           <CollapsibleTrigger className="w-full">
-            <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors">
+            <div className="flex items-center justify-between rounded-lg p-2 transition-colors hover:bg-muted/50">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">{label}</span>
-                {required && <span className="text-destructive text-xs">*</span>}
+                {required && <span className="text-xs text-destructive">*</span>}
                 {trailing}
               </div>
               <div className="flex items-center gap-2">
                 {isCompleted && summary && (
-                  <span className="text-xs text-muted-foreground truncate max-w-[120px]">
+                  <span className="max-w-[120px] truncate text-xs text-muted-foreground">
                     {summary}
                   </span>
                 )}
@@ -364,9 +413,7 @@ function MobileCollapsibleSection({
               </div>
             </div>
           </CollapsibleTrigger>
-          <CollapsibleContent className="pt-2">
-            {children}
-          </CollapsibleContent>
+          <CollapsibleContent className="pt-2">{children}</CollapsibleContent>
         </Collapsible>
       </div>
     </div>

@@ -90,11 +90,11 @@ export function useUndoableReducer<S, A extends { type: string }>(
   }, []);
 
   const undo = useCallback(() => {
-    historyDispatch({ type: '__UNDO__' } as unknown);
+    historyDispatch({ type: '__UNDO__' });
   }, []);
 
   const redo = useCallback(() => {
-    historyDispatch({ type: '__REDO__' } as unknown);
+    historyDispatch({ type: '__REDO__' });
   }, []);
 
   return {

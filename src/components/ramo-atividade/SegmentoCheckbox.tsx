@@ -1,7 +1,7 @@
-import React from "react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { cn } from "@/lib/utils";
-import type { SegmentoComplete } from "@/types/ramo-atividade";
+import React from 'react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
+import type { SegmentoComplete } from '@/types/ramo-atividade';
 
 interface SegmentoCheckboxProps {
   segmento: SegmentoComplete;
@@ -15,70 +15,48 @@ export function SegmentoCheckbox({
   segmento,
   isSelected,
   onToggle,
-  ramoHexCode,
   compact = false,
 }: SegmentoCheckboxProps) {
   if (compact) {
     return (
-      <label className={cn(
-        "flex items-center gap-2 py-1 px-2 rounded cursor-pointer transition-colors",
-        isSelected 
-          ? "bg-primary/10 text-primary" 
-          : "hover:bg-muted/50 text-foreground"
-      )}>
+      <label
+        className={cn(
+          'flex cursor-pointer items-center gap-2 rounded px-2 py-1 transition-colors',
+          isSelected ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted/50',
+        )}
+      >
         <Checkbox
           checked={isSelected}
           onCheckedChange={() => onToggle(segmento.segmento_slug)}
-          className="w-3.5 h-3.5"
+          className="h-3.5 w-3.5"
         />
-        <span className="text-xs truncate flex-1">
-          {segmento.segmento_name}
-        </span>
+        <span className="flex-1 truncate text-xs">{segmento.segmento_name}</span>
       </label>
     );
   }
 
   return (
-    <label className={cn(
-      "flex items-center gap-3 py-2 px-3 rounded-lg cursor-pointer transition-all duration-200",
-      isSelected 
-        ? "bg-primary/10 text-primary ring-1 ring-primary/20" 
-        : "hover:bg-muted/50 text-foreground"
-    )}>
+    <label
+      className={cn(
+        'flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 transition-all duration-200',
+        isSelected
+          ? 'bg-primary/10 text-primary ring-1 ring-primary/20'
+          : 'text-foreground hover:bg-muted/50',
+      )}
+    >
       <Checkbox
         checked={isSelected}
         onCheckedChange={() => onToggle(segmento.segmento_slug)}
-        className={cn(
-          "w-4 h-4 transition-all",
-          isSelected && "bg-primary border-primary"
-        )}
+        className={cn('h-4 w-4 transition-all', isSelected && 'border-primary bg-primary')}
       />
-      
-      <div className="flex-1 min-w-0">
-        <span className={cn(
-          "text-sm",
-          isSelected && "font-medium"
-        )}>
-          {segmento.segmento_name}
-        </span>
-        
+
+      <div className="min-w-0 flex-1">
+        <span className={cn('text-sm', isSelected && 'font-medium')}>{segmento.segmento_name}</span>
+
         {segmento.segmento_description && (
-          <p className="text-xs text-muted-foreground truncate">
-            {segmento.segmento_description}
-          </p>
+          <p className="truncate text-xs text-muted-foreground">{segmento.segmento_description}</p>
         )}
       </div>
-
-      {segmento.product_count !== undefined && segmento.product_count > 0 && (
-        <span className={cn(
-          "text-xs px-1.5 py-0.5 rounded",
-          isSelected 
-            ? "bg-primary/20 text-primary" 
-            : "bg-muted text-muted-foreground"
-        )}>
-          {segmento.product_count}
-        </span>
-      )}
     </label>
   );
 }

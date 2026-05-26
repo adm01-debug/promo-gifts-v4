@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
   X,
@@ -13,16 +13,16 @@ import {
   Sparkles,
   Filter,
   Keyboard,
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 interface SearchResult {
   id: string;
   title: string;
   description?: string;
-  category: "product" | "quote" | "client" | "order" | "page" | "action";
+  category: 'product' | 'quote' | 'client' | 'order' | 'page' | 'action';
   url: string;
   icon?: React.ReactNode;
   metadata?: Record<string, string>;
@@ -42,22 +42,26 @@ interface GlobalSearchProps {
 }
 
 const categoryConfig = {
-  product: { icon: Package, label: "Produto", color: "text-primary" },
-  quote: { icon: FileText, label: "Orçamento", color: "text-success" },
-  client: { icon: Users, label: "Cliente", color: "text-primary" },
-  order: { icon: ShoppingCart, label: "Pedido", color: "text-brand-primary" },
-  page: { icon: ArrowRight, label: "Página", color: "text-muted-foreground" },
-  action: { icon: Sparkles, label: "Ação", color: "text-primary" },
+  product: { icon: Package, label: 'Produto', color: 'text-primary' },
+  quote: { icon: FileText, label: 'Orçamento', color: 'text-success' },
+  client: { icon: Users, label: 'Cliente', color: 'text-primary' },
+  order: { icon: ShoppingCart, label: 'Pedido', color: 'text-brand-primary' },
+  page: { icon: ArrowRight, label: 'Página', color: 'text-muted-foreground' },
+  action: { icon: Sparkles, label: 'Ação', color: 'text-primary' },
 };
 
 const quickActions = [
-  { id: "new-quote", label: "Novo Orçamento", url: "/orcamentos/novo", icon: FileText },
-  { id: "products", label: "Catálogo de Produtos", url: "/filtros", icon: Package },
-  { id: "dashboard", label: "Dashboard", url: "/bi", icon: TrendingUp },
+  { id: 'new-quote', label: 'Novo Orçamento', url: '/orcamentos/novo', icon: FileText },
+  { id: 'products', label: 'Catálogo de Produtos', url: '/filtros', icon: Package },
+  { id: 'dashboard', label: 'Dashboard', url: '/bi', icon: TrendingUp },
 ];
 
-export function GlobalSearch({ isOpen, onClose, placeholder = "Buscar produtos, orçamentos, clientes..." }: GlobalSearchProps) {
-  const [query, setQuery] = useState("");
+export function GlobalSearch({
+  isOpen,
+  onClose,
+  placeholder = 'Buscar produtos, orçamentos, clientes...',
+}: GlobalSearchProps) {
+  const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -68,7 +72,7 @@ export function GlobalSearch({ isOpen, onClose, placeholder = "Buscar produtos, 
 
   // Load search history from localStorage
   useEffect(() => {
-    const history = localStorage.getItem("search-history");
+    const history = localStorage.getItem('search-history');
     if (history) {
       setSearchHistory(JSON.parse(history).slice(0, 5));
     }
@@ -84,7 +88,7 @@ export function GlobalSearch({ isOpen, onClose, placeholder = "Buscar produtos, 
   // Reset state when closed
   useEffect(() => {
     if (!isOpen) {
-      setQuery("");
+      setQuery('');
       setResults([]);
       setSelectedIndex(0);
       setActiveFilter(null);
@@ -101,34 +105,35 @@ export function GlobalSearch({ isOpen, onClose, placeholder = "Buscar produtos, 
     setIsLoading(true);
 
     // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise((resolve) => setTimeout(resolve, 200));
 
     // Mock results
-    const mockResults: SearchResult[] = [
-      {
-        id: "1",
-        title: "Caneta Personalizada Premium",
-        description: "SKU: CAN-001 - Categoria: Escritório",
-        category: "product",
-        url: "/produtos/1",
-        metadata: { price: "R$ 5,90", stock: "1.250 un" },
-      },
-      {
-        id: "2",
-        title: "Orçamento #2024-0125",
-        description: "Cliente: Empresa ABC Ltda",
-        category: "quote",
-        url: "/orcamentos/2",
-        metadata: { value: "R$ 15.000,00", status: "Pendente" },
-      },
-    ].filter(r => 
-      r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    const mockResults: SearchResult[] = (
+      [
+        {
+          id: '1',
+          title: 'Caneta Personalizada Premium',
+          description: 'SKU: CAN-001 - Categoria: Escritório',
+          category: 'product',
+          url: '/produtos/1',
+          metadata: { price: 'R$ 5,90', stock: '1.250 un' } as Record<string, string>,
+        },
+        {
+          id: '2',
+          title: 'Orçamento #2024-0125',
+          description: 'Cliente: Empresa ABC Ltda',
+          category: 'quote',
+          url: '/orcamentos/2',
+          metadata: { value: 'R$ 15.000,00', status: 'Pendente' } as Record<string, string>,
+        },
+      ] as SearchResult[]
+    ).filter(
+      (r) =>
+        r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        r.description?.toLowerCase().includes(searchQuery.toLowerCase()),
     );
 
-    const filteredResults = filter 
-      ? mockResults.filter(r => r.category === filter)
-      : mockResults;
+    const filteredResults = filter ? mockResults.filter((r) => r.category === filter) : mockResults;
 
     setResults(filteredResults);
     setIsLoading(false);
@@ -150,17 +155,17 @@ export function GlobalSearch({ isOpen, onClose, placeholder = "Buscar produtos, 
       if (!isOpen) return;
 
       switch (e.key) {
-        case "ArrowDown":
+        case 'ArrowDown':
           e.preventDefault();
-          setSelectedIndex(prev => 
-            Math.min(prev + 1, (query ? results.length : quickActions.length) - 1)
+          setSelectedIndex((prev) =>
+            Math.min(prev + 1, (query ? results.length : quickActions.length) - 1),
           );
           break;
-        case "ArrowUp":
+        case 'ArrowUp':
           e.preventDefault();
-          setSelectedIndex(prev => Math.max(prev - 1, 0));
+          setSelectedIndex((prev) => Math.max(prev - 1, 0));
           break;
-        case "Enter":
+        case 'Enter':
           e.preventDefault();
           if (query && results[selectedIndex]) {
             handleResultClick(results[selectedIndex]);
@@ -169,14 +174,14 @@ export function GlobalSearch({ isOpen, onClose, placeholder = "Buscar produtos, 
             onClose();
           }
           break;
-        case "Escape":
+        case 'Escape':
           onClose();
           break;
       }
     };
 
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, selectedIndex, results, query, navigate, onClose]);
 
   const handleResultClick = (result: SearchResult) => {
@@ -186,9 +191,12 @@ export function GlobalSearch({ isOpen, onClose, placeholder = "Buscar produtos, 
       timestamp: Date.now(),
       resultCount: results.length,
     };
-    const updatedHistory = [newHistory, ...searchHistory.filter(h => h.query !== query)].slice(0, 5);
+    const updatedHistory = [newHistory, ...searchHistory.filter((h) => h.query !== query)].slice(
+      0,
+      5,
+    );
     setSearchHistory(updatedHistory);
-    localStorage.setItem("search-history", JSON.stringify(updatedHistory));
+    localStorage.setItem('search-history', JSON.stringify(updatedHistory));
 
     navigate(result.url);
     onClose();
@@ -196,14 +204,17 @@ export function GlobalSearch({ isOpen, onClose, placeholder = "Buscar produtos, 
 
   const clearHistory = () => {
     setSearchHistory([]);
-    localStorage.removeItem("search-history");
+    localStorage.removeItem('search-history');
   };
 
-  const filters = useMemo(() => [
-    { id: "product", label: "Produtos" },
-    { id: "quote", label: "Orçamentos" },
-    { id: "client", label: "Clientes" },
-  ], []);
+  const filters = useMemo(
+    () => [
+      { id: 'product', label: 'Produtos' },
+      { id: 'quote', label: 'Orçamentos' },
+      { id: 'client', label: 'Clientes' },
+    ],
+    [],
+  );
 
   return (
     <AnimatePresence>
@@ -224,45 +235,46 @@ export function GlobalSearch({ isOpen, onClose, placeholder = "Buscar produtos, 
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -20 }}
             transition={{ duration: 0.15 }}
-            className="fixed top-[10%] left-1/2 -translate-x-1/2 z-50 w-full max-w-2xl px-4"
+            className="fixed left-1/2 top-[10%] z-50 w-full max-w-2xl -translate-x-1/2 px-4"
           >
-            <div className="bg-card rounded-2xl shadow-2xl border border-border overflow-hidden">
+            <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
               {/* Search Input */}
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
-                <Search className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+              <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+                <Search className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
                 <input
                   ref={inputRef}
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder={placeholder}
-                  className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
+                  className="flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
                 />
                 {query && (
-                  <button aria-label="Fechar"
-                    onClick={() => setQuery("")}
-                    className="p-1 rounded-full hover:bg-muted transition-colors"
+                  <button
+                    aria-label="Fechar"
+                    onClick={() => setQuery('')}
+                    className="rounded-full p-1 transition-colors hover:bg-muted"
                   >
                     <X className="h-4 w-4 text-muted-foreground" />
                   </button>
                 )}
-                <kbd className="hidden sm:flex items-center gap-1 px-2 py-1 text-xs font-medium text-muted-foreground bg-muted rounded">
+                <kbd className="hidden items-center gap-1 rounded bg-muted px-2 py-1 text-xs font-medium text-muted-foreground sm:flex">
                   ESC
                 </kbd>
               </div>
 
               {/* Filters */}
-              <div className="flex items-center gap-2 px-4 py-2 border-b border-border overflow-x-auto scrollbar-hide">
-                <Filter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                {filters.map(filter => (
+              <div className="scrollbar-hide flex items-center gap-2 overflow-x-auto border-b border-border px-4 py-2">
+                <Filter className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                {filters.map((filter) => (
                   <button
                     key={filter.id}
                     onClick={() => setActiveFilter(activeFilter === filter.id ? null : filter.id)}
                     className={cn(
-                      "px-3 py-1 text-xs font-medium rounded-full whitespace-nowrap transition-colors",
+                      'whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition-colors',
                       activeFilter === filter.id
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80',
                     )}
                   >
                     {filter.label}
@@ -274,7 +286,7 @@ export function GlobalSearch({ isOpen, onClose, placeholder = "Buscar produtos, 
               <div className="max-h-[60vh] overflow-y-auto">
                 {isLoading ? (
                   <div className="flex items-center justify-center py-12">
-                    <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                   </div>
                 ) : query ? (
                   results.length > 0 ? (
@@ -286,21 +298,21 @@ export function GlobalSearch({ isOpen, onClose, placeholder = "Buscar produtos, 
                             key={result.id}
                             onClick={() => handleResultClick(result)}
                             className={cn(
-                              "w-full flex items-start gap-3 px-4 py-3 text-left transition-colors",
-                              index === selectedIndex
-                                ? "bg-muted"
-                                : "hover:bg-muted/50"
+                              'flex w-full items-start gap-3 px-4 py-3 text-left transition-colors',
+                              index === selectedIndex ? 'bg-muted' : 'hover:bg-muted/50',
                             )}
                           >
-                            <div className={cn(
-                              "p-2 rounded-lg bg-muted",
-                              categoryConfig[result.category].color
-                            )}>
+                            <div
+                              className={cn(
+                                'rounded-lg bg-muted p-2',
+                                categoryConfig[result.category].color,
+                              )}
+                            >
                               <CategoryIcon className="h-4 w-4" />
                             </div>
-                            <div className="flex-1 min-w-0">
+                            <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2">
-                                <span className="font-medium text-foreground truncate">
+                                <span className="truncate font-medium text-foreground">
                                   {result.title}
                                 </span>
                                 <Badge variant="outline" className="text-[10px]">
@@ -308,12 +320,12 @@ export function GlobalSearch({ isOpen, onClose, placeholder = "Buscar produtos, 
                                 </Badge>
                               </div>
                               {result.description && (
-                                <p className="text-sm text-muted-foreground truncate mt-0.5">
+                                <p className="mt-0.5 truncate text-sm text-muted-foreground">
                                   {result.description}
                                 </p>
                               )}
                               {result.metadata && (
-                                <div className="flex items-center gap-3 mt-1">
+                                <div className="mt-1 flex items-center gap-3">
                                   {Object.entries(result.metadata).map(([key, value]) => (
                                     <span key={key} className="text-xs text-muted-foreground">
                                       {value}
@@ -322,17 +334,15 @@ export function GlobalSearch({ isOpen, onClose, placeholder = "Buscar produtos, 
                                 </div>
                               )}
                             </div>
-                            <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-1" />
+                            <ArrowRight className="mt-1 h-4 w-4 flex-shrink-0 text-muted-foreground" />
                           </button>
                         );
                       })}
                     </div>
                   ) : (
                     <div className="py-12 text-center">
-                      <Search className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-                      <p className="text-muted-foreground">
-                        Nenhum resultado para "{query}"
-                      </p>
+                      <Search className="mx-auto mb-3 h-12 w-12 text-muted-foreground/30" />
+                      <p className="text-muted-foreground">Nenhum resultado para "{query}"</p>
                     </div>
                   )
                 ) : (
@@ -340,8 +350,8 @@ export function GlobalSearch({ isOpen, onClose, placeholder = "Buscar produtos, 
                     {/* Search History */}
                     {searchHistory.length > 0 && (
                       <div className="mb-4">
-                        <div className="flex items-center justify-between px-4 mb-2">
-                          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        <div className="mb-2 flex items-center justify-between px-4">
+                          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                             Buscas recentes
                           </span>
                           <button
@@ -355,11 +365,11 @@ export function GlobalSearch({ isOpen, onClose, placeholder = "Buscar produtos, 
                           <button
                             key={item.query}
                             onClick={() => setQuery(item.query)}
-                            className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-muted transition-colors"
+                            className="flex w-full items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-muted"
                           >
                             <Clock className="h-4 w-4 text-muted-foreground" />
                             <span className="text-sm text-foreground">{item.query}</span>
-                            <span className="text-xs text-muted-foreground ml-auto">
+                            <span className="ml-auto text-xs text-muted-foreground">
                               {item.resultCount} resultados
                             </span>
                           </button>
@@ -369,8 +379,8 @@ export function GlobalSearch({ isOpen, onClose, placeholder = "Buscar produtos, 
 
                     {/* Quick Actions */}
                     <div>
-                      <div className="px-4 mb-2">
-                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      <div className="mb-2 px-4">
+                        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                           Ações rápidas
                         </span>
                       </div>
@@ -384,19 +394,17 @@ export function GlobalSearch({ isOpen, onClose, placeholder = "Buscar produtos, 
                               onClose();
                             }}
                             className={cn(
-                              "w-full flex items-center gap-3 px-4 py-2 text-left transition-colors",
-                              index === selectedIndex && !query
-                                ? "bg-muted"
-                                : "hover:bg-muted/50"
+                              'flex w-full items-center gap-3 px-4 py-2 text-left transition-colors',
+                              index === selectedIndex && !query ? 'bg-muted' : 'hover:bg-muted/50',
                             )}
                           >
-                            <div className="p-2 rounded-lg bg-primary/10">
+                            <div className="rounded-lg bg-primary/10 p-2">
                               <Icon className="h-4 w-4 text-primary" />
                             </div>
                             <span className="text-sm font-medium text-foreground">
                               {action.label}
                             </span>
-                            <ArrowRight className="h-4 w-4 text-muted-foreground ml-auto" />
+                            <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground" />
                           </button>
                         );
                       })}
@@ -406,15 +414,15 @@ export function GlobalSearch({ isOpen, onClose, placeholder = "Buscar produtos, 
               </div>
 
               {/* Footer */}
-              <div className="flex items-center justify-between px-4 py-2 border-t border-border bg-muted/30">
+              <div className="flex items-center justify-between border-t border-border bg-muted/30 px-4 py-2">
                 <div className="flex items-center gap-4 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Keyboard className="h-3 w-3" />
-                    <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px]">↑↓</kbd>
+                    <kbd className="rounded bg-muted px-1.5 py-0.5 text-[10px]">↑↓</kbd>
                     navegar
                   </span>
                   <span className="flex items-center gap-1">
-                    <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px]">↵</kbd>
+                    <kbd className="rounded bg-muted px-1.5 py-0.5 text-[10px]">↵</kbd>
                     selecionar
                   </span>
                 </div>
@@ -437,20 +445,20 @@ export function useGlobalSearch() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
-        setIsOpen(prev => !prev);
+        setIsOpen((prev) => !prev);
       }
     };
 
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   return {
     isOpen,
     open: () => setIsOpen(true),
     close: () => setIsOpen(false),
-    toggle: () => setIsOpen(prev => !prev),
+    toggle: () => setIsOpen((prev) => !prev),
   };
 }

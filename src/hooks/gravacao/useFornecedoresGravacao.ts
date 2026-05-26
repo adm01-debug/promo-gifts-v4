@@ -1,6 +1,10 @@
 // Hook CRUD para Fornecedores de Gravação (via external-db-bridge)
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { invokeExternalDb, invokeExternalDbSingle, invokeExternalDbDelete } from '@/lib/external-db';
+import {
+  invokeExternalDb,
+  invokeExternalDbSingle,
+  invokeExternalDbDelete,
+} from '@/lib/external-db';
 import type { FornecedorGravacao } from '@/types/gravacao-database';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
@@ -42,7 +46,7 @@ export function useFornecedoresGravacao() {
       return invokeExternalDbSingle<FornecedorGravacao>({
         table: 'fornecedor_gravacao',
         operation: 'insert',
-        data: formData,
+        data: { ...formData },
       });
     },
     onSuccess: () => {
@@ -55,9 +59,9 @@ export function useFornecedoresGravacao() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ 
-      id, 
-      ...updates 
+    mutationFn: async ({
+      id,
+      ...updates
     }: Partial<FornecedorFormData> & { id: string }): Promise<FornecedorGravacao> => {
       return invokeExternalDbSingle<FornecedorGravacao>({
         table: 'fornecedor_gravacao',

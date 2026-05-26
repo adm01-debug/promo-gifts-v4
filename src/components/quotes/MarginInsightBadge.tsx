@@ -101,7 +101,7 @@ export function MarginInsightBadge({
     );
   }
 
-  if (median === null) return null;
+  if (median === null || median === undefined) return null;
 
   const delta = currentMarginPercent - median;
   const isAbove = delta >= 0;

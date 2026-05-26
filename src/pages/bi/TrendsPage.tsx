@@ -14,8 +14,8 @@ import { TrendingUp, Search, Package, Calendar, RefreshCw, Download } from 'luci
 import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { PageSEO } from '@/components/seo/PageSEO';
-import { ProductsTabContent, SearchesTabContent } from "@/pages/trends/TrendsCharts";
-import { TrendsKpiCards } from "@/pages/trends/TrendsKpiCards";
+import { ProductsTabContent, SearchesTabContent } from '@/pages/trends/TrendsCharts';
+import { TrendsKpiCards } from '@/pages/trends/TrendsKpiCards';
 import { UnmetDemandCard } from '@/components/intelligence/UnmetDemandCard';
 import { HotSearchesCard } from '@/components/intelligence/HotSearchesCard';
 import { ConversionFunnel } from '@/components/intelligence/ConversionFunnel';
@@ -38,7 +38,7 @@ import {
   MOCK_PRODUCTS,
   MOCK_SEARCHES,
   buildMockDaily,
-} from "@/pages/trends/trends-mock";
+} from '@/pages/trends/trends-mock';
 import { Badge } from '@/components/ui/badge';
 
 type DateRange = '7d' | '30d' | '90d';
@@ -302,10 +302,18 @@ export default function TrendsPage() {
         if (sellerScope) q = q.eq('seller_id', sellerScope);
         return q;
       };
-      const [{ data: vAll }, { data: sAll }] = await Promise.all([
+      const [{ data: vAllRaw }, { data: sAllRaw }] = await Promise.all([
         buildQ('product_views', 'product_id, product_name, created_at, seller_id'),
         buildQ('search_analytics', 'search_term, created_at, seller_id'),
       ]);
+      // untypedFrom is the escape hatch for tables outside the generated schema;
+      // the select() rows come back loosely typed, so narrow to the shape we read.
+      const vAll = (vAllRaw ?? []) as unknown as Array<
+        Record<string, unknown> & { created_at: string }
+      >;
+      const sAll = (sAllRaw ?? []) as unknown as Array<
+        Record<string, unknown> & { created_at: string }
+      >;
       const split = (
         rows: Array<{ created_at: string }>,
         keyFn: (r: Record<string, unknown>) => string | null,
@@ -326,8 +334,8 @@ export default function TrendsPage() {
         });
         return { curTotal, prevTotal, curUnique: curUnique.size, prevUnique: prevUnique.size };
       };
-      const v = split(vAll ?? [], (r) => r.product_id || r.product_name);
-      const s = split(sAll ?? [], (r) => (r.search_term ?? '').toLowerCase());
+      const v = split(vAll, (r) => (r.product_id ?? r.product_name ?? null) as string | null);
+      const s = split(sAll, (r) => String(r.search_term ?? '').toLowerCase());
       return {
         current: {
           totalViews: v.curTotal,
@@ -422,123 +430,123 @@ export default function TrendsPage() {
   };
 
   return (
-      <>
-        <PageSEO
-          title="Tendências"
-          description="Analise tendências de produtos e buscas."
-          path="/tendencias"
-          noIndex
-        />
-        <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <div className="flex flex-wrap items-center gap-3">
-                <h1
-                  data-testid="page-title-tendencias"
-                  className="flex items-center gap-2 font-display text-2xl font-bold text-foreground lg:text-3xl"
-                >
-                  <TrendingUp className="h-7 w-7 text-primary" />
-                  Análise de Tendências
-                </h1>
-                <RealtimeBadge />
-                {demo && (
-                  <Badge
-                    variant="outline"
-                    className="gap-1 border-chart-4/40 bg-chart-4/10 text-chart-4"
-                  >
-                    <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-chart-4" />
-                    MODO DEMO — dados fictícios para avaliação
-                  </Badge>
-                )}
-              </div>
-              <p className="mt-1 text-muted-foreground">
-                {canManage
-                  ? 'Crescimento, conversão e demanda reprimida em tempo real'
-                  : 'Suas vendas, suas buscas, sua atividade'}
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <SavedViewsManager />
-              <Select value={dateRange} onValueChange={(v) => setDateRange(v as DateRange)}>
-                <SelectTrigger className="w-[140px]">
-                  <Calendar className="mr-2 h-4 w-4" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="7d">Últimos 7 dias</SelectItem>
-                  <SelectItem value="30d">Últimos 30 dias</SelectItem>
-                  <SelectItem value="90d">Últimos 90 dias</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button variant="outline" size="icon" onClick={handleRefresh} aria-label="Atualizar">
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          {/* IA — só para managers */}
-          {canManage && <TrendsInsightsCard days={days} />}
-
-          {/* KPIs */}
-          <TrendsKpiCards current={kpiCurrent} previous={kpiPrevious} />
-
-          {/* Funil + Demanda Reprimida */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <ConversionFunnel days={days} />
-            <UnmetDemandCard days={days} />
-          </div>
-
-          {/* Buscas Quentes — interesse real do mercado */}
-          <HotSearchesCard days={days} />
-
-          {/* Forecast Chart com toggles vs anterior + previsão + anomalias */}
-          <TrendsForecastChart
-            dailyTrends={displayDaily?.current}
-            previousTrends={displayDaily?.previous}
-            isLoading={displayLoadingDaily}
-            showForecast={showForecast}
-            onToggleForecast={setShowForecast}
-            showCompare={showCompare}
-            onToggleCompare={setShowCompare}
-          />
-
-          {/* Heatmap + Top Categorias */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <TrendsHeatmap days={days} />
-            <TopCategoriesCard days={days} />
-          </div>
-
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <TabsList>
-                <TabsTrigger value="products" className="gap-2">
-                  <Package className="h-4 w-4" />
-                  Produtos em alta
-                </TabsTrigger>
-                <TabsTrigger value="searches" className="gap-2">
-                  <Search className="h-4 w-4" />
-                  Termos mais buscados
-                </TabsTrigger>
-              </TabsList>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5"
-                onClick={activeTab === 'products' ? handleExportProducts : handleExportSearches}
+    <>
+      <PageSEO
+        title="Tendências"
+        description="Analise tendências de produtos e buscas."
+        path="/tendencias"
+        noIndex
+      />
+      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1
+                data-testid="page-title-tendencias"
+                className="flex items-center gap-2 font-display text-2xl font-bold text-foreground lg:text-3xl"
               >
-                <Download className="h-3.5 w-3.5" />
-                Exportar CSV
-              </Button>
+                <TrendingUp className="h-7 w-7 text-primary" />
+                Análise de Tendências
+              </h1>
+              <RealtimeBadge />
+              {demo && (
+                <Badge
+                  variant="outline"
+                  className="gap-1 border-chart-4/40 bg-chart-4/10 text-chart-4"
+                >
+                  <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-chart-4" />
+                  MODO DEMO — dados fictícios para avaliação
+                </Badge>
+              )}
             </div>
-            <TabsContent value="products" className="space-y-4">
-              <ProductsTabContent topProducts={displayProducts} isLoading={displayLoadingProducts} />
-            </TabsContent>
-            <TabsContent value="searches" className="space-y-4">
-              <SearchesTabContent topSearches={displaySearches} isLoading={displayLoadingSearches} />
-            </TabsContent>
-          </Tabs>
+            <p className="mt-1 text-muted-foreground">
+              {canManage
+                ? 'Crescimento, conversão e demanda reprimida em tempo real'
+                : 'Suas vendas, suas buscas, sua atividade'}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <SavedViewsManager />
+            <Select value={dateRange} onValueChange={(v) => setDateRange(v as DateRange)}>
+              <SelectTrigger className="w-[140px]">
+                <Calendar className="mr-2 h-4 w-4" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7d">Últimos 7 dias</SelectItem>
+                <SelectItem value="30d">Últimos 30 dias</SelectItem>
+                <SelectItem value="90d">Últimos 90 dias</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="icon" onClick={handleRefresh} aria-label="Atualizar">
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-        <TrendsTour />
-      </>
+
+        {/* IA — só para managers */}
+        {canManage && <TrendsInsightsCard days={days} />}
+
+        {/* KPIs */}
+        <TrendsKpiCards current={kpiCurrent} previous={kpiPrevious} />
+
+        {/* Funil + Demanda Reprimida */}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <ConversionFunnel days={days} />
+          <UnmetDemandCard days={days} />
+        </div>
+
+        {/* Buscas Quentes — interesse real do mercado */}
+        <HotSearchesCard days={days} />
+
+        {/* Forecast Chart com toggles vs anterior + previsão + anomalias */}
+        <TrendsForecastChart
+          dailyTrends={displayDaily?.current}
+          previousTrends={displayDaily?.previous}
+          isLoading={displayLoadingDaily}
+          showForecast={showForecast}
+          onToggleForecast={setShowForecast}
+          showCompare={showCompare}
+          onToggleCompare={setShowCompare}
+        />
+
+        {/* Heatmap + Top Categorias */}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <TrendsHeatmap days={days} />
+          <TopCategoriesCard days={days} />
+        </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <TabsList>
+              <TabsTrigger value="products" className="gap-2">
+                <Package className="h-4 w-4" />
+                Produtos em alta
+              </TabsTrigger>
+              <TabsTrigger value="searches" className="gap-2">
+                <Search className="h-4 w-4" />
+                Termos mais buscados
+              </TabsTrigger>
+            </TabsList>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={activeTab === 'products' ? handleExportProducts : handleExportSearches}
+            >
+              <Download className="h-3.5 w-3.5" />
+              Exportar CSV
+            </Button>
+          </div>
+          <TabsContent value="products" className="space-y-4">
+            <ProductsTabContent topProducts={displayProducts} isLoading={displayLoadingProducts} />
+          </TabsContent>
+          <TabsContent value="searches" className="space-y-4">
+            <SearchesTabContent topSearches={displaySearches} isLoading={displayLoadingSearches} />
+          </TabsContent>
+        </Tabs>
+      </div>
+      <TrendsTour />
+    </>
   );
 }

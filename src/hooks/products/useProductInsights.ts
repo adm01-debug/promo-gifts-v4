@@ -61,7 +61,9 @@ export function useProductInsights(productId?: string, productSku?: string) {
       const conversionRate =
         quotesCount && quotesCount > 0 ? ((ordersCount || 0) / quotesCount) * 100 : 0;
 
-      const orderIds = (orderItems || []).map((o) => o.order_id);
+      const orderIds = (orderItems || [])
+        .map((o) => o.order_id)
+        .filter((id): id is string => id !== null);
       let topSegments: ProductInsight['topSegments'] = [];
 
       if (orderIds.length > 0) {

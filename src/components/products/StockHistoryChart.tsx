@@ -292,15 +292,7 @@ export function StockHistoryChart({ productId }: StockHistoryChartProps) {
                 width={50}
               />
               <YAxis yAxisId="flow" orientation="right" hide />
-              <Tooltip
-                content={({
-                  active,
-                  payload,
-                }: {
-                  active?: boolean;
-                  payload?: { payload: Record<string, number> }[];
-                }) => <MarketTooltip active={active} payload={payload} showCost={showCost} />}
-              />
+              <Tooltip content={<MarketTooltip showCost={showCost} />} />
               <Legend
                 wrapperStyle={{ fontSize: '10px', paddingTop: '4px' }}
                 iconSize={8}

@@ -31,7 +31,7 @@ export function FavoritesTrashView() {
   if (items.length === 0) {
     return (
       <EmptyState
-        variant="default"
+        variant="generic"
         title="Lixeira vazia"
         description="Itens removidos aparecem aqui por 30 dias antes de serem excluídos definitivamente."
       />

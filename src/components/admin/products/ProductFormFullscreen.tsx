@@ -100,13 +100,15 @@ const STEPS: StepDef[] = [
     fieldLabels: {},
   },
   {
+    // 'kits' is a live wizard step but is missing from StepDef['id'] (StepId);
+    // widen via unknown until StepId is extended to include it.
     id: 'kits',
     label: 'Kits',
     description: 'Gestão de kits nativos',
     icon: Boxes,
     requiredFields: [],
     fieldLabels: {},
-  } as StepDef,
+  } as unknown as StepDef,
   {
     id: 'media',
     label: 'Mídia',

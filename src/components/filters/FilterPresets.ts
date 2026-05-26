@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import type { Json } from '@/integrations/supabase/types';
 import type { FilterState } from './FilterPanel';
 
 export interface FilterPreset {
@@ -88,7 +89,9 @@ export function useFilterPresets(context: string = 'catalog') {
             user_id: user.id,
             name: preset.name,
             description: preset.description || null,
-            filter_config: preset.filters as unknown as Record<string, unknown>,
+            // FilterState is a flat, JSON-serializable object; widen via unknown
+            // because TS won't structurally match it to Json (no index signature).
+            filter_config: preset.filters as unknown as Json,
             category: context,
             icon: preset.icon || null,
             color: preset.color || null,
@@ -134,7 +137,7 @@ export function useFilterPresets(context: string = 'catalog') {
           .update({
             ...restUpdates,
             updated_at: new Date().toISOString(),
-            ...(filterState !== undefined ? { filter_config: filterState as unknown } : {}),
+            ...(filterState !== undefined ? { filter_config: filterState as unknown as Json } : {}),
           })
           .eq('id', id)
           .select()

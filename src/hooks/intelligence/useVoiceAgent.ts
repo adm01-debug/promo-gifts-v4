@@ -1,5 +1,5 @@
 ﻿import { useState, useCallback, useRef, useEffect } from 'react';
-import { useScribe } from '@elevenlabs/react';
+import { useScribe, CommitStrategy } from '@elevenlabs/react';
 
 import { playTtsAudio } from '@/hooks/voice/playTtsAudio';
 import { processVoiceTranscript } from '@/hooks/voice/processTranscript';
@@ -87,7 +87,7 @@ export function useVoiceAgent({ onAction, onError }: UseVoiceAgentOptions = {}) 
 
   const scribe = useScribe({
     modelId: 'scribe_v2_realtime',
-    commitStrategy: 'vad',
+    commitStrategy: CommitStrategy.VAD,
     onConnect: () => {
       logger.log('[Voice] Scribe socket connected');
     },

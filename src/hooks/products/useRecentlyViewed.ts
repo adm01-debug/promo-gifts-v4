@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { type Product } from "@/hooks/products";
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { type Product } from '@/hooks/products';
 
-const STORAGE_KEY = "recently-viewed-products";
+const STORAGE_KEY = 'recently-viewed-products';
 const MAX_ITEMS = 10;
 
 export interface RecentlyViewedItem {
@@ -26,7 +26,7 @@ export function useRecentlyViewed() {
         setItems(JSON.parse(stored));
       }
     } catch (e) {
-      console.error("Error loading recently viewed:", e);
+      console.error('Error loading recently viewed:', e);
     }
     setIsLoaded(true);
   }, []);
@@ -59,10 +59,7 @@ export function useRecentlyViewed() {
 
     setItems((prev) => {
       const filtered = prev.filter((item) => item.productId !== productId);
-      return [{ productId, viewedAt: new Date().toISOString() }, ...filtered].slice(
-        0,
-        MAX_ITEMS,
-      );
+      return [{ productId, viewedAt: new Date().toISOString() }, ...filtered].slice(0, MAX_ITEMS);
     });
   }, []);
 

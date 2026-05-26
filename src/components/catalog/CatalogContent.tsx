@@ -142,17 +142,21 @@ export const CatalogContent = memo(function CatalogContent({
             ? 'Tente ajustar seus filtros para ver mais resultados.'
             : 'Explore nosso catálogo completo para encontrar o que procura.'
         }
-        action={{
-          label: 'Limpar todos os filtros',
-          onClick: onResetFilters,
-        }}
+        action={
+          onResetFilters
+            ? {
+                label: 'Limpar todos os filtros',
+                onClick: onResetFilters,
+              }
+            : undefined
+        }
       />
     );
   }
 
   return (
     <div className="relative space-y-8 pb-12 duration-500 animate-in fade-in">
-      <SparklineSalesProvider>
+      <SparklineSalesProvider productIds={paginatedProducts.map((p) => p.id)}>
         {viewMode === 'grid' && (
           <ProductGrid
             products={paginatedProducts}

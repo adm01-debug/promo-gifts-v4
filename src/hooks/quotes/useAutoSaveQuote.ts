@@ -86,7 +86,7 @@ export function useAutoSaveQuote<T>({
         console.error('Failed to parse/migrate autosave data', e);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [enabled, key]);
 
   // Efeito de salvamento (Debounced)

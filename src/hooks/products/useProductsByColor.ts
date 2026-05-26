@@ -1,6 +1,6 @@
 /**
  * useProductsByColor — Server-side color filtering
- * 
+ *
  * Queries product_variants + color_variations + color_groups via external-db-bridge
  * to return product IDs matching selected color filters.
  * Works with lightweight products that don't have embedded color data.
@@ -10,10 +10,10 @@ import { invokeBatchBridge } from '@/lib/external-db';
 import { logger } from '@/lib/logger';
 
 interface UseProductsByColorOptions {
-  colorGroups: string[];       // group slugs
-  colorVariations: string[];   // variation slugs
-  colorNuances: string[];      // nuance keywords (client-side only, not supported server-side)
-  colors: string[];            // legacy color names
+  colorGroups: string[]; // group slugs
+  colorVariations: string[]; // variation slugs
+  colorNuances: string[]; // nuance keywords (client-side only, not supported server-side)
+  colors: string[]; // legacy color names
 }
 
 interface UseProductsByColorResult {
@@ -31,17 +31,25 @@ export function useProductsByColor({
   const [productIds, setProductIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
 
-  const hasFilter = useMemo(() =>
-    colorGroups.length > 0 || colorVariations.length > 0 || colorNuances.length > 0 || colors.length > 0,
-    [colorGroups.length, colorVariations.length, colorNuances.length, colors.length]
+  const hasFilter = useMemo(
+    () =>
+      colorGroups.length > 0 ||
+      colorVariations.length > 0 ||
+      colorNuances.length > 0 ||
+      colors.length > 0,
+    [colorGroups.length, colorVariations.length, colorNuances.length, colors.length],
   );
 
-  const filterKey = useMemo(() =>
-    [...colorGroups].sort().join(',') + '|' +
-    [...colorVariations].sort().join(',') + '|' +
-    [...colorNuances].sort().join(',') + '|' +
-    [...colors].sort().join(','),
-    [colorGroups, colorVariations, colorNuances, colors]
+  const filterKey = useMemo(
+    () =>
+      [...colorGroups].sort().join(',') +
+      '|' +
+      [...colorVariations].sort().join(',') +
+      '|' +
+      [...colorNuances].sort().join(',') +
+      '|' +
+      [...colors].sort().join(','),
+    [colorGroups, colorVariations, colorNuances, colors],
   );
 
   const lastFetchedKey = useRef('');
@@ -85,12 +93,20 @@ export function useProductsByColor({
 
       const refResults = await invokeBatchBridge(refQueries);
 
-      const groupsData = refResults[0]?.success ? (refResults[0].data?.records as Record<string, unknown>[] || []) : [];
-      const variationsData = refResults[1]?.success ? (refResults[1].data?.records as Record<string, unknown>[] || []) : [];
+      const groupsData = refResults[0]?.success
+        ? (refResults[0].data?.records as Record<string, unknown>[]) || []
+        : [];
+      const variationsData = refResults[1]?.success
+        ? (refResults[1].data?.records as Record<string, unknown>[]) || []
+        : [];
 
       // Build lookup maps
-      const groupsBySlug = new Map(groupsData.map((g: Record<string, unknown>) => [g.slug as string, g.id as string]));
-      const variationsBySlug = new Map(variationsData.map((v: Record<string, unknown>) => [v.slug as string, v]));
+      const groupsBySlug = new Map(
+        groupsData.map((g: Record<string, unknown>) => [g.slug as string, g.id as string]),
+      );
+      const variationsBySlug = new Map(
+        variationsData.map((v: Record<string, unknown>) => [v.slug as string, v]),
+      );
 
       // Resolve target color_ids from filters
       const targetColorIds = new Set<string>();
@@ -98,7 +114,7 @@ export function useProductsByColor({
       // From colorVariations (slug -> variation id)
       for (const slug of colorVariations) {
         const variation = variationsBySlug.get(slug);
-        if (variation) targetColorIds.add(variation.id);
+        if (variation) targetColorIds.add(variation.id as string);
       }
 
       // From colorGroups (slug -> group id -> all variations in that group)
@@ -139,14 +155,16 @@ export function useProductsByColor({
         const CHUNK = 50;
         for (let i = 0; i < colorIdArray.length; i += CHUNK) {
           const chunk = colorIdArray.slice(i, i + CHUNK);
-          const variantQueries = [{
-            table: 'product_variants',
-            operation: 'select' as const,
-            select: 'product_id',
-            filters: { is_active: true, color_id: chunk },
-            limit: 5000,
-            offset: 0,
-          }];
+          const variantQueries = [
+            {
+              table: 'product_variants',
+              operation: 'select' as const,
+              select: 'product_id',
+              filters: { is_active: true, color_id: chunk },
+              limit: 5000,
+              offset: 0,
+            },
+          ];
 
           const variantResults = await invokeBatchBridge(variantQueries);
           if (variantResults[0]?.success && variantResults[0].data?.records) {
@@ -159,10 +177,12 @@ export function useProductsByColor({
 
       setProductIds(matchingProductIds);
       lastFetchedKey.current = filterKey;
-      logger.log(`[useProductsByColor] Found ${matchingProductIds.size} products for ${colorIdArray.length} color IDs`);
+      logger.log(
+        `[useProductsByColor] Found ${matchingProductIds.size} products for ${colorIdArray.length} color IDs`,
+      );
     } catch (err) {
       logger.error('[useProductsByColor] Critical Error:', err);
-      // Fallback: em caso de erro crítico na bridge de cores, permitimos 
+      // Fallback: em caso de erro crítico na bridge de cores, permitimos
       // visualização parcial ou vazia mas logamos o erro estruturado.
       setProductIds(new Set());
     } finally {

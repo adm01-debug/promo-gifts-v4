@@ -64,7 +64,7 @@ export function useTechniquePricing(techniqueCode: string | null) {
         const { data, error: fetchError } = await supabase
           .from('customization_price_tables')
           .select(
-            'id,table_code,table_code_option,table_fullcode,customization_type_name,max_colors,max_area_width_cm,max_area_height_cm,price_by_color,price_by_area,setup_price,handling_price'
+            'id,table_code,table_code_option,table_fullcode,customization_type_name,max_colors,max_area_width_cm,max_area_height_cm,price_by_color,price_by_area,setup_price,handling_price',
           )
           .eq('is_active', true)
           .limit(100);
@@ -109,47 +109,78 @@ export function useTechniquePricing(techniqueCode: string | null) {
     };
 
     fetchPriceOptions();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [techniqueCode]);
 
-  const hasPriceByColor = useMemo(() => priceOptions.some(opt => opt.priceByColor), [priceOptions]);
-  const hasPriceByArea = useMemo(() => priceOptions.some(opt => opt.priceByArea), [priceOptions]);
+  const hasPriceByColor = useMemo(
+    () => priceOptions.some((opt) => opt.priceByColor),
+    [priceOptions],
+  );
+  const hasPriceByArea = useMemo(() => priceOptions.some((opt) => opt.priceByArea), [priceOptions]);
 
   const colorOptions = useMemo((): ColorOption[] => {
     if (!hasPriceByColor || priceOptions.length === 0) return [];
-    const uniqueColors = [...new Set(priceOptions.map(opt => opt.maxColors))].filter(c => c > 0).sort((a, b) => a - b);
+    const uniqueColors = [...new Set(priceOptions.map((opt) => opt.maxColors))]
+      .filter((c) => c > 0)
+      .sort((a, b) => a - b);
     if (uniqueColors.length <= 1) {
       const maxColors = uniqueColors[0] || 4;
-      return Array.from({ length: maxColors }, (_, i) => ({ value: i + 1, label: `${i + 1} ${i === 0 ? 'cor' : 'cores'}` }));
+      return Array.from({ length: maxColors }, (_, i) => ({
+        value: i + 1,
+        label: `${i + 1} ${i === 0 ? 'cor' : 'cores'}`,
+      }));
     }
-    return uniqueColors.map(c => ({ value: c, label: `${c} ${c === 1 ? 'cor' : 'cores'}` }));
+    return uniqueColors.map((c) => ({ value: c, label: `${c} ${c === 1 ? 'cor' : 'cores'}` }));
   }, [priceOptions, hasPriceByColor]);
 
   const sizeOptions = useMemo((): SizeOption[] => {
     if (priceOptions.length === 0) return [];
     const uniqueAreas = new Map<string, SizeOption>();
-    priceOptions.forEach(opt => {
+    priceOptions.forEach((opt) => {
       if (opt.maxAreaWidth > 0 && opt.maxAreaHeight > 0) {
         const key = `${opt.maxAreaWidth}x${opt.maxAreaHeight}`;
         if (!uniqueAreas.has(key)) {
-          uniqueAreas.set(key, { value: key, label: `${opt.maxAreaWidth} x ${opt.maxAreaHeight} cm`, width: opt.maxAreaWidth, height: opt.maxAreaHeight, areaCm2: opt.areaCm2, tableFullcode: opt.tableFullcode || opt.tableCode });
+          uniqueAreas.set(key, {
+            value: key,
+            label: `${opt.maxAreaWidth} x ${opt.maxAreaHeight} cm`,
+            width: opt.maxAreaWidth,
+            height: opt.maxAreaHeight,
+            areaCm2: opt.areaCm2,
+            tableFullcode: opt.tableFullcode || opt.tableCode,
+          });
         }
       }
     });
     return Array.from(uniqueAreas.values()).sort((a, b) => a.areaCm2 - b.areaCm2);
   }, [priceOptions]);
 
-  const findMatchingTable = useCallback((colors: number, sizeValue: string): TechniquePriceOption | null => {
-    if (priceOptions.length === 0) return null;
-    const [width, height] = sizeValue.split('x').map(Number);
-    const matching = priceOptions.find(opt => {
-      const colorMatch = !hasPriceByColor || opt.maxColors >= colors;
-      const sizeMatch = !sizeValue || (opt.maxAreaWidth === width && opt.maxAreaHeight === height);
-      return colorMatch && sizeMatch;
-    });
-    if (!matching && hasPriceByColor) return priceOptions.find(opt => opt.maxColors >= colors) || priceOptions[0];
-    return matching || priceOptions[0];
-  }, [priceOptions, hasPriceByColor]);
+  const findMatchingTable = useCallback(
+    (colors: number, sizeValue: string): TechniquePriceOption | null => {
+      if (priceOptions.length === 0) return null;
+      const [width, height] = sizeValue.split('x').map(Number);
+      const matching = priceOptions.find((opt) => {
+        const colorMatch = !hasPriceByColor || opt.maxColors >= colors;
+        const sizeMatch =
+          !sizeValue || (opt.maxAreaWidth === width && opt.maxAreaHeight === height);
+        return colorMatch && sizeMatch;
+      });
+      if (!matching && hasPriceByColor)
+        return priceOptions.find((opt) => opt.maxColors >= colors) || priceOptions[0];
+      return matching || priceOptions[0];
+    },
+    [priceOptions, hasPriceByColor],
+  );
 
-  return { priceOptions, colorOptions, sizeOptions, hasPriceByColor, hasPriceByArea, isLoading, error, findMatchingTable };
+  return {
+    priceOptions,
+    colorOptions,
+    sizeOptions,
+    hasPriceByColor,
+    hasPriceByArea,
+    isLoading,
+    error,
+    findMatchingTable,
+  };
 }

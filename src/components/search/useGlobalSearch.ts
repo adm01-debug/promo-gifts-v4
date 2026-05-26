@@ -20,7 +20,7 @@ import { useSlashCommands } from '@/hooks/ui/useSlashCommands';
 import type { VoiceAgentAction } from '@/hooks/voice/types';
 
 import { createProductFuseOptions, rankProductSearchResults } from '@/utils/product-search';
-import type { ExternalProduct } from '@/types/external-db';
+import type { PromobrindProduct } from '@/lib/external-db';
 
 export type SearchResultType =
   | 'product'
@@ -327,15 +327,11 @@ export function useGlobalSearch() {
           if (intent.filters.priceRange) {
             if (intent.filters.priceRange === 'low')
               filteredProducts = filteredProducts.filter(
-                (p) =>
-                  ((p as ExternalProduct).sale_price || (p as ExternalProduct).base_price || 0) <
-                  50,
+                (p) => (p.sale_price || p.base_price || 0) < 50,
               );
             else if (intent.filters.priceRange === 'high')
               filteredProducts = filteredProducts.filter(
-                (p) =>
-                  ((p as ExternalProduct).sale_price || (p as ExternalProduct).base_price || 0) >
-                  200,
+                (p) => (p.sale_price || p.base_price || 0) > 200,
               );
           }
           if (intent.filters.color) {
@@ -357,12 +353,12 @@ export function useGlobalSearch() {
             if (colorFiltered.length > 0) filteredProducts = colorFiltered;
           }
 
-          const fuse = new Fuse(filteredProducts, createProductFuseOptions<ExternalProduct>());
+          const fuse = new Fuse(filteredProducts, createProductFuseOptions<PromobrindProduct>());
           rankProductSearchResults(filteredProducts, productQuery, fuse).forEach((p) => {
             allResults.push({
               id: p.id,
               title: p.name,
-              subtitle: `SKU: ${p.sku} • ${p.category_name || 'Sem categoria'} • ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((p as ExternalProduct).sale_price || (p as ExternalProduct).base_price || 0)}`,
+              subtitle: `SKU: ${p.sku} • ${p.category_name || 'Sem categoria'} • ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.sale_price || p.base_price || 0)}`,
               type: 'product',
               href: `/produto/${p.id}`,
             });
@@ -493,7 +489,7 @@ export function useGlobalSearch() {
                 .ilike('title', `%${term}%`)
                 .order('updated_at', { ascending: false });
             const { data } = await builder.limit(5);
-            (data || []).forEach((row: Record<string, unknown>) => {
+            ((data ?? []) as unknown as Record<string, unknown>[]).forEach((row) => {
               const id = row.id as string;
               allResults.push({
                 id,
@@ -539,17 +535,15 @@ export function useGlobalSearch() {
         try {
           const { data } = await supabase
             .from('generated_mockups')
-            .select('id, product_name, client_name, technique_name, created_at')
-            .or(
-              `product_name.ilike.%${term}%,client_name.ilike.%${term}%,technique_name.ilike.%${term}%`,
-            )
+            .select('id, product_name, technique_name, created_at')
+            .or(`product_name.ilike.%${term}%,technique_name.ilike.%${term}%`)
             .order('created_at', { ascending: false })
             .limit(5);
           (data || []).forEach((m) =>
             allResults.push({
               id: m.id,
               title: m.product_name || 'Mockup',
-              subtitle: `${m.client_name || 'Sem cliente'} • ${m.technique_name || '—'}`,
+              subtitle: m.technique_name || '—',
               type: 'mockup',
               href: `/mockups/${m.id}`,
             }),

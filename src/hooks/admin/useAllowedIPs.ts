@@ -1,10 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { type createClient } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-
-// Tables not yet in generated schema — bypass type checking via raw client cast
-const db = supabase as unknown as ReturnType<typeof createClient>;
 
 interface AllowedIP {
   id: string;
@@ -42,7 +38,7 @@ export function useAllowedIPs(targetUserId?: string) {
     }
 
     try {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from('user_allowed_ips')
         .select('id, user_id, ip_address, label, is_active, created_at')
         .eq('user_id', userId)
@@ -69,12 +65,12 @@ export function useAllowedIPs(targetUserId?: string) {
       }
 
       try {
-        const { error } = await db.from('user_allowed_ips').insert({
+        const { error } = await supabase.from('user_allowed_ips').insert({
           user_id: userId,
           ip_address: ipAddress,
           label: label || null,
           created_by: user.id,
-        } as never);
+        });
 
         if (error) {
           const e = error as { code?: string };
@@ -99,7 +95,7 @@ export function useAllowedIPs(targetUserId?: string) {
   const removeIP = useCallback(
     async (ipId: string): Promise<{ success: boolean; error?: string }> => {
       try {
-        const { error } = await db.from('user_allowed_ips').delete().eq('id', ipId);
+        const { error } = await supabase.from('user_allowed_ips').delete().eq('id', ipId);
 
         if (error) throw error;
 
@@ -118,7 +114,7 @@ export function useAllowedIPs(targetUserId?: string) {
   const toggleIP = useCallback(
     async (ipId: string, isActive: boolean): Promise<{ success: boolean; error?: string }> => {
       try {
-        const { error } = await db
+        const { error } = await supabase
           .from('user_allowed_ips')
           .update({ is_active: isActive })
           .eq('id', ipId);

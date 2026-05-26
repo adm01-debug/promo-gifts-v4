@@ -3,7 +3,6 @@
  * Pure functions to transform external DB products into Kit types.
  */
 
-import { getProductImageUrl, getProductPrice } from '@/lib/external-db';
 import {
   type KitBox,
   type KitItem,
@@ -14,6 +13,17 @@ import {
   estimateDefaultDimensions,
 } from '@/lib/kit-builder';
 
+// Local equivalents of the external-db helpers, typed against ExternalProductForKit.
+// (The shared helpers require the full PromobrindProduct shape, which the kit-builder
+// product subset does not satisfy; the logic mirrors `getProductImageUrl`/`getProductPrice`.)
+function resolveProductImageUrl(product: ExternalProductForKit): string | null {
+  return product.primary_image_url || product.image_url || (product.images?.[0] ?? null);
+}
+
+function resolveProductPrice(product: ExternalProductForKit): number {
+  return product.sale_price ?? product.base_price ?? 0;
+}
+
 function resolveProductMaterial(product: ExternalProductForKit): string | undefined {
   if (product.material) return product.material;
   if (!Array.isArray(product.materials) || product.materials.length === 0) return undefined;
@@ -21,7 +31,9 @@ function resolveProductMaterial(product: ExternalProductForKit): string | undefi
   const firstMaterial = product.materials[0];
   if (typeof firstMaterial === 'string') return firstMaterial;
   if (firstMaterial && typeof firstMaterial === 'object') {
-    const candidate = (firstMaterial as { name?: string; material?: string }).name ?? (firstMaterial as { name?: string; material?: string }).material;
+    const candidate =
+      (firstMaterial as { name?: string; material?: string }).name ??
+      (firstMaterial as { name?: string; material?: string }).material;
     return typeof candidate === 'string' && candidate.trim() ? candidate : undefined;
   }
 
@@ -61,8 +73,8 @@ export function transformToKitBox(product: ExternalProductForKit): KitBox | null
     id: product.id,
     name: product.name,
     sku: product.sku,
-    imageUrl: getProductImageUrl(product),
-    price: getProductPrice(product),
+    imageUrl: resolveProductImageUrl(product),
+    price: resolveProductPrice(product),
     internalWidth: dimensions.width,
     internalHeight: dimensions.height,
     internalDepth: dimensions.depth,
@@ -93,8 +105,8 @@ export function transformToKitItem(product: ExternalProductForKit, category?: st
     id: product.id,
     name: product.name,
     sku: product.sku,
-    imageUrl: getProductImageUrl(product),
-    price: getProductPrice(product),
+    imageUrl: resolveProductImageUrl(product),
+    price: resolveProductPrice(product),
     width: dimensions.width,
     height: dimensions.height,
     depth: dimensions.depth,

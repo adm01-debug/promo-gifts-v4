@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { type createClient } from '@supabase/supabase-js';
-const db = supabase as unknown as ReturnType<typeof createClient>;
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -37,9 +35,8 @@ import { PageSEO } from '@/components/seo/PageSEO';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 
 interface Permission {
-  id: string;
   code: string;
-  name: string;
+  label: string;
   description: string | null;
   category: string;
   created_at: string;
@@ -62,7 +59,7 @@ export default function PermissionsPage() {
   const [editingPermission, setEditingPermission] = useState<Permission | null>(null);
   const [formData, setFormData] = useState({
     code: '',
-    name: '',
+    label: '',
     description: '',
     category: 'geral',
   });
@@ -79,7 +76,7 @@ export default function PermissionsPage() {
 
   const fetchPermissions = async (isCancelled: () => boolean = () => false) => {
     try {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from('permissions')
         .select('*')
         .order('category', { ascending: true });
@@ -102,20 +99,20 @@ export default function PermissionsPage() {
   const handleSubmit = async () => {
     try {
       if (editingPermission) {
-        const { error } = await db
+        const { error } = await supabase
           .from('permissions')
           .update(formData)
-          .eq('id', editingPermission.id);
+          .eq('code', editingPermission.code);
         if (error) throw error;
         toast({ title: 'Permissão atualizada com sucesso' });
       } else {
-        const { error } = await db.from('permissions').insert(formData);
+        const { error } = await supabase.from('permissions').insert(formData);
         if (error) throw error;
         toast({ title: 'Permissão criada com sucesso' });
       }
       setIsDialogOpen(false);
       setEditingPermission(null);
-      setFormData({ code: '', name: '', description: '', category: 'geral' });
+      setFormData({ code: '', label: '', description: '', category: 'geral' });
       fetchPermissions();
     } catch (error: unknown) {
       toast({
@@ -130,16 +127,16 @@ export default function PermissionsPage() {
     setEditingPermission(permission);
     setFormData({
       code: permission.code,
-      name: permission.name,
+      label: permission.label,
       description: permission.description || '',
       category: permission.category,
     });
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (code: string) => {
     try {
-      const { error } = await db.from('permissions').delete().eq('id', id);
+      const { error } = await supabase.from('permissions').delete().eq('code', code);
       if (error) throw error;
       toast({ title: 'Permissão excluída com sucesso' });
       fetchPermissions();
@@ -191,7 +188,7 @@ export default function PermissionsPage() {
                   <Button
                     onClick={() => {
                       setEditingPermission(null);
-                      setFormData({ code: '', name: '', description: '', category: 'geral' });
+                      setFormData({ code: '', label: '', description: '', category: 'geral' });
                     }}
                   >
                     <Plus className="mr-2 h-4 w-4" />
@@ -216,8 +213,8 @@ export default function PermissionsPage() {
                     <div className="space-y-2">
                       <Label>Nome</Label>
                       <Input
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        value={formData.label}
+                        onChange={(e) => setFormData({ ...formData, label: e.target.value })}
                         placeholder="ex: Visualizar Produtos"
                       />
                     </div>
@@ -275,11 +272,11 @@ export default function PermissionsPage() {
                         </TableHeader>
                         <TableBody>
                           {perms.map((perm) => (
-                            <TableRow key={perm.id}>
+                            <TableRow key={perm.code}>
                               <TableCell>
                                 <Badge variant="secondary">{perm.code}</Badge>
                               </TableCell>
-                              <TableCell>{perm.name}</TableCell>
+                              <TableCell>{perm.label}</TableCell>
                               <TableCell className="text-sm text-muted-foreground">
                                 {perm.description || '-'}
                               </TableCell>
@@ -297,7 +294,7 @@ export default function PermissionsPage() {
                                     variant="ghost"
                                     size="icon"
                                     aria-label="Excluir"
-                                    onClick={() => handleDelete(perm.id)}
+                                    onClick={() => handleDelete(perm.code)}
                                   >
                                     <Trash2 className="h-4 w-4 text-destructive" />
                                   </Button>

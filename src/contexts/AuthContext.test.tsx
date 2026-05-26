@@ -62,7 +62,7 @@ describe('AuthContext', () => {
 
       vi.mocked(supabase.auth.getSession).mockResolvedValue({
         data: { session: mockSession },
-      } as unknown);
+      } as unknown as Awaited<ReturnType<typeof supabase.auth.getSession>>);
       vi.mocked(supabase.auth.signOut).mockRejectedValue(new Error('Network error'));
 
       const { result } = renderHook(() => useAuth(), { wrapper });
@@ -96,7 +96,7 @@ describe('AuthContext', () => {
       const mockSession = { user: mockUser };
       vi.mocked(supabase.auth.getSession).mockResolvedValue({
         data: { session: mockSession },
-      } as unknown);
+      } as unknown as Awaited<ReturnType<typeof supabase.auth.getSession>>);
 
       const { result } = renderHook(() => useAuth(), { wrapper });
 

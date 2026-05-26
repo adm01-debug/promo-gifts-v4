@@ -24,15 +24,8 @@ interface VariantStock {
   color_name: string | null;
 }
 
-export function useKitStockValidation(
-  items: KitItem[],
-  box: KitBox | null,
-  kitQuantity: number,
-) {
-  const productIds = [
-    ...(box ? [box.id] : []),
-    ...items.map((i) => i.id),
-  ];
+export function useKitStockValidation(items: KitItem[], box: KitBox | null, kitQuantity: number) {
+  const productIds = [...(box ? [box.id] : []), ...items.map((i) => i.id)];
 
   const { data: stockData, isLoading } = useQuery({
     queryKey: ['kit-stock-validation', productIds.join(',')],

@@ -180,9 +180,11 @@ export function BulkImportDialog({ open, onOpenChange, onComplete }: BulkImportD
       const skuCount = allSkus.filter((s) => s === sku).length;
       if (skuCount > 1) warnings.push('SKU duplicado dentro do arquivo');
 
+      // `mapped` holds CSV/Excel values typed as `unknown`; they are coerced above,
+      // so assert the assembled row to the typed ImportRow shape.
       const importRow: ImportRow | undefined =
         errors.length === 0
-          ? {
+          ? ({
               sku,
               name: String(mapped.name).trim(),
               sale_price: mapped.sale_price ?? 0,
@@ -227,7 +229,7 @@ export function BulkImportDialog({ open, onOpenChange, onComplete }: BulkImportD
               is_kit: mapped.is_kit ?? null,
               gender: mapped.gender || null,
               dimensions: mapped.dimensions || null,
-            }
+            } as ImportRow)
           : undefined;
 
       results.push({

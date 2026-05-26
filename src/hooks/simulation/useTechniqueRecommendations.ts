@@ -118,7 +118,7 @@ export interface UseTechniqueRecommendationsResult {
 function extractKeywords(product: Product | null): string[] {
   if (!product) return [];
 
-  const text = [product.name, product.categoryName, product.brand, product.sku]
+  const text = [product.name, product.category?.name, product.sku]
     .filter(Boolean)
     .join(' ')
     .toLowerCase();

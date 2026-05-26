@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { type Product } from "@/hooks/products";
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import type { TablesUpdate } from '@/integrations/supabase/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { type Product } from '@/hooks/products';
 
-const LEGACY_STORAGE_KEY = "product-collections";
+const LEGACY_STORAGE_KEY = 'product-collections';
 
 export interface CollectionVariantInfo {
   color_name?: string | null;
@@ -41,11 +42,17 @@ export interface Collection {
 }
 
 const DEFAULT_COLORS = [
-  "#8B5CF6", "#EC4899", "#F59E0B", "#10B981",
-  "#3B82F6", "#EF4444", "#6366F1", "#14B8A6",
+  '#8B5CF6',
+  '#EC4899',
+  '#F59E0B',
+  '#10B981',
+  '#3B82F6',
+  '#EF4444',
+  '#6366F1',
+  '#14B8A6',
 ];
 
-const DEFAULT_ICONS = ["📁", "⭐", "🎁", "💼", "🎯", "💡", "🔥", "❤️"];
+const DEFAULT_ICONS = ['📁', '⭐', '🎁', '💼', '🎯', '💡', '🔥', '❤️'];
 
 interface DbCollectionRow {
   id: string;
@@ -76,19 +83,17 @@ interface DbCollectionItemRow {
 }
 
 /** Convert DB rows to Collection interface */
-function dbToCollection(
-  row: DbCollectionRow,
-  items: DbCollectionItemRow[]
-): Collection {
+function dbToCollection(row: DbCollectionRow, items: DbCollectionItemRow[]): Collection {
   const productItems: CollectionProductItem[] = items.map((item) => ({
     productId: item.product_id,
-    variant: item.color_name || item.color_hex || item.thumbnail_url
-      ? {
-          color_name: item.color_name,
-          color_hex: item.color_hex,
-          thumbnail: item.thumbnail_url,
-        }
-      : undefined,
+    variant:
+      item.color_name || item.color_hex || item.thumbnail_url
+        ? {
+            color_name: item.color_name,
+            color_hex: item.color_hex,
+            thumbnail: item.thumbnail_url,
+          }
+        : undefined,
     notes: item.notes || undefined,
     priceAtSave: item.price_at_save ?? null,
     addedAt: item.created_at ?? null,
@@ -99,7 +104,7 @@ function dbToCollection(
     name: row.name,
     description: row.description || undefined,
     color: row.icon_color || DEFAULT_COLORS[0],
-    icon: row.icon || "📁",
+    icon: row.icon || '📁',
     isFeatured: row.is_featured ?? false,
     clientId: row.client_id ?? null,
     clientName: row.client_name ?? null,
@@ -123,13 +128,13 @@ export function useCollections() {
     if (!user?.id) return;
 
     const { data: colRows, error } = await supabase
-      .from("collections")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
+      .from('collections')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
 
     if (error) {
-      console.error("Error loading collections:", error);
+      console.error('Error loading collections:', error);
       setIsLoaded(true);
       return;
     }
@@ -143,10 +148,10 @@ export function useCollections() {
     // Load all items for user's collections
     const colIds = colRows.map((c) => c.id);
     const { data: itemRows } = await supabase
-      .from("collection_items")
-      .select("*")
-      .in("collection_id", colIds)
-      .order("sort_order", { ascending: true });
+      .from('collection_items')
+      .select('*')
+      .in('collection_id', colIds)
+      .order('sort_order', { ascending: true });
 
     const itemsByCollection = new Map<string, DbCollectionItemRow[]>();
     (itemRows || []).forEach((item) => {
@@ -155,9 +160,7 @@ export function useCollections() {
       itemsByCollection.set(item.collection_id, list);
     });
 
-    const mapped = colRows.map((row) =>
-      dbToCollection(row, itemsByCollection.get(row.id) || [])
-    );
+    const mapped = colRows.map((row) => dbToCollection(row, itemsByCollection.get(row.id) || []));
 
     setCollections(mapped);
     setIsLoaded(true);
@@ -175,15 +178,15 @@ export function useCollections() {
           if (Array.isArray(legacyCollections) && legacyCollections.length > 0) {
             // Check if user already has DB collections
             const { count } = await supabase
-              .from("collections")
-              .select("*", { count: "exact", head: true })
-              .eq("user_id", user.id);
+              .from('collections')
+              .select('*', { count: 'exact', head: true })
+              .eq('user_id', user.id);
 
             if (count === 0) {
               // Migrate each collection
               for (const col of legacyCollections) {
                 const { data: newCol } = await supabase
-                  .from("collections")
+                  .from('collections')
                   .insert({
                     user_id: user.id,
                     name: col.name,
@@ -195,20 +198,28 @@ export function useCollections() {
                   .single();
 
                 if (newCol) {
-                  const items = (col.productItems || col.productIds?.map((id: string) => ({ productId: id })) || []);
+                  const items =
+                    col.productItems ||
+                    col.productIds?.map((id: string) => ({ productId: id })) ||
+                    [];
                   if (items.length > 0) {
-                    await supabase.from("collection_items").insert(
-                      items.map((item: { productId?: string; variant?: CollectionVariantInfo } | string, idx: number) => {
-                        const isObj = typeof item === 'object';
-                        return {
-                          collection_id: newCol.id,
-                          product_id: isObj ? item.productId : item,
-                          color_name: isObj ? item.variant?.color_name ?? null : null,
-                          color_hex: isObj ? item.variant?.color_hex ?? null : null,
-                          thumbnail_url: isObj ? item.variant?.thumbnail ?? null : null,
-                          sort_order: idx,
-                        };
-                      })
+                    await supabase.from('collection_items').insert(
+                      items.map(
+                        (
+                          item: { productId?: string; variant?: CollectionVariantInfo } | string,
+                          idx: number,
+                        ) => {
+                          const isObj = typeof item === 'object';
+                          return {
+                            collection_id: newCol.id,
+                            product_id: isObj ? item.productId : item,
+                            color_name: isObj ? (item.variant?.color_name ?? null) : null,
+                            color_hex: isObj ? (item.variant?.color_hex ?? null) : null,
+                            thumbnail_url: isObj ? (item.variant?.thumbnail ?? null) : null,
+                            sort_order: idx,
+                          };
+                        },
+                      ),
                     );
                   }
                 }
@@ -222,7 +233,7 @@ export function useCollections() {
           }
         }
       } catch (e) {
-        console.error("Error migrating collections:", e);
+        console.error('Error migrating collections:', e);
       }
 
       await loadCollections();
@@ -232,10 +243,18 @@ export function useCollections() {
   }, [user?.id, loadCollections]);
 
   const createCollection = useCallback(
-    (name: string, description?: string, color?: string, icon?: string, clientId?: string | null, clientName?: string | null): Collection => {
+    (
+      name: string,
+      description?: string,
+      color?: string,
+      icon?: string,
+      clientId?: string | null,
+      clientName?: string | null,
+    ): Collection => {
       const tempId = `temp-${Date.now()}`;
       const now = new Date().toISOString();
-      const chosenColor = color || DEFAULT_COLORS[Math.floor(Math.random() * DEFAULT_COLORS.length)];
+      const chosenColor =
+        color || DEFAULT_COLORS[Math.floor(Math.random() * DEFAULT_COLORS.length)];
 
       const newCollection: Collection = {
         id: tempId,
@@ -258,7 +277,7 @@ export function useCollections() {
       // Persist to DB
       if (user?.id) {
         supabase
-          .from("collections")
+          .from('collections')
           .insert({
             user_id: user.id,
             name,
@@ -276,8 +295,8 @@ export function useCollections() {
                 prev.map((c) =>
                   c.id === tempId
                     ? { ...c, id: data.id, createdAt: data.created_at, updatedAt: data.updated_at }
-                    : c
-                )
+                    : c,
+                ),
               );
             }
           });
@@ -285,21 +304,19 @@ export function useCollections() {
 
       return newCollection;
     },
-    [user?.id]
+    [user?.id],
   );
 
   const updateCollection = useCallback(
-    (id: string, updates: Partial<Omit<Collection, "id" | "createdAt">>) => {
+    (id: string, updates: Partial<Omit<Collection, 'id' | 'createdAt'>>) => {
       setCollections((prev) =>
         prev.map((col) =>
-          col.id === id
-            ? { ...col, ...updates, updatedAt: new Date().toISOString() }
-            : col
-        )
+          col.id === id ? { ...col, ...updates, updatedAt: new Date().toISOString() } : col,
+        ),
       );
 
       // Persist
-      const dbUpdates: Record<string, unknown> = {};
+      const dbUpdates: TablesUpdate<'collections'> = {};
       if (updates.name !== undefined) dbUpdates.name = updates.name;
       if (updates.description !== undefined) dbUpdates.description = updates.description;
       if (updates.color !== undefined) dbUpdates.icon_color = updates.color;
@@ -312,19 +329,24 @@ export function useCollections() {
       if (updates.isPublic !== undefined) dbUpdates.is_public = updates.isPublic;
 
       if (Object.keys(dbUpdates).length > 0) {
-        supabase.from("collections").update(dbUpdates).eq("id", id).then();
+        supabase.from('collections').update(dbUpdates).eq('id', id).then();
       }
     },
-    []
+    [],
   );
 
   const deleteCollection = useCallback((id: string) => {
     setCollections((prev) => prev.filter((col) => col.id !== id));
-    supabase.from("collections").delete().eq("id", id).then();
+    supabase.from('collections').delete().eq('id', id).then();
   }, []);
 
   const addProductToCollection = useCallback(
-    (collectionId: string, productId: string, variant?: CollectionVariantInfo, priceAtSave?: number | null) => {
+    (
+      collectionId: string,
+      productId: string,
+      variant?: CollectionVariantInfo,
+      priceAtSave?: number | null,
+    ) => {
       setCollections((prev) =>
         prev.map((col) => {
           if (col.id !== collectionId) return col;
@@ -335,11 +357,11 @@ export function useCollections() {
             productItems: [...col.productItems, { productId, variant }],
             updatedAt: new Date().toISOString(),
           };
-        })
+        }),
       );
 
       supabase
-        .from("collection_items")
+        .from('collection_items')
         .insert({
           collection_id: collectionId,
           product_id: productId,
@@ -351,59 +373,62 @@ export function useCollections() {
         } as never)
         .then();
     },
-    []
+    [],
   );
 
-  const restoreFromTrash = useCallback(async (collectionId: string, productId: string) => {
-    const { data: trashed } = await supabase
-      .from("collection_items_trash" as never)
-      .select("*")
-      .eq("collection_id", collectionId)
-      .eq("product_id", productId)
-      .order("deleted_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (!trashed) return false;
-    const t = trashed as Record<string, unknown>;
-    await supabase.from("collection_items").insert({
-      collection_id: collectionId,
-      product_id: productId,
-      color_name: t.color_name ?? null,
-      color_hex: t.color_hex ?? null,
-      thumbnail_url: t.thumbnail_url ?? null,
-      notes: t.notes ?? null,
-      price_at_save: t.price_at_save ?? null,
-      sort_order: t.sort_order ?? 0,
-    } as never);
-    await supabase.from("collection_items_trash" as never).delete().eq("id", t.id as string);
-    await loadCollections();
-    return true;
-  }, [loadCollections]);
-
-  const removeProductFromCollection = useCallback(
-    (collectionId: string, productId: string) => {
-      setCollections((prev) =>
-        prev.map((col) =>
-          col.id === collectionId
-            ? {
-                ...col,
-                productIds: col.productIds.filter((id) => id !== productId),
-                productItems: col.productItems.filter((item) => item.productId !== productId),
-                updatedAt: new Date().toISOString(),
-              }
-            : col
-        )
-      );
-
-      supabase
-        .from("collection_items")
+  const restoreFromTrash = useCallback(
+    async (collectionId: string, productId: string) => {
+      const { data: trashed } = await supabase
+        .from('collection_items_trash' as never)
+        .select('*')
+        .eq('collection_id', collectionId)
+        .eq('product_id', productId)
+        .order('deleted_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!trashed) return false;
+      const t = trashed as Record<string, unknown>;
+      await supabase.from('collection_items').insert({
+        collection_id: collectionId,
+        product_id: productId,
+        color_name: t.color_name ?? null,
+        color_hex: t.color_hex ?? null,
+        thumbnail_url: t.thumbnail_url ?? null,
+        notes: t.notes ?? null,
+        price_at_save: t.price_at_save ?? null,
+        sort_order: t.sort_order ?? 0,
+      } as never);
+      await supabase
+        .from('collection_items_trash' as never)
         .delete()
-        .eq("collection_id", collectionId)
-        .eq("product_id", productId)
-        .then();
+        .eq('id', t.id as string);
+      await loadCollections();
+      return true;
     },
-    []
+    [loadCollections],
   );
+
+  const removeProductFromCollection = useCallback((collectionId: string, productId: string) => {
+    setCollections((prev) =>
+      prev.map((col) =>
+        col.id === collectionId
+          ? {
+              ...col,
+              productIds: col.productIds.filter((id) => id !== productId),
+              productItems: col.productItems.filter((item) => item.productId !== productId),
+              updatedAt: new Date().toISOString(),
+            }
+          : col,
+      ),
+    );
+
+    supabase
+      .from('collection_items')
+      .delete()
+      .eq('collection_id', collectionId)
+      .eq('product_id', productId)
+      .then();
+  }, []);
 
   const addProductToMultipleCollections = useCallback(
     (productId: string, collectionIds: string[], variant?: CollectionVariantInfo) => {
@@ -418,7 +443,7 @@ export function useCollections() {
             };
           }
           return col;
-        })
+        }),
       );
 
       // Persist all
@@ -431,11 +456,14 @@ export function useCollections() {
         sort_order: 0,
       }));
 
-      supabase.from("collection_items").upsert(inserts, {
-        onConflict: "collection_id,product_id,color_name",
-      }).then();
+      supabase
+        .from('collection_items')
+        .upsert(inserts, {
+          onConflict: 'collection_id,product_id,color_name',
+        })
+        .then();
     },
-    []
+    [],
   );
 
   const getCollectionProductVariant = useCallback(
@@ -445,7 +473,7 @@ export function useCollections() {
       const item = collection.productItems.find((i) => i.productId === productId);
       return item?.variant;
     },
-    [collections]
+    [collections],
   );
 
   const getCollectionProductItems = useCallback(
@@ -453,25 +481,22 @@ export function useCollections() {
       const collection = collections.find((col) => col.id === collectionId);
       return collection?.productItems || [];
     },
-    [collections]
+    [collections],
   );
 
   const getCollectionProductsFromMap = useCallback(
-    (
-      collectionId: string,
-      getProductsByIds: (ids: string[]) => Product[]
-    ): Product[] => {
+    (collectionId: string, getProductsByIds: (ids: string[]) => Product[]): Product[] => {
       const collection = collections.find((col) => col.id === collectionId);
       if (!collection) return [];
       return getProductsByIds(collection.productIds);
     },
-    [collections]
+    [collections],
   );
 
   const getProductCollections = useCallback(
     (productId: string): Collection[] =>
       collections.filter((col) => col.productIds.includes(productId)),
-    [collections]
+    [collections],
   );
 
   const isProductInCollection = useCallback(
@@ -479,39 +504,36 @@ export function useCollections() {
       const collection = collections.find((col) => col.id === collectionId);
       return collection?.productIds.includes(productId) ?? false;
     },
-    [collections]
+    [collections],
   );
 
-  const reorderProducts = useCallback(
-    (collectionId: string, orderedProductIds: string[]) => {
-      setCollections((prev) =>
-        prev.map((col) => {
-          if (col.id !== collectionId) return col;
-          const itemMap = new Map(col.productItems.map((item) => [item.productId, item]));
-          const reordered = orderedProductIds
-            .map((pid) => itemMap.get(pid))
-            .filter(Boolean) as CollectionProductItem[];
-          return {
-            ...col,
-            productIds: reordered.map((i) => i.productId),
-            productItems: reordered,
-            updatedAt: new Date().toISOString(),
-          };
-        })
-      );
+  const reorderProducts = useCallback((collectionId: string, orderedProductIds: string[]) => {
+    setCollections((prev) =>
+      prev.map((col) => {
+        if (col.id !== collectionId) return col;
+        const itemMap = new Map(col.productItems.map((item) => [item.productId, item]));
+        const reordered = orderedProductIds
+          .map((pid) => itemMap.get(pid))
+          .filter(Boolean) as CollectionProductItem[];
+        return {
+          ...col,
+          productIds: reordered.map((i) => i.productId),
+          productItems: reordered,
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+    );
 
-      // Persist sort_order to DB
-      orderedProductIds.forEach((pid, idx) => {
-        supabase
-          .from("collection_items")
-          .update({ sort_order: idx })
-          .eq("collection_id", collectionId)
-          .eq("product_id", pid)
-          .then();
-      });
-    },
-    []
-  );
+    // Persist sort_order to DB
+    orderedProductIds.forEach((pid, idx) => {
+      supabase
+        .from('collection_items')
+        .update({ sort_order: idx })
+        .eq('collection_id', collectionId)
+        .eq('product_id', pid)
+        .then();
+    });
+  }, []);
 
   const updateProductNotes = useCallback(
     (collectionId: string, productId: string, notes: string) => {
@@ -521,20 +543,20 @@ export function useCollections() {
           return {
             ...col,
             productItems: col.productItems.map((item) =>
-              item.productId === productId ? { ...item, notes } : item
+              item.productId === productId ? { ...item, notes } : item,
             ),
           };
-        })
+        }),
       );
 
       supabase
-        .from("collection_items")
+        .from('collection_items')
         .update({ notes })
-        .eq("collection_id", collectionId)
-        .eq("product_id", productId)
+        .eq('collection_id', collectionId)
+        .eq('product_id', productId)
         .then();
     },
-    []
+    [],
   );
 
   return {

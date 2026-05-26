@@ -23,11 +23,10 @@ vi.mock('../ConfigurationPanelV6', () => ({
   }) => {
     // Simula cálculo de preço baseado na técnica
     const mockPrice: CustomizationPriceResponseV6 = {
-      pricePerUnit: props.technique.technique_id === 'tech-A' ? 1.5 : 2.5,
-      setupPrice: 50,
-      totalPrice: 200,
-      isPossible: true,
-      pricingDetails: [],
+      success: true,
+      preco_unitario: props.technique.technique_id === 'tech-A' ? 1.5 : 2.5,
+      setup_total: 50,
+      total_cobrado: 200,
     };
 
     return (
@@ -38,7 +37,7 @@ vi.mock('../ConfigurationPanelV6', () => ({
         data-initial-height={props.initialHeight ?? ''}
         data-initial-colors={props.initialColors ?? ''}
       >
-        <div data-testid="mock-price-value">{mockPrice.pricePerUnit}</div>
+        <div data-testid="mock-price-value">{mockPrice.preco_unitario}</div>
         <button
           type="button"
           data-testid="emit-dims"

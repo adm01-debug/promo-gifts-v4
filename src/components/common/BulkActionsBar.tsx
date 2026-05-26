@@ -72,12 +72,7 @@ export function BulkActionsBar({
           {showSelectAllBanner && totalCount && onSelectAll && (
             <div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-muted/50 px-4 py-1.5 text-sm text-muted-foreground">
               <span>Todos desta página estão selecionados.</span>
-              <Button
-                variant="link-primary"
-                size="sm"
-                className="h-auto p-0 text-xs"
-                onClick={onSelectAll}
-              >
+              <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={onSelectAll}>
                 Selecionar todos os {totalCount}
               </Button>
             </div>

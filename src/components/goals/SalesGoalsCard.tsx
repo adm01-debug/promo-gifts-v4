@@ -1,44 +1,38 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Target, Plus, TrendingUp, Trophy, Calendar, Sparkles } from "lucide-react";
-import { useSalesGoals, type CreateGoalInput } from "@/hooks/intelligence";
-import { format, differenceInDays } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Target, Plus, TrendingUp, Trophy, Calendar, Sparkles } from 'lucide-react';
+import { useSalesGoals, type CreateGoalInput } from '@/hooks/intelligence';
+import { format, differenceInDays } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 export function SalesGoalsCard() {
-  const {
-    activeGoal,
-    isLoading,
-    createGoal,
-    getProgress,
-    getProgressColor,
-    isCreating,
-  } = useSalesGoals();
+  const { activeGoal, isLoading, createGoal, getProgress, getProgressColor, isCreating } =
+    useSalesGoals();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState<CreateGoalInput>({
-    goal_type: "monthly",
+    goal_type: 'monthly',
     target_value: 50000,
     target_quotes: 20,
     target_conversions: 10,
@@ -49,7 +43,7 @@ export function SalesGoalsCard() {
     await createGoal(formData);
     setIsDialogOpen(false);
     setFormData({
-      goal_type: "monthly",
+      goal_type: 'monthly',
       target_value: 50000,
       target_quotes: 20,
       target_conversions: 10,
@@ -57,15 +51,15 @@ export function SalesGoalsCard() {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
     }).format(value);
   };
 
   if (isLoading) {
     return (
-      <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
         <CardHeader className="pb-3">
           <Skeleton className="h-6 w-40" />
         </CardHeader>
@@ -79,13 +73,13 @@ export function SalesGoalsCard() {
 
   if (!activeGoal) {
     return (
-      <Card className="bg-gradient-to-br from-muted/50 to-muted/30 border-dashed">
+      <Card className="border-dashed bg-gradient-to-br from-muted/50 to-muted/30">
         <CardContent className="flex flex-col items-center justify-center py-8 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
             <Target className="h-7 w-7 text-primary" />
           </div>
-          <h3 className="font-display font-semibold text-foreground mb-1">Defina sua Meta</h3>
-          <p className="text-sm text-muted-foreground mb-4 max-w-xs">
+          <h3 className="mb-1 font-display font-semibold text-foreground">Defina sua Meta</h3>
+          <p className="mb-4 max-w-xs text-sm text-muted-foreground">
             Crie uma meta de vendas para acompanhar seu progresso!
           </p>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -102,12 +96,14 @@ export function SalesGoalsCard() {
                   Nova Meta de Vendas
                 </DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+              <form onSubmit={handleSubmit} className="mt-4 space-y-4">
                 <div className="space-y-2">
                   <Label>Período</Label>
                   <Select
                     value={formData.goal_type}
-                    onValueChange={(v) => setFormData({ ...formData, goal_type: v as string })}
+                    onValueChange={(v) =>
+                      setFormData({ ...formData, goal_type: v as CreateGoalInput['goal_type'] })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -161,7 +157,7 @@ export function SalesGoalsCard() {
                 </div>
 
                 <Button type="submit" className="w-full" disabled={isCreating}>
-                  {isCreating ? "Criando..." : "Criar Meta"}
+                  {isCreating ? 'Criando...' : 'Criar Meta'}
                 </Button>
               </form>
             </DialogContent>
@@ -182,23 +178,23 @@ export function SalesGoalsCard() {
     : 0;
 
   const goalTypeLabels = {
-    weekly: "Semanal",
-    monthly: "Mensal",
-    quarterly: "Trimestral",
+    weekly: 'Semanal',
+    monthly: 'Mensal',
+    quarterly: 'Trimestral',
   };
 
   return (
     <Card
       className={cn(
-        "relative overflow-hidden transition-all",
+        'relative overflow-hidden transition-all',
         activeGoal.is_achieved
-          ? "bg-gradient-to-br from-success/10 to-success/5 border-success/30"
-          : "bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20"
+          ? 'border-success/30 bg-gradient-to-br from-success/10 to-success/5'
+          : 'border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10',
       )}
     >
       {activeGoal.is_achieved && (
-        <div className="absolute top-2 right-2">
-          <Badge variant="default" className="bg-success gap-1">
+        <div className="absolute right-2 top-2">
+          <Badge variant="default" className="gap-1 bg-success">
             <Trophy className="h-3 w-3" />
             Atingida!
           </Badge>
@@ -209,15 +205,12 @@ export function SalesGoalsCard() {
         <CardTitle className="flex items-center gap-2 text-lg">
           <div
             className={cn(
-              "p-2 rounded-lg",
-              activeGoal.is_achieved ? "bg-success/20" : "bg-primary/20"
+              'rounded-lg p-2',
+              activeGoal.is_achieved ? 'bg-success/20' : 'bg-primary/20',
             )}
           >
             <Target
-              className={cn(
-                "h-5 w-5",
-                activeGoal.is_achieved ? "text-success" : "text-primary"
-              )}
+              className={cn('h-5 w-5', activeGoal.is_achieved ? 'text-success' : 'text-primary')}
             />
           </div>
           Meta {goalTypeLabels[activeGoal.goal_type]}
@@ -241,60 +234,59 @@ export function SalesGoalsCard() {
           <Progress
             value={progress}
             className={cn(
-              "h-3",
-              progressColor === "success" && "[&>div]:bg-success",
-              progressColor === "warning" && "[&>div]:bg-warning",
-              progressColor === "destructive" && "[&>div]:bg-destructive"
+              'h-3',
+              progressColor === 'success' && '[&>div]:bg-success',
+              progressColor === 'warning' && '[&>div]:bg-warning',
+              progressColor === 'destructive' && '[&>div]:bg-destructive',
             )}
           />
-          <p className="text-xs text-muted-foreground text-right">{progress.toFixed(1)}%</p>
+          <p className="text-right text-xs text-muted-foreground">{progress.toFixed(1)}%</p>
         </div>
 
         {/* Secondary Metrics */}
         <div className="grid grid-cols-2 gap-3">
           {activeGoal.target_quotes > 0 && (
-            <div className="p-3 rounded-lg bg-background/50">
-              <div className="flex items-center gap-2 mb-1">
+            <div className="rounded-lg bg-background/50 p-3">
+              <div className="mb-1 flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground">Orçamentos</span>
               </div>
               <p className="font-semibold">
                 {activeGoal.current_quotes}/{activeGoal.target_quotes}
               </p>
-              <Progress value={quotesProgress} className="h-1.5 mt-1" />
+              <Progress value={quotesProgress} className="mt-1 h-1.5" />
             </div>
           )}
           {activeGoal.target_conversions > 0 && (
-            <div className="p-3 rounded-lg bg-background/50">
-              <div className="flex items-center gap-2 mb-1">
+            <div className="rounded-lg bg-background/50 p-3">
+              <div className="mb-1 flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground">Conversões</span>
               </div>
               <p className="font-semibold">
                 {activeGoal.current_conversions}/{activeGoal.target_conversions}
               </p>
-              <Progress value={conversionsProgress} className="h-1.5 mt-1" />
+              <Progress value={conversionsProgress} className="mt-1 h-1.5" />
             </div>
           )}
         </div>
 
         {/* Time Remaining */}
-        <div className="flex items-center gap-2 pt-2 border-t border-border/50">
+        <div className="flex items-center gap-2 border-t border-border/50 pt-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm text-muted-foreground">
             {daysRemaining > 0 ? (
               <>
-                <span className="font-medium text-foreground">{daysRemaining}</span> dias
-                restantes
+                <span className="font-medium text-foreground">{daysRemaining}</span> dias restantes
               </>
             ) : daysRemaining === 0 ? (
-              <span className="text-warning font-medium">Último dia!</span>
+              <span className="font-medium text-warning">Último dia!</span>
             ) : (
               <span className="text-muted-foreground">Período encerrado</span>
             )}
           </span>
           <span className="ml-auto text-xs text-muted-foreground">
-            até {format(new Date(activeGoal.end_date), "dd/MM", { locale: ptBR })}
+            até {format(new Date(activeGoal.end_date), 'dd/MM', { locale: ptBR })}
           </span>
         </div>
       </CardContent>

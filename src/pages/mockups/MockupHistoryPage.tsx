@@ -53,7 +53,7 @@ export default function MockupHistoryPage() {
       let query = supabase
         .from('generated_mockups')
         .select('*', { count: 'exact' })
-        .eq('seller_id', userId)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .range((page - 1) * pageSize, page * pageSize - 1);
 
@@ -65,7 +65,10 @@ export default function MockupHistoryPage() {
 
       const { data, error, count } = await query;
       if (error) throw error;
-      return { mockups: data as GeneratedMockup[], totalCount: count || 0 };
+      // The DB row (generated_mockups) carries some fields (client_name, location_name,
+      // logo dims) inside area_config rather than as columns, so the row and the view
+      // model don't structurally overlap — bridge via unknown.
+      return { mockups: (data ?? []) as unknown as GeneratedMockup[], totalCount: count || 0 };
     },
     enabled: !!userId,
     staleTime: 1000 * 60 * 5, // 5 minutos

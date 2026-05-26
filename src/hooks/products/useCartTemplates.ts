@@ -4,6 +4,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
@@ -69,7 +70,7 @@ export function useCartTemplates() {
         user_id: userId,
         name,
         description: description || null,
-        items: items as unknown as Record<string, unknown>[],
+        items: items as unknown as Json,
       });
       if (error) throw error;
     },

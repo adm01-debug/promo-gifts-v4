@@ -51,7 +51,7 @@ function normalizeRole(raw: string | null | undefined): RoleName {
  * (mantemos os enums legados nessa tabela enquanto a migração não desce).
  */
 function toDbRole(role: RoleName): 'admin' | 'manager' | 'vendedor' {
-  if (role === 'dev') return 'admin';        // dev herda permissões de admin no banco
+  if (role === 'dev') return 'admin'; // dev herda permissões de admin no banco
   if (role === 'supervisor') return 'manager';
   return 'vendedor';
 }
@@ -131,7 +131,7 @@ export function useRBAC() {
     return permissions.some(
       (p) =>
         (p.action === '*' || p.action === action) &&
-        (p.resource === '*' || p.resource === resource)
+        (p.resource === '*' || p.resource === resource),
     );
   };
 

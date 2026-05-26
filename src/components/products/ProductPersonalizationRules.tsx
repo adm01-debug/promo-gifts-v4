@@ -277,22 +277,27 @@ export function ProductPersonalizationRules({
             id: loc.id,
             code: loc.location_code,
             name: loc.location_name,
-            maxWidth: loc.max_width_cm,
-            maxHeight: loc.max_height_cm,
-            maxArea: loc.max_area_cm2,
-            areaImageUrl: loc.area_image_url,
+            maxWidth: loc.max_width_cm ?? null,
+            maxHeight: loc.max_height_cm ?? null,
+            maxArea: loc.max_area_cm2 ?? null,
+            areaImageUrl: loc.area_image_url ?? null,
             techniques: ((techniques || []) as DbTechnique[])
-              .map((tech: DbTechnique) => ({
-                id: tech.id || tech.personalization_techniques?.id,
-                name: tech.name || tech.personalization_techniques?.name,
-                code: tech.code || tech.personalization_techniques?.code,
-                description: tech.description || tech.personalization_techniques?.description,
-                estimatedDays:
-                  tech.estimatedDays || tech.personalization_techniques?.estimated_days,
-                maxColors: tech.max_colors,
-                isDefault: tech.is_default,
-              }))
-              .filter((t: { id?: string }) => t.id),
+              .map((tech: DbTechnique): TechniqueInfo | null => {
+                const id = tech.id || tech.personalization_techniques?.id;
+                if (!id) return null;
+                return {
+                  id,
+                  name: tech.name || tech.personalization_techniques?.name || '',
+                  code: tech.code || tech.personalization_techniques?.code || '',
+                  description:
+                    tech.description ?? tech.personalization_techniques?.description ?? null,
+                  estimatedDays:
+                    tech.estimatedDays ?? tech.personalization_techniques?.estimated_days ?? null,
+                  maxColors: tech.max_colors ?? null,
+                  isDefault: tech.is_default ?? false,
+                };
+              })
+              .filter((t): t is TechniqueInfo => t !== null),
           };
         }),
       };

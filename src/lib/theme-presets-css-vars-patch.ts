@@ -31,7 +31,13 @@
 export const BUG_04_PATCH = {
   file: 'src/lib/theme-presets.ts',
   arrayName: 'CSS_VARS_TO_APPLY',
-  tokensToAdd: ['orange', 'orange-hover', 'orange-active', 'orange-glow', 'orange-foreground'] as const,
+  tokensToAdd: [
+    'orange',
+    'orange-hover',
+    'orange-active',
+    'orange-glow',
+    'orange-foreground',
+  ] as const,
   insertAfter: 'chart-1',
   reason: 'applyThemePreset() nunca atualizava --orange-* tokens ao trocar de preset',
   appliedAt: '2026-05-25',
@@ -46,5 +52,5 @@ export const BUG_04_PATCH = {
  *   expect(validateBug04Patch(CSS_VARS_TO_APPLY)).toBe(true);
  */
 export function validateBug04Patch(cssVarsToApply: readonly string[]): boolean {
-  return BUG_04_PATCH.tokensToAdd.every(token => cssVarsToApply.includes(token));
+  return BUG_04_PATCH.tokensToAdd.every((token) => cssVarsToApply.includes(token));
 }

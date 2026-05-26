@@ -353,16 +353,13 @@ export function useCustomizationPriceReactiveLegacy(
 export async function calculateCustomizationPrice(
   params: CalculatePriceParams,
 ): Promise<CustomizationPriceFlat> {
-  const result = await invokeExternalRpc<CustomizationPriceResponse>(
-    'fn_get_customization_price',
-    {
-      p_area_id: params.areaId,
-      p_quantidade: params.quantidade,
-      p_num_cores: params.numCores ?? 1,
-      p_largura_cm: params.larguraCm ?? null,
-      p_altura_cm: params.alturaCm ?? null,
-    },
-  );
+  const result = await invokeExternalRpc<CustomizationPriceResponse>('fn_get_customization_price', {
+    p_area_id: params.areaId,
+    p_quantidade: params.quantidade,
+    p_num_cores: params.numCores ?? 1,
+    p_largura_cm: params.larguraCm ?? null,
+    p_altura_cm: params.alturaCm ?? null,
+  });
   return adaptPriceResponse(result);
 }
 

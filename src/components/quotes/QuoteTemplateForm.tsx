@@ -56,11 +56,40 @@ export function QuoteTemplateForm({
 
     setSaving(true);
     try {
-      let result;
+      let result: QuoteTemplate | null;
       if (isEditing) {
         result = await updateTemplate(template.id, formData);
       } else {
-        result = await createTemplate(formData);
+        const created = await createTemplate(formData);
+        // createTemplate returns the raw DB row; normalize it to QuoteTemplate
+        result = created
+          ? {
+              id: created.id,
+              seller_id: created.seller_id ?? '',
+              name: created.name,
+              description: created.description ?? undefined,
+              is_default: created.is_default ?? false,
+              template_data:
+                created.template_data &&
+                typeof created.template_data === 'object' &&
+                !Array.isArray(created.template_data)
+                  ? (created.template_data as Record<string, unknown>)
+                  : {},
+              // DB stores items as JSON; matches the hook's own transformTemplates mapping.
+              items: Array.isArray(created.items)
+                ? (created.items as unknown as QuoteTemplateItem[])
+                : [],
+              discount_percent: created.discount_percent ?? 0,
+              discount_amount: created.discount_amount ?? 0,
+              notes: created.notes ?? undefined,
+              internal_notes: created.internal_notes ?? undefined,
+              payment_terms: created.payment_terms ?? undefined,
+              delivery_time: created.delivery_time ?? undefined,
+              validity_days: created.validity_days ?? 30,
+              created_at: created.created_at ?? '',
+              updated_at: created.updated_at ?? '',
+            }
+          : null;
       }
       onSave?.(result);
     } finally {

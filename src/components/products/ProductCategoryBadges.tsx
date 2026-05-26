@@ -1,14 +1,23 @@
-import { useNavigate } from "react-router-dom";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Badge } from "@/components/ui/badge";
-import { Package, Palette, Sparkles } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { getCategoryIcon, useCategoryIcons } from "@/hooks/products/useCategoryIcons";
-import type { Category } from "@/data/mockData";
+import { useNavigate } from 'react-router-dom';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
+import { Package, Palette, Sparkles } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { getCategoryIcon, useCategoryIcons } from '@/hooks/products/useCategoryIcons';
+
+/**
+ * Categoria/grupo exibido como badge. Aceita id string (UUID) ou numérico,
+ * espelhando os shapes reais de `Product.category` e `Product.groups`.
+ */
+interface CategoryBadgeItem {
+  id: string | number;
+  name: string;
+  icon?: string;
+}
 
 interface ProductCategoryBadgesProps {
-  category: Category;
-  groups?: Category[];
+  category: CategoryBadgeItem;
+  groups?: CategoryBadgeItem[];
   className?: string;
   showLabels?: boolean;
   // UUID real da categoria (para deep-link correto ao Super Filtro)
@@ -29,43 +38,41 @@ interface ProductCategoryBadgesProps {
  * Combina a categoria principal com grupos adicionais
  * Inclui link opcional para o simulador de personalização
  */
-export function ProductCategoryBadges({ 
-  category, 
-  groups, 
+export function ProductCategoryBadges({
+  category,
+  groups,
   className,
-  showLabels = false,
   categoryUuid,
   productId,
   productName,
   productSku,
   productPrice,
   productImageUrl,
-  productMinQuantity,
   showPersonalizationLink = true,
   isKit = false,
 }: ProductCategoryBadgesProps) {
   const navigate = useNavigate();
   const { data: categoryIcons = [] } = useCategoryIcons();
-  
+
   // Combinar categoria principal com grupos adicionais (sem duplicatas)
-  const allCategories: Category[] = [];
-  
+  const allCategories: CategoryBadgeItem[] = [];
+
   if (category) {
     allCategories.push(category);
   }
-  
+
   if (groups && groups.length > 0) {
-    groups.forEach(group => {
-      if (group && !allCategories.some(c => c.id === group.id)) {
+    groups.forEach((group) => {
+      if (group && !allCategories.some((c) => c.id === group.id)) {
         allCategories.push(group);
       }
     });
   }
 
   if (allCategories.length === 0) return null;
-  
+
   // Função para obter ícone da categoria do Supabase ou usar o local
-  const getIcon = (cat: Category) => {
+  const getIcon = (cat: CategoryBadgeItem) => {
     // Primeiro tenta buscar do Supabase
     const supabaseIcon = getCategoryIcon(cat.name, categoryIcons);
     if (supabaseIcon !== '📦') return supabaseIcon;
@@ -76,7 +83,7 @@ export function ProductCategoryBadges({
   // Navegar para o simulador com o produto pré-selecionado
   const handlePersonalizationClick = () => {
     if (!productId) return;
-    
+
     // Criar objeto com dados do produto para passar via state
     const productData = {
       id: productId,
@@ -86,17 +93,17 @@ export function ProductCategoryBadges({
       imageUrl: productImageUrl,
       categoryName: category?.name,
     };
-    
+
     // Navegar passando o produto via state
-    navigate('/simulador', { 
-      state: { 
-        preSelectedProduct: productData 
-      } 
+    navigate('/simulador', {
+      state: {
+        preSelectedProduct: productData,
+      },
     });
   };
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-1.5", className)}>
+    <div className={cn('flex flex-wrap items-center gap-1.5', className)}>
       {allCategories.map((cat) => (
         <Tooltip key={cat.id}>
           <TooltipTrigger asChild>
@@ -104,9 +111,9 @@ export function ProductCategoryBadges({
               variant="secondary"
               onClick={() => navigate(`/filtros?categories=${categoryUuid || cat.id}`)}
               className={cn(
-                "px-2.5 py-1 text-sm font-medium cursor-pointer",
-                "bg-secondary/80 hover:bg-secondary border border-border/50",
-                "transition-all duration-200 hover:scale-105"
+                'cursor-pointer px-2.5 py-1 text-sm font-medium',
+                'border border-border/50 bg-secondary/80 hover:bg-secondary',
+                'transition-all duration-200 hover:scale-105',
               )}
             >
               <span className="mr-1.5">{getIcon(cat)}</span>
@@ -127,13 +134,13 @@ export function ProductCategoryBadges({
               variant="outline"
               onClick={handlePersonalizationClick}
               className={cn(
-                "px-2.5 py-1 text-sm font-medium cursor-pointer",
-                "border-primary/50 bg-primary/10 hover:bg-primary/20",
-                "text-primary hover:text-primary",
-                "transition-all duration-200 hover:scale-105 hover:border-primary"
+                'cursor-pointer px-2.5 py-1 text-sm font-medium',
+                'border-primary/50 bg-primary/10 hover:bg-primary/20',
+                'text-primary hover:text-primary',
+                'transition-all duration-200 hover:scale-105 hover:border-primary',
               )}
             >
-              <Palette className="h-3.5 w-3.5 mr-1.5" />
+              <Palette className="mr-1.5 h-3.5 w-3.5" />
               <span className="text-xs">Personalização</span>
             </Badge>
           </TooltipTrigger>
@@ -143,26 +150,32 @@ export function ProductCategoryBadges({
         </Tooltip>
       )}
 
-
       {/* Visualizar com Logo */}
       {productId && (
         <Tooltip>
           <TooltipTrigger asChild>
             <Badge
               variant="outline"
-              onClick={() => navigate('/mockup-generator', {
-                state: {
-                  preSelectedProduct: { id: productId, name: productName, sku: productSku, imageUrl: productImageUrl }
-                }
-              })}
+              onClick={() =>
+                navigate('/mockup-generator', {
+                  state: {
+                    preSelectedProduct: {
+                      id: productId,
+                      name: productName,
+                      sku: productSku,
+                      imageUrl: productImageUrl,
+                    },
+                  },
+                })
+              }
               className={cn(
-                "px-2.5 py-1 text-sm font-medium cursor-pointer",
-                "border-success/50 bg-success/15 hover:bg-success/25",
-                "text-success hover:text-success/80",
-                "transition-all duration-200 hover:scale-105 hover:border-success"
+                'cursor-pointer px-2.5 py-1 text-sm font-medium',
+                'border-success/50 bg-success/15 hover:bg-success/25',
+                'text-success hover:text-success/80',
+                'transition-all duration-200 hover:scale-105 hover:border-success',
               )}
             >
-              <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+              <Sparkles className="mr-1.5 h-3.5 w-3.5" />
               <span className="text-xs">Visualizar com Logo</span>
             </Badge>
           </TooltipTrigger>
@@ -180,13 +193,13 @@ export function ProductCategoryBadges({
               variant="outline"
               onClick={() => navigate(`/kit-builder?product=${productId}`)}
               className={cn(
-                "px-2.5 py-1 text-sm font-medium cursor-pointer",
-                "border-warning/50 bg-warning/15 hover:bg-warning/25",
-                "text-warning hover:text-warning",
-                "transition-all duration-200 hover:scale-105 hover:border-warning"
+                'cursor-pointer px-2.5 py-1 text-sm font-medium',
+                'border-warning/50 bg-warning/15 hover:bg-warning/25',
+                'text-warning hover:text-warning',
+                'transition-all duration-200 hover:scale-105 hover:border-warning',
               )}
             >
-              <Package className="h-3.5 w-3.5 mr-1.5" />
+              <Package className="mr-1.5 h-3.5 w-3.5" />
               <span className="text-xs">Monte seu Kit</span>
             </Badge>
           </TooltipTrigger>
