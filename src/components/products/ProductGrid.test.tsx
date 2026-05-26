@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { ProductGrid } from './ProductGrid';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ProductCardSkeleton } from '@/components/loading/ModernSkeletons';
 
 // Mock components that require complex context
 vi.mock('@/components/ui/tooltip', () => ({
