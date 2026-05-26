@@ -229,7 +229,7 @@ export function NoveltyProductGrid() {
                 : `${getGridColsClass(gridColumns)} ${getGridGapClass(gridColumns)}`,
             )}
           >
-            {Array.from({ length: 10 }).map((_, i) => (
+            {Array.from({ length: 15 }).map((_, i) => (
               <ProductCardSkeleton key={i} variant={viewMode === 'list' ? 'compact' : 'default'} />
             ))}
           </div>
