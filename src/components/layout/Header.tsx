@@ -215,7 +215,7 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
           </Button>
 
           {/* ── Cluster 1: Transacional (carrinho, notificações, alertas) ── */}
-          <div className="flex items-center gap-1 rounded-2xl border border-border/20 bg-muted/30 px-1.5 py-1 sm:gap-1.5">
+          <div className="flex items-center gap-1 px-1.5 py-1 sm:gap-1.5">
             <CartHeaderButton />
             <div className="mx-0.5 h-4 w-px bg-border/40" />
             <DiscountApprovalHeaderBadge />
