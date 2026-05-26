@@ -240,10 +240,12 @@ export async function callAiWithTracking(options: {
       const errMsg = (err as Error)?.message ?? "";
       const isNoRouting = errMsg.includes("No active routing") || errMsg.includes("Nenhum routing ativo");
       const isNoCapabilityMatch = errMsg.includes("No valid models satisfy") || errMsg.includes("Nenhum modelo satisfaz");
+      // Fallback to legacy when providers lack credentials (no API key configured for any provider)
+      const isAllMissingCredentials = errMsg.includes("Todos os providers falharam") && errMsg.includes("missing_credential");
 
-      if (isNoRouting || isNoCapabilityMatch) {
+      if (isNoRouting || isNoCapabilityMatch || isAllMissingCredentials) {
         console.log(
-          `[ai-usage] Router not configured for "${functionName}" (${isNoRouting ? "no_routing" : "no_capability_match"}). Falling back to legacy Lovable path.`,
+          `[ai-usage] Router unavailable for "${functionName}" (${isNoRouting ? "no_routing" : isNoCapabilityMatch ? "no_capability_match" : "missing_credentials"}). Falling back to legacy Lovable path.`,
         );
         // continua para path legacy abaixo
       } else {
