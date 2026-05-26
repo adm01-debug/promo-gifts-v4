@@ -22,6 +22,77 @@ env:
   ARTIFACT_RETENTION_DAYS: "14"
 
 jobs:
+  detect-changes:
+    name: Detect changed scopes
+    runs-on: ubuntu-latest
+    outputs:
+      non_critical_changed: ${{ steps.filter.outputs.non_critical }}
+      hooks_changed: ${{ steps.filter.outputs.hooks }}
+      price_freshness_changed: ${{ steps.filter.outputs.price_freshness }}
+      cloud_status_changed: ${{ steps.filter.outputs.cloud_status }}
+      theme_changed: ${{ steps.filter.outputs.theme }}
+      edge_functions_changed: ${{ steps.filter.outputs.edge_functions }}
+      ref_warning_changed: ${{ steps.filter.outputs.ref_warning }}
+      elite_changed: ${{ steps.filter.outputs.elite }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            non_critical:
+              - 'tests/hooks/**'
+              - 'src/hooks/**'
+              - 'tests/utils/price-freshness*.test.ts'
+              - 'tests/components/PriceFreshnessBadge*.test.tsx'
+              - 'src/utils/price-freshness.ts'
+              - 'src/components/products/PriceFreshnessBadge.tsx'
+              - 'src/hooks/ui/useCloudStatus.ts'
+              - 'src/components/**/CloudStatus*'
+              - 'supabase/functions/**'
+              - 'tests/admin/**'
+              - 'src/pages/admin/**'
+              - 'tests/theme/**'
+              - 'src/lib/theme-presets.ts'
+              - 'src/lib/theme-presets.test.ts'
+              - 'src/components/theme/**'
+              - 'e2e/flows/elite-ux-validation.spec.ts'
+              - 'playwright.config.ts'
+            hooks:
+              - 'tests/hooks/**'
+              - 'src/hooks/**'
+            price_freshness:
+              - 'tests/utils/price-freshness*.test.ts'
+              - 'tests/components/PriceFreshnessBadge*.test.tsx'
+              - 'src/utils/price-freshness.ts'
+              - 'src/components/products/PriceFreshnessBadge.tsx'
+            cloud_status:
+              - 'src/hooks/ui/useCloudStatus.ts'
+              - 'src/components/**/CloudStatus*'
+              - 'tests/**/cloud-status*.test.ts*'
+            edge_functions:
+              - 'supabase/functions/**'
+              - 'scripts/typecheck-edge-functions.mjs'
+            ref_warning:
+              - 'tests/admin/**'
+              - 'scripts/check-route-ref-usage.mjs'
+              - 'scripts/check-aschild-nesting.mjs'
+              - 'scripts/check-route-error-element.mjs'
+              - 'src/pages/admin/**'
+            theme:
+              - 'tests/theme/**'
+              - 'src/lib/theme-presets.ts'
+              - 'src/lib/theme-presets.test.ts'
+              - 'src/components/theme/**'
+              - 'tailwind.config.ts'
+            elite:
+              - 'e2e/flows/elite-ux-validation.spec.ts'
+              - 'src/pages/**'
+              - 'src/components/**'
+              - 'playwright.config.ts'
+
   smoke:
     name: Smoke tests (rotas + health-check)
     runs-on: ubuntu-latest
@@ -389,7 +460,8 @@ jobs:
   elite-ui-validation:
     name: Elite UX Validation (E2E)
     runs-on: ubuntu-latest
-    needs: build-gate
+    needs: [build-gate, detect-changes]
+    if: github.event_name != 'pull_request' || needs.detect-changes.outputs.elite_changed == 'true'
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v6
@@ -412,6 +484,8 @@ jobs:
 
 
   ref-warning-suite:
+    needs: detect-changes
+    if: github.event_name != 'pull_request' || needs.detect-changes.outputs.ref_warning_changed == 'true'
     name: Ref-warning suite (skeletons + guards + rotas)
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -472,6 +546,8 @@ jobs:
           if-no-files-found: ignore
 
   hooks-tests:
+    needs: detect-changes
+    if: github.event_name != 'pull_request' || needs.detect-changes.outputs.hooks_changed == 'true'
     name: Hook tests (smoke + funcionais)
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -525,6 +601,8 @@ jobs:
           if-no-files-found: ignore
 
   price-freshness-tests:
+    needs: detect-changes
+    if: github.event_name != 'pull_request' || needs.detect-changes.outputs.price_freshness_changed == 'true'
     name: Price Freshness — testes + gate de cobertura
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -579,6 +657,8 @@ jobs:
           if-no-files-found: ignore
 
   cloud-status-tests:
+    needs: detect-changes
+    if: github.event_name != 'pull_request' || needs.detect-changes.outputs.cloud_status_changed == 'true'
     name: Cloud Status — testes + gate de cobertura
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -607,6 +687,8 @@ jobs:
           if-no-files-found: ignore
 
   edge-functions-typecheck:
+    needs: detect-changes
+    if: github.event_name != 'pull_request' || needs.detect-changes.outputs.edge_functions_changed == 'true'
     name: Edge Functions — Deno typecheck
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -632,7 +714,8 @@ jobs:
   theme-validation:
     name: 🎨 Theme & Accessibility Gate
     runs-on: ubuntu-latest
-    needs: quality
+    needs: [quality, detect-changes]
+    if: github.event_name != 'pull_request' || needs.detect-changes.outputs.theme_changed == 'true'
     timeout-minutes: 20
 
     steps:
