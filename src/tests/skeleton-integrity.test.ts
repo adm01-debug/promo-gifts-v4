@@ -57,4 +57,3 @@ describe('Integridade do Sistema de Skeletons', () => {
     expect(content).toContain('makeSkeleton');
   });
 });
-EOF
