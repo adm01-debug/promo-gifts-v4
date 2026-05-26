@@ -827,7 +827,7 @@ export default function VisualSearchPage() {
 
             {isSearching && (
               <div className="space-y-6">
-                {results && (
+            {results && !analysisError && (
                   <div className="flex items-center gap-2 rounded-lg bg-primary/10 p-3 border border-primary/20 animate-pulse mb-4">
                     <Loader2 className="h-4 w-4 text-primary animate-spin" />
                     <span className="text-xs font-bold text-primary uppercase tracking-wider">Recalculando matches com novos filtros...</span>
