@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 import {
   type Quote,
   type QuoteItem,
@@ -209,10 +210,10 @@ export const quoteService = {
       user_id: userId,
       action,
       description,
-      field_changed: options?.fieldChanged || null,
-      old_value: options?.oldValue || null,
-      new_value: options?.newValue || null,
-      metadata: options?.metadata || {},
+      field_changed: typeof options?.fieldChanged === 'string' ? options.fieldChanged : null,
+      old_value: typeof options?.oldValue === 'string' ? options.oldValue : null,
+      new_value: typeof options?.newValue === 'string' ? options.newValue : null,
+      metadata: (options?.metadata ?? {}) as Json,
     });
   },
 };

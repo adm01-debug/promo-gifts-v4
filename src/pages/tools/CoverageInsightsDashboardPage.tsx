@@ -35,7 +35,7 @@ const parseDataset = (text: string): CoverageSnapshot[] => {
 
 const getTrend = (values: number[]) => {
   if (values.length < 2) return 0;
-  return Number((values[values.length - 1]! - values[0]).toFixed(1));
+  return Number((values[values.length - 1] - values[0]).toFixed(1));
 };
 
 export default function CoverageInsightsDashboardPage() {
