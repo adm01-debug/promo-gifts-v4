@@ -20,6 +20,8 @@
 --   - testes de regressão por persona antes de aplicar
 --   - aplicação em janela controlada com rollback plan
 --
+-- ⚠️ Plano detalhado em: docs/RLS_REWRITE_PLAN.md
+--
 -- Arquivo mantido para preservar o checksum da sequência de migrations.
 -- ============================================================
 

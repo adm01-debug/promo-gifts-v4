@@ -1,0 +1,110 @@
+name: Detect Base64-Encoded Content
+
+# Detecta arquivos texto que foram acidentalmente commitados em base64.
+# Background: bug recorrente em commits do Lovable e similares (PR #319, #457, #459)
+# onde arquivos como vercel.json, .ts, .sh são salvos como uma única linha gigante
+# de base64 ao invés do conteúdo real, quebrando builds silenciosamente.
+#
+# Heurística: linha >= 200 caracteres composta APENAS por caracteres do alfabeto
+# base64 ([A-Za-z0-9+/=]) em um arquivo texto (não lock, não binário).
+#
+# Atua em PRs (revisão obrigatória) e em push pra main (proteção contra commits
+# que pulam o PR via auto-merge).
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  scan:
+    name: Scan for accidentally base64-encoded text files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Determine files to scan
+        id: files
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT" == "pull_request" ]]; then
+            git diff --name-only --diff-filter=AM "$BASE_SHA" "$HEAD_SHA" > /tmp/files.txt
+          elif [[ "$EVENT" == "push" ]]; then
+            git diff --name-only --diff-filter=AM HEAD~1 HEAD > /tmp/files.txt || git ls-files > /tmp/files.txt
+          else
+            git ls-files > /tmp/files.txt
+          fi
+          echo "Files to scan: $(wc -l < /tmp/files.txt)"
+          cat /tmp/files.txt
+
+      - name: Run base64 detector
+        id: detect
+        run: |
+          set -euo pipefail
+
+          # Extensões que devem ser texto puro. Lock files, binários e imagens
+          # são ignorados (podem ter linhas longas legitimamente).
+          INCLUDE_REGEX='\.(ts|tsx|js|jsx|json|sql|sh|md|yaml|yml|html|css|env|env\.example|toml|conf|rc)$'
+          EXCLUDE_REGEX='(package-lock\.json|pnpm-lock\.yaml|bun\.lock|yarn\.lock|\.min\.|\.bundle\.)'
+
+          # Limites
+          MIN_LEN=200
+          BASE64_PATTERN='^[A-Za-z0-9+/=]+$'
+
+          FOUND=0
+          > /tmp/violations.txt
+
+          while IFS= read -r FILE; do
+            [[ -z "$FILE" ]] && continue
+            [[ ! -f "$FILE" ]] && continue
+            [[ ! "$FILE" =~ $INCLUDE_REGEX ]] && continue
+            [[ "$FILE" =~ $EXCLUDE_REGEX ]] && continue
+
+            # Procura linhas longas E base64-only
+            LINE_NUM=0
+            while IFS= read -r LINE || [[ -n "$LINE" ]]; do
+              LINE_NUM=$((LINE_NUM + 1))
+              LEN=${#LINE}
+              if (( LEN >= MIN_LEN )) && [[ "$LINE" =~ $BASE64_PATTERN ]]; then
+                FOUND=$((FOUND + 1))
+                {
+                  echo "::error file=$FILE,line=$LINE_NUM::Line $LINE_NUM has $LEN chars of pure base64 alphabet. Likely a file accidentally encoded in base64. Decode it before committing."
+                  echo "$FILE:$LINE_NUM ($LEN chars)"
+                } | tee -a /tmp/violations.txt
+              fi
+            done < "$FILE"
+          done < /tmp/files.txt
+
+          {
+            echo "### Base64-Encoded Content Scan"
+            echo ""
+            if (( FOUND == 0 )); then
+              echo "✅ No suspicious base64-encoded lines detected."
+            else
+              echo "❌ Found $FOUND suspicious line(s). Possible accidentally base64-encoded files:"
+              echo ""
+              echo '```'
+              cat /tmp/violations.txt
+              echo '```'
+              echo ""
+              echo "**How to fix:** Decode the offending file before committing."
+              echo "If it really should be base64 (rare for source files), add the file"
+              echo "or extension to the EXCLUDE_REGEX in \`.github/workflows/detect-base64-content.yml\`"
+              echo "with a comment explaining why."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          exit $FOUND
