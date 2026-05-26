@@ -115,6 +115,7 @@ export function ColumnSelector({ value, onChange, className }: ColumnSelectorPro
     <div 
       role="radiogroup" 
       aria-label="Número de colunas"
+      data-testid="column-selector"
       className={cn(
         "inline-flex items-center gap-0.5 p-1 rounded-xl bg-muted/60 border border-border/40",
         className
@@ -130,6 +131,7 @@ export function ColumnSelector({ value, onChange, className }: ColumnSelectorPro
                 role="radio"
                 aria-label={opt.label}
                 aria-checked={isActive}
+                data-testid={`column-option-${opt.value}`}
                 className={cn(
                   "relative flex items-center justify-center h-9 w-9 rounded-lg transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background",
                   isActive
