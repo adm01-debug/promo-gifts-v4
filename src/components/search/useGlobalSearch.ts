@@ -463,20 +463,9 @@ export function useGlobalSearch() {
         },
       ];
 
-      // Builder mínimo encadeável: q.table é dinâmico (string), então supabase-js
-      // não expõe overload tipado. Modelamos só os métodos usados — sem `any` e
-      // runtime-idêntico (a query real é a mesma).
-      type SimpleQueryBuilder = {
-        eq: (col: string, val: unknown) => SimpleQueryBuilder;
-        or: (filter: string) => SimpleQueryBuilder;
-        ilike: (col: string, pattern: string) => SimpleQueryBuilder;
-        order: (col: string, opts: { ascending: boolean }) => SimpleQueryBuilder;
-        limit: (n: number) => Promise<{ data: Record<string, unknown>[] | null }>;
-      };
       for (const q of simpleQueries) {
         if (wants(q.type)) {
           try {
-
             let builder = untypedFrom(q.table).select(q.select);
 
             if (q.type === 'category')

@@ -15,7 +15,6 @@ import { Loader2, AlertCircle, CheckCircle2, History, Wand2 } from "lucide-react
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { TechniqueChangeDialog, DeleteMockupDialog } from "@/pages/mockups/mockup-generator/MockupDialogs";
 import { MockupToolbar } from "@/pages/mockups/mockup-generator/MockupToolbar";
 import { MockupEmptyState } from "@/pages/mockups/mockup-generator/MockupEmptyState";
@@ -74,7 +73,7 @@ export default function MockupGenerator() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [mockupToDelete, setMockupToDelete] = useState<string | null>(null);
 
-  const summary = useMemo(() => {
+  const _summary = useMemo(() => {
     const parts = [];
     if (mg.selectedClient) parts.push(mg.selectedClient.name);
     if (mg.selectedProduct) parts.push(mg.selectedProduct.name);
