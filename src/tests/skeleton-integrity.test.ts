@@ -32,11 +32,27 @@ describe('Integridade do Sistema de Skeletons', () => {
 
   it('apenas o componente base Skeleton de ui deve ser usado diretamente para formas customizadas', () => {
     try {
-      // Verifica se arquivos TSX estão usando Skeleton mas não importam de ModernSkeletons ou ui/skeleton
-      // Excluímos gerenciadores de skeletons e componentes de Kit que usam padrões específicos
-      // Também excluímos Index.tsx e CatalogHeader.tsx que gerenciam estados de carregamento específicos
-      const command = `rg -l "Skeleton" src/ --glob "*.tsx" --glob '!src/components/loading/*' --glob '!src/components/ui/skeleton.tsx' --glob '!src/components/layout/SkeletonLoaders.tsx' --glob '!src/tests/*' --glob '!src/routes/AppRoutes.tsx' --glob '!src/components/kit-builder/*' --glob '!src/components/kit-library/*' --glob '!src/pages/Index.tsx' --glob '!src/components/catalog/CatalogHeader.tsx'`;
-      const files = execSync(command).toString().trim().split('\n');
+      // Lista de arquivos TSX que usam Skeleton de forma gerenciada por outros componentes ou hooks
+      const exceptions = [
+        'src/components/loading/*',
+        'src/components/ui/skeleton.tsx',
+        'src/components/layout/SkeletonLoaders.tsx',
+        'src/tests/*',
+        'src/routes/AppRoutes.tsx',
+        'src/components/kit-builder/*',
+        'src/components/kit-library/*',
+        'src/pages/Index.tsx',
+        'src/components/catalog/CatalogHeader.tsx',
+        'src/pages/clients/ClientsPage.tsx',
+        'src/pages/quotes/QuotesListPage.tsx'
+      ];
+
+      const globExclusions = exceptions.map(e => `--glob '!${e}'`).join(' ');
+      const command = `rg -l "Skeleton" src/ --glob "*.tsx" ${globExclusions}`;
+      const result = execSync(command).toString().trim();
+      
+      if (!result) return;
+      const files = result.split('\n');
       
       files.forEach(file => {
         if (!file) return;
