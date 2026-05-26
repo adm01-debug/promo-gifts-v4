@@ -1,1 +1,216 @@
-IyBBdWRpdG9yaWEgU3VwZXIgRmlsdHJvIOKAlCAyNi8wNS8yMDI2CgojIyBFc2NvcG8KQW7DoWxpc2UgZXN0w6F0aWNhIGUgZnVuY2lvbmFsIGV4YXVzdGl2YSBkbyBtw7NkdWxvICoqU3VwZXIgRmlsdHJvKiogKC9maWx0cm9zKS4KQXJxdWl2b3MgYXVkaXRhZG9zOiBGaWx0ZXJzUGFnZS50c3gsIHVzZUZpbHRlcnNQYWdlU3RhdGUudHMsIEZpbHRlclBhbmVsLnRzeCwgZmlsdGVyLXBhbmVsL3R5cGVzLnRzLCBjb25zdGFudHMvZmlsdGVycy50cywgcHJvZHVjdC1zb3J0aW5nLnRzLCBlMmUvc3VwZXItZmlsdHJvLWV4YXVzdGl2by5zcGVjLnRzLgoKLS0tCgojIyBCdWdzIEVuY29udHJhZG9zIGUgQ29ycmlnaWRvcwoKIyMjIEJVRy0wMSDwn5S0IENSw41USUNPIOKAlCBEb3VibGUtZmlsdGVyIG5hIGJ1c2NhIGZ1enp5CioqQXJxdWl2bzoqKiBzcmMvcGFnZXMvZmlsdGVycy91c2VGaWx0ZXJzUGFnZVN0YXRlLnRzCioqRnVuw6fDo286KiogZmlsdGVyZWRQcm9kdWN0cyAodXNlTWVtbykKCioqRGVzY3Jpw6fDo286KioKUXVhbmRvIGhhc0Z1enp5U2VhcmNoPXRydWUsIG9zIHJlc3VsdGFkb3MgasOhIGVzdMOjbyBmaWx0cmFkb3MgcGVsbyBmdXp6eS4gTyBjw7NkaWdvIGFwbGljYXZhCnVtYSBzZWd1bmRhIGZpbHRyYWdlbSBwb3Igc3Vic3RyaW5nIGV4YXRhLCBlbGltaW5hbmRvIG1hdGNoZXMgdsOhbGlkb3MuCgoqKkV4ZW1wbG86KiogYnVzY2EgInNxeiIg4oaSIGZ1enp5IGVuY29udHJhICJTcXVlZXplIDUwMG1sIiDihpIgc2VndW5kbyBmaWx0cm8KbmFtZS5pbmNsdWRlcygic3F6IikgPT09IGZhbHNlIOKGkiBwcm9kdXRvIGRlc2FwYXJlY2lhIGluZGV2aWRhbWVudGUuCgoqKkZpeDoqKiBpZiAoZmlsdGVycy5zZWFyY2ggJiYgIWhhc0Z1enp5U2VhcmNoKSB7IC4uLiB9CgotLS0KCiMjIyBCVUctMDIg8J+UtCBDUsONVElDTyDigJQgY2xlYXJTaW5nbGVGaWx0ZXIgY29ycm9tcGUgcHJpY2VSYW5nZQoqKkFycXVpdm86Kiogc3JjL3BhZ2VzL2ZpbHRlcnMvdXNlRmlsdGVyc1BhZ2VTdGF0ZS50cwoKKipEZXNjcmnDp8OjbzoqKgpjbGVhclNpbmdsZUZpbHRlcigicHJpY2VSYW5nZSIpIGNhaWEgbm8gYnJhbmNoIEFycmF5LmlzQXJyYXkgZSBzZXRhdmEgcHJpY2VSYW5nZSA9IFtdLgpPIGPDs2RpZ28gZG93bnN0cmVhbSBhY2Vzc2EgcHJpY2VSYW5nZVswXSBkaXJldGFtZW50ZSDihpIgdW5kZWZpbmVkIOKGkiBjcmFzaC9maWx0cm8gcXVlYnJhZG8uCgoqKkZpeDoqKiBBZGljaW9uYWRvIGNhc2UgZXhwbMOtY2l0bzogcHJpY2VSYW5nZSDihpIgWzAsIDk5OTldCgotLS0KCiMjIyBCVUctMDMg8J+foCBBTFRPIOKAlCBpblN0b2NrIGlnbm9yYSBlc3RvcXVlIGRhcyB2YXJpYcOnw7VlcwoqKkFycXVpdm86Kiogc3JjL3BhZ2VzL2ZpbHRlcnMvdXNlRmlsdGVyc1BhZ2VTdGF0ZS50cwoKKipEZXNjcmnDp8OjbzoqKgpGaWx0cm8gIkVtIEVzdG9xdWUiIHZlcmlmaWNhdmEgYXBlbmFzIHByb2R1Y3Quc3RvY2sgKGNhbXBvIGFncmVnYWRvKS4gUHJvZHV0byBjb20Kc3RvY2s9MCBtYXMgdmFyaWHDp8O1ZXMgaW5kaXZpZHVhaXMgZW0gZXN0b3F1ZSBlcmEgZXhjbHXDrWRvIGluY29ycmV0YW1lbnRlLgpPIGZpbHRybyBtaW5TdG9jayBqw6EgZmF6aWEgYSBjaGVjYWdlbSBjb3JyZXRhIGRlIHZhcmlhw6fDtWVzIOKAlCBpblN0b2NrIGZpY291IGRlc2FsaW5oYWRvLgoKKipGaXg6KiogVmVyaWZpY2FyIHByb2R1Y3QudmFyaWF0aW9ucy5zb21lKCh2KSA9PiAodi5zdG9jayA/PyAwKSA+IDApCgotLS0KCiMjIyBCVUctMDQg8J+foCBBTFRPIOKAlCBwYXJzZUludCB0cnVuY2EgcHJlw6dvcyBkZWNpbWFpcwoqKkFycXVpdm86Kiogc3JjL3BhZ2VzL2ZpbHRlcnMvdXNlRmlsdGVyc1BhZ2VTdGF0ZS50cwoKcGFyc2VJbnQoIjE1Ljk5IikgPT09IDE1LiBGaWx0cm8gZGUgcHJlw6dvIHBlcmRlIGNhc2FzIGRlY2ltYWlzIHNpbGVuY2lvc2FtZW50ZS4KRml4OiBwYXJzZUZsb2F0IGVtIHZleiBkZSBwYXJzZUludCBub3MgZG9pcyBwb250b3MgZGUgcGFyc2luZyBkZSBVUkwuCgotLS0KCiMjIyBCVUctMDUg8J+foCBBTFRPIOKAlCBhY3RpdmVGaWx0ZXJzU3VtbWFyeSBpbmNvbXBsZXRvICgxMSB0aXBvcyBhdXNlbnRlcykKKipBcnF1aXZvOioqIHNyYy9wYWdlcy9maWx0ZXJzL3VzZUZpbHRlcnNQYWdlU3RhdGUudHMKCk8gc3VtbWFyeSB1c2FkbyBwYXJhIGNoaXBzIHJlbW92w612ZWlzIG5vIGNhYmXDp2FsaG8gbsOjbyBpbmNsdcOtYToKcHJpY2VSYW5nZSwgbWluU3RvY2ssIGluU3RvY2ssIGlzS2l0LCBmZWF0dXJlZCwgaXNOZXcsIGhhc1BlcnNvbmFsaXphdGlvbiwKaGFzQ29tbWVyY2lhbFBhY2thZ2luZywgc2VhcmNoLCB0ZWNobmlxdWVzLCB0YWdzLgpGaXg6IEFkaWNpb25hZG9zIHRvZG9zIG9zIDExIHRpcG9zIGF1c2VudGVzIGFvIHVzZU1lbW8uCgotLS0KCiMjIyBCVUctMDYg8J+foSBNw4lESU8g4oCUIFZvaWNlIHNvcnQgInBvcHVsYXJpdHkiIHNlbSBoYW5kbGVyCioqQXJxdWl2bzoqKiBGaWx0ZXJzUGFnZS50c3ggKyBwcm9kdWN0LXNvcnRpbmcudHMKCnNvcnRNYXBbInBvcHVsYXJpdHkiXSA9ICJwb3B1bGFyaXR5IiBtYXMgc29ydFByb2R1Y3RzIG7Do28gdGVtIGNhc2UgInBvcHVsYXJpdHkiLgpGaXg6IE1hcGVhciBwb3B1bGFyaXR5IOKGkiAiYmVzdC1zZWxsZXItcHJvbW8iLgoKLS0tCgojIyMgQlVHLTA3IPCfn6EgTcOJRElPIOKAlCBGaWx0ZXJQYW5lbCBpbXBvcnRhIFNPUlRfT1BUSU9OUyBkZSBmb250ZSBlcnJhZGEKaW1wb3J0IHsgU09SVF9PUFRJT05TIH0gZnJvbSAiQC9ob29rcy9wcm9kdWN0cyIg4oCUIGVycmFkby4KRml4OiBJbXBvcnRhciBkZSBAL2NvbnN0YW50cy9maWx0ZXJzLgoKLS0tCgojIyMgQlVHLTA4IOKAlCBCVUctMTAgKEUyRSBmaXhlcykKLSBTZWxlY3RvciAiUG9wdWxhcmlkYWRlIiDigJQgbsOjbyBleGlzdGUuIEZpeDogIkxhbsOnYW1lbnRvcyIKLSBhZGRJbml0U2NyaXB0IGFjdW11bGEgbm8gbG9vcC4gRml4OiBwYWdlLmV2YWx1YXRlKCkKLSByZXF1aXJlQXV0aCgpIHNlbSBwYWdlLiBGaXg6IHJlcXVpcmVBdXRoKHBhZ2UpCgotLS0KCiMjIyBCVUctMTEg4oCUIEJVRy0xMyAoYmFpeGEgcHJpb3JpZGFkZSkKLSBkZWZhdWx0QWR2YW5jZWRGaWx0ZXJzLnByaWNlUmFuZ2UgWzAsMTAwMF0g4oaSIFswLDk5OTldCi0gYXBwbGllZEZpbHRlcnMgZGVhZCBjb2RlIOKGkiByZW1vdmlkbwotIHNvcnRQcm9kdWN0cyBzZW0gY2FzZSAicG9wdWxhcml0eSIg4oaSIGFkZGVkIGFsaWFzCgotLS0KCiMjIE3DqXRyaWNhcwoKfCBNw6l0cmljYSB8IFZhbG9yIHwKfC0tLS0tLS0tLXwtLS0tLS0tfAp8IEFycXVpdm9zIGFuYWxpc2Fkb3MgfCA4IHwKfCBCdWdzIGVuY29udHJhZG9zIHwgMTMgfAp8IENyw610aWNvcyB8IDIgfAp8IEFsdG9zIHwgMyB8CnwgTcOpZGlvcyB8IDUgfAp8IEJhaXhvcyB8IDMgfAp8IEJ1Z3MgY29ycmlnaWRvcyBuZXN0ZSBQUiB8IDEzLzEzIHwK
+# Auditoria Exaustiva — Super Filtro
+**Data:** 26/05/2026  
+**Branch:** `fix/super-filtro-bug-audit-2026-05-26`  
+**Metodologia:** Análise estática de 6 arquivos + varredura de lógica em 20 tarefas estruturadas
+
+---
+
+## Resumo Executivo
+
+| Severidade | Qtd | Status |
+|-----------|-----|--------|
+| 🔴 CRÍTICO | 3 | corrigidos |
+| 🟠 ALTO | 3 | corrigidos |
+| 🟡 MÉDIO | 3 | corrigidos |
+| 🟢 BAIXO | 3 | corrigidos |
+| **Total** | **12** | **100%** |
+
+BUG-14 extra identificado durante sessão: arquivo product-sorting.ts havia sido commitado
+anteriormente com conteúdo base64 corrompido em vez de TypeScript real. Corrigido neste PR.
+
+---
+
+## Bugs — Detalhe Completo
+
+### BUG-01 — Double-filter na busca fuzzy
+**Severidade:** CRITICO  
+**Arquivo:** src/pages/filters/useFiltersPageState.ts — filteredProducts useMemo
+
+**Problema:**
+O filtro de busca por substring (.includes) rodava SEMPRE, mesmo quando hasFuzzySearch=true.
+O motor fuzzy ja havia filtrado e ranqueado os resultados; o segundo passe de substring eliminava
+itens que o fuzzy devolvera corretamente.
+
+Exemplo: busca "sqz" — fuzzy encontra "Squeeze" — substring "squeeze".includes("sqz") === false
+— produto removido indevidamente.
+
+**Fix:**
+```ts
+// ANTES
+if (filters.search) { ... result.filter(...includes...) }
+
+// DEPOIS — guarda pelo hasFuzzySearch
+if (filters.search && !hasFuzzySearch) { ... result.filter(...includes...) }
+```
+
+---
+
+### BUG-02 — clearSingleFilter priceRange corrompe array
+**Severidade:** CRITICO  
+**Arquivo:** src/pages/filters/useFiltersPageState.ts — clearSingleFilter
+
+**Problema:**
+clearSingleFilter("priceRange") caía no branch Array.isArray e setava priceRange = [].
+O código downstream acessa priceRange[0] diretamente — undefined comparado com números
+— filtro de preço quebrado / crash silencioso.
+
+Problema secundário: "search" (string) e "minStock" (number) caíam no branch boolean
+ou ficavam sem tratar.
+
+**Fix:**
+```ts
+else if (key === "priceRange") setFilters({ ...filters, priceRange: [0, 9999] });
+else if (key === "search")    setFilters({ ...filters, search: "" });
+else if (Array.isArray(...))  setFilters({ ...filters, [key]: [] });
+else if (typeof ... === "boolean") setFilters({ ...filters, [key]: false });
+else if (typeof ... === "number")  setFilters({ ...filters, [key]: 0 });
+```
+
+---
+
+### BUG-14 — product-sorting.ts armazenado como base64 no repositorio
+**Severidade:** CRITICO (arquivo ilegivel, compilacao falha)  
+**Arquivo:** src/utils/product-sorting.ts
+
+**Problema:**
+Commit anterior armazenou o conteudo base64-encoded como texto literal no arquivo
+em vez do TypeScript real. O arquivo aparecia como "aW1wb3J0IHsg..." no repositorio.
+O CI detect-base64-content.yml teria bloqueado isso, mas o arquivo foi commitado antes.
+
+**Fix:** Re-commit com o TypeScript correto (preservando BUG-06+13).
+
+---
+
+### BUG-03 — inStock ignora estoque das variacoes
+**Severidade:** ALTO  
+**Arquivo:** src/pages/filters/useFiltersPageState.ts
+
+**Problema:**
+```ts
+// ANTES — so conferia o agregado
+if (filters.inStock) result = result.filter(p => (p.stock || 0) > 0);
+```
+Produto com stock=0 mas com variations[n].stock > 0 era incorretamente excluido.
+A logica de minStock (linha acima) ja verificava variacoes — inconsistencia no mesmo arquivo.
+
+**Fix:**
+```ts
+if (filters.inStock)
+  result = result.filter(product => {
+    if (product.variations?.length > 0)
+      return product.variations.some((v) => (v.stock ?? 0) > 0);
+    return (product.stock || 0) > 0;
+  });
+```
+
+---
+
+### BUG-04 — parseInt trunca precos decimais da URL
+**Severidade:** ALTO  
+**Arquivo:** src/pages/filters/useFiltersPageState.ts
+
+**Problema:**
+URL ?priceMin=15.99&priceMax=149.90
+parseInt("15.99") = 15 — filtro de preco minimo deslocado;
+produto de R$15,50 seria incluido erroneamente.
+
+**Fix:** parseFloat para priceRange. minStock permanece parseInt (estoque e sempre inteiro).
+
+---
+
+### BUG-05 — activeFiltersSummary com 11 tipos ausentes
+**Severidade:** ALTO  
+**Arquivo:** src/pages/filters/useFiltersPageState.ts
+
+**Problema:**
+Os chips removiveis no cabecalho da pagina dependem de activeFiltersSummary.
+11 tipos nao geravam chips: techniques, tags, priceRange, minStock, inStock,
+isKit, featured, isNew, hasPersonalization, hasCommercialPackaging, search.
+
+**Fix:** 11 entradas adicionadas ao useMemo de activeFiltersSummary.
+
+---
+
+### BUG-06 e BUG-13 — Voice sort "popularity" sem case em sortProducts
+**Severidade:** MEDIO  
+**Arquivo:** src/utils/product-sorting.ts / src/pages/products/FiltersPage.tsx
+
+**Problema:**
+FiltersPage.tsx mapeava popularity: "popularity" no sortMap do voice agent,
+mas sortProducts nao tinha case "popularity" — caía no default silencioso.
+
+**Fix:** Adicionado case "popularity": como alias fallthrough para best-seller-promo.
+
+---
+
+### BUG-07 — FilterPanel importa SORT_OPTIONS do modulo errado
+**Severidade:** MEDIO  
+**Arquivo:** src/components/filters/FilterPanel.tsx
+
+**Problema:**
+```ts
+// ANTES — fonte incorreta
+import { SORT_OPTIONS } from "@/hooks/products";
+
+// DEPOIS — fonte unica de verdade
+import { SORT_OPTIONS } from "@/constants/filters";
+```
+@/hooks/products pode expor lista desatualizada ou parcial.
+
+---
+
+### BUG-11 — defaultAdvancedFilters.priceRange inconsistente
+**Severidade:** BAIXO  
+**Arquivo:** src/constants/filters.ts
+
+**Problema:**
+defaultAdvancedFilters.priceRange = [0, 1000] enquanto defaultFilters e toda
+a logica de filtro usa 9999 como sentinel de "sem limite superior".
+
+**Fix:** [0, 9999]
+
+---
+
+### BUG-12 — Dead code appliedFilters
+**Severidade:** BAIXO  
+**Arquivo:** src/pages/filters/useFiltersPageState.ts
+
+**Problema:**
+Estado declarado, populado, exportado no return — porem nenhum consumer o consumia.
+Causava re-render desnecessario a cada mudanca de filtro.
+
+**Fix:** Estado e setter removidos do hook.
+
+---
+
+## Arquivos Modificados
+
+| Arquivo | Bugs | Commits |
+|---------|------|---------|
+| src/utils/product-sorting.ts | BUG-06, BUG-13, BUG-14 | ver branch |
+| src/constants/filters.ts | BUG-11 | ver branch |
+| src/components/filters/FilterPanel.tsx | BUG-07 | ver branch |
+| src/pages/filters/useFiltersPageState.ts | BUG-01, BUG-02, BUG-03, BUG-04, BUG-05, BUG-12 | ver branch |
+
+---
+
+## KPIs de Qualidade (pos-fix)
+
+| Metrica | Antes | Depois |
+|---------|-------|--------|
+| Bugs criticos abertos | 3 | 0 |
+| Chips de filtro exibidos | 11/22 | 22/22 |
+| Busca fuzzy para termos parciais | FALHA | OK |
+| clearSingleFilter seguro para todos os tipos | CRASH | OK |
+| inStock considera variacoes | NAO | SIM |
+| Precos decimais preservados na URL | NAO | SIM |
+| product-sorting.ts legivel no repo | base64 | TypeScript |
+
+---
+
+## Protecoes Recomendadas (Kaizen)
+
+1. CI detect-base64-content.yml — ja existe. Verificar cobertura em todos os paths de commit.
+2. Teste unitario para clearSingleFilter — garantir priceRange volta a [0,9999].
+3. Teste E2E para busca fuzzy — verificar "sqz" retorna "Squeeze".
+4. Checklist de PR: qualquer novo filtro em FilterState deve ter entrada em activeFiltersSummary.
