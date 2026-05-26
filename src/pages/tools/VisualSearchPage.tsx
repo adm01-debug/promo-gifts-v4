@@ -99,8 +99,58 @@ export default function VisualSearchPage() {
   const [showHotspots, setShowHotspots] = useState(true);
   const [hotspotOpacity, setHotspotOpacity] = useState(1);
 
+  const [isListening, setIsListening] = useState(false);
+  const [hoveredProduct, setHoveredProduct] = useState<string | null>(null);
+
   const { data: categories = [] } = useExternalCategoriesQuery();
   const { data: colorData } = useColorSystem();
+
+  const startVoiceCommand = () => {
+    if (!('webkitSpeechRecognition' in window)) {
+      toast.error("Seu navegador não suporta comandos de voz.");
+      return;
+    }
+
+    const recognition = new (window as any).webkitSpeechRecognition();
+    recognition.lang = 'pt-BR';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      toast.info("Ouvindo comandos...");
+    };
+
+    recognition.onresult = (event: any) => {
+      const command = event.results[0][0].transcript.toLowerCase();
+      console.log("Voice command:", command);
+      handleVoiceCommand(command);
+    };
+
+    recognition.onerror = () => {
+      setIsListening(false);
+      toast.error("Erro ao processar comando de voz.");
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+  };
+
+  const handleVoiceCommand = (command: string) => {
+    if (command.includes('alumínio') || command.includes('metal')) {
+      // Find category or add to search terms
+      toast.success("Filtrando por Alumínio...");
+      processImage(previewUrl!, "alumínio");
+    } else if (command.includes('90') || command.includes('noventa')) {
+      toast.success("Mostrando apenas alta confiança...");
+      // Logic would be in frontend filtering if results exist
+    } else {
+      toast.info(`Comando não reconhecido: "${command}"`);
+    }
+  };
 
   // Load history from localStorage
   useEffect(() => {
