@@ -14,7 +14,7 @@ import { ProductCard } from '@/components/products/ProductCard';
 import { ProductListItem } from '@/components/products/ProductListItem';
 import { ProductTableView } from '@/components/products/ProductTableView';
 import { LayoutPopover } from '@/components/products/LayoutPopover';
-import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
+import { STORAGE_KEY as GRID_COLS_KEY, getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
 import { getGridColsClass, getGridGapClass } from '@/components/replenishments/grid-layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
