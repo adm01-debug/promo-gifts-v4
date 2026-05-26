@@ -206,7 +206,7 @@ jobs:
         continue-on-error: true
 
   build-gate:
-    name: Production Build & Warnings Gate
+    name: Full Production Build (blocking)
     runs-on: ubuntu-latest
     needs: quality
     timeout-minutes: 15
@@ -218,8 +218,25 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Production Build with Warning Analysis
-        run: npm run ci:build
+      - name: Full production build (compile must pass)
+        run: npm run build 2>&1 | tee build.log
+      - name: Build warnings gate
+        run: npm run ci:build:warnings
+      - name: Upload build logs (debug)
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: build-logs-${{ github.run_id }}
+          path: build.log
+          retention-days: 7
+      - name: Upload production bundle on failure (debug)
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: build-output-${{ github.run_id }}
+          path: dist/
+          retention-days: 7
+          if-no-files-found: ignore
 
   coverage:
 
