@@ -2,6 +2,7 @@ import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-
 import { handleCorsPreflight } from "../_shared/cors.ts";
 import { getOrCreateRequestId } from "../_shared/request-id.ts";
 import { createStructuredLogger } from "../_shared/structured-logger.ts";
+import { getCredential } from "../_shared/credentials.ts";
 
 // --- Types ---
 
@@ -53,8 +54,9 @@ class ExternalDatabaseChecker implements HealthChecker {
   async check(): Promise<CheckResult> {
     const start = Date.now();
     try {
-      const url = Deno.env.get("EXTERNAL_SUPABASE_URL");
-      const key = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY");
+      // fix: ssot-bypass + module-scope-credential-read — use credential vault
+      const url = await getCredential('EXTERNAL_PROMOBRIND_URL');
+      const key = await getCredential('EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY');
       
       if (!url || !key) {
         return { status: "skipped", error: "No credentials" };
@@ -130,4 +132,3 @@ Deno.serve(async (req) => {
     })
   );
 });
-
