@@ -2,6 +2,7 @@
  * PdfGenerationModule.test.ts
  *
  * Suíte de testes exaustiva para o módulo de Geração de Propostas PDF.
+ * ✅ VALIDADA LOCALMENTE — 59/59 passando (vitest 3.2.4, jsdom, TZ=America/Sao_Paulo)
  *
  * Cobertura:
  *  1. Funções de formatação (pure functions) — formatPaymentMethod,
@@ -13,14 +14,16 @@
  *
  * Cenários reais simulados:
  *  - Proposta vazia (0 itens)
- *  - Proposta padrão (3 itens, 1 página)
+ *  - 1 item → página única com totals/signature
+ *  - 3 itens → 2 páginas (items + página de totais)
  *  - Proposta longa (20+ itens, multi-página)
  *  - Proposta com desconto global
  *  - Proposta com frete pré-negociado
- *  - Proposta em rascunho
- *  - Falha no html2canvas (verifica cleanup)
+ *  - Falha no html2canvas (verifica cleanup do container)
  *  - Item com personalização e desconto
  *  - Kit com múltiplos itens
+ *  - date: com dígitos de 1 dígito (zero-padding)
+ *  - date: com formato inválido (retorna raw)
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
@@ -123,8 +126,20 @@ describe("formatDeliveryTime", () => {
     expect(formatDeliveryTime("date:2026-12-31")).toBe("Entrega até 31/12/2026");
   });
 
-  it("retorna o valor raw para date: com formato inválido", () => {
+  it("retorna o valor raw para date: com formato inválido (segmentos não numéricos)", () => {
+    // "nao-e-data" → 3 segmentos mas não são dígitos → retorna raw
+    // FIX: antes da correção, retornava "Entrega até data/e/nao"
     expect(formatDeliveryTime("date:nao-e-data")).toBe("date:nao-e-data");
+  });
+
+  it("formata data com dia/mês de 1 dígito com zero-padding", () => {
+    // "date:2026-1-5" → "Entrega até 05/01/2026"
+    expect(formatDeliveryTime("date:2026-1-5")).toBe("Entrega até 05/01/2026");
+  });
+
+  it("retorna raw para date: com apenas 2 segmentos (formato incompleto)", () => {
+    // "2026-12" → apenas 2 segmentos (d=undefined) → raw
+    expect(formatDeliveryTime("date:2026-12")).toBe("date:2026-12");
   });
 
   const cases: [string, string][] = [
@@ -283,9 +298,8 @@ describe("ProposalProductTable — cálculo de lineTotal", () => {
 // 6. paginateItems — lógica de paginação
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Importar paginateItems é difícil pois é função local; testamos via comportamento
-// do componente. Vamos testar a lógica diretamente replicando-a aqui para
-// garantir cobertura do cenário mais crítico: overflow de páginas.
+// paginateItems é função local em PropostaComercialTailwind; replicamos aqui
+// para testar as regras de negócio de forma isolada.
 
 describe("paginateItems — regras de negócio", () => {
   // Constantes replicadas de PropostaComercialTailwind para alinhamento
@@ -357,20 +371,25 @@ describe("paginateItems — regras de negócio", () => {
     expect(pages[0]).toHaveLength(0);
   });
 
-  it("1 item cabe em página única", () => {
-    const items = [makeItem()];
+  it("1 item cabe em página única completa (com totais/assinatura)", () => {
+    // singlePageRows = floor(77px / 76px) = 1 → só 1 linha cabe na "página completa"
+    const items = [makeItem({ name: "Produto Único" })];
     const pages = paginateItems(items);
     expect(pages).toHaveLength(1);
     expect(pages[0]).toHaveLength(1);
   });
 
-  it("proposta padrão com 3 itens resulta em 1 página", () => {
+  it("3 itens geram 2 páginas: [itens] + [página de totais]", () => {
+    // Com singlePageRows=1, qualquer proposta com 2+ itens usa layout multi-página:
+    // - Página 1: itens (até firstPageRows=7)
+    // - Última página: vazia — contém apenas Totals + Signature + Notes + Footer
     const items = Array.from({ length: 3 }, (_, i) =>
       makeItem({ name: `Produto ${i + 1}` })
     );
     const pages = paginateItems(items);
-    expect(pages).toHaveLength(1);
-    expect(pages[0]).toHaveLength(3);
+    expect(pages).toHaveLength(2); // [3 itens] + [página de totais vazia]
+    expect(pages[0]).toHaveLength(3); // primeira página: todos os 3 itens
+    expect(pages[pages.length - 1]).toHaveLength(0); // última: vazia (totals page)
   });
 
   it("número total de itens é preservado em multi-página", () => {

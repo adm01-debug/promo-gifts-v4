@@ -86,10 +86,15 @@ export function formatPaymentTerms(value?: string): string {
 export function formatDeliveryTime(value?: string): string {
   if (!value) return "";
   if (value.startsWith("date:")) {
-    const iso = value.slice(5);
+    const iso = value.slice(5); // esperado: YYYY-MM-DD
     const [y, m, d] = iso.split("-");
-    if (y && m && d) return `Entrega até ${d}/${m}/${y}`;
-    return value;
+    // FIX: validar que y/m/d são numéricos antes de formatar.
+    // Sem validação, "date:nao-e-data" gerava "Entrega até data/e/nao"
+    // ao invés de retornar o valor raw — comportamento incorreto.
+    if (y && m && d && /^\d{4}$/.test(y) && /^\d{1,2}$/.test(m) && /^\d{1,2}$/.test(d)) {
+      return `Entrega até ${d.padStart(2, "0")}/${m.padStart(2, "0")}/${y}`;
+    }
+    return value; // formato inválido: retorna raw sem explodir
   }
   const map: Record<string, string> = {
     "7_dias": "7 dias após aprovação",
