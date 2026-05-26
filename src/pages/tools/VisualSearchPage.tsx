@@ -771,83 +771,69 @@ export default function VisualSearchPage() {
                     <span className="text-xs font-bold text-primary uppercase tracking-wider">Recalculando matches com novos filtros...</span>
                   </div>
                 )}
-                <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-[#020617] p-8 min-h-[400px] flex items-center justify-center">
-                  {/* CRT/Scanline Noise Effect */}
-                  <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,118,0.06))] bg-[length:100%_4px,3px_100%] z-30" />
-                  
-                  <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <motion.div 
-                      animate={{ 
-                        scale: [1, 2, 1],
-                        opacity: [0.1, 0.3, 0.1]
-                      }}
-                      transition={{ duration: 4, repeat: Infinity }}
-                      className="absolute inset-0 bg-primary/20 rounded-full blur-3xl -translate-y-1/2"
-                    />
-                    {/* Scanning Line with Glitch Effect */}
-                    <motion.div 
-                      animate={{ top: ['0%', '100%', '0%'] }}
-                      transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                      className="absolute left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_15px_rgba(var(--primary),0.8)] z-10"
-                    />
-                  </div>
+                <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-background via-background to-muted/30 p-10 min-h-[360px] flex items-center justify-center">
+                  {/* Soft ambient glow */}
+                  <motion.div
+                    aria-hidden
+                    className="absolute -top-24 left-1/2 -translate-x-1/2 h-72 w-72 rounded-full bg-primary/10 blur-3xl"
+                    animate={{ opacity: [0.4, 0.7, 0.4] }}
+                    transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
+                  />
 
-                  {/* Orbiting Labels */}
-                  <div className="absolute inset-0 pointer-events-none">
-                    {[
-                      "DENSIDADE: ALTA", 
-                      "FORMA: CILÍNDRICA", 
-                      "REFLEXO: METÁLICO", 
-                      "MATERIAL: ALUMÍNIO"
-                    ].map((text, i) => (
+                  <div className="relative z-10 flex flex-col items-center gap-7 text-center max-w-md w-full">
+                    {/* Refined spinner with concentric rings */}
+                    <div className="relative h-20 w-20">
                       <motion.div
-                        key={i}
-                        animate={{ 
-                          rotate: 360,
-                        }}
-                        transition={{ 
-                          duration: 10 + i * 2, 
-                          repeat: Infinity, 
-                          ease: "linear" 
-                        }}
-                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-                        style={{ width: `${200 + i * 60}px`, height: `${200 + i * 60}px` }}
-                      >
-                        <motion.div 
-                          className="absolute top-0 left-1/2 -translate-x-1/2 bg-primary/10 backdrop-blur-sm border border-primary/30 px-2 py-0.5 rounded text-[8px] font-mono text-primary whitespace-nowrap"
-                          animate={{ rotate: -360 }}
-                          transition={{ duration: 10 + i * 2, repeat: Infinity, ease: "linear" }}
-                        >
-                          {text}
-                        </motion.div>
-                      </motion.div>
-                    ))}
-                  </div>
-
-                  <div className="relative flex flex-col items-center gap-6 text-center z-20">
-                    <div className="relative">
-                      <div className="h-24 w-24 animate-spin rounded-full border-4 border-primary/10 border-t-primary border-r-primary/40" />
-                      <Target className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 text-primary animate-pulse" />
+                        className="absolute inset-0 rounded-full border border-primary/20"
+                        animate={{ scale: [1, 1.15, 1], opacity: [0.6, 0, 0.6] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: 'easeOut' }}
+                      />
+                      <motion.div
+                        className="absolute inset-2 rounded-full border border-primary/30"
+                        animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: 'easeOut', delay: 0.4 }}
+                      />
+                      <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-primary animate-[spin_1.2s_linear_infinite]" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Eye className="h-7 w-7 text-primary" strokeWidth={1.5} />
+                      </div>
                     </div>
-                    <div className="space-y-4 max-w-md">
-                      <div>
-                        <p className="text-2xl font-black text-primary tracking-tighter uppercase italic drop-shadow-[0_0_10px_rgba(var(--primary),0.5)]">Análise Biométrica Ativa</p>
-                        <div className="flex items-center justify-center gap-4 mt-1">
-                          <p className="text-[9px] text-primary/60 font-mono tracking-widest uppercase">Mapeamento v2.5</p>
-                          <div className="h-1 w-1 rounded-full bg-primary/40" />
-                          <p className="text-[9px] text-primary/60 font-mono tracking-widest uppercase">Core: Neural-X</p>
-                        </div>
-                      </div>
-                      <div className="w-full space-y-1">
-                        <div className="flex justify-between text-[8px] font-mono text-primary/60 uppercase">
-                          <span>Sincronizando...</span>
-                          <span>{Math.round(65)}%</span>
-                        </div>
-                        <Progress value={65} className="h-1 w-full bg-primary/10" />
-                      </div>
-                      <p className="text-xs text-primary/80 font-medium italic animate-pulse">
-                        "Extraindo silhueta, identificando porosidade do material e mapeando cores secundárias..."
+
+                    <div className="space-y-2">
+                      <h3 className="font-display text-xl sm:text-2xl font-semibold tracking-tight text-foreground">
+                        Analisando sua imagem
+                      </h3>
+                      <p className="text-sm text-muted-foreground max-w-sm">
+                        Identificando formato, cores e materiais para encontrar os melhores produtos.
                       </p>
+                    </div>
+
+                    <div className="w-full space-y-2">
+                      <Progress value={65} className="h-1.5 w-full" />
+                      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                        <span>Processando…</span>
+                        <span className="tabular-nums font-medium text-foreground/70">65%</span>
+                      </div>
+                    </div>
+
+                    {/* Subtle step indicators */}
+                    <div className="flex items-center gap-2 flex-wrap justify-center">
+                      {['Silhueta', 'Cores', 'Material', 'Categoria'].map((step, i) => (
+                        <motion.span
+                          key={step}
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.15 }}
+                          className="inline-flex items-center gap-1.5 rounded-full bg-muted/60 px-2.5 py-1 text-[10px] font-medium text-muted-foreground border border-border/40"
+                        >
+                          <motion.span
+                            className="h-1.5 w-1.5 rounded-full bg-primary"
+                            animate={{ opacity: [0.3, 1, 0.3] }}
+                            transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.3 }}
+                          />
+                          {step}
+                        </motion.span>
+                      ))}
                     </div>
                   </div>
                 </div>
