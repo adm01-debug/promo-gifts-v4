@@ -60,15 +60,15 @@ Deno.serve(async (req: Request) => {
     const isServiceKey = token === serviceKey || (token?.startsWith("sb_") && serviceKey.startsWith("sb_") && token === serviceKey);
     
     if (token && isServiceKey) {
+      // Se não houver a flag X-Internal-Call, tratamos como uma tentativa externa
+      // e retornamos 401 para consistência nos testes de auditoria de segurança.
       const isInternal = req.headers.get("X-Internal-Call") === "true";
       
-      // Ajuste de bypass: se não houver a flag X-Internal-Call, tratamos como uma tentativa
-      // externa usando a service key (ex: testes de segurança) e retornamos 401 para consistência.
       if (!isInternal) {
         return new Response(
           JSON.stringify({ 
             error: "unauthorized_service_role", 
-            message: "Internal flag required for service_role bypass. Access denied to service_role without X-Internal-Call header.",
+            message: "Internal flag required for service_role bypass. Access denied.",
             allowed: false 
           }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
