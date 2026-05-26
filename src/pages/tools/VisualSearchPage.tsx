@@ -907,7 +907,7 @@ export default function VisualSearchPage() {
               </div>
             )}
 
-            {results && (
+            {results && !analysisError && (
               <div className="space-y-5">
                 <div className="flex items-end justify-between px-1">
                   <div className="space-y-1">
