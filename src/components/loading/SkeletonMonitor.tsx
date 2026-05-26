@@ -90,7 +90,9 @@ export function SkeletonMonitor({
       data-skeleton-elapsed={elapsed}
       data-skeleton-forced={isForced}
     >
-      {children}
+      <SkeletonMonitorContext.Provider value={name}>
+        {children}
+      </SkeletonMonitorContext.Provider>
 
       {/* Dev-only overlay timer */}
       {isDev && (elapsed > 300 || isForced) && (
