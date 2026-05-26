@@ -148,7 +148,44 @@ describe('contract: market-intelligence-insights', () => {
     if (r.ok) {
       expect(r.data.days).toBe(30);
       expect(r.data.forceRefresh).toBe(false);
+      expect(r.data.categoryId).toBe(UUID);
+      expect(r.data.supplierId).toBeNull();
+      expect(r.data.productId).toBe(UUID);
+      expect(r.data.categoryName).toBeUndefined();
+      expect(r.data.supplierName).toBeUndefined();
+      expect(r.data.productName).toBeUndefined();
       expect(r.responseHeaders['x-contract-version']).toBe('2');
+    }
+  });
+  it('v2 preserva campos opcionais válidos sem alterar tipos', async () => {
+    const r = await parseContract(
+      makeRequest({
+        headers: { 'accept-version': '2' },
+        body: {
+          categoryId: null,
+          supplierId: UUID,
+          productId: null,
+          categoryName: 'Categoria A',
+          supplierName: 'Fornecedor B',
+          productName: 'Produto C',
+          forceRefresh: true,
+          days: 90,
+        },
+      }),
+      MarketIntelligenceInsightsSchemas,
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.data).toEqual({
+        days: 90,
+        categoryId: null,
+        supplierId: UUID,
+        productId: null,
+        categoryName: 'Categoria A',
+        supplierName: 'Fornecedor B',
+        productName: 'Produto C',
+        forceRefresh: true,
+      });
     }
   });
   it('v2 strict rejeita campos extras', async () => {
@@ -166,6 +203,48 @@ describe('contract: market-intelligence-insights', () => {
     );
     expect(r.ok).toBe(false);
     if (!r.ok) await expectContractError(r.response, { status: 400, code: 'invalid_json' });
+  });
+});
+
+describe('contract: simulation-orchestrator', () => {
+  it('v2 aplica default de count e mantém tipos de saída', async () => {
+    const r = await parseContract(
+      makeRequest({
+        headers: { 'accept-version': '2' },
+        body: {
+          targetFunctions: ['external-db-bridge', 'product-webhook'],
+          mode: 'load',
+          idempotency_key: UUID,
+        },
+      }),
+      SimulationOrchestratorSchemas,
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.data).toEqual({
+        count: 100,
+        targetFunctions: ['external-db-bridge', 'product-webhook'],
+        mode: 'load',
+        idempotency_key: UUID,
+      });
+      expect(r.responseHeaders['x-contract-version']).toBe('2');
+      expect(r.responseHeaders.Deprecation).toBeUndefined();
+    }
+  });
+  it('v2 detecta breaking change em enum de targetFunctions', async () => {
+    const r = await parseContract(
+      makeRequest({
+        headers: { 'accept-version': '2' },
+        body: {
+          targetFunctions: ['legacy-unknown-handler'],
+          mode: 'load',
+          idempotency_key: UUID,
+        },
+      }),
+      SimulationOrchestratorSchemas,
+    );
+    expect(r.ok).toBe(false);
+    if (!r.ok) await expectContractError(r.response, { status: 422, code: 'validation_failed', fieldPaths: ['targetFunctions[0]'] });
   });
 });
 
