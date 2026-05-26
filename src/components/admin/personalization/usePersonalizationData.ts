@@ -43,7 +43,6 @@ export interface Location {
   max_width_cm: number | null;
   max_height_cm: number | null;
   max_area_cm2: number | null;
-  /** @deprecated TODO(#339): coluna não existe; upload de imagem não persiste. */
   area_image_url: string | null;
   is_active: boolean;
 }
@@ -60,7 +59,6 @@ export interface LocationTechnique {
   technique_id: string;
   composed_code: string;
   max_colors: number | null;
-  /** @deprecated TODO(#339): coluna não existe; toggle "definir como padrão" não persiste. */
   is_default: boolean;
   is_active: boolean;
   technique?: Technique;
