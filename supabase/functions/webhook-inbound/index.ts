@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
       .from('inbound_webhook_endpoints')
       .select('*')
       .eq('slug', slug)
-      .eq('active', true)
+      .eq('is_active', true)
       .maybeSingle();
     if (!endpoint) {
       return new Response(
