@@ -120,7 +120,9 @@ export function useMockupGenerator() {
       setPersonalizationAreas((prev) =>
         prev.map((area) => (area.id === activeAreaId ? { ...area, ...state } : area)),
       );
-      toast.info(positionHistory.canRedo ? '↩️ Desfazer' : '↪️ Refazer', { duration: 1000 });
+      // BUG-08 FIX: labels now reflect the action ALREADY performed, not the future action.
+      // canRedo=true means we just applied an undo → show "Desfeito"; otherwise → "Refeito".
+      toast.info(positionHistory.canRedo ? '↩️ Desfeito' : '↪️ Refeito', { duration: 1000 });
     });
   }, [activeAreaId, positionHistory]);
 
@@ -174,8 +176,10 @@ export function useMockupGenerator() {
 
   // ─── Effects ────────────────────────────────────────────────────────
 
+  // BUG-05 FIX: guard with hasDraftRestored so a product selection made BEFORE draft restoration
+  // completes does not stomp the restored areas. Also added hasDraftRestored to the dep array.
   useEffect(() => {
-    if (!productLocations || isRestoringDraft.current) return;
+    if (!productLocations || isRestoringDraft.current || !hasDraftRestored) return;
     const newAreas: PersonalizationArea[] = productLocations
       .sort((a, b) => a.order - b.order)
       .map((loc) => ({
@@ -197,16 +201,18 @@ export function useMockupGenerator() {
       setPersonalizationAreas(newAreas);
       setActiveAreaId(newAreas[0].id);
     }
-  }, [productLocations]);
+  }, [productLocations, hasDraftRestored]);
 
   useEffect(() => {
     if (!activeAreaId && personalizationAreas.length > 0)
       setActiveAreaId(personalizationAreas[0].id);
   }, [activeAreaId, personalizationAreas]);
 
+  // BUG-03 FIX: removed fetchHistory() from here — it was called twice on mount because the
+  // user?.id effect below already calls it once the auth resolves. Duplicate call wasted one
+  // round-trip and caused a history flash on every cold load.
   useEffect(() => {
     fetchData();
-    fetchHistory();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -675,6 +681,9 @@ export function useMockupGenerator() {
     positionHistory.clear();
     setActiveTab('generator');
     if (mockup.logo_url) logoColorAnalysis.analyzeImage(mockup.logo_url);
+    // BUG-04 FIX: clear stale draft so the auto-save effect does not overwrite the just-loaded
+    // history configuration ~1 second after this function returns.
+    clearDraft();
     toast.success('Configurações carregadas!');
   };
 
