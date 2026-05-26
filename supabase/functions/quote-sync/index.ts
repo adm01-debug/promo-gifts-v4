@@ -1,20 +1,21 @@
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { authenticateRequest, requireRole, authErrorResponse } from "../_shared/auth.ts";
 /// <reference lib="deno.ns" />
-import { createClient } from "npm:@supabase/supabase-js@2.49.1";
+// BUG-010 FIX: Aligned SDK version from @2.49.1 to @2.49.4 (standard for all edge functions).
+import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { parseBodyWithSchema } from "../_shared/zod-validate.ts";
 import { resolveCredential } from "../_shared/credentials.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const n8nWebhookUrl = Deno.env.get("N8N_QUOTE_WEBHOOK_URL");
+// BUG-010 FIX: REMOVED module-level `const n8nWebhookUrl = Deno.env.get("N8N_QUOTE_WEBHOOK_URL")`.
+// Module-scope reads are frozen at cold-start; key rotations via /admin/conexoes had no effect.
+// URL is now resolved inside sendToN8N() using resolveCredential() (DB-first SSOT).
 
 /**
  * Resolve credenciais do CRM externo (DB-first via integration_credentials,
  * env fallback via aliases CRM_SUPABASE_URL → EXTERNAL_CRM_URL).
- * Antes lia Deno.env.get() em escopo de módulo, ignorando rotações
- * salvas pela UI /admin/conexoes.
  */
 async function getCrmCreds(): Promise<{ url: string | null; key: string | null }> {
   const [urlRes, svcRes, anonRes] = await Promise.all([
@@ -63,8 +64,8 @@ interface QuoteData {
   seller_id?: string;
   seller_name?: string;
   status: string;
-  subtotal: number;            // apresentado (com markup)
-  discount_percent: number;    // aparente (cliente vê)
+  subtotal: number;
+  discount_percent: number;
   discount_amount: number;
   total: number;
   notes?: string;
@@ -75,7 +76,6 @@ interface QuoteData {
   shipping_cost?: number;
   items: QuoteItemData[];
   created_at: string;
-  // 🔒 Auditoria interna — NUNCA exibir ao cliente final no CRM
   internal_real_subtotal?: number;
   internal_real_discount_percent?: number;
   internal_negotiation_markup_percent?: number;
@@ -105,7 +105,6 @@ Deno.serve(async (req) => {
   }
 
   const corsHeaders = getCorsHeaders(req);
-  // Auth: exige vendedor autenticado (agente ou acima)
   try {
     const authCtx = await authenticateRequest(req);
     requireRole(authCtx, "agente");
@@ -113,19 +112,17 @@ Deno.serve(async (req) => {
     return authErrorResponse(authErr, corsHeaders);
   }
 
-
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    // Validate body with Zod
     const parsed = await parseBodyWithSchema(req, RequestSchema, getCorsHeaders(req));
     if ('error' in parsed) return parsed.error;
 
     const { action, data } = parsed.data;
-    console.log("Quote sync request received:", {
-      action,
-      hasData: Boolean(data),
-    });
+    console.log("Quote sync request received:", { action, hasData: Boolean(data) });
+
+    // BUG-010 FIX: resolve n8nWebhookUrl once per request inside handler (not at module scope).
+    const { value: n8nWebhookUrl } = await resolveCredential("N8N_QUOTE_WEBHOOK_URL");
 
     switch (action) {
       case "sync_quote": {
@@ -135,7 +132,7 @@ Deno.serve(async (req) => {
 
         let n8nResponse: Record<string, unknown> = {};
         if (n8nWebhookUrl) {
-          try { n8nResponse = await sendToN8N(quoteData); }
+          try { n8nResponse = await sendToN8N(quoteData, n8nWebhookUrl); }
           catch (err) { console.error("N8N sync failed (non-blocking):", err); }
         }
 
@@ -143,12 +140,7 @@ Deno.serve(async (req) => {
         await updateCRMSyncStatus(quoteId, n8nResponse);
 
         return new Response(
-          JSON.stringify({
-            success: true,
-            message: "Quote synced successfully",
-            bitrix_deal_id: n8nResponse.bitrix_deal_id,
-            bitrix_quote_id: n8nResponse.bitrix_quote_id,
-          }),
+          JSON.stringify({ success: true, message: "Quote synced successfully", bitrix_deal_id: n8nResponse.bitrix_deal_id, bitrix_quote_id: n8nResponse.bitrix_quote_id }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
@@ -159,11 +151,7 @@ Deno.serve(async (req) => {
         const crm = createClient(crmUrl, crmKey);
 
         const { data: pendingQuotes, error: fetchError } = await crm
-          .from("quotes")
-          .select("id")
-          .eq("synced_to_bitrix", false)
-          .in("status", ["sent", "approved"]);
-
+          .from("quotes").select("id").eq("synced_to_bitrix", false).in("status", ["sent", "approved"]);
         if (fetchError) throw fetchError;
 
         const results = [];
@@ -173,7 +161,7 @@ Deno.serve(async (req) => {
             if (quoteData) {
               let response: Record<string, unknown> = {};
               if (n8nWebhookUrl) {
-                try { response = await sendToN8N(quoteData); } catch { /* skip */ }
+                try { response = await sendToN8N(quoteData, n8nWebhookUrl); } catch { /* skip */ }
               }
               await sendToSalesPro(quoteData);
               await updateCRMSyncStatus(quote.id, response);
@@ -181,18 +169,12 @@ Deno.serve(async (req) => {
             }
           } catch (syncErr) {
             const errorMessage = syncErr instanceof Error ? syncErr.message : "Unknown error";
-            console.error(`Error syncing quote ${quote.id}:`, syncErr);
             results.push({ id: quote.id, success: false, error: errorMessage });
           }
         }
 
         return new Response(
-          JSON.stringify({
-            success: true,
-            synced: results.filter((r) => r.success).length,
-            failed: results.filter((r) => !r.success).length,
-            results,
-          }),
+          JSON.stringify({ success: true, synced: results.filter(r => r.success).length, failed: results.filter(r => !r.success).length, results }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
@@ -213,13 +195,14 @@ Deno.serve(async (req) => {
           }
         }
 
-        const salesProUrl = Deno.env.get("SALESPRO_WEBHOOK_URL");
-        const apiKey = Deno.env.get("QUOTE_SYNC_API_KEY");
-        if (salesProUrl && apiKey) {
+        // BUG-010 FIX: use resolveCredential for SALESPRO credentials
+        const { value: salesProUrl } = await resolveCredential("SALESPRO_WEBHOOK_URL");
+        const { value: salesProApiKey } = await resolveCredential("QUOTE_SYNC_API_KEY");
+        if (salesProUrl && salesProApiKey) {
           try {
             const response = await fetch(salesProUrl, {
               method: "POST",
-              headers: { "Content-Type": "application/json", "x-api-key": apiKey },
+              headers: { "Content-Type": "application/json", "x-api-key": salesProApiKey },
               body: JSON.stringify({ test: true, timestamp: new Date().toISOString(), source: "gifts-store" }),
             });
             const body = await response.text();
@@ -248,26 +231,21 @@ Deno.serve(async (req) => {
 // ===== Fetch quote data from external CRM database =====
 async function fetchQuoteFromCRM(quoteId: string): Promise<QuoteData | null> {
   const { url: crmUrl, key: crmKey } = await getCrmCreds();
-  if (!crmUrl || !crmKey) {
-    throw new Error("CRM database credentials not configured");
-  }
+  if (!crmUrl || !crmKey) throw new Error("CRM database credentials not configured");
 
   const crm = createClient(crmUrl, crmKey);
 
-  const { data: quote, error: quoteError } = await crm
-    .from("quotes").select("*").eq("id", quoteId).single();
+  const { data: quote, error: quoteError } = await crm.from("quotes").select("*").eq("id", quoteId).single();
   if (quoteError || !quote) { console.error("Error fetching quote:", quoteError); return null; }
 
   const { data: items, error: itemsError } = await crm
-    .from("quote_items").select("*, quote_item_personalizations(*)")
-    .eq("quote_id", quoteId).order("sort_order");
+    .from("quote_items").select("*, quote_item_personalizations(*)").eq("quote_id", quoteId).order("sort_order");
   if (itemsError) console.error("Error fetching items:", itemsError);
 
   let sellerName: string | undefined;
   if (quote.seller_id) {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { data: profile } = await supabase
-      .from("profiles").select("full_name").eq("user_id", quote.seller_id).single();
+    const { data: profile } = await supabase.from("profiles").select("full_name").eq("user_id", quote.seller_id).single();
     sellerName = profile?.full_name;
   }
 
@@ -299,7 +277,6 @@ async function fetchQuoteFromCRM(quoteId: string): Promise<QuoteData | null> {
     payment_terms: quote.payment_terms, delivery_time: quote.delivery_time,
     shipping_type: quote.shipping_type, shipping_cost: Number(quote.shipping_cost || 0),
     items: formattedItems, created_at: quote.created_at,
-    // Campos internos para auditoria (CRM uso interno apenas)
     internal_real_subtotal: quote.real_subtotal != null ? Number(quote.real_subtotal) : undefined,
     internal_real_discount_percent: quote.real_discount_percent != null ? Number(quote.real_discount_percent) : undefined,
     internal_negotiation_markup_percent: quote.negotiation_markup_percent != null ? Number(quote.negotiation_markup_percent) : undefined,
@@ -318,9 +295,9 @@ async function updateCRMSyncStatus(quoteId: string, n8nResponse: Record<string, 
   if (error) console.error("Error updating CRM sync status:", error);
 }
 
-async function sendToN8N(quoteData: QuoteData): Promise<Record<string, unknown>> {
-  if (!n8nWebhookUrl) throw new Error("N8N_QUOTE_WEBHOOK_URL not configured");
-  const response = await fetch(n8nWebhookUrl, {
+// BUG-010 FIX: sendToN8N now receives webhookUrl as parameter (no more module-scope closure).
+async function sendToN8N(quoteData: QuoteData, webhookUrl: string): Promise<Record<string, unknown>> {
+  const response = await fetch(webhookUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "create_or_update_quote", quote: quoteData, timestamp: new Date().toISOString() }),
@@ -332,9 +309,10 @@ async function sendToN8N(quoteData: QuoteData): Promise<Record<string, unknown>>
   try { return await response.json(); } catch { return { success: true }; }
 }
 
+// BUG-010 FIX: sendToSalesPro uses resolveCredential (DB-first SSOT) instead of Deno.env.get.
 async function sendToSalesPro(quoteData: QuoteData): Promise<void> {
-  const webhookUrl = Deno.env.get("SALESPRO_WEBHOOK_URL");
-  const apiKey = Deno.env.get("QUOTE_SYNC_API_KEY");
+  const { value: webhookUrl } = await resolveCredential("SALESPRO_WEBHOOK_URL");
+  const { value: apiKey } = await resolveCredential("QUOTE_SYNC_API_KEY");
   if (!webhookUrl || !apiKey) { console.warn("SalesPro not configured, skipping"); return; }
 
   try {
