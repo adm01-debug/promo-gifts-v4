@@ -185,6 +185,57 @@ describe('contract: product-webhook v1 (compat com produção)', () => {
       });
     }
   });
+
+  it('products no limite de 500 -> aceita (200) com latencia aceitavel', async () => {
+    const products = Array.from({ length: 500 }, (_, index) => ({
+      sku: `SKU-${index}`,
+      name: `Produto ${index}`,
+      price: 1,
+    }));
+
+    const req = makeRequest({
+      body: {
+        action: 'batch_upsert',
+        products,
+      },
+    });
+
+    const start = performance.now();
+    const r = await parseContract(req, ProductWebhookSchemas);
+    const elapsedMs = performance.now() - start;
+
+    expect(r.ok).toBe(true);
+    expect(elapsedMs).toBeLessThan(250);
+  });
+
+  it('products acima do limite de 500 -> rejeita com 422 e latencia aceitavel', async () => {
+    const products = Array.from({ length: 501 }, (_, index) => ({
+      sku: `SKU-${index}`,
+      name: `Produto ${index}`,
+      price: 1,
+    }));
+
+    const req = makeRequest({
+      body: {
+        action: 'batch_upsert',
+        products,
+      },
+    });
+
+    const start = performance.now();
+    const r = await parseContract(req, ProductWebhookSchemas);
+    const elapsedMs = performance.now() - start;
+
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      await expectContractError(r.response, {
+        status: 422,
+        code: 'validation_failed',
+        fieldPaths: ['products'],
+      });
+    }
+    expect(elapsedMs).toBeLessThan(250);
+  });
 });
 
 describe('contract: product-webhook v2 (strict)', () => {
