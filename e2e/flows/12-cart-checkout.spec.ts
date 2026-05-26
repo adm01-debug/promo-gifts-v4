@@ -232,4 +232,59 @@ test.describe("Fluxo: Carrinho → Checkout", () => {
         /\/functions\/v1\/(create-quote|external-db-bridge)/.test(url.href),
     );
   });
+
+  test("checkout bloqueia por campos obrigatórios e permite recuperação até confirmação final", async ({
+    page,
+  }) => {
+    const ready = await ensureActiveCart(page);
+    test.skip(!ready, "Sem empresas cadastradas para criar carrinho de teste");
+
+    const productId = await addFirstProductToCart(page);
+    test.skip(!productId, "Não foi possível adicionar produto para iniciar checkout");
+
+    await gotoAndSettle(page, "/carrinhos");
+
+    const checkoutBtn = page.locator(Sel.cart.checkoutCta).first();
+    await expect(checkoutBtn).toBeVisible({ timeout: 10_000 });
+    await checkoutBtn.click();
+
+    const confirmBtn = page.locator(Sel.cart.confirmDialogYes).first();
+    await expect(confirmBtn).toBeVisible({ timeout: 5_000 });
+    await confirmBtn.click();
+
+    await page.waitForURL(/\/orcamentos\/novo/, { timeout: 12_000 });
+    await expect(page.locator(Sel.page.title("orcamento-novo")).first()).toBeVisible({
+      timeout: 10_000,
+    });
+
+    // Tentativa de avançar sem preencher dados obrigatórios (bloqueio esperado)
+    const nextButton = page.locator(Sel.quote.next).first();
+    await nextButton.click();
+
+    const feedback = page.locator(TOAST_SELECTOR).first().or(page.locator(Sel.app.errorBanner).first());
+    await expect(feedback).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("step-indicator-client")).toBeVisible({ timeout: 5_000 });
+
+    // Recuperação: preencher campos obrigatórios e concluir fluxo
+    const companySearch = page.getByPlaceholder("Buscar empresa por nome, CNPJ...");
+    await companySearch.fill("Promo");
+    const companyOption = page.locator('button:has-text("Promo")').first();
+    await companyOption.waitFor({ state: "visible", timeout: 10_000 });
+    await companyOption.click();
+    await nextButton.click();
+
+    await page.getByTestId("payment-method-select-root").click();
+    await page.getByRole("option", { name: "Boleto Bancário" }).click();
+    await page.getByTestId("payment-terms-select-root").click();
+    await page.getByRole("option", { name: "7 dias a partir da entrega" }).click();
+    await page.getByRole("button", { name: "Contar dias" }).click();
+    await page.getByTestId("delivery-time-select-root").click();
+    await page.getByRole("option", { name: "7 dias | Após aprovação" }).click();
+    await page.getByTestId("shipping-type-select-root").click();
+    await page.getByRole("option", { name: "FOB | Repassado ao cliente" }).click();
+    await nextButton.click();
+
+    // Validação final: etapa de resumo/confirmacão atingida após recuperação
+    await expect(page.getByTestId("step-indicator-items")).toBeVisible({ timeout: 10_000 });
+  });
 });
