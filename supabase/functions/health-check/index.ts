@@ -84,6 +84,7 @@ class ExternalDatabaseChecker implements HealthChecker {
 
 Deno.serve(async (req) => {
   const requestId = getOrCreateRequestId(req);
+  console.log(`[health-check] env: URL=${!!Deno.env.get("SUPABASE_URL")}, SERVICE_ROLE=${!!Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`);
   const log = createStructuredLogger({ fn: "health-check", requestId, req });
 
   // Handle CORS
