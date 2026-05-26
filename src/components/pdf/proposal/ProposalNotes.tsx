@@ -26,7 +26,7 @@ export function ProposalNotes({ data }: { data: ProposalTemplateData }) {
           borderBottom: "2px solid #e8f5e9",
           paddingBottom: "4px",
         }}>
-          Condicoes Comerciais
+          Condições Comerciais
         </div>
 
         {/* TABLE LAYOUT instead of CSS grid — html2canvas does not support grid */}
@@ -70,7 +70,7 @@ export function ProposalNotes({ data }: { data: ProposalTemplateData }) {
         </table>
 
         <div style={{ fontSize: "9px", color: "#777", lineHeight: "1.5", paddingTop: "6px", marginBottom: "8px" }}>
-          <div>- Todos os valores incluem personalizacao conforme descricao.</div>
+          <div>- Todos os valores incluem personalização conforme descrição.</div>
           <div>- Todos os produtos passam por controle de qualidade.</div>
           {data.notes && <div>- {data.notes}</div>}
         </div>
@@ -86,16 +86,16 @@ export function ProposalNotes({ data }: { data: ProposalTemplateData }) {
             letterSpacing: "0.5px",
             marginBottom: "6px",
           }}>
-            Termos de Aceite e Contratacao
+            Termos de Aceite e Contratação
           </div>
           <div style={{ fontSize: "9px", color: "#555", lineHeight: "1.38" }}>
             <div style={{ marginBottom: "4px" }}>
-              <span style={{ fontWeight: 700, color: "#333" }}>1. ACEITE - </span>
-              A presente proposta constitui oferta formal (art. 427, Codigo Civil). A resposta do destinatario com expressoes de concordancia ("aprovado", "aceito", "de acordo" ou equivalentes), por e-mail ou aplicativo de mensagens, configura aceitacao plena de todos os termos, valores, prazos e especificacoes aqui descritos, formando contrato valido e vinculante (arts. 104, 107 e 427 a 435 do Codigo Civil).
+              <span style={{ fontWeight: 700, color: "#333" }}>1. ACEITE — </span>
+              A presente proposta constitui oferta formal (art. 427, Código Civil). A resposta do destinatário com expressões de concordância ("aprovado", "aceito", "de acordo" ou equivalentes), por e-mail ou aplicativo de mensagens, configura aceitação plena de todos os termos, valores, prazos e especificações aqui descritos, formando contrato válido e vinculante (arts. 104, 107 e 427 a 435 do Código Civil).
             </div>
             <div>
-              <span style={{ fontWeight: 700, color: "#333" }}>2. REPRESENTACAO - </span>
-              Ao aprovar esta proposta, o respondente declara que possui poderes suficientes para vincular a empresa identificada no campo "EMPRESA" a presente contratacao, estando autorizado a firmar compromissos comerciais nas condicoes aqui estipuladas.
+              <span style={{ fontWeight: 700, color: "#333" }}>2. REPRESENTAÇÃO — </span>
+              Ao aprovar esta proposta, o respondente declara que possui poderes suficientes para vincular a empresa identificada no campo "EMPRESA" à presente contratação, estando autorizado a firmar compromissos comerciais nas condições aqui estipuladas.
             </div>
           </div>
         </div>
