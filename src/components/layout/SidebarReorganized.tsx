@@ -97,6 +97,7 @@ const navGroups: NavGroup[] = [
       { icon: Sparkles, label: 'Magic Up', href: '/magic-up' },
       { icon: Crosshair, label: 'Match', href: '/match' },
       { icon: Boxes, label: 'Kit Maker', href: '/montar-kit' },
+      { icon: Zap, label: 'Raio X', href: '/raio-x' },
       { icon: Calculator, label: 'Simulador', href: '/simulador', shortcut: 'Alt+S' },
       { icon: BarChart3, label: 'Preços por Tiragem', href: '/simulador-precos' },
       { icon: DollarSign, label: 'Busca por Preço', href: '/busca-preco' },

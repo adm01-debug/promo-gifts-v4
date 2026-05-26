@@ -16,6 +16,7 @@ import {
   SimuladorWizard,
   StockDashboardPage,
   SimulationPage,
+  VisualSearchPage,
 } from './lazy-pages';
 
 /**
@@ -45,5 +46,6 @@ export const toolsRoutes = (
     <Route path="/dropbox" element={<DropboxBrowserPage />} />
     <Route path="/simulacao" element={<SimulationPage />} />
     <Route path="/ferramentas/cobertura" element={<CoverageInsightsDashboardPage />} />
+    <Route path="/raio-x" element={<VisualSearchPage />} />
   </>
 );

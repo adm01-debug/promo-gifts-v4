@@ -153,6 +153,7 @@ export const SimulationPage = lazyWithRetry(() => import('@/pages/Simulation'));
 export const CoverageInsightsDashboardPage = lazyWithRetry(
   () => import('@/pages/tools/CoverageInsightsDashboardPage'),
 );
+export const VisualSearchPage = lazyWithRetry(() => import('@/pages/tools/VisualSearchPage'));
 
 // ─────────────────────────────────────────────────────────────────
 // Clients (CRM)
