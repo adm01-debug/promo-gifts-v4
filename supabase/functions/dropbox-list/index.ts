@@ -14,15 +14,17 @@ const BodySchema = z.object({
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
+
+  // HOTFIX: OPTIONS preflight MUST be handled BEFORE auth.
+  // Browsers send OPTIONS without Authorization (it triggers preflight).
+  // If we authenticate first, preflight returns 401 and POST is never sent.
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
   try {
     const authCtx = await authenticateRequest(req);
     requireRole(authCtx, "agente");
   } catch (authErr) {
     return authErrorResponse(authErr, corsHeaders);
-  }
-
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
   }
 
   try {
