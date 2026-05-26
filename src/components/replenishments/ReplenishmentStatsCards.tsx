@@ -3,6 +3,7 @@ import { RefreshCw, CalendarPlus, CalendarRange, CalendarDays, Building2, AlertT
 import { useReplenishmentStats, type ReplenishmentStatsDisplay } from "@/hooks/products";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, type ReactNode } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // ─── Count Up Animation ─────────────────────────────────────────
 
