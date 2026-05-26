@@ -126,7 +126,7 @@ Deno.serve(async (req) => {
   log.info(overall === "healthy" ? "health_ok" : "health_degraded", responseBody);
 
   const corsHeaders = {
-    ...buildPublicCorsHeaders(),
+    ...getCorsHeaders(req),
     "Content-Type": "application/json"
   };
 

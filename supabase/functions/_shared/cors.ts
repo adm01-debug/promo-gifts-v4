@@ -52,14 +52,18 @@ const ALLOWED_HEADERS_LIST = [
 const ALLOWED_HEADERS_SET = new Set(ALLOWED_HEADERS_LIST.map((h) => h.toLowerCase()));
 const ALLOWED_HEADERS_VALUE = ALLOWED_HEADERS_LIST.join(', ');
 
-const CORS_HEADERS_BASE = {
-  'Access-Control-Allow-Headers': ALLOWED_HEADERS_VALUE,
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Expose-Headers': 'x-request-id',
+const SECURITY_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
   'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
   'Content-Security-Policy': "default-src 'self'; script-src 'self' 'strict-dynamic'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;",
+} as const;
+
+const CORS_HEADERS_BASE = {
+  'Access-Control-Allow-Headers': ALLOWED_HEADERS_VALUE,
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Expose-Headers': 'x-request-id',
+  ...SECURITY_HEADERS,
 } as const;
 
 // --- Internal Utilities ---
@@ -165,13 +169,9 @@ export function getCorsHeaders(req?: Request): Record<string, string> {
     logPreflightFromRequest(req, origin);
   }
 
-  // Security Headers for non-OPTIONS responses
-  const securityHeaders = req?.method !== 'OPTIONS' ? {
-    'X-Content-Type-Options': CORS_HEADERS_BASE['X-Content-Type-Options'],
-    'X-Frame-Options': CORS_HEADERS_BASE['X-Frame-Options'],
-    'Strict-Transport-Security': CORS_HEADERS_BASE['Strict-Transport-Security'],
-    'Content-Security-Policy': CORS_HEADERS_BASE['Content-Security-Policy'],
-  } : {};
+  // Security Headers are now part of CORS_HEADERS_BASE
+  // and are returned for both OPTIONS and non-OPTIONS for maximum compliance.
+  const securityHeaders = SECURITY_HEADERS;
 
   return {
     ...CORS_HEADERS_BASE,
