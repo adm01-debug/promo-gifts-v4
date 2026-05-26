@@ -44,6 +44,17 @@ interface VisualSearchResult {
     description: string;
     confidence: number;
     rationale: string;
+    visualEvidence?: {
+      material: string;
+      silhouette: string;
+      finish: string;
+    };
+    visualHighlights?: Array<{
+      label: string;
+      x: number;
+      y: number;
+      description: string;
+    }>;
   };
   products: Array<{
     id: string;
@@ -53,6 +64,7 @@ interface VisualSearchResult {
     price: number;
     images: string[];
     relevance: number;
+    matchRationale?: string;
   }>;
   searchTerms: string;
 }
@@ -180,8 +192,30 @@ export default function VisualSearchPage() {
     setPreviewUrl(null);
     setResults(null);
     setIsSearching(false);
+    // Preserving filters can be useful for re-analysis, but let's clear on hard reset
     setSelectedCategoryIds([]);
     setColorSelection({ groups: [], variations: [], nuances: [] });
+  };
+
+  const handleFeedback = async (isCorrect: boolean, notes?: string) => {
+    if (!results || !previewUrl) return;
+
+    try {
+      const { error } = await supabase
+        .from('visual_search_feedback')
+        .insert({
+          image_url: previewUrl,
+          original_analysis: results.analysis,
+          is_correct: isCorrect,
+          feedback_notes: notes,
+          search_terms: results.searchTerms
+        });
+
+      if (error) throw error;
+      toast.success(isCorrect ? 'Obrigado pelo feedback!' : 'Feedback registrado. Isso ajudará a melhorar a IA.');
+    } catch (err) {
+      console.error('Feedback error:', err);
+    }
   };
 
   const getConfidenceLabel = (confidence: number) => {
@@ -236,6 +270,32 @@ export default function VisualSearchPage() {
                       className="relative overflow-hidden group"
                     >
                       <img src={previewUrl} alt="Preview" className="aspect-square w-full object-cover" />
+                      
+                      {/* Visual Highlights Overlay */}
+                      {results?.analysis.visualHighlights && !isSearching && (
+                        <div className="absolute inset-0 pointer-events-none">
+                          {results.analysis.visualHighlights.map((hl, idx) => (
+                            <motion.div
+                              key={idx}
+                              initial={{ scale: 0, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              transition={{ delay: 0.5 + idx * 0.1 }}
+                              className="absolute group/hl pointer-events-auto"
+                              style={{ left: `${hl.x}%`, top: `${hl.y}%` }}
+                            >
+                              <div className="relative flex items-center justify-center">
+                                <div className="absolute h-6 w-6 animate-ping rounded-full bg-primary/40" />
+                                <div className="relative h-3 w-3 rounded-full bg-primary border-2 border-white shadow-lg" />
+                                
+                                {/* Tooltip */}
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover/hl:opacity-100 transition-opacity whitespace-nowrap bg-background/95 border border-border px-2 py-1 rounded text-[10px] font-medium shadow-xl">
+                                  {hl.label}: {hl.description}
+                                </div>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      )}
                       
                       {/* Scanning Line Animation */}
                       {isSearching && (
@@ -359,13 +419,25 @@ export default function VisualSearchPage() {
                 </div>
 
                 {previewUrl && !isSearching && (
-                  <Button
-                    className="w-full gap-2 shadow-lg shadow-primary/20 transition-all active:scale-95"
-                    onClick={() => processImage(previewUrl)}
-                  >
-                    <Target className="h-4 w-4" />
-                    {results ? 'Refazer Análise' : 'Iniciar Raio X'}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1 gap-2"
+                      onClick={() => processImage(previewUrl)}
+                    >
+                      <RefreshCcw className="h-4 w-4" />
+                      Reanalisar
+                    </Button>
+                    {!results && (
+                      <Button
+                        className="flex-1 gap-2 shadow-lg shadow-primary/20 transition-all active:scale-95"
+                        onClick={() => processImage(previewUrl)}
+                      >
+                        <Target className="h-4 w-4" />
+                        Iniciar Raio X
+                      </Button>
+                    )}
+                  </div>
                 )}
               </CardContent>
             </Card>

@@ -160,7 +160,9 @@ Use essas dicas para refinar sua percepção, mas priorize o que você vê visua
         keywords: [analysisContent.slice(0, 50)],
         description: "Análise visual parcial.",
         confidence: 0.5,
-        rationale: "Erro no processamento da estrutura de dados da IA."
+        rationale: "Erro no processamento da estrutura de dados da IA.",
+        visualEvidence: { material: "", silhouette: "", finish: "" },
+        visualHighlights: []
       };
     }
 
@@ -201,6 +203,12 @@ Use essas dicas para refinar sua percepção, mas priorize o que você vê visua
         finalProducts = directProducts.map(p => ({ ...p, relevance: 0.4 }));
       }
     }
+
+    // Add rationale to products
+    finalProducts = finalProducts.map(p => ({
+      ...p,
+      matchRationale: `Este produto foi selecionado por possuir características de ${productAnalysis.productType} em ${productAnalysis.material}, alinhado com a silhueta identificada.`
+    }));
 
     // Sort by relevance (some might be from RPC, some from fallback)
     finalProducts.sort((a, b) => (b.relevance || 0) - (a.relevance || 0));
