@@ -177,37 +177,8 @@ export default function MockupGenerator() {
 
       <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
 
-        <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-primary/10 via-accent/5 to-transparent p-6 border border-primary/20">
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-accent/10 rounded-full blur-3xl" />
-          <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-primary/10 ring-2 ring-primary/20 shrink-0">
-                <Wand2 className="h-7 w-7 text-primary animate-pulse" />
-              </div>
-              <div className="min-w-0">
-                <h1 data-testid="page-title-mockup-generator" className="font-display text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Gerador de Mockups</h1>
-                <p className="text-muted-foreground mt-1 truncate">Crie mockups profissionais de brindes personalizados ✨</p>
-                {mg.activeTab === "generator" && summary && (
-                  <p className="text-[11px] text-primary/70 mt-1 font-medium bg-primary/5 px-2 py-0.5 rounded-full inline-block border border-primary/10">
-                    {summary}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {mg.mockupHistory.length > 0 && (
-                <Badge variant="outline" className="gap-1.5 py-1 px-3 bg-background/50 backdrop-blur-sm border-primary/20">
-                  <History className="h-3.5 w-3.5 text-primary" />
-                  {mg.mockupHistory.length} no histórico
-                </Badge>
-              )}
-              <Badge variant="secondary" className="gap-1.5 py-1 px-3">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                V.5.2
-              </Badge>
-            </div>
-          </div>
-        </div>
+        <h1 data-testid="page-title-mockup-generator" className="sr-only">Gerador de Mockups</h1>
+
 
         {mg.activeTab !== "history" && (
           <div className="sticky top-0 z-[40] bg-background/80 backdrop-blur-md py-2 -mx-2 px-2 rounded-xl transition-all duration-300 border border-transparent hover:border-border/40">
