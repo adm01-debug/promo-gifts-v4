@@ -3,6 +3,7 @@ import { invokeFunction, registerCase } from "../_shared.ts";
 
 registerCase({ functionName: "expert-chat", caseId: "ECH-001", businessRule: "requisição sem mensagem deve ser rejeitada", testName: "rejeita payload sem mensagem", run: async () => {
   const res = await invokeFunction("expert-chat", {});
+  await res.text();
   assert(res.status === 400 || res.status === 401 || res.status === 422);
 }});
 
