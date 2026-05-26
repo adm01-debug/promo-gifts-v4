@@ -847,23 +847,23 @@ export default function VisualSearchPage() {
                             idx === 0 && results.products.length > 2 && !showFocusMode ? "sm:col-span-2 xl:col-span-2 sm:row-span-2" : ""
                           )}
                         >
-                        <Card 
-                          className={cn(
-                            "group h-full cursor-pointer overflow-hidden border-white/5 bg-black/40 backdrop-blur-md transition-all duration-500 hover:border-emerald-500/40 active:scale-[0.98] relative",
-                            product.relevance >= 0.9 ? "hover:shadow-[0_0_40px_rgba(52,211,153,0.2)] ring-1 ring-white/5 hover:ring-emerald-500/30" : "hover:shadow-2xl hover:bg-white/5",
-                            idx === 0 && results.products.length > 2 && !showFocusMode ? "border-emerald-500/20" : ""
-                          )}
-                          onClick={() => navigate(`/produto/${product.id}`)}
-                        >
-                          <div className="relative aspect-square overflow-hidden bg-white/5 p-8 flex items-center justify-center">
-                            <motion.img 
-                              src={product.images?.[0] || '/placeholder.svg'} 
-                              alt={product.name}
-                              className="h-full w-full object-contain transition-transform duration-700 group-hover:scale-110 drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
-                              whileHover={{
-                                filter: "brightness(1.1) contrast(1.05)"
-                              }}
-                            />
+                          <Card 
+                            className={cn(
+                              "group h-full cursor-pointer overflow-hidden border-white/5 bg-black/40 backdrop-blur-md transition-all duration-500 hover:border-emerald-500/40 active:scale-[0.98] relative shadow-2xl",
+                              product.relevance >= 0.9 ? "hover:shadow-[0_0_40px_rgba(52,211,153,0.2)] ring-1 ring-white/5 hover:ring-emerald-500/30" : "hover:shadow-2xl hover:bg-white/5",
+                              idx === 0 && results.products.length > 2 && !showFocusMode ? "border-emerald-500/20 shadow-emerald-500/10" : ""
+                            )}
+                            onClick={() => navigate(`/produto/${product.id}`)}
+                          >
+                            <div className="relative aspect-square overflow-hidden bg-white/5 p-8 flex items-center justify-center">
+                              <motion.img 
+                                src={product.images?.[0] || '/placeholder.svg'} 
+                                alt={product.name}
+                                className="h-full w-full object-contain transition-transform duration-700 group-hover:scale-110 drop-shadow-[0_20px_50px_rgba(0,0,0,0.8)]"
+                                whileHover={{
+                                  filter: "brightness(1.1) contrast(1.1)"
+                                }}
+                              />
                             
                             {/* Match Overlay */}
                             <div className="absolute top-4 right-4 flex flex-col items-end gap-1.5">
