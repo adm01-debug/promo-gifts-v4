@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { performanceTracker } from '@/utils/performance';
 import { useScrollLockFix } from '@/hooks/ui/useScrollLockFix';
 import { useGlobalShortcuts } from '@/hooks/ui/useGlobalShortcuts';
+import { getFallback } from '@/components/layout/SkeletonLoaders';
 
 import { SkipToContent } from '@/components/common/SkipToContent';
 
