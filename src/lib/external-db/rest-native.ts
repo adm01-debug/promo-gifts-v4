@@ -1,28 +1,15 @@
 /**
  * REST-native fallback for external-db-bridge SELECT operations.
  *
- * When the kill-switch `edge_external_db_bridge` is OFF (in public.system_kill_switches),
- * eligible read-only queries are transparently rerouted to the local Postgres via
- * `supabase.from(...).select(...)` instead of hitting the deprecated edge function.
+ * When the kill-switch `edge_external_db_bridge` is OFF, eligible read-only
+ * queries are rerouted to local Postgres via supabase.from(...).select(...).
  *
- * Eligibility:
- *   - Operation must be SELECT (no writes via REST fallback)
- *   - Table must be on REST_NATIVE_SAFE_TABLES whitelist
- *   - No `_search` virtual filter (bridge-only feature)
- *
- * Inelegible queries fall back to bridge automatically.
- *
- * IMPORTANT: This DOES NOT replace the bridge — it complements it. The bridge
- * remains the primary path while the kill-switch is ON.
+ * Eligibility: SELECT only, table in REST_NATIVE_SAFE_TABLES, no _search filter.
  */
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import type { InvokeOptions, InvokeResult } from './bridge';
 
-/**
- * Whitelist of tables safe for REST-native routing.
- * Confirmed to exist locally with sufficient data (see migration audit 2026-05-25).
- */
 const REST_NATIVE_SAFE_TABLES = new Set<string>([
   'products',
   'product_variants',
@@ -31,6 +18,14 @@ const REST_NATIVE_SAFE_TABLES = new Set<string>([
   'color_variations',
   'color_groups',
 ]);
+
+/**
+ * BUG-NEW-02 FIX: When offset is provided without limit, this conservative
+ * upper bound prevents unbounded queries while making the behaviour visible
+ * in logs (via logger.warn below). Callers should always specify `limit`
+ * alongside `offset` for predictable pagination.
+ */
+const OFFSET_WITHOUT_LIMIT_FALLBACK_UPPER = 999;
 
 type RestError = { message: string };
 type RestCountMode = 'exact' | 'planned' | 'estimated';
@@ -61,45 +56,19 @@ type RestNativeClient = {
   };
 };
 
-/**
- * Check if an InvokeOptions is eligible for REST-native routing.
- * Conservative: any unknown construct → false.
- */
 export function isRestNativeEligible(options: InvokeOptions): boolean {
   if (options.operation !== 'select') return false;
   if (!REST_NATIVE_SAFE_TABLES.has(options.table)) return false;
-
-  // The bridge supports a magical `_search` filter that does ILIKE across columns.
-  // We don't replicate this in REST-native — falls back to bridge.
   if (options.filters && '_search' in options.filters) return false;
-
   return true;
 }
 
-/**
- * Map filters object to PostgREST query builder calls.
- *
- * Supported shapes:
- *   { col: value }         → .eq(col, value)
- *   { col: array }         → .in(col, array)
- *   { col: null }          → .is(col, null)
- *   { col: { op: 'gte', value: X } } → .gte(col, X)  (future extensibility)
- */
 function applyFilters(query: RestQuery, filters?: Record<string, unknown>): RestQuery {
   if (!filters) return query;
-
   for (const [col, val] of Object.entries(filters)) {
-    if (val === null) {
-      query = query.is(col, null);
-      continue;
-    }
+    if (val === null) { query = query.is(col, null); continue; }
     if (Array.isArray(val)) {
-      if (val.length === 0) {
-        // Empty array → ensure no rows match (PostgREST `in` with empty fails)
-        query = query.in(col, ['__no_match__']);
-      } else {
-        query = query.in(col, val);
-      }
+      query = val.length === 0 ? query.in(col, ['__no_match__']) : query.in(col, val);
       continue;
     }
     if (typeof val === 'object' && val !== null) {
@@ -112,24 +81,14 @@ function applyFilters(query: RestQuery, filters?: Record<string, unknown>): Rest
       else if (op === 'like') query = query.like(col, opVal);
       else if (op === 'ilike') query = query.ilike(col, opVal);
       else if (op === 'neq') query = query.neq(col, opVal);
-      else {
-        // Unknown op shape — throw to force fallback
-        throw new Error(`rest-native: unsupported filter op '${op}' for column '${col}'`);
-      }
+      else throw new Error(`rest-native: unsupported filter op '${op}' for column '${col}'`);
       continue;
     }
-    // Primitive (string, number, boolean) → eq
     query = query.eq(col, val);
   }
   return query;
 }
 
-/**
- * Execute a SELECT via REST nativo (PostgREST). Returns the same shape as invokeExternalDb.
- *
- * @throws if the table is not whitelisted or operation is not select
- * @throws on REST/PostgREST errors (caller should fall back to bridge)
- */
 export async function executeRestNativeSelect<T>(
   options: InvokeOptions,
 ): Promise<InvokeResult<T>> {
@@ -146,7 +105,6 @@ export async function executeRestNativeSelect<T>(
     'estimated';
 
   const client = supabase as unknown as RestNativeClient;
-
   let query = countOption
     ? client.from(options.table).select(selectCols, { count: countOption, head: false })
     : client.from(options.table).select(selectCols);
@@ -159,18 +117,21 @@ export async function executeRestNativeSelect<T>(
 
   if (typeof options.limit === 'number') {
     const offset = options.offset ?? 0;
-    // PostgREST `range` is INCLUSIVE on both ends
     query = query.range(offset, offset + options.limit - 1);
   } else if (typeof options.offset === 'number' && options.offset > 0) {
-    // Offset without limit — emulate with range to a sane upper bound
-    query = query.range(options.offset, options.offset + 999);
+    // BUG-NEW-02 FIX: previously this branch was silent. Now we warn so the
+    // pattern is visible in logs. The upper bound is intentionally conservative
+    // (999 rows) — callers should always specify limit alongside offset.
+    logger.warn(
+      `[rest-native] offset=${options.offset} without limit on table=${options.table}. ` +
+      `Using fallback upper=${OFFSET_WITHOUT_LIMIT_FALLBACK_UPPER}. ` +
+      'Specify limit for predictable pagination.'
+    );
+    query = query.range(options.offset, options.offset + OFFSET_WITHOUT_LIMIT_FALLBACK_UPPER);
   }
 
   const { data, error, count } = await query;
-
-  if (error) {
-    throw new Error(`rest-native error: ${error.message}`);
-  }
+  if (error) throw new Error(`rest-native error: ${error.message}`);
 
   return {
     records: (data ?? []) as T[],
@@ -178,10 +139,6 @@ export async function executeRestNativeSelect<T>(
   };
 }
 
-/**
- * Smart entry point: if eligible, route to REST nativo; else throw to caller for bridge fallback.
- * Best used inside a try/catch in invokeExternalDb.
- */
 export async function tryExecuteRestNative<T>(
   options: InvokeOptions,
 ): Promise<InvokeResult<T> | null> {
