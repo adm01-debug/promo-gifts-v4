@@ -803,20 +803,17 @@ export default function VisualSearchPage() {
 
             {results && (
               <div className="space-y-5">
-                <div className="flex items-end justify-between px-1">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">Top Matches</h2>
-                      <Badge variant="outline" className="border-primary/20 text-primary bg-primary/5">Premium AI Search</Badge>
+                  <div className="flex items-end justify-between px-1 mb-8">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <h2 className="font-display text-4xl font-black tracking-tighter text-white/90 uppercase italic">Diagnóstico: {results.products.length} Alvos</h2>
+                        <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 bg-emerald-500/5 font-mono px-3">PROTOCOLO_X-RAY_V2.5</Badge>
+                      </div>
+                      <p className="text-[10px] text-white/30 flex items-center gap-2 font-mono uppercase tracking-[0.2em]">
+                        <Target className="h-3 w-3 text-emerald-500" /> Resultados classificados por convergência biométrica e materialidade
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Target className="h-3 w-3" /> Resultados ordenados por similaridade visual e técnica
-                    </p>
                   </div>
-                  <Badge variant="secondary" className="gap-1.5 px-4 py-1.5 text-xs font-black tracking-widest bg-foreground text-background">
-                    {results.products.length} RESULTADOS
-                  </Badge>
-                </div>
 
                 {results.products.length === 0 ? (
                   <Card className="py-24 border-dashed bg-muted/5 relative overflow-hidden">
