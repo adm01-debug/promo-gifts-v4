@@ -740,7 +740,7 @@ export default function VisualSearchPage() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                  <div className="columns-1 sm:columns-2 xl:columns-3 gap-5 space-y-5">
                     {results.products.map((product, idx) => (
                       <motion.div
                         key={product.id}
