@@ -153,7 +153,7 @@ describe("ColumnSelector", () => {
     const radios = screen.getAllByRole("radio");
     expect(radios.length).toBeGreaterThan(1);
     radios.forEach(radio => {
-      expect(radio).toHaveAttribute("aria-label", /colunas/);
+      expect(radio.getAttribute("aria-label")).toMatch(/colunas/);
     });
   });
 });
