@@ -72,29 +72,17 @@ function RouteSuspense({ children }: { children: ReactNode }) {
  *   DEVE ser o ÚLTIMO Route (precedência por ordem em react-router-dom).
  */
 export function AppRoutes() {
-  const { pathname } = useLocation();
-  
   return (
     <Routes>
-      {/* Public routes usually don't need the complex layout skeletons */}
-      <Route element={<Suspense fallback={getFallback(pathname)}>{null}</Suspense>}>
-        {publicRoutes}
-      </Route>
+      {publicRoutes}
 
       <Route element={<ProtectedRoute />}>
         <Route element={<ProtectedAppLayout />}>
-          {/* Sub-routes handle their own Suspense inside the layout */}
-          <Route path="*" element={
-            <Suspense fallback={getFallback(pathname)}>
-              <Routes>
-                {productRoutes}
-                {quoteRoutes}
-                {adminRoutes}
-                {toolsRoutes}
-                {homeAndClientRoutes}
-              </Routes>
-            </Suspense>
-          } />
+          {productRoutes}
+          {quoteRoutes}
+          {adminRoutes}
+          {toolsRoutes}
+          {homeAndClientRoutes}
         </Route>
       </Route>
 
