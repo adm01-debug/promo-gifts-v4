@@ -3,6 +3,7 @@ import { Sparkles, CalendarPlus, CalendarRange, CalendarDays, Building2 } from "
 import { useNoveltyStats } from "@/hooks/products";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function useCountUp(end: number, duration: number = 800) {
   const [count, setCount] = useState(0);
