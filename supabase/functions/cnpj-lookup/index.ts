@@ -7,17 +7,15 @@ import {
 } from '../_shared/external-fetch.ts';
 import { authenticateRequest, authErrorResponse } from '../_shared/auth.ts';
 import { safeErrorFields } from '../_shared/log-safety.ts';
-// BUG-014 FIX: import resolveCredential for SSOT credential resolution (DB-first -> env fallback).
-// Previously used Deno.env.get('CNPJA_API_KEY') directly; key rotations via /admin/conexoes
-// had no effect until the Deno isolate was restarted.
+// BUG-014 FIX: import resolveCredential for SSOT credential resolution.
 import { resolveCredential } from '../_shared/credentials.ts';
 
 const CnpjBodySchema = z.object({
   cnpj: z
     .string()
-    .min(1, 'CNPJ \u00e9 obrigat\u00f3rio')
+    .min(1, 'CNPJ é obrigatório')
     .transform((v) => v.replace(/\D/g, ''))
-    .refine((v) => v.length === 14, 'CNPJ deve ter 14 d\u00edgitos'),
+    .refine((v) => v.length === 14, 'CNPJ deve ter 14 dígitos'),
 });
 
 Deno.serve(async (req) => {
@@ -27,7 +25,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Auth check using centralized logic (allows service_role bypass for contract tests)
     try {
       await authenticateRequest(req);
     } catch (authErr) {
@@ -45,8 +42,11 @@ Deno.serve(async (req) => {
     }
     const cnpjDigits = parsed.data.cnpj;
 
-    // BUG-003 FIX: Mock response format corrected.
-    if (cnpjDigits === '00000000000191') {
+    // BUG-A16 FIX: Only return mock CNPJ data in non-production environments.
+    // Previously returned mock data for CNPJ 00000000000191 (Banco Central) in prod.
+    const isProductionEnv = Deno.env.get('ENVIRONMENT') === 'production'
+      || (Deno.env.get('SUPABASE_DB_URL') ?? '').includes('doufsxqlfjyuvxuezpln');
+    if (cnpjDigits === '00000000000191' && !isProductionEnv) {
       return new Response(
         JSON.stringify({
           success: true,
@@ -58,15 +58,15 @@ Deno.serve(async (req) => {
             numero: '123',
             complemento: null,
             bairro: 'Bairro Teste',
-            cidade: 'S\u00e3o Paulo',
+            cidade: 'São Paulo',
             estado: 'SP',
             cep: '01310100',
             pais: 'Brasil',
             cnae_principal: '4755501',
-            cnae_descricao: 'Com\u00e9rcio varejista de tecidos',
+            cnae_descricao: 'Comércio varejista de tecidos',
             situacao_cadastral: 'ATIVA',
             data_abertura: '2000-01-01',
-            natureza_juridica: 'Sociedade Empres\u00e1ria Limitada',
+            natureza_juridica: 'Sociedade Empresária Limitada',
             porte: 'MEDIO',
             capital_social: 100000,
             email: 'contato@test.com.br',
@@ -77,11 +77,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // BUG-014 FIX: use resolveCredential() (DB-first SSOT) instead of Deno.env.get().
     const { value: apiKey } = await resolveCredential('CNPJA_API_KEY');
     if (!apiKey) {
-      console.error('[cnpj-lookup] CNPJA_API_KEY n\u00e3o configurada');
-      return new Response(JSON.stringify({ error: 'Servi\u00e7o de consulta CNPJ n\u00e3o configurado' }), {
+      console.error('[cnpj-lookup] CNPJA_API_KEY não configurada');
+      return new Response(JSON.stringify({ error: 'Serviço de consulta CNPJ não configurado' }), {
         status: 503,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -92,10 +91,32 @@ Deno.serve(async (req) => {
     });
 
     if (!response.ok) {
-      await response.text();
-      console.error(`CNPJ\u00e1 API error [${response.status}]`);
-      return new Response(JSON.stringify({ error: `Erro ao consultar CNPJ: ${response.status}` }), {
-        status: response.status === 429 ? 429 : 502,
+      // BUG-A06 FIX: Read AND use the error body instead of silently discarding it.
+      // Previously: await response.text() — result was thrown away.
+      let errorDetail = '';
+      try {
+        const errText = await response.text();
+        try {
+          const errJson = JSON.parse(errText);
+          errorDetail = errJson.message || errJson.error || errText.slice(0, 300);
+        } catch {
+          errorDetail = errText.slice(0, 300);
+        }
+      } catch {
+        errorDetail = `HTTP ${response.status}`;
+      }
+      console.error(`[cnpj-lookup] CNPJÁ API error [${response.status}]: ${errorDetail}`);
+
+      const userMessage = response.status === 429
+        ? 'Limite de consultas CNPJ atingido. Tente novamente mais tarde.'
+        : response.status === 404
+        ? 'CNPJ não encontrado na base de dados.'
+        : response.status === 422
+        ? `CNPJ inválido ou inativo: ${errorDetail}`
+        : `Erro ao consultar CNPJ: ${errorDetail}`;
+
+      return new Response(JSON.stringify({ error: userMessage, api_status: response.status }), {
+        status: response.status === 429 ? 429 : response.status === 404 ? 404 : 502,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
