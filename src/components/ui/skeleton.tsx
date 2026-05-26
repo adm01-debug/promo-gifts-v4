@@ -33,7 +33,7 @@ const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(
       >
         {animate && (
           <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+            className="absolute inset-0 bg-gradient-to-r from-transparent via-foreground/5 to-transparent dark:via-white/5"
             initial={shimmer.initial}
             animate={shimmer.animate}
             transition={shimmer.transition}
