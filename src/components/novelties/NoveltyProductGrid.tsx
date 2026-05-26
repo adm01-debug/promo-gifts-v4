@@ -24,7 +24,7 @@ import {
 import { useNoveltiesSelectionMode, useNoveltiesWithDetails } from '@/hooks/products';
 import { ProductCardSkeleton } from '@/components/products/ProductCardSkeleton';
 import { LayoutPopover } from '@/components/products/LayoutPopover';
-import { getDefaultColumns, type ColumnCount, COLUMN_CLASSES } from '@/components/products/ColumnSelector';
+import { STORAGE_KEY as GRID_COLS_KEY, getDefaultColumns, type ColumnCount, COLUMN_CLASSES } from '@/components/products/ColumnSelector';
 import { BulkActionBar } from '@/components/products/BulkActionBar';
 import { BulkVariantWizard } from '@/components/catalog/BulkVariantWizard';
 import { BulkAddToCartModal } from '@/components/catalog/BulkAddToCartModal';
