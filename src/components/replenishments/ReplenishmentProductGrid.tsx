@@ -59,7 +59,13 @@ function useLoadingProgress(isLoading: boolean): number {
 export function ReplenishmentProductGrid() {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [gridColumns, setGridColumns] = useState<ColumnCount>(getDefaultColumns);
+  const [gridColumns, setGridColumnsState] = useState<ColumnCount>(getDefaultColumns);
+  const setGridColumns = useCallback((cols: ColumnCount) => {
+    setGridColumnsState(cols);
+    try {
+      localStorage.setItem(GRID_COLS_KEY, String(cols));
+    } catch { /* empty */ }
+  }, []);
   const [sortMode, setSortMode] = useState<SortMode>('newest');
   const [selectedSupplier, setSelectedSupplier] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
