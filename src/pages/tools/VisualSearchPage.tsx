@@ -876,11 +876,10 @@ export default function VisualSearchPage() {
                               />
                             </div>
 
-                            {/* Stock Indicator */}
+                            {/* Ranking Indicator */}
                             <div className="absolute top-4 left-4">
-                              <div className="flex items-center gap-1.5 rounded-full px-2 py-1 bg-black/60 backdrop-blur-md border border-white/5 text-[8px] font-bold text-white/70">
-                                <div className="h-1 w-1 rounded-full bg-emerald-400 animate-pulse" />
-                                ESTOQUE DISPONÍVEL
+                              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 backdrop-blur-md border border-white/10 text-[12px] font-black text-emerald-400 font-mono">
+                                #{idx + 1}
                               </div>
                             </div>
 
