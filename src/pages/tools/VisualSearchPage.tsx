@@ -850,8 +850,9 @@ export default function VisualSearchPage() {
                                         <Badge variant="outline" className="text-[8px] h-4 bg-background px-1 border-primary/20 text-primary uppercase font-bold">Acabamento</Badge>
                                         <span className="text-[9px] text-muted-foreground truncate italic">"{results.analysis.visualEvidence.finish}"</span>
                                       </div>
-                                    </>
+                                    </div>
                                   )}
+
                                 </div>
                               </div>
                             )}
