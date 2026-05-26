@@ -17,6 +17,23 @@ type ProfileWithRoles = {
   user_roles: { role: string }[] | null;
 };
 
+/**
+ * Forma explícita do row de `profiles` com o embed `user_roles(role)`.
+ * O relacionamento profiles↔user_roles (via user_id) não é reconhecido pelos
+ * tipos gerados do Supabase, então `.returns<T>()` evita a inferência profunda
+ * (TS2589) e tipa o embed corretamente (dispensa o cast que gerava TS2352).
+ */
+type ProfileWithRoles = {
+  id: string;
+  user_id: string | null;
+  full_name: string | null;
+  email: string | null;
+  avatar_url: string | null;
+  is_active: boolean | null;
+  created_at: string;
+  user_roles: { role: string }[] | null;
+};
+
 export function useUserManagement() {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -25,14 +42,17 @@ export function useUserManagement() {
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     try {
-      // `untypedFrom`: o embed `user_roles(role)` depende da relação
-      // profiles↔user_roles, ausente no types.ts gerado → gerava SelectQueryError
-      // (TS2352) + instanciação profunda (TS2589). A query em runtime é idêntica.
-      const { data: profilesRaw, error: profilesError } = await untypedFrom('profiles')
-        .select(
-          'id, user_id, full_name, email, avatar_url, is_active, created_at, user_roles(role)',
-        )
-        .order('created_at', { ascending: false });
+      // `select` tipado como `string` (não literal) evita que o parser de tipos
+      // do PostgREST recurra no embed `user_roles(role)` — relacionamento não
+      // reconhecido pelos tipos gerados — que causava TS2589 (instanciação
+      // profunda). `.returns<T>()` fornece a forma final do resultado.
+      const selectCols: string =
+        'id, user_id, full_name, email, avatar_url, is_active, created_at, user_roles(role)';
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select(selectCols)
+        .order('created_at', { ascending: false })
+        .returns<ProfileWithRoles[]>();
 
       if (profilesError) throw profilesError;
 
