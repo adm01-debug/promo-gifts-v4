@@ -56,6 +56,8 @@ Deno.serve(async (req: Request) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : null;
 
+    console.log(`[validate-access] Auth Check: token_present=${!!token}, service_key_present=${!!serviceKey}, match=${token === serviceKey}`);
+
     // System/Service bypass: only allowed if it's explicitly required or internal
     // We restrict this to POST only and check for a specific header if needed
     if (token && token === serviceKey) {
