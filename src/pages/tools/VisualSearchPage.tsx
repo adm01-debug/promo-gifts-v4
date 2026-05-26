@@ -184,6 +184,17 @@ export default function VisualSearchPage() {
     localStorage.setItem('visual-search-history', JSON.stringify(updatedHistory));
   };
 
+    const newItem: SearchHistoryItem = {
+      id: crypto.randomUUID(),
+      timestamp: Date.now(),
+      imageUrl,
+      productType
+    };
+    const updatedHistory = [newItem, ...history.slice(0, 9)];
+    setHistory(updatedHistory);
+    localStorage.setItem('visual-search-history', JSON.stringify(updatedHistory));
+  };
+
 
   const clearHistory = () => {
     setHistory([]);
