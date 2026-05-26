@@ -131,7 +131,7 @@ export default function VisualSearchPage() {
                       <p className="text-base font-semibold">Anexar foto do produto</p>
                       <p className="text-xs text-muted-foreground">Clique para selecionar ou arraste a imagem</p>
                     </div>
-                    <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
+                    <input id="visual-search-input" type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
                   </label>
                 )}
               </CardContent>
