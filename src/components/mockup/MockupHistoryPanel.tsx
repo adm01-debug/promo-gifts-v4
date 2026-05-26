@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { MockupHistorySkeleton } from "./MockupSkeleton";
+import { MockupHistorySkeleton } from "@/components/loading/ModernSkeletons";
 import { MockupCompareDialog } from "./MockupCompareDialog";
 import { MockupLightbox } from "./MockupLightbox";
 import type { GeneratedMockup } from "@/hooks/mockup/mockupGenerationService";
