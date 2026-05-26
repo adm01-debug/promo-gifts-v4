@@ -116,9 +116,7 @@ export function useTecnicasGravacao() {
         // BUG-GRAVACAO-01 FIX: variantesResult.count pode ser null quando a query
         // nao suporta countMode. Usar nullish coalescing evita "existem null variante(s)".
         const numVariantes = variantesResult.count ?? 'algumas';
-        throw new Error(
-          `Nao e possivel excluir: existem ${numVariantes} variante(s) vinculada(s)`,
-        );
+        throw new Error(`Nao e possivel excluir: existem ${numVariantes} variante(s) vinculada(s)`);
       }
 
       await invokeExternalDbDelete('tecnica_gravacao', id);
