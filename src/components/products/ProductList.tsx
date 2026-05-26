@@ -200,7 +200,11 @@ export function ProductList({
       <div className="flex flex-col gap-2">
         {displayProducts.map((product, index) => (
           (product as any).isSkeleton ? (
-            <ProductCardSkeleton key={product.id} variant="compact" />
+            <ProductCardSkeleton 
+              key={product.id} 
+              variant="compact" 
+              selectionMode={selectionMode}
+            />
           ) : (
             <ProductListItemWrapper
               key={product.id}
