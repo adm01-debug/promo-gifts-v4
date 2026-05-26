@@ -59,11 +59,13 @@ export function ProductCardSkeleton({ variant = "default", className }: ProductC
 export function ProductGridSkeleton({ 
   count = 8, 
   variant = "default",
-  columns = 4 
+  columns = 4,
+  className
 }: { 
   count?: number; 
   variant?: "default" | "compact" | "detailed";
   columns?: number;
+  className?: string;
 }) {
   const gridCols = columns === 5 
     ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
@@ -72,7 +74,7 @@ export function ProductGridSkeleton({
     : `grid-cols-1 sm:grid-cols-2 lg:grid-cols-${Math.min(columns, 3)} xl:grid-cols-${columns}`;
 
   return (
-    <div className={cn("grid gap-4", gridCols)}>
+    <div className={cn("grid gap-4", gridCols, className)}>
       {Array.from({ length: count }).map((_, i) => (
         <ProductCardSkeleton key={i} variant={variant} />
       ))}
