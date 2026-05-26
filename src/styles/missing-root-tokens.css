@@ -14,125 +14,127 @@
  * @see docs/design-system-audit-2026-05-25.md
  */
 
-@layer base {
-  :root {
-    /* ─── BUG-09: Motion easing tokens faltando ─────────────────────────── */
-    /* Referenciados em .card-lift, .stagger-item, .animate-heart-fill      */
-    --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
-    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+/* NOTA: sem `@layer base` — este arquivo é importado isoladamente em main.tsx,
+   fora do contexto do `@tailwind base` (que está em index.css), então o
+   PostCSS/Tailwind quebrava o build ("@layer base sem @tailwind base"). Tokens
+   :root aplicam globalmente sem o wrapper de layer. */
+:root {
+  /* ─── BUG-09: Motion easing tokens faltando ─────────────────────────── */
+  /* Referenciados em .card-lift, .stagger-item, .animate-heart-fill      */
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
-    /* ─── BUG-02: Glass morphism tokens faltando ─────────────────────────
+  /* ─── BUG-02: Glass morphism tokens faltando ─────────────────────────
        Usados em .glass, .glass-strong, .glass-card e utilitários glass-*  */
-    --glass-bg: 0 0% 100% / 0.8;
-    --glass-bg-strong: 0 0% 100% / 0.92;
-    --glass-bg-subtle: 0 0% 100% / 0.6;
-    --glass-border: 217 20% 88% / 0.4;
-    --glass-border-strong: 217 20% 88% / 0.65;
-    --glass-shadow: 0 4px 30px hsl(222 25% 10% / 0.06);
+  --glass-bg: 0 0% 100% / 0.8;
+  --glass-bg-strong: 0 0% 100% / 0.92;
+  --glass-bg-subtle: 0 0% 100% / 0.6;
+  --glass-border: 217 20% 88% / 0.4;
+  --glass-border-strong: 217 20% 88% / 0.65;
+  --glass-shadow: 0 4px 30px hsl(222 25% 10% / 0.06);
 
-    /* ─── BUG-02: Accent tokens faltando no light mode ───────────────────
+  /* ─── BUG-02: Accent tokens faltando no light mode ───────────────────
        .dark define --accent mas :root não. bg-accent era transparente.    */
-    --accent: 217 14% 93%;
-    --accent-foreground: 222 25% 10%;
+  --accent: 217 14% 93%;
+  --accent-foreground: 222 25% 10%;
 
-    /* ─── BUG-02: Chart color tokens faltando ────────────────────────────
+  /* ─── BUG-02: Chart color tokens faltando ────────────────────────────
        tailwind.config.ts referencia chart-1..5 mas nenhum estava no :root */
-    --chart-1: 217 91% 60%;   /* primary blue */
-    --chart-2: 142 71% 45%;   /* success green */
-    --chart-3: 38 92% 50%;    /* warning amber */
-    --chart-4: 254 92% 62%;   /* purple */
-    --chart-5: 346 77% 50%;   /* rose */
+  --chart-1: 217 91% 60%; /* primary blue */
+  --chart-2: 142 71% 45%; /* success green */
+  --chart-3: 38 92% 50%; /* warning amber */
+  --chart-4: 254 92% 62%; /* purple */
+  --chart-5: 346 77% 50%; /* rose */
 
-    /* ─── BUG-02: Cart color tokens faltando ─────────────────────────────
+  /* ─── BUG-02: Cart color tokens faltando ─────────────────────────────
        tailwind.config.ts define cart.DEFAULT/hover/foreground sem CSS var */
-    --cart: 217 91% 60%;
-    --cart-hover: 217 91% 55%;
-    --cart-foreground: 0 0% 100%;
+  --cart: 217 91% 60%;
+  --cart-hover: 217 91% 55%;
+  --cart-foreground: 0 0% 100%;
 
-    /* ─── BUG-02: Spacing tokens faltando ────────────────────────────────
+  /* ─── BUG-02: Spacing tokens faltando ────────────────────────────────
        .card-base, .card-elevated usam p-[var(--spacing-card)] = 0 padding */
-    --spacing-card: 1.5rem;       /* 24px */
-    --spacing-card-sm: 1rem;      /* 16px */
-    --spacing-card-lg: 2rem;      /* 32px */
-    --spacing-section: 2rem;      /* 32px */
-    --spacing-section-lg: 3rem;   /* 48px */
+  --spacing-card: 1.5rem; /* 24px */
+  --spacing-card-sm: 1rem; /* 16px */
+  --spacing-card-lg: 2rem; /* 32px */
+  --spacing-section: 2rem; /* 32px */
+  --spacing-section-lg: 3rem; /* 48px */
 
-    /* ─── BUG-02: Shadow depth tokens faltando ───────────────────────────
+  /* ─── BUG-02: Shadow depth tokens faltando ───────────────────────────
        tailwind.config.ts: shadow-lg, shadow-xl, shadow-header sem var     */
-    --shadow-lg: 0 10px 15px -3px hsl(222 25% 10% / 0.08), 0 4px 6px -4px hsl(222 25% 10% / 0.05);
-    --shadow-xl: 0 20px 25px -5px hsl(222 25% 10% / 0.1), 0 8px 10px -6px hsl(222 25% 10% / 0.06);
-    --shadow-header: 0 1px 3px hsl(222 25% 10% / 0.06), 0 1px 2px hsl(222 25% 10% / 0.04);
+  --shadow-lg: 0 10px 15px -3px hsl(222 25% 10% / 0.08), 0 4px 6px -4px hsl(222 25% 10% / 0.05);
+  --shadow-xl: 0 20px 25px -5px hsl(222 25% 10% / 0.1), 0 8px 10px -6px hsl(222 25% 10% / 0.06);
+  --shadow-header: 0 1px 3px hsl(222 25% 10% / 0.06), 0 1px 2px hsl(222 25% 10% / 0.04);
 
-    /* ─── BUG-02: Semantic color tokens faltando ─────────────────────────
+  /* ─── BUG-02: Semantic color tokens faltando ─────────────────────────
        CSS_VARS_TO_APPLY inclui text-secondary e interactive sem default   */
-    --text-secondary: 217 12% 42%;
-    --interactive: 217 91% 60%; /* mirrors --primary */
+  --text-secondary: 217 12% 42%;
+  --interactive: 217 91% 60%; /* mirrors --primary */
 
-    /* ─── BUG-03: Sidebar primary alinhado com --primary ─────────────────
+  /* ─── BUG-03: Sidebar primary alinhado com --primary ─────────────────
        Era 24 100% 50% (laranja) enquanto --primary era 217 91% 60% (azul) */
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 14% 93%;
-    --sidebar-accent-foreground: 222 25% 10%;
-    --sidebar-ring: 217 91% 60%;
+  --sidebar-primary: 217 91% 60%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 217 14% 93%;
+  --sidebar-accent-foreground: 222 25% 10%;
+  --sidebar-ring: 217 91% 60%;
 
-    /* ─── BUG-14: gradient-hero hardcoded em hue 24° ─────────────────────
+  /* ─── BUG-14: gradient-hero hardcoded em hue 24° ─────────────────────
        Hero banner exibia fundo levemente laranja independente do tema.    */
-    --gradient-hero: linear-gradient(
-      135deg,
-      hsl(var(--primary) / 0.06) 0%,
-      hsl(var(--primary-glow) / 0.03) 50%,
-      hsl(var(--primary) / 0.04) 100%
-    );
-  }
+  --gradient-hero: linear-gradient(
+    135deg,
+    hsl(var(--primary) / 0.06) 0%,
+    hsl(var(--primary-glow) / 0.03) 50%,
+    hsl(var(--primary) / 0.04) 100%
+  );
+}
 
-  .dark {
-    /* ─── BUG-09: Motion easing tokens (dark mode herda de :root) ───────── */
-    --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
-    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+.dark {
+  /* ─── BUG-09: Motion easing tokens (dark mode herda de :root) ───────── */
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
-    /* ─── BUG-02: Glass tokens para dark mode ───────────────────────────── */
-    --glass-bg: 240 6% 8% / 0.85;
-    --glass-bg-strong: 240 8% 6% / 0.92;
-    --glass-bg-subtle: 240 5% 10% / 0.65;
-    --glass-border: 217 30% 30% / 0.15;
-    --glass-border-strong: 217 40% 35% / 0.25;
-    --glass-shadow: 0 4px 30px hsl(225 20% 2% / 0.4);
+  /* ─── BUG-02: Glass tokens para dark mode ───────────────────────────── */
+  --glass-bg: 240 6% 8% / 0.85;
+  --glass-bg-strong: 240 8% 6% / 0.92;
+  --glass-bg-subtle: 240 5% 10% / 0.65;
+  --glass-border: 217 30% 30% / 0.15;
+  --glass-border-strong: 217 40% 35% / 0.25;
+  --glass-shadow: 0 4px 30px hsl(225 20% 2% / 0.4);
 
-    /* ─── BUG-02: Chart tokens dark mode ───────────────────────────────── */
-    --chart-1: 217 91% 60%;
-    --chart-2: 142 76% 48%;
-    --chart-3: 38 95% 58%;
-    --chart-4: 254 92% 65%;
-    --chart-5: 346 85% 60%;
+  /* ─── BUG-02: Chart tokens dark mode ───────────────────────────────── */
+  --chart-1: 217 91% 60%;
+  --chart-2: 142 76% 48%;
+  --chart-3: 38 95% 58%;
+  --chart-4: 254 92% 65%;
+  --chart-5: 346 85% 60%;
 
-    /* ─── BUG-02: Cart tokens dark mode ─────────────────────────────────── */
-    --cart: 217 91% 60%;
-    --cart-hover: 217 91% 66%;
-    --cart-foreground: 0 0% 100%;
+  /* ─── BUG-02: Cart tokens dark mode ─────────────────────────────────── */
+  --cart: 217 91% 60%;
+  --cart-hover: 217 91% 66%;
+  --cart-foreground: 0 0% 100%;
 
-    /* ─── BUG-02: Shadow depth tokens dark mode ─────────────────────────── */
-    --shadow-lg: 0 10px 15px -3px hsl(225 20% 2% / 0.7), 0 4px 6px -4px hsl(225 20% 2% / 0.5);
-    --shadow-xl: 0 20px 25px -5px hsl(225 20% 2% / 0.8), 0 8px 10px -6px hsl(225 20% 2% / 0.6);
-    --shadow-header: 0 1px 3px hsl(225 20% 2% / 0.7), inset 0 1px 0 hsl(225 15% 18% / 0.3);
+  /* ─── BUG-02: Shadow depth tokens dark mode ─────────────────────────── */
+  --shadow-lg: 0 10px 15px -3px hsl(225 20% 2% / 0.7), 0 4px 6px -4px hsl(225 20% 2% / 0.5);
+  --shadow-xl: 0 20px 25px -5px hsl(225 20% 2% / 0.8), 0 8px 10px -6px hsl(225 20% 2% / 0.6);
+  --shadow-header: 0 1px 3px hsl(225 20% 2% / 0.7), inset 0 1px 0 hsl(225 15% 18% / 0.3);
 
-    /* ─── BUG-02: Semantic dark mode ─────────────────────────────────────── */
-    --text-secondary: 215 20% 72%;
-    --interactive: 217 91% 60%;
+  /* ─── BUG-02: Semantic dark mode ─────────────────────────────────────── */
+  --text-secondary: 215 20% 72%;
+  --interactive: 217 91% 60%;
 
-    /* ─── BUG-03: Sidebar alinhado dark mode ─────────────────────────────── */
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 5% 16%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-ring: 217 91% 60%;
+  /* ─── BUG-03: Sidebar alinhado dark mode ─────────────────────────────── */
+  --sidebar-primary: 217 91% 60%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 240 5% 16%;
+  --sidebar-accent-foreground: 210 40% 98%;
+  --sidebar-ring: 217 91% 60%;
 
-    /* ─── BUG-14: gradient-hero dark mode ─────────────────────────────────── */
-    --gradient-hero: linear-gradient(
-      135deg,
-      hsl(var(--primary) / 0.12) 0%,
-      hsl(var(--primary-glow) / 0.06) 50%,
-      hsl(var(--primary) / 0.08) 100%
-    );
-  }
+  /* ─── BUG-14: gradient-hero dark mode ─────────────────────────────────── */
+  --gradient-hero: linear-gradient(
+    135deg,
+    hsl(var(--primary) / 0.12) 0%,
+    hsl(var(--primary-glow) / 0.06) 50%,
+    hsl(var(--primary) / 0.08) 100%
+  );
 }

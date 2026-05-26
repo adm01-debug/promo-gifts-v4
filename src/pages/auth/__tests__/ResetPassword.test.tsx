@@ -12,7 +12,7 @@ const mockOnAuthStateChange = vi.fn();
 const mockUnsubscribe = vi.fn();
 
 vi.mock('react-router-dom', async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = (await importOriginal()) as Record<string, unknown>;
   return {
     ...actual,
     useNavigate: () => mockNavigate,
