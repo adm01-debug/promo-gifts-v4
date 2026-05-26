@@ -9,6 +9,9 @@ import EnhancedErrorBoundary from "@/components/errors/EnhancedErrorBoundary";
 import App from "./App.tsx";
 import "./index.css";
 import "./styles/brand-tokens.css";
+// BUG-02/03/09/14 fix: tokens CSS ausentes do :root em index.css
+// @see docs/design-system-audit-2026-05-25.md
+import "./styles/missing-root-tokens.css";
 
 // Initialize Sentry FIRST (no-op if VITE_SENTRY_DSN is unset)
 initSentry();
