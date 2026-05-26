@@ -198,7 +198,7 @@ export default function VisualSearchPage() {
     setColorSelection({ groups: [], variations: [], nuances: [] });
   };
 
-  const handleFeedback = async (isCorrect: boolean, notes?: string) => {
+  const handleFeedback = async (isCorrect: boolean, productId?: string, relevance?: number, notes?: string) => {
     if (!results || !previewUrl) return;
 
     try {
@@ -209,7 +209,9 @@ export default function VisualSearchPage() {
           original_analysis: results.analysis,
           is_correct: isCorrect,
           feedback_notes: notes,
-          search_terms: results.searchTerms
+          search_terms: results.searchTerms,
+          product_id: productId,
+          match_relevance: relevance
         });
 
       if (error) throw error;
