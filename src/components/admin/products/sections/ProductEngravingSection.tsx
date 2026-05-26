@@ -1,8 +1,14 @@
 /**
  * ProductEngravingSection — Aba de Gravação com Wizard guiado
  * Refactored: 960 → ~280 lines (orchestrator + steps inline)
+ *
+ * Sprint 3 fixes (26/05/2026):
+ *   BUG-03: engravingFlushRef prop — populated with flushLocalAreas so AdminProductFormPage
+ *            can call it before navigate() to persist local areas for new products.
+ *   BUG-05 (UI completion): AlertDialog for delete area confirmation (state was already
+ *            exposed by useEngravingWizard since Sprint 2, UI rendering added here).
  */
-import React from 'react';
+import React, { useEffect } from 'react';
 import { SectionCard } from '../ProductFormHelpers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +16,16 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Paintbrush,
   MapPin,
@@ -41,10 +57,25 @@ import { EngravingAreaCard } from './engraving/EngravingAreaCard';
 interface Props {
   productId?: string;
   isEdit: boolean;
+  /** BUG-03: ref that will be populated with flushLocalAreas so the parent page can call it
+   *  after product creation and before navigating to edit mode. */
+  engravingFlushRef?: React.MutableRefObject<((id: string) => Promise<void>) | null>;
 }
 
-export default function ProductEngravingSection({ productId, isEdit }: Props) {
+export default function ProductEngravingSection({ productId, isEdit, engravingFlushRef }: Props) {
   const w = useEngravingWizard(productId, isEdit);
+
+  // BUG-03 FIX: register flushLocalAreas with the ref so AdminProductFormPage can call it
+  useEffect(() => {
+    if (engravingFlushRef) {
+      engravingFlushRef.current = w.flushLocalAreas;
+    }
+    return () => {
+      if (engravingFlushRef) {
+        engravingFlushRef.current = null;
+      }
+    };
+  }, [engravingFlushRef, w.flushLocalAreas]);
 
   const renderWizardStepper = () => {
     if (w.wizardStep === 'list') return null;
@@ -429,111 +460,140 @@ export default function ProductEngravingSection({ productId, isEdit }: Props) {
   };
 
   return (
-    <SectionCard
-      id="engraving"
-      title="Gravação e Personalização"
-      icon={Paintbrush}
-      subtitle="Configure locais e técnicas de personalização (BD externo)"
-    >
-      {w.isLoading ? (
-        <div className="space-y-2">
-          <Skeleton className="h-14 w-full rounded-lg" />
-          <Skeleton className="h-14 w-full rounded-lg" />
-        </div>
-      ) : (
-        <AnimatePresence mode="wait">
-          {w.wizardStep === 'list' ? (
-            <motion.div
-              key="list"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-3"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">
-                    {w.displayAreas.length} {w.displayAreas.length === 1 ? 'área' : 'áreas'}{' '}
-                    configurada{w.displayAreas.length !== 1 ? 's' : ''}
-                  </span>
-                  {w.displayAreas.filter((a) => a.is_active).length < w.displayAreas.length && (
-                    <Badge variant="outline" className="h-4 text-[10px]">
-                      {w.displayAreas.filter((a) => a.is_active).length} ativas
-                    </Badge>
-                  )}
-                  {!isEdit && w.localAreas.length > 0 && (
-                    <Badge variant="secondary" className="h-4 gap-0.5 text-[10px]">
-                      <Info className="h-2.5 w-2.5" /> Serão salvas ao criar o produto
-                    </Badge>
-                  )}
-                </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={w.startWizard}
-                  className="h-7 gap-1.5 text-xs"
-                >
-                  <Plus className="h-3 w-3" /> Nova Personalização
-                </Button>
-              </div>
-              {w.displayAreas.length === 0 && (
-                <div className="rounded-xl border border-dashed border-border/50 py-10 text-center">
-                  <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-                    <Paintbrush className="h-7 w-7 text-primary" />
+    <>
+      <SectionCard
+        id="engraving"
+        title="Gravação e Personalização"
+        icon={Paintbrush}
+        subtitle="Configure locais e técnicas de personalização (BD externo)"
+      >
+        {w.isLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-14 w-full rounded-lg" />
+            <Skeleton className="h-14 w-full rounded-lg" />
+          </div>
+        ) : (
+          <AnimatePresence mode="wait">
+            {w.wizardStep === 'list' ? (
+              <motion.div
+                key="list"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-3"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      {w.displayAreas.length} {w.displayAreas.length === 1 ? 'área' : 'áreas'}{' '}
+                      configurada{w.displayAreas.length !== 1 ? 's' : ''}
+                    </span>
+                    {w.displayAreas.filter((a) => a.is_active).length < w.displayAreas.length && (
+                      <Badge variant="outline" className="h-4 text-[10px]">
+                        {w.displayAreas.filter((a) => a.is_active).length} ativas
+                      </Badge>
+                    )}
+                    {!isEdit && w.localAreas.length > 0 && (
+                      <Badge variant="secondary" className="h-4 gap-0.5 text-[10px]">
+                        <Info className="h-2.5 w-2.5" /> Serão salvas ao criar o produto
+                      </Badge>
+                    )}
                   </div>
-                  <p className="mb-1 text-sm font-medium">Nenhuma personalização configurada</p>
-                  <p className="mx-auto mb-4 max-w-[300px] text-xs text-muted-foreground">
-                    Use o assistente para definir componentes, locais e técnicas de gravação do
-                    produto.
-                  </p>
-                  <Button type="button" size="sm" onClick={w.startWizard} className="gap-1.5">
-                    <Zap className="h-3.5 w-3.5" /> Iniciar Configuração
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={w.startWizard}
+                    className="h-7 gap-1.5 text-xs"
+                  >
+                    <Plus className="h-3 w-3" /> Nova Personalização
                   </Button>
                 </div>
-              )}
-              {w.displayAreas.length > 0 && (
-                <div className="space-y-1.5">
-                  {w.displayAreas.map((area) => (
-                    <EngravingAreaCard
-                      key={area.id}
-                      area={area}
-                      isExpanded={w.expandedId === area.id}
-                      onToggleExpand={() =>
-                        w.setExpandedId(w.expandedId === area.id ? null : area.id)
-                      }
-                      onToggleActive={() => w.handleToggleActive(area)}
-                      onDelete={() => w.handleDeleteArea(area)}
-                    />
-                  ))}
-                </div>
-              )}
-            </motion.div>
-          ) : (
-            <motion.div
-              key={w.wizardStep}
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -30 }}
-              transition={{ duration: 0.25 }}
-            >
-              <button
-                type="button"
-                onClick={w.resetWizard}
-                className="mb-3 flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-                aria-label="Voltar"
+                {w.displayAreas.length === 0 && (
+                  <div className="rounded-xl border border-dashed border-border/50 py-10 text-center">
+                    <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+                      <Paintbrush className="h-7 w-7 text-primary" />
+                    </div>
+                    <p className="mb-1 text-sm font-medium">Nenhuma personalização configurada</p>
+                    <p className="mx-auto mb-4 max-w-[300px] text-xs text-muted-foreground">
+                      Use o assistente para definir componentes, locais e técnicas de gravação do
+                      produto.
+                    </p>
+                    <Button type="button" size="sm" onClick={w.startWizard} className="gap-1.5">
+                      <Zap className="h-3.5 w-3.5" /> Iniciar Configuração
+                    </Button>
+                  </div>
+                )}
+                {w.displayAreas.length > 0 && (
+                  <div className="space-y-1.5">
+                    {w.displayAreas.map((area) => (
+                      <EngravingAreaCard
+                        key={area.id}
+                        area={area}
+                        isExpanded={w.expandedId === area.id}
+                        onToggleExpand={() =>
+                          w.setExpandedId(w.expandedId === area.id ? null : area.id)
+                        }
+                        onToggleActive={() => w.handleToggleActive(area)}
+                        onDelete={() => w.handleDeleteArea(area)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            ) : (
+              <motion.div
+                key={w.wizardStep}
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.25 }}
               >
-                <ChevronLeft className="h-3 w-3" /> Voltar à lista
-              </button>
-              {renderWizardStepper()}
-              {w.wizardStep === 'component' && renderComponentStep()}
-              {w.wizardStep === 'location' && renderLocationStep()}
-              {w.wizardStep === 'technique' && renderTechniqueStep()}
-              {w.wizardStep === 'details' && renderDetailsStep()}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      )}
-    </SectionCard>
+                <button
+                  type="button"
+                  onClick={w.resetWizard}
+                  className="mb-3 flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                  aria-label="Voltar"
+                >
+                  <ChevronLeft className="h-3 w-3" /> Voltar à lista
+                </button>
+                {renderWizardStepper()}
+                {w.wizardStep === 'component' && renderComponentStep()}
+                {w.wizardStep === 'location' && renderLocationStep()}
+                {w.wizardStep === 'technique' && renderTechniqueStep()}
+                {w.wizardStep === 'details' && renderDetailsStep()}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        )}
+      </SectionCard>
+
+      {/* BUG-05 FIX: AlertDialog for area delete confirmation (no more confirm()) */}
+      <AlertDialog
+        open={!!w.deleteAreaConfirm}
+        onOpenChange={(open) => { if (!open) w.cancelDeleteArea(); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover área de personalização</AlertDialogTitle>
+            <AlertDialogDescription>
+              Deseja remover a área{' '}
+              <strong>&quot;{w.deleteAreaConfirm?.location_name}&quot;</strong> com a técnica{' '}
+              <strong>&quot;{w.deleteAreaConfirm?.technique_name}&quot;</strong>?
+              {!isEdit && ' (A área só existe localmente e não foi salva no banco ainda.)'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={w.cancelDeleteArea}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={w.confirmDeleteArea}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
