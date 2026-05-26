@@ -123,7 +123,15 @@ export default function VisualSearchPage() {
                     </div>
                   </div>
                 ) : (
-                  <label className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-4 p-6 text-center">
+                  <label 
+                    className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-4 p-6 text-center"
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const file = e.dataTransfer.files?.[0];
+                      if (file) handleFileUpload({ target: { files: [file] } } as any);
+                    }}
+                  >
                     <div className="rounded-full bg-primary/10 p-4">
                       <Camera className="h-10 w-10 text-primary" />
                     </div>
@@ -131,7 +139,7 @@ export default function VisualSearchPage() {
                       <p className="text-base font-semibold">Anexar foto do produto</p>
                       <p className="text-xs text-muted-foreground">Clique para selecionar ou arraste a imagem</p>
                     </div>
-                    <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
+                    <input id="visual-search-input" type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
                   </label>
                 )}
               </CardContent>
