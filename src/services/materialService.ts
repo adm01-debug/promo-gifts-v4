@@ -200,6 +200,7 @@ class MaterialService {
   // Buscar IDs de produtos que possuem determinados materiais
   async getProductsByMaterials(options: {
     materialTypeIds?: string[];
+    materialTypeSlugs?: string[];
     materialGroupSlugs?: string[];
   }): Promise<{ productIds: string[]; count: number; materialTypeIds?: string[] }> {
     return this.callApi('products_by_materials', options);
