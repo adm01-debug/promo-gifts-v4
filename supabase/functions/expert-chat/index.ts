@@ -11,7 +11,7 @@ import { z } from 'npm:zod@3.23.8';
 import { callAiWithTracking, QuotaExceededError } from '../_shared/ai-usage.ts';
 import { rateLimiters, applyRateLimit } from '../_shared/rate-limiter.ts';
 import { runBotProtection } from '../_shared/bot-protection.ts';
-import { resolveCredential } from '../_shared/credentials.ts';
+import { resolveCredential, getCredential } from '../_shared/credentials.ts';
 import { extractAndParseAIJSON, safeJson } from '../_shared/json-parser.ts';
 import { safeErrorFields } from '../_shared/log-safety.ts';
 import { assertSwitchEnabled } from '../_shared/kill_switch.ts';
@@ -998,8 +998,9 @@ ${
     let productsContext = '';
     let semanticResults: any[] = [];
 
-    const EXT_URL = Deno.env.get('EXTERNAL_SUPABASE_URL');
-    const EXT_KEY = Deno.env.get('EXTERNAL_SUPABASE_SERVICE_KEY');
+    // fix: ssot-bypass — credential vault
+    const EXT_URL = await getCredential('EXTERNAL_PROMOBRIND_URL');
+    const EXT_KEY = await getCredential('EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY');
 
     if (!EXT_URL || !EXT_KEY) {
       console.error('External DB env vars not set — cannot fetch products');
@@ -1279,8 +1280,9 @@ ${generalPool.map((p) => buildProductDescription(p)).join('\n\n')}
 `;
       }
     } else {
-      const EXT_URL2 = Deno.env.get('EXTERNAL_SUPABASE_URL');
-      const EXT_KEY2 = Deno.env.get('EXTERNAL_SUPABASE_SERVICE_KEY');
+      // fix: ssot-bypass — credential vault
+      const EXT_URL2 = await getCredential('EXTERNAL_PROMOBRIND_URL');
+      const EXT_KEY2 = await getCredential('EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY');
       if (EXT_URL2 && EXT_KEY2) {
         const extClient = createClient(EXT_URL2, EXT_KEY2);
         let q = extClient
