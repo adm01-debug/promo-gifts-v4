@@ -2,25 +2,47 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ProductCardSkeletonProps {
-  variant?: "default" | "compact" | "detailed";
+  variant?: "default" | "compact" | "detailed" | "list";
   className?: string;
   id?: string;
 }
 
+/**
+ * Standardized Product Card Skeleton with variants.
+ */
 export function ProductCardSkeleton({ variant = "default", className, id }: ProductCardSkeletonProps) {
   const skeletonId = id || `product-card-${variant}`;
   
-  if (variant === "compact") {
+  if (variant === "compact" || variant === "list") {
     return (
       <div 
-        className={cn("flex items-center gap-3 p-3 rounded-lg bg-card border border-border/40 overflow-hidden", className)}
+        className={cn(
+          "flex items-center gap-3 p-3 rounded-xl bg-card border border-border/40 overflow-hidden", 
+          variant === "list" && "px-4 py-2.5",
+          className
+        )}
         data-skeleton-container={skeletonId}
       >
-        <Skeleton className="h-16 w-16 rounded-lg shrink-0" id={`${skeletonId}-image`} />
-        <div className="flex-1 space-y-2">
+        <Skeleton 
+          className={cn(
+            "rounded-lg shrink-0", 
+            variant === "compact" ? "h-16 w-16" : "w-14 h-14 sm:w-[72px] sm:h-[72px]"
+          )} 
+          id={`${skeletonId}-image`} 
+        />
+        <div className="flex-1 space-y-2 min-w-0">
+          <div className="flex items-center gap-1.5">
+             <Skeleton className="h-3 w-16" id={`${skeletonId}-badge`} />
+             <Skeleton className="h-3 w-12" id={`${skeletonId}-sku`} />
+          </div>
           <Skeleton className="h-4 w-3/4" id={`${skeletonId}-title`} />
-          <Skeleton className="h-3 w-1/2" id={`${skeletonId}-category`} />
-          <Skeleton className="h-4 w-16" id={`${skeletonId}-price`} />
+          <div className="flex items-center justify-between gap-2">
+            <Skeleton className="h-4 w-16" id={`${skeletonId}-price`} />
+            <div className="flex gap-1">
+               <Skeleton className="h-7 w-7 rounded-full" id={`${skeletonId}-action-1`} />
+               <Skeleton className="h-7 w-7 rounded-full" id={`${skeletonId}-action-2`} />
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -28,14 +50,14 @@ export function ProductCardSkeleton({ variant = "default", className, id }: Prod
 
   return (
     <div 
-      className={cn("group relative flex flex-col rounded-xl border border-border bg-card overflow-hidden", className)}
+      className={cn("group relative flex flex-col rounded-xl border border-border bg-card overflow-hidden h-full", className)}
       data-skeleton-container={skeletonId}
     >
       {/* Image */}
       <Skeleton className="aspect-square w-full rounded-none" id={`${skeletonId}-image`} />
       
       {/* Content */}
-      <div className="p-4 space-y-3">
+      <div className="p-4 space-y-3 flex-1 flex flex-col">
         {/* Category badge */}
         <Skeleton className="h-5 w-20 rounded-full" id={`${skeletonId}-badge`} />
         
@@ -48,42 +70,50 @@ export function ProductCardSkeleton({ variant = "default", className, id }: Prod
         {/* SKU */}
         <Skeleton className="h-4 w-24" id={`${skeletonId}-sku`} />
         
-        {/* Price */}
-        <div className="flex items-center justify-between pt-2">
+        <div className="flex-1" />
+
+        {/* Price + Actions */}
+        <div className="flex items-center justify-between pt-2 border-t border-border/40">
           <Skeleton className="h-6 w-20" id={`${skeletonId}-price`} />
-          {variant === "detailed" ? (
-            <div className="flex gap-1">
-              <Skeleton className="h-8 w-8 rounded-full" id={`${skeletonId}-action-1`} />
-              <Skeleton className="h-8 w-8 rounded-full" id={`${skeletonId}-action-2`} />
-            </div>
-          ) : (
+          <div className="flex gap-1.5">
+            {variant === "detailed" && (
+              <Skeleton className="h-8 w-8 rounded-full" id={`${skeletonId}-action-ext`} />
+            )}
             <Skeleton className="h-8 w-8 rounded-full" id={`${skeletonId}-action`} />
-          )}
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
+/**
+ * Grid or List of products skeleton.
+ */
 export function ProductGridSkeleton({ 
   count = 12, 
   variant = "default",
   columns = 5,
-  id = "product-grid"
+  id = "product-grid",
+  className
 }: { 
   count?: number; 
-  variant?: "default" | "compact" | "detailed";
+  variant?: "default" | "compact" | "detailed" | "list";
   columns?: number;
   id?: string;
+  className?: string;
 }) {
-  const gridCols = columns === 5 
-    ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
-    : `grid-cols-1 sm:grid-cols-2 lg:grid-cols-${Math.min(columns, 4)} xl:grid-cols-${columns}`;
+  const isList = variant === "list" || variant === "compact";
+  const gridCols = isList 
+    ? "grid-cols-1" 
+    : columns === 5 
+      ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+      : `grid-cols-1 sm:grid-cols-2 lg:grid-cols-${Math.min(columns, 4)} xl:grid-cols-${columns}`;
 
   return (
-    <div className={cn("grid gap-6", gridCols)} data-skeleton-grid={id}>
+    <div className={cn("grid gap-4 md:gap-6", gridCols, className)} data-skeleton-grid={id}>
       {Array.from({ length: count }).map((_, i) => (
-        <ProductCardSkeleton key={i} variant={variant} id={`${id}-item-${i}`} />
+        <ProductCardSkeleton key={i} variant={variant === "list" ? "list" : variant} id={`${id}-item-${i}`} />
       ))}
     </div>
   );
@@ -91,12 +121,12 @@ export function ProductGridSkeleton({
 
 export function TableSkeleton({ rows = 5, columns = 5, id = "table" }: { rows?: number; columns?: number; id?: string }) {
   return (
-    <div className="rounded-xl border border-border overflow-hidden" data-skeleton-table={id}>
-      <table className="w-full">
-        <thead className="bg-muted/50">
+    <div className="rounded-xl border border-border overflow-hidden bg-card" data-skeleton-table={id}>
+      <table className="w-full border-collapse">
+        <thead className="bg-muted/30">
           <tr>
             {Array.from({ length: columns }).map((_, i) => (
-              <th key={i} className="py-3 px-4 text-left">
+              <th key={i} className="py-3 px-4 text-left border-b border-border">
                 <Skeleton className="h-4 w-20" id={`${id}-header-${i}`} />
               </th>
             ))}
@@ -104,7 +134,7 @@ export function TableSkeleton({ rows = 5, columns = 5, id = "table" }: { rows?: 
         </thead>
         <tbody>
           {Array.from({ length: rows }).map((_, rowIndex) => (
-            <tr key={rowIndex} className="border-b border-border">
+            <tr key={rowIndex} className="border-b border-border/50 last:border-0">
               {Array.from({ length: columns }).map((_, colIndex) => (
                 <td key={colIndex} className="py-4 px-4">
                   <Skeleton className="h-5 w-full max-w-[120px]" id={`${id}-cell-${rowIndex}-${colIndex}`} />
@@ -135,14 +165,14 @@ export function StatsGridSkeleton({ count = 4, id = "stats" }: { count?: number;
   );
 }
 
-export function ChartSkeleton({ id = "chart" }: { id?: string }) {
+export function ChartSkeleton({ id = "chart", className }: { id?: string; className?: string }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-6 space-y-4" data-skeleton-chart={id}>
+    <div className={cn("rounded-xl border border-border bg-card p-6 space-y-4", className)} data-skeleton-chart={id}>
       <div className="flex items-center justify-between">
         <Skeleton className="h-5 w-32" id={`${id}-title`} />
         <Skeleton className="h-8 w-24 rounded-md" id={`${id}-filter`} />
       </div>
-      <div className="flex items-end gap-2 h-48">
+      <div className="flex items-end gap-2 h-48 pt-4">
         {Array.from({ length: 12 }).map((_, i) => (
           <Skeleton
             key={i}
@@ -152,7 +182,7 @@ export function ChartSkeleton({ id = "chart" }: { id?: string }) {
           />
         ))}
       </div>
-      <div className="flex justify-between">
+      <div className="flex justify-between border-t border-border/30 pt-4">
         {Array.from({ length: 6 }).map((_, i) => (
           <Skeleton key={i} className="h-3 w-8" id={`${id}-label-${i}`} />
         ))}
@@ -180,7 +210,7 @@ export function DashboardSkeleton() {
 export function PageHeaderSkeleton({ id = "page-header" }: { id?: string }) {
   return (
     <div className="space-y-4 mb-6" data-skeleton-header={id}>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-2">
           <Skeleton className="h-8 w-48 rounded-lg" id={`${id}-title`} />
           <Skeleton className="h-4 w-64 rounded-md" id={`${id}-subtitle`} />
@@ -194,6 +224,5 @@ export function PageHeaderSkeleton({ id = "page-header" }: { id?: string }) {
   );
 }
 
-// Aliases for compatibility
 export { StatsGridSkeleton as StatsCardSkeleton };
 export { TableSkeleton as TableRowSkeleton };
