@@ -108,19 +108,20 @@ export function useSimilarProducts(product: Product | null | undefined) {
       }
 
       // 2. Try product_group_members (group-based siblings)
+      // NOTE: a coluna correta no BD externo é `product_group_id` (não `group_id`).
       try {
         const { records: memberships } = await invokeExternalDb<{
-          group_id: string;
+          product_group_id: string;
         }>({
           table: 'product_group_members',
           operation: 'select',
-          select: 'group_id',
+          select: 'product_group_id',
           filters: { product_id: productId },
           limit: 10,
         });
 
         if (memberships && memberships.length > 0) {
-          const groupIds = [...new Set(memberships.map(m => m.group_id))].filter(Boolean);
+          const groupIds = [...new Set(memberships.map(m => m.product_group_id))].filter(Boolean);
           if (groupIds.length === 0) throw new Error('No valid group IDs');
           
           const { records: allMembers } = await invokeExternalDb<{
@@ -130,7 +131,7 @@ export function useSimilarProducts(product: Product | null | undefined) {
             operation: 'select',
             select: 'product_id',
             filters: {
-              group_id: `in.(${groupIds.join(',')})`,
+              product_group_id: `in.(${groupIds.join(',')})`,
             },
             limit: 100,
           });
