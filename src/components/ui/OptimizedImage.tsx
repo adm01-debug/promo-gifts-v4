@@ -55,7 +55,7 @@ export function OptimizedImage({
   }, [src, priority]);
 
   return (
-    <div className={cn('relative overflow-hidden bg-muted/20', containerClassName)}>
+    <div className={cn('relative overflow-hidden bg-white', containerClassName)}>
       {!isLoaded && !error && <Skeleton className="absolute inset-0 z-0 h-full w-full" />}
 
       {error ? (
