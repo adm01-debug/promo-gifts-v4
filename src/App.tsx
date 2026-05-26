@@ -16,7 +16,6 @@ import { ThemeInitializer } from '@/components/ThemeInitializer';
 import { useAppBootstrap } from '@/hooks/common/useAppBootstrap';
 import { AppRoutes } from '@/routes/AppRoutes';
 import { RoutePrefetcher } from '@/routes/RoutePrefetcher';
-import { SkeletonDevTools } from '@/components/dev/SkeletonDevTools';
 import { isSupabaseLighthousePlaceholder } from '@/lib/env/supabase-placeholder';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import './App.css';
@@ -151,9 +150,6 @@ const App = () => {
                         <OptionalDevOnlyBridgeOverlay />
                         <RouteScrollReset />
                         <RoutePrefetcher />
-                        <Suspense fallback={null}>
-                          <SkeletonDevTools />
-                        </Suspense>
                         <AppRoutes />
                       </EnhancedErrorBoundary>
                     </AppBootstrap>

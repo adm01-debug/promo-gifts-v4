@@ -1,10 +1,8 @@
-import { useEffect, useRef, useState, createContext, useContext } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { logger } from '@/lib/logger';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { getSkeletonThreshold } from '@/config/skeleton.config';
-
-const SkeletonMonitorContext = createContext<string | null>(null);
 
 interface SkeletonMonitorProps {
   name: string;
@@ -21,7 +19,6 @@ export function SkeletonMonitor({
   children,
   thresholdMs: manualThresholdMs,
 }: SkeletonMonitorProps) {
-  const parentName = useContext(SkeletonMonitorContext);
   const thresholdMs = manualThresholdMs || getSkeletonThreshold(name);
   const startTime = useRef<number>(performance.now());
   const [elapsed, setElapsed] = useState(0);
@@ -29,18 +26,8 @@ export function SkeletonMonitor({
   const isDev = isAdmin || isDevRole;
 
   useEffect(() => {
-    // Detect double skeleton (nested monitors)
-    if (parentName && process.env.NODE_ENV === 'development') {
-      console.warn(`[DoubleSkeleton] Detected nested skeleton: "${name}" inside "${parentName}"`);
-    }
-
     // Only track if we are in the browser
     if (typeof window === 'undefined') return;
-
-    // Log mounting
-    if (process.env.NODE_ENV === 'development') {
-      // console.debug(`[SkeletonMonitor] Mounted: ${name}`);
-    }
 
     const timer = setInterval(() => {
       setElapsed(Math.round(performance.now() - startTime.current));
@@ -72,35 +59,17 @@ export function SkeletonMonitor({
     };
   }, [name, thresholdMs]);
 
-  // Check for "forced loading" global debug flag
-  const [isForced, setIsForced] = useState(false);
-  useEffect(() => {
-    const checkForced = () => {
-      setIsForced((window as any).__FORCE_SKELETONS__ === true);
-    };
-    checkForced();
-    const interval = setInterval(checkForced, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
   return (
-    <div 
-      className="relative h-full min-h-[100px] w-full"
-      data-skeleton-monitor={name}
-      data-skeleton-elapsed={elapsed}
-      data-skeleton-forced={isForced}
-    >
-      <SkeletonMonitorContext.Provider value={name}>
-        {children}
-      </SkeletonMonitorContext.Provider>
+    <div className="relative h-full min-h-[200px] w-full">
+      {children}
 
       {/* Dev-only overlay timer */}
-      {isDev && (elapsed > 300 || isForced) && (
+      {isDev && elapsed > 300 && (
         <div className="pointer-events-none fixed bottom-4 right-4 z-[9999]">
           <div
             className={cn(
               'flex items-center gap-2 rounded-full border px-3 py-1.5 font-mono text-[11px] font-bold shadow-lg backdrop-blur-md',
-              elapsed > thresholdMs || isForced
+              elapsed > thresholdMs
                 ? 'animate-pulse border-destructive/20 bg-destructive text-destructive-foreground'
                 : 'border-border/40 bg-background/80 text-foreground',
             )}
@@ -108,10 +77,10 @@ export function SkeletonMonitor({
             <div
               className={cn(
                 'h-2 w-2 rounded-full',
-                elapsed > thresholdMs || isForced ? 'bg-white' : 'animate-pulse bg-primary',
+                elapsed > thresholdMs ? 'bg-white' : 'animate-pulse bg-primary',
               )}
             />
-            {isForced ? '[DEBUG FORCED] ' : ''}Loading {name}: {(elapsed / 1000).toFixed(1)}s
+            Loading {name}: {(elapsed / 1000).toFixed(1)}s
           </div>
         </div>
       )}

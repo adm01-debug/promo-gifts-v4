@@ -53,11 +53,7 @@ function RouteSuspense({ children }: { children: ReactNode }) {
 
   }, [pathname]);
 
-  return (
-    <Suspense fallback={getFallback(pathname)}>
-      {children}
-    </Suspense>
-  );
+  return <Suspense fallback={getFallback(pathname)}>{children}</Suspense>;
 }
 
 /**
