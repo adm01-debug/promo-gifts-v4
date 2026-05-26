@@ -860,19 +860,33 @@ export default function VisualSearchPage() {
                               </div>
                             )}
                             
-                            <div className="flex items-center justify-between border-t border-border/50 pt-4">
+                            <div className="flex items-center justify-between border-t border-border/50 pt-4 mt-auto">
                               <div className="flex flex-col">
                                 <span className="text-[9px] font-black text-muted-foreground/60 uppercase tracking-widest">Preço Sugerido</span>
                                 <span className="text-xl font-black tracking-tighter text-foreground">
                                   {formatCurrency(product.price)}
                                 </span>
                               </div>
-                              <motion.div 
-                                whileHover={{ x: 3 }}
-                                className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/5 text-primary transition-all group-hover:bg-primary group-hover:text-primary-foreground shadow-sm"
-                              >
-                                <ArrowRight className="h-5 w-5" />
-                              </motion.div>
+                              <div className="flex items-center gap-2">
+                                {idx === 0 && (
+                                  <Button 
+                                    size="sm" 
+                                    className="h-8 gap-1.5 text-[10px] font-bold uppercase tracking-wider shadow-lg shadow-primary/20"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toast.info("Criando rascunho de orçamento...");
+                                    }}
+                                  >
+                                    <Zap className="h-3 w-3" /> Orçamento
+                                  </Button>
+                                )}
+                                <motion.div 
+                                  whileHover={{ x: 3 }}
+                                  className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/5 text-primary transition-all group-hover:bg-primary group-hover:text-primary-foreground shadow-sm"
+                                >
+                                  <ArrowRight className="h-5 w-5" />
+                                </motion.div>
+                              </div>
                             </div>
                           </CardContent>
                         </Card>
