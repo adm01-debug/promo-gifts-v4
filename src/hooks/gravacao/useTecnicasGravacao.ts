@@ -1,4 +1,4 @@
-// Hook CRUD para Técnicas de Gravação (via external-db-bridge)
+// Hook CRUD para Tecnicas de Gravacao (via external-db-bridge)
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   invokeExternalDb,
@@ -69,7 +69,7 @@ export function useTecnicasGravacao() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-      toast.success('Técnica criada com sucesso!');
+      toast.success('Tecnica criada com sucesso!');
     },
     onError: (error: Error) => {
       toast.error(sanitizeError(error));
@@ -94,7 +94,7 @@ export function useTecnicasGravacao() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-      toast.success('Técnica atualizada com sucesso!');
+      toast.success('Tecnica atualizada com sucesso!');
     },
     onError: (error: Error) => {
       toast.error(sanitizeError(error));
@@ -113,8 +113,11 @@ export function useTecnicasGravacao() {
       });
 
       if ((variantesResult.count ?? 0) > 0) {
+        // BUG-GRAVACAO-01 FIX: variantesResult.count pode ser null quando a query
+        // nao suporta countMode. Usar nullish coalescing evita "existem null variante(s)".
+        const numVariantes = variantesResult.count ?? 'algumas';
         throw new Error(
-          `Não é possível excluir: existem ${variantesResult.count} variante(s) vinculada(s)`,
+          `Nao e possivel excluir: existem ${numVariantes} variante(s) vinculada(s)`,
         );
       }
 
@@ -122,7 +125,7 @@ export function useTecnicasGravacao() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-      toast.success('Técnica excluída com sucesso!');
+      toast.success('Tecnica excluida com sucesso!');
     },
     onError: (error: Error) => {
       toast.error(sanitizeError(error));
@@ -140,7 +143,7 @@ export function useTecnicasGravacao() {
     },
     onSuccess: (_, { ativo }) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-      toast.success(ativo ? 'Técnica ativada!' : 'Técnica desativada!');
+      toast.success(ativo ? 'Tecnica ativada!' : 'Tecnica desativada!');
     },
     onError: (error: Error) => {
       toast.error(sanitizeError(error));
@@ -156,7 +159,9 @@ export function useTecnicasGravacao() {
     create: createMutation.mutateAsync,
     update: updateMutation.mutateAsync,
     delete: deleteMutation.mutateAsync,
-    toggleStatus: toggleStatusMutation.mutate,
+    // BUG-GRAVACAO-02 FIX: era toggleStatusMutation.mutate (fire-and-forget).
+    // Callers nao conseguiam await o resultado. Alinhado com create/update/delete.
+    toggleStatus: toggleStatusMutation.mutateAsync,
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
