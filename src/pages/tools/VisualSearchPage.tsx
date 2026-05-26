@@ -40,6 +40,34 @@ export default function VisualSearchPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [results, setResults] = useState<VisualSearchResult | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [debugMode, setDebugMode] = useState(false);
+
+  const simulateSuccess = () => {
+    const mockData: VisualSearchResult = {
+      analysis: {
+        productType: "Caneta",
+        material: "Plástico",
+        colors: ["Azul", "Branco"],
+        category: "Escritório",
+        keywords: ["caneta", "plástica", "esferográfica"],
+        description: "Caneta plástica azul e branca com clip."
+      },
+      products: [
+        {
+          id: "92411869-ad2b-4115-b12f-9bf6a8aebeb6",
+          name: "Kit Boas-Vindas Galáxia",
+          sku: "KIT-001",
+          category_name: "Kits",
+          price: 45.90,
+          images: [],
+          relevance: 0.95
+        }
+      ],
+      searchTerms: "caneta plástica escritório"
+    };
+    setPreviewUrl("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==");
+    setResults(mockData);
+  };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
