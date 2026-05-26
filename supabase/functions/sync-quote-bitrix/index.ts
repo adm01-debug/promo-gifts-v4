@@ -2,19 +2,38 @@ import { getCorsHeaders } from '../_shared/cors.ts';
 import { z } from '../_shared/zod-validate.ts';
 import { fetchWithBreaker, CircuitOpenError, circuitOpenResponse } from '../_shared/external-fetch.ts';
 import { authorize } from '../_shared/authorize.ts';
-// BUG-006 FIX: import resolveCredential for SSOT credential resolution (DB-first -> env fallback).
-// Previously used Deno.env.get("N8N_QUOTE_WEBHOOK_URL") directly, bypassing credential SSOT.
 import { resolveCredential } from '../_shared/credentials.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 
-const SELLER_EMAIL_MAP: Record<string, number> = {
-  "comercial01@promobrindes.com.br": 8,
-  "henrique.silva@promobrindes.com.br": 10,
-  "comercial03@promobrindes.com.br": 16,
-  "comercial04@promobrindes.com.br": 5174,
-  "comercial06@promobrindes.com.br": 5176,
-  "comercial05@promobrindes.com.br": 5180,
-  "comercial07@promobrindes.com.br": 16558,
-};
+// BUG-A09 FIX (26/05/2026): SELLER_EMAIL_MAP era hardcoded no código.
+// Novo vendedor exigia PR + deploy. Vendedor demitido = ID órfão.
+// Fix: busca email → bitrix_id direto da tabela `profiles` (coluna `bitrix_id`).
+// Fallback: se o perfil não tiver bitrix_id preenchido, loga warning e segue sem seller_id.
+async function resolveSellerBitrixId(
+  email: string | null,
+  serviceClient: ReturnType<typeof createClient>,
+): Promise<number | null> {
+  if (!email) return null;
+  try {
+    const { data, error } = await serviceClient
+      .from('profiles')
+      .select('bitrix_id')
+      .eq('email', email)
+      .maybeSingle();
+    if (error) {
+      console.warn('[sync-quote-bitrix] erro ao buscar bitrix_id do perfil:', error.message);
+      return null;
+    }
+    if (!data?.bitrix_id) {
+      console.warn(`[sync-quote-bitrix] perfil '${email}' sem bitrix_id configurado. Preencha profiles.bitrix_id.`);
+      return null;
+    }
+    return data.bitrix_id as number;
+  } catch (err) {
+    console.warn('[sync-quote-bitrix] falha ao resolver seller_id:', err);
+    return null;
+  }
+}
 
 const SyncQuoteBitrixSchema = z.object({
   quote: z.record(z.any()).optional(),
@@ -29,8 +48,8 @@ const SyncQuoteBitrixSchema = z.object({
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
@@ -41,42 +60,43 @@ Deno.serve(async (req) => {
 
     let rawBody: unknown;
     try { rawBody = await req.json(); } catch {
-      return new Response(JSON.stringify({ error: "Invalid request body" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return new Response(JSON.stringify({ error: 'Invalid request body' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     const parsed = SyncQuoteBitrixSchema.safeParse(rawBody);
     if (!parsed.success) {
-      return new Response(JSON.stringify({ error: "Validation failed", details: parsed.error.flatten().fieldErrors }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return new Response(JSON.stringify({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     const { quote, proposalData, pdfUrl, filename, bitrixCompanyId, shippingType, shippingCost } = parsed.data;
 
-    // BUG-006 FIX: use resolveCredential (DB-first SSOT) instead of Deno.env.get().
-    const { value: webhookUrl } = await resolveCredential("N8N_QUOTE_WEBHOOK_URL");
+    const { value: webhookUrl } = await resolveCredential('N8N_QUOTE_WEBHOOK_URL');
     if (!webhookUrl) {
-      throw new Error("N8N_QUOTE_WEBHOOK_URL nao configurado nos secrets");
+      throw new Error('N8N_QUOTE_WEBHOOK_URL nao configurado nos secrets');
     }
 
-    const sellerEmail = authenticatedEmail;
-    const sellerId = sellerEmail ? SELLER_EMAIL_MAP[sellerEmail] : undefined;
-    if (sellerEmail && sellerId === undefined) {
-      console.warn(`sellerEmail autenticado "${sellerEmail}" nao mapeado no SELLER_EMAIL_MAP`);
-    }
+    // BUG-A09 FIX: busca bitrix_id do banco em vez do mapa hardcoded
+    const serviceClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+      { auth: { persistSession: false, autoRefreshToken: false } },
+    );
+    const sellerId = await resolveSellerBitrixId(authenticatedEmail, serviceClient);
 
     const companyId = bitrixCompanyId ? parseInt(bitrixCompanyId, 10) : null;
     if (!companyId || !Number.isFinite(companyId) || companyId <= 0) {
-      throw new Error("company_id (Bitrix) e obrigatorio.");
+      throw new Error('company_id (Bitrix) e obrigatorio.');
     }
 
     const rawItems = proposalData?.items || [];
     const itemsValidos = rawItems.filter((item: any) => !!item.bitrix_product_id);
     const itemsExcluidos = rawItems.length - itemsValidos.length;
     if (itemsExcluidos > 0) console.warn(`${itemsExcluidos} item(ns) excluido(s) por nao ter bitrix_product_id`);
-    if (itemsValidos.length === 0) throw new Error("Nenhum produto possui bitrix_product_id. Aguarde importacao do catalogo.");
+    if (itemsValidos.length === 0) throw new Error('Nenhum produto possui bitrix_product_id. Aguarde importacao do catalogo.');
 
     const products = itemsValidos.map((item: any) => ({
       offer_id: item.bitrix_product_id,
@@ -90,8 +110,8 @@ Deno.serve(async (req) => {
       quote_id: quote?.id || null,
       quote_number: quote?.quote_number || null,
       company_id: companyId,
-      seller_id: sellerId || null,
-      seller_email: sellerEmail,
+      seller_id: sellerId,
+      seller_email: authenticatedEmail,
       products,
       pdf_url: pdfUrl || null,
       filename: filename || null,
@@ -101,29 +121,29 @@ Deno.serve(async (req) => {
       sent_at: new Date().toISOString(),
     };
 
-    const response = await fetchWithBreaker("bitrix", webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const response = await fetchWithBreaker('bitrix', webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(n8nPayload),
     });
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error("n8n webhook error:", response.status, errText);
+      console.error('n8n webhook error:', response.status, errText);
       throw new Error(`n8n webhook error: ${response.status}`);
     }
 
     const result = await response.json();
     return new Response(JSON.stringify({ ok: true, result }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (err) {
     if (err instanceof CircuitOpenError) return circuitOpenResponse(err, corsHeaders);
-    console.error("sync-quote-bitrix error:", err);
-    const message = err instanceof Error ? err.message : "Erro desconhecido";
+    console.error('sync-quote-bitrix error:', err);
+    const message = err instanceof Error ? err.message : 'Erro desconhecido';
     return new Response(JSON.stringify({ error: message }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 });

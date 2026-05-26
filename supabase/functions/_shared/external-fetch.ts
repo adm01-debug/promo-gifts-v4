@@ -1,19 +1,15 @@
 /**
  * Wrapper resiliente para fetch a APIs externas com circuit breaker integrado.
  *
- * Uso:
- *   import { fetchWithBreaker } from "../_shared/external-fetch.ts";
- *   const res = await fetchWithBreaker("bitrix", "https://api.bitrix.com/...", { method: "POST" });
- *
- * Hardening defensivo:
- * - Rejeita URLs sem `https://` (anti-SSRF). Em testes locais, `ALLOW_HTTP_FETCH=1` libera HTTP.
- * - Falhas HTTP 5xx/network contam como falha; 2xx/3xx/4xx contam como sucesso.
- * - Se circuito OPEN, lança `CircuitOpenError` imediatamente.
+ * BUG-A14 FIX (26/05/2026): `Retry-After` era hardcoded como 60s para todos os
+ * serviços. CNPJA tem limite diário (pode levar horas), Dropbox tem recovery rápido.
+ * `circuitOpenResponse` agora aceita `retryAfterSeconds` opcional (default: 60).
+ * Cada função pode passar o valor correto para o serviço que está chamando.
  */
 import { getBreaker } from "./circuit-breaker.ts";
 
 export class CircuitOpenError extends Error {
-  constructor(public service: string) {
+  constructor(public service: string, public retryAfterSeconds = 60) {
     super(`circuit_open:${service}`);
     this.name = "CircuitOpenError";
   }
@@ -35,6 +31,15 @@ function assertSecureUrl(url: string | URL): void {
   }
 }
 
+/** Mapa de Retry-After por serviço (segundos). Sobrescreve o default 60s. */
+const SERVICE_RETRY_AFTER: Record<string, number> = {
+  cnpja: 3600,          // CNPJA: limite diário ~35 req/dia — esperar 1h
+  "image-cdn": 10,      // CDN de imagens: recovery rápido
+  dropbox: 15,          // Dropbox: recupera em segundos
+  elevenlabs: 30,       // ElevenLabs: rate limit por minuto
+  bitrix: 5,            // Bitrix: normalmente transiente
+};
+
 export async function fetchWithBreaker(
   service: string,
   url: string | URL,
@@ -44,7 +49,8 @@ export async function fetchWithBreaker(
 
   const breaker = getBreaker(service);
   if (!breaker.canRequest()) {
-    throw new CircuitOpenError(service);
+    const retryAfter = SERVICE_RETRY_AFTER[service] ?? 60;
+    throw new CircuitOpenError(service, retryAfter);
   }
 
   try {
@@ -63,7 +69,8 @@ export async function fetchWithBreaker(
 
 /**
  * Helper para responder 503 + Retry-After quando circuito aberto.
- * Use em catch blocks: `if (err instanceof CircuitOpenError) return circuitOpenResponse(err, corsHeaders);`
+ * Use em catch blocks:
+ *   `if (err instanceof CircuitOpenError) return circuitOpenResponse(err, corsHeaders);`
  */
 export function circuitOpenResponse(
   err: CircuitOpenError,
@@ -73,14 +80,14 @@ export function circuitOpenResponse(
     JSON.stringify({
       error: "Service temporarily unavailable",
       service: err.service,
-      retry_after_seconds: 60,
+      retry_after_seconds: err.retryAfterSeconds,
     }),
     {
       status: 503,
       headers: {
         ...corsHeaders,
         "Content-Type": "application/json",
-        "Retry-After": "60",
+        "Retry-After": String(err.retryAfterSeconds),
       },
     },
   );

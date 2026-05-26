@@ -61,6 +61,10 @@ function base64ToBytes(dataUrl: string): Uint8Array {
 
 const CANVAS_PX = 1024;
 
+// BUG-A13 FIX (26/05/2026): OffscreenCanvas pode não estar disponível em todos
+// os runtimes Deno Edge. Adicionado try/catch específico com mensagem clara.
+// BUG-A15 FIX (26/05/2026): Substituídas declarações `var` por `const`/`let`
+// dentro de compositeImages() (era código de era antes do ES6).
 async function compositeImages(
   productBytes: Uint8Array,
   logoBytes: Uint8Array,
@@ -71,6 +75,15 @@ async function compositeImages(
   rotDeg: number,
   scalePct: number,
 ): Promise<Blob> {
+  // BUG-A13 FIX: Guard explícito para OffscreenCanvas indisponível
+  if (typeof OffscreenCanvas === "undefined") {
+    throw new Error(
+      "OffscreenCanvas não está disponível neste runtime. " +
+      "A função generate-mockup requer Deno com suporte a Canvas. " +
+      "Verifique se a edge function está com a flag --unstable-canvas ativada."
+    );
+  }
+
   const canvas = new OffscreenCanvas(CANVAS_PX, CANVAS_PX);
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("OffscreenCanvas 2d context unavailable");
@@ -80,19 +93,20 @@ async function compositeImages(
     createImageBitmap(new Blob([logoBytes])),
   ]);
 
+  // BUG-A15 FIX: const/let em vez de var
   // Product -- cover-fill crop
-  var pa = prodBmp.width / prodBmp.height;
-  var sx = 0, sy = 0, sw = prodBmp.width, sh = prodBmp.height;
+  const pa = prodBmp.width / prodBmp.height;
+  let sx = 0, sy = 0, sw = prodBmp.width, sh = prodBmp.height;
   if (pa > 1) { sw = prodBmp.height; sx = (prodBmp.width - sw) / 2; }
   else        { sh = prodBmp.width;  sy = (prodBmp.height - sh) / 2; }
   ctx.drawImage(prodBmp, sx, sy, sw, sh, 0, 0, CANVAS_PX, CANVAS_PX);
 
   // Logo -- positioned, rotated, scaled
-  var cx = (posXPct / 100) * CANVAS_PX;
-  var cy = (posYPct / 100) * CANVAS_PX;
-  var s  = scalePct / 100;
-  var lw = logoWRatio * CANVAS_PX * s;
-  var lh = logoHRatio * CANVAS_PX * s;
+  const cx = (posXPct / 100) * CANVAS_PX;
+  const cy = (posYPct / 100) * CANVAS_PX;
+  const s  = scalePct / 100;
+  const lw = logoWRatio * CANVAS_PX * s;
+  const lh = logoHRatio * CANVAS_PX * s;
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate((rotDeg * Math.PI) / 180);
@@ -174,9 +188,15 @@ Deno.serve(async (req) => {
       );
     } catch (e) {
       console.error("[generate-mockup] canvas error:", e);
+      // BUG-A13 FIX: distingue erro de canvas indisponível de erro de composição
+      const msg = (e as Error).message;
+      const isRuntimeError = msg.includes("OffscreenCanvas não está disponível");
       return new Response(
-        JSON.stringify({ error: "composition_failed", message: (e as Error).message }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        JSON.stringify({
+          error: isRuntimeError ? "canvas_runtime_unavailable" : "composition_failed",
+          message: msg,
+        }),
+        { status: isRuntimeError ? 501 : 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const supabase = createClient(
