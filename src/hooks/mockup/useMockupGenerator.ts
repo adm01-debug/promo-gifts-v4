@@ -123,7 +123,7 @@ export function useMockupGenerator() {
   // Logo color analysis
   const logoColorAnalysis = useLogoColorAnalysis();
 
-  // Undo/Redo
+  // ─── Undo/Redo ───────────────────────────────────────────────────────
   const positionHistory = usePositionHistory({ enabled: true });
 
   useEffect(() => {
@@ -133,8 +133,8 @@ export function useMockupGenerator() {
         prev.map((area) => (area.id === activeAreaId ? { ...area, ...state } : area)),
       );
       // BUG-08 FIX: labels now reflect the action ALREADY performed, not the future action.
-      // canRedo=true means we just applied an undo -> show "Desfeito"; otherwise -> "Refeito".
-      toast.info(positionHistory.canRedo ? 'Desfeito' : 'Refeito', { duration: 1000 });
+      // canRedo=true means we just applied an undo → show "Desfeito"; otherwise → "Refeito".
+      toast.info(positionHistory.canRedo ? '↩️ Desfeito' : '↪️ Refeito', { duration: 1000 });
     });
   }, [activeAreaId, positionHistory]);
 
@@ -152,7 +152,7 @@ export function useMockupGenerator() {
     };
   }, []);
 
-  // Derived state
+  // ─── Derived state ──────────────────────────────────────────────────
 
   const activeArea =
     personalizationAreas.find((a) => a.id === activeAreaId) || personalizationAreas[0];
@@ -200,10 +200,10 @@ export function useMockupGenerator() {
     });
   }, [customizationOptions]);
 
-  // Effects
+  // ─── Effects ────────────────────────────────────────────────────────
 
   // BUG-05 FIX: guard with hasDraftRestored so a product selection made BEFORE draft restoration
-  // completes does not stomp the restored areas.
+  // completes does not stomp the restored areas. Also added hasDraftRestored to the dep array.
   useEffect(() => {
     if (!productLocations || isRestoringDraft.current || !hasDraftRestored) return;
     const newAreas: PersonalizationArea[] = productLocations
@@ -234,7 +234,9 @@ export function useMockupGenerator() {
       setActiveAreaId(personalizationAreas[0].id);
   }, [activeAreaId, personalizationAreas]);
 
-  // BUG-03 FIX: removed fetchHistory() from here to avoid double call on mount.
+  // BUG-03 FIX: removed fetchHistory() from here — it was called twice on mount because the
+  // user?.id effect below already calls it once the auth resolves. Duplicate call wasted one
+  // round-trip and caused a history flash on every cold load.
   useEffect(() => {
     fetchData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -257,6 +259,7 @@ export function useMockupGenerator() {
     if ((!mw || mw <= 0) && (!mh || mh <= 0)) return;
     setPersonalizationAreas((prev) =>
       prev.map((area) => {
+        // Limite efetivo = menor entre técnica e área (se ambos definidos)
         const areaW = area.maxWidthCm && area.maxWidthCm > 0 ? area.maxWidthCm : null;
         const areaH = area.maxHeightCm && area.maxHeightCm > 0 ? area.maxHeightCm : null;
         const effW = mw && areaW ? Math.min(mw, areaW) : mw || areaW;
@@ -306,10 +309,7 @@ export function useMockupGenerator() {
           setShowDraftRestoredNotice(true);
           // T3 FIX: cancel any previous timer before scheduling a new one.
           if (draftNoticeTimeoutRef.current) clearTimeout(draftNoticeTimeoutRef.current);
-          draftNoticeTimeoutRef.current = setTimeout(
-            () => setShowDraftRestoredNotice(false),
-            5000,
-          );
+          draftNoticeTimeoutRef.current = setTimeout(() => setShowDraftRestoredNotice(false), 5000);
         }
       } catch (err) {
         console.error('Erro ao restaurar rascunho:', err);
@@ -355,7 +355,8 @@ export function useMockupGenerator() {
     );
   }, [isLoadingData, hasDraftRestored, techniques, getProductById]);
 
-  // Auto-save with debounce
+  // Auto-save with debounce to prevent UI lag during logo dragging/resizing
+  // especially since logoPreview can be a large base64 string
   useEffect(() => {
     if (!hasDraftRestored || isRestoringDraft.current) return;
 
@@ -370,7 +371,7 @@ export function useMockupGenerator() {
         personalizationAreas,
         updatedAt: new Date().toISOString(),
       });
-    }, 1000);
+    }, 1000); // 1 second debounce for all state changes
 
     return () => clearTimeout(timeout);
   }, [
@@ -386,7 +387,7 @@ export function useMockupGenerator() {
     if (user?.id) fetchHistory();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Data fetching
+  // ─── Data fetching ──────────────────────────────────────────────────
 
   const fetchData = useCallback(async () => {
     try {
@@ -400,9 +401,10 @@ export function useMockupGenerator() {
       if (techniquesErr) {
         const msg = await extractFunctionErrorMessage(techniquesErr);
         console.error('Error fetching techniques:', msg);
-        toast.error('Erro ao carregar tecnicas. Tente recarregar a pagina.');
+        toast.error('Erro ao carregar técnicas. Tente recarregar a página.');
         return;
       }
+      // Bridge response may be { data: { records } } or { records }; narrow the unknown payload.
       const res = techniquesRes as
         | { data?: { records?: Record<string, unknown>[] }; records?: Record<string, unknown>[] }
         | null
@@ -437,7 +439,7 @@ export function useMockupGenerator() {
     }
   }, [user?.id]);
 
-  // Handlers
+  // ─── Handlers ───────────────────────────────────────────────────────
 
   const updateActiveArea = useCallback(
     (updates: Partial<PersonalizationArea>) => {
@@ -448,6 +450,7 @@ export function useMockupGenerator() {
         if (areaIndex === -1) return prev;
 
         const currentArea = prev[areaIndex];
+        // Only update if there are actual changes
         const hasChanges = Object.entries(updates).some(
           ([key, value]) => currentArea[key as keyof PersonalizationArea] !== value,
         );
@@ -486,7 +489,7 @@ export function useMockupGenerator() {
             }
             return currentAreas;
           });
-        }, 300);
+        }, 300); // Slightly faster debounce for better responsiveness
       }
     },
     [activeAreaId, positionHistory],
@@ -495,11 +498,11 @@ export function useMockupGenerator() {
   const handleAreaLogoUpload = useCallback(
     async (areaId: string, file: File) => {
       if (!file.type.startsWith('image/')) {
-        toast.error('Por favor, selecione uma imagem valida');
+        toast.error('Por favor, selecione uma imagem válida');
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
-        toast.error('A imagem deve ter no maximo 5MB');
+        toast.error('A imagem deve ter no máximo 5MB');
         return;
       }
 
@@ -537,7 +540,7 @@ export function useMockupGenerator() {
     return selectedProduct?.images?.[0] || null;
   }, [productSelection, selectedProduct]);
 
-  // T1/T2 FIX: wrapped in useCallback with correct deps.
+  // T1/T2 FIX: wrapped in useCallback with correct deps — eliminates stale closures.
   const saveMockupToHistory = useCallback(
     async (
       mockupUrl: string,
@@ -559,7 +562,7 @@ export function useMockupGenerator() {
     [user, selectedProduct, selectedTechnique, selectedClient, mockupAnnotations],
   );
 
-  // T1/T2 FIX: wrapped in useCallback.
+  // T1/T2 FIX: wrapped in useCallback. Declared before generateMockup (which closes over it).
   const downloadMockup = useCallback(
     async (url?: string) => {
       const mockupUrl = url || generatedMockup;
@@ -570,16 +573,16 @@ export function useMockupGenerator() {
   );
 
   // T1/T2 FIX: wrapped in useCallback.
-  // T5 FIX: batch DB saves parallelised with Promise.allSettled.
+  // T5 FIX: batch DB saves parallelised with Promise.allSettled (was sequential for-await).
   const generateMockup = useCallback(async () => {
     const areasWithLogos = personalizationAreas.filter((a) => a.logoPreview);
     if (!selectedClient || !productSelection || !selectedTechnique || areasWithLogos.length === 0) {
-      toast.error('Selecione empresa, produto, tecnica e faca upload de pelo menos um logo');
+      toast.error('Selecione empresa, produto, técnica e faça upload de pelo menos um logo');
       return;
     }
     const productImage = getProductImage();
     if (!productImage) {
-      toast.error('O produto selecionado nao possui imagem');
+      toast.error('O produto selecionado não possui imagem');
       return;
     }
 
@@ -620,6 +623,7 @@ export function useMockupGenerator() {
             return saveMockupToHistory(r.url, area).then((recordId) => ({ recordId, r }));
           }),
         );
+        // Pick the last fulfilled result to update lastSaved* state.
         const lastFulfilled = batchSaveResults
           .filter(
             (
@@ -664,7 +668,7 @@ export function useMockupGenerator() {
     try {
       await deleteMockupFromDb(mockupToDelete, user?.id);
       setMockupHistory((prev) => prev.filter((m) => m.id !== mockupToDelete));
-      toast.success('Mockup excluido');
+      toast.success('Mockup excluído');
     } catch (error) {
       console.error('Error deleting mockup:', error);
       toast.error('Erro ao excluir mockup');
@@ -697,7 +701,7 @@ export function useMockupGenerator() {
     logoColorAnalysis.clearAnalysis();
   }, [positionHistory, clearDraft, logoColorAnalysis]);
 
-  // T1/T2 FIX: wrapped in useCallback — pure function, no state deps.
+  // T1/T2 FIX: wrapped in useCallback — pure function over its argument, no state deps.
   const handleShareMockup = useCallback((mockup: GeneratedMockup) => {
     const text = `Confira o mockup: ${mockup.product_name} com ${mockup.technique_name}`;
     window.open(
@@ -706,7 +710,7 @@ export function useMockupGenerator() {
     );
   }, []);
 
-  // T1/T2 FIX: wrapped in useCallback with correct deps.
+  // T1/T2 FIX: wrapped in useCallback with correct deps including techniques & getProductById.
   const loadFromHistory = useCallback(
     (mockup: GeneratedMockup) => {
       const product = mockup.product_id ? getProductById(mockup.product_id) : null;
@@ -745,7 +749,7 @@ export function useMockupGenerator() {
       // BUG-04 FIX: clear stale draft so the auto-save effect does not overwrite the just-loaded
       // history configuration ~1 second after this function returns.
       clearDraft();
-      toast.success('Configuracoes carregadas!');
+      toast.success('Configurações carregadas!');
     },
     [techniques, getProductById, logoColorAnalysis, clearDraft, positionHistory],
   );
