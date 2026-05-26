@@ -45,7 +45,9 @@ describe('Integridade do Sistema de Skeletons', () => {
         'src/components/catalog/CatalogHeader.tsx',
         'src/pages/clients/ClientsPage.tsx',
         'src/pages/quotes/QuotesListPage.tsx',
-        'src/pages/tools/MagicUp.tsx'
+        'src/pages/tools/MagicUp.tsx',
+        'src/pages/mockups/MockupHistoryPage.tsx',
+        'src/pages/tools/DropboxBrowserPage.tsx'
       ];
 
       const globExclusions = exceptions.map(e => `--glob '!${e}'`).join(' ');
