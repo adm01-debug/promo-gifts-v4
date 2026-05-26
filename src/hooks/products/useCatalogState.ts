@@ -169,8 +169,6 @@ export function useCatalogState() {
   const totalEstimate = catalogData?.pages?.[0]?.totalEstimate ?? null;
 
   // BUG-CS-03 FIX: Guard against multiple simultaneous prefetch calls.
-  // Original enqueued a new requestIdleCallback every time hasNextPage changed,
-  // causing duplicated fetchNextPage calls.
   const prefetchScheduledRef = useRef(false);
 
   useEffect(() => {
@@ -178,15 +176,11 @@ export function useCatalogState() {
       prefetchScheduledRef.current = true;
       if ('requestIdleCallback' in window) {
         window.requestIdleCallback(() => {
-          fetchNextPage().finally(() => {
-            prefetchScheduledRef.current = false;
-          });
+          fetchNextPage().finally(() => { prefetchScheduledRef.current = false; });
         });
       } else {
         setTimeout(() => {
-          fetchNextPage().finally(() => {
-            prefetchScheduledRef.current = false;
-          });
+          fetchNextPage().finally(() => { prefetchScheduledRef.current = false; });
         }, 1000);
       }
     }
@@ -235,8 +229,7 @@ export function useCatalogState() {
     }
   }, [searchParams, sortBy]);
 
-  // BUG-CS-06 FIX: Reset displayCount without startTransition wrapper.
-  // Depends on debouncedServerSearch to avoid resetting on every keystroke.
+  // BUG-CS-06 FIX: Reset displayCount sem startTransition, depende de debouncedServerSearch
   useEffect(() => {
     setDisplayCount(ITEMS_PER_PAGE);
   }, [filters, sortBy, debouncedServerSearch]);
@@ -388,28 +381,18 @@ export function useCatalogState() {
       fetchNextPage().finally(() => {
         setDisplayCount((prev) => prev + ITEMS_PER_PAGE);
         setIsLoadingMore(false);
-        setTimeout(() => {
-          isUpdatingRef.current = false;
-        }, 100);
+        setTimeout(() => { isUpdatingRef.current = false; }, 100);
       });
     } else {
       setTimeout(() => {
         setDisplayCount((prev) => prev + ITEMS_PER_PAGE);
         setIsLoadingMore(false);
-        setTimeout(() => {
-          isUpdatingRef.current = false;
-        }, 100);
+        setTimeout(() => { isUpdatingRef.current = false; }, 100);
       }, 150);
     }
   }, [
-    isLoading,
-    isLoadingMore,
-    isFetchingNextPage,
-    hasMoreProducts,
-    displayCount,
-    filteredProducts.length,
-    hasNextPage,
-    fetchNextPage,
+    isLoading, isLoadingMore, isFetchingNextPage, hasMoreProducts,
+    displayCount, filteredProducts.length, hasNextPage, fetchNextPage,
   ]);
 
   useEffect(() => {
@@ -427,9 +410,7 @@ export function useCatalogState() {
     );
 
     if (loadMoreRef.current) observerRef.current.observe(loadMoreRef.current);
-    return () => {
-      observerRef.current?.disconnect();
-    };
+    return () => { observerRef.current?.disconnect(); };
   }, [isLoading, hasMoreProducts, isLoadingMore, loadMore]);
 
   const statBadges = useMemo(() => {
@@ -469,56 +450,31 @@ export function useCatalogState() {
       ? uniqueSuppliers.size
       : (realStats?.totalSuppliers ?? uniqueSuppliers.size);
 
-    // BUG-CS-01 FIX: isFavorite is a *function* reference — always truthy in ternary condition.
-    // The favoriteCount branch was never reached. Correct gate is hasActiveFilters.
+    // BUG-CS-01 FIX: isFavorite e funcao — sempre truthy; gate correto e hasActiveFilters
     const contextualFavoriteCount = hasActiveFilters
       ? deduped.filter((p) => isFavorite(p.id)).length
       : favoriteCount;
 
     return [
-      {
-        id: 'products',
-        label: 'Produtos Unicos',
-        value: productCount,
-        icon: React.createElement(Package, { className: 'h-4 w-4' }),
-      },
-      {
-        id: 'variants',
-        label: 'Variacoes',
-        value: totalVariants,
-        icon: React.createElement(Palette, { className: 'h-4 w-4' }),
-      },
-      {
-        id: 'categories',
-        label: 'Categorias',
-        value: categoriesCount,
-        icon: React.createElement(FolderTree, { className: 'h-4 w-4' }),
-      },
-      {
-        id: 'suppliers',
-        label: 'Fornecedores',
-        value: suppliersCount,
-        icon: React.createElement(Users, { className: 'h-4 w-4' }),
-      },
-      {
-        id: 'favorites',
-        label: 'Favoritos',
-        value: contextualFavoriteCount,
-        icon: React.createElement(Heart, { className: 'h-4 w-4' }),
-      },
+      { id: 'products', label: 'Produtos Unicos', value: productCount,
+        icon: React.createElement(Package, { className: 'h-4 w-4' }) },
+      { id: 'variants', label: 'Variacoes', value: totalVariants,
+        icon: React.createElement(Palette, { className: 'h-4 w-4' }) },
+      { id: 'categories', label: 'Categorias', value: categoriesCount,
+        icon: React.createElement(FolderTree, { className: 'h-4 w-4' }) },
+      { id: 'suppliers', label: 'Fornecedores', value: suppliersCount,
+        icon: React.createElement(Users, { className: 'h-4 w-4' }) },
+      { id: 'favorites', label: 'Favoritos', value: contextualFavoriteCount,
+        icon: React.createElement(Heart, { className: 'h-4 w-4' }) },
     ];
   }, [
-    filteredProducts,
-    favoriteCount,
-    isFavorite,
-    activeFiltersCount,
-    searchQuery,
-    totalEstimate,
-    // BUG-STAT-01 FIX: hasNextPage removido — causava recalculo desnecessario a cada page fetch
+    filteredProducts, favoriteCount, isFavorite,
+    activeFiltersCount, searchQuery, totalEstimate,
+    // BUG-STAT-01 FIX: hasNextPage removido das deps
     realStats,
   ]);
 
-  // BUG-CS-02 FIX: original chamava setSortBy('name') — wrong default.
+  // BUG-CS-02 FIX: era setSortBy('name') — default correto e 'relevance'
   const resetFilters = useCallback(() => {
     setFilters(defaultFilters);
     setSortBy('relevance');
@@ -527,16 +483,12 @@ export function useCatalogState() {
   }, [navigate, setSortBy]);
 
   const handleViewProduct = useCallback(
-    (product: Product) => {
-      navigate(`/produto/${product.id}`);
-    },
+    (product: Product) => { navigate(`/produto/${product.id}`); },
     [navigate],
   );
 
   const [shareProduct, setShareProduct] = useState<Product | null>(null);
-  const handleShareProduct = useCallback((product: Product) => {
-    setShareProduct(product);
-  }, []);
+  const handleShareProduct = useCallback((product: Product) => { setShareProduct(product); }, []);
 
   const handleFavoriteProduct = useCallback(
     (product: Product, e?: React.MouseEvent) => {
@@ -547,7 +499,7 @@ export function useCatalogState() {
           void favQuickAdd.addToList(target.id, product as never);
           toast({
             title: 'Adicionado aos Favoritos',
-            description: `Salvo em "${target.name}". Use Shift+clique para confirmar a lista padrao sem confirmacao.`,
+            description: `Salvo em "${target.name}". Use Shift+clique para confirmar a lista padrao.`,
           });
         } else {
           toggleFavorite(product.id);
@@ -556,6 +508,15 @@ export function useCatalogState() {
     },
     [favQuickAdd, toggleFavorite, toast],
   );
+
+  // BUG-KBD-01 FIX: handleFavoriteProduct estava nas deps do keyboard useEffect.
+  // Como depende de favQuickAdd/toggleFavorite/toast, era recriada com frequencia,
+  // causando re-registro desnecessario do listener a cada render do catalogo.
+  // Solucao: capturar a versao mais recente em ref sem adicionar deps instáveis.
+  const handleFavoriteProductRef = useRef(handleFavoriteProduct);
+  useEffect(() => {
+    handleFavoriteProductRef.current = handleFavoriteProduct;
+  }, [handleFavoriteProduct]);
 
   const handleSearch = useCallback(
     (query: string) => {
@@ -594,23 +555,18 @@ export function useCatalogState() {
           break;
         case 'Enter':
         case 'o':
-          if (activeProductId) {
-            e.preventDefault();
-            navigate(`/produto/${activeProductId}`);
-          }
+          if (activeProductId) { e.preventDefault(); navigate(`/produto/${activeProductId}`); }
           break;
         case 'f':
           if (activeProductId) {
             e.preventDefault();
             const product = paginatedProducts.find((p) => p.id === activeProductId);
-            if (product) handleFavoriteProduct(product);
+            // BUG-KBD-01 FIX: usa ref em vez da funcao diretamente nas deps
+            if (product) handleFavoriteProductRef.current(product);
           }
           break;
         case 'Escape':
-          if (activeProductId) {
-            e.preventDefault();
-            setActiveProductId(null);
-          }
+          if (activeProductId) { e.preventDefault(); setActiveProductId(null); }
           if (selectionMode) setSelectionMode(false);
           break;
       }
@@ -618,30 +574,23 @@ export function useCatalogState() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeProductId, paginatedProducts, navigate, handleFavoriteProduct, selectionMode]);
+  // BUG-KBD-01 FIX: handleFavoriteProduct removido das deps — era instavel.
+  // handleFavoriteProductRef.current e sempre atual sem triggerar re-registro.
+  }, [activeProductId, paginatedProducts, navigate, selectionMode]);
 
   return {
-    filters,
-    setFilters,
-    viewMode,
-    setViewMode,
-    gridColumns,
-    setGridColumns,
-    sortBy,
-    setSortBy,
+    filters, setFilters,
+    viewMode, setViewMode,
+    gridColumns, setGridColumns,
+    sortBy, setSortBy,
     refetchCatalog,
-    selectionMode,
-    setSelectionMode,
-    selectedCount,
-    setSelectedCount,
+    selectionMode, setSelectionMode,
+    selectedCount, setSelectedCount,
     toggleSelectionMode,
-    filterSheetOpen,
-    setFilterSheetOpen,
-    searchQuery,
-    setSearchQuery,
+    filterSheetOpen, setFilterSheetOpen,
+    searchQuery, setSearchQuery,
     isSearching,
-    displayCount,
-    setDisplayCount,
+    displayCount, setDisplayCount,
     isLoadingMore,
     isInitialCatalogLoad,
     isLoading,
@@ -656,22 +605,16 @@ export function useCatalogState() {
     handleShareProduct,
     handleFavoriteProduct,
     handleSearch,
-    isFavorite,
-    toggleFavorite,
-    isInCompare,
-    toggleCompare,
-    canAddMore,
+    isFavorite, toggleFavorite,
+    isInCompare, toggleCompare, canAddMore,
     activeFiltersCount,
     hasActiveCatalogConstraints,
     shouldShowCatalogSkeleton,
     shouldShowEmptyState,
-    shareProduct,
-    setShareProduct,
+    shareProduct, setShareProduct,
     hasNextPage,
-    activeProductId,
-    setActiveProductId,
-    suggestions,
-    quickSuggestions,
+    activeProductId, setActiveProductId,
+    suggestions, quickSuggestions,
     searchHistory: history,
     clearHistory,
     navigate,
