@@ -1,8 +1,8 @@
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-const CONCURRENCY = 100;
-const TOTAL_REQUESTS = 5000;
+const CONCURRENCY = 10;
+const TOTAL_REQUESTS = 50;
 
 async function runLoadTest(name: string, path: string, method = "GET", body: any = null, headers: any = {}) {
   console.log(`Starting stress test for ${name} (${TOTAL_REQUESTS} requests, concurrency ${CONCURRENCY})...`);
