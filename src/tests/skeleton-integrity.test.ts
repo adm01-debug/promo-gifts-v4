@@ -34,7 +34,8 @@ describe('Integridade do Sistema de Skeletons', () => {
     try {
       // Verifica se arquivos estão usando Skeleton mas não importam de ModernSkeletons ou ui/skeleton
       // Este teste foca em garantir que não criamos duplicatas locais
-      const command = `rg -l "Skeleton" src/ --glob '!src/components/loading/*' --glob '!src/components/ui/skeleton.tsx' --glob '!src/components/layout/SkeletonLoaders.tsx' --glob '!src/tests/*'`;
+      // Excluímos AppRoutes.tsx e SkeletonLoaders.tsx que são gerenciadores de skeletons
+      const command = `rg -l "Skeleton" src/ --glob '!src/components/loading/*' --glob '!src/components/ui/skeleton.tsx' --glob '!src/components/layout/SkeletonLoaders.tsx' --glob '!src/tests/*' --glob '!src/routes/AppRoutes.tsx'`;
       const files = execSync(command).toString().trim().split('\n');
       
       files.forEach(file => {
@@ -56,3 +57,4 @@ describe('Integridade do Sistema de Skeletons', () => {
     expect(content).toContain('makeSkeleton');
   });
 });
+EOF
