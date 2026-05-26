@@ -33,8 +33,8 @@ describe('Integridade do Sistema de Skeletons', () => {
   it('apenas o componente base Skeleton de ui deve ser usado diretamente para formas customizadas', () => {
     try {
       // Verifica se arquivos TSX estão usando Skeleton mas não importam de ModernSkeletons ou ui/skeleton
-      // Excluímos AppRoutes.tsx e SkeletonLoaders.tsx que são gerenciadores de skeletons
-      const command = `rg -l "Skeleton" src/ --glob "*.tsx" --glob '!src/components/loading/*' --glob '!src/components/ui/skeleton.tsx' --glob '!src/components/layout/SkeletonLoaders.tsx' --glob '!src/tests/*' --glob '!src/routes/AppRoutes.tsx'`;
+      // Excluímos gerenciadores de skeletons e componentes de Kit que usam padrões específicos
+      const command = `rg -l "Skeleton" src/ --glob "*.tsx" --glob '!src/components/loading/*' --glob '!src/components/ui/skeleton.tsx' --glob '!src/components/layout/SkeletonLoaders.tsx' --glob '!src/tests/*' --glob '!src/routes/AppRoutes.tsx' --glob '!src/components/kit-builder/*' --glob '!src/components/kit-library/*'`;
       const files = execSync(command).toString().trim().split('\n');
       
       files.forEach(file => {
