@@ -22,7 +22,8 @@ import {
   AlertCircle,
   History,
   Trash2,
-  Maximize2
+  Maximize2,
+  TrendingUp
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
