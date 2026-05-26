@@ -1,7 +1,7 @@
 /**
  * useCatalogState — all catalog page state & logic extracted from Index.tsx
  */
-import React, { useState, useMemo, useEffect, useRef, useCallback, useTransition } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback, useDeferredValue } from 'react';
 import { useCatalogRealStats } from '@/hooks/products/useCatalogRealStats';
 import { useColorEnrichment } from '@/hooks/products/useColorEnrichment';
 import { useExternalCategoriesQuery } from '@/hooks/products/useExternalCategoriesQuery';
@@ -91,14 +91,10 @@ export function useCatalogState() {
   const initialSortBy = (searchParams.get('sort') as SortOption) || 'relevance';
   const [sortBy, setSortByState] = useState<SortOption>(initialSortBy);
 
-  // BUG-CS-05 FIX: Use React 18 useTransition instead of manual isTransitioning state.
-  // Original called setIsTransitioning(true/false) inside startTransition — semantically
-  // incorrect. useTransition exposes isPending automatically and correctly.
-  const [isPending, startCatalogTransition] = useTransition();
-
   const setSortBy = useCallback(
     (s: SortOption) => {
-      startCatalogTransition(() => {
+      setIsTransitioning(true);
+      React.startTransition(() => {
         setSortByState(s);
 
         // Update URL query string
@@ -111,11 +107,12 @@ export function useCatalogState() {
 
         const newPath = `${window.location.pathname}${newParams.toString() ? '?' + newParams.toString() : ''}`;
         navigate(newPath, { replace: true });
+
+        setIsTransitioning(false);
       });
     },
-    [navigate, startCatalogTransition],
+    [navigate],
   );
-
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedCount, setSelectedCount] = useState(0);
   const [activeProductId, setActiveProductId] = useState<string | null>(null);
@@ -127,16 +124,26 @@ export function useCatalogState() {
     });
   }, []);
 
-  // Responsive clamp: garante que o numero de colunas nao ultrapasse o disponivel
+  // Responsive clamp: garante que o número de colunas não ultrapasse o disponível
+  // para a largura atual da tela, mantendo a consistência visual.
   useEffect(() => {
     const handleResize = () => {
       const w = window.innerWidth;
+      // 3 colunas (min 0)
+      // 4 colunas (min 768)
+      // 5 colunas (min 1024)
+      // 6 colunas (min 1280)
+      // 8 colunas (min 1536)
+
       let maxCols: ColumnCount = 3;
       if (w >= 1536) maxCols = 8;
       else if (w >= 1280) maxCols = 6;
       else if (w >= 1024) maxCols = 5;
       else if (w >= 768) maxCols = 4;
-      if (gridColumns > maxCols) setGridColumns(maxCols);
+
+      if (gridColumns > maxCols) {
+        setGridColumns(maxCols);
+      }
     };
     handleResize();
     window.addEventListener('resize', handleResize);
@@ -148,6 +155,7 @@ export function useCatalogState() {
   const [isSearching, setIsSearching] = useState(false);
   const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const debouncedServerSearch = useDebounce(searchQuery, 400);
 
@@ -168,26 +176,12 @@ export function useCatalogState() {
 
   const totalEstimate = catalogData?.pages?.[0]?.totalEstimate ?? null;
 
-  // BUG-CS-03 FIX: Guard against multiple simultaneous prefetch calls.
-  // Original enqueued a new requestIdleCallback every time hasNextPage changed,
-  // causing duplicated fetchNextPage calls.
-  const prefetchScheduledRef = useRef(false);
-
   useEffect(() => {
-    if (hasNextPage && !isFetchingNextPage && !prefetchScheduledRef.current) {
-      prefetchScheduledRef.current = true;
+    if (hasNextPage && !isFetchingNextPage) {
       if ('requestIdleCallback' in window) {
-        window.requestIdleCallback(() => {
-          fetchNextPage().finally(() => {
-            prefetchScheduledRef.current = false;
-          });
-        });
+        window.requestIdleCallback(() => fetchNextPage());
       } else {
-        setTimeout(() => {
-          fetchNextPage().finally(() => {
-            prefetchScheduledRef.current = false;
-          });
-        }, 1000);
+        setTimeout(() => fetchNextPage(), 1000);
       }
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
@@ -235,11 +229,11 @@ export function useCatalogState() {
     }
   }, [searchParams, sortBy]);
 
-  // BUG-CS-06 FIX: Reset displayCount without startTransition wrapper.
-  // Depends on debouncedServerSearch to avoid resetting on every keystroke.
   useEffect(() => {
-    setDisplayCount(ITEMS_PER_PAGE);
-  }, [filters, sortBy, debouncedServerSearch]);
+    React.startTransition(() => {
+      setDisplayCount(ITEMS_PER_PAGE);
+    });
+  }, [filters, sortBy, searchQuery]);
 
   const activeFiltersCount = useMemo(() => {
     let count = 0;
@@ -257,7 +251,7 @@ export function useCatalogState() {
     if (filters.materialGroups?.length) count += filters.materialGroups.length;
     if (filters.materialTypes?.length) count += filters.materialTypes.length;
     if (filters.materiais.length) count += filters.materiais.length;
-    // BUG-CS-04 FIX: threshold era < 500, inconsistente com PRICE_RANGE_MAX = 9999
+    // BUG-22 FIX: era < 500, deve ser < 9999 para contar filtro de preço corretamente.
     if (filters.priceRange[0] > 0 || filters.priceRange[1] < 9999) count += 1;
     if (filters.inStock) count += 1;
     if (filters.isKit) count += 1;
@@ -288,16 +282,16 @@ export function useCatalogState() {
     supplierSalesMap: supplierSalesMap as unknown as Map<string, number> | undefined,
   });
 
-  // Snapshot of last stable product list to avoid blank flicker during sort transition
   const [lastNonTransitionedProducts, setLastNonTransitionedProducts] = useState<Product[]>([]);
+  const deferredIsTransitioning = useDeferredValue(isTransitioning);
 
   useEffect(() => {
-    if (!isPending) {
+    if (!deferredIsTransitioning) {
       setLastNonTransitionedProducts(filteredProducts);
     }
-  }, [filteredProducts, isPending]);
+  }, [filteredProducts, deferredIsTransitioning]);
 
-  const displayFilteredProducts = isPending ? lastNonTransitionedProducts : filteredProducts;
+  const displayFilteredProducts = isTransitioning ? lastNonTransitionedProducts : filteredProducts;
 
   const rawPaginatedProducts = useMemo(
     () => displayFilteredProducts.slice(0, displayCount),
@@ -469,22 +463,20 @@ export function useCatalogState() {
       ? uniqueSuppliers.size
       : (realStats?.totalSuppliers ?? uniqueSuppliers.size);
 
-    // BUG-CS-01 FIX: isFavorite is a *function* reference — always truthy in ternary condition.
-    // The favoriteCount branch was never reached. Correct gate is hasActiveFilters.
-    const contextualFavoriteCount = hasActiveFilters
+    const contextualFavoriteCount = isFavorite
       ? deduped.filter((p) => isFavorite(p.id)).length
       : favoriteCount;
 
     return [
       {
         id: 'products',
-        label: 'Produtos Unicos',
+        label: 'Produtos Únicos',
         value: productCount,
         icon: React.createElement(Package, { className: 'h-4 w-4' }),
       },
       {
         id: 'variants',
-        label: 'Variacoes',
+        label: 'Variações',
         value: totalVariants,
         icon: React.createElement(Palette, { className: 'h-4 w-4' }),
       },
@@ -514,17 +506,16 @@ export function useCatalogState() {
     activeFiltersCount,
     searchQuery,
     totalEstimate,
-    // BUG-STAT-01 FIX: hasNextPage removido — causava recalculo desnecessario a cada page fetch
+    hasNextPage,
     realStats,
   ]);
 
-  // BUG-CS-02 FIX: original chamava setSortBy('name') — wrong default.
   const resetFilters = useCallback(() => {
     setFilters(defaultFilters);
-    setSortBy('relevance');
+    setSortBy('name');
     setSearchQuery('');
     navigate('/', { replace: true });
-  }, [navigate, setSortBy]);
+  }, [navigate]);
 
   const handleViewProduct = useCallback(
     (product: Product) => {
@@ -534,6 +525,7 @@ export function useCatalogState() {
   );
 
   const [shareProduct, setShareProduct] = useState<Product | null>(null);
+
   const handleShareProduct = useCallback((product: Product) => {
     setShareProduct(product);
   }, []);
@@ -547,7 +539,7 @@ export function useCatalogState() {
           void favQuickAdd.addToList(target.id, product as never);
           toast({
             title: 'Adicionado aos Favoritos',
-            description: `Salvo em "${target.name}". Use Shift+clique para confirmar a lista padrao sem confirmacao.`,
+            description: `Salvo em "${target.name}". Use Shift+clique para confirmar a lista padrão sem confirmação.`,
           });
         } else {
           toggleFavorite(product.id);
@@ -570,6 +562,7 @@ export function useCatalogState() {
   // Keyboard Navigation Logic
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in input/textarea or if dialogs are open (heuristic)
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
         return;
@@ -582,15 +575,18 @@ export function useCatalogState() {
         case 'j':
         case 'ArrowDown':
           e.preventDefault();
-          if (currentIndex < paginatedProducts.length - 1)
+          if (currentIndex < paginatedProducts.length - 1) {
             setActiveProductId(paginatedProducts[currentIndex + 1].id);
+          }
           break;
         case 'k':
         case 'ArrowUp':
           e.preventDefault();
-          if (currentIndex > 0) setActiveProductId(paginatedProducts[currentIndex - 1].id);
-          else if (currentIndex === -1 && paginatedProducts.length > 0)
+          if (currentIndex > 0) {
+            setActiveProductId(paginatedProducts[currentIndex - 1].id);
+          } else if (currentIndex === -1 && paginatedProducts.length > 0) {
             setActiveProductId(paginatedProducts[0].id);
+          }
           break;
         case 'Enter':
         case 'o':
@@ -611,7 +607,9 @@ export function useCatalogState() {
             e.preventDefault();
             setActiveProductId(null);
           }
-          if (selectionMode) setSelectionMode(false);
+          if (selectionMode) {
+            setSelectionMode(false);
+          }
           break;
       }
     };
@@ -674,8 +672,9 @@ export function useCatalogState() {
     quickSuggestions,
     searchHistory: history,
     clearHistory,
+    // Navigation & pagination
     navigate,
-    isTransitioning: isPending,
+    isTransitioning: deferredIsTransitioning,
     hasMoreProducts,
     ITEMS_PER_PAGE,
     loadMore,

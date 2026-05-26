@@ -97,6 +97,8 @@ export default function FiltersPage() {
         state.setFilters((prev: FilterState) => ({ ...prev, search: query }));
         toast.success(action.response);
       } else if (action.action === 'sort' && action.data.sortBy) {
+        // BUG-VOZ FIX: sortMap não continha 'best-seller-supplier' e 'best-seller-promo'.
+        // Comandos de voz como "ordenar por mais vendidos" caíam no fallback 'name' silenciosamente.
         const sortMap: Record<string, string> = {
           'price-asc': 'price-asc',
           'price-desc': 'price-desc',
@@ -104,6 +106,8 @@ export default function FiltersPage() {
           stock: 'stock',
           newest: 'newest',
           popularity: 'popularity',
+          'best-seller-supplier': 'best-seller-supplier',
+          'best-seller-promo': 'best-seller-promo',
         };
         const sortValue = sortMap[action.data.sortBy] || 'name';
         state.setSortBy(sortValue);

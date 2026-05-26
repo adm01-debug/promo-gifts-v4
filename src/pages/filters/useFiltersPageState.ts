@@ -279,10 +279,13 @@ export function useFiltersPageState() {
       toast.success('Filtros limpos', { description: 'Todos os filtros foram removidos.' });
   };
 
-  const searchQuery = searchParams.get('search') || '';
+  // BUG-20 FIX: usar filters.search como fonte primária (imediata) em vez de
+  // searchParams.get('search') que fica stale por 1 render frame após setFilters.
+  // O fallback para searchParams mantém compatibilidade com links diretos via URL.
+  const fuzzySearchQuery = filters.search || searchParams.get('search') || '';
   const { results: fuzzySearchResults, hasSearch: hasFuzzySearch } = useProductFuzzySearch(
     realProducts,
-    searchQuery,
+    fuzzySearchQuery,
   );
 
   // Apply filters
@@ -390,6 +393,29 @@ export function useFiltersPageState() {
     if (filters.hasCommercialPackaging)
       result = result.filter((product) => product.hasCommercialPackaging === true);
     if (filters.isKit) result = result.filter((product) => product.isKit === true);
+    // BUG-15a FIX: featured era contabilizado/chipeado mas nunca filtrava produtos.
+    if (filters.featured) result = result.filter((product) => product.featured === true);
+    // BUG-15b FIX: isNew mapeia para product.newArrival (campo correto no tipo Product).
+    if (filters.isNew) result = result.filter((product) => product.newArrival === true);
+    // BUG-15c FIX (parte 2): hasPersonalization — tipo corrigido em commit anterior; filtro aplicado aqui.
+    if (filters.hasPersonalization)
+      result = result.filter((product) => product.hasPersonalization === true);
+    // BUG-16 FIX: gender era contabilizado/chipeado mas sem bloco de filtro.
+    if (filters.gender?.length) {
+      const genderSet = new Set(filters.gender.map((g) => g.toLowerCase().trim()));
+      result = result.filter((product) =>
+        genderSet.has((product.gender || '').toLowerCase().trim()),
+      );
+    }
+    // BUG-17 FIX: sizes era contabilizado/chipeado mas sem bloco de filtro.
+    if (filters.sizes?.length) {
+      const sizeSet = new Set(filters.sizes);
+      result = result.filter((product) =>
+        product.variations?.some(
+          (v: ProductVariation) => v.size_code !== null && sizeSet.has(String(v.size_code)),
+        ),
+      );
+    }
     const skipSort = hasFuzzySearch && sortBy === 'name';
     sortProducts(result, sortBy, { promoSalesMap, supplierSalesMap, skipSort });
     return result;

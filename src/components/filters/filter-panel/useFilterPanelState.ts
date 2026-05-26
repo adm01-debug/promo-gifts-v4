@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useDebounce } from '@/hooks/common';
 import {
   SORT_OPTIONS,
@@ -28,9 +28,22 @@ export function useFilterPanelState(
   const [localSearch, setLocalSearch] = useState(filters.search);
   const debouncedSearch = useDebounce(localSearch, 500);
 
+  // BUG-19 FIX: stale closure — refs para capturar sempre os valores mais recentes
+  // de filters e onFilterChange dentro do effect que só roda quando debouncedSearch muda.
+  // Sem esse padrão, o effect fechava sobre versões antigas, sobrescrevendo filtros
+  // alterados durante os 500ms de debounce (ex: cor selecionada era apagada).
+  const filtersRef = useRef(filters);
+  const onFilterChangeRef = useRef(onFilterChange);
   useEffect(() => {
-    if (debouncedSearch !== filters.search) {
-      onFilterChange({ ...filters, search: debouncedSearch });
+    filtersRef.current = filters;
+  });
+  useEffect(() => {
+    onFilterChangeRef.current = onFilterChange;
+  });
+
+  useEffect(() => {
+    if (debouncedSearch !== filtersRef.current.search) {
+      onFilterChangeRef.current({ ...filtersRef.current, search: debouncedSearch });
     }
   }, [debouncedSearch]);
 
