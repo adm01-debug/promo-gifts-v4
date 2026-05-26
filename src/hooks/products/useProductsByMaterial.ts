@@ -41,7 +41,7 @@ export function useProductsByMaterial(options: UseProductsByMaterialOptions = {}
     queryKey: ['products-by-materials', materialTypeSlugs, materialGroupSlugs],
     queryFn: async () => {
       const result = await materialService.getProductsByMaterials({
-        materialTypeIds: materialTypeSlugs.length > 0 ? materialTypeSlugs : undefined,
+        materialTypeSlugs: materialTypeSlugs.length > 0 ? materialTypeSlugs : undefined,
         materialGroupSlugs: materialGroupSlugs.length > 0 ? materialGroupSlugs : undefined,
       });
       return result;
