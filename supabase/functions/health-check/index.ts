@@ -128,7 +128,7 @@ Deno.serve(async (req) => {
   return log.respond(
     new Response(JSON.stringify(responseBody), {
       status: overall === "unhealthy" ? 503 : 200,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     })
   );
 });
