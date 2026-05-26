@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from "react";
 import { useReducedMotion } from "@/hooks/ui/useReducedMotion";
 import { SelectionCheckbox } from "@/components/common/SelectionCheckbox";
 import { cn } from "@/lib/utils";
-import { ProductCardSkeleton } from "./ProductCardSkeleton";
+import { ProductCardSkeleton } from "@/components/loading/ModernSkeletons";
 
 export interface ProductGridProps {
   products: Product[];

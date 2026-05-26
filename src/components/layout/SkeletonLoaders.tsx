@@ -1,12 +1,13 @@
 import * as React from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ProductGridSkeleton } from "@/components/products/ProductCardSkeleton";
+import { ProductGridSkeleton } from "@/components/loading/ModernSkeletons";
 import { 
   TableSkeleton, 
   StatsCardSkeleton, 
   ChartSkeleton, 
   PageHeaderSkeleton 
 } from "@/components/loading/SkeletonShimmer";
+import { DashboardSkeleton as ModernDashboardSkeleton } from "@/components/loading/ModernSkeletons";
 import { SkeletonMonitor } from "@/components/loading/SkeletonMonitor";
 
 /**
@@ -158,27 +159,7 @@ export const AdminSkeleton = makeSkeleton(
 /** Dashboard / home skeleton */
 export const DashboardSkeleton = makeSkeleton(
   "Dashboard",
-  () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-10 w-40 rounded-lg" />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[1, 2, 3, 4].map((i) => (
-          <StatsCardSkeleton key={i} />
-        ))}
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <ChartSkeleton />
-        </div>
-        <div>
-          <TableSkeleton rows={6} columns={3} />
-        </div>
-      </div>
-    </div>
-  ),
+  () => <ModernDashboardSkeleton />,
   "p-3 sm:p-4 lg:p-6",
 );
 
