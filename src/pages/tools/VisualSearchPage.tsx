@@ -421,35 +421,33 @@ export default function VisualSearchPage() {
                       
                       <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
                         <div className="flex flex-col gap-2">
-                          <Button variant="secondary" size="sm" onClick={reset} className="gap-2">
-                            <RefreshCcw className="h-4 w-4" /> Trocar Foto
+                          <Button variant="secondary" size="sm" onClick={reset} className="gap-2 bg-white/10 text-white border-white/10 hover:bg-white/20">
+                            <RefreshCcw className="h-4 w-4" /> Resetar
                           </Button>
-                          <div className="flex flex-col gap-2 bg-background/90 p-2 rounded-lg border border-border shadow-sm">
+                          <div className="flex flex-col gap-2 bg-black/80 backdrop-blur-md p-3 rounded-xl border border-white/10 shadow-2xl">
                             <div className="flex items-center justify-between gap-4">
-                              <Label className="text-[10px] font-bold uppercase text-muted-foreground whitespace-nowrap">Exibir Pontos</Label>
+                              <Label className="text-[10px] font-bold uppercase text-white/50 whitespace-nowrap font-mono">Radar Hotspots</Label>
                               <Button 
                                 variant={showHotspots ? "default" : "outline"} 
-                                size="icon" 
-                                className="h-6 w-10" 
+                                size="sm" 
+                                className={cn("h-6 w-12 text-[9px] font-black", showHotspots ? "bg-emerald-500 hover:bg-emerald-600" : "bg-transparent")} 
                                 onClick={() => setShowHotspots(!showHotspots)}
                               >
-                                {showHotspots ? "ON" : "OFF"}
+                                {showHotspots ? "ACTV" : "OFF"}
                               </Button>
                             </div>
                             {showHotspots && (
-                              <div className="space-y-1">
-                                <div className="flex justify-between text-[9px] font-bold uppercase text-muted-foreground">
-                                  <span>Intensidade</span>
-                                  <span>{Math.round(hotspotOpacity * 100)}%</span>
+                              <div className="space-y-1.5 pt-1">
+                                <div className="flex justify-between text-[9px] font-bold uppercase text-white/40 font-mono">
+                                  <span>Glow Intensity</span>
+                                  <span className="text-emerald-400">{Math.round(hotspotOpacity * 100)}%</span>
                                 </div>
-                                <input 
-                                  type="range" 
-                                  min="0" 
-                                  max="1" 
-                                  step="0.1" 
-                                  value={hotspotOpacity} 
-                                  onChange={(e) => setHotspotOpacity(parseFloat(e.target.value))}
-                                  className="w-full h-1 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+                                <Slider 
+                                  value={[hotspotOpacity * 100]} 
+                                  onValueChange={(val) => setHotspotOpacity(val[0] / 100)}
+                                  max={100}
+                                  step={10}
+                                  className="py-1"
                                 />
                               </div>
                             )}
