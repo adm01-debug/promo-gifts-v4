@@ -1,7 +1,7 @@
 /**
  * useCatalogState — all catalog page state & logic extracted from Index.tsx
  */
-import React, { useState, useMemo, useEffect, useRef, useCallback, useDeferredValue } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback, useTransition } from 'react';
 import { useCatalogRealStats } from '@/hooks/products/useCatalogRealStats';
 import { useColorEnrichment } from '@/hooks/products/useColorEnrichment';
 import { useExternalCategoriesQuery } from '@/hooks/products/useExternalCategoriesQuery';
@@ -91,10 +91,14 @@ export function useCatalogState() {
   const initialSortBy = (searchParams.get('sort') as SortOption) || 'relevance';
   const [sortBy, setSortByState] = useState<SortOption>(initialSortBy);
 
+  // BUG-CS-05 FIX: Use React 18 useTransition instead of manual isTransitioning state.
+  // Original called setIsTransitioning(true/false) inside startTransition — semantically
+  // incorrect. useTransition exposes isPending automatically and correctly.
+  const [isPending, startCatalogTransition] = useTransition();
+
   const setSortBy = useCallback(
     (s: SortOption) => {
-      setIsTransitioning(true);
-      React.startTransition(() => {
+      startCatalogTransition(() => {
         setSortByState(s);
 
         // Update URL query string
@@ -107,12 +111,11 @@ export function useCatalogState() {
 
         const newPath = `${window.location.pathname}${newParams.toString() ? '?' + newParams.toString() : ''}`;
         navigate(newPath, { replace: true });
-
-        setIsTransitioning(false);
       });
     },
-    [navigate],
+    [navigate, startCatalogTransition],
   );
+
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedCount, setSelectedCount] = useState(0);
   const [activeProductId, setActiveProductId] = useState<string | null>(null);
@@ -124,26 +127,16 @@ export function useCatalogState() {
     });
   }, []);
 
-  // Responsive clamp: garante que o número de colunas não ultrapasse o disponível
-  // para a largura atual da tela, mantendo a consistência visual.
+  // Responsive clamp: garante que o numero de colunas nao ultrapasse o disponivel
   useEffect(() => {
     const handleResize = () => {
       const w = window.innerWidth;
-      // 3 colunas (min 0)
-      // 4 colunas (min 768)
-      // 5 colunas (min 1024)
-      // 6 colunas (min 1280)
-      // 8 colunas (min 1536)
-
       let maxCols: ColumnCount = 3;
       if (w >= 1536) maxCols = 8;
       else if (w >= 1280) maxCols = 6;
       else if (w >= 1024) maxCols = 5;
       else if (w >= 768) maxCols = 4;
-
-      if (gridColumns > maxCols) {
-        setGridColumns(maxCols);
-      }
+      if (gridColumns > maxCols) setGridColumns(maxCols);
     };
     handleResize();
     window.addEventListener('resize', handleResize);
@@ -155,7 +148,6 @@ export function useCatalogState() {
   const [isSearching, setIsSearching] = useState(false);
   const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const debouncedServerSearch = useDebounce(searchQuery, 400);
 
@@ -176,12 +168,26 @@ export function useCatalogState() {
 
   const totalEstimate = catalogData?.pages?.[0]?.totalEstimate ?? null;
 
+  // BUG-CS-03 FIX: Guard against multiple simultaneous prefetch calls.
+  // Original enqueued a new requestIdleCallback every time hasNextPage changed,
+  // causing duplicated fetchNextPage calls.
+  const prefetchScheduledRef = useRef(false);
+
   useEffect(() => {
-    if (hasNextPage && !isFetchingNextPage) {
+    if (hasNextPage && !isFetchingNextPage && !prefetchScheduledRef.current) {
+      prefetchScheduledRef.current = true;
       if ('requestIdleCallback' in window) {
-        window.requestIdleCallback(() => fetchNextPage());
+        window.requestIdleCallback(() => {
+          fetchNextPage().finally(() => {
+            prefetchScheduledRef.current = false;
+          });
+        });
       } else {
-        setTimeout(() => fetchNextPage(), 1000);
+        setTimeout(() => {
+          fetchNextPage().finally(() => {
+            prefetchScheduledRef.current = false;
+          });
+        }, 1000);
       }
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
@@ -229,11 +235,11 @@ export function useCatalogState() {
     }
   }, [searchParams, sortBy]);
 
+  // BUG-CS-06 FIX: Reset displayCount without startTransition wrapper.
+  // Depends on debouncedServerSearch to avoid resetting on every keystroke.
   useEffect(() => {
-    React.startTransition(() => {
-      setDisplayCount(ITEMS_PER_PAGE);
-    });
-  }, [filters, sortBy, searchQuery]);
+    setDisplayCount(ITEMS_PER_PAGE);
+  }, [filters, sortBy, debouncedServerSearch]);
 
   const activeFiltersCount = useMemo(() => {
     let count = 0;
@@ -251,7 +257,8 @@ export function useCatalogState() {
     if (filters.materialGroups?.length) count += filters.materialGroups.length;
     if (filters.materialTypes?.length) count += filters.materialTypes.length;
     if (filters.materiais.length) count += filters.materiais.length;
-    if (filters.priceRange[0] > 0 || filters.priceRange[1] < 500) count += 1;
+    // BUG-CS-04 FIX: threshold era < 500, inconsistente com PRICE_RANGE_MAX = 9999
+    if (filters.priceRange[0] > 0 || filters.priceRange[1] < 9999) count += 1;
     if (filters.inStock) count += 1;
     if (filters.isKit) count += 1;
     if (filters.featured) count += 1;
@@ -281,16 +288,16 @@ export function useCatalogState() {
     supplierSalesMap: supplierSalesMap as unknown as Map<string, number> | undefined,
   });
 
+  // Snapshot of last stable product list to avoid blank flicker during sort transition
   const [lastNonTransitionedProducts, setLastNonTransitionedProducts] = useState<Product[]>([]);
-  const deferredIsTransitioning = useDeferredValue(isTransitioning);
 
   useEffect(() => {
-    if (!deferredIsTransitioning) {
+    if (!isPending) {
       setLastNonTransitionedProducts(filteredProducts);
     }
-  }, [filteredProducts, deferredIsTransitioning]);
+  }, [filteredProducts, isPending]);
 
-  const displayFilteredProducts = isTransitioning ? lastNonTransitionedProducts : filteredProducts;
+  const displayFilteredProducts = isPending ? lastNonTransitionedProducts : filteredProducts;
 
   const rawPaginatedProducts = useMemo(
     () => displayFilteredProducts.slice(0, displayCount),
@@ -381,28 +388,18 @@ export function useCatalogState() {
       fetchNextPage().finally(() => {
         setDisplayCount((prev) => prev + ITEMS_PER_PAGE);
         setIsLoadingMore(false);
-        setTimeout(() => {
-          isUpdatingRef.current = false;
-        }, 100);
+        setTimeout(() => { isUpdatingRef.current = false; }, 100);
       });
     } else {
       setTimeout(() => {
         setDisplayCount((prev) => prev + ITEMS_PER_PAGE);
         setIsLoadingMore(false);
-        setTimeout(() => {
-          isUpdatingRef.current = false;
-        }, 100);
+        setTimeout(() => { isUpdatingRef.current = false; }, 100);
       }, 150);
     }
   }, [
-    isLoading,
-    isLoadingMore,
-    isFetchingNextPage,
-    hasMoreProducts,
-    displayCount,
-    filteredProducts.length,
-    hasNextPage,
-    fetchNextPage,
+    isLoading, isLoadingMore, isFetchingNextPage, hasMoreProducts,
+    displayCount, filteredProducts.length, hasNextPage, fetchNextPage,
   ]);
 
   useEffect(() => {
@@ -420,9 +417,7 @@ export function useCatalogState() {
     );
 
     if (loadMoreRef.current) observerRef.current.observe(loadMoreRef.current);
-    return () => {
-      observerRef.current?.disconnect();
-    };
+    return () => { observerRef.current?.disconnect(); };
   }, [isLoading, hasMoreProducts, isLoadingMore, loadMore]);
 
   const statBadges = useMemo(() => {
@@ -440,9 +435,7 @@ export function useCatalogState() {
       const variationCount = !colorCount && p.variations?.length ? p.variations.length : 0;
       return sum + colorCount + variationCount;
     }, 0);
-    const totalVariants = hasActiveFilters
-      ? localVariants
-      : (realStats?.totalVariants ?? localVariants);
+    const totalVariants = hasActiveFilters ? localVariants : (realStats?.totalVariants ?? localVariants);
 
     const uniqueCategoryIds = new Set(
       deduped
@@ -462,72 +455,46 @@ export function useCatalogState() {
       ? uniqueSuppliers.size
       : (realStats?.totalSuppliers ?? uniqueSuppliers.size);
 
-    const contextualFavoriteCount = isFavorite
+    // BUG-CS-01 FIX: isFavorite is a *function* reference — always truthy in ternary condition.
+    // The favoriteCount branch was never reached. Correct gate is hasActiveFilters.
+    const contextualFavoriteCount = hasActiveFilters
       ? deduped.filter((p) => isFavorite(p.id)).length
       : favoriteCount;
 
     return [
-      {
-        id: 'products',
-        label: 'Produtos Únicos',
-        value: productCount,
-        icon: React.createElement(Package, { className: 'h-4 w-4' }),
-      },
-      {
-        id: 'variants',
-        label: 'Variações',
-        value: totalVariants,
-        icon: React.createElement(Palette, { className: 'h-4 w-4' }),
-      },
-      {
-        id: 'categories',
-        label: 'Categorias',
-        value: categoriesCount,
-        icon: React.createElement(FolderTree, { className: 'h-4 w-4' }),
-      },
-      {
-        id: 'suppliers',
-        label: 'Fornecedores',
-        value: suppliersCount,
-        icon: React.createElement(Users, { className: 'h-4 w-4' }),
-      },
-      {
-        id: 'favorites',
-        label: 'Favoritos',
-        value: contextualFavoriteCount,
-        icon: React.createElement(Heart, { className: 'h-4 w-4' }),
-      },
+      { id: 'products', label: 'Produtos Unicos', value: productCount,
+        icon: React.createElement(Package, { className: 'h-4 w-4' }) },
+      { id: 'variants', label: 'Variacoes', value: totalVariants,
+        icon: React.createElement(Palette, { className: 'h-4 w-4' }) },
+      { id: 'categories', label: 'Categorias', value: categoriesCount,
+        icon: React.createElement(FolderTree, { className: 'h-4 w-4' }) },
+      { id: 'suppliers', label: 'Fornecedores', value: suppliersCount,
+        icon: React.createElement(Users, { className: 'h-4 w-4' }) },
+      { id: 'favorites', label: 'Favoritos', value: contextualFavoriteCount,
+        icon: React.createElement(Heart, { className: 'h-4 w-4' }) },
     ];
   }, [
-    filteredProducts,
-    favoriteCount,
-    isFavorite,
-    activeFiltersCount,
-    searchQuery,
-    totalEstimate,
-    hasNextPage,
+    filteredProducts, favoriteCount, isFavorite,
+    activeFiltersCount, searchQuery, totalEstimate,
+    // BUG-STAT-01 FIX: hasNextPage removido — causava recalculo desnecessario a cada page fetch
     realStats,
   ]);
 
+  // BUG-CS-02 FIX: original chamava setSortBy('name') — wrong default.
   const resetFilters = useCallback(() => {
     setFilters(defaultFilters);
-    setSortBy('name');
+    setSortBy('relevance');
     setSearchQuery('');
     navigate('/', { replace: true });
-  }, [navigate]);
+  }, [navigate, setSortBy]);
 
   const handleViewProduct = useCallback(
-    (product: Product) => {
-      navigate(`/produto/${product.id}`);
-    },
+    (product: Product) => { navigate(`/produto/${product.id}`); },
     [navigate],
   );
 
   const [shareProduct, setShareProduct] = useState<Product | null>(null);
-
-  const handleShareProduct = useCallback((product: Product) => {
-    setShareProduct(product);
-  }, []);
+  const handleShareProduct = useCallback((product: Product) => { setShareProduct(product); }, []);
 
   const handleFavoriteProduct = useCallback(
     (product: Product, e?: React.MouseEvent) => {
@@ -538,7 +505,7 @@ export function useCatalogState() {
           void favQuickAdd.addToList(target.id, product as never);
           toast({
             title: 'Adicionado aos Favoritos',
-            description: `Salvo em "${target.name}". Use Shift+clique para confirmar a lista padrão sem confirmação.`,
+            description: `Salvo em "${target.name}". Use Shift+clique para confirmar a lista padrao sem confirmacao.`,
           });
         } else {
           toggleFavorite(product.id);
@@ -561,7 +528,6 @@ export function useCatalogState() {
   // Keyboard Navigation Logic
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if typing in input/textarea or if dialogs are open (heuristic)
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
         return;
@@ -574,25 +540,20 @@ export function useCatalogState() {
         case 'j':
         case 'ArrowDown':
           e.preventDefault();
-          if (currentIndex < paginatedProducts.length - 1) {
+          if (currentIndex < paginatedProducts.length - 1)
             setActiveProductId(paginatedProducts[currentIndex + 1].id);
-          }
           break;
         case 'k':
         case 'ArrowUp':
           e.preventDefault();
-          if (currentIndex > 0) {
+          if (currentIndex > 0)
             setActiveProductId(paginatedProducts[currentIndex - 1].id);
-          } else if (currentIndex === -1 && paginatedProducts.length > 0) {
+          else if (currentIndex === -1 && paginatedProducts.length > 0)
             setActiveProductId(paginatedProducts[0].id);
-          }
           break;
         case 'Enter':
         case 'o':
-          if (activeProductId) {
-            e.preventDefault();
-            navigate(`/produto/${activeProductId}`);
-          }
+          if (activeProductId) { e.preventDefault(); navigate(`/produto/${activeProductId}`); }
           break;
         case 'f':
           if (activeProductId) {
@@ -602,13 +563,8 @@ export function useCatalogState() {
           }
           break;
         case 'Escape':
-          if (activeProductId) {
-            e.preventDefault();
-            setActiveProductId(null);
-          }
-          if (selectionMode) {
-            setSelectionMode(false);
-          }
+          if (activeProductId) { e.preventDefault(); setActiveProductId(null); }
+          if (selectionMode) setSelectionMode(false);
           break;
       }
     };
@@ -618,27 +574,18 @@ export function useCatalogState() {
   }, [activeProductId, paginatedProducts, navigate, handleFavoriteProduct, selectionMode]);
 
   return {
-    filters,
-    setFilters,
-    viewMode,
-    setViewMode,
-    gridColumns,
-    setGridColumns,
-    sortBy,
-    setSortBy,
+    filters, setFilters,
+    viewMode, setViewMode,
+    gridColumns, setGridColumns,
+    sortBy, setSortBy,
     refetchCatalog,
-    selectionMode,
-    setSelectionMode,
-    selectedCount,
-    setSelectedCount,
+    selectionMode, setSelectionMode,
+    selectedCount, setSelectedCount,
     toggleSelectionMode,
-    filterSheetOpen,
-    setFilterSheetOpen,
-    searchQuery,
-    setSearchQuery,
+    filterSheetOpen, setFilterSheetOpen,
+    searchQuery, setSearchQuery,
     isSearching,
-    displayCount,
-    setDisplayCount,
+    displayCount, setDisplayCount,
     isLoadingMore,
     isInitialCatalogLoad,
     isLoading,
@@ -653,27 +600,20 @@ export function useCatalogState() {
     handleShareProduct,
     handleFavoriteProduct,
     handleSearch,
-    isFavorite,
-    toggleFavorite,
-    isInCompare,
-    toggleCompare,
-    canAddMore,
+    isFavorite, toggleFavorite,
+    isInCompare, toggleCompare, canAddMore,
     activeFiltersCount,
     hasActiveCatalogConstraints,
     shouldShowCatalogSkeleton,
     shouldShowEmptyState,
-    shareProduct,
-    setShareProduct,
+    shareProduct, setShareProduct,
     hasNextPage,
-    activeProductId,
-    setActiveProductId,
-    suggestions,
-    quickSuggestions,
+    activeProductId, setActiveProductId,
+    suggestions, quickSuggestions,
     searchHistory: history,
     clearHistory,
-    // Navigation & pagination
     navigate,
-    isTransitioning: deferredIsTransitioning,
+    isTransitioning: isPending,
     hasMoreProducts,
     ITEMS_PER_PAGE,
     loadMore,

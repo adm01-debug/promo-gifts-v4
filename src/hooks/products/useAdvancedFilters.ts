@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import {
   useExternalCategories,
   useExternalTechniques,
@@ -41,7 +41,9 @@ import { defaultAdvancedFilters } from '@/constants/filters';
 
 export function useAdvancedFilters() {
   const [filters, setFilters] = useState<AdvancedFilterState>(defaultAdvancedFilters);
-  const [isLoading, setIsLoading] = useState(true);
+  // BUG-LOADING-01 FIX: isLoading inicializava como true antes de qualquer fetch ter ocorrido,
+  // causando um flash de skeleton desnecessario quando os dados ja estavam em cache.
+  const [isLoading, setIsLoading] = useState(false);
 
   // Hooks para buscar dados do banco externo
   const categoriesDB = useExternalCategories();
@@ -50,7 +52,30 @@ export function useAdvancedFilters() {
   const colorGroupsDB = useExternalDatabase<ColorGroupData>('color_groups');
   const tagsDB = useExternalDatabase<TagData>('tags');
 
-  // Buscar dados iniciais
+  // BUG-AF-01 FIX: Captura referencias das funcoes em refs para evitar stale closure
+  // sem adicionar as funcoes como deps (o que causaria re-fetch infinito).
+  // O efeito roda uma vez no mount — comportamento intencional para pre-carregar opcoes de filtro.
+  const fetchRefsRef = useRef({
+    categoriesFetch: categoriesDB.fetchAll,
+    techniquesFetch: techniquesDB.fetchAll,
+    suppliersFetch: suppliersDB.fetchAll,
+    colorGroupsFetch: colorGroupsDB.fetchAll,
+    tagsFetch: tagsDB.fetchAll,
+  });
+
+  // Mantém as refs atualizadas sem triggerar o efeito
+  useEffect(() => {
+    fetchRefsRef.current = {
+      categoriesFetch: categoriesDB.fetchAll,
+      techniquesFetch: techniquesDB.fetchAll,
+      suppliersFetch: suppliersDB.fetchAll,
+      colorGroupsFetch: colorGroupsDB.fetchAll,
+      tagsFetch: tagsDB.fetchAll,
+    };
+  });
+
+  // Buscar dados iniciais — roda uma vez no mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     let isMounted = true;
 
@@ -58,14 +83,14 @@ export function useAdvancedFilters() {
       setIsLoading(true);
       try {
         await Promise.all([
-          categoriesDB.fetchAll({ filters: { is_active: true }, limit: 500 }),
-          techniquesDB.fetchAll({ filters: { is_active: true }, limit: 100 }),
-          suppliersDB.fetchAll({ limit: 100 }),
-          colorGroupsDB.fetchAll({ filters: { is_active: true }, limit: 100 }),
-          tagsDB.fetchAll({ limit: 200 }),
+          fetchRefsRef.current.categoriesFetch({ filters: { is_active: true }, limit: 500 }),
+          fetchRefsRef.current.techniquesFetch({ filters: { is_active: true }, limit: 100 }),
+          fetchRefsRef.current.suppliersFetch({ limit: 100 }),
+          fetchRefsRef.current.colorGroupsFetch({ filters: { is_active: true }, limit: 100 }),
+          fetchRefsRef.current.tagsFetch({ limit: 200 }),
         ]);
       } catch (error) {
-        console.error('Erro ao carregar opções de filtros:', error);
+        console.error('Erro ao carregar opcoes de filtros:', error);
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -80,7 +105,7 @@ export function useAdvancedFilters() {
     };
   }, []);
 
-  // Transformar categorias em árvore hierárquica
+  // Transformar categorias em arvore hierarquica
   const categoryTree = useMemo((): CategoryOption[] => {
     const categories = categoriesDB.data as ExternalCategory[];
     if (!categories?.length) return [];
@@ -114,7 +139,7 @@ export function useAdvancedFilters() {
     return roots;
   }, [categoriesDB.data]);
 
-  // Lista plana de categorias para seleção
+  // Lista plana de categorias para selecao
   const categoryOptions = useMemo((): CategoryOption[] => {
     const flattenCategories = (cats: CategoryOption[], level = 0): CategoryOption[] => {
       return cats.flatMap((cat) => [
@@ -125,7 +150,7 @@ export function useAdvancedFilters() {
     return flattenCategories(categoryTree);
   }, [categoryTree]);
 
-  // Técnicas de personalização
+  // Tecnicas de personalizacao
   const techniqueOptions = useMemo((): TechniqueOption[] => {
     const techniques = techniquesDB.data as ExternalTechnique[];
     return (
@@ -177,7 +202,7 @@ export function useAdvancedFilters() {
     );
   }, [tagsDB.data]);
 
-  // Funções para manipular filtros
+  // Funcoes para manipular filtros
   const updateFilter = useCallback(
     <K extends keyof AdvancedFilterState>(key: K, value: AdvancedFilterState[K]) => {
       setFilters((prev) => ({ ...prev, [key]: value }));
@@ -230,7 +255,8 @@ export function useAdvancedFilters() {
     if (filters.endomarketing.length) count += filters.endomarketing.length;
     if (filters.ramosAtividade.length) count += filters.ramosAtividade.length;
     if (filters.segmentosAtividade.length) count += filters.segmentosAtividade.length;
-    if (filters.priceRange[0] > 0 || filters.priceRange[1] < 1000) count++;
+    // Threshold alinhado com PRICE_RANGE_MAX = 9999 em useCatalogFiltering
+    if (filters.priceRange[0] > 0 || filters.priceRange[1] < 9999) count++;
     if (filters.quantityRange[0] > 1 || filters.quantityRange[1] < 10000) count++;
     if (filters.stockStatus !== 'all') count++;
     if (filters.isKit) count++;
@@ -242,7 +268,7 @@ export function useAdvancedFilters() {
     return count;
   }, [filters]);
 
-  // Verificar se há filtros ativos em um grupo específico
+  // Verificar se ha filtros ativos em um grupo especifico
   const hasActiveFiltersInGroup = useCallback(
     (keys: (keyof AdvancedFilterState)[]) => {
       return keys.some((key) => {
