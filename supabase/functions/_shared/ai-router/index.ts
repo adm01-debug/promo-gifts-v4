@@ -92,13 +92,23 @@ const CACHE_TTL_MS = 60_000;
 let _serviceClient: SupabaseClient | null = null;
 function getServiceClient(): SupabaseClient {
   if (_serviceClient) return _serviceClient;
-  _serviceClient = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    { auth: { persistSession: false, autoRefreshToken: false } },
-  );
+  // Routing/providers/models tables live in the canonical external DB.
+  // Fallback to internal SUPABASE_URL if external is not configured.
+  const url =
+    Deno.env.get("EXTERNAL_SUPABASE_URL") ??
+    Deno.env.get("EXTERNAL_PROMOBRIND_URL") ??
+    Deno.env.get("SUPABASE_URL")!;
+  const key =
+    Deno.env.get("EXTERNAL_SUPABASE_SERVICE_ROLE_KEY") ??
+    Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") ??
+    Deno.env.get("EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY") ??
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  _serviceClient = createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
   return _serviceClient;
 }
+
 
 async function getRouting(functionName: string): Promise<RoutingRow | null> {
   const cached = ROUTING_CACHE.get(functionName);
