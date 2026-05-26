@@ -66,7 +66,11 @@ Deno.serve(async (req: Request) => {
       // externa usando a service key (ex: testes de segurança) e retornamos 401 para consistência.
       if (!isInternal) {
         return new Response(
-          JSON.stringify({ error: "Unauthorized (Internal flag required for service_role bypass)", allowed: false }),
+          JSON.stringify({ 
+            error: "unauthorized_service_role", 
+            message: "Internal flag required for service_role bypass. Access denied to service_role without X-Internal-Call header.",
+            allowed: false 
+          }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }

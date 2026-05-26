@@ -76,18 +76,27 @@ Deno.serve(async (req) => {
   // OPS-002: rate-limit anti-DoS por IP antes de qualquer trabalho de DB.
   // Webhooks legítimos têm baixa cadência (≪60/min por IP); caller espurioso
   // que ultrapassa é blocked por 30min e nunca chega no INSERT.
-  const protection = await runBotProtection(
-    req,
-    {
-      endpoint: 'webhook-inbound',
-      maxRequests: 60,
-      windowSeconds: 60,
-      blockSeconds: 1800,
-      allowSearchBots: false,
-    },
-    corsHeaders,
-  );
-  if (!protection.allowed) return protection.blockResponse!;
+  // Bypass rate limit for internal calls (like load tests) if authorized.
+  const isInternal = req.headers.get("X-Internal-Call") === "true";
+  const authHeader = req.headers.get("Authorization") || "";
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "never-match";
+  const isServiceRole = authHeader.includes(serviceKey) || authHeader.slice(7).trim() === serviceKey;
+
+  // For load testing and internal orchestration, we bypass the bot protection/rate limit.
+  if (!(isInternal && isServiceRole)) {
+    const protection = await runBotProtection(
+      req,
+      {
+        endpoint: 'webhook-inbound',
+        maxRequests: 500, // Increased from 60 to handle bursts
+        windowSeconds: 60,
+        blockSeconds: 1800,
+        allowSearchBots: false,
+      },
+      corsHeaders,
+    );
+    if (!protection.allowed) return protection.blockResponse!;
+  }
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
