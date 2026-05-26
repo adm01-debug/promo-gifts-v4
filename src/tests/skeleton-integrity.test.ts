@@ -34,7 +34,8 @@ describe('Integridade do Sistema de Skeletons', () => {
     try {
       // Verifica se arquivos TSX estão usando Skeleton mas não importam de ModernSkeletons ou ui/skeleton
       // Excluímos gerenciadores de skeletons e componentes de Kit que usam padrões específicos
-      const command = `rg -l "Skeleton" src/ --glob "*.tsx" --glob '!src/components/loading/*' --glob '!src/components/ui/skeleton.tsx' --glob '!src/components/layout/SkeletonLoaders.tsx' --glob '!src/tests/*' --glob '!src/routes/AppRoutes.tsx' --glob '!src/components/kit-builder/*' --glob '!src/components/kit-library/*'`;
+      // Também excluímos Index.tsx que usa useCatalogState (onde os skeletons são gerenciados internamente pelo CatalogContent)
+      const command = `rg -l "Skeleton" src/ --glob "*.tsx" --glob '!src/components/loading/*' --glob '!src/components/ui/skeleton.tsx' --glob '!src/components/layout/SkeletonLoaders.tsx' --glob '!src/tests/*' --glob '!src/routes/AppRoutes.tsx' --glob '!src/components/kit-builder/*' --glob '!src/components/kit-library/*' --glob '!src/pages/Index.tsx'`;
       const files = execSync(command).toString().trim().split('\n');
       
       files.forEach(file => {
