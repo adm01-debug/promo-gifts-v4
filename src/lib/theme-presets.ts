@@ -152,6 +152,14 @@ export const CSS_VARS_TO_APPLY: (keyof ThemeModeColors)[] = [
   'shadow-xl',
   'shadow-header',
   'chart-1',
+  // BUG-04 fix: orange-* tokens ausentes — applyThemePreset() nunca
+  // atualizava --orange-* ao trocar de preset.
+  // @see docs/design-system-audit-2026-05-25.md
+  'orange',
+  'orange-hover',
+  'orange-active',
+  'orange-glow',
+  'orange-foreground',
 ];
 
 export interface ThemePreset {
