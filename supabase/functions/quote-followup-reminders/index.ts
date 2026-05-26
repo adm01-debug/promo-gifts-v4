@@ -5,7 +5,8 @@
  * Cria notificacoes para vendedores cujos orcamentos enviados ha >=2 dias
  * ainda nao foram visualizados pelo cliente. Idempotente por dia (nao duplica).
  */
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+// BULK-SDK-FIX: Changed from esm.sh URL to npm: direct — removes import_map dependency.
+import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
 import { authorizeCron } from "../_shared/dispatcher-auth.ts";
 
