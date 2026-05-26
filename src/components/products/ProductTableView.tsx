@@ -236,20 +236,20 @@ export const ProductTableView = memo(function ProductTableView({
                   className="flex items-center px-4 border-b border-border/30 h-14"
                 >
                   {selectionMode && <div className="w-10 px-2 flex justify-center"><div className="w-4 h-4 rounded bg-muted/40 animate-pulse" /></div>}
-                  <div className="w-12 px-2"><div className="w-10 h-10 rounded-md bg-muted/40 animate-pulse" /></div>
+                  <div className="w-12 px-2"><Skeleton className="w-10 h-10 rounded-md" /></div>
                   <div className="flex-1 px-3 space-y-2">
-                    <div className="h-4 w-48 rounded bg-muted/50 animate-pulse" />
-                    <div className="h-3 w-32 rounded bg-muted/30 animate-pulse" />
+                    <Skeleton className="h-4 w-48" />
+                    <Skeleton className="h-3 w-32" />
                   </div>
-                  <div className="w-32 px-3 hidden md:block"><div className="h-3 w-20 rounded bg-muted/40 animate-pulse" /></div>
-                  <div className="w-40 px-3 hidden lg:block"><div className="h-3 w-24 rounded bg-muted/40 animate-pulse" /></div>
+                  <div className="w-32 px-3 hidden md:block"><Skeleton className="h-3 w-20" /></div>
+                  <div className="w-40 px-3 hidden lg:block"><Skeleton className="h-3 w-24" /></div>
                   <div className="w-32 px-3 hidden sm:flex gap-1">
-                    {[1,2,3].map(i => <div key={i} className="w-3 h-3 rounded-full bg-muted/40 animate-pulse" />)}
+                    {[1,2,3].map(i => <Skeleton key={i} className="w-3.5 h-3.5 rounded-full" />)}
                   </div>
-                  <div className="w-32 px-3 text-right"><div className="h-4 w-16 rounded bg-muted/50 animate-pulse ml-auto" /></div>
-                  <div className="w-32 px-3 text-right"><div className="h-4 w-12 rounded bg-muted/40 animate-pulse ml-auto" /></div>
+                  <div className="w-32 px-3 text-right"><Skeleton className="h-4 w-16 ml-auto" /></div>
+                  <div className="w-32 px-3 text-right"><Skeleton className="h-4 w-12 ml-auto" /></div>
                   <div className="w-48 px-3 flex justify-center gap-2">
-                    {[1,2,3].map(i => <div key={i} className="w-8 h-8 rounded-full bg-muted/30 animate-pulse" />)}
+                    {[1,2,3].map(i => <Skeleton key={i} className="h-8 w-8 rounded-full" />)}
                   </div>
                 </div>
               );
