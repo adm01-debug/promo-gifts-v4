@@ -13,11 +13,11 @@ import { needsConversion, ensureSupportedFormat } from '@/lib/image-converter';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   useFilteredTechniques,
-  useMockupDraft,
   useProductCustomizationOptionsForMockup,
   type CustomizationOption,
   type TechniqueWithLimits,
-} from '@/hooks/mockup';
+} from '@/hooks/mockup/useMockupTechniques';
+import { useMockupDraft } from '@/hooks/mockup/useMockupDraft';
 import { useLogoColorAnalysis, usePositionHistory } from '@/hooks/simulation';
 import { useProductsContext } from '@/contexts/ProductsContext';
 import { getMockupWizardStep } from '@/components/mockup/mockupWizardStep';
