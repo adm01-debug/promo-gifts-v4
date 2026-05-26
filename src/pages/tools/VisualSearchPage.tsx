@@ -890,15 +890,42 @@ export default function VisualSearchPage() {
                               )}
                             />
                             
-                            {/* Material Magnifier Overlay (Hover) */}
-                            {hoveredProduct === product.id && (
-                              <div className="absolute inset-0 pointer-events-none z-20 bg-black/5 flex items-center justify-center">
-                                <div className="bg-background/90 backdrop-blur-md border border-primary/20 px-3 py-1.5 rounded-full shadow-2xl flex items-center gap-2 animate-in fade-in zoom-in duration-300">
-                                  <Eye className="h-3 w-3 text-primary" />
-                                  <span className="text-[10px] font-black uppercase tracking-tighter">Comparando Textura</span>
-                                </div>
-                              </div>
-                            )}
+                            {/* Material Magnifier Overlay (Hover) - Side-by-Side Comparison */}
+                            <AnimatePresence>
+                              {hoveredProduct === product.id && (
+                                <motion.div 
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  exit={{ opacity: 0 }}
+                                  className="absolute inset-0 pointer-events-none z-20 flex flex-col items-center justify-center gap-4 bg-black/40 backdrop-blur-[2px]"
+                                >
+                                  <div className="flex items-center gap-4 w-full px-4">
+                                    {/* Original Texture Snippet */}
+                                    <div className="flex-1 flex flex-col items-center gap-2">
+                                      <div className="h-24 w-24 rounded-full border-2 border-white/50 overflow-hidden shadow-2xl bg-black">
+                                        <img src={previewUrl!} className="h-full w-full object-cover scale-[2.5]" alt="Original Texture" />
+                                      </div>
+                                      <span className="text-[8px] font-black text-white uppercase tracking-widest bg-black/40 px-2 py-0.5 rounded">Sua Foto</span>
+                                    </div>
+
+                                    <div className="h-10 w-[1px] bg-white/20" />
+
+                                    {/* Catalog Texture Snippet */}
+                                    <div className="flex-1 flex flex-col items-center gap-2">
+                                      <div className="h-24 w-24 rounded-full border-2 border-primary/50 overflow-hidden shadow-2xl bg-white">
+                                        <img src={product.images?.[0] || '/placeholder.svg'} className="h-full w-full object-contain scale-[2.5]" alt="Catalog Texture" />
+                                      </div>
+                                      <span className="text-[8px] font-black text-primary uppercase tracking-widest bg-primary/10 px-2 py-0.5 rounded backdrop-blur-sm">Catálogo</span>
+                                    </div>
+                                  </div>
+
+                                  <div className="bg-background/90 backdrop-blur-md border border-primary/20 px-4 py-1.5 rounded-full shadow-2xl flex items-center gap-2">
+                                    <Eye className="h-3 w-3 text-primary animate-pulse" />
+                                    <span className="text-[10px] font-black uppercase tracking-tighter">Lupa de Material Ativa</span>
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
                             
                             {/* Match Overlay */}
                             <div className="absolute top-4 right-4 flex flex-col items-end gap-1.5">
