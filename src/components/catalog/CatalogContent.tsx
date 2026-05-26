@@ -104,6 +104,7 @@ export const CatalogContent = memo(function CatalogContent({
         count={12} 
         columns={gridColumns} 
         variant="default" 
+        hideCategoryBadges={hideCategoryBadges}
       />
     );
   }

@@ -79,12 +79,14 @@ export function ProductGridSkeleton({
   count = 15, 
   variant = "default",
   columns = 5,
-  className
+  className,
+  hideCategoryBadges = false
 }: { 
   count?: number; 
   variant?: "default" | "compact" | "detailed";
   columns?: number;
   className?: string;
+  hideCategoryBadges?: boolean;
 }) {
   // Use the exact same gap logic as ProductGrid.tsx for layout stability
   const gapClass = columns >= 8 
@@ -98,7 +100,7 @@ export function ProductGridSkeleton({
   return (
     <div className={cn("grid", gridCols, gapClass, className)}>
       {Array.from({ length: count }).map((_, i) => (
-        <ProductCardSkeleton key={i} variant={variant} />
+        <ProductCardSkeleton key={i} variant={variant} hideCategoryBadges={hideCategoryBadges} />
       ))}
     </div>
   );
