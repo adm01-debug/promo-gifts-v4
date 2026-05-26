@@ -3,6 +3,7 @@ import { invokeFunction, registerCase } from "../_shared.ts";
 
 registerCase({ functionName: "crm-db-bridge", caseId: "CRM-001", businessRule: "payload vazio deve falhar em validação/autorização", testName: "rejeita payload vazio", run: async () => {
   const res = await invokeFunction("crm-db-bridge", {});
+  await res.text();
   assert(res.status === 400 || res.status === 401 || res.status === 422);
 }});
 
