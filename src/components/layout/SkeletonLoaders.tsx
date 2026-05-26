@@ -50,7 +50,7 @@ export const CatalogSkeleton = makeSkeleton(
         <Skeleton className="h-10 w-10 rounded-lg" />
         <Skeleton className="h-10 w-10 rounded-lg" />
       </div>
-      <ProductGridSkeleton count={10} columns={5} />
+      <ProductGridSkeleton count={15} columns={5} />
     </div>
   ),
   "p-3 sm:p-4 lg:p-6 space-y-6",
