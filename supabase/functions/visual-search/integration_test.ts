@@ -11,18 +11,25 @@ Deno.test("visual-search edge function integration test", async () => {
   
   console.log("Testing visual-search with mock image...");
   
-  const { data, error } = await supabase.functions.invoke("visual-search", {
-    body: {
+  const response = await fetch(`${supabaseUrl}/functions/v1/visual-search`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${supabaseKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
       imageBase64: base64Image,
       category: "Escritório",
       color: "Preto"
-    }
+    })
   });
+
+  const data = await response.json();
+  const error = response.ok ? null : { message: data.error || 'Status ' + response.status };
 
   if (error) {
     console.error("Function invocation error:", error);
-    // If it's a 401/403, we might need to handle auth in the test differently if the function requires it
-    // But since we're using service_role to call it, it should pass authenticateRequest if it uses localServiceClient
+    // If it's a 401/403, we might need to handle auth in the test differently
   }
 
   // We expect a success or a specific AI error (like quota) but not a 500 or 400 routing error
