@@ -412,7 +412,7 @@ export function useFiltersPageState() {
       const sizeSet = new Set(filters.sizes);
       result = result.filter((product) =>
         product.variations?.some(
-          (v: ProductVariation) => v.size_code !== null && sizeSet.has(String(v.size_code)),
+          (v: ProductVariation) => v.size_code != null && sizeSet.has(String(v.size_code)),
         ),
       );
     }
