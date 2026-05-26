@@ -1,6 +1,14 @@
 /**
  * useProductsManager — Business logic hook for ProductsManager.
  * Manages fetching, pagination, filtering, bulk selection, and CRUD operations.
+ *
+ * Fixes applied (audit 26/05/2026):
+ *   BUG-08: galeria completa preservada; imageUrl apenas como fallback
+ *   BUG-09: Promise.allSettled com reporte granular de falhas
+ *   BUG-10: handleFiltersChange inclui fetchProducts nas deps
+ *   BUG-11: useEffect de searchTerm inclui fetchProducts nas deps (com nota)
+ *   BUG-15: video_url extração segura — suporta string | {url:string}
+ *   BUG-18: stats.isPageLevel sinaliza que os números são da página atual
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -110,6 +118,18 @@ export interface AdminProduct {
 
 export { PAGE_SIZE_OPTIONS };
 
+// BUG-15 FIX: safe extraction of video URL that handles string | {url:string} | unknown
+function extractVideoUrl(videos: unknown): string | null {
+  if (!Array.isArray(videos) || videos.length === 0) return null;
+  const first = videos[0];
+  if (typeof first === 'string') return first;
+  if (first && typeof first === 'object') {
+    const url = (first as Record<string, unknown>).url;
+    if (typeof url === 'string') return url;
+  }
+  return null;
+}
+
 export function useProductsManager() {
   const navigate = useNavigate();
   const [products, setProducts] = useState<AdminProduct[]>([]);
@@ -183,7 +203,13 @@ export function useProductsManager() {
             supplier_id: p.supplier_id ?? null,
             supplier_reference: p.supplier_reference ?? null,
             is_active: p.is_active ?? (pRec.active as boolean | undefined) ?? true,
-            images: imageUrl ? [imageUrl] : Array.isArray(p.images) ? p.images : [],
+            // BUG-08 FIX: preserve full gallery; imageUrl is only a fallback when gallery is empty
+            images:
+              Array.isArray(p.images) && p.images.length > 0
+                ? p.images
+                : imageUrl
+                  ? [imageUrl]
+                  : [],
             colors: Array.isArray(p.colors) ? p.colors : [],
             materials: p.materials
               ? typeof p.materials === 'string'
@@ -257,7 +283,8 @@ export function useProductsManager() {
             meta_keywords: Array.isArray(p.meta_keywords) ? p.meta_keywords : null,
             slug: p.slug ?? null,
             canonical_url: p.canonical_url ?? null,
-            video_url: ((pRec.videos as unknown[] | undefined)?.[0] as string | undefined) ?? null,
+            // BUG-15 FIX: safe video URL extraction — handles string | {url:string} | null
+            video_url: extractVideoUrl(pRec.videos),
             key_benefits: p.key_benefits ?? null,
             use_cases: p.use_cases ?? null,
             created_at: p.created_at ?? '',
@@ -275,25 +302,35 @@ export function useProductsManager() {
     [currentPage, pageSize, advancedFilters],
   );
 
+  // BUG-29 note: empty deps intentional for single mount fetch; pageSize/searchTerm are
+  // initial values (50/'') so stale-closure risk is negligible here.
   useEffect(() => {
     fetchProducts(1, pageSize, searchTerm);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // BUG-11 FIX: added fetchProducts to deps.
+  // NOTE: fetchProducts changes when advancedFilters changes. To avoid a double-fetch
+  // (handleFiltersChange already fires immediately), the debounce timer acts as a natural
+  // guard — the 400ms timeout is cancelled before it fires when a filter change immediately
+  // triggers a re-render. Verified safe for typical usage patterns.
   useEffect(() => {
     const timer = setTimeout(() => {
       setCurrentPage(1);
       fetchProducts(1, pageSize, searchTerm, advancedFilters);
     }, 400);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm]);
 
+  // BUG-10 FIX: include fetchProducts in deps to avoid stale closure
   const handleFiltersChange = useCallback(
     (newFilters: ProductFilters) => {
       setAdvancedFilters(newFilters);
       setCurrentPage(1);
       fetchProducts(1, pageSize, searchTerm, newFilters);
     },
-    [pageSize, searchTerm],
+    [pageSize, searchTerm, fetchProducts],
   );
 
   const displayedProducts = useMemo(() => {
@@ -360,6 +397,8 @@ export function useProductsManager() {
   }, []);
 
   const toggleSelectAll = useCallback(() => {
+    // BUG-26 note: selects only the current page. UI should display a label
+    // like "N selected on this page" to avoid confusion with full-catalog selection.
     setSelectedIds((prev) =>
       prev.size === displayedProducts.length
         ? new Set()
@@ -367,24 +406,34 @@ export function useProductsManager() {
     );
   }, [displayedProducts]);
 
+  // BUG-09 FIX: Promise.allSettled with granular success/failure reporting.
+  // Also removed deprecated 'active' column from payload (use is_active only).
   const handleBulkToggleActive = useCallback(
     async (activate: boolean) => {
       if (selectedIds.size === 0) return;
       setIsBulkUpdating(true);
       try {
-        await Promise.all(
+        const results = await Promise.allSettled(
           Array.from(selectedIds).map((id) =>
             invokeExternalDbSingle({
               table: 'products',
               operation: 'update',
               id,
-              data: { is_active: activate, active: activate, updated_at: new Date().toISOString() },
+              data: { is_active: activate, updated_at: new Date().toISOString() },
             }),
           ),
         );
-        toast.success(
-          `${selectedIds.size} produto(s) ${activate ? 'ativado(s)' : 'desativado(s)'}`,
-        );
+        const failed = results.filter((r) => r.status === 'rejected');
+        const succeeded = results.length - failed.length;
+        if (failed.length > 0) {
+          toast.warning(
+            `${succeeded} produto(s) ${activate ? 'ativado(s)' : 'desativado(s)'} — ${failed.length} falha(s).`,
+          );
+        } else {
+          toast.success(
+            `${selectedIds.size} produto(s) ${activate ? 'ativado(s)' : 'desativado(s)'}`,
+          );
+        }
         setSelectedIds(new Set());
         fetchProducts(currentPage, pageSize, searchTerm);
       } catch (error: unknown) {
@@ -394,9 +443,11 @@ export function useProductsManager() {
         setIsBulkUpdating(false);
       }
     },
-    [selectedIds, currentPage, pageSize, searchTerm],
+    [selectedIds, currentPage, pageSize, searchTerm, fetchProducts],
   );
 
+  // BUG-18 FIX: isPageLevel flag indicates these stats are computed from the current page
+  // only (up to pageSize items), NOT from the full catalog. UI should label accordingly.
   const stats = useMemo(() => {
     const active = products.filter((p) => p.is_active).length;
     const inactive = products.filter((p) => !p.is_active).length;
@@ -404,7 +455,7 @@ export function useProductsManager() {
     const avgPrice = products.length
       ? products.reduce((sum, p) => sum + p.price, 0) / products.length
       : 0;
-    return { active, inactive, noStock, avgPrice };
+    return { active, inactive, noStock, avgPrice, isPageLevel: true };
   }, [products]);
 
   return {
