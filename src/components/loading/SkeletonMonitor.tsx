@@ -26,6 +26,8 @@ export function SkeletonMonitor({
   const isDev = isAdmin || isDevRole;
 
   useEffect(() => {
+    console.log(`[Skeleton-Trace] Rendering: ${name} (Path: ${window.location.pathname})`);
+  }, [name]);
     // Only track if we are in the browser
     if (typeof window === 'undefined') return;
 
