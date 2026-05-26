@@ -102,7 +102,7 @@ export const MockupWizard = forwardRef<HTMLDivElement, MockupWizardProps>(functi
   return (
     <div ref={ref} className={cn("w-full transition-all duration-300", className)}>
       {/* Desktop Stepper */}
-      <div className="hidden md:block py-2">
+      <div className="hidden md:block py-1">
         <div className="relative flex items-start justify-between">
           {/* Progress line background */}
           <div className="absolute top-5 left-[5%] right-[5%] h-1 bg-muted rounded-full" />
@@ -171,7 +171,7 @@ export const MockupWizard = forwardRef<HTMLDivElement, MockupWizardProps>(functi
       </div>
 
       {/* Mobile Stepper - Progress Bar Style */}
-      <div className="md:hidden space-y-3">
+      <div className="md:hidden space-y-1.5">
         {/* Progress Bar */}
         <div className="relative h-2 bg-muted rounded-full overflow-hidden">
           <div

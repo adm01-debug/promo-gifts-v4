@@ -175,13 +175,14 @@ export default function MockupGenerator() {
 
       <GeneratingOverlay isVisible={mg.isLoading} productName={mg.selectedProduct?.name} techniqueName={mg.selectedTechnique?.name} />
 
-      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
+      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 pt-0 sm:pt-0 pb-3 sm:pb-4 space-y-2 sm:space-y-3 pb-24 md:pb-6 animate-fade-in -mt-3 sm:-mt-4 lg:-mt-6">
 
         <h1 data-testid="page-title-mockup-generator" className="sr-only">Gerador de Mockups</h1>
 
 
+
         {mg.activeTab !== "history" && (
-          <div className="sticky top-0 z-[40] bg-background/80 backdrop-blur-md py-2 -mx-2 px-2 rounded-xl transition-all duration-300 border border-transparent hover:border-border/40">
+          <div className="sticky top-0 z-[40] bg-background/80 backdrop-blur-md pt-0 pb-1.5 -mx-2 px-2 rounded-xl transition-all duration-300 border border-transparent hover:border-border/40">
             <Suspense fallback={null}>
               <MockupWizard
                 currentStep={mg.wizardStep}
@@ -220,7 +221,7 @@ export default function MockupGenerator() {
         )}
 
         <Tabs value={mg.activeTab} onValueChange={(v) => mg.setActiveTab(v as "generator" | "history")} className="w-full">
-          <div className="flex items-center justify-between gap-2 mb-4">
+          <div className="flex items-center justify-between gap-2 mb-2">
             <TabsList>
               <TabsTrigger value="generator" className="flex items-center gap-2"><Wand2 className="h-4 w-4" /> Gerar Mockup</TabsTrigger>
               <TabsTrigger value="history" className="flex items-center gap-2"><History className="h-4 w-4" /> Histórico ({mg.mockupHistory.length})</TabsTrigger>
@@ -238,7 +239,7 @@ export default function MockupGenerator() {
 
           <TabsContent value="generator">
             <Suspense fallback={<div className="flex items-center justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <MockupConfigPanel
                   techniques={mg.techniques}
                   productSelection={mg.productSelection}
