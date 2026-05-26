@@ -69,7 +69,7 @@ export const ProductCardImage = memo(function ProductCardImage({
 }: ProductCardImageProps) {
   return (
     <div
-      className="product-img-container relative aspect-[4/5] overflow-hidden bg-muted/30"
+      className="product-img-container relative aspect-[4/5] overflow-hidden bg-white"
       style={{ zIndex: 0 }}
       onTouchStart={
         hasMultipleVariants
