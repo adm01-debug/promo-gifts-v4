@@ -836,34 +836,49 @@ export default function VisualSearchPage() {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: idx * 0.04, duration: 0.4 }}
+                        className={cn(
+                          idx === 0 && results.products.length > 2 && !showFocusMode ? "sm:col-span-2 xl:col-span-2 sm:row-span-2" : ""
+                        )}
                       >
                         <Card 
                           className={cn(
-                            "group h-full cursor-pointer overflow-hidden border-border/40 transition-all duration-500 hover:border-primary/40 active:scale-[0.98] relative",
-                            product.relevance >= 0.9 ? "hover:shadow-[0_0_30px_rgba(var(--primary),0.15)] ring-1 ring-transparent hover:ring-primary/20" : "hover:shadow-2xl"
+                            "group h-full cursor-pointer overflow-hidden border-white/5 bg-black/40 backdrop-blur-md transition-all duration-500 hover:border-emerald-500/40 active:scale-[0.98] relative",
+                            product.relevance >= 0.9 ? "hover:shadow-[0_0_40px_rgba(52,211,153,0.2)] ring-1 ring-white/5 hover:ring-emerald-500/30" : "hover:shadow-2xl hover:bg-white/5",
+                            idx === 0 && results.products.length > 2 && !showFocusMode ? "border-emerald-500/20" : ""
                           )}
                           onClick={() => navigate(`/produto/${product.id}`)}
                         >
-                          <div className="relative aspect-square overflow-hidden bg-white/50 p-6 flex items-center justify-center">
-                            <img 
+                          <div className="relative aspect-square overflow-hidden bg-white/5 p-8 flex items-center justify-center">
+                            <motion.img 
                               src={product.images?.[0] || '/placeholder.svg'} 
                               alt={product.name}
-                              className="h-full w-full object-contain transition-transform duration-700 group-hover:scale-110 drop-shadow-md"
+                              className="h-full w-full object-contain transition-transform duration-700 group-hover:scale-110 drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
+                              whileHover={{
+                                filter: "brightness(1.1) contrast(1.05)"
+                              }}
                             />
                             
                             {/* Match Overlay */}
                             <div className="absolute top-4 right-4 flex flex-col items-end gap-1.5">
                               <div className={cn(
-                                "flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black shadow-lg backdrop-blur-md transition-all group-hover:scale-110",
-                                product.relevance >= 0.9 ? "bg-emerald-500 text-white" : "bg-white/95 text-foreground border border-border"
+                                "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-black shadow-2xl backdrop-blur-xl transition-all group-hover:scale-110 border border-white/10",
+                                product.relevance >= 0.9 ? "bg-emerald-500 text-white" : "bg-black/60 text-white/90"
                               )}>
-                                {product.relevance >= 0.9 && <CheckCircle2 className="h-3 w-3" />}
-                                {Math.round(product.relevance * 100)}% Match
+                                {product.relevance >= 0.9 ? <Award className="h-3 w-3" /> : <Target className="h-3 w-3" />}
+                                {Math.round(product.relevance * 100)}% {product.relevance >= 0.9 ? "FIDELIDADE" : "MATCH"}
                               </div>
                               <Progress 
                                 value={product.relevance * 100} 
-                                className="h-1 w-16 bg-white/40 overflow-hidden" 
+                                className="h-1 w-16 bg-white/10 overflow-hidden" 
                               />
+                            </div>
+
+                            {/* Stock Indicator */}
+                            <div className="absolute top-4 left-4">
+                              <div className="flex items-center gap-1.5 rounded-full px-2 py-1 bg-black/60 backdrop-blur-md border border-white/5 text-[8px] font-bold text-white/70">
+                                <div className="h-1 w-1 rounded-full bg-emerald-400 animate-pulse" />
+                                ESTOQUE DISPONÍVEL
+                              </div>
                             </div>
 
                             {/* Ranking Badge for Top 3 */}
