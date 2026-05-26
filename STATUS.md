@@ -8,7 +8,9 @@
 
 ## 🎯 Onde estamos hoje
 
-**Última sessão**: 2026-05-24 — **Continuação do colapso** (`claude/confident-heisenberg-M03BW`). Achado central: o kill-switch nunca havia sido ligado no código da edge `external-db-bridge` (causa raiz do colapso). Corrigido no código + 5 migrations DB aplicadas via MCP (REVOKE anon, drop de 67 índices ociosos, consolidação de policies, captura de `fn_handle_new_user`, otimização do drift-check). `fn_run_smoke_tests()` 14/14 ✅. Detalhes em [`docs/RUNBOOK_COLAPSO_2026-05-24.md`](./docs/RUNBOOK_COLAPSO_2026-05-24.md).
+**Última sessão**: 2026-05-25 — **Hardening de fluxos de usuário** (`claude/project-comprehensive-audit-555Dk`). Auditoria focada nos fluxos do vendedor (catálogo→carrinho→orçamento→kit). Achados/correções: (1) **carrinho** — 10 mutations de `useSellerCarts.ts` engoliam erros sem feedback (RLS/rede/constraint); adicionado `onError` consistente via `sanitizeError`; reorder agora aborta em falha parcial; `duplicateItemToCart` passou a copiar `sort_order`. (2) **#339** — confirmado via DB ao vivo que 6 colunas de personalização não existem (`area_image_url`, `max_area_cm2`, `is_default`×2, `is_personalizable`); migration aditiva idempotente **redigida** (`20260525232003_fix_339_*`), **não aplicada em prod** (aguarda revisão/deploy). Advisors read-only rodados no banco: 0 ERROR de segurança, estado bate com a doc. Gates: build ✅, baseline TSC ✅ (zero regressão), testes do carrinho 8/8 ✅.
+
+**Sessão anterior**: 2026-05-24 — **Continuação do colapso** (`claude/confident-heisenberg-M03BW`). Achado central: o kill-switch nunca havia sido ligado no código da edge `external-db-bridge` (causa raiz do colapso). Corrigido no código + 5 migrations DB aplicadas via MCP (REVOKE anon, drop de 67 índices ociosos, consolidação de policies, captura de `fn_handle_new_user`, otimização do drift-check). `fn_run_smoke_tests()` 14/14 ✅. Detalhes em [`docs/RUNBOOK_COLAPSO_2026-05-24.md`](./docs/RUNBOOK_COLAPSO_2026-05-24.md).
 
 **Sessão anterior**: 2026-05-23 — **Etapas 9-13** fechadas — refatoração do top-5 do TSC baseline (235 erros eliminados, 0 regressão).
 
