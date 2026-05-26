@@ -76,8 +76,6 @@ const PRIVILEGED_FUNCTIONS: GateExpectation[] = [
 for (const { fn, patterns, description } of PRIVILEGED_FUNCTIONS) {
   Deno.test({
     name: `[gate] ${fn} (${description}) exige perfil dev`,
-    sanitizeOps: false,
-    sanitizeResources: false,
     fn: async () => {
       const path = new URL(`../${fn}/index.ts`, import.meta.url);
       const source = await Deno.readTextFile(path);
