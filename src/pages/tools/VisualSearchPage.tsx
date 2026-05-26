@@ -38,36 +38,39 @@ interface VisualSearchResult {
 
 export default function VisualSearchPage() {
   const navigate = useNavigate();
-  const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [results, setResults] = useState<VisualSearchResult | null>(null);
   const [isSearching, setIsSearching] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [selectedColor, setSelectedColor] = useState<string>("all");
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [colorSelection, setColorSelection] = useState<ColorFilterSelection>({
+    groups: [],
+    variations: [],
+    nuances: [],
+  });
 
-  const categories = [
-    { value: "all", label: "Todas as Categorias" },
-    { value: "Escritório", label: "Escritório" },
-    { value: "Tecnologia", label: "Tecnologia" },
-    { value: "Cozinha", label: "Cozinha" },
-    { value: "Esporte", label: "Esporte" },
-    { value: "Vestuário", label: "Vestuário" },
-    { value: "Ferramentas", label: "Ferramentas" },
-    { value: "Bem-estar", label: "Bem-estar" },
-    { value: "Lazer", label: "Lazer" },
-  ];
+  const { data: categories = [] } = useExternalCategoriesQuery();
+  const { data: colorData } = useColorSystem();
 
-  const colors = [
-    { value: "all", label: "Todas as Cores" },
-    { value: "Preto", label: "Preto" },
-    { value: "Branco", label: "Branco" },
-    { value: "Azul", label: "Azul" },
-    { value: "Vermelho", label: "Vermelho" },
-    { value: "Verde", label: "Verde" },
-    { value: "Amarelo", label: "Amarelo" },
-    { value: "Prata", label: "Prata" },
-    { value: "Dourado", label: "Dourado" },
-  ];
+  // Resolve nomes selecionados para passar à IA
+  const selectedCategoryNames = useMemo(() => {
+    if (!selectedCategoryIds.length) return [];
+    const map = new Map(categories.map((c) => [c.id, c.name]));
+    return selectedCategoryIds.map((id) => map.get(id)).filter(Boolean) as string[];
+  }, [selectedCategoryIds, categories]);
+
+  const selectedColorNames = useMemo(() => {
+    if (!colorData) return [];
+    const names: string[] = [];
+    colorData.groups.forEach((g) => {
+      if (colorSelection.groups.includes(g.slug)) names.push(g.name);
+      g.variations.forEach((v) => {
+        if (colorSelection.variations.includes(v.slug)) names.push(v.name);
+      });
+    });
+    return names;
+  }, [colorSelection, colorData]);
+
+  const hasRefinements = selectedCategoryIds.length > 0 || selectedColorNames.length > 0;
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
