@@ -383,19 +383,33 @@ export default function VisualSearchPage() {
                         </div>
                       )}
                       
-                      {/* Scanning Line Animation */}
+                      {/* Scanning Line Animation with "Shader" effect */}
                       {isSearching && (
-                        <motion.div 
-                          className="absolute left-0 top-0 z-10 h-1 w-full bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_20px_rgba(var(--primary),1)]"
-                          animate={{ 
-                            top: ['0%', '100%', '0%'] 
-                          }}
-                          transition={{ 
-                            duration: 2, 
-                            repeat: Infinity, 
-                            ease: "linear" 
-                          }}
-                        />
+                        <div className="absolute inset-0 z-10 overflow-hidden pointer-events-none">
+                          <motion.div 
+                            className="absolute left-0 top-0 h-[20%] w-full bg-gradient-to-b from-primary/0 via-primary/40 to-primary/0"
+                            animate={{ 
+                              top: ['-20%', '100%'] 
+                            }}
+                            transition={{ 
+                              duration: 2.5, 
+                              repeat: Infinity, 
+                              ease: "linear" 
+                            }}
+                          />
+                          <motion.div 
+                            className="absolute left-0 top-0 h-1 w-full bg-primary shadow-[0_0_30px_rgba(var(--primary),1)]"
+                            animate={{ 
+                              top: ['0%', '100%'] 
+                            }}
+                            transition={{ 
+                              duration: 2.5, 
+                              repeat: Infinity, 
+                              ease: "linear" 
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.15] mix-blend-overlay" />
+                        </div>
                       )}
                       
                       <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
