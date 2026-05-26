@@ -216,7 +216,8 @@ Use essas dicas para refinar sua percepção, mas priorize o que você vê visua
     finalProducts = finalProducts.map(p => ({
       ...p,
       matchRationale: `Este produto foi selecionado por possuir características de ${productAnalysis.productType} em ${productAnalysis.material}, alinhado com a silhueta identificada.`,
-      totalFound: Math.floor(Math.random() * 25) + 5 // Simulação de dados de tendência
+      totalFound: Math.floor(Math.random() * 25) + 5, // Simulação de dados de tendência
+      stock: Math.floor(Math.random() * 450) + 1 // Simulação de estoque real
     }));
 
     // Re-calculate confidence based on user filters if provided
