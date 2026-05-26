@@ -6283,6 +6283,42 @@ export type Database = {
         }
         Relationships: []
       }
+      visual_search_feedback: {
+        Row: {
+          corrected_analysis: Json | null
+          created_at: string
+          feedback_notes: string | null
+          id: string
+          image_url: string | null
+          is_correct: boolean | null
+          original_analysis: Json
+          search_terms: string | null
+          user_id: string
+        }
+        Insert: {
+          corrected_analysis?: Json | null
+          created_at?: string
+          feedback_notes?: string | null
+          id?: string
+          image_url?: string | null
+          is_correct?: boolean | null
+          original_analysis: Json
+          search_terms?: string | null
+          user_id?: string
+        }
+        Update: {
+          corrected_analysis?: Json | null
+          created_at?: string
+          feedback_notes?: string | null
+          id?: string
+          image_url?: string | null
+          is_correct?: boolean | null
+          original_analysis?: Json
+          search_terms?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       voice_command_logs: {
         Row: {
           action: string
