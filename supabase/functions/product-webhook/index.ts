@@ -3,6 +3,7 @@ import { crypto } from 'https://deno.land/std@0.224.0/crypto/mod.ts';
 import { encodeHex } from 'https://deno.land/std@0.224.0/encoding/hex.ts';
 import { buildPublicCorsHeaders } from '../_shared/cors.ts';
 import { parseContract } from '../_shared/contracts/index.ts';
+import { getCredential } from '../_shared/credentials.ts';
 import {
   ProductWebhookSchemas,
   type ProductWebhookV1Payload,
@@ -11,7 +12,6 @@ import {
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const webhookSecret = Deno.env.get('N8N_PRODUCT_WEBHOOK_SECRET');
 const configuredBatchSize = Number(Deno.env.get('PRODUCT_WEBHOOK_BATCH_SIZE') ?? '200');
 const MAX_BATCH_SIZE = 500;
 const BATCH_SIZE = Number.isFinite(configuredBatchSize)
@@ -19,13 +19,6 @@ const BATCH_SIZE = Number.isFinite(configuredBatchSize)
   : 200;
 const DEFAULT_WEBHOOK_TOLERANCE_SEC = 300;
 const MAX_WEBHOOK_TOLERANCE_SEC = 3600;
-const configuredWebhookToleranceSec = Number(
-  Deno.env.get('N8N_PRODUCT_WEBHOOK_TOLERANCE_SEC') ?? DEFAULT_WEBHOOK_TOLERANCE_SEC,
-);
-const webhookTimestampToleranceSec =
-  Number.isFinite(configuredWebhookToleranceSec) && configuredWebhookToleranceSec > 0
-    ? Math.min(Math.floor(configuredWebhookToleranceSec), MAX_WEBHOOK_TOLERANCE_SEC)
-    : DEFAULT_WEBHOOK_TOLERANCE_SEC;
 
 const allowedOrigins = new Set(
   (Deno.env.get('PRODUCT_WEBHOOK_ALLOWED_ORIGINS') ?? '')
@@ -151,8 +144,9 @@ async function isReplayNonce(
   supabase: SupabaseClient<any>,
   nonce: string,
   timestamp: number,
+  toleranceSec: number,
 ): Promise<boolean> {
-  const expiresAt = new Date((timestamp + webhookTimestampToleranceSec) * 1000).toISOString();
+  const expiresAt = new Date((timestamp + toleranceSec) * 1000).toISOString();
 
   const { error } = await supabase.from('webhook_request_nonces' as never).insert({
     source: 'product-webhook',
@@ -194,6 +188,16 @@ Deno.serve(async (req) => {
 
   try {
     const rawBody = await req.text();
+
+    // fix: ssot-bypass + module-scope-credential-read — read from credential vault per-request
+    const webhookSecret = await getCredential('N8N_PRODUCT_WEBHOOK_SECRET');
+    const configuredWebhookToleranceSec = Number(
+      await getCredential('N8N_PRODUCT_WEBHOOK_TOLERANCE_SEC') ?? DEFAULT_WEBHOOK_TOLERANCE_SEC,
+    );
+    const webhookTimestampToleranceSec =
+      Number.isFinite(configuredWebhookToleranceSec) && configuredWebhookToleranceSec > 0
+        ? Math.min(Math.floor(configuredWebhookToleranceSec), MAX_WEBHOOK_TOLERANCE_SEC)
+        : DEFAULT_WEBHOOK_TOLERANCE_SEC;
 
     if (!webhookSecret) {
       logAuthFailure('misconfigured_secret', req);
@@ -249,7 +253,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const replayed = await isReplayNonce(supabase, nonce, timestamp);
+    const replayed = await isReplayNonce(supabase, nonce, timestamp, webhookTimestampToleranceSec);
     if (replayed) {
       logAuthFailure('replayed_nonce', req, { nonceSize: nonce.length });
       return new Response(UNAUTHORIZED_BODY, {

@@ -17,6 +17,7 @@ import { WebhookDispatcherSchemas } from "../_shared/contracts/schemas/webhook-d
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
 import { authorizeDispatcher } from "../_shared/dispatcher-auth.ts";
 import { assertSwitchEnabled } from "../_shared/kill_switch.ts";
+import { getCredential } from "../_shared/credentials.ts";
 
 const corsHeaders = buildPublicCorsHeaders({ allowMethods: "POST, OPTIONS" });
 
@@ -47,7 +48,8 @@ Deno.serve(async (req) => {
   if (killResponse) return killResponse;
 
   // Guard: require X-Dispatcher-Secret to prevent unauthorized invocations
-  const dispatcherSecret = Deno.env.get("WEBHOOK_DISPATCHER_SECRET");
+  // fix: ssot-bypass — credential vault
+  const dispatcherSecret = await getCredential("WEBHOOK_DISPATCHER_SECRET");
   if (dispatcherSecret) {
     const incoming = req.headers.get("x-dispatcher-secret");
     if (!incoming || incoming !== dispatcherSecret) {
