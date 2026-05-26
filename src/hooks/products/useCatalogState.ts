@@ -88,14 +88,28 @@ export function useCatalogState() {
       /* empty */
     }
   }, []);
-  const [sortBy, setSortByState] = useState<SortOption>('relevance');
+  const initialSortBy = (searchParams.get('sort') as SortOption) || 'relevance';
+  const [sortBy, setSortByState] = useState<SortOption>(initialSortBy);
+
   const setSortBy = useCallback((s: SortOption) => {
     setIsTransitioning(true);
     React.startTransition(() => {
       setSortByState(s);
+      
+      // Update URL query string
+      const newParams = new URLSearchParams(window.location.search);
+      if (s === 'relevance') {
+        newParams.delete('sort');
+      } else {
+        newParams.set('sort', s);
+      }
+      
+      const newPath = `${window.location.pathname}${newParams.toString() ? '?' + newParams.toString() : ''}`;
+      navigate(newPath, { replace: true });
+      
       setIsTransitioning(false);
     });
-  }, []);
+  }, [navigate]);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedCount, setSelectedCount] = useState(0);
   const [activeProductId, setActiveProductId] = useState<string | null>(null);
@@ -204,6 +218,13 @@ export function useCatalogState() {
   useEffect(() => {
     setSearchQuery(searchQueryFromUrl);
   }, [searchQueryFromUrl]);
+
+  useEffect(() => {
+    const urlSort = searchParams.get('sort') as SortOption;
+    if (urlSort && urlSort !== sortBy) {
+      setSortByState(urlSort);
+    }
+  }, [searchParams, sortBy]);
 
   useEffect(() => {
     React.startTransition(() => {
