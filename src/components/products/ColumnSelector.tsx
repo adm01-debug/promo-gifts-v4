@@ -2,9 +2,17 @@ import { useEffect, useState } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-const STORAGE_KEY = "product-grid-columns";
+export const STORAGE_KEY = "product-grid-columns";
 
 export type ColumnCount = 3 | 4 | 5 | 6 | 8;
+
+export const COLUMN_CLASSES: Record<ColumnCount, string> = {
+  3: "grid-cols-3",
+  4: "grid-cols-2 sm:grid-cols-3 md:grid-cols-4",
+  5: "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5",
+  6: "grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6",
+  8: "grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8",
+};
 
 function GridIcon({ cols, rows = 2 }: { cols: number; rows?: number }) {
   const size = 18;
@@ -43,12 +51,6 @@ interface ColumnOption {
   minWidth: number;
 }
 
-// Breakpoints alinhados com responsividade do grid de produtos:
-// - 3 colunas: sempre disponível (mobile-first)
-// - 4 colunas: ≥768px (md tailwind)
-// - 5 colunas: ≥1024px (lg tailwind)
-// - 6 colunas: ≥1280px (xl tailwind)
-// - 8 colunas: ≥1536px (2xl tailwind)
 const columnOptions: ColumnOption[] = [
   { value: 3, label: "3 colunas", cols: 3, rows: 2, minWidth: 0 },
   { value: 4, label: "4 colunas", cols: 4, rows: 2, minWidth: 768 },
@@ -61,7 +63,7 @@ function getAvailableOptions(screenWidth: number): ColumnOption[] {
   return columnOptions.filter((opt) => screenWidth >= opt.minWidth);
 }
 
-function getDefaultColumns(): ColumnCount {
+export function getDefaultColumns(): ColumnCount {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -83,7 +85,6 @@ interface ColumnSelectorProps {
 }
 
 export function ColumnSelector({ value, onChange, className }: ColumnSelectorProps) {
-  // Track window width to filter options responsively.
   const [screenWidth, setScreenWidth] = useState<number>(() =>
     typeof window !== "undefined" ? window.innerWidth : 1600,
   );
@@ -97,9 +98,6 @@ export function ColumnSelector({ value, onChange, className }: ColumnSelectorPro
 
   const available = getAvailableOptions(screenWidth);
 
-  // Clamping: se o valor controlado ultrapassa o máximo disponível para a
-  // largura atual, dispara onChange para o maior valor permitido. Mantém
-  // a UI consistente quando a tela encolhe ou o valor vem maior do esperado.
   useEffect(() => {
     if (available.length === 0) return;
     const maxAvailable = available[available.length - 1].value;
@@ -108,14 +106,17 @@ export function ColumnSelector({ value, onChange, className }: ColumnSelectorPro
     }
   }, [value, available, onChange]);
 
-  // Quando só sobra 1 opção (ou nenhuma), o seletor não tem utilidade.
   if (available.length <= 1) return null;
 
   return (
-    <div className={cn(
-      "inline-flex items-center gap-0.5 p-1 rounded-xl bg-muted/60 border border-border/40",
-      className
-    )}>
+    <div 
+      role="radiogroup" 
+      aria-label="Número de colunas"
+      className={cn(
+        "inline-flex items-center gap-0.5 p-1 rounded-xl bg-muted/60 border border-border/40",
+        className
+      )}
+    >
       {available.map((opt) => {
         const isActive = value === opt.value;
         return (
@@ -123,14 +124,22 @@ export function ColumnSelector({ value, onChange, className }: ColumnSelectorPro
             <TooltipTrigger asChild>
               <button
                 type="button"
+                role="radio"
                 aria-label={opt.label}
-                aria-pressed={isActive}
+                aria-checked={isActive}
                 className={cn(
-                  "relative flex items-center justify-center h-9 w-9 rounded-lg transition-colors duration-150 cursor-pointer",
+                  "relative flex items-center justify-center h-9 w-9 rounded-lg transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ring-offset-background",
                   isActive
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onChange(opt.value);
+                    try { localStorage.setItem(STORAGE_KEY, String(opt.value)); } catch { /* empty */ }
+                  }
+                }}
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -150,5 +159,3 @@ export function ColumnSelector({ value, onChange, className }: ColumnSelectorPro
     </div>
   );
 }
-
-export { getDefaultColumns, STORAGE_KEY };
