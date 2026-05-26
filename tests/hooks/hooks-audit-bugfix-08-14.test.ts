@@ -1,14 +1,14 @@
 /**
  * Testes de Regressao -- BUG-08 a BUG-14
  * Auditoria de hooks -- promo-gifts-v4 (2026-05)
- * 21/21 testes passando (validado localmente em 2026-05-26)
+ * 21/21 testes passando, zero warnings (validado 2026-05-26)
  *
  * Padroes aplicados:
  * - render-helpers.tsx ativa mocks globais (supabase, AuthContext)
- * - clearAllMocks() em vez de restoreAllMocks() no afterEach
- * - vi.useRealTimers() nos testes que usam waitFor (TanStack Query)
+ * - clearAllMocks() em vez de restoreAllMocks() — preserva mocks de render-helpers
+ * - vi.useRealTimers() + waitFor nos testes com TanStack Query (evita act() warning)
  * - vi.useFakeTimers() nos testes de timing (throttle, polling)
- * - Imports estaticos dos hooks (nao dynamic import)
+ * - waitFor() gerencia act() internamente — sem "not wrapped in act" warnings
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
@@ -45,8 +45,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   vi.useRealTimers();
-  // clearAllMocks: limpa historico mas preserva implementacoes do mock de render-helpers
-  // NAO usar restoreAllMocks() -- destroi o mock de supabase/client
+  // clearAllMocks preserva implementacoes — NAO usar restoreAllMocks (destroi mocks de render-helpers)
   vi.clearAllMocks();
   localStorage.clear();
 });
@@ -56,7 +55,7 @@ afterEach(() => {
 // ────────────────────────────────────────────────────────────────────────────
 describe('BUG-08 -- polling nao recriado apos fetch', () => {
   it('setInterval de 30s criado UMA vez por montagem', async () => {
-    vi.useRealTimers(); // waitFor precisa de timers reais para resolver promises
+    vi.useRealTimers();
     const spy = vi.spyOn(global, 'setInterval');
     mockFromAlways({
       data: [{
@@ -123,7 +122,7 @@ describe('BUG-09 -- useThrottle leading-edge real', () => {
       ({ v, l }) => useThrottle(v, l),
       { initialProps: { v: 'a', l: 300 } }
     );
-    // Render inicial seta o lock. Liberar antes do teste de leading edge.
+    // Render inicial seta o lock. Liberar antes de testar leading edge.
     await act(async () => { vi.advanceTimersByTime(300); });
     expect(result.current).toBe('a');
     // Agora lock liberado: proxima mudanca dispara leading edge imediatamente
@@ -178,7 +177,7 @@ describe('BUG-09 -- useThrottle leading-edge real', () => {
 // ────────────────────────────────────────────────────────────────────────────
 describe('BUG-10 -- use2FA nao expoe totp_secret', () => {
   it('disable2FA chama verify-2fa-token com action disable', async () => {
-    vi.useRealTimers(); // waitFor precisa de timers reais
+    vi.useRealTimers();
     mockFromOnce({ data: null, error: null }); // fetchSettings inicial
     mockFunctionsInvoke({ data: { success: true }, error: null }); // Edge Function
     mockFromOnce({ data: null, error: null }); // fetchSettings pos-disable
@@ -193,7 +192,7 @@ describe('BUG-10 -- use2FA nao expoe totp_secret', () => {
   });
 
   it('disable2FA sem args: retorna erro sem chamadas extras ao banco', async () => {
-    vi.useRealTimers(); // waitFor precisa de timers reais
+    vi.useRealTimers();
     mockFromOnce({ data: null, error: null });
     const { result } = renderHookWithProviders(() => use2FA());
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -230,7 +229,7 @@ describe('BUG-11 -- useKitAutoSave refs e cleanup dedicado', () => {
       expect(src).toContain('onKitIdCreatedRef');
       expect(src).toContain('[user?.id, currentKitId]');
       expect(src).toContain('Cleanup dedicado ao unmount');
-      expect(src).not.toContain('onKitIdCreated]'); // nao nas deps do useCallback
+      expect(src).not.toContain('onKitIdCreated]');
     }
   });
 });
@@ -243,15 +242,17 @@ describe('BUG-12 -- useTechniquePricing PostgREST nativo', () => {
     mockFromAlways({ data: [], error: null });
     renderHookWithProviders(() => useTechniquePricing('SILK'));
     vi.useRealTimers();
-    await new Promise<void>(r => setTimeout(r, 50));
+    // waitFor gerencia act() internamente — sem warning de state update fora de act
+    await waitFor(() => {
+      expect(
+        (supabase.from as ReturnType<typeof vi.fn>).mock.calls
+          .some(([t]: [string]) => t === 'customization_price_tables')
+      ).toBe(true);
+    });
     expect(
       (supabase.functions.invoke as ReturnType<typeof vi.fn>).mock.calls
         .filter(([f]: [string]) => f === 'external-db-bridge')
     ).toHaveLength(0);
-    expect(
-      (supabase.from as ReturnType<typeof vi.fn>).mock.calls
-        .some(([t]: [string]) => t === 'customization_price_tables')
-    ).toBe(true);
   });
 
   it('flag cancelled para cleanup em unmount', async () => {
@@ -329,11 +330,12 @@ describe('BUG-14 -- usePrintAreas PostgREST para todas as funcoes', () => {
     mockFromAlways({ data: [], error: null });
     renderHookWithProviders(() => usePrintAreas('prod-1'));
     vi.useRealTimers();
-    await new Promise<void>(r => setTimeout(r, 50));
-    expect(
-      (supabase.from as ReturnType<typeof vi.fn>).mock.calls
-        .some(([t]: [string]) => t === 'print_area_techniques')
-    ).toBe(true);
+    await waitFor(() => {
+      expect(
+        (supabase.from as ReturnType<typeof vi.fn>).mock.calls
+          .some(([t]: [string]) => t === 'print_area_techniques')
+      ).toBe(true);
+    });
     expect(
       (supabase.functions.invoke as ReturnType<typeof vi.fn>).mock.calls
         .filter(([f]: [string]) => f === 'external-db-bridge')
@@ -344,32 +346,35 @@ describe('BUG-14 -- usePrintAreas PostgREST para todas as funcoes', () => {
     mockFromAlways({ data: [], error: null });
     renderHookWithProviders(() => useTechniques());
     vi.useRealTimers();
-    await new Promise<void>(r => setTimeout(r, 50));
-    expect(
-      (supabase.from as ReturnType<typeof vi.fn>).mock.calls
-        .some(([t]: [string]) => t === 'tecnica_gravacao')
-    ).toBe(true);
+    await waitFor(() => {
+      expect(
+        (supabase.from as ReturnType<typeof vi.fn>).mock.calls
+          .some(([t]: [string]) => t === 'tecnica_gravacao')
+      ).toBe(true);
+    });
   });
 
   it('useTechniqueStats: from(v_technique_stats)', async () => {
     mockFromAlways({ data: [], error: null });
     renderHookWithProviders(() => useTechniqueStats());
     vi.useRealTimers();
-    await new Promise<void>(r => setTimeout(r, 50));
-    expect(
-      (supabase.from as ReturnType<typeof vi.fn>).mock.calls
-        .some(([t]: [string]) => t === 'v_technique_stats')
-    ).toBe(true);
+    await waitFor(() => {
+      expect(
+        (supabase.from as ReturnType<typeof vi.fn>).mock.calls
+          .some(([t]: [string]) => t === 'v_technique_stats')
+      ).toBe(true);
+    });
   });
 
   it('useHasPrintAreas: from(print_area_techniques)', async () => {
     mockFromAlways({ data: [{ id: 'area-1' }], error: null });
     renderHookWithProviders(() => useHasPrintAreas('prod-2'));
     vi.useRealTimers();
-    await new Promise<void>(r => setTimeout(r, 50));
-    expect(
-      (supabase.from as ReturnType<typeof vi.fn>).mock.calls
-        .some(([t]: [string]) => t === 'print_area_techniques')
-    ).toBe(true);
+    await waitFor(() => {
+      expect(
+        (supabase.from as ReturnType<typeof vi.fn>).mock.calls
+          .some(([t]: [string]) => t === 'print_area_techniques')
+      ).toBe(true);
+    });
   });
 });
