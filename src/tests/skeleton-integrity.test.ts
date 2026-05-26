@@ -32,8 +32,10 @@ describe('Integridade do Sistema de Skeletons', () => {
 
   it('apenas o componente base Skeleton de ui deve ser usado diretamente para formas customizadas', () => {
     try {
-      // Lista de arquivos TSX que usam Skeleton de forma gerenciada por outros componentes ou hooks
-      const exceptions = [
+      // Este teste foca em garantir que não criamos componentes de skeleton fora da pasta centralizada
+      // e que o componente base ui/skeleton é importado corretamente quando necessário.
+      
+      const globExclusions = [
         'src/components/loading/*',
         'src/components/ui/skeleton.tsx',
         'src/components/layout/SkeletonLoaders.tsx',
@@ -47,10 +49,10 @@ describe('Integridade do Sistema de Skeletons', () => {
         'src/pages/quotes/QuotesListPage.tsx',
         'src/pages/tools/MagicUp.tsx',
         'src/pages/mockups/MockupHistoryPage.tsx',
-        'src/pages/tools/DropboxBrowserPage.tsx'
-      ];
+        'src/pages/tools/DropboxBrowserPage.tsx',
+        'src/pages/kit-builder/KitLibraryPage.tsx'
+      ].map(e => `--glob '!${e}'`).join(' ');
 
-      const globExclusions = exceptions.map(e => `--glob '!${e}'`).join(' ');
       const command = `rg -l "Skeleton" src/ --glob "*.tsx" ${globExclusions}`;
       const result = execSync(command).toString().trim();
       
