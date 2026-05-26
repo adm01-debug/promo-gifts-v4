@@ -314,9 +314,20 @@ export default function VisualSearchPage() {
               <Zap className="h-6 w-6 text-primary-foreground transition-transform group-hover:rotate-12" />
               <div className="absolute inset-0 animate-ping rounded-xl bg-primary/20" />
             </motion.div>
-            <div>
+            <div className="flex-1">
               <h1 className="font-display text-2xl font-bold tracking-tight">Raio X</h1>
               <p className="text-sm text-muted-foreground">O "Shazam" do catálogo: tire uma foto e encontre o produto</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={isListening ? "default" : "outline"}
+                size="sm"
+                className={cn("h-9 gap-2", isListening && "animate-pulse bg-red-500 hover:bg-red-600")}
+                onClick={startVoiceCommand}
+              >
+                {isListening ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+                <span className="hidden sm:inline">{isListening ? "Ouvindo..." : "Comandos de Voz"}</span>
+              </Button>
             </div>
           </div>
         </div>
