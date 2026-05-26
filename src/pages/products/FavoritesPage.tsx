@@ -51,7 +51,6 @@ import type { FavoritesSort } from '@/components/favorites/FavoritesSortBar';
 
 type ViewMode = 'grid' | 'list' | 'table';
 const VIEW_MODE_KEY = 'favorites-view-mode';
-import { STORAGE_KEY as GRID_COLS_KEY, getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
 const SELECTED_LIST_KEY = 'favorites-selected-list-id';
 const SORT_KEY = 'favorites-sort';
 const PRICE_DROP_FILTER_KEY = 'favorites-only-drops';
