@@ -144,11 +144,6 @@ function FreshnessTooltipBody({ freshness, priceUpdatedAt }: FreshnessTooltipPro
           {longDate && <span className="text-muted-foreground"> ({longDate})</span>}
         </div>
       )}
-      {exactDateTime && (
-        <div className="text-[11px] tabular-nums leading-snug text-muted-foreground">
-          Hora local: {exactDateTime}
-        </div>
-      )}
       {!shortDate && (
         <div className="leading-snug text-muted-foreground">
           O fornecedor não informou a data da última atualização deste preço.
