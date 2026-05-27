@@ -122,7 +122,7 @@ describe('QuoteBuilderPage E2E Wizard Flow', () => {
 
     // Verificar se o Step 1 está marcado como concluído visualmente no stepper
     const wizard = screen.getByTestId('quote-wizard');
-    const clientStep = within(wizard).getByLabel(/Etapa 1: Cliente/i);
+    const clientStep = within(wizard).getByLabelText(/Etapa 1: Cliente/i);
     expect(clientStep).toHaveAttribute('aria-label', expect.stringContaining('Concluída'));
 
     // --- ETAPA 2: CONDIÇÕES ---
