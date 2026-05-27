@@ -6016,6 +6016,39 @@ export type Database = {
           },
         ]
       }
+      system_error_logs: {
+        Row: {
+          created_at: string
+          error_message: string
+          function_name: string
+          id: string
+          metadata: Json | null
+          severity: string | null
+          stack_trace: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message: string
+          function_name: string
+          id?: string
+          metadata?: Json | null
+          severity?: string | null
+          stack_trace?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string
+          function_name?: string
+          id?: string
+          metadata?: Json | null
+          severity?: string | null
+          stack_trace?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       system_settings: {
         Row: {
           description: string | null

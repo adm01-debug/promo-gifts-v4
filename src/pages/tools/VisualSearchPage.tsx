@@ -258,22 +258,46 @@ export default function VisualSearchPage() {
       
       let friendlyMessage = 'Ocorreu um problema na análise da imagem.';
       let tip = 'Tente novamente com outra foto ou verifique sua conexão.';
+      let debugInfo = '';
+
+      // Tenta extrair informações detalhadas do erro retornado pelo Edge Function
+      if (err.context && typeof err.context.json === 'function') {
+        try {
+          const errorData = await err.context.json();
+          if (errorData.error) friendlyMessage = errorData.error;
+          if (errorData.step) debugInfo = ` [Passo: ${errorData.step}]`;
+          if (errorData.requestId) debugInfo += ` [ID: ${errorData.requestId}]`;
+        } catch (e) {
+          console.warn('Could not parse error context json', e);
+        }
+      } else if (err.message) {
+        // Fallback para mensagens diretas
+        if (err.message.includes('Configuração ausente')) {
+          friendlyMessage = 'Erro de Configuração: O backend não possui as chaves de API necessárias.';
+          tip = 'Verifique as variáveis de ambiente LOVABLE_API_KEY ou HF_ACCESS_TOKEN no dashboard do Supabase.';
+        } else {
+          friendlyMessage = err.message;
+        }
+      }
       
       if (err.message?.includes('400') || err.message?.includes('payload too large')) {
         friendlyMessage = 'A imagem é muito grande ou pesada para processar.';
         tip = 'Dica: Tente usar uma foto com resolução menor ou em formato JPG/PNG.';
       } else if (err.message?.includes('500') || err.status === 500) {
-        friendlyMessage = 'Nossos servidores de IA estão temporariamente ocupados.';
-        tip = 'Dica: Aguarde alguns segundos e clique em "Tentar Novamente". Verifique se o produto está bem centralizado.';
+        // Se já não tivermos uma mensagem mais específica do backend
+        if (friendlyMessage === 'Ocorreu um problema na análise da imagem.') {
+          friendlyMessage = 'Nossos servidores de IA estão temporariamente ocupados.';
+          tip = 'Dica: Aguarde alguns segundos e clique em "Tentar Novamente". Verifique se o produto está bem centralizado.';
+        }
       } else if (err.message?.includes('network') || err.name === 'TypeError') {
         friendlyMessage = 'Houve uma falha de conexão.';
         tip = 'Dica: Verifique seu sinal de internet e tente reenviar a foto.';
       }
 
-      setAnalysisError({ message: friendlyMessage, tip });
+      setAnalysisError({ message: `${friendlyMessage}${debugInfo}`, tip });
       
       toast.error('Erro ao analisar imagem', {
-        description: err.message || 'Tente novamente com outra imagem.'
+        description: friendlyMessage
       });
     } finally {
       setIsSearching(false);
