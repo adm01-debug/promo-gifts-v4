@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useQuoteBuilderState } from './useQuoteBuilderState';
 import { BrowserRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as React from 'react';
 
 // Mocks
@@ -44,8 +45,18 @@ vi.mock('@/hooks/quotes', async () => {
   };
 });
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+});
+
 const wrapper = ({ children }: { children: React.ReactNode }) => (
-  <BrowserRouter>{children}</BrowserRouter>
+  <QueryClientProvider client={queryClient}>
+    <BrowserRouter>{children}</BrowserRouter>
+  </QueryClientProvider>
 );
 
 describe('useQuoteBuilderState E2E Logic', () => {
