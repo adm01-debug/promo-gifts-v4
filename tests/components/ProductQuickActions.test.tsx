@@ -1,101 +1,133 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
-import { ProductQuickActions } from './ProductQuickActions';
+import { describe, it, expect } from 'vitest';
+import { ProductQuickActions } from '@/components/products/ProductQuickActions';
 import { BrowserRouter } from 'react-router-dom';
-
-const mockProduct = {
-  id: '123',
-  name: 'Test Product',
-  price: 100,
-  minQuantity: 10,
-  supplier: { id: 's1', name: 'Supplier' },
-  images: [],
-  tags: {},
-  variations: [],
-} as any;
+import '@testing-library/jest-dom';
 
 describe('ProductQuickActions', () => {
-  it('should disable Indicação button when no tags are provided', () => {
-    render(
-      <BrowserRouter>
-        <ProductQuickActions
-          productId="123"
-          productName="Test Product"
-          basePrice={100}
-          minQuantity={10}
-          tags={{}}
-        />
-      </BrowserRouter>
-    );
+  const defaultProps = {
+    productId: '123',
+    productName: 'Test Product',
+    basePrice: 100,
+    minQuantity: 10,
+  };
 
-    const button = screen.getByRole('button', { name: /Indicação/i });
-    expect(button).toBeDisabled();
-    expect(button).toHaveAttribute('title', 'Sem dados de indicação para este produto');
+  describe('Botão Indicação', () => {
+    it('should disable Indicação button when no tags are provided', () => {
+      render(
+        <BrowserRouter>
+          <ProductQuickActions {...defaultProps} tags={{}} />
+        </BrowserRouter>
+      );
+
+      const button = screen.getByRole('button', { name: /Indicação/i });
+      expect(button).toBeDisabled();
+      expect(button).toHaveAttribute('title', 'Sem dados de indicação para este produto');
+    });
+
+    it('should enable Indicação button when tags are provided', () => {
+      const tags = { 'Público-Alvo': ['Jovens'] };
+      render(
+        <BrowserRouter>
+          <ProductQuickActions {...defaultProps} tags={tags} />
+        </BrowserRouter>
+      );
+
+      const button = screen.getByRole('button', { name: /Indicação/i });
+      expect(button).not.toBeDisabled();
+    });
+
+    it('should show loading state in Indicação modal', () => {
+      const tags = { 'Público-Alvo': ['Jovens'] };
+      render(
+        <BrowserRouter>
+          <ProductQuickActions {...defaultProps} tags={tags} isLoadingTags={true} />
+        </BrowserRouter>
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: /Indicação/i }));
+      const skeletons = document.querySelectorAll('.animate-pulse');
+      expect(skeletons.length).toBeGreaterThan(0);
+    });
+
+    it('should show error state in Indicação modal', () => {
+      const tags = { 'Público-Alvo': ['Jovens'] };
+      render(
+        <BrowserRouter>
+          <ProductQuickActions {...defaultProps} tags={tags} hasErrorTags={true} />
+        </BrowserRouter>
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: /Indicação/i }));
+      expect(screen.getByText(/Não foi possível carregar as indicações/i)).toBeInTheDocument();
+    });
   });
 
-  it('should enable Indicação button when tags are provided', () => {
-    const tags = {
-      'Público-Alvo': ['Jovens'],
-    };
+  describe('Botão Nicho', () => {
+    it('should disable Nicho button when no niches are provided', () => {
+      render(
+        <BrowserRouter>
+          <ProductQuickActions {...defaultProps} niches={[]} />
+        </BrowserRouter>
+      );
 
-    render(
-      <BrowserRouter>
-        <ProductQuickActions
-          productId="123"
-          productName="Test Product"
-          basePrice={100}
-          minQuantity={10}
-          tags={tags}
-        />
-      </BrowserRouter>
-    );
+      const button = screen.getByRole('button', { name: /Nicho/i });
+      expect(button).toBeDisabled();
+      expect(button).toHaveAttribute('title', 'Sem dados de nicho para este produto');
+    });
 
-    const button = screen.getByRole('button', { name: /Indicação/i });
-    expect(button).not.toBeDisabled();
-  });
+    it('should enable Nicho button when niches are provided', () => {
+      render(
+        <BrowserRouter>
+          <ProductQuickActions {...defaultProps} niches={['Tecnologia']} />
+        </BrowserRouter>
+      );
 
-  it('should show loading state in modal', async () => {
-    const tags = { 'Público-Alvo': ['Jovens'] };
-    render(
-      <BrowserRouter>
-        <ProductQuickActions
-          productId="123"
-          productName="Test Product"
-          basePrice={100}
-          minQuantity={10}
-          tags={tags}
-          isLoadingTags={true}
-        />
-      </BrowserRouter>
-    );
+      const button = screen.getByRole('button', { name: /Nicho/i });
+      expect(button).not.toBeDisabled();
+    });
 
-    const button = screen.getByRole('button', { name: /Indicação/i });
-    fireEvent.click(button);
+    it('should show loading state in Nicho modal', () => {
+      render(
+        <BrowserRouter>
+          <ProductQuickActions {...defaultProps} niches={['Tecnologia']} isLoadingNiches={true} />
+        </BrowserRouter>
+      );
 
-    // Should show skeleton/loading indicators (looking for animate-pulse)
-    const skeletons = document.querySelectorAll('.animate-pulse');
-    expect(skeletons.length).toBeGreaterThan(0);
-  });
+      fireEvent.click(screen.getByRole('button', { name: /Nicho/i }));
+      const skeletons = document.querySelectorAll('.animate-pulse');
+      expect(skeletons.length).toBeGreaterThan(0);
+    });
 
-  it('should show error state with try again button in modal', async () => {
-    const tags = { 'Público-Alvo': ['Jovens'] };
-    render(
-      <BrowserRouter>
-        <ProductQuickActions
-          productId="123"
-          productName="Test Product"
-          basePrice={100}
-          minQuantity={10}
-          tags={tags}
-          hasErrorTags={true}
-        />
-      </BrowserRouter>
-    );
+    it('should show error state in Nicho modal', () => {
+      render(
+        <BrowserRouter>
+          <ProductQuickActions {...defaultProps} niches={['Tecnologia']} hasErrorNiches={true} />
+        </BrowserRouter>
+      );
 
-    const button = screen.getByRole('button', { name: /Indicação/i });
-    fireEvent.click(button);
+      fireEvent.click(screen.getByRole('button', { name: /Nicho/i }));
+      expect(screen.getByText(/Não foi possível carregar os nichos/i)).toBeInTheDocument();
+    });
 
-    expect(screen.getByText('Não foi possível carregar as indicações.')).toBeInTheDocument();
-    expect(screen.getByText('Tentar novamente')).toBeInTheDocument();
+    it('should display niches correctly in modal', () => {
+      const niches = ['Saúde', 'Educação', '  Tecnologia  ', 'Saúde']; // Includes duplicates and spaces
+      render(
+        <BrowserRouter>
+          <ProductQuickActions {...defaultProps} niches={niches} />
+        </BrowserRouter>
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: /Nicho/i }));
+      
+      expect(screen.getByText('Saúde')).toBeInTheDocument();
+      expect(screen.getByText('Educação')).toBeInTheDocument();
+      expect(screen.getByText('Tecnologia')).toBeInTheDocument();
+      
+      // Check for uniqueness (Saúde should only appear once if it's a simple list)
+      // Actually displayNiches uses Set, so it should be unique.
+      const items = screen.getAllByText(/Saúde|Educação|Tecnologia/);
+      expect(items.length).toBe(3);
+    });
   });
 });

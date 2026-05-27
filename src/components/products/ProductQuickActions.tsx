@@ -31,6 +31,8 @@ interface ProductQuickActionsProps {
   hasErrorTags?: boolean;
   isLoadingNiches?: boolean;
   hasErrorNiches?: boolean;
+  onRetryTags?: () => void;
+  onRetryNiches?: () => void;
   selectedVariant?: {
     variantName?: string | null;
     colorHex?: string | null;
@@ -74,6 +76,8 @@ export function ProductQuickActions({
   hasErrorTags,
   isLoadingNiches,
   hasErrorNiches,
+  onRetryTags,
+  onRetryNiches,
   selectedVariant,
   onConfirmPrice,
 }: ProductQuickActionsProps) {
@@ -94,8 +98,15 @@ export function ProductQuickActions({
   );
 
   const isActionDisabled = (key: ActionKey) => {
-    if (key === 'indicacao') return displayTagSections.length === 0;
-    if (key === 'nicho') return displayNiches.length === 0;
+    if (key === 'indicacao') {
+      // Permitir abrir se estiver carregando ou se houver erro (para mostrar feedback no modal)
+      if (isLoadingTags || hasErrorTags) return false;
+      return displayTagSections.length === 0;
+    }
+    if (key === 'nicho') {
+      if (isLoadingNiches || hasErrorNiches) return false;
+      return displayNiches.length === 0;
+    }
     return false;
   };
 
@@ -241,7 +252,7 @@ export function ProductQuickActions({
                   Não foi possível carregar as indicações.
                 </p>
                 <button
-                  onClick={() => window.location.reload()}
+                  onClick={() => (onRetryTags ? onRetryTags() : window.location.reload())}
                   className="rounded-lg bg-destructive px-4 py-2 text-xs font-bold text-destructive-foreground transition-all hover:bg-destructive/90"
                 >
                   Tentar novamente
@@ -307,7 +318,7 @@ export function ProductQuickActions({
                   Não foi possível carregar os nichos.
                 </p>
                 <button
-                  onClick={() => window.location.reload()}
+                  onClick={() => (onRetryNiches ? onRetryNiches() : window.location.reload())}
                   className="rounded-lg bg-destructive px-4 py-2 text-xs font-bold text-destructive-foreground transition-all hover:bg-destructive/90"
                 >
                   Tentar novamente
