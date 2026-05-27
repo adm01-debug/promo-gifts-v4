@@ -107,6 +107,20 @@ export function ProductDetailHero({
       {/* LEFT — Gallery */}
       <div className="min-w-0">
         <div className="space-y-3 pb-4 lg:sticky lg:top-20">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <ProductCategoryBadges
+              category={product.category as never}
+              groups={product.groups}
+              categoryUuid={product.category_id}
+              productId={product.id}
+              productName={product.name}
+              productSku={product.sku}
+              productPrice={product.price}
+              productImageUrl={product.images?.[0]}
+              productMinQuantity={minQuantity}
+              isKit={product.isKit}
+            />
+          </div>
           <ProductGallery
             images={product.images}
             video={product.video ?? undefined}
@@ -143,20 +157,7 @@ export function ProductDetailHero({
       <div className="flex min-w-0 flex-col gap-3 md:gap-4 xl:gap-5">
         {/* Header */}
         <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <ProductCategoryBadges
-              category={product.category as never}
-              groups={product.groups}
-              categoryUuid={product.category_id}
-              productId={product.id}
-              productName={product.name}
-              productSku={product.sku}
-              productPrice={product.price}
-              productImageUrl={product.images?.[0]}
-              productMinQuantity={minQuantity}
-              isKit={product.isKit}
-            />
-          </div>
+
           <div className="flex flex-wrap gap-1.5">
             {product.featured && (
               <Badge className="bg-gradient-primary px-2 py-0.5 text-[11px] text-primary-foreground shadow-sm">
