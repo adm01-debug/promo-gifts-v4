@@ -349,7 +349,6 @@ export function PriceFreshnessBadge({
       <span
         role="status"
         aria-label={ariaLabel}
-        title={title}
         tabIndex={0}
         className={cn('inline-flex items-center justify-center', color, focusRing, className)}
       >
@@ -365,7 +364,6 @@ export function PriceFreshnessBadge({
       <span
         role="status"
         aria-label={ariaLabel}
-        title={title}
         tabIndex={0}
         className={cn(
           'inline-flex items-center gap-1 text-xs font-medium',
