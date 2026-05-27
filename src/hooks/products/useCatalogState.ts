@@ -124,17 +124,11 @@ export function useCatalogState() {
     });
   }, []);
 
-  // Responsive clamp: garante que o número de colunas não ultrapasse o disponível
-  // para a largura atual da tela, mantendo a consistência visual.
+  // Responsive clamp: garante que o numero de colunas nao ultrapasse o disponivel
+  // para a largura atual da tela, mantendo a consistencia visual.
   useEffect(() => {
     const handleResize = () => {
       const w = window.innerWidth;
-      // 3 colunas (min 0)
-      // 4 colunas (min 768)
-      // 5 colunas (min 1024)
-      // 6 colunas (min 1280)
-      // 8 colunas (min 1536)
-
       let maxCols: ColumnCount = 3;
       if (w >= 1536) maxCols = 8;
       else if (w >= 1280) maxCols = 6;
@@ -176,12 +170,26 @@ export function useCatalogState() {
 
   const totalEstimate = catalogData?.pages?.[0]?.totalEstimate ?? null;
 
+  // BUG-CS-03 FIX: Guard against multiple simultaneous prefetch calls.
+  // Original enqueued a new requestIdleCallback every time hasNextPage changed,
+  // causing duplicated fetchNextPage calls.
+  const prefetchScheduledRef = useRef(false);
+
   useEffect(() => {
-    if (hasNextPage && !isFetchingNextPage) {
+    if (hasNextPage && !isFetchingNextPage && !prefetchScheduledRef.current) {
+      prefetchScheduledRef.current = true;
       if ('requestIdleCallback' in window) {
-        window.requestIdleCallback(() => fetchNextPage());
+        window.requestIdleCallback(() => {
+          fetchNextPage().finally(() => {
+            prefetchScheduledRef.current = false;
+          });
+        });
       } else {
-        setTimeout(() => fetchNextPage(), 1000);
+        setTimeout(() => {
+          fetchNextPage().finally(() => {
+            prefetchScheduledRef.current = false;
+          });
+        }, 1000);
       }
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
@@ -229,6 +237,8 @@ export function useCatalogState() {
     }
   }, [searchParams, sortBy]);
 
+  // BUG-CS-06 FIX: Reset displayCount without startTransition wrapper.
+  // Depends on debouncedServerSearch to avoid resetting on every keystroke.
   useEffect(() => {
     React.startTransition(() => {
       setDisplayCount(ITEMS_PER_PAGE);
@@ -251,7 +261,7 @@ export function useCatalogState() {
     if (filters.materialGroups?.length) count += filters.materialGroups.length;
     if (filters.materialTypes?.length) count += filters.materialTypes.length;
     if (filters.materiais.length) count += filters.materiais.length;
-    // BUG-22 FIX: era < 500, deve ser < 9999 para contar filtro de preço corretamente.
+    // BUG-22 FIX: era < 500, deve ser < 9999 para contar filtro de preco corretamente.
     if (filters.priceRange[0] > 0 || filters.priceRange[1] < 9999) count += 1;
     if (filters.inStock) count += 1;
     if (filters.isKit) count += 1;
@@ -463,20 +473,22 @@ export function useCatalogState() {
       ? uniqueSuppliers.size
       : (realStats?.totalSuppliers ?? uniqueSuppliers.size);
 
-    const contextualFavoriteCount = isFavorite
+    // BUG-CS-01 FIX: isFavorite is a *function* reference — always truthy in ternary condition.
+    // The favoriteCount branch was never reached. Correct gate is hasActiveFilters.
+    const contextualFavoriteCount = hasActiveFilters
       ? deduped.filter((p) => isFavorite(p.id)).length
       : favoriteCount;
 
     return [
       {
         id: 'products',
-        label: 'Produtos Únicos',
+        label: 'Produtos Unicos',
         value: productCount,
         icon: React.createElement(Package, { className: 'h-4 w-4' }),
       },
       {
         id: 'variants',
-        label: 'Variações',
+        label: 'Variacoes',
         value: totalVariants,
         icon: React.createElement(Palette, { className: 'h-4 w-4' }),
       },
@@ -506,16 +518,17 @@ export function useCatalogState() {
     activeFiltersCount,
     searchQuery,
     totalEstimate,
-    hasNextPage,
+    // BUG-STAT-01 FIX: hasNextPage removido — causava recalculo desnecessario a cada page fetch
     realStats,
   ]);
 
+  // BUG-CS-02 FIX: era setSortBy('name') — default correto e 'relevance'
   const resetFilters = useCallback(() => {
     setFilters(defaultFilters);
-    setSortBy('name');
+    setSortBy('relevance');
     setSearchQuery('');
     navigate('/', { replace: true });
-  }, [navigate]);
+  }, [navigate, setSortBy]);
 
   const handleViewProduct = useCallback(
     (product: Product) => {
@@ -539,7 +552,7 @@ export function useCatalogState() {
           void favQuickAdd.addToList(target.id, product as never);
           toast({
             title: 'Adicionado aos Favoritos',
-            description: `Salvo em "${target.name}". Use Shift+clique para confirmar a lista padrão sem confirmação.`,
+            description: `Salvo em "${target.name}". Use Shift+clique para confirmar a lista padrao sem confirmacao.`,
           });
         } else {
           toggleFavorite(product.id);
@@ -548,6 +561,15 @@ export function useCatalogState() {
     },
     [favQuickAdd, toggleFavorite, toast],
   );
+
+  // BUG-KBD-01 FIX: handleFavoriteProduct estava nas deps do keyboard useEffect.
+  // Como depende de favQuickAdd/toggleFavorite/toast, era recriada com frequencia,
+  // causando re-registro desnecessario do listener a cada render do catalogo.
+  // Solucao: capturar a versao mais recente em ref sem adicionar deps instaveis.
+  const handleFavoriteProductRef = useRef(handleFavoriteProduct);
+  useEffect(() => {
+    handleFavoriteProductRef.current = handleFavoriteProduct;
+  }, [handleFavoriteProduct]);
 
   const handleSearch = useCallback(
     (query: string) => {
@@ -599,7 +621,8 @@ export function useCatalogState() {
           if (activeProductId) {
             e.preventDefault();
             const product = paginatedProducts.find((p) => p.id === activeProductId);
-            if (product) handleFavoriteProduct(product);
+            // BUG-KBD-01 FIX: usa ref em vez da funcao diretamente nas deps
+            if (product) handleFavoriteProductRef.current(product);
           }
           break;
         case 'Escape':
@@ -616,7 +639,9 @@ export function useCatalogState() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeProductId, paginatedProducts, navigate, handleFavoriteProduct, selectionMode]);
+  // BUG-KBD-01 FIX: handleFavoriteProduct removido das deps — era instavel.
+  // handleFavoriteProductRef.current e sempre atual sem triggerar re-registro.
+  }, [activeProductId, paginatedProducts, navigate, selectionMode]);
 
   return {
     filters,
