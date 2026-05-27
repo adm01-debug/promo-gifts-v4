@@ -225,8 +225,9 @@ export async function fetchPromobrindProducts(options?: {
               countMode,
             });
             consecutiveErrors = 0;
+          } else {
+            throw fallbackErr;
           }
-          throw fallbackErr;
         }
       }
 
