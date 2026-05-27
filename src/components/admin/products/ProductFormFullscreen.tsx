@@ -35,6 +35,7 @@ interface ProductFormFullscreenProps {
   isEdit: boolean;
   /** BUG-03: ref populated by ProductEngravingSection with flushLocalAreas */
   engravingFlushRef?: React.MutableRefObject<((id: string) => Promise<void>) | null>;
+  lastPriceUpdate?: { date: string; user: string } | null;
 }
 
 const STEPS: StepDef[] = [
@@ -58,6 +59,7 @@ export function ProductFormFullscreen({
   isSaving,
   isEdit,
   engravingFlushRef,
+  lastPriceUpdate,
 }: ProductFormFullscreenProps) {
   const [images, setImages] = useState<string[]>(initialImages);
   const [skuManuallyEdited, setSkuManuallyEdited] = useState(isEdit);
@@ -287,6 +289,7 @@ export function ProductFormFullscreen({
                 generateSeoAI={generateSeoAI}
                 isSeoGenerating={isSeoGenerating}
                 engravingFlushRef={engravingFlushRef}
+                lastPriceUpdate={lastPriceUpdate}
               />
             </motion.div>
           </AnimatePresence>
