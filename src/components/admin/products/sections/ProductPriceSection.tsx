@@ -3,8 +3,9 @@
  */
 import { Input } from '@/components/ui/input';
 import { FieldLabel, SectionCard, type FormSectionProps } from '../ProductFormHelpers';
-import { Tag } from 'lucide-react';
+import { Tag, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatPriceDateLong } from '@/utils/price-freshness';
 
 interface Props extends FormSectionProps {
   supplierMarkup: number | null;
@@ -13,6 +14,7 @@ interface Props extends FormSectionProps {
   onCostPriceDisplayChange: (v: string) => void;
   onSalePriceDisplayChange: (v: string) => void;
   onSalePriceManualEdit: () => void;
+  lastPriceUpdate?: { date: string; user: string } | null;
 }
 
 export function ProductPriceSection({
@@ -27,6 +29,7 @@ export function ProductPriceSection({
   onCostPriceDisplayChange,
   onSalePriceDisplayChange,
   onSalePriceManualEdit,
+  lastPriceUpdate,
 }: Props) {
   const salePrice = watch('sale_price') ?? 0;
   const suggestedPrice = watch('suggested_price') ?? 0;
@@ -185,6 +188,15 @@ export function ProductPriceSection({
             <option value={60}>60 dias (padrão)</option>
             <option value={90}>90 dias</option>
           </select>
+          {lastPriceUpdate && (
+            <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+              <History className="h-3 w-3" />
+              <span>
+                Alterado por <strong>{lastPriceUpdate.user}</strong> em{' '}
+                {formatPriceDateLong(new Date(lastPriceUpdate.date))}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </SectionCard>

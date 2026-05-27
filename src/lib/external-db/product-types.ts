@@ -199,14 +199,34 @@ export const PRODUCT_SELECT_FIELDS_WITH_SALE =
   'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
   'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
   'materials, dimensions, min_quantity, created_at, updated_at, price_updated_at, ' +
+  'price_freshness_threshold_days, ' +
   'is_featured, is_bestseller, is_new, is_on_sale, is_kit, gender, ' +
   'height_cm, width_cm, length_cm, diameter_cm, weight_g, capacity_ml, ' +
   'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
   'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3';
 
-export const PRODUCT_SELECT_FIELDS_WITH_SALE_NO_THRESHOLD = PRODUCT_SELECT_FIELDS_WITH_SALE;
+export const PRODUCT_SELECT_FIELDS_WITH_SALE_NO_THRESHOLD =
+  'id, name, sku, sale_price, cost_price, images, primary_image_url, ' +
+  'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
+  'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
+  'materials, dimensions, min_quantity, created_at, updated_at, price_updated_at, ' +
+  'is_featured, is_bestseller, is_new, is_on_sale, is_kit, gender, ' +
+  'height_cm, width_cm, length_cm, diameter_cm, weight_g, capacity_ml, ' +
+  'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
+  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3';
 
 export const PRODUCT_SELECT_FIELDS_LEGACY =
+  'id, name, sku, cost_price, images, primary_image_url, ' +
+  'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
+  'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
+  'materials, dimensions, min_quantity, created_at, updated_at, price_updated_at, ' +
+  'price_freshness_threshold_days, ' +
+  'is_featured, is_bestseller, is_new, is_on_sale, is_kit, ' +
+  'height_cm, width_cm, length_cm, diameter_cm, weight_g, capacity_ml, ' +
+  'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
+  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3';
+
+export const PRODUCT_SELECT_FIELDS_LEGACY_NO_THRESHOLD =
   'id, name, sku, cost_price, images, primary_image_url, ' +
   'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
   'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
@@ -216,9 +236,18 @@ export const PRODUCT_SELECT_FIELDS_LEGACY =
   'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
   'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3';
 
-export const PRODUCT_SELECT_FIELDS_LEGACY_NO_THRESHOLD = PRODUCT_SELECT_FIELDS_LEGACY;
-
 export const PRODUCT_SELECT_FIELDS_DETAIL =
+  'id, name, sku, sale_price, cost_price, images, primary_image_url, ' +
+  'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
+  'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
+  'materials, dimensions, min_quantity, created_at, updated_at, price_updated_at, ' +
+  'price_freshness_threshold_days, ' +
+  'is_featured, is_bestseller, is_new, is_on_sale, is_kit, tags, ' +
+  'height_cm, width_cm, length_cm, diameter_cm, weight_g, capacity_ml, ' +
+  'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
+  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3';
+
+export const PRODUCT_SELECT_FIELDS_DETAIL_NO_THRESHOLD =
   'id, name, sku, sale_price, cost_price, images, primary_image_url, ' +
   'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
   'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
@@ -227,8 +256,6 @@ export const PRODUCT_SELECT_FIELDS_DETAIL =
   'height_cm, width_cm, length_cm, diameter_cm, weight_g, capacity_ml, ' +
   'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
   'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3';
-
-export const PRODUCT_SELECT_FIELDS_DETAIL_NO_THRESHOLD = PRODUCT_SELECT_FIELDS_DETAIL;
 
 // #2: also trigger fallback when orderBy hits a missing column
 export function shouldFallbackSelect(err: unknown) {

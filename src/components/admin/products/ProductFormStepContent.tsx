@@ -86,6 +86,7 @@ interface StepContentProps {
   isSeoGenerating: boolean;
   /** BUG-03: ref populated by ProductEngravingSection with flushLocalAreas */
   engravingFlushRef?: React.MutableRefObject<((id: string) => Promise<void>) | null>;
+  lastPriceUpdate?: { date: string; user: string } | null;
 }
 
 export function ProductFormStepContent({
@@ -114,6 +115,7 @@ export function ProductFormStepContent({
   generateSeoAI,
   isSeoGenerating,
   engravingFlushRef,
+  lastPriceUpdate,
 }: StepContentProps) {
   const { register, setValue, errors } = formProps;
 
@@ -176,6 +178,7 @@ export function ProductFormStepContent({
             onCostPriceDisplayChange={onCostPriceDisplayChange}
             onSalePriceDisplayChange={onSalePriceDisplayChange}
             onSalePriceManualEdit={onSalePriceManualEdit}
+            lastPriceUpdate={lastPriceUpdate}
           />
           <ProductFiscalSection {...(formProps as unknown as FormSectionProps)} />
         </>

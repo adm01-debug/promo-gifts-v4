@@ -10,6 +10,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { productFormSchema, type ProductFormData, defaultFormValues } from './ProductFormSchema';
+import { useSystemSettings } from '@/hooks/admin/useSystemSettings';
 import { ProductPreviewPanel } from './ProductPreviewPanel';
 import { HorizontalStepper, type StepDef } from './HorizontalStepper';
 import { ProductFormStepContent } from './ProductFormStepContent';
@@ -35,6 +36,7 @@ interface ProductFormFullscreenProps {
   isEdit: boolean;
   /** BUG-03: ref populated by ProductEngravingSection with flushLocalAreas */
   engravingFlushRef?: React.MutableRefObject<((id: string) => Promise<void>) | null>;
+  lastPriceUpdate?: { date: string; user: string } | null;
 }
 
 const STEPS: StepDef[] = [
@@ -58,6 +60,7 @@ export function ProductFormFullscreen({
   isSaving,
   isEdit,
   engravingFlushRef,
+  lastPriceUpdate,
 }: ProductFormFullscreenProps) {
   const [images, setImages] = useState<string[]>(initialImages);
   const [skuManuallyEdited, setSkuManuallyEdited] = useState(isEdit);
@@ -71,11 +74,21 @@ export function ProductFormFullscreen({
     return stored !== null ? stored === 'true' : true;
   });
 
+  const { getSetting } = useSystemSettings();
+  const globalDefault = parseInt(getSetting('default_price_freshness_threshold', '60'), 10);
+
   const { register, handleSubmit, setValue, watch, trigger, getValues, formState: { errors } } =
     useForm<ProductFormData>({
       resolver: zodResolver(productFormSchema),
       defaultValues: { ...defaultFormValues, ...initialData },
     });
+    
+  // Update threshold for new products if global default changes or is loaded
+  useEffect(() => {
+    if (!isEdit && !initialData?.price_freshness_threshold_days) {
+      setValue('price_freshness_threshold_days', globalDefault);
+    }
+  }, [globalDefault, isEdit, initialData, setValue]);
 
   const formValues = watch();
   const supplierId = formValues.supplier_id || '';
@@ -287,6 +300,7 @@ export function ProductFormFullscreen({
                 generateSeoAI={generateSeoAI}
                 isSeoGenerating={isSeoGenerating}
                 engravingFlushRef={engravingFlushRef}
+                lastPriceUpdate={lastPriceUpdate}
               />
             </motion.div>
           </AnimatePresence>

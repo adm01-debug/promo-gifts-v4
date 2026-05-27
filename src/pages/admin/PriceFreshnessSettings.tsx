@@ -8,9 +8,9 @@
  * Rota: /admin/validade-precos (admin-only — protegida por AdminRoute).
  */
 import { useMemo, useState } from 'react';
-import { Trash2, Loader2, Filter } from 'lucide-react';
+import { Trash2, Loader2, Filter, Settings2, ShieldCheck, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -34,11 +34,16 @@ import {
   ALLOWED_FRESHNESS_THRESHOLDS,
 } from '@/hooks/products';
 import { formatPriceDateLong } from '@/utils/price-freshness';
+import { useSystemSettings } from '@/hooks/admin/useSystemSettings';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function PriceFreshnessSettings() {
   const { data: overrides, isLoading } = useAllFreshnessOverrides();
   const remove = useDeleteFreshnessOverride();
   const [filter, setFilter] = useState<'all' | '30' | '60' | '90'>('all');
+  
+  const { getSetting, updateSetting, isLoading: isSettingsLoading } = useSystemSettings();
+  const globalDefault = getSetting('default_price_freshness_threshold', '60');
 
   const filtered = useMemo(() => {
     if (!overrides) return [];
@@ -60,40 +65,89 @@ export default function PriceFreshnessSettings() {
         title="Validade de Preços | Admin"
         description="Configure a janela de validade do alerta de preço por produto (30, 60 ou 90 dias)."
       />
-      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
-        <div className="mb-6">
+      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-6 px-3 py-3 pb-24 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
+        <div className="flex flex-col gap-1">
           <h1
             data-testid="page-title-validade-precos"
             className="font-display text-2xl font-bold text-foreground"
           >
             Validade de Preços
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Produtos com janela de validade customizada. Sem override, o padrão do sistema é{' '}
-            <strong>60 dias</strong>.
+          <p className="text-sm text-muted-foreground">
+            Gerencie o tempo de expiração dos preços no catálogo e configure padrões globais.
           </p>
         </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-            <CardTitle className="text-base">Overrides ativos ({overrides?.length ?? 0})</CardTitle>
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <Select value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
-                <SelectTrigger className="h-8 w-[140px] text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  {ALLOWED_FRESHNESS_THRESHOLDS.map((d) => (
-                    <SelectItem key={d} value={String(d)}>
-                      {d} dias ({counts[String(d)] ?? 0})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardHeader>
+        <div className="grid gap-6 md:grid-cols-3">
+          <Card className="md:col-span-1">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Settings2 className="h-4 w-4 text-primary" />
+                <CardTitle className="text-base font-semibold">Padrão Global</CardTitle>
+              </div>
+              <CardDescription>
+                Define a validade padrão usada para todos os produtos que não possuem override manual.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Janela Padrão
+                </label>
+                {isSettingsLoading ? (
+                  <Skeleton className="h-9 w-full" />
+                ) : (
+                  <Select 
+                    value={globalDefault} 
+                    onValueChange={(v) => updateSetting.mutate({ key: 'default_price_freshness_threshold', value: v })}
+                    disabled={updateSetting.isPending}
+                  >
+                    <SelectTrigger className="h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="30">30 dias</SelectItem>
+                      <SelectItem value="60">60 dias</SelectItem>
+                      <SelectItem value="90">90 dias</SelectItem>
+                      <SelectItem value="120">120 dias</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+                <p className="text-[11px] text-muted-foreground">
+                  Alterar este valor afetará imediatamente o alerta de todos os produtos sem configuração específica.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="md:col-span-2">
+            <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-primary" />
+                  <CardTitle className="text-base font-semibold">Produtos com Override ({overrides?.length ?? 0})</CardTitle>
+                </div>
+                <CardDescription>
+                  Lista de produtos que possuem uma validade de preço específica configurada no cadastro.
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <Select value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
+                  <SelectTrigger className="h-8 w-[140px] text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    {ALLOWED_FRESHNESS_THRESHOLDS.map((d) => (
+                      <SelectItem key={d} value={String(d)}>
+                        {d} dias ({counts[String(d)] ?? 0})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
           <CardContent>
             {isLoading ? (
               <div className="flex items-center justify-center py-12 text-muted-foreground">
