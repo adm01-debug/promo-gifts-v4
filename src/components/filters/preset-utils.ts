@@ -100,26 +100,21 @@ export function summarizeFilters(filters: FilterState): string {
     (filters.colorVariations?.length || 0) +
     (filters.colorNuances?.length || 0) +
     (filters.colors?.length || 0);
-  if (totalCores > 0)
-    parts.push(`${totalCores} cor${totalCores > 1 ? 'es' : ''}`);
+  if (totalCores > 0) parts.push(`${totalCores} cor${totalCores > 1 ? 'es' : ''}`);
   if (filters.categories?.length)
     parts.push(`${filters.categories.length} categoria${filters.categories.length > 1 ? 's' : ''}`);
   if (filters.suppliers?.length)
     parts.push(`${filters.suppliers.length} fornecedor${filters.suppliers.length > 1 ? 'es' : ''}`);
-  if (filters.publicoAlvo?.length)
-    parts.push(`público-alvo`);
-  if (filters.datasComemorativas?.length)
-    parts.push(`datas comemorativas`);
-  if (filters.endomarketing?.length)
-    parts.push(`endomarketing`);
+  if (filters.publicoAlvo?.length) parts.push(`público-alvo`);
+  if (filters.datasComemorativas?.length) parts.push(`datas comemorativas`);
+  if (filters.endomarketing?.length) parts.push(`endomarketing`);
   if (filters.ramosAtividade?.length || filters.segmentosAtividade?.length)
     parts.push(`nichos/segmentos`);
   const totalMateriais =
     (filters.materialGroups?.length || 0) +
     (filters.materialTypes?.length || 0) +
     (filters.materiais?.length || 0);
-  if (totalMateriais > 0)
-    parts.push(`${totalMateriais} material${totalMateriais > 1 ? 'is' : ''}`);
+  if (totalMateriais > 0) parts.push(`${totalMateriais} material${totalMateriais > 1 ? 'is' : ''}`);
   if (filters.techniques?.length)
     parts.push(`${filters.techniques.length} técnica${filters.techniques.length > 1 ? 's' : ''}`);
   if (filters.tags?.length)
@@ -129,10 +124,8 @@ export function summarizeFilters(filters: FilterState): string {
   if (filters.sizes?.length)
     parts.push(`${filters.sizes.length} tamanho${filters.sizes.length > 1 ? 's' : ''}`);
   // BUG-SF-04 FIX: threshold era 500, correto é 9999
-  if (filters.priceRange?.[0] > 0 || filters.priceRange?.[1] < 9999)
-    parts.push('faixa de preço');
-  if (filters.minStock > 0)
-    parts.push(`estoque ≥ ${filters.minStock}`);
+  if (filters.priceRange?.[0] > 0 || filters.priceRange?.[1] < 9999) parts.push('faixa de preço');
+  if (filters.minStock > 0) parts.push(`estoque ≥ ${filters.minStock}`);
   if (filters.inStock) parts.push('em estoque');
   if (filters.isKit) parts.push('kits');
   if (filters.featured) parts.push('destaques');

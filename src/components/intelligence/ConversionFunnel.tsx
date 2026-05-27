@@ -73,13 +73,13 @@ export function ConversionFunnel({ days }: ConversionFunnelProps) {
           .from('product_views')
           .select('id', { count: 'exact', head: true })
           .gte('created_at', since),
-        // rls-allow: respeita can_view_all_sales; RLS filtra por seller
         supabase
+          // rls-allow: respeita can_view_all_sales; RLS filtra por seller
           .from('quotes')
           .select('id', { count: 'exact', head: true })
           .gte('created_at', since),
-        // rls-allow: respeita can_view_all_sales; RLS filtra por seller
         supabase
+          // rls-allow: respeita can_view_all_sales; RLS filtra por seller
           .from('orders')
           .select('id', { count: 'exact', head: true })
           .gte('created_at', since),

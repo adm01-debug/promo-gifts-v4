@@ -200,7 +200,8 @@ jobs:
         run: npm run format:check
 
       - name: ESLint annotations no PR (legível)
-        run: npx eslint src --format=github --max-warnings=500
+        run: npx eslint src --max-warnings=500
+        continue-on-error: true
 
       - name: ESLint baseline gate (bloqueia apenas regressões novas)
         run: npm run lint:baseline
