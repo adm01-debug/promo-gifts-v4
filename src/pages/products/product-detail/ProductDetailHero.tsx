@@ -112,6 +112,11 @@ export function ProductDetailHero({
             video={product.video ?? undefined}
             productVideos={product.productVideos as never}
             productName={product.name}
+            productId={id}
+            productPrice={product.price}
+            productSku={product.sku}
+            productMinQuantity={product.minQuantity}
+            shareUrl={typeof window !== 'undefined' ? window.location.href : undefined}
             colors={product.variations?.map((variation: ProductVariation) => ({
               name: variation.color?.name || 'Cor',
               hex: variation.color?.hex || '#CCC',

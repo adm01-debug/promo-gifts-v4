@@ -69,6 +69,13 @@ interface PromoFlixPlayerProps {
   isHls?: boolean;
   autoPlay?: boolean;
   className?: string;
+  /** Dados de venda — habilitam botão "Enviar pelo WhatsApp" */
+  productId?: string | null;
+  productPrice?: number | null;
+  productSku?: string | null;
+  productMinQuantity?: number | null;
+  /** URL pública que o cliente vai abrir (página do produto) */
+  shareUrl?: string | null;
 }
 
 export function PromoFlixPlayer({
@@ -79,7 +86,14 @@ export function PromoFlixPlayer({
   isHls = false,
   autoPlay = true,
   className,
+  productId,
+  productPrice,
+  productSku,
+  productMinQuantity,
+  shareUrl,
 }: PromoFlixPlayerProps) {
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const canShareOnWhatsApp = Boolean(productName);
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<number | null>(null);
@@ -1017,6 +1031,21 @@ export function PromoFlixPlayer({
               >
                 <Camera className="h-6 w-6 md:h-5 md:w-5" />
               </button>
+
+              {/* WhatsApp Share — sales-first */}
+              {canShareOnWhatsApp && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShareDialogOpen(true);
+                  }}
+                  className="flex items-center gap-1 rounded-full p-3 transition-colors hover:bg-[#25D366]/20 text-white/80 hover:text-[#25D366] md:p-2"
+                  aria-label="Enviar vídeo pelo WhatsApp"
+                  title="Enviar vídeo pelo WhatsApp"
+                >
+                  <MessageCircle className="h-6 w-6 md:h-5 md:w-5" />
+                </button>
+              )}
             </div>
 
             {/* Speed - Simplified on mobile */}
@@ -1107,8 +1136,22 @@ export function PromoFlixPlayer({
               )}
             </button>
         </div>
+        </div>
       </div>
-    </div>
+
+      {/* WhatsApp share dialog (sales-first) */}
+      {canShareOnWhatsApp && (
+        <VideoShareWhatsAppDialog
+          open={shareDialogOpen}
+          onOpenChange={setShareDialogOpen}
+          productName={productName || ''}
+          videoTitle={title}
+          shareUrl={shareUrl}
+          productPrice={productPrice}
+          productSku={productSku}
+          productMinQuantity={productMinQuantity}
+        />
+      )}
     </div>
   );
 }

@@ -33,6 +33,12 @@ interface GalleryVideoPlayerProps {
   productName: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Dados de venda para o pitch via WhatsApp */
+  productId?: string | null;
+  productPrice?: number | null;
+  productSku?: string | null;
+  productMinQuantity?: number | null;
+  shareUrl?: string | null;
 }
 
 export function GalleryVideoPlayer({
@@ -40,6 +46,11 @@ export function GalleryVideoPlayer({
   productName,
   open,
   onOpenChange,
+  productId,
+  productPrice,
+  productSku,
+  productMinQuantity,
+  shareUrl,
 }: GalleryVideoPlayerProps) {
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
   const v = productVideos[activeVideoIndex];
@@ -99,6 +110,11 @@ export function GalleryVideoPlayer({
                 title={v?.title || undefined}
                 productName={productName}
                 autoPlay
+                productId={productId}
+                productPrice={productPrice}
+                productSku={productSku}
+                productMinQuantity={productMinQuantity}
+                shareUrl={shareUrl}
               />
             ) : (
               <div className="flex aspect-video w-full items-center justify-center text-sm text-white/60">
