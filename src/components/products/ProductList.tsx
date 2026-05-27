@@ -2,6 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { ProductListItem } from './ProductListItem';
 import { BulkActionBar } from './BulkActionBar';
 import { AddToCollectionModal } from '@/components/collections/AddToCollectionModal';
+import { AlertTriangle, RotateCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
 import type { Product } from '@/hooks/products';
 import type { ActiveColorFilter } from '@/utils/color-image-resolver';
@@ -12,6 +14,8 @@ import { ProductCardSkeleton } from '@/components/loading/ModernSkeletons';
 export interface ProductListProps {
   products: Product[];
   isLoading?: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
   onProductClick?: (productId: string) => void;
   onViewProduct?: (product: Product) => void;
   onShareProduct?: (product: Product) => void;
@@ -82,6 +86,8 @@ function ProductListItemWrapper({
 export function ProductList({
   products,
   isLoading = false,
+  isError,
+  onRetry,
   onProductClick,
   onViewProduct,
   onShareProduct,
@@ -174,6 +180,28 @@ export function ProductList({
   const handleBulkCollection = useCallback(() => {
     setCollectionModalOpen(true);
   }, []);
+
+  if (isError) {
+    return (
+      <div className="flex animate-fade-in flex-col items-center justify-center py-16 text-center">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+          <AlertTriangle className="h-8 w-8" />
+        </div>
+        <h3 className="mb-2 font-display text-lg font-semibold text-foreground">
+          Ops! Falha ao carregar lista
+        </h3>
+        <p className="mb-6 max-w-md text-sm text-muted-foreground">
+          Não conseguimos conectar ao catálogo agora. Verifique sua conexão ou tente novamente.
+        </p>
+        {onRetry && (
+          <Button onClick={onRetry} variant="outline" className="gap-2">
+            <RotateCw className="h-4 w-4" />
+            Tentar novamente
+          </Button>
+        )}
+      </div>
+    );
+  }
 
   if (products.length === 0 && !isLoading) {
     return (

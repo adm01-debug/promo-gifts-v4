@@ -229,6 +229,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const timer = window.setTimeout(() => {
       console.warn('[AuthContext] Watchdog: isLoading travado por 12s — forçando false');
       setIsLoading(false);
+      // BUG-FIX: Se travar, avisa o usuário que algo está errado
+      toast.error('O carregamento está demorando mais que o esperado. Algumas funcionalidades podem estar indisponíveis.');
     }, 12000);
     return () => window.clearTimeout(timer);
   }, [isLoading, setIsLoading]);

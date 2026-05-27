@@ -1,5 +1,6 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Play, Maximize2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getCdnUrl } from '@/utils/image-utils';
@@ -87,7 +88,7 @@ export function ProductGallery({
       ? [video, ...videos]
       : videos;
 
-  const allMedia = [...displayImages, ...displayVideos];
+  const allMedia = useMemo(() => [...displayImages, ...displayVideos], [displayImages, displayVideos]);
   const isVideo = useCallback(
     (index: number) => index >= displayImages.length,
     [displayImages.length],
@@ -185,39 +186,61 @@ export function ProductGallery({
             onWheel={handleWheel}
           >
             {!isVideo(selectedIndex) && <div className="absolute inset-0 bg-white" />}
-            {isVideo(selectedIndex) ? (
-              <video
-                src={allMedia[selectedIndex]}
-                controls
-                className="h-full w-full animate-fade-in object-contain"
-                poster={displayImages[0]}
-              />
-            ) : (
-              <img
-                src={getCdnUrl(allMedia[selectedIndex], 'large')}
-                alt={`${productName} - Imagem ${selectedIndex + 1}`}
-                title={productName}
-                className={cn(
-                  'h-full w-full object-contain transition-all duration-700 ease-out',
-                  zoom > 1 && 'cursor-grab',
-                  isPanning && 'cursor-grabbing',
-                  isAnimating && 'scale-95 opacity-80',
-                  isImageLoading ? 'scale-105 opacity-40 blur-md' : 'scale-100 opacity-100 blur-0',
-                )}
-                style={{
-                  transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
-                }}
-                draggable={false}
-                onLoad={() => setIsImageLoading(false)}
-                onError={(e) => {
-                  const img = e.currentTarget;
-                  if (!img.dataset.fallback) {
-                    img.dataset.fallback = '1';
-                    img.src = allMedia[selectedIndex];
-                  }
-                }}
-              />
-            )}
+            <AnimatePresence mode="wait">
+              {isVideo(selectedIndex) ? (
+                <motion.video
+                  key={allMedia[selectedIndex]}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  src={allMedia[selectedIndex]}
+                  controls
+                  className="h-full w-full object-contain"
+                  poster={displayImages[0]}
+                />
+              ) : (
+                <motion.div
+                  key={allMedia[selectedIndex]}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="h-full w-full"
+                  drag="x"
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={0.2}
+                  onDragEnd={(_e, info) => {
+                    if (info.offset.x < -50) goToNext();
+                    else if (info.offset.x > 50) goToPrevious();
+                  }}
+                >
+                  <img
+                    src={getCdnUrl(allMedia[selectedIndex], 'large')}
+                    alt={`${productName} - Imagem ${selectedIndex + 1}`}
+                    title={productName}
+                    className={cn(
+                      'h-full w-full object-contain transition-all duration-700 ease-out',
+                      zoom > 1 && 'cursor-grab',
+                      isPanning && 'cursor-grabbing',
+                      isAnimating && 'scale-95 opacity-80',
+                      isImageLoading ? 'scale-105 opacity-40 blur-md' : 'scale-100 opacity-100 blur-0',
+                    )}
+                    style={{
+                      transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
+                    }}
+                    draggable={false}
+                    onLoad={() => setIsImageLoading(false)}
+                    onError={(e) => {
+                      const img = e.currentTarget;
+                      if (!img.dataset.fallback) {
+                        img.dataset.fallback = '1';
+                        img.src = allMedia[selectedIndex];
+                      }
+                    }}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Play button */}
@@ -306,11 +329,14 @@ export function ProductGallery({
         <GalleryColorVariations
           colors={colors}
           selectedColorIndex={selectedColorIndex}
-          onColorSelect={(index) => {
-            setSelectedIndex(0);
-            resetZoom();
-            onColorSelect?.(index);
-          }}
+          onColorSelect={useCallback(
+            (index: number) => {
+              setSelectedIndex(0);
+              resetZoom();
+              onColorSelect?.(index);
+            },
+            [resetZoom, onColorSelect],
+          )}
         />
       )}
 

@@ -42,7 +42,6 @@ function ProtectedAppLayout() {
   );
 }
 
-/** Location-aware Suspense that renders route-specific skeletons. */
 function RouteSuspense({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
 
@@ -51,19 +50,34 @@ function RouteSuspense({ children }: { children: ReactNode }) {
     NProgress.start();
     performanceTracker.startRouteTransition(pathname);
 
-    // Complete progress after a short delay (once the new route should be rendering)
-    const timer = setTimeout(() => {
+    // No longer using a fixed delay: we wait for the Suspense to resolve.
+    // NProgress.done() should be called when the component is mounted.
+    // However, since this is a global wrapper, we'll use a safer approach.
+    return () => {
       NProgress.done();
       performanceTracker.endRouteTransition(pathname);
-    }, 200);
-
-    return () => {
-      clearTimeout(timer);
-      NProgress.done();
     };
   }, [pathname]);
 
-  return <Suspense fallback={getFallback(pathname)}>{children}</Suspense>;
+  return (
+    <Suspense
+      fallback={
+        <div onAnimationStart={() => NProgress.start()}>
+          {getFallback(pathname)}
+        </div>
+      }
+    >
+      <RouteSuspenseDone>{children}</RouteSuspenseDone>
+    </Suspense>
+  );
+}
+
+/** Helper to signal completion when Suspense resolves */
+function RouteSuspenseDone({ children }: { children: ReactNode }) {
+  useEffect(() => {
+    NProgress.done();
+  }, []);
+  return <>{children}</>;
 }
 
 /**

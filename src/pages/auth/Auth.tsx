@@ -236,8 +236,10 @@ export default function Auth() {
   }, []);
 
   // Redirect if already logged in (only on initial load)
+  const navigatedRef = useRef(false);
   useEffect(() => {
-    if (user && !authLoading && !isSubmitting) {
+    if (user && !authLoading && !isSubmitting && !navigatedRef.current) {
+      navigatedRef.current = true;
       const target = resolveRedirectTargetCb();
       setTimeout(() => navigate(target, { replace: true }), 100);
     }
