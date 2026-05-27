@@ -1,4 +1,4 @@
-import './lib/console-filter'; // Install filter early
+import './lib/console-filter';
 import { Fragment } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HelmetProvider } from 'react-helmet-async';
