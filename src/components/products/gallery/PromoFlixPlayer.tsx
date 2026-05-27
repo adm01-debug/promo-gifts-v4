@@ -41,6 +41,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 const PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
 
@@ -95,6 +97,7 @@ export function PromoFlixPlayer({
   const [scanProgress, setScanProgress] = useState(0);
   const [showRaioXPanel, setShowRaioXPanel] = useState(false);
   const [selectedHotspot, setSelectedHotspot] = useState<number | null>(null);
+  const [hoverSeekPct, setHoverSeekPct] = useState<number | null>(null);
 
   // Mock hotspots based on video aspect ratio (for visual simulation)
   const hotspots = useMemo(() => [
@@ -485,10 +488,20 @@ export function PromoFlixPlayer({
         onDoubleClick={toggleFullscreen}
       />
 
-      {/* Loading spinner */}
+      {/* Cinematic vignette for legibility */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(0,0,0,0.45)_100%)]" />
+
+      {/* Loading state — branded */}
       {isLoading && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-white/20 border-t-primary" />
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-4">
+          <div className="relative h-14 w-14">
+            <div className="absolute inset-0 rounded-full border-2 border-white/10" />
+            <div className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-primary border-r-primary/60" />
+            <div className="absolute inset-2 rounded-full bg-primary/10 backdrop-blur-sm flex items-center justify-center">
+              <Play className="h-4 w-4 fill-primary text-primary" />
+            </div>
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/60">Carregando</span>
         </div>
       )}
 
@@ -641,48 +654,60 @@ export function PromoFlixPlayer({
         )}
       </AnimatePresence>
 
-      {/* Center play overlay */}
-      {!isPlaying && !isLoading && (
-        <button
-          onClick={togglePlay}
-          className="absolute inset-0 flex items-center justify-center bg-black/30 transition-opacity"
-          aria-label="Reproduzir"
-        >
-          <span className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/90 text-primary-foreground shadow-2xl transition-transform hover:scale-110">
-            <Play className="h-10 w-10 fill-current" />
-          </span>
-        </button>
-      )}
+      {/* Center play overlay — cinematic */}
+      <AnimatePresence>
+        {!isPlaying && !isLoading && (
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={togglePlay}
+            className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-black/10 via-transparent to-black/40 group/play"
+            aria-label="Reproduzir"
+          >
+            <span className="relative flex h-24 w-24 items-center justify-center">
+              <span className="absolute inset-0 rounded-full bg-primary/30 blur-2xl group-hover/play:bg-primary/50 transition-all" />
+              <span className="absolute inset-0 rounded-full border border-white/20 scale-110 group-hover/play:scale-125 transition-transform duration-500" />
+              <span className="relative flex h-20 w-20 items-center justify-center rounded-full bg-white/95 text-black shadow-[0_8px_32px_rgba(0,0,0,0.5)] transition-transform duration-300 group-hover/play:scale-110">
+                <Play className="h-9 w-9 fill-current ml-1" />
+              </span>
+            </span>
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       {/* Top bar: brand + title */}
       <div
         className={cn(
-          'pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent p-4 transition-opacity duration-300',
-          showControls || !isPlaying ? 'opacity-100' : 'opacity-0',
+          'pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-between bg-gradient-to-b from-black/70 via-black/30 to-transparent px-5 py-4 transition-all duration-500',
+          showControls || !isPlaying ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2',
         )}
       >
-        <div className="flex items-center gap-2">
-          <div className="relative overflow-hidden rounded bg-primary px-2 py-0.5 shadow-lg shadow-primary/20">
-            <span className="relative z-10 text-[10px] font-black uppercase tracking-[0.2em] text-primary-foreground">
+        <div className="flex items-center gap-3">
+          <div className="relative overflow-hidden rounded-md bg-gradient-to-br from-primary to-primary/70 px-2.5 py-1 shadow-lg shadow-primary/30 ring-1 ring-white/20">
+            <span className="relative z-10 text-[11px] font-black uppercase tracking-[0.25em] text-primary-foreground">
               PromoFlix
             </span>
-            <motion.div 
-              className="absolute inset-0 bg-white/20"
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
               initial={{ x: '-100%' }}
-              animate={{ x: '100%' }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+              animate={{ x: '200%' }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: "linear", repeatDelay: 1 }}
             />
           </div>
           {title && (
-            <span className="text-sm font-semibold text-white/90 drop-shadow-md tracking-tight">{title}</span>
+            <div className="flex flex-col leading-tight">
+              <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/50">Você está assistindo</span>
+              <span className="text-sm font-semibold text-white drop-shadow-md tracking-tight max-w-[420px] truncate">{title}</span>
+            </div>
           )}
         </div>
 
         {isRaioXActive && (
           <div className="flex items-center gap-2 pointer-events-auto">
-            <div className="flex items-center gap-2 bg-primary/20 backdrop-blur-md border border-primary/30 rounded-full px-3 py-1">
-              <Zap className="h-3.5 w-3.5 text-primary animate-pulse" />
-              <span className="text-[10px] font-bold text-primary tracking-widest uppercase">Modo Raio-X</span>
+            <div className="flex items-center gap-2 bg-primary/20 backdrop-blur-md border border-primary/40 rounded-full px-3 py-1.5 shadow-lg shadow-primary/20">
+              <Zap className="h-3.5 w-3.5 text-primary animate-pulse fill-primary/40" />
+              <span className="text-[10px] font-black text-white tracking-[0.2em] uppercase">Modo Raio-X</span>
             </div>
           </div>
         )}
@@ -719,18 +744,82 @@ export function PromoFlixPlayer({
           />
         </div>
 
-        <div className="flex items-center gap-2">
+      {/* Bottom controls */}
+      <div
+        className={cn(
+          'absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black via-black/80 to-transparent px-5 pt-12 pb-4 transition-all duration-500',
+          showControls || !isPlaying ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0',
+        )}
+      >
+        {/* Seek bar with hover preview */}
+        <div
+          className="group/seek relative mb-3 flex items-center py-2"
+          onMouseMove={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const pct = ((e.clientX - rect.left) / rect.width) * 100;
+            setHoverSeekPct(Math.max(0, Math.min(100, pct)));
+          }}
+          onMouseLeave={() => setHoverSeekPct(null)}
+        >
+          {/* Hover time tooltip */}
+          {hoverSeekPct !== null && duration > 0 && (
+            <div
+              className="pointer-events-none absolute -top-2 -translate-x-1/2 -translate-y-full rounded-md bg-black/90 backdrop-blur-md border border-white/10 px-2 py-1 text-[11px] font-bold tabular-nums text-white shadow-xl whitespace-nowrap"
+              style={{ left: `${hoverSeekPct}%` }}
+            >
+              {formatTime((hoverSeekPct / 100) * duration)}
+              <span className="absolute left-1/2 -translate-x-1/2 top-full h-0 w-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black/90" />
+            </div>
+          )}
+
+          <div className="relative h-1 w-full rounded-full bg-white/20 transition-all duration-200 group-hover/seek:h-1.5">
+            {/* Buffered */}
+            <div
+              className="absolute inset-y-0 left-0 rounded-full bg-white/30"
+              style={{ width: `${bufferedPct}%` }}
+            />
+            {/* Hover ghost */}
+            {hoverSeekPct !== null && (
+              <div
+                className="absolute inset-y-0 left-0 rounded-full bg-white/15"
+                style={{ width: `${hoverSeekPct}%` }}
+              />
+            )}
+            {/* Progress */}
+            <div
+              className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-primary to-primary/80 shadow-[0_0_8px_rgba(var(--primary-rgb),0.6)]"
+              style={{ width: `${progressPct}%` }}
+            />
+            {/* Thumb */}
+            <div
+              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-3.5 w-3.5 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.6)] ring-2 ring-primary opacity-0 group-hover/seek:opacity-100 transition-opacity"
+              style={{ left: `${progressPct}%` }}
+            />
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={0.1}
+            value={progressPct}
+            onChange={onSeek}
+            aria-label="Linha do tempo"
+            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+          />
+        </div>
+
+        <div className="flex items-center gap-1">
           <button
             onClick={togglePlay}
-            className="rounded-full p-2 transition-colors hover:bg-white/15"
+            className="rounded-full p-2 transition-all hover:bg-white/15 hover:scale-110 active:scale-95"
             aria-label={isPlaying ? 'Pausar' : 'Reproduzir'}
           >
-            {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+            {isPlaying ? <Pause className="h-5 w-5 fill-current" /> : <Play className="h-5 w-5 fill-current" />}
           </button>
 
           <button
             onClick={() => seekBy(-10)}
-            className="rounded-full p-2 transition-colors hover:bg-white/15"
+            className="rounded-full p-2 transition-all hover:bg-white/15 hover:-rotate-12 active:scale-95"
             aria-label="Voltar 10 segundos"
             title="Voltar 10s (J / ←)"
           >
@@ -738,7 +827,7 @@ export function PromoFlixPlayer({
           </button>
           <button
             onClick={() => seekBy(10)}
-            className="rounded-full p-2 transition-colors hover:bg-white/15"
+            className="rounded-full p-2 transition-all hover:bg-white/15 hover:rotate-12 active:scale-95"
             aria-label="Avançar 10 segundos"
             title="Avançar 10s (L / →)"
           >
@@ -749,25 +838,30 @@ export function PromoFlixPlayer({
           <div className="group/vol flex items-center">
             <button
               onClick={toggleMute}
-              className="rounded-full p-2 transition-colors hover:bg-white/15"
+              className="rounded-full p-2 transition-all hover:bg-white/15 hover:scale-110 active:scale-95"
               aria-label={isMuted ? 'Ativar som' : 'Mutar'}
             >
               {volumeIcon}
             </button>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.05}
-              value={isMuted ? 0 : volume}
-              onChange={(e) => setVol(Number(e.target.value))}
-              aria-label="Volume"
-              className="w-0 cursor-pointer accent-primary transition-all group-hover/vol:ml-1 group-hover/vol:w-20"
-            />
+            <div className="overflow-hidden">
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.05}
+                value={isMuted ? 0 : volume}
+                onChange={(e) => setVol(Number(e.target.value))}
+                aria-label="Volume"
+                className="w-0 cursor-pointer accent-primary transition-all duration-300 group-hover/vol:ml-2 group-hover/vol:w-24"
+              />
+            </div>
           </div>
 
-          <div className="ml-1 text-sm font-medium tabular-nums text-white/90">
-            {formatTime(currentTime)} <span className="text-white/50">/ {formatTime(duration)}</span>
+          {/* Time */}
+          <div className="ml-3 flex items-baseline gap-1.5 font-mono text-[13px] tabular-nums">
+            <span className="font-semibold text-white">{formatTime(currentTime)}</span>
+            <span className="text-white/30">/</span>
+            <span className="text-white/50">{formatTime(duration)}</span>
           </div>
 
           <div className="flex-1" />
