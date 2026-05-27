@@ -189,16 +189,27 @@ export function useFilterPresets(context: string = 'catalog') {
       if (!user) return;
       try {
         // Remove default from all presets of this context
-        await supabase.from('saved_filters').update({ is_default: false }).eq('category', context);
+        const { error: resetError } = await supabase
+          .from('saved_filters')
+          .update({ is_default: false })
+          .eq('category', context);
+
+        if (resetError) throw resetError;
 
         // Set selected as default
         if (id) {
-          await supabase.from('saved_filters').update({ is_default: true }).eq('id', id);
+          const { error: setError } = await supabase
+            .from('saved_filters')
+            .update({ is_default: true })
+            .eq('id', id);
+
+          if (setError) throw setError;
         }
 
         setPresets((prev) => prev.map((p) => ({ ...p, is_default: p.id === id })));
       } catch (err) {
         console.error('Error setting default preset:', err);
+        toast.error('Erro ao definir preset padrão');
       }
     },
     [user, context],

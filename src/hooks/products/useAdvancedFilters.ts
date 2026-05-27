@@ -72,7 +72,13 @@ export function useAdvancedFilters() {
       colorGroupsFetch: colorGroupsDB.fetchAll,
       tagsFetch: tagsDB.fetchAll,
     };
-  });
+  }, [
+    categoriesDB.fetchAll,
+    techniquesDB.fetchAll,
+    suppliersDB.fetchAll,
+    colorGroupsDB.fetchAll,
+    tagsDB.fetchAll,
+  ]);
 
   // Buscar dados iniciais — roda uma vez no mount
   useEffect(() => {

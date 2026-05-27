@@ -20,12 +20,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 
-// Cast tático: ai_providers / ai_models / ai_function_routing ainda não estão
-// em `database.types.ts` (regen pendente). Após regenerar via
-// `supabase gen types typescript`, remover este cast — as interfaces abaixo
-// já refletem o schema real.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const sb: any = supabase;
+// Definimos um tipo estendido para o SupabaseClient que conhece as tabelas de AI
+// enquanto o database.types.ts não é regenerado.
+type ExtendedSupabaseClient = typeof supabase & {
+  from: (table: 'ai_providers' | 'ai_models' | 'ai_function_routing' | string) => any;
+};
+
+const sb = supabase as ExtendedSupabaseClient;
 
 // ============================================================
 // Types — SCHEMA REAL (ground truth)
