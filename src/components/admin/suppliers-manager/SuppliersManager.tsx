@@ -97,15 +97,17 @@ export function SuppliersManager() {
       {/* BUG-04 FIX: state-driven AlertDialog instead of native confirm() */}
       <AlertDialog
         open={!!m.deleteConfirmSupplier}
-        onOpenChange={(open) => { if (!open) m.cancelDelete(); }}
+        onOpenChange={(open) => {
+          if (!open) m.cancelDelete();
+        }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir fornecedor</AlertDialogTitle>
             <AlertDialogDescription>
               Deseja realmente excluir o fornecedor{' '}
-              <strong>&quot;{m.deleteConfirmSupplier?.name}&quot;</strong>?
-              Esta ação não pode ser desfeita.
+              <strong>&quot;{m.deleteConfirmSupplier?.name}&quot;</strong>? Esta ação não pode ser
+              desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

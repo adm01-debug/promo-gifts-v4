@@ -212,11 +212,7 @@ export function useSuppliersManager() {
     try {
       const raw = supplier.contacts;
       const parsed: unknown =
-        raw === null || raw === undefined
-          ? null
-          : typeof raw === 'string'
-            ? JSON.parse(raw)
-            : raw; // already parsed by PostgREST JSONB
+        raw === null || raw === undefined ? null : typeof raw === 'string' ? JSON.parse(raw) : raw; // already parsed by PostgREST JSONB
       if (Array.isArray(parsed) && parsed.length > 0) {
         setContacts(
           parsed.map(
@@ -377,7 +373,7 @@ export function useSuppliersManager() {
           table: 'suppliers',
           operation: 'select',
           select: 'id,name',
-          filters: { '__ilike_name': editingSupplier.name.trim() },
+          filters: { __ilike_name: editingSupplier.name.trim() },
           limit: 5,
         });
         const dupByName = existingByName.records?.find((r) => r.id !== editingSupplier.id);
@@ -401,7 +397,7 @@ export function useSuppliersManager() {
           operation: 'select',
           select: 'id,name,trading_name',
           // BUG-21 FIX: case-insensitive trading_name dup check
-          filters: { '__ilike_trading_name': editingSupplier.trading_name.trim() },
+          filters: { __ilike_trading_name: editingSupplier.trading_name.trim() },
           limit: 5,
         });
         const dupByTN = existingByTN.records?.find((r) => r.id !== editingSupplier.id);
@@ -587,8 +583,7 @@ export function useSuppliersManager() {
         if (data.razao_social && !es.name?.trim()) updateField('name', data.razao_social);
         if (data.nome_fantasia && !es.trading_name?.trim())
           updateField('trading_name', data.nome_fantasia);
-        if (data.logradouro && !es.logradouro?.trim())
-          updateField('logradouro', data.logradouro);
+        if (data.logradouro && !es.logradouro?.trim()) updateField('logradouro', data.logradouro);
         if (data.numero && !es.numero?.trim()) updateField('numero', data.numero);
         if (data.complemento && !es.complemento?.trim())
           updateField('complemento', data.complemento);

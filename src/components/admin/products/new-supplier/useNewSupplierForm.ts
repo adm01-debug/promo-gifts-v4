@@ -416,7 +416,14 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
           .join(', ') || null;
 
       // BUG-01 FIX: buildNotesField no longer serializes phone/fiscal data — those use dedicated columns
-      const notesValue = buildNotesField(notes, contacts, formaPagamento, pixKeys, transportadoraPadrao, transportadoraId);
+      const notesValue = buildNotesField(
+        notes,
+        contacts,
+        formaPagamento,
+        pixKeys,
+        transportadoraPadrao,
+        transportadoraId,
+      );
 
       const data: Record<string, unknown> = {
         name: name.trim(),
