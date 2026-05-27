@@ -80,6 +80,7 @@ Deno.serve(async (req) => {
     console.log("Analyzing image with AI...");
     console.log(`Config status: HF_TOKEN=${!!AI_HF_ACCESS_TOKEN}, LOVABLE_KEY=${!!AI_LOVABLE_API_KEY}`);
     console.log(`Debug tokens: HUGGING_FACE_ACCESS_TOKEN=${!!Deno.env.get("HUGGING_FACE_ACCESS_TOKEN")}, HUGGINGFACE_API_KEY=${!!Deno.env.get("HUGGINGFACE_API_KEY")}, HF_TOKEN=${!!Deno.env.get("HF_TOKEN")}`);
+    console.log("All Env keys:", Object.keys(Deno.env.toObject()).join(", "));
 
     const requestBody = {
       messages: [
