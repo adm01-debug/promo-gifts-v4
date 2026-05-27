@@ -26,12 +26,10 @@ export function ProtectedRoute({
   const bypassAuth = searchParams.get('bypass_auth') === 'true';
   const location = useLocation();
 
-
   if (bypassAuth) {
     return children ? <>{children}</> : <Outlet />;
   }
 
-  const location = useLocation();
 
   if (isLoading) {
     return (
