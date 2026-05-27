@@ -7,8 +7,11 @@ import { getCachedByIds, getFreshFromCacheSafe, putInCacheSafe } from './immutab
 import {
   type PromobrindProduct,
   PRODUCT_SELECT_FIELDS_WITH_SALE,
+  PRODUCT_SELECT_FIELDS_WITH_SALE_NO_THRESHOLD,
   PRODUCT_SELECT_FIELDS_LEGACY,
+  PRODUCT_SELECT_FIELDS_LEGACY_NO_THRESHOLD,
   PRODUCT_SELECT_FIELDS_DETAIL,
+  PRODUCT_SELECT_FIELDS_DETAIL_NO_THRESHOLD,
   shouldFallbackSelect,
 } from './product-types';
 
@@ -18,8 +21,11 @@ async function fetchProductWithRetry(
 ): Promise<InvokeResult<PromobrindProduct>> {
   const selectFields = [
     PRODUCT_SELECT_FIELDS_DETAIL,
+    PRODUCT_SELECT_FIELDS_DETAIL_NO_THRESHOLD,
     PRODUCT_SELECT_FIELDS_WITH_SALE,
+    PRODUCT_SELECT_FIELDS_WITH_SALE_NO_THRESHOLD,
     PRODUCT_SELECT_FIELDS_LEGACY,
+    PRODUCT_SELECT_FIELDS_LEGACY_NO_THRESHOLD,
   ];
   let lastError: unknown;
   for (let selectIdx = 0; selectIdx < selectFields.length; selectIdx++) {
