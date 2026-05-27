@@ -121,7 +121,7 @@ export function QuickAddToQuote({
         ) : (
           <Button size={buttonSize} className={cn(className)} onClick={(e) => e.stopPropagation()}>
             {iconOverride === 'cart' ? (
-              <ShoppingBag className="h-4 w-4" />
+              <ShoppingCart className="h-4 w-4" />
             ) : (
               <Plus className="h-4 w-4" />
             )}
