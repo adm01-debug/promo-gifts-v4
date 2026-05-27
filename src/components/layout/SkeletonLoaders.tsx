@@ -215,7 +215,10 @@ export function getFallback(pathname: string): React.ReactNode {
     pathname === '/' ||
     pathname === '/novidades' ||
     pathname === '/reposicao' ||
-    pathname === '/favoritos'
+    pathname === '/favoritos' ||
+    pathname === '/comparar' ||
+    pathname.startsWith('/colecoes') ||
+    pathname.startsWith('/carrinhos')
   )
     return <CatalogSkeleton />;
   if (pathname.startsWith('/orcamentos')) return <QuotesSkeleton />;
@@ -238,7 +241,13 @@ export function getFallback(pathname: string): React.ReactNode {
     pathname === '/simulador' ||
     pathname === '/magic-up' ||
     pathname === '/simulador-precos' ||
-    pathname === '/busca-preco'
+    pathname === '/busca-preco' ||
+    pathname === '/estoque' ||
+    pathname === '/raio-x' ||
+    pathname.startsWith('/ferramentas/') ||
+    pathname.startsWith('/inteligencia') ||
+    pathname === '/meus-kits' ||
+    pathname.startsWith('/mockups/')
   )
     return <ToolsSkeleton />;
   return <GenericSkeleton />;
