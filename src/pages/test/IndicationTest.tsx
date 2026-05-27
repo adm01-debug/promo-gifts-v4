@@ -63,7 +63,9 @@ export default function IndicationTest() {
           minQuantity={1}
           tags={{}}
           niches={[]}
+          product={{ ...mockProduct, colors: [] }}
         />
+
       </div>
     </div>
   );
