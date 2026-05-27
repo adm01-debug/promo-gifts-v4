@@ -207,7 +207,7 @@ export const quoteService = {
     description: string,
     options?: Record<string, unknown>,
   ) {
-    await supabase.from('quote_history').insert({
+    const { error } = await supabase.from('quote_history').insert({
       quote_id: quoteId,
       user_id: userId,
       action,
@@ -217,5 +217,12 @@ export const quoteService = {
       new_value: typeof options?.newValue === 'string' ? options.newValue : null,
       metadata: (options?.metadata ?? {}) as Json,
     });
+
+    if (error) {
+      console.error('[quoteService.logHistory] Failed to log history:', error);
+      // We don't necessarily want to crash the whole operation if history logging fails,
+      // but we should at least log it. Other service methods throw errors.
+      // throw error; 
+    }
   },
 };

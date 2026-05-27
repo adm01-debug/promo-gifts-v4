@@ -71,7 +71,7 @@ export function useComparisonWeights() {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return;
-    await supabase.from('user_preferences').upsert(
+    const { error } = await supabase.from('user_preferences').upsert(
       {
         user_id: user.id,
         // ComparisonWeights is an interface (no implicit index signature) so it is
@@ -80,6 +80,10 @@ export function useComparisonWeights() {
       },
       { onConflict: 'user_id' },
     );
+
+    if (error) {
+      console.error('[useComparisonWeights] Failed to save weights:', error);
+    }
   }, []);
 
   const reset = useCallback(() => setWeights(DEFAULT_WEIGHTS), [setWeights]);
