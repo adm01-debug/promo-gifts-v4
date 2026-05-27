@@ -26,7 +26,8 @@ describe("useAdvancedFilters - Reset Logic", () => {
   });
 
   it("defaultAdvancedFilters has correct range defaults", () => {
-    expect(defaultAdvancedFilters.priceRange).toEqual([0, 1000]);
+    // FIX-11: priceRange foi corrigido para [0, 9999] em constants/filters.ts
+    expect(defaultAdvancedFilters.priceRange).toEqual([0, 9999]);
     expect(defaultAdvancedFilters.quantityRange).toEqual([1, 10000]);
   });
 
@@ -58,7 +59,7 @@ describe("useAdvancedFilters - Reset Logic", () => {
     expect(resetState.colors).toEqual([]);
     expect(resetState.isKit).toBe(false);
     expect(resetState.isFeatured).toBe(false);
-    expect(resetState.priceRange).toEqual([0, 1000]);
+    expect(resetState.priceRange).toEqual([0, 9999]);
     expect(resetState.stockStatus).toBe("all");
 
     // Verify dirty state was different

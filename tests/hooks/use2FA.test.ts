@@ -74,6 +74,6 @@ describe("use2FA", () => {
     let r: { success: boolean; error?: string } | null = null;
     await act(async () => { r = await result.current.disable2FA(); });
     expect(r!.success).toBe(false);
-    expect(r!.error).toContain("Código necessário");
+    expect(r!.error).toContain("Codigo necessario");
   });
 });

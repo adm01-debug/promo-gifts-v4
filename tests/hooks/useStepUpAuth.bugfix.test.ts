@@ -17,8 +17,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
 // ─── Mock Supabase ─────────────────────────────────────────────────────────
+// BUG-HOIST: vi.mock é hoisted antes das declarações const. Usar vi.hoisted()
+// para que mockInvoke seja inicializado antes da factory do vi.mock executar.
 
-const mockInvoke = vi.fn();
+const { mockInvoke } = vi.hoisted(() => ({
+  mockInvoke: vi.fn(),
+}));
 
 vi.mock('../../src/integrations/supabase/client', () => ({
   supabase: {

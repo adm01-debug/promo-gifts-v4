@@ -1,39 +1,39 @@
 {
-  "generatedAt": "2026-05-26T16:00:27.319Z",
-  "totalErrors": 135,
+  "generatedAt": "2026-05-27T02:03:00.526Z",
+  "totalErrors": 147,
   "counts": {
+    "src/components/catalog/CatalogContent.tsx": {
+      "TS2552": 1
+    },
+    "src/components/loading/index.ts": {
+      "TS2305": 2
+    },
     "src/components/mockup/approval/OffscreenLayoutCapture.tsx": {
       "TS2345": 1
+    },
+    "src/components/products/ColumnSelector.test.tsx": {
+      "TS2322": 1
+    },
+    "src/components/products/ProductGrid.tsx": {
+      "TS2322": 3,
+      "TS2345": 3
     },
     "src/components/search/AdvancedSearch.tsx": {
       "TS2345": 1
     },
-    "src/hooks/admin/useDeviceDetection.ts": {
-      "TS2353": 1
-    },
-    "src/hooks/mockup/mockupGenerationService.ts": {
-      "TS2345": 1
-    },
-    "src/lib/personalization/repositories/technique.repository.ts": {
-      "TS2322": 1,
-      "TS2339": 1
-    },
-    "src/pages/products/FavoritesPage.tsx": {
-      "TS2322": 2
-    },
-    "src/pages/products/seller-carts/CartSidebar.tsx": {
-      "TS2322": 1
-    },
     "src/contexts/OrganizationContext.tsx": {
-      "TS2769": 2,
+      "TS2339": 4,
       "TS2345": 3,
-      "TS2339": 4
+      "TS2769": 2
     },
     "src/hooks/admin/useAllowedIPs.ts": {
-      "TS2769": 4,
+      "TS2322": 5,
       "TS2345": 3,
       "TS2352": 1,
-      "TS2322": 5
+      "TS2769": 4
+    },
+    "src/hooks/admin/useDeviceDetection.ts": {
+      "TS2353": 1
     },
     "src/hooks/admin/useGeoBlocking.ts": {
       "TS2345": 2
@@ -42,49 +42,52 @@
       "TS2353": 1
     },
     "src/hooks/auth/useAccessSecurity.ts": {
-      "TS2769": 9,
-      "TS2352": 3,
-      "TS2345": 5,
       "TS2322": 2,
-      "TS2353": 1
+      "TS2345": 5,
+      "TS2352": 3,
+      "TS2353": 1,
+      "TS2769": 9
     },
     "src/hooks/intelligence/useSalesGoals.ts": {
-      "TS2769": 6,
-      "TS2345": 5,
       "TS2322": 10,
-      "TS2353": 1
+      "TS2345": 5,
+      "TS2353": 1,
+      "TS2769": 6
+    },
+    "src/hooks/mockup/mockupGenerationService.ts": {
+      "TS2322": 1
     },
     "src/hooks/mockup/useMockupDraft.ts": {
-      "TS2769": 2,
-      "TS2345": 2
+      "TS2345": 2,
+      "TS2769": 2
     },
     "src/hooks/products/useColorSystem.ts": {
-      "TS2769": 1,
       "TS2345": 1,
-      "TS2352": 1
+      "TS2352": 1,
+      "TS2769": 1
     },
     "src/hooks/products/useProductInsights.ts": {
-      "TS2531": 1,
-      "TS18047": 1
+      "TS18047": 1,
+      "TS2531": 1
     },
     "src/hooks/quotes/useQuoteBuilderState.ts": {
       "TS2352": 1
     },
     "src/hooks/simulation/usePrintAreas.ts": {
-      "TS2589": 3,
-      "TS2769": 5,
+      "TS2322": 1,
       "TS2345": 6,
-      "TS2322": 1
+      "TS2589": 3,
+      "TS2769": 5
     },
     "src/hooks/simulation/useSimulation.ts": {
+      "TS2345": 1,
       "TS2589": 1,
-      "TS2769": 3,
-      "TS2345": 1
+      "TS2769": 3
     },
     "src/hooks/simulation/useTechniquePricing.ts": {
-      "TS2769": 1,
+      "TS2339": 16,
       "TS2345": 1,
-      "TS2339": 16
+      "TS2769": 1
     },
     "src/lib/cloud-status.ts": {
       "TS2339": 1,
@@ -96,12 +99,25 @@
     "src/lib/external-db-prewarm.ts": {
       "TS2769": 1
     },
+    "src/lib/personalization/repositories/technique.repository.ts": {
+      "TS2322": 1,
+      "TS2339": 1
+    },
     "src/lib/theme-presets.ts": {
       "TS2322": 5
     },
+    "src/pages/products/FavoritesPage.tsx": {
+      "TS2322": 2
+    },
+    "src/pages/products/seller-carts/CartSidebar.tsx": {
+      "TS2322": 1
+    },
     "src/pages/quotes/QuotesKanbanPage.tsx": {
-      "TS2769": 1,
-      "TS2345": 1
+      "TS2345": 1,
+      "TS2769": 1
+    },
+    "src/tests/visual-search/VisualSearch.test.ts": {
+      "TS2345": 2
     }
   }
 }
