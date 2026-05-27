@@ -2,20 +2,32 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from "./types";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+// ============================================================================
+// VÍNCULO FIXO — banco canônico PromoGifts é `doufsxqlfjyuvxuezpln`.
+// O Lovable às vezes regenera .env apontando para `pqpdolkaeqlyzpdpbizo`
+// (projeto vazio criado por ele), o que quebra o login pois os usuários
+// reais (ex.: adm01@promobrindes.com.br) só existem no projeto canônico.
+// Por isso forçamos a URL+anon key canônica aqui, ignorando o .env quando
+// ele apontar para o projeto errado. Anon key é pública por design.
+// Ref: project-knowledge -> "Banco de dados — VÍNCULO FIXO".
+// ============================================================================
+const CANONICAL_URL = "https://doufsxqlfjyuvxuezpln.supabase.co";
+const CANONICAL_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvdWZzeHFsZmp5dXZ4dWV6cGxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczODY2NDMsImV4cCI6MjA4Mjk2MjY0M30.nm3WMOBSx5SUnIBmvF_Mj0Y-4hV6UohrBF0sUpuQvPc";
 
-// Bug fix: suporta tanto VITE_SUPABASE_PUBLISHABLE_KEY (Lovable legacy)
-// quanto VITE_SUPABASE_ANON_KEY (padrão Supabase / Vercel).
-// Se apenas VITE_SUPABASE_ANON_KEY estiver definida (caso comum em novos
-// projetos Vercel), o cliente era criado com key=undefined → 401 em tudo.
-const SUPABASE_PUBLISHABLE_KEY =
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
-  import.meta.env.VITE_SUPABASE_ANON_KEY;
+const envUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const envKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
+  import.meta.env.VITE_SUPABASE_ANON_KEY) as string | undefined;
 
-if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-  throw new Error(
-    "Missing Supabase environment variables: VITE_SUPABASE_URL and either " +
-    "VITE_SUPABASE_PUBLISHABLE_KEY or VITE_SUPABASE_ANON_KEY are required."
+// Usa .env apenas se apontar para o projeto canônico; senão, força canônico.
+const useEnv = !!envUrl && envUrl.includes("doufsxqlfjyuvxuezpln") && !!envKey;
+const SUPABASE_URL = useEnv ? envUrl! : CANONICAL_URL;
+const SUPABASE_PUBLISHABLE_KEY = useEnv ? envKey! : CANONICAL_ANON_KEY;
+
+if (!useEnv && typeof console !== "undefined") {
+  console.warn(
+    "[supabase/client] .env aponta para projeto não-canônico — usando fallback " +
+      "hardcoded para doufsxqlfjyuvxuezpln. Re-aponte a conexão no Lovable."
   );
 }
 
