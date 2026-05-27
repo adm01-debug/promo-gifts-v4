@@ -13,9 +13,6 @@ import { publicRoutes } from './public-routes';
 import { quoteRoutes } from './quote-routes';
 import { toolsRoutes } from './tools-routes';
 
-const IndicationTest = lazyWithRetry(() =>
-  import('@/pages/test/IndicationTest').then((m) => ({ default: m.default })),
-);
 
 
 
