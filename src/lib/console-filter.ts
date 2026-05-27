@@ -7,7 +7,7 @@
  * - Erros de manifest.json 401 (comuns na extensão Lovable).
  * - PostMessage origin mismatches (comuns no preview).
  */
-export function installConsoleFilter() {
+(function installConsoleFilter() {
   if (typeof window === 'undefined') return;
 
   const originalWarn = console.warn;
@@ -41,4 +41,4 @@ export function installConsoleFilter() {
     }
     originalError.apply(console, args);
   };
-}
+})();
