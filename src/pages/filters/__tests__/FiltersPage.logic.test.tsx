@@ -19,9 +19,9 @@ vi.mock('@/hooks/products/useProductsLightweight', () => ({
     data: {
       pages: [{
         products: [
-          { id: '1', name: 'Caneta Metal', price: 10, category_id: 'cat1', brand: 'Fornecedor A', materials: ['Metal'] },
-          { id: '2', name: 'Caneta Plastico', price: 5, category_id: 'cat1', brand: 'Fornecedor B', materials: ['Plastico'] },
-          { id: '3', name: 'Mochila Notebook', price: 50, category_id: 'cat2', brand: 'Fornecedor A', materials: ['Nylon'] },
+          { id: '1', name: 'Caneta Metal', price: 10, category_id: 'cat1', brand: 'Fornecedor A', materials: ['Metal'], stock: 100, featured: true, newArrival: false, gender: 'Unissex' },
+          { id: '2', name: 'Caneta Plastico', price: 5, category_id: 'cat1', brand: 'Fornecedor B', materials: ['Plastico'], stock: 50, featured: false, newArrival: true, gender: 'Masculino' },
+          { id: '3', name: 'Mochila Notebook', price: 50, category_id: 'cat2', brand: 'Fornecedor A', materials: ['Nylon'], stock: 0, featured: false, newArrival: false, gender: 'Feminino' },
         ],
         totalEstimate: 3
       }]
@@ -35,7 +35,7 @@ vi.mock('@/hooks/products/useProductsLightweight', () => ({
 
 vi.mock('@/hooks/products/useProductsByCategory', () => ({
   useProductsByCategory: vi.fn(({ categoryIds }) => ({
-    productIds: new Set(categoryIds.includes('cat1') ? ['1', '2'] : []),
+    productIds: new Set(categoryIds.includes('cat1') ? ['1', '2'] : categoryIds.includes('cat2') ? ['3'] : []),
     hasFilter: categoryIds.length > 0,
     isLoading: false,
   })),
@@ -50,9 +50,9 @@ vi.mock('@/hooks/products/useProductsByColor', () => ({
 }));
 
 vi.mock('@/hooks/products/useProductsByMaterial', () => ({
-  useProductsByMaterial: vi.fn(() => ({
+  useProductsByMaterial: vi.fn(({ materialGroups = [], materialTypes = [] }) => ({
     productIds: new Set(),
-    hasFilter: false,
+    hasFilter: materialGroups.length > 0 || materialTypes.length > 0,
     isLoading: false,
   })),
 }));
@@ -67,7 +67,7 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
   </QueryClientProvider>
 );
 
-describe('useFiltersPageState Logic', () => {
+describe('useFiltersPageState Logic - Extended Validation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -77,58 +77,93 @@ describe('useFiltersPageState Logic', () => {
     
     expect(result.current.realProducts.length).toBe(3);
     expect(result.current.filteredProducts.length).toBe(3);
-    expect(result.current.activeFiltersCount).toBe(0);
   });
 
-  it('should filter by search term', () => {
+  it('should filter by featured products', () => {
     const { result } = renderHook(() => useFiltersPageState(), { wrapper });
 
     act(() => {
-      result.current.handleFilterChange({ ...result.current.filters, search: 'Mochila' });
+      result.current.handleFilterChange({ ...result.current.filters, featured: true });
     });
 
     expect(result.current.filteredProducts.length).toBe(1);
-    expect(result.current.filteredProducts[0].name).toBe('Mochila Notebook');
-    expect(result.current.activeFiltersCount).toBe(1);
+    expect(result.current.filteredProducts[0].id).toBe('1');
   });
 
-  it('should filter by category', () => {
+  it('should filter by new arrivals', () => {
     const { result } = renderHook(() => useFiltersPageState(), { wrapper });
 
     act(() => {
-      result.current.handleFilterChange({ ...result.current.filters, categories: ['cat1'] });
+      result.current.handleFilterChange({ ...result.current.filters, isNew: true });
     });
 
-    // Mock returns ['1', '2'] for 'cat1'
+    expect(result.current.filteredProducts.length).toBe(1);
+    expect(result.current.filteredProducts[0].id).toBe('2');
+  });
+
+  it('should filter by stock availability', () => {
+    const { result } = renderHook(() => useFiltersPageState(), { wrapper });
+
+    act(() => {
+      result.current.handleFilterChange({ ...result.current.filters, inStock: true });
+    });
+
+    // 1 and 2 have stock, 3 has 0
     expect(result.current.filteredProducts.length).toBe(2);
-    expect(result.current.filteredProducts.every(p => p.category_id === 'cat1')).toBe(true);
+    expect(result.current.filteredProducts.some(p => p.id === '3')).toBe(false);
   });
 
-  it('should filter by price range', () => {
+  it('should filter by gender', () => {
     const { result } = renderHook(() => useFiltersPageState(), { wrapper });
 
     act(() => {
-      result.current.handleFilterChange({ ...result.current.filters, priceRange: [0, 15] });
+      result.current.handleFilterChange({ ...result.current.filters, gender: ['Feminino'] });
     });
 
-    // Caneta Metal (10) and Caneta Plastico (5) should remain
-    expect(result.current.filteredProducts.length).toBe(2);
-    expect(result.current.filteredProducts.every(p => p.price <= 15)).toBe(true);
+    expect(result.current.filteredProducts.length).toBe(1);
+    expect(result.current.filteredProducts[0].gender).toBe('Feminino');
   });
 
-  it('should handle reset', () => {
+  it('should filter by supplier', () => {
     const { result } = renderHook(() => useFiltersPageState(), { wrapper });
 
     act(() => {
-      result.current.handleFilterChange({ ...result.current.filters, search: 'Caneta' });
+      result.current.handleFilterChange({ ...result.current.filters, suppliers: ['Fornecedor B'] });
     });
-    expect(result.current.activeFiltersCount).toBe(1);
+
+    expect(result.current.filteredProducts.length).toBe(1);
+    expect(result.current.filteredProducts[0].brand).toBe('Fornecedor B');
+  });
+
+  it('should combine multiple filters (AND logic)', () => {
+    const { result } = renderHook(() => useFiltersPageState(), { wrapper });
 
     act(() => {
-      result.current.handleReset();
+      result.current.handleFilterChange({ 
+        ...result.current.filters, 
+        categories: ['cat1'],
+        priceRange: [0, 8]
+      });
     });
 
-    expect(result.current.activeFiltersCount).toBe(0);
-    expect(result.current.filteredProducts.length).toBe(3);
+    // Only 'Caneta Plastico' (id 2, price 5) matches both
+    expect(result.current.filteredProducts.length).toBe(1);
+    expect(result.current.filteredProducts[0].id).toBe('2');
+  });
+
+  it('should update activeFiltersCount correctly', () => {
+    const { result } = renderHook(() => useFiltersPageState(), { wrapper });
+
+    act(() => {
+      result.current.handleFilterChange({ 
+        ...result.current.filters, 
+        search: 'a',
+        featured: true,
+        priceRange: [10, 20]
+      });
+    });
+
+    expect(result.current.activeFiltersCount).toBe(3);
   });
 });
+
