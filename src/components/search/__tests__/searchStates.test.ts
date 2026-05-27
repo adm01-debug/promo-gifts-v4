@@ -31,11 +31,7 @@ import { describe, it, expect } from 'vitest';
  *
  * FIX BUG-GS-02: was `>= 2`, now `>= 3`.
  */
-function showEmptyState(
-  isSearching: boolean,
-  queryLen: number,
-  resultsCount: number,
-): boolean {
+function showEmptyState(isSearching: boolean, queryLen: number, resultsCount: number): boolean {
   return !isSearching && queryLen >= 3 && resultsCount === 0;
 }
 
