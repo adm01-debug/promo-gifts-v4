@@ -18,7 +18,7 @@ import './styles/missing-root-tokens.css';
 initSentry();
 
 // Silencia warnings conhecidos e poluição do preview
-installConsoleFilter();
+
 
 // Install global error handlers for unhandled errors/rejections
 installGlobalErrorHandlers();
