@@ -1,6 +1,7 @@
 /**
  * useQuotes — Hook de orçamentos (Refatorado para usar React Query e quoteService)
  */
+import { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useSalesScope } from '@/lib/auth/visibility-scope';
@@ -42,6 +43,34 @@ export function useQuotes() {
   const orgId = currentOrg?.id || null;
   const scope = useSalesScope();
   const queryClient = useQueryClient();
+
+  // BUG-NEW-02: Adiciona assinatura Realtime para orçamentos.
+  // Garante que mudanças feitas em outras abas ou por outros usuários (em escopos compartilhados)
+  // reflitam imediatamente na lista sem necessidade de refresh manual.
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel('quotes-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'quotes',
+          // O filtro simplificado garante que qualquer mudança no escopo do usuário invalide o cache
+          filter: scope === 'own' ? `user_id=eq.${userId}` : undefined,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['quotes'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, scope, queryClient]);
 
   const {
     data: quotes = [],

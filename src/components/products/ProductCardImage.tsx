@@ -2,7 +2,7 @@
  * ProductCardImage — Image section with carousel, badges, and color dots.
  * Extracted from ProductCard.tsx.
  */
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { Sparkles, Package } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -191,9 +191,11 @@ export const ProductCardImage = memo(function ProductCardImage({
               return (
                 <Tooltip key={idx}>
                   <TooltipTrigger asChild>
-                    <div
+                    <button
+                      type="button"
+                      aria-label={`Cor ${color.name}`}
                       className={cn(
-                        'h-5 w-5 cursor-pointer rounded-full border-2 shadow-sm transition-all duration-200 hover:scale-125 hover:shadow-md',
+                        'h-5 w-5 cursor-pointer rounded-full border-2 shadow-sm transition-all duration-200 hover:scale-125 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
                         isDotHighlighted
                           ? 'scale-110 border-success ring-2 ring-success/30'
                           : 'border-border/50',
