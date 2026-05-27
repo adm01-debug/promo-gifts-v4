@@ -40,8 +40,11 @@ export type { PromobrindProduct } from './product-types';
 export { getProductImageUrl, getProductPrice, getProductStock } from './product-types';
 export {
   PRODUCT_SELECT_FIELDS_WITH_SALE,
+  PRODUCT_SELECT_FIELDS_WITH_SALE_NO_THRESHOLD,
   PRODUCT_SELECT_FIELDS_LEGACY,
+  PRODUCT_SELECT_FIELDS_LEGACY_NO_THRESHOLD,
   PRODUCT_SELECT_FIELDS_DETAIL,
+  PRODUCT_SELECT_FIELDS_DETAIL_NO_THRESHOLD,
   shouldFallbackSelect,
 } from './product-types';
 
