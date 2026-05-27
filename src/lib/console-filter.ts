@@ -21,6 +21,8 @@
     'aponta para projeto não-canônico',
     '[Performance] Skeleton',
     '[CloudStatus] state change',
+    '[Telemetry] performance',
+    '[Performance] Route',
   ];
 
   const SILENCED_ERRORS = [
