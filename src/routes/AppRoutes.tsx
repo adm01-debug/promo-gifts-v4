@@ -85,8 +85,8 @@ export function AppRoutes() {
   return (
     <RouteSuspense>
       <Routes>
-        <Route path="/test-indication" element={<Suspense fallback={null}><IndicationTest /></Suspense>} />
         {publicRoutes}
+
         
         
         
