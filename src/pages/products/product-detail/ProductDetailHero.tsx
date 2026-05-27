@@ -501,6 +501,8 @@ export function ProductDetailHero({
             minQuantity={minQuantity}
             isLoadingTags={isLoadingTags}
             hasErrorTags={hasErrorTags}
+            isLoadingNiches={isLoadingNiches}
+            hasErrorNiches={hasErrorNiches}
             tags={
               product.tags
                 ? {
