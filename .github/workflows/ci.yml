@@ -206,10 +206,10 @@ jobs:
         run: |
           set -euo pipefail
           # Rodar prettier --write e depois git diff para ver EXATAMENTE o que mudou.
-          # Abordagem mais diagnóstica que --check: mostra o diff completo.
+          # git diff sem filtro de arquivo — captura todos os arquivos modificados pelo prettier.
           ./node_modules/.bin/prettier --write "src/**/*.{ts,tsx,css}"
-          DIFF=$(git diff --unified=3 HEAD -- "src/**/*.{ts,tsx,css}" 2>&1 || true)
-          STAT=$(git diff --stat HEAD -- "src/**/*.{ts,tsx,css}" 2>&1 || true)
+          DIFF=$(git diff --unified=3 HEAD 2>&1 || true)
+          STAT=$(git diff --stat HEAD 2>&1 || true)
           if [ -n "$DIFF" ]; then
             echo "### ❌ Prettier — diff do que CI quer reformatar" >> "$GITHUB_STEP_SUMMARY"
             printf '```diff\n%s\n```\n' "$DIFF" >> "$GITHUB_STEP_SUMMARY"
