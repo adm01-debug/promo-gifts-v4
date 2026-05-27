@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { HelmetProvider } from 'react-helmet-async';
 import { registerServiceWorker } from '@/lib/sw-register';
 import { installGlobalErrorHandlers } from '@/lib/error-reporter';
+import { installConsoleFilter } from '@/lib/console-filter';
 import { initSentry } from '@/lib/sentry';
 import { installSafeToast } from '@/lib/security/safeToast';
 import EnhancedErrorBoundary from '@/components/errors/EnhancedErrorBoundary';
