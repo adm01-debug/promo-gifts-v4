@@ -293,7 +293,7 @@ jobs:
             command: npx vitest run tests/components/products/ProductSparkline.labels.test.tsx --reporter=verbose
             flaky_retry: "true"
           - name: quotes-wizard-logic
-            command: npx vitest run src/logic/quotes/calculations.test.ts src/pages/quotes/QuoteBuilder.e2e.test.tsx --reporter=verbose
+            command: npx vitest run src/logic/quotes/__tests__/calculations.test.ts src/pages/quotes/QuoteBuilder.e2e.test.tsx --reporter=verbose
             flaky_retry: "false"
 
     steps:
