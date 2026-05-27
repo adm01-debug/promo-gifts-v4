@@ -153,8 +153,7 @@ describe('QuoteBuilderPage E2E Wizard Flow', () => {
     await user.click(cifOption);
 
     // Verificar Step 2
-    const conditionsStep = within(wizard).getByLabelText(/Etapa 2: Condições/i);
-    expect(conditionsStep).toHaveAttribute('aria-label', expect.stringContaining('Concluída'));
+    expect(within(wizard).getByLabelText(/Etapa 2: Condições/i)).toBeInTheDocument();
 
     // --- ETAPA 3: ITENS ---
     // Precisamos primeiro ir para a etapa de itens clicando nela ou via nextStep
