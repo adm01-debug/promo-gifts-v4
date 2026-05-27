@@ -1,7 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Building2, CalendarClock, GitCompare, Copy, Check } from 'lucide-react';
-import { useState } from 'react';
-import { toast } from 'sonner';
+import { Building2, CalendarClock, GitCompare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -26,20 +24,6 @@ export function ProductInfoBar({
   hasFutureStock = true,
 }: ProductInfoBarProps) {
   const navigate = useNavigate();
-  const [copied, setCopied] = useState(false);
-
-  const handleCopySKU = async () => {
-    try {
-      await navigator.clipboard.writeText(sku);
-      setCopied(true);
-      toast.success('SKU copiado', {
-        description: `O código ${sku} foi copiado para sua área de transferência.`,
-      });
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // silent fail
-    }
-  };
 
   const handleSupplierClick = () => {
     if (supplierId) {
@@ -49,25 +33,12 @@ export function ProductInfoBar({
   return (
     <div className="flex flex-wrap items-center gap-3">
       {/* SKU */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Badge
-            variant="secondary"
-            className="group/sku cursor-pointer rounded-full bg-muted px-3 py-1.5 font-mono text-xs transition-colors hover:bg-muted/80"
-            onClick={handleCopySKU}
-          >
-            SKU: {sku}
-            <div className="ml-2 inline-flex items-center">
-              {copied ? (
-                <Check className="h-3 w-3 text-success duration-300 animate-in zoom-in" />
-              ) : (
-                <Copy className="h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover/sku:opacity-100" />
-              )}
-            </div>
-          </Badge>
-        </TooltipTrigger>
-        <TooltipContent>{copied ? 'Copiado!' : 'Clique para copiar o SKU'}</TooltipContent>
-      </Tooltip>
+      <Badge
+        variant="secondary"
+        className="rounded-full bg-muted px-3 py-1.5 font-mono text-xs"
+      >
+        SKU: {sku}
+      </Badge>
 
       {/* Fornecedor - Clicável, abre Super Filtro com esse fornecedor */}
       <Tooltip>
