@@ -76,6 +76,8 @@ export function ProductQuickActions({
   hasErrorTags,
   isLoadingNiches,
   hasErrorNiches,
+  onRetryTags,
+  onRetryNiches,
   selectedVariant,
   onConfirmPrice,
 }: ProductQuickActionsProps) {
