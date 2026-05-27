@@ -26,5 +26,12 @@ export const publicRoutes = (
     <Route path="/unauthorized" element={<Unauthorized />} />
     <Route path="/termos" element={<TermsPage />} />
     <Route path="/privacidade" element={<PrivacyPage />} />
+    <Route path="/test-whatsapp" element={
+      <Suspense fallback={null}>
+        <div className="flex h-screen items-center justify-center bg-black">
+          <import('@/pages/TestWhatsAppShare').then(m => <m.default />)}
+        </div>
+      </Suspense>
+    } />
   </>
 );
