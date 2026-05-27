@@ -12,6 +12,7 @@ import { productRoutes } from './product-routes';
 import { publicRoutes } from './public-routes';
 import { quoteRoutes } from './quote-routes';
 import { toolsRoutes } from './tools-routes';
+import { PromoFlixPlayground } from './lazy-pages';
 
 
 
@@ -80,7 +81,8 @@ export function AppRoutes() {
     <RouteSuspense>
       <Routes>
         {publicRoutes}
-        
+        <Route path="/promoflix-playground" element={<PromoFlixPlayground />} />
+
 
 
 
