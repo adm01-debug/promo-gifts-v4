@@ -39,6 +39,12 @@ interface ProductGalleryProps {
   colors?: ColorMedia[];
   onColorSelect?: (colorIndex: number) => void;
   selectedColorIndex?: number;
+  /** Dados de venda para compartilhamento do vídeo via WhatsApp */
+  productId?: string | null;
+  productPrice?: number | null;
+  productSku?: string | null;
+  productMinQuantity?: number | null;
+  shareUrl?: string | null;
 }
 
 export function ProductGallery({
@@ -50,6 +56,11 @@ export function ProductGallery({
   colors,
   onColorSelect,
   selectedColorIndex = 0,
+  productId,
+  productPrice,
+  productSku,
+  productMinQuantity,
+  shareUrl,
 }: ProductGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
