@@ -340,7 +340,7 @@ export default function VisualSearchPage() {
               <div className="absolute inset-0 animate-ping rounded-xl bg-primary/20" />
             </motion.div>
             <div className="flex-1">
-              <h1 className="font-display text-2xl font-bold tracking-tight">Raio X</h1>
+              <h1 data-testid="raio-x-title" className="font-display text-2xl font-bold tracking-tight">Raio X</h1>
               <p className="text-sm text-muted-foreground">O "Shazam" do catálogo: tire uma foto e encontre o produto</p>
             </div>
             <div className="flex items-center gap-2">
@@ -360,6 +360,7 @@ export default function VisualSearchPage() {
         {/* Hidden file input — único ponto de upload, acionado pelo CTA principal "Iniciar Scanner" e por drag-and-drop */}
         <input 
           ref={fileInputRef}
+          data-testid="visual-search-input"
           id="visual-search-input" 
           type="file" 
           className="hidden" 
@@ -384,7 +385,7 @@ export default function VisualSearchPage() {
                   <Card className="relative overflow-hidden border-2 border-dashed border-muted-foreground/20 bg-muted/5 transition-all duration-300">
                     <CardContent className="p-0">
                       <div className="relative overflow-hidden group">
-                        <img src={previewUrl} alt="Preview" className="aspect-square w-full object-cover" />
+                        <img data-testid="sidebar-preview-image" src={previewUrl} alt="Preview" className="aspect-square w-full object-cover" />
                         
                         {/* Visual Highlights Overlay */}
                         {results?.analysis.visualHighlights && !isSearching && showHotspots && (
@@ -429,7 +430,7 @@ export default function VisualSearchPage() {
                         
                         <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
                           <div className="flex flex-col gap-2">
-                            <Button variant="secondary" size="sm" onClick={reset} className="gap-2">
+                            <Button data-testid="reset-search-button" variant="secondary" size="sm" onClick={reset} className="gap-2">
                               <RefreshCcw className="h-4 w-4" /> Trocar Foto
                             </Button>
                             <div className="flex flex-col gap-2 bg-background/90 p-2 rounded-lg border border-border shadow-sm">
