@@ -83,7 +83,7 @@
     "test:fuzz": "node scripts/fuzz-testing.mjs",
     "test:fuzz:uploads": "node scripts/fuzz-edge-uploads.mjs",
     "test:fuzz:all": "node scripts/fuzz-testing.mjs && node scripts/fuzz-edge-uploads.mjs",
-    "test:e2e:flows": "npx playwright test e2e/flows/25-quote-full-flow.spec.ts e2e/flows/26-catalog-to-kit-flow.spec.ts e2e/flows/27-admin-critical-routes.spec.ts e2e/flows/28-error-boundaries.spec.ts",
+    "test:e2e:flows": "npx playwright test e2e/flows/25-quote-full-flow.spec.ts e2e/flows/26-catalog-to-kit-flow.spec.ts e2e/flows/27-admin-critical-routes.spec.ts e2e/flows/28-error-boundaries.spec.ts e2e/flows/30-quote-wizard-validations.spec.ts",
     "test:e2e:mobile:flows": "npx playwright test e2e/flows/29-mobile-critical-routes.spec.ts --project=routes-mobile",
     "test:e2e:error-boundaries": "npx playwright test e2e/flows/28-error-boundaries.spec.ts",
     "check:critical-coverage": "node scripts/check-critical-modules-coverage.mjs",
