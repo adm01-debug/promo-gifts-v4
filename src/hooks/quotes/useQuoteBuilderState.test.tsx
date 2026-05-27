@@ -79,7 +79,7 @@ describe('useQuoteBuilderState E2E Logic', () => {
     
     expect(result.current.completedSteps).toContain('client');
 
-    // Step 2: Conditions (Mocking requirements)
+    // Step 2: Conditions
     act(() => {
       result.current.setPaymentMethod('boleto');
       result.current.setPaymentTerms('7_dias');
@@ -88,5 +88,25 @@ describe('useQuoteBuilderState E2E Logic', () => {
     });
 
     expect(result.current.completedSteps).toContain('conditions');
+  });
+
+  it('should handle navigation between steps', () => {
+    const { result } = renderHook(() => useQuoteBuilderState(), { wrapper });
+
+    // Initial step is 'client'
+    expect(result.current.activeStep).toBe('client');
+
+    // Fill client info
+    act(() => {
+      result.current.setClientId('client-1');
+      result.current.setContactId('contact-1');
+    });
+
+    // Move to next step
+    act(() => {
+      result.current.nextStep();
+    });
+
+    expect(result.current.activeStep).toBe('conditions');
   });
 });
