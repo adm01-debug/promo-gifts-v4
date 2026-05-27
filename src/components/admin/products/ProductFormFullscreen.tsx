@@ -10,6 +10,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { productFormSchema, type ProductFormData, defaultFormValues } from './ProductFormSchema';
+import { useSystemSettings } from '@/hooks/admin/useSystemSettings';
 import { ProductPreviewPanel } from './ProductPreviewPanel';
 import { HorizontalStepper, type StepDef } from './HorizontalStepper';
 import { ProductFormStepContent } from './ProductFormStepContent';
@@ -73,11 +74,21 @@ export function ProductFormFullscreen({
     return stored !== null ? stored === 'true' : true;
   });
 
+  const { getSetting } = useSystemSettings();
+  const globalDefault = parseInt(getSetting('default_price_freshness_threshold', '60'), 10);
+
   const { register, handleSubmit, setValue, watch, trigger, getValues, formState: { errors } } =
     useForm<ProductFormData>({
       resolver: zodResolver(productFormSchema),
       defaultValues: { ...defaultFormValues, ...initialData },
     });
+    
+  // Update threshold for new products if global default changes or is loaded
+  useEffect(() => {
+    if (!isEdit && !initialData?.price_freshness_threshold_days) {
+      setValue('price_freshness_threshold_days', globalDefault);
+    }
+  }, [globalDefault, isEdit, initialData, setValue]);
 
   const formValues = watch();
   const supplierId = formValues.supplier_id || '';
