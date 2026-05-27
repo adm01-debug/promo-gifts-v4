@@ -145,15 +145,17 @@ export function PromoFlixPlayer({
               setQualities(levels);
               
               const savedQuality = localStorage.getItem('promoflix_quality');
-              if (savedQuality !== null) {
+              if (savedQuality !== null && hlsInstance) {
                 const q = parseInt(savedQuality, 10);
-                hlsInstance.currentLevel = q;
-                setCurrentQuality(q);
+                if (q >= -1 && q < data.levels.length) {
+                  hlsInstance.currentLevel = q;
+                  setCurrentQuality(q);
+                }
               }
             });
 
             hlsInstance.on(Hls.Events.LEVEL_SWITCHED, (_, data) => {
-              if (hlsInstance.autoLevelEnabled) {
+              if (hlsInstance && hlsInstance.autoLevelEnabled) {
                 setCurrentQuality(-1);
               }
             });
