@@ -29,22 +29,49 @@ function makeSkeleton(displayName: string, render: () => React.ReactNode, rootCl
   return Cmp;
 }
 
-/** Catalog / Products page skeleton */
+/** Catalog / Products page skeleton — mirrors Index.tsx exactly */
 export const CatalogSkeleton = makeSkeleton(
   'Catalog',
   () => (
-    <div className="flex flex-col gap-6">
-      <PageHeaderSkeleton />
-      <div className="flex gap-3">
-        <Skeleton className="h-10 w-full max-w-md rounded-lg" />
-        <Skeleton className="h-10 w-10 rounded-lg" />
-        <Skeleton className="h-10 w-10 rounded-lg" />
+    <div className="space-y-4">
+      {/* Header row: title (with count) + inline desktop search + recently viewed */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <Skeleton className="h-8 w-56 sm:h-9 sm:w-64 lg:h-10 lg:w-72 rounded-md" />
+          <div className="hidden w-80 items-center gap-2 sm:flex lg:w-[28rem]">
+            <Skeleton className="h-11 flex-1 rounded-lg" />
+          </div>
+          <Skeleton className="hidden h-9 w-9 rounded-md sm:block" />
+        </div>
       </div>
+
+      {/* Mobile search */}
+      <div className="flex w-full items-center gap-2 sm:hidden">
+        <Skeleton className="h-11 flex-1 rounded-lg" />
+      </div>
+
+      {/* Sticky toolbar row */}
+      <div className="-mx-4 border-b border-border/30 px-4 py-2 sm:-mx-6 sm:px-6">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-9 w-24 rounded-md" />
+            <Skeleton className="h-9 w-28 rounded-md" />
+            <Skeleton className="hidden h-9 w-32 rounded-md md:block" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Skeleton className="hidden h-9 w-40 rounded-md md:block" />
+            <Skeleton className="h-9 w-9 rounded-md" />
+            <Skeleton className="h-9 w-9 rounded-md" />
+          </div>
+        </div>
+      </div>
+
       <ProductGridSkeleton count={15} columns={5} />
     </div>
   ),
-  'p-3 sm:p-4 lg:p-6 space-y-6',
+  'mx-auto w-full max-w-[1920px] px-3 py-3 sm:px-4 sm:py-4 lg:px-6 xl:px-8',
 );
+
 
 /** Product detail page skeleton */
 export const ProductDetailSkeleton = makeSkeleton(
