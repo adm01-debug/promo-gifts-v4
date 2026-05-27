@@ -469,7 +469,6 @@ export function PriceFreshnessBadge({
       <span
         role="status"
         aria-label={ariaLabel}
-        title={title}
         className={cn('inline-flex items-center gap-1.5 text-xs font-medium', color, className)}
       >
         <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
