@@ -251,10 +251,6 @@ export function PromoFlixPlayer({
     return () => document.removeEventListener('fullscreenchange', handler);
   }, []);
 
-  const flash = useCallback((label: string) => {
-    setFlashLabel(label);
-    window.setTimeout(() => setFlashLabel(null), 700);
-  }, []);
 
   const togglePlay = useCallback(() => {
     const v = videoRef.current;
