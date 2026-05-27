@@ -1031,6 +1031,21 @@ export function PromoFlixPlayer({
               >
                 <Camera className="h-6 w-6 md:h-5 md:w-5" />
               </button>
+
+              {/* WhatsApp Share — sales-first */}
+              {canShareOnWhatsApp && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShareDialogOpen(true);
+                  }}
+                  className="flex items-center gap-1 rounded-full p-3 transition-colors hover:bg-[#25D366]/20 text-white/80 hover:text-[#25D366] md:p-2"
+                  aria-label="Enviar vídeo pelo WhatsApp"
+                  title="Enviar vídeo pelo WhatsApp"
+                >
+                  <MessageCircle className="h-6 w-6 md:h-5 md:w-5" />
+                </button>
+              )}
             </div>
 
             {/* Speed - Simplified on mobile */}
