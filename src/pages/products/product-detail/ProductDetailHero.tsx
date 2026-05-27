@@ -43,6 +43,8 @@ interface ProductDetailHeroProps {
   onOpenSupplierComparison: () => void;
   isLoadingTags?: boolean;
   hasErrorTags?: boolean;
+  isLoadingNiches?: boolean;
+  hasErrorNiches?: boolean;
 }
 
 const getStockStatusInfo = (status: string) => {
@@ -75,6 +77,8 @@ export function ProductDetailHero({
   onOpenSupplierComparison,
   isLoadingTags,
   hasErrorTags,
+  isLoadingNiches,
+  hasErrorNiches,
 }: ProductDetailHeroProps) {
   const navigate = useNavigate();
   const [quoteVariantWizardOpen, setQuoteVariantWizardOpen] = useState(false);
@@ -497,6 +501,8 @@ export function ProductDetailHero({
             minQuantity={minQuantity}
             isLoadingTags={isLoadingTags}
             hasErrorTags={hasErrorTags}
+            isLoadingNiches={isLoadingNiches}
+            hasErrorNiches={hasErrorNiches}
             tags={
               product.tags
                 ? {

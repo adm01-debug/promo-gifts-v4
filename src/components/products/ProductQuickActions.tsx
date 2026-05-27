@@ -29,6 +29,8 @@ interface ProductQuickActionsProps {
   product?: Product;
   isLoadingTags?: boolean;
   hasErrorTags?: boolean;
+  isLoadingNiches?: boolean;
+  hasErrorNiches?: boolean;
   selectedVariant?: {
     variantName?: string | null;
     colorHex?: string | null;
@@ -70,6 +72,8 @@ export function ProductQuickActions({
   product,
   isLoadingTags,
   hasErrorTags,
+  isLoadingNiches,
+  hasErrorNiches,
   selectedVariant,
   onConfirmPrice,
 }: ProductQuickActionsProps) {
@@ -288,7 +292,28 @@ export function ProductQuickActions({
           </div>
 
           <div className="space-y-3 px-5 py-5">
-            {displayNiches.length > 0 ? (
+            {isLoadingNiches ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-11 w-full animate-pulse rounded-xl bg-muted/50" />
+                ))}
+              </div>
+            ) : hasErrorNiches ? (
+              <div className="flex flex-col items-center justify-center rounded-xl border border-destructive/20 bg-destructive/5 p-6 text-center">
+                <div className="mb-3 rounded-full bg-destructive/10 p-3">
+                  <Layers className="h-6 w-6 text-destructive" />
+                </div>
+                <p className="mb-4 text-sm font-medium text-destructive">
+                  Não foi possível carregar os nichos.
+                </p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="rounded-lg bg-destructive px-4 py-2 text-xs font-bold text-destructive-foreground transition-all hover:bg-destructive/90"
+                >
+                  Tentar novamente
+                </button>
+              </div>
+            ) : displayNiches.length > 0 ? (
               displayNiches.map((niche) => (
                 <div
                   key={niche}

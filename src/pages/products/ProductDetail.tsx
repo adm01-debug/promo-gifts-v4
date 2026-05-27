@@ -334,6 +334,8 @@ export default function ProductDetail() {
           onOpenSupplierComparison={() => setSupplierCompareOpen(true)}
           isLoadingTags={isLoading}
           hasErrorTags={isError}
+          isLoadingNiches={isLoading}
+          hasErrorNiches={isError}
         />
 
         <div className="border-t border-border/60 pt-6 xl:pt-8">
