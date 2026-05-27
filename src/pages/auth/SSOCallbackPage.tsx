@@ -201,7 +201,7 @@ export default function SSOCallbackPage() {
         // ou supabase-js já parseou o hash fragment automaticamente).
         const {
           data: { session },
-        } = await supabase.auth.getSession();
+        } = await (await getSupabaseClient()).auth.getSession();
         tracer.step('session-check-initial', { hasSession: !!session });
         if (session) {
           tracer.setFlow(hash ? 'implicit' : 'unknown');

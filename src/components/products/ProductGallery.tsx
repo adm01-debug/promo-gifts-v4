@@ -329,11 +329,14 @@ export function ProductGallery({
         <GalleryColorVariations
           colors={colors}
           selectedColorIndex={selectedColorIndex}
-          onColorSelect={useCallback((index: number) => {
-            setSelectedIndex(0);
-            resetZoom();
-            onColorSelect?.(index);
-          }, [resetZoom, onColorSelect])}
+          onColorSelect={useCallback(
+            (index: number) => {
+              setSelectedIndex(0);
+              resetZoom();
+              onColorSelect?.(index);
+            },
+            [resetZoom, onColorSelect],
+          )}
         />
       )}
 
