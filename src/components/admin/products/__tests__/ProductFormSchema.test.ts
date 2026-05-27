@@ -22,11 +22,11 @@ describe('ProductFormSchema - Price Freshness', () => {
       name: 'Test Product',
       supplier_id: 'SUPP123',
       sale_price: 10,
-      price_freshness_threshold_days: 30
+      price_freshness_threshold_days: 120
     });
     expect(validResult.success).toBe(true);
     if (validResult.success) {
-      expect(validResult.data.price_freshness_threshold_days).toBe(30);
+      expect(validResult.data.price_freshness_threshold_days).toBe(120);
     }
 
     const invalidResult = productFormSchema.safeParse({
@@ -34,7 +34,7 @@ describe('ProductFormSchema - Price Freshness', () => {
       name: 'Test Product',
       supplier_id: 'SUPP123',
       sale_price: 10,
-      price_freshness_threshold_days: 400
+      price_freshness_threshold_days: 500
     });
     expect(invalidResult.success).toBe(false);
   });

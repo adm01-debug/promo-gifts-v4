@@ -187,6 +187,7 @@ export function ProductPriceSection({
             <option value={30}>30 dias</option>
             <option value={60}>60 dias (padrão)</option>
             <option value={90}>90 dias</option>
+            <option value={120}>120 dias</option>
           </select>
           {lastPriceUpdate && (
             <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-muted-foreground">
