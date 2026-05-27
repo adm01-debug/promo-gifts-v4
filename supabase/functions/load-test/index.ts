@@ -1,5 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { getCorsHeaders } from "../_shared/cors.ts";
+import { createStructuredLogger } from "../_shared/structured-logger.ts";
+import { getOrCreateRequestId } from "../_shared/request-id.ts";
 
 /**
  * Load test to simulate thousands of webhook events and concurrent requests.
@@ -8,23 +10,40 @@ import { getCorsHeaders } from "../_shared/cors.ts";
 
 Deno.serve(async (req: Request) => {
   const corsHeaders = getCorsHeaders(req);
+  const requestId = getOrCreateRequestId(req);
+  const log = createStructuredLogger({ fn: "load-test", requestId, req });
+
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { 
-      concurrency = 10, 
-      totalRequests = 100, 
+    const parsed = await req.json().catch(() => ({}));
+    // Guard: if body is null/array/primitive, fall back to empty object so
+    // destructuring doesn't throw a TypeError.
+    const safeBody = (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed))
+      ? (parsed as Record<string, unknown>)
+      : {};
+    const {
+      concurrency = 10,
+      totalRequests = 100,
       targetEndpoint = "/health-check",
       method = "GET",
       body = null,
       headers = {},
       useIdempotency = false
-    } = await req.json().catch(() => ({}));
+    } = safeBody as {
+      concurrency?: number;
+      totalRequests?: number;
+      targetEndpoint?: string;
+      method?: string;
+      body?: unknown;
+      headers?: Record<string, string>;
+      useIdempotency?: boolean;
+    };
 
     const baseUrl = Deno.env.get("SUPABASE_URL")!.replace(".supabase.co", ".supabase.co/functions/v1");
     const targetUrl = targetEndpoint.startsWith("http") ? targetEndpoint : `${baseUrl}${targetEndpoint}`;
 
-    console.log(`[load-test] Starting: ${totalRequests} ${method} requests to ${targetUrl} (concurrency: ${concurrency}, idempotency: ${useIdempotency})`);
+    log.info('load-test starting', { totalRequests, method, targetUrl, concurrency, useIdempotency });
 
     let successCount = 0;
     let errorCount = 0;

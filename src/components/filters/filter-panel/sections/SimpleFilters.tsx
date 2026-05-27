@@ -104,8 +104,14 @@ export function PublicoFilter({
   setPublicoSearch: (v: string) => void;
   toggleArrayFilter: (key: keyof FilterState, value: string) => void;
 }) {
+  // BUG-SF-14 FIX: mensagem confusa "Carregando..." antes mesmo dos produtos começarem a carregar.
   if (publicoAlvoOptions.length === 0)
-    return <p className="text-xs text-muted-foreground">Carregando opções dos produtos...</p>;
+    return (
+      <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <span className="inline-block h-3 w-3 animate-spin rounded-full border border-muted-foreground border-t-transparent" />
+        Disponível após carregar o catálogo
+      </p>
+    );
   return (
     <SearchableCheckboxList
       items={publicoAlvoOptions.map((p) => ({ id: `pub-${p}`, label: toTitleCase(p) }))}
@@ -138,8 +144,14 @@ export function EndomarketingFilter({
   setEndoSearch: (v: string) => void;
   toggleArrayFilter: (key: keyof FilterState, value: string) => void;
 }) {
+  // BUG-SF-14 FIX: mensagem confusa antes dos produtos carregarem.
   if (endomarketingOptions.length === 0)
-    return <p className="text-xs text-muted-foreground">Carregando opções dos produtos...</p>;
+    return (
+      <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <span className="inline-block h-3 w-3 animate-spin rounded-full border border-muted-foreground border-t-transparent" />
+        Disponível após carregar o catálogo
+      </p>
+    );
   return (
     <SearchableCheckboxList
       items={endomarketingOptions.map((e) => ({ id: `endo-${e}`, label: toTitleCase(e) }))}
@@ -286,31 +298,45 @@ export function TagsFilter({
         className="flex max-h-48 flex-wrap gap-1.5 overflow-y-auto overscroll-contain pr-1"
         style={{ overscrollBehavior: 'contain' }}
       >
-        {tagOptions
-          .filter((t) => !tagSearch || t.name.toLowerCase().includes(tagSearch.toLowerCase()))
-          .slice(0, 30)
-          .map((tag) => (
-            <button
-              key={tag.id}
-              onClick={() => toggleArrayFilter('tags', tag.id)}
-              aria-label={`Tag ${tag.name}`}
-              className={cn(
-                'rounded-full border px-2.5 py-1 text-xs transition-all',
-                (filters.tags || []).includes(tag.id)
-                  ? 'border-brand-primary bg-brand-primary text-brand-primary-foreground'
-                  : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted',
+        {(() => {
+          // BUG-SF-12 FIX: limite era 30 sem indicador — aumentado para 50 e adicionado
+          // aviso "+X mais" quando o total filtrado excede o limite.
+          const TAG_DISPLAY_LIMIT = 50;
+          const filtered = tagOptions.filter(
+            (t) => !tagSearch || t.name.toLowerCase().includes(tagSearch.toLowerCase()),
+          );
+          const displayed = filtered.slice(0, TAG_DISPLAY_LIMIT);
+          const hidden = filtered.length - displayed.length;
+          return (
+            <>
+              {displayed.map((tag) => (
+                <button
+                  key={tag.id}
+                  onClick={() => toggleArrayFilter('tags', tag.id)}
+                  aria-label={`Tag ${tag.name}`}
+                  className={cn(
+                    'rounded-full border px-2.5 py-1 text-xs transition-all',
+                    (filters.tags || []).includes(tag.id)
+                      ? 'border-brand-primary bg-brand-primary text-brand-primary-foreground'
+                      : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted',
+                  )}
+                >
+                  {tag.name}
+                </button>
+              ))}
+              {hidden > 0 && (
+                <span className="self-center text-[11px] text-muted-foreground">
+                  +{hidden} mais — use a busca acima para filtrar
+                </span>
               )}
-            >
-              {tag.name}
-            </button>
-          ))}
-        {tagOptions.filter(
-          (t) => !tagSearch || t.name.toLowerCase().includes(tagSearch.toLowerCase()),
-        ).length === 0 && (
-          <p className="w-full py-2 text-center text-xs text-muted-foreground">
-            Nenhuma tag encontrada
-          </p>
-        )}
+              {filtered.length === 0 && (
+                <p className="w-full py-2 text-center text-xs text-muted-foreground">
+                  Nenhuma tag encontrada
+                </p>
+              )}
+            </>
+          );
+        })()}
       </div>
     </div>
   );

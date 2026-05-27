@@ -256,7 +256,7 @@ export function useAdvancedFilters() {
     if (filters.segmentosAtividade.length) count += filters.segmentosAtividade.length;
     // Threshold alinhado com PRICE_RANGE_MAX = 9999 em useCatalogFiltering
     if (filters.priceRange[0] > 0 || filters.priceRange[1] < 9999) count++;
-    if (filters.quantityRange[0] > 1 || filters.quantityRange[1] < 10000) count++;
+    // BUG-SF-16 FIX: quantityRange removido de AdvancedFilterState (era campo orphaned).
     if (filters.stockStatus !== 'all') count++;
     if (filters.isKit) count++;
     if (filters.isFeatured) count++;

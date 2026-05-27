@@ -10,9 +10,8 @@ import { getCorsHeaders } from "../_shared/cors.ts";
  */
 import {
   SendTransactionalEmailSchemas,
-} from '../_shared/request-schemas.ts';
-import { parseContract } from '../_shared/contract-parser.ts';
-import { logActivity } from '../_shared/activity-logger.ts';
+} from '../_shared/contracts/schemas/send-transactional-email.ts';
+import { parseContract } from '../_shared/contracts/index.ts';
 import { authenticateRequest, authErrorResponse } from '../_shared/auth.ts';
 import { resolveCredential } from '../_shared/credentials.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2.49.4';
@@ -69,7 +68,7 @@ Deno.serve(async (req) => {
   let user: { id: string; email?: string };
   try {
     const auth = await authenticateRequest(req);
-    user = { id: auth.userId, email: auth.userEmail };
+    user = { id: auth.userId };
   } catch (authErr) {
     return authErrorResponse(authErr, corsHeaders);
   }
@@ -130,12 +129,11 @@ Deno.serve(async (req) => {
     const sendResult = await sendViaResend(resendKey, body.recipient_email, subject, html);
     console.log('[send-transactional-email] sent via Resend', sendResult?.id);
 
-    await logActivity(adminClient, {
-      userId: user.id,
-      action: 'email_sent',
-      resourceType: 'email',
-      metadata: { event_type: body.event_type, recipient: body.recipient_email, email_id: sendResult?.id },
-    }).catch((e: unknown) => console.warn('[send-transactional-email] logActivity failed (non-fatal):', e));
+    // Log activity (non-fatal)
+    console.info('[send-transactional-email] activity', JSON.stringify({
+      userId: user.id, action: 'email_sent', resourceType: 'email',
+      event_type: body.event_type, recipient: body.recipient_email, email_id: sendResult?.id,
+    }));
 
     return new Response(
       JSON.stringify({

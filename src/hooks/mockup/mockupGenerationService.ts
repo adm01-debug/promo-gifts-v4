@@ -35,7 +35,7 @@ export interface GeneratedMockup {
   technique_name: string;
   mockup_url: string;
   layout_url?: string | null;
-  logo_url: string;
+  logo_url: string | null;
   position_x: number | null;
   position_y: number | null;
   logo_width_cm: number | null;
@@ -184,7 +184,7 @@ export interface GenerateMockupResult {
 }
 
 /** BUG-C FIX: 60-second timeout for edge function calls. */
-const GENERATE_TIMEOUT_MS = 60_000;
+const GENERATE_TIMEOUT_MS = 60000;
 
 function withGenerateTimeout<T>(promise: Promise<T>): Promise<T> {
   return Promise.race([
@@ -202,10 +202,8 @@ function withGenerateTimeout<T>(promise: Promise<T>): Promise<T> {
 function assertNotSvg(area: PersonalizationArea): void {
   if (!area.logoPreview) return;
   const isSvgDataUrl =
-    area.logoPreview.startsWith('data:image/svg') ||
-    area.logoPreview.startsWith('data:text/xml');
-  const isSvgHttpUrl =
-    area.logoPreview.startsWith('http') && /\.svg(\?|$)/i.test(area.logoPreview);
+    area.logoPreview.startsWith('data:image/svg') || area.logoPreview.startsWith('data:text/xml');
+  const isSvgHttpUrl = area.logoPreview.startsWith('http') && /\.svg(\?|$)/i.test(area.logoPreview);
   if (isSvgDataUrl || isSvgHttpUrl) {
     throw new Error(
       `Logos SVG não são suportados na área "${area.name}". Converta para PNG ou JPG.`,

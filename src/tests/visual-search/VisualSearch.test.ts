@@ -120,7 +120,8 @@ describe('Módulo Raio X - Validação Funcional', () => {
     it('deve registrar feedback positivo no banco de dados', async () => {
       const { supabase } = await import('@/integrations/supabase/client');
       const insertMock = vi.fn().mockResolvedValue({ error: null });
-      vi.mocked(supabase.from).mockReturnValue({ insert: insertMock });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(supabase.from).mockReturnValue({ insert: insertMock } as any);
 
       const feedbackData = {
         product_id: '123',
@@ -128,7 +129,8 @@ describe('Módulo Raio X - Validação Funcional', () => {
         match_relevance: 0.95,
       };
 
-      await supabase.from('visual_search_feedback').insert(feedbackData);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await supabase.from('visual_search_feedback').insert(feedbackData as any);
       expect(insertMock).toHaveBeenCalledWith(feedbackData);
     });
   });

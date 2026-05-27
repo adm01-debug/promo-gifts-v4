@@ -47,10 +47,16 @@ export function useFilterPanelState(
     }
   }, [debouncedSearch]);
 
+  // BUG-SF-07 FIX: sync de localSearch para qualquer mudança externa de filters.search
+  // (preset aplicado, URL navigation, voice action). Antes só sincronizava quando === '',
+  // deixando o campo de busca visualmente desatualizado ao navegar para /?search=caneta.
+  // O effect não cria loop: quando localSearch muda via user input, o debounce dispara e
+  // onFilterChange atualiza filters.search — na próxima checagem, filters.search === localSearch.
   useEffect(() => {
-    if (filters.search !== localSearch && filters.search === '') {
-      setLocalSearch('');
+    if (filters.search !== localSearch) {
+      setLocalSearch(filters.search || '');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.search]);
 
   const { data: categoryIcons = [] } = useCategoryIcons();

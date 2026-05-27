@@ -19,7 +19,8 @@ export const defaultAdvancedFilters: AdvancedFilterState = {
   // FIX-11: era [0, 1000] — inconsistente com defaultFilters.priceRange [0, 9999]
   // e com a lógica de filtro que usa 9999 como "sem limite superior".
   priceRange: [0, 9999],
-  quantityRange: [1, 10000],
+  // BUG-SF-16 FIX: quantityRange removido — era campo orphaned (não aparecia na UI,
+  // não era serializado na URL, não era aplicado ao filtro). Ver advancedFilters.ts.
   stockStatus: 'all',
   minStock: 0,
   isKit: false,

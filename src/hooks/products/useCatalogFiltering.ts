@@ -110,10 +110,15 @@ export function useCatalogFiltering({
 
     if (result.length === 0) return result;
 
+    // BUG-SF-11 FIX: implementação era inconsistente com useFiltersPageState.
+    // useFiltersPageState usava supplier.id + supplier.name + supplier_reference.
+    // Aqui, padronizamos para verificar supplier.id (mais confiável) além de brand e supplier_reference.
     if (supplierFilterSet.size > 0) {
       result = result.filter(
         (p) =>
-          supplierFilterSet.has(p.brand || '') || supplierFilterSet.has(p.supplier_reference || ''),
+          supplierFilterSet.has(p.supplier?.id || '') ||
+          supplierFilterSet.has(p.brand || '') ||
+          supplierFilterSet.has(p.supplier_reference || ''),
       );
     }
 

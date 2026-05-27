@@ -1,31 +1,21 @@
 {
-  "generated_at": "2026-05-25T17:25:14.449Z",
-  "total": 101,
+  "generated_at": "2026-05-27T01:47:35.678Z",
+  "total": 83,
   "entries": [
     {
-      "file": "src/components/admin/DiscountApprovalQueue.tsx",
-      "line": 52,
-      "snippet": "onError: (e: Error) => toast.error(e.message),"
-    },
-    {
-      "file": "src/components/admin/SellerDiscountLimitsPanel.tsx",
-      "line": 75,
-      "snippet": "onError: (e: Error) => toast.error(e.message),"
+      "file": "src/components/admin/connections/AutoTestIntervalCard.tsx",
+      "line": 39,
+      "snippet": "toast.error('Não foi possível ler o intervalo atual', { description: error.message });"
     },
     {
       "file": "src/components/admin/connections/AutoTestIntervalCard.tsx",
-      "line": 33,
-      "snippet": "toast.error(\"Não foi possível ler o intervalo atual\", { description: error.message });"
-    },
-    {
-      "file": "src/components/admin/connections/AutoTestIntervalCard.tsx",
-      "line": 54,
-      "snippet": "description: error.message.includes(\"forbidden\")"
+      "line": 62,
+      "snippet": "description: error.message.includes('forbidden')"
     },
     {
       "file": "src/components/admin/connections/CredentialCacheMetricsPanel.tsx",
       "line": 98,
-      "snippet": "toast.error(invErr?.message ?? data?.error?.message ?? \"Falha ao reiniciar métricas\");"
+      "snippet": "toast.error(invErr?.message ?? data?.error?.message ?? 'Falha ao reiniciar métricas');"
     },
     {
       "file": "src/components/admin/connections/CredentialsSourceIndicator.tsx",
@@ -39,13 +29,13 @@
     },
     {
       "file": "src/components/admin/connections/FailureWindowCard.tsx",
-      "line": 32,
-      "snippet": "toast.error(\"Não foi possível ler a janela atual\", { description: error.message });"
+      "line": 38,
+      "snippet": "toast.error('Não foi possível ler a janela atual', { description: error.message });"
     },
     {
       "file": "src/components/admin/connections/FailureWindowCard.tsx",
-      "line": 53,
-      "snippet": "description: error.message.includes(\"forbidden\")"
+      "line": 63,
+      "snippet": "description: error.message.includes('forbidden')"
     },
     {
       "file": "src/components/admin/connections/LastSyncRunPanel.tsx",
@@ -54,32 +44,32 @@
     },
     {
       "file": "src/components/admin/connections/McpTab.tsx",
-      "line": 60,
-      "snippet": "if (error) toast.error(\"Erro ao carregar chaves\", { description: error.message });"
+      "line": 69,
+      "snippet": "if (error) toast.error('Erro ao carregar chaves', { description: error.message });"
     },
     {
       "file": "src/components/admin/connections/RefreshFromDbButton.tsx",
-      "line": 52,
-      "snippet": "description: r.message ?? \"Próximas chamadas relerão os valores do banco.\","
+      "line": 63,
+      "snippet": "description: r.message ?? 'Próximas chamadas relerão os valores do banco.',"
     },
     {
       "file": "src/components/admin/connections/RefreshFromDbButton.tsx",
-      "line": 57,
-      "snippet": "description: r.error?.message ?? \"Erro desconhecido\","
+      "line": 68,
+      "snippet": "description: r.error?.message ?? 'Erro desconhecido',"
     },
     {
       "file": "src/components/admin/products/NewCategoryDialog.tsx",
-      "line": 92,
+      "line": 106,
       "snippet": "toast.error(err instanceof Error ? err.message : 'Erro ao criar categoria');"
     },
     {
       "file": "src/components/admin/products/ProductMarketingSection.tsx",
-      "line": 121,
+      "line": 155,
       "snippet": "toast.error(err instanceof Error ? err.message : 'Erro ao salvar');"
     },
     {
       "file": "src/components/admin/products/ProductMarketingSection.tsx",
-      "line": 145,
+      "line": 185,
       "snippet": "toast.error(err instanceof Error ? err.message : 'Erro ao limpar');"
     },
     {
@@ -94,12 +84,12 @@
     },
     {
       "file": "src/components/admin/products/ProductRamosSection.tsx",
-      "line": 71,
+      "line": 72,
       "snippet": "toast.error(err instanceof Error ? err.message : 'Erro ao alterar segmento');"
     },
     {
       "file": "src/components/admin/products/ProductTagsSection.tsx",
-      "line": 98,
+      "line": 122,
       "snippet": "toast.error(err instanceof Error ? err.message : 'Erro ao alterar tag');"
     },
     {
@@ -134,62 +124,47 @@
     },
     {
       "file": "src/components/admin/products/kit-components/ProductKitComponentsSection.tsx",
-      "line": 97,
+      "line": 121,
       "snippet": "toast.error(err instanceof Error ? err.message : 'Erro ao criar componente');"
     },
     {
       "file": "src/components/admin/products/kit-components/ProductKitComponentsSection.tsx",
-      "line": 111,
+      "line": 135,
       "snippet": "toast.error(err instanceof Error ? err.message : 'Erro ao atualizar');"
     },
     {
       "file": "src/components/admin/products/kit-components/ProductKitComponentsSection.tsx",
-      "line": 126,
+      "line": 150,
       "snippet": "toast.error(err instanceof Error ? err.message : 'Erro ao remover');"
     },
     {
-      "file": "src/components/admin/products/sections/engraving/useEngravingWizard.ts",
-      "line": 84,
-      "snippet": "onError: (e: Error) => toast.error(e.message),"
-    },
-    {
-      "file": "src/components/admin/products/sections/engraving/useEngravingWizard.ts",
-      "line": 96,
-      "snippet": "onError: (e: Error) => toast.error(e.message),"
-    },
-    {
-      "file": "src/components/admin/products/sections/engraving/useEngravingWizard.ts",
-      "line": 108,
-      "snippet": "onError: (e: Error) => toast.error(e.message),"
+      "file": "src/components/admin/products/useProductVariants.ts",
+      "line": 155,
+      "snippet": "toast.error(err instanceof Error ? err.message : 'Erro ao criar variação');"
     },
     {
       "file": "src/components/admin/products/useProductVariants.ts",
-      "line": 128,
-      "snippet": "} catch (err) { toast.error(err instanceof Error ? err.message : 'Erro ao criar variação'); }"
+      "line": 169,
+      "snippet": "toast.error(err instanceof Error ? err.message : 'Erro ao atualizar');"
     },
     {
       "file": "src/components/admin/products/useProductVariants.ts",
-      "line": 139,
-      "snippet": "} catch (err) { toast.error(err instanceof Error ? err.message : 'Erro ao atualizar'); }"
+      "line": 184,
+      "snippet": "toast.error(err instanceof Error ? err.message : 'Erro ao remover');"
     },
     {
       "file": "src/components/admin/products/useProductVariants.ts",
-      "line": 151,
-      "snippet": "} catch (err) { toast.error(err instanceof Error ? err.message : 'Erro ao remover'); }"
-    },
-    {
-      "file": "src/components/admin/products/useProductVariants.ts",
-      "line": 167,
-      "snippet": "} catch (err) { toast.error(err instanceof Error ? err.message : 'Erro na operação em lote'); }"
+      "line": 211,
+      "snippet": "toast.error(err instanceof Error ? err.message : 'Erro na operação em lote');"
     },
     {
       "file": "src/components/admin/products/useProductsManager.ts",
-      "line": 222,
-      "snippet": "toast.error(error instanceof Error ? error.message : \"Erro ao excluir produto\");"
+      "line": 386,
+      "snippet": "toast.error(error instanceof Error ? error.message : 'Erro ao excluir produto');"
     },
     {
       "file": "src/components/admin/products/useProductsManager.ts",
-      "line": 246,
+      "line": 441,
       "snippet": "toast.error(error instanceof Error ? error.message : 'Erro ao atualizar produtos em lote');"
     },
     {
@@ -214,13 +189,13 @@
     },
     {
       "file": "src/components/admin/security/BlockIpButton.tsx",
-      "line": 56,
-      "snippet": "description: err instanceof Error ? err.message : \"Erro desconhecido\","
+      "line": 62,
+      "snippet": "description: err instanceof Error ? err.message : 'Erro desconhecido',"
     },
     {
       "file": "src/components/admin/security/ForceGlobalLogoutDialog.tsx",
       "line": 47,
-      "snippet": "description: err instanceof Error ? err.message : \"Erro desconhecido\","
+      "snippet": "description: err instanceof Error ? err.message : 'Erro desconhecido',"
     },
     {
       "file": "src/components/admin/security/SecureUploadManager.tsx",
@@ -229,13 +204,13 @@
     },
     {
       "file": "src/components/admin/security/keys/diagnostics/FullOpDiagnosticsPanel.tsx",
-      "line": 83,
-      "snippet": "toast.error(\"Falha ao executar diagnóstico\", { description: error.message });"
+      "line": 120,
+      "snippet": "toast.error('Falha ao executar diagnóstico', { description: error.message });"
     },
     {
       "file": "src/components/admin/security/keys/diagnostics/FullOpDiagnosticsPanel.tsx",
-      "line": 88,
-      "snippet": "toast.error(\"Erro inesperado\", { description: e instanceof Error ? e.message : String(e) });"
+      "line": 125,
+      "snippet": "toast.error('Erro inesperado', { description: e instanceof Error ? e.message : String(e) });"
     },
     {
       "file": "src/components/admin/security/keys/useMcpKeys.ts",
@@ -244,17 +219,17 @@
     },
     {
       "file": "src/components/admin/security/role-migration/RoleMigrationPanel.tsx",
-      "line": 135,
+      "line": 143,
       "snippet": "description: e instanceof Error ? e.message : String(e),"
     },
     {
       "file": "src/components/admin/security/role-migration/RoleMigrationPanel.tsx",
-      "line": 195,
+      "line": 203,
       "snippet": "description: e instanceof Error ? e.message : String(e),"
     },
     {
       "file": "src/components/admin/security/role-migration/RoleMigrationPanel.tsx",
-      "line": 207,
+      "line": 215,
       "snippet": "description: e instanceof Error ? e.message : String(e),"
     },
     {
@@ -264,17 +239,17 @@
     },
     {
       "file": "src/components/admin/users/useUserManagement.ts",
-      "line": 145,
+      "line": 163,
       "snippet": "description: error instanceof Error ? error.message : String(error),"
     },
     {
       "file": "src/components/admin/users/useUserManagement.ts",
-      "line": 183,
+      "line": 201,
       "snippet": "description: error instanceof Error ? error.message : String(error),"
     },
     {
       "file": "src/components/admin/users/useUserManagement.ts",
-      "line": 212,
+      "line": 230,
       "snippet": "description: error instanceof Error ? error.message : String(error),"
     },
     {
@@ -289,112 +264,47 @@
     },
     {
       "file": "src/components/bi/ExecutiveSummaryButton.tsx",
-      "line": 75,
-      "snippet": "toast.error(\"Erro ao copiar\", { description: e instanceof Error ? e.message : \"Tente novamente.\" });"
+      "line": 80,
+      "snippet": "description: e instanceof Error ? e.message : 'Tente novamente.',"
     },
     {
       "file": "src/components/bi/ExecutiveSummaryButton.tsx",
-      "line": 98,
-      "snippet": "toast.error(\"Falha ao gerar PPTX\", { description: e instanceof Error ? e.message : \"Tente novamente.\" });"
+      "line": 105,
+      "snippet": "description: e instanceof Error ? e.message : 'Tente novamente.',"
     },
     {
       "file": "src/components/bi/ExportDossierButton.tsx",
       "line": 25,
-      "snippet": "description: err instanceof Error ? err.message : \"Tente novamente.\","
+      "snippet": "description: err instanceof Error ? err.message : 'Tente novamente.',"
     },
     {
       "file": "src/components/intelligence/SavedViewsManager.tsx",
-      "line": 61,
-      "snippet": "onError: (e: Error) => toast({ title: \"Erro ao salvar\", description: e.message, variant: \"destructive\" }),"
+      "line": 74,
+      "snippet": "toast({ title: 'Erro ao salvar', description: e.message, variant: 'destructive' }),"
     },
     {
       "file": "src/components/kit-builder/KitAIPromptDialog.tsx",
-      "line": 47,
+      "line": 53,
       "snippet": "toast.error(e instanceof Error ? e.message : 'Erro ao gerar sugestão');"
     },
     {
-      "file": "src/components/search/VisualSearchButton.tsx",
-      "line": 99,
-      "snippet": "description: error instanceof Error ? error.message : \"Não foi possível processar a imagem.\","
-    },
-    {
       "file": "src/components/security/MfaChallengeDialog.tsx",
-      "line": 50,
-      "snippet": "toast.error(\"Código inválido\", { description: e instanceof Error ? e.message : \"Tente novamente\" });"
+      "line": 61,
+      "snippet": "description: e instanceof Error ? e.message : 'Tente novamente',"
     },
     {
       "file": "src/components/security/MfaEnrollmentDialog.tsx",
-      "line": 63,
-      "snippet": "toast.error(\"Falha ao iniciar MFA\", { description: e instanceof Error ? e.message : \"Erro desconhecido\" });"
+      "line": 76,
+      "snippet": "description: e instanceof Error ? e.message : 'Erro desconhecido',"
     },
     {
       "file": "src/components/security/MfaEnrollmentDialog.tsx",
-      "line": 87,
-      "snippet": "toast.error(\"Código inválido\", { description: e instanceof Error ? e.message : \"Tente novamente\" });"
-    },
-    {
-      "file": "src/hooks/gravacao/useFornecedoresGravacao.ts",
-      "line": 52,
-      "snippet": "toast.error(error.message);"
-    },
-    {
-      "file": "src/hooks/gravacao/useFornecedoresGravacao.ts",
-      "line": 73,
-      "snippet": "toast.error(error.message);"
-    },
-    {
-      "file": "src/hooks/gravacao/useFornecedoresGravacao.ts",
-      "line": 86,
-      "snippet": "toast.error(error.message);"
-    },
-    {
-      "file": "src/hooks/gravacao/useTecnicasGravacao.ts",
-      "line": 69,
-      "snippet": "toast.error(error.message);"
-    },
-    {
-      "file": "src/hooks/gravacao/useTecnicasGravacao.ts",
-      "line": 94,
-      "snippet": "toast.error(error.message);"
-    },
-    {
-      "file": "src/hooks/gravacao/useTecnicasGravacao.ts",
-      "line": 120,
-      "snippet": "toast.error(error.message);"
-    },
-    {
-      "file": "src/hooks/gravacao/useTecnicasGravacao.ts",
-      "line": 138,
-      "snippet": "toast.error(error.message);"
-    },
-    {
-      "file": "src/hooks/gravacao/useVariantesGravacao.ts",
-      "line": 59,
-      "snippet": "toast.error(error.message);"
-    },
-    {
-      "file": "src/hooks/gravacao/useVariantesGravacao.ts",
-      "line": 84,
-      "snippet": "toast.error(error.message);"
-    },
-    {
-      "file": "src/hooks/gravacao/useVariantesGravacao.ts",
-      "line": 98,
-      "snippet": "toast.error(error.message);"
-    },
-    {
-      "file": "src/hooks/gravacao/useVariantesGravacao.ts",
-      "line": 116,
-      "snippet": "toast.error(error.message);"
-    },
-    {
-      "file": "src/hooks/gravacao/useVariantesGravacao.ts",
-      "line": 138,
-      "snippet": "toast.error(error.message);"
+      "line": 106,
+      "snippet": "description: e instanceof Error ? e.message : 'Tente novamente',"
     },
     {
       "file": "src/hooks/simulator/useWizardDrafts.ts",
-      "line": 72,
+      "line": 79,
       "snippet": "toast.error(`Erro ao salvar: ${err.message}`);"
     },
     {
@@ -419,13 +329,13 @@
     },
     {
       "file": "src/pages/admin/AdminExternalDbPage.tsx",
-      "line": 63,
-      "snippet": "description: err instanceof Error ? err.message : \"Erro desconhecido\","
+      "line": 80,
+      "snippet": "description: err instanceof Error ? err.message : 'Erro desconhecido',"
     },
     {
       "file": "src/pages/admin/AdminExternalDbPage.tsx",
-      "line": 109,
-      "snippet": "description: err instanceof Error ? err.message : \"Erro desconhecido\","
+      "line": 125,
+      "snippet": "description: err instanceof Error ? err.message : 'Erro desconhecido',"
     },
     {
       "file": "src/pages/admin/AdminProductFormPage.tsx",
@@ -434,78 +344,78 @@
     },
     {
       "file": "src/pages/admin/AdminSegurancaAcessoPage.tsx",
-      "line": 202,
+      "line": 201,
       "snippet": "description: parsed.error.errors[0].message,"
     },
     {
       "file": "src/pages/admin/AdminSegurancaAcessoPage.tsx",
-      "line": 220,
+      "line": 219,
       "snippet": "toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });"
     },
     {
       "file": "src/pages/admin/AdminSegurancaAcessoPage.tsx",
-      "line": 235,
+      "line": 234,
       "snippet": "toast({ title: 'Erro ao remover', description: error.message, variant: 'destructive' });"
     },
     {
-      "file": "src/pages/admin/SellerDiscountLimitsAdminPage.tsx",
-      "line": 202,
-      "snippet": "onError: (e: Error) => toast.error(e.message),"
-    },
-    {
       "file": "src/pages/admin/StorageTestPage.tsx",
-      "line": 44,
+      "line": 54,
       "snippet": "description: error.message,"
     },
     {
       "file": "src/pages/admin/StorageTestPage.tsx",
-      "line": 85,
+      "line": 93,
       "snippet": "description: error.message,"
     },
     {
       "file": "src/pages/admin/StorageTestPage.tsx",
-      "line": 110,
+      "line": 116,
       "snippet": "description: error.message,"
     },
     {
       "file": "src/pages/admin/StorageTestPage.tsx",
-      "line": 132,
+      "line": 136,
       "snippet": "description: error.message,"
     },
     {
       "file": "src/pages/admin/StorageTestPage.tsx",
-      "line": 150,
-      "snippet": "toast({ title: \"Sucesso\", description: data.message });"
+      "line": 154,
+      "snippet": "toast({ title: 'Sucesso', description: data.message });"
     },
     {
       "file": "src/pages/admin/StorageTestPage.tsx",
-      "line": 152,
-      "snippet": "toast({ title: \"Erro\", description: err.message, variant: \"destructive\" });"
+      "line": 156,
+      "snippet": "toast({ title: 'Erro', description: err.message, variant: 'destructive' });"
     },
     {
       "file": "src/pages/admin/telemetry/useOptimizationQueue.ts",
-      "line": 84,
+      "line": 96,
       "snippet": "toast.error(`Falha ao enfileirar: ${error.message}`);"
     },
     {
       "file": "src/pages/admin/telemetry/useOptimizationQueue.ts",
-      "line": 97,
+      "line": 112,
       "snippet": "toast.error(`Falha ao remover: ${error.message}`);"
     },
     {
       "file": "src/pages/admin/telemetry/useOptimizationQueue.ts",
-      "line": 106,
+      "line": 124,
       "snippet": "toast.error(`Falha ao resetar: ${error.message}`);"
     },
     {
       "file": "src/pages/admin/telemetry/useOptimizationQueue.ts",
-      "line": 117,
+      "line": 137,
       "snippet": "toast.error(`Falha ao reivindicar: ${claimErr.message}`);"
     },
     {
       "file": "src/pages/auth/ResetPassword.tsx",
       "line": 104,
       "snippet": "description: error.message,"
+    },
+    {
+      "file": "src/pages/tools/VisualSearchPage.tsx",
+      "line": 276,
+      "snippet": "description: err.message || 'Tente novamente com outra imagem.'"
     }
   ]
 }

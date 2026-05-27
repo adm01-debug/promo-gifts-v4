@@ -133,6 +133,9 @@ export const EDGE_AUTHZ_MANIFEST: Record<string, AuthzEntry> = {
   "mcp-keys-update": { category: "dev", rationale: "MCP keys — has_role(dev) inline", enforcedBy: "custom" },
   "test-contract-orchestrator": { category: "dev", rationale: "Teste de contratos — dev/CI only, HMAC inline", enforcedBy: "custom" },
   "test-inventory-orchestrator": { category: "dev", rationale: "Teste de inventario — dev/CI only, service_role inline", enforcedBy: "custom" },
+  "load-test": { category: "dev", rationale: "Load testing utility — sem auth no caller; uso dev/CI only", enforcedBy: "custom" },
+
+  "verify-2fa-token": { category: "authenticated", rationale: "Verificação TOTP server-side — JWT Bearer obrigatório (verify_jwt: true)", enforcedBy: "jwt" },
 
   // ---------------- Scoped (auth custom) ----------------
   "mcp-server": { category: "scoped", rationale: "Token MCP com escopos read/write/admin", enforcedBy: "custom" },

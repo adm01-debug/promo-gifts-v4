@@ -85,10 +85,14 @@ export function useFiltersPageState() {
     return f;
   });
 
-  const debouncedServerSearch = useDebounce(filters.search || '', 400);
-  const urlSearch = searchParams.get('search') || '';
-  const debouncedUrlSearch = useDebounce(urlSearch, 400);
-  const serverSearchTerm = debouncedServerSearch || debouncedUrlSearch;
+  // BUG-SF-19 FIX: eram dois useDebounce encadeados (filters.search + urlSearch),
+  // potencialmente causando latência de 800ms e race conditions.
+  // filters.search é fonte primária (imediata após setFilters) — searchParams.get('search')
+  // é o fallback para compatibilidade com links externos que chegam com ?search= na URL
+  // sem nunca passar por setFilters (first render). Com filters inicializados a partir da URL
+  // no useState inicial, filters.search já contém o valor — o fallback é apenas garantia.
+  const effectiveSearch = filters.search || searchParams.get('search') || '';
+  const serverSearchTerm = useDebounce(effectiveSearch, 400);
 
   const {
     data: catalogData,
@@ -357,7 +361,10 @@ export function useFiltersPageState() {
               nichos.some((t: string) => t.toLowerCase().includes(s.toLowerCase())),
             )
           : true;
-        return matchesRamo || matchesSegmento;
+        // BUG-SF-06 FIX: era OR — produto passava se correspondesse a ramo OU segmento.
+        // Correto é AND: produto deve corresponder ao ramo E ao segmento selecionados.
+        // Se apenas um dos filtros está ativo, o outro default é true (sem restrição).
+        return matchesRamo && matchesSegmento;
       });
     if (hasMaterialFilter && materialFilteredProductIds.size > 0)
       result = result.filter((p) => materialFilteredProductIds.has(p.id));
@@ -416,7 +423,46 @@ export function useFiltersPageState() {
         ),
       );
     }
-    const skipSort = hasFuzzySearch && sortBy === 'name';
+    // BUG-SF-02 FIX: tags era contabilizado/chipeado mas sem bloco de filtro.
+    // Produto.tags é um objeto estruturado (publicoAlvo, ramo, etc.) — não tem campo de tags genérico.
+    // Aqui fazemos match pelo slug do tag versus qualquer campo de string do produto.
+    if (filters.tags?.length) {
+      result = result.filter((product) => {
+        // Tenta match nos campos de tag do produto via ID ou valor
+        const allTagValues = [
+          ...(product.tags?.publicoAlvo || []),
+          ...(product.tags?.datasComemorativas || []),
+          ...(product.tags?.endomarketing || []),
+          ...(product.tags?.ramo || []),
+          ...(product.tags?.nicho || []),
+        ].map((v: string) => v.toLowerCase());
+        // Se o ID da tag bater com algum valor de tag do produto, inclui o produto
+        return filters.tags.some((tagId) => {
+          const tagIdLower = tagId.toLowerCase();
+          return allTagValues.some((v) => v === tagIdLower || v.includes(tagIdLower));
+        });
+      });
+    }
+    // BUG-SF-01 FIX: techniques era contabilizado/chipeado mas sem bloco de filtro.
+    // O campo techniques não existe diretamente no Product lightweight — filtro
+    // client-side faz match pelo ID/nome da técnica no metadata do produto.
+    // Para filtro server-side completo, implementar useProductsByTechnique hook.
+    if (filters.techniques?.length) {
+      const techSet = new Set(filters.techniques.map((t) => t.toLowerCase()));
+      result = result.filter((product) => {
+        // Tenta match via metadata.techniques (se disponível no produto enriquecido)
+        const metaTechs: string[] = (product.metadata?.techniques as string[]) || [];
+        if (metaTechs.length > 0) {
+          return metaTechs.some((t: string) => techSet.has(t.toLowerCase()));
+        }
+        // Fallback: sem dados de técnica no produto — não filtra (inclui o produto)
+        // para não esconder produtos válidos enquanto o hook server-side não existe.
+        return true;
+      });
+    }
+    // BUG-SF-08 FIX: era só === 'name', deve incluir 'relevance' (consistente com useCatalogFiltering).
+    // Com busca fuzzy ativa, a relevância já está na ordem dos resultados — não aplicar sort extra.
+    const skipSort = hasFuzzySearch && (sortBy === 'name' || sortBy === 'relevance');
     sortProducts(result, sortBy, { promoSalesMap, supplierSalesMap, skipSort });
     return result;
   }, [

@@ -7,6 +7,7 @@ import {
   DollarSign,
   Truck,
   Users,
+  User,
   Calendar,
   Briefcase,
   Gem,
@@ -18,6 +19,7 @@ import {
   Target,
   TrendingUp,
   Zap,
+  Ruler,
 } from 'lucide-react';
 
 // ============================================
@@ -134,8 +136,10 @@ export const SECTION_CONFIG: Record<string, { title: string; icon: React.ReactNo
     title: 'Técnicas de Gravação',
     icon: React.createElement(Paintbrush, { className: 'h-4 w-4' }),
   },
-  genero: { title: 'Gênero', icon: React.createElement(Users, { className: 'h-4 w-4' }) },
-  tamanhos: { title: 'Tamanhos', icon: React.createElement(Package, { className: 'h-4 w-4' }) },
+  // BUG-SF-18 FIX: genero usava Users (igual a publico), tamanhos usava Package (igual a estoque).
+  // Ícones mais semânticos: User (singular) para gênero, Ruler para tamanhos.
+  genero: { title: 'Gênero', icon: React.createElement(User, { className: 'h-4 w-4' }) },
+  tamanhos: { title: 'Tamanhos', icon: React.createElement(Ruler, { className: 'h-4 w-4' }) },
   tags: { title: 'Tags', icon: React.createElement(Tag, { className: 'h-4 w-4' }) },
   'opcoes-rapidas': {
     title: 'Opções Rápidas',
@@ -156,5 +160,8 @@ export const SECTION_GROUPS = [
     sections: ['publico', 'datas-comemorativas', 'endomarketing', 'ramos-atividade'],
     icon: Target,
   },
-  { label: 'ATALHOS', sections: ['tags', 'opcoes-rapidas'], icon: Zap },
+  // BUG-SF-03 FIX: 'ordenacao' estava definido em SECTION_CONFIG e sectionRenderers
+  // mas NUNCA aparecia no sidebar porque não estava em nenhum SECTION_GROUPS.
+  // Adicionado ao grupo 'ATALHOS' para renderizar a seção de ordenação no painel lateral.
+  { label: 'ATALHOS', sections: ['tags', 'opcoes-rapidas', 'ordenacao'], icon: Zap },
 ];

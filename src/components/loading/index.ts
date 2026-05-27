@@ -19,8 +19,6 @@ export {
   ProductTableSkeleton,
   ProductListItemSkeleton,
   ProductListSkeleton,
-  TextSkeleton,
-  ChartSkeleton,
 } from './ModernSkeletons';
 
 export { LoadingOverlay, Spinner, LoadingDots, ProgressLoader } from './LoadingOverlay';

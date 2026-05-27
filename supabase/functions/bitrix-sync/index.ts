@@ -57,7 +57,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    const parsed = BitrixSyncSchema.safeParse(await req.json());
+    let rawBitrixBody: unknown = {};
+    try { rawBitrixBody = await req.json(); } catch { /* invalid JSON → safeParse will reject below */ }
+    const parsed = BitrixSyncSchema.safeParse(rawBitrixBody);
     if (!parsed.success) {
       return new Response(
         JSON.stringify({ error: 'Invalid request', details: parsed.error.flatten().fieldErrors }),

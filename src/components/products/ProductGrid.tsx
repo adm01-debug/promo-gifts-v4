@@ -212,11 +212,13 @@ export function ProductGrid({
     );
   }
 
-  const displayProducts =
+  type SkeletonEntry = { id: string; isSkeleton: true };
+  const displayProducts: Array<Product | SkeletonEntry> =
     isLoading && products.length === 0
-      ? Array.from({ length: 15 }).map(
-          (_, i) => ({ id: `skeleton-${i}`, isSkeleton: true }) as Record<string, unknown>,
-        )
+      ? Array.from({ length: 15 }).map((_, i) => ({
+          id: `skeleton-${i}`,
+          isSkeleton: true as const,
+        }))
       : products;
 
   return (
@@ -225,7 +227,7 @@ export function ProductGrid({
       className={`grid ${columnClasses[columns] || columnClasses[5]} ${columns >= 8 ? 'gap-x-4 gap-y-8' : columns >= 6 ? 'gap-x-6 gap-y-8' : 'gap-x-4 gap-y-8 sm:gap-x-6 lg:gap-x-8'}`}
     >
       {displayProducts.map((product, index) =>
-        (product as Record<string, unknown>).isSkeleton ? (
+        'isSkeleton' in product && product.isSkeleton ? (
           <ProductCardSkeleton
             key={product.id}
             variant="default"
@@ -234,18 +236,18 @@ export function ProductGrid({
           />
         ) : (
           <ProductCardWrapper
-            key={product.id}
-            product={product}
+            key={(product as Product).id}
+            product={product as Product}
             index={index}
             isVisible={isGridVisible}
             priority={index < 8}
-            onClick={onProductClick ? () => onProductClick(product.id) : undefined}
+            onClick={onProductClick ? () => onProductClick((product as Product).id) : undefined}
             onView={onViewProduct}
             onShare={onShareProduct}
             onFavorite={onFavoriteProduct}
-            isFavorited={isFavorite ? isFavorite(product.id) : false}
+            isFavorited={isFavorite ? isFavorite((product as Product).id) : false}
             onToggleFavorite={onToggleFavorite}
-            isInCompare={isInCompare ? isInCompare(product.id) : false}
+            isInCompare={isInCompare ? isInCompare((product as Product).id) : false}
             onToggleCompare={onToggleCompare}
             canAddToCompare={canAddToCompare}
             highlightColors={highlightColors}

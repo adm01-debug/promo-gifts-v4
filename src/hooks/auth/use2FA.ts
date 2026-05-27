@@ -131,7 +131,7 @@ export function use2FA(targetUserId?: string) {
 
       // Admin bypass: pode desativar sem token se targetUserId for explicito
       if (!token && !targetUserId) {
-        return { success: false, error: 'Codigo necessario' };
+        return { success: false, error: 'Código necessário' };
       }
 
       /**

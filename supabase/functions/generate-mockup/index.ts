@@ -130,12 +130,15 @@ async function compositeImages(
   }
 
   const canvas = new OffscreenCanvas(CANVAS_PX, CANVAS_PX);
-  const ctx = canvas.getContext("2d");
+  // deno-lint-ignore no-explicit-any
+  const ctx = canvas.getContext("2d") as any;
   if (!ctx) throw new Error("OffscreenCanvas 2d context unavailable");
 
   const [prodBmp, logoBmp] = await Promise.all([
-    createImageBitmap(new Blob([productBytes])),
-    createImageBitmap(new Blob([logoBytes])),
+    // deno-lint-ignore no-explicit-any
+    createImageBitmap(new Blob([productBytes as unknown as any])),
+    // deno-lint-ignore no-explicit-any
+    createImageBitmap(new Blob([logoBytes as unknown as any])),
   ]);
 
   // BUG-A15 FIX: const/let em vez de var
@@ -181,8 +184,15 @@ Deno.serve(async (req) => {
   }
 
   let body: GenerateMockupBody;
-  try { body = await req.json(); }
-  catch { return validationError("Request body must be valid JSON", corsHeaders); }
+  try {
+    const parsed = await req.json();
+    // Guard: null / array / primitive bodies would throw when we access
+    // body.productImageUrl below — treat them as an empty object so the
+    // validation error path fires cleanly instead of a 500.
+    body = (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed))
+      ? (parsed as GenerateMockupBody)
+      : ({} as GenerateMockupBody);
+  } catch { return validationError("Request body must be valid JSON", corsHeaders); }
 
   if (!isValidHttpUrl(body.productImageUrl))
     return validationError("productImageUrl is required and must be a valid HTTPS URL", corsHeaders);

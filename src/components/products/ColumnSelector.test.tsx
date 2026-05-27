@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ColumnSelector, STORAGE_KEY } from './ColumnSelector';
+import { ColumnSelector, STORAGE_KEY, type ColumnCount } from './ColumnSelector';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 // Mock screen width
@@ -22,7 +22,7 @@ describe('ColumnSelector', () => {
     setScreenWidth(1600); // Desktop size with all options
   });
 
-  const renderSelector = (value: number = 5, onChange = vi.fn()) => {
+  const renderSelector = (value: ColumnCount = 5, onChange = vi.fn()) => {
     return render(
       <TooltipProvider>
         <ColumnSelector value={value} onChange={onChange} />

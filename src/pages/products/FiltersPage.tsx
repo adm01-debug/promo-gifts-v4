@@ -98,8 +98,10 @@ export default function FiltersPage() {
         toast.success(action.response);
       } else if (action.action === 'sort' && action.data.sortBy) {
         // BUG-VOZ FIX: sortMap não continha 'best-seller-supplier' e 'best-seller-promo'.
-        // Comandos de voz como "ordenar por mais vendidos" caíam no fallback 'name' silenciosamente.
+        // BUG-SF-10 FIX: 'relevance' também estava ausente — comando "ordenar por relevância"
+        // caía no fallback 'name' silenciosamente.
         const sortMap: Record<string, string> = {
+          relevance: 'relevance',
           'price-asc': 'price-asc',
           'price-desc': 'price-desc',
           name: 'name',
