@@ -77,6 +77,8 @@ export function ProductDetailHero({
   onOpenSupplierComparison,
   isLoadingTags,
   hasErrorTags,
+  isLoadingNiches,
+  hasErrorNiches,
 }: ProductDetailHeroProps) {
   const navigate = useNavigate();
   const [quoteVariantWizardOpen, setQuoteVariantWizardOpen] = useState(false);
