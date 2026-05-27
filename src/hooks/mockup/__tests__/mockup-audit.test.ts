@@ -159,15 +159,35 @@ describe('Analise estatica — useMockupGenerator.ts', () => {
   let src: string;
   beforeEach(() => { src = readSrc('src/hooks/mockup/useMockupGenerator.ts'); });
 
-  describe('T1/T2 — 7 handlers em useCallback', () => {
-    const handlers = ['saveMockupToHistory', 'generateMockup', 'downloadMockup', 'deleteMockup', 'resetForm', 'handleShareMockup', 'loadFromHistory'] as const;
-    handlers.forEach((fn) => {
-      it(`${fn} usa useCallback`, () => { expect(src).toMatch(new RegExp(`const\\s+${fn}\\s*=\\s*useCallback`)); });
+  describe('T1/T2 — 7 handlers envolvidos em useCallback com deps corretas', () => {
+    const handlers = [
+      'saveMockupToHistory',
+      'generateMockup',
+      'downloadMockup',
+      'deleteMockup',
+      'resetForm',
+      'handleShareMockup',
+      'loadFromHistory',
+    ] as const;
+
+    it.each(handlers)('%s usa useCallback', (fn) => {
+      expect(src).toMatch(new RegExp(`const\\s+${fn}\\s*=\\s*useCallback`));
     });
-    it('saveMockupToHistory: deps criticas', () => {
+
+    it('saveMockupToHistory: array de deps inclui todas as closures criticas', () => {
       expect(src).toContain('[user, selectedProduct, selectedTechnique, selectedClient, mockupAnnotations]');
     });
-    it('deleteMockup: deps incluem mockupToDelete e user', () => { expect(src).toContain('[mockupToDelete, user]'); });
+
+    it('deleteMockup: deps incluem mockupToDelete e user', () => {
+      expect(src).toContain('[mockupToDelete, user]');
+    });
+
+    it('eslint-disable comments removidos (NAO mais necessarios)', () => {
+      // Nota: era necessario na versao buggy sem useCallback
+      expect(src).not.toMatch(
+        /eslint-disable-next-line react-hooks\/exhaustive-deps\s*\nconst\s+(saveMockupToHistory|generateMockup|downloadMockup|deleteMockup|resetForm|handleShareMockup|loadFromHistory)/,
+      );
+    });
   });
 
   describe('T3 — Memory leaks: cleanup de timeouts', () => {

@@ -427,7 +427,6 @@ export function useFiltersPageState() {
     // Produto.tags é um objeto estruturado (publicoAlvo, ramo, etc.) — não tem campo de tags genérico.
     // Aqui fazemos match pelo slug do tag versus qualquer campo de string do produto.
     if (filters.tags?.length) {
-      const tagSet = new Set(filters.tags.map((t) => t.toLowerCase()));
       result = result.filter((product) => {
         // Tenta match nos campos de tag do produto via ID ou valor
         const allTagValues = [
@@ -438,7 +437,7 @@ export function useFiltersPageState() {
           ...(product.tags?.nicho || []),
         ].map((v: string) => v.toLowerCase());
         // Se o ID da tag bater com algum valor de tag do produto, inclui o produto
-        return filters.tags!.some((tagId) => {
+        return filters.tags.some((tagId) => {
           const tagIdLower = tagId.toLowerCase();
           return allTagValues.some((v) => v === tagIdLower || v.includes(tagIdLower));
         });
