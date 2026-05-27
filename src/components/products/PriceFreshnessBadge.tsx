@@ -392,28 +392,29 @@ export function PriceFreshnessBadge({
     const relative = formatRelativeDaysShort(freshness.daysSinceUpdate);
 
     if (freshness.status === 'stale') {
+      // Versão suavizada: pill discreto (mesmo footprint visual do `aging`),
+      // mantendo a cor de aviso âmbar mas sem o bloco cheio que competia
+      // com o preço. Detalhes (data + recomendação) migram para o tooltip.
       body = (
-        <div
+        <span
           role="status"
           aria-label={ariaLabel}
+          title={title}
+          tabIndex={0}
           className={cn(
-            'inline-flex items-start gap-2.5 rounded-xl border-[1.5px] border-amber-300 bg-amber-100/80 px-3.5 py-2.5 text-amber-900 dark:border-amber-500/60 dark:bg-amber-500/15 dark:text-amber-200',
+            'inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50/70 px-2.5 py-0.5 text-[11px] font-medium text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
+            focusRing,
             className,
           )}
         >
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-          <div className="flex flex-col gap-0.5 leading-tight">
-            <span className="font-display text-sm font-semibold">Preço pode estar defasado</span>
+          <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden="true" />
+          <span className="tabular-nums">
+            Preço pode estar defasado
             {absolute && (
-              <span className="text-xs tabular-nums text-amber-800/90 dark:text-amber-200/80">
-                Última atualização em {absolute} ({relative})
-              </span>
+              <span className="text-muted-foreground"> · {relative}</span>
             )}
-            <span className="text-[11px] text-amber-800/80 dark:text-amber-200/70">
-              Confirme com o fornecedor antes de fechar o orçamento.
-            </span>
-          </div>
-        </div>
+          </span>
+        </span>
       );
     } else if (freshness.status === 'aging' && absolute) {
       body = (
