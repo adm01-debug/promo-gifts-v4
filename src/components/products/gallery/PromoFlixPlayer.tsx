@@ -713,38 +713,6 @@ export function PromoFlixPlayer({
         )}
       </div>
 
-      {/* Bottom controls */}
-      <div
-        className={cn(
-          'absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black via-black/60 to-transparent p-4 transition-all duration-500 backdrop-blur-[2px]',
-          showControls || !isPlaying ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0',
-        )}
-      >
-        {/* Seek bar */}
-        <div className="group/seek relative mb-2 flex items-center">
-          <div className="relative h-1 w-full overflow-hidden rounded-full bg-white/25 transition-all group-hover/seek:h-1.5">
-            <div
-              className="absolute inset-y-0 left-0 bg-white/40"
-              style={{ width: `${bufferedPct}%` }}
-            />
-            <div
-              className="absolute inset-y-0 left-0 bg-primary"
-              style={{ width: `${progressPct}%` }}
-            />
-          </div>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            step={0.1}
-            value={progressPct}
-            onChange={onSeek}
-            aria-label="Linha do tempo"
-            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-          />
-        </div>
-
-      {/* Bottom controls */}
       <div
         className={cn(
           'absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black via-black/80 to-transparent px-5 pt-12 pb-4 transition-all duration-500',
