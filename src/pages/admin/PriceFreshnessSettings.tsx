@@ -125,10 +125,10 @@ export default function PriceFreshnessSettings() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="h-4 w-4 text-primary" />
-                  <CardTitle className="text-base font-semibold">Produtos com Override ({overrides?.length ?? 0})</CardTitle>
+                  <CardTitle className="text-base font-semibold">Overrides Legados ({overrides?.length ?? 0})</CardTitle>
                 </div>
                 <CardDescription>
-                  Lista de produtos que possuem uma validade de preço específica configurada no cadastro.
+                  Estes são overrides salvos no banco local (Supabase). Novos produtos devem ser configurados diretamente na ficha técnica no Admin de Produtos.
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
