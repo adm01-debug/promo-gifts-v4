@@ -55,7 +55,7 @@ export function LegalFooter({ className, withDivider = true }: LegalFooterProps)
       </nav>
 
       <p className="text-center text-[9px] font-medium text-muted-foreground opacity-90 sm:text-[10px]">
-        © {year} Promo Gifts — Todos os direitos reservados.
+        © {year} Promo Brindes — Todos os direitos reservados.
       </p>
     </footer>
   );

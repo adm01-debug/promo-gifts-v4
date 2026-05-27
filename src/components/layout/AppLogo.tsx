@@ -63,7 +63,7 @@ export function AppLogo({
               textClassName,
             )}
           >
-            Promo Gifts
+            Promo Brindes
           </span>
           <span
             className={cn(

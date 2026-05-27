@@ -14,7 +14,7 @@ export interface OnboardingStep {
 export const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     id: 'welcome',
-    title: 'Bem-vindo ao Promo Gifts!',
+    title: 'Bem-vindo ao Promo Brindes!',
     description:
       'Vamos fazer um tour completo pelas funcionalidades do sistema. Você descobrirá recursos poderosos para turbinar suas vendas!',
     targetSelector: "[data-tour='sidebar']",
