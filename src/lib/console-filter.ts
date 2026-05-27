@@ -20,6 +20,9 @@
     'target origin provided',
     'prewarm skip',
     'prewarm',
+    'SkeletonMonitor',
+    'SkeletonMonitor.tsx',
+    'threshold: 1500ms',
   ];
 
   const SILENCED_ERRORS = [
