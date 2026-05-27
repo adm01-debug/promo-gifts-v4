@@ -33,7 +33,7 @@ import { useCurrentSection } from '@/hooks/ui/useCurrentSection';
 import { useIsScrolled } from '@/hooks/ui/useScroll';
 import { useToast } from '@/hooks/ui/use-toast';
 import { useOnboardingContext } from '@/contexts/OnboardingContext';
-import { OrganizationSwitcher } from '@/components/OrganizationSwitcher';
+
 import { useSearchStore } from '@/stores/useSearchStore';
 
 import { StockAlertsIndicator } from '@/components/inventory/StockAlertsIndicator';
