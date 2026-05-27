@@ -335,7 +335,7 @@ export function PriceFreshnessBadge({
     );
   }
 
-  const { ariaLabel, title } = buildAccessibleLabel(freshness, priceUpdatedAt);
+  const { ariaLabel } = buildAccessibleLabel(freshness, priceUpdatedAt);
 
   // Anel de foco visível padronizado para os triggers compactos. Usa o token
   // `--ring` para herdar a cor do tema (light/dark/skins) e respeitar o
