@@ -71,8 +71,10 @@ export function ProductCardSkeleton({
         </div>
       )}
 
-      {/* Image Section - Matches ProductCardImage aspect ratio */}
-      <Skeleton className="aspect-square w-full rounded-none" animate={animate} />
+      {/* Image Section - Matches ProductCardImage: white product canvas + 4/5 ratio */}
+      <div className="product-img-container relative aspect-[4/5] w-full overflow-hidden">
+        <Skeleton className="absolute inset-0 h-full w-full rounded-none bg-muted/30" animate={animate} />
+      </div>
 
       {/* Info Section - Synchronized with ProductCard.tsx */}
       <div className="relative flex flex-1 flex-col space-y-2.5 bg-background p-3 sm:space-y-4 sm:p-5">

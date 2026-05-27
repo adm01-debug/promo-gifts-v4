@@ -107,11 +107,33 @@ function CatalogSkeletonBody() {
   );
 }
 
+function AppShellCatalogSkeletonBody() {
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="flex">
+        <div className="hidden h-screen w-64 shrink-0 border-r border-sidebar-border/10 bg-sidebar/5 lg:block" />
+        <div className="min-w-0 flex-1">
+          <div className="h-14 border-b border-border/10 bg-sidebar/60" />
+          <main className="p-3 pb-6 sm:p-4 lg:p-6">
+            <CatalogSkeletonBody />
+          </main>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** Catalog / Products page skeleton — espelha Index.tsx (header + toolbar + grid). */
 export const CatalogSkeleton = makeSkeleton(
   'Catalog',
   () => <CatalogSkeletonBody />,
   'mx-auto w-full max-w-[1920px] px-3 py-3 sm:px-4 sm:py-4 lg:px-6 xl:px-8',
+);
+
+export const AppShellCatalogSkeleton = makeSkeleton(
+  'AppShellCatalog',
+  () => <AppShellCatalogSkeletonBody />,
+  'w-full',
 );
 
 
@@ -289,7 +311,7 @@ export function getFallback(pathname: string): React.ReactNode {
     pathname.startsWith('/colecoes') ||
     pathname.startsWith('/carrinhos')
   )
-    return <CatalogSkeleton />;
+    return pathname === '/' ? <AppShellCatalogSkeleton /> : <CatalogSkeleton />;
   if (pathname.startsWith('/orcamentos')) return <QuotesSkeleton />;
   if (pathname.startsWith('/clientes')) return <ClientsSkeleton />;
   if (pathname.startsWith('/admin') || pathname === '/status') return <AdminSkeleton />;
