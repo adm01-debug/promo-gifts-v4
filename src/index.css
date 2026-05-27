@@ -61,7 +61,7 @@
 /* Custom Tooltip Utilities (Ensures build retention) */
 @layer utilities {
   .text-tooltip {
-    font-size: 7.7px;
+    font-size: 5.4px !important;
     line-height: 1.15;
   }
 }
