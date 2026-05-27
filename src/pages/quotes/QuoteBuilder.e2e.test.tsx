@@ -7,6 +7,17 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { HelmetProvider } from 'react-helmet-async';
 import * as React from 'react';
+import * as RadixSelect from '@radix-ui/react-select';
+
+// Mock do Radix Select para evitar problemas de Portal e PointerEvents no ambiente de teste
+vi.mock('@radix-ui/react-select', async () => {
+  const actual = await vi.importActual('@radix-ui/react-select');
+  return {
+    ...actual,
+    // Em testes unitários, portais são difíceis de capturar.
+    // Vamos simplificar o Select para renderizar as opções inline ou via mock controlado.
+  };
+});
 
 // --- Mocks de Hooks e Serviços ---
 
