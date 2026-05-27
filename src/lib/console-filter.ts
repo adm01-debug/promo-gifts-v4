@@ -24,6 +24,7 @@
     '[Telemetry] performance',
     '[Performance] Route',
     '[Performance] Skeleton',
+    '[CloudStatus]',
   ];
 
   const SILENCED_ERRORS = [
