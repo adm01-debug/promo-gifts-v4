@@ -713,15 +713,16 @@ export function PromoFlixPlayer({
         )}
       </div>
 
+      {/* Bottom controls */}
       <div
         className={cn(
-          'absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black via-black/80 to-transparent px-5 pt-12 pb-4 transition-all duration-500',
+          'absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black via-black/80 to-transparent px-4 pb-4 pt-12 transition-all duration-500 md:px-5 md:pb-4 md:pt-12',
           showControls || !isPlaying ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0',
         )}
       >
-        {/* Seek bar with hover preview */}
+        {/* Seek bar with larger touch area on mobile */}
         <div
-          className="group/seek relative mb-3 flex items-center py-2"
+          className="group/seek relative mb-2 flex items-center py-3 md:mb-3 md:py-2"
           onMouseMove={(e) => {
             const rect = e.currentTarget.getBoundingClientRect();
             const pct = ((e.clientX - rect.left) / rect.width) * 100;
@@ -729,18 +730,18 @@ export function PromoFlixPlayer({
           }}
           onMouseLeave={() => setHoverSeekPct(null)}
         >
-          {/* Hover time tooltip */}
+          {/* Hover time tooltip - hidden on touch devices by default behavior */}
           {hoverSeekPct !== null && duration > 0 && (
             <div
-              className="pointer-events-none absolute -top-2 -translate-x-1/2 -translate-y-full rounded-md bg-black/90 backdrop-blur-md border border-white/10 px-2 py-1 text-[11px] font-bold tabular-nums text-white shadow-xl whitespace-nowrap"
+              className="pointer-events-none absolute -top-2 -translate-x-1/2 -translate-y-full rounded-md bg-black/90 px-2 py-1 text-[11px] font-bold tabular-nums text-white border border-white/10 shadow-xl backdrop-blur-md whitespace-nowrap"
               style={{ left: `${hoverSeekPct}%` }}
             >
               {formatTime((hoverSeekPct / 100) * duration)}
-              <span className="absolute left-1/2 -translate-x-1/2 top-full h-0 w-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black/90" />
+              <span className="absolute left-1/2 top-full h-0 w-0 -translate-x-1/2 border-l-4 border-r-4 border-t-4 border-transparent border-t-black/90" />
             </div>
           )}
 
-          <div className="relative h-1 w-full rounded-full bg-white/20 transition-all duration-200 group-hover/seek:h-1.5">
+          <div className="relative h-1.5 w-full rounded-full bg-white/20 transition-all duration-200 md:h-1 md:group-hover/seek:h-1.5">
             {/* Buffered */}
             <div
               className="absolute inset-y-0 left-0 rounded-full bg-white/30"
@@ -758,9 +759,9 @@ export function PromoFlixPlayer({
               className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-primary to-primary/80 shadow-[0_0_8px_rgba(var(--primary-rgb),0.6)]"
               style={{ width: `${progressPct}%` }}
             />
-            {/* Thumb */}
+            {/* Thumb - Larger on mobile */}
             <div
-              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-3.5 w-3.5 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.6)] ring-2 ring-primary opacity-0 group-hover/seek:opacity-100 transition-opacity"
+              className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.6)] ring-2 ring-primary transition-opacity md:h-3.5 md:w-3.5 md:opacity-0 md:group-hover/seek:opacity-100"
               style={{ left: `${progressPct}%` }}
             />
           </div>
@@ -776,147 +777,151 @@ export function PromoFlixPlayer({
           />
         </div>
 
-        <div className="flex items-center gap-1">
-          <button
-            onClick={togglePlay}
-            className="rounded-full p-2 transition-all hover:bg-white/15 hover:scale-110 active:scale-95"
-            aria-label={isPlaying ? 'Pausar' : 'Reproduzir'}
-          >
-            {isPlaying ? <Pause className="h-5 w-5 fill-current" /> : <Play className="h-5 w-5 fill-current" />}
-          </button>
-
-          <button
-            onClick={() => seekBy(-10)}
-            className="rounded-full p-2 transition-all hover:bg-white/15 hover:-rotate-12 active:scale-95"
-            aria-label="Voltar 10 segundos"
-            title="Voltar 10s (J / ←)"
-          >
-            <RotateCcw className="h-5 w-5" />
-          </button>
-          <button
-            onClick={() => seekBy(10)}
-            className="rounded-full p-2 transition-all hover:bg-white/15 hover:rotate-12 active:scale-95"
-            aria-label="Avançar 10 segundos"
-            title="Avançar 10s (L / →)"
-          >
-            <RotateCw className="h-5 w-5" />
-          </button>
-
-          {/* Volume */}
-          <div className="group/vol flex items-center">
+        <div className="flex flex-wrap items-center gap-1 md:flex-nowrap">
+          <div className="flex items-center gap-1">
             <button
-              onClick={toggleMute}
-              className="rounded-full p-2 transition-all hover:bg-white/15 hover:scale-110 active:scale-95"
-              aria-label={isMuted ? 'Ativar som' : 'Mutar'}
+              onClick={togglePlay}
+              className="rounded-full p-3 transition-all hover:bg-white/15 hover:scale-110 active:scale-95 md:p-2"
+              aria-label={isPlaying ? 'Pausar' : 'Reproduzir'}
             >
-              {volumeIcon}
+              {isPlaying ? <Pause className="h-6 w-6 fill-current md:h-5 md:w-5" /> : <Play className="h-6 w-6 fill-current md:h-5 md:w-5" />}
             </button>
-            <div className="overflow-hidden">
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.05}
-                value={isMuted ? 0 : volume}
-                onChange={(e) => setVol(Number(e.target.value))}
-                aria-label="Volume"
-                className="w-0 cursor-pointer accent-primary transition-all duration-300 group-hover/vol:ml-2 group-hover/vol:w-24"
-              />
-            </div>
-          </div>
 
-          {/* Time */}
-          <div className="ml-3 flex items-baseline gap-1.5 font-mono text-[13px] tabular-nums">
-            <span className="font-semibold text-white">{formatTime(currentTime)}</span>
-            <span className="text-white/30">/</span>
-            <span className="text-white/50">{formatTime(duration)}</span>
+            <button
+              onClick={() => seekBy(-10)}
+              className="rounded-full p-3 transition-all hover:bg-white/15 hover:-rotate-12 active:scale-95 md:p-2"
+              aria-label="Voltar 10 segundos"
+              title="Voltar 10s (J / ←)"
+            >
+              <RotateCcw className="h-6 w-6 md:h-5 md:w-5" />
+            </button>
+            <button
+              onClick={() => seekBy(10)}
+              className="rounded-full p-3 transition-all hover:bg-white/15 hover:rotate-12 active:scale-95 md:p-2"
+              aria-label="Avançar 10 segundos"
+              title="Avançar 10s (L / →)"
+            >
+              <RotateCw className="h-6 w-6 md:h-5 md:w-5" />
+            </button>
+
+            {/* Volume - hidden on smallest mobile, shown on larger mobile/tablet up */}
+            <div className="group/vol hidden items-center sm:flex">
+              <button
+                onClick={toggleMute}
+                className="rounded-full p-2 transition-all hover:bg-white/15 hover:scale-110 active:scale-95"
+                aria-label={isMuted ? 'Ativar som' : 'Mutar'}
+              >
+                {volumeIcon}
+              </button>
+              <div className="overflow-hidden">
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={isMuted ? 0 : volume}
+                  onChange={(e) => setVol(Number(e.target.value))}
+                  aria-label="Volume"
+                  className="w-0 cursor-pointer accent-primary transition-all duration-300 md:group-hover/vol:ml-2 md:group-hover/vol:w-24"
+                />
+              </div>
+            </div>
+
+            {/* Time - Larger font on mobile, responsive margin */}
+            <div className="ml-2 flex items-baseline gap-1 font-mono text-sm tabular-nums md:ml-3 md:gap-1.5 md:text-[13px]">
+              <span className="font-semibold text-white">{formatTime(currentTime)}</span>
+              <span className="text-white/30">/</span>
+              <span className="text-white/50">{formatTime(duration)}</span>
+            </div>
           </div>
 
           <div className="flex-1" />
 
-          <div className="flex items-center gap-1.5 px-2 mr-2 border-r border-white/10">
-            {/* Raio-X Toggle */}
+          <div className="flex items-center gap-1 md:gap-1.5">
+            <div className="flex items-center gap-1 px-1 mr-1 border-r border-white/10 md:gap-1.5 md:px-2 md:mr-2">
+              {/* Raio-X Toggle */}
+              <button
+                onClick={toggleRaioX}
+                className={cn(
+                  "group relative flex items-center justify-center rounded-full p-3 transition-all duration-300 md:p-2",
+                  isRaioXActive 
+                    ? "bg-primary text-primary-foreground shadow-[0_0_15px_rgba(var(--primary-rgb),0.5)]" 
+                    : "hover:bg-white/15 text-white/80 hover:text-white"
+                )}
+                aria-label="Ativar Raio-X"
+                title="Raio-X (X)"
+              >
+                {isRaioXActive ? <Zap className="h-6 w-6 fill-current md:h-5 md:w-5" /> : <ZapOff className="h-6 w-6 md:h-5 md:w-5" />}
+                {isRaioXActive && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3 md:-top-1 md:-right-1">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+                  </span>
+                )}
+              </button>
+
+              {/* Screenshot */}
+              <button
+                onClick={takeScreenshot}
+                className="flex items-center gap-1 rounded-full p-3 transition-colors hover:bg-white/15 text-white/80 hover:text-white md:p-2"
+                aria-label="Capturar frame"
+                title="Foto do frame (S)"
+              >
+                <Camera className="h-6 w-6 md:h-5 md:w-5" />
+              </button>
+            </div>
+
+            {/* Speed - Simplified on mobile */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="flex items-center gap-1 rounded-full px-3 py-3 text-sm font-medium tabular-nums transition-colors hover:bg-white/15 md:px-2.5 md:py-2"
+                  aria-label="Velocidade"
+                  title="Velocidade (< / >)"
+                >
+                  <Gauge className="h-6 w-6 md:h-5 md:w-5" />
+                  <span className="hidden sm:inline">{playbackRate}x</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-32">
+                <DropdownMenuLabel>Velocidade</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {PLAYBACK_RATES.map((rate) => (
+                  <DropdownMenuItem
+                    key={rate}
+                    onClick={() => setRate(rate)}
+                    className={cn(playbackRate === rate && 'font-bold text-primary', "py-2.5")}
+                  >
+                    {rate === 1 ? 'Normal (1x)' : `${rate}x`}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* PiP - Hidden on smallest mobile if space is tight */}
             <button
-              onClick={toggleRaioX}
-              className={cn(
-                "group relative flex items-center justify-center rounded-full p-2 transition-all duration-300",
-                isRaioXActive 
-                  ? "bg-primary text-primary-foreground shadow-[0_0_15px_rgba(var(--primary-rgb),0.5)]" 
-                  : "hover:bg-white/15 text-white/80 hover:text-white"
-              )}
-              aria-label="Ativar Raio-X"
-              title="Raio-X (X)"
+              onClick={togglePip}
+              className="hidden rounded-full p-3 transition-colors hover:bg-white/15 sm:flex md:p-2"
+              aria-label="Picture-in-Picture"
+              title="Picture-in-Picture (P)"
             >
-              {isRaioXActive ? <Zap className="h-5 w-5 fill-current" /> : <ZapOff className="h-5 w-5" />}
-              {isRaioXActive && (
-                <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
-                </span>
-              )}
+              <PictureInPicture2 className="h-6 w-6 md:h-5 md:w-5" />
             </button>
 
-            {/* Screenshot */}
+            {/* Fullscreen */}
             <button
-              onClick={takeScreenshot}
-              className="flex items-center gap-1 rounded-full p-2 transition-colors hover:bg-white/15 text-white/80 hover:text-white"
-              aria-label="Capturar frame"
-              title="Foto do frame (S)"
+              onClick={toggleFullscreen}
+              className="rounded-full p-3 transition-colors hover:bg-white/15 md:p-2"
+              aria-label={isFullscreen ? 'Sair da tela cheia' : 'Tela cheia'}
+              title="Tela cheia (F)"
             >
-              <Camera className="h-5 w-5" />
+              {isFullscreen ? (
+                <Minimize className="h-6 w-6 md:h-5 md:w-5" />
+              ) : (
+                <Maximize className="h-6 w-6 md:h-5 md:w-5" />
+              )}
             </button>
           </div>
-
-          {/* Speed */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className="flex items-center gap-1 rounded-full px-2.5 py-2 text-sm font-medium tabular-nums transition-colors hover:bg-white/15"
-                aria-label="Velocidade"
-                title="Velocidade (< / >)"
-              >
-                <Gauge className="h-5 w-5" />
-                {playbackRate}x
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-32">
-              <DropdownMenuLabel>Velocidade</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {PLAYBACK_RATES.map((rate) => (
-                <DropdownMenuItem
-                  key={rate}
-                  onClick={() => setRate(rate)}
-                  className={cn(playbackRate === rate && 'font-bold text-primary')}
-                >
-                  {rate === 1 ? 'Normal (1x)' : `${rate}x`}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* PiP */}
-          <button
-            onClick={togglePip}
-            className="rounded-full p-2 transition-colors hover:bg-white/15"
-            aria-label="Picture-in-Picture"
-            title="Picture-in-Picture (P)"
-          >
-            <PictureInPicture2 className="h-5 w-5" />
-          </button>
-
-          {/* Fullscreen */}
-          <button
-            onClick={toggleFullscreen}
-            className="rounded-full p-2 transition-colors hover:bg-white/15"
-            aria-label={isFullscreen ? 'Sair da tela cheia' : 'Tela cheia'}
-            title="Tela cheia (F)"
-          >
-            {isFullscreen ? (
-              <Minimize className="h-5 w-5" />
-            ) : (
-              <Maximize className="h-5 w-5" />
-            )}
-          </button>
         </div>
       </div>
     </div>
