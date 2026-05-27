@@ -20,6 +20,7 @@
     'Skeleton-Trace',
     'aponta para projeto não-canônico',
     '[Performance] Skeleton',
+    '[CloudStatus] state change',
   ];
 
   const SILENCED_ERRORS = [
