@@ -10,7 +10,7 @@ import { adminRoutes } from './admin-routes';
 import { homeAndClientRoutes, notFoundRoute } from './client-routes';
 import { productRoutes } from './product-routes';
 import { publicRoutes } from './public-routes';
-import DebugButtons from '@/pages/DebugButtons';
+import ActionButtonsGallery from '@/pages/design-system/ActionButtonsGallery';
 import { quoteRoutes } from './quote-routes';
 import { toolsRoutes } from './tools-routes';
 
@@ -85,7 +85,7 @@ export function AppRoutes() {
     <RouteSuspense>
       <Routes>
         {publicRoutes}
-        <Route path="/debug-buttons" element={<DebugButtons />} />
+        <Route path="/design-system/action-buttons" element={<ActionButtonsGallery />} />
         
         
 
