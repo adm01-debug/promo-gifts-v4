@@ -37,7 +37,7 @@ export function ProtectedRoute({
     );
   }
 
-  if (!user && !location.search.includes('bypass_auth=true')) {
+  if (!user) {
     // Salva destino pós-login (sobrevive ao round-trip OAuth)
     savePostLoginRedirect(`${location.pathname}${location.search}${location.hash}`);
     // Etapa 8: instrumentação para auditar se Navigate está mudando URL em produção
