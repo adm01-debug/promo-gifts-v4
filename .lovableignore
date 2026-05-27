@@ -15,3 +15,9 @@ supabase/functions/elevenlabs-tts/index.ts
 supabase/functions/generate-mockup/index.ts
 supabase/functions/cnpj-lookup/index.ts
 supabase/functions/image-proxy/index.ts
+
+# Hooks auditados — não editar via Lovable (requer revisão manual)
+# Alterações causam regressões críticas (VOICE-01, KBD-01, CS-02, STAT-01, CS-03)
+src/hooks/intelligence/useSpeechRecognition.ts
+src/hooks/products/useCatalogState.ts
+src/hooks/__tests__/hooks-audit-regression.unit.test.ts
