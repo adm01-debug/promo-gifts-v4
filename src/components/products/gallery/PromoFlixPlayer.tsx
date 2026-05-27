@@ -110,12 +110,16 @@ export function PromoFlixPlayer({
     { id: 3, x: 45, y: 75, label: 'Acabamento Base', detail: 'Polímero de Alta Densidade', confidence: 92 },
   ], []);
 
+  const flash = useCallback((label: string) => {
+    setFlashLabel(label);
+    window.setTimeout(() => setFlashLabel(null), 700);
+  }, []);
+
   // Setup HLS or native
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !src) return;
 
-    let hls: import('hls.js').default | null = null;
     let cancelled = false;
 
     setIsLoading(true);
@@ -163,7 +167,7 @@ export function PromoFlixPlayer({
                 setCurrentQuality(-1);
               }
             });
-          } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
+          } else if (videoRef.current?.canPlayType('application/vnd.apple.mpegurl')) {
             videoRef.current.src = src;
           }
         })
@@ -247,10 +251,6 @@ export function PromoFlixPlayer({
     return () => document.removeEventListener('fullscreenchange', handler);
   }, []);
 
-  const flash = useCallback((label: string) => {
-    setFlashLabel(label);
-    window.setTimeout(() => setFlashLabel(null), 700);
-  }, []);
 
   const togglePlay = useCallback(() => {
     const v = videoRef.current;
@@ -1001,9 +1001,9 @@ export function PromoFlixPlayer({
                 <Maximize className="h-6 w-6 md:h-5 md:w-5" />
               )}
             </button>
-          </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }
