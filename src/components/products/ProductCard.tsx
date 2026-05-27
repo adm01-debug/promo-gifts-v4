@@ -483,8 +483,8 @@ export const ProductCard = memo(
                       getStockStatusColor(displayStatus),
                     )}
                   >
-                    <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                    <span className="hidden sm:inline">{getStockStatusLabel(displayStatus)}</span>
+                    <Package className="h-2.5 w-2.5 shrink-0 sm:h-3 sm:w-3" />
+                    <span className="hidden whitespace-nowrap sm:inline">{getStockStatusLabel(displayStatus)}</span>
                     <span className="sm:hidden">
                       {displayStatus === 'in-stock'
                         ? '✓'
