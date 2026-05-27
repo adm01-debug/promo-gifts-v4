@@ -35,7 +35,7 @@ export interface GeneratedMockup {
   technique_name: string;
   mockup_url: string;
   layout_url?: string | null;
-  logo_url: string;
+  logo_url: string | null;
   position_x: number | null;
   position_y: number | null;
   logo_width_cm: number | null;
