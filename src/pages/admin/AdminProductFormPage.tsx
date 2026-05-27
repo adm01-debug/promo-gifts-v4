@@ -179,6 +179,7 @@ export default function AdminProductFormPage() {
         stock_unit: data.stock_unit || 'un', product_type: data.product_type || 'product',
         is_kit: data.product_type === 'kit', min_quantity: data.min_quantity ?? 1,
         min_order_quantity: data.min_order_quantity ?? null,
+        price_freshness_threshold_days: data.price_freshness_threshold_days ?? 60,
         is_active: data.is_active, active: data.is_active,
         is_featured: data.is_featured, is_bestseller: data.is_bestseller,
         is_new: data.is_new, is_on_sale: data.is_on_sale,
