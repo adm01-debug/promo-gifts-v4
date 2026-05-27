@@ -29,15 +29,44 @@ function makeSkeleton(displayName: string, render: () => React.ReactNode, rootCl
   return Cmp;
 }
 
-/** Catalog / Products page skeleton — mirrors Index.tsx exactly */
-export const CatalogSkeleton = makeSkeleton(
-  'Catalog',
-  () => (
+/** Lê preferências persistidas pelo catálogo para que o fallback de rota
+ *  bata exatamente com o skeleton de conteúdo renderizado pelo Index. */
+type CatalogColumns = 3 | 4 | 5 | 6 | 8;
+type CatalogViewMode = 'grid' | 'list' | 'table';
+
+function readCatalogColumns(): CatalogColumns {
+  try {
+    const v = Number(localStorage.getItem('product-grid-columns'));
+    if ([3, 4, 5, 6, 8].includes(v)) return v as CatalogColumns;
+  } catch {
+    /* empty */
+  }
+  if (typeof window !== 'undefined' && window.innerWidth < 1024) return 3;
+  return 5;
+}
+
+function readCatalogViewMode(): CatalogViewMode {
+  try {
+    const v = localStorage.getItem('catalog-view-mode');
+    if (v === 'grid' || v === 'list' || v === 'table') return v;
+  } catch {
+    /* empty */
+  }
+  return 'grid';
+}
+
+function CatalogSkeletonBody() {
+  const columns = readCatalogColumns();
+  const viewMode = readCatalogViewMode();
+  // Mesma contagem usada por CatalogContent para evitar "salto" visual
+  const count = viewMode === 'list' ? 8 : 12;
+
+  return (
     <div className="space-y-4">
-      {/* Header row: title (with count) + inline desktop search + recently viewed */}
+      {/* Header row: título + busca inline desktop + recently viewed */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          <Skeleton className="h-8 w-56 sm:h-9 sm:w-64 lg:h-10 lg:w-72 rounded-md" />
+          <Skeleton className="h-8 w-56 rounded-md sm:h-9 sm:w-64 lg:h-10 lg:w-72" />
           <div className="hidden w-80 items-center gap-2 sm:flex lg:w-[28rem]">
             <Skeleton className="h-11 flex-1 rounded-lg" />
           </div>
@@ -66,9 +95,25 @@ export const CatalogSkeleton = makeSkeleton(
         </div>
       </div>
 
-      <ProductGridSkeleton count={15} columns={5} />
+      {viewMode === 'list' ? (
+        <div className="flex flex-col gap-2">
+          {Array.from({ length: count }).map((_, i) => (
+            <Skeleton key={i} className="h-[80px] w-full rounded-xl sm:h-[96px]" />
+          ))}
+        </div>
+      ) : viewMode === 'table' ? (
+        <Skeleton className="h-[560px] w-full rounded-xl" />
+      ) : (
+        <ProductGridSkeleton count={count} columns={columns} />
+      )}
     </div>
-  ),
+  );
+}
+
+/** Catalog / Products page skeleton — espelha Index.tsx (header + toolbar + grid). */
+export const CatalogSkeleton = makeSkeleton(
+  'Catalog',
+  () => <CatalogSkeletonBody />,
   'mx-auto w-full max-w-[1920px] px-3 py-3 sm:px-4 sm:py-4 lg:px-6 xl:px-8',
 );
 
