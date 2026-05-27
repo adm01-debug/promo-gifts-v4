@@ -14,7 +14,7 @@ import type { Product } from '@/types/product-catalog';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Package, Heart, Users, Palette, FolderTree } from 'lucide-react';
 
-import { defaultFilters, type FilterState } from '@/components/filters/FilterPanel';
+import { defaultFilters, type FilterState, type ColorGroup } from '@/components/filters/FilterPanel';
 import {
   getDefaultColumns,
   STORAGE_KEY as GRID_COLUMNS_KEY,
