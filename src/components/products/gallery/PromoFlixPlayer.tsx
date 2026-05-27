@@ -132,12 +132,12 @@ export function PromoFlixPlayer({
         .then(({ default: Hls }) => {
           if (cancelled || !videoRef.current) return;
           if (Hls.isSupported()) {
-            hls = new Hls({ maxBufferLength: 30 });
-            hlsRef.current = hls;
-            hls.loadSource(src);
-            hls.attachMedia(videoRef.current);
+            const hlsInstance = new Hls({ maxBufferLength: 30 });
+            hlsRef.current = hlsInstance;
+            hlsInstance.loadSource(src);
+            hlsInstance.attachMedia(videoRef.current);
 
-            hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
+            hlsInstance.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
               const levels = data.levels.map((level, index) => ({
                 id: index,
                 label: level.height ? `${level.height}p` : `Qualidade ${index + 1}`
@@ -147,13 +147,13 @@ export function PromoFlixPlayer({
               const savedQuality = localStorage.getItem('promoflix_quality');
               if (savedQuality !== null) {
                 const q = parseInt(savedQuality, 10);
-                if (hls) hls.currentLevel = q;
+                hlsInstance.currentLevel = q;
                 setCurrentQuality(q);
               }
             });
 
-            hls.on(Hls.Events.LEVEL_SWITCHED, (_, data) => {
-              if (hls && hls.autoLevelEnabled) {
+            hlsInstance.on(Hls.Events.LEVEL_SWITCHED, (_, data) => {
+              if (hlsInstance.autoLevelEnabled) {
                 setCurrentQuality(-1);
               }
             });
@@ -168,8 +168,8 @@ export function PromoFlixPlayer({
 
     return () => {
       cancelled = true;
-      if (hls) {
-        hls.destroy();
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
         hlsRef.current = null;
       }
     };
