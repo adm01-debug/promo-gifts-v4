@@ -177,7 +177,7 @@ export function ProductQuickActions({
         open={activeModal === 'personalizacao'}
         onOpenChange={(o) => !o && setActiveModal(null)}
       >
-        <DialogContent className="max-h-[72vh] max-w-md overflow-y-auto">
+        <DialogContent className="max-h-[85vh] w-[min(96vw,820px)] max-w-[820px] overflow-y-auto overflow-x-hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Palette className="h-5 w-5 text-primary" />
