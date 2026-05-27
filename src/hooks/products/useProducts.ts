@@ -23,7 +23,14 @@ export function useProducts(
 ) {
   return useQuery<Product[]>({
     queryKey: ['promobrind-products', filters],
-    queryFn: () => productService.fetchProducts(filters),
+    queryFn: async () => {
+      try {
+        return await productService.fetchProducts(filters);
+      } catch (error) {
+        console.error('[useProducts] Error fetching products:', error);
+        throw error;
+      }
+    },
     staleTime: 30 * 60 * 1000,
     gcTime: 24 * 60 * 60 * 1000,
     refetchOnWindowFocus: false,

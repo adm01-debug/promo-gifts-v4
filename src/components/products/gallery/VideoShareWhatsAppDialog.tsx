@@ -122,12 +122,28 @@ export function VideoShareWhatsAppDialog({
   // Compute the default message based on current selection / props.
   const defaultMessage = useMemo(() => {
     const firstName = selection?.contactName?.split(' ')[0];
+    
+    // Sanitize shareUrl to remove tracking or auth bypass params
+    let sanitizedShareUrl = shareUrl;
+    if (sanitizedShareUrl) {
+      try {
+        const url = new URL(sanitizedShareUrl);
+        url.searchParams.delete('bypass_auth');
+        url.searchParams.delete('utm_source');
+        url.searchParams.delete('utm_medium');
+        url.searchParams.delete('utm_campaign');
+        sanitizedShareUrl = url.toString();
+      } catch {
+        // Keep as is if not a valid URL
+      }
+    }
+
     return buildSalesMessage({
       contactFirstName: firstName,
       companyName: selection?.companyName,
       productName,
       videoTitle,
-      shareUrl,
+      shareUrl: sanitizedShareUrl,
       productPrice,
       productSku,
       productMinQuantity,
