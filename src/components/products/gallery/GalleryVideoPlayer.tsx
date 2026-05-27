@@ -1,12 +1,19 @@
 /**
- * GalleryVideoPlayer — Dialog para reprodução de vídeos do produto
+ * GalleryVideoPlayer — Dialog para reprodução de vídeos do produto.
+ * Usa PromoFlixPlayer (player Netflix-like) quando o vídeo é Cloudflare Stream ou MP4 direto.
+ * Mantém iframe para YouTube.
  */
 
 import { useState } from 'react';
 import { Play, X } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { getCloudflareEmbedUrl, getCloudflareThumbnailUrl } from '@/utils/cloudflare-stream';
+import {
+  extractCloudflareStreamId,
+  getCloudflareHlsUrl,
+  getCloudflareThumbnailUrl,
+} from '@/utils/cloudflare-stream';
+import { PromoFlixPlayer } from './PromoFlixPlayer';
 
 interface ProductVideo {
   id: string;
@@ -35,78 +42,90 @@ export function GalleryVideoPlayer({
   onOpenChange,
 }: GalleryVideoPlayerProps) {
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
+  const v = productVideos[activeVideoIndex];
+
+  const cloudflareId = extractCloudflareStreamId(v?.url_stream);
+  const hlsUrl = v?.url_hls ?? getCloudflareHlsUrl(v?.url_stream);
+  const directUrl = v?.url_original ?? null;
+  const youtubeId = v?.source_youtube_id ?? null;
+
+  const posterUrl =
+    getCloudflareThumbnailUrl(v?.url_stream, { time: '1s', height: 720 }) ??
+    v?.url_thumbnail ??
+    null;
+
+  const playerSrc = hlsUrl ?? directUrl;
+  const isHls = Boolean(hlsUrl);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-4xl overflow-hidden border-none bg-black p-0 [&>button.absolute]:hidden">
+      <DialogContent className="w-full max-w-5xl overflow-hidden border-none bg-black p-0 [&>button.absolute]:hidden">
         <div className="relative w-full">
-          {/* Header */}
-          <div className="absolute left-0 right-0 top-0 z-50 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent p-4">
-            <div className="flex items-center gap-2">
+          {/* Header (apenas para multi-video info + close) */}
+          <div className="pointer-events-none absolute left-0 right-0 top-0 z-50 flex items-center justify-between p-4">
+            <div className="pointer-events-auto flex items-center gap-2">
               {productVideos.length > 1 && (
-                <span className="text-sm font-medium text-primary-foreground/80">
-                  Vídeo {activeVideoIndex + 1} de {productVideos.length}
-                </span>
-              )}
-              {productVideos[activeVideoIndex]?.title && (
-                <span className="text-sm text-primary-foreground/60">
-                  — {productVideos[activeVideoIndex].title}
+                <span className="rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur-md">
+                  {activeVideoIndex + 1} de {productVideos.length}
                 </span>
               )}
             </div>
             <button
               aria-label="Fechar"
-              className="flex h-9 w-9 items-center justify-center rounded-full text-white transition-colors hover:bg-white/20"
+              className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md transition-colors hover:bg-white/20"
               onClick={() => onOpenChange(false)}
             >
               <X className="h-5 w-5" />
             </button>
           </div>
 
-          {/* Video player */}
-          <div className="aspect-video w-full bg-black">
-            {(() => {
-              const v = productVideos[activeVideoIndex];
-              const posterUrl =
-                getCloudflareThumbnailUrl(v?.url_stream, { time: '1s', height: 720 }) ??
-                v?.url_thumbnail ??
-                null;
-              const embedUrl = getCloudflareEmbedUrl(v?.url_stream, {
-                autoplay: true,
-                poster: posterUrl,
-              });
-              if (!embedUrl) return null;
-              return (
+          {/* Player */}
+          <div className="w-full bg-black">
+            {youtubeId && !cloudflareId ? (
+              <div className="aspect-video w-full">
                 <iframe
-                  src={embedUrl}
+                  src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0`}
                   title={v?.title || `Vídeo do produto ${productName}`}
                   className="h-full w-full"
-                  allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                  allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                   allowFullScreen
                 />
-              );
-            })()}
+              </div>
+            ) : playerSrc ? (
+              <PromoFlixPlayer
+                src={playerSrc}
+                isHls={isHls}
+                posterUrl={posterUrl}
+                title={v?.title || undefined}
+                productName={productName}
+                autoPlay
+              />
+            ) : (
+              <div className="flex aspect-video w-full items-center justify-center text-sm text-white/60">
+                Vídeo indisponível
+              </div>
+            )}
           </div>
 
           {/* Multi-video thumbnails */}
           {productVideos.length > 1 && (
             <div className="flex gap-2 overflow-x-auto bg-black/95 p-3">
-              {productVideos.map((pv, idx) => (
-                <button
-                  key={pv.id}
-                  onClick={() => setActiveVideoIndex(idx)}
-                  className={cn(
-                    'relative aspect-video w-24 shrink-0 overflow-hidden rounded-lg transition-all duration-200',
-                    activeVideoIndex === idx
-                      ? 'scale-105 ring-2 ring-primary'
-                      : 'opacity-60 hover:opacity-100',
-                  )}
-                >
-                  {(() => {
-                    const thumbnailUrl =
-                      getCloudflareThumbnailUrl(pv.url_stream, { time: '1s', height: 270 }) ??
-                      pv.url_thumbnail;
-                    return thumbnailUrl ? (
+              {productVideos.map((pv, idx) => {
+                const thumbnailUrl =
+                  getCloudflareThumbnailUrl(pv.url_stream, { time: '1s', height: 270 }) ??
+                  pv.url_thumbnail;
+                return (
+                  <button
+                    key={pv.id}
+                    onClick={() => setActiveVideoIndex(idx)}
+                    className={cn(
+                      'relative aspect-video w-24 shrink-0 overflow-hidden rounded-lg transition-all duration-200',
+                      activeVideoIndex === idx
+                        ? 'scale-105 ring-2 ring-primary'
+                        : 'opacity-60 hover:opacity-100',
+                    )}
+                  >
+                    {thumbnailUrl ? (
                       <img
                         src={thumbnailUrl}
                         alt={pv.title || `Vídeo ${idx + 1}`}
@@ -117,13 +136,13 @@ export function GalleryVideoPlayer({
                       <div className="flex h-full w-full items-center justify-center bg-muted">
                         <Play className="h-4 w-4 text-foreground" />
                       </div>
-                    );
-                  })()}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Play className="h-5 w-5 fill-white/50 text-primary-foreground drop-shadow-lg" />
-                  </div>
-                </button>
-              ))}
+                    )}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Play className="h-5 w-5 fill-white/50 text-primary-foreground drop-shadow-lg" />
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
