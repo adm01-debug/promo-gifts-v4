@@ -18,6 +18,13 @@ import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+interface SimulationDetail {
+  fnName: string;
+  status: number;
+  payload: string;
+  error: string;
+}
+
 interface SimulationReport {
   totalScenarios: number;
   successes: number;
@@ -25,7 +32,7 @@ interface SimulationReport {
   startTime: string;
   endTime: string;
   consistencyChecks: { passed: number; failed: number };
-  details: any[];
+  details: SimulationDetail[];
   latencies: number[];
 }
 

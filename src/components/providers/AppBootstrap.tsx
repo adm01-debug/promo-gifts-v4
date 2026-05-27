@@ -15,17 +15,22 @@ export function AppBootstrap({ children }: { children: ReactNode }) {
     const checkMaintenance = async () => {
       try {
         const supabase = await getSupabaseClient();
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('system_settings')
           .select('value')
           .eq('key', 'maintenance_mode')
           .maybeSingle();
 
+        if (error) {
+          console.error('[AppBootstrap] Failed to fetch maintenance mode:', error);
+          return;
+        }
+
         if (data && data.value === 'true') {
           setMaintenanceMode(true);
         }
       } catch (e) {
-        console.error('Maintenance check failed:', e);
+        console.error('[AppBootstrap] Error during maintenance check:', e);
       }
     };
 

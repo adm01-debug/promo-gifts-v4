@@ -129,8 +129,9 @@ class TelemetryService {
     }
   }
 
-  async logError(name: string, error: any, metadata?: Record<string, any>): Promise<void> {
-    const stack = error?.stack || new Error().stack;
+  async logError(name: string, error: unknown, metadata?: Record<string, unknown>): Promise<void> {
+    const errObj = error instanceof Error ? error : (typeof error === 'object' && error !== null ? error as any : { message: String(error) });
+    const stack = errObj.stack || new Error().stack;
     return this.log({
       event_type: 'error',
       name,

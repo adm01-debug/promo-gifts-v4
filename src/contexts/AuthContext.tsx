@@ -71,7 +71,7 @@ interface AuthContextType {
   mfaRequired: boolean;
   rolesLoaded: boolean;
   refreshAAL: () => Promise<void>;
-  signIn: (email: string, password: string) => Promise<{ error: any; data: any }>;
+  signIn: (email: string, password: string) => Promise<{ error: import('@supabase/supabase-js').AuthError | null; data: { user: User | null; session: Session | null } }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   refreshSession: () => Promise<void>;
