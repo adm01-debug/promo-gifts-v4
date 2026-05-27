@@ -28,12 +28,13 @@
 
   console.warn = (...args: any[]) => {
     try {
-      const msg = typeof args[0] === 'string' ? args[0] : JSON.stringify(args[0]);
+      const firstArg = args[0];
+      const msg = typeof firstArg === 'string' ? firstArg : JSON.stringify(firstArg);
       if (SILENCED_WARNINGS.some(pattern => msg && msg.includes(pattern))) {
         return;
       }
     } catch (e) {
-      // Fallback if stringify fails
+      // Fallback
     }
     originalWarn.apply(console, args);
   };
