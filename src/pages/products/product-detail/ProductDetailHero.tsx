@@ -208,10 +208,6 @@ export function ProductDetailHero({
                     variant="pdp"
                     alwaysShow
                   />
-                  <PriceFreshnessThresholdEditor
-                    productId={id}
-                    currentEffectiveDays={effectiveThresholdDays}
-                  />
                 </div>
               </div>
 
