@@ -320,8 +320,6 @@ export default function ProductDetail() {
       />
 
       <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-4 px-3 py-3 sm:px-4 sm:py-4 lg:px-6 xl:px-8">
-        <IntelligenceBadges badges={intellBadges} />
-
         <ProductDetailHero
           product={product}
           id={id || ''}
