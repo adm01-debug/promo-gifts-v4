@@ -33,7 +33,7 @@ import { useCurrentSection } from '@/hooks/ui/useCurrentSection';
 import { useIsScrolled } from '@/hooks/ui/useScroll';
 import { useToast } from '@/hooks/ui/use-toast';
 import { useOnboardingContext } from '@/contexts/OnboardingContext';
-import { OrganizationSwitcher } from '@/components/OrganizationSwitcher';
+
 import { useSearchStore } from '@/stores/useSearchStore';
 
 import { StockAlertsIndicator } from '@/components/inventory/StockAlertsIndicator';
@@ -177,9 +177,8 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                 {currentSection}
               </span>
             </div>
-            <div className="mx-1 h-8 w-px bg-border/20" />
-            <OrganizationSwitcher />
           </div>
+
         </div>
 
         {/* ══════ Center section — Global Search (#4 expandida) ══════ */}
