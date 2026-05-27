@@ -151,7 +151,7 @@ export default function ProductDetail() {
       url: currentUrl,
       brand: {
         '@type': 'Brand',
-        name: product.supplier?.name || 'Promo Gifts',
+        name: product.supplier?.name || 'Promo Brindes',
       },
       offers: {
         '@type': 'Offer',
@@ -165,7 +165,7 @@ export default function ProductDetail() {
             : product.stockStatus === 'out-of-stock'
               ? 'https://schema.org/OutOfStock'
               : 'https://schema.org/LimitedAvailability',
-        seller: { '@type': 'Organization', name: 'Promo Gifts' },
+        seller: { '@type': 'Organization', name: 'Promo Brindes' },
         url: currentUrl,
       },
       category: product.category?.name,
@@ -297,7 +297,7 @@ export default function ProductDetail() {
   return (
     <>
       <PageSEO
-        title={`${product.name} | Promo Gifts`}
+        title={`${product.name} | Promo Brindes`}
         description={product.description || `${product.name} - Brinde Promocional`}
         path={`/produto/${product.id}`}
         ogImage={
