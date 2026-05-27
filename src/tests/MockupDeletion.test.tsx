@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import MockupGenerator from '@/pages/mockups/MockupGenerator';
@@ -7,8 +7,6 @@ import { ThemeProvider } from '@/contexts/ThemeContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { HelmetProvider } from 'react-helmet-async';
-import * as mockupService from '@/hooks/mockup/mockupGenerationService';
-import { toast } from 'sonner';
 import { ProductsProvider } from '@/contexts/ProductsContext';
 import { AriaLiveProvider } from '@/components/a11y/AriaLive';
 
@@ -86,6 +84,13 @@ const mockMg = {
   downloadMockup: vi.fn(),
   generateMockup: vi.fn(),
   saveMockupToHistory: vi.fn(),
+  // Unified delete flow now lives in the hook (G7) + rich load-from-history (G8).
+  deleteDialogOpen: false,
+  mockupToDelete: null as string | null,
+  setDeleteDialogOpen: vi.fn(),
+  setMockupToDelete: vi.fn(),
+  deleteMockup: vi.fn(),
+  loadFromHistory: vi.fn(),
 };
 
 vi.mock('@/hooks/mockup', () => ({
@@ -188,59 +193,45 @@ describe('Mockup Deletion Flow', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockMg.activeTab = 'generator';
-    vi.mocked(mockupService.deleteMockupFromDb).mockResolvedValue(undefined);
+    mockMg.deleteDialogOpen = false;
+    mockMg.mockupToDelete = null;
   });
 
-  it('deve abrir o diálogo de confirmação ao clicar em excluir', async () => {
-    mockMg.activeTab = 'history';
-    renderWithProviders(<MockupGenerator />);
-
-    // Encontrar e clicar no botão de excluir
-    const deleteButton = await screen.findByTestId('delete-mockup-button');
-    fireEvent.click(deleteButton);
-
-    // Verificar se o diálogo apareceu
-    expect(screen.getByText(/Excluir mockup\?/i)).toBeInTheDocument();
-  });
-
-  it('deve chamar deleteMockupFromDb e atualizar a lista ao confirmar', async () => {
+  it('opens the delete flow (selects the mockup + opens the dialog) when clicking delete', async () => {
     mockMg.activeTab = 'history';
     renderWithProviders(<MockupGenerator />);
 
     const deleteButton = await screen.findByTestId('delete-mockup-button');
     fireEvent.click(deleteButton);
 
-    const confirmButton = screen.getByRole('button', {
-      name: /excluir/i,
-    });
-    fireEvent.click(confirmButton);
+    // G7: the page no longer owns delete state — it delegates to the hook.
+    expect(mockMg.setMockupToDelete).toHaveBeenCalledWith('mockup-1');
+    expect(mockMg.setDeleteDialogOpen).toHaveBeenCalledWith(true);
+  });
+
+  it('delegates confirmation to the hook deleteMockup', async () => {
+    mockMg.activeTab = 'history';
+    mockMg.deleteDialogOpen = true;
+    renderWithProviders(<MockupGenerator />);
+
+    const dialog = await screen.findByRole('alertdialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: /excluir/i }));
 
     await waitFor(() => {
-      expect(mockupService.deleteMockupFromDb).toHaveBeenCalledWith('mockup-1', 'user-123');
+      expect(mockMg.deleteMockup).toHaveBeenCalledTimes(1);
     });
-
-    expect(toast.success).toHaveBeenCalledWith('Mockup excluído com sucesso');
-    expect(mockMg.fetchHistory).toHaveBeenCalled();
   });
 
-  it('deve exibir toast de erro quando a deleção falhar', async () => {
-    vi.mocked(mockupService.deleteMockupFromDb).mockRejectedValue(new Error('Database error'));
+  it('loads a full configuration from history via loadFromHistory (G8)', async () => {
     mockMg.activeTab = 'history';
-
     renderWithProviders(<MockupGenerator />);
 
-    const deleteButton = await screen.findByTestId('delete-mockup-button');
-    fireEvent.click(deleteButton);
+    const regenerate = (await screen.findAllByLabelText('Regenerar'))[0];
+    fireEvent.click(regenerate);
 
-    const confirmButton = screen.getByRole('button', {
-      name: /excluir/i,
-    });
-    fireEvent.click(confirmButton);
-
-    await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith(
-        'Não foi possível excluir o mockup. Tente novamente.',
-      );
-    });
+    expect(mockMg.loadFromHistory).toHaveBeenCalledTimes(1);
+    expect(mockMg.loadFromHistory).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'mockup-1' }),
+    );
   });
 });

@@ -69,8 +69,9 @@ export function useSuppliersManager() {
 
   // BUG-23 FIX: cleanup carrier search timeout on unmount
   useEffect(() => {
+    const timeoutRef = carrierSearchTimeout;
     return () => {
-      if (carrierSearchTimeout.current) clearTimeout(carrierSearchTimeout.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, []);
 

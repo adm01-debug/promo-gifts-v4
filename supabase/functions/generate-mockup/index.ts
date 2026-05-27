@@ -9,6 +9,9 @@ interface GenerateMockupBody {
   productImageUrl?: string;
   logoBase64?: string;
   logoUrl?: string;
+  // techniqueName/techniquePrompt are echoed back as metadata only — this function
+  // is a deterministic canvas compositor (the AI/"nano-banana" route was removed),
+  // so the prompt has NO visual effect. Kept for response provenance/back-compat.
   techniqueName?: string;
   techniquePrompt?: string;
   positionX?: number;
@@ -22,9 +25,13 @@ interface GenerateMockupBody {
 
 // ─ Validation ──────────────────────────────────────────────────────────────
 
-function validationError(message: string, corsHeaders: Record<string, string>): Response {
+function validationError(
+  message: string,
+  corsHeaders: Record<string, string>,
+  errorCode?: string,
+): Response {
   return new Response(
-    JSON.stringify({ error: "validation_failed", message }),
+    JSON.stringify({ error: "validation_failed", errorCode, message }),
     { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
   );
 }
@@ -35,6 +42,44 @@ function isValidHttpUrl(value: unknown): value is string {
     const u = new URL(value);
     return u.protocol === "https:" || u.protocol === "http:";
   } catch { return false; }
+}
+
+// SSRF mitigation: optionally restrict which hosts the function will fetch from.
+// Configured via MOCKUP_FETCH_ALLOWED_HOSTS (comma-separated hostnames). When unset
+// the function allows all hosts (logged) so existing product CDNs keep working — set
+// the env var to lock it down once the legitimate domains are confirmed.
+function hostAllowed(rawUrl: string): boolean {
+  const allow = (Deno.env.get("MOCKUP_FETCH_ALLOWED_HOSTS") || "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  if (allow.length === 0) {
+    console.warn("[generate-mockup] MOCKUP_FETCH_ALLOWED_HOSTS not set — allowing all hosts");
+    return true;
+  }
+  try {
+    const host = new URL(rawUrl).hostname.toLowerCase();
+    return allow.some((a) => host === a || host.endsWith("." + a));
+  } catch {
+    return false;
+  }
+}
+
+// SVG cannot be rasterised by createImageBitmap in the Deno edge runtime, so it must
+// be rejected up-front with an actionable, machine-readable error code.
+function looksLikeSvg(bytes: Uint8Array): boolean {
+  const head = new TextDecoder("utf-8", { fatal: false })
+    .decode(bytes.subarray(0, 512))
+    .toLowerCase();
+  return head.includes("<svg") || (head.includes("<?xml") && head.includes("svg"));
+}
+
+function svgError(corsHeaders: Record<string, string>): Response {
+  return validationError(
+    "Logos SVG não são suportados. Use PNG ou JPG.",
+    corsHeaders,
+    "SVG_NOT_SUPPORTED",
+  );
 }
 
 // ─ Image helpers ────────────────────────────────────────────────────────────
@@ -142,9 +187,19 @@ Deno.serve(async (req) => {
   if (!isValidHttpUrl(body.productImageUrl))
     return validationError("productImageUrl is required and must be a valid HTTPS URL", corsHeaders);
 
+  if (!hostAllowed(body.productImageUrl!))
+    return validationError("productImageUrl host is not allowed", corsHeaders, "HOST_NOT_ALLOWED");
+
   const hasLogo = body.logoBase64 || isValidHttpUrl(body.logoUrl);
   if (!hasLogo)
     return validationError("Either logoBase64 or a valid logoUrl is required", corsHeaders);
+
+  if (body.logoUrl && !body.logoBase64 && !hostAllowed(body.logoUrl))
+    return validationError("logoUrl host is not allowed", corsHeaders, "HOST_NOT_ALLOWED");
+
+  // G1: reject SVG data URLs before any fetch/decode work.
+  if (body.logoBase64 && /^data:image\/svg/i.test(body.logoBase64.trim()))
+    return svgError(corsHeaders);
 
   const posX    = Math.max(0, Math.min(100, body.positionX ?? 50));
   const posY    = Math.max(0, Math.min(100, body.positionY ?? 50));
@@ -156,28 +211,40 @@ Deno.serve(async (req) => {
   const t0 = Date.now();
 
   try {
-    let productBytes: Uint8Array;
-    try { productBytes = await fetchBytes(body.productImageUrl!, 12_000); }
-    catch (e) {
+    // G10: fetch product image and logo in parallel (was a sequential waterfall up to ~24s).
+    const [prodSettled, logoSettled] = await Promise.allSettled([
+      fetchBytes(body.productImageUrl!, 12_000),
+      (async () =>
+        body.logoBase64 ? base64ToBytes(body.logoBase64) : await fetchBytes(body.logoUrl!, 12_000))(),
+    ]);
+
+    if (prodSettled.status === "rejected") {
       return new Response(
-        JSON.stringify({ error: "product_image_unavailable", message: (e as Error).message }),
+        JSON.stringify({
+          error: "product_image_unavailable",
+          message: (prodSettled.reason as Error)?.message ?? "Falha ao baixar imagem do produto",
+        }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (logoSettled.status === "rejected") {
+      return new Response(
+        JSON.stringify({
+          error: "logo_unavailable",
+          message: (logoSettled.reason as Error)?.message ?? "Falha ao processar o logo",
+        }),
         { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    let logoBytes: Uint8Array;
-    try {
-      logoBytes = body.logoBase64
-        ? base64ToBytes(body.logoBase64)
-        : await fetchBytes(body.logoUrl!, 12_000);
-    } catch (e) {
-      return new Response(
-        JSON.stringify({ error: "logo_unavailable", message: (e as Error).message }),
-        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
+    const productBytes = prodSettled.value;
+    const logoBytes = logoSettled.value;
 
+    // G1: reject SVG content that slipped in via a URL fetch.
+    if (looksLikeSvg(productBytes) || looksLikeSvg(logoBytes)) return svgError(corsHeaders);
+
+    // G4: this is canvas composition (no AI). The name reflects the total time budget.
     if (Date.now() - t0 > 20_000) {
       return new Response(
-        JSON.stringify({ error: "ai_generation_timeout", message: "Tempo limite excedido" }),
+        JSON.stringify({ error: "composition_timeout", message: "Tempo limite excedido" }),
         { status: 504, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 

@@ -22,7 +22,7 @@ test.describe("Mockup Resilience and Error Handling", () => {
     await page.locator('[role="option"]').first().click();
 
     const fileInput = page.locator('input[data-testid^="mockup-logo-upload-input-"]').first();
-    const logoPath = path.resolve("public/placeholder.svg");
+    const logoPath = path.resolve("public/images/promo-brindes-logo.png");
     await fileInput.setInputFiles(logoPath);
     await expect(page.locator("img[alt='Logo']")).toBeVisible();
 
@@ -66,7 +66,7 @@ test.describe("Mockup Resilience and Error Handling", () => {
     await productOption.click();
 
     const fileInput = page.locator('input[data-testid^="mockup-logo-upload-input-"]').first();
-    await fileInput.setInputFiles(path.resolve("public/placeholder.svg"));
+    await fileInput.setInputFiles(path.resolve("public/images/promo-brindes-logo.png"));
 
     // Move logo to center
     const centerBtn = page.getByRole("button", { name: /^Centro$/i });
@@ -101,7 +101,7 @@ test.describe("Mockup Resilience and Error Handling", () => {
     await page.locator('[data-testid^="mockup-product-option-"]').first().click();
     await page.getByTestId("mockup-technique-select-trigger").click();
     await page.locator('[role="option"]').first().click();
-    await page.locator('input[data-testid^="mockup-logo-upload-input-"]').first().setInputFiles(path.resolve("public/placeholder.svg"));
+    await page.locator('input[data-testid^="mockup-logo-upload-input-"]').first().setInputFiles(path.resolve("public/images/promo-brindes-logo.png"));
 
     // 2. Mock 1st fail, 2nd success
     let callCount = 0;
@@ -117,7 +117,12 @@ test.describe("Mockup Resilience and Error Handling", () => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({ mockup_url: "https://example.com/mockup.png" })
+          // Real edge returns both camelCase (read by the frontend) and snake_case.
+          body: JSON.stringify({
+            ok: true,
+            mockupUrl: "https://example.com/mockup.png",
+            mockup_url: "https://example.com/mockup.png",
+          })
         });
       }
     });

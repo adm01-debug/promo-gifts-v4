@@ -102,7 +102,9 @@ export const DESCRIPTORS: Record<string, Descriptor> = {
     ],
   },
   "generate-mockup": {
-    invalidInputs: [{ label: "token ausente", body: { productId: "x" } }],
+    invalidInputs: [
+      { label: "token ausente", body: { productImageUrl: "https://example.com/p.png" } },
+    ],
   },
 
   // ---------------- Auditorias / dry-run seguro ----------------

@@ -31,21 +31,7 @@ export interface LogoData {
   originalName?: string;
 }
 
-// Mockup gerado
-export interface GeneratedMockup {
-  id: string;
-  seller_id: string;
-  client_id: string | null;
-  product_id: string | null;
-  product_name: string;
-  product_sku: string | null;
-  technique_id: string | null;
-  technique_name: string;
-  logo_url: string;
-  mockup_url: string;
-  logo_width_cm: number | null;
-  logo_height_cm: number | null;
-  position_x: number | null;
-  position_y: number | null;
-  created_at: string;
-}
+// G9 FIX: there used to be a second, divergent `GeneratedMockup` definition here
+// (seller_id, missing client_name/layout_url/annotations…). It was unused and drifted
+// from the runtime shape. Re-export the single source of truth from the service.
+export type { GeneratedMockup } from '@/hooks/mockup/mockupGenerationService';

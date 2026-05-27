@@ -6,13 +6,10 @@ import { type MockupTechnique } from '@/types/external-db';
  * Progressive Preview + Enhanced Header + Sticky Navigator.
  */
 
-import { useMemo, useCallback, useState, Suspense } from 'react';
-import { useProductsContext } from '@/contexts/ProductsContext';
-import { deleteMockupFromDb } from '@/hooks/mockup/mockupGenerationService';
+import { useMemo, useCallback, Suspense } from 'react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { Button } from '@/components/ui/button';
 import { Loader2, AlertCircle, CheckCircle2, History, Wand2 } from 'lucide-react';
-import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
@@ -103,9 +100,6 @@ export default function MockupGenerator() {
   const mg = useMockupGenerator();
   const { profile } = useAuth();
   const user = mg.user;
-  const { getProductById } = useProductsContext();
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [mockupToDelete, setMockupToDelete] = useState<string | null>(null);
 
   const _summary = useMemo(() => {
     const parts = [];
@@ -579,18 +573,11 @@ export default function MockupGenerator() {
                 clients={mg.historyClients}
                 techniques={mg.techniques}
                 onDelete={(id) => {
-                  setMockupToDelete(id);
-                  setDeleteDialogOpen(true);
+                  mg.setMockupToDelete(id);
+                  mg.setDeleteDialogOpen(true);
                 }}
                 onDownload={(mockup) => mg.downloadMockup(mockup)}
-                onLoadFromHistory={(mockup) => {
-                  const product = getProductById(mockup.product_id || '');
-                  if (product) {
-                    mg.setProductSelection({ product, variant: null, imageUrl: mockup.mockup_url });
-                    mg.setActiveTab('generator');
-                    toast.success('Produto restaurado do histórico');
-                  }
-                }}
+                onLoadFromHistory={mg.loadFromHistory}
               />
             </Suspense>
           </TabsContent>
@@ -606,27 +593,15 @@ export default function MockupGenerator() {
           hasGeneratedMockup={!!mg.generatedMockup}
         />
 
+        {/* G7 FIX: single source of truth — the hook owns delete state + the owner-scoped
+            DELETE with optimistic history removal (was duplicated with local page state). */}
         <DeleteMockupDialog
-          open={deleteDialogOpen}
+          open={mg.deleteDialogOpen}
           onOpenChange={(open) => {
-            setDeleteDialogOpen(open);
-            if (!open) setMockupToDelete(null);
+            mg.setDeleteDialogOpen(open);
+            if (!open) mg.setMockupToDelete(null);
           }}
-          onConfirm={async () => {
-            if (mockupToDelete) {
-              try {
-                await deleteMockupFromDb(mockupToDelete, user?.id);
-                toast.success('Mockup excluído com sucesso');
-                await mg.fetchHistory();
-              } catch (error) {
-                console.error('Erro ao excluir mockup:', error);
-                toast.error('Não foi possível excluir o mockup. Tente novamente.');
-              } finally {
-                setDeleteDialogOpen(false);
-                setMockupToDelete(null);
-              }
-            }
-          }}
+          onConfirm={mg.deleteMockup}
         />
 
         <TechniqueColorConfigDialog
