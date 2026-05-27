@@ -414,6 +414,7 @@ export function ProductDetailHero({
                   </Button>
                 </div>
               </div>
+              </div>
             </div>
           </div>
 
