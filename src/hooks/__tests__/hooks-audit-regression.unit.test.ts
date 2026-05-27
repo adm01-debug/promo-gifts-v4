@@ -16,7 +16,7 @@
  *   KBD-01    keyboard handler deps — handleFavoriteProductRef
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { toNumber } from '@/hooks/stock/stockFetcher';
 import { migratePayload } from '@/hooks/quotes/useAutoSaveQuote';
 
@@ -45,7 +45,11 @@ describe('STOCK-01 — toNumber utility (base para buildFutureEntries)', () => {
   });
 
   it('usa fallback customizado quando fornecido', () => {
-    expect(toNumber(null, 10)).toBe(10);
+    // null → Number(null)=0 → isFinite → retorna 0 (fallback nao se aplica)
+    expect(toNumber(null, 10)).toBe(0);
+    // NaN e Infinity SIM usam fallback
+    expect(toNumber(NaN, 10)).toBe(10);
+    expect(toNumber(Infinity, 10)).toBe(10);
     expect(toNumber('xyz', 99)).toBe(99);
   });
 });
@@ -61,7 +65,7 @@ describe('STOCK-01 — logica de guarda de entrada futura', () => {
    * Corrigido: `if (q != null && q > 0 && d)` — explicito e correto
    */
   function shouldCreateEntry(q: number | null | undefined, d: string | null | undefined): boolean {
-    return q != null && q > 0 && d != null && d !== '';
+    return q !== null && q !== undefined && q > 0 && d !== null && d !== undefined && d !== '';
   }
 
   it('[REGRESSAO STOCK-01] nao cria entrada quando q=0 (antes criava com if(q&&d)=false)', () => {
