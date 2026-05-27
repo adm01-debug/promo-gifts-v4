@@ -177,3 +177,39 @@ Corrigido para `toggleStatusMutation.mutateAsync`
 | `8e914c32` (este PR) | `stockFetcher.ts` | STOCK-01, STOCK-02, STOCK-03 |
 | `fa702127` (este PR) | `useTecnicasGravacao.ts` | GRAVACAO-01, GRAVACAO-02 |
 | CS-01..06, AF-01, LOADING-01, STAT-01 | Incorporados pelo Lovable no main | — |
+
+---
+
+## Round 5 — BUG-20 a BUG-26 (2026-05-27)
+
+**Branch:** `claude/hooks-audit-bugs-t3VC5`  
+**Escopo:** 270+ hooks, foco em: `src/hooks/intelligence/`, `src/hooks/admin/`, `src/hooks/auth/`, `src/hooks/common/`, `src/hooks/ui/`, `src/components/admin/connections/`
+
+| ID | Severidade | Arquivo | Problema | Status |
+|----|------------|---------|----------|--------|
+| BUG-20 | P1 | `src/hooks/intelligence/useSpeechRecognition.ts` | `onResult`/`onError` nas deps do useEffect recriam instância SpeechRecognition a cada re-render do pai | ✅ Corrigido |
+| BUG-21 | P2 | `src/hooks/admin/useGeoBlocking.ts` | `fetchData` (Promise.all) sem `isMounted` guard — BUG-17 só corrigiu `fetchCurrentCountry` | ✅ Corrigido |
+| BUG-22 | P2 | `src/hooks/admin/useAllowedIPs.ts` | `fetchCurrentIP` (fetch externo ipify.org) sem AbortController; `fetchAllowedIPs` sem isMounted | ✅ Corrigido |
+| BUG-23 | P2 | `src/hooks/auth/useAccessSecurity.ts` | `fetchAll` (4 queries Promise.all) sem `isMounted` guard; `finally { setIsLoading(false) }` após unmount | ✅ Corrigido |
+| BUG-24 | P3 | `src/hooks/common/useDebounce.ts` (`useSearchAsYouType`) | `onSearch` nas deps do useEffect — callers com callback inline causam re-runs desnecessários | ✅ Corrigido |
+| BUG-25 | P3 | `src/hooks/ui/useGlobalShortcuts.ts` | `let lastGAt = 0` em escopo de módulo (singleton) — compartilhado entre instâncias e testes | ✅ Corrigido |
+| BUG-26 | P2 | `src/hooks/intelligence/useConnectionsOverview.ts` | `load` (com polling 30s) sem `isMounted` guard — setState após unmount | ✅ Corrigido |
+
+### Hooks Auditados sem Bugs (Round 5)
+
+| Área | Hooks | Resultado |
+|------|-------|-----------|
+| `src/components/admin/connections/` | 10 hooks | ✅ Todos clean |
+| `src/hooks/bi/` | 14 hooks (todos useQuery) | ✅ Todos clean |
+| `usePulseBarStatus`, `useRecentIncidents`, `useIncidentDetails`, `useIncidentTimeline72h` | 4 hooks | ✅ useQuery correto |
+| `useFocusContext`, `useZoneCollapse`, `useZoneVisibility`, `useSeverityChangeNotifier`, `useSecretField` | 5 hooks | ✅ Padrões corretos |
+
+### Totais Acumulados
+
+| Round | Data | Novos Bugs | Total Acumulado |
+|-------|------|-----------|-----------------|
+| Round 1 | Abr 2026 | 7 (BUG-01 a BUG-07) | 7 |
+| Round 2 | Mai 2026 | — (19 testes) | 7 |
+| Round 3 | Mai 2026 | 10 (BUG-08 a BUG-17) | 17 |
+| Round 4 | Mai 2026 | 2 (BUG-18, BUG-19) | 19 |
+| **Round 5** | **Mai 2026** | **7 (BUG-20 a BUG-26)** | **26** |

@@ -125,15 +125,29 @@ export function useSearchAsYouType(
   const [isSearching, setIsSearching] = useState(false);
   const debouncedQuery = useDebounce(query, debounceMs);
 
+  /**
+   * BUG-24 FIX: estabilizar onSearch via ref para remover das deps do useEffect.
+   *
+   * PROBLEMA ORIGINAL: onSearch estava nas deps de useEffect (linha ~136).
+   * Callers que passam callback inline recebem nova referência a cada render,
+   * recriando o useEffect e disparando buscas ou atualizações de isSearching
+   * em ciclos desnecessários.
+   *
+   * SOLUÇÃO: capturar onSearch em ref atualizado a cada render. O useEffect
+   * lê via ref, sem precisar do callback nas deps.
+   */
+  const onSearchRef = useRef(onSearch);
+  onSearchRef.current = onSearch;
+
   useEffect(() => {
     if (debouncedQuery.length >= minLength) {
       setIsSearching(true);
-      onSearch(debouncedQuery);
+      onSearchRef.current(debouncedQuery); // BUG-24 FIX: via ref, não closure
       setIsSearching(false);
     } else if (debouncedQuery.length === 0) {
-      onSearch('');
+      onSearchRef.current(''); // BUG-24 FIX: via ref
     }
-  }, [debouncedQuery, minLength, onSearch]);
+  }, [debouncedQuery, minLength]); // BUG-24 FIX: onSearch removido das deps
 
   const handleChange = useCallback(
     (value: string) => {
@@ -147,8 +161,8 @@ export function useSearchAsYouType(
 
   const clear = useCallback(() => {
     setQuery('');
-    onSearch('');
-  }, [onSearch]);
+    onSearchRef.current(''); // BUG-24 FIX: usa ref para consistência
+  }, []); // onSearch removido das deps de clear também
 
   return {
     query,

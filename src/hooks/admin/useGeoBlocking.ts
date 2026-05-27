@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { type createClient } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -29,6 +29,18 @@ export function useGeoBlocking() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentCountry, setCurrentCountry] = useState<{ code: string; name: string } | null>(null);
 
+  /**
+   * BUG-21 FIX: mountedRef para guard de fetchData.
+   *
+   * PROBLEMA ORIGINAL: fetchData (useCallback com Promise.all de Supabase) não
+   * tinha guard de isMounted. Se o componente desmontasse enquanto as queries
+   * estavam em vôo, setCountries/setSettings/setIsLoading(false) seriam chamados
+   * num componente já desmontado. BUG-17 só corrigiu fetchCurrentCountry.
+   *
+   * SOLUÇÃO: mountedRef lido dentro de fetchData antes e após o Promise.all.
+   */
+  const mountedRef = useRef(true);
+
   // BUG-17 FIX: accept an AbortSignal so the fetch can be cancelled when the
   // component unmounts. Without this, setCurrentCountry would be called on an
   // already-unmounted component if the ipapi.co response arrived after unmount
@@ -49,6 +61,7 @@ export function useGeoBlocking() {
   }, []);
 
   const fetchData = useCallback(async () => {
+    if (!mountedRef.current) return; // BUG-21 FIX: guard pré-await
     try {
       const [countriesRes, settingsRes] = await Promise.all([
         supabase
@@ -62,6 +75,8 @@ export function useGeoBlocking() {
           .single(),
       ]);
 
+      if (!mountedRef.current) return; // BUG-21 FIX: guard pós-await (componente pode ter desmontado)
+
       if (countriesRes.error) throw countriesRes.error;
       setCountries(countriesRes.data || []);
 
@@ -74,16 +89,18 @@ export function useGeoBlocking() {
     } catch (error) {
       console.error('Error fetching geo blocking data:', error);
     } finally {
-      setIsLoading(false);
+      if (mountedRef.current) setIsLoading(false); // BUG-21 FIX: só atualiza se montado
     }
-  }, []);
+  }, []); // mountedRef é estável (não precisa nas deps)
 
   useEffect(() => {
+    mountedRef.current = true;
     // Create an AbortController so fetchCurrentCountry can be cancelled on unmount
     const controller = new AbortController();
     fetchCurrentCountry(controller.signal);
     fetchData();
     return () => {
+      mountedRef.current = false; // BUG-21 FIX: sinaliza unmount antes de abort
       controller.abort();
     };
   }, [fetchCurrentCountry, fetchData]);

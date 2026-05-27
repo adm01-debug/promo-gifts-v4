@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -19,21 +19,40 @@ export function useAllowedIPs(targetUserId?: string) {
 
   const userId = targetUserId || user?.id;
 
+  /**
+   * BUG-22 FIX: mountedRef + AbortController para fetchCurrentIP/fetchAllowedIPs.
+   *
+   * PROBLEMA ORIGINAL: fetchCurrentIP fazia fetch externo a api.ipify.org sem
+   * AbortController nem flag de isMounted. Se o componente desmontasse durante
+   * o round-trip (~200-500ms), setCurrentIP era chamado num componente desmontado.
+   * fetchAllowedIPs também não tinha guard de isMounted.
+   *
+   * SOLUÇÃO:
+   *   - fetchCurrentIP aceita AbortSignal opcional; silencia AbortError.
+   *   - mountedRef sincronizado no useEffect garante que nenhum setter é chamado
+   *     após o unmount.
+   */
+  const mountedRef = useRef(true);
+
   // Buscar IP atual do usuário
-  const fetchCurrentIP = useCallback(async () => {
+  const fetchCurrentIP = useCallback(async (signal?: AbortSignal) => {
     try {
-      const response = await fetch('https://api.ipify.org?format=json');
+      const response = await fetch('https://api.ipify.org?format=json', { signal });
       const data = (await response.json()) as { ip: string };
-      setCurrentIP(data.ip);
+      if (mountedRef.current) setCurrentIP(data.ip);
     } catch (error) {
+      // AbortError é esperado no unmount — silenciar
+      if (error instanceof Error && error.name === 'AbortError') return;
       console.error('Error fetching current IP:', error);
     }
-  }, []);
+  }, []); // mountedRef é estável (não precisa nas deps)
 
   const fetchAllowedIPs = useCallback(async () => {
     if (!userId) {
-      setAllowedIPs([]);
-      setIsLoading(false);
+      if (mountedRef.current) {
+        setAllowedIPs([]);
+        setIsLoading(false);
+      }
       return;
     }
 
@@ -44,18 +63,25 @@ export function useAllowedIPs(targetUserId?: string) {
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
+      if (!mountedRef.current) return; // BUG-22 FIX: guard pós-await
       if (error) throw error;
       setAllowedIPs((data || []) as AllowedIP[]);
     } catch (error) {
       console.error('Error fetching allowed IPs:', error);
     } finally {
-      setIsLoading(false);
+      if (mountedRef.current) setIsLoading(false); // BUG-22 FIX: só se montado
     }
-  }, [userId]);
+  }, [userId]); // mountedRef é estável
 
   useEffect(() => {
-    fetchCurrentIP();
+    mountedRef.current = true;
+    const controller = new AbortController();
+    fetchCurrentIP(controller.signal); // BUG-22 FIX: passa signal para poder abortar
     fetchAllowedIPs();
+    return () => {
+      mountedRef.current = false; // BUG-22 FIX: sinaliza unmount
+      controller.abort();
+    };
   }, [fetchCurrentIP, fetchAllowedIPs]);
 
   const addIP = useCallback(

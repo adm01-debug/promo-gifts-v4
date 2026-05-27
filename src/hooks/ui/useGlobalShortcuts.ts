@@ -12,30 +12,36 @@
  *   Alt+R carrinhos, Alt+P produtos, Alt+F super filtro, Alt+M mockup, Alt+S simulador.
  *   Header: Alt+F favoritos, Alt+C comparar, Alt+T tema.
  */
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useOracleVoiceBridge } from '@/stores/oracleVoiceBridge';
 import { useSearchStore } from '@/stores/useSearchStore';
-import { useOnboardingContext } from '@/contexts/OnboardingContext';
+import { useOptionalOnboardingContext } from '@/contexts/OnboardingContext';
 
 interface ShortcutHandlers {
   onSearchFocus?: () => void;
   onToggleCart?: () => void;
 }
 
-// "G then K" sequence buffer (vim-style chord) — opens kit library
-let lastGAt = 0;
-
 export function useGlobalShortcuts(handlers?: ShortcutHandlers) {
   const navigate = useNavigate();
   const openOracle = useOracleVoiceBridge((s) => s.openOracle);
   const { open: searchOpen, setOpen: setOpenSearch } = useSearchStore();
-  let onboarding: any = null;
-  try {
-    onboarding = useOnboardingContext();
-  } catch (_e) {
-    // Context may not be available outside MainLayout
-  }
+  // BUG-25 + ESLint fix: substituído padrão try/catch (que violava rules-of-hooks)
+  // por useOptionalOnboardingContext que retorna null quando o provider não existe.
+  const onboarding = useOptionalOnboardingContext();
+
+  /**
+   * BUG-25 FIX: mover lastGAt de escopo de módulo para useRef interno.
+   *
+   * PROBLEMA ORIGINAL: `let lastGAt = 0` em escopo de módulo (singleton global)
+   * era compartilhado entre todas as instâncias do hook e persistia entre testes.
+   * Um "G" pressionado em uma instância poderia acionar "G→K" em outra, e entre
+   * suites de teste o estado não era resetado (flaky tests).
+   *
+   * SOLUÇÃO: useRef isolado por instância — cada mount tem seu próprio contador.
+   */
+  const lastGAtRef = useRef(0);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -47,12 +53,12 @@ export function useGlobalShortcuts(handlers?: ShortcutHandlers) {
       // G then K (within 800ms) → open kit library — no modifier, ignored in inputs
       if (!isMod && !e.altKey && !e.shiftKey && !isInput) {
         if (e.key === 'g' || e.key === 'G') {
-          lastGAt = Date.now();
+          lastGAtRef.current = Date.now(); // BUG-25 FIX: ref por instância
           return;
         }
-        if ((e.key === 'k' || e.key === 'K') && Date.now() - lastGAt < 800) {
+        if ((e.key === 'k' || e.key === 'K') && Date.now() - lastGAtRef.current < 800) {
           e.preventDefault();
-          lastGAt = 0;
+          lastGAtRef.current = 0; // BUG-25 FIX: reset do ref por instância
           navigate('/meus-kits');
           return;
         }
@@ -100,7 +106,7 @@ export function useGlobalShortcuts(handlers?: ShortcutHandlers) {
         return;
       }
     },
-    [navigate, openOracle, handlers, searchOpen, setOpenSearch],
+    [navigate, openOracle, handlers, searchOpen, setOpenSearch, onboarding],
   );
 
   useEffect(() => {

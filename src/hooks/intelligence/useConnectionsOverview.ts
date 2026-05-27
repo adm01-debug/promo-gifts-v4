@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface OverviewRow {
@@ -20,6 +20,16 @@ export function useConnectionsOverview(pollMs = 30000) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  /**
+   * BUG-26 FIX: mountedRef para guard de load (isMounted pattern).
+   *
+   * PROBLEMA: `load` (useCallback[]) chamava setRows/setLoading/setRefreshing
+   * após uma query Supabase sem verificar se o componente ainda estava montado.
+   * Navegação rápida entre páginas durante o fetch de 30s causava warnings de
+   * "setState on unmounted component".
+   */
+  const mountedRef = useRef(true);
+
   const load = useCallback(async (silent = false) => {
     if (!silent) setRefreshing(true);
     const { data, error } = await supabase
@@ -29,6 +39,7 @@ export function useConnectionsOverview(pollMs = 30000) {
       )
       .order('type', { ascending: true })
       .order('name', { ascending: true });
+    if (!mountedRef.current) return; // BUG-26 FIX: guard pós-await
     if (!error && data) {
       const mapped: OverviewRow[] = data.map((r) => ({
         key: r.id,
@@ -47,13 +58,17 @@ export function useConnectionsOverview(pollMs = 30000) {
     }
     setLoading(false);
     setRefreshing(false);
-  }, []);
+  }, []); // mountedRef é estável
 
   useEffect(() => {
+    mountedRef.current = true;
     load(true);
-    if (pollMs <= 0) return;
+    if (pollMs <= 0) return () => { mountedRef.current = false; };
     const id = setInterval(() => load(true), pollMs);
-    return () => clearInterval(id);
+    return () => {
+      mountedRef.current = false; // BUG-26 FIX: sinaliza unmount antes de clearInterval
+      clearInterval(id);
+    };
   }, [load, pollMs]);
 
   const patchRow = useCallback((key: string, patch: Partial<OverviewRow>) => {

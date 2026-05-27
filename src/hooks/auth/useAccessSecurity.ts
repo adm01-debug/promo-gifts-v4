@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -47,7 +47,25 @@ export function useAccessSecurity() {
   const [blockedLogs, setBlockedLogs] = useState<AccessBlockedLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  /**
+   * BUG-23 FIX: mountedRef para guard de fetchAll.
+   *
+   * PROBLEMA ORIGINAL: fetchAll executava 4 queries em Promise.all sem nenhum
+   * guard de isMounted. O `finally { setIsLoading(false) }` disparava mesmo
+   * após o componente ser desmontado, causando "setState on unmounted component".
+   *
+   * SOLUÇÃO: mountedRef verificado antes e após o Promise.all, e no finally.
+   */
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   const fetchAll = useCallback(async () => {
+    if (!mountedRef.current) return; // BUG-23 FIX: guard pré-await
     setIsLoading(true);
     try {
       const [settingsRes, ipsRes, citiesRes, logsRes] = await Promise.all([
@@ -75,17 +93,20 @@ export function useAccessSecurity() {
           .limit(50),
       ]);
 
+      if (!mountedRef.current) return; // BUG-23 FIX: guard pós-await
+
       const settingsData = (settingsRes as unknown as { data: AccessSecuritySettings | null }).data;
       if (settingsData) setSettings(settingsData);
       if (ipsRes.data) setIps(ipsRes.data as IpWhitelistEntry[]);
       if (citiesRes.data) setCities(citiesRes.data as CityWhitelistEntry[]);
       if (logsRes.data) setBlockedLogs(logsRes.data as AccessBlockedLog[]);
     } catch (error) {
+      if (!mountedRef.current) return; // BUG-23 FIX: não propagar erro após unmount
       console.error('Erro ao carregar configurações de acesso:', error);
     } finally {
-      setIsLoading(false);
+      if (mountedRef.current) setIsLoading(false); // BUG-23 FIX: só se ainda montado
     }
-  }, []);
+  }, []); // mountedRef é estável
 
   useEffect(() => {
     fetchAll();
