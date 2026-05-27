@@ -175,10 +175,11 @@ export function GalleryFullscreen({
         {/* Thumbnails strip */}
         {allMedia.length > 1 && (
           <div className="scrollbar-thin flex gap-2 overflow-x-auto border-t border-border/40 px-4 py-3">
-            {allMedia.map((media, index) => (
-              <button
-                key={index}
-                onClick={() => onSelectIndex(index)}
+              {allMedia.map((media, index) => (
+                <button
+                  key={`thumb-${index}`}
+                  aria-label={`Ver ${isVideo(index) ? 'vídeo' : 'imagem'} ${index + 1}`}
+                  onClick={() => onSelectIndex(index)}
                 className={cn(
                   'relative h-14 w-14 shrink-0 overflow-hidden rounded-lg transition-all duration-200',
                   selectedIndex === index

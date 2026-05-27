@@ -133,6 +133,7 @@ export function GalleryVideoPlayer({
                 return (
                   <button
                     key={pv.id}
+                    aria-label={`Ver vídeo ${idx + 1}: ${pv.title || 'sem título'}`}
                     onClick={() => setActiveVideoIndex(idx)}
                     className={cn(
                       'relative aspect-video w-24 shrink-0 overflow-hidden rounded-lg transition-all duration-200',
