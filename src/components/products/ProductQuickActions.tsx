@@ -27,6 +27,8 @@ interface ProductQuickActionsProps {
   tags?: Record<string, string[]>;
   niches?: string[];
   product?: Product;
+  isLoadingTags?: boolean;
+  hasErrorTags?: boolean;
   selectedVariant?: {
     variantName?: string | null;
     colorHex?: string | null;
@@ -66,6 +68,8 @@ export function ProductQuickActions({
   tags,
   niches,
   product,
+  isLoadingTags,
+  hasErrorTags,
   selectedVariant,
   onConfirmPrice,
 }: ProductQuickActionsProps) {
@@ -211,7 +215,26 @@ export function ProductQuickActions({
           </div>
 
           <div className="space-y-5 px-5 py-5">
-            {displayTagSections.length > 0 ? (
+            {isLoadingTags ? (
+              <div className="space-y-4">
+                {[1, 2].map((i) => (
+                  <div key={i} className="space-y-2">
+                    <div className="h-3 w-24 animate-pulse rounded bg-muted" />
+                    <div className="flex flex-wrap gap-2">
+                      {[1, 2, 3].map((j) => (
+                        <div key={j} className="h-8 w-20 animate-pulse rounded-lg bg-muted" />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : hasErrorTags ? (
+              <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 text-center">
+                <p className="text-sm text-destructive">
+                  Não foi possível carregar as indicações. Tente novamente mais tarde.
+                </p>
+              </div>
+            ) : displayTagSections.length > 0 ? (
               displayTagSections.map(([category, items]) => (
                 <div key={category} className="space-y-2.5">
                   <div className="flex items-center gap-2">
