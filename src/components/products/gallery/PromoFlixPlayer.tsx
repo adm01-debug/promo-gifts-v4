@@ -617,8 +617,8 @@ export function PromoFlixPlayer({
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(0,0,0,0.45)_100%)]" />
 
       {/* Loading state — branded */}
-      {isLoading && (
-        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-4">
+      {(isLoading || isReconnecting) && !hlsError && (
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-4 z-20">
           <div className="relative h-14 w-14">
             <div className="absolute inset-0 rounded-full border-2 border-white/10" />
             <div className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-primary border-r-primary/60" />
@@ -626,7 +626,28 @@ export function PromoFlixPlayer({
               <Play className="h-4 w-4 fill-primary text-primary" />
             </div>
           </div>
-          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/60">Carregando</span>
+          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/60">
+            {isReconnecting ? 'Reconectando...' : 'Carregando'}
+          </span>
+        </div>
+      )}
+
+      {/* Error state */}
+      {hlsError && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 bg-black/80 backdrop-blur-sm z-50 p-6 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-500/20 text-red-500 ring-1 ring-red-500/40">
+            <ZapOff className="h-8 w-8" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-lg font-bold">Ops! Algo deu errado</h3>
+            <p className="max-w-xs text-sm text-white/60">{hlsError}</p>
+          </div>
+          <Button 
+            onClick={() => initPlayer()} 
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-8"
+          >
+            Tentar Novamente
+          </Button>
         </div>
       )}
 
