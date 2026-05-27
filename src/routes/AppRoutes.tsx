@@ -20,6 +20,8 @@ import { toolsRoutes } from './tools-routes';
 
 
 
+
+
 // NProgress configuration
 NProgress.configure({ showSpinner: false, speed: 400, minimum: 0.1 });
 
@@ -83,6 +85,8 @@ export function AppRoutes() {
       <Routes>
         {publicRoutes}
         
+        
+
 
 
 
