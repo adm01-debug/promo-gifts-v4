@@ -169,6 +169,23 @@ export function ProductPriceSection({
             className="h-9"
           />
         </div>
+        <div>
+          <FieldLabel
+            htmlFor="price_freshness_threshold_days"
+            hint="Após esse prazo o sistema avisa o vendedor que o preço pode estar defasado. Padrão: 60 dias."
+          >
+            Validade do Preço
+          </FieldLabel>
+          <select
+            id="price_freshness_threshold_days"
+            {...register('price_freshness_threshold_days', { valueAsNumber: true })}
+            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+          >
+            <option value={30}>30 dias</option>
+            <option value={60}>60 dias (padrão)</option>
+            <option value={90}>90 dias</option>
+          </select>
+        </div>
       </div>
     </SectionCard>
   );
