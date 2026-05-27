@@ -1,10 +1,11 @@
-import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors.ts';
-import { authenticateRequest, authErrorResponse } from '../_shared/auth.ts';
+import { getCorsHeaders } from '../_shared/cors.ts';
+import { authenticateRequest } from '../_shared/auth.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
-import { callAiWithTracking, QuotaExceededError } from '../_shared/ai-usage.ts';
+import { callAiWithTracking } from '../_shared/ai-usage.ts';
 import { z } from '../_shared/zod-validate.ts';
-import { rateLimiters, applyRateLimit } from '../_shared/rate-limiter.ts';
+import { applyRateLimit, rateLimiters } from '../_shared/rate-limiter.ts';
 import { runBotProtection } from '../_shared/bot-protection.ts';
+import { getOrCreateRequestId } from '../_shared/request-id.ts';
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -12,21 +13,52 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const requestId = getOrCreateRequestId(req);
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseServiceRole = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const serviceClient = createClient(supabaseUrl, supabaseServiceRole);
+
+  let userId: string | undefined;
+  let currentStep = "initializing";
+
+  const logToDb = async (error: any, metadata: any = {}) => {
+    try {
+      await serviceClient.from('system_error_logs').insert({
+        user_id: userId,
+        function_name: 'visual-search',
+        error_message: error.message || String(error),
+        stack_trace: error.stack,
+        metadata: {
+          ...metadata,
+          requestId,
+          currentStep,
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (dbErr) {
+      console.error("Critical: Failed to log error to DB", dbErr);
+    }
+  };
+
   try {
+    // 1. Authentication & Config Validation
+    currentStep = "config_validation";
+    const AI_LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const AI_HF_ACCESS_TOKEN = Deno.env.get("HF_ACCESS_TOKEN");
+
+    if (!AI_LOVABLE_API_KEY && !AI_HF_ACCESS_TOKEN) {
+      throw new Error("Configuração ausente: LOVABLE_API_KEY ou HF_ACCESS_TOKEN não configurados no backend.");
+    }
+
     // Bypass mechanism for simulations/tests
     const bypassKey = Deno.env.get("SIMULATION_BYPASS_KEY");
     const providedBypass = req.headers.get("X-Simulation-Bypass");
     
     let auth;
-    let userId;
-    
     if (bypassKey && providedBypass === bypassKey) {
       console.log("Bypass authentication active");
-      userId = "00000000-0000-0000-0000-000000000000"; // Mock user
-      auth = { 
-        userId, 
-        localServiceClient: createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!) 
-      };
+      userId = "00000000-0000-0000-0000-000000000000";
+      auth = { userId, localServiceClient: serviceClient };
     } else {
       auth = await authenticateRequest(req);
       userId = auth.userId;
@@ -34,7 +66,8 @@ Deno.serve(async (req) => {
 
     const user = { id: userId };
 
-    // Anti-scraping
+    // 2. Protection & Rate Limiting
+    currentStep = "protection_check";
     const protection = await runBotProtection(req, {
       endpoint: 'visual-search',
       maxRequests: 20,
@@ -51,32 +84,33 @@ Deno.serve(async (req) => {
       return new Response(rl.body, { status: rl.status, headers });
     }
 
+    // 3. Input Validation
+    currentStep = "input_validation";
     const ImageSchema = z.object({
       imageBase64: z.string().min(10, 'Image is required').max(10_000_000, 'Image too large'),
       category: z.string().optional(),
       color: z.string().optional(),
     });
 
-    let rawBody: unknown;
-    try { rawBody = await req.json(); } catch {
-      return new Response(JSON.stringify({ error: "Invalid request body" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    let rawBody: any;
+    try { 
+      rawBody = await req.json(); 
+    } catch {
+      throw new Error("Corpo da requisição inválido (esperado JSON).");
     }
     
     const parsed = ImageSchema.safeParse(rawBody);
     if (!parsed.success) {
       return new Response(
-        JSON.stringify({ error: parsed.error.issues[0]?.message || "Invalid input" }),
+        JSON.stringify({ error: parsed.error.issues[0]?.message || "Input inválido" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    const { imageBase64, category, color } = parsed.data;
+    const { imageBase64 } = parsed.data;
 
-    const AI_LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    const AI_HF_ACCESS_TOKEN = Deno.env.get("HF_ACCESS_TOKEN");
-
-    console.log("Analyzing image with AI...");
+    // 4. AI Analysis
+    currentStep = "ai_analysis";
+    console.log(`[${requestId}] Starting AI analysis...`);
     
     const requestBody = {
       messages: [
@@ -124,32 +158,41 @@ Responda APENAS em JSON com este formato:
           const hfData = await hfResponse.json();
           analysisContent = hfData.choices?.[0]?.message?.content || "";
           usedProvider = "huggingface";
+        } else {
+          console.warn(`HF Provider failed: ${hfResponse.status} ${hfResponse.statusText}`);
         }
-      } catch (err) { console.error("HF Error:", err); }
+      } catch (err) { 
+        console.error("HF Error:", err); 
+      }
     }
 
     if (!analysisContent && AI_LOVABLE_API_KEY) {
-      const model = "google/gemini-2.5-flash";
-      const analysisResponse = await callAiWithTracking({
-        userId: user.id,
-        functionName: "visual-search",
-        model,
-        apiKey: AI_LOVABLE_API_KEY,
-        requestBody,
-      });
+      try {
+        const model = "google/gemini-2.5-flash";
+        const analysisResponse = await callAiWithTracking({
+          userId: user.id,
+          functionName: "visual-search",
+          model,
+          apiKey: AI_LOVABLE_API_KEY,
+          requestBody,
+        });
 
-      if (analysisResponse.ok) {
-        const analysisData = await analysisResponse.json();
-        analysisContent = analysisData.choices?.[0]?.message?.content || "";
-        usedProvider = "lovable";
+        if (analysisResponse.ok) {
+          const analysisData = await analysisResponse.json();
+          analysisContent = analysisData.choices?.[0]?.message?.content || "";
+          usedProvider = "lovable";
+        }
+      } catch (err) {
+        console.error("Lovable AI Error:", err);
       }
     }
 
     if (!analysisContent) {
-      throw new Error("Análise visual indisponível (Cota IA ou Token HF ausente).");
+      throw new Error("Não foi possível realizar a análise visual. Verifique as configurações de IA (Hugging Face/Lovable) e se há créditos disponíveis.");
     }
 
-    // Parse JSON
+    // 5. Database Search
+    currentStep = "database_search";
     let productAnalysis;
     const jsonMatch = analysisContent.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
@@ -161,10 +204,8 @@ Responda APENAS em JSON com este formato:
     }
 
     const supabase = auth.localServiceClient;
-
-    // Search products
     const searchTerms = [productAnalysis.productType, ...productAnalysis.keywords].join(" ");
-    console.log("Searching products:", searchTerms);
+    console.log(`[${requestId}] Searching products:`, searchTerms);
 
     const { data: directProducts, error: directError } = await supabase
       .from("products")
@@ -173,9 +214,12 @@ Responda APENAS em JSON com este formato:
       .or(`name.ilike.%${productAnalysis.productType}%,description.ilike.%${productAnalysis.productType}%`)
       .limit(50);
 
+    if (directError) throw directError;
+
     let finalProducts = directProducts || [];
 
-    // Re-rank using semantic function if we have products
+    // 6. Semantic Ranking
+    currentStep = "semantic_ranking";
     if (finalProducts.length > 0) {
       const { data: rankedResults, error: rankError } = await supabase
         .rpc("search_products_semantic", {
@@ -202,13 +246,29 @@ Responda APENAS em JSON com este formato:
       }
     }
 
-    return new Response(JSON.stringify({ analysis: productAnalysis, products: finalProducts, searchTerms }), {
+    console.log(`[${requestId}] Success. Provider: ${usedProvider}, Products found: ${finalProducts.length}`);
+
+    return new Response(JSON.stringify({ 
+      analysis: productAnalysis, 
+      products: finalProducts, 
+      searchTerms,
+      usedProvider,
+      requestId
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
 
   } catch (error) {
-    console.error("Visual search error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error(`[${requestId}] Visual search error at step "${currentStep}":`, error);
+    
+    // Log to DB
+    await logToDb(error, { provider: usedProvider || 'none' });
+
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      step: currentStep,
+      requestId
+    }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
   }
