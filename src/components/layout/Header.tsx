@@ -177,9 +177,8 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                 {currentSection}
               </span>
             </div>
-            <div className="mx-1 h-8 w-px bg-border/20" />
-            <OrganizationSwitcher />
           </div>
+
         </div>
 
         {/* ══════ Center section — Global Search (#4 expandida) ══════ */}
