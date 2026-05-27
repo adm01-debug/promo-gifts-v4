@@ -86,16 +86,17 @@ Deno.serve(async (req: Request) => {
     const { data: body, responseHeaders } = contractResult;
     contractResponseHeaders = responseHeaders;
 
-    const email = body.email.toLowerCase();
+    const email = (body.email ?? '').toLowerCase();
     const dryRun = body.dryRun !== false;
 
     // 2. Rate limit
-    const rlResult = await castRpcResult<E2ERateLimitRow>(
+    const rlResult = await castRpcResult<{ data: E2ERateLimitRow | null; error: unknown }>(
       supabase.rpc("e2e_cleanup_check_rate_limit", {
         p_ip: clientIp,
         p_max: RATE_LIMIT_MAX,
         p_window_seconds: RATE_LIMIT_WINDOW,
-      })
+        // deno-lint-ignore no-explicit-any
+      }) as unknown as Promise<{ data: E2ERateLimitRow | null; error: unknown }>
     );
     if (rlResult.data && !rlResult.data.allowed) {
       await supabase.from("e2e_cleanup_audit").insert({

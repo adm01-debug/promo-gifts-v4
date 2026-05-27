@@ -11,7 +11,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 // Fallback: se o perfil não tiver bitrix_id preenchido, loga warning e segue sem seller_id.
 async function resolveSellerBitrixId(
   email: string | null,
-  serviceClient: ReturnType<typeof createClient>,
+  // deno-lint-ignore no-explicit-any
+  serviceClient: any,
 ): Promise<number | null> {
   if (!email) return null;
   try {

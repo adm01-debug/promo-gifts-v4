@@ -5,14 +5,10 @@ import { authenticateRequest, authErrorResponse } from '../_shared/auth.ts';
 import { safeJson } from '../_shared/json-parser.ts';
 import { resolveCredential } from '../_shared/credentials.ts';
 import { safeErrorFields } from '../_shared/log-safety.ts';
-import { applyRateLimit, createRateLimiters } from '../_shared/rate-limiter.ts';
+import { applyRateLimit, rateLimiters } from '../_shared/rate-limiter.ts';
 
 const HF_ENDPOINT = 'https://api-inference.huggingface.co/v1/chat/completions';
 const HF_MODEL = 'mistralai/Mistral-7B-Instruct-v0.3';
-
-const rateLimiters = createRateLimiters({
-  ai: { maxRequests: 10, windowSeconds: 60 },
-});
 
 const RecommendationRequestSchema = z.object({
   client: z.object({

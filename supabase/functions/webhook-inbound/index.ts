@@ -1,6 +1,6 @@
 // webhook-inbound: receives external webhooks at /functions/v1/webhook-inbound
-import { getCorsHeaders } from './_shared/cors.ts';
-import { runBotProtection } from './_shared/bot-protection.ts';
+import { getCorsHeaders } from '../_shared/cors.ts';
+import { runBotProtection } from '../_shared/bot-protection.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2.49.4';
 
 const WEBHOOK_SOURCES = [
@@ -109,10 +109,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    await adminClient.rpc('increment_webhook_stats', {
+    const { error: statsErr } = await adminClient.rpc('increment_webhook_stats', {
       p_source: source,
       p_event: event,
-    }).catch((e: unknown) => console.warn('[webhook-inbound] increment_webhook_stats non-fatal:', e));
+    });
+    if (statsErr) console.warn('[webhook-inbound] increment_webhook_stats non-fatal:', statsErr);
 
     return new Response(
       JSON.stringify({ ok: true, source, event, queued: true }),

@@ -179,7 +179,8 @@ function verifyTOTP(secret: string | null, token: string): boolean {
  * Remove o codigo da lista apos uso bem-sucedido.
  */
 async function tryBackupCode(
-  admin: ReturnType<typeof createClient>,
+  // deno-lint-ignore no-explicit-any
+  admin: any,
   userId: string,
   codes: string[] | null,
   token: string,
