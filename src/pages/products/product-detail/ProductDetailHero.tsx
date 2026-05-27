@@ -43,6 +43,8 @@ interface ProductDetailHeroProps {
   onOpenSupplierComparison: () => void;
   isLoadingTags?: boolean;
   hasErrorTags?: boolean;
+  isLoadingNiches?: boolean;
+  hasErrorNiches?: boolean;
 }
 
 const getStockStatusInfo = (status: string) => {
