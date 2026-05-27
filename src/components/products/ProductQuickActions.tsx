@@ -72,6 +72,8 @@ export function ProductQuickActions({
   product,
   isLoadingTags,
   hasErrorTags,
+  isLoadingNiches,
+  hasErrorNiches,
   selectedVariant,
   onConfirmPrice,
 }: ProductQuickActionsProps) {
