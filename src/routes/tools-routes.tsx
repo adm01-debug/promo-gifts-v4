@@ -17,6 +17,7 @@ import {
   StockDashboardPage,
   SimulationPage,
   VisualSearchPage,
+  PromoFlixPlayground,
 } from './lazy-pages';
 
 /**
