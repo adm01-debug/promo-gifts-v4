@@ -1,7 +1,9 @@
 import { ProductCard } from './ProductCard';
 import type { Product } from '@/types/product-catalog';
 import type { ActiveColorFilter } from '@/utils/color-image-resolver';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { AlertTriangle, RotateCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useReducedMotion } from '@/hooks/ui/useReducedMotion';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
 import { cn } from '@/lib/utils';
@@ -10,6 +12,8 @@ import { ProductCardSkeleton } from '@/components/loading/ModernSkeletons';
 export interface ProductGridProps {
   products: Product[];
   isLoading?: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
   onProductClick?: (productId: string) => void;
   onViewProduct?: (product: Product) => void;
   onShareProduct?: (product: Product) => void;
@@ -166,6 +170,8 @@ const columnClasses: Record<number, string> = {
 export function ProductGrid({
   products,
   isLoading,
+  isError,
+  onRetry,
   onProductClick,
   onViewProduct,
   onShareProduct,
@@ -193,6 +199,28 @@ export function ProductGrid({
     const timer = setTimeout(() => setIsGridVisible(true), 50);
     return () => clearTimeout(timer);
   }, [products, isLoading]);
+
+  if (isError) {
+    return (
+      <div className="flex animate-fade-in flex-col items-center justify-center py-16 text-center">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+          <AlertTriangle className="h-8 w-8" />
+        </div>
+        <h3 className="mb-2 font-display text-lg font-semibold text-foreground">
+          Ops! Falha ao carregar produtos
+        </h3>
+        <p className="mb-6 max-w-md text-sm text-muted-foreground">
+          Não conseguimos conectar ao catálogo agora. Verifique sua conexão ou tente novamente.
+        </p>
+        {onRetry && (
+          <Button onClick={onRetry} variant="outline" className="gap-2">
+            <RotateCw className="h-4 w-4" />
+            Tentar novamente
+          </Button>
+        )}
+      </div>
+    );
+  }
 
   const showEmptyState = !isLoading && products.length === 0;
 
