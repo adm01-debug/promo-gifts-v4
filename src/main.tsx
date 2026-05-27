@@ -1,3 +1,4 @@
+import './lib/console-filter';
 import { Fragment } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HelmetProvider } from 'react-helmet-async';
@@ -15,6 +16,8 @@ import './styles/missing-root-tokens.css';
 
 // Initialize Sentry FIRST (no-op if VITE_SENTRY_DSN is unset)
 initSentry();
+
+
 
 // Install global error handlers for unhandled errors/rejections
 installGlobalErrorHandlers();
