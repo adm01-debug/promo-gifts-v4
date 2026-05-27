@@ -22,6 +22,9 @@ export const productFormSchema = z.object({
   min_quantity: z.coerce.number().int().min(1).default(1),
   min_order_quantity: z.coerce.number().int().min(0).optional().nullable(),
   stock_unit: z.string().max(20).optional().default('un'),
+  // Validade do preço (dias). Após esse prazo o sistema avisa o vendedor
+  // que o preço pode estar defasado. Restrito ao cadastro do produto.
+  price_freshness_threshold_days: z.coerce.number().int().min(1).max(365).default(60),
 
   // Dimensões físicas
   height_cm: z.coerce.number().min(0).optional().nullable(),
