@@ -191,14 +191,24 @@ export function getProductStock(product: PromobrindProduct): number {
 // Select field constants
 // NOTE: `price_updated_at` is the SSOT for price freshness — populated via
 // trigger on the external Promobrind DB whenever any price field changes.
-// `price_freshness_threshold_days` é configurado no cadastro do produto
-// (30/60/90 dias, default 60). Requer a coluna existir na tabela products
-// do BD externo — ver ALTER TABLE em docs/PRICE_FRESHNESS_THRESHOLD.sql.
+// `price_freshness_threshold_days` é opcional durante a transição de schema:
+// tentamos ler quando existir e caímos para default 60d quando a coluna ainda
+// não foi aplicada no BD externo.
 export const PRODUCT_SELECT_FIELDS_WITH_SALE =
   'id, name, sku, sale_price, cost_price, images, primary_image_url, ' +
   'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
   'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
   'materials, dimensions, min_quantity, created_at, updated_at, price_updated_at, price_freshness_threshold_days, ' +
+  'is_featured, is_bestseller, is_new, is_on_sale, is_kit, gender, ' +
+  'height_cm, width_cm, length_cm, diameter_cm, weight_g, capacity_ml, ' +
+  'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
+  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3';
+
+export const PRODUCT_SELECT_FIELDS_WITH_SALE_NO_THRESHOLD =
+  'id, name, sku, sale_price, cost_price, images, primary_image_url, ' +
+  'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
+  'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
+  'materials, dimensions, min_quantity, created_at, updated_at, price_updated_at, ' +
   'is_featured, is_bestseller, is_new, is_on_sale, is_kit, gender, ' +
   'height_cm, width_cm, length_cm, diameter_cm, weight_g, capacity_ml, ' +
   'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
@@ -214,11 +224,31 @@ export const PRODUCT_SELECT_FIELDS_LEGACY =
   'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
   'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3';
 
+export const PRODUCT_SELECT_FIELDS_LEGACY_NO_THRESHOLD =
+  'id, name, sku, cost_price, images, primary_image_url, ' +
+  'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
+  'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
+  'materials, dimensions, min_quantity, created_at, updated_at, price_updated_at, ' +
+  'is_featured, is_bestseller, is_new, is_on_sale, is_kit, ' +
+  'height_cm, width_cm, length_cm, diameter_cm, weight_g, capacity_ml, ' +
+  'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
+  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3';
+
 export const PRODUCT_SELECT_FIELDS_DETAIL =
   'id, name, sku, sale_price, cost_price, images, primary_image_url, ' +
   'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
   'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
   'materials, dimensions, min_quantity, created_at, updated_at, price_updated_at, price_freshness_threshold_days, ' +
+  'is_featured, is_bestseller, is_new, is_on_sale, is_kit, tags, ' +
+  'height_cm, width_cm, length_cm, diameter_cm, weight_g, capacity_ml, ' +
+  'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
+  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3';
+
+export const PRODUCT_SELECT_FIELDS_DETAIL_NO_THRESHOLD =
+  'id, name, sku, sale_price, cost_price, images, primary_image_url, ' +
+  'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
+  'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
+  'materials, dimensions, min_quantity, created_at, updated_at, price_updated_at, ' +
   'is_featured, is_bestseller, is_new, is_on_sale, is_kit, tags, ' +
   'height_cm, width_cm, length_cm, diameter_cm, weight_g, capacity_ml, ' +
   'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
