@@ -392,7 +392,6 @@ export function PriceFreshnessBadge({
         <span
           role="status"
           aria-label={ariaLabel}
-          title={title}
           tabIndex={0}
           className={cn(
             'inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50/70 px-2.5 py-0.5 text-[11px] font-medium text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
