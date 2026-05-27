@@ -48,5 +48,6 @@ export const toolsRoutes = (
     <Route path="/simulacao" element={<SimulationPage />} />
     <Route path="/ferramentas/cobertura" element={<CoverageInsightsDashboardPage />} />
     <Route path="/raio-x" element={<VisualSearchPage />} />
+    <Route path="/promoflix-test" element={<PromoFlixPlayground />} />
   </>
 );
