@@ -319,13 +319,13 @@ export function ProductDetailHero({
                   minQuantity={minQuantity}
                   variant="button"
                   buttonSize="lg"
-                  className="xl:h-13 h-12 flex-1 basis-0 gap-1.5 rounded-xl bg-primary font-display text-[0.875rem] font-bold tracking-[0.15em] text-primary-foreground shadow-md shadow-primary/20 transition-all duration-300 hover:scale-[1.02] hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
+                  className="xl:h-13 h-12 flex-1 basis-0 gap-1.5 rounded-xl bg-primary text-[0.875rem] font-action-button text-primary-foreground shadow-md shadow-primary/20 transition-all duration-300 hover:scale-[1.02] hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
                   labelOverride="Carrinho"
                   iconOverride="cart"
                 />
                 <Button
                   size="lg"
-                  className="xl:h-13 h-12 flex-1 basis-0 gap-1.5 rounded-xl bg-success font-display text-[0.875rem] font-bold tracking-[0.15em] text-success-foreground shadow-md shadow-success/20 transition-all duration-300 hover:scale-[1.02] hover:bg-success/90 hover:shadow-lg hover:shadow-success/30 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
+                  className="xl:h-13 h-12 flex-1 basis-0 gap-1.5 rounded-xl bg-success text-[0.875rem] font-action-button text-success-foreground shadow-md shadow-success/20 transition-all duration-300 hover:scale-[1.02] hover:bg-success/90 hover:shadow-lg hover:shadow-success/30 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
                   onClick={() => setQuoteVariantWizardOpen(true)}
                 >
                   <FileText className="h-4 w-4" />
