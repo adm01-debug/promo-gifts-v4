@@ -106,6 +106,7 @@ export default function AdminProductFormPage() {
       product_type: p.product_type ?? (p.is_kit ? 'kit' : 'product'),
       min_quantity: p.min_quantity ?? 1,
       min_order_quantity: p.min_order_quantity ?? null,
+      price_freshness_threshold_days: p.price_freshness_threshold_days ?? 60,
       height_cm: p.height_cm ?? null, width_cm: p.width_cm ?? null,
       length_cm: p.length_cm ?? null, diameter_cm: p.diameter_cm ?? null,
       weight_g: p.weight_g ?? null, capacity_ml: p.capacity_ml ?? null,
