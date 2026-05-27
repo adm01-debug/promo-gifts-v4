@@ -1,5 +1,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 import * as OTPAuth from 'https://esm.sh/otpauth@9.3.5';
+import { buildPublicCorsHeaders } from '../_shared/cors.ts';
+import { createStructuredLogger } from '../_shared/structured-logger.ts';
+import { getOrCreateRequestId } from '../_shared/request-id.ts';
 
 /**
  * Edge Function: verify-2fa-token
@@ -24,22 +27,21 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const ANON_KEY     = Deno.env.get('SUPABASE_ANON_KEY')!;
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+const corsHeaders = buildPublicCorsHeaders();
 
-function json(data: unknown, status = 200) {
+function json(data: unknown, status = 200, extraHeaders: Record<string, string> = {}) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { ...CORS, 'Content-Type': 'application/json' },
+    headers: { ...corsHeaders, 'Content-Type': 'application/json', ...extraHeaders },
   });
 }
 
 Deno.serve(async (req: Request) => {
+  const requestId = getOrCreateRequestId(req);
+  const log = createStructuredLogger({ fn: 'verify-2fa-token', requestId, req });
+
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: CORS });
+    return new Response(null, { headers: corsHeaders });
   }
 
   // Autenticacao JWT obrigatoria (verify_jwt: true no deploy)
@@ -71,6 +73,8 @@ Deno.serve(async (req: Request) => {
   const targetUserId  = body.target_user_id as string | undefined;
   const isAdminBypass = body.is_admin_bypass === true;
   const effectiveUserId = targetUserId || user.id;
+
+  log.info('verify-2fa-token request', { action, effectiveUserId, isAdminBypass });
 
   // Permissao: operacao em outro usuario requer role admin/dev/supervisor
   if (effectiveUserId !== user.id) {

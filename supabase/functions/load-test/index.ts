@@ -1,5 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { getCorsHeaders } from "../_shared/cors.ts";
+import { createStructuredLogger } from "../_shared/structured-logger.ts";
+import { getOrCreateRequestId } from "../_shared/request-id.ts";
 
 /**
  * Load test to simulate thousands of webhook events and concurrent requests.
@@ -8,6 +10,9 @@ import { getCorsHeaders } from "../_shared/cors.ts";
 
 Deno.serve(async (req: Request) => {
   const corsHeaders = getCorsHeaders(req);
+  const requestId = getOrCreateRequestId(req);
+  const log = createStructuredLogger({ fn: "load-test", requestId, req });
+
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
@@ -24,7 +29,7 @@ Deno.serve(async (req: Request) => {
     const baseUrl = Deno.env.get("SUPABASE_URL")!.replace(".supabase.co", ".supabase.co/functions/v1");
     const targetUrl = targetEndpoint.startsWith("http") ? targetEndpoint : `${baseUrl}${targetEndpoint}`;
 
-    console.log(`[load-test] Starting: ${totalRequests} ${method} requests to ${targetUrl} (concurrency: ${concurrency}, idempotency: ${useIdempotency})`);
+    log.info('load-test starting', { totalRequests, method, targetUrl, concurrency, useIdempotency });
 
     let successCount = 0;
     let errorCount = 0;
