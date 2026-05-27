@@ -1,12 +1,27 @@
 /**
  * EmptySearchState — empty state inteligente do GlobalSearchPalette.
- * Mostrado quando há query (>= 2 chars) mas zero resultados.
+ * Mostrado quando há query (>= 3 chars) mas zero resultados.
+ *
+ * FIX BUG-GS-05: Unified localStorage store with useSearchHistory.
+ * Previously used key 'recent_global_searches' (format: string[]), which was
+ * completely disconnected from the 'global-search-history-v2' key used by
+ * useSearchHistory (format: HistoryItem[]). The user would see different history
+ * in different places in the UI.
+ * Fix: reads/writes 'global-search-history-v2' using the HistoryItem format.
  */
 import { memo } from 'react';
 import { Search, Plus, ExternalLink, RotateCcw, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const RECENT_KEY = 'recent_global_searches';
+/** Must stay in sync with STORAGE_KEY in useSearchHistory.ts */
+const UNIFIED_HISTORY_KEY = 'global-search-history-v2';
+
+interface HistoryItem {
+  id: string;
+  label: string;
+  type: string;
+  timestamp: number;
+}
 
 interface EmptySearchStateProps {
   query: string;
@@ -17,11 +32,14 @@ interface EmptySearchStateProps {
 
 function getRecentSearches(): string[] {
   try {
-    const raw = localStorage.getItem(RECENT_KEY);
+    const raw = localStorage.getItem(UNIFIED_HISTORY_KEY);
     if (!raw) return [];
-    const arr = JSON.parse(raw);
+    const arr = JSON.parse(raw) as HistoryItem[];
     if (!Array.isArray(arr)) return [];
-    return arr.filter((x): x is string => typeof x === 'string').slice(0, 5);
+    return arr
+      .filter((x) => x && typeof x.label === 'string' && x.type === 'general')
+      .map((x) => x.label)
+      .slice(0, 5);
   } catch {
     return [];
   }
@@ -123,18 +141,35 @@ export const EmptySearchState = memo(function EmptySearchState({
   );
 });
 
-/** Persist a query in recent searches (max 5, dedupe, most-recent first). */
+/**
+ * Persist a query in recent searches (max 5, dedupe, most-recent first).
+ * FIX BUG-GS-05: Now writes to 'global-search-history-v2' (HistoryItem format)
+ * instead of the old disconnected 'recent_global_searches' key (string[] format).
+ */
 export function pushRecentSearch(query: string): void {
   const trimmed = query.trim();
   if (!trimmed || trimmed.length < 2) return;
   try {
-    const raw = localStorage.getItem(RECENT_KEY);
-    const arr: string[] = raw
-      ? (JSON.parse(raw) as string[]).filter((x) => typeof x === 'string')
+    const raw = localStorage.getItem(UNIFIED_HISTORY_KEY);
+    const allItems: HistoryItem[] = raw
+      ? (JSON.parse(raw) as HistoryItem[]).filter((x) => x && typeof x.label === 'string')
       : [];
-    const filtered = arr.filter((x) => x.toLowerCase() !== trimmed.toLowerCase());
-    filtered.unshift(trimmed);
-    localStorage.setItem(RECENT_KEY, JSON.stringify(filtered.slice(0, 5)));
+    const newItem: HistoryItem = {
+      id: `history-${trimmed}`,
+      label: trimmed,
+      type: 'general',
+      timestamp: Date.now(),
+    };
+    // Dedupe by label (case-insensitive) and id
+    const filtered = allItems.filter(
+      (i) =>
+        !(i.id === newItem.id && i.type === 'general') &&
+        !(i.label.toLowerCase() === trimmed.toLowerCase() && i.type === 'general'),
+    );
+    filtered.unshift(newItem);
+    localStorage.setItem(UNIFIED_HISTORY_KEY, JSON.stringify(filtered.slice(0, 50)));
+    // Notify same-tab listeners (useSearchHistory uses this event)
+    window.dispatchEvent(new Event('search-history-update'));
   } catch {
     /* silent */
   }

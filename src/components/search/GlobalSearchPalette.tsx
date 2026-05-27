@@ -30,6 +30,7 @@ import {
   Users,
   Calculator,
   LifeBuoy,
+  AlertCircle,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -128,8 +129,11 @@ export function GlobalSearchPalette() {
     <>
       {/* ── Trigger ── */}
       <div className="flex w-full items-center gap-2 md:w-auto">
+        {/* FIX BUG-GS-12: added aria-label and aria-haspopup for screen readers */}
         <button
           onClick={() => s.setOpen(true)}
+          aria-label="Abrir busca global"
+          aria-haspopup="dialog"
           className="group relative flex flex-1 items-center gap-3 overflow-hidden rounded-2xl border border-border/40 bg-muted/40 px-4 py-2.5 text-sm shadow-sm backdrop-blur-md transition-all duration-300 hover:border-primary/40 md:w-full"
         >
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/[0.05] to-primary/0 transition-all duration-500 group-hover:via-primary/[0.1]" />
@@ -184,6 +188,16 @@ export function GlobalSearchPalette() {
         </div>
 
         <CommandList className="scrollbar-thin max-h-[520px] px-1 [background-color:hsl(var(--command-surface))]">
+          {/* FIX BUG-GS-07: Search error banner — shown when performSemanticSearch throws */}
+          {s.searchError && !s.isSearching && (
+            <div className="mx-2 mt-3 flex items-center gap-3 rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-3 duration-300 animate-in fade-in-0 slide-in-from-top-2">
+              <AlertCircle className="h-4 w-4 shrink-0 text-destructive/70" />
+              <p className="text-xs text-destructive/80">
+                Erro ao buscar. Verifique sua conexão e tente novamente.
+              </p>
+            </div>
+          )}
+
           {/* AI Processing Banner */}
           {s.isAIProcessing && (
             <div className="from-primary/12 via-primary/6 to-primary/3 mx-2 mt-3 flex items-center gap-3 rounded-2xl border border-primary/15 bg-gradient-to-r px-4 py-3.5 shadow-sm shadow-primary/5 duration-300 animate-in fade-in-0 slide-in-from-top-2">
@@ -286,8 +300,12 @@ export function GlobalSearchPalette() {
             </div>
           )}
 
-          {/* Empty state — intelligent */}
-          {!s.isSearching && s.query.length >= 2 && s.results.length === 0 && (
+          {/* Empty state — intelligent.
+              FIX BUG-GS-02: changed threshold from >= 2 to >= 3.
+              performSemanticSearch only runs for queries with >= 3 chars, so a
+              2-char query always has results.length === 0, causing EmptySearchState
+              AND the "Continue digitando" hint to render simultaneously. */}
+          {!s.isSearching && s.query.length >= 3 && s.results.length === 0 && (
             <EmptySearchState
               query={s.query}
               onAction={handleEmptyAction}
@@ -296,7 +314,7 @@ export function GlobalSearchPalette() {
             />
           )}
 
-          {/* Short query hint */}
+          {/* Short query hint — shown for 1–2 chars only (mutually exclusive with EmptySearchState) */}
           {!s.isSearching && s.query.length >= 1 && s.query.length < 3 && (
             <div className="flex items-center justify-center gap-2.5 px-4 py-8 duration-200 animate-in fade-in-0">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg [background-color:hsl(var(--command-accent))]">

@@ -88,7 +88,9 @@ export function AdvancedSearch({
           break;
       }
     },
-    [navigate, onSearch],
+    // FIX BUG-GS-04: added setQuery to deps — it is used in cases 'search','filter','clear'
+    // but was missing, creating a stale closure.
+    [navigate, onSearch, setQuery],
   );
 
   const handleOpenVoiceOverlay = () => {

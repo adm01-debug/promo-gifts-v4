@@ -150,6 +150,31 @@ export function GlobalSearch({
   }, [query, activeFilter, performSearch]);
 
   // Keyboard navigation
+  // FIX BUG-GS-08: wrap handleResultClick in useCallback and add to useEffect deps.
+  // Previously handleResultClick was defined after the useEffect and was not
+  // memoized, creating a stale closure — the Enter key handler would call
+  // a version of handleResultClick that captured stale query/searchHistory values.
+  const handleResultClick = useCallback(
+    (result: SearchResult) => {
+      // Save to history
+      const newHistory: SearchHistory = {
+        query,
+        timestamp: Date.now(),
+        resultCount: results.length,
+      };
+      const updatedHistory = [newHistory, ...searchHistory.filter((h) => h.query !== query)].slice(
+        0,
+        5,
+      );
+      setSearchHistory(updatedHistory);
+      localStorage.setItem('search-history', JSON.stringify(updatedHistory));
+
+      navigate(result.url);
+      onClose();
+    },
+    [query, results.length, searchHistory, navigate, onClose],
+  );
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen) return;
@@ -182,25 +207,7 @@ export function GlobalSearch({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, selectedIndex, results, query, navigate, onClose]);
-
-  const handleResultClick = (result: SearchResult) => {
-    // Save to history
-    const newHistory: SearchHistory = {
-      query,
-      timestamp: Date.now(),
-      resultCount: results.length,
-    };
-    const updatedHistory = [newHistory, ...searchHistory.filter((h) => h.query !== query)].slice(
-      0,
-      5,
-    );
-    setSearchHistory(updatedHistory);
-    localStorage.setItem('search-history', JSON.stringify(updatedHistory));
-
-    navigate(result.url);
-    onClose();
-  };
+  }, [isOpen, selectedIndex, results, query, navigate, onClose, handleResultClick]);
 
   const clearHistory = () => {
     setSearchHistory([]);
@@ -439,8 +446,11 @@ export function GlobalSearch({
   );
 }
 
-// Hook to manage global search state
-export function useGlobalSearch() {
+// FIX BUG-GS-13: renamed from useGlobalSearch → useLegacyGlobalSearch to avoid
+// name collision with the real hook in useGlobalSearch.ts. The legacy hook uses
+// local state + mock data and is NOT the production search hook.
+/** @deprecated Use useGlobalSearch from './useGlobalSearch' instead. */
+export function useLegacyGlobalSearch() {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {

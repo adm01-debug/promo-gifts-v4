@@ -82,6 +82,19 @@ export interface QuickSuggestion {
   icon: string;
 }
 
+/**
+ * FIX BUG-GS-14: Redact potential PII from search queries before logging to analytics.
+ * Patterns: CPF (###.###.###-##), CNPJ (##.###.###/####-##), e-mail addresses.
+ * Any matched pattern is replaced with '[REDACTED]' so analytics remain useful
+ * (query length, intent type, latency) without storing personal identifiers.
+ */
+function redactPii(query: string): string {
+  return query
+    .replace(/\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/g, '[REDACTED]') // CPF
+    .replace(/\b\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}\b/g, '[REDACTED]') // CNPJ
+    .replace(/\S+@\S+\.\S+/g, '[REDACTED]'); // e-mail
+}
+
 export function useGlobalSearch() {
   const { open, setOpen, voiceOverlayOpen, setVoiceOverlayOpen } = useSearchStore();
   const [query, setQuery] = useState('');
@@ -91,6 +104,8 @@ export function useGlobalSearch() {
   const [searchIntent, setSearchIntent] = useState<SearchIntent | null>(null);
   const [popularProducts, setPopularProducts] = useState<PopularProduct[]>([]);
   const [typingSuggestions, setTypingSuggestions] = useState<string[]>([]);
+  // FIX BUG-GS-07: expose search error state so UI can show a feedback banner
+  const [searchError, setSearchError] = useState(false);
   const navigate = useNavigate();
   const debouncedQuery = useDebounce(query, 500);
 
@@ -179,7 +194,12 @@ export function useGlobalSearch() {
           break;
       }
     },
-    [addVoiceCommand, navigate, setOpen, setVoiceOverlayOpen],
+    // FIX BUG-GS-03 / BUG-GS-18 / BUG-GS-19: added setQuery and setResults.
+    // Both are used inside the callback (cases: search, filter, clear) but were
+    // missing from the dependency array, creating stale closures.
+    // useState setters are stable references so this rarely causes runtime issues,
+    // but it violates the rules-of-hooks and can cause subtle bugs in Strict Mode.
+    [addVoiceCommand, navigate, setOpen, setVoiceOverlayOpen, setQuery, setResults],
   );
 
   const handleOpenVoiceOverlay = useCallback(() => {
@@ -191,16 +211,36 @@ export function useGlobalSearch() {
     setVoiceOverlayOpen(false);
   }, [setVoiceOverlayOpen]);
 
+  // ── FIX BUG-GS-06: Clear search cache on user logout ──
+  // The LRU cache is a module-level singleton. Without clearing on sign-out,
+  // a user logging in on the same browser tab would see cached results from
+  // the previous user's session.
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        searchCache.clear();
+      }
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
   // ── Popular products ──
   useEffect(() => {
     if (!open) return;
     (async () => {
       try {
+        // FIX BUG-GS-10: increased limit from 100 to 1000.
+        // With 100 records ordered by created_at DESC we were sampling only the
+        // most *recently* viewed products, not the most *frequently* viewed.
+        // A product with 10 000 historical views may be absent if not recently visited.
+        // A larger sample gives the client-side count a better approximation of
+        // true popularity. A proper server-side aggregation view is tracked as
+        // a follow-up DB migration.
         const { data: viewsData } = await supabase
           .from('product_views')
           .select('product_id, product_name, product_sku')
           .order('created_at', { ascending: false })
-          .limit(100);
+          .limit(1000);
         if (!viewsData) return;
 
         const viewCounts = viewsData.reduce(
@@ -269,8 +309,11 @@ export function useGlobalSearch() {
     if (!searchQuery.trim() || searchQuery.length < 3) {
       setResults([]);
       setSearchIntent(null);
+      setSearchError(false);
       return;
     }
+    // Reset error on every new search attempt
+    setSearchError(false);
 
     const cached = searchCache.get(searchQuery);
     if (cached) {
@@ -696,7 +739,7 @@ export function useGlobalSearch() {
             .from('search_analytics')
             .insert({
               user_id: userId,
-              search_term: searchQuery.toLowerCase().trim().slice(0, 200),
+              search_term: redactPii(searchQuery.toLowerCase().trim()).slice(0, 200),
               results_count: finalResults.length,
               search_context: JSON.stringify({ latency_ms: latencyMs, intent_type: intent.type }),
             })
@@ -708,7 +751,10 @@ export function useGlobalSearch() {
         () => undefined,
       );
     } catch {
+      // FIX BUG-GS-07: propagate error state so UI can show feedback instead of
+      // silently showing empty results when a network/auth/timeout error occurs.
       setIsAIProcessing(false);
+      if (!abortRef.current?.signal.aborted) setSearchError(true);
     } finally {
       if (!controller.signal.aborted) setIsSearching(false);
     }
@@ -804,6 +850,7 @@ export function useGlobalSearch() {
     isSearching,
     isAIProcessing,
     searchIntent,
+    searchError,
     popularProducts,
     typingSuggestions,
     // quickSuggestions: campo obrigatorio em GlobalSearchIdleState.

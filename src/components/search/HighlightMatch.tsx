@@ -11,6 +11,12 @@ interface HighlightMatchProps {
  * Highlights matching portions of text based on the search query.
  * Splits the query into words and highlights each match.
  * Includes diacritic-insensitive matching.
+ *
+ * FIX BUG-GS-01: Previously used `regex.test(part)` with the same stateful
+ * global regex (`gi`) used in `text.split(regex)`. After `split()`, the
+ * regex `.lastIndex` is in an unpredictable position, causing `.test()` to
+ * alternate true/false — skipping every other match.
+ * Fix: use a separate non-global regex (`testRegex`) for testing parts.
  */
 export const HighlightMatch = memo(function HighlightMatch({
   text,
@@ -23,7 +29,7 @@ export const HighlightMatch = memo(function HighlightMatch({
   }
 
   // Remove diacritics for comparison
-  const normalize = (str: string) => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const normalize = (str: string) => str.normalize('NFD').replace(/[̀-ͯ]/g, '');
 
   const words = query
     .trim()
@@ -54,13 +60,20 @@ export const HighlightMatch = memo(function HighlightMatch({
   };
 
   const regexStr = words.map(createDiacriticRegex).join('|');
-  const regex = new RegExp(`(${regexStr})`, 'gi');
-  const parts = text.split(regex);
+
+  // Use 'gi' (global) only for split — capturing groups require it.
+  const splitRegex = new RegExp(`(${regexStr})`, 'gi');
+  const parts = text.split(splitRegex);
+
+  // FIX BUG-GS-01: Separate non-global regex for testing each part.
+  // A global regex used in `.test()` advances `lastIndex` on every call,
+  // causing alternating true/false results and missed highlights.
+  const testRegex = new RegExp(`^(?:${regexStr})$`, 'i');
 
   return (
     <span className={className}>
       {parts.map((part, i) =>
-        regex.test(part) ? (
+        part && testRegex.test(part) ? (
           <mark key={i} className={highlightClassName}>
             {part}
           </mark>
