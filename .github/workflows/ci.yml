@@ -197,17 +197,30 @@ jobs:
         run: npm run typecheck
 
       - name: Prettier style check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           set +e
-          OUTPUT=$(npx prettier --list-different "src/**/*.{ts,tsx,css}" 2>&1)
+          # Usar o binário local (não npx) para garantir consistência com npm run
+          OUTPUT=$(./node_modules/.bin/prettier --list-different "src/**/*.{ts,tsx,css}" 2>&1)
           EXIT_CODE=$?
-          if [ $EXIT_CODE -ne 0 ] || [ -n "$OUTPUT" ]; then
+          # Também capturar a saída de --check para ter [warn] lines
+          CHECK_OUTPUT=$(./node_modules/.bin/prettier --check "src/**/*.{ts,tsx,css}" 2>&1)
+          CHECK_EXIT=$?
+          if [ $EXIT_CODE -ne 0 ] || [ -n "$OUTPUT" ] || [ $CHECK_EXIT -ne 0 ]; then
             echo "### ❌ Prettier — arquivos com formatação diferente" >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-            echo "$OUTPUT" >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-            echo "Arquivos não-formatados:"
+            printf '```\n%s\n```\n' "$OUTPUT" >> "$GITHUB_STEP_SUMMARY"
+            printf '```\n%s\n```\n' "$CHECK_OUTPUT" >> "$GITHUB_STEP_SUMMARY"
+            echo "=== PRETTIER LIST-DIFFERENT OUTPUT (exit $EXIT_CODE) ==="
             echo "$OUTPUT"
+            echo "=== PRETTIER CHECK OUTPUT (exit $CHECK_EXIT) ==="
+            echo "$CHECK_OUTPUT"
+            # Postar comentário na PR para diagnóstico (se for PR event)
+            if [ -n "$PR_NUMBER" ]; then
+              BODY="❌ **Prettier CI diagnóstico** (branch: $GITHUB_REF_NAME)\n\n**--list-different (exit $EXIT_CODE):**\n\`\`\`\n${OUTPUT}\n\`\`\`\n\n**--check (exit $CHECK_EXIT):**\n\`\`\`\n${CHECK_OUTPUT}\n\`\`\`"
+              gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body "$(printf '%b' "$BODY")" || true
+            fi
             exit 1
           fi
           echo "✅ Prettier OK" >> "$GITHUB_STEP_SUMMARY"
