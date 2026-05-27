@@ -179,7 +179,7 @@ describe('QuoteBuilderPage E2E Wizard Flow', () => {
     expect(itemCard).toHaveTextContent('Caneta Metal Premium');
     
     // Verificar Step 3
-    const itemsStep = within(wizard).getByLabel(/Etapa 3: Itens/i);
+    const itemsStep = within(wizard).getByLabelText(/Etapa 3: Itens/i);
     expect(itemsStep).toHaveAttribute('aria-label', expect.stringContaining('Concluída'));
 
     // --- ETAPA 4: REVISÃO E ENVIO ---
