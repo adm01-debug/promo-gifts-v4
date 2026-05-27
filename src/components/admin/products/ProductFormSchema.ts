@@ -147,6 +147,7 @@ export const defaultFormValues: ProductFormData = {
   min_quantity: 1,
   min_order_quantity: null,
   stock_unit: 'un',
+  price_freshness_threshold_days: 60,
   height_cm: null,
   width_cm: null,
   length_cm: null,
