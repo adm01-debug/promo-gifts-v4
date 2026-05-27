@@ -332,6 +332,8 @@ export default function ProductDetail() {
           onOpenPackagingModal={() => setPackagingModalOpen(true)}
           onOpenFutureStock={() => setFutureStockOpen(true)}
           onOpenSupplierComparison={() => setSupplierCompareOpen(true)}
+          isLoadingTags={isLoading}
+          hasErrorTags={isError}
         />
 
         <div className="border-t border-border/60 pt-6 xl:pt-8">

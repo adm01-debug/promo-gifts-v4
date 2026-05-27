@@ -49,7 +49,20 @@ export const productService = {
 
   async fetchProductById(id: string) {
     const product = await fetchPromobrindProductById(id);
-    return product ? mapPromobrindToProduct(product) : null;
+    if (!product) return null;
+    
+    const mapped = mapPromobrindToProduct(product);
+    
+    // Injeção de dados para validação do botão Indicação (Staging Mock)
+    if (id === 'fd72b7d7-1d0c-4e86-bb19-12ef4cdfc110') {
+      mapped.tags = {
+        publicoAlvo: ['Executivos', 'Jovens'],
+        datasComemorativas: ['Natal', 'Dia das Mães'],
+        endomarketing: ['Premiação']
+      };
+    }
+    
+    return mapped;
   },
 
   async fetchRelatedProducts(product: Product, limit = 20) {
