@@ -107,6 +107,39 @@ export function ProductDetailHero({
       {/* LEFT — Gallery */}
       <div className="min-w-0">
         <div className="space-y-3 pb-4 lg:sticky lg:top-20">
+          <div className="flex flex-wrap gap-1.5">
+            {product.featured && (
+              <Badge className="bg-gradient-primary px-2 py-0.5 text-[11px] text-primary-foreground shadow-sm">
+                <Sparkles className="mr-1 h-3 w-3" />
+                Destaque
+              </Badge>
+            )}
+            {product.newArrival && (
+              <Badge className="bg-gradient-to-r from-info to-info/80 px-2 py-0.5 text-[11px] text-info-foreground">
+                Novidade
+              </Badge>
+            )}
+            {product.onSale && (
+              <Badge className="bg-gradient-to-r from-destructive to-destructive/80 px-2 py-0.5 text-[11px] text-destructive-foreground">
+                Promoção
+              </Badge>
+            )}
+            {product.isKit && (
+              <Badge className="bg-gradient-to-r from-warning to-warning/80 px-2 py-0.5 text-[11px] text-warning-foreground">
+                <Layers className="mr-1 h-3 w-3" />
+                KIT
+              </Badge>
+            )}
+            {product.gender && <GenderBadge gender={product.gender} size="md" />}
+            <PackagingBadge
+              hasCommercialPackaging={product.hasCommercialPackaging ?? null}
+              packingType={product.packingType ?? null}
+              repackingType={product.repackingType ?? null}
+              packagingContext={(product.packagingContext ?? null) as never}
+              onClick={onOpenPackagingModal}
+            />
+          </div>
+
           <div className="flex flex-wrap items-center gap-1.5">
             <ProductCategoryBadges
               category={product.category as never}
@@ -157,39 +190,6 @@ export function ProductDetailHero({
       <div className="flex min-w-0 flex-col gap-3 md:gap-4 xl:gap-5">
         {/* Header */}
         <div className="space-y-2">
-
-          <div className="flex flex-wrap gap-1.5">
-            {product.featured && (
-              <Badge className="bg-gradient-primary px-2 py-0.5 text-[11px] text-primary-foreground shadow-sm">
-                <Sparkles className="mr-1 h-3 w-3" />
-                Destaque
-              </Badge>
-            )}
-            {product.newArrival && (
-              <Badge className="bg-gradient-to-r from-info to-info/80 px-2 py-0.5 text-[11px] text-info-foreground">
-                Novidade
-              </Badge>
-            )}
-            {product.onSale && (
-              <Badge className="bg-gradient-to-r from-destructive to-destructive/80 px-2 py-0.5 text-[11px] text-destructive-foreground">
-                Promoção
-              </Badge>
-            )}
-            {product.isKit && (
-              <Badge className="bg-gradient-to-r from-warning to-warning/80 px-2 py-0.5 text-[11px] text-warning-foreground">
-                <Layers className="mr-1 h-3 w-3" />
-                KIT
-              </Badge>
-            )}
-            {product.gender && <GenderBadge gender={product.gender} size="md" />}
-            <PackagingBadge
-              hasCommercialPackaging={product.hasCommercialPackaging ?? null}
-              packingType={product.packingType ?? null}
-              repackingType={product.repackingType ?? null}
-              packagingContext={(product.packagingContext ?? null) as never}
-              onClick={onOpenPackagingModal}
-            />
-          </div>
           <h1
             data-testid="page-title-detalhe-produto"
             data-product-name={product.name}
