@@ -104,11 +104,11 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
     <div>
       <div>
         <span
-          aria-label="Preço atualizado pelo fornecedor em 03 de maio de 2026, hoje."
+          aria-label="Preço atualizado pelo fornecedor em 03 de maio de 2026, há 0 dias."
           class="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
           role="status"
           tabindex="0"
-          title="Preço atualizado pelo fornecedor em 03 de maio de 2026, hoje."
+          title="Preço atualizado pelo fornecedor em 03 de maio de 2026, há 0 dias."
         >
           <svg
             aria-hidden="true"
@@ -135,7 +135,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           <span
             class="tabular-nums"
           >
-            hoje
+            há 0d
             <span
               class="text-muted-foreground"
             >
@@ -561,11 +561,11 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
     <div>
       <div>
         <span
-          aria-label="Preço atualizado pelo fornecedor em 03 de maio de 2026, hoje."
+          aria-label="Preço atualizado pelo fornecedor em 03 de maio de 2026, há 0 dias."
           class="inline-flex items-center justify-center text-emerald-700 dark:text-emerald-400 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
           role="status"
           tabindex="0"
-          title="Preço atualizado pelo fornecedor em 03 de maio de 2026, hoje."
+          title="Preço atualizado pelo fornecedor em 03 de maio de 2026, há 0 dias."
         >
           <svg
             aria-hidden="true"
@@ -899,10 +899,10 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
     <div>
       <div>
         <span
-          aria-label="Preço atualizado pelo fornecedor em 03 de maio de 2026, hoje."
+          aria-label="Preço atualizado pelo fornecedor em 03 de maio de 2026, há 0 dias."
           class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400"
           role="status"
-          title="Preço atualizado pelo fornecedor em 03 de maio de 2026, hoje."
+          title="Preço atualizado pelo fornecedor em 03 de maio de 2026, há 0 dias."
         >
           <svg
             aria-hidden="true"
@@ -1254,7 +1254,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
     <div>
       <div>
         <span
-          aria-label="Preço atualizado pelo fornecedor em 03 de maio de 2026, hoje."
+          aria-label="Preço atualizado pelo fornecedor em 03 de maio de 2026, há 0 dias."
           class="inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-400"
           role="status"
         >
