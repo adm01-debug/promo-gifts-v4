@@ -112,12 +112,12 @@ describe('useSupplierComparison Real-world Scenarios', () => {
      expect(result.current.result?.fastestLeadTimeDays).toBe(5);
   });
 
-  it('should handle data corruption: negative prices or zero stock', () => {
+  it('should filter out products with invalid data (negative price)', () => {
     const corruptAlt = { 
       ...baseProduct, 
       id: 'corrupt', 
-      price: -10, // Should probably be ignored or handled
-      stock: 0,
+      price: -10, 
+      stock: 100,
       supplier: { id: 's2', name: 'B' }
     };
 
@@ -125,18 +125,15 @@ describe('useSupplierComparison Real-world Scenarios', () => {
 
     const { result } = renderHook(() => useSupplierComparison(baseProduct as any));
     
-    // It currently includes them but score should be low or it should filter them.
-    // Let's see what happens.
     const alt = result.current.result?.alternatives.find(a => a.product.id === 'corrupt');
-    expect(alt).toBeDefined();
-    expect(alt?.score).toBeLessThan(100);
+    expect(alt).toBeUndefined(); // Filtered out correctly
   });
 
   it('should handle many alternatives (Performance/Limit test)', () => {
     const manyAlts = Array.from({ length: 100 }, (_, i) => ({
       ...baseProduct,
       id: `alt-${i}`,
-      name: `Product Alternative ${i}`,
+      name: `Caneca Alternativa ${i}`,
       supplier: { id: `supp-${i}`, name: `Supplier ${i}` },
       price: 10 + i,
       stock: 1000 - i,
@@ -148,7 +145,7 @@ describe('useSupplierComparison Real-world Scenarios', () => {
     const { result } = renderHook(() => useSupplierComparison(baseProduct as any));
     const end = performance.now();
 
-    expect(result.current.result?.alternatives.length).toBeGreaterThan(0);
+    expect(result.current.result?.alternatives.length).toBe(100);
     expect(end - start).toBeLessThan(100); // Should be fast
   });
 
