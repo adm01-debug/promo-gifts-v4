@@ -158,4 +158,22 @@ test.describe('Supplier Comparison Modal Visual Regression', () => {
 
     await expect(modal).toHaveScreenshot('supplier-comparison-loading.png');
   });
+  test('should match visual snapshot for the comparison modal - Error State', async ({ page }) => {
+    // Intercept to return error
+    await page.route('**/functions/v1/external-db-bridge', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Internal Server Error' }),
+      });
+    });
+
+    await page.click('button:has-text("Comparar Fornecedores")');
+    const modal = page.locator('div[role="dialog"]');
+    await expect(modal).toBeVisible();
+    
+    await expect(modal.getByText('Ocorreu um erro ao carregar os dados')).toBeVisible();
+
+    await expect(modal).toHaveScreenshot('supplier-comparison-error.png');
+  });
 });

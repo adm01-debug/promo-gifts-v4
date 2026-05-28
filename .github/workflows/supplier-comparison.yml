@@ -1,0 +1,38 @@
+name: Supplier Comparison CI
+
+on:
+  pull_request:
+    paths:
+      - 'src/hooks/products/useSupplierComparison.ts'
+      - 'src/components/compare/SupplierComparisonModal.tsx'
+      - 'tests/hooks/useSupplierComparison*'
+      - 'e2e/flows/supplier-comparison-visual.spec.ts'
+
+jobs:
+  test-supplier-comparison:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+      
+      - name: Run Unit & Property Tests with Coverage
+        run: npm run test:supplier-comparison
+      
+      - name: Run Visual Regression Tests
+        run: npx playwright test e2e/flows/supplier-comparison-visual.spec.ts
+      
+      - name: Upload Coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/

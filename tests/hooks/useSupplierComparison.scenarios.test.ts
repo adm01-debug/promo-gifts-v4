@@ -190,6 +190,26 @@ describe('useSupplierComparison Real-world Scenarios', () => {
     expect(alt?.score).toBeLessThan(100);
     expect(alt?.isBestStock).toBe(false);
   });
+  it('should never produce NaN or negative scores even with extreme inputs', () => {
+    const extremeAlt = { 
+      ...baseProduct, 
+      id: 'extreme', 
+      price: Infinity, 
+      stock: -100, 
+      leadTimeDays: NaN,
+      supplier: { id: 's2', name: 'B' }
+    };
+
+    mockUseProducts.mockReturnValue({ data: [baseProduct, extremeAlt], isLoading: false });
+
+    const { result } = renderHook(() => useSupplierComparison(baseProduct as any));
+    const alt = result.current.result?.alternatives[0];
+    
+    expect(alt?.score).toBeDefined();
+    expect(alt?.score).toBeGreaterThanOrEqual(0);
+    expect(alt?.score).toBeLessThanOrEqual(100);
+    expect(Number.isNaN(alt?.score)).toBe(false);
+  });
 });
 
 
