@@ -232,10 +232,6 @@ export function PromoFlixPlayer({
     const video = videoRef.current;
     if (!video || !src) return;
 
-  // Setup HLS or native
-  const initPlayer = useCallback(() => {
-    const video = videoRef.current;
-    if (!video || !src) return;
 
     // Invalida qualquer init anterior em andamento (Strict Mode / troca de src / Retry)
     const myToken = ++initTokenRef.current;
