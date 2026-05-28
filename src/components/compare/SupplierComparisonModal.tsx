@@ -82,15 +82,16 @@ export function SupplierComparisonModal({
   };
 
   // hooks calls must happen unconditionally — declarar antes do early-return
-  const baseProduct = comparison?.baseProduct;
-  const baseIsLowest = baseProduct ? baseProduct.price === comparison?.lowestPrice : false;
-  const baseIsBestStock = baseProduct ? baseProduct.stock === comparison?.highestStock : false;
+  // use the product from prop as fallback for the base product info
+  const displayProduct = comparison?.baseProduct ?? product;
+  const baseIsLowest = displayProduct ? displayProduct.price === comparison?.lowestPrice : false;
+  const baseIsBestStock = displayProduct ? displayProduct.stock === comparison?.highestStock : false;
 
   const allProducts = useMemo(() => {
-    if (!comparison || !baseProduct) return [];
+    if (!comparison || !displayProduct) return [];
     return [
       {
-        product: baseProduct,
+        product: displayProduct,
         priceDiff: 0,
         priceDiffPercent: 0,
         stockAdvantage: false,
@@ -98,16 +99,16 @@ export function SupplierComparisonModal({
         isBestStock: baseIsBestStock,
         commonColors: [] as string[],
         commonMaterials: [] as string[],
-        leadTimeDays: baseProduct.leadTimeDays ?? null,
-        isVerified: baseProduct.is_active !== false,
+        leadTimeDays: displayProduct.leadTimeDays ?? null,
+        isVerified: displayProduct.is_active !== false,
         score: 100,
         economiaPorMOQ: 0,
-        effectiveMOQ: baseProduct.minQuantity ?? 1,
+        effectiveMOQ: displayProduct.minQuantity ?? 1,
         isBase: true,
       },
       ...comparison.alternatives.map((alt) => ({ ...alt, isBase: false })),
     ];
-  }, [comparison, baseProduct, baseIsLowest, baseIsBestStock]);
+  }, [comparison, displayProduct, baseIsLowest, baseIsBestStock]);
 
   if (isLoading) {
     return (
@@ -136,7 +137,7 @@ export function SupplierComparisonModal({
     );
   }
 
-  if (!baseProduct) {
+  if (!displayProduct) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-h-[85vh] max-w-5xl">
@@ -174,7 +175,7 @@ export function SupplierComparisonModal({
             <h3 className="text-xl font-bold">Nenhuma alternativa encontrada</h3>
             <p className="mt-2 max-w-sm text-muted-foreground">
               Não encontramos outros fornecedores oferecendo produtos similares a{' '}
-              <span className="font-semibold text-foreground">&quot;{baseProduct.name}&quot;</span> nesta categoria.
+              <span className="font-semibold text-foreground">&quot;{displayProduct.name}&quot;</span> nesta categoria.
             </p>
             <Button variant="outline" className="mt-8" onClick={() => onOpenChange(false)}>
               Fechar comparador
