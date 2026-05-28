@@ -104,4 +104,24 @@ test.describe("PromoFlix Player - Desktop & Mobile", () => {
     const isPlaying = await page.evaluate(() => localStorage.getItem('promoflix_playing') === 'true');
     expect(isPlaying).toBe(true);
   });
+
+  test("deve mostrar botão 'Carregar Manualmente' se o vídeo ficar travado", async ({ page }) => {
+    // Delay manifest response significantly to trigger timeout
+    await page.route("**/*.m3u8", async route => {
+      await new Promise(resolve => setTimeout(resolve, 12000));
+      return route.abort('failed');
+    });
+
+    await page.reload();
+    
+    // Expect the button to appear after our 10s logic
+    const manualBtn = page.getByRole('button', { name: /Carregar Manualmente/i });
+    await expect(manualBtn).toBeVisible({ timeout: 15000 });
+    
+    // Clicking it should trigger a reload of the source
+    // We can verify this by checking if the overlay goes back to the initial loading state
+    await manualBtn.click();
+    await expect(page.locator("text=Carregando")).toBeVisible();
+    await expect(manualBtn).not.toBeVisible();
+  });
 });
