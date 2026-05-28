@@ -130,6 +130,7 @@ export function PromoFlixPlayer({
   const [isLoading, setIsLoading] = useState(true);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [hlsError, setHlsError] = useState<string | null>(null);
+  const [showLoadingAction, setShowLoadingAction] = useState(false);
   const [flashLabel, setFlashLabel] = useState<string | null>(null);
   const [isRaioXActive, setIsRaioXActive] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -170,6 +171,11 @@ export function PromoFlixPlayer({
     [],
   );
 
+  const logTelemetry = useCallback((event: string, details?: any) => {
+    const timestamp = new Date().toISOString();
+    console.log(`[PromoFlix Telemetry] [${timestamp}] ${event}`, details || '');
+  }, []);
+
   const flash = useCallback((label: string) => {
     setFlashLabel(label);
     window.setTimeout(() => setFlashLabel(null), 700);
@@ -189,20 +195,23 @@ export function PromoFlixPlayer({
   const armLoadingTimeout = useCallback(() => {
     clearLoadingTimeout();
     loadingTimeoutRef.current = window.setTimeout(() => {
-      // Após 10s sem dados, libera a UI: esconde o overlay e deixa o usuário
-      // clicar em play manualmente (evita "Carregando" eterno em casos de CORS
-      // ou autoplay bloqueado). Só escala para erro se o vídeo continuar sem
-      // qualquer dado mesmo depois de 25s.
       const v = videoRef.current;
       if (v && v.readyState < 1) {
-        setIsLoading(false);
-        setIsReconnecting(false);
+        setShowLoadingAction(true);
+        logTelemetry('STUCK_LOADING_TIMEOUT', {
+          readyState: v.readyState,
+          networkState: v.networkState,
+          src: src.substring(0, 50) + '...',
+          currentTime: v.currentTime,
+        });
+        
         loadingTimeoutRef.current = window.setTimeout(() => {
           const vv = videoRef.current;
           if (vv && vv.readyState < 1) {
             setHlsError(
-              'O vídeo está demorando para responder. Verifique sua conexão e tente novamente.',
+              'O vídeo está demorando para responder. Pode haver um bloqueio de rede ou CORS.',
             );
+            logTelemetry('LOADING_ERROR_FINAL', { readyState: vv.readyState });
           }
         }, 15000);
       } else {
@@ -221,6 +230,8 @@ export function PromoFlixPlayer({
     setHlsError(null);
     setIsReconnecting(false);
     reconnectAttemptsRef.current = 0;
+    setShowLoadingAction(false);
+    logTelemetry('INIT_PLAYER', { src: src.substring(0, 50) + '...', isHls });
     armLoadingTimeout();
 
     // Para garantir autoplay nos navegadores (Chrome/Safari bloqueiam autoplay com som),
@@ -424,48 +435,69 @@ export function PromoFlixPlayer({
     const onPlay = () => {
       setIsPlaying(true);
       localStorage.setItem('promoflix_playing', 'true');
+      logTelemetry('EVENT_PLAY');
     };
     const onPause = () => {
       setIsPlaying(false);
       localStorage.setItem('promoflix_playing', 'false');
+      logTelemetry('EVENT_PAUSE');
     };
     const onTime = () => setCurrentTime(video.currentTime);
     const onMeta = () => {
       setDuration(video.duration || 0);
       setIsLoading(false);
       setHlsError(null);
+      setShowLoadingAction(false);
       clearLoadingTimeout();
+      logTelemetry('EVENT_LOADEDMETADATA', { duration: video.duration });
     };
     const onLoadStart = () => {
-      // Browser começou a buscar mídia — mantém o overlay, mas se em 4s tiver
-      // qualquer dado, removemos via outros eventos. Aqui só garantimos limpo.
+      logTelemetry('EVENT_LOADSTART');
     };
     const onLoadedData = () => {
       setIsLoading(false);
       setIsReconnecting(false);
+      setShowLoadingAction(false);
       clearLoadingTimeout();
+      logTelemetry('EVENT_LOADEDDATA');
     };
     const onProgress = () => {
       if (video.buffered.length > 0) {
         setBuffered(video.buffered.end(video.buffered.length - 1));
-        // Se já temos qualquer buffer, definitivamente não estamos mais "carregando"
         setIsLoading(false);
+        setShowLoadingAction(false);
         clearLoadingTimeout();
       }
     };
     const onWaiting = () => {
-      // Só mostra spinner se realmente não tem dados suficientes
-      if (video.readyState < 2) setIsLoading(true);
+      if (video.readyState < 2) {
+        setIsLoading(true);
+        logTelemetry('EVENT_WAITING', { readyState: video.readyState });
+      }
     };
     const onPlaying = () => {
       setIsLoading(false);
       setIsReconnecting(false);
+      setShowLoadingAction(false);
       clearLoadingTimeout();
+      logTelemetry('EVENT_PLAYING');
     };
     const onCanPlay = () => {
       setIsLoading(false);
       setIsReconnecting(false);
+      setShowLoadingAction(false);
       clearLoadingTimeout();
+      logTelemetry('EVENT_CANPLAY');
+    };
+    const onError = () => {
+      const error = video.error;
+      logTelemetry('EVENT_VIDEO_ERROR', {
+        code: error?.code,
+        message: error?.message,
+      });
+      if (error?.code === 4) {
+        setHlsError('Erro de CORS ou Formato não suportado. Verifique as permissões do servidor de vídeo.');
+      }
     };
     const onRate = () => setPlaybackRate(video.playbackRate);
     const onVolume = () => {
@@ -485,6 +517,7 @@ export function PromoFlixPlayer({
     video.addEventListener('waiting', onWaiting);
     video.addEventListener('playing', onPlaying);
     video.addEventListener('canplay', onCanPlay);
+    video.addEventListener('error', onError);
     video.addEventListener('ratechange', onRate);
     video.addEventListener('volumechange', onVolume);
 
@@ -499,6 +532,7 @@ export function PromoFlixPlayer({
       video.removeEventListener('waiting', onWaiting);
       video.removeEventListener('playing', onPlaying);
       video.removeEventListener('canplay', onCanPlay);
+      video.removeEventListener('error', onError);
       video.removeEventListener('ratechange', onRate);
       video.removeEventListener('volumechange', onVolume);
     };
@@ -791,17 +825,33 @@ export function PromoFlixPlayer({
 
       {/* Loading state — branded */}
       {(isLoading || isReconnecting) && !hlsError && (
-        <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-4">
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-black/20 backdrop-blur-[2px]">
           <div className="relative h-14 w-14">
             <div className="absolute inset-0 rounded-full border-2 border-white/10" />
             <div className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-r-primary/60 border-t-primary" />
-            <div className="absolute inset-2 flex items-center justify-center rounded-full bg-primary/10 backdrop-blur-sm">
+            <div className="absolute inset-2 flex items-center justify-center rounded-full bg-primary/10">
               <Play className="h-4 w-4 fill-primary text-primary" />
             </div>
           </div>
-          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/60">
-            {isReconnecting ? 'Reconectando...' : 'Carregando'}
-          </span>
+          <div className="flex flex-col items-center gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/60">
+              {isReconnecting ? 'Reconectando...' : 'Carregando'}
+            </span>
+            {showLoadingAction && (
+              <motion.button
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  initPlayer();
+                }}
+                className="mt-2 flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-white/20 transition-colors"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Carregar Manualmente
+              </motion.button>
+            )}
+          </div>
         </div>
       )}
 
