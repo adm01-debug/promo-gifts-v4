@@ -132,7 +132,7 @@ export function FutureStockModal({
     return entries;
   }, [filteredEntries, sortOrder]);
 
-  const hasNoFutureStock = stockEntries.length === 0;
+  const hasNoFutureStock = allStockEntries.length === 0;
   const hasVariants = variantsWithStock.length > 0;
   const hasActiveFilters = selectedColor || dateFilter !== 'all';
 
@@ -370,16 +370,16 @@ export function FutureStockModal({
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-muted-foreground">
-                      Previsões de reposição ({filteredAndSortedEntries.length})
+                      Previsões de reposição ({sortedEntries.length})
                     </span>
-                    {filteredAndSortedEntries.length === 0 && hasActiveFilters && (
+                    {sortedEntries.length === 0 && hasActiveFilters && (
                       <span className="text-xs text-muted-foreground">
                         Nenhum resultado para os filtros selecionados
                       </span>
                     )}
                   </div>
                   <div className="space-y-3">
-                    {filteredAndSortedEntries.map((entry) => {
+                    {sortedEntries.map((entry) => {
                       const expectedDate = parseISO(entry.expectedDate);
                       const daysUntil = Math.ceil(
                         (expectedDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
