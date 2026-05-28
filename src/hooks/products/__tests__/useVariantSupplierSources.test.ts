@@ -136,4 +136,28 @@ describe('processStockEntries', () => {
     expect(entries).toHaveLength(1);
     expect(entries[0].expectedQuantity).toBe(200);
   });
+
+  it('deve manter o entryIndex correto mesmo quando entradas anteriores são vazias', () => {
+    const variant: VariantWithStock = {
+      id: 'v-only-2',
+      product_id: 'p1',
+      sku: 'S1',
+      color_code: '01',
+      color_name: 'Cor',
+      color_hex: '#000',
+      stock_quantity: 0,
+      selected_thumbnail: null,
+      next_date_1: null,
+      next_quantity_1: null,
+      next_date_2: '2026-02-01',
+      next_quantity_2: 500,
+      next_date_3: null,
+      next_quantity_3: null,
+    };
+
+    const entries = processStockEntries([variant]);
+    expect(entries).toHaveLength(1);
+    expect(entries[0].entryIndex).toBe(2);
+    expect(entries[0].id).toBe('v-only-2-2');
+  });
 });
