@@ -20,6 +20,23 @@ vi.mock('recharts', () => ({
   Bar: () => <div />,
 }));
 
+vi.mock('@/components/ui/tabs', () => ({
+  Tabs: ({ children, onValueChange, value }: any) => (
+    <div data-testid="tabs" data-value={value} onClick={(e: any) => {
+      const val = e.target.getAttribute('data-value');
+      if (val) onValueChange(val);
+    }}>
+      {children}
+    </div>
+  ),
+  TabsList: ({ children }: any) => <div>{children}</div>,
+  TabsTrigger: ({ children, value }: any) => (
+    <button data-value={value}>{children}</button>
+  ),
+  TabsContent: ({ children }: any) => <div>{children}</div>,
+}));
+
+
 describe('StockHistoryChart', () => {
   const mockProductId = 'prod_123';
 
