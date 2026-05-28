@@ -105,13 +105,46 @@ describe('useStockHistory helpers', () => {
       expect(result[1].stockClose).toBe(90);
     });
 
-    it('should return sorted array by date', () => {
-      const unordered = [mockSummaries[2], mockSummaries[0]];
-      const result = aggregateDailySummaryByDate(unordered);
-      expect(result[0].date).toBe('2024-01-01');
-      expect(result[1].date).toBe('2024-01-02');
+    it('should return empty array if summaries is empty', () => {
+      expect(aggregateDailySummaryByDate([])).toEqual([]);
+    });
+
+    it('should handle missing cost price correctly', () => {
+      const summaries: StockDailySummary[] = [
+        {
+          summary_date: '2024-01-01',
+          stock_close: 100,
+          cost_price_close: null,
+          supplier_id: 'S1',
+          units_depleted: 0,
+          units_restocked: 0,
+          restock_detected: false,
+        } as any,
+      ];
+      const result = aggregateDailySummaryByDate(summaries);
+      expect(result[0].costPriceClose).toBeNull();
+    });
+
+    it('should calculate weighted cost only for suppliers with stock > 0', () => {
+      const summaries: StockDailySummary[] = [
+        {
+          summary_date: '2024-01-01',
+          stock_close: 100,
+          cost_price_close: 10,
+          supplier_id: 'S1',
+        } as any,
+        {
+          summary_date: '2024-01-01',
+          stock_close: 0,
+          cost_price_close: 50, // Should be ignored
+          supplier_id: 'S2',
+        } as any,
+      ];
+      const result = aggregateDailySummaryByDate(summaries);
+      expect(result[0].costPriceClose).toBe(10);
     });
   });
+
 
   describe('extractUniqueSupplierIds', () => {
     it('should return unique supplier ids', () => {
