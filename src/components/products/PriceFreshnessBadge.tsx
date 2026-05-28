@@ -239,7 +239,7 @@ function formatAbsoluteDate(value: string | Date): string | null {
 
 function formatRelativeDaysShort(days: number | null): string {
   if (days === null) return '';
-  if (days <= 0) return 'hoje';
+  if (days === 0) return 'há 0 dias';
   if (days === 1) return 'há 1 dia';
   return `há ${days} dias`;
 }

@@ -51,7 +51,7 @@ export function formatPriceDateLong(date: Date): string {
 }
 
 function formatRelativeDays(days: number): string {
-  if (days <= 0) return 'hoje';
+  if (days === 0) return 'há 0 dias';
   if (days === 1) return 'há 1 dia';
   return `há ${days} dias`;
 }
