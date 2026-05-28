@@ -109,7 +109,7 @@ export function SupplierComparisonModal({
     ];
   }, [comparison, baseProduct, baseIsLowest, baseIsBestStock]);
 
-  if (isLoading || !comparison || !baseProduct) {
+  if (isLoading || !baseProduct) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-h-[85vh] max-w-5xl">
@@ -120,16 +120,55 @@ export function SupplierComparisonModal({
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-6 p-4">
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-              {[...Array(4)].map((_, i) => (
-                <Skeleton key={i} className="h-20 w-full rounded-lg" />
-              ))}
+            {!baseProduct && !isLoading ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <Package className="mb-4 h-12 w-12 text-muted-foreground/30" />
+                <p className="text-lg font-medium">Produto base não carregado</p>
+                <p className="text-sm text-muted-foreground">Ocorreu um erro ao carregar os dados para comparação.</p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                  {[...Array(4)].map((_, i) => (
+                    <Skeleton key={i} className="h-20 w-full rounded-lg" />
+                  ))}
+                </div>
+                <div className="space-y-3">
+                  {[...Array(5)].map((_, i) => (
+                    <Skeleton key={i} className="h-24 w-full rounded-xl" />
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Se comparison for null, significa que não foram encontradas alternativas similares
+  if (!comparison) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-h-[85vh] max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-primary" />
+              Comparador de Fornecedores
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+              <Sparkles className="h-8 w-8 text-muted-foreground/40" />
             </div>
-            <div className="space-y-3">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-24 w-full rounded-xl" />
-              ))}
-            </div>
+            <h3 className="text-xl font-bold">Nenhuma alternativa encontrada</h3>
+            <p className="mt-2 max-w-sm text-muted-foreground">
+              Não encontramos outros fornecedores oferecendo produtos similares a{' '}
+              <span className="font-semibold text-foreground">&quot;{baseProduct.name}&quot;</span> nesta categoria.
+            </p>
+            <Button variant="outline" className="mt-8" onClick={() => onOpenChange(false)}>
+              Fechar comparador
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
