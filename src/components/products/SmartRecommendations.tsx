@@ -152,7 +152,7 @@ function MiniCard({ product, score, reason, isBestChoice, badgeLabel, onClick }:
           <QuickAddToQuote
             productId={product.id}
             productName={product.name}
-            productSku={product.id} // SKU is expected, using ID as fallback if not present in ProductForRecommendation
+            productSku={product.sku}
             variant="badge"
             className="w-full justify-center py-1.5 opacity-90 hover:opacity-100"
           />
