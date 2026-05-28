@@ -84,6 +84,8 @@ export function SupplierComparisonModal({
   const [onlyVerified, setOnlyVerified] = useState(false);
   const [sortBy, setSortBy] = useState<SupplierComparisonSort>('score');
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
+  const [selectedForDuel, setSelectedForDuel] = useState<string[]>([]);
 
   const { result: comparison, isLoading } = useSupplierComparison(product ?? null, {
     onlyVerified,
@@ -119,6 +121,39 @@ export function SupplierComparisonModal({
       ...comparison.alternatives.map((alt) => ({ ...alt, isBase: false })),
     ];
   }, [comparison, displayProduct]);
+
+  const filteredProducts = useMemo(() => {
+    let filtered = allProducts;
+    if (onlyVerified) {
+      filtered = filtered.filter(p => p.isVerified);
+    }
+    if (activeFilters.includes('moq10')) {
+      filtered = filtered.filter(p => (p.product.minQuantity ?? 1) <= 10);
+    }
+    if (activeFilters.includes('instock')) {
+      filtered = filtered.filter(p => p.product.stock > 0);
+    }
+    return filtered;
+  }, [allProducts, onlyVerified, activeFilters]);
+
+  const winner = useMemo(() => {
+    return allProducts.reduce((prev, current) => (prev.score > current.score) ? prev : current, allProducts[0]);
+  }, [allProducts]);
+
+  const winnerReason = useMemo(() => {
+    if (!winner) return '';
+    const { scoreBreakdown } = winner;
+    const topFactor = Object.entries(scoreBreakdown).reduce((a, b) => a[1] > b[1] ? a : b);
+    const factorLabels: Record<string, string> = {
+      price: 'melhor preço',
+      stock: 'maior estoque',
+      colors: 'maior variedade de cores',
+      moq: 'baixo pedido mínimo',
+      lead: 'entrega mais rápida',
+      verified: 'fornecedor ativo e confiável'
+    };
+    return `O ${winner.product.supplier.name} é o vencedor principalmente pelo ${factorLabels[topFactor[0]] || 'equilíbrio de fatores'}.`;
+  }, [winner]);
 
   if (isLoading) {
     return (
