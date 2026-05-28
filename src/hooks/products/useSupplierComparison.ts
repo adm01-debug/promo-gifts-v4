@@ -95,8 +95,10 @@ export function useSupplierComparison(
       if (p.id === baseProduct.id) return false;
       if (p.supplier.id === baseProduct.supplier.id) return false;
       if (p.category.id !== baseProduct.category.id) return false;
+      if (p.price <= 0) return false; // Ignora produtos com preço zero ou negativo (erro de dados)
 
-      const sim = nameSimilarity(baseTokens, tokenize(p.name));
+      const pTokens = tokenize(p.name);
+      const sim = nameSimilarity(baseTokens, pTokens);
       const subBonus =
         baseSubcategory && p.subcategory?.toLowerCase().trim() === baseSubcategory ? 0.15 : 0;
       const matBonus = jaccard(baseMaterials, normalizeMaterials(p.materials)) > 0 ? 0.1 : 0;
@@ -234,7 +236,13 @@ function tokenize(input: string | null | undefined): Set<string> {
     stripAccents(input)
       .toLowerCase()
       .split(/[^a-z0-9]+/)
-      .filter((w) => w.length > 2 && !STOPWORDS_PT.has(w)),
+      .filter((w) => {
+        // Permite palavras > 2 caracteres que não são stopwords
+        if (w.length > 2) return !STOPWORDS_PT.has(w);
+        // Permite palavras de 2 caracteres se contiverem números (ex: A4, 5G, 2L, 1m)
+        if (w.length === 2) return /[0-9]/.test(w);
+        return false;
+      }),
   );
 }
 
