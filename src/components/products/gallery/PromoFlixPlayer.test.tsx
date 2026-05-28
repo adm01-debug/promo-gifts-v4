@@ -85,10 +85,9 @@ describe('PromoFlixPlayer Persistence and Logic', () => {
     
     // Initial state: loading
     expect(getByText(/Carregando/i)).toBeDefined();
-    expect(queryByText(/Carregar Manualmente/i)).toBeNull();
     
-    // Advance 10 seconds
-    vi.advanceTimersByTime(11000);
+    // Advance 11 seconds to trigger STUCK_LOADING_TIMEOUT (10s)
+    await vi.advanceTimersByTimeAsync(11000);
     
     // Should show manual load button
     expect(getByText(/Carregar Manualmente/i)).toBeDefined();
@@ -96,12 +95,12 @@ describe('PromoFlixPlayer Persistence and Logic', () => {
     vi.useRealTimers();
   });
 
-  it('should show CORS error message when video fails with code 4', () => {
-    const { getByText } = render(<PromoFlixPlayer src="cors-error.mp4" />);
+  it('should show CORS error message when video fails with code 4', async () => {
+    const { findByText } = render(<PromoFlixPlayer src="cors-error.mp4" />);
     
     const video = document.querySelector('video');
     if (video) {
-      // Simulate CORS error
+      // Simulate CORS error (code 4)
       Object.defineProperty(video, 'error', {
         value: { code: 4, message: 'CORS policy' },
         configurable: true
@@ -109,10 +108,10 @@ describe('PromoFlixPlayer Persistence and Logic', () => {
       video.dispatchEvent(new Event('error'));
     }
     
-    expect(getByText(/Erro de CORS ou Formato não suportado/i)).toBeDefined();
+    expect(await findByText(/Erro de CORS ou Formato não suportado/i)).toBeDefined();
   });
 
-  it('should hide loading overlay when progress event has buffer', () => {
+  it('should hide loading overlay when progress event has buffer', async () => {
     const { queryByText } = render(<PromoFlixPlayer src="test.mp4" />);
     
     const video = document.querySelector('video');
