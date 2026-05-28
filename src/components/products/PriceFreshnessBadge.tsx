@@ -420,7 +420,7 @@ export function PriceFreshnessBadge({
           <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           <span className="tabular-nums">
             Atualizado em {absolute}
-            <span className="text-amber-700/70 dark:text-amber-300/70"> · {relative}</span>
+            <span className="text-amber-700/70 dark:text-amber-300/70"> ({relative})</span>
             {limitSuffix}
           </span>
         </span>
