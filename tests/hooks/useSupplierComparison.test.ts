@@ -1,6 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useSupplierComparison, getSupplierProductsInCategory } from '@/hooks/products/useSupplierComparison';
+import { 
+  useSupplierComparison, 
+  getSupplierProductsInCategory,
+  normalizeMaterials,
+  normalizeColorNames
+} from '@/hooks/products/useSupplierComparison';
 import { Product } from '@/types/product-catalog';
 
 // Mock products data
