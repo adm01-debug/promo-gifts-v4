@@ -942,6 +942,7 @@ export function PromoFlixPlayer({
         autoPlay={autoPlay}
         playsInline
         preload="auto"
+        crossOrigin="anonymous"
         onClick={togglePlay}
         onDoubleClick={toggleFullscreen}
       />
