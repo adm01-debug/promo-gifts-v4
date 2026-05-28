@@ -37,6 +37,7 @@ interface ProductQuickActionsProps {
     variantName?: string | null;
     colorHex?: string | null;
     thumbnailUrl?: string | null;
+    variantImages?: string[] | null;
   } | null;
   onConfirmPrice?: () => void;
   priceConfirmedAt?: string | Date | null;
