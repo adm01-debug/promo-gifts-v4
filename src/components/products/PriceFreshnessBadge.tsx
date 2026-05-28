@@ -395,7 +395,7 @@ export function PriceFreshnessBadge({
         >
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           <div className="flex flex-col gap-0.5 leading-tight">
-            <span className="font-display text-sm font-semibold">Preço pode estar defasado</span>
+            <span className="font-display text-sm font-semibold">Possivelmente defasado</span>
             {absolute && (
               <span className="text-xs tabular-nums text-amber-800/90 dark:text-amber-200/80">
                 Última atualização em {absolute} ({relative})
