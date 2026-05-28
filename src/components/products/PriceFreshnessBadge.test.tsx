@@ -17,11 +17,11 @@ describe('PriceFreshnessBadge Component', () => {
     return render(<TooltipProvider>{ui}</TooltipProvider>);
   };
 
-  it("renders 'Atualizado hoje' for fresh updates in inline variant", () => {
+  it("renders 'Atualizado (há 0 dias)' for fresh updates in inline variant", () => {
     const today = new Date('2026-05-03T09:00:00Z').toISOString();
     renderWithProvider(<PriceFreshnessBadge priceUpdatedAt={today} variant="inline" />);
 
-    expect(screen.getByText(/Atualizado hoje/i)).toBeInTheDocument();
+    expect(screen.getByText(/Atualizado \(há 0 dias\)/i)).toBeInTheDocument();
   });
 
   it('renders nothing for fresh updates in compact variant (unless alwaysShow is true)', () => {
@@ -34,19 +34,28 @@ describe('PriceFreshnessBadge Component', () => {
   });
 
   it('renders badge in compact variant for stale updates', () => {
-    // 2026-05-03 - 4 months ago (~120 days)
+    // 2026-05-03 - 120 days ago
     const monthsAgo = new Date('2026-01-03T12:00:00Z').toISOString();
     renderWithProvider(<PriceFreshnessBadge priceUpdatedAt={monthsAgo} variant="compact" />);
 
-    // 120 days / 30 = 4 months (há 4m)
+    // compact uses formatCompactRelative which is different
     expect(screen.getByText(/há 4m/i)).toBeInTheDocument();
+  });
+
+  it("renders 'Próximo do limite (há 45 dias)' for aging updates in inline variant", () => {
+    // 2026-05-03 - 45 days ago
+    const fortyFiveDaysAgo = new Date('2026-03-19T12:00:00Z').toISOString();
+    renderWithProvider(<PriceFreshnessBadge priceUpdatedAt={fortyFiveDaysAgo} variant="inline" />);
+
+    expect(screen.getByText(/Próximo do limite \(há 45 dias\)/i)).toBeInTheDocument();
   });
 
   it('renders PDP variant with warning box for stale updates', () => {
     const monthsAgo = new Date('2026-01-03T12:00:00Z').toISOString();
     renderWithProvider(<PriceFreshnessBadge priceUpdatedAt={monthsAgo} variant="pdp" />);
 
-    expect(screen.getByText(/Preço pode estar defasado/i)).toBeInTheDocument();
+    expect(screen.getByText(/Possivelmente defasado/i)).toBeInTheDocument();
+    expect(screen.getByText(/\(há 120 dias\)/i)).toBeInTheDocument();
     expect(screen.getByText(/Confirme com o fornecedor/i)).toBeInTheDocument();
   });
 
