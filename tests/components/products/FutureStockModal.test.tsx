@@ -175,6 +175,30 @@ describe('FutureStockModal (UI Tests)', () => {
     expect(screen.queryByText(/Variante SKU: SKU-BLUE-1/i)).not.toBeInTheDocument();
   });
 
+  it('deve renderizar corretamente quando apenas next_date_2 ou next_date_3 estão preenchidos (combinações parciais)', () => {
+    render(
+      <FutureStockModal
+        open={true}
+        onOpenChange={vi.fn()}
+        productId="p1"
+        productName="Produto Teste"
+        productSku="SKU-123"
+      />
+    );
+
+    const verdeHeaders = screen.getAllByText(/Verde/i);
+    const greenGroup = verdeHeaders.find(el => el.closest('.border-l-4'))?.closest('.rounded-2xl');
+    expect(greenGroup).toBeInTheDocument();
+
+    // Expande o grupo verde
+    const greenToggle = within(greenGroup as HTMLElement).getByRole('button');
+    fireEvent.click(greenToggle);
+
+    // Deve mostrar a data 15/05/2026 mesmo sendo a "chegada 2"
+    expect((greenGroup as HTMLElement).textContent).toContain('15 de mai');
+    expect((greenGroup as HTMLElement).textContent).toContain('450');
+  });
+
 
 
 
