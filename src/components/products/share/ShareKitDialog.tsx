@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Layers, Send, Package, Eye, Pencil, Check } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { Layers, Send, Package, Eye, Pencil, Check, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -226,7 +226,14 @@ export function ShareKitDialog({ open, onOpenChange, product, mode }: ShareKitDi
               </div>
 
               <div className="space-y-2">
-                <span className="text-xs font-medium text-muted-foreground">Destinatário</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-muted-foreground">Destinatário</span>
+                  {phoneError && (
+                    <span className="flex items-center gap-1 text-[10px] font-medium text-destructive">
+                      <AlertCircle className="h-3 w-3" /> {phoneError}
+                    </span>
+                  )}
+                </div>
                 <ShareContactSelector
                   selection={contactSelection}
                   onSelect={setContactSelection}
@@ -237,7 +244,11 @@ export function ShareKitDialog({ open, onOpenChange, product, mode }: ShareKitDi
                 <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
                   Cancelar
                 </Button>
-                <Button className="flex-1 gap-2 bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleSend}>
+                <Button 
+                  className="flex-1 gap-2 bg-primary text-primary-foreground hover:bg-primary/90" 
+                  onClick={handleSend}
+                  disabled={!!phoneError}
+                >
                   <Send className="h-4 w-4" />
                   Enviar WhatsApp
                 </Button>
