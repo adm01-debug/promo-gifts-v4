@@ -95,8 +95,10 @@ export function useSupplierComparison(
       if (p.id === baseProduct.id) return false;
       if (p.supplier.id === baseProduct.supplier.id) return false;
       if (p.category.id !== baseProduct.category.id) return false;
+      if (p.price <= 0) return false; // Ignora produtos com preço zero ou negativo (erro de dados)
 
-      const sim = nameSimilarity(baseTokens, tokenize(p.name));
+      const pTokens = tokenize(p.name);
+      const sim = nameSimilarity(baseTokens, pTokens);
       const subBonus =
         baseSubcategory && p.subcategory?.toLowerCase().trim() === baseSubcategory ? 0.15 : 0;
       const matBonus = jaccard(baseMaterials, normalizeMaterials(p.materials)) > 0 ? 0.1 : 0;
