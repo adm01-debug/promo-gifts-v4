@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Layers, Send, Package, Eye, Pencil, Check, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -61,7 +61,6 @@ ${item.weightG ? `⚖️ Peso: ${item.weightG}g` : ''}
 Promo Brindes - Brindes com Excelência!`;
 }
 
-
 export function ShareKitDialog({ open, onOpenChange, product, mode }: ShareKitDialogProps) {
   const { toast } = useToast();
   const [customMessage, setCustomMessage] = useState<string | null>(null);
@@ -69,7 +68,7 @@ export function ShareKitDialog({ open, onOpenChange, product, mode }: ShareKitDi
   const [previewMode, setPreviewMode] = useState(false);
   const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
 
-  const kitItems = product.kitItems || [];
+  const kitItems = useMemo(() => product.kitItems || [], [product.kitItems]);
 
   const activeItem = useMemo(() => {
     if (mode === 'separate' && selectedItemIndex !== null) {
@@ -90,7 +89,7 @@ export function ShareKitDialog({ open, onOpenChange, product, mode }: ShareKitDi
       const images: string[] = [];
       const mainImg = product.images?.[0] || product.image_url;
       if (mainImg) images.push(mainImg);
-      
+
       kitItems.forEach((item) => {
         if (item.imageUrl) images.push(item.imageUrl);
       });
@@ -259,18 +258,15 @@ export function ShareKitDialog({ open, onOpenChange, product, mode }: ShareKitDi
                     </span>
                   )}
                 </div>
-                <ShareContactSelector
-                  selection={contactSelection}
-                  onSelect={setContactSelection}
-                />
+                <ShareContactSelector selection={contactSelection} onSelect={setContactSelection} />
               </div>
 
               <div className="flex gap-2 pt-1">
                 <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
                   Cancelar
                 </Button>
-                <Button 
-                  className="flex-1 gap-2 bg-primary text-primary-foreground hover:bg-primary/90" 
+                <Button
+                  className="flex-1 gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
                   onClick={handleSend}
                   disabled={!!phoneError}
                 >

@@ -17,8 +17,8 @@ import { addDays, format, parseISO, isBefore } from 'date-fns';
 import {
   processStockEntries,
   calculateColorSummary,
-  VariantWithStock,
-  StockEntry,
+  type VariantWithStock,
+  type StockEntry,
 } from '../useVariantSupplierSources';
 
 // ---------- Helpers ----------
@@ -258,7 +258,9 @@ describe('Estoque Futuro · ordenação', () => {
 
   it('quantity-desc: maior quantidade primeiro', () => {
     const sorted = sortEntries(entries, 'quantity-desc');
-    expect(sorted[0].expectedQuantity).toBeGreaterThanOrEqual(sorted[sorted.length - 1].expectedQuantity);
+    expect(sorted[0].expectedQuantity).toBeGreaterThanOrEqual(
+      sorted[sorted.length - 1].expectedQuantity,
+    );
     expect(sorted[0].expectedQuantity).toBe(20000);
   });
 
@@ -430,9 +432,7 @@ describe('Estoque Futuro · agrupamento por cor', () => {
     // Espelha lógica do toggleGroup do modal
     let expanded: string[] = [];
     const toggle = (name: string) => {
-      expanded = expanded.includes(name)
-        ? expanded.filter((n) => n !== name)
-        : [...expanded, name];
+      expanded = expanded.includes(name) ? expanded.filter((n) => n !== name) : [...expanded, name];
     };
     toggle('Azul');
     expect(expanded).toEqual(['Azul']);
@@ -454,8 +454,7 @@ describe('Estoque Futuro · agrupamento por cor', () => {
 // 7. Formatação de números (k para >=1000) — espelha lógica do badge
 // =====================================================================
 describe('Estoque Futuro · formatação de números', () => {
-  const fmt = (n: number) =>
-    n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
+  const fmt = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n));
 
   it.each([
     [412, '412'],

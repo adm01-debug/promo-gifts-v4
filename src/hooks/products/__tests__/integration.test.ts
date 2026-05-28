@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useProductVariantsWithStock } from '../useVariantSupplierSources';
@@ -12,7 +13,7 @@ vi.mock('@/lib/external-db', () => ({
 
 let queryClient: QueryClient;
 
-const wrapper = ({ children }: { children: React.ReactNode }) => 
+const wrapper = ({ children }: { children: React.ReactNode }) =>
   React.createElement(QueryClientProvider, { client: queryClient }, children);
 
 describe('useProductVariantsWithStock Integration (Mock)', () => {
@@ -45,10 +46,10 @@ describe('useProductVariantsWithStock Integration (Mock)', () => {
               next_quantity_2: 100,
               next_date_3: null,
               next_quantity_3: 0,
-            }
-          ]
-        }
-      ]
+            },
+          ],
+        },
+      ],
     };
 
     (invokeExternalDb as any).mockResolvedValue(mockDbResult);
@@ -58,11 +59,11 @@ describe('useProductVariantsWithStock Integration (Mock)', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     const variant = result.current.data![0];
-    
+
     // Verifica mapeamento de compatibilidade
     expect(variant.next_entry_date).toBe('2026-06-10');
     expect(variant.next_entry_quantity).toBe(50);
-    
+
     // Verifica mapeamento das múltiplas datas
     expect(variant.next_date_1).toBe('2026-06-10');
     expect(variant.next_date_2).toBe('2026-07-15');
@@ -80,15 +81,15 @@ describe('useProductVariantsWithStock Integration (Mock)', () => {
           id: 'v2',
           product_id: 'p1',
           sku: 'SKU-02',
-          variant_supplier_sources: []
-        }
-      ]
+          variant_supplier_sources: [],
+        },
+      ],
     };
 
     (invokeExternalDb as any).mockResolvedValue(mockDbResult);
     const { result } = renderHook(() => useProductVariantsWithStock('p1'), { wrapper });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    
+
     const variant = result.current.data![0];
     expect(variant.next_date_1).toBeUndefined();
     expect(variant.next_entry_date).toBeNull();
@@ -102,22 +103,22 @@ describe('useProductVariantsWithStock Integration (Mock)', () => {
           product_id: 'p1',
           sku: 'SKU-01',
           color_name: 'Azul',
-          variant_supplier_sources: [{ next_date_1: '2026-06-10', next_quantity_1: 50 }]
+          variant_supplier_sources: [{ next_date_1: '2026-06-10', next_quantity_1: 50 }],
         },
         {
           id: 'v2',
           product_id: 'p1',
           sku: 'SKU-02',
           color_name: 'Azul',
-          variant_supplier_sources: [{ next_date_1: '2026-06-15', next_quantity_1: 30 }]
-        }
-      ]
+          variant_supplier_sources: [{ next_date_1: '2026-06-15', next_quantity_1: 30 }],
+        },
+      ],
     };
 
     (invokeExternalDb as any).mockResolvedValue(mockDbResult);
     const { result } = renderHook(() => useProductVariantsWithStock('p1'), { wrapper });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    
+
     expect(result.current.data).toHaveLength(2);
     expect(result.current.data![0].color_name).toBe('Azul');
     expect(result.current.data![1].color_name).toBe('Azul');
@@ -139,10 +140,10 @@ describe('useProductVariantsWithStock Integration (Mock)', () => {
               next_quantity_2: null,
               next_date_3: '2026-08-20',
               next_quantity_3: 80,
-            }
-          ]
-        }
-      ]
+            },
+          ],
+        },
+      ],
     };
 
     (invokeExternalDb as any).mockResolvedValue(mockDbResult);

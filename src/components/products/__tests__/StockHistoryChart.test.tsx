@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { StockHistoryChart } from '../StockHistoryChart';
@@ -22,20 +23,21 @@ vi.mock('recharts', () => ({
 
 vi.mock('@/components/ui/tabs', () => ({
   Tabs: ({ children, onValueChange, value }: any) => (
-    <div data-testid="tabs" data-value={value} onClick={(e: any) => {
-      const val = e.target.getAttribute('data-value');
-      if (val) onValueChange(val);
-    }}>
+    <div
+      data-testid="tabs"
+      data-value={value}
+      onClick={(e: any) => {
+        const val = e.target.getAttribute('data-value');
+        if (val) onValueChange(val);
+      }}
+    >
       {children}
     </div>
   ),
   TabsList: ({ children }: any) => <div>{children}</div>,
-  TabsTrigger: ({ children, value }: any) => (
-    <button data-value={value}>{children}</button>
-  ),
+  TabsTrigger: ({ children, value }: any) => <button data-value={value}>{children}</button>,
   TabsContent: ({ children }: any) => <div>{children}</div>,
 }));
-
 
 describe('StockHistoryChart', () => {
   const mockProductId = 'prod_123';
@@ -53,7 +55,11 @@ describe('StockHistoryChart', () => {
     hasError: false,
     isDemo: false,
     chartData: [],
-    effectiveIntelligence: { abc_classification: 'A', turnover_score: 95, total_current_stock: 1000 },
+    effectiveIntelligence: {
+      abc_classification: 'A',
+      turnover_score: 95,
+      total_current_stock: 1000,
+    },
     effectiveVelocities: [{ supplier_id: 'S1', avg_daily_depletion_7d: 12 }],
     bestVelocity: { avg_daily_depletion_7d: 12, velocity_trend: 1.2 },
     flags: ['hot-product'],
@@ -62,7 +68,7 @@ describe('StockHistoryChart', () => {
     trend: 1.2,
     trendDisplay: { value: '+20%', sub: 'em ascensão' },
     marketDemandLevel: 'high',
-    demandLabel: { 
+    demandLabel: {
       high: { text: 'Alta', color: 'text-warning' },
       'very-high': { text: 'Muito Alta', color: 'text-destructive' },
       moderate: { text: 'Moderada', color: 'text-primary' },
@@ -102,7 +108,7 @@ describe('StockHistoryChart', () => {
     (useStockChartData as any).mockReturnValue(defaultMockData);
 
     render(<StockHistoryChart productId={mockProductId} />);
-    
+
     expect(screen.getByText('Vendas no mercado')).toBeInTheDocument();
     expect(screen.getByText('12.0')).toBeInTheDocument(); // avg_daily_depletion_7d
     expect(screen.getByText('Alta')).toBeInTheDocument(); // demandLabel.high.text
@@ -114,7 +120,7 @@ describe('StockHistoryChart', () => {
     (useStockChartData as any).mockReturnValue(defaultMockData);
 
     render(<StockHistoryChart productId={mockProductId} />);
-    
+
     expect(screen.getByText('Sucesso no Mercado')).toBeInTheDocument(); // Flag config mapping for commercial
   });
 
@@ -126,10 +132,10 @@ describe('StockHistoryChart', () => {
     });
 
     render(<StockHistoryChart productId={mockProductId} />);
-    
+
     const costButton = screen.getByRole('button', { name: /Ver custo/i });
     fireEvent.click(costButton);
-    
+
     expect(setShowCost).toHaveBeenCalledWith(true);
   });
 
@@ -152,10 +158,10 @@ describe('StockHistoryChart', () => {
     });
 
     render(<StockHistoryChart productId={mockProductId} />);
-    
+
     const ninetyDaysTab = screen.getByText('90d');
     fireEvent.click(ninetyDaysTab);
-    
+
     expect(setPeriod).toHaveBeenCalledWith('90');
   });
 });

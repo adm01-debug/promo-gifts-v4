@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ProductInfoBar } from '../ProductInfoBar';
@@ -25,7 +26,7 @@ describe('ProductInfoBar', () => {
   const defaultProps = {
     sku: 'ABC-123',
     supplierName: 'XBZ Brindes',
-    supplierId: 'supp_001',
+    supplierId: 'supp_001' as string | undefined,
     onOpenFutureStock: vi.fn(),
     onOpenSupplierComparison: vi.fn(),
   };
@@ -34,7 +35,7 @@ describe('ProductInfoBar', () => {
     return render(
       <BrowserRouter>
         <ProductInfoBar {...props} />
-      </BrowserRouter>
+      </BrowserRouter>,
     );
   };
 

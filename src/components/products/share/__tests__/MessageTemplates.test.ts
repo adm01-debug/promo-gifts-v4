@@ -33,13 +33,16 @@ describe('MESSAGE_TEMPLATES', () => {
     expect(keys).toEqual(['formal', 'informal', 'promotional']);
   });
 
-  it.each(MESSAGE_TEMPLATES)('template %s gera mensagem não vazia com nome, SKU e preço', (template) => {
-    const msg = template.generate(baseProduct);
-    expect(msg.length).toBeGreaterThan(50);
-    expect(msg).toContain('Squeeze Térmica');
-    expect(msg).toContain('R$');
-    expect(msg).toContain('29,90');
-  });
+  it.each(MESSAGE_TEMPLATES)(
+    'template %s gera mensagem não vazia com nome, SKU e preço',
+    (template) => {
+      const msg = template.generate(baseProduct);
+      expect(msg.length).toBeGreaterThan(50);
+      expect(msg).toContain('Squeeze Térmica');
+      expect(msg).toContain('R$');
+      expect(msg).toContain('29,90');
+    },
+  );
 
   it('template formal inclui SKU e linguagem formal', () => {
     const msg = MESSAGE_TEMPLATES.find((t) => t.key === 'formal')!.generate(baseProduct);
@@ -59,22 +62,22 @@ describe('MESSAGE_TEMPLATES', () => {
 
   it('lida com produto sem descrição', () => {
     const noDesc = { ...baseProduct, description: null } as Product;
-    MESSAGE_TEMPLATES.forEach((t) => {
+    for (const t of MESSAGE_TEMPLATES) {
       expect(() => t.generate(noDesc)).not.toThrow();
-    });
+    }
   });
 
   it('lida com produto sem cores', () => {
     const noColors = { ...baseProduct, colors: [] } as Product;
-    MESSAGE_TEMPLATES.forEach((t) => {
+    for (const t of MESSAGE_TEMPLATES) {
       expect(() => t.generate(noColors)).not.toThrow();
-    });
+    }
   });
 
   it('mensagens cabem em 1600 caracteres (limite WhatsApp/Twilio)', () => {
-    MESSAGE_TEMPLATES.forEach((t) => {
+    for (const t of MESSAGE_TEMPLATES) {
       const msg = t.generate(baseProduct);
       expect(msg.length).toBeLessThan(1600);
-    });
+    }
   });
 });

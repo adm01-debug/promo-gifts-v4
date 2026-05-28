@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { format, parseISO, addDays, isAfter, isBefore } from 'date-fns';
+import { format, parseISO, addDays, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
   CalendarClock,
@@ -11,12 +11,12 @@ import {
   ArrowUpDown,
   Filter,
   Clock,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { ChevronDown, ChevronUp } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -57,10 +57,8 @@ export function FutureStockModal({
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
 
   const toggleGroup = (colorName: string) => {
-    setExpandedGroups(prev => 
-      prev.includes(colorName) 
-        ? prev.filter(name => name !== colorName) 
-        : [...prev, colorName]
+    setExpandedGroups((prev) =>
+      prev.includes(colorName) ? prev.filter((name) => name !== colorName) : [...prev, colorName],
     );
   };
 
@@ -68,14 +66,17 @@ export function FutureStockModal({
   const { data: variantsWithStock = [], isLoading, error } = useProductVariantsWithStock(productId);
 
   // Processar entradas de reposição (todas as 1/2/3 previsões)
-  const allStockEntries = useMemo(() => processStockEntries(variantsWithStock), [variantsWithStock]);
+  const allStockEntries = useMemo(
+    () => processStockEntries(variantsWithStock),
+    [variantsWithStock],
+  );
 
   // Aplicar filtros de período e cor às entradas
   const { filteredEntries, periodFilteredEntries } = useMemo(() => {
     const now = new Date();
     // Normalizar "agora" para o início do dia para evitar que previsões de hoje pareçam "atrasadas" por causa do horário
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
+
     // 1. Filtrar primeiro apenas por período (usado para o resumo de cores)
     let periodFiltered = [...allStockEntries];
     if (dateFilter !== 'all') {
@@ -103,9 +104,9 @@ export function FutureStockModal({
       finalFiltered = finalFiltered.filter((entry) => entry.colorName === selectedColor);
     }
 
-    return { 
-      filteredEntries: finalFiltered, 
-      periodFilteredEntries: periodFiltered 
+    return {
+      filteredEntries: finalFiltered,
+      periodFilteredEntries: periodFiltered,
     };
   }, [allStockEntries, dateFilter, selectedColor]);
 
@@ -214,7 +215,7 @@ export function FutureStockModal({
                   <div className="flex items-center gap-2">
                     <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
                     <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as SortOrder)}>
-                      <SelectTrigger className="h-9 w-[180px] text-sm [&>span]:whitespace-nowrap [&>span]:truncate">
+                      <SelectTrigger className="h-9 w-[180px] text-sm [&>span]:truncate [&>span]:whitespace-nowrap">
                         <SelectValue placeholder="Ordenar por" />
                       </SelectTrigger>
                       <SelectContent>
@@ -385,16 +386,20 @@ export function FutureStockModal({
                     const colorEntries = sortedEntries.filter((e) => e.colorName === colorName);
                     // Agrupar por variante dentro da cor
                     const variantIds = Array.from(new Set(colorEntries.map((e) => e.variantId)));
-                    const isExpanded = expandedGroups.includes(colorName) || selectedColor === colorName;
+                    const isExpanded =
+                      expandedGroups.includes(colorName) || selectedColor === colorName;
 
                     return (
-                      <div key={colorName} className="space-y-4 rounded-2xl border border-border/50 bg-muted/30 p-1">
-                        <button 
+                      <div
+                        key={colorName}
+                        className="space-y-4 rounded-2xl border border-border/50 bg-muted/30 p-1"
+                      >
+                        <button
                           onClick={() => toggleGroup(colorName)}
-                          className="flex w-full items-center justify-between p-3 transition-colors hover:bg-muted/50 rounded-xl"
+                          className="flex w-full items-center justify-between rounded-xl p-3 transition-colors hover:bg-muted/50"
                         >
                           <div className="flex items-center gap-3 border-l-4 border-primary pl-3">
-                            <div 
+                            <div
                               className="h-4 w-4 rounded-full border border-background shadow-sm"
                               style={{ backgroundColor: colorEntries[0]?.colorHex || '#888' }}
                             />
@@ -406,7 +411,11 @@ export function FutureStockModal({
                               {colorEntries.length === 1 ? 'previsão' : 'previsões'}
                             </Badge>
                           </div>
-                          {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                          {isExpanded ? (
+                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          )}
                         </button>
 
                         {isExpanded && (
@@ -415,132 +424,144 @@ export function FutureStockModal({
                               // Ordenação cronológica automática dentro da variante
                               const variantEntries = colorEntries
                                 .filter((e) => e.variantId === vId)
-                                .sort((a, b) => new Date(a.expectedDate).getTime() - new Date(b.expectedDate).getTime());
-                              
+                                .sort(
+                                  (a, b) =>
+                                    new Date(a.expectedDate).getTime() -
+                                    new Date(b.expectedDate).getTime(),
+                                );
+
                               const first = variantEntries[0];
 
-                            return (
-                              <div key={vId} className="space-y-3">
-                                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-tight text-muted-foreground/70">
-                                  <Package className="h-3 w-3" />
-                                  Variante SKU: {first.supplierSku}
-                                </div>
+                              return (
+                                <div key={vId} className="space-y-3">
+                                  <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-tight text-muted-foreground/70">
+                                    <Package className="h-3 w-3" />
+                                    Variante SKU: {first.supplierSku}
+                                  </div>
 
-                                <div className="relative grid gap-3 pl-4">
-                                  {/* Linha vertical da timeline */}
-                                  <div className="absolute left-1.5 top-2 bottom-2 w-0.5 bg-border/40" />
-                                  
-                                  {variantEntries.map((entry) => {
-                                    const expectedDate = parseISO(entry.expectedDate);
-                                    const daysUntil = Math.ceil(
-                                      (expectedDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
-                                    );
-                                    const isUrgent = daysUntil <= 7 && daysUntil >= 0;
-                                    const isPast = daysUntil < 0;
+                                  <div className="relative grid gap-3 pl-4">
+                                    {/* Linha vertical da timeline */}
+                                    <div className="absolute bottom-2 left-1.5 top-2 w-0.5 bg-border/40" />
 
-                                    return (
-                                      <div
-                                        key={entry.id}
-                                        className={cn(
-                                          'relative flex items-center gap-4 rounded-xl border bg-card p-3 transition-all hover:border-primary/30',
-                                          isUrgent && !isPast && 'border-warning/30 bg-warning/5',
-                                          isPast && 'border-destructive/30 bg-destructive/5',
-                                        )}
-                                      >
-                                        {/* Marcador da timeline */}
-                                        <div className={cn(
-                                          "absolute -left-[18px] h-2.5 w-2.5 rounded-full border-2 border-background",
-                                          isPast ? "bg-destructive" : isUrgent ? "bg-warning" : "bg-primary"
-                                        )} />
-                                        {/* Indicador visual de cor/thumb */}
-                                        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-border">
-                                          {entry.thumbnail ? (
-                                            <img
-                                              src={entry.thumbnail}
-                                              alt={entry.colorName}
-                                              className="h-full w-full object-cover"
-                                              loading="lazy"
-                                            />
-                                          ) : (
-                                            <div
-                                              className="h-full w-full"
-                                              style={{ backgroundColor: entry.colorHex ?? '#888' }}
-                                            />
+                                    {variantEntries.map((entry) => {
+                                      const expectedDate = parseISO(entry.expectedDate);
+                                      const daysUntil = Math.ceil(
+                                        (expectedDate.getTime() - Date.now()) /
+                                          (1000 * 60 * 60 * 24),
+                                      );
+                                      const isUrgent = daysUntil <= 7 && daysUntil >= 0;
+                                      const isPast = daysUntil < 0;
+
+                                      return (
+                                        <div
+                                          key={entry.id}
+                                          className={cn(
+                                            'relative flex items-center gap-4 rounded-xl border bg-card p-3 transition-all hover:border-primary/30',
+                                            isUrgent && !isPast && 'border-warning/30 bg-warning/5',
+                                            isPast && 'border-destructive/30 bg-destructive/5',
                                           )}
-                                        </div>
-
-                                        {/* Info */}
-                                        <div className="min-w-0 flex-1">
-                                          <div className="mb-0.5 flex items-center gap-2">
-                                            <Badge
-                                              variant="outline"
-                                              className={cn(
-                                                'px-1.5 py-0 text-[9px] font-bold uppercase',
-                                                isPast
-                                                  ? 'border-destructive/20 bg-destructive/10 text-destructive'
-                                                  : isUrgent
-                                                    ? 'border-warning/20 bg-warning/10 text-warning'
-                                                    : 'border-primary/20 bg-primary/10 text-primary',
-                                              )}
-                                            >
-                                              {isPast
-                                                ? 'Atrasado'
+                                        >
+                                          {/* Marcador da timeline */}
+                                          <div
+                                            className={cn(
+                                              'absolute -left-[18px] h-2.5 w-2.5 rounded-full border-2 border-background',
+                                              isPast
+                                                ? 'bg-destructive'
                                                 : isUrgent
-                                                  ? 'Em breve'
-                                                  : `Previsão ${entry.entryIndex}`}
-                                            </Badge>
+                                                  ? 'bg-warning'
+                                                  : 'bg-primary',
+                                            )}
+                                          />
+                                          {/* Indicador visual de cor/thumb */}
+                                          <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-border">
+                                            {entry.thumbnail ? (
+                                              <img
+                                                src={entry.thumbnail}
+                                                alt={entry.colorName}
+                                                className="h-full w-full object-cover"
+                                                loading="lazy"
+                                              />
+                                            ) : (
+                                              <div
+                                                className="h-full w-full"
+                                                style={{
+                                                  backgroundColor: entry.colorHex ?? '#888',
+                                                }}
+                                              />
+                                            )}
                                           </div>
-                                          <div className="flex items-center gap-3 text-sm">
-                                            <span className="flex items-center gap-1.5 font-medium text-foreground">
-                                              <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                                              {format(expectedDate, "dd 'de' MMM", {
-                                                locale: ptBR,
-                                              })}
-                                            </span>
-                                            <span
-                                              className={cn(
-                                                'text-xs font-semibold',
-                                                isPast
-                                                  ? 'text-destructive'
+
+                                          {/* Info */}
+                                          <div className="min-w-0 flex-1">
+                                            <div className="mb-0.5 flex items-center gap-2">
+                                              <Badge
+                                                variant="outline"
+                                                className={cn(
+                                                  'px-1.5 py-0 text-[9px] font-bold uppercase',
+                                                  isPast
+                                                    ? 'border-destructive/20 bg-destructive/10 text-destructive'
+                                                    : isUrgent
+                                                      ? 'border-warning/20 bg-warning/10 text-warning'
+                                                      : 'border-primary/20 bg-primary/10 text-primary',
+                                                )}
+                                              >
+                                                {isPast
+                                                  ? 'Atrasado'
                                                   : isUrgent
-                                                    ? 'text-warning'
-                                                    : 'text-primary',
-                                              )}
-                                            >
-                                              {isPast
-                                                ? `${Math.abs(daysUntil)}d atrasado`
-                                                : daysUntil === 0
-                                                  ? 'chega hoje'
-                                                  : `em ${daysUntil}d`}
-                                            </span>
+                                                    ? 'Em breve'
+                                                    : `Previsão ${entry.entryIndex}`}
+                                              </Badge>
+                                            </div>
+                                            <div className="flex items-center gap-3 text-sm">
+                                              <span className="flex items-center gap-1.5 font-medium text-foreground">
+                                                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                                                {format(expectedDate, "dd 'de' MMM", {
+                                                  locale: ptBR,
+                                                })}
+                                              </span>
+                                              <span
+                                                className={cn(
+                                                  'text-xs font-semibold',
+                                                  isPast
+                                                    ? 'text-destructive'
+                                                    : isUrgent
+                                                      ? 'text-warning'
+                                                      : 'text-primary',
+                                                )}
+                                              >
+                                                {isPast
+                                                  ? `${Math.abs(daysUntil)}d atrasado`
+                                                  : daysUntil === 0
+                                                    ? 'chega hoje'
+                                                    : `em ${daysUntil}d`}
+                                              </span>
+                                            </div>
                                           </div>
-                                        </div>
 
-                                        {/* Quantidade */}
-                                        <div className="shrink-0 text-right">
-                                          <div className="flex items-baseline justify-end gap-1">
-                                            <span className="text-lg font-bold text-primary">
-                                              +{entry.expectedQuantity.toLocaleString('pt-BR')}
-                                            </span>
-                                            <span className="text-[10px] font-bold uppercase text-muted-foreground">
-                                              un
-                                            </span>
+                                          {/* Quantidade */}
+                                          <div className="shrink-0 text-right">
+                                            <div className="flex items-baseline justify-end gap-1">
+                                              <span className="text-lg font-bold text-primary">
+                                                +{entry.expectedQuantity.toLocaleString('pt-BR')}
+                                              </span>
+                                              <span className="text-[10px] font-bold uppercase text-muted-foreground">
+                                                un
+                                              </span>
+                                            </div>
                                           </div>
                                         </div>
-                                      </div>
-                                    );
-                                  })}
+                                      );
+                                    })}
+                                  </div>
                                 </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               )
             )}
 

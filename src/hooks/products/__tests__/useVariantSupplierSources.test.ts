@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { processStockEntries, VariantWithStock } from '../useVariantSupplierSources';
+import { processStockEntries, type VariantWithStock } from '../useVariantSupplierSources';
 
 describe('processStockEntries', () => {
   const mockVariant: VariantWithStock = {
@@ -24,13 +24,13 @@ describe('processStockEntries', () => {
   it('deve gerar até 3 entradas para uma variante com todos os dados preenchidos', () => {
     const entries = processStockEntries([mockVariant]);
     expect(entries).toHaveLength(3);
-    
+
     expect(entries[0]).toMatchObject({
       id: 'v1-1',
       variantId: 'v1',
       expectedDate: '2026-06-01',
       expectedQuantity: 100,
-      entryIndex: 1
+      entryIndex: 1,
     });
 
     expect(entries[1]).toMatchObject({
@@ -38,7 +38,7 @@ describe('processStockEntries', () => {
       variantId: 'v1',
       expectedDate: '2026-07-01',
       expectedQuantity: 200,
-      entryIndex: 2
+      entryIndex: 2,
     });
 
     expect(entries[2]).toMatchObject({
@@ -46,7 +46,7 @@ describe('processStockEntries', () => {
       variantId: 'v1',
       expectedDate: '2026-08-01',
       expectedQuantity: 300,
-      entryIndex: 3
+      entryIndex: 3,
     });
   });
 
@@ -124,6 +124,8 @@ describe('processStockEntries', () => {
       color_hex: '#000',
       stock_quantity: 0,
       selected_thumbnail: null,
+      next_entry_date: null,
+      next_entry_quantity: null,
       next_date_1: null,
       next_quantity_1: 100,
       next_date_2: '2026-01-01',
@@ -147,6 +149,8 @@ describe('processStockEntries', () => {
       color_hex: '#000',
       stock_quantity: 0,
       selected_thumbnail: null,
+      next_entry_date: null,
+      next_entry_quantity: null,
       next_date_1: null,
       next_quantity_1: null,
       next_date_2: '2026-02-01',

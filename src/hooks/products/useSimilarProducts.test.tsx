@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useSimilarProducts } from './useSimilarProducts';
@@ -51,8 +52,20 @@ describe('useSimilarProducts', () => {
       })
       .mockResolvedValueOnce({
         records: [
-          { id: 'rel-1', name: 'Similar 1', sale_price: 10, primary_image_url: 'img1.jpg', brand: 'Marca A' },
-          { id: 'rel-2', name: 'Similar 2', sale_price: 20, primary_image_url: 'img2.jpg', brand: 'Marca B' },
+          {
+            id: 'rel-1',
+            name: 'Similar 1',
+            sale_price: 10,
+            primary_image_url: 'img1.jpg',
+            brand: 'Marca A',
+          },
+          {
+            id: 'rel-2',
+            name: 'Similar 2',
+            sale_price: 20,
+            primary_image_url: 'img2.jpg',
+            brand: 'Marca B',
+          },
         ],
       });
 
@@ -64,20 +77,29 @@ describe('useSimilarProducts', () => {
 
     expect(result.current.data).toHaveLength(2);
     expect(result.current.data![0].name).toBe('Similar 1');
-    expect(invokeExternalDb).toHaveBeenCalledWith(expect.objectContaining({ table: 'product_relationships' }));
+    expect(invokeExternalDb).toHaveBeenCalledWith(
+      expect.objectContaining({ table: 'product_relationships' }),
+    );
   });
 
   it('estratégia 2: deve usar product_group_members se relationships falhar ou for vazio', async () => {
     // 1. Relationships vazio
     (invokeExternalDb as any)
-      .mockResolvedValueOnce({ records: [] }) 
+      .mockResolvedValueOnce({ records: [] })
       // 2. Busca grupo do produto
       .mockResolvedValueOnce({ records: [{ product_group_id: 'group-99' }] })
       // 3. Busca membros do grupo
       .mockResolvedValueOnce({ records: [{ product_id: 'prod-123' }, { product_id: 'sibling-1' }] })
       // 4. Busca dados do sibling
       .mockResolvedValueOnce({
-        records: [{ id: 'sibling-1', name: 'Irmão de Grupo', sale_price: 15, primary_image_url: 'img3.jpg' }],
+        records: [
+          {
+            id: 'sibling-1',
+            name: 'Irmão de Grupo',
+            sale_price: 15,
+            primary_image_url: 'img3.jpg',
+          },
+        ],
       });
 
     const { result } = renderHook(() => useSimilarProducts(mockProduct), {
@@ -99,7 +121,13 @@ describe('useSimilarProducts', () => {
       // 3. Fallback query
       .mockResolvedValueOnce({
         records: [
-          { id: 'fall-1', name: 'Fallback Item', sale_price: 50, primary_image_url: 'img4.jpg', supplier_id: 'supp-456' },
+          {
+            id: 'fall-1',
+            name: 'Fallback Item',
+            sale_price: 50,
+            primary_image_url: 'img4.jpg',
+            supplier_id: 'supp-456',
+          },
         ],
       });
 
@@ -145,7 +173,7 @@ describe('useSimilarProducts', () => {
 
   it('deve evitar loops infinitos ou duplicatas de IDs no grupo', async () => {
     (invokeExternalDb as any)
-      .mockResolvedValueOnce({ records: [] }) 
+      .mockResolvedValueOnce({ records: [] })
       .mockResolvedValueOnce({ records: [{ product_group_id: 'g1' }, { product_group_id: 'g1' }] })
       .mockResolvedValueOnce({ records: [{ product_id: 'prod-123' }, { product_id: 'prod-123' }] })
       .mockResolvedValueOnce({ records: [] }); // fetchProductsByIds recebe []

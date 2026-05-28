@@ -1,10 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useStockChartData } from '../useStockChartData';
 import * as intelligenceHooks from '@/hooks/intelligence/useStockHistory';
 
 vi.mock('@/hooks/intelligence/useStockHistory', async () => {
-  const actual = await vi.importActual<typeof import('@/hooks/intelligence/useStockHistory')>('@/hooks/intelligence/useStockHistory');
+  const actual = await vi.importActual<typeof intelligenceHooks>(
+    '@/hooks/intelligence/useStockHistory',
+  );
   return {
     ...actual,
     useStockDailySummary: vi.fn(),
@@ -22,24 +25,20 @@ describe('useStockChartData', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Default success mocks
     const now = new Date();
     const dateStr = now.toISOString().split('T')[0];
 
     (intelligenceHooks.useStockDailySummary as any).mockReturnValue({
-      data: [
-        { summary_date: dateStr, supplier_id: 'S1', stock_close: 100, units_depleted: 5 },
-      ],
+      data: [{ summary_date: dateStr, supplier_id: 'S1', stock_close: 100, units_depleted: 5 }],
       isLoading: false,
       error: null,
       refetch: vi.fn(),
     });
 
     (intelligenceHooks.useStockVelocity as any).mockReturnValue({
-      data: [
-        { supplier_id: 'S1', avg_daily_depletion_7d: 10, velocity_trend: 1.2 },
-      ],
+      data: [{ supplier_id: 'S1', avg_daily_depletion_7d: 10, velocity_trend: 1.2 }],
       isLoading: false,
       error: null,
       refetch: vi.fn(),
@@ -55,7 +54,7 @@ describe('useStockChartData', () => {
 
   it('should initialize with default state', () => {
     const { result } = renderHook(() => useStockChartData(mockProductId));
-    
+
     expect(result.current.period).toBe('30');
     expect(result.current.showCost).toBe(false);
     expect(result.current.selectedSupplier).toBe('all');
@@ -63,11 +62,11 @@ describe('useStockChartData', () => {
 
   it('should handle period changes', () => {
     const { result } = renderHook(() => useStockChartData(mockProductId));
-    
+
     act(() => {
       result.current.setPeriod('90');
     });
-    
+
     expect(result.current.period).toBe('90');
     expect(result.current.days).toBe(90);
     expect(intelligenceHooks.useStockDailySummary).toHaveBeenCalledWith(mockProductId, 90);
@@ -115,7 +114,7 @@ describe('useStockChartData', () => {
     (intelligenceHooks.useProductIntelligenceData as any).mockReturnValue({ data: null });
 
     const { result } = renderHook(() => useStockChartData(mockProductId));
-    
+
     expect(result.current.isDemo).toBe(true);
     expect(result.current.hasData).toBe(false);
     expect(result.current.chartData.length).toBeGreaterThan(0); // Should have mock data
@@ -131,7 +130,7 @@ describe('useStockChartData', () => {
     (intelligenceHooks.useProductIntelligenceData as any).mockReturnValue({ refetch: refetchInt });
 
     const { result } = renderHook(() => useStockChartData(mockProductId));
-    
+
     act(() => {
       result.current.handleRetry();
     });
@@ -153,7 +152,7 @@ describe('useStockChartData', () => {
     });
 
     const { result } = renderHook(() => useStockChartData(mockProductId));
-    
+
     // Default 'all'
     expect(result.current.chartData[0].stockClose).toBe(150);
 

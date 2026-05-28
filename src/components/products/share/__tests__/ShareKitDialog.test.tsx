@@ -12,12 +12,23 @@ vi.mock('../whatsapp', () => ({
 }));
 
 vi.mock('../ShareContactSelector', () => ({
-  ShareContactSelector: ({ selection, onSelect }: { selection: unknown; onSelect: (s: unknown) => void }) => (
+  ShareContactSelector: ({ onSelect }: { selection?: unknown; onSelect: (s: unknown) => void }) => (
     <div data-testid="contact-selector">
-      <button onClick={() => onSelect({ companyId: 'c1', companyName: 'ACME', contactPhone: '11999998888', contactName: 'João' })}>
+      <button
+        onClick={() =>
+          onSelect({
+            companyId: 'c1',
+            companyName: 'ACME',
+            contactPhone: '11999998888',
+            contactName: 'João',
+          })
+        }
+      >
         select-valid
       </button>
-      <button onClick={() => onSelect({ companyId: 'c1', companyName: 'ACME', contactPhone: '123' })}>
+      <button
+        onClick={() => onSelect({ companyId: 'c1', companyName: 'ACME', contactPhone: '123' })}
+      >
         select-invalid
       </button>
       <button onClick={() => onSelect(null)}>clear</button>
@@ -37,7 +48,14 @@ const kitProduct: Product = {
   images: ['https://example.com/kit.jpg'],
   isKit: true,
   kitItems: [
-    { id: 'i1', productId: 'p1', productName: 'Squeeze', quantity: 1, sku: 'SQZ', imageUrl: 'https://example.com/sqz.jpg' },
+    {
+      id: 'i1',
+      productId: 'p1',
+      productName: 'Squeeze',
+      quantity: 1,
+      sku: 'SQZ',
+      imageUrl: 'https://example.com/sqz.jpg',
+    },
     { id: 'i2', productId: 'p2', productName: 'Caderno', quantity: 1, sku: 'CAD', imageUrl: '' }, // sem imagem
   ],
   category: { id: 1, name: 'Kits' },
@@ -121,15 +139,15 @@ describe('ShareKitDialog - modo SEPARATE', () => {
 describe('ShareKitDialog - edge cases', () => {
   it('lida com kitItems vazio sem quebrar', () => {
     const emptyKit = { ...kitProduct, kitItems: [] } as Product;
-    expect(() => 
-      render(<ShareKitDialog open onOpenChange={vi.fn()} product={emptyKit} mode="complete" />)
+    expect(() =>
+      render(<ShareKitDialog open onOpenChange={vi.fn()} product={emptyKit} mode="complete" />),
     ).not.toThrow();
   });
 
   it('lida com kitItems undefined sem quebrar', () => {
     const noKit = { ...kitProduct, kitItems: undefined } as unknown as Product;
-    expect(() => 
-      render(<ShareKitDialog open onOpenChange={vi.fn()} product={noKit} mode="separate" />)
+    expect(() =>
+      render(<ShareKitDialog open onOpenChange={vi.fn()} product={noKit} mode="separate" />),
     ).not.toThrow();
   });
 });

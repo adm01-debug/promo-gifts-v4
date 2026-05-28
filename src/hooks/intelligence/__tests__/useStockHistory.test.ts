@@ -1,4 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { describe, it, expect } from 'vitest';
 import {
   aggregateDailySummaryByDate,
   extractUniqueSupplierIds,
@@ -145,7 +146,6 @@ describe('useStockHistory helpers', () => {
     });
   });
 
-
   describe('extractUniqueSupplierIds', () => {
     it('should return unique supplier ids', () => {
       const data = [
@@ -202,10 +202,11 @@ describe('useStockHistory helpers', () => {
       expect(getActiveFlags({ ...base, is_hot_product: true })).toEqual(['hot-product']);
       expect(getActiveFlags({ ...base, is_stockout_risk: true })).toEqual(['stockout-risk']);
       expect(getActiveFlags({ ...base, is_stagnant: true })).toEqual(['stagnant']);
-      expect(getActiveFlags({ ...base, is_negotiation_opportunity: true })).toEqual(['negotiation-opportunity']);
+      expect(getActiveFlags({ ...base, is_negotiation_opportunity: true })).toEqual([
+        'negotiation-opportunity',
+      ]);
       expect(getActiveFlags({ ...base, has_frequent_restock: true })).toEqual(['frequent-restock']);
       expect(getActiveFlags({ ...base, abc_classification: 'A' })).toEqual(['class-a']);
     });
   });
 });
-

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Building2, User, Search, X, Loader2, Phone, Mail, Check, AlertCircle } from 'lucide-react';
+import { Building2, User, Search, X, Loader2, Phone, Check, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -42,8 +42,6 @@ export function ShareContactSelector({ onSelect, selection }: ShareContactSelect
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<CompanyOption | null>(null);
-  const [isEditingPhone, setIsEditingPhone] = useState(false);
-  const [manualPhone, setManualPhone] = useState('');
   const ref = useRef<HTMLDivElement>(null);
 
   // Debounce search
@@ -172,7 +170,7 @@ export function ShareContactSelector({ onSelect, selection }: ShareContactSelect
     if (!selection) return;
     onSelect({
       ...selection,
-      contactPhone: newPhone
+      contactPhone: newPhone,
     });
   };
 
@@ -221,7 +219,9 @@ export function ShareContactSelector({ onSelect, selection }: ShareContactSelect
                       <div className="min-w-0 flex-1">
                         <span className="font-medium">{contact.name}</span>
                         {contact.cargo && (
-                          <span className="ml-1 text-muted-foreground text-xs">· {contact.cargo}</span>
+                          <span className="ml-1 text-xs text-muted-foreground">
+                            · {contact.cargo}
+                          </span>
                         )}
                       </div>
                       {isSelected && <Check className="h-3.5 w-3.5 text-primary" />}
@@ -243,7 +243,7 @@ export function ShareContactSelector({ onSelect, selection }: ShareContactSelect
                     </span>
                   )}
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <div className="relative flex-1">
                     <Phone className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -252,14 +252,17 @@ export function ShareContactSelector({ onSelect, selection }: ShareContactSelect
                       onChange={(e) => handlePhoneChange(e.target.value)}
                       placeholder="(00) 00000-0000"
                       className={cn(
-                        "h-9 pl-8 text-sm",
-                        phoneError && "border-destructive focus-visible:ring-destructive"
+                        'h-9 pl-8 text-sm',
+                        phoneError && 'border-destructive focus-visible:ring-destructive',
                       )}
                     />
                   </div>
                 </div>
                 <p className="text-[10px] text-muted-foreground">
-                  Normalizado: <span className="font-mono">{selection.contactPhone?.replace(/\D/g, '') || '-'}</span>
+                  Normalizado:{' '}
+                  <span className="font-mono">
+                    {selection.contactPhone?.replace(/\D/g, '') || '-'}
+                  </span>
                 </p>
               </div>
             )}

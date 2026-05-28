@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect } from 'vitest';
 import { processStockEntries } from '../useVariantSupplierSources';
 
@@ -17,13 +18,13 @@ describe('useVariantSupplierSources UI Logic / Timeline', () => {
         next_quantity_1: 50,
         next_date_2: '2026-07-15',
         next_quantity_2: 0, // Deve ignorar
-        next_date_3: null,  // Deve ignorar
+        next_date_3: null, // Deve ignorar
         next_quantity_3: 100, // Deve ignorar porque a data é nula
-      }
+      },
     ];
 
     const entries = processStockEntries(mockVariants as any);
-    
+
     expect(entries).toHaveLength(1);
     expect(entries[0].expectedDate).toBe('2026-06-10');
     expect(entries[0].expectedQuantity).toBe(50);
@@ -43,11 +44,11 @@ describe('useVariantSupplierSources UI Logic / Timeline', () => {
         next_quantity_2: 30,
         next_date_3: '2026-08-20',
         next_quantity_3: 20,
-      }
+      },
     ];
 
     const entries = processStockEntries(mockVariants as any);
-    
+
     expect(entries).toHaveLength(3);
     expect(entries[0].id).toBe('v1-1');
     expect(entries[0].entryIndex).toBe(1);
@@ -68,16 +69,16 @@ describe('useVariantSupplierSources UI Logic / Timeline', () => {
         next_quantity_1: 50,
         next_date_2: '2026-06-15',
         next_quantity_2: 30,
-      }
+      },
     ];
 
     const entries = processStockEntries(mockVariants as any);
-    
+
     // Simula a ordenação que acontece no componente
-    const sorted = [...entries].sort((a, b) => 
-      new Date(a.expectedDate).getTime() - new Date(b.expectedDate).getTime()
+    const sorted = [...entries].sort(
+      (a, b) => new Date(a.expectedDate).getTime() - new Date(b.expectedDate).getTime(),
     );
-    
+
     expect(sorted[0].expectedDate).toBe('2026-06-15');
     expect(sorted[1].expectedDate).toBe('2026-08-10');
   });
