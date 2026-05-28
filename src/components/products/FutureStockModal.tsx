@@ -370,106 +370,133 @@ export function FutureStockModal({
               hasVariants && (
                 <div className="space-y-6">
                   {/* Agrupamento por cor */}
-                  {Array.from(new Set(sortedEntries.map(e => e.colorName))).map(colorName => {
-                    const colorEntries = sortedEntries.filter(e => e.colorName === colorName);
-                    const firstEntry = colorEntries[0];
-                    
+                  {Array.from(new Set(sortedEntries.map((e) => e.colorName))).map((colorName) => {
+                    const colorEntries = sortedEntries.filter((e) => e.colorName === colorName);
+                    // Agrupar por variante dentro da cor
+                    const variantIds = Array.from(new Set(colorEntries.map((e) => e.variantId)));
+
                     return (
-                      <div key={colorName} className="space-y-3">
-                        <div className="flex items-center gap-2 border-l-2 border-primary pl-3">
-                          <span className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
-                            {colorName}
-                          </span>
-                          <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-                            {colorEntries.length} {colorEntries.length === 1 ? 'previsão' : 'previsões'}
-                          </Badge>
+                      <div key={colorName} className="space-y-4 rounded-2xl border border-border/50 bg-muted/30 p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 border-l-4 border-primary pl-3">
+                            <span className="text-sm font-bold uppercase tracking-wider text-foreground">
+                              {colorName}
+                            </span>
+                            <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                              {colorEntries.length}{' '}
+                              {colorEntries.length === 1 ? 'previsão' : 'previsões'}
+                            </Badge>
+                          </div>
                         </div>
-                        
-                        <div className="grid gap-3">
-                          {colorEntries.map((entry) => {
-                            const expectedDate = parseISO(entry.expectedDate);
-                            const daysUntil = Math.ceil(
-                              (expectedDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
-                            );
-                            const isUrgent = daysUntil <= 7 && daysUntil >= 0;
-                            const isPast = daysUntil < 0;
+
+                        <div className="space-y-6">
+                          {variantIds.map((vId) => {
+                            const variantEntries = colorEntries.filter((e) => e.variantId === vId);
+                            const first = variantEntries[0];
 
                             return (
-                              <div
-                                key={entry.id}
-                                className={cn(
-                                  'flex items-center gap-4 rounded-xl border bg-card p-4 transition-all hover:border-primary/30',
-                                  isUrgent && !isPast && 'border-warning/30 bg-warning/5',
-                                  isPast && 'border-destructive/30 bg-destructive/5',
-                                )}
-                              >
-                                {/* Imagem ou Cor (Apenas se for a primeira da cor ou mobile) */}
-                                <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-border">
-                                  {entry.thumbnail ? (
-                                    <img
-                                      src={entry.thumbnail}
-                                      alt={entry.colorName}
-                                      className="h-full w-full object-cover"
-                                      loading="lazy"
-                                    />
-                                  ) : (
-                                    <div
-                                      className="h-full w-full"
-                                      style={{ backgroundColor: entry.colorHex ?? '#888' }}
-                                    />
-                                  )}
+                              <div key={vId} className="space-y-3">
+                                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-tight text-muted-foreground/70">
+                                  <Package className="h-3 w-3" />
+                                  Variante SKU: {first.supplierSku}
                                 </div>
 
-                                {/* Info */}
-                                <div className="min-w-0 flex-1">
-                                  <div className="mb-1 flex items-center gap-2">
-                                    <Badge
-                                      variant="outline"
-                                      className={cn(
-                                        'px-2 py-0 text-[10px]',
-                                        isPast
-                                          ? 'border-destructive/20 bg-destructive/10 text-destructive'
-                                          : isUrgent
-                                            ? 'border-warning/20 bg-warning/10 text-warning'
-                                            : 'border-primary/20 bg-primary/10 text-primary',
-                                      )}
-                                    >
-                                      {isPast
-                                        ? 'Atrasado'
-                                        : isUrgent
-                                          ? 'Em breve'
-                                          : `Previsão ${entry.entryIndex}`}
-                                    </Badge>
-                                    {isPast && (
-                                      <span className="flex items-center gap-1 text-[10px] font-medium text-destructive">
-                                        <AlertTriangle className="h-3 w-3" /> Reposição pendente
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                                    <span className="flex items-center gap-1.5">
-                                      <Calendar className="h-3.5 w-3.5" />
-                                      {format(expectedDate, "dd 'de' MMMM", { locale: ptBR })}
-                                      <span className={cn(
-                                        'ml-1 text-xs font-medium',
-                                        isPast ? 'text-destructive' : isUrgent ? 'text-warning' : 'text-foreground/60'
-                                      )}>
-                                        ({isPast ? `${Math.abs(daysUntil)}d atrás` : daysUntil === 0 ? 'hoje' : `${daysUntil}d`})
-                                      </span>
-                                    </span>
-                                    <span className="flex items-center gap-1.5 text-xs">
-                                      <Package className="h-3.5 w-3.5" />
-                                      {entry.supplierSku}
-                                    </span>
-                                  </div>
-                                </div>
+                                <div className="grid gap-2">
+                                  {variantEntries.map((entry) => {
+                                    const expectedDate = parseISO(entry.expectedDate);
+                                    const daysUntil = Math.ceil(
+                                      (expectedDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+                                    );
+                                    const isUrgent = daysUntil <= 7 && daysUntil >= 0;
+                                    const isPast = daysUntil < 0;
 
-                                {/* Quantidade */}
-                                <div className="shrink-0 text-right">
-                                  <span className="text-xl font-bold text-primary">
-                                    +{entry.expectedQuantity.toLocaleString('pt-BR')}
-                                  </span>
-                                  <p className="text-[10px] font-medium uppercase text-muted-foreground">unidades</p>
+                                    return (
+                                      <div
+                                        key={entry.id}
+                                        className={cn(
+                                          'flex items-center gap-4 rounded-xl border bg-card p-3 transition-all hover:border-primary/30',
+                                          isUrgent && !isPast && 'border-warning/30 bg-warning/5',
+                                          isPast && 'border-destructive/30 bg-destructive/5',
+                                        )}
+                                      >
+                                        {/* Indicador visual de cor/thumb */}
+                                        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-border">
+                                          {entry.thumbnail ? (
+                                            <img
+                                              src={entry.thumbnail}
+                                              alt={entry.colorName}
+                                              className="h-full w-full object-cover"
+                                              loading="lazy"
+                                            />
+                                          ) : (
+                                            <div
+                                              className="h-full w-full"
+                                              style={{ backgroundColor: entry.colorHex ?? '#888' }}
+                                            />
+                                          )}
+                                        </div>
+
+                                        {/* Info */}
+                                        <div className="min-w-0 flex-1">
+                                          <div className="mb-0.5 flex items-center gap-2">
+                                            <Badge
+                                              variant="outline"
+                                              className={cn(
+                                                'px-1.5 py-0 text-[9px] font-bold uppercase',
+                                                isPast
+                                                  ? 'border-destructive/20 bg-destructive/10 text-destructive'
+                                                  : isUrgent
+                                                    ? 'border-warning/20 bg-warning/10 text-warning'
+                                                    : 'border-primary/20 bg-primary/10 text-primary',
+                                              )}
+                                            >
+                                              {isPast
+                                                ? 'Atrasado'
+                                                : isUrgent
+                                                  ? 'Em breve'
+                                                  : `Previsão ${entry.entryIndex}`}
+                                            </Badge>
+                                          </div>
+                                          <div className="flex items-center gap-3 text-sm">
+                                            <span className="flex items-center gap-1.5 font-medium text-foreground">
+                                              <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                                              {format(expectedDate, "dd 'de' MMM", {
+                                                locale: ptBR,
+                                              })}
+                                            </span>
+                                            <span
+                                              className={cn(
+                                                'text-xs font-semibold',
+                                                isPast
+                                                  ? 'text-destructive'
+                                                  : isUrgent
+                                                    ? 'text-warning'
+                                                    : 'text-primary',
+                                              )}
+                                            >
+                                              {isPast
+                                                ? `${Math.abs(daysUntil)}d atrasado`
+                                                : daysUntil === 0
+                                                  ? 'chega hoje'
+                                                  : `em ${daysUntil}d`}
+                                            </span>
+                                          </div>
+                                        </div>
+
+                                        {/* Quantidade */}
+                                        <div className="shrink-0 text-right">
+                                          <div className="flex items-baseline justify-end gap-1">
+                                            <span className="text-lg font-bold text-primary">
+                                              +{entry.expectedQuantity.toLocaleString('pt-BR')}
+                                            </span>
+                                            <span className="text-[10px] font-bold uppercase text-muted-foreground">
+                                              un
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               </div>
                             );
@@ -483,7 +510,7 @@ export function FutureStockModal({
             )}
 
             {/* Resumo total */}
-            {!isLoading && !error && !hasNoFutureStock && filteredAndSortedEntries.length > 0 && (
+            {!isLoading && !error && !hasNoFutureStock && sortedEntries.length > 0 && (
               <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/10 to-primary/5 p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -495,14 +522,14 @@ export function FutureStockModal({
                         {hasActiveFilters ? 'Total filtrado' : 'Total previsto'}
                       </span>
                       <p className="text-sm text-muted-foreground">
-                        {filteredAndSortedEntries.length} reposição(ões) agendada(s)
+                        {sortedEntries.length} reposição(ões) agendada(s)
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <span className="text-2xl font-bold text-primary">
                       +
-                      {filteredAndSortedEntries
+                      {sortedEntries
                         .reduce((sum, e) => sum + e.expectedQuantity, 0)
                         .toLocaleString('pt-BR')}
                     </span>

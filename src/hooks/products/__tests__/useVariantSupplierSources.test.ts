@@ -82,4 +82,48 @@ describe('processStockEntries', () => {
     const entries = processStockEntries([variantNoData]);
     expect(entries).toHaveLength(0);
   });
+
+  it('deve garantir que o entryIndex e os IDs sejam consistentes para 3 chegadas', () => {
+    const variant: VariantWithStock = {
+      ...mockVariant,
+      id: 'var-999',
+      next_date_1: '2026-01-01',
+      next_quantity_1: 10,
+      next_date_2: '2026-02-01',
+      next_quantity_2: 20,
+      next_date_3: '2026-03-01',
+      next_quantity_3: 30,
+    };
+
+    const entries = processStockEntries([variant]);
+    expect(entries[0].id).toBe('var-999-1');
+    expect(entries[0].entryIndex).toBe(1);
+    expect(entries[1].id).toBe('var-999-2');
+    expect(entries[1].entryIndex).toBe(2);
+    expect(entries[2].id).toBe('var-999-3');
+    expect(entries[2].entryIndex).toBe(3);
+  });
+
+  it('deve ignorar pares onde a data é nula mas a quantidade existe', () => {
+    const variant: VariantWithStock = {
+      id: 'v-null-date',
+      product_id: 'p1',
+      sku: 'S1',
+      color_code: '01',
+      color_name: 'Cor',
+      color_hex: '#000',
+      stock_quantity: 0,
+      selected_thumbnail: null,
+      next_date_1: null,
+      next_quantity_1: 100,
+      next_date_2: '2026-01-01',
+      next_quantity_2: 200,
+      next_date_3: null,
+      next_quantity_3: null,
+    };
+
+    const entries = processStockEntries([variant]);
+    expect(entries).toHaveLength(1);
+    expect(entries[0].expectedQuantity).toBe(200);
+  });
 });
