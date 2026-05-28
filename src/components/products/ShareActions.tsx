@@ -21,6 +21,7 @@ import { useToast } from '@/hooks/ui';
 import type { Product } from '@/hooks/products';
 import { SharePreviewDialog } from './share/SharePreviewDialog';
 import { ShareAllColorsDialog } from './share/ShareAllColorsDialog';
+import { ShareKitDialog } from './share/ShareKitDialog';
 import { usePhotoDownload } from './share/usePhotoDownload';
 import { MESSAGE_TEMPLATES } from './share/MessageTemplates';
 
@@ -31,6 +32,7 @@ interface ShareActionsProps {
     variantName?: string | null;
     colorHex?: string | null;
     thumbnailUrl?: string | null;
+    variantImages?: string[] | null;
   } | null;
 }
 
@@ -50,7 +52,9 @@ export function ShareActions({
   // Count photos considering selection
   const totalPhotosCount = useMemo(() => {
     // If we have a selected variant with specific images, use those + main product images
-    const variantImages = selectedVariant?.thumbnailUrl ? [selectedVariant.thumbnailUrl] : [];
+    const variantImages = selectedVariant?.variantImages && selectedVariant.variantImages.length > 0 
+      ? selectedVariant.variantImages 
+      : (selectedVariant?.thumbnailUrl ? [selectedVariant.thumbnailUrl] : []);
     
     if (!product.colors || product.colors.length === 0) {
       return Array.from(new Set([...variantImages, ...product.images])).length;
@@ -197,5 +201,3 @@ export function ShareActions({
   );
 }
 
-// Add the missing import at the top
-import { ShareKitDialog } from './share/ShareKitDialog';
