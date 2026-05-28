@@ -517,6 +517,7 @@ export function PromoFlixPlayer({
     video.addEventListener('waiting', onWaiting);
     video.addEventListener('playing', onPlaying);
     video.addEventListener('canplay', onCanPlay);
+    video.addEventListener('error', onError);
     video.addEventListener('ratechange', onRate);
     video.addEventListener('volumechange', onVolume);
 
@@ -531,6 +532,7 @@ export function PromoFlixPlayer({
       video.removeEventListener('waiting', onWaiting);
       video.removeEventListener('playing', onPlaying);
       video.removeEventListener('canplay', onCanPlay);
+      video.removeEventListener('error', onError);
       video.removeEventListener('ratechange', onRate);
       video.removeEventListener('volumechange', onVolume);
     };
