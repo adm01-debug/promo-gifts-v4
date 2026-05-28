@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, fireEvent, act, waitFor } from '@testing-library/react';
 import { PromoFlixPlayer } from './PromoFlixPlayer';
 
 // Mock lucide-react icons
@@ -25,6 +25,7 @@ vi.mock('lucide-react', () => ({
   X: () => <div data-testid="x-icon" />,
   PictureInPicture2: () => <div data-testid="pip-icon" />,
   Gauge: () => <div data-testid="gauge-icon" />,
+  MessageCircle: () => <div data-testid="whatsapp-icon" />,
 }));
 
 // Mock sonner
@@ -32,10 +33,11 @@ vi.mock('sonner', () => ({
   toast: {
     error: vi.fn(),
     success: vi.fn(),
+    info: vi.fn(),
   },
 }));
 
-describe('PromoFlixPlayer Persistence and Logic', () => {
+describe('PromoFlixPlayer Automated Tests', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
@@ -62,7 +64,6 @@ describe('PromoFlixPlayer Persistence and Logic', () => {
   it('should initialize volume from localStorage', () => {
     localStorage.setItem('promoflix_volume', '0.5');
     render(<PromoFlixPlayer src="test.mp4" />);
-    // Check if localStorage was accessed correctly
     expect(localStorage.getItem('promoflix_volume')).toBe('0.5');
   });
 
@@ -71,23 +72,18 @@ describe('PromoFlixPlayer Persistence and Logic', () => {
     render(<PromoFlixPlayer src="test.mp4" autoPlay={false} />);
     expect(localStorage.getItem('promoflix_playing')).toBe('true');
   });
-  
-  it('should check playback rates constants', () => {
-    const rates = [0.5, 0.75, 1, 1.25, 1.5, 2];
-    expect(rates).toContain(1);
-    expect(rates).toContain(0.5);
-    expect(rates).toContain(2);
-  });
 
-  it('should show retry button after timeout if video is stuck', async () => {
+  it('should show manual load button after 10s timeout if video is stuck', async () => {
     vi.useFakeTimers();
-    const { getByText, queryByText } = render(<PromoFlixPlayer src="stuck.mp4" />);
+    const { getByText } = render(<PromoFlixPlayer src="stuck.mp4" />);
     
     // Initial state: loading
     expect(getByText(/Carregando/i)).toBeDefined();
     
     // Advance 11 seconds to trigger STUCK_LOADING_TIMEOUT (10s)
-    await vi.advanceTimersByTimeAsync(11000);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(11000);
+    });
     
     // Should show manual load button
     expect(getByText(/Carregar Manualmente/i)).toBeDefined();
@@ -95,20 +91,27 @@ describe('PromoFlixPlayer Persistence and Logic', () => {
     vi.useRealTimers();
   });
 
-  it('should show CORS error message when video fails with code 4', async () => {
-    const { findByText } = render(<PromoFlixPlayer src="cors-error.mp4" />);
+  it('should show actionable CORS error message when video fails with code 4', async () => {
+    const { findByText, getByRole } = render(<PromoFlixPlayer src="cors-error.mp4" />);
     
     const video = document.querySelector('video');
     if (video) {
       // Simulate CORS error (code 4)
-      Object.defineProperty(video, 'error', {
-        value: { code: 4, message: 'CORS policy' },
-        configurable: true
+      await act(async () => {
+        Object.defineProperty(video, 'error', {
+          value: { code: 4, message: 'CORS policy' },
+          configurable: true
+        });
+        fireEvent(video, new Event('error'));
       });
-      video.dispatchEvent(new Event('error'));
     }
     
-    expect(await findByText(/Erro de CORS ou Formato não suportado/i)).toBeDefined();
+    // Check for actionable message
+    expect(await findByText(/restrições de segurança \(CORS\)/i)).toBeDefined();
+    expect(await findByText(/Verifique as permissões do servidor ou tente um link diferente/i)).toBeDefined();
+    
+    // Ensure "Tentar Novamente" button exists (actionable)
+    expect(getByRole('button', { name: /Tentar Novamente/i })).toBeDefined();
   });
 
   it('should hide loading overlay when progress event has buffer', async () => {
@@ -126,13 +129,44 @@ describe('PromoFlixPlayer Persistence and Logic', () => {
         configurable: true
       });
       
-      await vi.waitFor(() => {
-        video.dispatchEvent(new Event('progress'));
-        if (queryByText(/Carregando/i)) throw new Error('Still loading');
+      await act(async () => {
+        fireEvent(video, new Event('progress'));
       });
     }
     
     // Overlay should be gone (isLoading = false)
-    expect(queryByText(/Carregando/i)).toBeNull();
+    await waitFor(() => {
+      expect(queryByText(/Carregando/i)).toBeNull();
+    });
+  });
+
+  it('should hide loading overlay when loadeddata event fires', async () => {
+    const { queryByText } = render(<PromoFlixPlayer src="test.mp4" />);
+    
+    const video = document.querySelector('video');
+    if (video) {
+      await act(async () => {
+        fireEvent(video, new Event('loadeddata'));
+      });
+    }
+    
+    await waitFor(() => {
+      expect(queryByText(/Carregando/i)).toBeNull();
+    });
+  });
+
+  it('should hide loading overlay when canplay event fires', async () => {
+    const { queryByText } = render(<PromoFlixPlayer src="test.mp4" />);
+    
+    const video = document.querySelector('video');
+    if (video) {
+      await act(async () => {
+        fireEvent(video, new Event('canplay'));
+      });
+    }
+    
+    await waitFor(() => {
+      expect(queryByText(/Carregando/i)).toBeNull();
+    });
   });
 });

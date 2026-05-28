@@ -496,7 +496,7 @@ export function PromoFlixPlayer({
         message: error?.message,
       });
       if (error?.code === 4) {
-        setHlsError('Erro de CORS ou Formato não suportado. Verifique as permissões do servidor de vídeo.');
+        setHlsError('Não foi possível acessar o vídeo devido a restrições de segurança (CORS) ou formato incompatível. Verifique as permissões do servidor ou tente um link diferente.');
       }
     };
     const onRate = () => setPlaybackRate(video.playbackRate);
