@@ -228,6 +228,7 @@ export function PromoFlixPlayer({
   }, [clearLoadingTimeout, logTelemetry, src]);
 
   // Setup HLS or native
+  // Setup HLS or native
   const initPlayer = useCallback(() => {
     const video = videoRef.current;
     if (!video || !src) return;
@@ -237,33 +238,15 @@ export function PromoFlixPlayer({
     autoplayFallbackTriedRef.current = false;
 
     // Reset de estado imediato para evitar flicker de erro anterior
-    act(() => {
-      setIsLoading(true);
-      setHlsError(null);
-      setIsReconnecting(false);
-      setShowLoadingAction(false);
-      reconnectAttemptsRef.current = 0;
-    });
-
-    logTelemetry('INIT_PLAYER', { src: src.substring(0, 50) + '...', isHls });
-    armLoadingTimeout();
-
-    // ... continua ...
-
-
-
-    // Invalida qualquer init anterior em andamento (Strict Mode / troca de src / Retry)
-    const myToken = ++initTokenRef.current;
-    autoplayFallbackTriedRef.current = false;
-
-    // Reset de estado para que o overlay de erro/loading anterior não fique preso
     setIsLoading(true);
     setHlsError(null);
     setIsReconnecting(false);
     setShowLoadingAction(false);
     reconnectAttemptsRef.current = 0;
+
     logTelemetry('INIT_PLAYER', { src: src.substring(0, 50) + '...', isHls });
     armLoadingTimeout();
+
 
     // Limpa instância HLS anterior (não-destruída) antes de qualquer reattach
     if (hlsRef.current) {
