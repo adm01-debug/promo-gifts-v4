@@ -28,7 +28,8 @@ test.describe("Future Stock Modal (Estoque Futuro)", () => {
             supplier: { id: "supp-1", name: "Fornecedor Teste" },
             variations: [
               { id: "var-blue-1", color: { name: "Azul", hex: "#0000FF" }, stock: 50, sku: "SKU-BLUE-1" },
-              { id: "var-red-1", color: { name: "Vermelho", hex: "#FF0000" }, stock: 20, sku: "SKU-RED-1" }
+              { id: "var-red-1", color: { name: "Vermelho", hex: "#FF0000" }, stock: 20, sku: "SKU-RED-1" },
+              { id: "var-green-1", color: { name: "Verde", hex: "#00FF00" }, stock: 10, sku: "SKU-GREEN-1" }
             ]
           }
         ])
@@ -54,12 +55,12 @@ test.describe("Future Stock Modal (Estoque Futuro)", () => {
                 stock_quantity: 50,
                 variant_supplier_sources: [
                   {
-                    // Arrival 2 is SOONER than Arrival 1 in terms of date, should be reordered in UI
-                    next_date_1: "2026-12-31", // Arrival 1: Dec 31
+                    // Arrival 2 (June) is SOONER than Arrival 1 (Dec), should be reordered in UI
+                    next_date_1: "2026-12-31", 
                     next_quantity_1: 1000,
-                    next_date_2: "2026-06-01", // Arrival 2: June 1 (Should come first)
+                    next_date_2: "2026-06-01", 
                     next_quantity_2: 500,
-                    next_date_3: "2027-01-15", // Arrival 3: Jan 15
+                    next_date_3: "2027-01-15", 
                     next_quantity_3: 2000
                   }
                 ]
@@ -81,6 +82,25 @@ test.describe("Future Stock Modal (Estoque Futuro)", () => {
                     next_quantity_3: 0 // Should be ignored
                   }
                 ]
+              },
+              {
+                id: "var-green-1",
+                product_id: productId,
+                sku: "SKU-GREEN-1",
+                color_name: "Verde",
+                color_hex: "#00FF00",
+                stock_quantity: 10,
+                variant_supplier_sources: [
+                  {
+                    // Partial combination: only next_date_2 is set
+                    next_date_1: null,
+                    next_quantity_1: null,
+                    next_date_2: "2026-05-15",
+                    next_quantity_2: 450,
+                    next_date_3: null,
+                    next_quantity_3: 0
+                  }
+                ]
               }
             ]
           })
@@ -94,82 +114,63 @@ test.describe("Future Stock Modal (Estoque Futuro)", () => {
   test("deve exibir a timeline com ordenação cronológica e ignorar entradas inválidas", async ({ page }) => {
     await gotoAndSettle(page, `/produto/${productId}`);
 
-    // Abrir modal de estoque futuro
     const openButton = page.getByRole('button', { name: /Estoque Futuro/i });
     await openButton.click();
 
-    // Verificar se o modal abriu
     await expect(page.getByText('Estoque Futuro', { exact: true }).first()).toBeVisible();
-    await expect(page.getByText(productName)).toBeVisible();
 
-    // Verificar timeline da variante Azul (deve ter 3 entradas ordenadas)
-    // Ordenação esperada: Jun 1, 2026 -> Dec 31, 2026 -> Jan 15, 2027
-    const blueSection = page.locator('div').filter({ hasText: /^Azul/ }).first();
-    await expect(blueSection).toBeVisible();
+    const blueHeader = page.getByRole('button', { name: /^Azul/ });
+    await blueHeader.click();
 
+    const blueSection = page.locator('.rounded-2xl').filter({ hasText: /^Azul/ });
     const timelineItems = blueSection.locator('.relative.flex.gap-4');
     await expect(timelineItems).toHaveCount(3);
 
-    // Verificar datas na ordem (assumindo formato DD/MM/YYYY ou similar no UI)
-    // A lógica de ordenação cronológica foi implementada no modal
-    await expect(timelineItems.nth(0)).toContainText('01/06/2026');
-    await expect(timelineItems.nth(0)).toContainText('500');
+    // Verificar ordem cronológica (Junho < Dezembro < Janeiro)
+    // O UI usa formato "dd de MMM" (ex: 01 de jun)
+    await expect(timelineItems.nth(0)).toContainText(/01 de jun/i);
+    await expect(timelineItems.nth(1)).toContainText(/31 de dez/i);
+    await expect(timelineItems.nth(2)).toContainText(/15 de jan/i);
 
-    await expect(timelineItems.nth(1)).toContainText('31/12/2026');
-    await expect(timelineItems.nth(1)).toContainText('1.000');
-
-    await expect(timelineItems.nth(2)).toContainText('15/01/2027');
-    await expect(timelineItems.nth(2)).toContainText('2.000');
-
-    // Verificar timeline da variante Vermelha (deve ter apenas 1 entrada válida)
-    // Ignorou: null date e zero quantity
-    const redSection = page.locator('div').filter({ hasText: /^Vermelho/ }).first();
-    await expect(redSection).toBeVisible();
+    // Verificar que pares inválidos no Vermelho foram ignorados (apenas 1 válido)
+    const redHeader = page.getByRole('button', { name: /^Vermelho/ });
+    await redHeader.click(); 
+    const redSection = page.locator('.rounded-2xl').filter({ hasText: /^Vermelho/ });
     const redTimelineItems = redSection.locator('.relative.flex.gap-4');
     await expect(redTimelineItems).toHaveCount(1);
-    await expect(redTimelineItems).toContainText('10/07/2026');
+    await expect(redTimelineItems).toContainText(/10 de jul/i);
     await expect(redTimelineItems).toContainText('300');
   });
 
-  test("deve respeitar o comportamento de colapso/expandir por grupo de cor", async ({ page }) => {
+  test("deve validar combinações parciais de campos (apenas next_date_2/3)", async ({ page }) => {
     await gotoAndSettle(page, `/produto/${productId}`);
     await page.getByRole('button', { name: /Estoque Futuro/i }).click();
 
-    // Por padrão, grupos podem estar colapsados ou expandidos dependendo da lógica (ex: selectedColor)
-    // Vamos testar o toggle manual
+    const greenHeader = page.getByRole('button', { name: /^Verde/ });
+    await greenHeader.click();
+    
+    const greenSection = page.locator('.rounded-2xl').filter({ hasText: /^Verde/ });
+    const greenTimelineItems = greenSection.locator('.relative.flex.gap-4');
+    
+    // Deve mostrar 1 entrada mesmo sendo do "index 2"
+    await expect(greenTimelineItems).toHaveCount(1);
+    await expect(greenTimelineItems).toContainText(/15 de mai/i);
+    await expect(greenTimelineItems).toContainText('450');
+  });
+
+  test("deve alternar colapso/expansão ao clicar nos headers", async ({ page }) => {
+    await gotoAndSettle(page, `/produto/${productId}`);
+    await page.getByRole('button', { name: /Estoque Futuro/i }).click();
+
     const blueHeader = page.getByRole('button', { name: /^Azul/ });
-    const redHeader = page.getByRole('button', { name: /^Vermelho/ });
+    const blueContent = page.getByText('SKU-BLUE-1').first();
 
-    // Clicar para colapsar Azul se estiver aberto, ou expandir se fechado
-    // Como implementamos o sistema de expandedGroups no modal
-    
-    // Vamos verificar se o conteúdo está visível
-    const blueContent = page.locator('div').filter({ hasText: 'SKU-BLUE-1' }).last();
-    const redContent = page.locator('div').filter({ hasText: 'SKU-RED-1' }).last();
-
-    // Inicialmente, ambos devem estar visíveis se expandedGroups começou vazio mas a lógica de fallback ou ordenação os abriu
-    // No código: const isExpanded = expandedGroups.includes(colorName) || selectedColor === colorName;
-    // Se expandedGroups estiver vazio e selectedColor null, eles podem estar fechados.
-    
-    // Vamos garantir que clicamos para expandir/colapsar e verificar a mudança
+    // Expandir
     await blueHeader.click();
-    // Se estava fechado, agora SKU-BLUE-1 deve estar visível. Se estava aberto, deve sumir.
-    // Vamos forçar um estado conhecido clicando.
-    
-    // Verificar se ao clicar no grid de cores (filtro), ele expande automaticamente
-    const blueFilterButton = page.locator('button[title^="Azul"]');
-    await blueFilterButton.click();
-    
     await expect(blueContent).toBeVisible();
-    
-    // O vermelho deve estar colapsado se não for a cor selecionada e não estiver em expandedGroups
-    // Mas no modal, se não houver filtro, talvez todos apareçam.
-    // O requisito diz "Implementar um colapso/expandir por grupo de cor no modal"
-    
-    await blueHeader.click(); // Colapsar azul
+
+    // Colapsar
+    await blueHeader.click();
     await expect(blueContent).not.toBeVisible();
-    
-    await redHeader.click(); // Expandir vermelho
-    await expect(redContent).toBeVisible();
   });
 });

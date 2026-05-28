@@ -43,6 +43,21 @@ describe('FutureStockModal (UI Tests)', () => {
       next_quantity_2: 500,
       next_date_3: '2026-08-20',
       next_quantity_3: 0, // Ignorado
+    },
+    {
+      id: 'var-green-1',
+      product_id: 'p1',
+      sku: 'SKU-GREEN-1',
+      color_name: 'Verde',
+      color_hex: '#00FF00',
+      stock_quantity: 10,
+      selected_thumbnail: 'green.jpg',
+      next_date_1: null,
+      next_quantity_1: null,
+      next_date_2: '2026-05-15', // Única data válida
+      next_quantity_2: 450,
+      next_date_3: null,
+      next_quantity_3: 0,
     }
   ];
 
@@ -158,6 +173,30 @@ describe('FutureStockModal (UI Tests)', () => {
     fireEvent.click(blueFilterBtn);
     // Deve colapsar novamente
     expect(screen.queryByText(/Variante SKU: SKU-BLUE-1/i)).not.toBeInTheDocument();
+  });
+
+  it('deve renderizar corretamente quando apenas next_date_2 ou next_date_3 estão preenchidos (combinações parciais)', () => {
+    render(
+      <FutureStockModal
+        open={true}
+        onOpenChange={vi.fn()}
+        productId="p1"
+        productName="Produto Teste"
+        productSku="SKU-123"
+      />
+    );
+
+    const verdeHeaders = screen.getAllByText(/Verde/i);
+    const greenGroup = verdeHeaders.find(el => el.closest('.border-l-4'))?.closest('.rounded-2xl');
+    expect(greenGroup).toBeInTheDocument();
+
+    // Expande o grupo verde
+    const greenToggle = within(greenGroup as HTMLElement).getByRole('button');
+    fireEvent.click(greenToggle);
+
+    // Deve mostrar a data 15/05/2026 mesmo sendo a "chegada 2"
+    expect((greenGroup as HTMLElement).textContent).toContain('15 de mai');
+    expect((greenGroup as HTMLElement).textContent).toContain('450');
   });
 
 
