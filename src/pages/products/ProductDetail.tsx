@@ -77,8 +77,62 @@ export default function ProductDetail() {
   const [packagingModalOpen, setPackagingModalOpen] = useState(false);
   const { addToRecentlyViewed } = useRecentlyViewedStore();
 
-  const { data, isLoading, isError } = useProduct(id || '');
-  const product = data as Product | null | undefined;
+  const isTestMode = searchParams.get('test') === 'true';
+  const { data: realData, isLoading: isRealLoading, isError: isRealError } = useProduct(id || '');
+  
+  const mockProduct: Product = {
+    id: 'test-kit-id',
+    name: 'Kit Promocional de Teste',
+    description: 'Um kit completo para testar as novas funcionalidades de compartilhamento WhatsApp.',
+    sku: 'KIT-TEST-001',
+    price: 150.00,
+    minQuantity: 10,
+    stock: 500,
+    stockStatus: 'in-stock',
+    images: [
+      'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=2000&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1544816153-0973059446d3?q=80&w=2000&auto=format&fit=crop'
+    ],
+    isKit: true,
+    kitItems: [
+      {
+        id: 'item-1',
+        productId: 'p1',
+        productName: 'Squeeze Térmica',
+        quantity: 1,
+        sku: 'SQZ-001',
+        imageUrl: 'https://images.unsplash.com/photo-1602143394807-a2536fe0589a?q=80&w=2000&auto=format&fit=crop',
+        description: 'Squeeze de alumínio 500ml'
+      },
+      {
+        id: 'item-2',
+        productId: 'p2',
+        productName: 'Caderno Moleskine',
+        quantity: 1,
+        sku: 'CAD-002',
+        imageUrl: '', // Testing fallback
+        description: 'Caderno com capa dura'
+      }
+    ],
+    category: { id: 1, name: 'Kits' },
+    supplier: { id: 'supp-1', name: 'Fornecedor de Teste' },
+    colors: [],
+    materials: ['Alumínio', 'Papel'],
+    featured: true,
+    newArrival: true,
+    onSale: false,
+    tags: {
+      publicoAlvo: ['Corporativo'],
+      datasComemorativas: ['Onboarding'],
+      endomarketing: ['Welcome Kit'],
+      ramo: ['Escritório'],
+      nicho: ['Tech']
+    }
+  };
+
+  const product = isTestMode ? mockProduct : (realData as Product | null | undefined);
+  const isLoading = isTestMode ? false : isRealLoading;
+  const isError = isTestMode ? false : isRealError;
   const { data: supplierTrust } = useSupplierTrust(id);
   const { data: similarItems = [] } = useSimilarProducts(product);
 
