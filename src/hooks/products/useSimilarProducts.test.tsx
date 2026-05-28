@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import { useSimilarProducts } from '../useSimilarProducts';
+import { useSimilarProducts } from './useSimilarProducts';
 import { invokeExternalDb } from '@/lib/external-db';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
