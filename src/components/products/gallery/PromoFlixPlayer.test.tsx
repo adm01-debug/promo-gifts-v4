@@ -91,24 +91,24 @@ describe('PromoFlixPlayer Automated Tests', () => {
     vi.useRealTimers();
   });
 
-  it('should show actionable CORS error message when video fails with code 4', async () => {
+  it('should show actionable error message when native video fails with code 4 (SRC_NOT_SUPPORTED)', async () => {
     const { findByText, getByRole } = render(<PromoFlixPlayer src="cors-error.mp4" />);
     
     const video = document.querySelector('video');
     if (video) {
-      // Simulate CORS error (code 4)
+      // Simulate SRC_NOT_SUPPORTED (code 4) on native playback (no HLS.js attached for .mp4)
       await act(async () => {
         Object.defineProperty(video, 'error', {
-          value: { code: 4, message: 'CORS policy' },
+          value: { code: 4, message: 'SRC_NOT_SUPPORTED' },
           configurable: true
         });
         fireEvent(video, new Event('error'));
       });
     }
     
-    // Check for actionable message
-    expect(await findByText(/restrições de segurança \(CORS\)/i)).toBeDefined();
-    expect(await findByText(/Verifique as permissões do servidor ou tente um link diferente/i)).toBeDefined();
+    // Check for actionable message (generalized — previously falsely attributed to CORS)
+    expect(await findByText(/Não foi possível reproduzir este vídeo/i)).toBeDefined();
+    expect(await findByText(/formato pode não ser suportado/i)).toBeDefined();
     
     // Ensure "Tentar Novamente" button exists and works
     const retryButton = getByRole('button', { name: /Tentar Novamente/i });
