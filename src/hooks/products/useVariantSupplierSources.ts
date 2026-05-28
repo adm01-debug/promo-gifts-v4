@@ -106,7 +106,7 @@ export function processStockEntries(variants: VariantWithStock[]): StockEntry[] 
 
   for (const v of variants) {
     const futurePairs = [
-      { date: v.next_date_1, qty: v.next_quantity_1 },
+      { date: v.next_date_1 ?? v.next_entry_date, qty: v.next_quantity_1 ?? v.next_entry_quantity },
       { date: v.next_date_2, qty: v.next_quantity_2 },
       { date: v.next_date_3, qty: v.next_quantity_3 },
     ];

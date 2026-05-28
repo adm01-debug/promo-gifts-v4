@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect } from 'vitest';
-import { processStockEntries } from '../useVariantSupplierSources';
+import { processStockEntries, type VariantWithStock } from '../useVariantSupplierSources';
 
 describe('useVariantSupplierSources UI Logic / Timeline', () => {
   it('deve gerar entradas válidas e ignorar pares vazios ou com quantidade zero', () => {
-    const mockVariants = [
+    const mockVariants: VariantWithStock[] = [
       {
         id: 'v1',
         product_id: 'p1',
@@ -14,6 +13,8 @@ describe('useVariantSupplierSources UI Logic / Timeline', () => {
         color_hex: '#0000FF',
         stock_quantity: 10,
         selected_thumbnail: 'thumb1.jpg',
+        next_entry_date: '2026-06-10',
+        next_entry_quantity: 50,
         next_date_1: '2026-06-10',
         next_quantity_1: 50,
         next_date_2: '2026-07-15',
@@ -23,7 +24,7 @@ describe('useVariantSupplierSources UI Logic / Timeline', () => {
       },
     ];
 
-    const entries = processStockEntries(mockVariants as any);
+    const entries = processStockEntries(mockVariants);
 
     expect(entries).toHaveLength(1);
     expect(entries[0].expectedDate).toBe('2026-06-10');
@@ -32,12 +33,18 @@ describe('useVariantSupplierSources UI Logic / Timeline', () => {
   });
 
   it('deve manter a consistência de IDs e entryIndex para múltiplas chegadas válidas', () => {
-    const mockVariants = [
+    const mockVariants: VariantWithStock[] = [
       {
         id: 'v1',
         product_id: 'p1',
         sku: 'SKU-01',
         color_name: 'Azul',
+        color_code: null,
+        color_hex: null,
+        stock_quantity: null,
+        selected_thumbnail: null,
+        next_entry_date: null,
+        next_entry_quantity: null,
         next_date_1: '2026-06-10',
         next_quantity_1: 50,
         next_date_2: '2026-07-15',
@@ -47,7 +54,7 @@ describe('useVariantSupplierSources UI Logic / Timeline', () => {
       },
     ];
 
-    const entries = processStockEntries(mockVariants as any);
+    const entries = processStockEntries(mockVariants);
 
     expect(entries).toHaveLength(3);
     expect(entries[0].id).toBe('v1-1');
@@ -59,12 +66,18 @@ describe('useVariantSupplierSources UI Logic / Timeline', () => {
   });
 
   it('deve permitir ordenação cronológica correta das entradas processadas', () => {
-    const mockVariants = [
+    const mockVariants: VariantWithStock[] = [
       {
         id: 'v1',
         product_id: 'p1',
         sku: 'SKU-01',
         color_name: 'Azul',
+        color_code: null,
+        color_hex: null,
+        stock_quantity: null,
+        selected_thumbnail: null,
+        next_entry_date: null,
+        next_entry_quantity: null,
         next_date_1: '2026-08-10',
         next_quantity_1: 50,
         next_date_2: '2026-06-15',
@@ -72,7 +85,7 @@ describe('useVariantSupplierSources UI Logic / Timeline', () => {
       },
     ];
 
-    const entries = processStockEntries(mockVariants as any);
+    const entries = processStockEntries(mockVariants);
 
     // Simula a ordenação que acontece no componente
     const sorted = [...entries].sort(
