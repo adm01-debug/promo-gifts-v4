@@ -24,9 +24,12 @@ describe('useStockChartData', () => {
     vi.clearAllMocks();
     
     // Default success mocks
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+
     (intelligenceHooks.useStockDailySummary as any).mockReturnValue({
       data: [
-        { summary_date: '2024-05-20', supplier_id: 'S1', stock_close: 100, units_depleted: 5 },
+        { summary_date: dateStr, supplier_id: 'S1', stock_close: 100, units_depleted: 5 },
       ],
       isLoading: false,
       error: null,
@@ -139,10 +142,13 @@ describe('useStockChartData', () => {
   });
 
   it('should filter chart data by selected supplier', () => {
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+
     (intelligenceHooks.useStockDailySummary as any).mockReturnValue({
       data: [
-        { summary_date: '2024-05-20', supplier_id: 'S1', stock_close: 100 },
-        { summary_date: '2024-05-20', supplier_id: 'S2', stock_close: 50 },
+        { summary_date: dateStr, supplier_id: 'S1', stock_close: 100 },
+        { summary_date: dateStr, supplier_id: 'S2', stock_close: 50 },
       ],
     });
 

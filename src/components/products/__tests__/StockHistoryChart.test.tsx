@@ -98,7 +98,7 @@ describe('StockHistoryChart', () => {
 
     render(<StockHistoryChart productId={mockProductId} />);
     
-    expect(screen.getByText('🔥 Produto Quente')).toBeInTheDocument(); // Assuming flag config mapping
+    expect(screen.getByText('Sucesso no Mercado')).toBeInTheDocument(); // Flag config mapping for commercial
   });
 
   it('should toggle cost visibility', () => {
@@ -136,7 +136,7 @@ describe('StockHistoryChart', () => {
 
     render(<StockHistoryChart productId={mockProductId} />);
     
-    const ninetyDaysTab = screen.getByRole('tab', { name: '90d' });
+    const ninetyDaysTab = screen.getByText('90d');
     fireEvent.click(ninetyDaysTab);
     
     expect(setPeriod).toHaveBeenCalledWith('90');
