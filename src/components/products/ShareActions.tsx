@@ -57,7 +57,8 @@ export function ShareActions({
       : (selectedVariant?.thumbnailUrl ? [selectedVariant.thumbnailUrl] : []);
     
     if (!product.colors || product.colors.length === 0) {
-      return Array.from(new Set([...variantImages, ...product.images])).length;
+      const all = Array.from(new Set([...variantImages, ...product.images]));
+      return all.length > 0 ? all.length : 1;
     }
 
     const colorImageUrls = new Set<string>();
