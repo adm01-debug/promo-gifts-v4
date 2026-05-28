@@ -184,6 +184,10 @@ export function PromoFlixPlayer({
   // Refs para controlar reconexões e timeout de loading sem causar re-render
   const reconnectAttemptsRef = useRef(0);
   const loadingTimeoutRef = useRef<number | null>(null);
+  // Token de cancelamento para imports assíncronos de hls.js (evita instâncias órfãs)
+  const initTokenRef = useRef(0);
+  // Indica se já tentamos o fallback autoplay-muted (para não loopar)
+  const autoplayFallbackTriedRef = useRef(false);
 
   const clearLoadingTimeout = useCallback(() => {
     if (loadingTimeoutRef.current !== null) {
@@ -204,11 +208,13 @@ export function PromoFlixPlayer({
           src: src.substring(0, 50) + '...',
           currentTime: v.currentTime,
         });
-        
+
         loadingTimeoutRef.current = window.setTimeout(() => {
           const vv = videoRef.current;
+          // Não sobrescreve erro fatal já apresentado por hls.js ou onError nativo
           if (vv && vv.readyState < 1) {
-            setHlsError(
+            setHlsError((prev) =>
+              prev ??
               'O vídeo está demorando para responder. Pode haver um bloqueio de rede ou CORS.',
             );
             logTelemetry('LOADING_ERROR_FINAL', { readyState: vv.readyState });
@@ -219,7 +225,7 @@ export function PromoFlixPlayer({
         setIsReconnecting(false);
       }
     }, 10000);
-  }, [clearLoadingTimeout]);
+  }, [clearLoadingTimeout, logTelemetry, src]);
 
   // Setup HLS or native
   const initPlayer = useCallback(() => {
