@@ -55,6 +55,13 @@ export default defineConfig({
         functions: 60,
         branches: 50,
         statements: 60,
+        // Threshold específico para o módulo de comparação de fornecedores (exigência T14)
+        'src/hooks/products/useSupplierComparison.ts': {
+          lines: 90,
+          functions: 90,
+          branches: 85,
+          statements: 90,
+        },
       },
     },
   },
