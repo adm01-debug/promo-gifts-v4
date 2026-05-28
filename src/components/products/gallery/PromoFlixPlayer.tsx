@@ -184,6 +184,10 @@ export function PromoFlixPlayer({
   // Refs para controlar reconexões e timeout de loading sem causar re-render
   const reconnectAttemptsRef = useRef(0);
   const loadingTimeoutRef = useRef<number | null>(null);
+  // Token de cancelamento para imports assíncronos de hls.js (evita instâncias órfãs)
+  const initTokenRef = useRef(0);
+  // Indica se já tentamos o fallback autoplay-muted (para não loopar)
+  const autoplayFallbackTriedRef = useRef(false);
 
   const clearLoadingTimeout = useCallback(() => {
     if (loadingTimeoutRef.current !== null) {
@@ -204,11 +208,13 @@ export function PromoFlixPlayer({
           src: src.substring(0, 50) + '...',
           currentTime: v.currentTime,
         });
-        
+
         loadingTimeoutRef.current = window.setTimeout(() => {
           const vv = videoRef.current;
+          // Não sobrescreve erro fatal já apresentado por hls.js ou onError nativo
           if (vv && vv.readyState < 1) {
-            setHlsError(
+            setHlsError((prev) =>
+              prev ??
               'O vídeo está demorando para responder. Pode haver um bloqueio de rede ou CORS.',
             );
             logTelemetry('LOADING_ERROR_FINAL', { readyState: vv.readyState });
@@ -219,49 +225,88 @@ export function PromoFlixPlayer({
         setIsReconnecting(false);
       }
     }, 10000);
-  }, [clearLoadingTimeout]);
+  }, [clearLoadingTimeout, logTelemetry, src]);
 
   // Setup HLS or native
   const initPlayer = useCallback(() => {
     const video = videoRef.current;
     if (!video || !src) return;
 
+
+    // Invalida qualquer init anterior em andamento (Strict Mode / troca de src / Retry)
+    const myToken = ++initTokenRef.current;
+    autoplayFallbackTriedRef.current = false;
+
+    // Reset de estado para que o overlay de erro/loading anterior não fique preso
     setIsLoading(true);
     setHlsError(null);
     setIsReconnecting(false);
-    reconnectAttemptsRef.current = 0;
     setShowLoadingAction(false);
+    reconnectAttemptsRef.current = 0;
     logTelemetry('INIT_PLAYER', { src: src.substring(0, 50) + '...', isHls });
     armLoadingTimeout();
 
-    // Para garantir autoplay nos navegadores (Chrome/Safari bloqueiam autoplay com som),
-    // inicia mutado quando autoPlay é solicitado. O usuário pode desmutar manualmente.
+    // Limpa instância HLS anterior (não-destruída) antes de qualquer reattach
+    if (hlsRef.current) {
+      try {
+        hlsRef.current.destroy();
+      } catch {
+        /* noop */
+      }
+      hlsRef.current = null;
+    }
+    // Limpa src anterior do elemento <video> para evitar erros code 4 residuais
+    try {
+      video.removeAttribute('src');
+      video.load();
+    } catch {
+      /* noop */
+    }
+
     const shouldMuteForAutoplay = autoPlay && !isMuted;
     const effectiveMuted = isMuted || shouldMuteForAutoplay;
 
+    // Tentativa de play com fallback automático para mutado (políticas de autoplay)
+    const tryPlay = (v: HTMLVideoElement) => {
+      v.play().catch((err) => {
+        if (!autoplayFallbackTriedRef.current && !v.muted) {
+          autoplayFallbackTriedRef.current = true;
+          v.muted = true;
+          v.play().catch(() => setIsPlaying(false));
+          logTelemetry('AUTOPLAY_FALLBACK_MUTED', { error: String(err) });
+        } else {
+          setIsPlaying(false);
+        }
+      });
+    };
+
     const canPlayNativeHls = video.canPlayType('application/vnd.apple.mpegurl') !== '';
-    const isM3u8 = src.includes('.m3u8');
+    // Detecção robusta: extensão .m3u8 ou padrão de manifest (Cloudflare Stream sem extensão)
+    const isM3u8 =
+      /\.m3u8(\?|$)/i.test(src) ||
+      /\/manifest\/video\.m3u8/i.test(src) ||
+      /cloudflarestream\.com.*manifest/i.test(src);
     const useNative = !isHls || !isM3u8 || canPlayNativeHls;
 
     if (useNative) {
       video.src = src;
       video.volume = volume;
       video.muted = effectiveMuted;
-      // Força o navegador a iniciar o download dos metadados
       try {
         video.load();
       } catch {
         /* noop */
       }
       if (isPlaying || autoPlay) {
-        video.play().catch(() => setIsPlaying(false));
+        tryPlay(video);
       }
       return;
     }
 
     import('hls.js')
       .then(({ default: hlsConstructor }) => {
-
+        // Aborta se outro init aconteceu enquanto importávamos
+        if (myToken !== initTokenRef.current) return;
 
         const videoEl = videoRef.current;
         if (!videoEl) return;
@@ -276,11 +321,16 @@ export function PromoFlixPlayer({
           } catch {
             /* noop */
           }
+          if (isPlaying || autoPlay) tryPlay(videoEl);
           return;
         }
 
         if (hlsRef.current) {
-          hlsRef.current.destroy();
+          try {
+            hlsRef.current.destroy();
+          } catch {
+            /* noop */
+          }
         }
         const hlsInstance = new hlsConstructor({
           maxBufferLength: 30,
@@ -293,6 +343,7 @@ export function PromoFlixPlayer({
         hlsInstance.attachMedia(videoEl);
 
         hlsInstance.on(hlsConstructor.Events.MANIFEST_PARSED, (_, data) => {
+          if (myToken !== initTokenRef.current) return;
           const levels = data.levels.map((level, index) => ({
             id: index,
             label: level.height ? `${level.height}p` : `Qualidade ${index + 1}`,
@@ -316,39 +367,40 @@ export function PromoFlixPlayer({
           if (v) {
             v.volume = volume;
             v.muted = effectiveMuted;
-            if (isPlaying || autoPlay) {
-              v.play().catch(() => setIsPlaying(false));
-            }
+            if (isPlaying || autoPlay) tryPlay(v);
           }
-          // Manifest carregado — já podemos remover o overlay de loading.
-          // Esperar apenas por `loadedmetadata`/`canplay` pode travar se o autoplay for bloqueado.
           setIsLoading(false);
           setIsReconnecting(false);
           clearLoadingTimeout();
         });
 
-        // Primeiro fragmento carregado é a garantia definitiva de que está jogando
         hlsInstance.on(hlsConstructor.Events.FRAG_LOADED, () => {
+          if (myToken !== initTokenRef.current) return;
           setIsLoading(false);
           setIsReconnecting(false);
           clearLoadingTimeout();
         });
 
         hlsInstance.on(hlsConstructor.Events.ERROR, (_, data) => {
-          if (!data.fatal) {
-            // Apenas log — não-fatais se recuperam sozinhos
-            return;
-          }
+          if (myToken !== initTokenRef.current) return;
+          if (!data.fatal) return;
           switch (data.type) {
             case hlsConstructor.ErrorTypes.NETWORK_ERROR: {
               console.error('HLS Network Error:', data);
               reconnectAttemptsRef.current += 1;
               if (reconnectAttemptsRef.current > 3) {
-                setHlsError('Não foi possível carregar o vídeo. Verifique sua conexão e tente novamente.');
+                setHlsError(
+                  'Não foi possível carregar o vídeo. Verifique sua conexão e tente novamente.',
+                );
                 setIsLoading(false);
                 setIsReconnecting(false);
                 clearLoadingTimeout();
-                hlsInstance.destroy();
+                try {
+                  hlsInstance.destroy();
+                } catch {
+                  /* noop */
+                }
+                hlsRef.current = null;
               } else {
                 setIsReconnecting(true);
                 hlsInstance.startLoad();
@@ -363,6 +415,12 @@ export function PromoFlixPlayer({
                 setHlsError('Erro de mídia ao reproduzir o vídeo.');
                 setIsLoading(false);
                 clearLoadingTimeout();
+                try {
+                  hlsInstance.destroy();
+                } catch {
+                  /* noop */
+                }
+                hlsRef.current = null;
               }
               break;
             default:
@@ -371,7 +429,12 @@ export function PromoFlixPlayer({
               setIsLoading(false);
               setIsReconnecting(false);
               clearLoadingTimeout();
-              hlsInstance.destroy();
+              try {
+                hlsInstance.destroy();
+              } catch {
+                /* noop */
+              }
+              hlsRef.current = null;
               break;
           }
         });
@@ -383,10 +446,10 @@ export function PromoFlixPlayer({
         });
       })
       .catch((err) => {
+        if (myToken !== initTokenRef.current) return;
         console.error('HLS loading error:', err);
         const v = videoRef.current;
         if (v) {
-          // Fallback: tenta direto como nativo
           v.src = src;
           v.volume = volume;
           v.muted = effectiveMuted;
@@ -395,6 +458,7 @@ export function PromoFlixPlayer({
           } catch {
             /* noop */
           }
+          if (isPlaying || autoPlay) tryPlay(v);
         } else {
           setHlsError('Erro crítico no player.');
           setIsLoading(false);
@@ -406,10 +470,26 @@ export function PromoFlixPlayer({
   useEffect(() => {
     initPlayer();
     return () => {
+      // Invalida callbacks de imports HLS ainda pendentes
+      initTokenRef.current += 1;
       clearLoadingTimeout();
       if (hlsRef.current) {
-        hlsRef.current.destroy();
+        try {
+          hlsRef.current.destroy();
+        } catch {
+          /* noop */
+        }
         hlsRef.current = null;
+      }
+      // Limpa src do <video> para o próximo mount não disparar onError code 4 com src antigo
+      const v = videoRef.current;
+      if (v) {
+        try {
+          v.removeAttribute('src');
+          v.load();
+        } catch {
+          /* noop */
+        }
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -497,29 +577,43 @@ export function PromoFlixPlayer({
         code: error?.code,
         message: error?.message,
         usingHls: Boolean(hlsRef.current),
+        src: video.currentSrc?.substring(0, 80),
       });
-      // Quando estamos usando HLS.js, o <video> recebe erros (especialmente code 4 =
-      // SRC_NOT_SUPPORTED) sempre que o MediaSource é detached durante recuperações
-      // automáticas (network/media error → recoverMediaError, startLoad). Esses erros
-      // NÃO são fatais para o usuário — o hls.js já tem seu próprio handler (ERROR event)
-      // que decide se mostra mensagem definitiva. Ignorar aqui evita o falso positivo
-      // "Ops! Algo deu errado / CORS" que travava o player.
+      // Quando hls.js está ATIVO, o <video> recebe erros (code 4 = SRC_NOT_SUPPORTED)
+      // toda vez que o MediaSource é detached durante recuperações (network/media error,
+      // recoverMediaError, startLoad, level switch). NÃO são fatais — o próprio hls.js
+      // dispara seu evento ERROR e decide a mensagem definitiva.
       if (hlsRef.current) {
         return;
       }
-      // Sem HLS.js (reprodução nativa): erro real de fonte/decodificação.
-      if (error?.code === 4) {
-        setHlsError(
-          'Não foi possível reproduzir este vídeo. O formato pode não ser suportado pelo seu navegador ou o link está indisponível.',
-        );
-        setIsLoading(false);
-        setShowLoadingAction(false);
-        clearLoadingTimeout();
-      } else if (error?.code === 2) {
-        setHlsError('Falha de rede ao carregar o vídeo. Verifique sua conexão e tente novamente.');
-        setIsLoading(false);
-        clearLoadingTimeout();
+      // Ignora erro residual quando não há src definido (acontece após cleanup/re-init)
+      if (!video.currentSrc && !video.src) {
+        return;
       }
+      // Reprodução nativa: erro real de fonte/decodificação
+      switch (error?.code) {
+        case 1: // ABORTED — usuário ou script abortou, normalmente não fatal
+          return;
+        case 2: // NETWORK
+          setHlsError(
+            'Falha de rede ao carregar o vídeo. Verifique sua conexão e tente novamente.',
+          );
+          break;
+        case 3: // DECODE
+          setHlsError(
+            'Erro ao decodificar o vídeo. O arquivo pode estar corrompido ou em um codec não suportado.',
+          );
+          break;
+        case 4: // SRC_NOT_SUPPORTED
+        default:
+          setHlsError(
+            'Não foi possível reproduzir este vídeo. O formato pode não ser suportado pelo seu navegador ou o link está indisponível.',
+          );
+          break;
+      }
+      setIsLoading(false);
+      setShowLoadingAction(false);
+      clearLoadingTimeout();
     };
     const onRate = () => setPlaybackRate(video.playbackRate);
     const onVolume = () => {
@@ -802,6 +896,16 @@ export function PromoFlixPlayer({
 
   useEffect(() => bumpControls(), [bumpControls]);
 
+  // Cleanup do auto-hide ao desmontar
+  useEffect(() => {
+    return () => {
+      if (controlsTimeoutRef.current) {
+        window.clearTimeout(controlsTimeoutRef.current);
+        controlsTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
   const progressPct = duration > 0 ? (currentTime / duration) * 100 : 0;
   const bufferedPct = duration > 0 ? (buffered / duration) * 100 : 0;
 
@@ -838,6 +942,7 @@ export function PromoFlixPlayer({
         autoPlay={autoPlay}
         playsInline
         preload="auto"
+        crossOrigin="anonymous"
         onClick={togglePlay}
         onDoubleClick={toggleFullscreen}
       />
