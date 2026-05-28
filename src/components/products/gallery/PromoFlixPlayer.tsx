@@ -494,9 +494,29 @@ export function PromoFlixPlayer({
       logTelemetry('EVENT_VIDEO_ERROR', {
         code: error?.code,
         message: error?.message,
+        usingHls: Boolean(hlsRef.current),
       });
+      // Quando estamos usando HLS.js, o <video> recebe erros (especialmente code 4 =
+      // SRC_NOT_SUPPORTED) sempre que o MediaSource é detached durante recuperações
+      // automáticas (network/media error → recoverMediaError, startLoad). Esses erros
+      // NÃO são fatais para o usuário — o hls.js já tem seu próprio handler (ERROR event)
+      // que decide se mostra mensagem definitiva. Ignorar aqui evita o falso positivo
+      // "Ops! Algo deu errado / CORS" que travava o player.
+      if (hlsRef.current) {
+        return;
+      }
+      // Sem HLS.js (reprodução nativa): erro real de fonte/decodificação.
       if (error?.code === 4) {
-        setHlsError('Não foi possível acessar o vídeo devido a restrições de segurança (CORS) ou formato incompatível. Verifique as permissões do servidor ou tente um link diferente.');
+        setHlsError(
+          'Não foi possível reproduzir este vídeo. O formato pode não ser suportado pelo seu navegador ou o link está indisponível.',
+        );
+        setIsLoading(false);
+        setShowLoadingAction(false);
+        clearLoadingTimeout();
+      } else if (error?.code === 2) {
+        setHlsError('Falha de rede ao carregar o vídeo. Verifique sua conexão e tente novamente.');
+        setIsLoading(false);
+        clearLoadingTimeout();
       }
     };
     const onRate = () => setPlaybackRate(video.playbackRate);
