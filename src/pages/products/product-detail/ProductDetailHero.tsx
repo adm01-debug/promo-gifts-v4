@@ -526,6 +526,7 @@ export function ProductDetailHero({
                     variantName: selectedVariation.color?.name,
                     colorHex: selectedVariation.color?.hex,
                     thumbnailUrl: selectedVariation.images?.[0] || selectedVariation.image,
+                    variantImages: selectedVariation.images,
                   }
                 : null
             }
