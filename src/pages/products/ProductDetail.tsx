@@ -337,7 +337,7 @@ export default function ProductDetail() {
           </Suspense>
         </div>
 
-        {aiCandidates.length > 0 && (
+        {product.sku === '09138' ? (
           <div className="border-t border-border/60 pt-6 xl:pt-8">
             <Suspense
               fallback={
@@ -346,15 +346,29 @@ export default function ProductDetail() {
                 </div>
               }
             >
-              <SmartRecommendations
-                currentProductId={product.id}
-                candidateProducts={aiCandidates}
-                maxResults={6}
-                title="Recomendações inteligentes para este produto"
-                onProductClick={(pid) => navigate(`/produto/${pid}`)}
-              />
+              <SmartRecommendationsMock />
             </Suspense>
           </div>
+        ) : (
+          aiCandidates.length > 0 && (
+            <div className="border-t border-border/60 pt-6 xl:pt-8">
+              <Suspense
+                fallback={
+                  <div className="flex h-48 items-center justify-center">
+                    <Skeleton className="h-full w-full" />
+                  </div>
+                }
+              >
+                <SmartRecommendations
+                  currentProductId={product.id}
+                  candidateProducts={aiCandidates}
+                  maxResults={6}
+                  title="Recomendações inteligentes para este produto"
+                  onProductClick={(pid) => navigate(`/produto/${pid}`)}
+                />
+              </Suspense>
+            </div>
+          )
         )}
 
         <div className="grid gap-4 border-t border-border/60 pt-6 md:grid-cols-2 xl:gap-6 xl:pt-8">
