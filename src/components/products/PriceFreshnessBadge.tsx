@@ -119,7 +119,7 @@ function FreshnessTooltipBody({ freshness, priceUpdatedAt }: FreshnessTooltipPro
   // Padrão único pt-BR: "em DD/MM/AAAA". A hora local e a forma por extenso
   // ficam como detalhamento auxiliar, sem repetir a data curta.
   const shortDate = isValidDate ? formatPriceDateShort(dateValue) : null;
-  const longDate = isValidDate ? formatPriceDateLong(dateValue) : null;
+  const _longDate = isValidDate ? formatPriceDateLong(dateValue) : null;
   const _exactDateTime = isValidDate ? formatExactDateTime(dateValue) : null;
   const statusLabel = STATUS_LABELS[freshness.status];
   const rule = buildClassificationRule(freshness.thresholdDays);
@@ -128,12 +128,15 @@ function FreshnessTooltipBody({ freshness, priceUpdatedAt }: FreshnessTooltipPro
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center gap-1.5">
         <span className="font-semibold">{statusLabel}</span>
-        {freshness.status !== 'unknown' && (() => {
-          const stripped = freshness.label.match(/\(([^)]+)\)/)?.[1] || freshness.label.replace(/^(Atualizado|Próximo do limite|Possivelmente defasado)\s+/i, '').trim();
-          return (
-            <span className="text-muted-foreground">({stripped})</span>
-          );
-        })()}
+        {freshness.status !== 'unknown' &&
+          (() => {
+            const stripped =
+              freshness.label.match(/\(([^)]+)\)/)?.[1] ||
+              freshness.label
+                .replace(/^(Atualizado|Próximo do limite|Possivelmente defasado)\s+/i, '')
+                .trim();
+            return <span className="text-muted-foreground">({stripped})</span>;
+          })()}
       </div>
       {shortDate && (
         <div className="leading-snug">
