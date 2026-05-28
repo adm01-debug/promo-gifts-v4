@@ -163,5 +163,22 @@ describe('useSupplierComparison', () => {
     );
     expect(resDefault.current.result?.alternatives).toBeDefined();
   });
+
+  describe('getSupplierProductsInCategory', () => {
+    it('should group products by supplier correctly', () => {
+      const { getSupplierProductsInCategory } = require('@/hooks/products/useSupplierComparison');
+      const products = [
+        { ...mockBaseProduct, supplier: { id: 's1' }, category: { id: 'c1' } },
+        { ...mockBaseProduct, id: 'p2', supplier: { id: 's1' }, category: { id: 'c1' } },
+        { ...mockBaseProduct, id: 'p3', supplier: { id: 's2' }, category: { id: 'c1' } },
+        { ...mockBaseProduct, id: 'p4', supplier: { id: 's1' }, category: { id: 'c2' } }, // different category
+      ];
+      
+      const map = getSupplierProductsInCategory(products, 'c1');
+      expect(map.size).toBe(2);
+      expect(map.get('s1')).toHaveLength(2);
+      expect(map.get('s2')).toHaveLength(1);
+    });
+  });
 });
 
