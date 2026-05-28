@@ -33,15 +33,17 @@ function SpecItem({
 }: SpecItemProps) {
   if (compact) {
     return (
-      <div className="flex items-center gap-2.5 rounded-xl border border-border/40 bg-secondary/40 px-3 py-3">
+      <div className="flex min-w-0 items-center gap-2 rounded-xl border border-border/40 bg-secondary/40 px-2.5 py-2.5">
         <div
-          className={`h-8 w-8 rounded-lg ${iconBgClass} flex shrink-0 items-center justify-center [&_svg]:h-4 [&_svg]:w-4`}
+          className={`h-7 w-7 rounded-lg ${iconBgClass} flex shrink-0 items-center justify-center [&_svg]:h-3.5 [&_svg]:w-3.5`}
         >
           <span className={iconColorClass}>{icon}</span>
         </div>
-        <div className="min-w-0">
-          <p className="mb-1 text-[10px] leading-none text-muted-foreground/70">{label}</p>
-          <p className="text-sm font-bold leading-none text-foreground">
+        <div className="min-w-0 flex-1">
+          <p className="mb-0.5 truncate text-[10px] leading-none text-muted-foreground/70">
+            {label}
+          </p>
+          <p className="truncate text-sm font-bold leading-none text-foreground">
             {value} <span className="text-[10px] font-normal text-muted-foreground">{unit}</span>
           </p>
         </div>
