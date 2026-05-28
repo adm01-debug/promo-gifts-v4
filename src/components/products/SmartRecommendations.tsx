@@ -15,6 +15,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { getCdnUrl } from '@/utils/image-utils';
 import { QuickAddToQuote } from './QuickAddToQuote';
 import {
   useAIRecommendations,
@@ -93,6 +94,21 @@ function MiniCard({ product, score, reason, isBestChoice, badgeLabel, onClick }:
           )} 
         />
       )}
+
+      <div className="relative aspect-video w-full overflow-hidden bg-muted/30">
+        {product.imageUrl ? (
+          <img
+            src={getCdnUrl(product.imageUrl, 'card')}
+            alt={product.name}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover/card:scale-110"
+            loading="lazy"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-muted/10">
+            <Sparkles className="h-6 w-6 text-muted-foreground/20" />
+          </div>
+        )}
+      </div>
 
       <CardContent className="relative space-y-2.5 p-3">
         {/* Badges Row */}
