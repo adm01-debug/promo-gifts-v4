@@ -226,11 +226,15 @@ const STOPWORDS_PT = new Set([
   'ml', 'cm', 'mm', 'kg', 'g',
 ]);
 
-function stripAccents(s: string): string {
+/* -------------------------------------------------------------------------- */
+/*  Exported for testing purposes only                                        */
+/* -------------------------------------------------------------------------- */
+
+export function stripAccents(s: string): string {
   return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
-function tokenize(input: string | null | undefined): Set<string> {
+export function tokenize(input: string | null | undefined): Set<string> {
   if (!input) return new Set();
   return new Set(
     stripAccents(input)
@@ -246,37 +250,39 @@ function tokenize(input: string | null | undefined): Set<string> {
   );
 }
 
-function jaccard(a: Set<string> | string[], b: Set<string> | string[]): number {
+export function jaccard(a: Set<string> | string[], b: Set<string> | string[]): number {
   const setA = a instanceof Set ? a : new Set(a);
   const setB = b instanceof Set ? b : new Set(b);
   if (setA.size === 0 || setB.size === 0) return 0;
   let inter = 0;
-  setA.forEach((v) => { if (setB.has(v)) inter += 1; });
+  setA.forEach((v) => {
+    if (setB.has(v)) inter += 1;
+  });
   return inter / (setA.size + setB.size - inter);
 }
 
-function nameSimilarity(a: Set<string>, b: Set<string>): number {
+export function nameSimilarity(a: Set<string>, b: Set<string>): number {
   return jaccard(a, b);
 }
 
-function intersect(a: string[], b: string[]): string[] {
+export function intersect(a: string[], b: string[]): string[] {
   const setB = new Set(b);
   return a.filter((v) => setB.has(v));
 }
 
-function normalizeColorNames(colors: Product['colors']): string[] {
+export function normalizeColorNames(colors: Product['colors']): string[] {
   if (!Array.isArray(colors)) return [];
   return colors
     .map((c) => (c?.name ? stripAccents(c.name).toLowerCase().trim() : ''))
     .filter(Boolean);
 }
 
-function normalizeMaterials(materials: Product['materials']): string[] {
+export function normalizeMaterials(materials: Product['materials']): string[] {
   if (!Array.isArray(materials)) return [];
   return materials.map((m) => stripAccents(String(m)).toLowerCase().trim()).filter(Boolean);
 }
 
-interface ScoreInput {
+export interface ScoreInput {
   priceDiffPercent: number;
   stock: number;
   highestStock: number;
@@ -292,7 +298,7 @@ interface ScoreInput {
  * Pesos: preço 40 · estoque 25 · cores em comum 15 · lead time 10 · verificado 10.
  * Mais barato e maior estoque = melhor. Lead time menor = melhor.
  */
-function computeScore(input: ScoreInput): number {
+export function computeScore(input: ScoreInput): number {
   // Preço: -50% diff = 1.0 ; +50% diff = 0.0
   const priceComponent = clamp01(0.5 - input.priceDiffPercent / 100);
   // Estoque relativo ao maior estoque visto
