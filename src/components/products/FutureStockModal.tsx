@@ -214,7 +214,7 @@ export function FutureStockModal({
                   <div className="flex items-center gap-2">
                     <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
                     <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as SortOrder)}>
-                      <SelectTrigger className="h-9 w-[160px] text-sm">
+                      <SelectTrigger className="h-9 w-[180px] text-sm [&>span]:whitespace-nowrap [&>span]:truncate">
                         <SelectValue placeholder="Ordenar por" />
                       </SelectTrigger>
                       <SelectContent>
