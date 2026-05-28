@@ -94,10 +94,18 @@ export function AppRoutes() {
     <RouteSuspense>
       <Routes>
         {publicRoutes}
+        <Route path="/produto/:id" element={<ProductDetail />} />
 
         <Route element={<ProtectedRoute />}>
           <Route element={<ProtectedAppLayout />}>
-            {productRoutes}
+            <Route
+              path="/produto/:id"
+              element={
+                <ValidProductIdRoute>
+                  <ProductDetail />
+                </ValidProductIdRoute>
+              }
+            />
             {quoteRoutes}
             {adminRoutes}
             {toolsRoutes}
