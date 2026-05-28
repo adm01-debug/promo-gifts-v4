@@ -349,6 +349,10 @@ jobs:
           - name: supplier-comparison
             command: npm run test:supplier-comparison
             flaky_retry: "false"
+          - name: promoflix-player
+            command: npx vitest run src/components/products/gallery/PromoFlixPlayer.test.tsx --reporter=verbose
+            flaky_retry: "false"
+
 
     steps:
       - uses: actions/checkout@v5

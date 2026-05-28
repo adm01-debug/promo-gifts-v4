@@ -261,6 +261,8 @@ export function PromoFlixPlayer({
 
     import('hls.js')
       .then(({ default: hlsConstructor }) => {
+
+
         const videoEl = videoRef.current;
         if (!videoEl) return;
 
