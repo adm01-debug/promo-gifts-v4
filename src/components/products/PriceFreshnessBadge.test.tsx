@@ -34,12 +34,20 @@ describe('PriceFreshnessBadge Component', () => {
   });
 
   it('renders badge in compact variant for stale updates', () => {
-    // 2026-05-03 - 4 months ago (~120 days)
+    // 2026-05-03 - 120 days ago
     const monthsAgo = new Date('2026-01-03T12:00:00Z').toISOString();
     renderWithProvider(<PriceFreshnessBadge priceUpdatedAt={monthsAgo} variant="compact" />);
 
-    // 120 days / 30 = 4 months (há 4m)
+    // compact uses formatCompactRelative which is different
     expect(screen.getByText(/há 4m/i)).toBeInTheDocument();
+  });
+
+  it("renders 'Próximo do limite (há 45 dias)' for aging updates in inline variant", () => {
+    // 2026-05-03 - 45 days ago
+    const fortyFiveDaysAgo = new Date('2026-03-19T12:00:00Z').toISOString();
+    renderWithProvider(<PriceFreshnessBadge priceUpdatedAt={fortyFiveDaysAgo} variant="inline" />);
+
+    expect(screen.getByText(/Próximo do limite \(há 45 dias\)/i)).toBeInTheDocument();
   });
 
   it('renders PDP variant with warning box for stale updates', () => {
