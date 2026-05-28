@@ -13,11 +13,6 @@ import { publicRoutes } from './public-routes';
 import { quoteRoutes } from './quote-routes';
 import { toolsRoutes } from './tools-routes';
 
-
-
-
-
-
 // NProgress configuration
 NProgress.configure({ showSpinner: false, speed: 400, minimum: 0.1 });
 
@@ -55,11 +50,7 @@ function RouteSuspense({ children }: { children: ReactNode }) {
 
   return (
     <Suspense
-      fallback={
-        <div onAnimationStart={() => NProgress.start()}>
-          {getFallback(pathname)}
-        </div>
-      }
+      fallback={<div onAnimationStart={() => NProgress.start()}>{getFallback(pathname)}</div>}
     >
       <RouteSuspenseDone>{children}</RouteSuspenseDone>
     </Suspense>

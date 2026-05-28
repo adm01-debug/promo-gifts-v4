@@ -222,7 +222,10 @@ export function ProductList({
   type SkeletonEntry = { id: string; isSkeleton: true };
   const displayProducts: Array<Product | SkeletonEntry> =
     isLoading && products.length === 0
-      ? Array.from({ length: 8 }).map((_, i) => ({ id: `skeleton-${i}`, isSkeleton: true as const }))
+      ? Array.from({ length: 8 }).map((_, i) => ({
+          id: `skeleton-${i}`,
+          isSkeleton: true as const,
+        }))
       : products;
 
   // Get first selected product for collection modal
