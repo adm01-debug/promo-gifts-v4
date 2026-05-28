@@ -1,4 +1,5 @@
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
+import type { Json } from '@/integrations/supabase/types';
 
 export type TelemetryEventType = 'error' | 'performance' | 'ux_action' | 'api_fail';
 
@@ -30,10 +31,11 @@ const SAMPLE_RATE: Record<TelemetryEventType, number> = {
   ux_action: 0.2, // 20% — ações de UX são frequentes mas amostradas
 };
 
-interface BufferedEvent extends TelemetryPayload {
+interface BufferedEvent extends Omit<TelemetryPayload, 'metadata'> {
   url: string;
   user_agent: string;
   session_id: string;
+  metadata?: Json;
 }
 
 class TelemetryService {
@@ -112,7 +114,7 @@ class TelemetryService {
         event_type: payload.event_type,
         name: payload.name,
         duration_ms: payload.duration_ms,
-        metadata: payload.metadata || {},
+        metadata: (payload.metadata || {}) as Json,
         url: typeof window !== 'undefined' ? window.location.href : '',
         user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
         session_id: this.sessionId,
