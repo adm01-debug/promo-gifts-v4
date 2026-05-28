@@ -79,9 +79,10 @@ describe('FutureStockModal (UI Tests)', () => {
     fireEvent.click(blueToggle);
 
     // Verifica se as datas da timeline do Azul estão na ordem correta
-    expect(within(blueGroup as HTMLElement).getByText('01/06/2026')).toBeInTheDocument();
-    expect(within(blueGroup as HTMLElement).getByText('31/12/2026')).toBeInTheDocument();
-    expect(within(blueGroup as HTMLElement).getByText('15/01/2027')).toBeInTheDocument();
+    // Usamos exact: false para permitir que o matcher ignore elementos irmãos (como o SVG)
+    expect(within(blueGroup as HTMLElement).getByText('01/06/2026', { exact: false })).toBeInTheDocument();
+    expect(within(blueGroup as HTMLElement).getByText('31/12/2026', { exact: false })).toBeInTheDocument();
+    expect(within(blueGroup as HTMLElement).getByText('15/01/2027', { exact: false })).toBeInTheDocument();
   });
 
   it('deve ignorar pares nulos ou com quantidade zero na visualização', () => {
@@ -104,9 +105,9 @@ describe('FutureStockModal (UI Tests)', () => {
     fireEvent.click(redToggle);
 
     // Deve ter a data válida
-    expect(within(redGroup as HTMLElement).getByText('10/07/2026')).toBeInTheDocument();
+    expect(within(redGroup as HTMLElement).getByText('10/07/2026', { exact: false })).toBeInTheDocument();
     // Não deve ter as outras datas/quantidades que foram ignoradas (ex: 20/08/2026 com qty 0)
-    expect(within(redGroup as HTMLElement).queryByText('20/08/2026')).not.toBeInTheDocument();
+    expect(within(redGroup as HTMLElement).queryByText('20/08/2026', { exact: false })).not.toBeInTheDocument();
   });
 
   it('deve alternar o estado de colapso/expandir ao clicar no header da cor', () => {
@@ -144,8 +145,9 @@ describe('FutureStockModal (UI Tests)', () => {
       />
     );
 
-    // Clica no botão de filtro Azul no grid usando um matcher flexível para o título
-    const blueFilterBtn = screen.getByTitle(/Azul/i);
+    // Clica no botão de filtro Azul no grid usando um matcher parcial para o título
+    const blueFilterBtn = screen.queryAllByTitle(/Azul/i)[0];
+    if (!blueFilterBtn) throw new Error('Botão de filtro não encontrado');
     fireEvent.click(blueFilterBtn);
 
     // A variante Azul deve estar expandida
@@ -156,6 +158,7 @@ describe('FutureStockModal (UI Tests)', () => {
     // Deve colapsar novamente
     expect(screen.queryByText(/Variante SKU: SKU-BLUE-1/i)).not.toBeInTheDocument();
   });
+
 
 
 
