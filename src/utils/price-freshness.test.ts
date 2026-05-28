@@ -52,7 +52,7 @@ describe('Price Freshness Utility', () => {
       const today = new Date('2026-05-03T09:00:00Z').toISOString();
       const result = getPriceFreshness(today, 60);
       expect(result.status).toBe('fresh');
-      expect(result.label).toBe('Atualizado hoje');
+      expect(result.label).toBe('Atualizado (há 0 dias)');
       expect(result.shouldWarn).toBe(false);
     });
 

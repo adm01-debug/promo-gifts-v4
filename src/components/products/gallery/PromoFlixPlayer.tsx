@@ -46,6 +46,7 @@ import {
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { logger } from '@/lib/logger';
 
 const PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
 
@@ -171,9 +172,8 @@ export function PromoFlixPlayer({
     [],
   );
 
-  const logTelemetry = useCallback((event: string, details?: any) => {
-    const timestamp = new Date().toISOString();
-    console.log(`[PromoFlix Telemetry] [${timestamp}] ${event}`, details || '');
+  const logTelemetry = useCallback((event: string, details?: Record<string, unknown>) => {
+    logger.debug(`[PromoFlix Telemetry] ${event}`, details);
   }, []);
 
   const flash = useCallback((label: string) => {
@@ -213,9 +213,10 @@ export function PromoFlixPlayer({
           const vv = videoRef.current;
           // Não sobrescreve erro fatal já apresentado por hls.js ou onError nativo
           if (vv && vv.readyState < 1) {
-            setHlsError((prev) =>
-              prev ??
-              'O vídeo está demorando para responder. Pode haver um bloqueio de rede ou CORS.',
+            setHlsError(
+              (prev) =>
+                prev ??
+                'O vídeo está demorando para responder. Pode haver um bloqueio de rede ou CORS.',
             );
             logTelemetry('LOADING_ERROR_FINAL', { readyState: vv.readyState });
           }
@@ -231,7 +232,6 @@ export function PromoFlixPlayer({
   const initPlayer = useCallback(() => {
     const video = videoRef.current;
     if (!video || !src) return;
-
 
     // Invalida qualquer init anterior em andamento (Strict Mode / troca de src / Retry)
     const myToken = ++initTokenRef.current;
@@ -465,10 +465,23 @@ export function PromoFlixPlayer({
           clearLoadingTimeout();
         }
       });
-  }, [src, isHls, volume, isMuted, isPlaying, autoPlay, armLoadingTimeout, clearLoadingTimeout]);
+  }, [
+    src,
+    isHls,
+    volume,
+    isMuted,
+    isPlaying,
+    autoPlay,
+    armLoadingTimeout,
+    clearLoadingTimeout,
+    logTelemetry,
+  ]);
 
   useEffect(() => {
     initPlayer();
+    // Captura o nó atual para uso seguro no cleanup (evita ler videoRef.current
+    // tardiamente, quando o ref já pode ter mudado).
+    const v = videoRef.current;
     return () => {
       // Invalida callbacks de imports HLS ainda pendentes
       initTokenRef.current += 1;
@@ -482,7 +495,6 @@ export function PromoFlixPlayer({
         hlsRef.current = null;
       }
       // Limpa src do <video> para o próximo mount não disparar onError code 4 com src antigo
-      const v = videoRef.current;
       if (v) {
         try {
           v.removeAttribute('src');
@@ -652,7 +664,7 @@ export function PromoFlixPlayer({
       video.removeEventListener('ratechange', onRate);
       video.removeEventListener('volumechange', onVolume);
     };
-  }, []);
+  }, [clearLoadingTimeout, logTelemetry]);
 
   // Fullscreen tracking
   useEffect(() => {
@@ -972,7 +984,7 @@ export function PromoFlixPlayer({
                   e.stopPropagation();
                   initPlayer();
                 }}
-                className="mt-2 flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-white/20 transition-colors"
+                className="mt-2 flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white transition-colors hover:bg-white/20"
               >
                 <RotateCcw className="h-3 w-3" />
                 Carregar Manualmente

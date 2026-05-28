@@ -139,7 +139,7 @@ export function getPriceFreshness(
     status,
     daysSinceUpdate: days,
     thresholdDays: threshold,
-    label: `Atualizado (${relative})`,
+    label: baseLabel,
     tooltip: `${baseTooltip} Preço dentro do prazo de validade.`,
     shouldWarn: false,
     isStale: false,
