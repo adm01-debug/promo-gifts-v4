@@ -78,12 +78,11 @@ describe('FutureStockModal (UI Tests)', () => {
     const blueToggle = within(blueGroup as HTMLElement).getByRole('button');
     fireEvent.click(blueToggle);
 
-    // Verifica se as datas da timeline do Azul estão presentes
-    // Usamos um matcher mais tolerante para encontrar o texto dentro de elementos com múltiplos filhos
+    // Verifica se as datas da timeline do Azul estão presentes no formato por extenso (usado no UI)
     const contentAzul = (blueGroup as HTMLElement).textContent;
-    expect(contentAzul).toContain('01/06/2026');
-    expect(contentAzul).toContain('31/12/2026');
-    expect(contentAzul).toContain('15/01/2027');
+    expect(contentAzul).toContain('01 de jun');
+    expect(contentAzul).toContain('31 de dez');
+    expect(contentAzul).toContain('15 de jan');
   });
 
   it('deve ignorar pares nulos ou com quantidade zero na visualização', () => {
@@ -105,11 +104,12 @@ describe('FutureStockModal (UI Tests)', () => {
     const redToggle = within(redGroup as HTMLElement).getByRole('button');
     fireEvent.click(redToggle);
 
-    // Deve ter a data válida
-    expect((redGroup as HTMLElement).textContent).toContain('10/07/2026');
+    // Deve ter a data válida por extenso
+    expect((redGroup as HTMLElement).textContent).toContain('10 de jul');
     // Não deve ter as outras datas que foram ignoradas
-    expect((redGroup as HTMLElement).textContent).not.toContain('20/08/2026');
+    expect((redGroup as HTMLElement).textContent).not.toContain('20 de ago');
   });
+
 
   it('deve alternar o estado de colapso/expandir ao clicar no header da cor', () => {
     render(
