@@ -90,6 +90,7 @@ export default function ProductDetail() {
       similarItems.slice(0, 12).map((it) => ({
         id: it.id,
         name: it.name,
+        sku: it.sku,
         category: it.category_name || product?.category?.name || 'Brindes',
         priceRange: formatCurrency(it.price),
         imageUrl: it.og_image_url || it.images?.[0],
