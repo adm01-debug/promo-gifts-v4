@@ -104,7 +104,7 @@
     "types:generate:supabase": "supabase gen types typescript --project-id doufsxqlfjyuvxuezpln --schema public > src/integrations/supabase/types.ts",
     "coverage:ci:collect": "node scripts/collect-coverage-ci.mjs",
     "coverage:ci:report": "node scripts/collect-coverage-ci.mjs --skip-run",
-    "test:supplier-comparison": "TZ=America/Sao_Paulo vitest run src/hooks/products/useSupplierComparison.ts tests/hooks/useSupplierComparison.property.test.ts --coverage --coverage.include=src/hooks/products/useSupplierComparison.ts --coverage.thresholds.lines=90 --coverage.thresholds.functions=90 --coverage.thresholds.branches=85 --coverage.thresholds.statements=90"
+    "test:supplier-comparison": "TZ=America/Sao_Paulo vitest run src/hooks/products/useSupplierComparison.ts tests/hooks/useSupplierComparison.property.test.ts tests/hooks/useSupplierComparison.test.ts --coverage --coverage.include=src/hooks/products/useSupplierComparison.ts --coverage.thresholds.lines=90 --coverage.thresholds.functions=90 --coverage.thresholds.branches=85 --coverage.thresholds.statements=90"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [
