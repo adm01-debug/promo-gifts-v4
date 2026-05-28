@@ -101,7 +101,7 @@ function formatExactDateTime(value: string | Date): string | null {
 
 function buildClassificationRule(thresholdDays: number): string {
   const half = Math.floor(thresholdDays / 2);
-  return `Regra: até ${half} dias = atualizado · ${half + 1}–${thresholdDays} dias = próximo do limite · acima de ${thresholdDays} dias = possivelmente defasado.`;
+  return `Regra de Preços: Até ${half} dias = Atualizado / ${half + 1}–${thresholdDays} dias = Próximo do limite / Acima de ${thresholdDays} dias = Possivelmente defasado`;
 }
 
 interface FreshnessTooltipProps {
@@ -130,10 +130,11 @@ function FreshnessTooltipBody({ freshness, priceUpdatedAt }: FreshnessTooltipPro
         <span className="font-semibold">{statusLabel}</span>
         {freshness.status !== 'unknown' && (
           <span className="text-muted-foreground">
-            ·{' '}
+            {' '}
             {freshness.label
-              .replace(/^Atualizado\s+/i, '')
-              .replace(/^Preço pode estar defasado\s*/i, '')}
+              .replace(/^Atualizado\s+/i, '(')
+              .replace(/^Preço pode estar defasado\s*/i, '(')
+              .replace(/\)?$/, ')')}
           </span>
         )}
       </div>
@@ -141,7 +142,6 @@ function FreshnessTooltipBody({ freshness, priceUpdatedAt }: FreshnessTooltipPro
         <div className="leading-snug">
           <span className="text-muted-foreground">Atualizado</span>{' '}
           <span className="font-medium tabular-nums">em {shortDate}</span>
-          {longDate && <span className="text-muted-foreground"> ({longDate})</span>}
         </div>
       )}
       {!shortDate && (
