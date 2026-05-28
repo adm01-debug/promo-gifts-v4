@@ -86,7 +86,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
     });
     Object.defineProperty(HTMLMediaElement.prototype, 'canPlayType', {
       configurable: true,
-      value: vi.fn().mockReturnValue('maybe'),
+      value: vi.fn().mockReturnValue(''), // Mock NOT supported to force HLS.js
     });
   });
 
