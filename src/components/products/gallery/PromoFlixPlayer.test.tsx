@@ -1,6 +1,5 @@
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, fireEvent, act, waitFor, screen } from '@testing-library/react';
+import { render, fireEvent, act, waitFor } from '@testing-library/react';
 import { PromoFlixPlayer } from './PromoFlixPlayer';
 
 // Mock hls.js for dynamic import
@@ -37,7 +36,24 @@ vi.mock('hls.js', () => {
 vi.mock('lucide-react', () => ({
   Play: () => <div data-testid="play-icon" />,
   Pause: () => <div data-testid="pause-icon" />,
-...
+  Volume2: () => <div data-testid="volume-icon" />,
+  VolumeX: () => <div data-testid="mute-icon" />,
+  Maximize: () => <div data-testid="maximize-icon" />,
+  Minimize: () => <div data-testid="minimize-icon" />,
+  Settings: () => <div data-testid="settings-icon" />,
+  RotateCcw: () => <div data-testid="rotate-ccw-icon" />,
+  RotateCw: () => <div data-testid="rotate-cw-icon" />,
+  Camera: () => <div data-testid="camera-icon" />,
+  Zap: () => <div data-testid="zap-icon" />,
+  ZapOff: () => <div data-testid="zap-off-icon" />,
+  ChevronLeft: () => <div data-testid="chevron-left-icon" />,
+  ChevronRight: () => <div data-testid="chevron-right-icon" />,
+  Search: () => <div data-testid="search-icon" />,
+  Target: () => <div data-testid="target-icon" />,
+  Info: () => <div data-testid="info-icon" />,
+  X: () => <div data-testid="x-icon" />,
+  PictureInPicture2: () => <div data-testid="pip-icon" />,
+  Gauge: () => <div data-testid="gauge-icon" />,
   MessageCircle: () => <div data-testid="whatsapp-icon" />,
 }));
 
@@ -51,7 +67,6 @@ vi.mock('sonner', () => ({
 }));
 
 describe('PromoFlixPlayer Automated Tests', () => {
-
   beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
@@ -189,6 +204,93 @@ describe('PromoFlixPlayer Automated Tests', () => {
     
     await waitFor(() => {
       expect(queryByText(/Carregando/i)).toBeNull();
+    });
+  });
+
+  describe('HLS.js specific scenarios', () => {
+    it('should handle HLS.js fatal network errors with recovery attempts', async () => {
+      const { findByText } = render(<PromoFlixPlayer src="test.m3u8" isHls={true} />);
+      
+      // Get the mock Hls instance
+      const Hls = (await import('hls.js')).default;
+      const hlsInstance = vi.mocked(Hls).mock.results[0].value;
+      const errorHandler = hlsInstance.on.mock.calls.find((call: any) => call[0] === 'hlsError')[1];
+
+      // Simulate 1st fatal network error (should trigger startLoad)
+      await act(async () => {
+        errorHandler('hlsError', {
+          fatal: true,
+          type: 'networkError',
+          details: 'manifestLoadError'
+        });
+      });
+
+      expect(hlsInstance.startLoad).toHaveBeenCalledTimes(1);
+      
+      // Simulate 4 more fatal network errors (total 5, > 3 threshold)
+      for (let i = 0; i < 4; i++) {
+        await act(async () => {
+          errorHandler('hlsError', {
+            fatal: true,
+            type: 'networkError',
+            details: 'manifestLoadError'
+          });
+        });
+      }
+
+      // Should show the final error message
+      expect(await findByText(/Não foi possível carregar o vídeo. Verifique sua conexão/i)).toBeDefined();
+    });
+
+    it('should handle HLS.js fatal media errors with recovery', async () => {
+      render(<PromoFlixPlayer src="test.m3u8" isHls={true} />);
+      
+      const Hls = (await import('hls.js')).default;
+      const hlsInstance = vi.mocked(Hls).mock.results[0].value;
+      const errorHandler = hlsInstance.on.mock.calls.find((call: any) => call[0] === 'hlsError')[1];
+
+      // Simulate fatal media error
+      await act(async () => {
+        errorHandler('hlsError', {
+          fatal: true,
+          type: 'mediaError',
+          details: 'bufferStalledError'
+        });
+      });
+
+      expect(hlsInstance.recoverMediaError).toHaveBeenCalledTimes(1);
+    });
+
+    it('should hide loading overlay when HLS.js MANIFEST_PARSED event fires', async () => {
+      const { queryByText } = render(<PromoFlixPlayer src="test.m3u8" isHls={true} />);
+      
+      const Hls = (await import('hls.js')).default;
+      const hlsInstance = vi.mocked(Hls).mock.results[0].value;
+      const manifestHandler = hlsInstance.on.mock.calls.find((call: any) => call[0] === 'hlsManifestParsed')[1];
+
+      await act(async () => {
+        manifestHandler('hlsManifestParsed', { levels: [] });
+      });
+
+      await waitFor(() => {
+        expect(queryByText(/Carregando/i)).toBeNull();
+      });
+    });
+
+    it('should hide loading overlay when HLS.js FRAG_LOADED event fires', async () => {
+      const { queryByText } = render(<PromoFlixPlayer src="test.m3u8" isHls={true} />);
+      
+      const Hls = (await import('hls.js')).default;
+      const hlsInstance = vi.mocked(Hls).mock.results[0].value;
+      const fragLoadedHandler = hlsInstance.on.mock.calls.find((call: any) => call[0] === 'hlsFragLoaded')[1];
+
+      await act(async () => {
+        fragLoadedHandler('hlsFragLoaded', {});
+      });
+
+      await waitFor(() => {
+        expect(queryByText(/Carregando/i)).toBeNull();
+      });
     });
   });
 });
