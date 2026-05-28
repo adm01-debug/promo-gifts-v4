@@ -32,6 +32,7 @@ export interface ProductForRecommendation {
   category: string;
   description?: string;
   priceRange?: string;
+  imageUrl?: string;
   tags?: string[];
 }
 
