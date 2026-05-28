@@ -78,4 +78,58 @@ describe('PromoFlixPlayer Persistence and Logic', () => {
     expect(rates).toContain(0.5);
     expect(rates).toContain(2);
   });
+
+  it('should show retry button after timeout if video is stuck', async () => {
+    vi.useFakeTimers();
+    const { getByText, queryByText } = render(<PromoFlixPlayer src="stuck.mp4" />);
+    
+    // Initial state: loading
+    expect(getByText(/Carregando/i)).toBeDefined();
+    expect(queryByText(/Carregar Manualmente/i)).toBeNull();
+    
+    // Advance 10 seconds
+    vi.advanceTimersByTime(11000);
+    
+    // Should show manual load button
+    expect(getByText(/Carregar Manualmente/i)).toBeDefined();
+    
+    vi.useRealTimers();
+  });
+
+  it('should show CORS error message when video fails with code 4', () => {
+    const { getByText } = render(<PromoFlixPlayer src="cors-error.mp4" />);
+    
+    const video = document.querySelector('video');
+    if (video) {
+      // Simulate CORS error
+      Object.defineProperty(video, 'error', {
+        value: { code: 4, message: 'CORS policy' },
+        configurable: true
+      });
+      video.dispatchEvent(new Event('error'));
+    }
+    
+    expect(getByText(/Erro de CORS ou Formato não suportado/i)).toBeDefined();
+  });
+
+  it('should hide loading overlay when progress event has buffer', () => {
+    const { queryByText } = render(<PromoFlixPlayer src="test.mp4" />);
+    
+    const video = document.querySelector('video');
+    if (video) {
+      // Mock buffered range
+      Object.defineProperty(video, 'buffered', {
+        value: {
+          length: 1,
+          start: () => 0,
+          end: () => 10,
+        },
+        configurable: true
+      });
+      video.dispatchEvent(new Event('progress'));
+    }
+    
+    // Overlay should be gone (isLoading = false)
+    expect(queryByText(/Carregando/i)).toBeNull();
+  });
 });
