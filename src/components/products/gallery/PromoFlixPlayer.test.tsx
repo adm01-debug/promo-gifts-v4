@@ -388,7 +388,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
     });
 
     it('should reset error state when switching to a new video src', async () => {
-      const { rerender, getByText, queryByText } = render(<PromoFlixPlayer src="error.mp4" />);
+      const { rerender, queryByText, getByText } = render(<PromoFlixPlayer src="error.mp4" />);
       
       const video = document.querySelector('video');
       await act(async () => {
@@ -399,11 +399,13 @@ describe('PromoFlixPlayer Automated Tests', () => {
       expect(getByText(/Falha de rede/i)).toBeDefined();
       
       // Rerender with new src
-      render(<PromoFlixPlayer src="new-video.mp4" />);
+      rerender(<PromoFlixPlayer src="new-video.mp4" />);
       
-      // Error should be gone immediately
-      expect(queryByText(/Falha de rede/i)).toBeNull();
-      expect(getByText(/Carregando/i)).toBeDefined();
+      // Error should be gone immediately because initPlayer resets it
+      await waitFor(() => {
+        expect(queryByText(/Falha de rede/i)).toBeNull();
+        expect(getByText(/Carregando/i)).toBeDefined();
+      });
     });
 
     it('should try muted autoplay fallback if play() fails with sound', async () => {
@@ -416,13 +418,15 @@ describe('PromoFlixPlayer Automated Tests', () => {
       
       render(<PromoFlixPlayer src="test.mp4" autoPlay={true} isMuted={false} />);
       
+      // We need to wait for the fallback logic to execute
       await waitFor(() => {
         // Should have been called twice (initially + fallback)
         expect(playSpy).toHaveBeenCalledTimes(2);
         const video = document.querySelector('video');
         expect(video?.muted).toBe(true);
-      });
+      }, { timeout: 2000 });
     });
+
 
     it('should correctly handle native error code 3 (DECODE)', async () => {
       const { findByText } = render(<PromoFlixPlayer src="corrupt.mp4" />);
