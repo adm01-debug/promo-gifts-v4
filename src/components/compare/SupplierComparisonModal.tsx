@@ -35,11 +35,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  useSupplierComparison,
-  type Product,
-  type SupplierComparisonSort,
-} from '@/hooks/products';
+import { useSupplierComparison, type Product, type SupplierComparisonSort } from '@/hooks/products';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface SupplierComparisonModalProps {
@@ -124,7 +120,9 @@ export function SupplierComparisonModal({
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Package className="mb-4 h-12 w-12 text-muted-foreground/30" />
                 <p className="text-lg font-medium">Produto base não carregado</p>
-                <p className="text-sm text-muted-foreground">Ocorreu um erro ao carregar os dados para comparação.</p>
+                <p className="text-sm text-muted-foreground">
+                  Ocorreu um erro ao carregar os dados para comparação.
+                </p>
               </div>
             ) : (
               <>
@@ -164,7 +162,8 @@ export function SupplierComparisonModal({
             <h3 className="text-xl font-bold">Nenhuma alternativa encontrada</h3>
             <p className="mt-2 max-w-sm text-muted-foreground">
               Não encontramos outros fornecedores oferecendo produtos similares a{' '}
-              <span className="font-semibold text-foreground">&quot;{baseProduct.name}&quot;</span> nesta categoria.
+              <span className="font-semibold text-foreground">&quot;{baseProduct.name}&quot;</span>{' '}
+              nesta categoria.
             </p>
             <Button variant="outline" className="mt-8" onClick={() => onOpenChange(false)}>
               Fechar comparador
@@ -268,16 +267,14 @@ export function SupplierComparisonModal({
             </div>
             <div className="rounded-lg border border-success/20 bg-success/10 p-3">
               <p className="mb-1 text-xs text-muted-foreground">Economia / pedido (MOQ)</p>
-              <p className="text-lg font-bold text-success">
-                {formatCurrency(maxEconomiaPorMOQ)}
-              </p>
+              <p className="text-lg font-bold text-success">{formatCurrency(maxEconomiaPorMOQ)}</p>
             </div>
             <div className="rounded-lg border border-border bg-muted p-3">
               <p className="mb-1 flex items-center gap-1 text-xs text-muted-foreground">
                 <Clock className="h-3 w-3" /> Lead time mín.
               </p>
               <p className="text-lg font-bold">
-                {fastestLeadTimeDays != null ? `${fastestLeadTimeDays}d` : '—'}
+                {fastestLeadTimeDays !== null ? `${fastestLeadTimeDays}d` : '—'}
               </p>
             </div>
           </div>
@@ -302,7 +299,7 @@ export function SupplierComparisonModal({
                   <TableHead className="text-center">Estoque</TableHead>
                   <TableHead className="text-center">Lead</TableHead>
                   <TableHead className="text-center">Cores ⌒</TableHead>
-                  <TableHead className="text-center w-[90px]">Score</TableHead>
+                  <TableHead className="w-[90px] text-center">Score</TableHead>
                   <TableHead className="w-[90px]"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -441,7 +438,7 @@ export function SupplierComparisonModal({
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
-                        {leadTimeDays != null ? (
+                        {leadTimeDays !== null ? (
                           <span className="text-sm">{leadTimeDays}d</span>
                         ) : (
                           <span className="text-xs text-muted-foreground">—</span>
@@ -492,15 +489,16 @@ export function SupplierComparisonModal({
                   <p className="mb-2 flex items-center gap-2 text-sm font-medium">
                     {p.supplier.name}
                     {isBase && (
-                      <Badge variant="secondary" className="text-xs">Atual</Badge>
+                      <Badge variant="secondary" className="text-xs">
+                        Atual
+                      </Badge>
                     )}
                   </p>
                   {Array.isArray(p.materials) && p.materials.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {p.materials.map((material) => {
                         const isCommon =
-                          !isBase &&
-                          commonMaterials.includes(material.toLowerCase().trim());
+                          !isBase && commonMaterials.includes(material.toLowerCase().trim());
                         return (
                           <Badge
                             key={material}
@@ -566,13 +564,7 @@ function ScorePill({ score, isBase }: { score: number; isBase: boolean }) {
   );
 }
 
-function CommonColorsBadge({
-  colors,
-  product,
-}: {
-  colors: string[];
-  product: Product;
-}) {
+function CommonColorsBadge({ colors, product }: { colors: string[]; product: Product }) {
   if (colors.length === 0) {
     return <span className="text-xs text-muted-foreground">0</span>;
   }
