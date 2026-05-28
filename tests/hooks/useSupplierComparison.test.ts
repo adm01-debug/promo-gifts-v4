@@ -113,13 +113,55 @@ describe('useSupplierComparison', () => {
     const { result: resPrice } = renderHook(() => 
       useSupplierComparison(mockBaseProduct, { sortBy: 'price' })
     );
-    expect(resPrice.current.result?.alternatives[0].product.id).toBe('alt-1'); // cheapest first
+    expect(resPrice.current.result?.alternatives[0].product.id).toBe('alt-1');
 
     // Sort by stock
     const { result: resStock } = renderHook(() => 
       useSupplierComparison(mockBaseProduct, { sortBy: 'stock' })
     );
-    expect(resStock.current.result?.alternatives[0].product.id).toBe('alt-expensive'); // highest stock first
+    expect(resStock.current.result?.alternatives[0].product.id).toBe('alt-expensive');
+
+    // Sort by leadTime
+    const altFast = { ...mockAlt1, id: 'alt-fast', leadTimeDays: 2 };
+    mockUseProducts.mockReturnValue({ 
+      data: [mockBaseProduct, mockAlt1, altFast], 
+      isLoading: false 
+    });
+    const { result: resLead } = renderHook(() => 
+      useSupplierComparison(mockBaseProduct, { sortBy: 'leadTime' })
+    );
+    expect(resLead.current.result?.alternatives[0].product.id).toBe('alt-fast');
+
+    // Sort by commonColors
+    const altManyColors = { ...mockAlt1, id: 'alt-colors', colors: [
+      { name: 'Branco', hex: '#FFF' },
+      { name: 'Azul', hex: '#00F' }
+    ]};
+    mockUseProducts.mockReturnValue({ 
+      data: [mockBaseProduct, mockAlt1, altManyColors], 
+      isLoading: false 
+    });
+    const { result: resColors } = renderHook(() => 
+      useSupplierComparison(mockBaseProduct, { sortBy: 'commonColors' })
+    );
+    // alt-colors has 1 common color (Branco), alt-1 also has 1. 
+    // Wait, mockBaseProduct has 1 color (Branco).
+    // Let's make one have 0.
+    const altNoColors = { ...mockAlt1, id: 'alt-no-colors', colors: [{ name: 'Preto', hex: '#000' }] };
+    mockUseProducts.mockReturnValue({ 
+      data: [mockBaseProduct, altNoColors, altManyColors], 
+      isLoading: false 
+    });
+    const { result: resColors2 } = renderHook(() => 
+      useSupplierComparison(mockBaseProduct, { sortBy: 'commonColors' })
+    );
+    expect(resColors2.current.result?.alternatives[0].product.id).toBe('alt-colors');
+
+    // Default sort (score)
+    const { result: resDefault } = renderHook(() => 
+      useSupplierComparison(mockBaseProduct)
+    );
+    expect(resDefault.current.result?.alternatives).toBeDefined();
   });
 });
 
