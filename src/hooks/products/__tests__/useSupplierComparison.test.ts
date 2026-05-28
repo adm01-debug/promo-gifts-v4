@@ -23,7 +23,8 @@ describe('useSupplierComparison logic', () => {
       expect(tokens.has('caderno')).toBe(true);
       expect(tokens.has('a4')).toBe(true);
       expect(tokens.has('folhas')).toBe(true);
-      expect(tokens.size).toBe(3);
+      // tokens: 'caderno', 'a4', '100', 'folhas'
+      expect(tokens.size).toBe(4);
     });
   });
 
