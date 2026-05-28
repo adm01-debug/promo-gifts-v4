@@ -24,7 +24,7 @@ jobs:
       run: npx playwright install --with-deps
 
     - name: Run Playwright Visual Tests
-      run: npx playwright test e2e/flows/99-auth-ui-baseline.spec.ts
+      run: npx playwright test e2e/flows/99-auth-ui-baseline.spec.ts e2e/flows/supplier-comparison-visual.spec.ts
       env:
         CI: true
 
