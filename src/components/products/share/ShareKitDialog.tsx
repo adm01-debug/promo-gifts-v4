@@ -86,20 +86,44 @@ export function ShareKitDialog({ open, onOpenChange, product, mode }: ShareKitDi
 
   const allImages = useMemo(() => {
     if (mode === 'complete') {
-      const images = [product.images[0]]; // Start with kit main photo
+      const images: string[] = [];
+      const mainImg = product.images?.[0] || product.image_url;
+      if (mainImg) images.push(mainImg);
+      
       kitItems.forEach((item) => {
         if (item.imageUrl) images.push(item.imageUrl);
       });
       return Array.from(new Set(images.filter(Boolean) as string[]));
     } else if (activeItem) {
-      return [activeItem.imageUrl].filter(Boolean) as string[];
+      const images = [activeItem.imageUrl].filter(Boolean) as string[];
+      if (images.length === 0 && (product.images?.[0] || product.image_url)) {
+        images.push((product.images?.[0] || product.image_url) as string);
+      }
+      return images;
     }
     return [];
-  }, [mode, product.images, kitItems, activeItem]);
+  }, [mode, product.images, product.image_url, kitItems, activeItem]);
 
   const imageIndices = useMemo(() => new Set(allImages.map((_, i) => i)), [allImages]);
 
+  const phoneError = useMemo(() => {
+    if (!contactSelection?.contactPhone) return null;
+    const digits = contactSelection.contactPhone.replace(/\D/g, '');
+    if (digits.length < 10) return 'Telefone muito curto (mínimo 10 dígitos)';
+    if (digits.length > 13) return 'Telefone muito longo';
+    return null;
+  }, [contactSelection?.contactPhone]);
+
   const handleSend = () => {
+    if (phoneError) {
+      toast({
+        title: 'Telefone inválido',
+        description: phoneError,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const target = contactSelection?.contactName || contactSelection?.companyName || 'destinatário';
     const { opened } = openWhatsAppShare({
       message,
