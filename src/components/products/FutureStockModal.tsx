@@ -532,13 +532,15 @@ export function FutureStockModal({
                                   })}
                                 </div>
                               </div>
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
               )
             )}
 
