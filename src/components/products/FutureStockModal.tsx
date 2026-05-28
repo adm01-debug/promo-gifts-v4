@@ -368,126 +368,116 @@ export function FutureStockModal({
               !isLoading &&
               !error &&
               hasVariants && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-muted-foreground">
-                      Previsões de reposição ({sortedEntries.length})
-                    </span>
-                    {sortedEntries.length === 0 && hasActiveFilters && (
-                      <span className="text-xs text-muted-foreground">
-                        Nenhum resultado para os filtros selecionados
-                      </span>
-                    )}
-                  </div>
-                  <div className="space-y-3">
-                    {sortedEntries.map((entry) => {
-                      const expectedDate = parseISO(entry.expectedDate);
-                      const daysUntil = Math.ceil(
-                        (expectedDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
-                      );
-                      const isUrgent = daysUntil <= 7 && daysUntil >= 0;
-                      const isPast = daysUntil < 0;
+                <div className="space-y-6">
+                  {/* Agrupamento por cor */}
+                  {Array.from(new Set(sortedEntries.map(e => e.colorName))).map(colorName => {
+                    const colorEntries = sortedEntries.filter(e => e.colorName === colorName);
+                    const firstEntry = colorEntries[0];
+                    
+                    return (
+                      <div key={colorName} className="space-y-3">
+                        <div className="flex items-center gap-2 border-l-2 border-primary pl-3">
+                          <span className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+                            {colorName}
+                          </span>
+                          <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                            {colorEntries.length} {colorEntries.length === 1 ? 'previsão' : 'previsões'}
+                          </Badge>
+                        </div>
+                        
+                        <div className="grid gap-3">
+                          {colorEntries.map((entry) => {
+                            const expectedDate = parseISO(entry.expectedDate);
+                            const daysUntil = Math.ceil(
+                              (expectedDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+                            );
+                            const isUrgent = daysUntil <= 7 && daysUntil >= 0;
+                            const isPast = daysUntil < 0;
 
-                      return (
-                        <div
-                          key={entry.id}
-                          className={cn(
-                            'flex items-center gap-4 rounded-xl border bg-card p-4 transition-all',
-                            isUrgent && !isPast && 'border-warning/30 bg-warning/5',
-                            isPast && 'border-destructive/30 bg-destructive/5',
-                          )}
-                        >
-                          {/* Imagem ou Cor */}
-                          <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-border">
-                            {entry.thumbnail ? (
-                              <img
-                                src={entry.thumbnail}
-                                alt={entry.colorName}
-                                className="h-full w-full object-cover"
-                                loading="lazy"
-                              />
-                            ) : (
+                            return (
                               <div
-                                className="h-full w-full"
-                                style={{ backgroundColor: entry.colorHex ?? '#888' }}
-                              />
-                            )}
-                          </div>
-
-                          {/* Info */}
-                          <div className="min-w-0 flex-1">
-                            <div className="mb-1 flex items-center gap-2">
-                              <span className="font-medium text-foreground">{entry.colorName}</span>
-                              <Badge
-                                variant="outline"
+                                key={entry.id}
                                 className={cn(
-                                  'px-2 py-0 text-[10px]',
-                                  isPast
-                                    ? 'border-destructive/20 bg-destructive/10 text-destructive'
-                                    : isUrgent
-                                      ? 'border-warning/20 bg-warning/10 text-warning'
-                                      : 'border-info/20 bg-info/10 text-info',
+                                  'flex items-center gap-4 rounded-xl border bg-card p-4 transition-all hover:border-primary/30',
+                                  isUrgent && !isPast && 'border-warning/30 bg-warning/5',
+                                  isPast && 'border-destructive/30 bg-destructive/5',
                                 )}
                               >
-                                {isPast
-                                  ? 'Atrasado'
-                                  : isUrgent
-                                    ? 'Em breve'
-                                    : `Previsão ${entry.entryIndex}`}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <Calendar className="h-3.5 w-3.5" />
-                                {format(expectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                                <span
-                                  className={cn(
-                                    'ml-1 font-medium',
-                                    isPast
-                                      ? 'text-destructive'
-                                      : isUrgent
-                                        ? 'text-warning'
-                                        : 'text-foreground/70',
+                                {/* Imagem ou Cor (Apenas se for a primeira da cor ou mobile) */}
+                                <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-border">
+                                  {entry.thumbnail ? (
+                                    <img
+                                      src={entry.thumbnail}
+                                      alt={entry.colorName}
+                                      className="h-full w-full object-cover"
+                                      loading="lazy"
+                                    />
+                                  ) : (
+                                    <div
+                                      className="h-full w-full"
+                                      style={{ backgroundColor: entry.colorHex ?? '#888' }}
+                                    />
                                   )}
-                                >
-                                  (
-                                  {isPast
-                                    ? `${Math.abs(daysUntil)} dias atrás`
-                                    : daysUntil === 0
-                                      ? 'hoje'
-                                      : daysUntil === 1
-                                        ? 'amanhã'
-                                        : `${daysUntil} dias`}
-                                  )
-                                </span>
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Package className="h-3.5 w-3.5" />
-                                SKU: {entry.supplierSku}
-                              </span>
-                            </div>
-                            {/* Estoque atual da variante */}
-                            <div className="mt-1 text-xs text-muted-foreground/70">
-                              Estoque atual: {(entry.currentStock ?? 0).toLocaleString('pt-BR')} un
-                              {(entry.reservedStock ?? 0) > 0 && (
-                                <span className="ml-2">
-                                  (reservado: {(entry.reservedStock ?? 0).toLocaleString('pt-BR')})
-                                </span>
-                              )}
-                            </div>
-                          </div>
+                                </div>
 
-                          {/* Quantidade */}
-                          <div className="shrink-0 text-right">
-                            <span className="text-xl font-bold text-primary">
-                              +{entry.expectedQuantity.toLocaleString('pt-BR')}
-                            </span>
-                            <p className="text-xs text-muted-foreground">unidades</p>
-                          </div>
+                                {/* Info */}
+                                <div className="min-w-0 flex-1">
+                                  <div className="mb-1 flex items-center gap-2">
+                                    <Badge
+                                      variant="outline"
+                                      className={cn(
+                                        'px-2 py-0 text-[10px]',
+                                        isPast
+                                          ? 'border-destructive/20 bg-destructive/10 text-destructive'
+                                          : isUrgent
+                                            ? 'border-warning/20 bg-warning/10 text-warning'
+                                            : 'border-primary/20 bg-primary/10 text-primary',
+                                      )}
+                                    >
+                                      {isPast
+                                        ? 'Atrasado'
+                                        : isUrgent
+                                          ? 'Em breve'
+                                          : `Previsão ${entry.entryIndex}`}
+                                    </Badge>
+                                    {isPast && (
+                                      <span className="flex items-center gap-1 text-[10px] font-medium text-destructive">
+                                        <AlertTriangle className="h-3 w-3" /> Reposição pendente
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                                    <span className="flex items-center gap-1.5">
+                                      <Calendar className="h-3.5 w-3.5" />
+                                      {format(expectedDate, "dd 'de' MMMM", { locale: ptBR })}
+                                      <span className={cn(
+                                        'ml-1 text-xs font-medium',
+                                        isPast ? 'text-destructive' : isUrgent ? 'text-warning' : 'text-foreground/60'
+                                      )}>
+                                        ({isPast ? `${Math.abs(daysUntil)}d atrás` : daysUntil === 0 ? 'hoje' : `${daysUntil}d`})
+                                      </span>
+                                    </span>
+                                    <span className="flex items-center gap-1.5 text-xs">
+                                      <Package className="h-3.5 w-3.5" />
+                                      {entry.supplierSku}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Quantidade */}
+                                <div className="shrink-0 text-right">
+                                  <span className="text-xl font-bold text-primary">
+                                    +{entry.expectedQuantity.toLocaleString('pt-BR')}
+                                  </span>
+                                  <p className="text-[10px] font-medium uppercase text-muted-foreground">unidades</p>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
-                      );
-                    })}
-                  </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )
             )}
