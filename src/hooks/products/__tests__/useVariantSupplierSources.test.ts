@@ -50,22 +50,30 @@ describe('processStockEntries', () => {
     });
   });
 
-  it('deve ignorar entradas com quantidade zero ou nula', () => {
-    const variantWithPartialData: VariantWithStock = {
+  it('deve ignorar pares vazios, zero ou nulos (data ou quantidade)', () => {
+    const variantWithEdgeCases: VariantWithStock = {
       ...mockVariant,
       next_date_1: '2026-06-01',
-      next_quantity_1: 100,
-      next_date_2: '2026-07-01',
-      next_quantity_2: 0, // Zero - deve ignorar
+      next_quantity_1: 0, // Zero - deve ignorar
+      next_date_2: null, // Data nula - deve ignorar
+      next_quantity_2: 100,
       next_date_3: '2026-08-01',
-      next_quantity_3: 300,
+      next_quantity_3: -10, // Negativa - deve ignorar
     };
 
-    const entries = processStockEntries([variantWithPartialData]);
-    expect(entries).toHaveLength(2); // Deve ter 1 e 3
-    
-    expect(entries[0].entryIndex).toBe(1);
-    expect(entries[1].entryIndex).toBe(3);
+    const entries = processStockEntries([variantWithEdgeCases]);
+    expect(entries).toHaveLength(0);
+
+    const variantWithOneValid: VariantWithStock = {
+      ...mockVariant,
+      next_date_1: '2026-06-01',
+      next_quantity_1: 10,
+      next_date_2: '', // Data vazia
+      next_quantity_2: 20,
+    };
+    const entries2 = processStockEntries([variantWithOneValid]);
+    expect(entries2).toHaveLength(1);
+    expect(entries2[0].expectedDate).toBe('2026-06-01');
   });
 
   it('deve lidar com variantes sem nenhuma previsão', () => {

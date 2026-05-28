@@ -391,7 +391,11 @@ export function FutureStockModal({
 
                         <div className="space-y-6">
                           {variantIds.map((vId) => {
-                            const variantEntries = colorEntries.filter((e) => e.variantId === vId);
+                            // Pegamos as entradas da variante e SEMPRE ordenamos por data cronológica internamente
+                            const variantEntries = colorEntries
+                              .filter((e) => e.variantId === vId)
+                              .sort((a, b) => new Date(a.expectedDate).getTime() - new Date(b.expectedDate).getTime());
+                            
                             const first = variantEntries[0];
 
                             return (
