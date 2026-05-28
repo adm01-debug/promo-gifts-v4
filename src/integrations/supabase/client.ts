@@ -21,8 +21,8 @@ const envKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
 
 // Usa .env apenas se apontar para o projeto canônico; senão, força canônico.
 const useEnv = !!envUrl && envUrl.includes("doufsxqlfjyuvxuezpln") && !!envKey;
-const SUPABASE_URL = useEnv ? envUrl! : CANONICAL_URL;
-const SUPABASE_PUBLISHABLE_KEY = useEnv ? envKey! : CANONICAL_ANON_KEY;
+const SUPABASE_URL = useEnv ? (envUrl as string) : CANONICAL_URL;
+const SUPABASE_PUBLISHABLE_KEY = useEnv ? (envKey as string) : CANONICAL_ANON_KEY;
 
 if (!useEnv && typeof console !== "undefined") {
   console.warn(

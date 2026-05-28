@@ -326,7 +326,10 @@ export default function Auth() {
           title = 'Erro de Conexão';
           description = 'Não foi possível alcançar o servidor. Verifique sua internet.';
           diagnosis = 'NETWORK_ERROR: Falha física ou DNS (0).';
-        } else if (error.message.includes('Database error') || error.status >= 500) {
+        } else if (
+          error.message.includes('Database error') ||
+          (error.status !== undefined && error.status >= 500)
+        ) {
           title = 'Erro no Servidor';
           description = 'O sistema está instável no momento. Nossa equipe já foi notificada.';
           diagnosis = `SERVER_ERROR: Erro interno do Supabase (${error.status || 500}).`;
@@ -911,9 +914,9 @@ export default function Auth() {
             </div>
           )}
 
-                <LegalFooter />
-                <SupabaseConnectionDebug />
-              </div>
+          <LegalFooter />
+          <SupabaseConnectionDebug />
+        </div>
       </div>
     </main>
   );

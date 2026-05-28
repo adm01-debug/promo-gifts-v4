@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
-import { 
-  CheckCircle2, 
-  AlertTriangle, 
-  Database, 
-  Globe, 
-  Wifi, 
+import {
+  CheckCircle2,
+  AlertTriangle,
+  Database,
+  Globe,
+  Wifi,
   Search,
   Activity,
-  Server
+  Server,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -26,7 +26,7 @@ export const SupabaseConnectionDebug = () => {
     const check = async () => {
       try {
         const client = await getSupabaseClient();
-        const url = (client as any).supabaseUrl || 'N/A';
+        const url = (client as unknown as { supabaseUrl?: string }).supabaseUrl || 'N/A';
         const envUrl = import.meta.env.VITE_SUPABASE_URL || 'N/A';
         const projectRef = url.split('//')[1]?.split('.')[0] || 'N/A';
         const isCanonical = projectRef === 'doufsxqlfjyuvxuezpln';
@@ -36,7 +36,7 @@ export const SupabaseConnectionDebug = () => {
           envUrl,
           isCanonical,
           projectRef,
-          clientReady: !!client
+          clientReady: !!client,
         });
       } catch (e) {
         console.error('Debug check failed', e);
@@ -85,26 +85,28 @@ export const SupabaseConnectionDebug = () => {
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-between rounded-lg bg-blue-500/5 p-3 border border-blue-500/10">
+      <div className="mt-4 flex items-center justify-between rounded-lg border border-blue-500/10 bg-blue-500/5 p-3">
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/10">
             <Search className="h-4 w-4 text-blue-400" />
           </div>
           <div>
-            <p className="text-[10px] font-medium text-blue-400 uppercase tracking-tighter">Project Ref</p>
+            <p className="text-[10px] font-medium uppercase tracking-tighter text-blue-400">
+              Project Ref
+            </p>
             <p className="text-sm font-bold text-white">{info.projectRef}</p>
           </div>
         </div>
 
         {info.isCanonical ? (
           <div className="flex items-center gap-2">
-            <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/30 px-2 py-0.5 animate-pulse">
+            <Badge className="animate-pulse border-amber-500/30 bg-amber-500/20 px-2 py-0.5 text-amber-500">
               <AlertTriangle className="mr-1 h-3 w-3" /> FALLBACK CANÔNICO ACIONADO
             </Badge>
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+            <Badge className="border-blue-500/30 bg-blue-500/20 text-blue-400">
               <Server className="mr-1 h-3 w-3" /> AMBIENTE CUSTOM
             </Badge>
           </div>

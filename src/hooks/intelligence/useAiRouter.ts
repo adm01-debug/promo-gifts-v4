@@ -23,6 +23,7 @@ import { sanitizeError } from '@/lib/security/sanitize-error';
 // Definimos um tipo estendido para o SupabaseClient que conhece as tabelas de AI
 // enquanto o database.types.ts não é regenerado.
 type ExtendedSupabaseClient = typeof supabase & {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   from: (table: 'ai_providers' | 'ai_models' | 'ai_function_routing' | string) => any;
 };
 

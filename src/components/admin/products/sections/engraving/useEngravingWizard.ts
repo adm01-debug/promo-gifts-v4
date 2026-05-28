@@ -290,6 +290,29 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
   const isBusy = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
   const isLoading = loadingTechs || (isEdit && loadingAreas);
 
+  // BUG-03 FIX: flush locally-stored areas to the DB after a product is created
+  const flushLocalAreas = useCallback(async (realProductId: string): Promise<void> => {
+    const pending = localAreasRef.current;
+    if (!pending.length) return;
+    for (const area of pending) {
+      const {
+        id: _id,
+        _techData: _td,
+        ...areaData
+      } = area as typeof area & { _techData?: ExternalTechnique };
+      const { data, error } = await supabase.functions.invoke('external-db-bridge', {
+        body: {
+          table: 'print_area_techniques',
+          operation: 'insert',
+          data: { ...areaData, product_id: realProductId },
+        },
+      });
+      if (error) throw new Error(error.message);
+      if (!data?.success) throw new Error(data?.error || 'Erro ao salvar área de personalização');
+    }
+    setLocalAreas([]);
+  }, []);
+
   return {
     wizardStep,
     setWizardStep,
@@ -328,6 +351,7 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
     confirmDeleteArea,
     cancelDeleteArea,
     handleToggleActive,
+    flushLocalAreas,
   };
 }
 

@@ -14,7 +14,7 @@ import type { Product } from '@/types/product-catalog';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Package, Heart, Users, Palette, FolderTree } from 'lucide-react';
 
-import { defaultFilters, type FilterState, type ColorGroup } from '@/components/filters/FilterPanel';
+import { defaultFilters, type FilterState } from '@/components/filters/FilterPanel';
 import {
   getDefaultColumns,
   STORAGE_KEY as GRID_COLUMNS_KEY,
@@ -639,8 +639,8 @@ export function useCatalogState() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  // BUG-KBD-01 FIX: handleFavoriteProduct removido das deps — era instavel.
-  // handleFavoriteProductRef.current e sempre atual sem triggerar re-registro.
+    // BUG-KBD-01 FIX: handleFavoriteProduct removido das deps — era instavel.
+    // handleFavoriteProductRef.current e sempre atual sem triggerar re-registro.
   }, [activeProductId, paginatedProducts, navigate, selectionMode]);
 
   return {

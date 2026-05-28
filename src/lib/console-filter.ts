@@ -1,6 +1,7 @@
 /**
  * Console Filter — Silencia warnings conhecidos e poluição visual no console.
  */
+/* eslint-disable no-console */
 (function installConsoleFilter() {
   if (typeof window === 'undefined') return;
 
@@ -29,27 +30,28 @@
     'Failed to load resource: the server responded with a status of 401',
   ];
 
-  const shouldSilence = (args: any[]) => {
+  const shouldSilence = (args: unknown[]) => {
     try {
-      const msg = typeof args[0] === 'string' ? args[0] : JSON.stringify(args[0]);
-      return SILENCED_PATTERNS.some(pattern => msg && msg.includes(pattern));
-    } catch (e) {
+      const first = args[0];
+      const msg = typeof first === 'string' ? first : JSON.stringify(first);
+      return SILENCED_PATTERNS.some((pattern) => msg && msg.includes(pattern));
+    } catch {
       return false;
     }
   };
 
-  console.warn = (...args: any[]) => {
+  console.warn = (...args: unknown[]) => {
     if (shouldSilence(args)) return;
-    return originalWarn.apply(console, args);
+    return originalWarn.apply(console, args as Parameters<typeof originalWarn>);
   };
 
-  console.error = (...args: any[]) => {
+  console.error = (...args: unknown[]) => {
     if (shouldSilence(args)) return;
-    return originalError.apply(console, args);
+    return originalError.apply(console, args as Parameters<typeof originalError>);
   };
 
-  console.log = (...args: any[]) => {
+  console.log = (...args: unknown[]) => {
     if (shouldSilence(args)) return;
-    return originalLog.apply(console, args);
+    return originalLog.apply(console, args as Parameters<typeof originalLog>);
   };
 })();

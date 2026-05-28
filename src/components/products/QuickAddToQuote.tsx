@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Check, ShoppingCart, ShoppingBag, X } from 'lucide-react';
+import { Plus, Check, ShoppingCart, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';

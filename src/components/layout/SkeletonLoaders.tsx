@@ -10,6 +10,7 @@ import {
   ProductDetailSkeleton as ModernProductDetailSkeleton,
   ClientCardSkeleton,
   QuoteCardSkeleton,
+  TableSkeleton,
 } from '@/components/loading/ModernSkeletons';
 import { SkeletonMonitor } from '@/components/loading/SkeletonMonitor';
 
@@ -135,7 +136,6 @@ export const AppShellCatalogSkeleton = makeSkeleton(
   () => <AppShellCatalogSkeletonBody />,
   'w-full',
 );
-
 
 /** Product detail page skeleton */
 export const ProductDetailSkeleton = makeSkeleton(

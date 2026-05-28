@@ -8,7 +8,7 @@
  * Rota: /admin/validade-precos (admin-only — protegida por AdminRoute).
  */
 import { useMemo, useState } from 'react';
-import { Trash2, Loader2, Filter, Settings2, ShieldCheck, Clock } from 'lucide-react';
+import { Trash2, Loader2, Filter, Settings2, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
@@ -41,7 +41,7 @@ export default function PriceFreshnessSettings() {
   const { data: overrides, isLoading } = useAllFreshnessOverrides();
   const remove = useDeleteFreshnessOverride();
   const [filter, setFilter] = useState<'all' | '30' | '60' | '90'>('all');
-  
+
   const { getSetting, updateSetting, isLoading: isSettingsLoading } = useSystemSettings();
   const globalDefault = getSetting('default_price_freshness_threshold', '60');
 
@@ -86,7 +86,8 @@ export default function PriceFreshnessSettings() {
                 <CardTitle className="text-base font-semibold">Padrão Global</CardTitle>
               </div>
               <CardDescription>
-                Define a validade padrão usada para todos os produtos que não possuem override manual.
+                Define a validade padrão usada para todos os produtos que não possuem override
+                manual.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -97,9 +98,11 @@ export default function PriceFreshnessSettings() {
                 {isSettingsLoading ? (
                   <Skeleton className="h-9 w-full" />
                 ) : (
-                  <Select 
-                    value={globalDefault} 
-                    onValueChange={(v) => updateSetting.mutate({ key: 'default_price_freshness_threshold', value: v })}
+                  <Select
+                    value={globalDefault}
+                    onValueChange={(v) =>
+                      updateSetting.mutate({ key: 'default_price_freshness_threshold', value: v })
+                    }
                     disabled={updateSetting.isPending}
                   >
                     <SelectTrigger className="h-9">
@@ -114,7 +117,8 @@ export default function PriceFreshnessSettings() {
                   </Select>
                 )}
                 <p className="text-[11px] text-muted-foreground">
-                  Alterar este valor afetará imediatamente o alerta de todos os produtos sem configuração específica.
+                  Alterar este valor afetará imediatamente o alerta de todos os produtos sem
+                  configuração específica.
                 </p>
               </div>
             </CardContent>
@@ -125,10 +129,13 @@ export default function PriceFreshnessSettings() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="h-4 w-4 text-primary" />
-                  <CardTitle className="text-base font-semibold">Overrides Legados ({overrides?.length ?? 0})</CardTitle>
+                  <CardTitle className="text-base font-semibold">
+                    Overrides Legados ({overrides?.length ?? 0})
+                  </CardTitle>
                 </div>
                 <CardDescription>
-                  Estes são overrides salvos no banco local (Supabase). Novos produtos devem ser configurados diretamente na ficha técnica no Admin de Produtos.
+                  Estes são overrides salvos no banco local (Supabase). Novos produtos devem ser
+                  configurados diretamente na ficha técnica no Admin de Produtos.
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
@@ -148,60 +155,60 @@ export default function PriceFreshnessSettings() {
                 </Select>
               </div>
             </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-12 text-muted-foreground">
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Carregando…
-              </div>
-            ) : filtered.length === 0 ? (
-              <div className="py-12 text-center text-sm text-muted-foreground">
-                Nenhum produto com validade customizada.
-                <br />
-                Configure pela página do produto, no botão <strong>“Validade”</strong> ao lado do
-                preço.
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Produto (ID)</TableHead>
-                    <TableHead className="w-32">Validade</TableHead>
-                    <TableHead className="w-48">Atualizado em</TableHead>
-                    <TableHead className="w-28 text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map((o) => (
-                    <TableRow key={o.id}>
-                      <TableCell className="font-mono text-xs">{o.product_id}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{o.threshold_days} dias</Badge>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {formatPriceDateLong(new Date(o.updated_at))}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-7 text-xs text-muted-foreground hover:text-destructive"
-                          disabled={remove.isPending}
-                          onClick={() => remove.mutate(o.product_id)}
-                        >
-                          <Trash2 className="mr-1 h-3 w-3" />
-                          Restaurar
-                        </Button>
-                      </TableCell>
+            <CardContent>
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12 text-muted-foreground">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Carregando…
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="py-12 text-center text-sm text-muted-foreground">
+                  Nenhum produto com validade customizada.
+                  <br />
+                  Configure pela página do produto, no botão <strong>“Validade”</strong> ao lado do
+                  preço.
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Produto (ID)</TableHead>
+                      <TableHead className="w-32">Validade</TableHead>
+                      <TableHead className="w-48">Atualizado em</TableHead>
+                      <TableHead className="w-28 text-right">Ações</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.map((o) => (
+                      <TableRow key={o.id}>
+                        <TableCell className="font-mono text-xs">{o.product_id}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{o.threshold_days} dias</Badge>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {formatPriceDateLong(new Date(o.updated_at))}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 text-xs text-muted-foreground hover:text-destructive"
+                            disabled={remove.isPending}
+                            onClick={() => remove.mutate(o.product_id)}
+                          >
+                            <Trash2 className="mr-1 h-3 w-3" />
+                            Restaurar
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
-  </>
-);
+    </>
+  );
 }

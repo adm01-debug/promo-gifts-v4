@@ -7,7 +7,7 @@ import {
   useCallback,
   type ReactNode,
 } from 'react';
-import { type User, type Session } from '@supabase/supabase-js';
+import { type User, type Session, type AuthError } from '@supabase/supabase-js';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 import { checkLoginAllowed, recordFailedAttempt, clearLoginAttempts } from '@/lib/auth/rate-limit';
@@ -71,7 +71,13 @@ interface AuthContextType {
   mfaRequired: boolean;
   rolesLoaded: boolean;
   refreshAAL: () => Promise<void>;
-  signIn: (email: string, password: string) => Promise<{ error: import('@supabase/supabase-js').AuthError | null; data: { user: User | null; session: Session | null } }>;
+  signIn: (
+    email: string,
+    password: string,
+  ) => Promise<{
+    error: AuthError | { message: string; status?: number } | null;
+    data: { user: User | null; session: Session | null } | null;
+  }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   refreshSession: () => Promise<void>;
@@ -84,9 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const {
     profile,
-    setProfile,
     userRoles,
-    setUserRoles,
     isLoading,
     setIsLoading,
     fetchUserData,
@@ -101,7 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     log.info('start');
     try {
       const supabase = await getSupabaseClient();
-      const { data, error } = await supabase.auth.refreshSession();
+      const { data, error: _error } = await supabase.auth.refreshSession();
       const nextSession = data?.session ?? (await supabase.auth.getSession()).data.session;
       if (mountedRef.current) {
         setSession(nextSession);
@@ -230,7 +234,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.warn('[AuthContext] Watchdog: isLoading travado por 12s — forçando false');
       setIsLoading(false);
       // BUG-FIX: Se travar, avisa o usuário que algo está errado
-      toast.error('O carregamento está demorando mais que o esperado. Algumas funcionalidades podem estar indisponíveis.');
+      toast.error(
+        'O carregamento está demorando mais que o esperado. Algumas funcionalidades podem estar indisponíveis.',
+      );
     }, 12000);
     return () => window.clearTimeout(timer);
   }, [isLoading, setIsLoading]);

@@ -2,7 +2,7 @@
  * ProductCardImage — Image section with carousel, badges, and color dots.
  * Extracted from ProductCard.tsx.
  */
-import { memo, useCallback } from 'react';
+import { memo } from 'react';
 import { Sparkles, Package } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';

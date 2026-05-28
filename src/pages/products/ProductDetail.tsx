@@ -39,7 +39,6 @@ const PackagingModal = lazyWithRetry(() =>
 import {
   useProduct,
   useProductAnalytics,
-  useProductIntelligenceBadges,
   useSimilarProducts,
   useSupplierTrust,
   type ExternalVariantStock,
@@ -50,7 +49,6 @@ import type { Product, ProductVariation } from '@/types/product-catalog';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { EmptyState } from '@/components/common/EmptyState';
-import { IntelligenceBadges } from '@/components/common/IntelligenceBadges';
 import { FloatingCompareBar } from '@/components/compare/FloatingCompareBar';
 import { MobileProductActions } from '@/components/mobile/MobileProductActions';
 import { useRecentlyViewedStore } from '@/stores/useRecentlyViewedStore';
@@ -93,22 +91,6 @@ export default function ProductDetail() {
       })),
     [similarItems, product?.category?.name],
   );
-
-  const catalogFlags = useMemo(
-    () =>
-      product
-        ? {
-            featured: product.featured,
-            newArrival: product.newArrival,
-            onSale: product.onSale,
-            lowStock: product.stockStatus === 'low-stock',
-            stock: product.stock,
-          }
-        : undefined,
-    [product?.featured, product?.newArrival, product?.onSale, product?.stockStatus, product?.stock],
-  );
-
-  const { badges: intellBadges } = useProductIntelligenceBadges(id, catalogFlags);
 
   const { data: viewCount = 0 } = useQuery({
     queryKey: ['product-views-count', id],

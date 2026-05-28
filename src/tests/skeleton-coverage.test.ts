@@ -35,28 +35,40 @@ describe('Cobertura de Skeletons por Rota', () => {
   ];
 
   it('deve retornar um skeleton válido para cada rota principal', () => {
-    routesToTest.forEach(path => {
+    expect(routesToTest).not.toHaveLength(0);
+    for (const path of routesToTest) {
       const fallback = getFallback(path);
       expect(fallback, `Rota ${path} não possui um fallback definido`).toBeDefined();
-      
-      // Check if it's a React element
-      expect(React.isValidElement(fallback), `Fallback da rota ${path} não é um elemento React válido`).toBe(true);
-    });
+      expect(
+        React.isValidElement(fallback),
+        `Fallback da rota ${path} não é um elemento React válido`,
+      ).toBe(true);
+    }
   });
 
   it('deve usar CatalogSkeleton para rotas de listagem de produtos', () => {
-    const productListRoutes = ['/produtos', '/filtros', '/novidades', '/reposicao', '/favoritos', '/colecoes', '/carrinhos'];
-    productListRoutes.forEach(path => {
-      const fallback = getFallback(path) as any;
+    const productListRoutes = [
+      '/produtos',
+      '/filtros',
+      '/novidades',
+      '/reposicao',
+      '/favoritos',
+      '/colecoes',
+      '/carrinhos',
+    ];
+    expect(productListRoutes).not.toHaveLength(0);
+    for (const path of productListRoutes) {
+      const fallback = getFallback(path) as unknown as { type: { displayName: string } };
       expect(fallback.type.displayName).toBe('Catalog');
-    });
+    }
   });
 
   it('deve usar ToolsSkeleton para ferramentas conhecidas', () => {
     const toolRoutes = ['/simulador', '/magic-up', '/busca-preco', '/estoque', '/raio-x'];
-    toolRoutes.forEach(path => {
-      const fallback = getFallback(path) as any;
+    expect(toolRoutes).not.toHaveLength(0);
+    for (const path of toolRoutes) {
+      const fallback = getFallback(path) as unknown as { type: { displayName: string } };
       expect(fallback.type.displayName).toBe('Tools');
-    });
+    }
   });
 });

@@ -120,7 +120,7 @@ function FreshnessTooltipBody({ freshness, priceUpdatedAt }: FreshnessTooltipPro
   // ficam como detalhamento auxiliar, sem repetir a data curta.
   const shortDate = isValidDate ? formatPriceDateShort(dateValue) : null;
   const longDate = isValidDate ? formatPriceDateLong(dateValue) : null;
-  const exactDateTime = isValidDate ? formatExactDateTime(dateValue) : null;
+  const _exactDateTime = isValidDate ? formatExactDateTime(dateValue) : null;
   const statusLabel = STATUS_LABELS[freshness.status];
   const rule = buildClassificationRule(freshness.thresholdDays);
 
@@ -402,9 +402,7 @@ export function PriceFreshnessBadge({
           <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden="true" />
           <span className="tabular-nums">
             Preço pode estar defasado
-            {absolute && (
-              <span className="text-muted-foreground"> · {relative}</span>
-            )}
+            {absolute && <span className="text-muted-foreground"> · {relative}</span>}
           </span>
         </span>
       );

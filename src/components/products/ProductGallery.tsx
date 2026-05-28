@@ -76,19 +76,26 @@ export function ProductGallery({
   const hasProductVideos = productVideos.length > 0;
   const selectedColor = colors?.[selectedColorIndex];
 
-  const displayImages = selectedColor?.images?.length
-    ? selectedColor.images
-    : selectedColor?.image
-      ? [selectedColor.image]
-      : images;
+  const displayImages = useMemo(
+    () =>
+      selectedColor?.images?.length
+        ? selectedColor.images
+        : selectedColor?.image
+          ? [selectedColor.image]
+          : images,
+    [selectedColor, images],
+  );
 
-  const displayVideos = selectedColor?.videos?.length
-    ? selectedColor.videos
-    : video
-      ? [video, ...videos]
-      : videos;
+  const displayVideos = useMemo(
+    () =>
+      selectedColor?.videos?.length ? selectedColor.videos : video ? [video, ...videos] : videos,
+    [selectedColor, video, videos],
+  );
 
-  const allMedia = useMemo(() => [...displayImages, ...displayVideos], [displayImages, displayVideos]);
+  const allMedia = useMemo(
+    () => [...displayImages, ...displayVideos],
+    [displayImages, displayVideos],
+  );
   const isVideo = useCallback(
     (index: number) => index >= displayImages.length,
     [displayImages.length],
@@ -148,9 +155,22 @@ export function ProductGallery({
   const handleWheel = (e: React.WheelEvent) => {
     if (isFullscreen) {
       e.preventDefault();
-      e.deltaY < 0 ? handleZoomIn() : handleZoomOut();
+      if (e.deltaY < 0) {
+        handleZoomIn();
+      } else {
+        handleZoomOut();
+      }
     }
   };
+
+  const handleColorSelect = useCallback(
+    (index: number) => {
+      setSelectedIndex(0);
+      resetZoom();
+      onColorSelect?.(index);
+    },
+    [resetZoom, onColorSelect],
+  );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -223,7 +243,9 @@ export function ProductGallery({
                       zoom > 1 && 'cursor-grab',
                       isPanning && 'cursor-grabbing',
                       isAnimating && 'scale-95 opacity-80',
-                      isImageLoading ? 'scale-105 opacity-40 blur-md' : 'scale-100 opacity-100 blur-0',
+                      isImageLoading
+                        ? 'scale-105 opacity-40 blur-md'
+                        : 'scale-100 opacity-100 blur-0',
                     )}
                     style={{
                       transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
@@ -329,14 +351,7 @@ export function ProductGallery({
         <GalleryColorVariations
           colors={colors}
           selectedColorIndex={selectedColorIndex}
-          onColorSelect={useCallback(
-            (index: number) => {
-              setSelectedIndex(0);
-              resetZoom();
-              onColorSelect?.(index);
-            },
-            [resetZoom, onColorSelect],
-          )}
+          onColorSelect={handleColorSelect}
         />
       )}
 

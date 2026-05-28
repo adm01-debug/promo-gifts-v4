@@ -3,8 +3,8 @@ import * as Calc from './calculations';
 
 describe('Financial Calculations Edge Cases', () => {
   const items = [
-    { quantity: 100, unitPrice: 10.00 }, // 1000.00
-    { quantity: 1, unitPrice: 0.01 },    // 0.01
+    { quantity: 100, unitPrice: 10.0 }, // 1000.00
+    { quantity: 1, unitPrice: 0.01 }, // 0.01
   ];
 
   it('should handle 0% discount correctly', () => {
@@ -23,17 +23,17 @@ describe('Financial Calculations Edge Cases', () => {
 
   it('should handle fixed amount discount correctly', () => {
     const subtotal = Calc.calculateSubtotal(items);
-    const discount = Calc.calculateDiscountAmount(subtotal, 'amount', 50.50);
-    expect(discount).toBe(50.50);
+    const discount = Calc.calculateDiscountAmount(subtotal, 'amount', 50.5);
+    expect(discount).toBe(50.5);
     expect(Calc.round2(subtotal - discount)).toBe(949.51);
   });
 
   it('should handle 2-decimal rounding for complex values', () => {
-    const complexItems = [
+    const _complexItems = [
       { quantity: 3, unitPrice: 10.3333 }, // 30.9999 -> 31.00? No, calculations.ts does round2(q * p)
     ];
     // In calculations.ts: calculateItemTotal = round2(item.quantity * item.unitPrice + ...)
-    expect(Calc.calculateItemTotal({ quantity: 3, unitPrice: 10.3333 })).toBe(31.00);
+    expect(Calc.calculateItemTotal({ quantity: 3, unitPrice: 10.3333 })).toBe(31.0);
     expect(Calc.calculateItemTotal({ quantity: 1, unitPrice: 0.3333 })).toBe(0.33);
   });
 
@@ -42,12 +42,16 @@ describe('Financial Calculations Edge Cases', () => {
     const markup = 10; // 10% markup -> presentedSubtotal = 1100
     const presentedSubtotal = Calc.applyMarkup(realSubtotal, markup);
     expect(presentedSubtotal).toBe(1100);
-    
+
     const discountValue = 100; // presented subtotal - 100 = 1000
     const discountAmount = Calc.calculateDiscountAmount(presentedSubtotal, 'amount', discountValue);
-    
+
     // realSubtotal was 1000, final is 1000 -> real discount is 0%
-    const realDiscount = Calc.calculateRealDiscountPercent(realSubtotal, presentedSubtotal, discountAmount);
+    const realDiscount = Calc.calculateRealDiscountPercent(
+      realSubtotal,
+      presentedSubtotal,
+      discountAmount,
+    );
     expect(realDiscount).toBe(0);
   });
 });
