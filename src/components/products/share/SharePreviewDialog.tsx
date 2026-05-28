@@ -22,6 +22,7 @@ interface SelectedVariantInfo {
   variantName?: string | null;
   colorHex?: string | null;
   thumbnailUrl?: string | null;
+  variantImages?: string[] | null;
 }
 
 interface SharePreviewDialogProps {
@@ -47,7 +48,9 @@ export function SharePreviewDialog({
   const mainImages = useMemo(() => {
     const preferredImages: string[] = [];
 
-    if (selectedVariant?.thumbnailUrl) {
+    if (selectedVariant?.variantImages && selectedVariant.variantImages.length > 0) {
+      preferredImages.push(...selectedVariant.variantImages);
+    } else if (selectedVariant?.thumbnailUrl) {
       preferredImages.push(selectedVariant.thumbnailUrl);
     }
 
