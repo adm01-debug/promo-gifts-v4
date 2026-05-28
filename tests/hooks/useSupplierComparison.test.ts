@@ -166,7 +166,6 @@ describe('useSupplierComparison', () => {
 
   describe('getSupplierProductsInCategory', () => {
     it('should group products by supplier correctly', () => {
-      const { getSupplierProductsInCategory } = require('@/hooks/products/useSupplierComparison');
       const products = [
         { ...mockBaseProduct, supplier: { id: 's1' }, category: { id: 'c1' } },
         { ...mockBaseProduct, id: 'p2', supplier: { id: 's1' }, category: { id: 'c1' } },
