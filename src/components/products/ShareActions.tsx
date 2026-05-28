@@ -51,13 +51,15 @@ export function ShareActions({
 
   // Count photos considering selection
   const totalPhotosCount = useMemo(() => {
+    const imagesArray = Array.isArray(product.images) ? product.images : [];
+    
     // If we have a selected variant with specific images, use those + main product images
     const variantImages = selectedVariant?.variantImages && selectedVariant.variantImages.length > 0 
       ? selectedVariant.variantImages 
       : (selectedVariant?.thumbnailUrl ? [selectedVariant.thumbnailUrl] : []);
     
     if (!product.colors || product.colors.length === 0) {
-      const all = Array.from(new Set([...variantImages, ...product.images]));
+      const all = Array.from(new Set([...variantImages, ...imagesArray])).filter(Boolean);
       return all.length > 0 ? all.length : 1;
     }
 
@@ -67,8 +69,8 @@ export function ShareActions({
       color.images?.forEach((img) => colorImageUrls.add(img));
     });
 
-    const mainImages = product.images.filter((img) => !colorImageUrls.has(img));
-    const combined = Array.from(new Set([...variantImages, ...mainImages]));
+    const mainImages = imagesArray.filter((img) => !colorImageUrls.has(img));
+    const combined = Array.from(new Set([...variantImages, ...mainImages])).filter(Boolean);
     
     return combined.length > 0 ? combined.length : 1;
   }, [product.images, product.colors, selectedVariant]);
