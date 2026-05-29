@@ -1,6 +1,6 @@
 import { forwardRef, useCallback, Fragment } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { Home } from 'lucide-react';
+import { Home, Zap, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { canNavigateTo, isDevOnlyPath } from '@/lib/navigation/restricted-routes';
@@ -12,6 +12,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
 interface BreadcrumbItem {
   label: string;
