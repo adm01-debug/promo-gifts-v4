@@ -10,6 +10,7 @@ export default function PrivacyPage() {
     <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-8 px-3 py-3 sm:px-4 sm:py-4 lg:px-6 xl:px-8">
       <PageSEO title="Política de Privacidade" path="/privacidade" />
       <div className="mx-auto max-w-3xl space-y-8">
+        <PersistentBreadcrumbs showBackButton />
         <header className="space-y-4">
           <Link
             to="/auth"
