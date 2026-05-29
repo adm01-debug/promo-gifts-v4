@@ -318,8 +318,8 @@ export function PricingPanel() {
                                       </Badge>
                                     </span>
                                   </TooltipTrigger>
-                                  <TooltipContent className="max-w-xs">
-                                    <div className="space-y-1 text-xs">
+                                  <TooltipContent>
+                                    <div className="space-y-1">
                                       {tabela.faixas.slice(0, 5).map((f) => (
                                         <div key={f.faixa} className="flex justify-between gap-4">
                                           <span>≥ {f.quantidadeMinima} un:</span>

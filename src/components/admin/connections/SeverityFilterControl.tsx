@@ -128,8 +128,8 @@ export function SeverityFilterControl({ counts, className }: Props) {
                     )}
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-xs">
-                  <p className="text-xs">{pill.description}</p>
+                <TooltipContent side="bottom">
+                  <p>{pill.description}</p>
                 </TooltipContent>
               </Tooltip>
             );

@@ -364,7 +364,7 @@ export function ProductPersonalizationRules({
                 <Info className="h-3.5 w-3.5 text-muted-foreground" />
               </TooltipTrigger>
               <TooltipContent>
-                <p className="max-w-xs text-xs">
+                <p>
                   Técnicas e locais disponíveis para personalização deste produto
                 </p>
               </TooltipContent>
@@ -480,7 +480,7 @@ export function ProductPersonalizationRules({
                                   )}
                                 </Badge>
                               </TooltipTrigger>
-                              <TooltipContent side="bottom" className="max-w-xs">
+                              <TooltipContent side="bottom">
                                 <div className="space-y-1">
                                   <p className="font-medium">{technique.name}</p>
                                   {technique.description && (

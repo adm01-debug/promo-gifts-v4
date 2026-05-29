@@ -242,9 +242,9 @@ export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps
               </div>
             </div>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="text-xs">
+          <TooltipContent side="bottom">
             Busca inteligente{' '}
-            <kbd className="ml-1 rounded bg-muted px-1.5 py-0.5 font-mono text-[10px]">⌘K</kbd>
+            <kbd className="ml-1 rounded bg-muted px-1 py-0.5 font-mono text-[5px]">⌘K</kbd>
           </TooltipContent>
         </Tooltip>
 
