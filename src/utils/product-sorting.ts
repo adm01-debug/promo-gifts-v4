@@ -16,11 +16,6 @@ export function sortProducts(
   if (options?.skipSort) return products;
 
   switch (sortBy) {
-    case 'relevance':
-    case 'store-default':
-      // In relevance mode, we preserve the search ranking order
-      // (rankProductSearchResults already handles the hierarchy)
-      break;
     case 'name':
       products.sort((a, b) => a.name.localeCompare(b.name));
       break;

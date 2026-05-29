@@ -94,8 +94,6 @@ export interface AdvancedFilterState {
   // Adicionados todos os valores reais de SORT_OPTIONS para evitar divergência de tipo.
   sortBy:
     | 'name'
-    | 'relevance'
-    | 'store-default'
     | 'price-asc'
     | 'price-desc'
     | 'newest'

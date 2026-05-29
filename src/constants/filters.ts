@@ -41,8 +41,6 @@ export const STOCK_FILTER_OPTIONS: StockFilterOption[] = [
 ];
 
 export const SORT_OPTIONS = [
-  { value: 'relevance', label: 'Relevância (Busca)' },
-  { value: 'store-default', label: 'Padrão (Loja)' },
   { value: 'name', label: 'Nome (A-Z)' },
   { value: 'price-asc', label: 'Menor Preço' },
   { value: 'price-desc', label: 'Maior Preço' },
