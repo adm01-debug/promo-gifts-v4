@@ -17,6 +17,7 @@ export function sortProducts(
 
   switch (sortBy) {
     case 'relevance':
+    case 'store-default':
       // In relevance mode, we preserve the search ranking order
       // (rankProductSearchResults already handles the hierarchy)
       break;
@@ -34,7 +35,14 @@ export function sortProducts(
       break;
     case 'newest':
       products.sort(
-        (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime(),
+        (a, b) => {
+          const bTime = new Date(b.created_at || b.updated_at || 0).getTime();
+          const aTime = new Date(a.created_at || a.updated_at || 0).getTime();
+          if (bTime !== aTime) return bTime - aTime;
+          // Se datas iguais, prioriza os que têm flag newArrival
+          if (b.newArrival !== a.newArrival) return b.newArrival ? 1 : -1;
+          return a.name.localeCompare(b.name);
+        }
       );
       break;
     case 'best-seller-supplier': {
