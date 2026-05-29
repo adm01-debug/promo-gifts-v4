@@ -7,8 +7,8 @@ import { resolveCredential } from '../_shared/credentials.ts';
 import { safeErrorFields } from '../_shared/log-safety.ts';
 import { applyRateLimit, rateLimiters } from '../_shared/rate-limiter.ts';
 
-const HF_ENDPOINT = 'https://api-inference.huggingface.co/v1/chat/completions';
-const HF_MODEL = 'mistralai/Mistral-7B-Instruct-v0.3';
+const AI_ENDPOINT = 'https://ai.gateway.lovable.dev/v1/chat/completions';
+const AI_MODEL = 'google/gemini-2.5-flash';
 
 const RecommendationRequestSchema = z.object({
   client: z.object({
