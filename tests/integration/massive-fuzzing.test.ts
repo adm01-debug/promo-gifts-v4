@@ -5,8 +5,8 @@ import { describe, expect, it } from 'vitest';
  * Isso não é um teste unitário puro, mas sim um orquestrador de testes de integração real.
  */
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'http://127.0.0.1:54321';
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'http://127.0.0.1:54321';
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SIMULATION_BYPASS_KEY;
 
 describe("Massive Webhook & Edge Function Fuzzing", () => {
   it("deve executar 1000 cenários de fuzzing com sucesso (status codes esperados)", async () => {
