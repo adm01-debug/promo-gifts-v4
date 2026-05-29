@@ -41,7 +41,7 @@ export function QuantityCalculator({
             <TooltipTrigger>
               <Info className="h-3.5 w-3.5 text-muted-foreground/50" />
             </TooltipTrigger>
-            <TooltipContent className="max-w-[200px] px-2 py-1 text-[11px]">
+            <TooltipContent>
               Digite a quantidade desejada para ver o preço aplicado
             </TooltipContent>
           </Tooltip>
@@ -100,7 +100,7 @@ export function QuantityCalculator({
           <TooltipTrigger>
             <Info className="h-4 w-4 text-muted-foreground" />
           </TooltipTrigger>
-          <TooltipContent className="max-w-[200px] px-2 py-1 text-[11px]">
+          <TooltipContent>
             Digite a quantidade desejada para ver o preço aplicado
           </TooltipContent>
         </Tooltip>

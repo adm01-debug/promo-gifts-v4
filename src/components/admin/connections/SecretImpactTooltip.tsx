@@ -54,7 +54,7 @@ export function SecretImpactTooltip({ secretName, children, isMissing, className
         <p className="font-bold leading-tight">{impact.system}</p>
         <span
           className={cn(
-            'rounded px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider',
+            'rounded px-1 py-0.5 font-mono text-tooltip-header !opacity-100',
             impact.severity === 'critical' || impact.severity === 'high'
               ? 'bg-destructive/20 text-destructive'
               : impact.severity === 'medium'
@@ -66,7 +66,7 @@ export function SecretImpactTooltip({ secretName, children, isMissing, className
         </span>
       </div>
 
-      <p className="text-[11px] leading-relaxed text-white/70">
+      <p className="text-tooltip leading-relaxed text-white/70">
         Se esta chave estiver{' '}
         <strong className={cn('font-bold', SEVERITY_TONE[impact.severity])}>ausente ou vazia</strong>, os itens
         abaixo deixam de funcionar:
@@ -74,11 +74,11 @@ export function SecretImpactTooltip({ secretName, children, isMissing, className
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <p className="mb-1.5 text-tooltip-header">Telas Afetadas</p>
-          <ul className="space-y-1">
+          <p className="mb-1 text-tooltip-header">Telas Afetadas</p>
+          <ul className="space-y-0.5">
             {impact.screens.map((s) => (
-              <li key={s} className="flex items-center gap-1.5 font-mono text-[10px] text-white/80">
-                <span className="h-1 w-1 rounded-full bg-white/20" />
+              <li key={s} className="flex items-center gap-1 text-tooltip font-mono text-white/80">
+                <span className="h-0.5 w-0.5 rounded-full bg-white/20" />
                 {s}
               </li>
             ))}
@@ -86,11 +86,11 @@ export function SecretImpactTooltip({ secretName, children, isMissing, className
         </div>
 
         <div>
-          <p className="mb-1.5 text-tooltip-header">Fluxos Afetados</p>
-          <ul className="space-y-1">
+          <p className="mb-1 text-tooltip-header">Fluxos Afetados</p>
+          <ul className="space-y-0.5">
             {impact.flows.map((f) => (
-              <li key={f} className="flex items-center gap-1.5 text-[10px] text-white/80">
-                <span className="h-1 w-1 rounded-full bg-white/20" />
+              <li key={f} className="flex items-center gap-1 text-tooltip text-white/80">
+                <span className="h-0.5 w-0.5 rounded-full bg-white/20" />
                 {f}
               </li>
             ))}

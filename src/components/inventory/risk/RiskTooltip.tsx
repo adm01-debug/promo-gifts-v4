@@ -20,13 +20,13 @@ export const RiskTooltip = forwardRef<
   return (
     <div
       ref={ref}
-      className="text-tooltip min-w-[160px] rounded-lg border border-white/10 bg-black/85 p-3 text-white shadow-2xl backdrop-blur-md animate-in fade-in-0 zoom-in-95"
+      className="text-tooltip min-w-[140px] max-w-[180px] rounded-md border border-white/10 bg-black/90 p-2 text-white shadow-2xl backdrop-blur-md animate-in fade-in-0 zoom-in-95"
     >
-      <div className="mb-2 border-b border-white/5 pb-1.5">
+      <div className="mb-1.5 border-b border-white/5 pb-1">
         <p className="text-tooltip-header">{data.fullDate}</p>
       </div>
       
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <div className="flex items-center justify-between gap-4">
           <span className="text-white/50">Estoque Atual</span>
           <span className="font-bold tabular-nums">
@@ -35,16 +35,16 @@ export const RiskTooltip = forwardRef<
         </div>
 
         {(data.depleted || data.restocked) && (
-          <div className="grid grid-cols-2 gap-2 border-t border-white/5 pt-2">
+          <div className="grid grid-cols-2 gap-2 border-t border-white/5 pt-1.5">
             {data.depleted !== null && data.depleted > 0 && (
               <div className="space-y-0.5">
-                <span className="text-[9px] uppercase tracking-wider text-destructive/80">Saídas</span>
+                <span className="text-tooltip-header !text-destructive/80">Saídas</span>
                 <p className="font-bold text-destructive tabular-nums">-{data.depleted}</p>
               </div>
             )}
             {data.restocked !== null && data.restocked > 0 && (
               <div className="space-y-0.5">
-                <span className="text-[9px] uppercase tracking-wider text-primary/80">Entradas</span>
+                <span className="text-tooltip-header !text-primary/80">Entradas</span>
                 <p className="font-bold text-primary tabular-nums">+{data.restocked}</p>
               </div>
             )}
@@ -52,9 +52,9 @@ export const RiskTooltip = forwardRef<
         )}
 
         {data.restockDetected && (
-          <div className="mt-1 flex items-center gap-1.5 rounded bg-primary/10 px-1.5 py-0.5 border border-primary/20">
-            <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
-            <span className="text-[9px] font-bold uppercase tracking-wider text-primary">Reposição Detectada</span>
+          <div className="mt-1 flex items-center gap-1.5 rounded bg-primary/10 px-1 py-0.5 border border-primary/20">
+            <div className="h-1 w-1 animate-pulse rounded-full bg-primary" />
+            <span className="text-tooltip-header !text-primary !opacity-100">Reposição Detectada</span>
           </div>
         )}
       </div>

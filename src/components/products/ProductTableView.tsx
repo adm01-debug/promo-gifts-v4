@@ -527,7 +527,7 @@ export const ProductTableView = memo(function ProductTableView({
                             style={{ backgroundColor: c.hex }}
                           />
                         </TooltipTrigger>
-                        <TooltipContent side="top" className="text-[10px]">
+                        <TooltipContent side="top">
                           {c.name}
                         </TooltipContent>
                       </Tooltip>

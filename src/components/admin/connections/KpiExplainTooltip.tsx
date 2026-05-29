@@ -36,47 +36,47 @@ export function KpiExplainTooltip({
           <Info className="h-3 w-3" />
         </button>
       </TooltipTrigger>
-      <TooltipContent side="bottom" className="w-72 p-0">
-        <div className="border-b border-white/5 bg-white/[0.03] px-3.5 py-2.5">
-          <p className="font-semibold leading-tight">{explain.summary}</p>
+      <TooltipContent side="bottom" className="w-64 p-0">
+        <div className="border-b border-white/5 bg-white/[0.03] px-3 py-2">
+          <p className="font-semibold leading-tight text-tooltip">{explain.summary}</p>
         </div>
-        <div className="space-y-3 p-3.5">
+        <div className="space-y-2.5 p-3">
           <section className="space-y-1">
-            <header className="flex items-center gap-1.5 text-tooltip-header">
-              <Calculator className="h-3 w-3" />
+            <header className="flex items-center gap-1 text-tooltip-header">
+              <Calculator className="h-2.5 w-2.5" />
               <span>Fórmula Logística</span>
             </header>
-            <div className="rounded-md bg-white/[0.05] p-2 font-mono text-[10px] leading-relaxed text-white/90">
+            <div className="rounded bg-white/[0.05] p-1.5 font-mono text-tooltip leading-relaxed text-white/90">
               {explain.formula}
             </div>
           </section>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <section className="space-y-1">
-              <header className="flex items-center gap-1.5 text-tooltip-header">
-                <Clock className="h-3 w-3" />
+              <header className="flex items-center gap-1 text-tooltip-header">
+                <Clock className="h-2.5 w-2.5" />
                 <span>Janela</span>
               </header>
-              <p className="text-[10px] text-white/80">{explain.window}</p>
+              <p className="text-tooltip text-white/80">{explain.window}</p>
             </section>
             <section className="space-y-1">
-              <header className="flex items-center gap-1.5 text-tooltip-header">
-                <Database className="h-3 w-3" />
+              <header className="flex items-center gap-1 text-tooltip-header">
+                <Database className="h-2.5 w-2.5" />
                 <span>Fonte</span>
               </header>
-              <p className="truncate text-[10px] text-white/80" title={explain.source}>
+              <p className="truncate text-tooltip text-white/80" title={explain.source}>
                 {explain.source}
               </p>
             </section>
           </div>
 
           {explain.threshold && (
-            <section className="rounded-md bg-primary/10 p-2 border border-primary/20">
-              <header className="flex items-center gap-1.5 text-tooltip-header !text-primary !opacity-100">
-                <Target className="h-3 w-3" />
+            <section className="rounded bg-primary/10 p-1.5 border border-primary/20">
+              <header className="flex items-center gap-1 text-tooltip-header !text-primary !opacity-100">
+                <Target className="h-2.5 w-2.5" />
                 <span>Meta de Performance</span>
               </header>
-              <p className="mt-0.5 text-[10px] font-medium text-primary-foreground">{explain.threshold}</p>
+              <p className="mt-0.5 text-tooltip font-medium text-primary-foreground">{explain.threshold}</p>
             </section>
           )}
         </div>
