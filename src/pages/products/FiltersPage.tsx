@@ -338,7 +338,7 @@ export default function FiltersPage() {
                         )} />
                         <SelectValue placeholder="Ordenar" />
                         {/* BUG-G7: Mobile indicator when sorted */}
-                        state.sortBy !== 'name' && (
+                        {state.sortBy !== 'name' && (
                           <div className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-primary sm:hidden" />
                         )}
                       </SelectTrigger>
