@@ -46,7 +46,7 @@ export function ProductCardResult({
             <div className="flex flex-wrap gap-1">
               {product.colors.slice(0, 6).map((color, idx) => (
                 <div
-                  key={idx}
+                  key={`${color.name}-${idx}`}
                   className="h-4 w-4 rounded-full border border-border"
                   style={{ backgroundColor: color.hex || '#ccc' }}
                   title={color.name}
