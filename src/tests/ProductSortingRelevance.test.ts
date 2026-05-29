@@ -121,6 +121,13 @@ describe('sortProducts — Relevância (Busca)', () => {
     const result = sortProducts([...input], 'name', { skipSort: true });
     expect(result.map((p) => p.id)).toEqual(input.map((p) => p.id));
   });
+
+  it('store-default preserva a ordem de entrada (comportamento de ordenação padrão)', () => {
+    const input = baseProducts();
+    const expected = input.map((p) => p.id);
+    const result = sortProducts([...input], 'store-default').map((p) => p.id);
+    expect(result).toEqual(expected);
+  });
 });
 
 describe('sortProducts — Nome (A-Z)', () => {
