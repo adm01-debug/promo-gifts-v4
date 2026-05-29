@@ -172,9 +172,9 @@ const CloudStatusBannerInner = memo(function CloudStatusBannerInner() {
               {timeline
                 .slice()
                 .reverse()
-                .map((entry, idx) => (
+                .map((entry) => (
                   <div
-                    key={idx}
+                    key={`${entry.timestamp}-${entry.status}`}
                     className="flex items-center justify-between font-mono text-[10px] opacity-80"
                   >
                     <div className="flex items-center gap-2">

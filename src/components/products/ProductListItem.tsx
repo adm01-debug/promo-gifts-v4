@@ -460,7 +460,7 @@ export const ProductListItem = memo(function ProductListItem({
                     (activeColorFilter?.variations?.includes(color.variationSlug || '') ?? false);
                   return (
                     <div
-                      key={idx}
+                      key={`${color.name}-${idx}`}
                       className={cn(
                         'h-3 w-3 rounded-full border',
                         isHighlighted
