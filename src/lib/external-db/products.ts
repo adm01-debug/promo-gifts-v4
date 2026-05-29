@@ -1,6 +1,14 @@
 /**
  * Fetch products with full enrichment (colors, images, variants, suppliers).
+ *
+ * PERF (2026-05-29): o caminho primário agora é o RPC `fn_products_enriched`,
+ * que devolve produtos JÁ enriquecidos (colors/images/supplier_name) em UMA
+ * chamada — eliminando o fan-out de ~46 round-trips (página paginada + batches
+ * de enrichment via edge function). O caminho legado (bridge + enrichProducts)
+ * é mantido como FALLBACK automático: acionado quando os filtros não são
+ * suportados pelo RPC ou em qualquer erro, garantindo zero regressão.
  */
+import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import {
   invokeExternalDb,
@@ -49,6 +57,145 @@ type SupplierRow = { id: string; name: string; code: string };
 type ColorVariationRow = { id: string; name: string; slug: string; group_id: string };
 type ColorGroupRow = { id: string; name: string; slug: string };
 
+type FetchOptions = {
+  search?: string;
+  limit?: number;
+  offset?: number;
+  orderBy?: { column: string; ascending?: boolean };
+  filters?: Record<string, unknown>;
+  returnCount?: boolean;
+};
+
+type EnrichedResult = { products: PromobrindProduct[]; count: number | null };
+
+// ============================================================
+// RPC PATH — fn_products_enriched (caminho primário)
+// ============================================================
+
+const RPC_FILTER_KEYS = new Set([
+  'active',
+  'is_active',
+  'main_category_id',
+  'supplier_id',
+  '_search',
+]);
+const RPC_ORDER_COLUMNS = new Set([
+  'name',
+  'created_at',
+  'updated_at',
+  'sale_price',
+  'price_updated_at',
+]);
+const RPC_PAGE_SIZE = 500;
+const RPC_HARD_MAX = 200_000;
+const RPC_PAGINATION_TIMEOUT_MS = 30_000;
+
+/**
+ * O RPC suporta apenas um subconjunto de filtros escalares. Operadores
+ * ({ op, value }), arrays (IN) ou chaves desconhecidas forçam o fallback
+ * para o caminho legado (bridge), preservando todos os consumidores.
+ */
+function filtersSupportedByRpc(filters?: Record<string, unknown>): boolean {
+  if (!filters) return true;
+  for (const [key, value] of Object.entries(filters)) {
+    if (!RPC_FILTER_KEYS.has(key)) return false;
+    if (key === '_search') continue;
+    if (Array.isArray(value)) return false;
+    if (value !== null && typeof value === 'object') return false;
+  }
+  return true;
+}
+
+function orderSupportedByRpc(orderBy?: { column: string }): boolean {
+  return !orderBy || RPC_ORDER_COLUMNS.has(orderBy.column);
+}
+
+function buildRpcArgs(
+  filters: Record<string, unknown>,
+  options: FetchOptions | undefined,
+  limit: number | null,
+  offset: number,
+  withCount: boolean,
+): Record<string, unknown> {
+  const activeRaw =
+    typeof filters.is_active === 'boolean'
+      ? filters.is_active
+      : typeof filters.active === 'boolean'
+        ? filters.active
+        : true;
+  const search =
+    typeof filters._search === 'string' ? filters._search : (options?.search ?? null);
+  return {
+    p_limit: typeof limit === 'number' ? limit : null,
+    p_offset: offset,
+    p_search: search,
+    p_main_category_id:
+      typeof filters.main_category_id === 'string' ? filters.main_category_id : null,
+    p_supplier_id: typeof filters.supplier_id === 'string' ? filters.supplier_id : null,
+    p_active: activeRaw,
+    p_order_by: options?.orderBy?.column ?? 'name',
+    p_order_dir: (options?.orderBy?.ascending ?? true) ? 'asc' : 'desc',
+    p_with_count: withCount,
+  };
+}
+
+async function callEnrichedRpc(args: Record<string, unknown>): Promise<EnrichedResult> {
+  // `fn_products_enriched` foi criada após o último gen-types e ainda não está
+  // no Database type — cast controlado (mesmo padrão de kill-switch-client.ts).
+  const client = supabase as unknown as {
+    rpc: (
+      fn: 'fn_products_enriched',
+      params: Record<string, unknown>,
+    ) => PromiseLike<{ data: unknown; error: { message?: string } | null }>;
+  };
+  const { data, error } = await client.rpc('fn_products_enriched', args);
+  if (error) throw new Error(error.message || 'fn_products_enriched falhou');
+  const payload = (data ?? {}) as { products?: PromobrindProduct[]; count?: number | null };
+  return { products: payload.products ?? [], count: payload.count ?? null };
+}
+
+async function fetchViaEnrichedRpc(
+  options: FetchOptions | undefined,
+  filters: Record<string, unknown>,
+): Promise<EnrichedResult> {
+  const withCount = options?.returnCount === true;
+
+  // Página com limite explícito → 1 única chamada.
+  if (typeof options?.limit === 'number' && options.limit > 0) {
+    return callEnrichedRpc(
+      buildRpcArgs(filters, options, options.limit, options?.offset ?? 0, withCount),
+    );
+  }
+
+  // Catálogo completo → pagina pelo próprio RPC (já enriquecido, sem batch separado).
+  const all: PromobrindProduct[] = [];
+  let offset = 0;
+  let count: number | null = null;
+  const start = Date.now();
+
+  while (offset < RPC_HARD_MAX) {
+    if (Date.now() - start > RPC_PAGINATION_TIMEOUT_MS) {
+      logger.warn(
+        `[external-db] RPC pagination time budget exceeded. Got ${all.length} products at offset=${offset}.`,
+      );
+      break;
+    }
+    const page = await callEnrichedRpc(
+      buildRpcArgs(filters, options, RPC_PAGE_SIZE, offset, withCount && offset === 0),
+    );
+    if (offset === 0) count = page.count;
+    all.push(...page.products);
+    offset += page.products.length;
+    if (page.products.length < RPC_PAGE_SIZE) break;
+  }
+
+  return { products: all, count };
+}
+
+// ============================================================
+// PUBLIC API — RPC-first, fallback automático para bridge
+// ============================================================
+
 export async function fetchPromobrindProducts(options?: {
   search?: string;
   limit?: number;
@@ -64,14 +211,43 @@ export async function fetchPromobrindProducts(options?: {
   filters?: Record<string, unknown>;
   returnCount?: true;
 }): Promise<{ products: PromobrindProduct[]; count: number | null }>;
-export async function fetchPromobrindProducts(options?: {
-  search?: string;
-  limit?: number;
-  offset?: number;
-  orderBy?: { column: string; ascending?: boolean };
-  filters?: Record<string, unknown>;
-  returnCount?: boolean;
-}): Promise<PromobrindProduct[] | { products: PromobrindProduct[]; count: number | null }> {
+export async function fetchPromobrindProducts(
+  options?: FetchOptions,
+): Promise<PromobrindProduct[] | EnrichedResult> {
+  const filters: Record<string, unknown> = {
+    ...(options?.filters?.active === undefined && options?.filters?.is_active === undefined
+      ? { active: true }
+      : {}),
+    ...options?.filters,
+  };
+  if (options?.search) {
+    filters._search = options.search;
+  }
+
+  const rpcEligible = filtersSupportedByRpc(filters) && orderSupportedByRpc(options?.orderBy);
+
+  if (rpcEligible) {
+    try {
+      const result = await fetchViaEnrichedRpc(options, filters);
+      return options?.returnCount ? result : result.products;
+    } catch (err) {
+      logger.warn(
+        `[external-db] fn_products_enriched falhou — fallback bridge/legacy: ${(err as Error).message}`,
+      );
+      // continua para o caminho legado abaixo
+    }
+  }
+
+  return fetchPromobrindProductsViaBridge(options);
+}
+
+// ============================================================
+// LEGACY PATH — bridge + enrichProducts (fallback)
+// ============================================================
+
+async function fetchPromobrindProductsViaBridge(
+  options?: FetchOptions,
+): Promise<PromobrindProduct[] | EnrichedResult> {
   const filters: Record<string, unknown> = {
     ...(options?.filters?.active === undefined && options?.filters?.is_active === undefined
       ? { active: true }
