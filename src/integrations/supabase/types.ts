@@ -3423,6 +3423,7 @@ export type Database = {
         Row: {
           button_name: string
           created_at: string
+          destination_path: string | null
           id: string
           source_path: string
           timestamp: string
@@ -3431,6 +3432,7 @@ export type Database = {
         Insert: {
           button_name: string
           created_at?: string
+          destination_path?: string | null
           id?: string
           source_path: string
           timestamp?: string
@@ -3439,6 +3441,7 @@ export type Database = {
         Update: {
           button_name?: string
           created_at?: string
+          destination_path?: string | null
           id?: string
           source_path?: string
           timestamp?: string
