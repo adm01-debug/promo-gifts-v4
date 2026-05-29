@@ -1,4 +1,4 @@
-﻿import { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useExternalProductSearch } from '@/hooks/simulation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, Package, X } from 'lucide-react';
 import { formatCurrency } from './utils';
+import { TruncatedTooltip } from '@/components/ui/truncated-tooltip';
 import type { Product } from './types';
 
 interface ProductSearchProps {
@@ -56,8 +57,10 @@ export function ProductSearch({ onSelect, selectedProduct }: ProductSearchProps)
                 <Package className="h-6 w-6 text-muted-foreground" />
               )}
             </div>
-            <div>
-              <p className="font-medium">{selectedProduct.name}</p>
+            <div className="min-w-0 flex-1">
+              <TruncatedTooltip className="font-medium">
+                {selectedProduct.name}
+              </TruncatedTooltip>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <span>SKU: {selectedProduct.sku}</span>
                 <span>•</span>
