@@ -968,7 +968,7 @@ export default function VisualSearchPage() {
                   </Card>
                 ) : (
                   <div data-testid="search-results-list" className="columns-1 sm:columns-2 xl:columns-3 gap-5 space-y-5">
-                    {results.products.map((product, idx) => (
+                    {results.products.map((product) => (
                       <motion.div
                         key={product.id}
                         initial={{ opacity: 0, scale: 0.95 }}
