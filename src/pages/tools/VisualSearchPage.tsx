@@ -416,7 +416,7 @@ export default function VisualSearchPage() {
                           <div className="absolute inset-0 pointer-events-none" style={{ opacity: hotspotOpacity }}>
                             {results.analysis.visualHighlights.map((hl, idx) => (
                               <motion.div
-                                key={idx}
+                                key={`${hl.label}-${idx}`}
                                 initial={{ scale: 0, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
                                 transition={{ delay: 0.5 + idx * 0.1 }}
@@ -676,14 +676,20 @@ export default function VisualSearchPage() {
 
                     <div className="flex flex-wrap gap-1.5">
                       {results.analysis.keywords.map((kw, i) => (
-                        <Badge 
-                          key={i} 
-                          variant="secondary" 
-                          className="h-5 cursor-pointer border-transparent bg-background/80 px-2 text-[9px] font-medium uppercase text-primary hover:bg-primary hover:text-white transition-all"
-                          onClick={() => processImage(previewUrl!, kw)}
+                        <motion.div
+                          key={`${kw}-${i}`}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0.2 + i * 0.05 }}
                         >
-                          {kw}
-                        </Badge>
+                          <Badge 
+                            variant="secondary" 
+                            className="h-5 cursor-pointer border-transparent bg-background/80 px-2 text-[9px] font-medium uppercase text-primary hover:bg-primary hover:text-white transition-all"
+                            onClick={() => processImage(previewUrl!, kw)}
+                          >
+                            {kw}
+                          </Badge>
+                        </motion.div>
                       ))}
                     </div>
 
@@ -962,7 +968,7 @@ export default function VisualSearchPage() {
                   </Card>
                 ) : (
                   <div data-testid="search-results-list" className="columns-1 sm:columns-2 xl:columns-3 gap-5 space-y-5">
-                    {results.products.map((product, idx) => (
+                    {results.products.map((product) => (
                       <motion.div
                         key={product.id}
                         initial={{ opacity: 0, scale: 0.95 }}

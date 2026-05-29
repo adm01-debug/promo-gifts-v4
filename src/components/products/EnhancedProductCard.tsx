@@ -324,11 +324,12 @@ export function EnhancedProductCard({
             )}
           >
             <div className="flex items-center gap-1 rounded-full bg-card/90 px-2 py-1 backdrop-blur-sm">
-              {product.colors.slice(0, 4).map((color: { hex: string }, idx: number) => (
+              {product.colors.slice(0, 4).map((color: { hex: string; name?: string }, idx: number) => (
                 <div
-                  key={idx}
+                  key={`${color.hex}-${idx}`}
                   className="h-4 w-4 rounded-full border-2 border-card shadow-sm"
                   style={{ backgroundColor: color.hex }}
+                  title={color.name}
                 />
               ))}
               {product.colors.length > 4 && (
@@ -405,8 +406,8 @@ export function EnhancedProductCard({
 
               {Array.isArray(product.materials) && product.materials.length > 0 && (
                 <div className="flex flex-wrap gap-1">
-                  {product.materials.slice(0, 3).map((material: string, idx: number) => (
-                    <Badge key={idx} variant="outline" className="text-[10px]">
+                  {product.materials.slice(0, 3).map((material: string) => (
+                    <Badge key={material} variant="outline" className="text-[10px]">
                       {material}
                     </Badge>
                   ))}

@@ -66,7 +66,7 @@ function ProductMiniCard({ product, onClick }: { product: Product; onClick: () =
             <div className="flex -space-x-1">
               {product.colors.slice(0, 3).map((color, idx) => (
                 <div
-                  key={idx}
+                  key={`${color.name}-${idx}`}
                   className="h-3 w-3 rounded-full border border-background ring-1 ring-border/30"
                   style={{ backgroundColor: color.hex }}
                   title={color.name}

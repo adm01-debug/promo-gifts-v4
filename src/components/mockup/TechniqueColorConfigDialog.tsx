@@ -252,7 +252,7 @@ export function TechniqueColorConfigDialog({
                         color.selectedPantone || color.pantoneMatch?.pantoneCode || color.name;
                       return (
                         <label
-                          key={idx}
+                          key={`${color.hex}-${idx}`}
                           className={cn(
                             'flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-all',
                             isSelected

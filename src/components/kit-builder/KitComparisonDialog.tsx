@@ -188,8 +188,8 @@ export function KitComparisonDialog({ open, onOpenChange, kits }: KitComparisonD
               </tr>
             </thead>
             <tbody>
-              {rows.map((row, idx) => (
-                <tr key={idx} className={idx % 2 === 0 ? 'bg-muted/30' : ''}>
+              {rows.map((row) => (
+                <tr key={row.label} className={rows.indexOf(row) % 2 === 0 ? 'bg-muted/30' : ''}>
                   <td className="flex items-center gap-1.5 px-2 py-2.5 font-medium text-muted-foreground">
                     {row.icon}
                     {row.label}
@@ -218,7 +218,7 @@ export function KitComparisonDialog({ open, onOpenChange, kits }: KitComparisonD
                 <p className="mb-2 text-sm font-semibold">{kit.name}</p>
                 {(kit.items_data || []).map((item: KitItemData, idx: number) => (
                   <div
-                    key={idx}
+                    key={`${item.sku}-${idx}`}
                     className="flex items-center gap-2 rounded bg-muted/50 p-1.5 text-xs"
                   >
                     {item.imageUrl && (
