@@ -97,7 +97,7 @@ export function PromoFlixPlayer({
   const controlsTimeoutRef = useRef<number | null>(null);
   const hlsRef = useRef<HlsType | null>(null);
 
-  const [isPlaying, setIsPlaying] = useState(() => { try { return localStorage.getItem('promoflix_playing') === 'true'; } catch { return false; } });
+  const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [buffered, setBuffered] = useState(0);
