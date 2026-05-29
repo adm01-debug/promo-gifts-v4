@@ -128,7 +128,7 @@ export function TechniqueTooltip({ technique, children, className }: TechniqueTo
   const info = getTechniqueInfo(technique);
 
   return (
-    <HoverCard openDelay={200} closeDelay={100}>
+    <HoverCard openDelay={700} closeDelay={100}>
       <HoverCardTrigger asChild>
         <div className={cn('cursor-help', className)}>{children}</div>
       </HoverCardTrigger>

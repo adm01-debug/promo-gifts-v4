@@ -66,14 +66,14 @@ export function SecretImpactTooltip({ secretName, children, isMissing, className
         </span>
       </div>
 
-      <p className="text-muted-foreground">
+      <p className="text-background/70">
         Se esta chave estiver{' '}
         <strong className={SEVERITY_TONE[impact.severity]}>ausente ou vazia</strong>, os itens
         abaixo deixam de funcionar:
       </p>
 
       <div>
-        <p className="mb-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+        <p className="mb-1 text-[10px] uppercase tracking-wide text-background/50">
           Telas afetadas
         </p>
         <ul className="space-y-0.5">
@@ -86,7 +86,7 @@ export function SecretImpactTooltip({ secretName, children, isMissing, className
       </div>
 
       <div>
-        <p className="mb-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+        <p className="mb-1 text-[10px] uppercase tracking-wide text-background/50">
           Fluxos afetados
         </p>
         <ul className="space-y-0.5">

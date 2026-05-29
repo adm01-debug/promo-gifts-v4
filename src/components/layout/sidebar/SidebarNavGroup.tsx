@@ -195,7 +195,7 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
             <TooltipTrigger asChild>
               <div>{linkContent}</div>
             </TooltipTrigger>
-            <TooltipContent side="right" className="z-[100] border-border bg-card">
+            <TooltipContent side="right" className="z-[100]">
               <div className="flex items-center gap-2">
                 <span>{item.label}</span>
                 {item.shortcut && (

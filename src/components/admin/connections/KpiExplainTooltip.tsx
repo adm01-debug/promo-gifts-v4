@@ -50,16 +50,16 @@ export function KpiExplainTooltip({
       </TooltipTrigger>
       <TooltipContent
         side="bottom"
-        className="max-w-sm overflow-hidden border-primary/40 bg-primary p-0 text-primary-foreground"
+        className="max-w-sm overflow-hidden p-0"
       >
         <div className="border-b border-white/10 bg-black/10 px-3 py-2">
           <p className="text-[11px] font-semibold leading-snug">{explain.summary}</p>
         </div>
         <dl className="space-y-2 px-3 py-2 text-[10px]">
           <div className="flex gap-2">
-            <Calculator className="mt-0.5 h-2.5 w-2.5 shrink-0 text-primary-foreground/70" />
+            <Calculator className="mt-0.5 h-2.5 w-2.5 shrink-0 text-background/70" />
             <div className="min-w-0">
-              <dt className="text-[8px] font-semibold uppercase tracking-wide text-primary-foreground/60">
+              <dt className="text-[8px] font-semibold uppercase tracking-wide text-background/60">
                 Fórmula
               </dt>
               <dd className="mt-0.5 break-words rounded bg-black/20 px-1.5 py-0.5 font-mono text-[10px] leading-snug">
@@ -68,18 +68,18 @@ export function KpiExplainTooltip({
             </div>
           </div>
           <div className="flex gap-2">
-            <Clock className="mt-0.5 h-2.5 w-2.5 shrink-0 text-primary-foreground/70" />
+            <Clock className="mt-0.5 h-2.5 w-2.5 shrink-0 text-background/70" />
             <div className="min-w-0">
-              <dt className="text-[8px] font-semibold uppercase tracking-wide text-primary-foreground/60">
+              <dt className="text-[8px] font-semibold uppercase tracking-wide text-background/60">
                 Janela
               </dt>
               <dd className="leading-snug">{explain.window}</dd>
             </div>
           </div>
           <div className="flex gap-2">
-            <Database className="mt-0.5 h-2.5 w-2.5 shrink-0 text-primary-foreground/70" />
+            <Database className="mt-0.5 h-2.5 w-2.5 shrink-0 text-background/70" />
             <div className="min-w-0">
-              <dt className="text-[8px] font-semibold uppercase tracking-wide text-primary-foreground/60">
+              <dt className="text-[8px] font-semibold uppercase tracking-wide text-background/60">
                 Fonte
               </dt>
               <dd className="break-words font-mono text-[10px] leading-snug">{explain.source}</dd>
@@ -87,9 +87,9 @@ export function KpiExplainTooltip({
           </div>
           {explain.threshold && (
             <div className="flex gap-2">
-              <Target className="mt-0.5 h-2.5 w-2.5 shrink-0 text-primary-foreground/70" />
-              <div className="min-w-0">
-                <dt className="text-[8px] font-semibold uppercase tracking-wide text-primary-foreground/60">
+                <Target className="mt-0.5 h-2.5 w-2.5 shrink-0 text-background/70" />
+                <div className="min-w-0">
+                  <dt className="text-[8px] font-semibold uppercase tracking-wide text-background/60">
                   Alvo
                 </dt>
                 <dd className="leading-snug">{explain.threshold}</dd>

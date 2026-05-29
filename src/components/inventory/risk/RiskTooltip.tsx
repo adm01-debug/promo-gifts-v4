@@ -27,9 +27,9 @@ export const RiskTooltip = forwardRef<
   return (
     <div
       ref={ref}
-      className="min-w-[150px] rounded-lg border border-border bg-popover p-2.5 shadow-lg"
+      className="text-tooltip min-w-[150px] rounded-lg border border-border/40 bg-foreground/90 p-2.5 text-background shadow-sm backdrop-blur-sm"
     >
-      <p className="text-[10px] font-medium text-foreground">{data.fullDate}</p>
+      <p className="text-[10px] font-semibold text-background">{data.fullDate}</p>
       <div className="mt-1.5 space-y-1">
         <div className="flex justify-between text-[10px]">
           <span className="text-muted-foreground">Estoque:</span>
