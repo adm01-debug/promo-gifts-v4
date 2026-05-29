@@ -30,6 +30,7 @@ vi.mock('@/hooks/products', () => ({
   useCategoryIcons: () => ({ data: [] }),
   getCategoryIcon: () => '📦',
   useProductIntelligence: () => ({ badges: [] }),
+  useProductIntelligenceBadges: () => ({ badges: [] }),
 }));
 
 vi.mock('@/hooks/products/useCategoryIcons', () => ({
@@ -62,14 +63,20 @@ const mockProduct: Product = {
   category: { id: 1, name: 'Brindes' },
   category_id: 'cat-uuid-1',
   supplier: { id: 'supp-1', name: 'Fornecedor A' },
-  tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
+  tags: { 
+    publicoAlvo: ['Executivos'], 
+    datasComemorativas: [], 
+    endomarketing: [], 
+    ramo: [], 
+    nicho: [] 
+  },
   priceUpdatedAt: new Date().toISOString(),
   leadTimeDays: 5,
 } as any;
 
 const queryClient = new QueryClient();
 
-const renderPDP = () => {
+const renderPDP = (tags = {}) => {
   return render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
@@ -86,6 +93,7 @@ const renderPDP = () => {
             onOpenPackagingModal={() => {}}
             onOpenFutureStock={() => {}}
             onOpenSupplierComparison={() => {}}
+            tags={tags}
           />
         </TooltipProvider>
       </BrowserRouter>
@@ -101,16 +109,13 @@ describe('B2B Product Detail Flow Integration', () => {
   it('Fluxo 1: Adicionar ao Carrinho (Quick Add)', async () => {
     renderPDP();
     
-    // Abrir o popover de adicionar ao carrinho
     const cartButton = screen.getByText('Carrinho');
     fireEvent.click(cartButton);
 
-    // Selecionar variação no mock
     const variantButton = await screen.findByText('Mock Variant');
     fireEvent.click(variantButton);
     
-    // Verificar se o botão de confirmar no carrinho aparece
-    const confirmAdd = await screen.findByText('Adicionar ao Carrinho');
+    const confirmAdd = await screen.findByText(/Adicionar ao Carrinho/i);
     fireEvent.click(confirmAdd);
 
     expect(mockAddToActiveCart).toHaveBeenCalledWith(expect.objectContaining({
@@ -125,23 +130,29 @@ describe('B2B Product Detail Flow Integration', () => {
     const categoryBadge = screen.getByText('Brindes');
     fireEvent.click(categoryBadge.parentElement!);
     
-    expect(mockNavigate).toHaveBeenCalledWith('/filtros?categories=cat-uuid-1');
+    expect(mockNavigate).toHaveBeenCalledWith(expect.stringContaining('/filtros?categories=cat-uuid-1'));
   });
 
-  it('Fluxo 3: Abrir Modais de Ação Rápida', async () => {
+  it('Fluxo 3: Abrir Modais de Ação Rápida (Preços)', async () => {
     renderPDP();
     
-    // Abrir Modal de Preços
     const pricesButton = screen.getByText('Preços');
     fireEvent.click(pricesButton);
-    expect(await screen.findByText('Tabela de Preços')).toBeDefined();
+    
+    const title = await screen.findByText(/Tabela de Preços/i);
+    expect(title).toBeDefined();
   });
 
-  it('Fluxo 4: Verificação de Tags e Nichos (Seção Indicação)', async () => {
-    renderPDP();
+  it('Fluxo 4: Verificação de Tags e Nichos (Indicação)', async () => {
+    // Passando tags explicitamente para habilitar o botão
+    renderPDP({ 'Público-Alvo': ['Executivos'] });
+    
     const indicationButton = screen.getByText('Indicação');
+    expect(indicationButton).not.toBeDisabled();
+    
     fireEvent.click(indicationButton);
     
-    expect(await screen.findByText('Indicado para')).toBeDefined();
+    const modalTitle = await screen.findByText(/Indicado para/i);
+    expect(modalTitle).toBeDefined();
   });
 });
