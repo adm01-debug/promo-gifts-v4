@@ -5,6 +5,8 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import type { SortOption } from '@/hooks/products/useCatalogState';
 import type { Json } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/ui/use-toast';
+// BUG-PREF-01 FIX: importar SORT_OPTIONS para validar sortBy ao carregar de storage.
+import { SORT_OPTIONS } from '@/constants/filters';
 
 interface CatalogPreferences {
   sortBy: SortOption;
@@ -17,6 +19,23 @@ const DEFAULT_PREFERENCES: CatalogPreferences = {
 };
 
 const STORAGE_KEY = 'catalog_preferences';
+
+// BUG-PREF-01 FIX: Conjunto dos valores válidos de sortBy derivado do SSOT.
+// Localizado aqui para validar antes de gravar no state — sem depender
+// da validação em useCatalogState (defense-in-depth).
+const CATALOG_VALID_SORT_VALUES = new Set(SORT_OPTIONS.map(o => o.value));
+
+/**
+ * BUG-PREF-01 FIX: Sanitiza um valor de sortBy antes de aplicar ao state.
+ * Retorna 'name' para qualquer valor inválido, null ou ausente.
+ * Previne que localStorage/cloud stale (ex: 'relevance' de versão anterior)
+ * quebre o catálogo ou entre no state sem validação.
+ */
+function sanitizeSortBy(val: unknown): SortOption {
+  return typeof val === 'string' && CATALOG_VALID_SORT_VALUES.has(val)
+    ? (val as SortOption)
+    : 'name';
+}
 
 export function useCatalogPreferences() {
   const { user } = useAuth();
@@ -85,14 +104,27 @@ export function useCatalogPreferences() {
     const loadPreferences = () => {
       try {
         if (cloudPreferences) {
-          setPreferencesState(cloudPreferences);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudPreferences));
+          // BUG-PREF-01 FIX: Validar sortBy antes de aplicar ao state.
+          // Cloud data pode conter valor stale de versão anterior do app
+          // (ex: 'relevance'). Normalizar para 'name' se inválido.
+          const validatedCloudPrefs: CatalogPreferences = {
+            ...cloudPreferences,
+            sortBy: sanitizeSortBy(cloudPreferences.sortBy),
+          };
+          setPreferencesState(validatedCloudPrefs);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(validatedCloudPrefs));
         } else {
           const stored = localStorage.getItem(STORAGE_KEY);
           if (stored) {
             try {
               const parsed = JSON.parse(stored);
-              setPreferencesState((prev) => ({ ...prev, ...parsed }));
+              // BUG-PREF-01 FIX: Validar sortBy antes de aplicar ao state.
+              // localStorage pode conter valor stale de versão anterior do app.
+              const validatedParsed: Partial<CatalogPreferences> = {
+                ...parsed,
+                sortBy: sanitizeSortBy(parsed?.sortBy),
+              };
+              setPreferencesState((prev) => ({ ...prev, ...validatedParsed }));
             } catch (e) {
               console.error('Error parsing catalog preferences', e);
             }
