@@ -20,9 +20,9 @@ export const RiskTooltip = forwardRef<
   return (
     <div
       ref={ref}
-      className="text-tooltip min-w-[140px] max-w-[180px] rounded-md border border-white/10 bg-black/90 p-2 text-white shadow-2xl backdrop-blur-md animate-in fade-in-0 zoom-in-95"
+      className="text-tooltip min-w-[160px] max-w-[240px] rounded-md border border-white/10 bg-black/90 p-3 text-white shadow-2xl backdrop-blur-md animate-in fade-in-0 zoom-in-95"
     >
-      <div className="mb-1.5 border-b border-white/5 pb-1">
+      <div className="mb-2 border-b border-white/5 pb-1.5">
         <p className="text-tooltip-header">{data.fullDate}</p>
       </div>
       

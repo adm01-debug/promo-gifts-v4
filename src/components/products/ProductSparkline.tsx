@@ -210,12 +210,12 @@ export function ProductSparkline({ productId, className }: ProductSparklineProps
             marginBottom: 6,
           }}
         >
-          <div className="min-w-[160px] overflow-hidden rounded-md border border-white/10 bg-[#1a1a1a]/95 shadow-2xl backdrop-blur-md">
+          <div className="min-w-[200px] overflow-hidden rounded-md border border-white/10 bg-[#1a1a1a]/95 shadow-2xl backdrop-blur-md">
             {/* Header with day info */}
             <div className="border-b border-border/40 bg-gradient-to-r from-muted/80 to-transparent px-3 py-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1">
-                  <Activity className="h-2.5 w-2.5 text-muted-foreground" />
+                  <Activity className="h-3.5 w-3.5 text-muted-foreground" />
                   <span className="text-tooltip-header">
                     Mercado · Dia {hoverIndex + 1}
                   </span>
@@ -255,7 +255,7 @@ export function ProductSparkline({ productId, className }: ProductSparklineProps
                 <div className="flex items-center gap-1">
                   <TrendIcon
                     className={cn(
-                      'h-3 w-3',
+                      'h-4 w-4',
                       summary.periodChange > 0
                         ? 'text-success'
                         : summary.periodChange < 0
@@ -296,7 +296,7 @@ export function ProductSparkline({ productId, className }: ProductSparklineProps
                       }}
                     />
                   </div>
-                  <span className="text-[9px] text-muted-foreground/70">
+                  <span className="text-tooltip text-muted-foreground/70">
                     {summary.firstHalfTotal} un
                   </span>
                 </div>
@@ -317,7 +317,7 @@ export function ProductSparkline({ productId, className }: ProductSparklineProps
                       }}
                     />
                   </div>
-                  <span className="text-[9px] text-muted-foreground/70">
+                  <span className="text-tooltip text-muted-foreground/70">
                     {summary.secondHalfTotal} un
                   </span>
                 </div>
@@ -327,7 +327,7 @@ export function ProductSparkline({ productId, className }: ProductSparklineProps
             {/* Trend footer */}
             <div className="flex items-center justify-between border-t border-white/5 px-3 py-1.5">
               <div className="flex items-center gap-1">
-                <Zap className="h-2.5 w-2.5 text-warning" />
+                <Zap className="h-3.5 w-3.5 text-warning" />
                 <span className="text-tooltip-header">
                   {summary.activeDays}/{points.length} dias ativos
                 </span>
@@ -342,7 +342,7 @@ export function ProductSparkline({ productId, className }: ProductSparklineProps
                       : 'bg-muted text-muted-foreground',
                 )}
               >
-                <TrendIcon className="h-3 w-3" />
+                <TrendIcon className="h-4 w-4" />
                 {summary.trend > 0 ? '+' : ''}
                 {summary.trend.toFixed(1)}%
               </div>

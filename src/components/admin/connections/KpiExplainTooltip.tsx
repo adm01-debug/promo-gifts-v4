@@ -33,7 +33,7 @@ export function KpiExplainTooltip({
             className,
           )}
         >
-          <Info className="h-3 w-3" />
+          <Info className="h-4 w-4" />
         </button>
       </TooltipTrigger>
       <TooltipContent side="bottom" className="w-64 p-0">
@@ -43,7 +43,7 @@ export function KpiExplainTooltip({
         <div className="space-y-2.5 p-3">
           <section className="space-y-1">
             <header className="flex items-center gap-1 text-tooltip-header">
-              <Calculator className="h-2.5 w-2.5" />
+              <Calculator className="h-3.5 w-3.5" />
               <span>Fórmula Logística</span>
             </header>
             <div className="rounded bg-white/[0.05] p-1.5 font-mono text-tooltip leading-relaxed text-white/90">
@@ -54,14 +54,14 @@ export function KpiExplainTooltip({
           <div className="grid grid-cols-2 gap-3">
             <section className="space-y-1">
               <header className="flex items-center gap-1 text-tooltip-header">
-                <Clock className="h-2.5 w-2.5" />
+                <Clock className="h-3.5 w-3.5" />
                 <span>Janela</span>
               </header>
               <p className="text-tooltip text-white/80">{explain.window}</p>
             </section>
             <section className="space-y-1">
               <header className="flex items-center gap-1 text-tooltip-header">
-                <Database className="h-2.5 w-2.5" />
+                <Database className="h-3.5 w-3.5" />
                 <span>Fonte</span>
               </header>
               <p className="truncate text-tooltip text-white/80" title={explain.source}>
@@ -73,7 +73,7 @@ export function KpiExplainTooltip({
           {explain.threshold && (
             <section className="rounded bg-primary/10 p-1.5 border border-primary/20">
               <header className="flex items-center gap-1 text-tooltip-header !text-primary !opacity-100">
-                <Target className="h-2.5 w-2.5" />
+                <Target className="h-3.5 w-3.5" />
                 <span>Meta de Performance</span>
               </header>
               <p className="mt-0.5 text-tooltip font-medium text-primary-foreground">{explain.threshold}</p>
