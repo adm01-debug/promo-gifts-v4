@@ -102,7 +102,7 @@ export function IntelligenceBadges({
                 </Badge>
               </motion.div>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className=" text-center">
+            <TooltipContent side="bottom" className="text-center">
               <p>{badge.label}</p>
             </TooltipContent>
           </Tooltip>
@@ -122,7 +122,7 @@ export function IntelligenceBadges({
               </Badge>
             </motion.div>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className=" text-center">
+          <TooltipContent side="bottom" className="text-center">
             <p>
               {turnoverScore >= 80
                 ? 'Alto potencial comercial'

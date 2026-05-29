@@ -123,7 +123,7 @@ export function TechniqueCard({
                 )}
               </div>
             </HoverCardTrigger>
-            <HoverCardContent side="right" className="w-64 p-3">
+            <HoverCardContent side="right">
               <TechniquePreview technique={technique} thumbnail={thumbnail} />
             </HoverCardContent>
           </HoverCard>
@@ -286,7 +286,7 @@ export function TechniqueCard({
                   )}
                 </motion.div>
               </HoverCardTrigger>
-              <HoverCardContent side="right" className="w-72 p-4">
+              <HoverCardContent side="right">
                 <TechniquePreview technique={technique} thumbnail={thumbnail} expanded />
               </HoverCardContent>
             </HoverCard>

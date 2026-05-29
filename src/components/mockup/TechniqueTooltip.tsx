@@ -132,7 +132,7 @@ export function TechniqueTooltip({ technique, children, className }: TechniqueTo
       <HoverCardTrigger asChild>
         <div className={cn('cursor-help', className)}>{children}</div>
       </HoverCardTrigger>
-      <HoverCardContent side="right" align="start" className="w-64 overflow-hidden p-0">
+      <HoverCardContent side="right" align="start" className="overflow-hidden p-0">
         {/* Visual Header */}
         <div className={cn('bg-gradient-to-r p-3 text-primary-foreground', info.gradient)}>
           <div className="flex items-center justify-between">

@@ -36,7 +36,7 @@ export function KpiExplainTooltip({
           <Info className="h-4 w-4" />
         </button>
       </TooltipTrigger>
-      <TooltipContent side="bottom" className="w-64 p-0">
+      <TooltipContent side="bottom" className="p-0">
         <div className="border-b border-white/5 bg-white/[0.03] px-3 py-2">
           <p className="font-semibold leading-tight text-tooltip">{explain.summary}</p>
         </div>

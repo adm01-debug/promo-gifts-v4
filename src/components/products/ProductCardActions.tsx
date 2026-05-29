@@ -238,7 +238,7 @@ function ActionButton({
       <TooltipContent side="left" className="flex items-center gap-2">
         {label}
         {shortcut && (
-          <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+          <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-tooltip font-medium opacity-100 sm:flex">
             {shortcut}
           </kbd>
         )}
