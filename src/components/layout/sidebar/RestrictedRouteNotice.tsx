@@ -63,15 +63,15 @@ export function RestrictedRouteNotice({ isCollapsed }: RestrictedRouteNoticeProp
           </TooltipTrigger>
           <TooltipContent
             side="right"
-            className="max-w-xs border-amber-500/20 bg-background/95 backdrop-blur-md"
+            className="border-amber-500/20 bg-background/95 backdrop-blur-md"
           >
-            <p className="flex items-center gap-1.5 text-xs font-bold text-amber-500">
-              <ShieldAlert className="h-3 w-3" />
+            <p className="flex items-center gap-1.5 font-bold text-amber-500">
+              <ShieldAlert className="h-2.5 w-2.5" />
               {title}
             </p>
-            <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{description}</p>
+            <p className="mt-1 leading-relaxed text-muted-foreground">{description}</p>
             <div className="mt-2 flex items-center justify-between gap-4 border-t border-border/40 pt-2">
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-muted-foreground">
                 Nível:{' '}
                 <span className="font-mono font-bold uppercase text-amber-600/80">
                   {requiredRole}
@@ -81,7 +81,7 @@ export function RestrictedRouteNotice({ isCollapsed }: RestrictedRouteNoticeProp
                 asChild
                 size="sm"
                 variant="ghost"
-                className="h-6 px-2 text-[10px] hover:bg-amber-500/10 hover:text-amber-600"
+                className="h-5 px-1.5 text-tooltip hover:bg-amber-500/10 hover:text-amber-600"
               >
                 <Link to="/">Sair</Link>
               </Button>
