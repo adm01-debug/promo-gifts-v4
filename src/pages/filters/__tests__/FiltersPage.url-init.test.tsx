@@ -82,4 +82,24 @@ describe('useFiltersPageState - URL Initialization', () => {
     // Both should match since useProductsByCategory returns 1 and 2
     expect(result.current.filteredProducts.length).toBe(2);
   });
+
+  it('should NOT wipe results if useProductsByCategory returns an error', () => {
+    const mockSearchParams = new URLSearchParams('categories=30');
+    (useSearchParams as any).mockReturnValue([mockSearchParams, vi.fn()]);
+
+    // Mock an error
+    const { useProductsByCategory } = require('@/hooks/products/useProductsByCategory');
+    (useProductsByCategory as any).mockReturnValue({
+      productIds: new Set(),
+      hasFilter: true,
+      isLoading: false,
+      error: 'Edge function failed'
+    });
+
+    const { result } = renderHook(() => useFiltersPageState(), { wrapper });
+    
+    // Should still have results from useProductsCatalog mock
+    expect(result.current.filteredProducts.length).toBe(1);
+    expect(result.current.filteredProducts[0].id).toBe('1');
+  });
 });
