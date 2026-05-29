@@ -153,7 +153,8 @@ export function useCatalogFiltering({
     }
 
     // Business Logic - Do not change sorting behavior
-    const skipSort = hasFuzzySearch && sortBy === 'relevance';
+    const skipSort =
+      (hasFuzzySearch && sortBy === 'relevance') || (hasFuzzySearch && sortBy === 'name');
     // supplierSalesMap arrives typed as Map<string, number> via an upstream cast,
     // but its runtime entries are SupplierSalesEntry (from useSupplierSalesRanking).
     sortProducts(result, sortBy, {

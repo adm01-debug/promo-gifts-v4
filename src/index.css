@@ -60,7 +60,7 @@
 
 /* Custom Tooltip Utilities (Ensures build retention) */
 @layer utilities {
-  /* Tooltip: Standard (Reduzido em 20% - ~9.36px) */
+  /* Tooltip: Standard (Aumentado ~4% de 9px → 9.36px) */
   .tooltip-standard .text-tooltip {
     font-size: 9.36px !important;
     line-height: 1.45;
@@ -76,7 +76,7 @@
     opacity: 0.7;
   }
 
-  /* Tooltip: Compact (Reduzido em 20% - ~6.8px) */
+  /* Tooltip: Compact (Aumentado ~4.6% de 6.5px → 6.8px) */
   .tooltip-compact .text-tooltip {
     font-size: 6.8px !important;
     line-height: 1.4;

@@ -55,7 +55,7 @@ export function useCatalogPreferences() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const saveToCloudMutation = useMutation({
+  const { mutate: saveToCloud } = useMutation({
     mutationFn: async (prefs: CatalogPreferences) => {
       if (!user) return;
 
@@ -118,7 +118,7 @@ export function useCatalogPreferences() {
         }
         
         if (user) {
-          saveToCloudMutation.mutate(updated, {
+          saveToCloud(updated, {
             onError: (err) => {
               console.warn('Cloud sync failed, will retry on next change', err);
               toast({
@@ -129,11 +129,11 @@ export function useCatalogPreferences() {
             }
           });
         }
-        
+
         return updated;
       });
     },
-    [user, saveToCloudMutation],
+    [user, saveToCloud, toast],
   );
 
   return {
