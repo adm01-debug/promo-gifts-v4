@@ -2,12 +2,15 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from '
 import { performanceTracker } from '@/utils/performance';
 
 type Theme = 'light' | 'dark' | 'auto';
+type TooltipStyle = 'compact' | 'standard';
 
 interface ThemeContextType {
   theme: Theme;
   actualTheme: 'light' | 'dark';
+  tooltipStyle: TooltipStyle;
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
+  setTooltipStyle: (style: TooltipStyle) => void;
   isFallback?: boolean;
 }
 
@@ -23,12 +26,20 @@ export function ThemeProvider({
   children,
   defaultTheme = 'auto',
   storageKey = 'gifts-store-theme',
+  tooltipStorageKey = 'gifts-store-tooltip-style',
 }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
       return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
     }
     return defaultTheme;
+  });
+
+  const [tooltipStyle, setTooltipStyleState] = useState<TooltipStyle>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem(tooltipStorageKey) as TooltipStyle) || 'standard';
+    }
+    return 'standard';
   });
 
   const [actualTheme, setActualTheme] = useState<'light' | 'dark'>(() => {
@@ -55,6 +66,13 @@ export function ThemeProvider({
     root.classList.add(resolved);
     setActualTheme(resolved);
   }, [theme]);
+
+  // Atualizar classe do tooltip style
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.classList.remove('tooltip-compact', 'tooltip-standard');
+    root.classList.add(`tooltip-${tooltipStyle}`);
+  }, [tooltipStyle]);
 
   // Listener para mudanças no tema do sistema
   useEffect(() => {
@@ -111,11 +129,18 @@ export function ThemeProvider({
     setTheme(nextTheme);
   };
 
+  const setTooltipStyle = (style: TooltipStyle) => {
+    localStorage.setItem(tooltipStorageKey, style);
+    setTooltipStyleState(style);
+  };
+
   const value: ThemeContextType = {
     theme,
     actualTheme,
+    tooltipStyle,
     setTheme,
     toggleTheme,
+    setTooltipStyle,
   };
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

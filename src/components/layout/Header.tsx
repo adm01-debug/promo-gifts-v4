@@ -51,7 +51,7 @@ interface HeaderProps {
 }
 
 export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: HeaderProps) {
-  const { theme, actualTheme, setTheme, toggleTheme, isFallback } = useTheme();
+  const { theme, actualTheme, setTheme, toggleTheme, tooltipStyle, setTooltipStyle, isFallback } = useTheme();
   const navigate = useNavigate();
   const { toast } = useToast();
   const favoriteCount = useFavoritesStore((s) => s.favoriteCount);
@@ -102,6 +102,14 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
       return;
     }
     toggleTheme();
+  };
+
+  const handleToggleTooltipStyle = () => {
+    setTooltipStyle(tooltipStyle === 'compact' ? 'standard' : 'compact');
+    toast({
+      title: `Tooltip: ${tooltipStyle === 'compact' ? 'Standard' : 'Compact'}`,
+      description: `O tamanho dos tooltips foi alterado para ${tooltipStyle === 'compact' ? '9px' : '6px'}.`,
+    });
   };
 
   const handleSignOut = async () => {
@@ -314,6 +322,22 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                 </kbd>
               </TooltipContent>
             </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleToggleTooltipStyle}
+                  className="relative h-8 w-8 rounded-full text-muted-foreground transition-all duration-200 hover:bg-primary/10 hover:text-foreground"
+                  aria-label="Alternar tamanho do tooltip"
+                >
+                  <Palette className="h-[17px] w-[17px]" strokeWidth={1.75} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                Tamanho Tooltip: {tooltipStyle === 'compact' ? 'Mudar para Standard' : 'Mudar para Compact'}
+              </TooltipContent>
+            </Tooltip>
           </div>
 
           {/* ── Mobile overflow menu (#8) ── */}
@@ -356,6 +380,11 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                     <Moon className="mr-2 h-4 w-4" />
                   )}
                   {actualTheme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-border" />
+                <DropdownMenuItem onClick={handleToggleTooltipStyle} className="cursor-pointer">
+                  <Palette className="mr-2 h-4 w-4" />
+                  Tooltips: {tooltipStyle === 'compact' ? 'Standard' : 'Compact'}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

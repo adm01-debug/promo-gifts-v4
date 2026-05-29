@@ -60,21 +60,50 @@
 
 /* Custom Tooltip Utilities (Ensures build retention) */
 @layer utilities {
-  .text-tooltip {
+  /* Tooltip: Standard (50% maior - 9px) */
+  .tooltip-standard .text-tooltip {
     font-size: 9px !important;
     line-height: 1.4;
     letter-spacing: 0.01em;
     font-weight: 600;
-    -webkit-font-smoothing: subpixel-antialiased;
   }
 
-  .text-tooltip-header {
+  .tooltip-standard .text-tooltip-header {
     font-size: 8px !important;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     opacity: 0.7;
   }
+
+  /* Tooltip: Compact (Tamanho original/originalmente reduzido - 6px) */
+  .tooltip-compact .text-tooltip {
+    font-size: 6.5px !important;
+    line-height: 1.35;
+    letter-spacing: 0.015em;
+    font-weight: 600;
+  }
+
+  .tooltip-compact .text-tooltip-header {
+    font-size: 5.8px !important;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.7;
+  }
+
+  /* Base/Fallback (defaults to standard) */
+  .text-tooltip {
+    @apply transition-all duration-300;
+    font-size: 9px;
+    -webkit-font-smoothing: subpixel-antialiased;
+  }
+
+  .text-tooltip-header {
+    @apply transition-all duration-300;
+    font-size: 8px;
+  }
+
   .recharts-tooltip-standard {
     @apply !rounded-md !border-white/10 !bg-[#1a1a1a]/95 !px-3 !py-1.5 !shadow-2xl !backdrop-blur-md;
     @apply !text-tooltip !font-semibold !text-white;
