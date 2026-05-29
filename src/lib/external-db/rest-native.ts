@@ -127,9 +127,9 @@ export async function executeRestNativeSelect<T>(options: InvokeOptions): Promis
     // pattern is visible in logs. The upper bound is intentionally conservative
     // (999 rows) — callers should always specify limit alongside offset.
     logger.warn(
-      `[rest-native] offset=${options.offset} without limit on table=${options.table}. ` +
-        `Using fallback upper=${OFFSET_WITHOUT_LIMIT_FALLBACK_UPPER}. ` +
-        'Specify limit for predictable pagination.',
+      `[rest-native] PAGINATION WARNING: offset=${options.offset} without limit on table=${options.table}. ` +
+        `Capping at ${OFFSET_WITHOUT_LIMIT_FALLBACK_UPPER} rows. ` +
+        'Please specify limit for predictable behavior.',
     );
     query = query.range(options.offset, options.offset + OFFSET_WITHOUT_LIMIT_FALLBACK_UPPER);
   }

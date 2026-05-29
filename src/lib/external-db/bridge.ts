@@ -239,25 +239,27 @@ export async function invokeBatchBridge(queries: BatchQuery[]): Promise<BatchRes
  */
 export async function invokeExternalDb<T>(options: InvokeOptions): Promise<InvokeResult<T>> {
   // Step 1: kill-switch check (fail-open, cached 60s+5min)
-  let useRestNative = false;
+  let bridgeEnabled = true;
   try {
     const switchState = await getKillSwitchState(KILL_SWITCH_NAME);
-    useRestNative = !switchState.enabled;
+    bridgeEnabled = switchState.enabled;
   } catch {
     // fail-open: assume bridge available
-    useRestNative = false;
+    bridgeEnabled = true;
   }
 
   // Step 2: route to REST nativo when applicable
-  if (useRestNative) {
+  if (!bridgeEnabled || isRestNativeEligible(options)) {
     const restResult = await tryExecuteRestNative<T>(options);
     if (restResult !== null) {
       return restResult;
     }
-    // REST not eligible or failed — fall through to bridge.
-    logger.debug(
-      `[external-db] REST nativo não aplicável para ${options.table}/${options.operation}, usando bridge`,
-    );
+    
+    // If bridge is OFF and REST native failed/not eligible, we can't proceed to bridge
+    if (!bridgeEnabled) {
+      logger.warn(`[external-db] Bridge is OFF and REST native failed for ${options.table}/${options.operation}. Returning empty.`);
+      return { records: [], count: 0 };
+    }
   }
 
   // Step 3: bridge path (legacy / fallback)
