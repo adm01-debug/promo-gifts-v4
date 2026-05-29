@@ -179,6 +179,20 @@ Deno.serve(async (req) => {
               if (data) report.consistencyChecks.passed++;
               else report.consistencyChecks.failed++;
             }
+            
+            // Fuzzing adicional para validação de UUID e payloads malformados
+            if (mode === "fuzzing") {
+              const maliciousPayloads = [
+                { id: "not-a-uuid" },
+                { id: null },
+                { id: "" },
+                { id: "00000000-0000-0000-0000-000000000000" }
+              ];
+              for (const p of maliciousPayloads) {
+                await runScenario("webhook-inbound", p, [400, 422]);
+              }
+            }
+          })());
           })());
         }
 
