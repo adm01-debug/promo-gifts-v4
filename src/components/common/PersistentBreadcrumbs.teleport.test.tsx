@@ -33,11 +33,11 @@ describe('PersistentBreadcrumbs - Teletransporte Logic', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useNavigate as any).mockReturnValue(mockNavigate);
+    (useNavigate as ReturnType<typeof vi.fn>).mockReturnValue(mockNavigate);
   });
 
   it('should render the Zap icon (portal) and correct aria-label', () => {
-    (useLocation as any).mockReturnValue({ pathname: '/produtos' });
+    (useLocation as ReturnType<typeof vi.fn>).mockReturnValue({ pathname: '/produtos' });
     render(
       <MemoryRouter>
         <PersistentBreadcrumbs showBackButton />
@@ -53,7 +53,7 @@ describe('PersistentBreadcrumbs - Teletransporte Logic', () => {
   });
 
   it('should call navigate(-1) and track analytics when history is long enough', () => {
-    (useLocation as any).mockReturnValue({ pathname: '/favoritos' });
+    (useLocation as ReturnType<typeof vi.fn>).mockReturnValue({ pathname: '/favoritos' });
     
     // Simula history.length > 2
     Object.defineProperty(window, 'history', {
@@ -75,7 +75,7 @@ describe('PersistentBreadcrumbs - Teletransporte Logic', () => {
   });
 
   it('should fallback to home when history is shallow', () => {
-    (useLocation as any).mockReturnValue({ pathname: '/produtos' });
+    (useLocation as ReturnType<typeof vi.fn>).mockReturnValue({ pathname: '/produtos' });
     
     // Simula history.length <= 2 (entrada direta)
     Object.defineProperty(window, 'history', {
@@ -97,7 +97,7 @@ describe('PersistentBreadcrumbs - Teletransporte Logic', () => {
   });
 
   it('should not show back button on home page', () => {
-    (useLocation as any).mockReturnValue({ pathname: '/' });
+    (useLocation as ReturnType<typeof vi.fn>).mockReturnValue({ pathname: '/' });
 
     render(
       <MemoryRouter>
