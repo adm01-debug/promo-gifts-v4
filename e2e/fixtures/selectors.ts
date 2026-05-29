@@ -179,6 +179,8 @@ export const Sel = {
     mockupBadge: TID("product-mockup-badge"),
     /** Badge de kit no detalhe do produto. */
     kitBadge: TID("product-kit-badge"),
+    /** SKU no detalhe do produto (ProductInfoBar). */
+    sku: TID("product-sku"),
   },
 
   // ---------- Simulador ----------
