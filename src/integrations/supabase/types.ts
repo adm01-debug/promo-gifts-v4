@@ -6103,6 +6103,36 @@ export type Database = {
         }
         Relationships: []
       }
+      system_kill_switches: {
+        Row: {
+          created_at: string | null
+          enabled: boolean | null
+          id: string
+          legacy_message: string | null
+          rollout_percentage: number | null
+          switch_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          legacy_message?: string | null
+          rollout_percentage?: number | null
+          switch_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          legacy_message?: string | null
+          rollout_percentage?: number | null
+          switch_name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       system_settings: {
         Row: {
           description: string | null
@@ -6946,6 +6976,10 @@ export type Database = {
         Returns: Json
       }
       fn_save_quote_draft: { Args: { p_data: Json }; Returns: string }
+      fn_should_apply_kill_switch: {
+        Args: { p_bucket_key: string; p_switch_name: string }
+        Returns: boolean
+      }
       get_app_health_summary: { Args: { _minutes?: number }; Returns: Json }
       get_auto_test_job_status: {
         Args: { _limit?: number }
