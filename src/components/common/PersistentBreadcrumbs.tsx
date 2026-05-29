@@ -151,7 +151,7 @@ export const PersistentBreadcrumbs = forwardRef<HTMLElement, PersistentBreadcrum
                   <span className="inline">Teletransporte</span>
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="max-w-[200px] text-xs">
+              <TooltipContent side="bottom" className="max-w-[200px] text-xs" data-testid="teleport-tooltip-content">
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-1.5 font-semibold text-sky-400">
                     <Zap className="h-3 w-3" />
@@ -199,7 +199,7 @@ export const PersistentBreadcrumbs = forwardRef<HTMLElement, PersistentBreadcrum
                         <TooltipTrigger asChild>
                           <BreadcrumbItem className="cursor-help">{itemElement}</BreadcrumbItem>
                         </TooltipTrigger>
-                        <TooltipContent side="bottom" className="max-w-[200px] text-xs">
+                        <TooltipContent side="bottom" className="max-w-[200px] text-xs" data-testid="inicio-tooltip-content">
                           <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-1.5 font-semibold text-primary">
                               <Home className="h-3 w-3" />
