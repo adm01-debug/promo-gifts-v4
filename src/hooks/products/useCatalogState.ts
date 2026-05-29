@@ -71,7 +71,7 @@ export function useCatalogState() {
   const { data: promoSalesMap } = usePromoSalesRanking();
   const { data: supplierSalesMap } = useSupplierSalesRanking();
   const { preferences, updatePreferences, isLoaded: prefsLoaded } = useCatalogPreferences();
-  const { trackSort } = useProductAnalytics();
+  const { trackSort, trackSearch } = useProductAnalytics();
 
   const searchQueryFromUrl = searchParams.get('search') || '';
 
