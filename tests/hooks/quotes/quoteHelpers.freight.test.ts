@@ -6,7 +6,15 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { calculateQuoteTotals, round2 } from '@/hooks/quotes/quoteHelpers';
+import {
+  calculateQuoteTotals,
+  round2,
+  validateDiscount,
+  buildInsertPayload,
+  buildUpdatePayload,
+  buildItemsInsertPayload,
+  buildPersonalizationsInsertPayload,
+} from '@/hooks/quotes/quoteHelpers';
 import type { QuoteItem } from '@/hooks/quotes/quoteTypes';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -247,5 +255,182 @@ describe("validateDiscount — integrado via calculateQuoteTotals", () => {
     const r = calculateQuoteTotals({ discount_percent: -1 }, items(10, 10));
     // subtotal = 100, desconto = -1 → total = 101
     expect(r.total).toBeGreaterThan(r.subtotal);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// validateDiscount — chamado diretamente
+// ---------------------------------------------------------------------------
+
+describe("validateDiscount — direto", () => {
+  it("desconto válido 10% → não lança", () => {
+    expect(() => validateDiscount({ discount_percent: 10 }, { subtotal: 100, discountAmount: 10 })).not.toThrow();
+  });
+
+  it("discount_percent 0 → não lança (falsy, branch ignorado)", () => {
+    expect(() => validateDiscount({ discount_percent: 0 }, { subtotal: 100, discountAmount: 0 })).not.toThrow();
+  });
+
+  it("discount_percent > 100 → lança", () => {
+    expect(() => validateDiscount({ discount_percent: 101 }, { subtotal: 100, discountAmount: 101 })).toThrow(/desconto/i);
+  });
+
+  it("discount_percent < 0 → lança", () => {
+    expect(() => validateDiscount({ discount_percent: -5 }, { subtotal: 100, discountAmount: -5 })).toThrow(/desconto/i);
+  });
+
+  it("discountAmount negativo → lança", () => {
+    expect(() => validateDiscount({}, { subtotal: 100, discountAmount: -1 })).toThrow(/negativo/i);
+  });
+
+  it("discountAmount > subtotal → lança", () => {
+    expect(() => validateDiscount({}, { subtotal: 100, discountAmount: 200 })).toThrow(/exceder/i);
+  });
+
+  it("discountAmount = subtotal (dentro da tolerância 0.01) → não lança", () => {
+    expect(() => validateDiscount({}, { subtotal: 100, discountAmount: 100 })).not.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildInsertPayload
+// ---------------------------------------------------------------------------
+
+const BASE_TOTALS = { subtotal: 100, discountAmount: 10, total: 90 };
+
+describe("buildInsertPayload", () => {
+  it("retorna payload com campos obrigatórios preenchidos", () => {
+    const p = buildInsertPayload(
+      { client_name: 'ACME', status: 'draft', shipping_type: 'fob_pre', shipping_cost: 15 },
+      'user-123',
+      'org-456',
+      BASE_TOTALS,
+    );
+    expect(p.seller_id).toBe('user-123');
+    expect(p.organization_id).toBe('org-456');
+    expect(p.client_name).toBe('ACME');
+    expect(p.subtotal).toBe(100);
+    expect(p.discount_amount).toBe(10);
+    expect(p.total).toBe(90);
+    expect(p.shipping_cost).toBe(15);
+    expect(p.status).toBe('draft');
+  });
+
+  it("orgId null → organization_id null", () => {
+    const p = buildInsertPayload({}, 'uid', null, BASE_TOTALS);
+    expect(p.organization_id).toBeNull();
+  });
+
+  it("status padrão 'draft' quando não informado", () => {
+    const p = buildInsertPayload({}, 'uid', null, BASE_TOTALS);
+    expect(p.status).toBe('draft');
+  });
+
+  it("arredonda valores monetários com round2", () => {
+    const p = buildInsertPayload({}, 'uid', null, { subtotal: 10.005, discountAmount: 0, total: 10.005 });
+    expect(p.subtotal).toBe(10.01);
+    expect(p.total).toBe(10.01);
+  });
+
+  it("discountAmount > subtotal → lança via validateDiscount", () => {
+    expect(() =>
+      buildInsertPayload({}, 'uid', null, { subtotal: 50, discountAmount: 60, total: -10 })
+    ).toThrow(/exceder/i);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildUpdatePayload
+// ---------------------------------------------------------------------------
+
+describe("buildUpdatePayload", () => {
+  it("retorna payload com subtotal/total corretos", () => {
+    const p = buildUpdatePayload({ client_name: 'Beta', status: 'sent' }, BASE_TOTALS);
+    expect(p.client_name).toBe('Beta');
+    expect(p.status).toBe('sent');
+    expect(p.subtotal).toBe(100);
+    expect(p.total).toBe(90);
+    expect(p.discount_amount).toBe(10);
+  });
+
+  it("updated_at é string ISO válida", () => {
+    const p = buildUpdatePayload({}, BASE_TOTALS);
+    expect(typeof p.updated_at).toBe('string');
+    expect(() => new Date(p.updated_at!).toISOString()).not.toThrow();
+  });
+
+  it("desconto inválido → lança", () => {
+    expect(() =>
+      buildUpdatePayload({}, { subtotal: 50, discountAmount: 100, total: -50 })
+    ).toThrow(/exceder/i);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildItemsInsertPayload
+// ---------------------------------------------------------------------------
+
+describe("buildItemsInsertPayload", () => {
+  it("mapeia items corretamente com sort_order", () => {
+    const result = buildItemsInsertPayload(
+      [makeItem(2, 50), makeItem(3, 20)],
+      'quote-abc',
+    );
+    expect(result).toHaveLength(2);
+    expect(result[0].quote_id).toBe('quote-abc');
+    expect(result[0].quantity).toBe(2);
+    expect(result[0].unit_price).toBe(50);
+    expect(result[0].subtotal).toBe(100);
+    expect(result[0].sort_order).toBe(0);
+    expect(result[1].sort_order).toBe(1);
+  });
+
+  it("lista vazia → array vazio", () => {
+    expect(buildItemsInsertPayload([], 'q')).toEqual([]);
+  });
+
+  it("arredonda unit_price e subtotal", () => {
+    const result = buildItemsInsertPayload([makeItem(3, 10.005)], 'q');
+    expect(result[0].unit_price).toBe(10.01);
+    expect(result[0].subtotal).toBe(30.02);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildPersonalizationsInsertPayload
+// ---------------------------------------------------------------------------
+
+describe("buildPersonalizationsInsertPayload", () => {
+  const pers = [
+    {
+      technique_id: 'tech-1',
+      technique_name: 'Serigrafia',
+      location_code: 'FRONT',
+      location_name: 'Frente',
+      personalized_quantity: 100,
+      colors_count: 2,
+      positions_count: 1,
+      area_cm2: 50,
+      width_cm: 10,
+      height_cm: 5,
+      setup_cost: 30,
+      unit_cost: 1.5,
+      total_cost: 180,
+      notes: 'obs',
+    },
+  ] as Parameters<typeof buildPersonalizationsInsertPayload>[0];
+
+  it("mapeia personalização com todos os campos", () => {
+    const result = buildPersonalizationsInsertPayload(pers, 'item-xyz');
+    expect(result).toHaveLength(1);
+    expect(result[0].quote_item_id).toBe('item-xyz');
+    expect(result[0].technique_name).toBe('Serigrafia');
+    expect(result[0].total_cost).toBe(180);
+    expect(result[0].setup_cost).toBe(30);
+    expect(result[0].unit_cost).toBe(1.5);
+  });
+
+  it("lista vazia → array vazio", () => {
+    expect(buildPersonalizationsInsertPayload([], 'item-xyz')).toEqual([]);
   });
 });
