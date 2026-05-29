@@ -223,20 +223,8 @@ export function useCatalogState() {
   const isInitialCatalogLoad =
     (isLoadingProducts || isFetchingProducts) && realProducts.length === 0;
 
-  useEffect(() => {
-    setSearchQuery(searchQueryFromUrl);
-    if (searchQueryFromUrl.trim()) {
-      trackSearch({
-        searchTerm: searchQueryFromUrl,
-        resultsCount: filteredProducts.length,
-        filtersUsed: { sortBy },
-      });
-      updatePreferences({ 
-        lastSearchTerm: searchQueryFromUrl,
-        lastSearchSortBy: sortBy 
-      });
-    }
-  }, [searchQueryFromUrl, trackSearch, filteredProducts.length, sortBy, updatePreferences]);
+  // search-sync useEffect moved below filteredProducts to avoid TDZ.
+
 
   useEffect(() => {
     const urlSort = searchParams.get('sort') as SortOption;
