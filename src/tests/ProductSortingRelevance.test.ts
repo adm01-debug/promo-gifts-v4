@@ -7,8 +7,8 @@ import type { Product, SupplierSalesEntry } from '@/hooks/products';
  * Bateria de testes validando o seletor de "Relevância" e demais
  * opções de ordenação do módulo de produtos.
  *
- * Cobre todas as 8 opções expostas em SORT_OPTIONS:
- *  - relevance, name, price-asc, price-desc, newest, stock,
+ * Cobre todas as 9 opções expostas em SORT_OPTIONS:
+ *  - relevance, store-default, name, price-asc, price-desc, newest, stock,
  *    best-seller-supplier, best-seller-promo
  */
 
@@ -70,9 +70,10 @@ const baseProducts = (): Product[] => [
 ];
 
 describe('SORT_OPTIONS — contrato do seletor', () => {
-  it('expõe exatamente as 8 opções esperadas, na ordem da UI', () => {
+  it('expõe exatamente as 9 opções esperadas, na ordem da UI', () => {
     expect(SORT_OPTIONS.map((o) => o.value)).toEqual([
       'relevance',
+      'store-default',
       'name',
       'price-asc',
       'price-desc',
@@ -204,7 +205,7 @@ describe('sortProducts — + Vendidos (Indústria)', () => {
     const result = sortProducts(baseProducts(), 'best-seller-supplier', {
       supplierSalesMap: new Map(),
     }).map((p) => p.id);
-    // scores: 1=0, 2=3 (feat+new), 3=1 (new), 4=2 (feat) -> 2,4,3,1
+    // scores (novo 10/5): 1=0, 2=15 (feat+new), 3=5 (new), 4=10 (feat) -> 2,4,3,1
     expect(result).toEqual(['2', '4', '3', '1']);
   });
 

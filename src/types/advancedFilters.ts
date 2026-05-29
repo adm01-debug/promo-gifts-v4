@@ -95,6 +95,7 @@ export interface AdvancedFilterState {
   sortBy:
     | 'name'
     | 'relevance'
+    | 'store-default'
     | 'price-asc'
     | 'price-desc'
     | 'newest'

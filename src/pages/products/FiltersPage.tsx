@@ -102,6 +102,7 @@ export default function FiltersPage() {
         // caía no fallback 'name' silenciosamente.
         const sortMap: Record<string, string> = {
           relevance: 'relevance',
+          'store-default': 'store-default',
           'price-asc': 'price-asc',
           'price-desc': 'price-desc',
           name: 'name',
@@ -328,15 +329,30 @@ export default function FiltersPage() {
                   <TooltipTrigger asChild>
                     <Select value={state.sortBy} onValueChange={state.setSortBy}>
                       <SelectTrigger
-                        className="w-44 shrink-0 sm:w-52"
+                        className={cn(
+                          "w-44 shrink-0 transition-all sm:w-52",
+                          state.sortBy !== 'relevance' && state.sortBy !== 'store-default' && "border-primary bg-primary/5 ring-1 ring-primary/20"
+                        )}
                         aria-label="Ordenar produtos"
+                        data-testid="catalog-sort-trigger"
                       >
-                        <ArrowUpDown className="mr-2 h-4 w-4" />
+                        <ArrowUpDown className={cn(
+                          "mr-2 h-4 w-4",
+                          (state.sortBy !== 'relevance' && state.sortBy !== 'store-default') ? "text-primary" : "text-muted-foreground"
+                        )} />
                         <SelectValue placeholder="Ordenar" />
+                        {/* BUG-G7: Mobile indicator when sorted */}
+                        {(state.sortBy !== 'relevance' && state.sortBy !== 'store-default') && (
+                          <div className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-primary sm:hidden" />
+                        )}
                       </SelectTrigger>
                       <SelectContent>
                         {SORT_OPTIONS.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
+                          <SelectItem 
+                            key={option.value} 
+                            value={option.value}
+                            data-testid={`catalog-sort-item-${option.value}`}
+                          >
                             {option.label}
                           </SelectItem>
                         ))}
@@ -344,7 +360,9 @@ export default function FiltersPage() {
                     </Select>
                   </TooltipTrigger>
                   <TooltipContent>
-                    Ordenar resultados (nome, preço, novidades, popularidade)
+                    {state.sortBy !== 'relevance' && state.sortBy !== 'store-default'
+                      ? `Ordenado por: ${SORT_OPTIONS.find(o => o.value === state.sortBy)?.label}`
+                      : 'Ordenar resultados (nome, preço, novidades, popularidade)'}
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>

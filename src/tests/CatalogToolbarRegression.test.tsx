@@ -41,7 +41,7 @@ describe('CatalogToolbar Regression', () => {
     );
 
     // Find the select trigger
-    const trigger = screen.getByLabelText(/ordenar por/i);
+    const trigger = screen.getByTestId('catalog-sort-trigger');
     expect(trigger).toBeInTheDocument();
 
     // 1. Verify Tooltip works
