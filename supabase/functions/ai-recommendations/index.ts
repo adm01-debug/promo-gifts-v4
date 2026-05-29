@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
       return new Response(rl.body, { status: rl.status, headers });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    const { value: LOVABLE_API_KEY } = await resolveCredential('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       console.warn('[ai-recommendations] LOVABLE_API_KEY not configured');
       return new Response(
@@ -76,20 +76,28 @@ Retorne EXATAMENTE em formato JSON (sem markdown):
 
     const userPrompt = `Cliente: ${client.name}${client.industry ? ` | Segmento: ${client.industry}` : ''}\nProdutos: ${products.map(p => `${p.id}|${p.name}|${p.category}`).join(', ')}`;
 
-    const aiResponse = await fetchWithBreaker('lovable-ai', AI_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: AI_MODEL,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-      }),
-    });
+    let aiResponse: Response;
+    try {
+      aiResponse = await fetchWithBreaker('lovable-ai', AI_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: AI_MODEL,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+        }),
+      });
+    } catch (aiErr) {
+      console.error('[ai-recommendations] Lovable AI request failed:', safeErrorFields(aiErr));
+      return new Response(
+        JSON.stringify({ recommendations: [], insights: 'Serviço de IA temporariamente indisponível.' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     if (!aiResponse.ok) {
       await aiResponse.text();
@@ -99,8 +107,8 @@ Retorne EXATAMENTE em formato JSON (sem markdown):
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const hfData = await aiResponse.json();
-    const content = hfData?.choices?.[0]?.message?.content || '{}';
+    const aiData = await aiResponse.json();
+    const content = aiData?.choices?.[0]?.message?.content || '{}';
 
     let result: { recommendations: unknown[]; insights: string };
     try {
