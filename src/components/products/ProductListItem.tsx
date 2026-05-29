@@ -353,9 +353,9 @@ export const ProductListItem = memo(function ProductListItem({
                 }
               }}
             >
-              {allMatchingVariants.map((v, i) => (
+              {allMatchingVariants.map((v) => (
                 <button
-                  key={v.groupSlug || v.variationSlug || i}
+                  key={`${v.groupSlug}-${v.variationSlug}-${v.name}`}
                   role="tab"
                   type="button"
                   tabIndex={i === safeVariantIdx ? 0 : -1}
