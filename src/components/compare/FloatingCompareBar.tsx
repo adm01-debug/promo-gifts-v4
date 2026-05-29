@@ -79,7 +79,7 @@ export const FloatingCompareBar = React.forwardRef<HTMLDivElement>(
                       />
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-[200px]">
+                  <TooltipContent side="top">
                     <p className="truncate font-medium">
                       {entry.product.name}
                       {entry.variant?.color_name && ` — ${entry.variant.color_name}`}

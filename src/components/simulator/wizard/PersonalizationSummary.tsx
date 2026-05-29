@@ -150,7 +150,7 @@ export function PersonalizationSummary({
                             </AlertDialogTrigger>
                           </span>
                         </TooltipTrigger>
-                        <TooltipContent side="bottom" className="text-xs">
+                        <TooltipContent side="bottom">
                           Remover todas
                         </TooltipContent>
                       </Tooltip>
@@ -375,7 +375,7 @@ function PersonalizationRow({
                 ⌘
               </Badge>
             </TooltipTrigger>
-            <TooltipContent side="top" className="font-mono text-xs">
+            <TooltipContent side="top" className="font-mono">
               {pers.pricing.budgetCode}
             </TooltipContent>
           </Tooltip>
@@ -396,7 +396,7 @@ function PersonalizationRow({
               <Pencil className="h-3 w-3" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="text-xs">
+          <TooltipContent side="bottom">
             Editar
           </TooltipContent>
         </Tooltip>
@@ -418,7 +418,7 @@ function PersonalizationRow({
                   </DropdownMenuTrigger>
                 </span>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-xs">
+              <TooltipContent side="bottom">
                 Duplicar
               </TooltipContent>
             </Tooltip>

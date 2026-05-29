@@ -279,7 +279,7 @@ export function RoleAuditLogPanel() {
                                   motivo
                                 </Badge>
                               </TooltipTrigger>
-                              <TooltipContent className="max-w-xs">{reason}</TooltipContent>
+                              <TooltipContent>{reason}</TooltipContent>
                             </Tooltip>
                           )}
                         </div>
