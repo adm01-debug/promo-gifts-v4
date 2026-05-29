@@ -36,15 +36,20 @@ export function useProfileRoles() {
         }
 
         if (profileResult.data) {
-          setProfile(profileResult.data as Profile);
-          // background update — fire and forget, não bloqueia isLoading
-          getSupabaseClient().then((supabase) =>
+          const profileData = profileResult.data as Profile;
+          setProfile(profileData);
+          
+          // background update — fire and forget, com proteção de mount
+          getSupabaseClient().then((supabase) => {
+            if (!userId) return;
             supabase
               .from('profiles')
               .update({ last_login_at: new Date().toISOString() })
               .eq('user_id', userId)
-              .then(),
-          );
+              .then(({ error }) => {
+                if (error) authDebugError('useProfileRoles.updateLastLogin', 'failed', error);
+              });
+          });
         }
 
         if (rolesResult.data && rolesResult.data.length > 0) {

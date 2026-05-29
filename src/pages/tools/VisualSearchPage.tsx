@@ -676,14 +676,20 @@ export default function VisualSearchPage() {
 
                     <div className="flex flex-wrap gap-1.5">
                       {results.analysis.keywords.map((kw, i) => (
-                        <Badge 
-                          key={i} 
-                          variant="secondary" 
-                          className="h-5 cursor-pointer border-transparent bg-background/80 px-2 text-[9px] font-medium uppercase text-primary hover:bg-primary hover:text-white transition-all"
-                          onClick={() => processImage(previewUrl!, kw)}
+                        <motion.div
+                          key={`${kw}-${i}`}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0.2 + i * 0.05 }}
                         >
-                          {kw}
-                        </Badge>
+                          <Badge 
+                            variant="secondary" 
+                            className="h-5 cursor-pointer border-transparent bg-background/80 px-2 text-[9px] font-medium uppercase text-primary hover:bg-primary hover:text-white transition-all"
+                            onClick={() => processImage(previewUrl!, kw)}
+                          >
+                            {kw}
+                          </Badge>
+                        </motion.div>
                       ))}
                     </div>
 
