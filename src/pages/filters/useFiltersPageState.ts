@@ -100,7 +100,11 @@ export function useFiltersPageState() {
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage,
-  } = useProductsCatalog(serverSearchTerm ? { search: serverSearchTerm } : undefined);
+  } = useProductsCatalog({
+    search: serverSearchTerm,
+    categories: filters.categories,
+    suppliers: filters.suppliers,
+  });
 
   useEffect(() => {
     if (hasNextPage && !isFetchingNextPage) fetchNextPage();
