@@ -49,60 +49,63 @@ export function SecretImpactTooltip({ secretName, children, isMissing, className
 
   // Sem mapeamento: ainda renderiza o trigger mas com mensagem genérica.
   const content = impact ? (
-    <div className="max-w-sm space-y-2 text-xs">
-      <div className="flex items-center justify-between gap-2">
-        <p className="font-semibold">{impact.system}</p>
+    <div className="max-w-sm space-y-3">
+      <div className="flex items-center justify-between gap-3 border-b border-white/5 pb-2">
+        <p className="font-bold leading-tight">{impact.system}</p>
         <span
           className={cn(
-            'rounded border px-1.5 py-0.5 font-mono text-[10px] uppercase',
+            'rounded px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider',
             impact.severity === 'critical' || impact.severity === 'high'
-              ? 'border-destructive/40 bg-destructive/10 text-destructive'
+              ? 'bg-destructive/20 text-destructive'
               : impact.severity === 'medium'
-                ? 'border-warning/40 bg-warning/10 text-warning'
-                : 'border-border bg-muted text-muted-foreground',
+                ? 'bg-warning/20 text-warning'
+                : 'bg-white/10 text-white/60',
           )}
         >
           {SEVERITY_LABEL[impact.severity]}
         </span>
       </div>
 
-      <p className="text-background/70">
+      <p className="text-[11px] leading-relaxed text-white/70">
         Se esta chave estiver{' '}
-        <strong className={SEVERITY_TONE[impact.severity]}>ausente ou vazia</strong>, os itens
+        <strong className={cn('font-bold', SEVERITY_TONE[impact.severity])}>ausente ou vazia</strong>, os itens
         abaixo deixam de funcionar:
       </p>
 
-      <div>
-        <p className="mb-1 text-[10px] uppercase tracking-wide text-background/50">
-          Telas afetadas
-        </p>
-        <ul className="space-y-0.5">
-          {impact.screens.map((s) => (
-            <li key={s} className="font-mono text-[11px]">
-              • {s}
-            </li>
-          ))}
-        </ul>
-      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <p className="mb-1.5 text-tooltip-header">Telas Afetadas</p>
+          <ul className="space-y-1">
+            {impact.screens.map((s) => (
+              <li key={s} className="flex items-center gap-1.5 font-mono text-[10px] text-white/80">
+                <span className="h-1 w-1 rounded-full bg-white/20" />
+                {s}
+              </li>
+            ))}
+          </ul>
+        </div>
 
-      <div>
-        <p className="mb-1 text-[10px] uppercase tracking-wide text-background/50">
-          Fluxos afetados
-        </p>
-        <ul className="space-y-0.5">
-          {impact.flows.map((f) => (
-            <li key={f} className="text-[11px]">
-              • {f}
-            </li>
-          ))}
-        </ul>
+        <div>
+          <p className="mb-1.5 text-tooltip-header">Fluxos Afetados</p>
+          <ul className="space-y-1">
+            {impact.flows.map((f) => (
+              <li key={f} className="flex items-center gap-1.5 text-[10px] text-white/80">
+                <span className="h-1 w-1 rounded-full bg-white/20" />
+                {f}
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   ) : (
-    <p className="max-w-xs text-xs">
-      Sem mapeamento de impacto para <code className="font-mono">{secretName}</code>. Mantenha-a
-      populada se for usada por alguma edge function.
-    </p>
+    <div className="max-w-xs space-y-1">
+      <p className="text-tooltip-header">Aviso de Configuração</p>
+      <p className="text-white/70 leading-relaxed">
+        Sem mapeamento de impacto para <code className="font-mono text-primary">{secretName}</code>. Mantenha-a
+        populada se for usada por alguma edge function.
+      </p>
+    </div>
   );
 
   return (
