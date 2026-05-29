@@ -104,38 +104,8 @@ export function useCatalogState() {
     }
   }, [prefsLoaded, preferences.sortBy, searchParams]);
 
-  const setSortBy = useCallback(
-    (s: SortOption) => {
-      const previousSort = sortBy;
-      setIsTransitioning(true);
-      React.startTransition(() => {
-        setSortByState(s);
-        updatePreferences({ sortBy: s });
+  // setSortBy moved below filteredProducts to avoid TDZ on filteredProducts/searchQuery/setIsTransitioning.
 
-        // Update URL query string
-        const newParams = new URLSearchParams(window.location.search);
-        if (s === 'relevance') {
-          newParams.delete('sort');
-        } else {
-          newParams.set('sort', s);
-        }
-
-        const newPath = `${window.location.pathname}${newParams.toString() ? '?' + newParams.toString() : ''}`;
-        navigate(newPath, { replace: true });
-
-        // Analytics tracking
-        trackSort({
-          sortBy: s,
-          previousSortBy: previousSort,
-          resultsCount: filteredProducts.length,
-          hasSearch: !!searchQuery.trim(),
-        });
-
-        setIsTransitioning(false);
-      });
-    },
-    [navigate, sortBy, updatePreferences, trackSort, filteredProducts.length, searchQuery],
-  );
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedCount, setSelectedCount] = useState(0);
   const [activeProductId, setActiveProductId] = useState<string | null>(null);
