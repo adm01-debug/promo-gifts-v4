@@ -1,5 +1,5 @@
 import * as React from 'react';
-
+import { TruncatedTooltip } from './truncated-tooltip';
 import { cn } from '@/lib/utils';
 
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
@@ -80,6 +80,18 @@ const TableCell = React.forwardRef<
 ));
 TableCell.displayName = 'TableCell';
 
+const TableCellTruncated = React.forwardRef<
+  HTMLTableCellElement,
+  React.TdHTMLAttributes<HTMLTableCellElement> & { children: string }
+>(({ className, children, ...props }, ref) => (
+  <TableCell ref={ref} className={className} {...props}>
+    <TruncatedTooltip className="max-w-[200px]">
+      {children}
+    </TruncatedTooltip>
+  </TableCell>
+));
+TableCellTruncated.displayName = 'TableCellTruncated';
+
 const TableCaption = React.forwardRef<
   HTMLTableCaptionElement,
   React.HTMLAttributes<HTMLTableCaptionElement>
@@ -88,4 +100,4 @@ const TableCaption = React.forwardRef<
 ));
 TableCaption.displayName = 'TableCaption';
 
-export { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption };
+export { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCellTruncated, TableCaption };
