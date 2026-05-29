@@ -1,8 +1,9 @@
 import { forwardRef, useCallback, Fragment } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { Home, Zap, HelpCircle } from 'lucide-react';
+import { Home, Zap, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigationAnalytics } from '@/hooks/useNavigationAnalytics';
 import { canNavigateTo, isDevOnlyPath } from '@/lib/navigation/restricted-routes';
 import {
   Breadcrumb,
@@ -57,14 +58,20 @@ export const PersistentBreadcrumbs = forwardRef<HTMLElement, PersistentBreadcrum
     const location = useLocation();
     const navigate = useNavigate();
     const { isDev, isAdmin } = useAuth();
+    const { trackNavigationClick } = useNavigationAnalytics();
 
     const handleBack = useCallback(() => {
+      trackNavigationClick('Teletransporte');
       if (window.history.length > 2) {
         navigate(-1);
       } else {
         navigate('/');
       }
-    }, [navigate]);
+    }, [navigate, trackNavigationClick]);
+
+    const handleHomeClick = useCallback(() => {
+      trackNavigationClick('Início');
+    }, [trackNavigationClick]);
 
     const buildBreadcrumbs = (): BreadcrumbItem[] => {
       if (customItems) return customItems;
@@ -137,6 +144,7 @@ export const PersistentBreadcrumbs = forwardRef<HTMLElement, PersistentBreadcrum
                   onClick={handleBack}
                   aria-label="Teletransporte — Voltar"
                   className="group hidden h-7 flex-shrink-0 items-center justify-center gap-1.5 rounded-full border border-border/40 bg-muted/60 px-3 text-xs font-medium text-muted-foreground transition-all duration-200 hover:border-border hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:inline-flex"
+                  data-testid="back-teleport-button"
                 >
                   <Zap className="h-3.5 w-3.5 text-sky-400 group-hover:animate-pulse" />
                   <span className="hidden md:inline">Teletransporte</span>
@@ -149,7 +157,7 @@ export const PersistentBreadcrumbs = forwardRef<HTMLElement, PersistentBreadcrum
                     <span>Teletransporte</span>
                   </div>
                   <p className="leading-relaxed text-muted-foreground">
-                    Retorna para a <strong>última página</strong> que você visitou no seu histórico de navegação.
+                    Retorna para a <strong>página anterior</strong> que você visitou. Diferente do Início, ele mantém seu progresso anterior.
                   </p>
                 </div>
               </TooltipContent>
@@ -168,14 +176,14 @@ export const PersistentBreadcrumbs = forwardRef<HTMLElement, PersistentBreadcrum
                     {Icon && <Icon className="h-3.5 w-3.5" />}
                     <span>{item.label}</span>
                     {isHome && index === 0 && (
-                      <HelpCircle className="h-3 w-3 opacity-40 transition-opacity group-hover:opacity-100" />
+                      <Info className="h-3 w-3 opacity-40 transition-opacity group-hover:opacity-100" />
                     )}
                   </div>
                 );
 
                 const itemElement = item.href ? (
                   <BreadcrumbLink asChild>
-                    <Link to={item.href} className="group">
+                    <Link to={item.href} className="group" onClick={isHome ? handleHomeClick : undefined} data-testid={isHome ? "home-breadcrumb-link" : undefined}>
                       {content}
                     </Link>
                   </BreadcrumbLink>
@@ -197,7 +205,7 @@ export const PersistentBreadcrumbs = forwardRef<HTMLElement, PersistentBreadcrum
                               <span>Início</span>
                             </div>
                             <p className="leading-relaxed text-muted-foreground">
-                              Leva você direto para a <strong>página inicial</strong> (Catálogo), reiniciando sua jornada.
+                              Leva você de volta ao <strong>Catálogo (Home)</strong>. Use para recomeçar sua busca do zero, ignorando o histórico.
                             </p>
                           </div>
                         </TooltipContent>
