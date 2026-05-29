@@ -53,13 +53,30 @@ const VIEW_MODE_KEY = 'catalog-view-mode';
 const VALID_SORT_VALUES = new Set<string>(SORT_OPTIONS.map(o => o.value));
 
 /**
+ * BUG-SORT-09 FIX: Mapa de aliases conhecidos → valores canônicos de SortOption.
+ * Permite que sistemas externos (voice agent, URL compartilhada) usem nomes
+ * alternativos que são normalizados antes de ser aplicados ao state.
+ * Sem este mapa, validateSortOption rejeitava aliases e o URL sync effect revertia
+ * silenciosamente o sort para 'name', descartando a intenção do voice agent.
+ * Ex: voice agent envia sortBy='popularity' → normaliza para 'best-seller-promo'.
+ */
+const SORT_ALIASES: Readonly<Record<string, SortOption>> = {
+  popularity: 'best-seller-promo',  // alias do voice agent
+  relevance: 'name',                // valor legado da versão anterior do app
+} as const;
+
+/**
  * BUG-SORT-01 FIX: Valida e normaliza um sort value arbitrário.
- * Retorna 'name' (default seguro) para qualquer valor inválido, nulo ou ausente
- * do SSOT SORT_OPTIONS. Previne que URL params corrompidos ou localStorage stale
- * (ex: 'relevance' de versão anterior) quebrem o Select UI e o URL sync loop.
+ * BUG-SORT-09 FIX: Normaliza aliases conhecidos para o valor canônico antes
+ * de validar no SSOT. Retorna 'name' (default seguro) para qualquer valor
+ * inválido, nulo ou ausente. Previne que URL params corrompidos ou aliases
+ * de voice agent quebrem o Select UI e o URL sync loop.
  */
 function validateSortOption(s: string | null | undefined): SortOption {
-  if (s && VALID_SORT_VALUES.has(s)) return s as SortOption;
+  if (!s) return 'name';
+  // BUG-SORT-09 FIX: normalizar alias → canonical antes de validar no SSOT
+  if (s in SORT_ALIASES) return SORT_ALIASES[s as keyof typeof SORT_ALIASES];
+  if (VALID_SORT_VALUES.has(s)) return s as SortOption;
   return 'name';
 }
 
@@ -321,17 +338,35 @@ export function useCatalogState() {
   }, [searchQueryFromUrl, trackSearch, sortBy, updatePreferences]);
 
   // BUG-SORT-01 FIX: Validar o sort param da URL antes de sincronizar com o state.
-  // O cast `as SortOption` anterior não tinha runtime check — valores inválidos
-  // (ex: URL manipulada manualmente) eram aceitos sem validação.
+  // BUG-URL-01 FIX: Normalizar a URL — remover param default (?sort=name) e
+  // canonicalizar aliases (?sort=popularity → ?sort=best-seller-promo).
   useEffect(() => {
     const urlSort = searchParams.get('sort');
     if (urlSort) {
       const validated = validateSortOption(urlSort);
+
+      // Sincronizar state se o valor validado diferir do atual
       if (validated !== sortBy) {
         setSortByState(validated);
       }
+
+      // Normalizar URL: remover sort=default ou substituir alias por canonical.
+      // Cobre dois casos:
+      //   1. ?sort=name        → remover (é o default; param redundante)
+      //   2. ?sort=popularity  → substituir por ?sort=best-seller-promo (canonical)
+      const urlNeedsNormalization = validated === 'name' || urlSort !== validated;
+      if (urlNeedsNormalization) {
+        const newParams = new URLSearchParams(window.location.search);
+        if (validated === 'name') {
+          newParams.delete('sort');
+        } else {
+          newParams.set('sort', validated);
+        }
+        const newPath = `${window.location.pathname}${newParams.toString() ? '?' + newParams.toString() : ''}`;
+        navigate(newPath, { replace: true });
+      }
     }
-  }, [searchParams, sortBy]);
+  }, [searchParams, sortBy, navigate]);
 
   // BUG-CS-06 FIX: Reset displayCount without startTransition wrapper.
   // Depends on debouncedServerSearch to avoid resetting on every keystroke.
