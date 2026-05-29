@@ -144,11 +144,11 @@ export const PersistentBreadcrumbs = forwardRef<HTMLElement, PersistentBreadcrum
                 <button
                   onClick={handleBack}
                   aria-label="Teletransporte — Voltar"
-                  className="group hidden h-7 flex-shrink-0 items-center justify-center gap-1.5 rounded-full border border-border/40 bg-muted/60 px-3 text-xs font-medium text-muted-foreground transition-all duration-200 hover:border-border hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:inline-flex"
+                  className="group flex h-7 flex-shrink-0 items-center justify-center gap-1.5 rounded-full border border-border/40 bg-muted/60 px-3 text-xs font-medium text-muted-foreground transition-all duration-200 hover:border-border hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   data-testid="back-teleport-button"
                 >
                   <Zap className="h-3.5 w-3.5 text-sky-400 group-hover:animate-pulse" />
-                  <span className="hidden md:inline">Teletransporte</span>
+                  <span className="inline">Teletransporte</span>
                 </button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-[200px] text-xs">
