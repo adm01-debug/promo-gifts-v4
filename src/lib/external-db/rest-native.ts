@@ -46,6 +46,7 @@ type RestQuery = PromiseLike<RestQueryResult> & {
   like(column: string, value: unknown): RestQuery;
   ilike(column: string, value: unknown): RestQuery;
   neq(column: string, value: unknown): RestQuery;
+  not(column: string, operator: string, value: unknown): RestQuery;
   order(column: string, options: { ascending: boolean }): RestQuery;
   range(from: number, to: number): RestQuery;
 };
@@ -61,6 +62,65 @@ export function isRestNativeEligible(options: InvokeOptions): boolean {
   if (!REST_NATIVE_SAFE_TABLES.has(options.table)) return false;
   if (options.filters && '_search' in options.filters) return false;
   return true;
+}
+
+/**
+ * PostgREST operator prefixes that callers may pass as string values.
+ * The bridge accepted these natively; REST-native must parse them into
+ * proper Supabase client method calls.
+ *
+ * Example: { stock_quantity: 'lt.50' } must become .lt('stock_quantity', 50)
+ *          { id: 'in.(uuid1,uuid2)' }  must become .in('id', ['uuid1','uuid2'])
+ */
+const POSTGREST_OP_REGEX = /^(eq|neq|gt|gte|lt|lte|like|ilike|is|in|not)\.(.+)$/;
+
+function parsePostgrestString(
+  query: RestQuery,
+  col: string,
+  raw: string,
+): RestQuery {
+  const match = raw.match(POSTGREST_OP_REGEX);
+  if (!match) {
+    // No operator prefix — treat as literal equality (e.g. 'true', 'some-uuid')
+    return query.eq(col, raw);
+  }
+
+  const [, op, rest] = match;
+
+  switch (op) {
+    case 'eq':
+      return query.eq(col, rest);
+    case 'neq':
+      return query.neq(col, rest);
+    case 'gt':
+      return query.gt(col, rest);
+    case 'gte':
+      return query.gte(col, rest);
+    case 'lt':
+      return query.lt(col, rest);
+    case 'lte':
+      return query.lte(col, rest);
+    case 'like':
+      return query.like(col, rest);
+    case 'ilike':
+      return query.ilike(col, rest);
+    case 'is':
+      if (rest === 'null') return query.is(col, null);
+      return query.eq(col, raw); // fallback for is.true etc
+    case 'in': {
+      // Parse 'in.(val1,val2,val3)' → ['val1','val2','val3']
+      const inner = rest.replace(/^\(/, '').replace(/\)$/, '');
+      const values = inner.split(',').map((v) => v.trim()).filter(Boolean);
+      return query.in(col, values);
+    }
+    case 'not':
+      // 'not.eq.value' or 'not.is.null' etc — use Supabase .not()
+      return query.not(col, op, rest);
+    default:
+      // Unknown operator — log and treat as literal eq
+      logger.warn(`[rest-native] Unknown PostgREST operator '${op}' for column '${col}', treating as eq`);
+      return query.eq(col, raw);
+  }
 }
 
 function applyFilters(query: RestQuery, filters?: Record<string, unknown>): RestQuery {
@@ -85,6 +145,14 @@ function applyFilters(query: RestQuery, filters?: Record<string, unknown>): Rest
       else if (op === 'ilike') query = query.ilike(col, opVal);
       else if (op === 'neq') query = query.neq(col, opVal);
       else throw new Error(`rest-native: unsupported filter op '${op}' for column '${col}'`);
+      continue;
+    }
+    // BUG-REST-01 FIX: String values may contain PostgREST operator prefixes
+    // from bridge-era callers (e.g. 'lt.50', 'gte.2026-...', 'in.(uuid,...)').
+    // Parse them into proper Supabase client method calls instead of blindly
+    // passing to .eq() which produces invalid syntax like 'column=eq.lt.50'.
+    if (typeof val === 'string') {
+      query = parsePostgrestString(query, col, val);
       continue;
     }
     query = query.eq(col, val);
@@ -127,9 +195,9 @@ export async function executeRestNativeSelect<T>(options: InvokeOptions): Promis
     // pattern is visible in logs. The upper bound is intentionally conservative
     // (999 rows) — callers should always specify limit alongside offset.
     logger.warn(
-      `[rest-native] offset=${options.offset} without limit on table=${options.table}. ` +
-        `Using fallback upper=${OFFSET_WITHOUT_LIMIT_FALLBACK_UPPER}. ` +
-        'Specify limit for predictable pagination.',
+      `[rest-native] PAGINATION WARNING: offset=${options.offset} without limit on table=${options.table}. ` +
+        `Capping at ${OFFSET_WITHOUT_LIMIT_FALLBACK_UPPER} rows. ` +
+        'Please specify limit for predictable behavior.',
     );
     query = query.range(options.offset, options.offset + OFFSET_WITHOUT_LIMIT_FALLBACK_UPPER);
   }
