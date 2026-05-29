@@ -108,6 +108,14 @@
     @apply !rounded-md !border-white/10 !bg-[#1a1a1a]/95 !px-3 !py-1.5 !shadow-2xl !backdrop-blur-md;
     @apply !text-tooltip !font-semibold !text-white;
   }
+
+  /* Custom line-clamp helpers */
+  .line-clamp-10 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 10;
+    overflow: hidden;
+  }
 }
 
   /* Protected action button font styles to prevent overrides */
