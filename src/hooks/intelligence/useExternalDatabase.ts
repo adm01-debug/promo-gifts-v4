@@ -18,6 +18,7 @@ export { extractFunctionErrorMessage } from '@/lib/external-db/invoke';
 
 import type { ExternalTable } from '@/lib/external-db/tables';
 import { invokeWithRetry, extractFunctionErrorMessage } from '@/lib/external-db/invoke';
+import { KillSwitchActiveError } from '@/lib/external-db/kill-switch-client';
 import { logger } from '@/lib/logger';
 import type {
   ExternalProduct,
@@ -71,6 +72,25 @@ interface ExternalDatabaseState<T> {
   count: number | null;
   isLoading: boolean;
   error: string | null;
+}
+
+/**
+ * Verifica se um erro é relacionado ao bridge descontinuado.
+ * Quando o kill-switch está OFF ou há falha de rede com o bridge,
+ * o erro não deve gerar toast (é esperado e silencioso).
+ */
+function isBridgeRelatedError(err: unknown, message: string): boolean {
+  // KillSwitchActiveError: bridge explicitamente desativado
+  if (err instanceof KillSwitchActiveError) return true;
+  // Mensagens típicas do bridge desativado ou erro de rede com a edge function
+  const lower = message.toLowerCase();
+  return (
+    lower.includes('external-db-bridge') ||
+    lower.includes('kill-switch') ||
+    lower.includes('failed to send a request to the edge function') ||
+    lower.includes('foi descontinuada') ||
+    lower.includes('migre para rest nativo')
+  );
 }
 
 // ============================================
@@ -150,7 +170,15 @@ export function useExternalDatabase<T = Record<string, unknown>>(tableName: Exte
         const errorMessage = await extractFunctionErrorMessage(err);
         if (isMountedRef.current) {
           setState((prev) => ({ ...prev, error: errorMessage, isLoading: false }));
-          toast.error(errorMessage);
+          // FIX: Não exibir toast para erros do bridge descontinuado.
+          // Quando kill-switch está OFF ou o bridge falha com FunctionsFetchError
+          // ("Failed to send a request to the Edge Function"), o erro é esperado
+          // e silencioso — não deve poluir a UX com toasts na página de produto.
+          if (!isBridgeRelatedError(err, errorMessage)) {
+            toast.error(errorMessage);
+          } else {
+            logger.warn(`[useExternalDatabase:${tableName}] bridge silenciado: ${errorMessage}`);
+          }
         }
         return null;
       }
