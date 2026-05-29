@@ -91,7 +91,7 @@ export function CartHeaderButton() {
         </TooltipTrigger>
         <TooltipContent className="border-border bg-card">
           Carrinho de Orçamentos{' '}
-          <kbd className="ml-1.5 rounded bg-muted px-1 py-0.5 font-mono text-[5px]">Alt+O</kbd>
+          <kbd className="ml-1.5 rounded bg-muted px-1 py-0.5 font-mono text-tooltip">Alt+O</kbd>
         </TooltipContent>
       </Tooltip>
 

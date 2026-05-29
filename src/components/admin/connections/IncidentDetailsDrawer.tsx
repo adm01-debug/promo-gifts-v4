@@ -380,7 +380,7 @@ export function IncidentDetailsDrawer({ incident, open, onOpenChange }: Props) {
                                       {t.error_message}
                                     </span>
                                   </TooltipTrigger>
-                                  <TooltipContent className="max-w-sm">
+                                  <TooltipContent>
                                     <p className="whitespace-pre-wrap text-xs">{t.error_message}</p>
                                   </TooltipContent>
                                 </Tooltip>
@@ -438,7 +438,7 @@ export function IncidentDetailsDrawer({ incident, open, onOpenChange }: Props) {
                                       {d.error_message}
                                     </span>
                                   </TooltipTrigger>
-                                  <TooltipContent className="max-w-sm">
+                                  <TooltipContent>
                                     <p className="whitespace-pre-wrap text-xs">{d.error_message}</p>
                                   </TooltipContent>
                                 </Tooltip>

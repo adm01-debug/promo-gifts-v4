@@ -76,7 +76,7 @@ export function FreightEstimator({ totalWeightGrams, kitQuantity }: FreightEstim
               <TooltipTrigger asChild>
                 <Info className="h-3.5 w-3.5 cursor-help text-muted-foreground" />
               </TooltipTrigger>
-              <TooltipContent className="max-w-[260px]">
+              <TooltipContent>
                 <p className="text-xs">
                   Valores estimados com base em tabela interna (referência: SP Capital). Para
                   cotação exata, consulte sua transportadora com o CEP de destino.

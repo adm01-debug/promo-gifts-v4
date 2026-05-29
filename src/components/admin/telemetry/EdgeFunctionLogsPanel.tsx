@@ -367,7 +367,7 @@ export function EdgeFunctionLogsPanel() {
                                   {row.status ?? 'err'}
                                 </span>
                               </TooltipTrigger>
-                              <TooltipContent className="max-w-xs">
+                              <TooltipContent>
                                 <p className="text-xs">{row.errorMessage ?? 'Erro sem mensagem'}</p>
                               </TooltipContent>
                             </Tooltip>

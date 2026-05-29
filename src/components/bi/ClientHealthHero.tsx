@@ -273,7 +273,7 @@ export function ClientHealthHero({ clientId, ramoAtividade, clientName }: Props)
                         </div>
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
+                    <TooltipContent>
                       <p className="text-xs">{health.nextActionDetail}</p>
                     </TooltipContent>
                   </Tooltip>
@@ -290,7 +290,7 @@ export function ClientHealthHero({ clientId, ramoAtividade, clientName }: Props)
                         </div>
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
+                    <TooltipContent>
                       <p className="text-xs">
                         Baseado no padrão sazonal histórico do cliente nos últimos 24 meses.
                       </p>
@@ -309,7 +309,7 @@ export function ClientHealthHero({ clientId, ramoAtividade, clientName }: Props)
                         </div>
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-sm">
+                    <TooltipContent>
                       <p className="text-xs leading-relaxed">"{health.scriptHint}"</p>
                     </TooltipContent>
                   </Tooltip>

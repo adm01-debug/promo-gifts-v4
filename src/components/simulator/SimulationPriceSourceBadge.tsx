@@ -103,7 +103,7 @@ export function SimulationPriceSourceBadge({
               </div>
             </div>
           </TooltipTrigger>
-          <TooltipContent className="max-w-xs">
+          <TooltipContent>
             O servidor de gravação não respondeu para esta combinação. O valor exibido é uma
             estimativa heurística baseada no catálogo. Reveja antes de enviar ao cliente.
           </TooltipContent>
