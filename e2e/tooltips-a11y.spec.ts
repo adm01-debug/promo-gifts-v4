@@ -1,5 +1,6 @@
 import { test, expect, requireAuth } from "./fixtures/test-base";
 import { gotoAndSettle } from "./helpers/nav";
+import AxeBuilder from '@axe-core/playwright';
 
 test.describe("Tooltip Accessibility & Visual Regression", () => {
   test.beforeEach(() => requireAuth());
