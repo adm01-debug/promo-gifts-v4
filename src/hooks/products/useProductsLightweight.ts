@@ -20,7 +20,7 @@ function mapLightweight(p: LightweightProduct): ProductLightweight {
   const imageUrl = p.primary_image_url || p.image_url || '/placeholder.svg';
 
   return {
-    id: p.id,
+    id: String(p.id),
     name: p.name,
     sku: p.sku,
     supplier_reference: p.supplier_reference ?? null,
@@ -52,7 +52,7 @@ export function mapLightweightToProduct(
     : null;
 
   return {
-    id: p.id,
+    id: String(p.id),
     name: p.name,
     description: '',
     category_id: resolvedCategoryId,

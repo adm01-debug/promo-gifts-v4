@@ -112,7 +112,7 @@ export function ProductCategoryBadges({
               onClick={() => {
                 // Se este item for a categoria principal (primeiro da lista), tenta usar o categoryUuid
                 // caso contrário usa o próprio cat.id (que pode ser numérico para grupos)
-                const isMainCategory = cat.id === category?.id;
+                const isMainCategory = String(cat.id) === String(category?.id);
                 const idToUse = isMainCategory && categoryUuid ? categoryUuid : cat.id;
                 navigate(`/filtros?categories=${idToUse}`);
               }}
