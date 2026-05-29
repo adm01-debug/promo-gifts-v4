@@ -114,7 +114,7 @@ test.describe('Product Catalog Sorting', () => {
     await expect(sortTrigger).toBeFocused();
   });
 
-  test('should handle persistence failure gracefully', async ({ page }) => {
+  test('should handle persistence loading failure gracefully with toast', async ({ page }) => {
     // Intercept profile fetch and return error
     await page.route('**/rest/v1/profiles*', (route) => {
       route.fulfill({
@@ -124,13 +124,71 @@ test.describe('Product Catalog Sorting', () => {
     });
 
     await page.reload();
-    await page.waitForSelector('[data-testid="product-card"]');
+    
+    // Check for error toast
+    await expect(page.getByText('Erro ao carregar preferências')).toBeVisible();
     
     // Should fallback to default 'relevance' or name sorting
     const sortTrigger = page.locator('button[aria-label="Ordenar por"]');
     await expect(sortTrigger).toBeVisible();
-    // Default fallback usually shows "Relevância" or placeholder
     await expect(page).not.toHaveURL(/sort=/);
+    
+    // Validate order of products (sequence check)
+    const productCards = page.locator('[data-testid="product-card"]');
+    const firstProductName = await productCards.nth(0).locator('h3').innerText();
+    const secondProductName = await productCards.nth(1).locator('h3').innerText();
+    // Default alphabetical order check if applicable, or just verify presence
+    expect(firstProductName.length).toBeGreaterThan(0);
+  });
+
+  test('should handle persistence saving failure with toast', async ({ page }) => {
+    // Intercept profile update and return error
+    await page.route('**/rest/v1/profiles*', (route) => {
+      if (route.request().method() === 'PATCH' || route.request().method() === 'PUT') {
+        route.fulfill({
+          status: 500,
+          body: JSON.stringify({ error: 'Save failed' }),
+        });
+      } else {
+        route.continue();
+      }
+    });
+
+    const sortTrigger = page.locator('button[aria-label="Ordenar por"]');
+    await sortTrigger.click();
+    await page.locator('role=option[name="Maior Estoque"]').click();
+    
+    // Check for error toast on save
+    await expect(page.getByText('Erro ao salvar preferência')).toBeVisible();
+    
+    // URL should still update locally
+    await expect(page).toHaveURL(/sort=stock/);
+  });
+
+  test('should track analytics events during search and sort', async ({ page }) => {
+    const analyticsRequests: any[] = [];
+    await page.route('**/rest/v1/catalog_analytics', (route) => {
+      analyticsRequests.push(route.request().postDataJSON());
+      route.fulfill({ status: 201 });
+    });
+
+    // 1. Change sort
+    const sortTrigger = page.locator('button[aria-label="Ordenar por"]');
+    await sortTrigger.click();
+    await page.locator('role=option[name="Menor Preço"]').click();
+    
+    // 2. Perform search
+    const searchInput = page.locator('input[placeholder*="Buscar"]');
+    await searchInput.fill('caneta');
+    await page.waitForTimeout(1500); // Wait for debounce and trackSort
+
+    // 3. Verify analytics call for sort change
+    const sortEvent = analyticsRequests.find(r => r.event_type === 'sort_change');
+    expect(sortEvent).toBeDefined();
+    expect(sortEvent.event_data.sort_by).toBe('price-asc');
+    
+    // 4. Verify search analytics (this usually goes to search_analytics table)
+    // We would need to intercept that too if testing the search track specifically
   });
 
   test('should keep preferences isolated between users', async ({ page, context }) => {

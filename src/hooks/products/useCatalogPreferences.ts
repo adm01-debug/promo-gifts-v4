@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import type { SortOption } from '@/hooks/products/useCatalogState';
 import type { Json } from '@/integrations/supabase/types';
+import { useToast } from '@/hooks/ui/use-toast';
 
 interface CatalogPreferences {
   sortBy: SortOption;
@@ -19,6 +20,7 @@ const STORAGE_KEY = 'catalog_preferences';
 
 export function useCatalogPreferences() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [preferences, setPreferencesState] = useState<CatalogPreferences>(DEFAULT_PREFERENCES);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -36,7 +38,11 @@ export function useCatalogPreferences() {
       if (error || !data?.preferences) {
         if (error) {
           console.error('Error fetching catalog preferences:', error);
-          // Standard pattern for user-facing feedback could be added here if there was a toast hook available in this context
+          toast({
+            title: 'Erro ao carregar preferências',
+            description: 'Usando ordenação padrão do sistema.',
+            variant: 'destructive',
+          });
         }
         return null;
       }
@@ -115,6 +121,11 @@ export function useCatalogPreferences() {
           saveToCloudMutation.mutate(updated, {
             onError: (err) => {
               console.warn('Cloud sync failed, will retry on next change', err);
+              toast({
+                title: 'Erro ao salvar preferência',
+                description: 'Sua escolha foi aplicada nesta sessão, mas não pôde ser salva na nuvem.',
+                variant: 'destructive',
+              });
             }
           });
         }
