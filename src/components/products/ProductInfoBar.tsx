@@ -35,6 +35,7 @@ export function ProductInfoBar({
       {/* SKU */}
       <Badge
         variant="secondary"
+        data-testid="product-sku"
         className="rounded-full bg-muted px-3 py-1.5 font-mono text-xs"
       >
         SKU: {sku}
