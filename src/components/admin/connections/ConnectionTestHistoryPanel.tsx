@@ -568,7 +568,7 @@ export function ConnectionTestHistoryPanel({
           </span>
           <span className="inline-flex items-center gap-2">
             {!expanded && items.length >= 2 && (
-              <TooltipProvider delayDuration={150}>
+              <TooltipProvider delayDuration={700}>
                 <LatencySparkline items={items} />
               </TooltipProvider>
             )}
@@ -700,7 +700,7 @@ export function ConnectionTestHistoryPanel({
               {emptyMessage(filter, source)}
             </div>
           ) : (
-            <TooltipProvider delayDuration={150}>
+            <TooltipProvider delayDuration={700}>
               <ul className="space-y-0.5">
                 {pendingTest && <PendingHistoryRow startedAt={pendingTest.startedAt} />}
                 {previewItems.map((it) => (
@@ -773,7 +773,7 @@ export function ConnectionTestHistoryPanel({
               {emptyMessage(filter, source)}
             </div>
           ) : (
-            <TooltipProvider delayDuration={150}>
+            <TooltipProvider delayDuration={700}>
               <ul className="space-y-0.5">
                 {pendingTest && <PendingHistoryRow startedAt={pendingTest.startedAt} />}
                 {visibleItems.map((it) => (

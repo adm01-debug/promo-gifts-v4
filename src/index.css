@@ -61,8 +61,10 @@
 /* Custom Tooltip Utilities (Ensures build retention) */
 @layer utilities {
   .text-tooltip {
-    font-size: 5.4px !important;
-    line-height: 1.15;
+    font-size: 11px !important;
+    line-height: 1.25;
+    letter-spacing: 0.005em;
+    font-weight: 500;
   }
 
   /* Protected action button font styles to prevent overrides */

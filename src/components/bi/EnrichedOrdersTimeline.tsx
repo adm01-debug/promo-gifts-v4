@@ -168,7 +168,7 @@ export function EnrichedOrdersTimeline({ clientId }: Props) {
                         </Badge>
                       )}
                       {o.isAnomaly && (
-                        <TooltipProvider delayDuration={150}>
+                        <TooltipProvider delayDuration={700}>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Badge

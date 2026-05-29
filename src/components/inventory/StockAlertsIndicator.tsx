@@ -265,7 +265,7 @@ export function StockAlertsIndicator({
   return (
     <div>
       <Popover open={isOpen} onOpenChange={setIsOpen}>
-        <Tooltip delayDuration={300}>
+        <Tooltip delayDuration={700}>
           <TooltipTrigger asChild>
             <span className="inline-flex">
               <PopoverTrigger asChild>

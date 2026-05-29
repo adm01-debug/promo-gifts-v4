@@ -151,7 +151,7 @@ export function CardSourceDiagnostic({ fields, readOnly, loadError, className }:
       <AlertTitle className="text-sm">{title}</AlertTitle>
       <AlertDescription>
         <ul className="mt-2 space-y-1.5 text-xs">
-          <TooltipProvider delayDuration={150}>
+          <TooltipProvider delayDuration={700}>
             {rows.map((r) => {
               const meta = SOURCE_META[r.source];
               return (

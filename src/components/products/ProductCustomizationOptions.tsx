@@ -185,7 +185,7 @@ export function ProductCustomizationOptions({
   const mutuallyExclusive = hasCircularOption && hasFlatOption;
 
   return (
-    <TooltipProvider delayDuration={200}>
+    <TooltipProvider delayDuration={700}>
       <div className="space-y-3">
         {/* Bloco fixo: stepper + locais — sempre visíveis durante a rolagem */}
         <div

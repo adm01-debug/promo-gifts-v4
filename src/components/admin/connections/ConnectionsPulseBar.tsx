@@ -143,7 +143,7 @@ export function ConnectionsPulseBar() {
   const webhookTone = (data?.kpis.activeWebhooks ?? 0) > 0 ? 'success' : 'default';
 
   return (
-    <TooltipProvider delayDuration={150}>
+    <TooltipProvider delayDuration={700}>
       <div
         role="status"
         aria-live="polite"

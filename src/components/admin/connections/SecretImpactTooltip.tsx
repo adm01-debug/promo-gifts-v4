@@ -106,7 +106,7 @@ export function SecretImpactTooltip({ secretName, children, isMissing, className
   );
 
   return (
-    <TooltipProvider delayDuration={200}>
+    <TooltipProvider delayDuration={700}>
       <Tooltip>
         <TooltipTrigger asChild>
           <span

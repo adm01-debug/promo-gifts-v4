@@ -222,7 +222,7 @@ export function ConnectionsIncidentStrip() {
   const dismiss = (id: string) => setDismissed((prev) => new Set(prev).add(id));
 
   return (
-    <TooltipProvider delayDuration={150}>
+    <TooltipProvider delayDuration={700}>
       <section
         aria-label="Incidentes recentes"
         className="-mt-3 rounded-lg border border-border/60 bg-card/40 backdrop-blur-sm"
