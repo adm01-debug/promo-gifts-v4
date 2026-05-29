@@ -145,7 +145,7 @@ export function VideoGrid({
                         style={{ backgroundColor: link.variant_color_hex || '#999' }}
                       />
                     </TooltipTrigger>
-                    <TooltipContent className="text-[10px]">
+                    <TooltipContent>
                       {link.variant_name || 'Variação'}
                     </TooltipContent>
                   </Tooltip>
@@ -187,7 +187,7 @@ export function VideoGrid({
                     <Type className="h-3 w-3" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent className="text-xs">Editar metadados</TooltipContent>
+                <TooltipContent>Editar metadados</TooltipContent>
               </Tooltip>
               {variants.length > 0 && (
                 <Tooltip>
@@ -206,7 +206,7 @@ export function VideoGrid({
                       <Link2 className="h-3 w-3" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent className="text-xs">Vincular a variação</TooltipContent>
+                  <TooltipContent>Vincular a variação</TooltipContent>
                 </Tooltip>
               )}
               {!video.url_thumbnail && !video.source_youtube_id && (
@@ -231,7 +231,7 @@ export function VideoGrid({
                       )}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent className="text-xs">Gerar thumbnail</TooltipContent>
+                  <TooltipContent>Gerar thumbnail</TooltipContent>
                 </Tooltip>
               )}
               <Tooltip>
@@ -250,7 +250,7 @@ export function VideoGrid({
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent className="text-xs">Remover vídeo</TooltipContent>
+                  <TooltipContent>Remover vídeo</TooltipContent>
               </Tooltip>
             </div>
 

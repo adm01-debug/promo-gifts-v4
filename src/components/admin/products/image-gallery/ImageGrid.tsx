@@ -155,7 +155,7 @@ export function ImageGrid({
                       <CheckCircle2 className="h-2 w-2 text-white" />
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent className="max-w-[180px] text-[10px]">
+                  <TooltipContent>
                     Alt: {ext.alt_text}
                   </TooltipContent>
                 </Tooltip>

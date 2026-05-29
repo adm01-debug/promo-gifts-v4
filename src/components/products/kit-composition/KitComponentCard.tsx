@@ -56,7 +56,7 @@ export function CopyButton({ text }: { text: string }) {
             )}
           </button>
         </TooltipTrigger>
-        <TooltipContent side="top" className="text-[10px]">
+        <TooltipContent side="top">
           {copied ? 'Copiado!' : 'Copiar'}
         </TooltipContent>
       </Tooltip>
@@ -88,7 +88,7 @@ export function SmartBadge({
             {children}
           </Badge>
         </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-[200px] text-xs">
+        <TooltipContent side="top">
           {tooltip}
         </TooltipContent>
       </Tooltip>
@@ -221,7 +221,7 @@ export function KitComponentCard({
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="left">
-                      <p className="text-xs">Ver produto</p>
+                      Ver produto
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
