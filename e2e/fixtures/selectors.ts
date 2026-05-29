@@ -374,6 +374,16 @@ export const Sel = {
       header: TID("app-header"),
       breadcrumbBar: TID("breadcrumb-bar"),
       breadcrumb: TID("breadcrumb"),
+      /** Botão "Teletransporte" (smart back) — `src/components/common/PersistentBreadcrumbs.tsx`. */
+      teleport: TID("back-teleport-button"),
+      /** Tooltip do Teletransporte — `src/components/common/PersistentBreadcrumbs.tsx`. */
+      teleportTooltip: TID("teleport-tooltip-content"),
+      /** Link/Botão "Início" no breadcrumb — `src/components/common/PersistentBreadcrumbs.tsx`. */
+      breadcrumbHome: TID("home-breadcrumb-link"),
+      /** Link/Botão "Início" no breadcrumb — `src/components/common/PersistentBreadcrumbs.tsx`. */
+      breadcrumbHome: TID("home-breadcrumb-link"),
+      /** Tooltip do Início — `src/components/common/PersistentBreadcrumbs.tsx`. */
+      breadcrumbHomeTooltip: TID("inicio-tooltip-content"),
       /**
        * Botão flutuante "voltar ao topo" — `src/components/common/ScrollProgress.tsx`.
        * Aparece após `window.scrollY > threshold` (default 150 no MainLayout).
