@@ -65,7 +65,7 @@ export function TruncatedTooltip({
         <TooltipTrigger asChild>
           {content}
         </TooltipTrigger>
-        <TooltipContent side={side} className={cn('max-w-xs', tooltipClassName)}>
+        <TooltipContent side={side} className={tooltipClassName} variant="compact">
           {children}
         </TooltipContent>
       </Tooltip>
