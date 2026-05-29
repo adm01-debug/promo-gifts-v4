@@ -95,21 +95,20 @@ describe('B2B Product Detail Flow Integration', () => {
     const cartButton = screen.getByText('Carrinho');
     fireEvent.click(cartButton);
 
-    // Selecionar variação (pula se não houver ou seleciona a primeira disponível no mock)
-    // No QuickAddToQuote, se não houver SingleVariantPicker com dados, ele mostra o passo 3 direto ou permite avançar
+    // Selecionar variação no mock
+    const variantButton = await screen.findByText('Mock Variant');
+    fireEvent.click(variantButton);
     
     // Verificar se o botão de confirmar no carrinho aparece
-    await waitFor(() => {
-      expect(screen.getByText('Adicionar ao Carrinho')).toBeDefined();
-    });
-
-    const confirmAdd = screen.getByText('Adicionar ao Carrinho');
+    const confirmAdd = await screen.findByText('Adicionar ao Carrinho');
     fireEvent.click(confirmAdd);
 
     expect(mockAddToActiveCart).toHaveBeenCalledWith(expect.objectContaining({
       product_id: 'prod-123',
-      quantity: 50
+      quantity: 50,
+      color_name: 'Azul'
     }));
+
   });
 
   it('Fluxo 2: Navegação por Categorias', () => {
