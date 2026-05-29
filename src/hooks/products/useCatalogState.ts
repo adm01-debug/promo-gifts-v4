@@ -69,9 +69,18 @@ export function useCatalogState() {
   const { data: promoSalesMap } = usePromoSalesRanking();
   const { data: supplierSalesMap } = useSupplierSalesRanking();
   const { preferences, updatePreferences, isLoaded: prefsLoaded } = useCatalogPreferences();
-  const { trackSort } = useProductAnalytics();
+  const { trackSort, trackSearch } = useProductAnalytics();
 
   const searchQueryFromUrl = searchParams.get('search') || '';
+
+  // Refs para furar a TDZ (temporal dead zone): tanto `setSortBy` quanto o
+  // effect de `searchQueryFromUrl` precisam de `filteredProducts`/`searchQuery`,
+  // mas ambos são declarados MAIS ABAIXO neste hook. Referenciar a const
+  // diretamente (mesmo só nas deps) dispara "Cannot access 'filteredProducts'
+  // before initialization" e derruba a página. Lemos via ref — sempre o valor
+  // atual, sincronizado por effect após as declarações reais.
+  const filteredProductsRef = useRef<Product[]>([]);
+  const searchQueryRef = useRef('');
 
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [viewMode, setViewModeState] = useState<ViewMode>(getPersistedViewMode);
@@ -121,18 +130,18 @@ export function useCatalogState() {
         const newPath = `${window.location.pathname}${newParams.toString() ? '?' + newParams.toString() : ''}`;
         navigate(newPath, { replace: true });
 
-        // Analytics tracking
+        // Analytics tracking (lê via ref para evitar TDZ — ver nota acima)
         trackSort({
           sortBy: s,
           previousSortBy: previousSort,
-          resultsCount: filteredProducts.length,
-          hasSearch: !!searchQuery.trim(),
+          resultsCount: filteredProductsRef.current.length,
+          hasSearch: !!searchQueryRef.current.trim(),
         });
 
         setIsTransitioning(false);
       });
     },
-    [navigate, sortBy, updatePreferences, trackSort, filteredProducts.length, searchQuery],
+    [navigate, sortBy, updatePreferences, trackSort],
   );
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedCount, setSelectedCount] = useState(0);
@@ -171,6 +180,11 @@ export function useCatalogState() {
   const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Mantém searchQueryRef sincronizado (consumido por setSortBy via ref).
+  useEffect(() => {
+    searchQueryRef.current = searchQuery;
+  }, [searchQuery]);
 
   const debouncedServerSearch = useDebounce(searchQuery, 400);
 
@@ -254,9 +268,10 @@ export function useCatalogState() {
   useEffect(() => {
     setSearchQuery(searchQueryFromUrl);
     if (searchQueryFromUrl.trim()) {
+      // resultsCount via ref para evitar TDZ (filteredProducts é declarado abaixo)
       trackSearch({
         searchTerm: searchQueryFromUrl,
-        resultsCount: filteredProducts.length,
+        resultsCount: filteredProductsRef.current.length,
         filtersUsed: { sortBy },
       });
       updatePreferences({ 
@@ -264,7 +279,7 @@ export function useCatalogState() {
         lastSearchSortBy: sortBy 
       });
     }
-  }, [searchQueryFromUrl, trackSearch, filteredProducts.length, sortBy, updatePreferences]);
+  }, [searchQueryFromUrl, trackSearch, sortBy, updatePreferences]);
 
   useEffect(() => {
     const urlSort = searchParams.get('sort') as SortOption;
@@ -327,6 +342,12 @@ export function useCatalogState() {
     promoSalesMap,
     supplierSalesMap: supplierSalesMap as unknown as Map<string, number> | undefined,
   });
+
+  // Mantém filteredProductsRef sincronizado (consumido por setSortBy e pelo
+  // effect de busca via ref, ambos declarados acima desta linha).
+  useEffect(() => {
+    filteredProductsRef.current = filteredProducts;
+  }, [filteredProducts]);
 
   const [lastNonTransitionedProducts, setLastNonTransitionedProducts] = useState<Product[]>([]);
   const deferredIsTransitioning = useDeferredValue(isTransitioning);
