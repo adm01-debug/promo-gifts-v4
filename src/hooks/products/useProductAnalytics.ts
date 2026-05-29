@@ -69,19 +69,29 @@ export function useProductAnalytics() {
   );
 
   /**
-   * trackSort — DISABLED: the `catalog_analytics` table does not exist in the
-   * production database yet. Inserting into it produces 404 errors in the
-   * console. Re-enable once the table is created via migration.
-   *
-   * TODO: Create `catalog_analytics` table migration, then restore insert.
+   * trackSort — Records sort events in catalog_analytics table.
    */
   const trackSort = useCallback(
-    async ({ sortBy }: TrackSortParams) => {
-      logger.debug(
-        `[analytics] trackSort skipped (catalog_analytics table pending): sortBy=${sortBy}`,
-      );
+    async ({ sortBy, previousSortBy, resultsCount, hasSearch }: TrackSortParams) => {
+      if (!user?.id) return;
+
+      try {
+        await supabase.from('catalog_analytics').insert({
+          user_id: user.id,
+          event_type: 'sort',
+          event_data: {
+            sortBy,
+            previousSortBy,
+            resultsCount,
+            hasSearch,
+            url: window.location.href,
+          },
+        });
+      } catch {
+        // Silently ignore all tracking errors
+      }
     },
-    [],
+    [user?.id],
   );
 
   return { trackProductView, trackSearch, trackSort };
