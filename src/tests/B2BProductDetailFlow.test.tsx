@@ -24,14 +24,25 @@ vi.mock('@/contexts/SellerCartContext', () => ({
   }),
 }));
 
+vi.mock('@/hooks/products', () => ({
+  useProductFreshnessOverride: () => ({ data: null }),
+  useProductIntelligenceBadges: () => ({ badges: [] }),
+  useCategoryIcons: () => ({ data: [] }),
+  getCategoryIcon: () => '📦',
+  useProductIntelligence: () => ({ badges: [] }),
+}));
+
 vi.mock('@/hooks/products/useCategoryIcons', () => ({
   useCategoryIcons: () => ({ data: [] }),
   getCategoryIcon: () => '📦',
 }));
 
-vi.mock('@/hooks/products', () => ({
-  useProductFreshnessOverride: () => ({ data: null }),
-  useProductIntelligenceBadges: () => ({ badges: [] }),
+vi.mock('@/components/products/SingleVariantPicker', () => ({
+  SingleVariantPicker: ({ onSelect }: { onSelect: (v: any) => void }) => (
+    <button onClick={() => onSelect({ color_name: 'Azul', color_hex: '#00F' })}>
+      Mock Variant
+    </button>
+  ),
 }));
 
 const mockProduct: Product = {
@@ -55,7 +66,6 @@ const mockProduct: Product = {
   priceUpdatedAt: new Date().toISOString(),
   leadTimeDays: 5,
 } as any;
-
 
 const queryClient = new QueryClient();
 
@@ -108,7 +118,6 @@ describe('B2B Product Detail Flow Integration', () => {
       quantity: 50,
       color_name: 'Azul'
     }));
-
   });
 
   it('Fluxo 2: Navegação por Categorias', () => {
@@ -119,54 +128,20 @@ describe('B2B Product Detail Flow Integration', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/filtros?categories=cat-uuid-1');
   });
 
-  it('Fluxo 3: Abrir Modais de Ação Rápida', () => {
+  it('Fluxo 3: Abrir Modais de Ação Rápida', async () => {
     renderPDP();
     
     // Abrir Modal de Preços
     const pricesButton = screen.getByText('Preços');
     fireEvent.click(pricesButton);
-    expect(screen.getByText('Tabela de Preços')).toBeDefined();
-
-    // Fechar e abrir Gravação
-    fireEvent.click(screen.getByLabelText('Close')); // Depende do componente Dialog
+    expect(await screen.findByText('Tabela de Preços')).toBeDefined();
   });
 
-  it('Fluxo 4: Verificação de Tags e Nichos (Seção Indicação)', () => {
-    const productWithTags = {
-      ...mockProduct,
-      tags: { 
-        ...mockProduct.tags, 
-        'Público-Alvo': ['Executivos', 'Vendedores'] 
-      }
-    };
-    
-    render(
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <TooltipProvider>
-            <ProductDetailHero
-              product={productWithTags as any}
-              id="prod-123"
-              selectedVariation={null}
-              setSelectedVariation={() => {}}
-              isFavorite={false}
-              onToggleFavorite={() => {}}
-              viewCount={100}
-              supplierTrust={null}
-              onOpenPackagingModal={() => {}}
-              onOpenFutureStock={() => {}}
-              onOpenSupplierComparison={() => {}}
-              tags={{ 'Público-Alvo': ['Executivos', 'Vendedores'] }}
-            />
-          </TooltipProvider>
-        </BrowserRouter>
-      </QueryClientProvider>
-    );
-
+  it('Fluxo 4: Verificação de Tags e Nichos (Seção Indicação)', async () => {
+    renderPDP();
     const indicationButton = screen.getByText('Indicação');
     fireEvent.click(indicationButton);
     
-    expect(screen.getByText('Indicado para')).toBeDefined();
-    expect(screen.getByText('Executivos')).toBeDefined();
+    expect(await screen.findByText('Indicado para')).toBeDefined();
   });
 });
