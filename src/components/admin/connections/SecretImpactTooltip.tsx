@@ -127,11 +127,11 @@ export function SecretImpactTooltip({ secretName, children, isMissing, className
             {children}
             {isMissing && impact ? (
               <AlertTriangle
-                className={cn('h-3 w-3', SEVERITY_TONE[impact.severity])}
+                className={cn('h-4 w-4', SEVERITY_TONE[impact.severity])}
                 aria-hidden="true"
               />
             ) : (
-              <Info className="h-3 w-3 text-muted-foreground/60" aria-hidden="true" />
+              <Info className="h-4 w-4 text-muted-foreground/60" aria-hidden="true" />
             )}
           </span>
         </TooltipTrigger>
