@@ -2,7 +2,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { ProductCategoryBadges } from './ProductCategoryBadges';
 import { BrowserRouter } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as router from 'react-router-dom';
+
+const mockNavigate = vi.fn();
 
 // Mock do hook useCategoryIcons
 vi.mock('@/hooks/products/useCategoryIcons', () => ({
@@ -13,11 +14,17 @@ vi.mock('@/hooks/products/useCategoryIcons', () => ({
   },
 }));
 
-// Mock do useNavigate
-const mockNavigate = vi.fn();
-vi.spyOn(router, 'useNavigate').mockImplementation(() => mockNavigate);
+// Mock do useNavigate do react-router-dom
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
 const defaultProps = {
+
   category: { id: 'cat-1', name: 'Squeeze' },
   groups: [
     { id: 'cat-2', name: 'Garrafas' },
