@@ -3,14 +3,12 @@ import { Link } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { PersistentBreadcrumbs } from '@/components/common/PersistentBreadcrumbs';
 
 export default function TermsPage() {
   return (
     <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-8 px-3 py-3 sm:px-4 sm:py-4 lg:px-6 xl:px-8">
       <PageSEO title="Termos de Uso" path="/termos" />
       <div className="mx-auto max-w-3xl space-y-8">
-        <PersistentBreadcrumbs showBackButton />
         <header className="space-y-4">
           <Link
             to="/auth"
