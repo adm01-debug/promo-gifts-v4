@@ -253,7 +253,18 @@ export function useCatalogState() {
 
   useEffect(() => {
     setSearchQuery(searchQueryFromUrl);
-  }, [searchQueryFromUrl]);
+    if (searchQueryFromUrl.trim()) {
+      trackSearch({
+        searchTerm: searchQueryFromUrl,
+        resultsCount: filteredProducts.length,
+        filtersUsed: { sortBy },
+      });
+      updatePreferences({ 
+        lastSearchTerm: searchQueryFromUrl,
+        lastSearchSortBy: sortBy 
+      });
+    }
+  }, [searchQueryFromUrl, trackSearch, filteredProducts.length, sortBy, updatePreferences]);
 
   useEffect(() => {
     const urlSort = searchParams.get('sort') as SortOption;
