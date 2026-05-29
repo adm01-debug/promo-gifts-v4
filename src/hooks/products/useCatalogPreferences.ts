@@ -7,6 +7,8 @@ import type { Json } from '@/integrations/supabase/types';
 
 interface CatalogPreferences {
   sortBy: SortOption;
+  lastSearchTerm?: string;
+  lastSearchSortBy?: SortOption;
 }
 
 const DEFAULT_PREFERENCES: CatalogPreferences = {
@@ -68,19 +70,27 @@ export function useCatalogPreferences() {
   });
 
   useEffect(() => {
-    if (cloudPreferences) {
-      setPreferencesState(cloudPreferences);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudPreferences));
-    } else {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        try {
-          setPreferencesState(JSON.parse(stored));
-        } catch (e) {
-          console.error('Error parsing catalog preferences', e);
+    const loadPreferences = () => {
+      try {
+        if (cloudPreferences) {
+          setPreferencesState(cloudPreferences);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudPreferences));
+        } else {
+          const stored = localStorage.getItem(STORAGE_KEY);
+          if (stored) {
+            try {
+              const parsed = JSON.parse(stored);
+              setPreferencesState((prev) => ({ ...prev, ...parsed }));
+            } catch (e) {
+              console.error('Error parsing catalog preferences', e);
+            }
+          }
         }
+      } catch (err) {
+        console.error('Failed to load preferences', err);
       }
-    }
+    };
+    loadPreferences();
     setIsLoaded(true);
   }, [cloudPreferences]);
 
@@ -88,10 +98,19 @@ export function useCatalogPreferences() {
     (newPrefs: Partial<CatalogPreferences>) => {
       setPreferencesState((prev) => {
         const updated = { ...prev, ...newPrefs };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        } catch (e) {
+          console.warn('LocalStorage save failed', e);
+        }
         
         if (user) {
-          saveToCloudMutation.mutate(updated);
+          saveToCloudMutation.mutate(updated, {
+            onError: (err) => {
+              console.warn('Cloud sync failed, will retry on next change', err);
+            }
+          });
         }
         
         return updated;
