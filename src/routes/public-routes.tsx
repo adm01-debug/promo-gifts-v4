@@ -7,7 +7,6 @@ import {
   Unauthorized,
   TermsPage,
   PrivacyPage,
-  TeleportTestPage,
 } from './lazy-pages';
 
 /**
