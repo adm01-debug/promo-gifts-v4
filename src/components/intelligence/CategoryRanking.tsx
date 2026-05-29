@@ -372,7 +372,7 @@ export function CategoryRanking({
                             </div>
                           </div>
                         </TooltipTrigger>
-                        <TooltipContent side="left" className="space-y-1 text-xs">
+                        <TooltipContent side="left" className="space-y-1 ">
                           <p className="font-semibold">{cat.categoryName}</p>
                           <div className="flex items-center gap-1.5">
                             <TrendingUp className="h-3 w-3 text-success" />

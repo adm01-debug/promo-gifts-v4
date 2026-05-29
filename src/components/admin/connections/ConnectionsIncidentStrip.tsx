@@ -147,7 +147,7 @@ function IncidentCard({
               <span>Ir para {getZoneLabel(getIncidentTargetZone(incident))}</span>
             </button>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-[220px]">
+          <TooltipContent side="bottom" >
             <p className="text-xs">
               Rola até a zona{' '}
               <span className="font-semibold">{getZoneLabel(getIncidentTargetZone(incident))}</span>{' '}

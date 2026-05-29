@@ -135,7 +135,7 @@ export function SecretImpactTooltip({ secretName, children, isMissing, className
             )}
           </span>
         </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-sm">
+        <TooltipContent side="top" >
           {content}
         </TooltipContent>
       </Tooltip>

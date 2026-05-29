@@ -49,7 +49,7 @@ export function VoiceSuggestions({
                 className="group cursor-pointer rounded-full border border-white/[0.06] bg-white/[0.04] px-3 py-1.5 text-xs text-white/35 transition-all duration-200 hover:border-white/[0.12] hover:bg-white/[0.08] hover:text-white/70 hover:shadow-[0_0_12px_rgba(255,255,255,0.05)]"
               >
                 <span className="transition-all duration-200 group-hover:tracking-wide">
-                  "{entry.transcript}"
+                 "{entry.transcript}"
                 </span>
               </button>
             ))}
@@ -68,7 +68,7 @@ export function VoiceSuggestions({
                 className="group cursor-pointer rounded-full border border-white/[0.06] bg-white/[0.04] px-3 py-1.5 text-xs text-white/35 transition-all duration-200 hover:border-white/[0.12] hover:bg-white/[0.08] hover:text-white/70 hover:shadow-[0_0_12px_rgba(255,255,255,0.05)]"
               >
                 <span className="transition-all duration-200 group-hover:tracking-wide">
-                  "{cmd}"
+                 "{cmd}"
                 </span>
               </button>
             ))}

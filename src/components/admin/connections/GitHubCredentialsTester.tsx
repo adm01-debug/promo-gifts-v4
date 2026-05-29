@@ -117,7 +117,7 @@ export function GitHubCredentialsTester() {
                         <span className="font-mono text-[10px]">{LABELS[key]}</span>
                       </Badge>
                     </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-sm space-y-1 text-xs">
+                    <TooltipContent side="top" className=" space-y-1 ">
                       <p className="font-semibold">{key}</p>
                       <p>{check.message}</p>
                       {check.detail && (

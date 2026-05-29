@@ -379,7 +379,7 @@ function HistoryRow({ item: it, onClick, highlighted, rowRef }: RowProps) {
               <span className="truncate">{tail}</span>
             </span>
           </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-sm break-words">
+          <TooltipContent side="top" className=" break-words">
             {kindCopy ? `${kindCopy.title} — ${tail}` : tail}
           </TooltipContent>
         </Tooltip>

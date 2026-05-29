@@ -55,7 +55,7 @@ function TimelineMarker({ ev }: { ev: TimelineEvent }) {
           aria-label={`${SEV_LABEL[ev.severity]}: ${ev.title} (${formatRelative(ev.occurredAt)})`}
         />
       </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-xs">
+      <TooltipContent side="top" >
         <div className="space-y-1">
           <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide">
             <span className={cn('inline-block h-2 w-2 rounded-full', SEV_DOT[ev.severity])} />

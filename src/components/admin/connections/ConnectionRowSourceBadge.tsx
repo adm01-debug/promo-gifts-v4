@@ -120,7 +120,7 @@ export function ConnectionRowSourceBadge({
           {m.label}
         </span>
       </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-xs">
+      <TooltipContent side="top" >
         <div className="space-y-1.5 text-xs">
           <div>{m.tooltip}</div>
           <ul className="space-y-0.5 font-mono text-[10px]">

@@ -89,7 +89,7 @@ function MiniCard({ product, score, reason, isBestChoice, badgeLabel, onClick }:
       {(isHighMatch || isBestChoice) && (
         <div 
           className={cn(
-            "absolute -inset-px opacity-0 transition-opacity duration-300 group-hover/card:opacity-100",
+           "absolute -inset-px opacity-0 transition-opacity duration-300 group-hover/card:opacity-100",
             isBestChoice ? "bg-amber-400/10" : "bg-primary/5"
           )} 
         />
@@ -127,7 +127,7 @@ function MiniCard({ product, score, reason, isBestChoice, badgeLabel, onClick }:
 
           <span
             className={cn(
-              "shrink-0 rounded-full border-[1.5px] px-1.5 py-0.5 font-display text-[10px] font-bold",
+             "shrink-0 rounded-full border-[1.5px] px-1.5 py-0.5 font-display text-[10px] font-bold",
               isBestChoice 
                 ? "border-amber-400/50 bg-amber-50 text-amber-600" 
                 : "border-primary/30 bg-primary/5 text-primary"

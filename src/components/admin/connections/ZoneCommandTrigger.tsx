@@ -33,7 +33,7 @@ export function ZoneCommandTrigger({ onOpen, className }: ZoneCommandTriggerProp
           </kbd>
         </Button>
       </TooltipTrigger>
-      <TooltipContent side="bottom" className="max-w-[220px]">
+      <TooltipContent side="bottom" >
         <p className="text-xs">Buscar zona ou módulo</p>
         <p className="mt-0.5 text-[10px] text-muted-foreground">
           Expande, mostra e leva direto ao módulo encontrado.

@@ -422,7 +422,7 @@ export const PresetsBar = React.forwardRef<HTMLDivElement, PresetsBarProps>(func
                           </DropdownMenu>
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent side="left" className="max-w-52 text-xs">
+                      <TooltipContent side="left" className="max-w-52 ">
                         {summary}
                       </TooltipContent>
                     </Tooltip>

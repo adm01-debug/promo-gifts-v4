@@ -49,7 +49,7 @@ export function SuspiciousWarning({
             ratio ≥ {threshold} for {suspiciousStreakSeconds}s
           </span>
         </ShadcnTooltipTrigger>
-        <ShadcnTooltipContent side="bottom" align="end" className="max-w-[280px] p-2">
+        <ShadcnTooltipContent side="bottom" align="end" className=" p-2">
           <div className="space-y-1 font-mono text-[10px] leading-snug">
             <div className="flex items-center gap-1 text-[11px] font-semibold text-warning">
               <AlertTriangle className="h-2.5 w-2.5" aria-hidden="true" />

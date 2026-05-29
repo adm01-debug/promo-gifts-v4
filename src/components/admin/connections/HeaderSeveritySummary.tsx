@@ -168,7 +168,7 @@ export function HeaderSeveritySummary({ className }: { className?: string }) {
                   </span>
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="max-w-xs">
+              <TooltipContent side="bottom" >
                 <p className="mb-1 text-xs font-semibold leading-tight">
                   {p.label} ·{' '}
                   {p.level === 'P0' ? 'Crítico' : p.level === 'P1' ? 'Atenção' : 'Estável'}

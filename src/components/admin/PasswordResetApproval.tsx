@@ -176,7 +176,7 @@ export function PasswordResetApproval() {
                     </p>
                     {request.reviewer_notes && (
                       <p className="text-xs italic text-muted-foreground">
-                        "{request.reviewer_notes}"
+                       "{request.reviewer_notes}"
                       </p>
                     )}
                   </div>

@@ -83,7 +83,7 @@ function ActionButton({
             <span className="hidden sm:inline">{label}</span>
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="top" className="text-xs sm:hidden">
+        <TooltipContent side="top" className=" sm:hidden">
           {label}
         </TooltipContent>
       </Tooltip>

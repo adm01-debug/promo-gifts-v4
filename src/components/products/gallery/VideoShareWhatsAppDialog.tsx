@@ -252,7 +252,7 @@ export function VideoShareWhatsAppDialog({
                   <p className="mt-2 text-[11px] text-warning">
                     Esse contato não tem telefone cadastrado. O WhatsApp abrirá
                     sem destinatário — escolha outro contato ou use a aba
-                    "Número manual".
+                   "Número manual".
                   </p>
                 )}
               </TabsContent>

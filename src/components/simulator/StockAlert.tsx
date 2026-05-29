@@ -156,7 +156,7 @@ export function StockBadge({ product, quantity, className }: StockAlertProps) {
             {alertLevel === 'critical' && 'Sem estoque'}
           </Badge>
         </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-xs">
+        <TooltipContent side="top" >
           <div className="space-y-1">
             <p className="flex items-center gap-1.5 font-medium">
               <Package className="h-3.5 w-3.5" />

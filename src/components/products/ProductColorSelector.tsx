@@ -270,7 +270,7 @@ export function CompactColorDots({ colors, maxVisible = 5, size = 'sm' }: Compac
               style={{ backgroundColor: color.hex || '#CCCCCC' }}
             />
           </TooltipTrigger>
-          <TooltipContent side="top" className="text-xs">
+          <TooltipContent side="top" >
             {color.variationName || color.name}
             {color.nuanceName && ` ${color.nuanceName}`}
           </TooltipContent>

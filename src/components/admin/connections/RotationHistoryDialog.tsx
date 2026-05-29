@@ -158,7 +158,7 @@ export function RotationHistoryDialog({ secretName, open, onOpenChange }: Props)
                 </div>
                 {last.notes && (
                   <div className="border-t border-primary/10 pt-2 text-xs italic text-muted-foreground">
-                    "{last.notes}"
+                   "{last.notes}"
                   </div>
                 )}
               </div>

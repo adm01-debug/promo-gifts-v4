@@ -172,7 +172,7 @@ export function ProductVariantsSection({
                       )}
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="text-xs">
+                  <TooltipContent side="top" >
                     <div className="flex flex-col gap-0.5">
                       <span className="font-medium">{v.color_name || v.name}</span>
                       <span className="font-mono text-muted-foreground">{v.sku}</span>

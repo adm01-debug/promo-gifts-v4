@@ -97,7 +97,7 @@ export function FailureWindowCard() {
                 <Info className="h-3.5 w-3.5 text-muted-foreground" />
               </span>
             </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-[300px]">
+            <TooltipContent side="top" >
               <p className="text-xs">
                 Evita ruído de incidentes em flaps transitórios. O cron de health-check só dispara{' '}
                 <code>connection_down</code> se nenhum teste sucesso ocorreu dentro da janela.

@@ -93,7 +93,7 @@ export function AutoTestIntervalCard() {
                 <Info className="h-3.5 w-3.5 text-muted-foreground" />
               </span>
             </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-[280px]">
+            <TooltipContent side="top" >
               <p className="text-xs">
                 Apenas administradores podem alterar. A mudança é registrada em auditoria e aplicada
                 imediatamente ao agendamento.

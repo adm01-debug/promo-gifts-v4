@@ -69,7 +69,7 @@ export function TemplatePreview({
       <TooltipProvider key={index} delayDuration={700}>
         <Tooltip>
           <TooltipTrigger asChild>{marker}</TooltipTrigger>
-          <TooltipContent side="top" className="text-xs">
+          <TooltipContent side="top" >
             <div className="space-y-1">
               <p className="font-medium">{area.name}</p>
               <p className="text-muted-foreground">

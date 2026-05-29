@@ -73,7 +73,7 @@ export function RecentlyViewedBar({ className, maxVisible = 6 }: RecentlyViewedB
                       />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-[200px]">
+                  <TooltipContent side="bottom" >
                     <p className="truncate font-medium">{product.name}</p>
                     <p className="text-xs text-muted-foreground">
                       {new Intl.NumberFormat('pt-BR', {

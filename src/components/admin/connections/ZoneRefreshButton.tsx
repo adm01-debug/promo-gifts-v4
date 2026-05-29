@@ -78,7 +78,7 @@ export function ZoneRefreshButton({
             <span>{isLoading ? 'Atualizando…' : 'Atualizar'}</span>
           </button>
         </TooltipTrigger>
-        <TooltipContent side="bottom" className="max-w-[220px]">
+        <TooltipContent side="bottom" >
           <p className="text-xs">{label}</p>
           <p className="mt-0.5 text-[10px] text-muted-foreground">
             Refresca apenas esta zona, sem recarregar o restante da página.

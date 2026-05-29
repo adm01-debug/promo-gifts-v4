@@ -215,7 +215,7 @@ export function ClientCategoryRadar({ clientId, ramoAtividade, clientName }: Pro
                         <HelpCircle className="h-3.5 w-3.5" />
                       </button>
                     </TooltipTrigger>
-                    <TooltipContent side="bottom" className="max-w-xs text-xs leading-relaxed">
+                    <TooltipContent side="bottom" className="leading-relaxed">
                       <p className="mb-1 font-semibold">Como ler este mapa</p>
                       <p className="mb-1.5">
                         <span className="font-medium">GAP:</span> categoria que move ≥8% do setor

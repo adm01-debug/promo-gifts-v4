@@ -600,7 +600,7 @@ export function ConnectionsOverviewTable({ refreshSignal }: ConnectionsOverviewT
                                 {message}
                               </button>
                             </TooltipTrigger>
-                            <TooltipContent side="top" className="max-w-md">
+                            <TooltipContent side="top" >
                               <p className="whitespace-pre-wrap break-words text-xs">{message}</p>
                             </TooltipContent>
                           </Tooltip>

@@ -116,7 +116,7 @@ function MiniKpi({
           {content}
         </button>
       </TooltipTrigger>
-      <TooltipContent side="bottom" className="max-w-xs">
+      <TooltipContent side="bottom" >
         <p className="text-xs leading-relaxed">{tooltip}</p>
       </TooltipContent>
     </Tooltip>
@@ -195,7 +195,7 @@ export function ConnectionsPulseBar() {
                 </div>
               </div>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-sm">
+            <TooltipContent side="bottom" >
               <p className="mb-1 text-xs font-semibold">{meta.description}</p>
               {data && data.reasons.length > 0 ? (
                 <ul className="list-disc space-y-1 pl-4 text-xs">

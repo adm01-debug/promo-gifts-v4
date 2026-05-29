@@ -167,7 +167,7 @@ export function CardSourceDiagnostic({ fields, readOnly, loadError, className }:
                         {meta.label}
                       </Badge>
                     </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-xs space-y-1 text-xs">
+                    <TooltipContent side="top" className=" space-y-1 ">
                       <p className="font-semibold">{meta.tooltip.title}</p>
                       <p>{meta.tooltip.body}</p>
                       <p className="text-muted-foreground">{meta.tooltip.action}</p>

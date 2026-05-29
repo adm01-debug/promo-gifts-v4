@@ -51,7 +51,7 @@ export function InstrumentationToggleButton() {
             )}
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="bottom" className="max-w-xs">
+        <TooltipContent side="bottom" >
           {paused
             ? 'Coleta desligada: bridge calls e long tasks não serão registrados. Navegue e compare a fluidez.'
             : 'Pausa imediata (sem reload) da coleta client-side. Use para verificar se a instrumentação está afetando a navegação.'}

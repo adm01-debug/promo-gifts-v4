@@ -163,7 +163,7 @@ export function ClientSeasonalityHeatmap({ clientId, ramoAtividade }: Props) {
                         {c.quotesCount > 0 ? c.quotesCount : '—'}
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent side="top" className="text-xs">
+                    <TooltipContent side="top" >
                       <div className="font-semibold">
                         {SEASONALITY_MONTH_LABELS_FULL[c.month - 1]}
                       </div>
@@ -203,7 +203,7 @@ export function ClientSeasonalityHeatmap({ clientId, ramoAtividade }: Props) {
                         {c.avgQuotesPerCompany > 0 ? c.avgQuotesPerCompany.toFixed(1) : '—'}
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent side="top" className="text-xs">
+                    <TooltipContent side="top" >
                       <div className="font-semibold">
                         {SEASONALITY_MONTH_LABELS_FULL[c.month - 1]} · Setor
                       </div>

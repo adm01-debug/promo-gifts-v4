@@ -411,7 +411,7 @@ export function StockFilterToolbar({
                 />
               </div>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-[250px]">
+            <TooltipContent side="bottom" >
               <p className="text-xs">
                 <strong>Filtro de tiragem:</strong> mostra apenas produtos com estoque disponível ≥
                 a quantidade informada. Ideal para verificar se há estoque suficiente para um

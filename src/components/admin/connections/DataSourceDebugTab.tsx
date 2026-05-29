@@ -158,7 +158,7 @@ export function DataSourceDebugTab() {
             kind: 'edge_function' as const,
             name: 'secrets-manager (action: list)',
             snippet:
-              "supabase.functions.invoke('secrets-manager', {\n  body: { action: 'list' }\n})\n// retorna: [{ name, has_value, masked_suffix, source, updated_at }]",
+             "supabase.functions.invoke('secrets-manager', {\n  body: { action: 'list' }\n})\n// retorna: [{ name, has_value, masked_suffix, source, updated_at }]",
           },
           samples: externalSecrets.map((s) => ({
             label: s.name,
@@ -182,7 +182,7 @@ export function DataSourceDebugTab() {
             kind: 'trigger' as const,
             name: 'sync_external_connections_from_credentials()',
             snippet:
-              "-- SSOT: integration_credentials.length > 0\n-- Espelho: external_connections.status\n--   = 'active' se URL e SERVICE_ROLE_KEY presentes,\n--   senão 'unconfigured'.\nINSERT INTO external_connections(...) ON CONFLICT (env_key, type) DO UPDATE\n  SET status = EXCLUDED.status, updated_at = now();",
+             "-- SSOT: integration_credentials.length > 0\n-- Espelho: external_connections.status\n--   = 'active' se URL e SERVICE_ROLE_KEY presentes,\n--   senão 'unconfigured'.\nINSERT INTO external_connections(...) ON CONFLICT (env_key, type) DO UPDATE\n  SET status = EXCLUDED.status, updated_at = now();",
           },
           samples: (extConns ?? []).map((c) => ({
             label: `${c.name ?? c.id} (env_key=${c.env_key ?? '—'})`,
@@ -201,7 +201,7 @@ export function DataSourceDebugTab() {
             kind: 'table_query' as const,
             name: 'external_connections.last_test_at',
             snippet:
-              "supabase\n  .from('external_connections')\n  .select('id,name,status,last_test_at,updated_at')\n  .order('updated_at', { ascending: false })",
+             "supabase\n  .from('external_connections')\n  .select('id,name,status,last_test_at,updated_at')\n  .order('updated_at', { ascending: false })",
           },
           samples: (extConns ?? []).map((c) => ({
             label: c.name ?? c.id,
@@ -222,7 +222,7 @@ export function DataSourceDebugTab() {
             kind: 'hook' as const,
             name: 'derived from external_connections',
             snippet:
-              "// Cálculo no client\nconst total  = rows.length;\nconst active = rows.filter(r => r.status === 'active').length;\nconst health = total === 0 ? 0 : active / total; // 0..1",
+             "// Cálculo no client\nconst total  = rows.length;\nconst active = rows.filter(r => r.status === 'active').length;\nconst health = total === 0 ? 0 : active / total; // 0..1",
           },
           samples: [
             {
@@ -262,7 +262,7 @@ export function DataSourceDebugTab() {
             kind: 'edge_function' as const,
             name: 'external-db-bridge (op: select_products)',
             snippet:
-              "// Edge function lê EXTERNAL_PROMOBRIND_URL + _SERVICE_ROLE_KEY\n// (de integration_credentials, via secrets-manager interno)\n// e cria um client Supabase apontando para o BD do catálogo.\nconst client = createClient(URL, SERVICE_ROLE_KEY);\nawait client.from('products').select(...);",
+             "// Edge function lê EXTERNAL_PROMOBRIND_URL + _SERVICE_ROLE_KEY\n// (de integration_credentials, via secrets-manager interno)\n// e cria um client Supabase apontando para o BD do catálogo.\nconst client = createClient(URL, SERVICE_ROLE_KEY);\nawait client.from('products').select(...);",
           },
           samples: [
             {

@@ -276,7 +276,7 @@ export function RetestButton({
             {button}
           </span>
         </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-xs text-xs leading-snug">
+        <TooltipContent side="top" className="leading-snug">
           <div className="flex items-center justify-between gap-2">
             <p className="font-medium">{tooltip.title}</p>
             {shortcutKey && !isDisabled ? (

@@ -54,7 +54,7 @@ export function PriceDropBadge({
             <span>{label}</span>
           </div>
         </TooltipTrigger>
-        <TooltipContent side="top" className="text-xs">
+        <TooltipContent side="top" >
           <div className="space-y-0.5">
             <div>
               Salvo a <strong>{fmt(priceAtSave)}</strong>

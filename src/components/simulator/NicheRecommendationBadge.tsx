@@ -124,7 +124,7 @@ export function NicheRecommendationBadge({
             Recomendado
           </Badge>
         </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-xs">
+        <TooltipContent side="top" >
           <div className="space-y-1">
             <p className="flex items-center gap-1 font-semibold">
               <Sparkles className="h-3.5 w-3.5 text-primary" />

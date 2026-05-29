@@ -72,7 +72,7 @@ export function FilterPanelHeader({
               Reset
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="border-border bg-card text-xs">
+          <TooltipContent side="bottom" className="border-border bg-card ">
             Limpar todos os filtros ativos
           </TooltipContent>
         </Tooltip>
@@ -90,7 +90,7 @@ export function FilterPanelHeader({
               Fechar
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="border-border bg-card text-xs">
+          <TooltipContent side="bottom" className="border-border bg-card ">
             Recolher todas as seções
           </TooltipContent>
         </Tooltip>

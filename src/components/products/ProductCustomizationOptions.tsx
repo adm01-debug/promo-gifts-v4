@@ -299,7 +299,7 @@ export function ProductCustomizationOptions({
                     <TooltipTrigger asChild>
                       <span className="inline-flex">{button}</span>
                     </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-[220px] text-xs">
+                    <TooltipContent side="top" className=" ">
                       {disabledReason}
                     </TooltipContent>
                   </Tooltip>

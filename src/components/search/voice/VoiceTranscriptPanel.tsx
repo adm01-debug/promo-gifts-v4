@@ -59,7 +59,7 @@ export function VoiceTranscriptPanel({
                 {phase === 'listening' ? '🎙️ Você está dizendo:' : '✅ Você disse:'}
               </p>
               <p className="font-display text-[15px] font-medium leading-relaxed text-white/90">
-                "{partialTranscript || finalTranscript}"
+               "{partialTranscript || finalTranscript}"
                 {phase === 'listening' && partialTranscript && (
                   <motion.span
                     animate={{ opacity: [1, 0] }}

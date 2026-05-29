@@ -83,7 +83,7 @@ export function NoveltyBadge({
   return (
     <Tooltip>
       <TooltipTrigger asChild>{content}</TooltipTrigger>
-      <TooltipContent side="top" className="max-w-xs">
+      <TooltipContent side="top" >
         <div className="text-sm">
           <p className="font-semibold">🆕 Produto Novidade</p>
           <p className="text-muted-foreground">

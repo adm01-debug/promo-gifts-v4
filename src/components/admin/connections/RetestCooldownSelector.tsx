@@ -53,7 +53,7 @@ export function RetestCooldownSelector({ className }: Props) {
             </Select>
           </div>
         </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-xs text-xs leading-snug">
+        <TooltipContent side="top" className="leading-snug">
           <p className="font-medium">Cooldown entre testes manuais</p>
           <p className="mt-0.5 text-muted-foreground">
             Tempo mínimo de espera após disparar "Testar novamente". Vale para todos os admins

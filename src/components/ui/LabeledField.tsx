@@ -3,7 +3,7 @@
  * (or <Textarea>) via a shared `React.useId()` id.
  *
  * This is the canonical fix for the DevTools accessibility warning:
- *   "No label associated with a form field"
+ *  "No label associated with a form field"
  *
  * Usage:
  *   // Instead of:

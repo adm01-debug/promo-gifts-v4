@@ -50,7 +50,7 @@ export function ExplainModeToggle({ className }: { className?: string }) {
             />
           </button>
         </TooltipTrigger>
-        <TooltipContent side="bottom" className="max-w-xs">
+        <TooltipContent side="bottom" >
           <p className="text-xs">
             {enabled
               ? 'Tooltips de fórmula visíveis nos KPIs.'

@@ -81,7 +81,7 @@ export function NegotiationMarkupCard({
                       <Info className="h-3 w-3 text-muted-foreground/60" />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-[280px] text-xs">
+                  <TooltipContent side="top" className=" ">
                     Infla o subtotal apresentado ao cliente para criar a sensação de um desconto
                     maior, mantendo o desconto real dentro da sua alçada. Não aparece no PDF, e-mail
                     ou link público.

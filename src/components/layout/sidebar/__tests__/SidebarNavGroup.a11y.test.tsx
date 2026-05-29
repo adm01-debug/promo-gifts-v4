@@ -257,7 +257,7 @@ describe('SidebarNavGroup — aria-current nos NavLinks acompanha a rota', () =>
   };
 
   it.each(Object.entries(ARIA_CURRENT_BY_ROUTE))(
-    "em %s os links com aria-current='page' são exatamente %j",
+   "em %s os links com aria-current='page' são exatamente %j",
     (path, expectedActive) => {
       setupRouter([path]);
       const labels = ['Novo Orçamento', 'Orçamentos', 'Carrinhos'];

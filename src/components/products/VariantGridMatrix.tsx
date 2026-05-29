@@ -389,7 +389,7 @@ export function VariantGridMatrix({
                               {formatStock(stock)}
                             </button>
                           </TooltipTrigger>
-                          <TooltipContent side="top" className="text-xs">
+                          <TooltipContent side="top" >
                             <div className="space-y-0.5">
                               <p className="font-semibold">
                                 {color.name} — {size}

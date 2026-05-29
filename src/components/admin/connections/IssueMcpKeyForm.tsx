@@ -241,7 +241,7 @@ export function IssueMcpKeyForm({ onIssued }: Props) {
                       {isFull && !canGrantFull && !grantorLoading && ' 🔒'}
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs">
+                  <TooltipContent side="top" >
                     <div className="space-y-1 text-xs">
                       <p className="font-semibold">{desc.label}</p>
                       <p className="text-muted-foreground">Tools habilitadas:</p>

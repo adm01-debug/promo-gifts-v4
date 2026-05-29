@@ -161,7 +161,7 @@ export function ColumnSelector({ value, onChange, className }: ColumnSelectorPro
                 <GridIcon cols={opt.cols} rows={opt.rows} />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="text-xs">
+            <TooltipContent side="bottom" >
               {opt.label}
             </TooltipContent>
           </Tooltip>

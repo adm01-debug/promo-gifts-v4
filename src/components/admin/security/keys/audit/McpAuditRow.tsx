@@ -130,7 +130,7 @@ export function McpAuditRow({ row }: Props) {
           ) : null}
           {row.is_full && d.justification ? (
             <div className="italic text-muted-foreground sm:col-span-2">
-              "{String(d.justification)}"
+             "{String(d.justification)}"
             </div>
           ) : null}
         </div>

@@ -147,13 +147,13 @@ export const SECRET_IMPACT_MAP: Readonly<Record<string, SecretImpact>> = {
     screens: [
       '/admin/conexoes → aba MCP',
       'Tools de código-fonte do MCP server',
-      "Flow / agentes externos com chave MCP '*'",
+     "Flow / agentes externos com chave MCP '*'",
     ],
     flows: [
       'list_repo_files — lista arquivos e diretórios do repositório (GET /repos/.../contents)',
       'read_repo_file — lê o conteúdo de um arquivo específico para contexto do agente',
       'write_repo_file — cria commit em branch alvo (PUT /repos/.../contents) para edições propostas pela IA',
-      "Sem o token todas as 3 tools retornam 401 e a chave MCP '*' perde poder de edição de código",
+     "Sem o token todas as 3 tools retornam 401 e a chave MCP '*' perde poder de edição de código",
     ],
     severity: 'critical',
   },
@@ -161,7 +161,7 @@ export const SECRET_IMPACT_MAP: Readonly<Record<string, SecretImpact>> = {
     system: 'GitHub — repositório alvo (owner/repo)',
     screens: ['/admin/conexoes → aba MCP', 'Tools de código-fonte do MCP server'],
     flows: [
-      "list_repo_files — sem o repo, não há onde listar (falha com 'repo undefined')",
+     "list_repo_files — sem o repo, não há onde listar (falha com 'repo undefined')",
       'read_repo_file — leitura de qualquer arquivo é abortada antes da chamada HTTP',
       'write_repo_file — commits são bloqueados; nenhuma edição da IA chega ao GitHub',
     ],
@@ -174,7 +174,7 @@ export const SECRET_IMPACT_MAP: Readonly<Record<string, SecretImpact>> = {
       'list_repo_files — usado como ref padrão quando o agente não especifica branch',
       'read_repo_file — define de qual branch o conteúdo é lido (default → main se ausente)',
       'write_repo_file — branch alvo dos commits da IA; recomendado mcp-edits/* para isolar de produção',
-      "Sem este valor, escritas caem direto em 'main' — risco alto de quebrar produção",
+     "Sem este valor, escritas caem direto em 'main' — risco alto de quebrar produção",
     ],
     severity: 'medium',
   },
