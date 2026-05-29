@@ -1,5 +1,6 @@
 import { test, expect, requireAuth } from "./fixtures/test-base";
 import { gotoAndSettle } from "./helpers/nav";
+import AxeBuilder from '@axe-core/playwright';
 
 test.describe("Tooltip Accessibility & Visual Regression", () => {
   test.beforeEach(() => requireAuth());
@@ -50,6 +51,19 @@ test.describe("Tooltip Accessibility & Visual Regression", () => {
         const ariaLabel = await trigger.getAttribute('aria-label');
         const ariaDescribedBy = await trigger.getAttribute('aria-describedby');
         expect(ariaDescribedBy || ariaLabel).toBeTruthy();
+
+        // Axe Accessibility Audit
+        const accessibilityScanResults = await new AxeBuilder({ page })
+          .include('[role="tooltip"]')
+          .analyze();
+        
+        expect(accessibilityScanResults.violations).toEqual([]);
+
+        // Contrast and ARIA check on the trigger too
+        const triggerA11y = await new AxeBuilder({ page })
+          .include('[data-state="open"]')
+          .analyze();
+        expect(triggerA11y.violations).toEqual([]);
 
         // Visual Snapshot
         await expect(tooltip).toHaveScreenshot(`tooltip-${mode}-${viewport.name}.png`);
