@@ -7,8 +7,8 @@ import type { Product, SupplierSalesEntry } from '@/hooks/products';
  * Bateria de testes validando o seletor de "Relevância" e demais
  * opções de ordenação do módulo de produtos.
  *
- * Cobre todas as 8 opções expostas em SORT_OPTIONS:
- *  - relevance, name, price-asc, price-desc, newest, stock,
+ * Cobre todas as 9 opções expostas em SORT_OPTIONS:
+ *  - relevance, store-default, name, price-asc, price-desc, newest, stock,
  *    best-seller-supplier, best-seller-promo
  */
 
