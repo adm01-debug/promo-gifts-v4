@@ -130,7 +130,7 @@ const App = () => {
         <ThemeInitializer />
         <AccessibilityProvider>
           <AriaLiveProvider>
-            <TooltipProvider delayDuration={400}>
+            <TooltipProvider delayDuration={700} skipDelayDuration={300}>
               {/*
                * Keep v7_startTransition disabled: under concurrent root work it can
                * update history before the matching route render commits.
