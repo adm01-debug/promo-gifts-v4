@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { logger } from '@/lib/logger';
 
 interface TrackViewParams {
   productId?: string;
@@ -67,26 +68,20 @@ export function useProductAnalytics() {
     [user?.id],
   );
 
+  /**
+   * trackSort — DISABLED: the `catalog_analytics` table does not exist in the
+   * production database yet. Inserting into it produces 404 errors in the
+   * console. Re-enable once the table is created via migration.
+   *
+   * TODO: Create `catalog_analytics` table migration, then restore insert.
+   */
   const trackSort = useCallback(
-    async ({ sortBy, previousSortBy, resultsCount, hasSearch }: TrackSortParams) => {
-      if (!user?.id) return;
-
-      try {
-        await supabase.from('catalog_analytics').insert({
-          event_type: 'sort_change',
-          event_data: {
-            sort_by: sortBy,
-            previous_sort_by: previousSortBy,
-            results_count: resultsCount,
-            has_search: hasSearch,
-          },
-          user_id: user.id,
-        });
-      } catch {
-        // Silently ignore tracking errors
-      }
+    async ({ sortBy }: TrackSortParams) => {
+      logger.debug(
+        `[analytics] trackSort skipped (catalog_analytics table pending): sortBy=${sortBy}`,
+      );
     },
-    [user?.id],
+    [],
   );
 
   return { trackProductView, trackSearch, trackSort };

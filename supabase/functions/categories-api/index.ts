@@ -1,4 +1,4 @@
-import { getCorsHeaders } from '../_shared/cors.ts';
+import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors.ts';
 import { getCredential } from '../_shared/credentials.ts';
 import { authenticateRequest, requireRole, authErrorResponse } from '../_shared/auth.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
@@ -12,17 +12,20 @@ const CategoriesRequestSchema = z.object({
 });
 
 Deno.serve(async (req) => {
+  // CORS preflight MUST be handled BEFORE auth — OPTIONS requests don't
+  // carry auth tokens, so authenticateRequest would reject them with 401.
+  // Chrome requires a 2xx response to OPTIONS for the preflight to pass.
+  const preflightResponse = handleCorsPreflightIfNeeded(req);
+  if (preflightResponse) return preflightResponse;
+
   const corsHeaders = getCorsHeaders(req);
+
   // Auth: exige vendedor autenticado (agente ou acima)
   try {
     const authCtx = await authenticateRequest(req);
     requireRole(authCtx, 'agente');
   } catch (authErr) {
     return authErrorResponse(authErr, corsHeaders);
-  }
-
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
   }
 
   try {

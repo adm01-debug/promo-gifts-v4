@@ -38,6 +38,24 @@ const DEFAULT_BOUNDS: ProductBounds = {
 const boundsCache = new Map<string, ProductBounds>();
 
 /**
+ * CDN domains that do NOT return CORS headers when requested from dynamic
+ * preview origins (e.g. id-preview--*.lovable.app). Using crossOrigin on
+ * these produces console CORS errors without any benefit. We load them
+ * without crossOrigin and gracefully fall back to DEFAULT_BOUNDS when
+ * getImageData() throws SecurityError (tainted canvas).
+ */
+const NO_CORS_DOMAINS = ['imagedelivery.net', 'cloudflarestream.com'];
+
+function shouldSkipCors(url: string): boolean {
+  try {
+    const hostname = new URL(url).hostname;
+    return NO_CORS_DOMAINS.some((d) => hostname.endsWith(d));
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Detect the product's bounding box in the image by scanning for
  * non-background pixels. Background is identified as near-white or
  * near-transparent pixels.
@@ -87,7 +105,19 @@ export async function detectProductBounds(
     if (!ctx) return DEFAULT_BOUNDS;
 
     ctx.drawImage(img, 0, 0, w, h);
-    const imageData = ctx.getImageData(0, 0, w, h);
+
+    // getImageData throws SecurityError if canvas is tainted (no CORS on image).
+    // This is expected for CDN images loaded without crossOrigin.
+    let imageData: ImageData;
+    try {
+      imageData = ctx.getImageData(0, 0, w, h);
+    } catch {
+      // Tainted canvas — image loaded without CORS. Return defaults with aspect ratio.
+      const fallback: ProductBounds = { ...DEFAULT_BOUNDS, imageAspectRatio };
+      boundsCache.set(imageUrl, fallback);
+      return fallback;
+    }
+
     const { data } = imageData;
 
     let minX = w,
@@ -169,15 +199,32 @@ export async function detectProductBounds(
 }
 
 /**
- * Load an image handling CORS. First tries direct load,
- * then falls back to fetch+blob if CORS blocks canvas read.
+ * Load an image handling CORS. For CDN domains known to NOT support CORS
+ * from dynamic preview origins, we skip crossOrigin entirely to avoid
+ * console errors. The canvas will be tainted but detectProductBounds
+ * handles that gracefully.
+ *
+ * For other domains, tries crossOrigin='anonymous' first, then falls back
+ * to fetch+blob if the image fails to load.
  */
 function loadImageCors(url: string): Promise<HTMLImageElement> {
+  const skipCors = shouldSkipCors(url);
+
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+
+    if (!skipCors) {
+      img.crossOrigin = 'anonymous';
+    }
+
     img.onload = () => resolve(img);
     img.onerror = async () => {
+      // If we already skipped CORS, there's no further fallback for loading
+      if (skipCors) {
+        reject(new Error(`Failed to load image (no-cors): ${url.substring(0, 60)}...`));
+        return;
+      }
+
       // Fallback: fetch as blob to bypass CORS
       try {
         const res = await fetch(url);
