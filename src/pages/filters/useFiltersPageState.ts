@@ -178,6 +178,7 @@ export function useFiltersPageState() {
     productIds: categoryFilteredProductIds,
     hasFilter: hasCategoryFilter,
     isLoading: isLoadingCategoryFilter,
+    error: categoryFilterError,
   } = useProductsByCategory({ categoryIds: filters.categories, includeDescendants: true });
   const {
     productIds: colorFilteredProductIds,
@@ -318,7 +319,12 @@ export function useFiltersPageState() {
       result = [];
     if (hasCategoryFilter && categoryFilteredProductIds.size > 0)
       result = result.filter((p) => categoryFilteredProductIds.has(p.id));
-    else if (hasCategoryFilter && categoryFilteredProductIds.size === 0 && !isLoadingCategoryFilter)
+    else if (
+      hasCategoryFilter &&
+      categoryFilteredProductIds.size === 0 &&
+      !isLoadingCategoryFilter &&
+      !categoryFilterError
+    )
       result = [];
     if (filters.suppliers.length > 0)
       result = result.filter((product) => {
