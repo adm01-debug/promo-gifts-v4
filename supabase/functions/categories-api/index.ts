@@ -7,7 +7,7 @@ import { safeErrorFields } from '../_shared/log-safety.ts';
 
 const CategoriesRequestSchema = z.object({
   action: z.enum(['tree', 'all', 'descendants', 'products_by_categories']),
-  categoryIds: z.array(z.string().uuid()).max(200).optional(),
+  categoryIds: z.array(z.string()).max(200).optional(),
   includeDescendants: z.boolean().optional(),
 });
 
