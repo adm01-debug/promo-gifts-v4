@@ -2,10 +2,16 @@
 /**
  * scripts/check-edge-integration-coverage.mjs
  *
- * Compara Edge Functions implantadas vs. funções cobertas por testes de integração.
- * Falha CI se a porcentagem de funções cobertas cair abaixo do threshold (padrão 60%).
+ * Verifica que cada Edge Function pública tem ao menos um arquivo de
+ * "client contract test" em tests/edge-functions/integration/ que
+ * referencia seu nome (via fetch mock).
  *
- * Critério de cobertura: presença de um arquivo de teste que menciona o nome da função.
+ * Atenção: esses testes verificam contratos de resposta (status, headers,
+ * shape), não executam o código real da função. Para cobertura de código real,
+ * use `supabase functions serve` + testes contra localhost.
+ *
+ * Falha CI se a porcentagem de funções com contrato cair abaixo do threshold
+ * (padrão 60%, ajustável via EDGE_COVERAGE_THRESHOLD).
  */
 
 import { readdirSync, readFileSync, existsSync } from "node:fs";
@@ -16,17 +22,10 @@ const THRESHOLD = Number(process.env.EDGE_COVERAGE_THRESHOLD) || 60;
 const FUNCTIONS_DIR = "supabase/functions";
 const TESTS_DIR = "tests/edge-functions/integration";
 
-// Funções a ignorar (utilitários internos sem endpoint HTTP direto)
-const IGNORED_FUNCTIONS = new Set([
-  "_shared",
-  "_templates",
-  "_utils",
-]);
-
 function listEdgeFunctions() {
   if (!existsSync(FUNCTIONS_DIR)) return [];
   return readdirSync(FUNCTIONS_DIR, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && !IGNORED_FUNCTIONS.has(d.name))
+    .filter((d) => d.isDirectory() && !d.name.startsWith("_"))
     .map((d) => d.name);
 }
 
