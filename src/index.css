@@ -101,7 +101,7 @@
 
   .text-tooltip-header {
     @apply transition-all duration-300;
-    font-size: 8px;
+    font-size: 10.4px;
   }
 
   .recharts-tooltip-standard {
