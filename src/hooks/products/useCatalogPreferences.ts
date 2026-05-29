@@ -33,7 +33,13 @@ export function useCatalogPreferences() {
         .eq('user_id', user.id)
         .single();
 
-      if (error || !data?.preferences) return null;
+      if (error || !data?.preferences) {
+        if (error) {
+          console.error('Error fetching catalog preferences:', error);
+          // Standard pattern for user-facing feedback could be added here if there was a toast hook available in this context
+        }
+        return null;
+      }
 
       const prefs = data.preferences as Record<string, unknown>;
       if (!prefs?.catalog) return null;
