@@ -47,4 +47,29 @@ test.describe("Fluxo: Navegação", () => {
     await page.goBack();
     await expect(page).toHaveURL(/\/produtos/);
   });
+
+  test("teletransporte retorna à rota anterior exata", async ({ page }) => {
+    await gotoAndSettle(page, "/produtos");
+    await gotoAndSettle(page, "/favoritos");
+
+    const teleportBtn = page.locator(Sel.app.layout.teleport);
+    await expect(teleportBtn).toBeVisible();
+
+    // Valida ícone de portal (Zap)
+    const icon = teleportBtn.locator("svg");
+    await expect(icon).toHaveClass(/text-sky-400/);
+
+    await teleportBtn.click();
+    await expectOnRoute(page, "/produtos");
+  });
+
+  test("teletransporte exibe tooltip explicativo", async ({ page }) => {
+    await gotoAndSettle(page, "/produtos");
+    const teleportBtn = page.locator(Sel.app.layout.teleport);
+
+    await teleportBtn.hover();
+    const tooltip = page.locator(Sel.app.layout.teleportTooltip);
+    await expect(tooltip).toBeVisible();
+    await expect(tooltip).toContainText("página anterior");
+  });
 });
