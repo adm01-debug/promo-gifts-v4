@@ -1,7 +1,9 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ProductCategoryBadges } from './ProductCategoryBadges';
 import { BrowserRouter } from 'react-router-dom';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 
 const mockNavigate = vi.fn();
 
@@ -42,10 +44,13 @@ const defaultProps = {
 const renderComponent = (props = defaultProps) => {
   return render(
     <BrowserRouter>
-      <ProductCategoryBadges {...props} />
+      <TooltipProvider>
+        <ProductCategoryBadges {...props} />
+      </TooltipProvider>
     </BrowserRouter>
   );
 };
+
 
 describe('ProductCategoryBadges', () => {
   beforeEach(() => {
