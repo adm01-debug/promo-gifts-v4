@@ -4,6 +4,7 @@ import { useFiltersPageState } from '../useFiltersPageState';
 import { BrowserRouter, useSearchParams } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as React from 'react';
+import { useProductsByCategory } from '@/hooks/products/useProductsByCategory';
 
 // Mock dependencies
 vi.mock('react-router-dom', async () => {
@@ -33,17 +34,7 @@ vi.mock('@/hooks/products/useProductsLightweight', () => ({
 }));
 
 vi.mock('@/hooks/products/useProductsByCategory', () => ({
-  useProductsByCategory: vi.fn(({ categoryIds }) => {
-    const ids = new Set<string>();
-    if (categoryIds.includes('30')) ids.add('1');
-    if (categoryIds.includes('31')) ids.add('2');
-    return {
-      productIds: ids,
-      hasFilter: categoryIds.length > 0,
-      isLoading: false,
-      error: null
-    };
-  }),
+  useProductsByCategory: vi.fn(),
 }));
 
 const queryClient = new QueryClient({
@@ -59,6 +50,18 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 describe('useFiltersPageState - URL Initialization', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default success mock
+    (useProductsByCategory as any).mockImplementation(({ categoryIds }: { categoryIds: string[] }) => {
+      const ids = new Set<string>();
+      if (categoryIds.includes('30')) ids.add('1');
+      if (categoryIds.includes('31')) ids.add('2');
+      return {
+        productIds: ids,
+        hasFilter: categoryIds.length > 0,
+        isLoading: false,
+        error: null
+      };
+    });
   });
 
   it('should initialize filters from categories in URL', () => {
@@ -79,7 +82,6 @@ describe('useFiltersPageState - URL Initialization', () => {
     const { result } = renderHook(() => useFiltersPageState(), { wrapper });
     
     expect(result.current.filters.categories).toEqual(['30', '31']);
-    // Both should match since useProductsByCategory returns 1 and 2
     expect(result.current.filteredProducts.length).toBe(2);
   });
 
@@ -88,7 +90,6 @@ describe('useFiltersPageState - URL Initialization', () => {
     (useSearchParams as any).mockReturnValue([mockSearchParams, vi.fn()]);
 
     // Mock an error
-    const { useProductsByCategory } = require('@/hooks/products/useProductsByCategory');
     (useProductsByCategory as any).mockReturnValue({
       productIds: new Set(),
       hasFilter: true,
@@ -98,7 +99,7 @@ describe('useFiltersPageState - URL Initialization', () => {
 
     const { result } = renderHook(() => useFiltersPageState(), { wrapper });
     
-    // Should still have results from useProductsCatalog mock
+    // Should still have results from useProductsCatalog mock (which already filtered by cat 30)
     expect(result.current.filteredProducts.length).toBe(1);
     expect(result.current.filteredProducts[0].id).toBe('1');
   });
