@@ -161,7 +161,11 @@ export function useCatalogState() {
     hasNextPage,
     fetchNextPage,
     refetch: refetchCatalog,
-  } = useProductsCatalog(debouncedServerSearch ? { search: debouncedServerSearch } : undefined);
+  } = useProductsCatalog({
+    search: debouncedServerSearch,
+    categories: filters.categories,
+    suppliers: filters.suppliers,
+  });
 
   const realProducts = useMemo(() => {
     if (!catalogData?.pages) return [] as Product[];
