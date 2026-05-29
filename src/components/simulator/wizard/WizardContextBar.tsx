@@ -70,8 +70,8 @@ export function WizardContextBar({ wizard }: WizardContextBarProps) {
 
       {/* Product name */}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold">{selectedProduct.name}</p>
-        <p className="font-mono text-xs text-muted-foreground">{selectedProduct.sku}</p>
+        <p data-testid="simulator-product-name" className="truncate text-sm font-semibold">{selectedProduct.name}</p>
+        <p data-testid="simulator-product-sku" className="font-mono text-xs text-muted-foreground">{selectedProduct.sku}</p>
       </div>
 
       {/* Dynamic context chips */}

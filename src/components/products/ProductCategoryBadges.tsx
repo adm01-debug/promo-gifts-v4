@@ -139,6 +139,7 @@ export function ProductCategoryBadges({
             <Badge
               variant="outline"
               onClick={handlePersonalizationClick}
+              data-testid="product-personalization-badge"
               className={cn(
                 'cursor-pointer px-2.5 py-1 text-sm font-medium',
                 'border-primary/50 bg-primary/10 hover:bg-primary/20',
@@ -198,6 +199,7 @@ export function ProductCategoryBadges({
             <Badge
               variant="outline"
               onClick={() => navigate(`/kit-builder?product=${productId}`)}
+              data-testid="product-kit-badge"
               className={cn(
                 'cursor-pointer px-2.5 py-1 text-sm font-medium',
                 'border-warning/50 bg-warning/15 hover:bg-warning/25',

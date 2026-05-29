@@ -173,6 +173,19 @@ export const Sel = {
       TID("product-card-quick-add"),
       TID("product-quickview-add-to-quote"),
     ].join(", "),
+    /** Badge de personalização no detalhe do produto. */
+    personalizationBadge: TID("product-personalization-badge"),
+    /** Badge de mockup no detalhe do produto. */
+    mockupBadge: TID("product-mockup-badge"),
+    /** Badge de kit no detalhe do produto. */
+    kitBadge: TID("product-kit-badge"),
+  },
+
+  // ---------- Simulador ----------
+  simulator: {
+    title: TID("page-title-simulador"),
+    productName: TID("simulator-product-name"),
+    productSku: TID("simulator-product-sku"),
   },
 
   // ---------- Variant Picker ----------
