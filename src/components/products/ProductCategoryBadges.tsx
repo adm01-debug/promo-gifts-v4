@@ -109,7 +109,13 @@ export function ProductCategoryBadges({
           <TooltipTrigger asChild>
             <Badge
               variant="secondary"
-              onClick={() => navigate(`/filtros?categories=${categoryUuid || cat.id}`)}
+              onClick={() => {
+                // Se este item for a categoria principal (primeiro da lista), tenta usar o categoryUuid
+                // caso contrário usa o próprio cat.id (que pode ser numérico para grupos)
+                const isMainCategory = cat.id === category?.id;
+                const idToUse = isMainCategory && categoryUuid ? categoryUuid : cat.id;
+                navigate(`/filtros?categories=${idToUse}`);
+              }}
               className={cn(
                 'cursor-pointer px-2.5 py-1 text-sm font-medium',
                 'border border-border/50 bg-secondary/80 hover:bg-secondary',

@@ -130,9 +130,17 @@ async function loadCategoriesMap(): Promise<ReadonlyMap<string, string>> {
   }
 }
 
-async function fetchCatalogPage(offset: number, search?: string): Promise<CatalogPage> {
+async function fetchCatalogPage(
+  offset: number,
+  search?: string,
+  categories?: string[],
+  suppliers?: string[],
+): Promise<CatalogPage> {
   const filters: Record<string, unknown> = { active: true };
   if (search) filters._search = search;
+  if (categories && categories.length > 0) filters.category_id = categories;
+  if (suppliers && suppliers.length > 0) filters.supplier_id = suppliers;
+
   const orderBy = { column: 'name', ascending: true };
 
   const isFirstLoad = offset === 0;
@@ -224,12 +232,15 @@ export function useProductsLightweight() {
  * Primeiro carregamento: 200 produtos (2 páginas batch).
  * Carregamentos seguintes: 100 produtos por vez, sob demanda.
  */
-export function useProductsCatalog(filters?: { search?: string }) {
+export function useProductsCatalog(filters?: { search?: string; categories?: string[]; suppliers?: string[] }) {
   const search = filters?.search || '';
+  const categories = filters?.categories || [];
+  const suppliers = filters?.suppliers || [];
 
   return useInfiniteQuery<CatalogPage, Error>({
-    queryKey: ['promobrind-products-catalog', search],
-    queryFn: ({ pageParam }) => fetchCatalogPage(pageParam as number, search || undefined),
+    queryKey: ['promobrind-products-catalog', search, categories, suppliers],
+    queryFn: ({ pageParam }) =>
+      fetchCatalogPage(pageParam as number, search || undefined, categories, suppliers),
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextOffset,
     staleTime: 30 * 60 * 1000,
