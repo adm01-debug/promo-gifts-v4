@@ -1,3 +1,4 @@
+// rebuild trigger
 /**
  * useCatalogState — all catalog page state & logic extracted from Index.tsx
  */
