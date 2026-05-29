@@ -113,36 +113,46 @@ export function useCatalogState() {
 
   const setSortBy = useCallback(
     (s: SortOption) => {
-      const previousSort = sortBy;
       setIsTransitioning(true);
-      React.startTransition(() => {
-        setSortByState(s);
-        updatePreferences({ sortBy: s });
-
-        // Update URL query string
-        const newParams = new URLSearchParams(window.location.search);
-        if (s === 'relevance') {
-          newParams.delete('sort');
-        } else {
-          newParams.set('sort', s);
-        }
-
-        const newPath = `${window.location.pathname}${newParams.toString() ? '?' + newParams.toString() : ''}`;
-        navigate(newPath, { replace: true });
-
-        // Analytics tracking (lê via ref para evitar TDZ — ver nota acima)
-        trackSort({
-          sortBy: s,
-          previousSortBy: previousSort,
-          resultsCount: filteredProductsRef.current.length,
-          hasSearch: !!searchQueryRef.current.trim(),
-        });
-
-        setIsTransitioning(false);
-      });
+      // BUG-G10: Concatena side-effects em uma única transição de estado.
+      // A persistência (updatePreferences/URL) e analytics seguem o estado.
+      setSortByState(s);
     },
-    [navigate, sortBy, updatePreferences, trackSort],
+    [],
   );
+
+  // BUG-G10 FIX: Consolidate side-effects (URL, Preferences, Analytics) 
+  // into a single effect reactive to sortBy changes.
+  const lastSortByRef = useRef<SortOption>(initialSortBy);
+  useEffect(() => {
+    if (sortBy === lastSortByRef.current) return;
+    
+    const previousSort = lastSortByRef.current;
+    lastSortByRef.current = sortBy;
+
+    // 1. Update Preferences
+    updatePreferences({ sortBy });
+
+    // 2. Update URL
+    const newParams = new URLSearchParams(window.location.search);
+    if (sortBy === 'relevance') {
+      newParams.delete('sort');
+    } else {
+      newParams.set('sort', sortBy);
+    }
+    const newPath = `${window.location.pathname}${newParams.toString() ? '?' + newParams.toString() : ''}`;
+    navigate(newPath, { replace: true });
+
+    // 3. Analytics
+    trackSort({
+      sortBy,
+      previousSortBy: previousSort,
+      resultsCount: filteredProductsRef.current.length,
+      hasSearch: !!searchQueryRef.current.trim(),
+    });
+
+    setIsTransitioning(false);
+  }, [sortBy, updatePreferences, navigate, trackSort]);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedCount, setSelectedCount] = useState(0);
   const [activeProductId, setActiveProductId] = useState<string | null>(null);
