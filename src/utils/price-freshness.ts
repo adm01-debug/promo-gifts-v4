@@ -103,9 +103,6 @@ export function getPriceFreshness(
   else if (days > Math.floor(threshold / 2)) status = 'aging';
   else status = 'fresh';
 
-  // Copy curto e consistente entre PDP e Quick View: apenas o relativo.
-  // A data absoluta fica no tooltip para evitar poluição visual.
-  const baseLabel = `Atualizado (${relative})`;
   // Tooltip padronizado para todos os status: data por extenso + janela de
   // validade configurada para este produto. Mensagem escrita para o vendedor:
   // direta, sem jargão técnico, sem repetir o número de dias.

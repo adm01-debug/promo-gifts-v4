@@ -171,8 +171,10 @@ export function PromoFlixPlayer({
     [],
   );
 
-  const logTelemetry = useCallback((event: string, details?: any) => {
+  const logTelemetry = useCallback((event: string, details?: unknown) => {
     const timestamp = new Date().toISOString();
+    // Telemetria intencional do player (diagnóstico de carregamento/HLS).
+    // eslint-disable-next-line no-console
     console.log(`[PromoFlix Telemetry] [${timestamp}] ${event}`, details || '');
   }, []);
 
@@ -188,6 +190,10 @@ export function PromoFlixPlayer({
   const initTokenRef = useRef(0);
   // Indica se já tentamos o fallback autoplay-muted (para não loopar)
   const autoplayFallbackTriedRef = useRef(false);
+  // Quando o mute é imposto apenas pela política de autoplay (e não escolhido
+  // pelo usuário), não devemos persistir esse mute como preferência. Este flag
+  // é consumido no próximo evento `volumechange` disparado por esse mute forçado.
+  const suppressMutePersistRef = useRef(false);
 
   const clearLoadingTimeout = useCallback(() => {
     if (loadingTimeoutRef.current !== null) {
@@ -213,9 +219,10 @@ export function PromoFlixPlayer({
           const vv = videoRef.current;
           // Não sobrescreve erro fatal já apresentado por hls.js ou onError nativo
           if (vv && vv.readyState < 1) {
-            setHlsError((prev) =>
-              prev ??
-              'O vídeo está demorando para responder. Pode haver um bloqueio de rede ou CORS.',
+            setHlsError(
+              (prev) =>
+                prev ??
+                'O vídeo está demorando para responder. Pode haver um bloqueio de rede ou CORS.',
             );
             logTelemetry('LOADING_ERROR_FINAL', { readyState: vv.readyState });
           }
@@ -247,7 +254,6 @@ export function PromoFlixPlayer({
     logTelemetry('INIT_PLAYER', { src: src.substring(0, 50) + '...', isHls });
     armLoadingTimeout();
 
-
     // Limpa instância HLS anterior (não-destruída) antes de qualquer reattach
     if (hlsRef.current) {
       try {
@@ -267,12 +273,17 @@ export function PromoFlixPlayer({
 
     const shouldMuteForAutoplay = autoPlay && !isMuted;
     const effectiveMuted = isMuted || shouldMuteForAutoplay;
+    // Mute aplicado só por causa do autoplay (usuário não escolheu mutar):
+    // não persistir como preferência no `volumechange` que ele dispara.
+    suppressMutePersistRef.current = shouldMuteForAutoplay;
 
     // Tentativa de play com fallback automático para mutado (políticas de autoplay)
     const tryPlay = (v: HTMLVideoElement) => {
       v.play().catch((err) => {
         if (!autoplayFallbackTriedRef.current && !v.muted) {
           autoplayFallbackTriedRef.current = true;
+          // Mute forçado pela política de autoplay — não deve virar preferência.
+          suppressMutePersistRef.current = true;
           v.muted = true;
           v.play().catch(() => setIsPlaying(false));
           logTelemetry('AUTOPLAY_FALLBACK_MUTED', { error: String(err) });
@@ -467,7 +478,17 @@ export function PromoFlixPlayer({
           clearLoadingTimeout();
         }
       });
-  }, [src, isHls, volume, isMuted, isPlaying, autoPlay, armLoadingTimeout, clearLoadingTimeout]);
+  }, [
+    src,
+    isHls,
+    volume,
+    isMuted,
+    isPlaying,
+    autoPlay,
+    armLoadingTimeout,
+    clearLoadingTimeout,
+    logTelemetry,
+  ]);
 
   useEffect(() => {
     initPlayer();
@@ -496,7 +517,6 @@ export function PromoFlixPlayer({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [src, isHls]); // Only re-init on src change to avoid loop with persistence states
-
 
   const setQuality = useCallback(
     (index: number) => {
@@ -623,7 +643,15 @@ export function PromoFlixPlayer({
       setVolume(video.volume);
       setIsMuted(video.muted);
       localStorage.setItem('promoflix_volume', video.volume.toString());
-      localStorage.setItem('promoflix_muted', video.muted.toString());
+      // Mute imposto apenas pela política de autoplay não deve sobrescrever a
+      // preferência do usuário em localStorage — apenas consome o flag. Mute/
+      // unmute manual (flag desligado) continua persistindo normalmente.
+      if (suppressMutePersistRef.current && video.muted) {
+        suppressMutePersistRef.current = false;
+      } else {
+        suppressMutePersistRef.current = false;
+        localStorage.setItem('promoflix_muted', video.muted.toString());
+      }
     };
 
     video.addEventListener('play', onPlay);
@@ -655,6 +683,9 @@ export function PromoFlixPlayer({
       video.removeEventListener('ratechange', onRate);
       video.removeEventListener('volumechange', onVolume);
     };
+    // Bind único: os handlers usam refs/setters estáveis; clearLoadingTimeout e
+    // logTelemetry são memoizados e não precisam re-vincular os listeners.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Fullscreen tracking
@@ -975,7 +1006,7 @@ export function PromoFlixPlayer({
                   e.stopPropagation();
                   initPlayer();
                 }}
-                className="mt-2 flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-white/20 transition-colors"
+                className="mt-2 flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white transition-colors hover:bg-white/20"
               >
                 <RotateCcw className="h-3 w-3" />
                 Carregar Manualmente
