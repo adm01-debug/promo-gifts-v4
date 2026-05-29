@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { PersistentBreadcrumbs } from '@/components/common/PersistentBreadcrumbs';
 
 export default function TermsPage() {
   return (
