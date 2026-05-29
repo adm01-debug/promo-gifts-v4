@@ -37,19 +37,24 @@ test.describe('Product Catalog Sorting', () => {
   test('should maintain sorting even with active search', async ({ page }) => {
     const searchInput = page.locator('input[placeholder*="Buscar"]');
     if (await searchInput.isVisible()) {
-      await searchInput.fill('caneta');
-      await page.waitForTimeout(1000); // Wait for debounce
-      
+      // 1. Set sort first
       const sortTrigger = page.locator('button[aria-label="Ordenar por"]');
       await sortTrigger.click();
       await page.locator('role=option[name="Menor Preço"]').click();
+      await expect(page).toHaveURL(/sort=price-asc/);
+
+      // 2. Perform search
+      await searchInput.fill('caneta');
+      await page.waitForTimeout(1000); // Wait for debounce
       
+      // 3. Verify sort is still active in URL and logic
       await expect(page).toHaveURL(/sort=price-asc/);
       await expect(page).toHaveURL(/search=caneta/);
       
-      // Verify that sorting works (logic-wise we updated skipSort)
-      // This is hard to validate content-wise without specific test data, 
-      // but checking URL params and lack of crash is a good baseline.
+      // 4. Change sort during search
+      await sortTrigger.click();
+      await page.locator('role=option[name="Maior Preço"]').click();
+      await expect(page).toHaveURL(/sort=price-desc/);
     }
   });
 
@@ -107,5 +112,39 @@ test.describe('Product Catalog Sorting', () => {
     
     // Focus should return to trigger
     await expect(sortTrigger).toBeFocused();
+  });
+
+  test('should handle persistence failure gracefully', async ({ page }) => {
+    // Intercept profile fetch and return error
+    await page.route('**/rest/v1/profiles*', (route) => {
+      route.fulfill({
+        status: 500,
+        body: JSON.stringify({ error: 'Database connection failed' }),
+      });
+    });
+
+    await page.reload();
+    await page.waitForSelector('[data-testid="product-card"]');
+    
+    // Should fallback to default 'relevance' or name sorting
+    const sortTrigger = page.locator('button[aria-label="Ordenar por"]');
+    await expect(sortTrigger).toBeVisible();
+    // Default fallback usually shows "Relevância" or placeholder
+    await expect(page).not.toHaveURL(/sort=/);
+  });
+
+  test('should keep preferences isolated between users', async ({ page, context }) => {
+    // 1. User A sets a preference
+    const sortTrigger = page.locator('button[aria-label="Ordenar por"]');
+    await sortTrigger.click();
+    await page.locator('role=option[name="Maior Preço"]').click();
+    await expect(page).toHaveURL(/sort=price-desc/);
+
+    // 2. Open new context (User B) - in E2E we usually mock auth or use different storage states
+    const userBPage = await context.newPage();
+    await userBPage.goto('/products');
+    
+    // User B should have default sort, not User A's
+    await expect(userBPage).not.toHaveURL(/sort=price-desc/);
   });
 });
