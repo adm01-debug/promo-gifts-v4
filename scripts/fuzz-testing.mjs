@@ -118,6 +118,29 @@ const NUMERIC_EXTREMES = [
   -1, 0, Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, Infinity, -Infinity, NaN, "not-a-number",
 ];
 
+const UUID_CORPUS = [
+  "00000000-0000-0000-0000-000000000000",   // nil UUID
+  "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",   // letras inválidas
+  "not-a-uuid",
+  "123",
+  "",
+  "550e8400-e29b-41d4-a716",               // truncado
+  "A".repeat(36),                          // comprimento certo, chars errados
+  "550e8400-e29b-41d4-a716-44665544000G",  // char inválido no final
+  "550e8400e29b41d4a716446655440000",      // sem hífens
+  null,
+  0,
+];
+
+// Matriz de campos ausentes: para cada schema, remove campos obrigatórios um a um.
+function missingFieldsMatrix(basePayload) {
+  const keys = Object.keys(basePayload);
+  return keys.map((k) => {
+    const { [k]: _removed, ...rest } = basePayload;
+    return rest;
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Geradores por função (campos críticos + regras de negócio)
 // ---------------------------------------------------------------------------
@@ -304,6 +327,66 @@ function generateSimulationOrchestratorPayloads() {
   return fieldFuzz({ action: "simulate", scenario_id: "s1" }, ["action", "scenario_id"]);
 }
 
+// ── Novas funções críticas: UUID_CORPUS + missingFieldsMatrix ────────────────
+
+function generateQuoteSyncPayloads() {
+  const valid = { quote_id: "550e8400-e29b-41d4-a716-446655440001", action: "recalculate" };
+  const p = [...missingFieldsMatrix(valid)];
+  // UUID corpus para quote_id
+  for (const uuid of UUID_CORPUS) p.push({ ...valid, quote_id: uuid });
+  // SQL injection em action
+  for (const sql of SQL_INJECTIONS.slice(0, 4)) p.push({ ...valid, action: sql });
+  // Ações inválidas
+  for (const a of ["fly", "drop", "", null, 0]) p.push({ ...valid, action: a });
+  p.push({}, valid);
+  return p;
+}
+
+function generateValidateAccessV2Payloads() {
+  const valid = { user_id: "550e8400-e29b-41d4-a716-446655440001", resource: "quotes", action: "read" };
+  const p = [...missingFieldsMatrix(valid)];
+  for (const uuid of UUID_CORPUS) p.push({ ...valid, user_id: uuid });
+  for (const xss of XSS_PAYLOADS.slice(0, 4)) p.push({ ...valid, resource: xss });
+  for (const sql of SQL_INJECTIONS.slice(0, 3)) p.push({ ...valid, action: sql });
+  for (const type of TYPE_CONFUSIONS) p.push({ ...valid, user_id: type });
+  p.push({}, valid);
+  return p;
+}
+
+function generateBlockIpPayloads() {
+  const valid = { ip: "1.2.3.4", duration_minutes: 60, reason: "brute_force" };
+  const p = [...missingFieldsMatrix(valid)];
+  // IP inválidos
+  for (const ip of ["not.an.ip", "999.999.999.999", "", null, ...SQL_INJECTIONS.slice(0, 3)]) {
+    p.push({ ...valid, ip });
+  }
+  for (const d of [...NUMERIC_EXTREMES.slice(0, 4), -1, 0]) p.push({ ...valid, duration_minutes: d });
+  p.push({}, valid);
+  return p;
+}
+
+function generateStepUpVerifyPayloads() {
+  const valid = { token: "valid-token-123", purpose: "admin_action" };
+  const p = [...missingFieldsMatrix(valid)];
+  for (const sql of SQL_INJECTIONS.slice(0, 4)) p.push({ ...valid, token: sql });
+  for (const xss of XSS_PAYLOADS.slice(0, 3)) p.push({ ...valid, purpose: xss });
+  for (const type of TYPE_CONFUSIONS) p.push({ ...valid, token: type });
+  p.push({}, valid);
+  return p;
+}
+
+function generateVerify2faPayloads() {
+  const valid = { user_id: "550e8400-e29b-41d4-a716-446655440001", code: "123456" };
+  const p = [...missingFieldsMatrix(valid)];
+  for (const uuid of UUID_CORPUS) p.push({ ...valid, user_id: uuid });
+  // Código inválido (< 6 dígitos, não numérico, muito longo, SQL)
+  for (const code of ["12345", "abc", "", "1234567", "' OR '1'='1", null, 0]) {
+    p.push({ ...valid, code });
+  }
+  p.push({}, valid);
+  return p;
+}
+
 // ---------------------------------------------------------------------------
 // Specs de funções alvo
 // ---------------------------------------------------------------------------
@@ -331,6 +414,12 @@ const FUNCTION_SPECS = [
   // --- Expansão: webhooks / orquestradores ---
   { name: "webhook-dispatcher", endpoint: "webhook-dispatcher",              authRequired: false, gen: generateWebhookDispatcherPayloads },
   { name: "simulation-orchestrator", endpoint: "simulation-orchestrator",    authRequired: false, gen: generateSimulationOrchestratorPayloads },
+  // --- Funções críticas adicionais com UUID_CORPUS + missingFieldsMatrix ---
+  { name: "quote-sync",          endpoint: "quote-sync",                     authRequired: true,  gen: generateQuoteSyncPayloads },
+  { name: "validate-access-v2",  endpoint: "validate-access",                authRequired: true,  gen: generateValidateAccessV2Payloads },
+  { name: "block-ip-temporarily",endpoint: "block-ip-temporarily",           authRequired: true,  gen: generateBlockIpPayloads },
+  { name: "step-up-verify",      endpoint: "step-up-verify",                 authRequired: true,  gen: generateStepUpVerifyPayloads },
+  { name: "verify-2fa-token",    endpoint: "verify-2fa-token",               authRequired: true,  gen: generateVerify2faPayloads },
 ];
 
 // ---------------------------------------------------------------------------

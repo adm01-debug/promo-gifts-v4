@@ -7,8 +7,8 @@ import { resolveCredential } from '../_shared/credentials.ts';
 import { safeErrorFields } from '../_shared/log-safety.ts';
 import { applyRateLimit, rateLimiters } from '../_shared/rate-limiter.ts';
 
-const HF_ENDPOINT = 'https://api-inference.huggingface.co/v1/chat/completions';
-const HF_MODEL = 'mistralai/Mistral-7B-Instruct-v0.3';
+const AI_ENDPOINT = 'https://ai.gateway.lovable.dev/v1/chat/completions';
+const AI_MODEL = 'google/gemini-2.5-flash';
 
 const RecommendationRequestSchema = z.object({
   client: z.object({
@@ -47,15 +47,11 @@ Deno.serve(async (req) => {
       return new Response(rl.body, { status: rl.status, headers });
     }
 
-    // BUG-008 FIX: resolveCredential() returns CredentialResolution (object), not string.
-    // Previously: `const HF_API_KEY = await resolveCredential(...)` was always truthy (object),
-    // so the null-check never fired and `Bearer [object Object]` was sent to HuggingFace,
-    // causing 100% of AI recommendation requests to fail with 401.
-    const { value: HF_API_KEY } = await resolveCredential('HUGGINGFACE_API_KEY');
-    if (!HF_API_KEY) {
-      console.warn('[ai-recommendations] HUGGINGFACE_API_KEY not configured');
+    const { value: LOVABLE_API_KEY } = await resolveCredential('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      console.warn('[ai-recommendations] LOVABLE_API_KEY not configured');
       return new Response(
-        JSON.stringify({ recommendations: [], insights: 'Servi\u00e7o de IA n\u00e3o configurado.' }),
+        JSON.stringify({ recommendations: [], insights: 'Serviço de IA não configurado.' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
@@ -74,39 +70,45 @@ Deno.serve(async (req) => {
     }
     const { client, products } = parsed.data;
 
-    const systemPrompt = `Voc\u00ea \u00e9 um especialista em brindes promocionais e marketing corporativo.
+    const systemPrompt = `Você é um especialista em brindes promocionais e marketing corporativo.
 Retorne EXATAMENTE em formato JSON (sem markdown):
-{"recommendations":[{"productId":"id","score":0.95,"reason":"Motivo"}],"insights":"An\u00e1lise"}`;
+{"recommendations":[{"productId":"id","score":0.95,"reason":"Motivo"}],"insights":"Análise"}`;
 
     const userPrompt = `Cliente: ${client.name}${client.industry ? ` | Segmento: ${client.industry}` : ''}\nProdutos: ${products.map(p => `${p.id}|${p.name}|${p.category}`).join(', ')}`;
 
-    const hfResponse = await fetchWithBreaker('huggingface', HF_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${HF_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: HF_MODEL,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-        max_tokens: 1024,
-        temperature: 0.3,
-      }),
-    });
-
-    if (!hfResponse.ok) {
-      await hfResponse.text();
-      console.error('[ai-recommendations] HuggingFace API error:', hfResponse.status);
+    let aiResponse: Response;
+    try {
+      aiResponse = await fetchWithBreaker('lovable-ai', AI_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: AI_MODEL,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+        }),
+      });
+    } catch (aiErr) {
+      console.error('[ai-recommendations] Lovable AI request failed:', safeErrorFields(aiErr));
       return new Response(
-        JSON.stringify({ recommendations: [], insights: 'Servi\u00e7o de IA temporariamente indispon\u00edvel.' }),
+        JSON.stringify({ recommendations: [], insights: 'Serviço de IA temporariamente indisponível.' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const hfData = await hfResponse.json();
-    const content = hfData?.choices?.[0]?.message?.content || '{}';
+    if (!aiResponse.ok) {
+      await aiResponse.text();
+      console.error('[ai-recommendations] Lovable AI error:', aiResponse.status);
+      return new Response(
+        JSON.stringify({ recommendations: [], insights: 'Serviço de IA temporariamente indisponível.' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const aiData = await aiResponse.json();
+    const content = aiData?.choices?.[0]?.message?.content || '{}';
 
     let result: { recommendations: unknown[]; insights: string };
     try {

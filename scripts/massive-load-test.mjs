@@ -39,81 +39,182 @@ if (!SERVICE_ROLE_KEY) {
   process.exit(0);
 }
 
-const CONCURRENCY = 5;
-const TOTAL_REQUESTS = 25;
+const TOTAL_REQUESTS = Number(process.env.LOAD_TOTAL_REQUESTS) || 1_000;
+const REQUEST_TIMEOUT_MS = 15_000;
 
-async function runLoadTest() {
-  console.log(
-    `🚀 Iniciando Teste de Carga (CONCURRENCY=${CONCURRENCY}, TOTAL=${TOTAL_REQUESTS})...`,
+// SLA thresholds
+const SLA_P95_MAX_MS = 2_000;
+const SLA_ERROR_RATE_MAX = 0.02;
+
+// Ramp-up stages: [concurrency, requestCount]
+const RAMP_STAGES = [
+  [5,   50],
+  [10,  100],
+  [25,  200],
+  [50,  300],
+  [100, 350],
+];
+
+const ENDPOINTS = [
+  {
+    url: `${SUPABASE_URL}/functions/v1/health-check`,
+    method: 'GET',
+    body: null,
+    weight: 3,
+  },
+  {
+    url: `${SUPABASE_URL}/functions/v1/cnpj-lookup`,
+    method: 'POST',
+    body: { cnpj: '00.000.000/0001-91' },
+    weight: 1,
+  },
+  {
+    url: `${SUPABASE_URL}/functions/v1/webhook-inbound`,
+    method: 'POST',
+    body: {
+      event: 'order.created',
+      occurred_at: new Date().toISOString(),
+      data: { order_id: 'load-test-ord', amount: 1.0 },
+    },
+    weight: 2,
+  },
+  {
+    url: `${SUPABASE_URL}/functions/v1/rate-limit-check`,
+    method: 'POST',
+    body: { key: 'load-test:probe', limit: 100000, window_seconds: 60 },
+    weight: 2,
+  },
+  {
+    url: `${SUPABASE_URL}/functions/v1/external-db-bridge`,
+    method: 'POST',
+    body: { operation: 'select', table: 'products', limit: 1 },
+    weight: 1,
+  },
+  {
+    url: `${SUPABASE_URL}/functions/v1/quote-sync`,
+    method: 'POST',
+    body: { quote_id: '00000000-0000-0000-0000-000000000001', action: 'recalculate' },
+    weight: 1,
+  },
+];
+
+const weightedEndpoints = ENDPOINTS.flatMap((e) => Array(e.weight).fill(e));
+
+function percentile(sorted, p) {
+  if (sorted.length === 0) return 0;
+  const idx = Math.min(
+    Math.ceil((p / 100) * sorted.length) - 1,
+    sorted.length - 1,
   );
+  return sorted[idx];
+}
 
-  const startTime = Date.now();
-  let completed = 0;
-  let failed = 0;
-  const latencies = [];
-
-  const endpoints = [
-    `${SUPABASE_URL}/functions/v1/external-db-bridge`,
-    `${SUPABASE_URL}/functions/v1/cnpj-lookup`,
-  ];
-
-  async function makeRequest() {
-    const endpoint = endpoints[Math.floor(Math.random() * endpoints.length)];
-    const reqStart = Date.now();
-    try {
-      const body = endpoint.includes('bridge')
-        ? { operation: 'select', table: 'products', limit: 1 }
-        : { cnpj: '00.000.000/0001-91' };
-
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-        },
-        body: JSON.stringify(body),
-      });
-
-      const latency = Date.now() - reqStart;
-      latencies.push(latency);
-
-      if (res.ok) {
-        completed++;
-      } else {
-        failed++;
-        // console.error(`Error ${res.status}: ${await res.text()}`);
-      }
-    } catch (err) {
-      failed++;
-      // console.error(err);
-    }
-  }
-
-  const chunks = [];
-  for (let i = 0; i < TOTAL_REQUESTS; i += CONCURRENCY) {
-    const batch = Array(Math.min(CONCURRENCY, TOTAL_REQUESTS - i))
-      .fill(null)
-      .map(() => makeRequest());
-    await Promise.all(batch);
-    process.stdout.write('.');
-  }
-
-  const totalTime = Date.now() - startTime;
-  const avgLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
-  const p95 = latencies.sort((a, b) => a - b)[Math.floor(latencies.length * 0.95)];
-
-  console.log(`\n\n--- RELATÓRIO DE CARGA ---`);
-  console.log(`Tempo Total: ${totalTime}ms`);
-  console.log(`Requests: ${completed} OK / ${failed} FAILED`);
-  console.log(`Latência Média: ${avgLatency.toFixed(2)}ms`);
-  console.log(`P95 Latência: ${p95}ms`);
-  console.log(`Throughput: ${((completed + failed) / (totalTime / 1000)).toFixed(2)} req/s`);
-  console.log(`---------------------------\n`);
-
-  if (failed > TOTAL_REQUESTS * 0.1) {
-    console.error('❌ Taxa de falha muito alta!');
-    process.exit(1);
+async function makeRequest(endpoint) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS);
+  const reqStart = Date.now();
+  try {
+    const opts = {
+      method: endpoint.method,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+      },
+      signal: ctrl.signal,
+    };
+    if (endpoint.body) opts.body = JSON.stringify(endpoint.body);
+    const res = await fetch(endpoint.url, opts);
+    clearTimeout(timer);
+    return { latency: Date.now() - reqStart, ok: res.status < 500 };
+  } catch {
+    clearTimeout(timer);
+    return { latency: Date.now() - reqStart, ok: false };
   }
 }
 
-runLoadTest().catch(console.error);
+async function runStage(concurrency, count, label) {
+  const latencies = [];
+  let ok = 0;
+  let failed = 0;
+  const queue = Array.from({ length: count }, () =>
+    weightedEndpoints[Math.floor(Math.random() * weightedEndpoints.length)],
+  );
+  let qi = 0;
+  await Promise.all(
+    Array.from({ length: concurrency }, async () => {
+      while (true) {
+        const idx = qi++;
+        if (idx >= queue.length) break;
+        const r = await makeRequest(queue[idx]);
+        latencies.push(r.latency);
+        r.ok ? ok++ : failed++;
+      }
+    }),
+  );
+  process.stdout.write(` [${label}:${ok}ok/${failed}fail]`);
+  return { latencies, ok, failed };
+}
+
+async function runLoadTest() {
+  console.log(`🚀 Massive Load Test — ${TOTAL_REQUESTS} req, ramp-up 5→100 concorrentes`);
+  console.log(`   Endpoints: ${ENDPOINTS.map((e) => e.url.split('/').pop()).join(', ')}`);
+
+  const start = Date.now();
+  const allLatencies = [];
+  let totalOk = 0;
+  let totalFailed = 0;
+
+  process.stdout.write('Progresso:');
+
+  for (const [concurrency, count] of RAMP_STAGES) {
+    const { latencies, ok, failed } = await runStage(concurrency, count, `c${concurrency}`);
+    allLatencies.push(...latencies);
+    totalOk += ok;
+    totalFailed += failed;
+  }
+
+  console.log('');
+
+  const totalTime = Date.now() - start;
+  const total = totalOk + totalFailed;
+  const sorted = [...allLatencies].sort((a, b) => a - b);
+  const errorRate = totalFailed / total;
+  const throughput = total / (totalTime / 1000);
+
+  console.log('\n\n--- RELATÓRIO DE CARGA ---');
+  console.log(`Tempo Total:        ${totalTime}ms`);
+  console.log(`Requests:           ${totalOk} OK / ${totalFailed} FAILED`);
+  console.log(`Taxa de erro:       ${(errorRate * 100).toFixed(2)}%`);
+  console.log(`Throughput:         ${throughput.toFixed(2)} req/s`);
+  console.log(`Latência Média:     ${(allLatencies.reduce((a, b) => a + b, 0) / allLatencies.length).toFixed(2)}ms`);
+  console.log(`P50:                ${percentile(sorted, 50)}ms`);
+  console.log(`P90:                ${percentile(sorted, 90)}ms`);
+  console.log(`P95:                ${percentile(sorted, 95)}ms`);
+  console.log(`P99:                ${percentile(sorted, 99)}ms`);
+  console.log('---------------------------\n');
+
+  const violations = [];
+  const p95 = percentile(sorted, 95);
+
+  if (p95 > SLA_P95_MAX_MS) {
+    violations.push(`P95 ${p95}ms > SLA ${SLA_P95_MAX_MS}ms`);
+  }
+  if (errorRate > SLA_ERROR_RATE_MAX) {
+    violations.push(
+      `Taxa de erro ${(errorRate * 100).toFixed(2)}% > SLA ${(SLA_ERROR_RATE_MAX * 100).toFixed(0)}%`,
+    );
+  }
+
+  if (violations.length > 0) {
+    console.error('❌ SLA VIOLATIONS:');
+    violations.forEach((v) => console.error(`   • ${v}`));
+    process.exit(1);
+  }
+
+  console.log('✅ Todos os SLAs satisfeitos.');
+}
+
+runLoadTest().catch((err) => {
+  console.error('Load test falhou:', err);
+  process.exit(1);
+});

@@ -188,8 +188,8 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                 .join(' · ');
 
               return (
-                <tr
-                  key={idx}
+                  <tr
+                    key={item.id || globalIdx}
                   style={{
                     backgroundColor: isEven ? '#ffffff' : '#f9fafb',
                     borderBottom: '1px solid #eef0f2',

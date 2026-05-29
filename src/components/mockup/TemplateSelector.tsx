@@ -81,7 +81,7 @@ export function TemplateSelector({
                   <div className="space-y-0.5">
                     {template.areas.map((area, idx) => (
                       <div
-                        key={idx}
+                        key={`${area.name}-${idx}`}
                         className="flex items-center gap-1 text-[10px] text-muted-foreground"
                       >
                         <span className="flex h-3 w-3 items-center justify-center rounded-full bg-primary text-[8px] text-primary-foreground">

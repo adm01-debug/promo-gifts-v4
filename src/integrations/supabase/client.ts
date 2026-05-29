@@ -3,36 +3,28 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from "./types";
 
 // ============================================================================
-// VÍNCULO FIXO — banco canônico PromoGifts é `doufsxqlfjyuvxuezpln`.
-// O Lovable às vezes regenera .env apontando para `pqpdolkaeqlyzpdpbizo`
-// (projeto vazio criado por ele), o que quebra o login pois os usuários
-// reais (ex.: adm01@promobrindes.com.br) só existem no projeto canônico.
-// Por isso forçamos a URL+anon key canônica aqui, ignorando o .env quando
-// ele apontar para o projeto errado. Anon key é pública por design.
-// Ref: project-knowledge -> "Banco de dados — VÍNCULO FIXO".
+// CONFIGURAÇÃO SUPABASE — SUPORTE MULTI-PROJETO
 // ============================================================================
-const CANONICAL_URL = "https://doufsxqlfjyuvxuezpln.supabase.co";
-const CANONICAL_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvdWZzeHFsZmp5dXZ4dWV6cGxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczODY2NDMsImV4cCI6MjA4Mjk2MjY0M30.nm3WMOBSx5SUnIBmvF_Mj0Y-4hV6UohrBF0sUpuQvPc";
 
 const envUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const envKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
   import.meta.env.VITE_SUPABASE_ANON_KEY) as string | undefined;
 
-// Usa .env apenas se apontar para o projeto canônico; senão, força canônico.
-const useEnv = !!envUrl && envUrl.includes("doufsxqlfjyuvxuezpln") && !!envKey;
-const SUPABASE_URL = useEnv ? (envUrl as string) : CANONICAL_URL;
-const SUPABASE_PUBLISHABLE_KEY = useEnv ? (envKey as string) : CANONICAL_ANON_KEY;
+// Banco canônico padrão para fallback caso .env falhe ou esteja vazio
+// Nota: Em produção, utilize variáveis de ambiente corretamente.
+const CANONICAL_URL = "https://doufsxqlfjyuvxuezpln.supabase.co";
+const CANONICAL_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvdWZzeHFsZmp5dXZ4dWV6cGxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczODY2NDMsImV4cCI6MjA4Mjk2MjY0M30.nm3WMOBSx5SUnIBmvF_Mj0Y-4hV6UohrBF0sUpuQvPc";
 
-if (!useEnv && typeof console !== "undefined") {
+// Prioridade: .env > Canonical Fallback
+const SUPABASE_URL = envUrl || CANONICAL_URL;
+const SUPABASE_PUBLISHABLE_KEY = envKey || CANONICAL_ANON_KEY;
+
+if (!envUrl && typeof console !== "undefined") {
   console.warn(
-    "[supabase/client] .env aponta para projeto não-canônico — usando fallback " +
-      "hardcoded para doufsxqlfjyuvxuezpln. Re-aponte a conexão no Lovable."
+    "[supabase/client] Variáveis de ambiente ausentes — usando fallback canônico."
   );
 }
-
-// Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
 
 type SupabaseStorage = {
   getItem: Storage['getItem'];
@@ -44,7 +36,6 @@ const getStorageOrUndefined = (): SupabaseStorage | undefined => {
   if (typeof window === 'undefined' || !window.localStorage) {
     return undefined;
   }
-
   return window.localStorage;
 };
 
@@ -55,5 +46,9 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage,
     persistSession: Boolean(storage),
     autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+  global: {
+    headers: { 'x-application-name': 'gifts-store-web' }
   }
 });

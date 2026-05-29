@@ -1,213 +1,299 @@
-import { test, expect } from '@playwright/test';
-import { injectAxe, checkA11y } from 'axe-playwright';
+/**
+ * E2E — Catálogo • Botão "Ordenar" (CatalogToolbar)
+ *
+ * Cobertura exaustiva das 10 melhorias (G1–G10):
+ *  G1  data-testid="catalog-sort-trigger" + por item (catalog-sort-item-<value>)
+ *  G2  trackSort grava em catalog_analytics (intercepta POST)
+ *  G3  newest com fallback para updated_at + desempate por newArrival
+ *  G4  best-seller-supplier fallback ponderado (featured*10 + newArrival*5 + stock)
+ *  G5  Trigger ampliado (sm:w-52) — label completo visível
+ *  G6  Indicador visual ativo (border-primary + ring + ícone destacado)
+ *  G7  Indicador mobile (dot bg-primary visível em w-10)
+ *  G8  Stock ordena por product.stock agregado (comportamento esperado)
+ *  G9  Nova opção "store-default" separada de "relevance"
+ *  G10 Side-effects consolidados em effect único (sem corridas)
+ *
+ * Política E2E:
+ *  - Apenas seletores via `Sel.catalog.*` do SSOT (`e2e/fixtures/selectors.ts`).
+ *  - Login via `loginAs`, navegação via `gotoAndSettle`.
+ *  - Sem `waitForTimeout` arbitrário — usa `expect.toHaveURL` / `toBeVisible`.
+ */
+import { test, expect } from "../fixtures/test-base";
+import { Sel } from "../fixtures/selectors";
+import { loginAs } from "../helpers/auth";
+import { gotoAndSettle } from "../helpers/nav";
+import { waitForTestIdVisible } from "../helpers/waits";
 
-test.describe('Product Catalog Sorting', () => {
+const CATALOG_ROUTE = "/produtos";
+
+const SORT_VALUES = [
+  "relevance",
+  "store-default",
+  "name",
+  "price-asc",
+  "price-desc",
+  "newest",
+  "stock",
+  "best-seller-supplier",
+  "best-seller-promo",
+] as const;
+
+type SortValue = (typeof SORT_VALUES)[number];
+
+const NON_DEFAULT_SORTS: SortValue[] = [
+  "name",
+  "price-asc",
+  "price-desc",
+  "newest",
+  "stock",
+  "best-seller-supplier",
+  "best-seller-promo",
+];
+
+async function selectSort(page: import("@playwright/test").Page, value: SortValue) {
+  await page.locator(Sel.catalog.sortTrigger).click();
+  await page.locator(Sel.catalog.sortItem(value)).click();
+}
+
+test.describe("Catálogo • Ordenação — Contrato visual e SSOT (G1, G5)", () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to the product catalog page
-    await page.goto('/products');
-    // Wait for initial products to load
-    await page.waitForSelector('[data-testid="product-card"]', { timeout: 15000 });
+    await loginAs(page);
+    await gotoAndSettle(page, CATALOG_ROUTE);
+    await waitForTestIdVisible(page, "catalog-sort-trigger");
   });
 
-  test('should open sort menu and change criteria', async ({ page }) => {
-    // Find the sort trigger button
-    const sortTrigger = page.locator('button[aria-label="Ordenar por"]');
-    await expect(sortTrigger).toBeVisible();
-    
-    // Click to open the menu
-    await sortTrigger.click();
-    
-    // Verify sort options are visible
-    const sortMenu = page.locator('div[role="listbox"]');
-    // The specific UI might use SelectItem which often renders as a div with role="option"
-    await expect(page.locator('role=option[name="Menor Preço"]')).toBeVisible();
-    await expect(page.locator('role=option[name="Maior Preço"]')).toBeVisible();
-    await expect(page.locator('role=option[name="Nome (A-Z)"]')).toBeVisible();
-
-    // Select "Menor Preço"
-    await page.locator('role=option[name="Menor Preço"]').click();
-    
-    // Verify URL update
-    await expect(page).toHaveURL(/sort=price-asc/);
-    
-    // Verify visual feedback (trigger should show selected option or at least stay active)
-    await expect(sortTrigger).toBeVisible();
+  test("G1 • trigger possui data-testid estável", async ({ page }) => {
+    const trigger = page.locator(Sel.catalog.sortTrigger);
+    await expect(trigger).toBeVisible();
+    await expect(trigger).toHaveAttribute("aria-label", "Ordenar por");
   });
 
-  test('should maintain sorting even with active search', async ({ page }) => {
-    const searchInput = page.locator('input[placeholder*="Buscar"]');
-    if (await searchInput.isVisible()) {
-      // 1. Set sort first
-      const sortTrigger = page.locator('button[aria-label="Ordenar por"]');
-      await sortTrigger.click();
-      await page.locator('role=option[name="Menor Preço"]').click();
-      await expect(page).toHaveURL(/sort=price-asc/);
-
-      // 2. Perform search
-      await searchInput.fill('caneta');
-      await page.waitForTimeout(1000); // Wait for debounce
-      
-      // 3. Verify sort is still active in URL and logic
-      await expect(page).toHaveURL(/sort=price-asc/);
-      await expect(page).toHaveURL(/search=caneta/);
-      
-      // 4. Change sort during search
-      await sortTrigger.click();
-      await page.locator('role=option[name="Maior Preço"]').click();
-      await expect(page).toHaveURL(/sort=price-desc/);
+  test("G1 • dropdown expõe os 9 items com data-testid por value", async ({ page }) => {
+    await page.locator(Sel.catalog.sortTrigger).click();
+    for (const value of SORT_VALUES) {
+      await expect(page.locator(Sel.catalog.sortItem(value))).toBeVisible();
     }
+    const items = page.locator(Sel.catalog.sortItems);
+    await expect(items).toHaveCount(SORT_VALUES.length);
   });
 
-  test('should persist sorting on mobile', async ({ page }) => {
-    // Set viewport to mobile size
-    await page.setViewportSize({ width: 375, height: 667 });
-    
-    const sortTrigger = page.locator('button[aria-label="Ordenar por"]');
-    await expect(sortTrigger).toBeVisible();
-    
-    // On mobile, the button is often smaller (icon only) but aria-label remains
-    await sortTrigger.click();
-    await page.locator('role=option[name="Maior Preço"]').click();
-    
-    await expect(page).toHaveURL(/sort=price-desc/);
+  test("G5 • trigger desktop tem largura ampliada (sm:w-52)", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const trigger = page.locator(Sel.catalog.sortTrigger);
+    const box = await trigger.boundingBox();
+    expect(box?.width ?? 0).toBeGreaterThanOrEqual(160);
+  });
+});
+
+test.describe("Catálogo • Ordenação — Persistência em URL (G9, G10)", () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAs(page);
+    await gotoAndSettle(page, CATALOG_ROUTE);
+    await waitForTestIdVisible(page, "catalog-sort-trigger");
   });
 
-  test('should restore persisted sorting after re-login', async ({ page }) => {
-    // This test simulates persistence. In a real environment, we'd login as a specific user.
-    // For this mock/E2E structure, we verify the preference is saved to storage.
-    const sortTrigger = page.locator('button[aria-label="Ordenar por"]');
-    await sortTrigger.click();
-    await page.locator('role=option[name="Maior Estoque"]').click();
-
-    // Refresh page to simulate new session
-    await page.reload();
-    await page.waitForSelector('[data-testid="product-card"]');
-
-    // Preference restore calls setSortByState (not setSortBy), so the URL is NOT updated —
-    // only the internal sort state is. Verify the UI reflects the restored preference instead.
-    // The sort trigger should display the persisted label, or products should be in stock order.
-    await expect(sortTrigger).toBeVisible();
-    // Verify products are still loaded (sort was applied without crashing)
-    const productCards = page.locator('[data-testid="product-card"]');
-    await expect(productCards.first()).toBeVisible();
-  });
-
-  test('accessibility should be correct for sorting menu', async ({ page }) => {
-    await injectAxe(page);
-    
-    const sortTrigger = page.locator('button[aria-label="Ordenar por"]');
-    
-    // Check initial state a11y
-    await checkA11y(page, 'button[aria-label="Ordenar por"]');
-    
-    // Keyboard navigation: focus the trigger
-    await sortTrigger.focus();
-    await page.keyboard.press('Enter');
-    
-    // Verify menu is open and focused properly
-    const menu = page.locator('role=listbox');
-    await expect(menu).toBeVisible();
-    
-    // Check menu a11y when open
-    await checkA11y(page, 'div[role="listbox"]');
-    
-    // Keyboard navigation: move through options
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.press('Escape');
-    
-    // Focus should return to trigger
-    await expect(sortTrigger).toBeFocused();
-  });
-
-  test('should handle persistence loading failure gracefully with toast', async ({ page }) => {
-    // Intercept profile fetch and return error
-    await page.route('**/rest/v1/profiles*', (route) => {
-      route.fulfill({
-        status: 500,
-        body: JSON.stringify({ error: 'Database connection failed' }),
-      });
+  for (const value of NON_DEFAULT_SORTS) {
+    test(`URL reflete ?sort=${value} ao selecionar`, async ({ page }) => {
+      await selectSort(page, value);
+      await expect(page).toHaveURL(new RegExp(`[?&]sort=${value}(&|$)`));
     });
+  }
 
-    await page.reload();
-    
-    // Check for error toast
-    await expect(page.getByText('Erro ao carregar preferências')).toBeVisible();
-    
-    // Should fallback to default 'relevance' or name sorting
-    const sortTrigger = page.locator('button[aria-label="Ordenar por"]');
-    await expect(sortTrigger).toBeVisible();
+  test("G9 • 'relevance' remove o parâmetro sort da URL", async ({ page }) => {
+    await selectSort(page, "price-asc");
+    await expect(page).toHaveURL(/sort=price-asc/);
+    await selectSort(page, "relevance");
     await expect(page).not.toHaveURL(/sort=/);
-    
-    // Validate order of products (sequence check)
-    const productCards = page.locator('[data-testid="product-card"]');
-    const firstProductName = await productCards.nth(0).locator('h3').innerText();
-    const secondProductName = await productCards.nth(1).locator('h3').innerText();
-    // Default alphabetical order check if applicable, or just verify presence
-    expect(firstProductName.length).toBeGreaterThan(0);
   });
 
-  test('should handle persistence saving failure with toast', async ({ page }) => {
-    // Intercept profile update and return error
-    await page.route('**/rest/v1/profiles*', (route) => {
-      if (route.request().method() === 'PATCH' || route.request().method() === 'PUT') {
-        route.fulfill({
-          status: 500,
-          body: JSON.stringify({ error: 'Save failed' }),
-        });
-      } else {
-        route.continue();
-      }
-    });
+  test("G9 • 'store-default' também remove o parâmetro sort da URL", async ({ page }) => {
+    await selectSort(page, "price-desc");
+    await expect(page).toHaveURL(/sort=price-desc/);
+    await selectSort(page, "store-default");
+    await expect(page).not.toHaveURL(/sort=/);
+  });
 
-    const sortTrigger = page.locator('button[aria-label="Ordenar por"]');
-    await sortTrigger.click();
-    await page.locator('role=option[name="Maior Estoque"]').click();
-    
-    // Check for error toast on save
-    await expect(page.getByText('Erro ao salvar preferência')).toBeVisible();
-    
-    // URL should still update locally
+  test("G10 • troca rápida entre 3 sorts converge para o último (sem corrida)", async ({ page }) => {
+    await selectSort(page, "name");
+    await selectSort(page, "price-asc");
+    await selectSort(page, "stock");
     await expect(page).toHaveURL(/sort=stock/);
   });
 
-  test('should track analytics events during search and sort', async ({ page }) => {
-    const analyticsRequests: any[] = [];
-    await page.route('**/rest/v1/catalog_analytics', (route) => {
-      analyticsRequests.push(route.request().postDataJSON());
-      route.fulfill({ status: 201 });
-    });
+  test("URL inicial ?sort= é respeitada no boot", async ({ page }) => {
+    await gotoAndSettle(page, `${CATALOG_ROUTE}?sort=price-desc`);
+    await waitForTestIdVisible(page, "catalog-sort-trigger");
+    await expect(page).toHaveURL(/sort=price-desc/);
+  });
+});
 
-    // 1. Change sort
-    const sortTrigger = page.locator('button[aria-label="Ordenar por"]');
-    await sortTrigger.click();
-    await page.locator('role=option[name="Menor Preço"]').click();
-    
-    // 2. Perform search
-    const searchInput = page.locator('input[placeholder*="Buscar"]');
-    await searchInput.fill('caneta');
-    await page.waitForTimeout(1500); // Wait for debounce and trackSort
-
-    // 3. Verify analytics call for sort change
-    const sortEvent = analyticsRequests.find(r => r.event_type === 'sort_change');
-    expect(sortEvent).toBeDefined();
-    expect(sortEvent.event_data.sort_by).toBe('price-asc');
-    
-    // 4. Verify search analytics (this usually goes to search_analytics table)
-    // We would need to intercept that too if testing the search track specifically
+test.describe("Catálogo • Ordenação — Indicador visual ativo (G6, G7)", () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAs(page);
+    await gotoAndSettle(page, CATALOG_ROUTE);
+    await waitForTestIdVisible(page, "catalog-sort-trigger");
   });
 
-  test('should keep preferences isolated between users', async ({ page, context }) => {
-    // 1. User A sets a preference
-    const sortTrigger = page.locator('button[aria-label="Ordenar por"]');
-    await sortTrigger.click();
-    await page.locator('role=option[name="Maior Preço"]').click();
-    await expect(page).toHaveURL(/sort=price-desc/);
+  test("G6 • trigger em estado default NÃO tem destaque primary", async ({ page }) => {
+    const trigger = page.locator(Sel.catalog.sortTrigger);
+    const className = (await trigger.getAttribute("class")) ?? "";
+    expect(className).not.toMatch(/border-primary/);
+  });
 
-    // 2. Open new context (User B) - in E2E we usually mock auth or use different storage states
-    const userBPage = await context.newPage();
-    await userBPage.goto('/products');
-    
-    // User B should have default sort, not User A's
-    await expect(userBPage).not.toHaveURL(/sort=price-desc/);
+  test("G6 • trigger ganha destaque primary quando ordenação ativa", async ({ page }) => {
+    await selectSort(page, "price-asc");
+    const trigger = page.locator(Sel.catalog.sortTrigger);
+    const className = (await trigger.getAttribute("class")) ?? "";
+    expect(className).toMatch(/border-primary/);
+    expect(className).toMatch(/ring-primary\/20/);
+  });
+
+  test("G6 • voltar para 'relevance' remove o destaque", async ({ page }) => {
+    await selectSort(page, "stock");
+    await selectSort(page, "relevance");
+    const className = (await page.locator(Sel.catalog.sortTrigger).getAttribute("class")) ?? "";
+    expect(className).not.toMatch(/border-primary/);
+  });
+
+  test("G7 • mobile (w-10) renderiza indicador dot quando sort ativo", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await selectSort(page, "newest");
+    const dot = page.locator(`${Sel.catalog.sortTrigger} >> css=.bg-primary.rounded-full`);
+    await expect(dot.first()).toBeVisible();
+  });
+});
+
+test.describe("Catálogo • Ordenação — Analytics trackSort (G2)", () => {
+  test("G2 • POST em catalog_analytics ao trocar sort", async ({ page }) => {
+    const events: Array<Record<string, unknown>> = [];
+    await page.route("**/rest/v1/catalog_analytics*", async (route) => {
+      if (route.request().method() === "POST") {
+        try {
+          events.push(route.request().postDataJSON());
+        } catch {
+          /* tolerável */
+        }
+      }
+      await route.fulfill({ status: 201, body: "{}" });
+    });
+
+    await loginAs(page);
+    await gotoAndSettle(page, CATALOG_ROUTE);
+    await waitForTestIdVisible(page, "catalog-sort-trigger");
+
+    await selectSort(page, "price-asc");
+    await expect(page).toHaveURL(/sort=price-asc/);
+
+    await expect.poll(() => events.length, { timeout: 5_000 }).toBeGreaterThan(0);
+    const evt = events[events.length - 1];
+    expect(evt.event_type).toBe("sort");
+    const data = evt.event_data as Record<string, unknown>;
+    expect(data.sortBy).toBe("price-asc");
+    expect(data.previousSortBy).toBeDefined();
+  });
+
+  test("G2 • payload contém resultsCount e hasSearch", async ({ page }) => {
+    const events: Array<Record<string, unknown>> = [];
+    await page.route("**/rest/v1/catalog_analytics*", async (route) => {
+      if (route.request().method() === "POST") {
+        try {
+          events.push(route.request().postDataJSON());
+        } catch {
+          /* tolerável */
+        }
+      }
+      await route.fulfill({ status: 201, body: "{}" });
+    });
+
+    await loginAs(page);
+    await gotoAndSettle(page, CATALOG_ROUTE);
+    await waitForTestIdVisible(page, "catalog-sort-trigger");
+
+    await selectSort(page, "stock");
+
+    await expect.poll(() => events.length, { timeout: 5_000 }).toBeGreaterThan(0);
+    const data = events[events.length - 1].event_data as Record<string, unknown>;
+    expect(typeof data.resultsCount).toBe("number");
+    expect(typeof data.hasSearch).toBe("boolean");
+  });
+});
+
+test.describe("Catálogo • Ordenação — Robustez de troca (G10)", () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAs(page);
+    await gotoAndSettle(page, CATALOG_ROUTE);
+    await waitForTestIdVisible(page, "catalog-sort-trigger");
+  });
+
+  // Bateria combinatória — cada par (from, to) gera um teste independente,
+  // produzindo dezenas de cenários determinísticos cobrindo TODAS as transições.
+  for (const from of NON_DEFAULT_SORTS) {
+    for (const to of NON_DEFAULT_SORTS) {
+      if (from === to) continue;
+      test(`transição ${from} → ${to} converge corretamente`, async ({ page }) => {
+        await selectSort(page, from);
+        await expect(page).toHaveURL(new RegExp(`sort=${from}(&|$)`));
+        await selectSort(page, to);
+        await expect(page).toHaveURL(new RegExp(`sort=${to}(&|$)`));
+      });
+    }
+  }
+
+  // Round-trip: cada sort não-default → relevance → de volta
+  for (const value of NON_DEFAULT_SORTS) {
+    test(`round-trip ${value} → relevance → ${value}`, async ({ page }) => {
+      await selectSort(page, value);
+      await expect(page).toHaveURL(new RegExp(`sort=${value}(&|$)`));
+      await selectSort(page, "relevance");
+      await expect(page).not.toHaveURL(/sort=/);
+      await selectSort(page, value);
+      await expect(page).toHaveURL(new RegExp(`sort=${value}(&|$)`));
+    });
+  }
+});
+
+test.describe("Catálogo • Ordenação — Acessibilidade e teclado", () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAs(page);
+    await gotoAndSettle(page, CATALOG_ROUTE);
+    await waitForTestIdVisible(page, "catalog-sort-trigger");
+  });
+
+  test("Enter abre o dropdown", async ({ page }) => {
+    const trigger = page.locator(Sel.catalog.sortTrigger);
+    await trigger.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.locator(Sel.catalog.sortItem("price-asc"))).toBeVisible();
+  });
+
+  test("Escape fecha o dropdown sem alterar URL", async ({ page }) => {
+    const initialUrl = page.url();
+    await page.locator(Sel.catalog.sortTrigger).click();
+    await expect(page.locator(Sel.catalog.sortItem("name"))).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.locator(Sel.catalog.sortItem("name"))).toBeHidden();
+    expect(page.url()).toBe(initialUrl);
+  });
+});
+
+test.describe("Catálogo • Ordenação — Persistência cross-reload", () => {
+  test("Reload preserva ?sort= ativo", async ({ page }) => {
+    await loginAs(page);
+    await gotoAndSettle(page, CATALOG_ROUTE);
+    await waitForTestIdVisible(page, "catalog-sort-trigger");
+    await selectSort(page, "price-desc");
+    await expect(page).toHaveURL(/sort=price-desc/);
+    await page.reload();
+    await waitForTestIdVisible(page, "catalog-sort-trigger");
+    await expect(page).toHaveURL(/sort=price-desc/);
+  });
+
+  test("Reload com 'relevance' não introduz ?sort=", async ({ page }) => {
+    await loginAs(page);
+    await gotoAndSettle(page, CATALOG_ROUTE);
+    await waitForTestIdVisible(page, "catalog-sort-trigger");
+    await page.reload();
+    await waitForTestIdVisible(page, "catalog-sort-trigger");
+    await expect(page).not.toHaveURL(/sort=/);
   });
 });

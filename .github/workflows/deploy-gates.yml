@@ -50,6 +50,11 @@ jobs:
       # Gate rapido de regressao. Suites amplas seguem no CI principal:
       # `test:quality`, `Hook tests` e `Test Coverage`.
       - run: npm run test:deploy-gate
+      - name: Webhook scenario matrix (contratos Zod, 0 HTTP)
+        run: |
+          TZ=America/Sao_Paulo npx vitest run \
+            tests/contracts/webhook-scenario-matrix.test.ts \
+            --reporter=dot
 
   e2e-smoke:
     name: Gate 3 - E2E Smoke

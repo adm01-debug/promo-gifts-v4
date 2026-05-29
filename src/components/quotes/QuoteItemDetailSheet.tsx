@@ -253,7 +253,7 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                     const totalRounded = Math.round(unitRounded * item.quantity * 100) / 100;
 
                     return (
-                      <div key={idx} className="space-y-3">
+                      <div key={`${p.technique_id || p.technique_name}-${idx}`} className="space-y-3">
                         <div className="space-y-2.5 rounded-lg border border-border/50 bg-muted/50 p-3">
                           {/* Technique */}
                           <div className="flex items-center gap-2">

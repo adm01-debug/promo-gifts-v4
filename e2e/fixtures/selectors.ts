@@ -127,7 +127,14 @@ export const Sel = {
   catalog: {
     /** Input da busca global do catálogo (SmartSearchInput). */
     searchInput: TID("catalog-search-input"),
+    /** Trigger do <Select> de ordenação (CatalogToolbar + FiltersPage). */
+    sortTrigger: TID("catalog-sort-trigger"),
+    /** Item específico do dropdown de ordenação (kebab-case do value). */
+    sortItem: (value: string) => TID(`catalog-sort-item-${value}`),
+    /** Qualquer item do dropdown (prefix match — útil para contagem). */
+    sortItems: TID_PREFIX("catalog-sort-item-"),
   },
+
   product: {
     card: TID("product-card"),
     /** Nome no card do catálogo (ProductCard / EnhancedProductCard). */
@@ -374,6 +381,16 @@ export const Sel = {
       header: TID("app-header"),
       breadcrumbBar: TID("breadcrumb-bar"),
       breadcrumb: TID("breadcrumb"),
+      /** Botão "Teletransporte" (smart back) — `src/components/common/PersistentBreadcrumbs.tsx`. */
+      teleport: TID("back-teleport-button"),
+      /** Tooltip do Teletransporte — `src/components/common/PersistentBreadcrumbs.tsx`. */
+      teleportTooltip: TID("teleport-tooltip-content"),
+      /** Link/Botão "Início" no breadcrumb — `src/components/common/PersistentBreadcrumbs.tsx`. */
+      breadcrumbHome: TID("home-breadcrumb-link"),
+      /** Link/Botão "Início" no breadcrumb — `src/components/common/PersistentBreadcrumbs.tsx`. */
+      breadcrumbHome: TID("home-breadcrumb-link"),
+      /** Tooltip do Início — `src/components/common/PersistentBreadcrumbs.tsx`. */
+      breadcrumbHomeTooltip: TID("inicio-tooltip-content"),
       /**
        * Botão flutuante "voltar ao topo" — `src/components/common/ScrollProgress.tsx`.
        * Aparece após `window.scrollY > threshold` (default 150 no MainLayout).

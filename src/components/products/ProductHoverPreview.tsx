@@ -103,7 +103,7 @@ export function ProductHoverPreview({
             <div className="flex items-center gap-1.5 pt-1">
               {product.colors.slice(0, 8).map((color, idx) => (
                 <div
-                  key={idx}
+                  key={`${color.hex}-${idx}`}
                   className="h-4 w-4 rounded-full border border-border/50 shadow-sm"
                   style={{ backgroundColor: color.hex }}
                   title={color.name}

@@ -385,7 +385,7 @@ export function QuoteBuilderSummaryColumn({
                           <div className="space-y-1">
                             {item.personalizations.map((p, pIdx) => (
                               <div
-                                key={pIdx}
+                                key={`${p.technique_id || p.technique_name}-${pIdx}`}
                                 className="flex items-center justify-between gap-1 rounded-lg border border-border/40 bg-card px-2 py-1 text-xs"
                               >
                                 <div className="flex min-w-0 flex-1 items-center gap-1.5">

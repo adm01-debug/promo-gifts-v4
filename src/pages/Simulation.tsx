@@ -289,7 +289,7 @@ export default function SimulationPage() {
                   <div className="space-y-6">
                     {report.details.map((detail, idx) => (
                       <div
-                        key={idx}
+                        key={`${detail.fnName}-${idx}`}
                         className="space-y-1 border-b border-slate-800 pb-4 font-mono text-xs"
                       >
                         <div className="flex items-center justify-between">

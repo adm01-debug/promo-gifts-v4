@@ -36,16 +36,22 @@ export function useProfileRoles() {
         }
 
         if (profileResult.data) {
-          setProfile(profileResult.data as Profile);
-          // background update — fire and forget, não bloqueia isLoading.
-          // `.catch` evita unhandled rejection se a escrita falhar (rede/RLS).
-          void getSupabaseClient()
-            .then((supabase) =>
-              supabase
+          const profileData = profileResult.data as Profile;
+          setProfile(profileData);
+
+          // background update — fire and forget, com proteção de mount.
+          // `.catch` evita unhandled rejection se conexão/escrita falhar (rede/RLS).
+          getSupabaseClient()
+            .then((supabase) => {
+              if (!userId) return;
+              return supabase
                 .from('profiles')
                 .update({ last_login_at: new Date().toISOString() })
-                .eq('user_id', userId),
-            )
+                .eq('user_id', userId)
+                .then(({ error }) => {
+                  if (error) authDebugError('useProfileRoles.updateLastLogin', 'failed', error);
+                });
+            })
             .catch(() => {
               /* atualização de last_login_at é best-effort */
             });

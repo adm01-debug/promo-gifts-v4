@@ -151,13 +151,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const name = session.user.user_metadata?.full_name?.split(' ')[0] || 'Usuário';
             toast.success(`🤖 Flow`, { description: getRandomGreeting(name), duration: 3000 });
           }
-          setTimeout(() => {
-            fetchUserData(session.user.id);
-            fetchAAL();
-            import('@/lib/external-db-prewarm').then((m) =>
-              m.prewarmExternalDb({ oncePerSession: true }),
-            );
-          }, 0);
+          // Use Promise.resolve().then to avoid potential issues with immediate state updates in event handler
+          Promise.resolve().then(() => {
+            if (session.user) {
+              fetchUserData(session.user.id);
+              fetchAAL();
+              import('@/lib/external-db-prewarm').then((m) =>
+                m.prewarmExternalDb({ oncePerSession: true }),
+              );
+            }
+          });
         } else {
           clearProfileRoles();
           clearMFA();

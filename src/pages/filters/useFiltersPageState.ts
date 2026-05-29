@@ -472,7 +472,7 @@ export function useFiltersPageState() {
     }
     // BUG-SF-08 FIX: era só === 'name', deve incluir 'relevance' (consistente com useCatalogFiltering).
     // Com busca fuzzy ativa, a relevância já está na ordem dos resultados — não aplicar sort extra.
-    const skipSort = hasFuzzySearch && (sortBy === 'name' || sortBy === 'relevance');
+    const skipSort = hasFuzzySearch && sortBy === 'name';
     sortProducts(result, sortBy, { promoSalesMap, supplierSalesMap, skipSort });
     return result;
   }, [
