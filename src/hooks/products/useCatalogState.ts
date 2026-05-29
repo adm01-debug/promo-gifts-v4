@@ -114,12 +114,11 @@ export function useCatalogState() {
 
   const setSortBy = useCallback(
     (s: SortOption) => {
+      if (s === sortBy) return;
       setIsTransitioning(true);
-      // BUG-G10: Concatena side-effects em uma única transição de estado.
-      // A persistência (updatePreferences/URL) e analytics seguem o estado.
       setSortByState(s);
     },
-    [],
+    [sortBy],
   );
 
   // BUG-G10 FIX: Consolidate side-effects (URL, Preferences, Analytics) 
