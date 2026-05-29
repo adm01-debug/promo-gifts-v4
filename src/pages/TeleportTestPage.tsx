@@ -18,8 +18,8 @@ export default function TeleportTestPage() {
         </p>
         
         <div className="flex gap-4">
-          <Button onClick={() => navigate('/produtos')}>Ir para Produtos</Button>
-          <Button onClick={() => navigate('/favoritos')}>Ir para Favoritos</Button>
+          <Button onClick={() => navigate('/termos')}>Ir para Termos</Button>
+          <Button onClick={() => navigate('/privacidade')}>Ir para Privacidade</Button>
           <Button variant="outline" onClick={() => window.history.back()}>
             Back Manual (Browser)
           </Button>
