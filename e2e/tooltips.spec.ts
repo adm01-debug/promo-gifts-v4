@@ -8,67 +8,59 @@ test.describe("Tooltip Regression Tests", () => {
     testInfo.annotations.push({ type: 'feature', description: 'Regression Visual & Styling' });
   });
 
-  test("Check tooltip styling (font size, padding, max-width)", async ({ page }, testInfo) => {
-    testInfo.annotations.push({ type: 'coverage', description: 'Standard Mode Styling' });
-    
-    await test.step("Navigate to products page", async () => {
-      await gotoAndSettle(page, "/produtos");
-      await page.setViewportSize({ width: 1366, height: 768 });
-    });
-    
-    await test.step("Trigger tooltip and validate styles", async () => {
-      const tooltipTrigger = page.locator('[data-state="closed"]').first();
-      if (await tooltipTrigger.count() > 0) {
-        await tooltipTrigger.hover();
-        
-        const tooltip = page.locator('[role="tooltip"]');
-        await expect(tooltip).toBeVisible();
-        
-        const fontSize = await tooltip.evaluate((el) => window.getComputedStyle(el).fontSize);
-        const padding = await tooltip.evaluate((el) => window.getComputedStyle(el).padding);
-        const maxWidth = await tooltip.evaluate((el) => window.getComputedStyle(el).maxWidth);
-        
-        console.log(`Tooltip Font Size: ${fontSize}`);
-        console.log(`Tooltip Padding: ${padding}`);
-        console.log(`Tooltip Max Width: ${maxWidth}`);
-        
-        expect(parseFloat(fontSize)).toBeCloseTo(11.7, 0);
-        expect(padding).toMatch(/8px|16px/);
-        expect(maxWidth).toBe("380px");
-        
-        testInfo.annotations.push({ 
-          type: 'result', 
-          description: `Styles validated: Font=${fontSize}, Padding=${padding}, MaxWidth=${maxWidth}` 
-        });
-      } else {
-        testInfo.annotations.push({ type: 'warning', description: 'No tooltip trigger found on this page' });
-      }
-    });
-  });
+  const viewports = [
+    { name: 'desktop', width: 1366, height: 768, expectedMaxWidth: "380px", expectedFontSize: 11.7, expectedPadding: /8px|16px/ },
+    { name: 'tablet', width: 768, height: 1024, expectedMaxWidth: "380px", expectedFontSize: 11.7, expectedPadding: /8px|16px/ },
+    { name: 'mobile', width: 320, height: 568, expectedMaxWidth: "288px", expectedFontSize: 11.7, expectedPadding: /8px|16px/ } // 320 - 32 = 288
+  ];
 
-  test("Tooltip responsiveness on mobile", async ({ page }, testInfo) => {
-    testInfo.annotations.push({ type: 'coverage', description: 'Mobile Viewport' });
-    
-    await test.step("Set mobile viewport and navigate", async () => {
-      await page.setViewportSize({ width: 320, height: 568 });
-      await gotoAndSettle(page, "/produtos");
-    });
-    
-    await test.step("Verify tooltip fits in mobile viewport", async () => {
-      const tooltipTrigger = page.locator('button[aria-haspopup="dialog"], [data-state="closed"]').first();
-      if (await tooltipTrigger.count() > 0) {
-        await tooltipTrigger.hover();
-        const tooltip = page.locator('[role="tooltip"]');
-        await expect(tooltip).toBeVisible();
+  for (const viewport of viewports) {
+    test(`Check tooltip styling on ${viewport.name} (${viewport.width}x${viewport.height})`, async ({ page }, testInfo) => {
+      testInfo.annotations.push({ type: 'coverage', description: `${viewport.name} Viewport Styling` });
+      
+      await test.step("Set viewport and navigate", async () => {
+        await page.setViewportSize({ width: viewport.width, height: viewport.height });
+        await gotoAndSettle(page, "/produtos");
+      });
+      
+      await test.step("Trigger tooltip and validate styles", async () => {
+        // Fallback search for different potential triggers
+        const tooltipTrigger = page.locator('[data-state="closed"], .tooltip-trigger').first();
         
-        const maxWidth = await tooltip.evaluate((el) => window.getComputedStyle(el).maxWidth);
-        expect(parseFloat(maxWidth)).toBeLessThanOrEqual(320);
-        
-        testInfo.annotations.push({ 
-          type: 'result', 
-          description: `Mobile max-width validated: ${maxWidth}` 
-        });
-      }
+        if (await tooltipTrigger.count() > 0) {
+          await tooltipTrigger.hover();
+          
+          const tooltip = page.locator('[role="tooltip"]');
+          await expect(tooltip).toBeVisible();
+          
+          const styles = await tooltip.evaluate((el) => {
+            const s = window.getComputedStyle(el);
+            return {
+              fontSize: s.fontSize,
+              padding: s.padding,
+              maxWidth: s.maxWidth
+            };
+          });
+          
+          console.log(`[${viewport.name}] Tooltip Styles:`, styles);
+          
+          expect(parseFloat(styles.fontSize)).toBeCloseTo(viewport.expectedFontSize, 0);
+          expect(styles.padding).toMatch(viewport.expectedPadding);
+          
+          // Flexible max-width check for responsive calc()
+          if (viewport.name === 'mobile') {
+            expect(parseFloat(styles.maxWidth)).toBeLessThanOrEqual(parseFloat(viewport.expectedMaxWidth));
+          } else {
+            expect(styles.maxWidth).toBe(viewport.expectedMaxWidth);
+          }
+          
+          testInfo.annotations.push({ 
+            type: 'result', 
+            description: `Styles validated on ${viewport.name}: Font=${styles.fontSize}, Padding=${styles.padding}, MaxWidth=${styles.maxWidth}` 
+          });
+        } else {
+          testInfo.annotations.push({ type: 'warning', description: `No tooltip trigger found on ${viewport.name}` });
+        }
+      });
     });
-  });
-});
+  }
