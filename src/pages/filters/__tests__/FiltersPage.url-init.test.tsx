@@ -33,12 +33,17 @@ vi.mock('@/hooks/products/useProductsLightweight', () => ({
 }));
 
 vi.mock('@/hooks/products/useProductsByCategory', () => ({
-  useProductsByCategory: vi.fn(({ categoryIds }) => ({
-    productIds: new Set(categoryIds.includes('30') ? ['1'] : categoryIds.includes('31') ? ['2'] : []),
-    hasFilter: categoryIds.length > 0,
-    isLoading: false,
-    error: null
-  })),
+  useProductsByCategory: vi.fn(({ categoryIds }) => {
+    const ids = new Set<string>();
+    if (categoryIds.includes('30')) ids.add('1');
+    if (categoryIds.includes('31')) ids.add('2');
+    return {
+      productIds: ids,
+      hasFilter: categoryIds.length > 0,
+      isLoading: false,
+      error: null
+    };
+  }),
 }));
 
 const queryClient = new QueryClient({
