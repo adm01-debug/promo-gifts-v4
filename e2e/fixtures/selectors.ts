@@ -380,9 +380,14 @@ export const Sel = {
       teleportTooltip: TID("teleport-tooltip-content"),
       /** Link/Botão "Início" no breadcrumb — `src/components/common/PersistentBreadcrumbs.tsx`. */
       breadcrumbHome: TID("home-breadcrumb-link"),
+      /** Link/Botão "Início" no breadcrumb — `src/components/common/PersistentBreadcrumbs.tsx`. */
+      breadcrumbHome: TID("home-breadcrumb-link"),
       /** Tooltip do Início — `src/components/common/PersistentBreadcrumbs.tsx`. */
       breadcrumbHomeTooltip: TID("inicio-tooltip-content"),
-      /** Botão flutuante "voltar ao topo" — `src/components/common/ScrollProgress.tsx`. */
+      /**
+       * Botão flutuante "voltar ao topo" — `src/components/common/ScrollProgress.tsx`.
+       * Aparece após `window.scrollY > threshold` (default 150 no MainLayout).
+       */
       scrollToTop: TID("scroll-to-top"),
     },
   },
