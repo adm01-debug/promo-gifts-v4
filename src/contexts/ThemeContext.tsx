@@ -20,6 +20,7 @@ interface ThemeProviderProps {
   children: ReactNode;
   defaultTheme?: Theme;
   storageKey?: string;
+  tooltipStorageKey?: string;
 }
 
 export function ThemeProvider({
@@ -117,8 +118,11 @@ export function ThemeProvider({
       });
     };
 
-    if (typeof document !== 'undefined' && 'startViewTransition' in document) {
-      (document as any).startViewTransition(apply);
+    const docWithViewTransition = document as Document & {
+      startViewTransition?: (callback: () => void) => void;
+    };
+    if (typeof document !== 'undefined' && docWithViewTransition.startViewTransition) {
+      docWithViewTransition.startViewTransition(apply);
     } else {
       apply();
     }
@@ -159,8 +163,10 @@ export function useTheme() {
     return {
       theme: 'light',
       actualTheme: 'light',
+      tooltipStyle: 'standard',
       setTheme: () => {},
       toggleTheme: () => {},
+      setTooltipStyle: () => {},
       isFallback: true,
     } as ThemeContextType;
   }

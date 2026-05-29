@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { ProductDetailHero } from '@/pages/products/product-detail/ProductDetailHero';
 import { BrowserRouter } from 'react-router-dom';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -38,7 +38,7 @@ vi.mock('@/hooks/products/useCategoryIcons', () => ({
 }));
 
 vi.mock('@/components/products/SingleVariantPicker', () => ({
-  SingleVariantPicker: ({ onSelect }: { onSelect: (v: any) => void }) => (
+  SingleVariantPicker: ({ onSelect }: { onSelect: (v: unknown) => void }) => (
     <button onClick={() => onSelect({ color_name: 'Azul', color_hex: '#00F' })}>
       Mock Variant
     </button>
@@ -62,20 +62,20 @@ const mockProduct: Product = {
   category: { id: 1, name: 'Brindes' },
   category_id: 'cat-uuid-1',
   supplier: { id: 'supp-1', name: 'Fornecedor A' },
-  tags: { 
-    publicoAlvo: ['Executivos'], 
-    datasComemorativas: [], 
-    endomarketing: [], 
-    ramo: [], 
-    nicho: [] 
+  tags: {
+    publicoAlvo: ['Executivos'],
+    datasComemorativas: [],
+    endomarketing: [],
+    ramo: [],
+    nicho: [],
   },
   priceUpdatedAt: new Date().toISOString(),
   leadTimeDays: 5,
-} as any;
+} as unknown as Product;
 
 const queryClient = new QueryClient();
 
-const renderPDP = (tags = {}) => {
+const renderPDP = () => {
   return render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
@@ -92,11 +92,10 @@ const renderPDP = (tags = {}) => {
             onOpenPackagingModal={() => {}}
             onOpenFutureStock={() => {}}
             onOpenSupplierComparison={() => {}}
-            tags={tags}
           />
         </TooltipProvider>
       </BrowserRouter>
-    </QueryClientProvider>
+    </QueryClientProvider>,
   );
 };
 
@@ -107,47 +106,51 @@ describe('B2B Product Detail Flow Integration', () => {
 
   it('Fluxo 1: Adicionar ao Carrinho (Quick Add)', async () => {
     renderPDP();
-    
+
     const cartButton = screen.getByText('Carrinho');
     fireEvent.click(cartButton);
 
     const variantButton = await screen.findByText('Mock Variant');
     fireEvent.click(variantButton);
-    
+
     const confirmAdd = await screen.findByTestId('product-card-add-to-cart');
     fireEvent.click(confirmAdd);
 
-    expect(mockAddToActiveCart).toHaveBeenCalledWith(expect.objectContaining({
-      product_id: 'prod-123',
-      quantity: 50,
-      color_name: 'Azul'
-    }));
+    expect(mockAddToActiveCart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        product_id: 'prod-123',
+        quantity: 50,
+        color_name: 'Azul',
+      }),
+    );
   });
 
   it('Fluxo 2: Navegação por Categorias', () => {
     renderPDP();
     const categoryBadge = screen.getByText('Brindes');
     fireEvent.click(categoryBadge.parentElement!);
-    
-    expect(mockNavigate).toHaveBeenCalledWith(expect.stringContaining('/filtros?categories=cat-uuid-1'));
+
+    expect(mockNavigate).toHaveBeenCalledWith(
+      expect.stringContaining('/filtros?categories=cat-uuid-1'),
+    );
   });
 
   it('Fluxo 3: Abrir Modais de Ação Rápida (Preços)', async () => {
     renderPDP();
-    
+
     const pricesButton = screen.getByText('Preços');
     fireEvent.click(pricesButton);
-    
+
     const title = await screen.findByText(/Tabela de Preços/i);
     expect(title).toBeDefined();
   });
 
   it('Fluxo 4: Verificação de Tags e Nichos (Indicação)', async () => {
-    renderPDP({ 'Público-Alvo': ['Executivos'] });
-    
+    renderPDP();
+
     const indicationButton = screen.getByText('Indicação');
     fireEvent.click(indicationButton);
-    
+
     const modalTitle = await screen.findByText(/Indicado para/i);
     expect(modalTitle).toBeDefined();
   });

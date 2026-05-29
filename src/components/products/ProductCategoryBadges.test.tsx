@@ -1,9 +1,9 @@
+import type { ComponentProps } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ProductCategoryBadges } from './ProductCategoryBadges';
 import { BrowserRouter } from 'react-router-dom';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-
 
 const mockNavigate = vi.fn();
 
@@ -25,8 +25,7 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-const defaultProps = {
-
+const defaultProps: ComponentProps<typeof ProductCategoryBadges> = {
   category: { id: 'cat-1', name: 'Squeeze' },
   groups: [
     { id: 'cat-2', name: 'Garrafas' },
@@ -47,10 +46,9 @@ const renderComponent = (props = defaultProps) => {
       <TooltipProvider>
         <ProductCategoryBadges {...props} />
       </TooltipProvider>
-    </BrowserRouter>
+    </BrowserRouter>,
   );
 };
-
 
 describe('ProductCategoryBadges', () => {
   beforeEach(() => {
@@ -68,7 +66,7 @@ describe('ProductCategoryBadges', () => {
     renderComponent();
     const mainCategory = screen.getByText('Squeeze').parentElement;
     if (mainCategory) fireEvent.click(mainCategory);
-    
+
     expect(mockNavigate).toHaveBeenCalledWith('/filtros?categories=uuid-123');
   });
 
@@ -76,7 +74,7 @@ describe('ProductCategoryBadges', () => {
     renderComponent({ ...defaultProps, categoryUuid: null });
     const mainCategory = screen.getByText('Squeeze').parentElement;
     if (mainCategory) fireEvent.click(mainCategory);
-    
+
     expect(mockNavigate).toHaveBeenCalledWith('/filtros?categories=cat-1');
   });
 
@@ -130,10 +128,10 @@ describe('ProductCategoryBadges', () => {
   });
 
   it('não deve renderizar nada se não houver categorias', () => {
-    const { container } = renderComponent({ 
-      ...defaultProps, 
-      category: null as any, 
-      groups: [] 
+    const { container } = renderComponent({
+      ...defaultProps,
+      category: null as unknown as ComponentProps<typeof ProductCategoryBadges>['category'],
+      groups: [],
     });
     expect(container.firstChild).toBeNull();
   });

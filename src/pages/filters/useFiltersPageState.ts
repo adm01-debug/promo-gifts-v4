@@ -487,6 +487,7 @@ export function useFiltersPageState() {
     hasCategoryFilter,
     categoryFilteredProductIds,
     isLoadingCategoryFilter,
+    categoryFilterError,
     hasColorFilter,
     colorFilteredProductIds,
     isLoadingColorFilter,

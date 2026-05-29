@@ -34,8 +34,10 @@ describe('ThemeInitializer', () => {
     const mockContext = {
       theme: 'light' as const,
       actualTheme: 'light' as const,
+      tooltipStyle: 'standard' as const,
       setTheme: vi.fn(),
       toggleTheme: vi.fn(),
+      setTooltipStyle: vi.fn(),
     };
 
     render(
@@ -54,8 +56,10 @@ describe('ThemeInitializer', () => {
         value={{
           theme: 'light',
           actualTheme: 'light',
+          tooltipStyle: 'standard',
           setTheme: vi.fn(),
           toggleTheme: vi.fn(),
+          setTooltipStyle: vi.fn(),
         }}
       >
         <ThemeInitializer />
@@ -70,8 +74,10 @@ describe('ThemeInitializer', () => {
         value={{
           theme: 'dark',
           actualTheme: 'dark',
+          tooltipStyle: 'standard',
           setTheme: vi.fn(),
           toggleTheme: vi.fn(),
+          setTooltipStyle: vi.fn(),
         }}
       >
         <ThemeInitializer />
