@@ -22,18 +22,15 @@ export function DiscontinuedItemsAlert({ items }: DiscontinuedItemsAlertProps) {
     queryFn: async () => {
       if (itemIds.length === 0) return [];
       try {
-        // Check against external DB via edge function
-        const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-          body: {
-            table: 'products',
-            operation: 'select',
-            filters: { id: `in.(${itemIds.join(',')})`, is_active: 'eq.false' },
-            select: 'id,name,sku',
-            limit: 50,
-          },
-        });
-        if (error || !data?.data) return [];
-        return data.data as Array<{ id: string; name: string; sku: string }>;
+        // REST native (bridge external-db-bridge foi descontinuada — 410 Gone)
+        const { data, error } = await supabase
+          .from('products' as never)
+          .select('id,name,sku')
+          .in('id', itemIds)
+          .eq('is_active', false)
+          .limit(50);
+        if (error || !data) return [];
+        return data as unknown as Array<{ id: string; name: string; sku: string }>;
       } catch {
         return [];
       }
