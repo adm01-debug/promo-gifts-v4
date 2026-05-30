@@ -1,15 +1,13 @@
 /**
  * External DB Bridge — Core invocation layer.
  *
- * ARCHITECTURE (Phase 4, 2026-05-30):
- *   1. invokeExternalDb: tries REST native FIRST (fast path, no kill-switch check).
- *      Only checks kill-switch if REST native is NOT eligible.
- *   2. invokeBatchBridge: on KillSwitchActiveError, decomposes batch into
- *      individual calls with concurrency cap (6 parallel max).
- *   3. Bridge code (invokeBridge, retry logic) kept for emergency rollback
- *      but is effectively dead code at 100% REST native.
+ * ARCHITECTURE (Phase 5, 2026-05-30):
+ *   1. invokeExternalDb: tries REST native FIRST (fast path).
+ *   2. Non-whitelisted tables: check kill-switch, try bridge with CORS guard.
+ *   3. Bridge CORS/network errors → graceful empty return (no console errors).
+ *   4. invokeBatchBridge: on kill-switch/CORS, decomposes to individual calls.
  *
- * Kill-switch state: enabled=false, rollout=100 → 100% REST native.
+ * Kill-switch: enabled=false, rollout=100 → 100% REST native.
  * Rollback: UPDATE system_kill_switches SET enabled = true WHERE switch_name = 'edge_external_db_bridge';
  */
 import { supabase } from '@/integrations/supabase/client';
@@ -97,7 +95,8 @@ function isCorsOrNetworkBridgeError(message: string): boolean {
   const lower = message.toLowerCase();
   return lower.includes('failed to send a request to the edge function') ||
     lower.includes('err_failed') || lower.includes('cors') ||
-    lower.includes('x-application-name') || lower.includes('preflight');
+    lower.includes('x-application-name') || lower.includes('preflight') ||
+    lower.includes('failed to fetch') || lower.includes('network');
 }
 
 export async function invokeBridge<T>(body: Record<string, unknown>): Promise<BridgeResponse<T>> {
@@ -124,7 +123,11 @@ export async function invokeBridge<T>(body: Record<string, unknown>): Promise<Br
     const { data, error } = await supabase.functions.invoke('external-db-bridge', { body, headers });
     if (error) {
       const parsed = await buildBridgeError(error);
-      if (isCorsOrNetworkBridgeError(parsed.message)) invalidateKillSwitchCache(KILL_SWITCH_NAME);
+      if (isCorsOrNetworkBridgeError(parsed.message)) {
+        invalidateKillSwitchCache(KILL_SWITCH_NAME);
+        // CORS/network errors are NOT retryable — bail immediately
+        throw new Error(parsed.message);
+      }
       if (parsed.retryable && attempt < BOOT_RETRY_ATTEMPTS) {
         const base = BOOT_INITIAL_BACKOFF_MS * Math.pow(2, attempt - 1);
         const jitter = Math.floor(Math.random() * 150);
@@ -159,10 +162,6 @@ function extractBatchResults(payload: unknown): BatchResult[] {
   return [];
 }
 
-/**
- * Decomposes batch queries into individual invokeExternalDb calls.
- * Uses concurrency limiter (Etapa 4) to prevent connection pool exhaustion.
- */
 async function decomposeBatchToIndividual(queries: BatchQuery[]): Promise<BatchResult[]> {
   logger.info(
     `[external-db] Decomposing ${queries.length} batch queries (concurrency=6)`,
@@ -211,34 +210,31 @@ export async function invokeBatchBridge(queries: BatchQuery[]): Promise<BatchRes
   } catch (err) {
     if (err instanceof KillSwitchActiveError) return decomposeBatchToIndividual(queries);
     if (err instanceof Error && isCorsOrNetworkBridgeError(err.message)) {
-      logger.warn('[external-db] Bridge unreachable, attempting batch decompose fallback');
+      logger.warn('[external-db] Bridge unreachable (CORS/network), decomposing to REST native');
       return decomposeBatchToIndividual(queries);
     }
     throw err;
   }
 }
 
-// ── CRUD (Etapa 5: REST native FIRST, kill-switch only on fallback) ─
+// ── CRUD ────────────────────────────────────────────────────────────
 
 /**
- * Smart routing (Phase 4, inverted path):
- *   1. If eligible → try REST native immediately (no kill-switch check)
- *   2. If REST native succeeds → return (fast path, zero overhead)
- *   3. If REST native fails OR not eligible → check kill-switch
- *   4. If bridge enabled → try bridge
- *   5. If bridge disabled → return empty
- *
- * This eliminates the kill-switch DB query for 100% of eligible requests.
+ * Smart routing:
+ *   1. If eligible → REST native (no kill-switch check, fast path)
+ *   2. If not eligible → check kill-switch
+ *   3. If bridge OFF → return empty silently
+ *   4. If bridge ON → try bridge WITH CORS guard
+ *   5. If bridge CORS/network error → return empty silently (no console spam)
  */
 export async function invokeExternalDb<T>(options: InvokeOptions): Promise<InvokeResult<T>> {
-  // Fast path: REST native first (no kill-switch check)
+  // Fast path: REST native (no overhead)
   if (isRestNativeEligible(options)) {
     const restResult = await tryExecuteRestNative<T>(options);
     if (restResult !== null) return restResult;
-    // REST native failed — fall through to bridge/kill-switch check
   }
 
-  // Slow path: check kill-switch, try bridge
+  // Slow path: check kill-switch
   let bridgeEnabled = true;
   try {
     const switchState = await getKillSwitchState(KILL_SWITCH_NAME);
@@ -248,19 +244,35 @@ export async function invokeExternalDb<T>(options: InvokeOptions): Promise<Invok
   }
 
   if (!bridgeEnabled) {
-    logger.warn(
-      `[external-db] Bridge OFF and REST native unavailable for ${options.table}/${options.operation}. Returning empty.`,
+    logger.debug(
+      `[external-db] Bridge OFF for ${options.table}/${options.operation}. Returning empty.`,
     );
     return { records: [], count: 0 };
   }
 
-  // Bridge path (legacy fallback)
-  const response = await invokeBridge<InvokeResult<T> | T>(options as unknown as Record<string, unknown>);
-  const payload = response.data;
-  if (options.operation !== 'select' && payload && typeof payload === 'object' && !Array.isArray(payload) && !('records' in payload)) {
-    return { records: [payload as T], count: 1 };
+  // Bridge path — wrapped in try/catch to prevent CORS errors from
+  // polluting the console when the bridge is unreachable (e.g. Lovable preview,
+  // stale kill-switch cache, or bridge truly down).
+  try {
+    const response = await invokeBridge<InvokeResult<T> | T>(options as unknown as Record<string, unknown>);
+    const payload = response.data;
+    if (options.operation !== 'select' && payload && typeof payload === 'object' && !Array.isArray(payload) && !('records' in payload)) {
+      return { records: [payload as T], count: 1 };
+    }
+    return payload as InvokeResult<T>;
+  } catch (err) {
+    if (err instanceof KillSwitchActiveError) {
+      return { records: [], count: 0 };
+    }
+    if (err instanceof Error && isCorsOrNetworkBridgeError(err.message)) {
+      logger.debug(
+        `[external-db] Bridge CORS/network error for ${options.table} — returning empty.`,
+      );
+      return { records: [], count: 0 };
+    }
+    // Non-CORS errors still propagate (auth errors, data errors, etc.)
+    throw err;
   }
-  return payload as InvokeResult<T>;
 }
 
 export async function invokeExternalDbSingle<T>(options: InvokeOptions): Promise<T> {
@@ -270,5 +282,17 @@ export async function invokeExternalDbSingle<T>(options: InvokeOptions): Promise
 }
 
 export async function invokeExternalDbDelete(table: string, id: string): Promise<void> {
-  await invokeBridge<{ success: boolean; deleted_id: string }>({ table, operation: 'delete', id });
+  try {
+    await invokeBridge<{ success: boolean; deleted_id: string }>({ table, operation: 'delete', id });
+  } catch (err) {
+    if (err instanceof KillSwitchActiveError) {
+      logger.warn(`[external-db] Delete blocked by kill-switch for ${table}/${id}`);
+      return;
+    }
+    if (err instanceof Error && isCorsOrNetworkBridgeError(err.message)) {
+      logger.warn(`[external-db] Delete CORS error for ${table}/${id}`);
+      return;
+    }
+    throw err;
+  }
 }
