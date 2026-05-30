@@ -66,4 +66,4 @@ export const GenerateButton = memo(function GenerateButton({
       </Button>
     </motion.div>
   );
-}
+});

@@ -335,4 +335,4 @@ export const MockupClientSelector = memo(function MockupClientSelector({
       </AnimatePresence>
     </div>
   );
-}
+});

@@ -84,4 +84,4 @@ export const AccessSecurityManager = memo(function AccessSecurityManager() {
       </Tabs>
     </div>
   );
-}
+});

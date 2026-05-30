@@ -86,4 +86,4 @@ export const DiscountApprovalHeaderBadge = memo(function DiscountApprovalHeaderB
       </TooltipContent>
     </Tooltip>
   );
-}
+});

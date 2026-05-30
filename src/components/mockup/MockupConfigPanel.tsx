@@ -419,4 +419,4 @@ function MobileCollapsibleSection({
       </div>
     </div>
   );
-}
+});

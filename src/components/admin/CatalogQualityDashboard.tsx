@@ -127,4 +127,4 @@ export const CatalogQualityDashboard = memo(function CatalogQualityDashboard() {
       </Card>
     </div>
   );
-}
+});

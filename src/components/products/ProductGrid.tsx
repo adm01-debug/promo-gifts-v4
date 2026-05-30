@@ -289,4 +289,4 @@ export const ProductGrid = React.memo(function ProductGrid({
       )}
     </div>
   );
-}
+});

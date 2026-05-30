@@ -106,4 +106,4 @@ export const MockupBeforeAfter = memo(function MockupBeforeAfter({ beforeImage, 
       </Badge>
     </div>
   );
-}
+});

@@ -136,4 +136,4 @@ export const QuoteRowQuickActions = memo(function QuoteRowQuickActions({
       )}
     </div>
   );
-}
+});

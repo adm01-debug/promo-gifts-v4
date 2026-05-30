@@ -180,4 +180,4 @@ export const DiscountApprovalQueue = memo(function DiscountApprovalQueue() {
       })}
     </div>
   );
-}
+});

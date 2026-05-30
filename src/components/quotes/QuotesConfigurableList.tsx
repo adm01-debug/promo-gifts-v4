@@ -505,4 +505,4 @@ export const QuotesConfigurableList = React.memo(function QuotesConfigurableList
       </div>
     </div>
   );
-}
+});

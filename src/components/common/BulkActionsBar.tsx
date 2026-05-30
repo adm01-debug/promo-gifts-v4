@@ -81,4 +81,4 @@ export const BulkActionsBar = memo(function BulkActionsBar({
       )}
     </AnimatePresence>
   );
-}
+});
