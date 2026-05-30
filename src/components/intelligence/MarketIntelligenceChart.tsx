@@ -33,14 +33,15 @@ import {
 import { cn } from '@/lib/utils';
 import { KpiCard } from '@/components/ui/kpi-card';
 import {
+  formatTooltipNumber,
+  formatTooltipPercent,
+} from '@/lib/format-utils';
+import {
   useMarketIntelligenceMacro,
-  type MacroSupplierMetrics,
-  type MacroMarketPoint,
-  type MacroMarketKpis,
-} from '@/hooks/intelligence';
-import { useSupplierNames } from '@/hooks/products';
+...
 import { safeParseDateForChart } from '@/lib/stock-chart-utils';
 import { SupplierChartFilter } from '@/components/products/SupplierChartFilter';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Props {
   days?: number;
@@ -293,7 +294,16 @@ export function MarketIntelligenceChart({
             value={avgDepletion.toFixed(1)}
             sub="un/dia (média 7d)"
             highlight={avgDepletion >= 20}
-            tooltip={`Velocidade média de saída do produto no mercado. Atualmente em ${avgDepletion > 0 ? avgDepletion.toFixed(1) + ' un' : '---'} por dia. Exemplo: se o cliente quer 500 unidades e a saída é 10 un/dia, o estoque dura 50 dias.`}
+            tooltip={isLoading ? undefined : (
+              <>
+                Velocidade média de saída: <span className="font-bold">{formatTooltipNumber(avgDepletion, 1)} un/dia</span>.
+                <br /><br />
+                <span className="text-primary font-semibold italic">Dica de Argumentação:</span>
+                {avgDepletion > 50 
+                  ? " 'Este produto está voando! A saída média é altíssima, se não reservarmos agora, o lote atual acaba em dias.'" 
+                  : " 'A saída é constante. Ideal para manter o giro do seu estoque sem riscos.'"}
+              </>
+            )}
           />
           <KpiCard
             icon={BarChart3}
@@ -301,7 +311,16 @@ export function MarketIntelligenceChart({
             value={demandLevel}
             sub={trendLabel}
             customValueColor={demandColor}
-            tooltip={`Momento do produto: ${demandLevel || 'Indisponível'}. Calculado pelo volume e aceleração recente. Exemplo: Demanda 'Muito Alta' com tendência '+20%' indica urgência crítica no fechamento.`}
+            tooltip={isLoading ? undefined : (
+              <>
+                Momento atual: <span className="font-bold">{demandLevel || "Sem dados"}</span>.
+                <br /><br />
+                <span className="text-primary font-semibold italic">Cenário Prático:</span>
+                {demandLevel === 'Muito Alta' || demandLevel === 'Alta'
+                  ? " Demanda aquecida. Ótimo momento para vender kits maiores, pois a procura final está garantida."
+                  : " Demanda estável. Momento seguro para repor estoque base com previsibilidade."}
+              </>
+            )}
           />
           <KpiCard
             icon={trendRatio > 1.2 ? TrendingUp : trendRatio < 0.8 ? TrendingDown : BarChart3}
@@ -315,14 +334,34 @@ export function MarketIntelligenceChart({
                   : 'demanda estável'
             }
             highlight={trendRatio > 1.3}
-            tooltip={`Variação da velocidade de saída: ${trendPercent !== undefined ? (trendPercent >= 0 ? '+' : '') + trendPercent + '%' : '---'}. Compara os últimos 7 dias com a média mensal. Exemplo: +30% significa que a procura está subindo rapidamente.`}
+            tooltip={isLoading ? undefined : (
+              <>
+                Variação da procura: <span className="font-bold">{formatTooltipPercent(trendPercent)}</span>.
+                <br /><br />
+                <span className="text-primary font-semibold italic">Como usar:</span>
+                {trendPercent > 15 
+                  ? " 'A procura subiu " + trendPercent + "% esta semana. Recomendo fechar logo antes que o preço suba ou o estoque esgote.'" 
+                  : " 'O mercado está estável, garantindo que o preço que estou te passando hoje é o melhor possível.'"}
+              </>
+            )}
           />
           <KpiCard
             icon={Package}
             label="Disponível"
             value={(kpis?.totalCurrentStock ?? 0).toLocaleString('pt-BR')}
             sub={supplierText}
-            tooltip={`Total de ${kpis?.totalCurrentStock ? kpis.totalCurrentStock.toLocaleString('pt-BR') + ' un' : '0 un'} em estoque. No ritmo de ${avgDepletion > 0 ? avgDepletion.toFixed(1) : '---'} un/dia, o estoque global dura aprox. ${avgDepletion > 0 ? Math.round((kpis?.totalCurrentStock ?? 0) / avgDepletion) : '---'} dias.`}
+            tooltip={isLoading ? undefined : (
+              <>
+                Estoque global: <span className="font-bold">{formatTooltipNumber(kpis?.totalCurrentStock, 0)} un</span>.
+                <br />
+                Duração estimada: <span className="font-bold">{avgDepletion > 0 ? Math.round((kpis?.totalCurrentStock ?? 0) / avgDepletion) : "---"} dias</span>.
+                <br /><br />
+                <span className="text-primary font-semibold italic">Argumento de Escassez:</span>
+                {(kpis?.totalCurrentStock ?? 0) < (avgDepletion * 15)
+                  ? " 'O estoque total no mercado está abaixo da segurança (menos de 15 dias). Garanta o seu antes da ruptura.'"
+                  : " 'Temos estoque saudável hoje, mas com a tendência atual, o ideal é programar a entrega para os próximos 30 dias.'"}
+              </>
+            )}
           />
         </div>
 
