@@ -31,6 +31,15 @@ export type {
   Operation,
 } from './bridge';
 
+// Silent-empty diagnostics (Etapa 1) — source for Etapa 2 telemetry + console.
+export {
+  reportSilentEmpty,
+  getSilentEmptyReport,
+  getSilentEmptySummary,
+  resetSilentEmptyReport,
+} from './silent-empty-report';
+export type { SilentEmptyEvent, SilentEmptyReason } from './silent-empty-report';
+
 // Batch Import
 export { checkExistingSkus, executeBatchImport, generateErrorReportCSV } from './batch-import';
 export type { ImportMode, ImportRow, BatchImportProgress, BatchImportResult } from './batch-import';

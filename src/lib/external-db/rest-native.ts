@@ -11,6 +11,7 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import { reportSilentEmpty } from './silent-empty-report';
 import type { InvokeOptions, InvokeResult } from './bridge';
 
 // ── Whitelist ────────────────────────────────────────────────────────
@@ -136,7 +137,7 @@ function mapRows(table: string, rows: unknown[]): unknown[] {
   });
 }
 
-// ── Metrics (Etapa 6) ───────────────────────────────────────────────
+// ── Metrics (Etapa 6) ─────────────────────────────────────────────────
 
 interface RestNativeMetrics {
   success: number;
@@ -398,9 +399,17 @@ export async function executeRestNativeSelect<T>(options: InvokeOptions): Promis
 /**
  * Try REST native with 1 retry on transient errors (Etapa 3).
  * Tracks success/fail metrics (Etapa 6).
+ *
+ * Etapa 1: on a TERMINAL failure (deterministic error or transient that never
+ * recovered), classify the silent-empty. When the bridge is OFF this is the end
+ * of the line → reportSilentEmpty('rest_error') (single source for case (b), at
+ * error level so it is visible in PROD). When the bridge is ON we will fall back
+ * to it, so we only emit a DEV debug line and let the bridge path decide.
+ * `ctx.bridgeEnabled` is supplied by the caller, which read the kill-switch once.
  */
 export async function tryExecuteRestNative<T>(
   options: InvokeOptions,
+  ctx?: { bridgeEnabled?: boolean },
 ): Promise<InvokeResult<T> | null> {
   if (!isRestNativeEligible(options)) return null;
 
@@ -431,9 +440,22 @@ export async function tryExecuteRestNative<T>(
       metrics.fail++;
       metrics.lastError = msg;
       metrics.lastErrorAt = Date.now();
-      logger.warn(
-        `[rest-native] failed for table=${options.table} after ${attempt + 1} attempt(s): ${msg}`,
-      );
+      // Etapa 1: single source for case (b). Avoid double-logging — the caller
+      // (invokeExternalDb) will NOT re-emit for eligible-select errors.
+      if (ctx?.bridgeEnabled) {
+        // Bridge ON → request will fall back to the bridge; do not alarm.
+        logger.debug(
+          `[rest-native] error for table=${options.table} after ${attempt + 1} attempt(s), ` +
+          `falling back to bridge: ${msg}`,
+        );
+      } else {
+        reportSilentEmpty({
+          reason: 'rest_error',
+          table: options.table,
+          operation: options.operation,
+          message: msg,
+        });
+      }
       return null;
     }
   }

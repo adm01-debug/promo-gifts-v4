@@ -15,6 +15,7 @@ import { logger } from '@/lib/logger';
 import { emitBridgeStatus, isColdStartSignal } from './bridge-status-events';
 import { getKillSwitchState, KillSwitchActiveError, invalidateKillSwitchCache } from './kill-switch-client';
 import { tryExecuteRestNative, isRestNativeEligible, runWithConcurrency } from './rest-native';
+import { reportSilentEmpty } from './silent-empty-report';
 
 const KILL_SWITCH_NAME = 'edge_external_db_bridge';
 
@@ -226,20 +227,16 @@ export async function invokeBatchBridge(queries: BatchQuery[]): Promise<BatchRes
 
 /**
  * Smart routing:
- *   1. If eligible → REST native (no kill-switch check, fast path)
+ *   1. If eligible → REST native (fast path)
  *   2. If not eligible → check kill-switch
- *   3. If bridge OFF → return empty silently
+ *   3. If bridge OFF → return empty (now diagnosed via reportSilentEmpty)
  *   4. If bridge ON → try bridge WITH CORS guard
  *   5. If bridge CORS/network error → return empty silently (no console spam)
  */
 export async function invokeExternalDb<T>(options: InvokeOptions): Promise<InvokeResult<T>> {
-  // Fast path: REST native (no overhead)
-  if (isRestNativeEligible(options)) {
-    const restResult = await tryExecuteRestNative<T>(options);
-    if (restResult !== null) return restResult;
-  }
-
-  // Slow path: check kill-switch
+  // Read the kill-switch up front (cached, cheap, fail-open). Etapa 1 needs the
+  // bridge state BEFORE the REST-native call so a REST failure can be classified
+  // correctly: terminal silent-empty (bridge OFF) vs. will-fall-back (bridge ON).
   let bridgeEnabled = true;
   try {
     const switchState = await getKillSwitchState(KILL_SWITCH_NAME);
@@ -248,10 +245,33 @@ export async function invokeExternalDb<T>(options: InvokeOptions): Promise<Invok
     bridgeEnabled = true; // fail-open
   }
 
+  // Fast path: REST native.
+  if (isRestNativeEligible(options)) {
+    const restResult = await tryExecuteRestNative<T>(options, { bridgeEnabled });
+    if (restResult !== null) return restResult;
+    // null here == eligible SELECT that errored. When bridge is OFF,
+    // tryExecuteRestNative already called reportSilentEmpty('rest_error') (case b),
+    // so we must NOT re-emit below. When bridge is ON, it logged a debug line and
+    // we fall through to the bridge path.
+  }
+
   if (!bridgeEnabled) {
-    logger.debug(
-      `[external-db] Bridge OFF for ${options.table}/${options.operation}. Returning empty.`,
-    );
+    if (options.operation !== 'select') {
+      // (c) write became a no-op while bridge is OFF — actionable, error level.
+      reportSilentEmpty({
+        reason: 'write_bridge_off',
+        table: options.table,
+        operation: options.operation,
+      });
+    } else if (!isRestNativeEligible(options)) {
+      // (a) SELECT on a table with no REST-native path — config gap, warn level.
+      reportSilentEmpty({
+        reason: 'table_not_whitelisted',
+        table: options.table,
+        operation: options.operation,
+      });
+    }
+    // (b) eligible-SELECT error: already reported inside tryExecuteRestNative.
     return { records: [], count: 0 };
   }
 
