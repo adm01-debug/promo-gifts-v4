@@ -90,6 +90,34 @@ const SEARCH_COLUMNS: Record<string, string> = {
   ramo_atividade: 'name',
 };
 
+/**
+ * Coluna de busca textual para uma tabela (considerando TABLE_ALIASES), ou null
+ * se a tabela não tiver coluna de busca configurada.
+ *
+ * NÃO usa fallback para 'name' (A1): tabelas como product_images / product_materials /
+ * product_kit_components / tabela_preco_gravacao_oficial_faixa / v_print_area_techniques_public
+ * NÃO possuem coluna 'name', então um ilike('name', ...) gerava 400 → (bridge OFF)
+ * vazio silencioso. Quem não tem coluna simplesmente NÃO aplica o ilike.
+ */
+function resolveSearchColumn(options: Pick<InvokeOptions, 'table'>): string | null {
+  const resolvedTable = TABLE_ALIASES[options.table] ?? options.table;
+  return SEARCH_COLUMNS[resolvedTable] ?? SEARCH_COLUMNS[options.table] ?? null;
+}
+
+/**
+ * Normaliza filters._search → termo de busca efetivo.
+ * Retorna o termo (trim) somente se for string não vazia; caso contrário undefined
+ * ('' / só-whitespace / não-string = "sem busca"). Evita (F2) que um _search vazio
+ * derrube a query e evita ilike('%   %').
+ */
+function normalizeSearchTerm(filters?: Record<string, unknown>): string | undefined {
+  if (!filters || !('_search' in filters)) return undefined;
+  const raw = filters._search;
+  if (typeof raw !== 'string') return undefined;
+  const trimmed = raw.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
 // ── Adaptador de colunas para tabelas SSOT com nomes em PT (ONDA-17) ──
 // Algumas tabelas SSOT usam colunas em portugues. O bridge (morto) fazia este
 // remap; replicado aqui ESCOPADO por tabela. Tabelas fora do mapa passam intactas.
@@ -273,10 +301,9 @@ export function isRestNativeEligible(options: InvokeOptions): boolean {
   if (!REST_NATIVE_SAFE_TABLES.has(options.table) && !REST_NATIVE_SAFE_TABLES.has(resolvedTable)) {
     return false;
   }
-  if (options.filters && '_search' in options.filters) {
-    const searchCol = SEARCH_COLUMNS[resolvedTable] ?? SEARCH_COLUMNS[options.table];
-    if (!searchCol) return false;
-  }
+  // _search é BEST-EFFORT (A1): se a tabela tiver coluna de busca, executeRestNativeSelect
+  // aplica o ilike; se não tiver, serve a query base SEM ilike. A presença de _search
+  // NUNCA torna uma tabela whitelisted inelegível — esse era o trap de vazio silencioso.
   return true;
 }
 
@@ -344,14 +371,25 @@ function applyFilters(query: RestQuery, filters?: Record<string, unknown>): Rest
 export async function executeRestNativeSelect<T>(options: InvokeOptions): Promise<InvokeResult<T>> {
   const tableName = TABLE_ALIASES[options.table] ?? options.table;
   const filters = options.filters ? { ...options.filters } : undefined;
-  let searchTerm: string | undefined;
-  if (filters && '_search' in filters) {
-    searchTerm = typeof filters._search === 'string' ? filters._search.trim() : undefined;
-    delete filters._search;
-  }
+  // Extrai e REMOVE _search ANTES de qualquer varredura de filtros (F3): _search
+  // nunca é uma coluna real, e um _search:[] não pode ser confundido com o trap
+  // de array vazio (A2) abaixo.
+  const searchTerm = normalizeSearchTerm(filters);
+  if (filters && '_search' in filters) delete filters._search;
 
   if (!isRestNativeEligible(options)) {
     throw new Error(`rest-native: not eligible for table=${options.table} op=${options.operation}`);
+  }
+
+  // A2: um filtro array VAZIO significa `coluna IN ()` → zero linhas por definição.
+  // Curto-circuita SEM ir à rede. Isso elimina o sentinel '__no_match__' que dava
+  // 400 (invalid input syntax) em colunas uuid/numéricas → (bridge OFF) vazio
+  // silencioso. É um vazio CORRETO (semântica do IN vazio), então NÃO é silent-empty
+  // e NÃO chama reportSilentEmpty. A precedência sobre _search (F4) é natural: o
+  // short-circuit retorna antes de montar a query.
+  if (filters && Object.values(filters).some((v) => Array.isArray(v) && v.length === 0)) {
+    logger.debug(`[rest-native] empty IN() filter on ${tableName} → short-circuit empty (no network)`);
+    return { records: [], count: 0 };
   }
 
   const countMode = options.countMode ?? 'none';
@@ -370,8 +408,18 @@ export async function executeRestNativeSelect<T>(options: InvokeOptions): Promis
   query = applyFilters(query, remapFilters(tableName, filters));
 
   if (searchTerm) {
-    const searchCol = SEARCH_COLUMNS[tableName] ?? SEARCH_COLUMNS[options.table] ?? 'name';
-    query = query.ilike(searchCol, `%${searchTerm}%`);
+    const searchCol = resolveSearchColumn(options);
+    if (searchCol) {
+      query = query.ilike(searchCol, `%${searchTerm}%`);
+    } else {
+      // A1: tabela whitelisted SEM coluna de busca → ignora o _search e serve a
+      // query base, em vez de gerar ilike('name') → 400 → vazio silencioso.
+      // WARN para ficar visível em diagnóstico (e sinalizar config faltante).
+      logger.warn(
+        `[rest-native] _search ignorado em '${tableName}': sem coluna de busca configurada ` +
+        `em SEARCH_COLUMNS. Servindo query base (termo de ${searchTerm.length} chars).`,
+      );
+    }
   }
 
   if (options.orderBy) {
