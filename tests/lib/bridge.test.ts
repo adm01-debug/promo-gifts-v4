@@ -3,27 +3,41 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     auth: {
-      getSession: vi.fn().mockResolvedValue({
-        data: { session: { access_token: 'mock-token' } },
-      }),
+      getSession: vi.fn().mockResolvedValue({ data: { session: { access_token: 'mock-token' } } }),
     },
     functions: {
       invoke: vi.fn(),
-    },
-    auth: {
-      getSession: vi.fn().mockResolvedValue({ data: { session: { access_token: 'mock-token' } } }),
     },
   },
 }));
 
 vi.mock('@/lib/logger', () => ({
-  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
+
+// Etapa 4: bridge routing is tested in isolation from the PostgREST write
+// mechanics. executeRestNativeWrite is exercised end-to-end in
+// rest-native-write.test.ts; here we only assert that invokeExternalDb /
+// invokeExternalDbDelete ROUTE writes/deletes to it for whitelisted tables.
+vi.mock('@/lib/external-db/rest-native-write', () => {
+  const WRITABLE = new Set([
+    'products', 'suppliers', 'product_variants', 'product_images', 'product_videos',
+    'product_kit_components', 'product_materials', 'print_area_techniques',
+    'tabela_preco_gravacao_oficial', 'tabela_preco_gravacao_oficial_faixa', 'tecnicas_gravacao',
+    'tecnica_gravacao', 'customization_price_tiers', 'personalization_techniques',
+  ]);
+  return {
+    isRestNativeWriteEligible: vi.fn((t: string) => WRITABLE.has(t)),
+    executeRestNativeWrite: vi.fn(async () => ({ records: [{ id: 'new-1', name: 'Test' }], count: 1 })),
+  };
+});
 
 import { invokeBridge, invokeExternalDb, invokeExternalDbDelete, invokeBatchBridge } from '@/lib/external-db/bridge';
 import { supabase } from '@/integrations/supabase/client';
+import { executeRestNativeWrite } from '@/lib/external-db/rest-native-write';
 
 const mockInvoke = vi.mocked(supabase.functions.invoke);
+const mockWrite = vi.mocked(executeRestNativeWrite);
 
 describe('invokeBridge', () => {
   beforeEach(() => {
@@ -33,7 +47,7 @@ describe('invokeBridge', () => {
   it('throws if table is missing for non-batch operations', async () => {
     await expect(
       invokeBridge({ operation: 'select' })
-    ).rejects.toThrow('tabela não informada');
+    ).rejects.toThrow('tabela nao informada');
   });
 
   it('allows batch operations without table', async () => {
@@ -47,12 +61,10 @@ describe('invokeBridge', () => {
   });
 
   it('retries on boot errors', async () => {
-    // First call fails with 502
     mockInvoke.mockResolvedValueOnce({
       data: null,
       error: { message: 'Bad Gateway', context: { status: 502 } },
     });
-    // Second call succeeds
     mockInvoke.mockResolvedValueOnce({
       data: { success: true, data: { records: [], count: 0 } },
       error: null,
@@ -90,39 +102,43 @@ describe('invokeBridge', () => {
 
   it('throws on success:false response', async () => {
     mockInvoke.mockResolvedValue({
-      data: { success: false, error: 'Tabela não encontrada' },
+      data: { success: false, error: 'Tabela nao encontrada' },
       error: null,
     });
 
     await expect(
       invokeBridge({ table: 'nonexistent', operation: 'select' })
-    ).rejects.toThrow('Tabela não encontrada');
+    ).rejects.toThrow('Tabela nao encontrada');
   });
 });
 
-describe('invokeExternalDb', () => {
+describe('invokeExternalDb — write routing (Etapa 4)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('wraps single non-record responses for mutations', async () => {
-    mockInvoke.mockResolvedValue({
-      data: { success: true, data: { id: 'new-1', name: 'Test' } },
-      error: null,
-    });
-
+  it('routes eligible mutations to the REST-native write path (not the bridge)', async () => {
     const result = await invokeExternalDb({
       table: 'products',
       operation: 'insert',
       data: { name: 'Test' },
     });
 
+    expect(mockWrite).toHaveBeenCalledTimes(1);
     expect(result.records).toHaveLength(1);
     expect(result.records[0]).toEqual({ id: 'new-1', name: 'Test' });
     expect(result.count).toBe(1);
+    expect(mockInvoke).not.toHaveBeenCalled();
   });
 
-  it('passes through records array for select', async () => {
+  it('propagates write errors loudly (no silent no-op)', async () => {
+    mockWrite.mockRejectedValueOnce(new Error('new row violates row-level security policy'));
+    await expect(
+      invokeExternalDb({ table: 'products', operation: 'update', id: 'p1', data: { name: 'x' } })
+    ).rejects.toThrow('row-level security');
+  });
+
+  it('passes through records array for select (REST native, bridge fallback)', async () => {
     mockInvoke.mockResolvedValue({
       data: { success: true, data: { records: [{ id: '1' }, { id: '2' }], count: 2 } },
       error: null,
@@ -135,6 +151,7 @@ describe('invokeExternalDb', () => {
 
     expect(result.records).toHaveLength(2);
     expect(result.count).toBe(2);
+    expect(mockWrite).not.toHaveBeenCalled();
   });
 });
 
@@ -143,17 +160,10 @@ describe('invokeExternalDbDelete', () => {
     vi.clearAllMocks();
   });
 
-  it('calls bridge with delete operation', async () => {
-    mockInvoke.mockResolvedValue({
-      data: { success: true, data: { deleted_id: 'del-1' } },
-      error: null,
-    });
-
+  it('routes delete to the REST-native write path for whitelisted tables', async () => {
     await invokeExternalDbDelete('products', 'del-1');
-    expect(mockInvoke).toHaveBeenCalledWith('external-db-bridge', {
-      body: { table: 'products', operation: 'delete', id: 'del-1' },
-      headers: { Authorization: 'Bearer mock-token' },
-    });
+    expect(mockWrite).toHaveBeenCalledWith({ table: 'products', operation: 'delete', id: 'del-1' });
+    expect(mockInvoke).not.toHaveBeenCalled();
   });
 });
 
@@ -192,20 +202,6 @@ describe('invokeBatchBridge', () => {
       operation: 'select' as const,
     }));
 
-    mockInvoke.mockResolvedValue({
-      data: {
-        success: true,
-        data: {
-          results: Array.from({ length: 10 }, () => ({
-            success: true,
-            data: { records: [], count: 0 },
-          })),
-        },
-      },
-      error: null,
-    });
-
-    // Will need 2 calls: 10 + 5
     mockInvoke.mockResolvedValueOnce({
       data: {
         success: true,
