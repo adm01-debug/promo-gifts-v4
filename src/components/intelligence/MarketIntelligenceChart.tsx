@@ -310,7 +310,7 @@ export function MarketIntelligenceChart({
                     ? ` "Este produto está voando com ${formatTooltipNumber(avgDepletion, 1)} saídas/dia! Recomendo garantir o lote agora para não perder o timing de venda."` 
                     : avgDepletion > 0
                       ? ` "Temos um giro saudável de ${formatTooltipNumber(avgDepletion, 1)} unidades/dia. É um item de segurança para o seu estoque base."`
-                      : " 'Sem registros de saída recente no mercado. Pode ser uma oportunidade de nicho ou aguardando reposição.'"}
+                      : " Sem registros de saída recente no mercado. Pode ser uma oportunidade de nicho ou aguardando reposição."}
                 </>
               )
             }
