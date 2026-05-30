@@ -307,10 +307,10 @@ export function MarketIntelligenceChart({
                   <br /><br />
                   <span className="text-primary font-semibold italic">Dica de Argumentação:</span>
                   {avgDepletion > 30 
-                    ? " 'Este produto está com altíssima rotatividade no mercado. Recomendo garantir o estoque agora para não perder vendas.'" 
+                    ? ` "Este produto está voando com ${formatTooltipNumber(avgDepletion, 1)} saídas/dia! Recomendo garantir o lote agora para não perder o timing de venda."` 
                     : avgDepletion > 0
-                      ? " 'A saída é constante e saudável. É um item de giro garantido para o seu PDV.'"
-                      : " 'Sem registros de saída recente no mercado.'"}
+                      ? ` "Temos um giro saudável de ${formatTooltipNumber(avgDepletion, 1)} unidades/dia. É um item de segurança para o seu estoque base."`
+                      : " 'Sem registros de saída recente no mercado. Pode ser uma oportunidade de nicho ou aguardando reposição.'"}
                 </>
               )
             }
@@ -334,10 +334,10 @@ export function MarketIntelligenceChart({
                   <br /><br />
                   <span className="text-primary font-semibold italic">Cenário Prático:</span>
                   {demandLevel === 'Muito Alta' || demandLevel === 'Alta'
-                    ? " Demanda aquecida! Ótimo momento para oferecer combos ou kits promocionais, aproveitando o fluxo de clientes."
+                    ? ` "Interesse ${demandLevel} detectado! Ótimo momento para combos, aproveitando que a busca orgânica está no pico."`
                     : demandLevel === 'Moderada'
-                      ? " Demanda estável. Momento ideal para manter o estoque de segurança e focar em atendimento de qualidade."
-                      : " Demanda baixa. Foco em ações de marketing ou cross-selling para reaquecer o interesse."}
+                      ? " \"Demanda equilibrada. Momento ideal para manter o estoque de segurança e focar em vendas consultivas.\""
+                      : " \"Interesse em fase inicial ou baixa. Foco em ações de marketing para despertar o desejo no seu cliente.\""}
                 </>
               )
             }
@@ -367,10 +367,10 @@ export function MarketIntelligenceChart({
                   <br /><br />
                   <span className="text-primary font-semibold italic">Como agir:</span>
                   {trendPercent > 15 
-                    ? " 'A procura subiu significativamente (" + trendPercent + "%) esta semana. Se demorarmos, o preço pode subir ou o estoque esgotar rápido.'" 
+                    ? ` "A procura subiu ${formatTooltipPercent(trendPercent)} esta semana! Se esperarmos, o preço pode subir ou o lote esgotar rápido."` 
                     : trendPercent < -15
-                      ? " 'Notamos uma leve queda na busca. Talvez seja o momento de negociarmos uma condição especial para você se destacar.'"
-                      : " 'O mercado está equilibrado, o que nos dá previsibilidade de preço e entrega para o seu pedido.'"}
+                      ? ` "Notamos um recuo de ${formatTooltipPercent(trendPercent)}. É a janela perfeita para negociarmos uma condição agressiva."`
+                      : " \"O mercado segue estável. Temos previsibilidade total de custos e prazos para o seu pedido hoje.\""}
                 </>
               )
             }
@@ -395,8 +395,8 @@ export function MarketIntelligenceChart({
                   <br /><br />
                   <span className="text-primary font-semibold italic">Gatilho de Venda:</span>
                   {avgDepletion > 0 && (kpis?.totalCurrentStock ?? 0) / avgDepletion < 15
-                    ? " 'Atenção: O estoque total do mercado dura menos de 15 dias. Precisamos garantir sua reserva agora para evitar ruptura.'"
-                    : " 'Temos estoque disponível para pronta entrega, mas a demanda estável sugere que não devemos esperar muito para repor.'" }
+                    ? ` "Urgente: Restam só ${formatTooltipNumber(kpis?.totalCurrentStock, 0)} unidades no mercado (menos de 15 dias). Garanta sua cota!"`
+                    : ` "Estoque de ${formatTooltipNumber(kpis?.totalCurrentStock, 0)} un disponível. A tendência sugere que este é o momento seguro para reposição."` }
                 </>
               )
             }
