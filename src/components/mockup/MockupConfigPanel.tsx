@@ -359,7 +359,7 @@ export const MockupConfigPanel = memo(function MockupConfigPanel({
       </CardContent>
     </Card>
   );
-}
+});
 
 // ─── Mobile Collapsible Section ──────────────────────────────────────
 
@@ -419,4 +419,4 @@ function MobileCollapsibleSection({
       </div>
     </div>
   );
-});
+}

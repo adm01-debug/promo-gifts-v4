@@ -1,37 +1,32 @@
 /**
- * Consulta ramo_atividade via REST native (2026-05-30).
+ * useProdutoRamoAtividade — busca os ramos de atividade vinculados a um produto.
+ * Consulta o banco externo Promobrind via external-db-bridge (SSOT).
  */
 import { useQuery } from '@tanstack/react-query';
-import { invokeExternalDb } from '@/lib/external-db';
-import { logger } from '@/lib/logger';
+import { supabase } from '@/integrations/supabase/client';
 
-export interface ProdutoRamoAtividade {
-  id: string;
-  name: string;
-  description?: string;
-  is_active?: boolean;
-  [key: string]: unknown;
+export interface ProdutoRamo {
+  ramo_id: string;
+  ramo_nome: string;
+  segmento_id?: string | null;
+  segmento_nome?: string | null;
 }
 
-export function useProdutoRamoAtividade() {
+export function useProdutoRamoAtividade(productId: string | null | undefined) {
   return useQuery({
-    queryKey: ['produto-ramo-atividade'],
-    queryFn: async (): Promise<ProdutoRamoAtividade[]> => {
-      try {
-        const result = await invokeExternalDb<ProdutoRamoAtividade>({
-          table: 'ramo_atividade',
+    queryKey: ['produto-ramo-atividade', productId],
+    enabled: !!productId,
+    queryFn: async (): Promise<ProdutoRamo[]> => {
+      const { data, error } = await supabase.functions.invoke('external-db-bridge', {
+        body: {
           operation: 'select',
-          orderBy: { column: 'name', ascending: true },
-          limit: 100,
-        });
-        return result.records || [];
-      } catch (e) {
-        logger.warn('[useProdutoRamoAtividade] Failed:', (e as Error).message);
-        return [];
-      }
+          table: 'produto_ramo_atividade',
+          filters: { product_id: productId },
+        },
+      });
+      if (error) throw error;
+      return (data?.rows || []) as ProdutoRamo[];
     },
-    staleTime: 60 * 60 * 1000,
-    gcTime: 24 * 60 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000,
   });
 }
