@@ -3,26 +3,23 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from "./types";
 
 // ============================================================================
-// CONFIGURAÇÃO SUPABASE — SUPORTE MULTI-PROJETO
+// CONFIGURACAO SUPABASE -- SUPORTE MULTI-PROJETO
 // ============================================================================
 
 const envUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const envKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
   import.meta.env.VITE_SUPABASE_ANON_KEY) as string | undefined;
 
-// Banco canônico padrão para fallback caso .env falhe ou esteja vazio
-// Nota: Em produção, utilize variáveis de ambiente corretamente.
 const CANONICAL_URL = "https://doufsxqlfjyuvxuezpln.supabase.co";
 const CANONICAL_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvdWZzeHFsZmp5dXZ4dWV6cGxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczODY2NDMsImV4cCI6MjA4Mjk2MjY0M30.nm3WMOBSx5SUnIBmvF_Mj0Y-4hV6UohrBF0sUpuQvPc";
 
-// Prioridade: .env > Canonical Fallback
 const SUPABASE_URL = envUrl || CANONICAL_URL;
 const SUPABASE_PUBLISHABLE_KEY = envKey || CANONICAL_ANON_KEY;
 
 if (!envUrl && typeof console !== "undefined") {
   console.warn(
-    "[supabase/client] Variáveis de ambiente ausentes — usando fallback canônico."
+    "[supabase/client] Variaveis de ambiente ausentes \u2014 usando fallback canonico."
   );
 }
 
@@ -48,7 +45,9 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
     detectSessionInUrl: true,
   },
-  global: {
-    headers: { 'x-application-name': 'gifts-store-web' }
-  }
+  // NOTE: x-application-name REMOVED from global headers (2026-05-30).
+  // This custom header caused CORS preflight failures on Edge Functions
+  // because external-db-bridge did not include it in Access-Control-Allow-Headers.
+  // Browser CORS preflight errors cannot be caught by JS try/catch.
+  // PostgREST does not need this header to function.
 });
