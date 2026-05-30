@@ -21,6 +21,8 @@ export {
   invokeExternalDbDelete,
   invokeBatchBridge,
   invokeBridge,
+  isWriteOperation,
+  WriteUnavailableError,
 } from './bridge';
 export type {
   InvokeOptions,

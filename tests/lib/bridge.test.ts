@@ -2,11 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
-    auth: {
-      getSession: vi.fn().mockResolvedValue({
-        data: { session: { access_token: 'mock-token' } },
-      }),
-    },
     functions: {
       invoke: vi.fn(),
     },
@@ -33,7 +28,7 @@ describe('invokeBridge', () => {
   it('throws if table is missing for non-batch operations', async () => {
     await expect(
       invokeBridge({ operation: 'select' })
-    ).rejects.toThrow('tabela não informada');
+    ).rejects.toThrow('tabela nao informada');
   });
 
   it('allows batch operations without table', async () => {
@@ -112,7 +107,7 @@ describe('invokeExternalDb', () => {
     });
 
     const result = await invokeExternalDb({
-      table: 'products',
+      table: 'audit_logs',
       operation: 'insert',
       data: { name: 'Test' },
     });
@@ -129,7 +124,7 @@ describe('invokeExternalDb', () => {
     });
 
     const result = await invokeExternalDb({
-      table: 'products',
+      table: 'audit_logs',
       operation: 'select',
     });
 
@@ -149,9 +144,9 @@ describe('invokeExternalDbDelete', () => {
       error: null,
     });
 
-    await invokeExternalDbDelete('products', 'del-1');
+    await invokeExternalDbDelete('audit_logs', 'del-1');
     expect(mockInvoke).toHaveBeenCalledWith('external-db-bridge', {
-      body: { table: 'products', operation: 'delete', id: 'del-1' },
+      body: { table: 'audit_logs', operation: 'delete', id: 'del-1' },
       headers: { Authorization: 'Bearer mock-token' },
     });
   });

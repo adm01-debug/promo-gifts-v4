@@ -14,7 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { emitBridgeStatus, isColdStartSignal } from './bridge-status-events';
 import { getKillSwitchState, KillSwitchActiveError, invalidateKillSwitchCache } from './kill-switch-client';
-import { tryExecuteRestNative, isRestNativeEligible, runWithConcurrency } from './rest-native';
+import { tryExecuteRestNative, isRestNativeEligible, runWithConcurrency, tryExecuteRestNativeWrite, isRestNativeWriteEligible } from './rest-native';
 import { reportSilentEmpty } from './silent-empty-report';
 import { recordBridgeCall, estimatePayloadBytes, type BridgeOperation } from '@/lib/telemetry/bridgeCallMetrics';
 import { newRequestId } from '@/lib/telemetry/requestId';
@@ -23,6 +23,43 @@ import { recordKillSwitchHit } from './kill-switch-telemetry';
 const KILL_SWITCH_NAME = 'edge_external_db_bridge';
 
 export type Operation = 'select' | 'insert' | 'update' | 'delete' | 'upsert' | 'batch_insert';
+
+const WRITE_OPERATIONS: ReadonlySet<Operation> = new Set<Operation>([
+  'insert',
+  'update',
+  'delete',
+  'upsert',
+  'batch_insert',
+]);
+
+/** True para qualquer operação que MUTA dados (tudo menos 'select'). */
+export function isWriteOperation(op: Operation | string | undefined): boolean {
+  return !!op && WRITE_OPERATIONS.has(op as Operation);
+}
+
+/**
+ * Lançado quando uma operação de ESCRITA não pôde ser executada porque a bridge
+ * está OFF (REST nativo ainda não cobre escrita) ou está inacessível (CORS/rede).
+ *
+ * Diferença crítica em relação ao retorno vazio de LEITURA: uma escrita NUNCA
+ * pode falhar em silêncio — senão a UI reporta "salvo com sucesso" sem que nada
+ * tenha sido persistido (corrupção silenciosa). Os callers (mutations / try-catch)
+ * já exibem `toast.error` a partir de `error.message`, então este erro tipado
+ * transforma o no-op silencioso em falha honesta e visível.
+ */
+export class WriteUnavailableError extends Error {
+  table: string;
+  operation: string;
+  constructor(table: string, operation: string) {
+    super(
+      `Escrita indisponível: '${operation}' em '${table}' não pôde ser persistida ` +
+        `(bridge OFF ou inacessível). Nenhum dado foi alterado.`,
+    );
+    this.name = 'WriteUnavailableError';
+    this.table = table;
+    this.operation = operation;
+  }
+}
 
 export interface InvokeOptions<T = Record<string, unknown>> {
   table: string;
@@ -66,7 +103,7 @@ export interface BatchResult {
   fromCache?: boolean;
 }
 
-// ── Bridge invocation (legacy, kept for rollback) ───────────────────
+// ── Bridge invocation (legacy, kept for rollback) ────
 
 const BOOT_RETRY_ATTEMPTS = 4;
 const BOOT_INITIAL_BACKOFF_MS = 400;
@@ -158,7 +195,7 @@ export async function invokeBridge<T>(body: Record<string, unknown>): Promise<Br
   throw new Error('Erro na bridge: tentativas esgotadas');
 }
 
-// ── Batch bridge ────────────────────────────────────────────────────
+// ── Batch bridge ────
 
 const BATCH_MAX_QUERIES = 10;
 
@@ -226,7 +263,7 @@ export async function invokeBatchBridge(queries: BatchQuery[]): Promise<BatchRes
   }
 }
 
-// ── CRUD ────────────────────────────────────────────────────────────
+// ── CRUD ────
 
 /**
  * Etapa 2: mapeia o Operation do bridge para o BridgeOperation da telemetria.
@@ -288,9 +325,20 @@ export async function invokeExternalDb<T>(options: InvokeOptions): Promise<Invok
     // is ON, it recorded the failed REST attempt and we fall back to the bridge.
   }
 
+  // Fast path WRITE (Plano A): escrita via PostgREST nativo + RLS, independente da
+  // bridge/kill-switch. Sucesso → retorna; erro (RLS negada, validação) → PROPAGA
+  // LOUD (toast.error no caller). Só cai para baixo se a tabela/op não for elegível,
+  // onde o WriteUnavailableError honesto assume.
+  if (isRestNativeWriteEligible(options)) {
+    const writeResult = await tryExecuteRestNativeWrite<T>(options);
+    if (writeResult !== null) return writeResult;
+  }
+
   if (!bridgeEnabled) {
-    if (options.operation !== 'select') {
+    if (isWriteOperation(options.operation)) {
       // (c) write became a no-op while bridge is OFF — actionable, error level.
+      // Telemetria + ERRO TIPADO: escrita nunca pode no-op silencioso (a UI mostraria
+      // "salvo" sem persistir). O throw vira toast.error nos callers (mutations/try-catch).
       reportSilentEmpty({
         reason: 'write_bridge_off',
         table: options.table,
@@ -298,6 +346,7 @@ export async function invokeExternalDb<T>(options: InvokeOptions): Promise<Invok
       });
       recordCall(false, null, 'write_bridge_off');
       recordKillSwitchHit({ switch_name: KILL_SWITCH_NAME, operation: telemetryOp, target: options.table });
+      throw new WriteUnavailableError(options.table, options.operation);
     } else if (!isRestNativeEligible(options)) {
       // (a) SELECT on a table with no REST-native path — config gap, warn level.
       reportSilentEmpty({
@@ -329,13 +378,19 @@ export async function invokeExternalDb<T>(options: InvokeOptions): Promise<Invok
   } catch (err) {
     if (err instanceof KillSwitchActiveError) {
       recordCall(false, null, 'kill_switch_active');
+      if (isWriteOperation(options.operation)) {
+        throw new WriteUnavailableError(options.table, options.operation);
+      }
       return { records: [], count: 0 };
     }
     if (err instanceof Error && isCorsOrNetworkBridgeError(err.message)) {
+      recordCall(false, null, err.message);
+      if (isWriteOperation(options.operation)) {
+        throw new WriteUnavailableError(options.table, options.operation);
+      }
       logger.debug(
         `[external-db] Bridge CORS/network error for ${options.table} — returning empty.`,
       );
-      recordCall(false, null, err.message);
       return { records: [], count: 0 };
     }
     // Non-CORS errors still propagate (auth errors, data errors, etc.)
@@ -351,16 +406,23 @@ export async function invokeExternalDbSingle<T>(options: InvokeOptions): Promise
 }
 
 export async function invokeExternalDbDelete(table: string, id: string): Promise<void> {
+  // Plano A: tenta escrita REST nativa (RLS) primeiro. Sucesso → done; erro → LOUD.
+  if (isRestNativeWriteEligible({ table, operation: 'delete', id })) {
+    await tryExecuteRestNativeWrite({ table, operation: 'delete', id });
+    return;
+  }
   try {
     await invokeBridge<{ success: boolean; deleted_id: string }>({ table, operation: 'delete', id });
   } catch (err) {
     if (err instanceof KillSwitchActiveError) {
-      logger.warn(`[external-db] Delete blocked by kill-switch for ${table}/${id}`);
-      return;
+      // Delete não pode no-op silencioso: a UI mostraria "excluído com sucesso"
+      // sem nada ter sido removido. Vira toast.error no caller.
+      logger.warn(`[external-db] Delete blocked by kill-switch for ${table}/${id} — surfacing loud`);
+      throw new WriteUnavailableError(table, 'delete');
     }
     if (err instanceof Error && isCorsOrNetworkBridgeError(err.message)) {
-      logger.warn(`[external-db] Delete CORS error for ${table}/${id}`);
-      return;
+      logger.warn(`[external-db] Delete CORS error for ${table}/${id} — surfacing loud`);
+      throw new WriteUnavailableError(table, 'delete');
     }
     throw err;
   }
