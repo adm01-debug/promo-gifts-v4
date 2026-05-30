@@ -210,6 +210,21 @@ export default defineConfig({
       grep: /@mobile/,
       grepInvert: /@smoke/,
     },
+    {
+      name: 'webkit-desktop',
+      use: { ...devices['Desktop Safari'] },
+      testMatch: /.*\.spec\.ts/,
+      testIgnore: [/fixtures\/auth\.setup\.ts/],
+      grepInvert: /@smoke/,
+    },
+    {
+      name: 'firefox-desktop',
+      use: { ...devices['Desktop Firefox'] },
+      testMatch: /.*\.spec\.ts/,
+      testIgnore: [/fixtures\/auth\.setup\.ts/],
+      grepInvert: /@smoke/,
+    },
+
   ],
   webServer: process.env.E2E_BASE_URL
     ? undefined
