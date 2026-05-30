@@ -14,7 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { emitBridgeStatus, isColdStartSignal } from './bridge-status-events';
 import { getKillSwitchState, KillSwitchActiveError, invalidateKillSwitchCache } from './kill-switch-client';
-import { tryExecuteRestNative, isRestNativeEligible, runWithConcurrency } from './rest-native';
+import { tryExecuteRestNative, isRestNativeEligible, runWithConcurrency, tryExecuteRestNativeWrite, isRestNativeWriteEligible } from './rest-native';
 import { reportSilentEmpty } from './silent-empty-report';
 
 const KILL_SWITCH_NAME = 'edge_external_db_bridge';
@@ -292,6 +292,15 @@ export async function invokeExternalDb<T>(options: InvokeOptions): Promise<Invok
     // we fall through to the bridge path.
   }
 
+  // Fast path WRITE (Plano A): escrita via PostgREST nativo + RLS, independente da
+  // bridge/kill-switch. Sucesso → retorna; erro (RLS negada, validação) → PROPAGA
+  // LOUD (toast.error no caller). Só cai para baixo se a tabela/op não for elegível,
+  // onde o WriteUnavailableError honesto assume.
+  if (isRestNativeWriteEligible(options)) {
+    const writeResult = await tryExecuteRestNativeWrite<T>(options);
+    if (writeResult !== null) return writeResult;
+  }
+
   if (!bridgeEnabled) {
     if (isWriteOperation(options.operation)) {
       // (c) write became a no-op while bridge is OFF — actionable, error level.
@@ -354,6 +363,11 @@ export async function invokeExternalDbSingle<T>(options: InvokeOptions): Promise
 }
 
 export async function invokeExternalDbDelete(table: string, id: string): Promise<void> {
+  // Plano A: tenta escrita REST nativa (RLS) primeiro. Sucesso → done; erro → LOUD.
+  if (isRestNativeWriteEligible({ table, operation: 'delete', id })) {
+    await tryExecuteRestNativeWrite({ table, operation: 'delete', id });
+    return;
+  }
   try {
     await invokeBridge<{ success: boolean; deleted_id: string }>({ table, operation: 'delete', id });
   } catch (err) {

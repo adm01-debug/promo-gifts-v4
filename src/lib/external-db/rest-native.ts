@@ -14,7 +14,7 @@ import { logger } from '@/lib/logger';
 import { reportSilentEmpty } from './silent-empty-report';
 import type { InvokeOptions, InvokeResult } from './bridge';
 
-// ── Whitelist ────────────────────────────────────────────────────────
+// ── Whitelist ─────────────────────────────────────────────────
 
 const REST_NATIVE_SAFE_TABLES = new Set<string>([
   // Core catalog
@@ -137,7 +137,7 @@ function mapRows(table: string, rows: unknown[]): unknown[] {
   });
 }
 
-// ── Metrics (Etapa 6) ─────────────────────────────────────────────────
+// ── Metrics (Etapa 6) ─────────────────────────────────────────
 
 interface RestNativeMetrics {
   success: number;
@@ -175,7 +175,7 @@ export function resetRestNativeMetrics(): void {
   metrics.lastErrorAt = null;
 }
 
-// ── Retry (Etapa 3) ─────────────────────────────────────────────────
+// ── Retry (Etapa 3) ────────────────────────────────────────
 
 const REST_NATIVE_RETRY_COUNT = 1;
 const REST_NATIVE_RETRY_DELAY_MS = 500;
@@ -197,7 +197,7 @@ function isRetryableError(msg: string): boolean {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// ── Concurrency limiter (Etapa 4) ───────────────────────────────────
+// ── Concurrency limiter (Etapa 4) ──────────────────────────────
 
 const BATCH_CONCURRENCY_LIMIT = 6;
 
@@ -229,7 +229,7 @@ export async function runWithConcurrency<T>(
   return results;
 }
 
-// ── Constants ───────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────
 
 const OFFSET_WITHOUT_LIMIT_FALLBACK_UPPER = 999;
 
@@ -263,7 +263,7 @@ type RestNativeClient = {
   };
 };
 
-// ── Eligibility ─────────────────────────────────────────────────────
+// ── Eligibility ─────────────────────────────────────────
 
 export function isRestNativeEligible(options: InvokeOptions): boolean {
   if (options.operation !== 'select') return false;
@@ -278,7 +278,7 @@ export function isRestNativeEligible(options: InvokeOptions): boolean {
   return true;
 }
 
-// ── PostgREST operator parsing ──────────────────────────────────────
+// ── PostgREST operator parsing ────────────────────────────────
 
 const POSTGREST_OP_REGEX = /^(eq|neq|gt|gte|lt|lte|like|ilike|is|in|not)\.(.+)$/;
 
@@ -337,7 +337,7 @@ function applyFilters(query: RestQuery, filters?: Record<string, unknown>): Rest
   return query;
 }
 
-// ── Core execution ──────────────────────────────────────────────────
+// ── Core execution ────────────────────────────────────────
 
 export async function executeRestNativeSelect<T>(options: InvokeOptions): Promise<InvokeResult<T>> {
   const tableName = TABLE_ALIASES[options.table] ?? options.table;
@@ -460,4 +460,165 @@ export async function tryExecuteRestNative<T>(
     }
   }
   return null;
+}
+
+// ── WRITE support (Plano A) ────────────────────────────────────
+//
+// Escrita vai SEMPRE para a tabela BASE — nunca para as views v_*_public
+// (read-only). Por isso NÃO reusa TABLE_ALIASES (que mapeia p/ views de leitura);
+// usa apenas WRITE_TABLE_ALIASES, que contém só RENAMES reais de tabela base.
+const WRITE_TABLE_ALIASES: Record<string, string> = {
+  tecnica_gravacao: 'tabela_preco_gravacao_oficial',
+  customization_price_tiers: 'tabela_preco_gravacao_oficial_faixa',
+  personalization_techniques: 'tecnicas_gravacao',
+};
+
+// Whitelist de ESCRITA (nomes como chamados pelos hooks de admin). A autorização
+// REAL é por RLS no banco (PR#3 — policies WITH CHECK por role). Esta lista só
+// evita escrita acidental em tabela não-prevista, que continua caindo no
+// WriteUnavailableError honesto (bridge.ts).
+const REST_NATIVE_WRITE_TABLES = new Set<string>([
+  'products',
+  'suppliers',
+  'categories',
+  'print_area_techniques',
+  'personalization_techniques',
+  'product_variants',
+  'variant_supplier_sources',
+  'supplier_branches',
+  'tecnica_gravacao',
+  'tecnica_gravacao_variante',
+  'fornecedor_gravacao',
+  'collections',
+  'collection_products',
+]);
+
+const REST_WRITE_OPS = new Set<string>(['insert', 'update', 'delete', 'upsert', 'batch_insert']);
+
+export function isRestNativeWriteEligible(options: InvokeOptions): boolean {
+  if (!REST_WRITE_OPS.has(options.operation)) return false;
+  return REST_NATIVE_WRITE_TABLES.has(options.table);
+}
+
+function resolveWriteTable(table: string): string {
+  return WRITE_TABLE_ALIASES[table] ?? table;
+}
+
+// EN→PT no payload de dados (espelha remapFilters), escopado por tabela.
+// Evita 400 do PostgREST por coluna inexistente em tabelas SSOT com nomes em PT.
+function remapData(table: string, data: Record<string, unknown>): Record<string, unknown> {
+  const map = COLUMN_ALIASES_BY_TABLE[table];
+  if (!map) return data;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(data)) out[map[k] ?? k] = v;
+  return out;
+}
+
+type RestWriteBuilder = PromiseLike<RestQueryResult> & {
+  eq(column: string, value: unknown): RestWriteBuilder;
+  in(column: string, values: readonly unknown[]): RestWriteBuilder;
+  is(column: string, value: null): RestWriteBuilder;
+  select(columns?: string): RestWriteBuilder;
+};
+
+type RestWriteClient = {
+  from(table: string): {
+    insert(values: unknown): RestWriteBuilder;
+    update(values: unknown): RestWriteBuilder;
+    delete(): RestWriteBuilder;
+    upsert(values: unknown): RestWriteBuilder;
+  };
+};
+
+/**
+ * Executa uma ESCRITA via PostgREST nativo (Plano A). Independente da bridge e do
+ * kill-switch. Autorização por RLS no banco. Guardas:
+ *  - (A2) update/delete SEM filtro/id → proibido (proteção contra mutação em massa).
+ *  - (A3) sempre tabela BASE (resolveWriteTable), nunca view v_*_public.
+ *  - (A5) remap EN→PT no payload e nos filtros.
+ *  - (A4) `.select()` de volta; insert OK com select-back vazio (RLS de SELECT) ainda é sucesso.
+ */
+export async function executeRestNativeWrite<T>(options: InvokeOptions): Promise<InvokeResult<T>> {
+  if (!isRestNativeWriteEligible(options)) {
+    throw new Error(`rest-native: not write-eligible for table=${options.table} op=${options.operation}`);
+  }
+  const table = resolveWriteTable(options.table);
+
+  // (A2) proteção contra UPDATE/DELETE sem escopo.
+  const hasScope = !!options.id || (!!options.filters && Object.keys(options.filters).length > 0);
+  if ((options.operation === 'update' || options.operation === 'delete') && !hasScope) {
+    throw new Error(
+      `rest-native: ${options.operation} em '${table}' sem filtro/id é proibido (proteção contra mutação em massa).`,
+    );
+  }
+
+  const client = supabase as unknown as RestWriteClient;
+  const tbl = client.from(table);
+
+  const scoped = (b: RestWriteBuilder): RestWriteBuilder => {
+    let q = b as unknown as RestQuery;
+    if (options.id) q = q.eq('id', options.id);
+    q = applyFilters(q, remapFilters(table, options.filters));
+    return q as unknown as RestWriteBuilder;
+  };
+
+  const payloadOf = (d: unknown): unknown =>
+    Array.isArray(d)
+      ? (d as Record<string, unknown>[]).map((row) => remapData(table, row))
+      : remapData(table, (d ?? {}) as Record<string, unknown>);
+
+  let builder: RestWriteBuilder;
+  switch (options.operation) {
+    case 'insert':
+    case 'batch_insert':
+      builder = tbl.insert(payloadOf(options.data)).select();
+      break;
+    case 'upsert':
+      builder = tbl.upsert(payloadOf(options.data)).select();
+      break;
+    case 'update':
+      builder = scoped(tbl.update(payloadOf(options.data))).select();
+      break;
+    case 'delete':
+      builder = scoped(tbl.delete()).select();
+      break;
+    default:
+      throw new Error(`rest-native: operação de escrita não suportada '${options.operation}'`);
+  }
+
+  const { data, error } = await builder;
+  if (error) {
+    throw new Error(`rest-native write error (${table}/${options.operation}): ${error.message}`);
+  }
+
+  const rows = mapRows(table, data ?? []) as T[];
+  return { records: rows, count: rows.length };
+}
+
+/**
+ * Wrapper de escrita: sem retry (evita insert/upsert duplicado em erro transiente).
+ * Retorna null SOMENTE quando a tabela/op não é write-elegível (o caller decide o
+ * fallback). Erros reais (RLS negada, validação, rede) PROPAGAM — LOUD — para
+ * virarem toast.error no caller, nunca no-op silencioso.
+ */
+export async function tryExecuteRestNativeWrite<T>(options: InvokeOptions): Promise<InvokeResult<T> | null> {
+  if (!isRestNativeWriteEligible(options)) return null;
+  const t0 = Date.now();
+  try {
+    const result = await executeRestNativeWrite<T>(options);
+    metrics.success++;
+    metrics.totalMs += Date.now() - t0;
+    logger.debug(
+      `[rest-native] WRITE OK ${options.operation} table=${resolveWriteTable(options.table)} ` +
+      `rows=${result.records.length} ${Date.now() - t0}ms`,
+    );
+    return result;
+  } catch (e) {
+    const msg = (e as Error).message;
+    metrics.fail++;
+    metrics.lastError = msg;
+    metrics.lastErrorAt = Date.now();
+    logger.warn(`[rest-native] WRITE FAIL ${options.operation} table=${resolveWriteTable(options.table)}: ${msg}`);
+    throw e; // LOUD
+  }
 }
