@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -9,7 +10,7 @@ export interface ProductCardSkeletonProps {
   selectionMode?: boolean;
 }
 
-export function ProductCardSkeleton({
+export const ProductCardSkeleton = memo(function ProductCardSkeleton({
   variant = 'default',
   className,
   animate = true,

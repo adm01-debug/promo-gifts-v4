@@ -8,7 +8,7 @@
  * Visível apenas para devs. Em ambiente saudável, renderiza um banner
  * compacto de status OK (dispensável).
  */
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { useDevAccessAudit } from '@/hooks/admin';
 
-export function DevAccessAuditAlert() {
+export const DevAccessAuditAlert = memo(function DevAccessAuditAlert() {
   const { enabled, loading, results, blocked, ranAt, run } = useDevAccessAudit();
   const [expanded, setExpanded] = useState(false);
   const [dismissed, setDismissed] = useState(false);

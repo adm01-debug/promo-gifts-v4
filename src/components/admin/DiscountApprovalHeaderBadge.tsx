@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { memo, useEffect } from 'react';
 import { Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 
 const QUERY_KEY = ['pending-discount-approvals-count'];
 
-export function DiscountApprovalHeaderBadge() {
+export const DiscountApprovalHeaderBadge = memo(function DiscountApprovalHeaderBadge() {
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();

@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { memo, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,7 +23,7 @@ interface BulkActionsBarProps {
   onSelectAll?: () => void;
 }
 
-export function BulkActionsBar({
+export const BulkActionsBar = memo(function BulkActionsBar({
   selectedCount,
   selectedIds,
   entityLabel = 'item',

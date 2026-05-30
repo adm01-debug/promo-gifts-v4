@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 import { useToast } from '@/hooks/ui/use-toast';
 import { sanitizeError } from '@/lib/security/sanitize-error';
+import { sanitizeEmail } from '@/lib/security/sanitize';
 
 export interface PasswordResetRequest {
   id: string;
@@ -131,12 +132,21 @@ export function usePasswordResetRequests() {
 
   const createRequest = async (email: string) => {
     try {
+      // Validação e sanitização do email (trim + lowercase + formato RFC 5322)
+      const safeEmail = sanitizeEmail(email);
+      if (!safeEmail) {
+        return {
+          success: false,
+          message: 'Formato de email inválido. Verifique o email informado.',
+        };
+      }
+
       // Verificar se já existe uma solicitação pendente para este email
       const supabase = await getSupabaseClient();
       const { data: existing } = await supabase
         .from('password_reset_requests')
         .select('id')
-        .eq('email', email)
+        .eq('email', safeEmail)
         .eq('status', 'pending')
         .single();
 
@@ -148,7 +158,7 @@ export function usePasswordResetRequests() {
         };
       }
 
-      const { error } = await supabase.from('password_reset_requests').insert({ email });
+      const { error } = await supabase.from('password_reset_requests').insert({ email: safeEmail });
 
       if (error) throw error;
 

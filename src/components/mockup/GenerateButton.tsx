@@ -2,6 +2,7 @@
  * GenerateButton — CTA dedicado para disparar a geração de mockup com IA.
  * Apresenta estados de loading, disabled e pulse de destaque quando pronto.
  */
+import { memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -16,7 +17,7 @@ interface GenerateButtonProps {
   className?: string;
 }
 
-export function GenerateButton({
+export const GenerateButton = memo(function GenerateButton({
   onClick,
   isGenerating,
   disabled = false,

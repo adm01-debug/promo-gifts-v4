@@ -81,7 +81,7 @@ interface SupplierFormDialogProps {
   removePixKey: (id: string) => void;
 }
 
-export function SupplierFormDialog({
+export const SupplierFormDialog = React.memo(function SupplierFormDialog({
   editingSupplier,
   setEditingSupplier,
   isNew,
@@ -1028,4 +1028,4 @@ export function SupplierFormDialog({
       </DialogContent>
     </Dialog>
   );
-}
+});

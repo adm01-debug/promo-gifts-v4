@@ -54,12 +54,18 @@ function loadFromStorage(): CompareItem[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) return [];
-    const parsed = JSON.parse(stored);
+    const raw = JSON.parse(stored);
+    if (!Array.isArray(raw)) return [];
     // Migrate old format (string[]) to new format (CompareItem[])
-    if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === 'string') {
-      return parsed.map((id: string) => ({ productId: id }));
+    if (raw.length > 0 && typeof raw[0] === 'string') {
+      return raw.filter((id: unknown): id is string => typeof id === 'string')
+        .map((id) => ({ productId: id }));
     }
-    return parsed;
+    // Validate each item has productId (filter out corrupted entries)
+    return raw.filter(
+      (item: unknown): item is CompareItem =>
+        typeof item === 'object' && item !== null && typeof (item as CompareItem).productId === 'string',
+    );
   } catch {
     return [];
   }
@@ -178,3 +184,8 @@ export const useComparisonStore = create<ComparisonStore>((set, get) => {
     },
   };
 });
+
+/** Atomic selectors — use these in components to avoid unnecessary re-renders */
+export const useCompareCount = () => useComparisonStore((s) => s.compareCount);
+export const useCompareItems = () => useComparisonStore((s) => s.compareItems);
+export const useCanAddMore = () => useComparisonStore((s) => s.canAddMore);

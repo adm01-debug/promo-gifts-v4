@@ -114,86 +114,123 @@ export function useAccessSecurity() {
 
   const updateSettings = async (updates: Partial<AccessSecuritySettings>) => {
     if (!settings) return;
-    const { error } = await supabase
-      .from('access_security_settings')
-      .update(updates)
-      .eq('id', settings.id);
-    if (error) {
-      toast.error('Erro ao atualizar configurações');
-      return;
+    try {
+      const { error } = await supabase
+        .from('access_security_settings')
+        .update(updates)
+        .eq('id', settings.id);
+      if (error) {
+        toast.error('Erro ao atualizar configurações');
+        return;
+      }
+      setSettings({ ...settings, ...updates });
+      toast.success('Configurações atualizadas');
+    } catch (err) {
+      console.error('[useAccessSecurity] updateSettings network error:', err);
+      toast.error('Erro de conexão ao atualizar configurações');
     }
-    setSettings({ ...settings, ...updates });
-    toast.success('Configurações atualizadas');
   };
 
   const addIp = async (ip_address: string, label?: string) => {
-    const { data, error } = await supabase
-      .from('ip_whitelist')
-      .insert({ ip_address, label: label || null })
-      .select()
-      .single();
-    if (error) {
-      if ((error as { code?: string }).code === '23505') toast.error('IP já cadastrado');
-      else toast.error('Erro ao adicionar IP');
+    try {
+      const { data, error } = await supabase
+        .from('ip_whitelist')
+        .insert({ ip_address, label: label || null })
+        .select()
+        .single();
+      if (error) {
+        if ((error as { code?: string }).code === '23505') toast.error('IP já cadastrado');
+        else toast.error('Erro ao adicionar IP');
+        return false;
+      }
+      setIps((prev) => [data as IpWhitelistEntry, ...prev]);
+      toast.success('IP adicionado à whitelist');
+      return true;
+    } catch (err) {
+      console.error('[useAccessSecurity] addIp network error:', err);
+      toast.error('Erro de conexão ao adicionar IP');
       return false;
     }
-    setIps((prev) => [data as IpWhitelistEntry, ...prev]);
-    toast.success('IP adicionado à whitelist');
-    return true;
   };
 
   const removeIp = async (id: string) => {
-    const { error } = await supabase.from('ip_whitelist').delete().eq('id', id);
-    if (error) {
-      toast.error('Erro ao remover IP');
-      return;
+    try {
+      const { error } = await supabase.from('ip_whitelist').delete().eq('id', id);
+      if (error) {
+        toast.error('Erro ao remover IP');
+        return;
+      }
+      setIps((prev) => prev.filter((ip) => ip.id !== id));
+      toast.success('IP removido');
+    } catch (err) {
+      console.error('[useAccessSecurity] removeIp network error:', err);
+      toast.error('Erro de conexão ao remover IP');
     }
-    setIps((prev) => prev.filter((ip) => ip.id !== id));
-    toast.success('IP removido');
   };
 
   const toggleIp = async (id: string, is_active: boolean) => {
-    const { error } = await supabase.from('ip_whitelist').update({ is_active }).eq('id', id);
-    if (error) {
-      toast.error('Erro ao atualizar IP');
-      return;
+    try {
+      const { error } = await supabase.from('ip_whitelist').update({ is_active }).eq('id', id);
+      if (error) {
+        toast.error('Erro ao atualizar IP');
+        return;
+      }
+      setIps((prev) => prev.map((ip) => (ip.id === id ? { ...ip, is_active } : ip)));
+    } catch (err) {
+      console.error('[useAccessSecurity] toggleIp network error:', err);
+      toast.error('Erro de conexão ao atualizar IP');
     }
-    setIps((prev) => prev.map((ip) => (ip.id === id ? { ...ip, is_active } : ip)));
   };
 
   const addCity = async (city_name: string, state?: string, country_code = 'BR') => {
-    const { data, error } = await supabase
-      .from('city_whitelist')
-      .insert({ city_name, state: state || null, country_code })
-      .select()
-      .single();
-    if (error) {
-      if ((error as { code?: string }).code === '23505') toast.error('Cidade já cadastrada');
-      else toast.error('Erro ao adicionar cidade');
+    try {
+      const { data, error } = await supabase
+        .from('city_whitelist')
+        .insert({ city_name, state: state || null, country_code })
+        .select()
+        .single();
+      if (error) {
+        if ((error as { code?: string }).code === '23505') toast.error('Cidade já cadastrada');
+        else toast.error('Erro ao adicionar cidade');
+        return false;
+      }
+      setCities((prev) => [data as CityWhitelistEntry, ...prev]);
+      toast.success('Cidade adicionada à whitelist');
+      return true;
+    } catch (err) {
+      console.error('[useAccessSecurity] addCity network error:', err);
+      toast.error('Erro de conexão ao adicionar cidade');
       return false;
     }
-    setCities((prev) => [data as CityWhitelistEntry, ...prev]);
-    toast.success('Cidade adicionada à whitelist');
-    return true;
   };
 
   const removeCity = async (id: string) => {
-    const { error } = await supabase.from('city_whitelist').delete().eq('id', id);
-    if (error) {
-      toast.error('Erro ao remover cidade');
-      return;
+    try {
+      const { error } = await supabase.from('city_whitelist').delete().eq('id', id);
+      if (error) {
+        toast.error('Erro ao remover cidade');
+        return;
+      }
+      setCities((prev) => prev.filter((c) => c.id !== id));
+      toast.success('Cidade removida');
+    } catch (err) {
+      console.error('[useAccessSecurity] removeCity network error:', err);
+      toast.error('Erro de conexão ao remover cidade');
     }
-    setCities((prev) => prev.filter((c) => c.id !== id));
-    toast.success('Cidade removida');
   };
 
   const toggleCity = async (id: string, is_active: boolean) => {
-    const { error } = await supabase.from('city_whitelist').update({ is_active }).eq('id', id);
-    if (error) {
-      toast.error('Erro ao atualizar cidade');
-      return;
+    try {
+      const { error } = await supabase.from('city_whitelist').update({ is_active }).eq('id', id);
+      if (error) {
+        toast.error('Erro ao atualizar cidade');
+        return;
+      }
+      setCities((prev) => prev.map((c) => (c.id === id ? { ...c, is_active } : c)));
+    } catch (err) {
+      console.error('[useAccessSecurity] toggleCity network error:', err);
+      toast.error('Erro de conexão ao atualizar cidade');
     }
-    setCities((prev) => prev.map((c) => (c.id === id ? { ...c, is_active } : c)));
   };
 
   return {

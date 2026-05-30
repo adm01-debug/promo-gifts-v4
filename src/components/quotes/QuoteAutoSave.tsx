@@ -1,6 +1,9 @@
 /**
  * QuoteAutoSave - Sistema de auto-save para orçamentos
  * Salva rascunhos automaticamente no localStorage com indicador visual
+ *
+ * SECURITY: Dados de orçamento (cliente, produtos, preços) salvos em localStorage.
+ * Considerar criptografia (ex: SJCL ou Web Crypto API) para produção.
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';

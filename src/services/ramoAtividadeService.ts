@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { sanitizeString } from '@/lib/security/sanitize';
 import type {
   RamoAtividade,
   RamoAtividadeFilho,
@@ -25,30 +26,44 @@ class RamoAtividadeService {
     };
   }
 
+  private static readonly FETCH_TIMEOUT_MS = 15000;
+
   private async callApi<T>(
     table: string,
     operation: string,
     params: Record<string, unknown> = {},
   ): Promise<T> {
     const headers = await this.getAuthHeaders();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), RamoAtividadeService.FETCH_TIMEOUT_MS);
 
-    const response = await fetch(this.baseUrl, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ table, operation, ...params }),
-    });
+    try {
+      const response = await fetch(this.baseUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ table, operation, ...params }),
+        signal: controller.signal,
+      });
 
-    const result = await response.json().catch(() => ({}));
+      const result = await response.json().catch(() => ({}));
 
-    if (!response.ok) {
-      throw new Error(result?.error || 'Erro ao acessar ramos de atividade');
+      if (!response.ok) {
+        throw new Error(result?.error || 'Erro ao acessar ramos de atividade');
+      }
+
+      if (result?.success === false) {
+        throw new Error(result?.error || 'Erro ao acessar ramos de atividade');
+      }
+
+      return (result?.data ?? result) as T;
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        throw new Error(`Timeout ao acessar API de ramos de atividade (${RamoAtividadeService.FETCH_TIMEOUT_MS / 1000}s)`);
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
     }
-
-    if (result?.success === false) {
-      throw new Error(result?.error || 'Erro ao acessar ramos de atividade');
-    }
-
-    return (result?.data ?? result) as T;
   }
 
   // ============================================================
@@ -104,8 +119,9 @@ class RamoAtividadeService {
 
   // Buscar ramo por ID
   async getRamoById(id: string): Promise<RamoAtividade | null> {
+    const safeId = sanitizeString(id, 100);
     const res = await this.callApi<{ records: RamoAtividade[] }>('ramo_atividade', 'select', {
-      id,
+      id: safeId,
     });
     return res.records?.[0] || null;
   }
@@ -156,7 +172,8 @@ class RamoAtividadeService {
     ramoId: string,
     apenasAtivos = true,
   ): Promise<{ segmentos: RamoAtividadeFilho[]; count: number }> {
-    const filters: Record<string, unknown> = { ramo_atividade_id: ramoId };
+    const safeRamoId = sanitizeString(ramoId, 100);
+    const filters: Record<string, unknown> = { ramo_atividade_id: safeRamoId };
     if (apenasAtivos) {
       filters.ativo = true;
     }
@@ -216,10 +233,11 @@ class RamoAtividadeService {
 
   // Buscar segmento por ID
   async getSegmentoById(id: string): Promise<RamoAtividadeFilho | null> {
+    const safeId = sanitizeString(id, 100);
     const res = await this.callApi<{ records: RamoAtividadeFilho[] }>(
       'ramo_atividade_filho',
       'select',
-      { id },
+      { id: safeId },
     );
     return res.records?.[0] || null;
   }
@@ -256,7 +274,7 @@ class RamoAtividadeService {
       records: { id: string; ramo_atividade_filho_id: string }[];
       count: number;
     }>('produto_ramo_atividade', 'select', {
-      filters: { produto_id: produtoId },
+      filters: { produto_id: sanitizeString(produtoId, 100) },
     });
 
     return {
@@ -269,8 +287,8 @@ class RamoAtividadeService {
   async addRamoAoProduto(produtoId: string, segmentoId: string): Promise<void> {
     await this.callApi('produto_ramo_atividade', 'insert', {
       data: {
-        produto_id: produtoId,
-        ramo_atividade_filho_id: segmentoId,
+        produto_id: sanitizeString(produtoId, 100),
+        ramo_atividade_filho_id: sanitizeString(segmentoId, 100),
       },
     });
   }

@@ -1,6 +1,7 @@
 import { fetchPromobrindProducts, fetchPromobrindProductById } from '@/lib/external-db';
 import { mapPromobrindToProduct } from '@/utils/product-mapper';
 import { type Product, type ProductFilters } from '@/types/product-catalog';
+import { sanitizeString } from '@/lib/security/sanitize';
 
 const getFiniteNumber = (value: unknown): number | null =>
   typeof value === 'number' && Number.isFinite(value) ? value : null;
@@ -12,7 +13,7 @@ export const productService = {
     if (filters?.inStock) externalFilters.stock_quantity = { op: 'gt', value: 0 };
 
     const products = await fetchPromobrindProducts({
-      search: filters?.search,
+      search: filters?.search ? sanitizeString(filters.search, 200) : undefined,
       limit: filters?.limit,
       filters: Object.keys(externalFilters).length > 0 ? externalFilters : undefined,
     });

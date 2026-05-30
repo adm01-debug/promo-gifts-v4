@@ -5,6 +5,7 @@
  * Handles: Client, Product, Technique selection + Areas.
  */
 
+import { memo } from 'react';
 import { Loader2, Paintbrush, RefreshCw, Info, ChevronDown, Wand2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -88,7 +89,7 @@ interface MockupConfigPanelProps {
   userId?: string;
 }
 
-export function MockupConfigPanel({
+export const MockupConfigPanel = memo(function MockupConfigPanel({
   techniques,
   productSelection,
   selectedTechnique,

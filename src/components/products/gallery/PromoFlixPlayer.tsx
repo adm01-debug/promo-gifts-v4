@@ -125,10 +125,12 @@ export function PromoFlixPlayer({
     { id: 3, x: 45, y: 75, label: 'Acabamento Base', detail: 'Polímero de Alta Densidade', confidence: 92 },
   ], []);
 
-  const logTelemetry = useCallback((event: string, details?: unknown) => {
-    const timestamp = new Date().toISOString();
-    // eslint-disable-next-line no-console
-    console.log(`[PromoFlix Telemetry] [${timestamp}] ${event}`, details || '');
+  const logTelemetry = useCallback((event: string, _details?: unknown) => {
+    if (import.meta.env.DEV) {
+      const timestamp = new Date().toISOString();
+      // eslint-disable-next-line no-console
+      console.log(`[PromoFlix Telemetry] [${timestamp}] ${event}`);
+    }
   }, []);
 
   const flash = useCallback((label: string) => {

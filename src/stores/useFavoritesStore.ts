@@ -37,7 +37,14 @@ interface FavoritesStore extends FavoritesState, FavoritesActions {
 function loadFromStorage(): FavoriteItem[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
+    if (!stored) return [];
+    const raw = JSON.parse(stored);
+    if (!Array.isArray(raw)) return [];
+    // Validate each item has productId (filter out corrupted entries)
+    return raw.filter(
+      (item: unknown): item is FavoriteItem =>
+        typeof item === 'object' && item !== null && typeof (item as FavoriteItem).productId === 'string',
+    );
   } catch {
     return [];
   }
@@ -93,3 +100,7 @@ export const useFavoritesStore = create<FavoritesStore>((set, get) => {
     },
   };
 });
+
+/** Atomic selectors — use these in components to avoid unnecessary re-renders */
+export const useFavoriteCount = () => useFavoritesStore((s) => s.favoriteCount);
+export const useFavorites = () => useFavoritesStore((s) => s.favorites);

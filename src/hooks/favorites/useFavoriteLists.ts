@@ -232,7 +232,7 @@ export function useFavoriteListItems(listId: string | null) {
         .order('position', { ascending: true })
         .order('added_at', { ascending: false });
       if (error) throw error;
-      return (data ?? []) as unknown as FavoriteListItem[];
+      return (data ?? []) as FavoriteListItem[];
     },
     enabled: !!listId && !!user,
     staleTime: 15_000,
@@ -265,7 +265,7 @@ export function useFavoriteListItems(listId: string | null) {
         .select()
         .single();
       if (error) throw error;
-      return data as unknown as FavoriteListItem;
+      return data as FavoriteListItem;
     },
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ITEMS_KEY(vars.listId) });
@@ -283,7 +283,7 @@ export function useFavoriteListItems(listId: string | null) {
         .select()
         .single();
       if (error) throw error;
-      return data as unknown as FavoriteListItem;
+      return data as FavoriteListItem;
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ITEMS_KEY(data.list_id) });
@@ -328,7 +328,7 @@ export function useFavoriteListItems(listId: string | null) {
               variant_info: trashed.variant_info,
               note: trashed.note,
               price_at_save: trashed.price_at_save,
-            } as never);
+            });
             await supabase.from('favorite_items_trash').delete().eq('id', trashed.id);
             qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
             qc.invalidateQueries({ queryKey: LISTS_KEY });
@@ -404,7 +404,7 @@ export function useFavoriteTrash() {
         variant_info: trashed.variant_info,
         note: trashed.note,
         price_at_save: trashed.price_at_save,
-      } as never);
+      });
       if (insErr) throw insErr;
 
       const { error: delErr } = await supabase
@@ -489,7 +489,7 @@ export function useLegacyFavoritesMigration() {
         variant_info: f.variant ?? null,
         position: idx,
       }));
-      const { error } = await supabase.from('favorite_items').upsert(rows as never, {
+      const { error } = await supabase.from('favorite_items').upsert(rows, {
         onConflict: 'list_id,product_id,variant_id',
         ignoreDuplicates: true,
       });

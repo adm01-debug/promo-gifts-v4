@@ -2,7 +2,7 @@
  * CatalogQualityDashboard — painel administrativo que mostra métricas de qualidade do catálogo:
  * produtos sem imagem, sem categoria, com SKU duplicado, sem preço etc.
  */
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +17,7 @@ interface QualityMetrics {
   totalRecordsFailed: number;
 }
 
-export function CatalogQualityDashboard() {
+export const CatalogQualityDashboard = memo(function CatalogQualityDashboard() {
   const [metrics, setMetrics] = useState<QualityMetrics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 

@@ -72,7 +72,7 @@ interface MockupHistoryPanelProps {
 
 const ITEMS_PER_PAGE = 12;
 
-export function MockupHistoryPanel({
+export const MockupHistoryPanel = memo(function MockupHistoryPanel({
   mockupHistory,
   isLoading,
   clients,

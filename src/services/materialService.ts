@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { sanitizeString } from '@/lib/security/sanitize';
 
 // Tipos
 export interface MaterialGroup {
@@ -61,29 +62,40 @@ class MaterialService {
     };
   }
 
+  private static readonly FETCH_TIMEOUT_MS = 15000;
+
   private async callApi<T>(action: string, params: Record<string, unknown> = {}): Promise<T> {
     const headers = await this.getAuthHeaders();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), MaterialService.FETCH_TIMEOUT_MS);
 
-    const response = await fetch(this.baseUrl, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ action, ...params }),
-    });
+    try {
+      const response = await fetch(this.baseUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ action, ...params }),
+        signal: controller.signal,
+      });
 
-    const result = await response.json().catch(() => ({}));
+      const result = await response.json().catch(() => ({}));
 
-    if (!response.ok) {
-      throw new Error(result?.error || 'Erro ao buscar materiais');
+      if (!response.ok) {
+        throw new Error(result?.error || 'Erro ao buscar materiais');
+      }
+
+      if (result?.success === false) {
+        throw new Error(result?.error || 'Erro ao buscar materiais');
+      }
+
+      return (result?.data ?? result) as T;
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        throw new Error(`Timeout ao acessar API de materiais (${MaterialService.FETCH_TIMEOUT_MS / 1000}s)`);
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
     }
-
-    // A função costuma responder no formato:
-    // { success: true, data: {...} }
-    // (mas mantém fallback para formato antigo sem envelope)
-    if (result?.success === false) {
-      throw new Error(result?.error || 'Erro ao buscar materiais');
-    }
-
-    return (result?.data ?? result) as T;
   }
 
   // Buscar todos os grupos de materiais com estatísticas
@@ -187,7 +199,7 @@ class MaterialService {
   async search(
     searchTerm: string,
   ): Promise<{ types: MaterialComplete[]; count: number; search: string }> {
-    return this.callApi('search', { search: searchTerm });
+    return this.callApi('search', { search: sanitizeString(searchTerm, 200) });
   }
 
   // Buscar materiais de um produto específico

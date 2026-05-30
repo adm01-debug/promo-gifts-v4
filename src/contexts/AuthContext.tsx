@@ -5,6 +5,7 @@ import {
   useState,
   useRef,
   useCallback,
+  useMemo,
   type ReactNode,
 } from 'react';
 import { type User, type Session, type AuthError } from '@supabase/supabase-js';
@@ -292,7 +293,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const isSupervisorOrAbove = checkIsSupervisorOrAbove(userRoles);
-  const value: AuthContextType = {
+
+  const value: AuthContextType = useMemo(() => ({
     user,
     session,
     profile,
@@ -323,7 +325,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await fetchUserData(user.id);
       }
     },
-  };
+  }), [
+    user, session, profile, isLoading, userRoles, isSupervisorOrAbove,
+    currentAAL, nextAAL, hasMFA, fetchAAL, signIn, signOut,
+  ]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

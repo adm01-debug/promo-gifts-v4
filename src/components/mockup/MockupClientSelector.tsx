@@ -3,7 +3,7 @@
  * Um único input que filtra e mostra resultados inline (sem botão separado)
  */
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { memo, useState, useRef, useEffect, useMemo } from 'react';
 import { useClientFuzzySearch } from '@/hooks/common';
 import { X, Building2, Search, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -56,7 +56,7 @@ function CompanyAvatar({
   );
 }
 
-export function MockupClientSelector({
+export const MockupClientSelector = memo(function MockupClientSelector({
   selectedClient,
   onClientSelect,
 }: MockupClientSelectorProps) {

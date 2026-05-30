@@ -1,7 +1,7 @@
 /**
  * DiscountApprovalQueue — fila administrativa de solicitações de desconto pendentes.
  */
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +13,7 @@ import { CheckCircle2, XCircle, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 
-export function DiscountApprovalQueue() {
+export const DiscountApprovalQueue = memo(function DiscountApprovalQueue() {
   const qc = useQueryClient();
   const [notes, setNotes] = useState<Record<string, string>>({});
 
