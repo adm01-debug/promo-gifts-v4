@@ -6,6 +6,8 @@
 import { cn } from '@/lib/utils';
 import { type LucideIcon, Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { Skeleton } from '@/components/ui/skeleton';
+import { type ReactNode } from 'react';
 
 interface KpiCardProps {
   icon: LucideIcon;
@@ -18,7 +20,7 @@ interface KpiCardProps {
   customValueColor?: string;
   ariaLabel?: string;
   /** Texto explicativo exibido em tooltip ao passar o mouse no ícone de info. */
-  tooltip?: string;
+  tooltip?: string | ReactNode;
   /** Delay opcional (ms) para animação fade-in escalonada. */
   animationDelay?: number;
 }
@@ -79,8 +81,16 @@ export function KpiCard({
                   <Info className="h-2.5 w-2.5" />
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="top">
-                <p className="leading-relaxed">{tooltip}</p>
+              <TooltipContent side="top" className="max-w-[280px]">
+                {tooltip ? (
+                  <div className="text-xs leading-relaxed">{tooltip}</div>
+                ) : (
+                  <div className="space-y-2 p-1">
+                    <Skeleton className="h-3 w-32" />
+                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                )}
               </TooltipContent>
             </Tooltip>
           )}
