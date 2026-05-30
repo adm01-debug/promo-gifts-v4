@@ -8,33 +8,68 @@
  *
  * Phase 2 (2026-05-29): expanded whitelist, _search via ilike, table aliases
  * for security (suppliers → v_suppliers_public VIEW).
+ *
+ * Phase 3 (2026-05-30): print areas, techniques, price tiers, ramos de atividade.
+ * Bridge aliases (tecnica_gravacao, customization_price_tiers, etc.) resolved to
+ * real table names. print_area_techniques routed to VIEW (hides unit_cost).
  */
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import type { InvokeOptions, InvokeResult } from './bridge';
 
 const REST_NATIVE_SAFE_TABLES = new Set<string>([
+  // Core catalog
   'products',
   'product_variants',
   'product_images',
-  'suppliers',
-  'v_suppliers_public',
-  'color_variations',
-  'color_groups',
-  'categories',
   'product_videos',
   'product_kit_components',
   'product_materials',
+  // Suppliers (via VIEW)
+  'suppliers',
+  'v_suppliers_public',
+  // Colors
+  'color_variations',
+  'color_groups',
+  // Categories & tags
+  'categories',
+  // Materials
   'material_types',
+  // Print areas & techniques
+  'print_area_techniques',
+  'v_print_area_techniques_public',
+  'tabela_preco_gravacao_oficial',
+  'tabela_preco_gravacao_oficial_faixa',
+  'tecnicas_gravacao',
+  // Bridge aliases (resolved via TABLE_ALIASES)
+  'tecnica_gravacao',
+  'customization_price_tiers',
+  'personalization_techniques',
+  // Reference data
+  'ramo_atividade',
+  // System
+  'system_kill_switches',
 ]);
 
 /**
- * Table aliases: bridge used raw table names; REST native redirects to
- * views for security (e.g. suppliers → v_suppliers_public hides
- * api_credentials, markup%, cnpj).
+ * Table aliases: bridge used raw table names or aliases;
+ * REST native redirects to real tables or views for security.
+ *
+ * Security VIEWs:
+ *   suppliers → v_suppliers_public (hides api_credentials, markup%)
+ *   print_area_techniques → v_print_area_techniques_public (hides unit_cost)
+ *
+ * Bridge aliases (from supabase/functions/external-db-bridge):
+ *   tecnica_gravacao → tabela_preco_gravacao_oficial
+ *   customization_price_tiers → tabela_preco_gravacao_oficial_faixa
+ *   personalization_techniques → tecnicas_gravacao
  */
 const TABLE_ALIASES: Record<string, string> = {
   suppliers: 'v_suppliers_public',
+  print_area_techniques: 'v_print_area_techniques_public',
+  tecnica_gravacao: 'tabela_preco_gravacao_oficial',
+  customization_price_tiers: 'tabela_preco_gravacao_oficial_faixa',
+  personalization_techniques: 'tecnicas_gravacao',
 };
 
 /**
@@ -49,6 +84,9 @@ const SEARCH_COLUMNS: Record<string, string> = {
   material_types: 'name',
   color_variations: 'name',
   color_groups: 'name',
+  tecnicas_gravacao: 'nome',
+  tabela_preco_gravacao_oficial: 'nome',
+  ramo_atividade: 'name',
 };
 
 /**
