@@ -108,7 +108,7 @@ export const ProductCardSkeleton = memo(function ProductCardSkeleton({
       </div>
     </div>
   );
-}
+});
 
 const gridColumnClasses: Record<number, string> = {
   3: 'grid-cols-2 sm:grid-cols-3',
