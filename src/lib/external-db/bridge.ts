@@ -16,6 +16,9 @@ import { emitBridgeStatus, isColdStartSignal } from './bridge-status-events';
 import { getKillSwitchState, KillSwitchActiveError, invalidateKillSwitchCache } from './kill-switch-client';
 import { tryExecuteRestNative, isRestNativeEligible, runWithConcurrency } from './rest-native';
 import { reportSilentEmpty } from './silent-empty-report';
+import { recordBridgeCall, estimatePayloadBytes, type BridgeOperation } from '@/lib/telemetry/bridgeCallMetrics';
+import { newRequestId } from '@/lib/telemetry/requestId';
+import { recordKillSwitchHit } from './kill-switch-telemetry';
 
 const KILL_SWITCH_NAME = 'edge_external_db_bridge';
 
@@ -226,14 +229,44 @@ export async function invokeBatchBridge(queries: BatchQuery[]): Promise<BatchRes
 // ── CRUD ────────────────────────────────────────────────────────────
 
 /**
+ * Etapa 2: mapeia o Operation do bridge para o BridgeOperation da telemetria.
+ * `batch_insert` não existe em BridgeOperation → mapeia para `batch`.
+ */
+function mapBridgeOp(op: Operation): BridgeOperation {
+  return op === 'batch_insert' ? 'batch' : op;
+}
+
+/**
  * Smart routing:
  *   1. If eligible → REST native (fast path)
  *   2. If not eligible → check kill-switch
  *   3. If bridge OFF → return empty (now diagnosed via reportSilentEmpty)
  *   4. If bridge ON → try bridge WITH CORS guard
  *   5. If bridge CORS/network error → return empty silently (no console spam)
+ *
+ * Etapa 2: telemetria do caminho vivo (recordBridgeCall). SELECTs elegíveis são
+ * contabilizados dentro de tryExecuteRestNative (1 amostra/call, sem inflar com
+ * retry). Aqui registramos apenas os caminhos NÃO servidos por REST: writes /
+ * tabela-fora-da-whitelist (bridge OFF) e o caminho da bridge (rollback).
  */
 export async function invokeExternalDb<T>(options: InvokeOptions): Promise<InvokeResult<T>> {
+  const t0 = performance.now();
+  const telemetryOp = mapBridgeOp(options.operation);
+  const reqBytes = estimatePayloadBytes(options.data ?? options.filters ?? null);
+  const recordCall = (ok: boolean, resp: unknown, errorMessage?: string): void => {
+    recordBridgeCall({
+      bridge: 'external-db-bridge',
+      op: telemetryOp,
+      target: options.table,
+      durationMs: performance.now() - t0,
+      reqBytes,
+      respBytes: ok ? estimatePayloadBytes(resp) : 0,
+      ok,
+      errorMessage,
+      requestId: newRequestId(),
+    });
+  };
+
   // Read the kill-switch up front (cached, cheap, fail-open). Etapa 1 needs the
   // bridge state BEFORE the REST-native call so a REST failure can be classified
   // correctly: terminal silent-empty (bridge OFF) vs. will-fall-back (bridge ON).
@@ -245,14 +278,14 @@ export async function invokeExternalDb<T>(options: InvokeOptions): Promise<Invok
     bridgeEnabled = true; // fail-open
   }
 
-  // Fast path: REST native.
+  // Fast path: REST native. (Telemetria já emitida dentro de tryExecuteRestNative.)
   if (isRestNativeEligible(options)) {
     const restResult = await tryExecuteRestNative<T>(options, { bridgeEnabled });
     if (restResult !== null) return restResult;
     // null here == eligible SELECT that errored. When bridge is OFF,
-    // tryExecuteRestNative already called reportSilentEmpty('rest_error') (case b),
-    // so we must NOT re-emit below. When bridge is ON, it logged a debug line and
-    // we fall through to the bridge path.
+    // tryExecuteRestNative already recorded the sample (ok=false) AND
+    // reportSilentEmpty('rest_error'), so we must NOT re-emit below. When bridge
+    // is ON, it recorded the failed REST attempt and we fall back to the bridge.
   }
 
   if (!bridgeEnabled) {
@@ -263,6 +296,8 @@ export async function invokeExternalDb<T>(options: InvokeOptions): Promise<Invok
         table: options.table,
         operation: options.operation,
       });
+      recordCall(false, null, 'write_bridge_off');
+      recordKillSwitchHit({ switch_name: KILL_SWITCH_NAME, operation: telemetryOp, target: options.table });
     } else if (!isRestNativeEligible(options)) {
       // (a) SELECT on a table with no REST-native path — config gap, warn level.
       reportSilentEmpty({
@@ -270,8 +305,10 @@ export async function invokeExternalDb<T>(options: InvokeOptions): Promise<Invok
         table: options.table,
         operation: options.operation,
       });
+      recordCall(false, null, 'table_not_whitelisted');
+      recordKillSwitchHit({ switch_name: KILL_SWITCH_NAME, operation: telemetryOp, target: options.table });
     }
-    // (b) eligible-SELECT error: already reported inside tryExecuteRestNative.
+    // (b) eligible-SELECT error: already reported + recorded inside tryExecuteRestNative.
     return { records: [], count: 0 };
   }
 
@@ -281,21 +318,28 @@ export async function invokeExternalDb<T>(options: InvokeOptions): Promise<Invok
   try {
     const response = await invokeBridge<InvokeResult<T> | T>(options as unknown as Record<string, unknown>);
     const payload = response.data;
+    let out: InvokeResult<T>;
     if (options.operation !== 'select' && payload && typeof payload === 'object' && !Array.isArray(payload) && !('records' in payload)) {
-      return { records: [payload as T], count: 1 };
+      out = { records: [payload as T], count: 1 };
+    } else {
+      out = payload as InvokeResult<T>;
     }
-    return payload as InvokeResult<T>;
+    recordCall(true, out);
+    return out;
   } catch (err) {
     if (err instanceof KillSwitchActiveError) {
+      recordCall(false, null, 'kill_switch_active');
       return { records: [], count: 0 };
     }
     if (err instanceof Error && isCorsOrNetworkBridgeError(err.message)) {
       logger.debug(
         `[external-db] Bridge CORS/network error for ${options.table} — returning empty.`,
       );
+      recordCall(false, null, err.message);
       return { records: [], count: 0 };
     }
     // Non-CORS errors still propagate (auth errors, data errors, etc.)
+    recordCall(false, null, err instanceof Error ? err.message : String(err));
     throw err;
   }
 }

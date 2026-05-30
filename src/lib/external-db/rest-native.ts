@@ -12,6 +12,8 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { reportSilentEmpty } from './silent-empty-report';
+import { recordBridgeCall, estimatePayloadBytes } from '@/lib/telemetry/bridgeCallMetrics';
+import { newRequestId } from '@/lib/telemetry/requestId';
 import type { InvokeOptions, InvokeResult } from './bridge';
 
 // ── Whitelist ────────────────────────────────────────────────────────
@@ -175,7 +177,7 @@ export function resetRestNativeMetrics(): void {
   metrics.lastErrorAt = null;
 }
 
-// ── Retry (Etapa 3) ─────────────────────────────────────────────────
+// ── Retry (Etapa 3) ──────────────────────────────────────────────────
 
 const REST_NATIVE_RETRY_COUNT = 1;
 const REST_NATIVE_RETRY_DELAY_MS = 500;
@@ -427,6 +429,18 @@ export async function tryExecuteRestNative<T>(
         `[rest-native] OK table=${resolvedTable} rows=${result.records.length} ` +
         `count=${result.count} ${elapsed}ms${attempt > 0 ? ` (retry #${attempt})` : ''}`,
       );
+      // Etapa 2: telemetria do caminho vivo. Uma amostra por chamada lógica
+      // (aqui, não em executeRestNativeSelect, p/ não contar retries em dobro).
+      recordBridgeCall({
+        bridge: 'external-db-bridge',
+        op: 'select',
+        target: options.table,
+        durationMs: elapsed,
+        reqBytes: estimatePayloadBytes(options.filters ?? null),
+        respBytes: estimatePayloadBytes(result),
+        ok: true,
+        requestId: newRequestId(),
+      });
       return result;
     } catch (e) {
       const msg = (e as Error).message;
@@ -440,6 +454,20 @@ export async function tryExecuteRestNative<T>(
       metrics.fail++;
       metrics.lastError = msg;
       metrics.lastErrorAt = Date.now();
+      // Etapa 2: registra a tentativa REST que falhou terminalmente (ok=false),
+      // independentemente do estado da bridge. Uma única amostra por chamada
+      // lógica (o loop de retry só chega aqui uma vez).
+      recordBridgeCall({
+        bridge: 'external-db-bridge',
+        op: 'select',
+        target: options.table,
+        durationMs: Date.now() - t0,
+        reqBytes: estimatePayloadBytes(options.filters ?? null),
+        respBytes: 0,
+        ok: false,
+        errorMessage: msg,
+        requestId: newRequestId(),
+      });
       // Etapa 1: single source for case (b). Avoid double-logging — the caller
       // (invokeExternalDb) will NOT re-emit for eligible-select errors.
       if (ctx?.bridgeEnabled) {
