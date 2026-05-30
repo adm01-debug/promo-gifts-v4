@@ -1,4 +1,4 @@
-﻿import { supabase, SUPABASE_URL } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '@/integrations/supabase/client';
 import type { VoiceAgentAction } from './types';
 
 /**
@@ -13,13 +13,13 @@ export async function processVoiceTranscript(transcript: string): Promise<VoiceA
     const {
       data: { session },
     } = await supabase.auth.getSession();
-    const authToken = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    const authToken = session?.access_token || SUPABASE_PUBLISHABLE_KEY;
 
     const response = await fetch(`${SUPABASE_URL}/functions/v1/voice-agent`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        apikey: SUPABASE_PUBLISHABLE_KEY,
         Authorization: `Bearer ${authToken}`,
       },
       body: JSON.stringify({ transcript }),
