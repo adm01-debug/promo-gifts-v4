@@ -18,7 +18,18 @@ describe('format-utils', () => {
     it('should handle decimal places', () => {
       expect(formatTooltipNumber(10.1234, 2)).toBe('10,12');
       expect(formatTooltipNumber(10.1234, 0)).toBe('10');
+      expect(formatTooltipNumber(99.9999, 1)).toBe('100,0');
     });
+
+    it('should handle very large numbers', () => {
+      expect(formatTooltipNumber(999999999.99)).toBe('999.999.999');
+      expect(formatTooltipNumber(1234567890)).toBe('1.234.567.890');
+    });
+
+    it('should handle long decimals by rounding', () => {
+      expect(formatTooltipNumber(1.23456789, 4)).toBe('1,2346');
+    });
+
   });
 
   describe('formatTooltipPercent', () => {
