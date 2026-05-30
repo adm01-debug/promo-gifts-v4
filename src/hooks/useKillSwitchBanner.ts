@@ -35,10 +35,14 @@ export function useKillSwitchBanner(): KillSwitchBannerData | null {
         const { getKillSwitchState } = await import('@/lib/external-db/kill-switch-client');
         const state = await getKillSwitchState(SWITCH_NAME);
         if (cancelled) return;
-        if (!state.enabled) {
+        // Só exibe o aviso quando o switch está desligado E há uma mensagem
+        // explícita configurada no banco (legacy_message). A bridge legada foi
+        // descontinuada e substituída pelo PostgREST nativo — portanto "switch
+        // off" sozinho NÃO significa indisponibilidade. Evita falso-positivo.
+        if (!state.enabled && state.message) {
           setBanner({
             switchName: SWITCH_NAME,
-            message: state.message ?? 'Esta funcionalidade está temporariamente indisponível.',
+            message: state.message,
           });
         } else {
           setBanner(null);
