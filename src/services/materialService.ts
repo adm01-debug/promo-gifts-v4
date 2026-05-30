@@ -1,3 +1,4 @@
+import { SUPABASE_URL } from '@/integrations/supabase/client';
 import { supabase } from '@/integrations/supabase/client';
 
 // Tipos
@@ -47,7 +48,7 @@ class MaterialService {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/materials-api`;
+    this.baseUrl = `${SUPABASE_URL}/functions/v1/materials-api`;
   }
 
   private async getAuthHeaders(): Promise<HeadersInit> {

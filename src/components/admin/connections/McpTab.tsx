@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Plug, Copy, Trash2, Plus, Github, ShieldAlert } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_URL } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -35,7 +35,7 @@ interface McpKey {
   created_at: string;
 }
 
-const MCP_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mcp-server`;
+const MCP_URL = `${SUPABASE_URL}/functions/v1/mcp-server`;
 
 function formatExpiresIn(expiresAt: string | null): string | null {
   if (!expiresAt) return null;

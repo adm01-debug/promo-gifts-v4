@@ -1,3 +1,4 @@
+import { SUPABASE_URL } from '@/integrations/supabase/client';
 /**
  * Card "Cold vs Warm — crm-db-bridge"
  *
@@ -39,7 +40,7 @@ interface DiagSnapshot {
   };
 }
 
-const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.replace(/\/+$/, '');
+const SUPABASE_URL = (SUPABASE_URL as string | undefined)?.replace(/\/+$/, '');
 const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
 const FN_URL = SUPABASE_URL ? `${SUPABASE_URL}/functions/v1/crm-db-bridge?op=diag` : null;
 const POLL_MS = 30_000;

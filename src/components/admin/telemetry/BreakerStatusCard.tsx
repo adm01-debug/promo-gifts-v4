@@ -1,3 +1,4 @@
+import { SUPABASE_URL } from '@/integrations/supabase/client';
 /**
  * Card "Circuit Breaker — crm-db-bridge"
  *
@@ -38,7 +39,7 @@ interface BreakerStatusResponse {
   all: Array<BreakerStatusResponse['breaker']>;
 }
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+const SUPABASE_URL = SUPABASE_URL as string;
 const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 const FN_URL = `${SUPABASE_URL}/functions/v1/crm-db-bridge?op=breaker_status`;
 const POLL_MS = 15_000;

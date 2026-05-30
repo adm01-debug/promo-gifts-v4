@@ -1,3 +1,4 @@
+import { SUPABASE_URL } from '@/integrations/supabase/client';
 import { supabase } from '@/integrations/supabase/client';
 import type {
   RamoAtividade,
@@ -11,7 +12,7 @@ class RamoAtividadeService {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/external-db-bridge`;
+    this.baseUrl = `${SUPABASE_URL}/functions/v1/external-db-bridge`;
   }
 
   private async getAuthHeaders(): Promise<HeadersInit> {

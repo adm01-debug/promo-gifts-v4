@@ -5,7 +5,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_URL } from '@/integrations/supabase/client';
 import { invokeExternalDb } from '@/lib/external-db';
 import { useExpertChatTts } from './useExpertChatTts';
 import { useExpertConversations, type ExpertConversation } from '@/hooks/intelligence';
@@ -471,7 +471,7 @@ export function useExpertChat({
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/expert-chat`,
+        `${SUPABASE_URL}/functions/v1/expert-chat`,
         {
           method: 'POST',
           headers: {
