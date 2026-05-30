@@ -293,6 +293,7 @@ export function MarketIntelligenceChart({
             value={avgDepletion.toFixed(1)}
             sub="un/dia (média 7d)"
             highlight={avgDepletion >= 20}
+            tooltip="Velocidade média de saída do produto no mercado nos últimos 7 dias, somando todos os fornecedores. Use para dimensionar a proposta: quanto maior, mais aquecida está a demanda e mais rápido o estoque some."
           />
           <KpiCard
             icon={BarChart3}
@@ -300,6 +301,7 @@ export function MarketIntelligenceChart({
             value={demandLevel}
             sub={trendLabel}
             customValueColor={demandColor}
+            tooltip="Classificação qualitativa do momento do produto (Alta, Média, Baixa) calculada a partir do volume e da tendência recentes. 'Alta' é gatilho para urgência no fechamento; 'Baixa' permite negociar prazo e preço."
           />
           <KpiCard
             icon={trendRatio > 1.2 ? TrendingUp : trendRatio < 0.8 ? TrendingDown : BarChart3}
@@ -313,12 +315,14 @@ export function MarketIntelligenceChart({
                   : 'demanda estável'
             }
             highlight={trendRatio > 1.3}
+            tooltip="Variação da demanda comparando o período recente com o anterior. Positivo = produto subindo (argumento de urgência para o cliente). Negativo = procura caindo (espaço para desconto ou troca por similar)."
           />
           <KpiCard
             icon={Package}
             label="Disponível"
             value={(kpis?.totalCurrentStock ?? 0).toLocaleString('pt-BR')}
             sub={supplierText}
+            tooltip="Estoque total disponível agora somando todos os fornecedores monitorados. Compare com 'Vendas no mercado' para estimar em quantos dias o produto pode acabar e antecipar o pedido do cliente."
           />
         </div>
 
