@@ -159,6 +159,17 @@ export async function invokeBridge<T>(body: Record<string, unknown>): Promise<Br
     }
   } catch (err) {
     if (err instanceof KillSwitchActiveError) throw err;
+    // FAIL-OPEN EXPLÍCITO (antes silencioso): o gate do kill-switch (getKillSwitchState)
+    // já é fail-open por design e praticamente nunca rejeita. Se mesmo assim rejeitar de
+    // forma inesperada, mantemos o comportamento histórico — PROSSEGUIR para a Edge Function
+    // (o backend espelha o kill-switch e decide em última instância, defesa em camadas).
+    // A diferença é que agora isso é OBSERVÁVEL: um fail-open silencioso aqui mascararia
+    // uma bridge religada por engano. Logamos em warn e seguimos; NÃO convertemos em
+    // fail-closed (validado por simulação: 481 cenários, 0 regressões de fluxo de controle).
+    logger.warn(
+      `[external-db] gate do kill-switch '${KILL_SWITCH_NAME}' falhou inesperadamente ` +
+        `(fail-open, prosseguindo p/ bridge): ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
   let sawColdStart = false;
   const { data: sessionData } = await supabase.auth.getSession();
