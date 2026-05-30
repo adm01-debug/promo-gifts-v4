@@ -194,7 +194,7 @@ export default function Auth() {
         },
       }));
 
-      // 3. External (Gestão de Produtos) via bridge ping op
+      // 3. External (Gestão de Produtos) via REST nativo — a bridge foi aposentada.
       if (isLighthousePlaceholder) {
         setDbStatus((prev) => ({ ...prev, external: { ok: false, loading: false } }));
         return;
@@ -202,19 +202,19 @@ export default function Auth() {
 
       try {
         const supabase = await getSupabaseClient();
-        const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-          body: { operation: 'ping' },
-        });
+        const { error } = await supabase.from('system_kill_switches')
+          .select('enabled')
+          .eq('switch_name', 'edge_external_db_bridge')
+          .limit(1);
 
         if (cancelled) return;
 
-        if (!error && data?.ok) {
+        if (!error) {
           setDbStatus((prev) => ({
             ...prev,
             external: {
-              ok: data.config?.has_url && data.config?.has_key,
-              url: data.config?.url || 'Configurado',
-              source: data.config?.is_external ? 'Externo' : 'Cloud',
+              ok: true,
+              source: 'Externo',
               loading: false,
             },
           }));
