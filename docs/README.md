@@ -52,6 +52,16 @@
    - Exemplos de código
    - Testes e validação
 
+6. **[ARQUITETURA_BRIDGE_REST_NATIVE.md](./ARQUITETURA_BRIDGE_REST_NATIVE.md)** 🌉 **NOVO!**  
+   **Como o catálogo lê o banco hoje** — LEITURA DE ONBOARDING (devs e IAs)
+   - Migração da Edge Function `external-db-bridge` → **PostgREST nativo**
+   - Mapa de arquivos em `src/lib/external-db/`
+   - Kill-switch com rollout A/B + rollback de emergência
+   - VIEWs de segurança, whitelist e aliases de tabela/coluna
+   - Camada de compatibilidade (shim + interceptor global)
+   - ⚠️ Lacuna de escrita (CRUD admin) e passos de aposentadoria
+   - Doc de apoio: [REST_NATIVE_MIGRATION.md](./REST_NATIVE_MIGRATION.md) (histórico/métricas)
+
 ---
 
 ## 🚀 Quick Start
@@ -60,9 +70,10 @@
 
 1. ✅ **Leia primeiro:** [POLITICA_IDIOMA_PT_BR.md](./POLITICA_IDIOMA_PT_BR.md)
 2. 📊 **Entenda o projeto:** [ANALISE_EXAUSTIVA_GIFTS_STORE.md](./ANALISE_EXAUSTIVA_GIFTS_STORE.md)
-3. 🚀 **Veja o que implementar:** [MELHORIAS_PENDENTES_PLANO_IMPLEMENTACAO.md](./MELHORIAS_PENDENTES_PLANO_IMPLEMENTACAO.md)
-4. ⚙️ **Configure o ambiente:** [CONFIGURACAO_LOCALE_PT_BR.md](./CONFIGURACAO_LOCALE_PT_BR.md)
-5. 🔄 **Entenda os processos:** [DIAGRAMAS_PROCESSOS_GIFTS_STORE.md](./DIAGRAMAS_PROCESSOS_GIFTS_STORE.md)
+3. 🌉 **Entenda como o catálogo acessa o banco:** [ARQUITETURA_BRIDGE_REST_NATIVE.md](./ARQUITETURA_BRIDGE_REST_NATIVE.md)
+4. 🚀 **Veja o que implementar:** [MELHORIAS_PENDENTES_PLANO_IMPLEMENTACAO.md](./MELHORIAS_PENDENTES_PLANO_IMPLEMENTACAO.md)
+5. ⚙️ **Configure o ambiente:** [CONFIGURACAO_LOCALE_PT_BR.md](./CONFIGURACAO_LOCALE_PT_BR.md)
+6. 🔄 **Entenda os processos:** [DIAGRAMAS_PROCESSOS_GIFTS_STORE.md](./DIAGRAMAS_PROCESSOS_GIFTS_STORE.md)
 
 ### Para Gestores/PMs:
 
@@ -96,7 +107,8 @@
 | MELHORIAS_PENDENTES_PLANO_IMPLEMENTACAO.md | 15 KB | 5 | 27/12/2025 |
 | DIAGRAMAS_PROCESSOS_GIFTS_STORE.md | 36 KB | 8 | 27/12/2025 |
 | CONFIGURACAO_LOCALE_PT_BR.md | 14 KB | 7 | 27/12/2025 |
-| **TOTAL** | **138 KB** | **44 seções** | - |
+| ARQUITETURA_BRIDGE_REST_NATIVE.md | 15 KB | 13 | 30/05/2026 |
+| **TOTAL** | **153 KB** | **57 seções** | - |
 
 ---
 
