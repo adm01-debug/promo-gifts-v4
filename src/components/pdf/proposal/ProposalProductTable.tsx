@@ -153,7 +153,7 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                 </td>
               </tr>
             )}
-            {group.items.map(({ item, globalIdx }, idx) => {
+            {group.items.map(({ item, globalIdx }, _idx) => {
               const persUnitCost =
                 item.personalizations?.reduce((sum, p) => {
                   const pTotal = p.total_cost || 0;
@@ -188,8 +188,8 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                 .join(' · ');
 
               return (
-                <tr
-                  key={idx}
+                  <tr
+                    key={item.id || globalIdx}
                   style={{
                     backgroundColor: isEven ? '#ffffff' : '#f9fafb',
                     borderBottom: '1px solid #eef0f2',

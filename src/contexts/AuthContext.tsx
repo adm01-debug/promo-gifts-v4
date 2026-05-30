@@ -151,13 +151,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const name = session.user.user_metadata?.full_name?.split(' ')[0] || 'Usuário';
             toast.success(`🤖 Flow`, { description: getRandomGreeting(name), duration: 3000 });
           }
-          setTimeout(() => {
-            fetchUserData(session.user.id);
-            fetchAAL();
-            import('@/lib/external-db-prewarm').then((m) =>
-              m.prewarmExternalDb({ oncePerSession: true }),
-            );
-          }, 0);
+          Promise.resolve().then(() => {
+            if (session.user) {
+              fetchUserData(session.user.id);
+              fetchAAL();
+              import('@/lib/external-db-prewarm').then((m) =>
+                m.prewarmExternalDb({ oncePerSession: true }),
+              );
+            }
+          });
         } else {
           clearProfileRoles();
           clearMFA();
@@ -198,7 +200,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const now = Date.now();
     const timeToExpiry = expiresAt - now;
 
-    if (timeToExpiry > 0 && timeToExpiry < 10 * 60 * 1000) refreshSession();
+    const buffer = 5 * 60 * 1000;
+    const refreshDelay = timeToExpiry - buffer;
+
+    if (timeToExpiry > 0 && refreshDelay <= 0) {
+      refreshSession();
+    }
 
     const warningTime = timeToExpiry - 2 * 60 * 1000;
     let warningTimer: number | null = null;
@@ -211,12 +218,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }, warningTime);
     }
 
-    const buffer = 5 * 60 * 1000;
-    const refreshTimer = setTimeout(() => refreshSession(), expiresAt - now - buffer);
+    const refreshTimer =
+      refreshDelay > 0 ? window.setTimeout(() => refreshSession(), refreshDelay) : null;
 
     return () => {
       if (warningTimer) window.clearTimeout(warningTimer);
-      clearTimeout(refreshTimer);
+      if (refreshTimer) window.clearTimeout(refreshTimer);
     };
   }, [session, refreshSession]);
 
@@ -226,15 +233,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [userRoles]);
 
   // Watchdog (Etapa 8): se isLoading travar (network error, edge function timeout, RLS hang),
-  // força isLoading=false. Threshold aumentado de 8s → 12s porque com a remoção do
-  // getSession() redundante em fetchUserData, cold starts de Vercel + Supabase ficam
-  // dentro de ~3-4s. O threshold de 12s garante cobertura sem falsos positivos.
+  // força isLoading=false. Threshold = 12s.
   useEffect(() => {
     if (!isLoading) return;
     const timer = window.setTimeout(() => {
       console.warn('[AuthContext] Watchdog: isLoading travado por 12s — forçando false');
       setIsLoading(false);
-      // BUG-FIX: Se travar, avisa o usuário que algo está errado
       toast.error(
         'O carregamento está demorando mais que o esperado. Algumas funcionalidades podem estar indisponíveis.',
       );
@@ -242,15 +246,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.clearTimeout(timer);
   }, [isLoading, setIsLoading]);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     const log = createClientLogger('auth.signIn', { base: { email_domain: email.split('@')[1] } });
     const { allowed, remainingSeconds } = checkLoginAllowed(email);
     if (!allowed) {
       return {
-        error: {
-          message: `Bloqueado. Tente em ${Math.ceil(remainingSeconds / 60)} min.`,
-          status: 429,
-        },
+        error: { message: `Bloqueado. Tente em ${Math.ceil(remainingSeconds / 60)} min.`, status: 429 },
         data: null,
       };
     }
@@ -278,9 +279,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .catch(() => {});
 
     return { error, data };
-  };
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     try {
       await authService.signOut();
     } finally {
@@ -290,45 +291,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearMFA();
       import('@/lib/external-db-prewarm').then((m) => m.resetPrewarmSession()).catch(() => {});
     }
-  };
+  }, [clearProfileRoles, clearMFA]);
 
   const isSupervisorOrAbove = checkIsSupervisorOrAbove(userRoles);
 
-  const value: AuthContextType = useMemo(() => ({
-    user,
-    session,
-    profile,
-    isLoading,
-    roles: userRoles,
-    role: getHighestRole(userRoles),
-    isDev: userRoles.includes('dev'),
-    isSupervisor: userRoles.some((r) => ['supervisor', 'admin', 'manager'].includes(r)),
-    isAgente: userRoles.some((r) => ['agente', 'vendedor'].includes(r)),
-    isSupervisorOrAbove,
-    isAdmin: isSupervisorOrAbove,
-    isManager: userRoles.includes('manager'),
-    isSeller: userRoles.some((r) => ['agente', 'vendedor'].includes(r)),
-    canManage: isSupervisorOrAbove,
-    isAuthenticated: !!user,
-    currentAAL,
-    nextAAL,
-    hasMFA,
-    mfaRequired: isSupervisorOrAbove && currentAAL !== 'aal2',
-    rolesLoaded: userRoles.length > 0,
-    refreshAAL: fetchAAL,
-    signIn,
-    signOut,
-    refreshSession,
-    refreshProfile: async () => {
-      if (user) {
-        fetchPromiseRef.current = null;
-        await fetchUserData(user.id);
-      }
-    },
-  }), [
-    user, session, profile, isLoading, userRoles, isSupervisorOrAbove,
-    currentAAL, nextAAL, hasMFA, fetchAAL, signIn, signOut,
-  ]);
+  const value: AuthContextType = useMemo(
+    () => ({
+      user,
+      session,
+      profile,
+      isLoading,
+      roles: userRoles,
+      role: getHighestRole(userRoles),
+      isDev: userRoles.includes('dev'),
+      isSupervisor: userRoles.some((r) => ['supervisor', 'admin', 'manager'].includes(r)),
+      isAgente: userRoles.some((r) => ['agente', 'vendedor'].includes(r)),
+      isSupervisorOrAbove,
+      isAdmin: isSupervisorOrAbove,
+      isManager: userRoles.includes('manager'),
+      isSeller: userRoles.some((r) => ['agente', 'vendedor'].includes(r)),
+      canManage: isSupervisorOrAbove,
+      isAuthenticated: !!user,
+      currentAAL,
+      nextAAL,
+      hasMFA,
+      mfaRequired: isSupervisorOrAbove && currentAAL !== 'aal2',
+      rolesLoaded: userRoles.length > 0,
+      refreshAAL: fetchAAL,
+      signIn,
+      signOut,
+      refreshSession,
+      refreshProfile: async () => {
+        if (user) {
+          fetchPromiseRef.current = null;
+          await fetchUserData(user.id);
+        }
+      },
+    }),
+    [
+      user,
+      session,
+      profile,
+      isLoading,
+      userRoles,
+      isSupervisorOrAbove,
+      currentAAL,
+      nextAAL,
+      hasMFA,
+      fetchAAL,
+      signIn,
+      signOut,
+      refreshSession,
+      fetchUserData,
+      fetchPromiseRef,
+    ],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

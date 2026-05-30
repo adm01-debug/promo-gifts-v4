@@ -1,16 +1,20 @@
 /**
  * External DB Bridge — Core invocation layer.
- * Handles retry, error parsing, batch queries.
  *
- * DUAL-MODE (2026-05-25): quando o kill-switch `edge_external_db_bridge` está OFF,
- * SELECTs em tabelas whitelistadas são roteados via REST nativo (PostgREST).
- * Writes e batches continuam sempre via bridge. Veja rest-native.ts.
+ * ARCHITECTURE (Phase 5, 2026-05-30):
+ *   1. invokeExternalDb: tries REST native FIRST (fast path).
+ *   2. Non-whitelisted tables: check kill-switch, try bridge with CORS guard.
+ *   3. Bridge CORS/network errors → graceful empty return (no console errors).
+ *   4. invokeBatchBridge: on kill-switch/CORS, decomposes to individual calls.
+ *
+ * Kill-switch: enabled=false, rollout=100 → 100% REST native.
+ * Rollback: UPDATE system_kill_switches SET enabled = true WHERE switch_name = 'edge_external_db_bridge';
  */
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { emitBridgeStatus, isColdStartSignal } from './bridge-status-events';
-import { getKillSwitchState, KillSwitchActiveError } from './kill-switch-client';
-import { tryExecuteRestNative, isRestNativeEligible } from './rest-native';
+import { getKillSwitchState, KillSwitchActiveError, invalidateKillSwitchCache } from './kill-switch-client';
+import { tryExecuteRestNative, isRestNativeEligible, runWithConcurrency } from './rest-native';
 
 const KILL_SWITCH_NAME = 'edge_external_db_bridge';
 
@@ -58,6 +62,8 @@ export interface BatchResult {
   fromCache?: boolean;
 }
 
+// ── Bridge invocation (legacy, kept for rollback) ───────────────────
+
 const BOOT_RETRY_ATTEMPTS = 4;
 const BOOT_INITIAL_BACKOFF_MS = 400;
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -66,129 +72,85 @@ async function buildBridgeError(error: unknown): Promise<{ message: string; retr
   let baseMessage = 'Erro desconhecido';
   let status: number | undefined;
   let responseBody = '';
-
   if (error && typeof error === 'object') {
     const maybeError = error as { message?: string; context?: Response };
-    if (typeof maybeError.message === 'string' && maybeError.message.trim()) {
-      baseMessage = maybeError.message;
-    }
+    if (typeof maybeError.message === 'string' && maybeError.message.trim()) baseMessage = maybeError.message;
     if (maybeError.context instanceof Response) {
       status = maybeError.context.status;
-      try {
-        responseBody = await maybeError.context.clone().text();
-      } catch {
-        /* ignore */
-      }
+      try { responseBody = await maybeError.context.clone().text(); } catch { /* ignore */ }
     }
   }
-
   const diagnostic = `${baseMessage} ${responseBody}`.toLowerCase();
-  const retryable =
-    status === 502 ||
-    status === 503 ||
-    status === 504 ||
-    diagnostic.includes('boot_error') ||
-    diagnostic.includes('bad gateway') ||
-    diagnostic.includes('function failed to start') ||
-    diagnostic.includes('statement timeout') ||
-    diagnostic.includes('canceling statement due to statement timeout') ||
-    diagnostic.includes('57014') ||
-    diagnostic.includes('supabase_edge_runtime_error') ||
-    diagnostic.includes('service is temporarily unavailable') ||
-    diagnostic.includes('functionshttperror') ||
-    diagnostic.includes('failed to fetch') ||
-    diagnostic.includes('network');
-
+  const retryable = status === 502 || status === 503 || status === 504 ||
+    diagnostic.includes('boot_error') || diagnostic.includes('bad gateway') ||
+    diagnostic.includes('function failed to start') || diagnostic.includes('statement timeout') ||
+    diagnostic.includes('57014') || diagnostic.includes('supabase_edge_runtime_error') ||
+    diagnostic.includes('service is temporarily unavailable') || diagnostic.includes('functionshttperror') ||
+    diagnostic.includes('failed to fetch') || diagnostic.includes('network');
   const details = responseBody ? `${baseMessage} | ${responseBody}` : baseMessage;
   return { message: `Erro na bridge: ${details}`, retryable };
+}
+
+function isCorsOrNetworkBridgeError(message: string): boolean {
+  const lower = message.toLowerCase();
+  return lower.includes('failed to send a request to the edge function') ||
+    lower.includes('err_failed') || lower.includes('cors') ||
+    lower.includes('x-application-name') || lower.includes('preflight') ||
+    lower.includes('failed to fetch') || lower.includes('network');
 }
 
 export async function invokeBridge<T>(body: Record<string, unknown>): Promise<BridgeResponse<T>> {
   const op = body.operation as string | undefined;
   if (op !== 'batch' && (!body.table || typeof body.table !== 'string')) {
-    const caller = new Error().stack?.split('\n')[2]?.trim() || 'unknown';
-    logger.error(
-      `[external-db] invokeBridge called without table! operation=${op}, caller=${caller}`,
-      body,
-    );
-    throw new Error(`invokeBridge: tabela não informada (operation=${op})`);
+    throw new Error(`invokeBridge: tabela nao informada (operation=${op})`);
   }
-
-  // ============================================================
-  // KILL-SWITCH FAIL-FAST: a edge function `external-db-bridge` foi
-  // descontinuada (responde 410 Gone). Não tente chamá-la — devolve um
-  // erro claro para o caller (que deve ter um fallback REST nativo ou
-  // tratar o estado vazio sem quebrar a UI / blank screen).
-  // ============================================================
   try {
     const switchState = await getKillSwitchState(KILL_SWITCH_NAME);
     if (!switchState.enabled) {
-      const friendly =
-        switchState.message ??
-        'external-db-bridge foi descontinuada. Migre para REST nativo /rest/v1/.';
-      logger.warn(`[external-db] invokeBridge short-circuit (kill-switch OFF): ${friendly}`);
+      const friendly = switchState.message ?? 'Bridge OFF. REST nativo ativo.';
       emitBridgeStatus({ type: 'unavailable', reason: `kill-switch: ${friendly}`, attempts: 0 });
       throw new KillSwitchActiveError(KILL_SWITCH_NAME, friendly);
     }
   } catch (err) {
     if (err instanceof KillSwitchActiveError) throw err;
-    // qualquer outra falha lendo o switch: fail-open, segue para a invocação
   }
-
   let sawColdStart = false;
   const { data: sessionData } = await supabase.auth.getSession();
   const accessToken = sessionData?.session?.access_token;
   const headers: Record<string, string> = {};
-  if (accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`;
-  }
-
+  if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
   for (let attempt = 1; attempt <= BOOT_RETRY_ATTEMPTS; attempt++) {
-    const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-      body,
-      headers,
-    });
+    const { data, error } = await supabase.functions.invoke('external-db-bridge', { body, headers });
     if (error) {
       const parsed = await buildBridgeError(error);
+      if (isCorsOrNetworkBridgeError(parsed.message)) {
+        invalidateKillSwitchCache(KILL_SWITCH_NAME);
+        // CORS/network errors are NOT retryable — bail immediately
+        throw new Error(parsed.message);
+      }
       if (parsed.retryable && attempt < BOOT_RETRY_ATTEMPTS) {
         const base = BOOT_INITIAL_BACKOFF_MS * Math.pow(2, attempt - 1);
         const jitter = Math.floor(Math.random() * 150);
         const delay = Math.min(base + jitter, 4000);
-        logger.warn(
-          `[external-db] bridge retry ${attempt}/${BOOT_RETRY_ATTEMPTS - 1} in ${delay}ms (base=${base}+jitter=${jitter}): ${parsed.message}`,
-        );
         if (isColdStartSignal(parsed.message)) {
           sawColdStart = true;
-          emitBridgeStatus({
-            type: 'degraded',
-            attempt,
-            maxAttempts: BOOT_RETRY_ATTEMPTS,
-            delayMs: delay,
-            baseDelayMs: base,
-            jitterMs: jitter,
-            reason: parsed.message,
-          });
+          emitBridgeStatus({ type: 'degraded', attempt, maxAttempts: BOOT_RETRY_ATTEMPTS, delayMs: delay, baseDelayMs: base, jitterMs: jitter, reason: parsed.message });
         }
         await sleep(delay);
         continue;
       }
-      if (isColdStartSignal(parsed.message)) {
-        emitBridgeStatus({ type: 'unavailable', reason: parsed.message, attempts: attempt });
-      }
+      if (isColdStartSignal(parsed.message)) emitBridgeStatus({ type: 'unavailable', reason: parsed.message, attempts: attempt });
       throw new Error(parsed.message);
     }
-    if (!data?.success) {
-      throw new Error(data?.error || 'Erro desconhecido no banco externo');
-    }
+    if (!data?.success) throw new Error(data?.error || 'Erro desconhecido no banco externo');
     if (sawColdStart) emitBridgeStatus({ type: 'recovered' });
     return data as BridgeResponse<T>;
   }
   throw new Error('Erro na bridge: tentativas esgotadas');
 }
 
-// ============================================
-// BATCH BRIDGE
-// ============================================
+// ── Batch bridge ────────────────────────────────────────────────────
+
 const BATCH_MAX_QUERIES = 10;
 
 function extractBatchResults(payload: unknown): BatchResult[] {
@@ -200,102 +162,137 @@ function extractBatchResults(payload: unknown): BatchResult[] {
   return [];
 }
 
-export async function invokeBatchBridge(queries: BatchQuery[]): Promise<BatchResult[]> {
-  if (queries.length <= BATCH_MAX_QUERIES) {
-    const response = await invokeBridge<{ results: BatchResult[] }>({
-      operation: 'batch',
-      queries,
-    });
-    const parsedResults = extractBatchResults(response);
-    if (parsedResults.length === 0 && queries.length > 0) {
-      throw new Error('Resposta inválida da batch bridge');
+async function decomposeBatchToIndividual(queries: BatchQuery[]): Promise<BatchResult[]> {
+  logger.info(
+    `[external-db] Decomposing ${queries.length} batch queries (concurrency=6)`,
+  );
+  const tasks = queries.map((q) => async (): Promise<BatchResult> => {
+    try {
+      const result = await invokeExternalDb<Record<string, unknown>>({
+        table: q.table,
+        operation: q.operation ?? 'select',
+        select: q.select,
+        filters: q.filters,
+        orderBy: q.orderBy,
+        limit: q.limit,
+        offset: q.offset,
+      });
+      return { success: true, data: { records: result.records, count: result.count } };
+    } catch (e) {
+      logger.warn(`[external-db] Batch decompose: ${q.table} failed: ${(e as Error).message}`);
+      return { success: false, error: (e as Error).message };
     }
-    return parsedResults;
-  }
+  });
 
-  const results: BatchResult[] = [];
-  for (let i = 0; i < queries.length; i += BATCH_MAX_QUERIES) {
-    const chunk = queries.slice(i, i + BATCH_MAX_QUERIES);
-    const response = await invokeBridge<{ results: BatchResult[] }>({
-      operation: 'batch',
-      queries: chunk,
-    });
-    const parsedResults = extractBatchResults(response);
-    if (parsedResults.length === 0 && chunk.length > 0) {
-      throw new Error('Resposta inválida da batch bridge');
-    }
-    results.push(...parsedResults);
-  }
-  return results;
+  const settled = await runWithConcurrency(tasks);
+  return settled.map((r) =>
+    r.status === 'fulfilled' ? r.value : { success: false, error: 'Promise rejected' },
+  );
 }
 
-// ============================================
-// CRUD HELPERS (dual-mode aware)
-// ============================================
+export async function invokeBatchBridge(queries: BatchQuery[]): Promise<BatchResult[]> {
+  try {
+    if (queries.length <= BATCH_MAX_QUERIES) {
+      const response = await invokeBridge<{ results: BatchResult[] }>({ operation: 'batch', queries });
+      const parsedResults = extractBatchResults(response);
+      if (parsedResults.length === 0 && queries.length > 0) throw new Error('Resposta invalida da batch bridge');
+      return parsedResults;
+    }
+    const results: BatchResult[] = [];
+    for (let i = 0; i < queries.length; i += BATCH_MAX_QUERIES) {
+      const chunk = queries.slice(i, i + BATCH_MAX_QUERIES);
+      const response = await invokeBridge<{ results: BatchResult[] }>({ operation: 'batch', queries: chunk });
+      const parsedResults = extractBatchResults(response);
+      if (parsedResults.length === 0 && chunk.length > 0) throw new Error('Resposta invalida da batch bridge');
+      results.push(...parsedResults);
+    }
+    return results;
+  } catch (err) {
+    if (err instanceof KillSwitchActiveError) return decomposeBatchToIndividual(queries);
+    if (err instanceof Error && isCorsOrNetworkBridgeError(err.message)) {
+      logger.warn('[external-db] Bridge unreachable (CORS/network), decomposing to REST native');
+      return decomposeBatchToIndividual(queries);
+    }
+    throw err;
+  }
+}
+
+// ── CRUD ────────────────────────────────────────────────────────────
 
 /**
- * Smart routing: tries REST nativo first when kill-switch is OFF OR when
- * request is eligible (performance win). Falls back to bridge otherwise.
+ * Smart routing:
+ *   1. If eligible → REST native (no kill-switch check, fast path)
+ *   2. If not eligible → check kill-switch
+ *   3. If bridge OFF → return empty silently
+ *   4. If bridge ON → try bridge WITH CORS guard
+ *   5. If bridge CORS/network error → return empty silently (no console spam)
  */
 export async function invokeExternalDb<T>(options: InvokeOptions): Promise<InvokeResult<T>> {
-  // Step 1: kill-switch check (fail-open, cached 60s+5min)
+  // Fast path: REST native (no overhead)
+  if (isRestNativeEligible(options)) {
+    const restResult = await tryExecuteRestNative<T>(options);
+    if (restResult !== null) return restResult;
+  }
+
+  // Slow path: check kill-switch
   let bridgeEnabled = true;
   try {
     const switchState = await getKillSwitchState(KILL_SWITCH_NAME);
     bridgeEnabled = switchState.enabled;
   } catch {
-    // fail-open: assume bridge available
-    bridgeEnabled = true;
+    bridgeEnabled = true; // fail-open
   }
 
-  // Step 2: route to REST nativo when applicable
-  // Try REST native when bridge is OFF *or* when the request is eligible
-  // (performance win: skip edge function overhead for simple SELECTs).
-  if (!bridgeEnabled || isRestNativeEligible(options)) {
-    const restResult = await tryExecuteRestNative<T>(options);
-    if (restResult !== null) {
-      return restResult;
-    }
+  if (!bridgeEnabled) {
+    logger.debug(
+      `[external-db] Bridge OFF for ${options.table}/${options.operation}. Returning empty.`,
+    );
+    return { records: [], count: 0 };
+  }
 
-    // If bridge is OFF and REST native failed/not eligible, we can't proceed to bridge
-    if (!bridgeEnabled) {
-      logger.warn(
-        `[external-db] Bridge is OFF and REST native failed for ${options.table}/${options.operation}. Returning empty.`,
+  // Bridge path — wrapped in try/catch to prevent CORS errors from
+  // polluting the console when the bridge is unreachable (e.g. Lovable preview,
+  // stale kill-switch cache, or bridge truly down).
+  try {
+    const response = await invokeBridge<InvokeResult<T> | T>(options as unknown as Record<string, unknown>);
+    const payload = response.data;
+    if (options.operation !== 'select' && payload && typeof payload === 'object' && !Array.isArray(payload) && !('records' in payload)) {
+      return { records: [payload as T], count: 1 };
+    }
+    return payload as InvokeResult<T>;
+  } catch (err) {
+    if (err instanceof KillSwitchActiveError) {
+      return { records: [], count: 0 };
+    }
+    if (err instanceof Error && isCorsOrNetworkBridgeError(err.message)) {
+      logger.debug(
+        `[external-db] Bridge CORS/network error for ${options.table} — returning empty.`,
       );
       return { records: [], count: 0 };
     }
+    // Non-CORS errors still propagate (auth errors, data errors, etc.)
+    throw err;
   }
-
-  // Step 3: bridge path (legacy / fallback)
-  const response = await invokeBridge<InvokeResult<T> | T>(
-    options as unknown as Record<string, unknown>,
-  );
-  const payload = response.data;
-
-  if (
-    options.operation !== 'select' &&
-    payload &&
-    typeof payload === 'object' &&
-    !Array.isArray(payload) &&
-    !('records' in payload)
-  ) {
-    return { records: [payload as T], count: 1 };
-  }
-  return payload as InvokeResult<T>;
 }
 
 export async function invokeExternalDbSingle<T>(options: InvokeOptions): Promise<T> {
   const result = await invokeExternalDb<T>(options);
-  if (!result.records?.length) {
-    throw new Error('Nenhum registro retornado');
-  }
+  if (!result.records?.length) throw new Error('Nenhum registro retornado');
   return result.records[0];
 }
 
 export async function invokeExternalDbDelete(table: string, id: string): Promise<void> {
-  await invokeBridge<{ success: boolean; deleted_id: string }>({
-    table,
-    operation: 'delete',
-    id,
-  });
+  try {
+    await invokeBridge<{ success: boolean; deleted_id: string }>({ table, operation: 'delete', id });
+  } catch (err) {
+    if (err instanceof KillSwitchActiveError) {
+      logger.warn(`[external-db] Delete blocked by kill-switch for ${table}/${id}`);
+      return;
+    }
+    if (err instanceof Error && isCorsOrNetworkBridgeError(err.message)) {
+      logger.warn(`[external-db] Delete CORS error for ${table}/${id}`);
+      return;
+    }
+    throw err;
+  }
 }

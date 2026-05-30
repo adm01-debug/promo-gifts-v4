@@ -6,6 +6,7 @@ import { z } from '../_shared/zod-validate.ts';
 import { applyRateLimit, rateLimiters } from '../_shared/rate-limiter.ts';
 import { runBotProtection } from '../_shared/bot-protection.ts';
 import { getOrCreateRequestId } from '../_shared/request-id.ts';
+import { resolveCredential } from '../_shared/credentials.ts';
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -44,7 +45,9 @@ Deno.serve(async (req) => {
     // 1. Authentication & Config Validation
     currentStep = "config_validation";
     const AI_LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    const AI_HF_ACCESS_TOKEN = Deno.env.get("HF_ACCESS_TOKEN");
+    // SSOT: HF_ACCESS_TOKEN resolvido via resolveCredential (DB-first → env fallback),
+    // não Deno.env.get direto — alinhado com ai-recommendations/elevenlabs e o audit de credenciais.
+    const { value: AI_HF_ACCESS_TOKEN } = await resolveCredential("HF_ACCESS_TOKEN");
 
     if (!AI_LOVABLE_API_KEY && !AI_HF_ACCESS_TOKEN) {
       throw new Error("Configuração ausente: LOVABLE_API_KEY ou HF_ACCESS_TOKEN não configurados no backend.");

@@ -345,8 +345,8 @@ function ProductRow({
         </TableCell>
         <TableCell className="hidden md:table-cell">
           <div className="flex flex-wrap gap-1">
-            {product.availableColors.slice(0, 5).map((color, idx) => (
-              <TooltipProvider key={idx}>
+            {product.availableColors.slice(0, 5).map((color) => (
+              <TooltipProvider key={color.colorName}>
                 <Tooltip>
                   <TooltipTrigger>
                     <div

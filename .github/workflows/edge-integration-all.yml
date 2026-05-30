@@ -108,9 +108,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: edge-integration
-    if: >
-      vars.SUPABASE_URL != '' &&
-      secrets.SUPABASE_SERVICE_ROLE_KEY != ''
+    # NOTA: `secrets` NÃO é permitido em `if:` de job (compila o workflow inteiro
+    # como inválido → startup_failure, 0 jobs). Gate só no `vars` (permitido) e a
+    # presença do secret é checada por step via `env`.
+    if: vars.SUPABASE_URL != ''
+    env:
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
     steps:
       - uses: actions/checkout@v5
@@ -124,14 +127,14 @@ jobs:
         run: npm ci
 
       - name: Run fuzz tests against live Supabase
+        if: env.SUPABASE_SERVICE_ROLE_KEY != ''
         run: node scripts/fuzz-testing.mjs
         env:
           SUPABASE_URL: ${{ vars.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           FUZZ_CONCURRENCY: "3"
 
       - name: Run upload fuzz tests against live Supabase
+        if: env.SUPABASE_SERVICE_ROLE_KEY != ''
         run: node scripts/fuzz-edge-uploads.mjs
         env:
           SUPABASE_URL: ${{ vars.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

@@ -31,10 +31,12 @@ import { usePromoSalesRanking } from '@/hooks/intelligence/usePromoSalesRanking'
 import { useCatalogFiltering } from '@/hooks/products/useCatalogFiltering';
 import { useCatalogPreferences } from '@/hooks/products/useCatalogPreferences';
 import { useProductAnalytics } from '@/hooks/products/useProductAnalytics';
+// BUG-SORT-01 FIX: importar SORT_OPTIONS para derivar VALID_SORT_VALUES e
+// validar sort params de URL/localStorage antes de aplicar ao state.
+import { SORT_OPTIONS } from '@/constants/filters';
 
 export type ViewMode = 'grid' | 'list' | 'table';
 export type SortOption =
-  | 'relevance'
   | 'name'
   | 'price-asc'
   | 'price-desc'
@@ -45,6 +47,38 @@ export type SortOption =
   | 'best-seller-promo';
 
 const VIEW_MODE_KEY = 'catalog-view-mode';
+
+// BUG-SORT-01 FIX: Conjunto dos valores válidos derivado do SSOT (SORT_OPTIONS).
+// Declarado fora do hook para não ser recriado a cada render.
+const VALID_SORT_VALUES = new Set<string>(SORT_OPTIONS.map(o => o.value));
+
+/**
+ * BUG-SORT-09 FIX: Mapa de aliases conhecidos → valores canônicos de SortOption.
+ * Permite que sistemas externos (voice agent, URL compartilhada) usem nomes
+ * alternativos que são normalizados antes de ser aplicados ao state.
+ * Sem este mapa, validateSortOption rejeitava aliases e o URL sync effect revertia
+ * silenciosamente o sort para 'name', descartando a intenção do voice agent.
+ * Ex: voice agent envia sortBy='popularity' → normaliza para 'best-seller-promo'.
+ */
+const SORT_ALIASES: Readonly<Record<string, SortOption>> = {
+  popularity: 'best-seller-promo',  // alias do voice agent
+  relevance: 'name',                // valor legado da versão anterior do app
+} as const;
+
+/**
+ * BUG-SORT-01 FIX: Valida e normaliza um sort value arbitrário.
+ * BUG-SORT-09 FIX: Normaliza aliases conhecidos para o valor canônico antes
+ * de validar no SSOT. Retorna 'name' (default seguro) para qualquer valor
+ * inválido, nulo ou ausente. Previne que URL params corrompidos ou aliases
+ * de voice agent quebrem o Select UI e o URL sync loop.
+ */
+function validateSortOption(s: string | null | undefined): SortOption {
+  if (!s) return 'name';
+  // BUG-SORT-09 FIX: normalizar alias → canonical antes de validar no SSOT
+  if (s in SORT_ALIASES) return SORT_ALIASES[s as keyof typeof SORT_ALIASES];
+  if (VALID_SORT_VALUES.has(s)) return s as SortOption;
+  return 'name';
+}
 
 function getPersistedViewMode(): ViewMode {
   try {
@@ -101,48 +135,70 @@ export function useCatalogState() {
       /* empty */
     }
   }, []);
-  const initialSortBy = (searchParams.get('sort') as SortOption) || preferences.sortBy || 'relevance';
+
+  // BUG-SORT-01 FIX: Validar o sort param da URL e o valor de preferência antes
+  // de usá-los como estado inicial. O cast `as SortOption` anterior não tinha
+  // runtime check — valores stale (ex: 'relevance') ou corrompidos eram aceitos.
+  const rawUrlSort = searchParams.get('sort');
+  const initialSortBy: SortOption = rawUrlSort
+    ? validateSortOption(rawUrlSort)
+    : validateSortOption(preferences.sortBy);
+
   const [sortBy, setSortByState] = useState<SortOption>(initialSortBy);
 
   // Sync sortBy with preferences once loaded
   useEffect(() => {
     if (prefsLoaded && preferences.sortBy && !searchParams.get('sort')) {
-      setSortByState(preferences.sortBy);
+      // BUG-SORT-01 FIX: validar o valor de preferência antes de aplicar ao state.
+      setSortByState(validateSortOption(preferences.sortBy));
     }
   }, [prefsLoaded, preferences.sortBy, searchParams]);
 
   const setSortBy = useCallback(
     (s: SortOption) => {
-      const previousSort = sortBy;
+      if (s === sortBy) return;
       setIsTransitioning(true);
-      React.startTransition(() => {
-        setSortByState(s);
-        updatePreferences({ sortBy: s });
-
-        // Update URL query string
-        const newParams = new URLSearchParams(window.location.search);
-        if (s === 'relevance') {
-          newParams.delete('sort');
-        } else {
-          newParams.set('sort', s);
-        }
-
-        const newPath = `${window.location.pathname}${newParams.toString() ? '?' + newParams.toString() : ''}`;
-        navigate(newPath, { replace: true });
-
-        // Analytics tracking (lê via ref para evitar TDZ — ver nota acima)
-        trackSort({
-          sortBy: s,
-          previousSortBy: previousSort,
-          resultsCount: filteredProductsRef.current.length,
-          hasSearch: !!searchQueryRef.current.trim(),
-        });
-
-        setIsTransitioning(false);
-      });
+      setSortByState(s);
     },
-    [navigate, sortBy, updatePreferences, trackSort],
+    [sortBy],
   );
+
+  // BUG-G10 FIX: Consolidate side-effects (URL, Preferences, Analytics) 
+  // into a single effect reactive to sortBy changes.
+  const lastSortByRef = useRef<SortOption>(initialSortBy);
+  useEffect(() => {
+    if (sortBy === lastSortByRef.current) return;
+    
+    const previousSort = lastSortByRef.current;
+    lastSortByRef.current = sortBy;
+
+    // 1. Update Preferences
+    updatePreferences({ sortBy });
+
+    // 2. Update URL
+    const newParams = new URLSearchParams(window.location.search);
+    if (sortBy === 'name') {
+      // BUG-SORT-04 FIX [CRÍTICO]: Remover o param 'sort' ao reverter para o default.
+      // Antes: bloco vazio deixava '?sort=price-asc' na URL quando o usuário
+      // selecionava 'Nome A-Z'. O URL sync effect lia o param stale e revertia
+      // o state imediatamente — tornando impossível selecionar o item default.
+      newParams.delete('sort');
+    } else {
+      newParams.set('sort', sortBy);
+    }
+    const newPath = `${window.location.pathname}${newParams.toString() ? '?' + newParams.toString() : ''}`;
+    navigate(newPath, { replace: true });
+
+    // 3. Analytics
+    trackSort({
+      sortBy,
+      previousSortBy: previousSort,
+      resultsCount: filteredProductsRef.current.length,
+      hasSearch: !!searchQueryRef.current.trim(),
+    });
+
+    setIsTransitioning(false);
+  }, [sortBy, updatePreferences, navigate, trackSort]);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedCount, setSelectedCount] = useState(0);
   const [activeProductId, setActiveProductId] = useState<string | null>(null);
@@ -281,12 +337,36 @@ export function useCatalogState() {
     }
   }, [searchQueryFromUrl, trackSearch, sortBy, updatePreferences]);
 
+  // BUG-SORT-01 FIX: Validar o sort param da URL antes de sincronizar com o state.
+  // BUG-URL-01 FIX: Normalizar a URL — remover param default (?sort=name) e
+  // canonicalizar aliases (?sort=popularity → ?sort=best-seller-promo).
   useEffect(() => {
-    const urlSort = searchParams.get('sort') as SortOption;
-    if (urlSort && urlSort !== sortBy) {
-      setSortByState(urlSort);
+    const urlSort = searchParams.get('sort');
+    if (urlSort) {
+      const validated = validateSortOption(urlSort);
+
+      // Sincronizar state se o valor validado diferir do atual
+      if (validated !== sortBy) {
+        setSortByState(validated);
+      }
+
+      // Normalizar URL: remover sort=default ou substituir alias por canonical.
+      // Cobre dois casos:
+      //   1. ?sort=name        → remover (é o default; param redundante)
+      //   2. ?sort=popularity  → substituir por ?sort=best-seller-promo (canonical)
+      const urlNeedsNormalization = validated === 'name' || urlSort !== validated;
+      if (urlNeedsNormalization) {
+        const newParams = new URLSearchParams(window.location.search);
+        if (validated === 'name') {
+          newParams.delete('sort');
+        } else {
+          newParams.set('sort', validated);
+        }
+        const newPath = `${window.location.pathname}${newParams.toString() ? '?' + newParams.toString() : ''}`;
+        navigate(newPath, { replace: true });
+      }
     }
-  }, [searchParams, sortBy]);
+  }, [searchParams, sortBy, navigate]);
 
   // BUG-CS-06 FIX: Reset displayCount without startTransition wrapper.
   // Depends on debouncedServerSearch to avoid resetting on every keystroke.
@@ -579,10 +659,9 @@ export function useCatalogState() {
     realStats,
   ]);
 
-  // BUG-CS-02 FIX: era setSortBy('name') — default correto e 'relevance'
   const resetFilters = useCallback(() => {
     setFilters(defaultFilters);
-    setSortBy('relevance');
+    setSortBy('name');
     setSearchQuery('');
     navigate('/', { replace: true });
   }, [navigate, setSortBy]);

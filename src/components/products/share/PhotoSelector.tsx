@@ -38,7 +38,7 @@ export function PhotoSelector({
           const selected = selectedImages.has(idx);
           return (
             <button
-              key={idx}
+              key={`${img}-${idx}`}
               type="button"
               onClick={() => onToggle(idx)}
               className={cn(

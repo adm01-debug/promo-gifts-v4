@@ -103,7 +103,7 @@ export function WhatsAppPreview({
               >
                 {selectedPhotos.slice(0, 4).map((img, idx) => (
                   <div
-                    key={idx}
+                    key={`${img}-${idx}`}
                     className={cn(
                       'relative overflow-hidden bg-black/20',
                       selectedPhotos.length === 1 ? 'aspect-[4/3]' : 'aspect-square',

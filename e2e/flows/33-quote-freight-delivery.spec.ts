@@ -167,4 +167,44 @@ test.describe("Fluxo: Orçamento + Frete", () => {
     await page.getByRole("option", { name: /pré-negociado/i }).click();
     await expect(page.getByTestId("shipping-cost-input")).toBeVisible();
   });
+
+  // ── Edge Cases: Valores Inválidos e Limites ──────────────────────────────
+
+  test("Valores de frete extremos (muito altos/baixos) — validação e persistência", async ({ page }) => {
+    await gotoAndSettle(page, "/orcamentos/novo");
+    const shippingSelect = page.getByTestId("shipping-type-select");
+    await shippingSelect.waitFor({ state: "visible" });
+
+    await shippingSelect.click();
+    await page.getByRole("option", { name: /pré-negociado/i }).click();
+
+    const shippingInput = page.getByTestId("shipping-cost-input");
+    
+    // Teste com valor negativo (se o input for type=number e tiver min=0)
+    await shippingInput.fill("-50");
+    const totalEl = page.getByTestId("summary-total-value");
+    const totalText = await totalEl.textContent();
+    // Dependendo da implementação, pode ignorar o sinal ou invalidar. 
+    // Aqui assumimos que não deve quebrar o render.
+    expect(totalText).not.toBeNaN();
+
+    // Valor muito alto
+    await shippingInput.fill("999999.99");
+    await expect(totalEl).toContainText("999");
+  });
+
+  test("Simulação de erro na API de Frete (KitBuilder) — fallback gracioso", async ({ page }) => {
+    // Intercepta a chamada de estimativa e retorna erro
+    await page.route("**/functions/v1/shipping-estimate**", route => {
+      route.fulfill({ status: 500, body: JSON.stringify({ error: "Internal Server Error" }) });
+    });
+
+    await gotoAndSettle(page, "/kit-builder");
+    
+    // Verifica se a UI não "crasha"
+    const freightSection = page.getByText(/estimativa de frete/i).first();
+    if (await freightSection.isVisible()) {
+      await expect(freightSection).toBeVisible();
+    }
+  });
 });

@@ -41,7 +41,7 @@ interface DevRouteProps {
  *    com ações contextuais (solicitar acesso, copiar link, e-mail).
  *
  * Comportamento ao bloquear:
- *  - Não autenticado → redireciona para /login preservando `from`.
+ *  - Não autenticado → redireciona para /auth preservando `from`.
  *  - Autenticado sem `dev` → exibe tela de aviso com:
  *      • CTA "Solicitar acesso a Dev" (notificação pessoal + mailto).
  *      • CTA "Copiar link da página" para encaminhar manualmente.

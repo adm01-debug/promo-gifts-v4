@@ -290,6 +290,17 @@ describe("validateDiscount — direto", () => {
   it("discountAmount = subtotal (dentro da tolerância 0.01) → não lança", () => {
     expect(() => validateDiscount({}, { subtotal: 100, discountAmount: 100 })).not.toThrow();
   });
+
+  it("total_cost de personalização negativo → deve somar valor negativo (reduzir subtotal)", () => {
+    const itemsWithPers: QuoteItem[] = [
+      {
+        ...makeItem(1, 100),
+        personalizations: [{ total_cost: -20 } as never],
+      },
+    ];
+    const r = calculateQuoteTotals({}, itemsWithPers);
+    expect(r.subtotal).toBe(80);
+  });
 });
 
 // ---------------------------------------------------------------------------

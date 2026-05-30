@@ -58,12 +58,15 @@ const METHOD_LABELS: Record<string, string> = {
 export function FreightEstimator({ totalWeightGrams, kitQuantity }: FreightEstimatorProps) {
   const [method, setMethod] = useState<string>('transportadora');
 
-  const totalWeightKg = (totalWeightGrams * kitQuantity) / 1000;
+  const safeWeightGrams = Math.max(0, totalWeightGrams);
+  const safeQuantity = Math.max(1, kitQuantity);
+  const totalWeightKg = (safeWeightGrams * safeQuantity) / 1000;
+  
   const table = FREIGHT_TABLE[method as keyof typeof FREIGHT_TABLE] || FREIGHT_TABLE.transportadora;
   const perShipmentCost =
     table.find((r) => totalWeightKg <= r.maxKg)?.price || table[table.length - 1].price;
 
-  const noWeight = totalWeightGrams === 0;
+  const noWeight = safeWeightGrams === 0;
 
   return (
     <Card>
@@ -120,7 +123,7 @@ export function FreightEstimator({ totalWeightGrams, kitQuantity }: FreightEstim
           <div className="rounded-lg bg-primary/10 p-2">
             <p className="text-[11px] text-muted-foreground">Por Kit</p>
             <p className="text-sm font-bold text-primary">
-              {formatCurrency(perShipmentCost / kitQuantity)}
+              {formatCurrency(perShipmentCost / safeQuantity)}
             </p>
           </div>
         </div>

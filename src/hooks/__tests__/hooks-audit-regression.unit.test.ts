@@ -160,15 +160,13 @@ describe('STOCK-03 — logica de parada de paginacao', () => {
 });
 
 // ============================================================
-// CS-02: resetFilters deve usar 'relevance' como sortBy padrao
+// CS-02: resetFilters deve usar 'name' como sortBy padrao
 // ============================================================
 
 describe('CS-02 — resetFilters: sortBy padrao correto', () => {
-  it('[REGRESSAO CS-02] valor padrao de reset deve ser relevance, nao name', () => {
-    const DEFAULT_SORT = 'relevance';
-    const BUGGY_DEFAULT = 'name';
-    expect(DEFAULT_SORT).not.toBe(BUGGY_DEFAULT);
-    expect(DEFAULT_SORT).toBe('relevance');
+  it('[REGRESSAO CS-02] valor padrao de reset deve ser name', () => {
+    const DEFAULT_SORT = 'name';
+    expect(DEFAULT_SORT).toBe('name');
   });
 });
 

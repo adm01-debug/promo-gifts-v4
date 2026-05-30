@@ -189,7 +189,7 @@ export const ProductCardImage = memo(function ProductCardImage({
                 (activeColorFilter?.groups?.includes(color.groupSlug || '') ?? false) ||
                 (activeColorFilter?.variations?.includes(color.variationSlug || '') ?? false);
               return (
-                <Tooltip key={idx}>
+                <Tooltip key={`${color.hex}-${idx}`}>
                   <TooltipTrigger asChild>
                     <button
                       type="button"
@@ -240,7 +240,7 @@ export const ProductCardImage = memo(function ProductCardImage({
         >
           {allMatchingVariants.map((v, i) => (
             <button
-              key={v.groupSlug || v.variationSlug || i}
+              key={`${v.groupSlug}-${v.variationSlug}-${v.name}-${i}`}
               role="tab"
               type="button"
               tabIndex={i === safeVariantIdx ? 0 : -1}

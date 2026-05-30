@@ -127,7 +127,14 @@ export const Sel = {
   catalog: {
     /** Input da busca global do catálogo (SmartSearchInput). */
     searchInput: TID("catalog-search-input"),
+    /** Trigger do <Select> de ordenação (CatalogToolbar + FiltersPage). */
+    sortTrigger: TID("catalog-sort-trigger"),
+    /** Item específico do dropdown de ordenação (kebab-case do value). */
+    sortItem: (value: string) => TID(`catalog-sort-item-${value}`),
+    /** Qualquer item do dropdown (prefix match — útil para contagem). */
+    sortItems: TID_PREFIX("catalog-sort-item-"),
   },
+
   product: {
     card: TID("product-card"),
     /** Nome no card do catálogo (ProductCard / EnhancedProductCard). */

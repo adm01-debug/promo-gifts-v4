@@ -58,6 +58,10 @@ interface CatalogToolbarProps {
   isTransitioning?: boolean;
 }
 
+// SORT_OPTIONS[0].value é o valor default ('name'). Derivar em vez de hardcodar
+// garante que qualquer futura mudança no SSOT seja refletida automaticamente.
+const DEFAULT_SORT_VALUE = SORT_OPTIONS[0].value;
+
 export function CatalogToolbar({
   filters,
   setFilters,
@@ -142,23 +146,51 @@ export function CatalogToolbar({
           <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="inline-flex">
+                {/* BUG-G7 FIX: `relative` adicionado ao span para ser o containing block
+                    correto do dot indicador mobile. O <button> do SelectTrigger tem
+                    position:static por padrão — sem `relative` no ancestral, o dot
+                    se posicionava relativo a um elemento mais acima na árvore DOM. */}
+                <span className="relative inline-flex">
                   <SelectTrigger
-                    className="h-9 w-10 text-xs font-medium sm:h-10 sm:w-44 sm:text-sm"
+                    className={cn(
+                      "relative h-9 w-10 text-xs font-medium transition-all sm:h-10 sm:w-52 sm:text-sm",
+                      sortBy !== DEFAULT_SORT_VALUE && "border-primary bg-primary/5 ring-1 ring-primary/20"
+                    )}
                     aria-label="Ordenar por"
+                    data-testid="catalog-sort-trigger"
                   >
-                    <ArrowUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground sm:mr-2" />
+                    <ArrowUpDown className={cn(
+                      "h-3.5 w-3.5 shrink-0 sm:mr-2",
+                      sortBy !== DEFAULT_SORT_VALUE ? "text-primary" : "text-muted-foreground"
+                    )} />
                     <span className="hidden sm:inline">
                       <SelectValue placeholder="Ordenar" />
                     </span>
+                    {/* BUG-G7 FIX: dot agora posicionado corretamente com `relative` no span pai */}
+                    {sortBy !== DEFAULT_SORT_VALUE && (
+                      <div className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-primary sm:hidden" />
+                    )}
                   </SelectTrigger>
                 </span>
               </TooltipTrigger>
-              <TooltipContent>Ordenar produtos (relevância, preço, novidades…)</TooltipContent>
+              <TooltipContent>
+                {sortBy !== DEFAULT_SORT_VALUE
+                  ? `Ordenado por: ${
+                      // BUG-TOOLTIP FIX: fallback para sortBy fora de SORT_OPTIONS (ex: 'color-match').
+                      // Antes: `?.label` retornava undefined → tooltip exibia "Ordenado por: undefined".
+                      SORT_OPTIONS.find(o => o.value === sortBy)?.label ?? 'Relevância de cor'
+                    }`
+                  : 'Ordenar produtos (nome, preço, novidades…)'}
+              </TooltipContent>
             </Tooltip>
             <SelectContent>
               {SORT_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value} className="text-xs sm:text-sm">
+                <SelectItem 
+                  key={option.value} 
+                  value={option.value} 
+                  className="text-xs sm:text-sm"
+                  data-testid={`catalog-sort-item-${option.value}`}
+                >
                   {option.label}
                 </SelectItem>
               ))}

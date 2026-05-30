@@ -129,7 +129,7 @@ describe("FreightEstimator — troca de modalidade", () => {
 
 // ─── Casos extremos ─────────────────────────────────────────────────────────
 
-describe("FreightEstimator — valores extremos", () => {
+describe("FreightEstimator — valores extremos e erro", () => {
   it("peso muito alto (999999g) → tier infinito = R$ 120,00", () => {
     renderFreight(999_999, 1);
     expect(screen.getAllByText(/120/).length).toBeGreaterThan(0);
@@ -138,5 +138,20 @@ describe("FreightEstimator — valores extremos", () => {
   it("kitQuantity=100 × 500g = 50kg → faixa ≤100kg = R$ 80,00", () => {
     renderFreight(500, 100);
     expect(screen.getAllByText(/80/).length).toBeGreaterThan(0);
+  });
+
+  it("peso negativo → trata como 0g", () => {
+    renderFreight(-500, 1);
+    expect(screen.getByText("0.0kg")).toBeInTheDocument();
+  });
+
+  it("kitQuantity=0 → trata como 1 kit para estimativa (evita divisão por zero)", () => {
+    renderFreight(1000, 0);
+    expect(screen.getByText("1.0kg")).toBeInTheDocument();
+  });
+  
+  it("Infinity grams → fallback para tier máximo", () => {
+    renderFreight(Infinity, 1);
+    expect(screen.getAllByText(/120/).length).toBeGreaterThan(0);
   });
 });

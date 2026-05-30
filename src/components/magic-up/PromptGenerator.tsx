@@ -395,7 +395,7 @@ export function PromptGenerator({
               const isSelected = selectedPrompt?.prompt === gp.prompt;
               return (
                 <Card
-                  key={idx}
+                  key={`${gp.title}-${idx}`}
                   className={cn(
                     'group cursor-pointer transition-all hover:shadow-md',
                     isSelected
