@@ -30,6 +30,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
+import { useBadgeVisibilityStore } from '@/stores/useBadgeVisibilityStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCurrentSection } from '@/hooks/ui/useCurrentSection';
 import { useIsScrolled } from '@/hooks/ui/useScroll';
