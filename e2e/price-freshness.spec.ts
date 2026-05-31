@@ -93,3 +93,53 @@ test.describe("Price Freshness Badge - Standard/Inline Mode", () => {
   });
 });
 
+test.describe("Price Freshness - Formatting and Timezones", () => {
+  test.beforeEach(async ({ page }) => {
+    await requireAuth();
+    await gotoAndSettle(page, "/produtos");
+    await waitForRouteIdle(page);
+  });
+
+  test("Verifica se o formato 'Atualizado em DD/MM/AAAA' é seguido rigorosamente", async ({ page }) => {
+    // Busca qualquer badge que tenha o texto de atualização
+    const badge = page.locator('[role="status"]').filter({ hasText: /Atualizado em/ }).first();
+    
+    if (await badge.isVisible()) {
+      const text = await badge.innerText();
+      // O formato deve ser EXATAMENTE "Atualizado em DD/MM/AAAA"
+      // Validamos o prefixo e a estrutura da data
+      expect(text).toMatch(/^Atualizado em \d{2}\/\d{2}\/\d{4}$/);
+      
+      // Verifica se o dia, mês e ano são válidos (básico)
+      const datePart = text.replace("Atualizado em ", "");
+      const [day, month, year] = datePart.split("/").map(Number);
+      
+      expect(day).toBeGreaterThanOrEqual(1);
+      expect(day).toBeLessThanOrEqual(31);
+      expect(month).toBeGreaterThanOrEqual(1);
+      expect(month).toBeLessThanOrEqual(12);
+      expect(year).toBeGreaterThanOrEqual(2020);
+    }
+  });
+
+  test("Verifica tooltips em datas limite (aging/stale)", async ({ page }) => {
+    // Tenta encontrar um badge de alerta (aging ou stale) no catálogo
+    // Eles usam cores específicas ou ícones AlertTriangle/Clock
+    const warningBadge = page.locator('[role="status"]').filter({ 
+      hasText: /há (?:[3-9]\d|\d{3,})d/ // Procura por "há 30d" pra cima (default 60, aging >= 30)
+    }).first();
+
+    if (await warningBadge.isVisible()) {
+      await warningBadge.hover();
+      const tooltip = page.locator('[role="tooltip"]');
+      await expect(tooltip).toBeVisible();
+      
+      const tooltipText = await tooltip.innerText();
+      // Em datas limite, o tooltip deve explicar a validade
+      expect(tooltipText).toContain("Regra de Preços");
+      expect(tooltipText).toContain("limite");
+    }
+  });
+});
+
+
