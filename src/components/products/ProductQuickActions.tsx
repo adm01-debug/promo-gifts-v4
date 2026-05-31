@@ -175,7 +175,6 @@ export function ProductQuickActions({
                 </Tooltip>
             );
           })}
-          })}
         </div>
 
         {product && <ShareActions product={product} selectedVariant={selectedVariant} />}
