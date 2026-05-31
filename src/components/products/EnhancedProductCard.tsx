@@ -3,6 +3,8 @@
  * Inclui preview expandido, quick-add e badges de urgência
  */
 
+import { useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, Eye, Share2, GitCompare, ShoppingCart, Package, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -83,9 +85,9 @@ export function EnhancedProductCard({
         animate={{ opacity: 1, y: 0 }}
         className="absolute left-3 top-3 z-20"
       >
-        <ProductStatusBadge 
-          type="urgency" 
-          urgencyType={urgencyType} 
+        <ProductStatusBadge
+          type="urgency"
+          urgencyType={urgencyType}
           value={urgencyText}
           size="sm"
           onClick={() => onStatusClick?.('urgency', urgencyType)}
@@ -97,7 +99,7 @@ export function EnhancedProductCard({
   return (
     <article
       className={cn(
-        'group relative overflow-hidden rounded-2xl bg-card card-glow',
+        'card-glow group relative overflow-hidden rounded-2xl bg-card',
         'cursor-pointer',
         isHovered && 'ring-2 ring-primary/20',
       )}
@@ -136,9 +138,9 @@ export function EnhancedProductCard({
         {/* Featured badge */}
         {product.featured && (
           <div className="absolute right-3 top-3 z-10">
-            <ProductStatusBadge 
-              type="featured" 
-              size="sm" 
+            <ProductStatusBadge
+              type="featured"
+              size="sm"
               onClick={() => onStatusClick?.('featured')}
             />
           </div>
@@ -298,14 +300,16 @@ export function EnhancedProductCard({
             )}
           >
             <div className="flex items-center gap-1 rounded-full bg-card/90 px-2 py-1 backdrop-blur-sm">
-              {product.colors.slice(0, 4).map((color: { hex: string; name?: string }, idx: number) => (
-                <div
-                  key={`${color.hex}-${idx}`}
-                  className="h-4 w-4 rounded-full border-2 border-card shadow-sm"
-                  style={{ backgroundColor: color.hex }}
-                  title={color.name}
-                />
-              ))}
+              {product.colors
+                .slice(0, 4)
+                .map((color: { hex: string; name?: string }, idx: number) => (
+                  <div
+                    key={`${color.hex}-${idx}`}
+                    className="h-4 w-4 rounded-full border-2 border-card shadow-sm"
+                    style={{ backgroundColor: color.hex }}
+                    title={color.name}
+                  />
+                ))}
               {product.colors.length > 4 && (
                 <span className="ml-1 text-[10px] text-muted-foreground">
                   +{product.colors.length - 4}

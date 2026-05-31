@@ -71,7 +71,6 @@ export function CommemorativeDateFilter({
               date={date}
               isSelected={selectedDates.includes(date.slug)}
               onSelect={() => onToggleDate(date.slug)}
-              compact={compact}
             />
           ))}
         </div>

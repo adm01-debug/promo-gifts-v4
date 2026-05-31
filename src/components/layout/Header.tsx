@@ -13,7 +13,6 @@ import {
   MoreHorizontal,
   Palette,
   Tag,
-  Tag,
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -54,18 +53,19 @@ interface HeaderProps {
 }
 
 export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: HeaderProps) {
-  const { theme, actualTheme, setTheme, toggleTheme, tooltipStyle, setTooltipStyle, isFallback } = useTheme();
+  const { theme, actualTheme, setTheme, toggleTheme, tooltipStyle, setTooltipStyle, isFallback } =
+    useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
   const favoriteCount = useFavoritesStore((s) => s.favoriteCount);
   const compareCount = useComparisonStore((s) => s.compareCount);
   const { user, profile, role, signOut, rolesLoaded } = useAuth();
-  
+
   const _isBadgeEnabled = useBadgeVisibilityStore((s) => s.isBadgeEnabled);
   const toggleBadges = useBadgeVisibilityStore((s) => s.toggleBadges);
   const initializeFromProfile = useBadgeVisibilityStore((s) => s.initializeFromProfile);
-  
+
   const badgesEnabled = useBadgeVisibilityStore((s) => {
     const settings = s.routeSettings[location.pathname];
     if (settings) {
@@ -133,7 +133,8 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
       toast({
         variant: 'destructive',
         title: 'Erro de Sincronização',
-        description: 'Não foi possível salvar sua preferência no servidor. Ela será mantida apenas nesta sessão.',
+        description:
+          'Não foi possível salvar sua preferência no servidor. Ela será mantida apenas nesta sessão.',
       });
     }
   };
@@ -220,7 +221,6 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
               </span>
             </div>
           </div>
-
         </div>
 
         {/* ══════ Center section — Global Search (#4 expandida) ══════ */}
@@ -369,7 +369,8 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                Tamanho Tooltip: {tooltipStyle === 'compact' ? 'Mudar para Standard' : 'Mudar para Compact'}
+                Tamanho Tooltip:{' '}
+                {tooltipStyle === 'compact' ? 'Mudar para Standard' : 'Mudar para Compact'}
               </TooltipContent>
             </Tooltip>
             <Tooltip>
@@ -378,7 +379,9 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                   variant="ghost"
                   size="icon"
                   onClick={handleToggleBadges}
-                  aria-label={badgesEnabled ? 'Ocultar badges dos produtos' : 'Exibir badges dos produtos'}
+                  aria-label={
+                    badgesEnabled ? 'Ocultar badges dos produtos' : 'Exibir badges dos produtos'
+                  }
                   aria-pressed={badgesEnabled}
                   className={cn(
                     'relative h-8 w-8 rounded-full transition-all duration-200 hover:bg-primary/10 hover:text-foreground',
@@ -395,7 +398,8 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                Badges dos produtos: {badgesEnabled ? 'Ativos — clique para ocultar' : 'Ocultos — clique para reativar'}
+                Badges dos produtos:{' '}
+                {badgesEnabled ? 'Ativos — clique para ocultar' : 'Ocultos — clique para reativar'}
               </TooltipContent>
             </Tooltip>
           </div>
@@ -446,7 +450,10 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                   <Palette className="mr-2 h-4 w-4" />
                   Tooltips: {tooltipStyle === 'compact' ? 'Standard' : 'Compact'}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toggleBadges(location.pathname, actualTheme, user?.id)} className="cursor-pointer">
+                <DropdownMenuItem
+                  onClick={() => toggleBadges(location.pathname, actualTheme, user?.id)}
+                  className="cursor-pointer"
+                >
                   <Tag className="mr-2 h-4 w-4" />
                   Badges: {badgesEnabled ? 'Ocultar' : 'Exibir'}
                 </DropdownMenuItem>
