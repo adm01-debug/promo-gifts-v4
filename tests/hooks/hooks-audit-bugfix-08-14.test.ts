@@ -354,15 +354,17 @@ describe('BUG-14 -- usePrintAreas PostgREST para todas as funcoes', () => {
     });
   });
 
-  it('useTechniqueStats: from(v_technique_stats)', async () => {
+  it('useTechniqueStats: @deprecated stub — NÃO chama v_technique_stats (Fase 3)', async () => {
     mockFromAlways({ data: [], error: null });
-    renderHookWithProviders(() => useTechniqueStats());
+    const { result } = renderHookWithProviders(() => useTechniqueStats());
     vi.useRealTimers();
     await waitFor(() => {
+      // Stub retorna [] sem chamar supabase (view não existe no DB)
       expect(
         (supabase.from as ReturnType<typeof vi.fn>).mock.calls
           .some(([t]: [string]) => t === 'v_technique_stats')
-      ).toBe(true);
+      ).toBe(false);
+      expect(result.current.data).toEqual([]);
     });
   });
 
