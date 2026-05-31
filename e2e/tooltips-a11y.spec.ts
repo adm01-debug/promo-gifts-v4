@@ -56,6 +56,12 @@ test.describe("Tooltip Accessibility & Visual Regression", () => {
         await test.step("Accessibility: Mouse Hover", async () => {
             await trigger.hover();
             const tooltip = page.locator('[role="tooltip"]');
+            
+            // Validação de delay de 1000ms
+            await expect(tooltip).not.toBeVisible();
+            await page.waitForTimeout(800);
+            await expect(tooltip).not.toBeVisible();
+            
             await expect(tooltip).toBeVisible();
             testInfo.annotations.push({ type: 'a11y-check', description: 'Mouse hover triggers tooltip' });
         });
