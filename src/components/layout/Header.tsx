@@ -66,7 +66,13 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
   const toggleBadges = useBadgeVisibilityStore((s) => s.toggleBadges);
   const initializeFromProfile = useBadgeVisibilityStore((s) => s.initializeFromProfile);
   
-  const badgesEnabled = isBadgeEnabled(location.pathname, actualTheme);
+  const badgesEnabled = useBadgeVisibilityStore((s) => {
+    const settings = s.routeSettings[location.pathname];
+    if (settings) {
+      return actualTheme === 'dark' ? settings.dark : settings.light;
+    }
+    return s.badgesEnabled;
+  });
 
   // Sync profile preferences with store
   useEffect(() => {

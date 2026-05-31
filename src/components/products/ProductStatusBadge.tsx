@@ -39,8 +39,14 @@ export function ProductStatusBadge({
 }: ProductStatusBadgeProps) {
   const location = useLocation();
   const { actualTheme } = useTheme();
-  const isBadgeEnabled = useBadgeVisibilityStore((s) => s.isBadgeEnabled);
-  const badgesEnabled = isBadgeEnabled(location.pathname, actualTheme);
+  
+  const badgesEnabled = useBadgeVisibilityStore((s) => {
+    const settings = s.routeSettings[location.pathname];
+    if (settings) {
+      return actualTheme === 'dark' ? settings.dark : settings.light;
+    }
+    return s.badgesEnabled;
+  });
   
   // Hide all status badges when user has disabled them (urgency badges always show as they're contextual)
   if (!badgesEnabled && type !== 'urgency') return null;
