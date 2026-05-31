@@ -189,54 +189,56 @@ html[data-scroll-locked] body {
 
 @layer base {
   :root {
-    /* ===== DESIGN TOKENS - ORANGE PREMIUM ===== */
+    /* ===== DESIGN TOKENS - DARK MODE BY DEFAULT ===== */
 
     /* 1. Typography & Contrast Tokens */
     --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
     --font-display: 'Outfit', system-ui, sans-serif;
 
-    /* 2. Surface & Background Tokens (High Contrast) */
-    --background: 0 0% 100%;
-    --foreground: 24 100% 5%;
-    --surface: 24 100% 98%;
-    --surface-hover: 24 100% 95%;
-    --divider: 24 100% 50% / 0.15;
+    /* 2. Surface & Background Tokens (Dark Mode) */
+    --background: var(--bg-override, 24 30% 3%);
+    --foreground: 24 10% 98%;
+    --surface: 24 28% 6%;
+    --surface-hover: 24 28% 10%;
+    --divider: 24 100% 60% / 0.3;
 
     /* 3. Component Surfaces */
-    --card: 0 0% 100%;
-    --card-foreground: 24 100% 5%;
-    --card-elevated: 0 0% 100%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 24 100% 5%;
+    --card: 24 28% 6%;
+    --card-foreground: 24 10% 98%;
+    --card-elevated: 24 28% 10%;
+    --popover: 24 28% 7%;
+    --popover-foreground: 24 10% 98%;
 
-    /* 4. Core Brand Colors (Orange Premium) */
+    /* 4. Core Brand Colors (Neon) */
     --primary: 217 91% 60%;
-    --primary-hover: 217 91% 55%;
-    --primary-active: 217 91% 50%;
-    --primary-glow: 217 91% 75%;
-    --primary-foreground: 0 0% 100%;
+    --primary-hover: 217 91% 66%;
+    --primary-active: 217 91% 72%;
+    --primary-glow: 217 91% 74%;
+    --primary-foreground: 217 91% 6%;
 
     /* 5. Functional Colors (High Saturation) */
-    --success: 142 100% 35%;
-    --success-foreground: 0 0% 100%;
-    --warning: 38 100% 45%;
-    --warning-foreground: 0 0% 100%;
-    --destructive: 0 100% 45%;
+    --success: 142 90% 48%;
+    --success-foreground: 142 100% 6%;
+    --warning: 38 100% 58%;
+    --warning-foreground: 38 100% 8%;
+    --destructive: 0 95% 62%;
     --destructive-foreground: 0 0% 100%;
-    --info: 210 100% 45%;
-    --info-foreground: 0 0% 100%;
+    --info: 210 100% 62%;
+    --info-foreground: 210 100% 8%;
 
     /* 6. Muted & Secondary States */
-    --secondary: 24 40% 96%;
-    --secondary-foreground: 24 100% 10%;
-    --muted: 24 20% 92%;
-    --muted-foreground: 24 40% 25%;
+    --secondary: 24 28% 12%;
+    --secondary-foreground: 24 10% 95%;
+    --muted: 24 22% 10%;
+    --muted-foreground: 24 15% 78%;
+    --accent: 24 28% 14%;
+    --accent-foreground: 24 100% 70%;
 
     /* 7. Borders & Inputs */
-    --border: 24 100% 50% / 0.25;
-    --border-strong: 24 100% 50% / 0.45;
-    --input: 24 100% 50% / 0.1;
-    --ring: 24 100% 50%;
+    --border: 24 100% 60% / 0.32;
+    --border-strong: 24 100% 60% / 0.55;
+    --input: 24 100% 60% / 0.18;
+    --ring: 24 100% 60%;
 
     /* 8. Radius Tokens */
     --radius-xs: 0.25rem;
@@ -257,61 +259,46 @@ html[data-scroll-locked] body {
     --duration-fast: 200ms;
     --duration-normal: 300ms;
     --duration-slow: 500ms;
-    --ease-out: cubic-bezier(0.34, 1.56, 0.64, 1); /* Custom elastic-ish ease out */
+    --ease-out: cubic-bezier(0.34, 1.56, 0.64, 1);
     --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
     --transition-standard: all var(--duration-normal) var(--ease-out);
 
-    /* 10. Shadow & Depth Tokens (NEUTRALIZED — orange glow eliminated) */
+    /* 10. Shadow & Depth Tokens (Neutralized) */
     --glow-blur: 0px;
     --glow-intensity: 0;
     --glow-color: 24 100% 50%;
     --glow-blur-hover: 0px;
     --glow-intensity-hover: 0;
 
-    --overlay-opacity: 0.45;
-    --overlay-blur: 8px;
-    --overlay-color: 24 100% 4%;
+    --overlay-opacity: 0.8;
+    --overlay-blur: 12px;
+    --overlay-color: 24 30% 2%;
 
-    --shadow-soft: 0 1px 3px hsl(0 0% 0% / 0.06);
-    --shadow-medium: 0 4px 12px hsl(0 0% 0% / 0.08);
-    --shadow-premium: 0 4px 12px hsl(0 0% 0% / 0.08);
+    --shadow-soft: 0 2px 8px hsl(0 0% 0% / 0.4);
+    --shadow-medium: 0 6px 18px hsl(0 0% 0% / 0.55);
+    --shadow-premium: 0 8px 24px hsl(0 0% 0% / 0.6);
     --shadow-glow: none;
     --shadow-glow-hover: none;
     --shadow-glow-active: none;
-    --shadow-glow-focus: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--primary) / 0.4);
-    --shadow-premium-hover: 0 6px 16px hsl(0 0% 0% / 0.12);
+    --shadow-glow-focus: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--primary) / 0.5);
+    --shadow-premium-hover: 0 12px 32px hsl(0 0% 0% / 0.7);
 
-    /* 10. Sidebar Specific */
-    --sidebar-background: 24 100% 99%;
-    --sidebar-foreground: 24 100% 10%;
-    --sidebar-primary: 24 100% 50%;
-    --sidebar-border: 24 100% 50% / 0.1;
+    /* 11. Sidebar Specific */
+    --sidebar-background: 24 30% 4%;
+    --sidebar-foreground: 24 10% 98%;
+    --sidebar-primary: 24 100% 60%;
+    --sidebar-border: 24 100% 60% / 0.18;
 
-    /* 11. Gradient Tokens — Orange Premium SSOT
-       Use estes tokens em vez de gradientes literais. */
-    --gradient-primary: linear-gradient(
-      135deg,
-      hsl(var(--primary)) 0%,
-      hsl(var(--primary-glow)) 100%
-    );
-    --gradient-cta: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(142 100% 45%) 100%);
-    --gradient-hero: linear-gradient(
-      135deg,
-      hsl(24 100% 97%) 0%,
-      hsl(24 100% 92%) 45%,
-      hsl(24 100% 88%) 100%
-    );
-    --gradient-glow: radial-gradient(
-      circle at 50% 0%,
-      hsl(var(--primary) / 0.35) 0%,
-      hsl(var(--primary) / 0.08) 45%,
-      transparent 70%
-    );
+    /* 12. Gradient Tokens */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-cta: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(142 100% 55%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(24 30% 4%) 0%, hsl(24 35% 8%) 50%, hsl(24 45% 12%) 100%);
+    --gradient-glow: radial-gradient(circle at 50% 0%, hsl(var(--primary) / 0.5) 0%, hsl(var(--primary) / 0.14) 45%, transparent 70%);
     --gradient-subtle: linear-gradient(180deg, hsl(var(--surface)) 0%, hsl(var(--background)) 100%);
     --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(var(--muted)) 100%);
-    --gradient-success: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(142 100% 45%) 100%);
-    --gradient-highlight: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(210 100% 70%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--surface)) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(142 100% 55%) 100%);
+    --gradient-highlight: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(38 100% 62%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(var(--card-elevated)) 0%, hsl(var(--card)) 100%);
   }
 
   .dark {
