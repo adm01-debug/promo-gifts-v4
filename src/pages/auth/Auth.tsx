@@ -304,36 +304,37 @@ export default function Auth() {
         logger.warn('[AUTH_FAILED] Authentication failed', { status: error.status ?? 'unknown' });
         await logLoginAttempt(data.email, null, false, error.message);
 
-        let description = error.message;
-        let diagnosis = 'Verifique as credenciais';
-        let title = 'Erro ao entrar';
+        let description = 'Ocorreu um erro ao validar seu acesso. Por favor, tente novamente.';
+        let title = 'Não foi possível entrar';
+        let hint = 'Se o erro persistir, tente redefinir sua senha ou use o login social.';
 
-        // Heurística de erro baseada no código e mensagem
         if (error.message.includes('Invalid login credentials') || error.status === 400) {
-          description = 'Email ou senha incorretos. Por favor, tente novamente.';
-          diagnosis = 'AUTH_FAILED: Credenciais inválidas (400).';
+          title = 'E-mail ou Senha Incorretos';
+          description = 'Não encontramos uma conta com esses dados. Verifique se digitou corretamente ou use "Esqueci minha senha".';
+          hint = 'Dica: Verifique se o Caps Lock está ativado.';
         } else if (error.message.includes('Email not confirmed')) {
-          description = 'E-mail pendente de confirmação. Por favor, valide sua conta.';
-          diagnosis = 'AUTH_CONFIRM: Usuário existe mas e-mail não foi confirmado.';
+          title = 'E-mail não confirmado';
+          description = 'Sua conta ainda não foi ativada. Verifique sua caixa de entrada e spam pelo e-mail de confirmação.';
+          hint = 'Ainda não recebeu? Aguarde alguns minutos antes de solicitar um novo envio.';
         } else if (error.message.includes('rate limit') || error.status === 429) {
-          title = 'Conta Temporariamente Bloqueada';
-          description = 'Muitas tentativas falhas. Por segurança, aguarde alguns minutos.';
-          diagnosis = 'RATE_LIMIT: Bloqueio temporário ativado (429).';
+          title = 'Acesso Temporariamente Suspenso';
+          description = 'Detectamos muitas tentativas seguidas. Por segurança, sua conta foi bloqueada por alguns minutos.';
+          hint = 'Tome um café e tente novamente em instantes.';
         } else if (
           error.status === 0 ||
           error.message.includes('network') ||
           error.message.includes('Fetch')
         ) {
           title = 'Erro de Conexão';
-          description = 'Não foi possível alcançar o servidor. Verifique sua internet.';
-          diagnosis = 'NETWORK_ERROR: Falha física ou DNS (0).';
+          description = 'Parece que você está sem internet ou nosso servidor está temporariamente inacessível.';
+          hint = 'Verifique sua conexão Wi-Fi ou dados móveis.';
         } else if (
           error.message.includes('Database error') ||
           (error.status !== undefined && error.status >= 500)
         ) {
-          title = 'Erro no Servidor';
-          description = 'O sistema está instável no momento. Nossa equipe já foi notificada.';
-          diagnosis = `SERVER_ERROR: Erro interno do Supabase (${error.status || 500}).`;
+          title = 'Sistema em Manutenção';
+          description = 'Estamos ajustando os motores das nossas galáxias. O serviço deve voltar ao normal em breve.';
+          hint = 'Nossa equipe técnica já foi notificada.';
         }
 
         toast({
@@ -341,17 +342,35 @@ export default function Auth() {
           title: title,
           description: (
             <div className="space-y-3">
-              <p className="font-medium">{description}</p>
-              <div className="rounded-lg border border-white/5 bg-black/40 p-2 font-mono text-[10px] text-white/50">
-                DIAGNÓSTICO: {diagnosis}
+              <p className="font-medium leading-relaxed">{description}</p>
+              <div className="rounded-xl border border-white/10 bg-black/40 p-3 shadow-inner">
+                <p className="text-[11px] leading-snug text-white/70">
+                  <span className="mr-2 text-[9px] font-bold uppercase tracking-wider text-primary">
+                    Como resolver:
+                  </span>
+                  {hint}
+                </p>
               </div>
-              <button
-                type="button"
-                className={authButtonClass('h-auto p-0 text-xs text-white/60 hover:text-white')}
-                onClick={() => navigate('/admin/status')}
-              >
-                Verificar status do sistema →
-              </button>
+              <div className="flex items-center gap-3 pt-1">
+                <button
+                  type="button"
+                  className={authButtonClass(
+                    'h-8 rounded-lg bg-white/5 px-3 text-[10px] uppercase tracking-widest text-white/40 hover:bg-white/10 hover:text-white'
+                  )}
+                  onClick={() => navigate('/admin/status')}
+                >
+                  Status do Sistema
+                </button>
+                <button
+                  type="button"
+                  className={authButtonClass(
+                    'h-8 rounded-lg bg-white/5 px-3 text-[10px] uppercase tracking-widest text-white/40 hover:bg-white/10 hover:text-white'
+                  )}
+                  onClick={() => window.location.reload()}
+                >
+                  Recarregar
+                </button>
+              </div>
             </div>
           ),
         });
