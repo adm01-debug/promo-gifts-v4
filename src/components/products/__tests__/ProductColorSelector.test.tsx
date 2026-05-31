@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ProductColorSelector } from '../ProductColorSelector';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -24,7 +24,6 @@ describe('ProductColorSelector Tooltip', () => {
   });
 
   it('shows the custom tooltip on hover and hides it on leave', async () => {
-    vi.useFakeTimers();
     render(
       <TooltipProvider>
         <ProductColorSelector colors={mockColors} />
@@ -34,19 +33,16 @@ describe('ProductColorSelector Tooltip', () => {
     const swatches = screen.getAllByRole('button');
     const firstSwatch = swatches[0];
     
-    // Initial state: tooltip should not be in the document
+    // Initial state
     expect(screen.queryByTestId('color-tooltip-swatch')).not.toBeInTheDocument();
 
     // Hover
     fireEvent.mouseEnter(firstSwatch);
     
-    // Fast-forward for Radix delay (700ms in component)
-    vi.advanceTimersByTime(800);
-    
-    // Now it should be there
+    // Wait for tooltip to appear (with small delayDuration=150)
     await waitFor(() => {
       expect(screen.getByTestId('color-tooltip-swatch')).toBeInTheDocument();
-    });
+    }, { timeout: 1000 });
 
     const swatch = screen.getByTestId('color-tooltip-swatch');
     expect(swatch.style.backgroundColor).toMatch(/rgb\(255, 0, 0\)|#ff0000/i);
@@ -54,12 +50,9 @@ describe('ProductColorSelector Tooltip', () => {
 
     // Leave
     fireEvent.mouseLeave(firstSwatch);
-    vi.advanceTimersByTime(800);
     
     await waitFor(() => {
       expect(screen.queryByTestId('color-tooltip-swatch')).not.toBeInTheDocument();
-    });
-
-    vi.useRealTimers();
+    }, { timeout: 1000 });
   });
 });
