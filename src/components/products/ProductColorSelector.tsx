@@ -4,6 +4,7 @@ import { Check, Sparkles } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { isLightColor } from '@/hooks/products/useColorSystem';
+import { ColorTooltipContent, colorTooltipClassName } from './ColorTooltipContent';
 
 // =====================================================
 // TIPOS
@@ -172,11 +173,11 @@ export function ProductColorSelector({
                   </AnimatePresence>
                 </motion.button>
               </TooltipTrigger>
-              <TooltipContent side="top" className="font-medium">
+              <TooltipContent side="top" className={colorTooltipClassName}>
                 <div className="text-center">
-                  <p>{formatColorName(color)}</p>
+                  <ColorTooltipContent colorName={formatColorName(color)} colorHex={colorHex} />
                   {color.groupName && color.groupName !== color.variationName && (
-                    <p className="text-xs text-muted-foreground">Grupo: {color.groupName}</p>
+                    <p className="mt-0.5 text-[10px] text-muted-foreground opacity-80">Grupo: {color.groupName}</p>
                   )}
                 </div>
               </TooltipContent>
@@ -270,9 +271,11 @@ export function CompactColorDots({ colors, maxVisible = 5, size = 'sm' }: Compac
               style={{ backgroundColor: color.hex || '#CCCCCC' }}
             />
           </TooltipTrigger>
-          <TooltipContent side="top" >
-            {color.variationName || color.name}
-            {color.nuanceName && ` ${color.nuanceName}`}
+          <TooltipContent side="top" className={colorTooltipClassName}>
+            <ColorTooltipContent 
+              colorName={`${color.variationName || color.name}${color.nuanceName ? ` ${color.nuanceName}` : ''}`} 
+              colorHex={color.hex || '#CCCCCC'} 
+            />
           </TooltipContent>
         </Tooltip>
       ))}

@@ -17,6 +17,7 @@ import { Package, Building2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { NoveltyBadge } from './NoveltyBadge';
 import { ProductStatusBadge } from './ProductStatusBadge';
+import { ColorTooltipContent, colorTooltipClassName } from './ColorTooltipContent';
 import { ListItemActions } from './list-item/ListItemActions';
 import { useNavigate } from 'react-router-dom';
 import { getCdnUrl } from '@/utils/image-utils';
@@ -418,7 +419,9 @@ export const ProductListItem = memo(function ProductListItem({
                       aria-label={`Ver ${v.name}`}
                     />
                   </TooltipTrigger>
-                  <TooltipContent>{v.name}</TooltipContent>
+                  <TooltipContent side="top" className={colorTooltipClassName}>
+                    <ColorTooltipContent colorName={v.name} colorHex={v.hex} />
+                  </TooltipContent>
                 </Tooltip>
               ))}
             </div>

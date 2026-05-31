@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, Play, Package } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { ColorTooltipContent, colorTooltipClassName } from '../ColorTooltipContent';
 import { sortByColorGroup } from '@/utils/colorSorting';
 import { getCdnUrl } from '@/utils/image-utils';
 
@@ -158,15 +159,9 @@ export function GalleryColorVariations({
                       <TooltipContent
                         side="top"
                         sideOffset={8}
-                        className="border border-border/40 bg-popover/95 px-2.5 py-1 text-xs font-medium text-popover-foreground shadow-md backdrop-blur-sm"
+                        className={colorTooltipClassName}
                       >
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            className="h-2.5 w-2.5 shrink-0 rounded-full border border-white/20"
-                            style={{ backgroundColor: color.hex }}
-                          />
-                          {color.name}
-                        </div>
+                        <ColorTooltipContent colorName={color.name} colorHex={color.hex} />
                       </TooltipContent>
                     </Tooltip>
                   ) : (

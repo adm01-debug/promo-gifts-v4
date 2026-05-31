@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { ProductStatusBadge } from './ProductStatusBadge';
 import { cn } from '@/lib/utils';
 import { isLightColor } from '@/hooks/products/useColorSystem';
+import { ColorTooltipContent, colorTooltipClassName } from './ColorTooltipContent';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import type { MatchedColorVariant } from '@/utils/color-variant-carousel';
 
@@ -133,7 +134,7 @@ export const ProductCardImage = memo(function ProductCardImage({
         <OptimizedImage
           src={cardImageUrl}
           alt={activeColorName ? `${product.name} - ${activeColorName}` : product.name}
-          title={activeColorName ? `${product.name} - ${activeColorName}` : product.name}
+          title={undefined}
           className={cn('h-full w-full object-contain')}
           onLoad={onImageLoad}
           containerClassName="h-full w-full"
@@ -248,7 +249,9 @@ export const ProductCardImage = memo(function ProductCardImage({
                       }}
                     />
                   </TooltipTrigger>
-                  <TooltipContent>{color.name}</TooltipContent>
+                  <TooltipContent side="top" className={colorTooltipClassName}>
+                    <ColorTooltipContent colorName={color.name} colorHex={color.hex} />
+                  </TooltipContent>
                 </Tooltip>
               );
             })}
@@ -281,45 +284,49 @@ export const ProductCardImage = memo(function ProductCardImage({
           }}
         >
           {allMatchingVariants.map((v, i) => (
-            <button
-              key={`${v.groupSlug}-${v.variationSlug}-${v.name}-${i}`}
-              role="tab"
-              type="button"
-              tabIndex={i === safeVariantIdx ? 0 : -1}
-              aria-selected={i === safeVariantIdx}
-              aria-current={i === safeVariantIdx ? 'true' : undefined}
-              onClick={(e) => {
-                e.stopPropagation();
-                onVariantChange(i);
-              }}
-              aria-label={`Ver variante ${v.name}`}
-              title={v.name}
-              className={cn(
-                'h-5 w-5 rounded-full border-2 transition-all duration-200 hover:scale-125 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
-                i === safeVariantIdx
-                  ? 'scale-110 ring-2 ring-offset-2 ring-offset-card'
-                  : 'border-border/50 opacity-70 hover:opacity-100',
-              )}
-              style={{
-                backgroundColor: v.hex,
-                borderColor:
-                  i === safeVariantIdx
-                    ? isLightColor(v.hex)
-                      ? 'hsl(var(--muted-foreground))'
-                      : v.hex
-                    : undefined,
-                ['--tw-ring-color' as string]:
-                  i === safeVariantIdx
-                    ? isLightColor(v.hex)
-                      ? 'hsl(var(--muted-foreground) / 0.6)'
-                      : v.hex
-                    : undefined,
-              }}
-            />
+            <Tooltip key={`${v.groupSlug}-${v.variationSlug}-${v.name}-${i}`}>
+              <TooltipTrigger asChild>
+                <button
+                  role="tab"
+                  type="button"
+                  tabIndex={i === safeVariantIdx ? 0 : -1}
+                  aria-selected={i === safeVariantIdx}
+                  aria-current={i === safeVariantIdx ? 'true' : undefined}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onVariantChange(i);
+                  }}
+                  aria-label={`Ver variante ${v.name}`}
+                  className={cn(
+                    'h-5 w-5 rounded-full border-2 transition-all duration-200 hover:scale-125 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+                    i === safeVariantIdx
+                      ? 'scale-110 ring-2 ring-offset-2 ring-offset-card'
+                      : 'border-border/50 opacity-70 hover:opacity-100',
+                  )}
+                  style={{
+                    backgroundColor: v.hex,
+                    borderColor:
+                      i === safeVariantIdx
+                        ? isLightColor(v.hex)
+                          ? 'hsl(var(--muted-foreground))'
+                          : v.hex
+                        : undefined,
+                    ['--tw-ring-color' as string]:
+                      i === safeVariantIdx
+                        ? isLightColor(v.hex)
+                          ? 'hsl(var(--muted-foreground) / 0.6)'
+                          : v.hex
+                        : undefined,
+                  }}
+                />
+              </TooltipTrigger>
+              <TooltipContent side="top" className={colorTooltipClassName}>
+                <ColorTooltipContent colorName={v.name} colorHex={v.hex} />
+              </TooltipContent>
+            </Tooltip>
           ))}
           <span
             className="ml-0.5 hidden max-w-[60px] truncate text-[10px] font-medium text-muted-foreground sm:inline"
-            title={allMatchingVariants[safeVariantIdx]?.name}
           >
             {allMatchingVariants[safeVariantIdx]?.name}
           </span>
