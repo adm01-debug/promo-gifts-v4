@@ -91,16 +91,53 @@ describe('OptimizedImage', () => {
     const cfSrc = 'https://imagedelivery.net/abc123/product-id/public';
     render(<OptimizedImage {...defaultProps} src={cfSrc} />);
     
+    const container = document.querySelector('[data-detection-rule="cloudflare"]');
+    expect(container).toBeInTheDocument();
+
     // The placeholder should have the /thumbnail path
     const placeholder = document.querySelector('img[aria-hidden="true"]');
     expect(placeholder).toBeInTheDocument();
     expect(placeholder).toHaveAttribute('src', 'https://imagedelivery.net/abc123/product-id/thumbnail');
   });
 
+  it('handles Cloudflare edge cases: trailing slashes and query strings', () => {
+    const cfSrcWithSlash = 'https://imagedelivery.net/abc123/product-id/public/';
+    const { unmount: unmountSlash } = render(<OptimizedImage {...defaultProps} src={cfSrcWithSlash} />);
+    
+    let placeholder = document.querySelector('img[aria-hidden="true"]');
+    expect(placeholder).toHaveAttribute('src', 'https://imagedelivery.net/abc123/product-id/thumbnail');
+    unmountSlash();
+
+    const cfSrcWithQuery = 'https://imagedelivery.net/abc123/product-id/public?v=123';
+    render(<OptimizedImage {...defaultProps} src={cfSrcWithQuery} />);
+    
+    placeholder = document.querySelector('img[aria-hidden="true"]');
+    expect(placeholder).toHaveAttribute('src', 'https://imagedelivery.net/abc123/product-id/thumbnail');
+  });
+
+  it('emits console.info only when debug is true or in development', () => {
+    const consoleSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+    const cfSrc = 'https://imagedelivery.net/abc123/product-id/public';
+    
+    // Debug false (default in tests NODE_ENV is usually 'test')
+    const { unmount } = render(<OptimizedImage {...defaultProps} src={cfSrc} debug={false} />);
+    expect(consoleSpy).not.toHaveBeenCalled();
+    unmount();
+
+    // Debug true
+    render(<OptimizedImage {...defaultProps} src={cfSrc} debug={true} />);
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[OptimizedImage] Cloudflare Image detected'));
+    
+    consoleSpy.mockRestore();
+  });
+
   it('detects Unsplash images and generates tiny thumbnail', () => {
     const unsplashSrc = 'https://images.unsplash.com/photo-123456?auto=format&fit=crop&q=80';
     render(<OptimizedImage {...defaultProps} src={unsplashSrc} />);
     
+    const container = document.querySelector('[data-detection-rule="unsplash"]');
+    expect(container).toBeInTheDocument();
+
     const placeholder = document.querySelector('img[aria-hidden="true"]');
     expect(placeholder).toBeInTheDocument();
     const src = placeholder?.getAttribute('src');
@@ -113,6 +150,9 @@ describe('OptimizedImage', () => {
     const supabaseSrc = 'https://abc.supabase.co/storage/v1/object/public/products/image.jpg';
     render(<OptimizedImage {...defaultProps} src={supabaseSrc} />);
     
+    const container = document.querySelector('[data-detection-rule="supabase"]');
+    expect(container).toBeInTheDocument();
+
     const placeholder = document.querySelector('img[aria-hidden="true"]');
     expect(placeholder).toBeInTheDocument();
     const src = placeholder?.getAttribute('src');
