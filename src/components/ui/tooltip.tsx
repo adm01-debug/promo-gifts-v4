@@ -4,7 +4,7 @@ import * as TooltipPrimitive from '@radix-ui/react-tooltip';
 
 import { cn } from '@/lib/utils';
 
-const TooltipProvider = ({ children, delayDuration = 700, ...props }: React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Provider>) => (
+const TooltipProvider = ({ children, delayDuration = 1000, ...props }: React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Provider>) => (
   <TooltipPrimitive.Provider delayDuration={delayDuration} {...props}>
     {children}
   </TooltipPrimitive.Provider>

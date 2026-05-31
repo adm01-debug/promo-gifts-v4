@@ -117,7 +117,7 @@ export function KpiCard({
   );
 
   if (tooltip) {
-    return <TooltipProvider delayDuration={700}>{content}</TooltipProvider>;
+    return <TooltipProvider delayDuration={1000}>{content}</TooltipProvider>;
   }
   return content;
 }

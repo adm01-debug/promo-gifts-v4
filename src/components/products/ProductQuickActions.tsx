@@ -48,33 +48,33 @@ type ModalType = 'precos' | 'personalizacao' | 'indicacao' | 'nicho' | null;
 type ActionKey = Exclude<ModalType, null>;
 
 const actions = [
-  {
-    key: 'precos' as const,
-    label: 'Preços',
-    icon: TableProperties,
+  { 
+    key: 'precos' as const, 
+    label: 'Preços', 
+    icon: TableProperties, 
     iconColor: 'text-primary',
-    description: 'Veja a tabela completa de preços por quantidade e variações',
+    description: 'Veja a tabela completa de preços por quantidade e variações'
   },
   {
     key: 'personalizacao' as const,
     label: 'Gravação',
     icon: Palette,
     iconColor: 'text-accent-foreground',
-    description: 'Confira técnicas de gravação, áreas e cores disponíveis',
+    description: 'Confira técnicas de gravação, áreas e cores disponíveis'
   },
-  {
-    key: 'indicacao' as const,
-    label: 'Indicação',
-    icon: Target,
+  { 
+    key: 'indicacao' as const, 
+    label: 'Indicação', 
+    icon: Target, 
     iconColor: 'text-primary',
-    description: 'Veja para qual público, datas e ocasiões este produto é indicado',
+    description: 'Veja para qual público, datas e ocasiões este produto é indicado'
   },
-  {
-    key: 'nicho' as const,
-    label: 'Nicho',
-    icon: Layers,
+  { 
+    key: 'nicho' as const, 
+    label: 'Nicho', 
+    icon: Layers, 
     iconColor: 'text-accent-foreground',
-    description: 'Descubra os nichos e segmentos onde este produto se encaixa',
+    description: 'Descubra os nichos e segmentos onde este produto se encaixa'
   },
 ];
 
@@ -172,37 +172,38 @@ export function ProductQuickActions({
                         : 'border-border/40 bg-card text-foreground shadow-sm hover:-translate-y-1 hover:scale-[1.02] hover:border-primary/50 hover:shadow-lg hover:shadow-primary/15 active:translate-y-0 active:scale-100 active:shadow-sm',
                     )}
                   >
-                      <Icon
-                        className={cn(
-                          'h-4 w-4 shrink-0 transition-all duration-300',
-                          disabled
-                            ? 'opacity-40'
-                            : cn(
-                                iconColor,
-                                'group-hover:rotate-6 group-hover:scale-125 group-hover:drop-shadow-sm',
-                              ),
-                        )}
-                      />
-                      {label}
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="top"
-                    className="max-w-[240px] border border-border/40 bg-popover/95 px-3 py-2 text-xs text-popover-foreground shadow-md backdrop-blur-sm"
-                  >
-                    <div className="flex items-start gap-2">
-                      <Icon className={cn('mt-0.5 h-3.5 w-3.5 shrink-0', iconColor)} />
-                      <div className="space-y-0.5">
-                        <p className="font-semibold leading-tight">{label}</p>
-                        <p className="text-[11px] font-normal leading-snug text-muted-foreground">
-                          {disabled
-                            ? `Sem dados de ${label.toLowerCase()} para este produto`
-                            : description}
-                        </p>
-                      </div>
+                    <Icon
+                      className={cn(
+                        'h-4 w-4 shrink-0 transition-all duration-300',
+                        disabled
+                          ? 'opacity-40'
+                          : cn(
+                              iconColor,
+                              'group-hover:rotate-6 group-hover:scale-125 group-hover:drop-shadow-sm',
+                            ),
+                      )}
+                    />
+                    {label}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent 
+                  side="top" 
+                  className="max-w-[240px] border-border/40 bg-popover/95 backdrop-blur-sm"
+                >
+                  <div className="flex flex-col gap-1.5 p-1">
+                    <div className="flex items-center gap-2 font-semibold text-foreground">
+                      <Icon className={cn("h-3.5 w-3.5", !disabled && iconColor)} />
+                      <span>{label}</span>
                     </div>
-                  </TooltipContent>
-                </Tooltip>
+                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                      {disabled 
+                        ? `Sem dados de ${label.toLowerCase()} para este produto`
+                        : description
+                      }
+                    </p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
             );
           })}
         </div>

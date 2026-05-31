@@ -172,7 +172,7 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
       <div className="min-w-[260px] flex-1 space-y-1">
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-sm font-medium leading-none">Fonte das credenciais</p>
-          <TooltipProvider delayDuration={700}>
+          <TooltipProvider delayDuration={1000}>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Badge
@@ -203,7 +203,7 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
         </p>
 
         <div className="flex flex-wrap items-center gap-1.5 pt-1">
-          <TooltipProvider delayDuration={700}>
+          <TooltipProvider delayDuration={1000}>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Badge
@@ -323,7 +323,7 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
       </div>
 
       {onRefresh && (
-        <TooltipProvider delayDuration={700}>
+        <TooltipProvider delayDuration={1000}>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button

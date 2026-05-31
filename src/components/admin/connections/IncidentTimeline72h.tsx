@@ -103,7 +103,7 @@ export function IncidentTimeline72h() {
   const ticks = [0, 1 / 6, 2 / 6, 3 / 6, 4 / 6, 5 / 6, 1];
 
   return (
-    <TooltipProvider delayDuration={700}>
+    <TooltipProvider delayDuration={1000}>
       <section
         aria-label="Timeline de incidentes nas últimas 72 horas"
         className="space-y-2 rounded-lg border bg-card px-4 py-3"

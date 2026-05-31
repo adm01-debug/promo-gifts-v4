@@ -160,7 +160,7 @@ export function IncidentDetailsDrawer({ incident, open, onOpenChange }: Props) {
         className="w-full overflow-y-auto sm:max-w-2xl"
         aria-describedby="incident-details-desc"
       >
-        <TooltipProvider delayDuration={700}>
+        <TooltipProvider delayDuration={1000}>
           <SheetHeader className="space-y-2 border-b border-border/40 pb-3">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline" className={cn('gap-1 text-[11px] font-semibold', sev.cls)}>
