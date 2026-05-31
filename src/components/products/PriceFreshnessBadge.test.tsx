@@ -99,7 +99,7 @@ describe('PriceFreshnessBadge Component', () => {
     const status = screen.getByRole('status');
     expect(status).toHaveAttribute(
       'aria-label',
-      expect.stringContaining('Preço atualizado pelo fornecedor'),
+      expect.stringContaining('Atualizado hoje'),
     );
   });
 });
