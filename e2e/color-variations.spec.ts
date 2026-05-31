@@ -107,6 +107,12 @@ test.describe("Color Variation Tooltips", () => {
       await carouselDot.hover();
       
       const tooltip = page.locator('[role="tooltip"]');
+      
+      // Validação de delay
+      await expect(tooltip).not.toBeVisible();
+      await page.waitForTimeout(800);
+      await expect(tooltip).not.toBeVisible();
+      
       await expect(tooltip).toBeVisible();
       
       await expect(tooltip.locator('[data-testid="color-tooltip-swatch"]')).toBeVisible();
