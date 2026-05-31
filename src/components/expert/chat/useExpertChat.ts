@@ -390,7 +390,7 @@ export function useExpertChat({
       setIsFromVoice(false);
       isFromVoiceRef.current = false;
     }
-  }, [isOpen, initialMessage, isLoading]);
+  }, [isOpen, initialMessage, isLoading, handleAutoSend]);
 
   // TTS — delegated to useExpertChatTts
   const { handlePlayTts, handlePauseTts, stopTts } = tts;
@@ -429,7 +429,7 @@ export function useExpertChat({
       return filtered;
     });
     handleAutoSend(lastUserInput);
-  }, [lastUserInput]);
+  }, [lastUserInput, handleAutoSend]);
 
   const handleStopGenerating = useCallback(() => {
     if (abortControllerRef.current) {
