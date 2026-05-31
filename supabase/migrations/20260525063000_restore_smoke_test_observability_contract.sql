@@ -35,6 +35,11 @@ CREATE POLICY smoke_test_runs_insert_admin
   TO authenticated
   WITH CHECK (public.is_admin_or_above((SELECT auth.uid())));
 
+-- Replay-safe: em preview-branches a função pode já existir como RETURNS TABLE
+-- (criada por 20260525005350/005426); CREATE OR REPLACE não muda o tipo de
+-- retorno → ERROR 42P13. DROP antes garante recriação como RETURNS void.
+-- Sem dependentes de schema em produção (verificado via pg_depend).
+DROP FUNCTION IF EXISTS public.fn_run_and_persist_smoke_tests();
 CREATE OR REPLACE FUNCTION public.fn_run_and_persist_smoke_tests()
 RETURNS void
 LANGUAGE plpgsql
