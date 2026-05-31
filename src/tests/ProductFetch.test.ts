@@ -4,8 +4,9 @@ import { supabase } from '../integrations/supabase/client';
 describe('Product Fetch Integration', () => {
   it('should be able to fetch products from v_products_public', async () => {
     // We use the supabase client which is already fixed in client.ts
-    const { data, error } = await supabase
-      .from('v_products_public' as any)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
+      .from('v_products_public')
       .select('id, name')
       .limit(1);
 
