@@ -16,6 +16,11 @@
 ALTER TABLE public.inbound_webhook_events
   ADD COLUMN IF NOT EXISTS idempotency_key TEXT;
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_webhook_idempotency
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='inbound_webhook_events' AND column_name IN ('endpoint_id','idempotency_key')) = 2 THEN
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_webhook_idempotency
   ON public.inbound_webhook_events (endpoint_id, idempotency_key)
   WHERE idempotency_key IS NOT NULL;
+  END IF;
+END $$;

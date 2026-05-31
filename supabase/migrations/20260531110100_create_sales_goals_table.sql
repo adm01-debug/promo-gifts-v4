@@ -39,6 +39,21 @@ BEGIN
   END IF;
 END $$;
 
-CREATE INDEX IF NOT EXISTS idx_sales_goals_user_id ON public.sales_goals(user_id);
-CREATE INDEX IF NOT EXISTS idx_sales_goals_date_range ON public.sales_goals(start_date, end_date);
-CREATE INDEX IF NOT EXISTS idx_sales_goals_user_active ON public.sales_goals(user_id, start_date, end_date) WHERE NOT is_achieved;
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='sales_goals' AND column_name IN ('user_id')) = 1 THEN
+    CREATE INDEX IF NOT EXISTS idx_sales_goals_user_id ON public.sales_goals(user_id);
+  END IF;
+END $$;
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='sales_goals' AND column_name IN ('start_date','end_date')) = 2 THEN
+    CREATE INDEX IF NOT EXISTS idx_sales_goals_date_range ON public.sales_goals(start_date, end_date);
+  END IF;
+END $$;
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='sales_goals' AND column_name IN ('user_id','start_date','end_date')) = 3 THEN
+    CREATE INDEX IF NOT EXISTS idx_sales_goals_user_active ON public.sales_goals(user_id, start_date, end_date) WHERE NOT is_achieved;
+  END IF;
+END $$;

@@ -45,6 +45,21 @@ USING (auth.uid() = user_id);
 END $$;
 
 -- Index for performance
-CREATE INDEX IF NOT EXISTS idx_system_error_logs_user_id ON public.system_error_logs(user_id);
-CREATE INDEX IF NOT EXISTS idx_system_error_logs_function_name ON public.system_error_logs(function_name);
-CREATE INDEX IF NOT EXISTS idx_system_error_logs_created_at ON public.system_error_logs(created_at);
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='system_error_logs' AND column_name IN ('user_id')) = 1 THEN
+    CREATE INDEX IF NOT EXISTS idx_system_error_logs_user_id ON public.system_error_logs(user_id);
+  END IF;
+END $$;
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='system_error_logs' AND column_name IN ('function_name')) = 1 THEN
+    CREATE INDEX IF NOT EXISTS idx_system_error_logs_function_name ON public.system_error_logs(function_name);
+  END IF;
+END $$;
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='system_error_logs' AND column_name IN ('created_at')) = 1 THEN
+    CREATE INDEX IF NOT EXISTS idx_system_error_logs_created_at ON public.system_error_logs(created_at);
+  END IF;
+END $$;

@@ -55,8 +55,13 @@ create table if not exists public.access_blocked_log (
   user_agent   text,
   created_at   timestamptz not null default now()
 );
-create index if not exists idx_access_blocked_log_created_at
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='access_blocked_log' AND column_name IN ('created_at')) = 1 THEN
+    create index if not exists idx_access_blocked_log_created_at
   on public.access_blocked_log (created_at desc);
+  END IF;
+END $$;
 alter table public.access_blocked_log enable row level security;
 revoke all on table public.access_blocked_log from anon;
 grant select, insert on table public.access_blocked_log to authenticated;
@@ -80,8 +85,13 @@ create table if not exists public.user_allowed_ips (
   created_at timestamptz not null default now(),
   constraint user_allowed_ips_user_ip_unique unique (user_id, ip_address)
 );
-create index if not exists idx_user_allowed_ips_user_id
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='user_allowed_ips' AND column_name IN ('user_id')) = 1 THEN
+    create index if not exists idx_user_allowed_ips_user_id
   on public.user_allowed_ips (user_id);
+  END IF;
+END $$;
 alter table public.user_allowed_ips enable row level security;
 revoke all on table public.user_allowed_ips from anon;
 grant select, insert, update, delete on table public.user_allowed_ips to authenticated;

@@ -34,6 +34,21 @@ BEGIN
   END IF;
 END $$;
 
-CREATE INDEX IF NOT EXISTS idx_personalization_simulations_seller_id ON public.personalization_simulations(seller_id);
-CREATE INDEX IF NOT EXISTS idx_personalization_simulations_created_at ON public.personalization_simulations(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_personalization_simulations_product_id ON public.personalization_simulations(product_id);
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='personalization_simulations' AND column_name IN ('seller_id')) = 1 THEN
+    CREATE INDEX IF NOT EXISTS idx_personalization_simulations_seller_id ON public.personalization_simulations(seller_id);
+  END IF;
+END $$;
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='personalization_simulations' AND column_name IN ('created_at')) = 1 THEN
+    CREATE INDEX IF NOT EXISTS idx_personalization_simulations_created_at ON public.personalization_simulations(created_at DESC);
+  END IF;
+END $$;
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='personalization_simulations' AND column_name IN ('product_id')) = 1 THEN
+    CREATE INDEX IF NOT EXISTS idx_personalization_simulations_product_id ON public.personalization_simulations(product_id);
+  END IF;
+END $$;

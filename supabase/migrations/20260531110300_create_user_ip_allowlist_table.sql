@@ -53,5 +53,15 @@ BEGIN
   END IF;
 END $$;
 
-CREATE INDEX IF NOT EXISTS idx_user_ip_allowlist_user_id ON public.user_ip_allowlist(user_id);
-CREATE INDEX IF NOT EXISTS idx_user_ip_allowlist_ip ON public.user_ip_allowlist(ip_address);
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='user_ip_allowlist' AND column_name IN ('user_id')) = 1 THEN
+    CREATE INDEX IF NOT EXISTS idx_user_ip_allowlist_user_id ON public.user_ip_allowlist(user_id);
+  END IF;
+END $$;
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='user_ip_allowlist' AND column_name IN ('ip_address')) = 1 THEN
+    CREATE INDEX IF NOT EXISTS idx_user_ip_allowlist_ip ON public.user_ip_allowlist(ip_address);
+  END IF;
+END $$;

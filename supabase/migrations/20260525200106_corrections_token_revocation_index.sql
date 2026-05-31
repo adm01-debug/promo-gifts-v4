@@ -3,13 +3,23 @@
 -- Nota: sem CONCURRENTLY para compatibilidade com transações de migration (Supabase branching).
 
 -- Índice para lookup eficiente por token + validade
-CREATE INDEX IF NOT EXISTS idx_token_revocations_token
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='user_token_revocations' AND column_name IN ('token_jti')) = 1 THEN
+    CREATE INDEX IF NOT EXISTS idx_token_revocations_token
   ON user_token_revocations(token_jti)
   WHERE expires_at > NOW();
+  END IF;
+END $$;
 
 -- Índice para limpeza por expiração
-CREATE INDEX IF NOT EXISTS idx_token_revocations_expires
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='user_token_revocations' AND column_name IN ('expires_at')) = 1 THEN
+    CREATE INDEX IF NOT EXISTS idx_token_revocations_expires
   ON user_token_revocations(expires_at);
+  END IF;
+END $$;
 
 -- Job de limpeza automática de tokens expirados (evita crescimento ilimitado)
 SELECT cron.schedule(

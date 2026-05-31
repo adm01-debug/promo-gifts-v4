@@ -32,8 +32,18 @@ create table if not exists public.sales_goals (
   updated_at          timestamptz not null default now()
 );
 
-create index if not exists idx_sales_goals_user on public.sales_goals (user_id);
-create index if not exists idx_sales_goals_period on public.sales_goals (user_id, goal_type, start_date, end_date);
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='sales_goals' AND column_name IN ('user_id')) = 1 THEN
+    create index if not exists idx_sales_goals_user on public.sales_goals (user_id);
+  END IF;
+END $$;
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='sales_goals' AND column_name IN ('user_id','goal_type','start_date','end_date')) = 4 THEN
+    create index if not exists idx_sales_goals_period on public.sales_goals (user_id, goal_type, start_date, end_date);
+  END IF;
+END $$;
 
 alter table public.sales_goals enable row level security;
 revoke all on table public.sales_goals from anon;
@@ -76,7 +86,12 @@ alter table public.product_group_components
   add column if not exists description text,
   add column if not exists updated_at timestamptz not null default now();
 
-create index if not exists idx_pgcomp_group on public.product_group_components (product_group_id, sort_order);
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='product_group_components' AND column_name IN ('product_group_id','sort_order')) = 2 THEN
+    create index if not exists idx_pgcomp_group on public.product_group_components (product_group_id, sort_order);
+  END IF;
+END $$;
 
 alter table public.product_group_components enable row level security;
 revoke all on table public.product_group_components from anon;
@@ -122,7 +137,12 @@ alter table public.product_group_locations
   add column if not exists sort_order integer not null default 0,
   add column if not exists updated_at timestamptz not null default now();
 
-create index if not exists idx_pgloc_component on public.product_group_locations (group_component_id);
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='product_group_locations' AND column_name IN ('group_component_id')) = 1 THEN
+    create index if not exists idx_pgloc_component on public.product_group_locations (group_component_id);
+  END IF;
+END $$;
 
 alter table public.product_group_locations enable row level security;
 revoke all on table public.product_group_locations from anon;
@@ -161,8 +181,18 @@ create table if not exists public.product_group_location_techniques (
 alter table public.product_group_location_techniques
   add column if not exists updated_at timestamptz not null default now();
 
-create index if not exists idx_pgloctech_location on public.product_group_location_techniques (group_location_id);
-create index if not exists idx_pgloctech_technique on public.product_group_location_techniques (technique_id);
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='product_group_location_techniques' AND column_name IN ('group_location_id')) = 1 THEN
+    create index if not exists idx_pgloctech_location on public.product_group_location_techniques (group_location_id);
+  END IF;
+END $$;
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='product_group_location_techniques' AND column_name IN ('technique_id')) = 1 THEN
+    create index if not exists idx_pgloctech_technique on public.product_group_location_techniques (technique_id);
+  END IF;
+END $$;
 
 alter table public.product_group_location_techniques enable row level security;
 revoke all on table public.product_group_location_techniques from anon;
@@ -202,8 +232,18 @@ create table if not exists public.product_component_location_techniques (
 alter table public.product_component_location_techniques
   add column if not exists updated_at timestamptz not null default now();
 
-create index if not exists idx_pcloctech_location on public.product_component_location_techniques (component_location_id);
-create index if not exists idx_pcloctech_technique on public.product_component_location_techniques (technique_id);
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='product_component_location_techniques' AND column_name IN ('component_location_id')) = 1 THEN
+    create index if not exists idx_pcloctech_location on public.product_component_location_techniques (component_location_id);
+  END IF;
+END $$;
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='product_component_location_techniques' AND column_name IN ('technique_id')) = 1 THEN
+    create index if not exists idx_pcloctech_technique on public.product_component_location_techniques (technique_id);
+  END IF;
+END $$;
 
 alter table public.product_component_location_techniques enable row level security;
 revoke all on table public.product_component_location_techniques from anon;

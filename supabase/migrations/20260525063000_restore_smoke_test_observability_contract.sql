@@ -12,11 +12,21 @@ CREATE TABLE IF NOT EXISTS public.smoke_test_runs (
   duration_ms numeric
 );
 
-CREATE INDEX IF NOT EXISTS idx_smoke_test_runs_ran_at
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='smoke_test_runs' AND column_name IN ('ran_at')) = 1 THEN
+    CREATE INDEX IF NOT EXISTS idx_smoke_test_runs_ran_at
   ON public.smoke_test_runs (ran_at DESC);
+  END IF;
+END $$;
 
-CREATE INDEX IF NOT EXISTS idx_smoke_test_runs_name_ran_at
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='smoke_test_runs' AND column_name IN ('test_name','ran_at')) = 2 THEN
+    CREATE INDEX IF NOT EXISTS idx_smoke_test_runs_name_ran_at
   ON public.smoke_test_runs (test_name, ran_at DESC);
+  END IF;
+END $$;
 
 ALTER TABLE public.smoke_test_runs ENABLE ROW LEVEL SECURITY;
 

@@ -11,7 +11,17 @@
 --   personalization_simulations.product_id -> idx_personalization_simulations_product_id
 --   user_allowed_ips.created_by            -> idx_user_allowed_ips_created_by
 -- =====================================================================
-CREATE INDEX IF NOT EXISTS idx_personalization_simulations_product_id
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='personalization_simulations' AND column_name IN ('product_id')) = 1 THEN
+    CREATE INDEX IF NOT EXISTS idx_personalization_simulations_product_id
   ON public.personalization_simulations (product_id);
-CREATE INDEX IF NOT EXISTS idx_user_allowed_ips_created_by
+  END IF;
+END $$;
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='user_allowed_ips' AND column_name IN ('created_by')) = 1 THEN
+    CREATE INDEX IF NOT EXISTS idx_user_allowed_ips_created_by
   ON public.user_allowed_ips (created_by);
+  END IF;
+END $$;
