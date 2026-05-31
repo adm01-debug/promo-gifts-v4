@@ -120,7 +120,7 @@ export function BIAiCopilot({ open, onOpenChange, clientId, clientName, ramoAtiv
       if (error) throw error;
       const answer = (data as { answer?: string })?.answer ?? 'Não consegui processar agora.';
       setMessages((prev) => [...prev, { role: 'assistant', content: answer }]);
-    } catch (_e) {
+    } catch {
       toast.error('Erro ao consultar o copiloto. Tente novamente.');
       setMessages((prev) => [
         ...prev,

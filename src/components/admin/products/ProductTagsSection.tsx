@@ -3,7 +3,7 @@
  * Gradientes, badges removíveis, color dots, contadores
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -75,7 +75,10 @@ export function ProductTagsSection({ productId }: ProductTagsSectionProps) {
     enabled: !!productId,
   });
 
-  const linkedTagIds = new Set(productTags.map((pt) => pt.tag_id));
+  const linkedTagIds = useMemo(
+    () => new Set(productTags.map((pt) => pt.tag_id)),
+    [productTags],
+  );
 
   const toggleTag = useCallback(
     async (tagId: string, isLinked: boolean) => {

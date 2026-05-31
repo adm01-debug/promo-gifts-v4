@@ -42,18 +42,23 @@ export function ProductRamosSection({ productId }: ProductRamosSectionProps) {
     enabled: !!productId,
   });
 
-  const linkedSegmentoIds = new Set(
-    (produtoRamosData?.associacoes || []).map((a) => a.ramo_atividade_filho_id),
+  const linkedSegmentoIds = useMemo(
+    () => new Set((produtoRamosData?.associacoes || []).map((a) => a.ramo_atividade_filho_id)),
+    [produtoRamosData?.associacoes],
   );
 
-  const ramos = ramosData?.ramos || [];
-  const segmentos = segmentosData?.segmentos || [];
+  const ramos = useMemo(() => ramosData?.ramos || [], [ramosData?.ramos]);
+  const segmentos = useMemo(() => segmentosData?.segmentos || [], [segmentosData?.segmentos]);
 
-  const segmentosByRamo = segmentos.reduce<Record<string, typeof segmentos>>((acc, s) => {
-    if (!acc[s.ramo_atividade_id]) acc[s.ramo_atividade_id] = [];
-    acc[s.ramo_atividade_id].push(s);
-    return acc;
-  }, {});
+  const segmentosByRamo = useMemo(
+    () =>
+      segmentos.reduce<Record<string, typeof segmentos>>((acc, s) => {
+        if (!acc[s.ramo_atividade_id]) acc[s.ramo_atividade_id] = [];
+        acc[s.ramo_atividade_id].push(s);
+        return acc;
+      }, {}),
+    [segmentos],
+  );
 
   const toggleSegmento = useCallback(
     async (segmentoId: string, isLinked: boolean) => {

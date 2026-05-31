@@ -41,11 +41,6 @@ export function FilterPanel({
   onReset,
   activeFiltersCount,
   products = [],
-  viewMode,
-  onViewModeChange,
-  gridColumns,
-  onGridColumnsChange,
-  filteredResultsCount,
 }: FilterPanelProps) {
   const state = useFilterPanelState(filters, onFilterChange, products);
 

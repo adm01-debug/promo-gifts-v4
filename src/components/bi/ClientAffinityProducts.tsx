@@ -18,7 +18,7 @@ interface Props {
 
 export function ClientAffinityProducts({ clientId }: Props) {
   const { data, isLoading } = useClientAffinity(clientId);
-  const { focusedSlug, focusedLabel } = useBICategoryFocus();
+  const { focusedSlug } = useBICategoryFocus();
 
   const visibleCategories = useMemo(() => {
     const cats = data?.categories ?? [];

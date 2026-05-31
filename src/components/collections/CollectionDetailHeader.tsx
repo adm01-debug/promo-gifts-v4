@@ -28,7 +28,7 @@ interface CollectionDetailHeaderProps {
     { color_name?: string | null; color_hex?: string | null; thumbnail?: string | null }
   >;
   notesMap?: Map<string, string | undefined>;
-  onBack: () => void;
+  onBack?: () => void;
   onCreateQuote: () => void;
   onPresent: () => void;
   onShare?: () => void;
@@ -43,7 +43,7 @@ export function CollectionDetailHeader({
   products,
   variantMap,
   notesMap,
-  onBack,
+  onBack, // Mantido apenas para compatibilidade de tipos se necessário // Mantido para compatibilidade legado mas não usado no render atual
   onCreateQuote,
   onPresent,
   onShare,

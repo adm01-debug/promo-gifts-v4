@@ -16,7 +16,7 @@ function formatCurrency(value: number): string {
 export function QuickActionsPanel() {
   const navigate = useNavigate();
   const { quotes, isLoading } = useQuotes();
-  const { user } = useAuth();
+  useAuth();
 
   const stats = useMemo(() => {
     if (!quotes.length)

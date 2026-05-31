@@ -42,7 +42,7 @@ export function PricingPanel() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTecnica, setFilterTecnica] = useState<string>('all');
   const [expandedTables, setExpandedTables] = useState<Set<string>>(new Set());
-  const [simuladorQtd, setSimuladorQtd] = useState<Record<string, number>>({});
+  const [simuladorQtd] = useState<Record<string, number>>({});
 
   // Construir filtros
   const filtros: TabelaPrecoFiltros = useMemo(() => {

@@ -68,7 +68,6 @@ const INITIAL_MESSAGES: Message[] = [
 export function AIMockupAssistant({
   productName,
   techniqueName,
-  onSuggestionApply,
   className,
 }: AIMockupAssistantProps) {
   const [isOpen, setIsOpen] = useState(false);

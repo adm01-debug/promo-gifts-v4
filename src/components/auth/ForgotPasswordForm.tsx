@@ -33,7 +33,7 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
   const { createRequest } = usePasswordResetRequests();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [requestSent, setRequestSent] = useState(false);
+  const [requestSent] = useState(false);
 
   const form = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -61,7 +61,7 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
 
       // Navega para a página de confirmação com instruções detalhadas
       navigate('/forgot-password-confirmation');
-    } catch (_error) {
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Erro inesperado',
