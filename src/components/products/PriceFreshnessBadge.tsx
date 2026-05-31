@@ -39,12 +39,12 @@ const STATUS_LABELS: Record<PriceFreshnessStatus, string> = {
 function buildAccessibleLabel(
   freshness: PriceFreshness,
   priceUpdatedAt?: string | Date | null,
-): { ariaLabel: string } {
-...
+): { ariaLabel: string; title: string } {
   // Frase principal lida pelo screen reader (curta e direta).
-  let ariaLabel: string;
-...
-  return { ariaLabel };
+  const ariaLabel = freshness.label;
+  const title = priceUpdatedAt ? `Atualizado em ${formatAbsoluteDate(priceUpdatedAt)}` : freshness.label;
+
+  return { ariaLabel, title };
 }
 
 /** Data + hora exatas no fuso local do usuário (PT-BR). Ex.: "24/04/2026 09:32". */
