@@ -12,6 +12,12 @@ import { isLightColor } from '@/hooks/products/useColorSystem';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import type { MatchedColorVariant } from '@/utils/color-variant-carousel';
 
+const DEFAULT_IMAGE_CONFIG = {
+  blurAmount: 12,
+  zoomAmount: 1.08,
+  duration: 800,
+};
+
 interface ProductCardImageProps {
   priority?: boolean;
   product: {
@@ -123,9 +129,9 @@ export const ProductCardImage = memo(function ProductCardImage({
         onLoad={onImageLoad}
         containerClassName="h-full w-full"
         priority={priority}
-        blurAmount={product.imageConfig?.blurAmount ?? 10}
-        zoomAmount={product.imageConfig?.zoomAmount ?? 1.05}
-        duration={product.imageConfig?.duration ?? 600}
+        blurAmount={product.imageConfig?.blurAmount ?? DEFAULT_IMAGE_CONFIG.blurAmount}
+        zoomAmount={product.imageConfig?.zoomAmount ?? DEFAULT_IMAGE_CONFIG.zoomAmount}
+        duration={product.imageConfig?.duration ?? DEFAULT_IMAGE_CONFIG.duration}
         lqip={product.imageConfig?.lqip}
       />
 

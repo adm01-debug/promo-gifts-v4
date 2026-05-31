@@ -12,11 +12,27 @@ export default function OptimizedImageDemo() {
   const [duration, setDuration] = useState(700);
   const [key, setKey] = useState(0);
   const [showError, setShowError] = useState(false);
+  const [delay, setDelay] = useState(1000);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentSrc, setCurrentSrc] = useState("");
 
   const sampleImage = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=800";
   const errorImage = "https://invalid-url.com/non-existent.jpg";
 
-  const reload = () => setKey(prev => prev + 1);
+  const reload = () => {
+    setIsLoading(true);
+    setCurrentSrc("");
+    setKey(prev => prev + 1);
+    
+    setTimeout(() => {
+      setCurrentSrc(showError ? errorImage : sampleImage + `?t=${Date.now()}`);
+      setIsLoading(false);
+    }, delay);
+  };
+
+  React.useEffect(() => {
+    reload();
+  }, [showError, delay]);
 
   return (
     <div className="container mx-auto p-8 space-y-8">
@@ -72,16 +88,31 @@ export default function OptimizedImageDemo() {
               />
             </div>
 
+            <div className="space-y-4">
+              <div className="flex justify-between">
+                <Label>Atraso de Rede ({delay}ms)</Label>
+              </div>
+              <Slider 
+                value={[delay]} 
+                onValueChange={([v]) => setDelay(v)} 
+                min={0} 
+                max={5000} 
+                step={500} 
+              />
+            </div>
+
             <div className="pt-4 space-y-2">
-              <Button onClick={reload} className="w-full gap-2">
-                <RefreshCcw className="h-4 w-4" /> Reiniciar Carregamento
+              <Button onClick={reload} className="w-full gap-2" disabled={isLoading}>
+                <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> 
+                {isLoading ? 'Simulando Rede...' : 'Reiniciar Carregamento'}
               </Button>
               <Button 
                 variant="outline" 
                 onClick={() => setShowError(!showError)} 
                 className="w-full gap-2"
+                disabled={isLoading}
               >
-                {showError ? 'Mostrar Imagem Válida' : 'Testar Estado de Erro'}
+                {showError ? 'Usar Imagem Válida' : 'Simular Erro de Carga'}
               </Button>
             </div>
           </CardContent>
@@ -95,7 +126,7 @@ export default function OptimizedImageDemo() {
             <div className="w-full max-w-sm aspect-[4/5] bg-white rounded-xl shadow-2xl overflow-hidden border">
               <OptimizedImage
                 key={key}
-                src={showError ? errorImage : sampleImage}
+                src={currentSrc}
                 alt="Product Preview"
                 blurAmount={blur}
                 zoomAmount={zoom}

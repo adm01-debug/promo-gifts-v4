@@ -41,11 +41,26 @@ export function OptimizedImage({
   const imgRef = useRef<HTMLImageElement>(null);
 
   // Generate a local blurred placeholder if no lqip is provided
-  // This is a simple SVG data URL that mimics a blurred version of the container
   const localPlaceholder = useMemo(() => {
-    if (lqip) return null;
-    return `data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 500'%3E%3Crect width='400' height='500' fill='%23f3f4f6'/%3E%3C/svg%3E`;
-  }, [lqip]);
+    if (lqip || !src) return null;
+    
+    // If it's an Unsplash image, we can get a tiny version for LQIP
+    if (src.includes('unsplash.com')) {
+      const url = new URL(src);
+      url.searchParams.set('w', '50');
+      url.searchParams.set('q', '10');
+      url.searchParams.set('blur', '10');
+      return url.toString();
+    }
+    
+    // If it's a Supabase storage image, we can try to get a thumbnail if transformations are enabled
+    if (src.includes('/storage/v1/object/public/')) {
+      return `${src}${src.includes('?') ? '&' : '?'}width=50&quality=10`;
+    }
+
+    // No local preview for other sources
+    return null;
+  }, [lqip, src]);
 
   useEffect(() => {
     if (priority) {
@@ -108,7 +123,7 @@ export function OptimizedImage({
           )}
 
           {/* Loading Shimmer - only if no LQIP */}
-          {!isLoaded && !lqip && (
+          {!isLoaded && !lqip && !localPlaceholder && (
             <div
               aria-hidden
               className="absolute inset-0 z-10 h-full w-full bg-white/20 image-shimmer backdrop-blur-sm"
@@ -138,7 +153,7 @@ export function OptimizedImage({
               onErrorProp?.(e);
             }}
             loading={priority ? 'eager' : 'lazy'}
-            {...(priority ? { fetchpriority: 'high' } : {})}
+            {...(priority ? { fetchPriority: 'high' } : {})}
             {...props}
           />
         </>
