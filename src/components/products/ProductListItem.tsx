@@ -383,74 +383,43 @@ export const ProductListItem = memo(function ProductListItem({
               }}
             >
               {allMatchingVariants.map((v, i) => (
-                <button
-                  key={`${v.groupSlug}-${v.variationSlug}-${v.name}`}
-                  role="tab"
-                  type="button"
-                  tabIndex={i === safeVariantIdx ? 0 : -1}
-                  aria-selected={i === safeVariantIdx}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setActiveVariantIdx(i);
-                  }}
-                  className={cn(
-                    'h-3 w-3 rounded-full border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                    i === safeVariantIdx
-                      ? 'scale-110 ring-1 ring-offset-1 ring-offset-card'
-                      : 'border-border/50 opacity-60',
-                  )}
-                  style={{
-                    backgroundColor: v.hex,
-                    borderColor:
-                      i === safeVariantIdx
-                        ? isLightColor(v.hex)
-                          ? 'hsl(var(--muted-foreground))'
-                          : v.hex
-                        : undefined,
-                    ['--tw-ring-color' as string]:
-                      i === safeVariantIdx
-                        ? isLightColor(v.hex)
-                          ? 'hsl(var(--muted-foreground) / 0.6)'
-                          : v.hex
-                        : v.hex,
-                  }}
-                  <Tooltip key={`${v.groupSlug}-${v.variationSlug}-${v.name}`}>
-                    <TooltipTrigger asChild>
-                      <button
-                        role="tab"
-                        type="button"
-                        tabIndex={i === safeVariantIdx ? 0 : -1}
-                        aria-selected={i === safeVariantIdx}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveVariantIdx(i);
-                        }}
-                        className={cn(
-                          'h-3 w-3 rounded-full border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                <Tooltip key={`${v.groupSlug}-${v.variationSlug}-${v.name}`}>
+                  <TooltipTrigger asChild>
+                    <button
+                      role="tab"
+                      type="button"
+                      tabIndex={i === safeVariantIdx ? 0 : -1}
+                      aria-selected={i === safeVariantIdx}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveVariantIdx(i);
+                      }}
+                      className={cn(
+                        'h-3 w-3 rounded-full border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        i === safeVariantIdx
+                          ? 'scale-110 ring-1 ring-offset-1 ring-offset-card'
+                          : 'border-border/50 opacity-60',
+                      )}
+                      style={{
+                        backgroundColor: v.hex,
+                        borderColor:
                           i === safeVariantIdx
-                            ? 'scale-110 ring-1 ring-offset-1 ring-offset-card'
-                            : 'border-border/50 opacity-60',
-                        )}
-                        style={{
-                          backgroundColor: v.hex,
-                          borderColor:
-                            i === safeVariantIdx
-                              ? isLightColor(v.hex)
-                                ? 'hsl(var(--muted-foreground))'
-                                : v.hex
-                              : undefined,
-                          ['--tw-ring-color' as string]:
-                            i === safeVariantIdx
-                              ? isLightColor(v.hex)
-                                ? 'hsl(var(--muted-foreground) / 0.6)'
-                                : v.hex
-                              : v.hex,
-                        }}
-                        aria-label={`Ver ${v.name}`}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>{v.name}</TooltipContent>
-                  </Tooltip>
+                            ? isLightColor(v.hex)
+                              ? 'hsl(var(--muted-foreground))'
+                              : v.hex
+                            : undefined,
+                        ['--tw-ring-color' as string]:
+                          i === safeVariantIdx
+                            ? isLightColor(v.hex)
+                              ? 'hsl(var(--muted-foreground) / 0.6)'
+                              : v.hex
+                            : v.hex,
+                      }}
+                      aria-label={`Ver ${v.name}`}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>{v.name}</TooltipContent>
+                </Tooltip>
               ))}
             </div>
           )}
