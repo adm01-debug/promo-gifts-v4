@@ -140,7 +140,7 @@ export default function OptimizedImageDemo() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <Card>
           <CardHeader>
             <CardTitle>Com LQIP (Base64/Thumb)</CardTitle>
@@ -155,6 +155,27 @@ export default function OptimizedImageDemo() {
                 src={sampleImage + "&t=" + key}
                 lqip="https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=1&w=50"
                 alt="LQIP Demo"
+                blurAmount={blur}
+                zoomAmount={zoom}
+                duration={duration}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Cloudflare Images Detection</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Valida a detecção de <strong>imagedelivery.net</strong> e geração do path <strong>/thumbnail</strong>. Confira o Console!
+            </p>
+            <div className="aspect-video relative overflow-hidden rounded-md border">
+              <OptimizedImage
+                key={`cf-${key}`}
+                src={`https://imagedelivery.net/demo-id/product-${key}/public`}
+                alt="Cloudflare Demo"
                 blurAmount={blur}
                 zoomAmount={zoom}
                 duration={duration}
