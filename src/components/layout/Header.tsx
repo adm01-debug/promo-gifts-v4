@@ -343,6 +343,32 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                 Tamanho Tooltip: {tooltipStyle === 'compact' ? 'Mudar para Standard' : 'Mudar para Compact'}
               </TooltipContent>
             </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleBadges}
+                  aria-label={badgesEnabled ? 'Ocultar badges dos produtos' : 'Exibir badges dos produtos'}
+                  aria-pressed={badgesEnabled}
+                  className={cn(
+                    'relative h-8 w-8 rounded-full transition-all duration-200 hover:bg-primary/10 hover:text-foreground',
+                    badgesEnabled ? 'text-muted-foreground' : 'text-muted-foreground/40',
+                  )}
+                >
+                  <Tag className="h-[17px] w-[17px]" strokeWidth={1.75} />
+                  {!badgesEnabled && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute left-1/2 top-1/2 h-[1.5px] w-5 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-full bg-current"
+                    />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                Badges dos produtos: {badgesEnabled ? 'Ativos — clique para ocultar' : 'Ocultos — clique para reativar'}
+              </TooltipContent>
+            </Tooltip>
           </div>
 
           {/* ── Mobile overflow menu (#8) ── */}
