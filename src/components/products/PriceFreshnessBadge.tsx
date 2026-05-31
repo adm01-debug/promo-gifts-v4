@@ -355,27 +355,19 @@ export function PriceFreshnessBadge({
 
     if (freshness.status === 'stale') {
       body = (
-        <div
+        <span
           role="status"
           aria-label={ariaLabel}
           className={cn(
-            'inline-flex items-start gap-2.5 rounded-xl border-[1.5px] border-amber-300 bg-amber-100/80 px-3.5 py-2.5 text-amber-900 dark:border-amber-500/60 dark:bg-amber-500/15 dark:text-amber-200',
+            'inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-amber-300 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800 dark:border-amber-500/60 dark:bg-amber-500/10 dark:text-amber-200',
             className,
           )}
         >
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-          <div className="flex flex-col gap-0.5 leading-tight">
-            <span className="font-display text-sm font-semibold">Preço pode estar defasado</span>
-            {absolute && (
-              <span className="text-xs tabular-nums text-amber-800/90 dark:text-amber-200/80">
-                Última atualização em {absolute} ({relative})
-              </span>
-            )}
-            <span className="text-[11px] text-amber-800/80 dark:text-amber-200/70">
-              Confirme com o fornecedor antes de fechar o orçamento.
-            </span>
-          </div>
-        </div>
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          <span className="tabular-nums">
+            {absolute ? `Atualizado em ${absolute}` : 'Preço pode estar defasado'}
+          </span>
+        </span>
       );
     } else if (freshness.status === 'aging' && absolute) {
       body = (
@@ -388,11 +380,7 @@ export function PriceFreshnessBadge({
           )}
         >
           <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          <span className="tabular-nums">
-            Atualizado em {absolute}
-            <span className="text-amber-700/70 dark:text-amber-300/70"> · {relative}</span>
-            {limitSuffix}
-          </span>
+          <span className="tabular-nums">Atualizado em {absolute}</span>
         </span>
       );
     } else if (freshness.status === 'fresh' && absolute) {
@@ -406,11 +394,7 @@ export function PriceFreshnessBadge({
           )}
         >
           <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          <span className="tabular-nums">
-            Atualizado em {absolute}
-            <span className="text-emerald-700/70 dark:text-emerald-400/70"> · {relative}</span>
-            {limitSuffix}
-          </span>
+          <span className="tabular-nums">Atualizado em {absolute}</span>
         </span>
       );
     } else {
@@ -425,10 +409,12 @@ export function PriceFreshnessBadge({
           )}
         >
           <HelpCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          <span>Data de atualização não informada</span>
+          <span>Data não informada</span>
         </span>
       );
     }
+    // referenced to avoid TS unused warning — detalhes vão no tooltip
+    void relative;
   } else {
     // `inline` (default) — usado em PDP/Quick View. Mantém o label do util
     // ("Atualizado há N dias" / "Preço pode estar defasado (há N dias)") e
