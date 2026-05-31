@@ -193,23 +193,20 @@ export function AIChat({
       const token = sessionData?.session?.access_token;
       if (!token) throw new Error('Usuário não autenticado');
 
-      const response = await fetch(
-        `${SUPABASE_URL}/functions/v1/expert-chat`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            apikey: SUPABASE_PUBLISHABLE_KEY,
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            messages: nextMessages.map((m) => ({ role: m.role, content: m.content })),
-            systemPrompt,
-            contextId,
-          }),
-          signal: controller.signal,
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/expert-chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({
+          messages: nextMessages.map((m) => ({ role: m.role, content: m.content })),
+          systemPrompt,
+          contextId,
+        }),
+        signal: controller.signal,
+      });
 
       if (!response.ok) {
         if (response.status === 429)

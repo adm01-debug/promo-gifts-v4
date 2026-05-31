@@ -136,8 +136,7 @@ export function useExternalDatabase<T = Record<string, unknown>>(tableName: Exte
         //
         // SELECT por id: o REST nativo filtra via PostgREST (.eq), então traduzimos o id
         // em filtro. Para escritas (insert/update/delete) o id segue no campo próprio.
-        const idFilter =
-          operation === 'select' && options?.id ? { id: options.id } : undefined;
+        const idFilter = operation === 'select' && options?.id ? { id: options.id } : undefined;
         const mergedFilters =
           idFilter || options?.filters
             ? { ...(options?.filters ?? {}), ...(idFilter ?? {}) }

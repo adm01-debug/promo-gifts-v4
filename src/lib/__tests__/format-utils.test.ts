@@ -26,11 +26,9 @@ describe('format-utils', () => {
       expect(formatTooltipNumber(1234567890)).toBe('1.234.567.890');
     });
 
-
     it('should handle long decimals by rounding', () => {
       expect(formatTooltipNumber(1.23456789, 4)).toBe('1,2346');
     });
-
   });
 
   describe('formatTooltipPercent', () => {

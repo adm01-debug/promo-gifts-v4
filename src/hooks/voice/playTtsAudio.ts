@@ -107,19 +107,16 @@ export function playTtsAudio(
 
     let ttsResponse: Response;
     try {
-      ttsResponse = await fetch(
-        `${SUPABASE_URL}/functions/v1/elevenlabs-tts`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            apikey: SUPABASE_PUBLISHABLE_KEY,
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: JSON.stringify({ text: ttsText }),
-          signal: controller.signal,
+      ttsResponse = await fetch(`${SUPABASE_URL}/functions/v1/elevenlabs-tts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${authToken}`,
         },
-      );
+        body: JSON.stringify({ text: ttsText }),
+        signal: controller.signal,
+      });
     } finally {
       clearTimeout(timeout);
     }

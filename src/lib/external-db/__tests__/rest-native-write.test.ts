@@ -26,15 +26,24 @@ interface Capture {
   selected: boolean;
 }
 const cap: Capture = { table: null, op: null, payload: undefined, eqCalls: [], selected: false };
-let nextResult: { data: unknown[] | null; error: { message: string } | null } = { data: [], error: null };
+let nextResult: { data: unknown[] | null; error: { message: string } | null } = {
+  data: [],
+  error: null,
+};
 
 function makeBuilder() {
   const builder: Record<string, unknown> = {};
   const chain = () => builder;
-  builder.eq = vi.fn((c: string, v: unknown) => { cap.eqCalls.push([c, v]); return chain(); });
+  builder.eq = vi.fn((c: string, v: unknown) => {
+    cap.eqCalls.push([c, v]);
+    return chain();
+  });
   builder.in = vi.fn(() => chain());
   builder.is = vi.fn(() => chain());
-  builder.select = vi.fn(() => { cap.selected = true; return chain(); });
+  builder.select = vi.fn(() => {
+    cap.selected = true;
+    return chain();
+  });
   // awaitable
   builder.then = (resolve: (r: typeof nextResult) => unknown) => resolve(nextResult);
   return builder;
@@ -45,10 +54,25 @@ vi.mock('@/integrations/supabase/client', () => ({
     from: (table: string) => {
       cap.table = table;
       return {
-        insert: (p: unknown) => { cap.op = 'insert'; cap.payload = p; return makeBuilder(); },
-        update: (p: unknown) => { cap.op = 'update'; cap.payload = p; return makeBuilder(); },
-        upsert: (p: unknown) => { cap.op = 'upsert'; cap.payload = p; return makeBuilder(); },
-        delete: () => { cap.op = 'delete'; return makeBuilder(); },
+        insert: (p: unknown) => {
+          cap.op = 'insert';
+          cap.payload = p;
+          return makeBuilder();
+        },
+        update: (p: unknown) => {
+          cap.op = 'update';
+          cap.payload = p;
+          return makeBuilder();
+        },
+        upsert: (p: unknown) => {
+          cap.op = 'upsert';
+          cap.payload = p;
+          return makeBuilder();
+        },
+        delete: () => {
+          cap.op = 'delete';
+          return makeBuilder();
+        },
       };
     },
   },
@@ -59,7 +83,11 @@ vi.mock('@/lib/logger', () => ({
 }));
 
 function resetCap() {
-  cap.table = null; cap.op = null; cap.payload = undefined; cap.eqCalls = []; cap.selected = false;
+  cap.table = null;
+  cap.op = null;
+  cap.payload = undefined;
+  cap.eqCalls = [];
+  cap.selected = false;
   nextResult = { data: [], error: null };
 }
 
@@ -69,16 +97,35 @@ describe('rest-native WRITE (Plano A)', () => {
 
   // ── Elegibilidade / whitelist ───────────────────────────────
   it('elegibilidade: write em tabela whitelisted = true; fora = false; select = false', () => {
-    expect(isRestNativeWriteEligible({ table: 'collections', operation: 'insert' } as InvokeOptions)).toBe(true);
-    expect(isRestNativeWriteEligible({ table: 'products', operation: 'update', id: 'x' } as InvokeOptions)).toBe(true);
-    expect(isRestNativeWriteEligible({ table: 'tabela_aleatoria', operation: 'insert' } as InvokeOptions)).toBe(false);
-    expect(isRestNativeWriteEligible({ table: 'products', operation: 'select' } as InvokeOptions)).toBe(false);
+    expect(
+      isRestNativeWriteEligible({ table: 'collections', operation: 'insert' } as InvokeOptions),
+    ).toBe(true);
+    expect(
+      isRestNativeWriteEligible({
+        table: 'products',
+        operation: 'update',
+        id: 'x',
+      } as InvokeOptions),
+    ).toBe(true);
+    expect(
+      isRestNativeWriteEligible({
+        table: 'tabela_aleatoria',
+        operation: 'insert',
+      } as InvokeOptions),
+    ).toBe(false);
+    expect(
+      isRestNativeWriteEligible({ table: 'products', operation: 'select' } as InvokeOptions),
+    ).toBe(false);
   });
 
   // ── A3: tabela BASE, nunca view ─────────────────────────────
   it('A3: insert em products vai para a tabela BASE products (não v_products_public)', async () => {
     nextResult = { data: [{ id: '1', name: 'X' }], error: null };
-    const r = await executeRestNativeWrite({ table: 'products', operation: 'insert', data: { name: 'X' } } as InvokeOptions);
+    const r = await executeRestNativeWrite({
+      table: 'products',
+      operation: 'insert',
+      data: { name: 'X' },
+    } as InvokeOptions);
     expect(cap.table).toBe('products');
     expect(cap.op).toBe('insert');
     expect(cap.selected).toBe(true);
@@ -87,16 +134,22 @@ describe('rest-native WRITE (Plano A)', () => {
 
   it('A3: alias de rename personalization_techniques → tecnicas_gravacao', async () => {
     nextResult = { data: [{ codigo: 'c1', nome: 'T' }], error: null };
-    await executeRestNativeWrite({ table: 'personalization_techniques', operation: 'insert', data: { name: 'T', is_active: true } } as InvokeOptions);
+    await executeRestNativeWrite({
+      table: 'personalization_techniques',
+      operation: 'insert',
+      data: { name: 'T', is_active: true },
+    } as InvokeOptions);
     expect(cap.table).toBe('tecnicas_gravacao');
   });
 
   // ── A5: remap EN→PT no payload ────────────────────────────
   it('A5: payload de tecnicas_gravacao remapeia name→nome, is_active→ativo', async () => {
     nextResult = { data: [{ codigo: 'c1' }], error: null };
-    await executeRestNativeWrite(
-      { table: 'personalization_techniques', operation: 'insert', data: { name: 'Tampografia', is_active: true } } as InvokeOptions,
-    );
+    await executeRestNativeWrite({
+      table: 'personalization_techniques',
+      operation: 'insert',
+      data: { name: 'Tampografia', is_active: true },
+    } as InvokeOptions);
     expect(cap.payload).toMatchObject({ nome: 'Tampografia', ativo: true });
     expect(cap.payload).not.toHaveProperty('name');
   });
@@ -104,7 +157,11 @@ describe('rest-native WRITE (Plano A)', () => {
   // ── A2: proteção contra mutação em massa ──────────────────────
   it('A2: update SEM filtro/id é proibido', async () => {
     await expect(
-      executeRestNativeWrite({ table: 'products', operation: 'update', data: { is_active: false } } as InvokeOptions),
+      executeRestNativeWrite({
+        table: 'products',
+        operation: 'update',
+        data: { is_active: false },
+      } as InvokeOptions),
     ).rejects.toThrow(/mutação em massa/);
   });
 
@@ -116,13 +173,22 @@ describe('rest-native WRITE (Plano A)', () => {
 
   it('A2: update COM id é permitido e aplica eq(id)', async () => {
     nextResult = { data: [{ id: 'p1' }], error: null };
-    await executeRestNativeWrite({ table: 'products', operation: 'update', id: 'p1', data: { is_active: false } } as InvokeOptions);
+    await executeRestNativeWrite({
+      table: 'products',
+      operation: 'update',
+      id: 'p1',
+      data: { is_active: false },
+    } as InvokeOptions);
     expect(cap.eqCalls).toContainEqual(['id', 'p1']);
   });
 
   it('A2: delete COM id aplica eq(id) e select()', async () => {
     nextResult = { data: [{ id: 'p9' }], error: null };
-    await executeRestNativeWrite({ table: 'products', operation: 'delete', id: 'p9' } as InvokeOptions);
+    await executeRestNativeWrite({
+      table: 'products',
+      operation: 'delete',
+      id: 'p9',
+    } as InvokeOptions);
     expect(cap.op).toBe('delete');
     expect(cap.eqCalls).toContainEqual(['id', 'p9']);
     expect(cap.selected).toBe(true);
@@ -131,7 +197,11 @@ describe('rest-native WRITE (Plano A)', () => {
   // ── A4: select-back vazio ainda é sucesso ─────────────────────
   it('A4: insert com select-back vazio (RLS de SELECT) ainda é sucesso (count 0, sem throw)', async () => {
     nextResult = { data: [], error: null };
-    const r = await executeRestNativeWrite({ table: 'collections', operation: 'insert', data: { name: 'C' } } as InvokeOptions);
+    const r = await executeRestNativeWrite({
+      table: 'collections',
+      operation: 'insert',
+      data: { name: 'C' },
+    } as InvokeOptions);
     expect(r.records).toEqual([]);
     expect(r.count).toBe(0);
   });
@@ -140,21 +210,31 @@ describe('rest-native WRITE (Plano A)', () => {
   it('erro de RLS/validação PROPAGA (LOUD), não vira no-op', async () => {
     nextResult = { data: null, error: { message: 'new row violates row-level security policy' } };
     await expect(
-      tryExecuteRestNativeWrite({ table: 'products', operation: 'insert', data: { name: 'X' } } as InvokeOptions),
+      tryExecuteRestNativeWrite({
+        table: 'products',
+        operation: 'insert',
+        data: { name: 'X' },
+      } as InvokeOptions),
     ).rejects.toThrow(/row-level security/);
   });
 
   it('tryExecuteRestNativeWrite retorna null p/ tabela não-elegível (caller decide fallback)', async () => {
-    const r = await tryExecuteRestNativeWrite({ table: 'tabela_aleatoria', operation: 'insert', data: {} } as InvokeOptions);
+    const r = await tryExecuteRestNativeWrite({
+      table: 'tabela_aleatoria',
+      operation: 'insert',
+      data: {},
+    } as InvokeOptions);
     expect(r).toBeNull();
   });
 
   // ── batch_insert (array) ──────────────────────────────────
   it('batch_insert envia array e remapeia cada linha', async () => {
     nextResult = { data: [{ codigo: 'a' }, { codigo: 'b' }], error: null };
-    await executeRestNativeWrite(
-      { table: 'personalization_techniques', operation: 'batch_insert', data: [{ name: 'A' }, { name: 'B' }] } as unknown as InvokeOptions,
-    );
+    await executeRestNativeWrite({
+      table: 'personalization_techniques',
+      operation: 'batch_insert',
+      data: [{ name: 'A' }, { name: 'B' }],
+    } as unknown as InvokeOptions);
     expect(Array.isArray(cap.payload)).toBe(true);
     expect((cap.payload as Array<Record<string, unknown>>)[0]).toMatchObject({ nome: 'A' });
   });

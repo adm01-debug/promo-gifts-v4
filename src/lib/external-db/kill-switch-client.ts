@@ -235,13 +235,17 @@ export async function getKillSwitchState(switchName: string): Promise<KillSwitch
           );
           if (rpcError) {
             // RPC falhou — default conservador: aplica kill (mesmo comportamento de quando rollout=100)
-            logger.warn(`[kill-switch-client] RPC rollout falhou — assume 100%: ${rpcError.message}`);
+            logger.warn(
+              `[kill-switch-client] RPC rollout falhou — assume 100%: ${rpcError.message}`,
+            );
             shouldApply = true;
           } else {
             shouldApply = Boolean(rpcResult);
           }
         } catch (e) {
-          logger.warn(`[kill-switch-client] RPC rollout erro — assume 100%: ${(e as Error).message}`);
+          logger.warn(
+            `[kill-switch-client] RPC rollout erro — assume 100%: ${(e as Error).message}`,
+          );
           shouldApply = true;
         }
       }

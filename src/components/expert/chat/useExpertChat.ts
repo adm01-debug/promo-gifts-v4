@@ -470,60 +470,53 @@ export function useExpertChat({
     if (convId) await saveMessage(convId, 'user', userMessage);
 
     try {
-      const response = await fetch(
-        `${SUPABASE_URL}/functions/v1/expert-chat`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-          },
-          body: JSON.stringify({
-            messages: [...messages, { role: 'user', content: userMessage }]
-              .map((m) => ({ role: m.role, content: m.content }))
-              .filter((m) => m.content?.length > 0),
-            clientId: clientId || undefined,
-            categoryFilter:
-              flowFilters.selectedCategories.length > 0
-                ? flowFilters.selectedCategories
-                : undefined,
-            priceMin: flowFilters.priceMin ? Number(flowFilters.priceMin) : undefined,
-            priceMax: flowFilters.priceMax ? Number(flowFilters.priceMax) : undefined,
-            materialFilter:
-              flowFilters.selectedMaterials.length > 0 ? flowFilters.selectedMaterials : undefined,
-            colorFilter:
-              flowFilters.selectedColors.length > 0 ? flowFilters.selectedColors : undefined,
-            genderFilter:
-              flowFilters.selectedGenders.length > 0 ? flowFilters.selectedGenders : undefined,
-            supplierFilter:
-              flowFilters.selectedSuppliers.length > 0 ? flowFilters.selectedSuppliers : undefined,
-            techniqueFilter:
-              flowFilters.selectedTechniques.length > 0
-                ? flowFilters.selectedTechniques
-                : undefined,
-            publicoFilter:
-              flowFilters.selectedPublicos.length > 0 ? flowFilters.selectedPublicos : undefined,
-            dataComemorativaFilter:
-              flowFilters.selectedDatasComemorativas.length > 0
-                ? flowFilters.selectedDatasComemorativas
-                : undefined,
-            endomarketingFilter:
-              flowFilters.selectedEndomarketing.length > 0
-                ? flowFilters.selectedEndomarketing
-                : undefined,
-            nichoFilter:
-              flowFilters.selectedNichos.length > 0 ? flowFilters.selectedNichos : undefined,
-            tagFilter: flowFilters.selectedTags.length > 0 ? flowFilters.selectedTags : undefined,
-            onlyInStock: flowFilters.onlyInStock || undefined,
-            onlyNew: flowFilters.onlyNew || undefined,
-            onlyKit: flowFilters.onlyKit || undefined,
-            onlyBestseller: flowFilters.onlyBestseller || undefined,
-            onlyFeatured: flowFilters.onlyFeatured || undefined,
-            hasPersonalization: flowFilters.hasPersonalization || undefined,
-          }),
-          signal: abortController.signal,
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/expert-chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
         },
-      );
+        body: JSON.stringify({
+          messages: [...messages, { role: 'user', content: userMessage }]
+            .map((m) => ({ role: m.role, content: m.content }))
+            .filter((m) => m.content?.length > 0),
+          clientId: clientId || undefined,
+          categoryFilter:
+            flowFilters.selectedCategories.length > 0 ? flowFilters.selectedCategories : undefined,
+          priceMin: flowFilters.priceMin ? Number(flowFilters.priceMin) : undefined,
+          priceMax: flowFilters.priceMax ? Number(flowFilters.priceMax) : undefined,
+          materialFilter:
+            flowFilters.selectedMaterials.length > 0 ? flowFilters.selectedMaterials : undefined,
+          colorFilter:
+            flowFilters.selectedColors.length > 0 ? flowFilters.selectedColors : undefined,
+          genderFilter:
+            flowFilters.selectedGenders.length > 0 ? flowFilters.selectedGenders : undefined,
+          supplierFilter:
+            flowFilters.selectedSuppliers.length > 0 ? flowFilters.selectedSuppliers : undefined,
+          techniqueFilter:
+            flowFilters.selectedTechniques.length > 0 ? flowFilters.selectedTechniques : undefined,
+          publicoFilter:
+            flowFilters.selectedPublicos.length > 0 ? flowFilters.selectedPublicos : undefined,
+          dataComemorativaFilter:
+            flowFilters.selectedDatasComemorativas.length > 0
+              ? flowFilters.selectedDatasComemorativas
+              : undefined,
+          endomarketingFilter:
+            flowFilters.selectedEndomarketing.length > 0
+              ? flowFilters.selectedEndomarketing
+              : undefined,
+          nichoFilter:
+            flowFilters.selectedNichos.length > 0 ? flowFilters.selectedNichos : undefined,
+          tagFilter: flowFilters.selectedTags.length > 0 ? flowFilters.selectedTags : undefined,
+          onlyInStock: flowFilters.onlyInStock || undefined,
+          onlyNew: flowFilters.onlyNew || undefined,
+          onlyKit: flowFilters.onlyKit || undefined,
+          onlyBestseller: flowFilters.onlyBestseller || undefined,
+          onlyFeatured: flowFilters.onlyFeatured || undefined,
+          hasPersonalization: flowFilters.hasPersonalization || undefined,
+        }),
+        signal: abortController.signal,
+      });
 
       if (!response.ok) {
         const errorData = await response.json();

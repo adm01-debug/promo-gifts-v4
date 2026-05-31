@@ -30,7 +30,11 @@ vi.mock('@/lib/telemetry/requestId', () => ({ newRequestId: vi.fn(() => 'req-tes
 
 import { isRestNativeEligible, executeRestNativeSelect } from './rest-native';
 
-type CannedResult = { data: unknown[] | null; error: { message: string } | null; count: number | null };
+type CannedResult = {
+  data: unknown[] | null;
+  error: { message: string } | null;
+  count: number | null;
+};
 
 /** Cria um stub encadeável que registra cada chamada e resolve para `result`. */
 function makeQueryStub(result: CannedResult) {
@@ -40,13 +44,30 @@ function makeQueryStub(result: CannedResult) {
     (calls[name] ||= []).push(args);
     return stub;
   };
-  for (const m of ['select', 'eq', 'in', 'is', 'gte', 'lte', 'gt', 'lt', 'like', 'ilike', 'neq', 'not', 'order', 'range']) {
+  for (const m of [
+    'select',
+    'eq',
+    'in',
+    'is',
+    'gte',
+    'lte',
+    'gt',
+    'lt',
+    'like',
+    'ilike',
+    'neq',
+    'not',
+    'order',
+    'range',
+  ]) {
     stub[m] = (...args: unknown[]) => record(m, args);
   }
   // Thenable: `await query` resolve para o resultado canônico.
   stub.then = (resolve: (v: CannedResult) => unknown) => Promise.resolve(result).then(resolve);
   stub.__calls = calls;
-  return stub as Record<string, (...a: unknown[]) => unknown> & { __calls: Record<string, unknown[][]> };
+  return stub as Record<string, (...a: unknown[]) => unknown> & {
+    __calls: Record<string, unknown[][]>;
+  };
 }
 
 beforeEach(() => {
@@ -57,19 +78,31 @@ beforeEach(() => {
 
 describe('isRestNativeEligible', () => {
   it('whitelisted COM coluna de busca → elegível mesmo com _search', () => {
-    expect(isRestNativeEligible({ table: 'products', operation: 'select', filters: { _search: 'x' } })).toBe(true);
+    expect(
+      isRestNativeEligible({ table: 'products', operation: 'select', filters: { _search: 'x' } }),
+    ).toBe(true);
   });
 
   it('A1: whitelisted SEM coluna de busca → continua elegível com _search', () => {
-    expect(isRestNativeEligible({ table: 'product_images', operation: 'select', filters: { _search: 'x' } })).toBe(true);
+    expect(
+      isRestNativeEligible({
+        table: 'product_images',
+        operation: 'select',
+        filters: { _search: 'x' },
+      }),
+    ).toBe(true);
   });
 
   it('não-whitelisted → inelegível', () => {
-    expect(isRestNativeEligible({ table: 'orders', operation: 'select' } as InvokeOptions)).toBe(false);
+    expect(isRestNativeEligible({ table: 'orders', operation: 'select' } as InvokeOptions)).toBe(
+      false,
+    );
   });
 
   it('operação de escrita → inelegível', () => {
-    expect(isRestNativeEligible({ table: 'products', operation: 'insert' } as InvokeOptions)).toBe(false);
+    expect(isRestNativeEligible({ table: 'products', operation: 'insert' } as InvokeOptions)).toBe(
+      false,
+    );
   });
 });
 
@@ -77,7 +110,11 @@ describe('executeRestNativeSelect — _search (A1 / F2 / regressão)', () => {
   it('regressão: _search em products aplica ilike(name)', async () => {
     const stub = makeQueryStub({ data: [{ id: '1', name: 'X' }], error: null, count: null });
     fromMock.mockReturnValue(stub);
-    const res = await executeRestNativeSelect({ table: 'products', operation: 'select', filters: { _search: 'abc' } });
+    const res = await executeRestNativeSelect({
+      table: 'products',
+      operation: 'select',
+      filters: { _search: 'abc' },
+    });
     expect(fromMock).toHaveBeenCalledWith('v_products_public'); // alias aplicado
     expect(stub.__calls.ilike?.[0]).toEqual(['name', '%abc%']);
     expect(res.records).toHaveLength(1);
@@ -92,15 +129,19 @@ describe('executeRestNativeSelect — _search (A1 / F2 / regressão)', () => {
       filters: { _search: 'abc', product_id: 'p1' },
     });
     expect(fromMock).toHaveBeenCalledWith('product_images');
-    expect(stub.__calls.ilike).toBeUndefined();         // sem ilike → sem 400
+    expect(stub.__calls.ilike).toBeUndefined(); // sem ilike → sem 400
     expect(stub.__calls.eq?.[0]).toEqual(['product_id', 'p1']); // filtro base aplicado
-    expect(loggerMock.warn).toHaveBeenCalledTimes(1);   // diagnóstico visível
+    expect(loggerMock.warn).toHaveBeenCalledTimes(1); // diagnóstico visível
   });
 
   it('F2: _search só-whitespace em products → sem ilike, query roda', async () => {
     const stub = makeQueryStub({ data: [], error: null, count: null });
     fromMock.mockReturnValue(stub);
-    await executeRestNativeSelect({ table: 'products', operation: 'select', filters: { _search: '   ' } });
+    await executeRestNativeSelect({
+      table: 'products',
+      operation: 'select',
+      filters: { _search: '   ' },
+    });
     expect(stub.__calls.ilike).toBeUndefined();
     expect(fromMock).toHaveBeenCalled();
   });
@@ -108,7 +149,11 @@ describe('executeRestNativeSelect — _search (A1 / F2 / regressão)', () => {
   it('F2: _search não-string em products → sem ilike, query roda', async () => {
     const stub = makeQueryStub({ data: [], error: null, count: null });
     fromMock.mockReturnValue(stub);
-    await executeRestNativeSelect({ table: 'products', operation: 'select', filters: { _search: 42 as unknown as string } });
+    await executeRestNativeSelect({
+      table: 'products',
+      operation: 'select',
+      filters: { _search: 42 as unknown as string },
+    });
     expect(stub.__calls.ilike).toBeUndefined();
     expect(fromMock).toHaveBeenCalled();
   });
@@ -117,14 +162,22 @@ describe('executeRestNativeSelect — _search (A1 / F2 / regressão)', () => {
 describe('executeRestNativeSelect — array vazio (A2 / F3 / F4)', () => {
   it('A2: filtro array vazio → short-circuit { [], 0 } SEM rede', async () => {
     await expect(
-      executeRestNativeSelect({ table: 'products', operation: 'select', filters: { category_id: [] } }),
+      executeRestNativeSelect({
+        table: 'products',
+        operation: 'select',
+        filters: { category_id: [] },
+      }),
     ).resolves.toEqual({ records: [], count: 0 });
     expect(fromMock).not.toHaveBeenCalled();
   });
 
   it('A2: array vazio em coluna uuid (id) → short-circuit, nunca 400', async () => {
     await expect(
-      executeRestNativeSelect({ table: 'product_variants', operation: 'select', filters: { id: [] } }),
+      executeRestNativeSelect({
+        table: 'product_variants',
+        operation: 'select',
+        filters: { id: [] },
+      }),
     ).resolves.toEqual({ records: [], count: 0 });
     expect(fromMock).not.toHaveBeenCalled();
   });
@@ -147,7 +200,7 @@ describe('executeRestNativeSelect — array vazio (A2 / F3 / F4)', () => {
       operation: 'select',
       filters: { _search: [] as unknown as string },
     });
-    expect(fromMock).toHaveBeenCalled();        // query roda (não houve short-circuit)
+    expect(fromMock).toHaveBeenCalled(); // query roda (não houve short-circuit)
     expect(stub.__calls.ilike).toBeUndefined(); // _search:[] não é string → sem ilike
     expect(res.records).toHaveLength(1);
   });
@@ -155,7 +208,11 @@ describe('executeRestNativeSelect — array vazio (A2 / F3 / F4)', () => {
   it('array NÃO-vazio continua virando filtro .in()', async () => {
     const stub = makeQueryStub({ data: [], error: null, count: null });
     fromMock.mockReturnValue(stub);
-    await executeRestNativeSelect({ table: 'products', operation: 'select', filters: { category_id: ['a', 'b'] } });
+    await executeRestNativeSelect({
+      table: 'products',
+      operation: 'select',
+      filters: { category_id: ['a', 'b'] },
+    });
     expect(fromMock).toHaveBeenCalled();
     expect(stub.__calls.in?.[0]).toEqual(['category_id', ['a', 'b']]);
   });

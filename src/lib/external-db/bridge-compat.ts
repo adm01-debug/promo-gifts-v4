@@ -142,7 +142,7 @@ export async function invokeExternalDbBridge(body: BridgeBody): Promise<BridgeCo
       if (msg.includes('410') || msg.includes('Gone') || msg.includes('descontinuada')) {
         logger.warn(
           `[bridge-compat] Bridge deprecated (410) for ${table}/${operation}. ` +
-          'Admin CRUD needs migration to direct Supabase client.',
+            'Admin CRUD needs migration to direct Supabase client.',
         );
         return {
           data: {
@@ -159,11 +159,15 @@ export async function invokeExternalDbBridge(body: BridgeBody): Promise<BridgeCo
   } catch (e) {
     const msg = (e as Error).message;
     const isCorsOrNetwork =
-      msg.includes('CORS') || msg.includes('ERR_FAILED') ||
-      msg.includes('Failed to fetch') || msg.includes('network');
+      msg.includes('CORS') ||
+      msg.includes('ERR_FAILED') ||
+      msg.includes('Failed to fetch') ||
+      msg.includes('network');
 
     if (isCorsOrNetwork) {
-      logger.debug(`[bridge-compat] CORS/network error for ${table}/${operation} - returning error`);
+      logger.debug(
+        `[bridge-compat] CORS/network error for ${table}/${operation} - returning error`,
+      );
       return {
         data: {
           success: false,

@@ -202,7 +202,8 @@ export default function Auth() {
 
       try {
         const supabase = await getSupabaseClient();
-        const { error } = await supabase.from('system_kill_switches')
+        const { error } = await supabase
+          .from('system_kill_switches')
           .select('enabled')
           .eq('switch_name', 'edge_external_db_bridge')
           .limit(1);

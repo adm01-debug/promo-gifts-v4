@@ -123,14 +123,23 @@ function normalizeSearchTerm(filters?: Record<string, unknown>): string | undefi
 // remap; replicado aqui ESCOPADO por tabela. Tabelas fora do mapa passam intactas.
 const COLUMN_ALIASES_BY_TABLE: Record<string, Record<string, string>> = {
   tecnicas_gravacao: {
-    id: 'codigo', code: 'codigo', codigo: 'codigo',
-    name: 'nome', nome: 'nome', slug: 'slug',
-    is_active: 'ativo', ativo: 'ativo',
-    display_order: 'ordem_exibicao', ordem_exibicao: 'ordem_exibicao',
+    id: 'codigo',
+    code: 'codigo',
+    codigo: 'codigo',
+    name: 'nome',
+    nome: 'nome',
+    slug: 'slug',
+    is_active: 'ativo',
+    ativo: 'ativo',
+    display_order: 'ordem_exibicao',
+    ordem_exibicao: 'ordem_exibicao',
   },
 };
 
-function remapFilters(table: string, filters?: Record<string, unknown>): Record<string, unknown> | undefined {
+function remapFilters(
+  table: string,
+  filters?: Record<string, unknown>,
+): Record<string, unknown> | undefined {
   const map = COLUMN_ALIASES_BY_TABLE[table];
   if (!map || !filters) return filters;
   const out: Record<string, unknown> = {};
@@ -316,23 +325,35 @@ function parsePostgrestString(query: RestQuery, col: string, raw: string): RestQ
   if (!match) return query.eq(col, raw);
   const [, op, rest] = match;
   switch (op) {
-    case 'eq': return query.eq(col, rest);
-    case 'neq': return query.neq(col, rest);
-    case 'gt': return query.gt(col, rest);
-    case 'gte': return query.gte(col, rest);
-    case 'lt': return query.lt(col, rest);
-    case 'lte': return query.lte(col, rest);
-    case 'like': return query.like(col, rest);
-    case 'ilike': return query.ilike(col, rest);
+    case 'eq':
+      return query.eq(col, rest);
+    case 'neq':
+      return query.neq(col, rest);
+    case 'gt':
+      return query.gt(col, rest);
+    case 'gte':
+      return query.gte(col, rest);
+    case 'lt':
+      return query.lt(col, rest);
+    case 'lte':
+      return query.lte(col, rest);
+    case 'like':
+      return query.like(col, rest);
+    case 'ilike':
+      return query.ilike(col, rest);
     case 'is':
       if (rest === 'null') return query.is(col, null);
       return query.eq(col, raw);
     case 'in': {
       const inner = rest.replace(/^\(/, '').replace(/\)$/, '');
-      const values = inner.split(',').map((v) => v.trim()).filter(Boolean);
+      const values = inner
+        .split(',')
+        .map((v) => v.trim())
+        .filter(Boolean);
       return query.in(col, values);
     }
-    case 'not': return query.not(col, op, rest);
+    case 'not':
+      return query.not(col, op, rest);
     default:
       logger.warn(`[rest-native] Unknown PostgREST op '${op}' for '${col}', treating as eq`);
       return query.eq(col, raw);
@@ -342,7 +363,10 @@ function parsePostgrestString(query: RestQuery, col: string, raw: string): RestQ
 function applyFilters(query: RestQuery, filters?: Record<string, unknown>): RestQuery {
   if (!filters) return query;
   for (const [col, val] of Object.entries(filters)) {
-    if (val === null) { query = query.is(col, null); continue; }
+    if (val === null) {
+      query = query.is(col, null);
+      continue;
+    }
     if (Array.isArray(val)) {
       query = val.length === 0 ? query.in(col, ['__no_match__']) : query.in(col, val);
       continue;
@@ -360,7 +384,10 @@ function applyFilters(query: RestQuery, filters?: Record<string, unknown>): Rest
       else throw new Error(`rest-native: unsupported filter op '${op}' for column '${col}'`);
       continue;
     }
-    if (typeof val === 'string') { query = parsePostgrestString(query, col, val); continue; }
+    if (typeof val === 'string') {
+      query = parsePostgrestString(query, col, val);
+      continue;
+    }
     query = query.eq(col, val);
   }
   return query;
@@ -388,17 +415,22 @@ export async function executeRestNativeSelect<T>(options: InvokeOptions): Promis
   // e NÃO chama reportSilentEmpty. A precedência sobre _search (F4) é natural: o
   // short-circuit retorna antes de montar a query.
   if (filters && Object.values(filters).some((v) => Array.isArray(v) && v.length === 0)) {
-    logger.debug(`[rest-native] empty IN() filter on ${tableName} → short-circuit empty (no network)`);
+    logger.debug(
+      `[rest-native] empty IN() filter on ${tableName} → short-circuit empty (no network)`,
+    );
     return { records: [], count: 0 };
   }
 
   const countMode = options.countMode ?? 'none';
   const selectCols = remapSelect(tableName, options.select ?? '*');
   const countOption =
-    countMode === 'none' ? undefined
-    : countMode === 'exact' ? 'exact'
-    : countMode === 'planned' ? 'planned'
-    : 'estimated';
+    countMode === 'none'
+      ? undefined
+      : countMode === 'exact'
+        ? 'exact'
+        : countMode === 'planned'
+          ? 'planned'
+          : 'estimated';
 
   const client = supabase as unknown as RestNativeClient;
   let query = countOption
@@ -417,13 +449,15 @@ export async function executeRestNativeSelect<T>(options: InvokeOptions): Promis
       // WARN para ficar visível em diagnóstico (e sinalizar config faltante).
       logger.warn(
         `[rest-native] _search ignorado em '${tableName}': sem coluna de busca configurada ` +
-        `em SEARCH_COLUMNS. Servindo query base (termo de ${searchTerm.length} chars).`,
+          `em SEARCH_COLUMNS. Servindo query base (termo de ${searchTerm.length} chars).`,
       );
     }
   }
 
   if (options.orderBy) {
-    query = query.order(remapOrderByCol(tableName, options.orderBy.column), { ascending: options.orderBy.ascending ?? true });
+    query = query.order(remapOrderByCol(tableName, options.orderBy.column), {
+      ascending: options.orderBy.ascending ?? true,
+    });
   }
 
   if (typeof options.limit === 'number') {
@@ -432,7 +466,7 @@ export async function executeRestNativeSelect<T>(options: InvokeOptions): Promis
   } else if (typeof options.offset === 'number' && options.offset > 0) {
     logger.warn(
       `[rest-native] PAGINATION WARNING: offset=${options.offset} without limit on table=${tableName}. ` +
-      `Capping at ${OFFSET_WITHOUT_LIMIT_FALLBACK_UPPER} rows.`,
+        `Capping at ${OFFSET_WITHOUT_LIMIT_FALLBACK_UPPER} rows.`,
     );
     query = query.range(options.offset, options.offset + OFFSET_WITHOUT_LIMIT_FALLBACK_UPPER);
   }
@@ -441,7 +475,7 @@ export async function executeRestNativeSelect<T>(options: InvokeOptions): Promis
   if (error) throw new Error(`rest-native error (${tableName}): ${error.message}`);
 
   return {
-    records: (mapRows(tableName, data ?? []) as T[]),
+    records: mapRows(tableName, data ?? []) as T[],
     count: typeof count === 'number' ? count : null,
   };
 }
@@ -475,7 +509,7 @@ export async function tryExecuteRestNative<T>(
       if (attempt > 0) metrics.retried++;
       logger.debug(
         `[rest-native] OK table=${resolvedTable} rows=${result.records.length} ` +
-        `count=${result.count} ${elapsed}ms${attempt > 0 ? ` (retry #${attempt})` : ''}`,
+          `count=${result.count} ${elapsed}ms${attempt > 0 ? ` (retry #${attempt})` : ''}`,
       );
       // Etapa 2: telemetria do caminho vivo. Uma amostra por chamada lógica
       // (aqui, não em executeRestNativeSelect, p/ não contar retries em dobro).
@@ -522,7 +556,7 @@ export async function tryExecuteRestNative<T>(
         // Bridge ON → request will fall back to the bridge; do not alarm.
         logger.debug(
           `[rest-native] error for table=${options.table} after ${attempt + 1} attempt(s), ` +
-          `falling back to bridge: ${msg}`,
+            `falling back to bridge: ${msg}`,
         );
       } else {
         reportSilentEmpty({
@@ -616,7 +650,9 @@ type RestWriteClient = {
  */
 export async function executeRestNativeWrite<T>(options: InvokeOptions): Promise<InvokeResult<T>> {
   if (!isRestNativeWriteEligible(options)) {
-    throw new Error(`rest-native: not write-eligible for table=${options.table} op=${options.operation}`);
+    throw new Error(
+      `rest-native: not write-eligible for table=${options.table} op=${options.operation}`,
+    );
   }
   const table = resolveWriteTable(options.table);
 
@@ -677,7 +713,9 @@ export async function executeRestNativeWrite<T>(options: InvokeOptions): Promise
  * fallback). Erros reais (RLS negada, validação, rede) PROPAGAM — LOUD — para
  * virarem toast.error no caller, nunca no-op silencioso.
  */
-export async function tryExecuteRestNativeWrite<T>(options: InvokeOptions): Promise<InvokeResult<T> | null> {
+export async function tryExecuteRestNativeWrite<T>(
+  options: InvokeOptions,
+): Promise<InvokeResult<T> | null> {
   if (!isRestNativeWriteEligible(options)) return null;
   const t0 = Date.now();
   try {
@@ -686,7 +724,7 @@ export async function tryExecuteRestNativeWrite<T>(options: InvokeOptions): Prom
     metrics.totalMs += Date.now() - t0;
     logger.debug(
       `[rest-native] WRITE OK ${options.operation} table=${resolveWriteTable(options.table)} ` +
-      `rows=${result.records.length} ${Date.now() - t0}ms`,
+        `rows=${result.records.length} ${Date.now() - t0}ms`,
     );
     return result;
   } catch (e) {
@@ -694,7 +732,9 @@ export async function tryExecuteRestNativeWrite<T>(options: InvokeOptions): Prom
     metrics.fail++;
     metrics.lastError = msg;
     metrics.lastErrorAt = Date.now();
-    logger.warn(`[rest-native] WRITE FAIL ${options.operation} table=${resolveWriteTable(options.table)}: ${msg}`);
+    logger.warn(
+      `[rest-native] WRITE FAIL ${options.operation} table=${resolveWriteTable(options.table)}: ${msg}`,
+    );
     throw e; // LOUD
   }
 }

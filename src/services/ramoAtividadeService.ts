@@ -61,11 +61,7 @@ class RamoAtividadeService {
     return row as T;
   }
 
-  private async updateRow<T>(
-    table: string,
-    id: string,
-    data: Record<string, unknown>,
-  ): Promise<T> {
+  private async updateRow<T>(table: string, id: string, data: Record<string, unknown>): Promise<T> {
     const { data: row, error } = await supabase
       .from(table as never)
       .update(data as never)
@@ -77,7 +73,10 @@ class RamoAtividadeService {
   }
 
   private async deleteRow(table: string, id: string): Promise<void> {
-    const { error } = await supabase.from(table as never).delete().eq('id', id);
+    const { error } = await supabase
+      .from(table as never)
+      .delete()
+      .eq('id', id);
     if (error) throw new Error(error.message || 'Erro ao remover registro');
   }
 
