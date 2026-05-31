@@ -86,4 +86,37 @@ describe('OptimizedImage', () => {
     expect(placeholder).toBeInTheDocument();
     expect(placeholder).toHaveAttribute('aria-hidden', 'true');
   });
-});
+  });
+
+  it('detects Cloudflare Images (imagedelivery.net) and generates /thumbnail path', () => {
+    const cfSrc = 'https://imagedelivery.net/abc123/product-id/public';
+    render(<OptimizedImage {...defaultProps} src={cfSrc} />);
+    
+    // The placeholder should have the /thumbnail path
+    const placeholder = document.querySelector('img[aria-hidden="true"]');
+    expect(placeholder).toBeInTheDocument();
+    expect(placeholder).toHaveAttribute('src', 'https://imagedelivery.net/abc123/product-id/thumbnail');
+  });
+
+  it('detects Unsplash images and generates tiny thumbnail', () => {
+    const unsplashSrc = 'https://images.unsplash.com/photo-123456?auto=format&fit=crop&q=80';
+    render(<OptimizedImage {...defaultProps} src={unsplashSrc} />);
+    
+    const placeholder = document.querySelector('img[aria-hidden="true"]');
+    expect(placeholder).toBeInTheDocument();
+    const src = placeholder?.getAttribute('src');
+    expect(src).toContain('w=50');
+    expect(src).toContain('q=10');
+    expect(src).toContain('blur=10');
+  });
+
+  it('detects Supabase storage images and generates thumbnail params', () => {
+    const supabaseSrc = 'https://abc.supabase.co/storage/v1/object/public/products/image.jpg';
+    render(<OptimizedImage {...defaultProps} src={supabaseSrc} />);
+    
+    const placeholder = document.querySelector('img[aria-hidden="true"]');
+    expect(placeholder).toBeInTheDocument();
+    const src = placeholder?.getAttribute('src');
+    expect(src).toContain('width=50');
+    expect(src).toContain('quality=10');
+  });
