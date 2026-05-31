@@ -182,7 +182,7 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
 
           {/* Category */}
           {product.category_name && (
-            <div className="mt-0.5 flex flex-wrap gap-1.5 border-t border-primary/20 pt-1.5">
+            <div className={productCardStyles.categoryBadgeSection}>
               <span className="flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-0.5 text-[10px] font-semibold text-primary shadow-sm shadow-primary/10 sm:text-xs">
                 <FolderTree className="h-2.5 w-2.5" aria-hidden="true" />
                 {product.category_name}
@@ -191,7 +191,7 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
           )}
 
           {/* Sparkline */}
-          <div className="border-t border-border/30 pt-1.5 sm:pt-2">
+          <div className={productCardStyles.sparklineSection}>
             <div className="mb-0.5 flex items-center justify-between">
               <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground sm:text-[10px]">
                 Vendas 30d
@@ -199,6 +199,7 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
             </div>
             <ProductSparkline productId={product.product_id} />
           </div>
+
         </div>
       </CardContent>
     </Card>
