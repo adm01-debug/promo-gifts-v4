@@ -3,7 +3,7 @@
  * Gradientes, color dots, contadores, busca, badges removíveis
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ramoAtividadeService } from '@/services/ramoAtividadeService';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -52,7 +52,7 @@ export function ProductRamosSection({ productId }: ProductRamosSectionProps) {
 
   const segmentosByRamo = useMemo(
     () =>
-      segmentos.reduce<Record<string, typeof segmentos>>((acc, s) => {
+      segmentos.reduce<Record<string, typeof segmentos>>((acc: Record<string, typeof segmentos>, s) => {
         if (!acc[s.ramo_atividade_id]) acc[s.ramo_atividade_id] = [];
         acc[s.ramo_atividade_id].push(s);
         return acc;

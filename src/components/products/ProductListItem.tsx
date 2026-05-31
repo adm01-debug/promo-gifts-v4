@@ -381,7 +381,7 @@ export const ProductListItem = memo(function ProductListItem({
                 }
               }}
             >
-              {allMatchingVariants.map((v) => (
+              {allMatchingVariants.map((v, i) => (
                 <button
                   key={`${v.groupSlug}-${v.variationSlug}-${v.name}`}
                   role="tab"

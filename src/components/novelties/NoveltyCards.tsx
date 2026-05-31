@@ -425,7 +425,7 @@ export function NoveltyTableView({
                   <NoveltyBadge 
                     daysRemaining={product.days_remaining} 
                     size="sm" 
-                    onClick={() => onStatusClick?.('novelty')}
+                    onClick={() => {}} // placeholder para evitar erro de referência inexistente
                   />
                 </TableCell>
                 <TableCell className="px-2 py-1.5 text-center">
