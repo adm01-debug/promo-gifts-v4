@@ -32,12 +32,12 @@ import { logger } from '@/lib/logger';
  * Product is resolved by p_area_id (which belongs to a product's print area).
  */
 export interface CustomizationPriceParams {
-  p_area_id: string;      // uuid of the print area
-  p_quantidade: number;   // quantity
-  p_num_cores: number;    // number of colors (0 if not applicable)
-  p_largura_cm: number;   // width in cm
-  p_altura_cm: number;    // height in cm
-  p_num_pontos?: number;  // stitch count (embroidery), default 0
+  p_area_id: string; // uuid of the print area
+  p_quantidade: number; // quantity
+  p_num_cores: number; // number of colors (0 if not applicable)
+  p_largura_cm: number; // width in cm
+  p_altura_cm: number; // height in cm
+  p_num_pontos?: number; // stitch count (embroidery), default 0
 }
 
 export interface CustomizationPriceResult {
@@ -66,7 +66,10 @@ export interface CustomizationOptionResult {
 
 // ── RPC client type ─────────────────────────────────────────────────────────────────
 type RpcClient = {
-  rpc(name: string, params?: Record<string, unknown>): Promise<{
+  rpc(
+    name: string,
+    params?: Record<string, unknown>,
+  ): Promise<{
     data: unknown;
     error: { message: string; code?: string } | null;
   }>;
@@ -76,7 +79,9 @@ async function callRpc<T>(name: string, params?: Record<string, unknown>): Promi
   const client = supabase as unknown as RpcClient;
   const { data, error } = await client.rpc(name, params ?? {});
   if (error) {
-    logger.warn(`[rpc-native] RPC '${name}' failed: ${error.message} (code=${error.code ?? 'n/a'})`);
+    logger.warn(
+      `[rpc-native] RPC '${name}' failed: ${error.message} (code=${error.code ?? 'n/a'})`,
+    );
     throw new Error(`rpc-native error (${name}): ${error.message}`);
   }
   return data as T;
@@ -88,15 +93,44 @@ type EnrichableResult = Record<string, unknown>;
 async function enrichCustomizationPrice(result: EnrichableResult): Promise<EnrichableResult> {
   if (!result.success || !result.tabela_codigo || result.tabela) return result;
   try {
-    type SB = { from(t: string): { select(c: string): { eq(col: string, val: unknown): { eq(col: string, val: unknown): { limit(n: number): Promise<{ data: Record<string, unknown>[] | null }> } } } } };
+    type SB = {
+      from(t: string): {
+        select(c: string): {
+          eq(
+            col: string,
+            val: unknown,
+          ): {
+            eq(
+              col: string,
+              val: unknown,
+            ): { limit(n: number): Promise<{ data: Record<string, unknown>[] | null }> };
+          };
+        };
+      };
+    };
     const s = supabase as unknown as SB;
-    const { data } = await s.from('tabela_preco_gravacao_oficial').select('id,area_maxima_texto,max_cores,cobra_por_cor')
-      .eq('codigo_tabela', result.tabela_codigo).eq('ativo', true).limit(1);
+    const { data } = await s
+      .from('tabela_preco_gravacao_oficial')
+      .select('id,area_maxima_texto,max_cores,cobra_por_cor')
+      .eq('codigo_tabela', result.tabela_codigo)
+      .eq('ativo', true)
+      .limit(1);
     if (!data?.length) return result;
     const t = data[0];
-    return { ...result, tabela: { ...((result.tabela as Record<string, unknown>) || {}), id: t.id, area_maxima_texto: t.area_maxima_texto ?? null, max_cores: t.max_cores ?? null, cobra_por_cor: t.cobra_por_cor ?? false } };
+    return {
+      ...result,
+      tabela: {
+        ...((result.tabela as Record<string, unknown>) || {}),
+        id: t.id,
+        area_maxima_texto: t.area_maxima_texto ?? null,
+        max_cores: t.max_cores ?? null,
+        cobra_por_cor: t.cobra_por_cor ?? false,
+      },
+    };
   } catch (e) {
-    logger.warn(`[rpc-native] enrichCustomizationPrice failed (non-fatal): ${(e as Error).message}`);
+    logger.warn(
+      `[rpc-native] enrichCustomizationPrice failed (non-fatal): ${(e as Error).message}`,
+    );
     return result;
   }
 }
@@ -126,12 +160,19 @@ export async function getCustomizationPrice(
  * Returns available customization options for a product.
  * Confirmed signature: fn_get_product_customization_options(p_product_id uuid)
  */
-export async function getProductCustomizationOptions(productId: string): Promise<CustomizationOptionResult[]> {
+export async function getProductCustomizationOptions(
+  productId: string,
+): Promise<CustomizationOptionResult[]> {
   try {
-    const data = await callRpc<CustomizationOptionResult[] | null>('fn_get_product_customization_options', { p_product_id: productId });
+    const data = await callRpc<CustomizationOptionResult[] | null>(
+      'fn_get_product_customization_options',
+      { p_product_id: productId },
+    );
     return Array.isArray(data) ? data : [];
   } catch (e) {
-    logger.warn(`[rpc-native] getProductCustomizationOptions(${productId}): ${(e as Error).message}`);
+    logger.warn(
+      `[rpc-native] getProductCustomizationOptions(${productId}): ${(e as Error).message}`,
+    );
     return [];
   }
 }
@@ -142,7 +183,9 @@ export async function getProductCustomizationOptions(productId: string): Promise
  */
 export async function getCategoryDescendants(categoryId: string): Promise<string[]> {
   try {
-    const data = await callRpc<string[] | null>('get_category_descendants', { p_category_id: categoryId });
+    const data = await callRpc<string[] | null>('get_category_descendants', {
+      p_category_id: categoryId,
+    });
     return Array.isArray(data) ? data : [];
   } catch (e) {
     logger.warn(`[rpc-native] getCategoryDescendants(${categoryId}): ${(e as Error).message}`);
@@ -155,7 +198,9 @@ export async function getCategoryDescendants(categoryId: string): Promise<string
 // Stubs return safe empty values and log a clear NOT_IN_DB warning.
 
 export async function getProductPrintAreas(productId: string): Promise<unknown[]> {
-  logger.warn(`[rpc-native] fn_get_product_print_areas NOT_IN_DB for product ${productId}. Use print_area_techniques table directly.`);
+  logger.warn(
+    `[rpc-native] fn_get_product_print_areas NOT_IN_DB for product ${productId}. Use print_area_techniques table directly.`,
+  );
   return [];
 }
 
@@ -164,12 +209,17 @@ export async function getProductPrintAreasV2(productId: string): Promise<unknown
   return [];
 }
 
-export async function linkProductPrintAreas(productId: string, _areas: unknown[]): Promise<{ success: boolean; affected: number }> {
+export async function linkProductPrintAreas(
+  productId: string,
+  _areas: unknown[],
+): Promise<{ success: boolean; affected: number }> {
   logger.warn(`[rpc-native] fn_link_product_print_areas NOT_IN_DB. Product: ${productId}`);
   return { success: false, affected: 0 };
 }
 
-export async function backfillProductPrintAreas(_productIds: string[]): Promise<{ success: boolean; processed: number; errors: number }> {
+export async function backfillProductPrintAreas(
+  _productIds: string[],
+): Promise<{ success: boolean; processed: number; errors: number }> {
   logger.warn('[rpc-native] fn_backfill_product_print_areas NOT_IN_DB.');
   return { success: false, processed: 0, errors: 0 };
 }
@@ -183,18 +233,26 @@ export async function findFornecedorPriceTable(_params: { technique_id: string }
 type DispatchFn = (params: Record<string, unknown>) => Promise<unknown>;
 // FASE 2: NOT_IN_DB agora retorna valores seguros em vez de throw.
 // A função NOT_IN_DB foi substituída por retornos inline para cada RPC.
-const NOT_IN_DB = (name: string): DispatchFn => async () => {
-  throw new Error(`rpc-native: '${name}' does not exist in doufsxqlfjyuvxuezpln. Create the DB function first.`);
-};
+const _NOT_IN_DB =
+  (name: string): DispatchFn =>
+  async () => {
+    throw new Error(
+      `rpc-native: '${name}' does not exist in doufsxqlfjyuvxuezpln. Create the DB function first.`,
+    );
+  };
 
 const RPC_DISPATCH: Record<string, DispatchFn> = {
   // ✓ Exists in DB — correct param names
-  fn_get_customization_price: (p) => getCustomizationPrice(p as unknown as CustomizationPriceParams),
-  fn_get_product_customization_options: (p) => getProductCustomizationOptions(p.p_product_id as string),
+  fn_get_customization_price: (p) =>
+    getCustomizationPrice(p as unknown as CustomizationPriceParams),
+  fn_get_product_customization_options: (p) =>
+    getProductCustomizationOptions(p.p_product_id as string),
   get_category_descendants: (p) => getCategoryDescendants(p.p_category_id as string),
   // ➠ Not in DB yet — safe returns (FASE 2: was throw, now returns safe empty)
   fn_get_customization_price_v2: async () => {
-    logger.warn('[rpc-native] fn_get_customization_price_v2 NOT_IN_DB — returning safe empty. Use fn_get_customization_price instead.');
+    logger.warn(
+      '[rpc-native] fn_get_customization_price_v2 NOT_IN_DB — returning safe empty. Use fn_get_customization_price instead.',
+    );
     return { success: false, preco_total: 0, preco_unitario: 0 };
   },
   fn_get_product_print_areas: async () => {
@@ -223,10 +281,15 @@ const RPC_DISPATCH: Record<string, DispatchFn> = {
  * Compatibility shim for invokeExternalDb({operation:'rpc', rpcName, rpcParams}).
  * Throws with a clear DB-verified error if rpcName is not in the allowed list.
  */
-export async function dispatchRpc(rpcName: string, rpcParams?: Record<string, unknown>): Promise<unknown> {
+export async function dispatchRpc(
+  rpcName: string,
+  rpcParams?: Record<string, unknown>,
+): Promise<unknown> {
   const fn = RPC_DISPATCH[rpcName];
   if (!fn) {
-    throw new Error(`rpc-native: '${rpcName}' not in dispatch table. Allowed: ${Object.keys(RPC_DISPATCH).join(', ')}`);
+    throw new Error(
+      `rpc-native: '${rpcName}' not in dispatch table. Allowed: ${Object.keys(RPC_DISPATCH).join(', ')}`,
+    );
   }
   logger.debug(`[rpc-native] dispatching ${rpcName}`);
   return fn(rpcParams ?? {});
