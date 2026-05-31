@@ -59,6 +59,7 @@ export function OptimizedImage({
       }
       const thumbUrl = baseUrl.replace(/\/[^/]+$/, '/thumbnail');
       if (debug || process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
         console.info(
           `[OptimizedImage] Cloudflare Image detected. Rule: CF_VARIANT_REPLACEMENT. Generated thumbnail: ${thumbUrl}`,
         );
@@ -74,6 +75,7 @@ export function OptimizedImage({
       url.searchParams.set('blur', '10');
       const thumbUrl = url.toString();
       if (debug || process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
         console.info(
           `[OptimizedImage] Unsplash Image detected. Rule: UNSPLASH_PARAMS. Generated thumbnail: ${thumbUrl}`,
         );
@@ -85,6 +87,7 @@ export function OptimizedImage({
     if (src.includes('/storage/v1/object/public/')) {
       const thumbUrl = `${src}${src.includes('?') ? '&' : '?'}width=50&quality=10`;
       if (debug || process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
         console.info(
           `[OptimizedImage] Supabase Storage detected. Rule: SUPABASE_TRANSFORM. Generated thumbnail: ${thumbUrl}`,
         );
@@ -126,6 +129,10 @@ export function OptimizedImage({
     return () => observer.disconnect();
   }, [src, priority]);
 
+  // Resolve placeholder source once; avoids repeated lqip || localPlaceholder
+  // expressions and eliminates the non-null assertion on localPlaceholder.
+  const placeholderSrc = lqip ?? localPlaceholder;
+
   return (
     <div
       className={cn('relative overflow-hidden bg-white', containerClassName)}
@@ -149,9 +156,9 @@ export function OptimizedImage({
       ) : (
         <>
           {/* Low Quality Image Preview (LQIP) or Auto-Generated Placeholder */}
-          {(lqip || localPlaceholder) && !isLoaded && !error && (
+          {placeholderSrc && !isLoaded && !error && (
             <img
-              src={lqip || localPlaceholder!}
+              src={placeholderSrc}
               alt=""
               aria-hidden="true"
               className={cn(
@@ -166,7 +173,7 @@ export function OptimizedImage({
           )}
 
           {/* Loading Shimmer — only if no LQIP/placeholder */}
-          {!isLoaded && !lqip && !localPlaceholder && (
+          {!isLoaded && !placeholderSrc && (
             <div
               aria-hidden
               className="absolute inset-0 z-10 flex items-center justify-center bg-muted/10 animate-pulse"

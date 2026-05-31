@@ -3,7 +3,6 @@
  * Extracted from ProductCard.tsx.
  */
 import { memo } from 'react';
-import { Sparkles, Package } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ProductStatusBadge } from './ProductStatusBadge';
@@ -115,29 +114,36 @@ export const ProductCardImage = memo(function ProductCardImage({
           : undefined
       }
     >
-      {/* Image */}
-      <OptimizedImage
-        src={cardImageUrl}
-        alt={activeColorName ? `${product.name} - ${activeColorName}` : product.name}
-        title={activeColorName ? `${product.name} - ${activeColorName}` : product.name}
-        className={cn('h-full w-full object-contain')}
+      {/* Image — hover scale is on a wrapper div to avoid conflicting with
+          OptimizedImage's internal blur-up animation styles on <img>.
+          Passing style directly to OptimizedImage caused externalStyle to
+          override transitionProperty/Duration mid-animation (S-09/S-11). */}
+      <div
+        className="h-full w-full"
         style={
           imageLoaded
-            ? { 
-                transform: `scale(${computedImageScale})`, 
+            ? {
+                transform: `scale(${computedImageScale})`,
                 willChange: 'transform',
-                transition: 'transform 0.3s ease-out' 
+                transition: 'transform 0.3s ease-out',
               }
             : undefined
         }
-        onLoad={onImageLoad}
-        containerClassName="h-full w-full"
-        priority={priority}
-        blurAmount={product.imageConfig?.blurAmount ?? DEFAULT_IMAGE_CONFIG.blurAmount}
-        zoomAmount={product.imageConfig?.zoomAmount ?? DEFAULT_IMAGE_CONFIG.zoomAmount}
-        duration={product.imageConfig?.duration ?? DEFAULT_IMAGE_CONFIG.duration}
-        lqip={product.imageConfig?.lqip}
-      />
+      >
+        <OptimizedImage
+          src={cardImageUrl}
+          alt={activeColorName ? `${product.name} - ${activeColorName}` : product.name}
+          title={activeColorName ? `${product.name} - ${activeColorName}` : product.name}
+          className={cn('h-full w-full object-contain')}
+          onLoad={onImageLoad}
+          containerClassName="h-full w-full"
+          priority={priority}
+          blurAmount={product.imageConfig?.blurAmount ?? DEFAULT_IMAGE_CONFIG.blurAmount}
+          zoomAmount={product.imageConfig?.zoomAmount ?? DEFAULT_IMAGE_CONFIG.zoomAmount}
+          duration={product.imageConfig?.duration ?? DEFAULT_IMAGE_CONFIG.duration}
+          lqip={product.imageConfig?.lqip}
+        />
+      </div>
 
       {/* Active color badge (mobile) */}
       {activeColorName && colorSpecificImage && (
