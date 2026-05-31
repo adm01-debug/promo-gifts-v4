@@ -32,7 +32,7 @@ import { useToast } from '@/hooks/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
 import { LegalFooter } from '@/components/auth/LegalFooter';
-import { SupabaseConnectionDebug } from '@/components/auth/SupabaseConnectionDebug';
+
 import { useDevGate } from '@/hooks/admin/useDevGate';
 import { useIPValidation } from '@/hooks/admin/useIPValidation';
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
