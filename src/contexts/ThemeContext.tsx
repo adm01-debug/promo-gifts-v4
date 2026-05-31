@@ -67,19 +67,9 @@ export function ThemeProvider({
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [storageKey]);
 
-  const setTheme = (newTheme: Theme) => {
+  const setTheme = (_newTheme: Theme) => {
     // Theme is fixed to dark, but we keep the storage sync just in case
     localStorage.setItem(storageKey, 'dark');
-  };
-
-    const docWithViewTransition = document as Document & {
-      startViewTransition?: (callback: () => void) => void;
-    };
-    if (typeof document !== 'undefined' && docWithViewTransition.startViewTransition) {
-      docWithViewTransition.startViewTransition(apply);
-    } else {
-      apply();
-    }
   };
 
   const toggleTheme = () => {
