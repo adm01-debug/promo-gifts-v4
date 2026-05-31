@@ -127,6 +127,11 @@ describe('OptimizedImage', () => {
     // Debug true
     render(<OptimizedImage {...defaultProps} src={cfSrc} debug={true} />);
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[OptimizedImage] Cloudflare Image detected'));
+    consoleSpy.mockClear();
+
+    // Non-supported source with debug true
+    render(<OptimizedImage {...defaultProps} src="https://example.com/image.jpg" debug={true} />);
+    expect(consoleSpy).not.toHaveBeenCalled();
     
     consoleSpy.mockRestore();
   });
