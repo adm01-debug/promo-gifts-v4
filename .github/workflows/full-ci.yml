@@ -8,20 +8,59 @@ on:
 
 jobs:
   quality-gate:
-    name: Lint & Typecheck
+    name: Lint, Typecheck & Coverage
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
+
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
       - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
+
       - name: Typecheck
         run: npm run qa:typecheck
+
       - name: Lint
         run: npm run qa:lint
+
+      - name: Unit & Integration Tests (Coverage)
+        run: npm run test:ci-core:coverage
+        env:
+          TZ: America/Sao_Paulo
+
+      - name: Validate Coverage Threshold
+        run: |
+          # Validação simples de threshold (exemplo: 50% lines)
+          # No projeto real, vitest --coverage.thresholds faz isso, 
+          # mas aqui garantimos a extração para o log.
+          pct=$(node -e "console.log(require('./coverage/coverage-summary.json').total.lines.pct)")
+          echo "Current Coverage: $pct%"
+          if (( $(echo "$pct < 50" | bc -l) )); then
+            echo "Coverage below 50% threshold!"
+            # exit 1 # Opcional: descomentar para falhar build se coverage cair
+          fi
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
 
   e2e-tests:
     name: Playwright E2E
@@ -30,19 +69,41 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
+
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+
       - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
+
+      - name: Cache Playwright Browsers
+        id: cache-playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+
       - name: Install Playwright Browsers
+        if: steps.cache-playwright.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
+
       - name: Run Playwright tests (Critical)
         run: npm run test:e2e:critical
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+      
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -51,13 +112,29 @@ jobs:
           retention-days: 7
 
   audit-report:
-    name: Audit Report
+    name: Final Audit Report
     runs-on: ubuntu-latest
     needs: [quality-gate, e2e-tests]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
+
+      - name: Download Coverage Summary
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage
+
       - name: Generate Audit Report
         run: node scripts/generate-audit-report.mjs
+
+      - name: Upload Audit Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-audit-report
+          path: audit-report.txt
+          retention-days: 30
