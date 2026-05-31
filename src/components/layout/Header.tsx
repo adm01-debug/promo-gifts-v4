@@ -141,10 +141,11 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
   };
 
   const handleToggleTooltipStyle = () => {
-    setTooltipStyle(tooltipStyle === 'compact' ? 'standard' : 'compact');
+    const nextStyle = tooltipStyle === 'compact' ? 'standard' : 'compact';
+    setTooltipStyle(nextStyle);
     toast({
-      title: `Tooltip: ${tooltipStyle === 'compact' ? 'Standard' : 'Compact'}`,
-      description: `O tamanho dos tooltips foi alterado para ${tooltipStyle === 'compact' ? '13px' : '10px'}.`,
+      title: `Dicas: ${nextStyle === 'compact' ? 'Compacto' : 'Padrão'}`,
+      description: `O tamanho das dicas foi alterado para ${nextStyle === 'compact' ? 'Compacto (10px)' : 'Padrão (13px)'}.`,
     });
   };
 
