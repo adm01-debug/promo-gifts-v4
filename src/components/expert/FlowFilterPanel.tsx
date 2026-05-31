@@ -29,28 +29,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { GroupSeparator, SectionRow, CollapsibleContent } from './FlowFilterPrimitives';
 import { SectionContent, GENDER_OPTIONS } from './FlowFilterSections';
 
-// ─── Types (re-exported for consumers) ───────────────────
-export interface FlowFilterState {
-  priceMin: string;
-  priceMax: string;
-  selectedCategories: string[];
-  selectedMaterials: string[];
-  selectedColors: string[];
-  selectedGenders: string[];
-  selectedSuppliers: string[];
-  selectedTechniques: string[];
-  selectedPublicos: string[];
-  selectedDatasComemorativas: string[];
-  selectedEndomarketing: string[];
-  selectedNichos: string[];
-  selectedTags: string[];
-  onlyInStock: boolean;
-  onlyNew: boolean;
-  onlyKit: boolean;
-  onlyBestseller: boolean;
-  onlyFeatured: boolean;
-  hasPersonalization: boolean;
-}
+// ─── Types (re-exported from shared file to avoid circular dep) ─────
+export type { FlowFilterState, FlowFilterOptions } from './flow-filter-types';
+import type { FlowFilterState, FlowFilterOptions } from './flow-filter-types';
 
 export const defaultFlowFilters: FlowFilterState = {
   priceMin: '',
@@ -126,19 +107,6 @@ export function getActiveFilterLabels(
   if (f.onlyFeatured) labels.push({ label: 'Destaques', key: 'onlyFeatured' });
   if (f.hasPersonalization) labels.push({ label: 'Personalização', key: 'hasPersonalization' });
   return labels;
-}
-
-export interface FlowFilterOptions {
-  categories: string[];
-  materials: string[];
-  colors: string[];
-  suppliers: string[];
-  techniques: string[];
-  publicoAlvo: string[];
-  datasComemorativas: string[];
-  endomarketing: string[];
-  nichos: string[];
-  tags: string[];
 }
 
 // ─── Section definitions ────────────────────────────────

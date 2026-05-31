@@ -4,7 +4,7 @@
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { MultiChipGrid } from './FlowFilterPrimitives';
-import type { FlowFilterState, FlowFilterOptions } from './FlowFilterPanel';
+import type { FlowFilterState, FlowFilterOptions } from './flow-filter-types';
 
 const PRICE_PRESETS = [
   { label: 'Até R$10', min: '', max: '10' },
