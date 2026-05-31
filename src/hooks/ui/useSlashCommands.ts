@@ -20,32 +20,6 @@ export function useSlashCommands(onClose: () => void) {
 
   const commands: CommandDefinition[] = [
     {
-      id: 'theme-light',
-      command: '/tema claro',
-      label: 'Mudar para Tema Claro',
-      description: 'Alterna a interface para o modo claro',
-      icon: 'Sun',
-      action: () => {
-        setTheme('light');
-        toast.success('Tema alterado', { description: 'Modo claro ativado.' });
-        onClose();
-      },
-      keywords: ['light', 'claro', 'branco'],
-    },
-    {
-      id: 'theme-dark',
-      command: '/tema escuro',
-      label: 'Mudar para Tema Escuro',
-      description: 'Alterna a interface para o modo escuro',
-      icon: 'Moon',
-      action: () => {
-        setTheme('dark');
-        toast.success('Tema alterado', { description: 'Modo escuro ativado.' });
-        onClose();
-      },
-      keywords: ['dark', 'escuro', 'preto'],
-    },
-    {
       id: 'logout',
       command: '/logout',
       label: 'Sair do Sistema',
