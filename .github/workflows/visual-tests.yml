@@ -8,6 +8,11 @@ on:
 
 jobs:
   visual-baseline:
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: [1, 2]
+        shardTotal: [2]
     timeout-minutes: 60
     runs-on: ubuntu-latest
     continue-on-error: true
@@ -27,12 +32,11 @@ jobs:
         rm -rf playwright-report/
         rm -rf test-results/
 
-
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
 
     - name: Run Playwright Visual Tests
-      run: npx playwright test e2e/flows/99-auth-ui-baseline.spec.ts e2e/flows/supplier-comparison-visual.spec.ts e2e/flows/31-promoflix-player.spec.ts e2e/tooltips-a11y.spec.ts e2e/optimized-image-visual.spec.ts e2e/routes/app/replenishment-grid-visual.spec.ts e2e/routes/app/novelty-grid-visual.spec.ts e2e/routes/app/novelty-card-variations.spec.ts
+      run: npx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }} e2e/flows/99-auth-ui-baseline.spec.ts e2e/flows/supplier-comparison-visual.spec.ts e2e/flows/31-promoflix-player.spec.ts e2e/tooltips-a11y.spec.ts e2e/optimized-image-visual.spec.ts e2e/routes/app/replenishment-grid-visual.spec.ts e2e/routes/app/novelty-grid-visual.spec.ts e2e/routes/app/novelty-card-variations.spec.ts
       env:
         CI: true
 
@@ -40,7 +44,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v5
       with:
-        name: playwright-report
+        name: playwright-report-${{ matrix.shardIndex }}
         path: playwright-report/
         retention-days: 30
 
