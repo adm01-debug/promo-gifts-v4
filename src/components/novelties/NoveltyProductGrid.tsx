@@ -601,66 +601,6 @@ export function NoveltyProductGrid() {
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                 <span className="text-sm text-muted-foreground">Filtrando...</span>
               </div>
-
-              {totalPages > 1 && (
-                <div className="mt-6 flex justify-center py-4">
-                  <Pagination>
-                    <PaginationContent>
-                      <PaginationItem>
-                        <PaginationPrevious
-                          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                          className={cn(
-                            currentPage === 1 && 'pointer-events-none opacity-50',
-                            'cursor-pointer',
-                          )}
-                        />
-                      </PaginationItem>
-
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                        // Simplificado: mostra todas as páginas se forem poucas, senão mostra com ellipsis
-                        // Aqui vamos mostrar apenas as 5 primeiras para o teste ou uma lógica simples
-                        if (totalPages > 7) {
-                          if (
-                            page !== 1 &&
-                            page !== totalPages &&
-                            Math.abs(page - currentPage) > 1
-                          ) {
-                            if (page === 2 || page === totalPages - 1)
-                              return (
-                                <PaginationItem key={page}>
-                                  <PaginationEllipsis />
-                                </PaginationItem>
-                              );
-                            return null;
-                          }
-                        }
-
-                        return (
-                          <PaginationItem key={page}>
-                            <PaginationLink
-                              isActive={currentPage === page}
-                              onClick={() => setCurrentPage(page)}
-                              className="cursor-pointer"
-                            >
-                              {page}
-                            </PaginationLink>
-                          </PaginationItem>
-                        );
-                      })}
-
-                      <PaginationItem>
-                        <PaginationNext
-                          onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                          className={cn(
-                            currentPage === totalPages && 'pointer-events-none opacity-50',
-                            'cursor-pointer',
-                          )}
-                        />
-                      </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
-                </div>
-              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -673,14 +613,26 @@ export function NoveltyProductGrid() {
               <PaginationItem>
                 <PaginationPrevious
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  className={cn(currentPage === 1 && 'pointer-events-none opacity-50', 'cursor-pointer')}
+                  className={cn(
+                    currentPage === 1 && 'pointer-events-none opacity-50',
+                    'cursor-pointer',
+                  )}
                 />
               </PaginationItem>
 
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                if (totalPages > 7 && page !== 1 && page !== totalPages && Math.abs(page - currentPage) > 1) {
+                if (
+                  totalPages > 7 &&
+                  page !== 1 &&
+                  page !== totalPages &&
+                  Math.abs(page - currentPage) > 1
+                ) {
                   if (page === currentPage - 2 || page === currentPage + 2) {
-                    return <PaginationItem key={page}><PaginationEllipsis /></PaginationItem>;
+                    return (
+                      <PaginationItem key={page}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    );
                   }
                   return null;
                 }
@@ -700,7 +652,10 @@ export function NoveltyProductGrid() {
               <PaginationItem>
                 <PaginationNext
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  className={cn(currentPage === totalPages && 'pointer-events-none opacity-50', 'cursor-pointer')}
+                  className={cn(
+                    currentPage === totalPages && 'pointer-events-none opacity-50',
+                    'cursor-pointer',
+                  )}
                 />
               </PaginationItem>
             </PaginationContent>
