@@ -71,6 +71,7 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
   selectionMode,
   isSelected,
   onToggleSelect,
+  onStatusClick,
 }: NoveltyCardProps) {
   const fresh = isFresh(product.detected_at);
   const stockQty = product.stock_quantity ?? 0;
