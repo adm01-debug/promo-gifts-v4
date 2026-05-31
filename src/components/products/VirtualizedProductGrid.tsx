@@ -302,6 +302,7 @@ export function VirtualizedProductGrid({
                       onToggleCompare={onToggleCompare}
                       canAddToCompare={canAddToCompare}
                       activeColorFilter={activeColorFilter}
+                      onStatusClick={onStatusClick}
                     />
                   ) : (
                     <motion.div
