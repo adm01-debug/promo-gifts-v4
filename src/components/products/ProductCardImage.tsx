@@ -146,7 +146,11 @@ export const ProductCardImage = memo(function ProductCardImage({
       {/* Badges - Top Left */}
       <div className="absolute left-2 top-2 z-10 flex flex-col gap-1 sm:left-3 sm:top-3 sm:gap-1.5 pointer-events-none">
         {product.featured && (
-          <ProductStatusBadge type="featured" size="sm" />
+          <ProductStatusBadge 
+            type="featured" 
+            size="sm" 
+            onClick={() => onStatusClick?.('featured')} 
+          />
         )}
         
         {isNovelty && noveltyDaysRemaining !== undefined ? (
@@ -154,15 +158,25 @@ export const ProductCardImage = memo(function ProductCardImage({
             type="novelty" 
             daysRemaining={noveltyDaysRemaining} 
             size="sm" 
+            onClick={() => onStatusClick?.('novelty')}
           />
         ) : (
           product.newArrival && (
-            <ProductStatusBadge type="novelty" value="Novo" size="sm" />
+            <ProductStatusBadge 
+              type="novelty" 
+              value="Novo" 
+              size="sm" 
+              onClick={() => onStatusClick?.('novelty')}
+            />
           )
         )}
 
         {product.isKit && (
-          <ProductStatusBadge type="kit" size="sm" />
+          <ProductStatusBadge 
+            type="kit" 
+            size="sm" 
+            onClick={() => onStatusClick?.('kit')}
+          />
         )}
 
         {product.onSale && (
@@ -170,6 +184,7 @@ export const ProductCardImage = memo(function ProductCardImage({
             type="promotion" 
             value="-20%" 
             size="sm" 
+            onClick={() => onStatusClick?.('promotion')}
           />
         )}
       </div>
