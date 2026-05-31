@@ -5,9 +5,13 @@
  * Tecnicas resolvidas via lookup em 'tabela_preco_gravacao_oficial'.
  *
  * BUG-14 FIX: substituidas todas as chamadas a external-db-bridge por PostgREST
- * nativo. print_area_techniques, tabela_preco_gravacao_oficial, tecnica_gravacao
- * e v_technique_stats sao tabelas LOCAIS do Supabase. Apos o merge do Caminho B
+ * nativo. print_area_techniques, tabela_preco_gravacao_oficial e tecnicas_gravacao
+ * sao tabelas LOCAIS do Supabase. Apos o merge do Caminho B
  * (PRs #230-232), o external-db-bridge foi deprecated para tabelas locais.
+ *
+ * NOTA (auditoria 2026-05-31): `tecnicas_gravacao` e o nome real da tabela local
+ * (era `tecnica_gravacao`, inexistente -> corrigido). Ja `v_technique_stats` NAO
+ * existe no banco interno (e view do BD externo/bridge) — ver useTechniqueStats().
  */
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -128,7 +132,7 @@ export function useTechniques() {
     queryKey: ['techniques-all'],
     queryFn: async (): Promise<TecnicaGravacao[]> => {
       const { data, error } = await supabase
-        .from('tecnica_gravacao')
+        .from('tecnicas_gravacao')
         .select('*')
         .eq('ativo', true)
         .order('ordem_exibicao', { ascending: true });
