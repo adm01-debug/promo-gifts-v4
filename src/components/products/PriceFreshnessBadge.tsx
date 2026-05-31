@@ -80,7 +80,6 @@ function FreshnessTooltipBody({ freshness, priceUpdatedAt }: FreshnessTooltipPro
   // Padrão único pt-BR: "em DD/MM/AAAA". A hora local e a forma por extenso
   // ficam como detalhamento auxiliar, sem repetir a data curta.
   const shortDate = isValidDate ? formatPriceDateShort(dateValue) : null;
-  const _exactDateTime = isValidDate ? formatExactDateTime(dateValue) : null;
   const statusLabel = STATUS_LABELS[freshness.status];
   const rule = buildClassificationRule(freshness.thresholdDays);
 
@@ -459,12 +458,6 @@ export function PriceFreshnessBadge({
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
-    );
-            <span className="tabular-nums text-muted-foreground"> · em {inlineDate}</span>
-          )}
-          {limitSuffix}
-        </span>
-      </span>
     );
   }
 
