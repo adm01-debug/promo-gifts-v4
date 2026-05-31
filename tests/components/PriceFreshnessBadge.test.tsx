@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { PriceFreshnessBadge } from '../PriceFreshnessBadge';
+import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 describe('PriceFreshnessBadge Component', () => {
