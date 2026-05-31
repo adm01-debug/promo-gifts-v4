@@ -39,51 +39,12 @@ const STATUS_LABELS: Record<PriceFreshnessStatus, string> = {
 function buildAccessibleLabel(
   freshness: PriceFreshness,
   priceUpdatedAt?: string | Date | null,
-): { ariaLabel: string; title: string } {
-  const dateValue = priceUpdatedAt
-    ? priceUpdatedAt instanceof Date
-      ? priceUpdatedAt
-      : new Date(priceUpdatedAt)
-    : null;
-  const isValid = dateValue && !Number.isNaN(dateValue.getTime());
-  const longDate = isValid ? formatPriceDateLong(dateValue) : null;
-  const days = freshness.daysSinceUpdate;
-  const relative =
-    days === null ? null : days === 0 ? 'há 0 dias' : days === 1 ? 'há 1 dia' : `há ${days} dias`;
-
+): { ariaLabel: string } {
+...
   // Frase principal lida pelo screen reader (curta e direta).
   let ariaLabel: string;
-  switch (freshness.status) {
-    case 'fresh':
-      ariaLabel = longDate
-        ? `Preço atualizado pelo fornecedor em ${longDate}, ${relative}.`
-        : 'Preço atualizado pelo fornecedor recentemente.';
-      break;
-    case 'aging':
-      ariaLabel = longDate
-        ? `Preço próximo do limite de validade. Última atualização do fornecedor em ${longDate}, ${relative}. Recomendamos confirmar antes de fechar o orçamento.`
-        : 'Preço próximo do limite de validade. Recomendamos confirmar com o fornecedor.';
-      break;
-    case 'stale':
-      ariaLabel = longDate
-        ? `Atenção: preço possivelmente defasado. Última atualização do fornecedor em ${longDate}, ${relative}. Confirme o valor antes de enviar o orçamento ao cliente.`
-        : 'Atenção: preço possivelmente defasado. Confirme com o fornecedor antes de enviar o orçamento.';
-      break;
-    case 'unknown':
-    default: {
-      // Diferencia entre data ausente e data inválida (ambas caem em
-      // `unknown` na utility, mas o `freshness.label` carrega a causa).
-      const isInvalid = /inválida/i.test(freshness.label);
-      ariaLabel = isInvalid
-        ? 'Preço com data de atualização inválida informada pelo fornecedor. Confirme o valor antes de enviar o orçamento.'
-        : 'Preço com data de atualização não informada pelo fornecedor. Confirme o valor antes de enviar o orçamento.';
-    }
-  }
-
-  // `title` espelha o aria-label para que o tooltip nativo do navegador
-  // funcione mesmo quando o Radix Tooltip não estiver disponível (ex.: foco
-  // por teclado em browsers sem suporte a hover).
-  return { ariaLabel, title: ariaLabel };
+...
+  return { ariaLabel };
 }
 
 /** Data + hora exatas no fuso local do usuário (PT-BR). Ex.: "24/04/2026 09:32". */
