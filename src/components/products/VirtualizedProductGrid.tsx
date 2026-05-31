@@ -42,6 +42,7 @@ interface VirtualizedProductGridProps {
   selectedIds?: Set<string>;
   /** External toggle handler */
   onToggleSelect?: (id: string) => void;
+  onStatusClick?: (type: string, value?: string | number) => void;
 }
 
 export function VirtualizedProductGrid({
