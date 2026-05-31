@@ -86,7 +86,6 @@ describe('OptimizedImage', () => {
     expect(placeholder).toBeInTheDocument();
     expect(placeholder).toHaveAttribute('aria-hidden', 'true');
   });
-  });
 
   it('detects Cloudflare Images (imagedelivery.net) and generates /thumbnail path', () => {
     const cfSrc = 'https://imagedelivery.net/abc123/product-id/public';
@@ -120,3 +119,4 @@ describe('OptimizedImage', () => {
     expect(src).toContain('width=50');
     expect(src).toContain('quality=10');
   });
+});
