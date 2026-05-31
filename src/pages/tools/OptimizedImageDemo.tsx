@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RefreshCcw, AlertTriangle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function OptimizedImageDemo() {
   const [blur, setBlur] = useState(20);
