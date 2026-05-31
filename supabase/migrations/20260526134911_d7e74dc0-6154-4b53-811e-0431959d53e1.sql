@@ -4,7 +4,13 @@ DROP POLICY IF EXISTS "Admins update roles" ON public.user_roles;
 DROP POLICY IF EXISTS "Admins delete roles" ON public.user_roles;
 DROP POLICY IF EXISTS "user_roles_supervisor_read" ON public.user_roles;
 
-CREATE POLICY "user_roles_org_admin_manage" 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'user_roles' AND policyname = 'user_roles_org_admin_manage'
+  ) THEN
+    CREATE POLICY "user_roles_org_admin_manage" 
 ON public.user_roles 
 FOR ALL 
 TO authenticated 
@@ -18,8 +24,16 @@ USING (
     )
   )
 );
+  END IF;
+END $$;
 
-CREATE POLICY "user_roles_supervisor_read_v2" 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'user_roles' AND policyname = 'user_roles_supervisor_read_v2'
+  ) THEN
+    CREATE POLICY "user_roles_supervisor_read_v2" 
 ON public.user_roles 
 FOR SELECT 
 TO authenticated 
@@ -33,12 +47,20 @@ USING (
     )
   )
 );
+  END IF;
+END $$;
 
 -- Fix order_items policies
 DROP POLICY IF EXISTS "order_items_select_v2" ON public.order_items;
 DROP POLICY IF EXISTS "order_items_manage_v2" ON public.order_items;
 
-CREATE POLICY "order_items_select_v3" 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'order_items' AND policyname = 'order_items_select_v3'
+  ) THEN
+    CREATE POLICY "order_items_select_v3" 
 ON public.order_items 
 FOR SELECT 
 TO authenticated 
@@ -53,8 +75,16 @@ USING (
     )
   )
 );
+  END IF;
+END $$;
 
-CREATE POLICY "order_items_insert_v3" 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'order_items' AND policyname = 'order_items_insert_v3'
+  ) THEN
+    CREATE POLICY "order_items_insert_v3" 
 ON public.order_items 
 FOR INSERT 
 TO authenticated 
@@ -69,8 +99,16 @@ WITH CHECK (
     )
   )
 );
+  END IF;
+END $$;
 
-CREATE POLICY "order_items_update_v3" 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'order_items' AND policyname = 'order_items_update_v3'
+  ) THEN
+    CREATE POLICY "order_items_update_v3" 
 ON public.order_items 
 FOR UPDATE 
 TO authenticated 
@@ -96,8 +134,16 @@ WITH CHECK (
     )
   )
 );
+  END IF;
+END $$;
 
-CREATE POLICY "order_items_delete_v3" 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'order_items' AND policyname = 'order_items_delete_v3'
+  ) THEN
+    CREATE POLICY "order_items_delete_v3" 
 ON public.order_items 
 FOR DELETE 
 TO authenticated 
@@ -112,17 +158,33 @@ USING (
     )
   )
 );
+  END IF;
+END $$;
 
 -- Fix admin_audit_log policies
 DROP POLICY IF EXISTS "admin_audit_log_scoped_read" ON public.admin_audit_log;
 
-CREATE POLICY "admin_audit_log_insert_self" 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'admin_audit_log' AND policyname = 'admin_audit_log_insert_self'
+  ) THEN
+    CREATE POLICY "admin_audit_log_insert_self" 
 ON public.admin_audit_log 
 FOR INSERT 
 TO authenticated 
 WITH CHECK (auth.uid() = user_id OR is_dev(auth.uid()));
+  END IF;
+END $$;
 
-CREATE POLICY "admin_audit_log_read_scoped" 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'admin_audit_log' AND policyname = 'admin_audit_log_read_scoped'
+  ) THEN
+    CREATE POLICY "admin_audit_log_read_scoped" 
 ON public.admin_audit_log 
 FOR SELECT 
 TO authenticated 
@@ -136,6 +198,8 @@ USING (
     )
   )
 );
+  END IF;
+END $$;
 
 -- Grants
 GRANT ALL ON public.user_roles TO authenticated, service_role;

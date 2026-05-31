@@ -4,15 +4,29 @@
 -- Applied: 2026-05-26
 -- =============================================================================
 
-CREATE POLICY step_up_challenges_insert_own
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'step_up_challenges' AND policyname = 'step_up_challenges_insert_own'
+  ) THEN
+    CREATE POLICY step_up_challenges_insert_own
   ON public.step_up_challenges
   FOR INSERT
   TO authenticated
   WITH CHECK (
     (SELECT auth.uid()) = user_id
   );
+  END IF;
+END $$;
 
-CREATE POLICY step_up_challenges_update_own
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'step_up_challenges' AND policyname = 'step_up_challenges_update_own'
+  ) THEN
+    CREATE POLICY step_up_challenges_update_own
   ON public.step_up_challenges
   FOR UPDATE
   TO authenticated
@@ -24,8 +38,16 @@ CREATE POLICY step_up_challenges_update_own
   WITH CHECK (
     (SELECT auth.uid()) = user_id
   );
+  END IF;
+END $$;
 
-CREATE POLICY step_up_challenges_delete_own_or_admin
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'step_up_challenges' AND policyname = 'step_up_challenges_delete_own_or_admin'
+  ) THEN
+    CREATE POLICY step_up_challenges_delete_own_or_admin
   ON public.step_up_challenges
   FOR DELETE
   TO authenticated
@@ -33,3 +55,5 @@ CREATE POLICY step_up_challenges_delete_own_or_admin
     (SELECT auth.uid()) = user_id
     OR is_admin_or_above((SELECT auth.uid()))
   );
+  END IF;
+END $$;

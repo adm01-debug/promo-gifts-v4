@@ -16,11 +16,23 @@ CREATE TABLE IF NOT EXISTS public.personalization_simulations (
 
 ALTER TABLE public.personalization_simulations ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Sellers can manage own simulations"
-  ON public.personalization_simulations
-  FOR ALL
-  USING (seller_id = auth.uid())
-  WITH CHECK (seller_id = auth.uid());
+-- Idempotente (ver nota em 20260531110100): cria a policy só se ainda não
+-- existir, evitando "policy already exists" em preview-branches baseados em prod.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename  = 'personalization_simulations'
+      AND policyname = 'Sellers can manage own simulations'
+  ) THEN
+    CREATE POLICY "Sellers can manage own simulations"
+      ON public.personalization_simulations
+      FOR ALL
+      USING (seller_id = auth.uid())
+      WITH CHECK (seller_id = auth.uid());
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_personalization_simulations_seller_id ON public.personalization_simulations(seller_id);
 CREATE INDEX IF NOT EXISTS idx_personalization_simulations_created_at ON public.personalization_simulations(created_at DESC);

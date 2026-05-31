@@ -15,12 +15,28 @@ GRANT ALL ON public.catalog_analytics TO service_role;
 
 ALTER TABLE public.catalog_analytics ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view their own catalog analytics" 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'catalog_analytics' AND policyname = 'Users can view their own catalog analytics'
+  ) THEN
+    CREATE POLICY "Users can view their own catalog analytics" 
 ON public.catalog_analytics 
 FOR SELECT 
 USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can insert their own catalog analytics" 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'catalog_analytics' AND policyname = 'Users can insert their own catalog analytics'
+  ) THEN
+    CREATE POLICY "Users can insert their own catalog analytics" 
 ON public.catalog_analytics 
 FOR INSERT 
 WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;

@@ -24,12 +24,28 @@ DO $$
 BEGIN
     IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'ai_usage_logs') THEN
         DROP POLICY IF EXISTS "Service role can update AI usage logs" ON public.ai_usage_logs;
-        CREATE POLICY "Service role can update AI usage logs" ON public.ai_usage_logs 
+        DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'ai_usage_logs' AND policyname = 'Service role can update AI usage logs'
+  ) THEN
+    CREATE POLICY "Service role can update AI usage logs" ON public.ai_usage_logs 
         FOR ALL TO service_role USING (true) WITH CHECK (true);
+  END IF;
+END $$;
         
         DROP POLICY IF EXISTS "Authenticated users can view own usage" ON public.ai_usage_logs;
-        CREATE POLICY "Authenticated users can view own usage" ON public.ai_usage_logs 
+        DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'ai_usage_logs' AND policyname = 'Authenticated users can view own usage'
+  ) THEN
+    CREATE POLICY "Authenticated users can view own usage" ON public.ai_usage_logs 
         FOR SELECT TO authenticated USING (true);
+  END IF;
+END $$;
     END IF;
 END $$;
 
@@ -52,7 +68,15 @@ BEGIN
             AND t.rowsecurity = true
             AND p.polname IS NULL
     ) LOOP
-        EXECUTE format('CREATE POLICY "System fallback policy" ON public.%I FOR SELECT TO authenticated USING (auth.jwt()->>''role'' IN (''admin'', ''dev'', ''supervisor''))', tbl_name);
+        EXECUTE format('DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'public' AND policyname = 'System fallback policy'
+  ) THEN
+    CREATE POLICY "System fallback policy" ON public.%I FOR SELECT TO authenticated USING (auth.jwt()->>''role'' IN (''admin'', ''dev'', ''supervisor''))', tbl_name);
+  END IF;
+END $$;
     END LOOP;
 END $$;
 

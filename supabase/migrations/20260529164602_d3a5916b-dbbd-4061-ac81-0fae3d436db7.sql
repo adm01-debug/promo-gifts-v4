@@ -59,25 +59,49 @@ ALTER TABLE public.system_kill_switches ENABLE ROW LEVEL SECURITY;
 GRANT SELECT ON public.system_kill_switches TO authenticated;
 GRANT ALL ON public.system_kill_switches TO service_role;
 
-CREATE POLICY "Public switches are readable by authenticated" 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'system_kill_switches' AND policyname = 'Public switches are readable by authenticated'
+  ) THEN
+    CREATE POLICY "Public switches are readable by authenticated" 
 ON public.system_kill_switches 
 FOR SELECT 
 TO authenticated 
 USING (true);
+  END IF;
+END $$;
 
 DROP POLICY IF EXISTS "Authenticated can read freshness overrides" ON public.product_price_freshness_overrides;
-CREATE POLICY "Authenticated can read freshness overrides" 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'product_price_freshness_overrides' AND policyname = 'Authenticated can read freshness overrides'
+  ) THEN
+    CREATE POLICY "Authenticated can read freshness overrides" 
 ON public.product_price_freshness_overrides 
 FOR SELECT 
 TO authenticated 
 USING (true);
+  END IF;
+END $$;
 
 DROP POLICY IF EXISTS "ownership_audit_reports_admin_select" ON public.ownership_audit_reports;
-CREATE POLICY "Admins/Devs can select audit reports" 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'ownership_audit_reports' AND policyname = 'Admins/Devs can select audit reports'
+  ) THEN
+    CREATE POLICY "Admins/Devs can select audit reports" 
 ON public.ownership_audit_reports 
 FOR SELECT 
 TO authenticated 
 USING (is_admin(auth.uid()) OR is_dev(auth.uid()));
+  END IF;
+END $$;
 
 -- Timestamp trigger for system_kill_switches
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()

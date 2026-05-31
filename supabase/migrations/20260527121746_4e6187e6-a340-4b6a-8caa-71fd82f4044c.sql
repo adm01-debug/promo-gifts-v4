@@ -1,4 +1,4 @@
-CREATE TABLE public.system_error_logs (
+CREATE TABLE IF NOT EXISTS public.system_error_logs (
     id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID,
     function_name TEXT NOT NULL,
@@ -18,17 +18,33 @@ GRANT ALL ON public.system_error_logs TO service_role;
 ALTER TABLE public.system_error_logs ENABLE ROW LEVEL SECURITY;
 
 -- Create policies
-CREATE POLICY "Users can insert their own error logs" 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'system_error_logs' AND policyname = 'Users can insert their own error logs'
+  ) THEN
+    CREATE POLICY "Users can insert their own error logs" 
 ON public.system_error_logs 
 FOR INSERT 
 WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can view their own error logs" 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'system_error_logs' AND policyname = 'Users can view their own error logs'
+  ) THEN
+    CREATE POLICY "Users can view their own error logs" 
 ON public.system_error_logs 
 FOR SELECT 
 USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Index for performance
-CREATE INDEX idx_system_error_logs_user_id ON public.system_error_logs(user_id);
-CREATE INDEX idx_system_error_logs_function_name ON public.system_error_logs(function_name);
-CREATE INDEX idx_system_error_logs_created_at ON public.system_error_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_system_error_logs_user_id ON public.system_error_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_system_error_logs_function_name ON public.system_error_logs(function_name);
+CREATE INDEX IF NOT EXISTS idx_system_error_logs_created_at ON public.system_error_logs(created_at);

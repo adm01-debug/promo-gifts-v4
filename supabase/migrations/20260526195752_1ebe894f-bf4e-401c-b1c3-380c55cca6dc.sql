@@ -1,5 +1,5 @@
 -- Create a table for visual search feedback
-CREATE TABLE public.visual_search_feedback (
+CREATE TABLE IF NOT EXISTS public.visual_search_feedback (
     id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID NOT NULL DEFAULT auth.uid(),
     image_url TEXT,
@@ -19,12 +19,28 @@ GRANT ALL ON public.visual_search_feedback TO service_role;
 ALTER TABLE public.visual_search_feedback ENABLE ROW LEVEL SECURITY;
 
 -- Policies
-CREATE POLICY "Users can view their own feedback" 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'visual_search_feedback' AND policyname = 'Users can view their own feedback'
+  ) THEN
+    CREATE POLICY "Users can view their own feedback" 
 ON public.visual_search_feedback FOR SELECT 
 TO authenticated 
 USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can insert their own feedback" 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'visual_search_feedback' AND policyname = 'Users can insert their own feedback'
+  ) THEN
+    CREATE POLICY "Users can insert their own feedback" 
 ON public.visual_search_feedback FOR INSERT 
 TO authenticated 
 WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;

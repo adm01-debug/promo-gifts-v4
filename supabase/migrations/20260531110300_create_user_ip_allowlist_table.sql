@@ -13,26 +13,45 @@ CREATE TABLE IF NOT EXISTS public.user_ip_allowlist (
 
 ALTER TABLE public.user_ip_allowlist ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Admins manage user IP allowlist"
-  ON public.user_ip_allowlist
-  FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.user_roles
-      WHERE user_id = auth.uid() AND role IN ('admin', 'dev')
-    )
-  )
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.user_roles
-      WHERE user_id = auth.uid() AND role IN ('admin', 'dev')
-    )
-  );
+-- Idempotente (ver nota em 20260531110100): cria as policies só se ausentes,
+-- evitando "policy already exists" em preview-branches baseados em prod.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename  = 'user_ip_allowlist'
+      AND policyname = 'Admins manage user IP allowlist'
+  ) THEN
+    CREATE POLICY "Admins manage user IP allowlist"
+      ON public.user_ip_allowlist
+      FOR ALL
+      USING (
+        EXISTS (
+          SELECT 1 FROM public.user_roles
+          WHERE user_id = auth.uid() AND role IN ('admin', 'dev')
+        )
+      )
+      WITH CHECK (
+        EXISTS (
+          SELECT 1 FROM public.user_roles
+          WHERE user_id = auth.uid() AND role IN ('admin', 'dev')
+        )
+      );
+  END IF;
 
-CREATE POLICY "Users can read own IP allowlist"
-  ON public.user_ip_allowlist
-  FOR SELECT
-  USING (user_id = auth.uid());
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename  = 'user_ip_allowlist'
+      AND policyname = 'Users can read own IP allowlist'
+  ) THEN
+    CREATE POLICY "Users can read own IP allowlist"
+      ON public.user_ip_allowlist
+      FOR SELECT
+      USING (user_id = auth.uid());
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_user_ip_allowlist_user_id ON public.user_ip_allowlist(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_ip_allowlist_ip ON public.user_ip_allowlist(ip_address);

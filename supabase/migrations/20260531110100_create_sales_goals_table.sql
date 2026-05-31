@@ -18,11 +18,26 @@ CREATE TABLE IF NOT EXISTS public.sales_goals (
 
 ALTER TABLE public.sales_goals ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can manage own goals"
-  ON public.sales_goals
-  FOR ALL
-  USING (user_id = auth.uid())
-  WITH CHECK (user_id = auth.uid());
+-- Idempotente: a tabela já existe em produção (criada por uma migração de
+-- timestamp diferente), então em preview-branches a policy já está presente.
+-- Um CREATE POLICY cru falharia com "policy already exists" e derrubaria o
+-- deploy do branch. O guard pg_policies cria só se ausente, sem tocar policies
+-- já existentes (inclusive variantes endurecidas).
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename  = 'sales_goals'
+      AND policyname = 'Users can manage own goals'
+  ) THEN
+    CREATE POLICY "Users can manage own goals"
+      ON public.sales_goals
+      FOR ALL
+      USING (user_id = auth.uid())
+      WITH CHECK (user_id = auth.uid());
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_sales_goals_user_id ON public.sales_goals(user_id);
 CREATE INDEX IF NOT EXISTS idx_sales_goals_date_range ON public.sales_goals(start_date, end_date);
