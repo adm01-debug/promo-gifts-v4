@@ -51,6 +51,7 @@ export interface FilterState {
   featured: boolean;
   isNew: boolean;
   hasPersonalization: boolean;
+  onSale: boolean;
   hasCommercialPackaging: boolean;
   gender: string[];
   sizes: string[];
