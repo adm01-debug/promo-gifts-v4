@@ -6,6 +6,91 @@ const NOVELTY_SELECT =
   'id, name, sku, primary_image_url, sale_price, category_id, supplier_id, created_at, stock_quantity, min_quantity';
 
 /**
+ * MOCK DATA para visualização quando o banco está vazio
+ */
+const MOCK_CATEGORIES = [
+  { id: 'cat-1', name: 'Eletrônicos' },
+  { id: 'cat-2', name: 'Escritório' },
+  { id: 'cat-3', name: 'Acessórios' },
+  { id: 'cat-4', name: 'Lifestyle' },
+];
+
+const MOCK_SUPPLIERS = [
+  { id: 'sup-1', name: 'Tech Gifts S.A.', code: 'TGS' },
+  { id: 'sup-2', name: 'Premium Office', code: 'POF' },
+  { id: 'sup-3', name: 'Global Merch', code: 'GME' },
+];
+
+const getMockDate = (daysAgo: number) => {
+  const d = new Date();
+  d.setDate(d.getDate() - daysAgo);
+  return d.toISOString();
+};
+
+const MOCK_PRODUCTS: RawProduct[] = [
+  {
+    id: 'mock-1',
+    name: 'Smartwatch Ultra Pro X',
+    sku: 'SW-001',
+    primary_image_url: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=800&q=80',
+    sale_price: 299.90,
+    category_id: 'cat-1',
+    supplier_id: 'sup-1',
+    created_at: getMockDate(0), // Hoje
+    stock_quantity: 45,
+    min_quantity: 10
+  },
+  {
+    id: 'mock-2',
+    name: 'Caderno Moleskine Executive',
+    sku: 'NB-202',
+    primary_image_url: 'https://images.unsplash.com/photo-1544816153-0973059446d3?w=800&q=80',
+    sale_price: 89.00,
+    category_id: 'cat-2',
+    supplier_id: 'sup-2',
+    created_at: getMockDate(2), // 2 dias atrás (Últimos 7 dias)
+    stock_quantity: 5,
+    min_quantity: 15
+  },
+  {
+    id: 'mock-3',
+    name: 'Garrafa Térmica Titanium',
+    sku: 'BT-500',
+    primary_image_url: 'https://images.unsplash.com/photo-1602143394807-a2536fe0589a?w=800&q=80',
+    sale_price: 124.50,
+    category_id: 'cat-4',
+    supplier_id: 'sup-3',
+    created_at: getMockDate(5), // 5 dias atrás (Últimos 7 dias)
+    stock_quantity: 120,
+    min_quantity: 20
+  },
+  {
+    id: 'mock-4',
+    name: 'Fone Bluetooth Noise Cancelling',
+    sku: 'HP-99',
+    primary_image_url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80',
+    sale_price: 450.00,
+    category_id: 'cat-1',
+    supplier_id: 'sup-1',
+    created_at: getMockDate(12), // 12 dias atrás (Últimos 15 dias)
+    stock_quantity: 0,
+    min_quantity: 5
+  },
+  {
+    id: 'mock-5',
+    name: 'Kit Canetas Premium Metal',
+    sku: 'PN-05',
+    primary_image_url: 'https://images.unsplash.com/photo-1585336261022-680e295ce3fe?w=800&q=80',
+    sale_price: 45.00,
+    category_id: 'cat-2',
+    supplier_id: 'sup-2',
+    created_at: getMockDate(25), // 25 dias atrás (Expira logo)
+    stock_quantity: 300,
+    min_quantity: 50
+  }
+];
+
+/**
  * Calcula a data de corte para novidades (últimos N dias)
  */
 function getCutoffDate(days: number = NOVELTY_WINDOW_DAYS): string {
@@ -99,8 +184,11 @@ async function enrichNovelties(novelties: NoveltyWithDetails[]): Promise<Novelty
   const categoryIds = [...new Set(novelties.map((n) => n.category_id).filter(Boolean))] as string[];
   const supplierIds = [...new Set(novelties.map((n) => n.supplier_id).filter(Boolean))] as string[];
 
+  // Fallback para mock se os IDs forem do mock
+  const isMock = novelties.some(n => n.product_id.startsWith('mock-'));
+
   const [catResult, supResult] = await Promise.all([
-    categoryIds.length > 0
+    !isMock && categoryIds.length > 0
       ? invokeExternalDb<CategoryRecord>({
           table: 'categories',
           operation: 'select',
@@ -108,8 +196,8 @@ async function enrichNovelties(novelties: NoveltyWithDetails[]): Promise<Novelty
           filters: { id: `in.(${categoryIds.join(',')})` },
           limit: 500,
         })
-      : { records: [] as CategoryRecord[] },
-    supplierIds.length > 0
+      : { records: isMock ? MOCK_CATEGORIES : [] as CategoryRecord[] },
+    !isMock && supplierIds.length > 0
       ? invokeExternalDb<SupplierRecord>({
           table: 'suppliers',
           operation: 'select',
@@ -117,7 +205,7 @@ async function enrichNovelties(novelties: NoveltyWithDetails[]): Promise<Novelty
           filters: { id: `in.(${supplierIds.join(',')})` },
           limit: 200,
         })
-      : { records: [] as SupplierRecord[] },
+      : { records: isMock ? MOCK_SUPPLIERS : [] as SupplierRecord[] },
   ]);
 
   const catMap = new Map(catResult.records.map((c) => [c.id, c.name]));
@@ -196,7 +284,14 @@ export function useNoveltiesWithDetails(options: UseNoveltiesOptions = {}) {
         limit,
       });
 
-      let novelties = result.records.map(toNovelty).filter((n) => n.is_active);
+      let records = result.records;
+
+      // Fallback para MOCK se o banco estiver vazio
+      if (records.length === 0) {
+        records = MOCK_PRODUCTS;
+      }
+
+      let novelties = records.map(toNovelty).filter((n) => n.is_active);
 
       if (onlyHighlighted) {
         novelties = novelties.filter((n) => n.is_highlighted);
@@ -272,7 +367,16 @@ export function useNoveltyStats() {
       const weekStart = todayStart - 6 * 86400000;
       const fifteenDaysStart = todayStart - 14 * 86400000;
 
-      const novelties = noveltiesResult.records.map((p) => ({
+      let records = noveltiesResult.records;
+      let totalProducts = totalResult.count || 0;
+
+      // Fallback para MOCK se o banco estiver vazio
+      if (records.length === 0 && totalProducts === 0) {
+        records = MOCK_PRODUCTS;
+        totalProducts = MOCK_PRODUCTS.length + 50; // Simula uma taxa de novidade realista
+      }
+
+      const novelties = records.map((p) => ({
         daysRemaining: calcDaysRemaining(p.created_at),
         createdTime: new Date(p.created_at).getTime(),
         supplierId: p.supplier_id,
@@ -283,7 +387,6 @@ export function useNoveltyStats() {
       const arrivedToday = active.filter((n) => n.createdTime >= todayStart).length;
       const arrivedThisWeek = active.filter((n) => n.createdTime >= weekStart).length;
       const arrivedLast15Days = active.filter((n) => n.createdTime >= fifteenDaysStart).length;
-      const totalProducts = totalResult.count || 0;
       const activeCount = active.length;
 
       // Find top supplier
@@ -305,17 +408,21 @@ export function useNoveltyStats() {
       // Resolve top supplier name
       let topSupplierName: string | null = null;
       if (topSupplierId) {
-        try {
-          const supResult = await invokeExternalDb<{ name: string }>({
-            table: 'suppliers',
-            operation: 'select',
-            select: 'name',
-            filters: { id: topSupplierId },
-            limit: 1,
-          });
-          topSupplierName = supResult.records[0]?.name || null;
-        } catch {
-          /* fallback */
+        if (topSupplierId.startsWith('sup-')) {
+          topSupplierName = MOCK_SUPPLIERS.find(s => s.id === topSupplierId)?.name || null;
+        } else {
+          try {
+            const supResult = await invokeExternalDb<{ name: string }>({
+              table: 'suppliers',
+              operation: 'select',
+              select: 'name',
+              filters: { id: topSupplierId },
+              limit: 1,
+            });
+            topSupplierName = supResult.records[0]?.name || null;
+          } catch {
+            /* fallback */
+          }
         }
       }
 
