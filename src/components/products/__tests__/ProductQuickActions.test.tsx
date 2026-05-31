@@ -25,7 +25,17 @@ describe('ProductQuickActions Tooltips', () => {
     minQuantity: 10,
     tags: { 'Público-Alvo': ['Empresas'] },
     niches: ['Tecnologia'],
-    product: { id: '123', name: 'Test', images: [] } as any,
+    product: { 
+      id: '123', 
+      name: 'Test', 
+      images: [],
+      category_id: 'cat1',
+      brand: 'Brand',
+      description: 'Desc',
+      sku: 'SKU',
+      colors: [],
+      sizes: []
+    } as any,
   };
 
   const renderComponent = (props = defaultProps) => {
