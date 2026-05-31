@@ -151,7 +151,7 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
 
           {/* Price + Stock */}
           <div className="flex items-end justify-between pt-0.5 sm:pt-1">
-            <div>
+            <div className="min-h-[3rem] sm:min-h-[3.5rem] flex flex-col justify-end">
               {product.base_price !== null && product.base_price > 0 ? (
                 <>
                   <p className="mb-0.5 text-[10px] text-muted-foreground sm:text-xs">A partir de</p>
@@ -176,6 +176,7 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
               </span>
             </div>
           </div>
+
 
           {/* Category */}
           {product.category_name && (
