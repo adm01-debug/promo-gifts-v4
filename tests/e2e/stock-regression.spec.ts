@@ -43,6 +43,17 @@ test.describe('Estoque Dashboard E2E', () => {
     await page.reload();
     await expect(page.locator('[data-testid="page-title-estoque"]')).toBeVisible();
     
+    // Check filters - clicking "Sem Estoque" should filter
+    const outOfStockCard = page.locator('text=Sem Estoque').first();
+    await outOfStockCard.click();
+    // Wait for network activity if any (though current implementation filters locally)
+    await page.waitForTimeout(500);
+    
+    // Search check
+    const searchInput = page.getByPlaceholder('Buscar produto, SKU ou cor...');
+    await searchInput.fill('SKU_INEXISTENTE_TESTE');
+    await expect(page.locator('text=Nenhum produto encontrado')).toBeVisible();
+
     const hasGoneLog = logs.some(log => log.includes('410') || log.includes('Gone'));
     expect(hasGoneLog).toBe(false);
   });

@@ -498,7 +498,7 @@ export function StockDashboard() {
         </CardHeader>
         <CardContent className="pt-0">
           <ScrollArea className="h-[min(600px,_60vh)]">
-            <VariantStockTable products={productStocks} />
+            <VariantStockTable products={productStocks} isLoading={isFetching} />
           </ScrollArea>
         </CardContent>
       </Card>

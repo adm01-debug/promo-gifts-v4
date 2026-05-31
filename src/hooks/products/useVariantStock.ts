@@ -25,7 +25,8 @@ export function useVariantStock() {
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
-    retry: 1,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * Math.pow(2, attempt), 10000),
   });
 
   const productStocks = useMemo(() => data?.productStocks ?? [], [data?.productStocks]);
