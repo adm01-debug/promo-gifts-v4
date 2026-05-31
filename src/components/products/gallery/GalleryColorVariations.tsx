@@ -152,11 +152,22 @@ export function GalleryColorVariations({
                           <ColorThumb
                             src={getCdnUrl(color.images?.[0] || color.image || '', 'thumbnail')}
                             alt={color.name}
-                            title={color.name}
                           />
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent>{color.name}</TooltipContent>
+                      <TooltipContent
+                        side="top"
+                        sideOffset={8}
+                        className="border border-border/40 bg-popover/95 px-2.5 py-1 text-xs font-medium text-popover-foreground shadow-md backdrop-blur-sm"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className="h-2.5 w-2.5 shrink-0 rounded-full border border-white/20"
+                            style={{ backgroundColor: color.hex }}
+                          />
+                          {color.name}
+                        </div>
+                      </TooltipContent>
                     </Tooltip>
                   ) : (
                     <div className="h-full w-full" style={{ backgroundColor: color.hex }} />
