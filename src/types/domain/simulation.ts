@@ -74,6 +74,7 @@ export interface SavedSimulation {
   id: string;
   seller_id?: string;
   client_id?: string | null;
+  client_name?: string | null;
   product_id: string;
   product_name?: string;
   product_sku?: string;
@@ -83,7 +84,6 @@ export interface SavedSimulation {
   notes?: string | null;
   created_at?: string;
   updated_at?: string;
-  bitrix_clients?: { id: string; name: string; ramo?: string } | null;
 }
 
 export type SimulatorStep = 'product' | 'techniques' | 'results';

@@ -16,7 +16,7 @@ interface CompareMockup {
   mockup_url: string;
   layout_url?: string | null;
   created_at: string;
-  bitrix_clients?: { name: string } | null;
+  client_name?: string | null;
 }
 
 interface MockupCompareDialogProps {
@@ -81,8 +81,8 @@ export function MockupCompareDialog({
                   <Badge variant="secondary" className="text-[10px]">
                     {mockup.technique_name}
                   </Badge>
-                  {mockup.bitrix_clients?.name && (
-                    <p className="text-xs text-primary">👤 {mockup.bitrix_clients.name}</p>
+                  {mockup.client_name && (
+                    <p className="text-xs text-primary">👤 {mockup.client_name}</p>
                   )}
                   <p className="text-[10px] text-muted-foreground">
                     {formatDistanceToNow(new Date(mockup.created_at), {

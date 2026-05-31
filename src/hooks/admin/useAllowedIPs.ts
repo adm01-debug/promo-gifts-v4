@@ -58,7 +58,7 @@ export function useAllowedIPs(targetUserId?: string) {
 
     try {
       const { data, error } = await supabase
-        .from('user_allowed_ips')
+        .from('user_ip_allowlist')
         .select('id, user_id, ip_address, label, is_active, created_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
@@ -91,7 +91,7 @@ export function useAllowedIPs(targetUserId?: string) {
       }
 
       try {
-        const { error } = await supabase.from('user_allowed_ips').insert({
+        const { error } = await supabase.from('user_ip_allowlist').insert({
           user_id: userId,
           ip_address: ipAddress,
           label: label || null,
@@ -121,7 +121,7 @@ export function useAllowedIPs(targetUserId?: string) {
   const removeIP = useCallback(
     async (ipId: string): Promise<{ success: boolean; error?: string }> => {
       try {
-        const { error } = await supabase.from('user_allowed_ips').delete().eq('id', ipId);
+        const { error } = await supabase.from('user_ip_allowlist').delete().eq('id', ipId);
 
         if (error) throw error;
 
@@ -141,7 +141,7 @@ export function useAllowedIPs(targetUserId?: string) {
     async (ipId: string, isActive: boolean): Promise<{ success: boolean; error?: string }> => {
       try {
         const { error } = await supabase
-          .from('user_allowed_ips')
+          .from('user_ip_allowlist')
           .update({ is_active: isActive })
           .eq('id', ipId);
 

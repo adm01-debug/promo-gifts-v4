@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/select';
 import { ArrowLeft, Plus, LayoutGrid, List, BarChart3, Building2 } from 'lucide-react';
 import { useQuotes } from '@/hooks/quotes';
-import { supabase } from '@/integrations/supabase/client';
+import { selectCrm } from '@/lib/crm-db';
 import { Badge } from '@/components/ui/badge';
 
 interface Client {
@@ -27,13 +27,32 @@ export default function QuotesKanbanPage() {
   const [selectedClientId, setSelectedClientId] = useState<string>('all');
   const [clients, setClients] = useState<Client[]>([]);
 
-  // Fetch clients for filter
+  // Fetch clients for filter via CRM bridge
   useEffect(() => {
+    let cancelled = false;
     const fetchClients = async () => {
-      const { data } = await supabase.from('bitrix_clients').select('id, name').order('name');
-      setClients(data || []);
+      try {
+        const companies = await selectCrm<{ id: string; razao_social: string; nome_fantasia: string }>(
+          'companies',
+          {
+            select: 'id, razao_social, nome_fantasia',
+            orderBy: { column: 'nome_fantasia', ascending: true },
+            limit: 500,
+          },
+        );
+        if (!cancelled) {
+          setClients(
+            companies.map((c) => ({ id: c.id, name: c.nome_fantasia || c.razao_social || '' })),
+          );
+        }
+      } catch {
+        // CRM bridge may be unavailable — clients will fall back to quotesClients
+      }
     };
     fetchClients();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Get unique clients from quotes

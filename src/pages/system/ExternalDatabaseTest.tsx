@@ -198,7 +198,7 @@ export default function ExternalDatabaseTest() {
           <TabsContent value="companies">
             <Card>
               <CardHeader>
-                <CardTitle>Dados das Empresas (bitrix_clients)</CardTitle>
+                <CardTitle>Dados das Empresas (CRM)</CardTitle>
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-[400px]">

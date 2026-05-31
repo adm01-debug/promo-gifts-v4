@@ -30,7 +30,7 @@ import { ptBR } from 'date-fns/locale';
 interface IpEntry {
   id: string;
   ip_address: string;
-  label: string | null;
+  reason: string | null;
   is_active: boolean;
   created_at: string;
 }
@@ -112,7 +112,7 @@ export function IpWhitelistTab({ ips, onAdd, onRemove, onToggle }: IpWhitelistTa
               {ips.map((ip) => (
                 <TableRow key={ip.id}>
                   <TableCell className="font-mono text-sm">{ip.ip_address}</TableCell>
-                  <TableCell>{ip.label || '—'}</TableCell>
+                  <TableCell>{ip.reason || '—'}</TableCell>
                   <TableCell>
                     <Switch
                       checked={ip.is_active}

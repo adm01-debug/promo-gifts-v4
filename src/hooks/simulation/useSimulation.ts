@@ -196,7 +196,7 @@ export function useSimulation() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('personalization_simulations')
-        .select(`*, bitrix_clients (id, name, ramo)`)
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(50);
       if (error) throw error;

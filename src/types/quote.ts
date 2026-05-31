@@ -16,7 +16,7 @@ export type ClientResponse = 'approved' | 'rejected' | 'changes_requested';
 export interface Quote {
   id: string;
   quote_number: string; // "ORC-2026-0001"
-  client_id: string | null; // FK bitrix_clients
+  client_id: string | null;
   client_name: string | null;
   client_email: string | null;
   client_phone: string | null;
