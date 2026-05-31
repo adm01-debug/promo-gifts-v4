@@ -93,13 +93,22 @@ test.describe('Replenishment Grid Advanced Visual & A11y @mobile', () => {
           maxDiffPixelRatio: 0.02,
         });
 
-        // 2. Scroll to middle/end to test virtualization alignment
+        const header = page.locator('div.flex.items-center.gap-4').first();
+        await expect(header).toHaveScreenshot(`header-only-${viewport.name}.png`);
+        
+        // 2. Initial State Screenshot (FOCUSED ON GRID as requested earlier)
+        await expect(grid).toHaveScreenshot(`grid-initial-${viewport.name}.png`, {
+          maxDiffPixelRatio: 0.02,
+        });
+
+        // 3. Scroll to middle/end to test virtualization alignment
         await grid.evaluate(el => el.scrollTop = 1000);
         await page.waitForTimeout(800); // Wait for virtualization to re-render
         
         await expect(grid).toHaveScreenshot(`grid-scrolled-${viewport.name}.png`, {
           maxDiffPixelRatio: 0.02,
         });
+
       });
 
       test('Accessibility Scan with Report', async ({ page }) => {
