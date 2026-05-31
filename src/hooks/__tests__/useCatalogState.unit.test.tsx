@@ -86,14 +86,14 @@ global.IntersectionObserver = class IntersectionObserver {
   readonly root: Element | Document | null = null;
   readonly rootMargin: string = '';
   readonly thresholds: ReadonlyArray<number> = [];
-  constructor() {}
+  constructor(_callback?: IntersectionObserverCallback, _options?: IntersectionObserverInit) {}
   disconnect() {}
   observe() {}
   unobserve() {}
   takeRecords(): IntersectionObserverEntry[] {
     return [];
   }
-};
+} as unknown as typeof IntersectionObserver;
 
 // TODO: hook cresceu demais — cascata de imports (Supabase + ProductsContext +
 // favorites/comparison stores + intelligence) estoura memória do worker vitest
