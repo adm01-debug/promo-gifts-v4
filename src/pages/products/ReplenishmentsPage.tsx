@@ -1,3 +1,4 @@
+import { RefreshCw } from 'lucide-react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { ReplenishmentStatsCards } from '@/components/replenishments/ReplenishmentStatsCards';
 import { ReplenishmentProductGrid } from '@/components/replenishments/ReplenishmentProductGrid';
@@ -12,14 +13,24 @@ export default function ReplenishmentsPage() {
         path="/reposicao"
       />
       <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
-        <header className="flex flex-wrap items-center justify-between gap-3">
-          <h1
-            data-testid="page-title-reposicao"
-            className="font-display text-xl font-bold sm:text-2xl lg:text-3xl"
-          >
-            Reposição
-          </h1>
-        </header>
+        {/* Cabeçalho da página */}
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <RefreshCw className="h-5 w-5" />
+          </div>
+          <div className="min-w-0">
+            <h1
+              data-testid="page-title-reposicao"
+              className="font-display text-2xl font-bold tracking-tight"
+            >
+              Reposição
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Produtos que voltaram ao estoque dos fornecedores nos últimos 30 dias
+            </p>
+          </div>
+        </div>
+
         <ReplenishmentStatsCards />
         <div className="grid grid-cols-1 gap-3 sm:gap-4 xl:grid-cols-[1fr_280px]">
           <main className="order-2 min-w-0 xl:order-1">
