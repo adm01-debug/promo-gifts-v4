@@ -4,6 +4,7 @@ import { ProductGallery } from '../ProductGallery';
 import { QuickViewGallery } from '../quick-view/QuickViewGallery';
 import { ZoomableGallery } from '../ZoomableGallery';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import type { ProductImageMeta } from '@/utils/image-utils';
 
 describe('Gallery Components - Tooltip Regression Audit', () => {
   const mockImages = ['https://example.com/image1.jpg', 'https://example.com/image2.jpg'];
@@ -51,9 +52,21 @@ describe('Gallery Components - Tooltip Regression Audit', () => {
   });
 
   it('QuickViewGallery should be free of tooltips on main images', () => {
-    const displayImages = [
-      { url_cdn: mockImages[0], alt_text: 'Alt 1' },
-      { url_cdn: mockImages[1], alt_text: 'Alt 2' },
+    const displayImages: ProductImageMeta[] = [
+      {
+        url_cdn: mockImages[0],
+        alt_text: 'Alt 1',
+        image_type: 'main',
+        is_primary: true,
+        display_order: 0,
+      },
+      {
+        url_cdn: mockImages[1],
+        alt_text: 'Alt 2',
+        image_type: 'main',
+        is_primary: false,
+        display_order: 1,
+      },
     ];
     const { container } = renderWithProviders(
       <QuickViewGallery
