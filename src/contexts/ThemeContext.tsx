@@ -1,14 +1,12 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { performanceTracker } from '@/utils/performance';
 
-type Theme = 'dark';
 type TooltipStyle = 'compact' | 'standard';
 
 interface ThemeContextType {
-  theme: Theme;
+  theme: 'dark';
   actualTheme: 'dark';
   tooltipStyle: TooltipStyle;
-  setTheme: (theme: Theme) => void;
+  setTheme: (theme: 'dark') => void;
   toggleTheme: () => void;
   setTooltipStyle: (style: TooltipStyle) => void;
   isFallback?: boolean;
@@ -18,19 +16,18 @@ export const ThemeContext = createContext<ThemeContextType | undefined>(undefine
 
 interface ThemeProviderProps {
   children: ReactNode;
-  defaultTheme?: Theme;
   storageKey?: string;
   tooltipStorageKey?: string;
 }
 
 export function ThemeProvider({
   children,
-  defaultTheme = 'dark',
   storageKey = 'gifts-store-theme',
   tooltipStorageKey = 'gifts-store-tooltip-style',
 }: ThemeProviderProps) {
-  // Force dark theme regardless of what's in localStorage
-  const [theme] = useState<Theme>('dark');
+  // Theme is strictly fixed to dark
+  const theme = 'dark';
+  const actualTheme = 'dark';
 
   const [tooltipStyle, setTooltipStyleState] = useState<TooltipStyle>(() => {
     if (typeof window !== 'undefined') {
@@ -39,23 +36,29 @@ export function ThemeProvider({
     return 'standard';
   });
 
-  const [actualTheme] = useState<'dark'>('dark');
-
-  // Force dark theme class
+  // Force dark theme class and remove any light-mode traces
   useEffect(() => {
     const root = window.document.documentElement;
     root.classList.remove('light');
     root.classList.add('dark');
-  }, []);
+    
+    // Cleanup any old theme preference
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(storageKey);
+      if (stored && stored !== 'dark') {
+        localStorage.setItem(storageKey, 'dark');
+      }
+    }
+  }, [storageKey]);
 
-  // Atualizar classe do tooltip style
+  // Update tooltip style class
   useEffect(() => {
     const root = window.document.documentElement;
     root.classList.remove('tooltip-compact', 'tooltip-standard');
     root.classList.add(`tooltip-${tooltipStyle}`);
   }, [tooltipStyle]);
 
-  // Listener for changes from other tabs - simplified as theme is fixed
+  // Listener for storage changes from other tabs to enforce dark mode
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === storageKey && e.newValue && e.newValue !== 'dark') {
@@ -67,8 +70,8 @@ export function ThemeProvider({
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [storageKey]);
 
-  const setTheme = (_newTheme: Theme) => {
-    // Theme is fixed to dark, but we keep the storage sync just in case
+  const setTheme = () => {
+    // Theme is fixed to dark
     localStorage.setItem(storageKey, 'dark');
   };
 
@@ -97,12 +100,6 @@ export function useTheme() {
   const context = useContext(ThemeContext);
 
   if (context === undefined) {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn(
-        'useTheme must be used within a ThemeProvider. Returning a fallback theme to avoid crash.',
-      );
-    }
-    // Return a safe fallback instead of throwing
     return {
       theme: 'dark',
       actualTheme: 'dark',
