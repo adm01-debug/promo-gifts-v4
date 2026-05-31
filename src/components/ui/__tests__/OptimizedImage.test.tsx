@@ -2,6 +2,18 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { OptimizedImage } from '../OptimizedImage';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
+// JSDOM does not implement IntersectionObserver. Without this mock,
+// OptimizedImage's useEffect (priority=false path) throws on mount.
+// The previous assumption "mock is global in setupFiles" was fragile —
+// we make it explicit here so this file is self-contained.
+const mockIntersectionObserver = vi.fn();
+mockIntersectionObserver.mockReturnValue({
+  observe: vi.fn(),
+  unobserve: vi.fn(),
+  disconnect: vi.fn(),
+});
+window.IntersectionObserver = mockIntersectionObserver;
+
 describe('OptimizedImage', () => {
   const defaultProps = {
     src: 'https://example.com/image.jpg',
@@ -12,29 +24,26 @@ describe('OptimizedImage', () => {
   };
 
   beforeEach(() => {
-    // IntersectionObserver mock is usually global in setupFiles, 
-    // but we can ensure it exists here if needed.
     vi.clearAllMocks();
   });
 
   it('renders a shimmer or placeholder when loading', () => {
     render(<OptimizedImage {...defaultProps} />);
-    
-    // Check for shimmer or placeholder element
-    // By default, if no lqip, we show a local placeholder img with blur
-    const placeholder = screen.getByRole('img', { hidden: true });
-    expect(placeholder).toBeInTheDocument();
-    expect(placeholder).toHaveStyle('filter: blur(20px)');
+
+    // With generic src (no LQIP generated), the main <img> is the only img element.
+    // It renders with src=undefined (not in view) + inline style with filter:blur
+    const img = screen.getByRole('img', { hidden: true });
+    expect(img).toBeInTheDocument();
+    expect(img).toHaveStyle('filter: blur(20px)');
   });
 
   it('applies fade-in, removes blur and resets zoom after onLoad', () => {
     render(<OptimizedImage {...defaultProps} />);
-    
+
     const img = screen.getByAltText('Test Image');
-    
+
     // Initial state (loading)
     expect(img).toHaveClass('opacity-0');
-    // Using getComputedStyle for style checks when possible, or just checking the style attribute
     expect(img).toHaveStyle(`filter: blur(${defaultProps.blurAmount}px)`);
     expect(img).toHaveStyle(`transform: scale(${defaultProps.zoomAmount})`);
     expect(img).toHaveStyle(`transition-duration: ${defaultProps.duration}ms`);
@@ -51,14 +60,9 @@ describe('OptimizedImage', () => {
   });
 
   it('handles custom configuration correctly', () => {
-    const customProps = {
-      ...defaultProps,
-      blurAmount: 50,
-      zoomAmount: 1.5,
-      duration: 1000,
-    };
+    const customProps = { ...defaultProps, blurAmount: 50, zoomAmount: 1.5, duration: 1000 };
     render(<OptimizedImage {...customProps} />);
-    
+
     const img = screen.getByAltText('Test Image');
     expect(img).toHaveStyle('filter: blur(50px)');
     expect(img).toHaveStyle('transform: scale(1.5)');
@@ -67,22 +71,14 @@ describe('OptimizedImage', () => {
 
   it('shows error state when image fails to load', () => {
     render(<OptimizedImage {...defaultProps} />);
-    
-    const img = screen.getByAltText('Test Image');
-    
-    // Simulate error
-    fireEvent.error(img);
-
+    fireEvent.error(screen.getByAltText('Test Image'));
     expect(screen.getByText('Erro ao carregar')).toBeInTheDocument();
   });
 
   it('uses lqip if provided', () => {
     const lqip = 'data:image/png;base64,lqip-data';
     render(<OptimizedImage {...defaultProps} lqip={lqip} />);
-    
-    // Find image by src attribute (LQIP)
     const placeholder = document.querySelector(`img[src="${lqip}"]`);
-    
     expect(placeholder).toBeInTheDocument();
     expect(placeholder).toHaveAttribute('aria-hidden', 'true');
   });
@@ -90,77 +86,76 @@ describe('OptimizedImage', () => {
   it('detects Cloudflare Images (imagedelivery.net) and generates /thumbnail path', () => {
     const cfSrc = 'https://imagedelivery.net/abc123/product-id/public';
     render(<OptimizedImage {...defaultProps} src={cfSrc} />);
-    
-    const container = document.querySelector('[data-detection-rule="cloudflare"]');
-    expect(container).toBeInTheDocument();
 
-    // The placeholder should have the /thumbnail path
+    expect(document.querySelector('[data-detection-rule="cloudflare"]')).toBeInTheDocument();
     const placeholder = document.querySelector('img[aria-hidden="true"]');
-    expect(placeholder).toBeInTheDocument();
-    expect(placeholder).toHaveAttribute('src', 'https://imagedelivery.net/abc123/product-id/thumbnail');
+    expect(placeholder).toHaveAttribute(
+      'src',
+      'https://imagedelivery.net/abc123/product-id/thumbnail',
+    );
   });
 
   it('handles Cloudflare edge cases: trailing slashes and query strings', () => {
-    const cfSrcWithSlash = 'https://imagedelivery.net/abc123/product-id/public/';
-    const { unmount: unmountSlash } = render(<OptimizedImage {...defaultProps} src={cfSrcWithSlash} />);
-    
-    let placeholder = document.querySelector('img[aria-hidden="true"]');
-    expect(placeholder).toHaveAttribute('src', 'https://imagedelivery.net/abc123/product-id/thumbnail');
-    unmountSlash();
+    const { unmount } = render(
+      <OptimizedImage {...defaultProps} src="https://imagedelivery.net/abc123/product-id/public/" />,
+    );
+    expect(document.querySelector('img[aria-hidden="true"]')).toHaveAttribute(
+      'src',
+      'https://imagedelivery.net/abc123/product-id/thumbnail',
+    );
+    unmount();
 
-    const cfSrcWithQuery = 'https://imagedelivery.net/abc123/product-id/public?v=123';
-    render(<OptimizedImage {...defaultProps} src={cfSrcWithQuery} />);
-    
-    placeholder = document.querySelector('img[aria-hidden="true"]');
-    expect(placeholder).toHaveAttribute('src', 'https://imagedelivery.net/abc123/product-id/thumbnail');
+    render(
+      <OptimizedImage {...defaultProps} src="https://imagedelivery.net/abc123/product-id/public?v=123" />,
+    );
+    expect(document.querySelector('img[aria-hidden="true"]')).toHaveAttribute(
+      'src',
+      'https://imagedelivery.net/abc123/product-id/thumbnail',
+    );
   });
 
   it('emits console.info only when debug is true or in development', () => {
-    const consoleSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+    const spy = vi.spyOn(console, 'info').mockImplementation(() => {});
     const cfSrc = 'https://imagedelivery.net/abc123/product-id/public';
-    
-    // Debug false (default in tests NODE_ENV is usually 'test')
+
     const { unmount } = render(<OptimizedImage {...defaultProps} src={cfSrc} debug={false} />);
-    expect(consoleSpy).not.toHaveBeenCalled();
+    expect(spy).not.toHaveBeenCalled();
     unmount();
 
-    // Debug true
     render(<OptimizedImage {...defaultProps} src={cfSrc} debug={true} />);
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[OptimizedImage] Cloudflare Image detected'));
-    consoleSpy.mockClear();
+    expect(spy).toHaveBeenCalledWith(
+      expect.stringContaining('[OptimizedImage] Cloudflare Image detected'),
+    );
+    spy.mockClear();
 
-    // Non-supported source with debug true
     render(<OptimizedImage {...defaultProps} src="https://example.com/image.jpg" debug={true} />);
-    expect(consoleSpy).not.toHaveBeenCalled();
-    
-    consoleSpy.mockRestore();
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
   });
 
   it('detects Unsplash images and generates tiny thumbnail', () => {
-    const unsplashSrc = 'https://images.unsplash.com/photo-123456?auto=format&fit=crop&q=80';
-    render(<OptimizedImage {...defaultProps} src={unsplashSrc} />);
-    
-    const container = document.querySelector('[data-detection-rule="unsplash"]');
-    expect(container).toBeInTheDocument();
-
-    const placeholder = document.querySelector('img[aria-hidden="true"]');
-    expect(placeholder).toBeInTheDocument();
-    const src = placeholder?.getAttribute('src');
+    render(
+      <OptimizedImage
+        {...defaultProps}
+        src="https://images.unsplash.com/photo-123456?auto=format&fit=crop&q=80"
+      />,
+    );
+    expect(document.querySelector('[data-detection-rule="unsplash"]')).toBeInTheDocument();
+    const src = document.querySelector('img[aria-hidden="true"]')?.getAttribute('src');
     expect(src).toContain('w=50');
     expect(src).toContain('q=10');
     expect(src).toContain('blur=10');
   });
 
   it('detects Supabase storage images and generates thumbnail params', () => {
-    const supabaseSrc = 'https://abc.supabase.co/storage/v1/object/public/products/image.jpg';
-    render(<OptimizedImage {...defaultProps} src={supabaseSrc} />);
-    
-    const container = document.querySelector('[data-detection-rule="supabase"]');
-    expect(container).toBeInTheDocument();
-
-    const placeholder = document.querySelector('img[aria-hidden="true"]');
-    expect(placeholder).toBeInTheDocument();
-    const src = placeholder?.getAttribute('src');
+    render(
+      <OptimizedImage
+        {...defaultProps}
+        src="https://abc.supabase.co/storage/v1/object/public/products/image.jpg"
+      />,
+    );
+    expect(document.querySelector('[data-detection-rule="supabase"]')).toBeInTheDocument();
+    const src = document.querySelector('img[aria-hidden="true"]')?.getAttribute('src');
     expect(src).toContain('width=50');
     expect(src).toContain('quality=10');
   });

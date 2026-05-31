@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import { Skeleton } from '@/components/ui/skeleton';
 import { ImageOff, Loader2 } from 'lucide-react';
 
 interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
@@ -19,8 +18,9 @@ interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> 
  * OptimizedImage component that handles:
  * 1. Lazy loading via native loading="lazy" and IntersectionObserver fallback
  * 2. Smooth fade-in transition when loaded
- * 3. Skeleton placeholder while loading
+ * 3. Blur-up (LQIP) placeholder while loading
  * 4. Error state handling with fallback icon
+ * 5. Auto-detection of CDN provider (Cloudflare, Unsplash, Supabase) for placeholder generation
  */
 export function OptimizedImage({
   src,
@@ -34,8 +34,10 @@ export function OptimizedImage({
   duration = 700,
   lqip,
   debug = false,
+  onDetection,
   onLoad: onLoadProp,
   onError: onErrorProp,
+  style: externalStyle,
   ...props
 }: OptimizedImageProps) {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -46,7 +48,7 @@ export function OptimizedImage({
   // Generate a local blurred placeholder if no lqip is provided
   const { localPlaceholder, detectionRule } = useMemo(() => {
     if (lqip || !src) return { localPlaceholder: null, detectionRule: 'none' };
-    
+
     // Cloudflare Images (imagedelivery.net)
     if (src.includes('imagedelivery.net')) {
       // Handle URLs with query strings or trailing slashes
@@ -55,16 +57,16 @@ export function OptimizedImage({
       if (baseUrl.endsWith('/')) {
         baseUrl = baseUrl.slice(0, -1);
       }
-      
       const thumbUrl = baseUrl.replace(/\/[^/]+$/, '/thumbnail');
-      
       if (debug || process.env.NODE_ENV === 'development') {
-        console.info(`[OptimizedImage] Cloudflare Image detected. Rule: CF_VARIANT_REPLACEMENT. Generated thumbnail: ${thumbUrl}`);
+        console.info(
+          `[OptimizedImage] Cloudflare Image detected. Rule: CF_VARIANT_REPLACEMENT. Generated thumbnail: ${thumbUrl}`,
+        );
       }
       return { localPlaceholder: thumbUrl, detectionRule: 'cloudflare' };
     }
 
-    // If it's an Unsplash image, we can get a tiny version for LQIP
+    // Unsplash — tiny LQIP via query params
     if (src.includes('unsplash.com')) {
       const url = new URL(src);
       url.searchParams.set('w', '50');
@@ -72,16 +74,20 @@ export function OptimizedImage({
       url.searchParams.set('blur', '10');
       const thumbUrl = url.toString();
       if (debug || process.env.NODE_ENV === 'development') {
-        console.info(`[OptimizedImage] Unsplash Image detected. Rule: UNSPLASH_PARAMS. Generated thumbnail: ${thumbUrl}`);
+        console.info(
+          `[OptimizedImage] Unsplash Image detected. Rule: UNSPLASH_PARAMS. Generated thumbnail: ${thumbUrl}`,
+        );
       }
       return { localPlaceholder: thumbUrl, detectionRule: 'unsplash' };
     }
-    
-    // If it's a Supabase storage image
+
+    // Supabase Storage
     if (src.includes('/storage/v1/object/public/')) {
       const thumbUrl = `${src}${src.includes('?') ? '&' : '?'}width=50&quality=10`;
       if (debug || process.env.NODE_ENV === 'development') {
-        console.info(`[OptimizedImage] Supabase Storage detected. Rule: SUPABASE_TRANSFORM. Generated thumbnail: ${thumbUrl}`);
+        console.info(
+          `[OptimizedImage] Supabase Storage detected. Rule: SUPABASE_TRANSFORM. Generated thumbnail: ${thumbUrl}`,
+        );
       }
       return { localPlaceholder: thumbUrl, detectionRule: 'supabase' };
     }
@@ -89,11 +95,14 @@ export function OptimizedImage({
     return { localPlaceholder: null, detectionRule: 'generic' };
   }, [lqip, src, debug]);
 
+  // Fire detection callback only when detectionRule changes.
+  // onDetection is intentionally excluded from deps: callers often pass
+  // inline arrow functions (new ref on every render) which would cause
+  // double-firing. The callback is stable-enough within a detectionRule cycle.
   useEffect(() => {
-    if (onDetection) {
-      onDetection(detectionRule);
-    }
-  }, [detectionRule, onDetection]);
+    onDetection?.(detectionRule);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detectionRule]);
 
   useEffect(() => {
     if (priority) {
@@ -118,11 +127,11 @@ export function OptimizedImage({
   }, [src, priority]);
 
   return (
-    <div 
+    <div
       className={cn('relative overflow-hidden bg-white', containerClassName)}
       data-detection-rule={detectionRule}
-      style={{ 
-        aspectRatio: props.width && props.height ? `${props.width}/${props.height}` : 'auto'
+      style={{
+        aspectRatio: props.width && props.height ? `${props.width}/${props.height}` : 'auto',
       } as React.CSSProperties}
     >
       {error ? (
@@ -139,24 +148,24 @@ export function OptimizedImage({
         </div>
       ) : (
         <>
-          {/* Low Quality Image Preview (LQIP) or Local Fallback */}
+          {/* Low Quality Image Preview (LQIP) or Auto-Generated Placeholder */}
           {(lqip || localPlaceholder) && !isLoaded && !error && (
             <img
               src={lqip || localPlaceholder!}
               alt=""
               aria-hidden="true"
               className={cn(
-                "absolute inset-0 h-full w-full object-cover transition-opacity duration-300",
-                "opacity-100"
+                'absolute inset-0 h-full w-full object-cover transition-opacity duration-300',
+                'opacity-100',
               )}
-              style={{ 
+              style={{
                 filter: `blur(${blurAmount}px)`,
                 transform: `scale(${zoomAmount})`,
               }}
             />
           )}
 
-          {/* Loading Shimmer - only if no LQIP */}
+          {/* Loading Shimmer — only if no LQIP/placeholder */}
           {!isLoaded && !lqip && !localPlaceholder && (
             <div
               aria-hidden
@@ -171,16 +180,21 @@ export function OptimizedImage({
             src={isInView ? src : undefined}
             alt={alt}
             className={cn(
-              'h-full w-full transition-all ease-out-expo',
+              'h-full w-full transition-all ease-out',
               isLoaded ? 'opacity-100 scale-100 blur-0' : 'opacity-0',
               className,
             )}
-            style={{ 
+            style={{
               transitionDuration: `${duration}ms`,
               transitionProperty: 'opacity, filter, transform',
               filter: isLoaded ? 'none' : `blur(${blurAmount}px)`,
               transform: isLoaded ? 'scale(1)' : `scale(${zoomAmount})`,
-              willChange: 'opacity, filter, transform'
+              willChange: 'opacity, filter, transform',
+              // External style merged only after animation completes to prevent
+              // overriding blur-up effect during load. When called from
+              // ProductCardImage, externalStyle is undefined until imageLoaded=true,
+              // which is batched with isLoaded=true — no mid-animation conflict.
+              ...(isLoaded ? (externalStyle ?? {}) : {}),
             }}
             onLoad={(e) => {
               setIsLoaded(true);
