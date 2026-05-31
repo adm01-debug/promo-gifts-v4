@@ -122,21 +122,126 @@ test.describe('Novelty Grid Advanced Visual & A11y @mobile', () => {
     });
   }
 
-  test('Card Consistency Check', async ({ page }) => {
+  test('Skeleton State & Layout Stability', async ({ page }) => {
+    // Intercept with delay to see skeleton
+    await page.route('**/api/external-db', async route => {
+      if (route.request().postDataJSON()?.operation === 'select') {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+      await route.continue();
+    });
+
+    await page.goto('/novidades');
+    const skeleton = page.locator('.animate-spin').first();
+    await expect(skeleton).toBeVisible();
+
+    // Capture skeleton grid
+    const grid = page.locator('div.grid').filter({ has: page.locator('.animate-pulse') }).first();
+    await expect(grid).toHaveScreenshot('novelty-skeleton-state.png');
+
+    // Wait for data and check stability
+    await page.waitForSelector('div[role="list"]');
+    const realGrid = page.locator('div[role="list"]');
+    await expect(realGrid).toBeVisible();
+    await expect(realGrid).toHaveScreenshot('novelty-data-loaded-stability.png');
+  });
+
+  test('Pagination & Alignment Check', async ({ page }) => {
+    // Mock enough products for multiple pages
+    await page.route('**/api/external-db', async route => {
+      const body = route.request().postDataJSON();
+      if (body?.operation === 'select' && body?.table === 'products') {
+        const mockProducts = Array.from({ length: 45 }, (_, i) => ({
+          id: `page-mock-${i}`,
+          name: `Product ${i} ${i % 3 === 0 ? 'with a very very very long name to test wrapping and alignment consistency across the grid' : ''}`,
+          sku: `SKU-${i}`,
+          primary_image_url: null,
+          sale_price: i % 5 === 0 ? null : 100 + i,
+          category_id: 'cat-1',
+          supplier_id: 'sup-1',
+          created_at: new Date().toISOString(),
+          stock_quantity: 100,
+          min_quantity: 10
+        }));
+        await route.fulfill({ 
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ records: mockProducts, count: 45 }) 
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
+    await page.goto('/novidades');
+    const paginator = page.locator('nav[aria-label="pagination"]');
+    await paginator.waitFor();
+
+    // Check first page alignment
+    const firstPageItems = page.locator('div[role="listitem"]');
+    await expect(firstPageItems).toHaveCount(20);
+    await expect(page).toHaveScreenshot('novelty-pagination-page-1.png');
+
+    // Click next
+    await page.click('a[aria-label="Go to next page"]');
+    await page.waitForTimeout(500);
+    await expect(page.locator('div[role="listitem"]')).toHaveCount(20);
+    await expect(page).toHaveScreenshot('novelty-pagination-page-2.png');
+
+    // Click last page (3)
+    await page.click('a:text("3")');
+    await page.waitForTimeout(500);
+    await expect(page.locator('div[role="listitem"]')).toHaveCount(5); 
+    await expect(page).toHaveScreenshot('novelty-pagination-last-page.png');
+  });
+
+  test('Card Variations: Long Title & Consultation Price', async ({ page }) => {
+    await page.route('**/api/external-db', async route => {
+      const body = route.request().postDataJSON();
+      if (body?.operation === 'select' && body?.table === 'products') {
+        const mockProducts = [
+          {
+            id: 'var-1',
+            name: 'Short Title',
+            sku: 'SKU-1',
+            sale_price: 100,
+            created_at: new Date().toISOString(),
+            stock_quantity: 100,
+            min_quantity: 10
+          },
+          {
+            id: 'var-2',
+            name: 'This is a very long product name that should definitely wrap to multiple lines and potentially push the layout down if not handled correctly by min-height constraints',
+            sku: 'SKU-2',
+            sale_price: 200,
+            created_at: new Date().toISOString(),
+            stock_quantity: 100,
+            min_quantity: 10
+          },
+          {
+            id: 'var-3',
+            name: 'Consultation Price Item',
+            sku: 'SKU-3',
+            sale_price: null,
+            created_at: new Date().toISOString(),
+            stock_quantity: 100,
+            min_quantity: 10
+          }
+        ];
+        await route.fulfill({ 
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ records: mockProducts }) 
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
     await page.goto('/novidades');
     const cards = page.locator('div[role="listitem"]');
-    await cards.first().waitFor();
-
-    const allCards = await cards.all();
-    for (const card of allCards.slice(0, 3)) {
-      const h3 = card.locator('h3');
-      const priceContainer = card.locator('.min-h-\\[3\\.25rem\\]'); 
-      
-      const h3Box = await h3.boundingBox();
-      const priceBox = await priceContainer.boundingBox();
-
-      if (h3Box) expect(h3Box.height).toBeGreaterThanOrEqual(40); 
-      if (priceBox) expect(priceBox.height).toBeGreaterThanOrEqual(52); 
-    }
+    await expect(cards).toHaveCount(3);
+    
+    await expect(page.locator('div[role="list"]')).toHaveScreenshot('novelty-card-variations.png');
   });
 });
