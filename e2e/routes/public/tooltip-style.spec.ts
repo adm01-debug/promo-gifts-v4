@@ -1,14 +1,10 @@
-import { test, expect, requireAuth } from "./fixtures/test-base";
-import { gotoAndSettle } from "./helpers/nav";
+import { test, expect } from "@playwright/test";
+
 
 test.describe("Tooltip Style Toggle E2E", () => {
-  test.beforeEach(({}, testInfo) => {
-    requireAuth();
-    testInfo.annotations.push({ type: 'component', description: 'Tooltip Style Toggle' });
-  });
-
   test("Should toggle tooltip style and show correct text in header tooltip", async ({ page }) => {
-    await gotoAndSettle(page, "/");
+    await page.goto("/");
+
 
     const toggleButton = page.locator('button[aria-label="Alternar tamanho do tooltip"]');
     
@@ -42,7 +38,8 @@ test.describe("Tooltip Style Toggle E2E", () => {
   });
 
   test("Should apply correct CSS class to document root", async ({ page }) => {
-    await gotoAndSettle(page, "/");
+    await page.goto("/");
+
 
     const toggleButton = page.locator('button[aria-label="Alternar tamanho do tooltip"]');
     
