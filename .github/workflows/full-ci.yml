@@ -98,18 +98,32 @@ jobs:
         if: steps.cache-playwright.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
 
-      - name: Run Playwright tests (Critical)
-        run: npm run test:e2e:critical
+      - name: Run Playwright tests (Critical & Visual)
+        run: |
+          npm run test:e2e:critical
+          npx playwright test e2e/routes/app/replenishment-grid-visual.spec.ts --project=routes-authed
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
       
-      - uses: actions/upload-artifact@v4
+      - name: Upload Playwright Artifacts (Screenshots & Diffs)
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-visual-regression-artifacts
+          path: |
+            playwright-report/
+            e2e-artifacts/
+          retention-days: 7
+
+      - name: Upload Playwright Report (Always)
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
 
   audit-report:
     name: Final Audit Report

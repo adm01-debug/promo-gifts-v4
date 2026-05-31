@@ -14,6 +14,8 @@ import { ProductSparkline } from '@/components/products/ProductSparkline';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
 import { cn } from '@/lib/utils';
 import type { ReplenishmentWithDetails, StockStatus } from '@/hooks/products';
+import { productCardStyles } from '@/components/products/product-card-styles';
+
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
@@ -65,13 +67,12 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
   return (
     <Card
       className={cn(
-        'group cursor-pointer overflow-hidden rounded-xl transition-all duration-300 sm:rounded-2xl',
-        'border-border/50 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg',
+        productCardStyles.container,
         recent && 'shadow-[0_0_16px_hsl(var(--info)/0.06)]',
-        isSelected &&
-          'border-primary/50 shadow-[0_0_20px_hsl(var(--primary)/0.15)] ring-2 ring-primary',
+        isSelected && productCardStyles.selected,
       )}
       onClick={handleClick}
+
       role="article"
       aria-label={`${product.product_name} — ${stockConfig.label}, ${formatPrice(product.base_price ?? 0)}`}
       aria-selected={selectionMode ? isSelected : undefined}
@@ -128,7 +129,7 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
         </div>
 
         {/* Content Section */}
-        <div className="relative space-y-2 bg-card p-2.5 sm:space-y-3 sm:p-4">
+        <div className={productCardStyles.infoSection}>
           {/* SKU + Supplier */}
           <div className="flex items-center justify-between gap-2">
             {product.product_sku && (
@@ -145,13 +146,13 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
           </div>
 
           {/* Name */}
-          <h3 className="line-clamp-2 min-h-[2.25rem] font-display text-sm font-semibold leading-snug text-foreground transition-colors duration-300 group-hover:text-primary sm:min-h-[2.75rem] sm:text-base">
+          <h3 className={productCardStyles.title}>
             {product.product_name}
           </h3>
 
           {/* Price + Stock */}
-          <div className="flex items-end justify-between pt-0.5 sm:pt-1">
-            <div className="min-h-[3rem] sm:min-h-[3.5rem] flex flex-col justify-end">
+          <div className={productCardStyles.priceStockSection}>
+            <div className={productCardStyles.priceContainer}>
               {product.base_price !== null && product.base_price > 0 ? (
                 <>
                   <p className="mb-0.5 text-[10px] text-muted-foreground sm:text-xs">A partir de</p>
@@ -163,6 +164,7 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
                 <span className="text-xs text-muted-foreground">Preço sob consulta</span>
               )}
             </div>
+
             <div className="flex flex-col items-end gap-0.5 sm:gap-1">
               <span className={cn('stock-indicator text-[10px] sm:text-xs', stockConfig.className)}>
                 <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3" aria-hidden="true" />
@@ -180,7 +182,7 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
 
           {/* Category */}
           {product.category_name && (
-            <div className="mt-0.5 flex flex-wrap gap-1.5 border-t border-primary/20 pt-1.5">
+            <div className={productCardStyles.categoryBadgeSection}>
               <span className="flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-0.5 text-[10px] font-semibold text-primary shadow-sm shadow-primary/10 sm:text-xs">
                 <FolderTree className="h-2.5 w-2.5" aria-hidden="true" />
                 {product.category_name}
@@ -189,7 +191,7 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
           )}
 
           {/* Sparkline */}
-          <div className="border-t border-border/30 pt-1.5 sm:pt-2">
+          <div className={productCardStyles.sparklineSection}>
             <div className="mb-0.5 flex items-center justify-between">
               <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground sm:text-[10px]">
                 Vendas 30d
@@ -197,6 +199,7 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
             </div>
             <ProductSparkline productId={product.product_id} />
           </div>
+
         </div>
       </CardContent>
     </Card>

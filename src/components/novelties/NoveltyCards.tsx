@@ -21,14 +21,14 @@ import { ProductSparkline } from '@/components/products/ProductSparkline';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
 import { cn } from '@/lib/utils';
 import type { NoveltyWithDetails } from '@/hooks/products';
+import { productCardStyles } from '@/components/products/product-card-styles';
 
 function isFresh(detectedAt: string): boolean {
-  return Math.floor((Date.now() - new Date(detectedAt).getTime()) / 86400000) <= 2;
-}
-
+...
 function formatPrice(price: number) {
   return price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
+
 
 function getStockStatusColor(status: string) {
   switch (status) {
@@ -79,14 +79,13 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
   return (
     <Card
       className={cn(
-        'group cursor-pointer overflow-hidden rounded-xl transition-all duration-300 sm:rounded-2xl',
-        'border-border/50 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg',
-        fresh && 'border-success/30 shadow-[0_0_16px_hsl(var(--success)/0.1)]',
-        isSelected &&
-          'border-primary/50 shadow-[0_0_20px_hsl(var(--primary)/0.15)] ring-2 ring-primary',
+        productCardStyles.container,
+        fresh && productCardStyles.recent,
+        isSelected && productCardStyles.selected,
       )}
       onClick={selectionMode ? onToggleSelect : onClick}
     >
+
       <CardContent className="p-0">
         {/* Image */}
         <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-muted/50 to-muted/30">
@@ -139,7 +138,7 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
         </div>
 
         {/* Info section — matching catalog ProductCard */}
-        <div className="relative space-y-2 bg-card p-2.5 sm:space-y-3 sm:p-4">
+        <div className={productCardStyles.infoSection}>
           {/* SKU + Supplier */}
           <div className="flex items-center justify-between gap-2">
             {product.product_sku && (
@@ -156,13 +155,13 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
           </div>
 
           {/* Product name */}
-          <h3 className="line-clamp-2 min-h-[2.25rem] font-display text-sm font-semibold leading-snug text-foreground transition-colors duration-300 group-hover:text-primary sm:min-h-[2.75rem] sm:text-base">
+          <h3 className={productCardStyles.title}>
             {product.product_name}
           </h3>
 
           {/* Price + Stock */}
-          <div className="flex items-end justify-between pt-0.5 sm:pt-1">
-            <div>
+          <div className={productCardStyles.priceStockSection}>
+            <div className={productCardStyles.priceContainer}>
               {product.base_price !== null && product.base_price > 0 ? (
                 <>
                   <p className="mb-0.5 text-[10px] text-muted-foreground sm:text-xs">A partir de</p>
@@ -174,6 +173,7 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
                 <span className="text-xs text-muted-foreground">Preço sob consulta</span>
               )}
             </div>
+
             <div className="flex flex-col items-end gap-0.5 sm:gap-1">
               <span
                 className={cn(
@@ -195,7 +195,7 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
 
           {/* Category badge */}
           {product.category_name && (
-            <div className="mt-0.5 flex flex-wrap gap-1.5 border-t border-primary/20 pt-1.5">
+            <div className={productCardStyles.categoryBadgeSection}>
               <span className="flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-0.5 text-[10px] font-semibold text-primary shadow-sm shadow-primary/10 sm:text-xs">
                 <FolderTree className="h-2.5 w-2.5" aria-hidden="true" />
                 {product.category_name}
@@ -204,7 +204,8 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
           )}
 
           {/* Vendas 30d sparkline */}
-          <div className="border-t border-border/30 pt-1.5 sm:pt-2">
+          <div className={productCardStyles.sparklineSection}>
+
             <div className="mb-0.5 flex items-center justify-between">
               <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground sm:text-[10px]">
                 Vendas 30d

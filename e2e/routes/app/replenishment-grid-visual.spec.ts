@@ -5,11 +5,23 @@ test.describe('Replenishment Grid Visual Validation', () => {
     // Navigate to Replenishments page
     await page.goto('/reposicao');
     
-    // Wait for the grid to be visible
+    // Wait for the grid to be visible and data to be loaded
     await page.waitForSelector('div[role="list"]');
+    // Pequena pausa para garantir que a virtualização e animações estabilizem
+    await page.waitForTimeout(1000);
+  });
+
+  test('should match baseline screenshot', async ({ page }) => {
+    const grid = page.locator('div[role="list"]');
+    // Captura screenshot do grid para comparação visual
+    await expect(grid).toHaveScreenshot('replenishment-grid.png', {
+      maxDiffPixelRatio: 0.05, // Tolera pequenas variações de anti-aliasing
+    });
   });
 
   test('should have consistent vertical and horizontal gaps', async ({ page }) => {
+
+
     // Get all card containers
     const cards = await page.locator('div[role="listitem"]').all();
     
