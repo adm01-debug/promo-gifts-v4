@@ -321,33 +321,24 @@ export function PriceFreshnessBadge({
     // discreto para que o vendedor consiga conferir sem abrir o tooltip.
     const compactDate = priceUpdatedAt ? formatAbsoluteDate(priceUpdatedAt) : null;
     body = (
-      <TooltipProvider delayDuration={700}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span
-              role="status"
-              aria-label={ariaLabel}
-              tabIndex={0}
-              className={cn(
-                'inline-flex items-center gap-1 text-xs font-medium',
-                color,
-                focusRing,
-                className,
-              )}
-            >
-              <Icon className="h-3 w-3" aria-hidden="true" />
-              <span className="tabular-nums">
-                {formatCompactRelative(freshness.daysSinceUpdate)}
-                {compactDate && <span className="text-muted-foreground"> · em {compactDate}</span>}
-                {limitSuffix && <span className="text-muted-foreground">{limitSuffix}</span>}
-              </span>
-            </span>
-          </TooltipTrigger>
-          <TooltipContent side="top">
-            <FreshnessTooltipBody freshness={freshness} priceUpdatedAt={priceUpdatedAt} />
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <span
+        role="status"
+        aria-label={ariaLabel}
+        tabIndex={0}
+        className={cn(
+          'inline-flex items-center gap-1 text-xs font-medium',
+          color,
+          focusRing,
+          className,
+        )}
+      >
+        <Icon className="h-3 w-3" aria-hidden="true" />
+        <span className="tabular-nums">
+          {formatCompactRelative(freshness.daysSinceUpdate)}
+          {compactDate && <span className="text-muted-foreground"> · em {compactDate}</span>}
+          {limitSuffix && <span className="text-muted-foreground">{limitSuffix}</span>}
+        </span>
+      </span>
     );
   } else if (variant === 'pdp') {
     const absolute = priceUpdatedAt ? formatAbsoluteDate(priceUpdatedAt) : null;
@@ -416,34 +407,22 @@ export function PriceFreshnessBadge({
     // referenced to avoid TS unused warning — detalhes vão no tooltip
     void relative;
   } else {
-    // `inline` (default) — usado em PDP/Quick View. Mantém o label do util
-    // ("Atualizado há N dias" / "Preço pode estar defasado (há N dias)") e
-    // anexa a data numérica pt-BR no padrão "em DD/MM/AAAA".
+    // `inline` (default) — usado em PDP/Quick View.
+    // Padronizado para exibir apenas "Atualizado em DD/MM/AAAA" (o essencial),
+    // movendo o label relativo e regras para o tooltip.
     const inlineDate = priceUpdatedAt ? formatAbsoluteDate(priceUpdatedAt) : null;
     body = (
-      <TooltipProvider delayDuration={700}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span
-              role="status"
-              aria-label={ariaLabel}
-              className={cn('inline-flex items-center gap-1.5 text-xs font-medium', color, className)}
-            >
-              <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              <span>
-                {freshness.label}
-                {inlineDate && (
-                  <span className="text-muted-foreground"> · em {inlineDate}</span>
-                )}
-                {limitSuffix && <span className="text-muted-foreground">{limitSuffix}</span>}
-              </span>
-            </span>
-          </TooltipTrigger>
-          <TooltipContent side="top">
-            <FreshnessTooltipBody freshness={freshness} priceUpdatedAt={priceUpdatedAt} />
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <span
+        role="status"
+        aria-label={ariaLabel}
+        className={cn('inline-flex items-center gap-1.5 text-xs font-medium', color, className)}
+      >
+        <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        <span className="tabular-nums">
+          {inlineDate ? `Atualizado em ${inlineDate}` : freshness.label}
+          {limitSuffix && <span className="text-muted-foreground">{limitSuffix}</span>}
+        </span>
+      </span>
     );
   }
 
