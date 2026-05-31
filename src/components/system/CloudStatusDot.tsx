@@ -22,7 +22,7 @@ const CloudStatusDotInner = memo(function CloudStatusDotInner() {
       : 'Cloud status aguardando primeira sondagem';
 
   return (
-    <TooltipProvider delayDuration={1000}>
+    <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
           <span

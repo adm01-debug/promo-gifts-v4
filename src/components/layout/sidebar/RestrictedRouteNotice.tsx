@@ -46,7 +46,7 @@ export function RestrictedRouteNotice({ isCollapsed }: RestrictedRouteNoticeProp
 
   if (isCollapsed) {
     return (
-      <TooltipProvider delayDuration={1000}>
+      <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
             <div

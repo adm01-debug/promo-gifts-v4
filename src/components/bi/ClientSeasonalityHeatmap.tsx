@@ -125,7 +125,7 @@ export function ClientSeasonalityHeatmap({ clientId, ramoAtividade }: Props) {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <TooltipProvider delayDuration={1000}>
+        <TooltipProvider>
           {/* Heatmap */}
           <div className="overflow-x-auto">
             <div className="min-w-[640px] space-y-2">

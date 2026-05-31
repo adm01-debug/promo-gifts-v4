@@ -50,7 +50,7 @@ export function FilterPanelHeader({
       </div>
 
       <div className="flex items-center gap-1.5">
-        <Tooltip delayDuration={1000}>
+        <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant="outline"
@@ -77,7 +77,7 @@ export function FilterPanelHeader({
           </TooltipContent>
         </Tooltip>
 
-        <Tooltip delayDuration={1000}>
+        <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant="outline"

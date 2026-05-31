@@ -37,7 +37,7 @@ export function SuspiciousWarning({
   if (!isSuspicious) return null;
 
   return (
-    <ShadcnTooltipProvider delayDuration={1000}>
+    <ShadcnTooltipProvider>
       <ShadcnTooltip>
         <ShadcnTooltipTrigger asChild>
           <span

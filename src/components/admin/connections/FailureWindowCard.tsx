@@ -90,7 +90,7 @@ export function FailureWindowCard() {
           </div>
         </div>
 
-        <TooltipProvider delayDuration={1000}>
+        <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <span className="inline-flex">

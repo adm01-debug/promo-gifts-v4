@@ -111,7 +111,7 @@ export function HeaderSeveritySummary({ className }: { className?: string }) {
   ];
 
   return (
-    <TooltipProvider delayDuration={1000}>
+    <TooltipProvider>
       <div
         role="group"
         aria-label="Resumo de severidade do hub de Conexões"

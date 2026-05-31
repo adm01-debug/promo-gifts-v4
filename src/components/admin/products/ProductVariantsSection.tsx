@@ -123,7 +123,7 @@ export function ProductVariantsSection({
 
       {/* Swatches */}
       {m.variants.length > 0 && (
-        <TooltipProvider delayDuration={1000}>
+        <TooltipProvider>
           <div className="flex flex-wrap gap-2.5">
             {m.variants.map((v) => {
               const hex = v.color_hex;

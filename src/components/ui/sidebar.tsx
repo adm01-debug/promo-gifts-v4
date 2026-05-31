@@ -119,7 +119,7 @@ const SidebarProvider = React.forwardRef<
 
     return (
       <SidebarContext.Provider value={contextValue}>
-        <TooltipProvider delayDuration={1000}>
+        <TooltipProvider>
           <div
             style={
               {
