@@ -1,3 +1,8 @@
+/**
+ * @deprecated Bridge `external-db-bridge` descomissionada (kill-switch OFF desde 2026-05-30).
+ * Este arquivo é mantido porque external-db-bridge/index.ts ainda importa dele.
+ * Será removido completamente na Fase 4 (descomissão da bridge).
+ */
 // supabase/functions/_shared/external-db-config.ts
 // Table whitelists, permissions, types for external-db-bridge
 

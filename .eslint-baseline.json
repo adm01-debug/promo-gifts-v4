@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-31T15:01:11.510Z",
-  "totalErrors": 80,
+  "generatedAt": "2026-05-31T22:10:14.265Z",
+  "totalErrors": 66,
   "counts": {
     "src/components/access/DevAccessDeniedPage.tsx": {
       "react-hooks/exhaustive-deps": 1
@@ -129,9 +129,6 @@
     "src/components/notifications/badge-stats/EfficiencyGrid.tsx": {
       "@typescript-eslint/no-unused-vars": 3
     },
-    "src/components/novelties/NoveltyCards.tsx": {
-      "@typescript-eslint/no-unused-vars": 1
-    },
     "src/components/novelties/NoveltyStatsCards.tsx": {
       "@typescript-eslint/no-unused-vars": 1
     },
@@ -144,17 +141,11 @@
     "src/components/products/BulkActionBar.tsx": {
       "@typescript-eslint/naming-convention": 1
     },
-    "src/components/products/EnhancedProductCard.tsx": {
-      "@typescript-eslint/no-unused-vars": 4
-    },
-    "src/components/products/NoveltyBadge.tsx": {
-      "@typescript-eslint/no-unused-vars": 6
+    "src/components/products/PriceFreshnessBadge.tsx": {
+      "@typescript-eslint/no-unused-vars": 1
     },
     "src/components/products/ProductCardActions.tsx": {
       "@typescript-eslint/naming-convention": 1
-    },
-    "src/components/products/ProductCardImage.tsx": {
-      "@typescript-eslint/no-unused-vars": 2
     },
     "src/components/products/ProductCustomizationOptions.tsx": {
       "react-hooks/exhaustive-deps": 1
@@ -300,10 +291,6 @@
     "src/components/ui/DataCard.tsx": {
       "@typescript-eslint/naming-convention": 1
     },
-    "src/components/ui/OptimizedImage.tsx": {
-      "@typescript-eslint/no-non-null-assertion": 1,
-      "no-console": 3
-    },
     "src/components/ui/ShortcutsHelpDialog.tsx": {
       "@typescript-eslint/naming-convention": 1
     },
@@ -376,6 +363,9 @@
     "src/lib/error-reporter.ts": {
       "@typescript-eslint/naming-convention": 1,
       "@typescript-eslint/no-non-null-assertion": 1
+    },
+    "src/lib/external-db/rpc-native.ts": {
+      "@typescript-eslint/no-unused-vars": 1
     },
     "src/lib/feature-flags.ts": {
       "@typescript-eslint/no-non-null-assertion": 1
@@ -454,11 +444,6 @@
     "src/pages/tools/DropboxBrowserPage.tsx": {
       "react-hooks/exhaustive-deps": 1
     },
-    "src/pages/tools/OptimizedImageDemo.tsx": {
-      "@typescript-eslint/no-explicit-any": 1,
-      "@typescript-eslint/no-unused-vars": 1,
-      "react-hooks/exhaustive-deps": 1
-    },
     "src/pages/tools/SimuladorWizard.tsx": {
       "react-hooks/exhaustive-deps": 1
     },
@@ -478,9 +463,6 @@
     "src/tests/CatalogSortingE2E.test.ts": {
       "@typescript-eslint/no-unused-vars": 1
     },
-    "src/tests/ProductFetch.test.ts": {
-      "@typescript-eslint/no-explicit-any": 1
-    },
     "src/tests/SidebarReorganized.test.tsx": {
       "@typescript-eslint/no-explicit-any": 1
     },
@@ -489,10 +471,6 @@
     },
     "src/utils/performance.ts": {
       "@typescript-eslint/no-unused-vars": 2,
-      "no-console": 1
-    },
-    "src/utils/security-audit.ts": {
-      "@typescript-eslint/no-unused-vars": 1,
       "no-console": 1
     }
   }
