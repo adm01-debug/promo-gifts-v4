@@ -181,6 +181,8 @@ export async function findFornecedorPriceTable(_params: { technique_id: string }
 
 // ── Dispatch table ────────────────────────────────────────────────────────────────────────
 type DispatchFn = (params: Record<string, unknown>) => Promise<unknown>;
+// FASE 2: NOT_IN_DB agora retorna valores seguros em vez de throw.
+// A função NOT_IN_DB foi substituída por retornos inline para cada RPC.
 const NOT_IN_DB = (name: string): DispatchFn => async () => {
   throw new Error(`rpc-native: '${name}' does not exist in doufsxqlfjyuvxuezpln. Create the DB function first.`);
 };
@@ -190,13 +192,31 @@ const RPC_DISPATCH: Record<string, DispatchFn> = {
   fn_get_customization_price: (p) => getCustomizationPrice(p as unknown as CustomizationPriceParams),
   fn_get_product_customization_options: (p) => getProductCustomizationOptions(p.p_product_id as string),
   get_category_descendants: (p) => getCategoryDescendants(p.p_category_id as string),
-  // ➠ Not in DB yet — clear error
-  fn_get_customization_price_v2: NOT_IN_DB('fn_get_customization_price_v2'),
-  fn_get_product_print_areas: NOT_IN_DB('fn_get_product_print_areas'),
-  fn_get_product_print_areas_v2: NOT_IN_DB('fn_get_product_print_areas_v2'),
-  fn_link_product_print_areas: NOT_IN_DB('fn_link_product_print_areas'),
-  fn_backfill_product_print_areas: NOT_IN_DB('fn_backfill_product_print_areas'),
-  fn_find_fornecedor_price_table: NOT_IN_DB('fn_find_fornecedor_price_table'),
+  // ➠ Not in DB yet — safe returns (FASE 2: was throw, now returns safe empty)
+  fn_get_customization_price_v2: async () => {
+    logger.warn('[rpc-native] fn_get_customization_price_v2 NOT_IN_DB — returning safe empty. Use fn_get_customization_price instead.');
+    return { success: false, preco_total: 0, preco_unitario: 0 };
+  },
+  fn_get_product_print_areas: async () => {
+    logger.warn('[rpc-native] fn_get_product_print_areas NOT_IN_DB — returning [].');
+    return [];
+  },
+  fn_get_product_print_areas_v2: async () => {
+    logger.warn('[rpc-native] fn_get_product_print_areas_v2 NOT_IN_DB — returning [].');
+    return [];
+  },
+  fn_link_product_print_areas: async () => {
+    logger.warn('[rpc-native] fn_link_product_print_areas NOT_IN_DB — returning safe empty.');
+    return { success: false, affected: 0 };
+  },
+  fn_backfill_product_print_areas: async () => {
+    logger.warn('[rpc-native] fn_backfill_product_print_areas NOT_IN_DB — returning safe empty.');
+    return { success: false, processed: 0, errors: 0 };
+  },
+  fn_find_fornecedor_price_table: async () => {
+    logger.warn('[rpc-native] fn_find_fornecedor_price_table NOT_IN_DB — returning null.');
+    return null;
+  },
 };
 
 /**

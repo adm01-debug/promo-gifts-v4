@@ -68,6 +68,11 @@ const REST_NATIVE_SAFE_TABLES = new Set<string>([
   'v_products_missing_primary_image',
   'v_products_with_tags',
   'v_products_without_images',
+
+  // ── FASE 2 ETAPA 5+6+9: aliases fantasma (resolvidos via TABLE_ALIASES) ──
+  'customization_price_tables',   // → tabela_preco_gravacao_oficial (17 refs)
+  'tecnica_gravacao_variante',    // → tabela_preco_gravacao_oficial (9 refs)
+  'v_products_without_videos',    // → v_products_without_video (typo fix)
 ]);
 
 const TABLE_ALIASES: Record<string, string> = {
@@ -77,6 +82,10 @@ const TABLE_ALIASES: Record<string, string> = {
   tecnica_gravacao: 'tabela_preco_gravacao_oficial',
   customization_price_tiers: 'tabela_preco_gravacao_oficial_faixa',
   personalization_techniques: 'tecnicas_gravacao',
+  // ── FASE 2: aliases para tabelas/views fantasma ──
+  customization_price_tables: 'tabela_preco_gravacao_oficial',   // ETAPA 5: 17 refs, bridge → tabela_preco_fornecedores_gravacao (não existe)
+  tecnica_gravacao_variante: 'tabela_preco_gravacao_oficial',    // ETAPA 6: 9 refs, bridge alias para variantes
+  v_products_without_videos: 'v_products_without_video',         // ETAPA 9: typo fix (view real é sem 's')
 };
 
 // ── Search columns ────────────────────────────────────────────────────────────────
@@ -102,6 +111,7 @@ const SEARCH_COLUMNS: Record<string, string> = {
   variation_types: 'name',
   product_groups: 'description',  // FIX: was 'name', no such column — actual is 'description'
   collections: 'name',            // ETAPA 4: collections.name (text) — verified in DB
+  customization_price_tables: 'nome',  // → resolvido para tabela_preco_gravacao_oficial.nome
 };
 
 function resolveSearchColumn(options: Pick<InvokeOptions, 'table'>): string | null {
@@ -135,6 +145,21 @@ const COLUMN_ALIASES_BY_TABLE: Record<string, Record<string, string>> = {
     parent_id: 'ramo_atividade_id', ramo_atividade_id: 'ramo_atividade_id',
     is_active: 'ativo', ativo: 'ativo',
   },
+  // ── FASE 2 ETAPA 5: customization_price_tables → tabela_preco_gravacao_oficial ──
+  // Callers esperam nomes EN, tabela real usa PT. Mapeamento verificado contra DB.
+  tabela_preco_gravacao_oficial: {
+    table_code: 'codigo_tabela', codigo_tabela: 'codigo_tabela',
+    table_code_option: 'codigo_tabela',
+    table_fullcode: 'codigo_tabela',
+    customization_type_name: 'grupo_tecnica', grupo_tecnica: 'grupo_tecnica',
+    is_active: 'ativo', ativo: 'ativo',
+    max_colors: 'max_cores', max_cores: 'max_cores',
+    setup_price: 'custo_setup', custo_setup: 'custo_setup',
+    handling_price: 'custo_manuseio', custo_manuseio: 'custo_manuseio',
+    price_by_color: 'cobra_por_cor', cobra_por_cor: 'cobra_por_cor',
+    price_by_area: 'usa_faixa_dimensional', usa_faixa_dimensional: 'usa_faixa_dimensional',
+    name: 'nome', nome: 'nome',
+  },
 };
 
 function remapFilters(table: string, filters?: Record<string, unknown>): Record<string, unknown> | undefined {
@@ -166,6 +191,25 @@ function mapRows(table: string, rows: unknown[]): unknown[] {
     return rows.map((r) => {
       const row = r as Record<string, unknown>;
       return { ...row, name: row.nome ?? row.name };
+    });
+  }
+  if (table === 'tabela_preco_gravacao_oficial') {
+    return rows.map((r) => {
+      const row = r as Record<string, unknown>;
+      return {
+        ...row,
+        table_code: row.codigo_tabela,
+        table_code_option: row.codigo_tabela,
+        table_fullcode: row.codigo_tabela,
+        customization_type_name: row.grupo_tecnica,
+        is_active: row.ativo,
+        max_colors: row.max_cores,
+        setup_price: row.custo_setup,
+        handling_price: row.custo_manuseio,
+        price_by_color: row.cobra_por_cor,
+        price_by_area: row.usa_faixa_dimensional,
+        name: row.nome,
+      };
     });
   }
   return rows;
@@ -398,6 +442,8 @@ const WRITE_TABLE_ALIASES: Record<string, string> = {
   tecnica_gravacao: 'tabela_preco_gravacao_oficial',
   customization_price_tiers: 'tabela_preco_gravacao_oficial_faixa',
   personalization_techniques: 'tecnicas_gravacao',
+  // ── FASE 2: alias de escrita para variantes fantasma ──
+  tecnica_gravacao_variante: 'tabela_preco_gravacao_oficial',
 };
 
 // AUDIT FIX: removed fornecedor_gravacao and tecnica_gravacao_variante —
@@ -414,6 +460,12 @@ const REST_NATIVE_WRITE_TABLES = new Set<string>([
   // Product media & related (previously routed via bridge — now REST native)
   'product_images', 'product_videos', 'product_materials',
   'product_kit_components', 'kit_component_media', 'kit_component_print_areas',
+  // ── FASE 2 ETAPA 6+10: WRITE para gravação ──
+  'tecnica_gravacao_variante',    // alias → tabela_preco_gravacao_oficial
+  'tabela_preco_gravacao_oficial',
+  'tabela_preco_gravacao_oficial_faixa',
+  'tecnicas_gravacao',
+  'tags',
 ]);
 
 const REST_WRITE_OPS = new Set<string>(['insert', 'update', 'delete', 'upsert', 'batch_insert']);
