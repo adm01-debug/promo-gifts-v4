@@ -33,61 +33,61 @@ const MOCK_PRODUCTS: RawProduct[] = [
     name: 'Smartwatch Ultra Pro X',
     sku: 'SW-001',
     primary_image_url: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=800&q=80',
-    sale_price: 299.90,
+    sale_price: 299.9,
     category_id: 'cat-1',
     supplier_id: 'sup-1',
     created_at: getMockDate(0), // Hoje
     stock_quantity: 45,
-    min_quantity: 10
+    min_quantity: 10,
   },
   {
     id: 'mock-2',
     name: 'Caderno Moleskine Executive',
     sku: 'NB-202',
     primary_image_url: 'https://images.unsplash.com/photo-1544816153-0973059446d3?w=800&q=80',
-    sale_price: 89.00,
+    sale_price: 89.0,
     category_id: 'cat-2',
     supplier_id: 'sup-2',
     created_at: getMockDate(2), // 2 dias atrás (Últimos 7 dias)
     stock_quantity: 5,
-    min_quantity: 15
+    min_quantity: 15,
   },
   {
     id: 'mock-3',
     name: 'Garrafa Térmica Titanium',
     sku: 'BT-500',
     primary_image_url: 'https://images.unsplash.com/photo-1602143394807-a2536fe0589a?w=800&q=80',
-    sale_price: 124.50,
+    sale_price: 124.5,
     category_id: 'cat-4',
     supplier_id: 'sup-3',
     created_at: getMockDate(5), // 5 dias atrás (Últimos 7 dias)
     stock_quantity: 120,
-    min_quantity: 20
+    min_quantity: 20,
   },
   {
     id: 'mock-4',
     name: 'Fone Bluetooth Noise Cancelling',
     sku: 'HP-99',
     primary_image_url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80',
-    sale_price: 450.00,
+    sale_price: 450.0,
     category_id: 'cat-1',
     supplier_id: 'sup-1',
     created_at: getMockDate(12), // 12 dias atrás (Últimos 15 dias)
     stock_quantity: 0,
-    min_quantity: 5
+    min_quantity: 5,
   },
   {
     id: 'mock-5',
     name: 'Kit Canetas Premium Metal',
     sku: 'PN-05',
     primary_image_url: 'https://images.unsplash.com/photo-1585336261022-680e295ce3fe?w=800&q=80',
-    sale_price: 45.00,
+    sale_price: 45.0,
     category_id: 'cat-2',
     supplier_id: 'sup-2',
     created_at: getMockDate(25), // 25 dias atrás (Expira logo)
     stock_quantity: 300,
-    min_quantity: 50
-  }
+    min_quantity: 50,
+  },
 ];
 
 /**
@@ -185,7 +185,7 @@ async function enrichNovelties(novelties: NoveltyWithDetails[]): Promise<Novelty
   const supplierIds = [...new Set(novelties.map((n) => n.supplier_id).filter(Boolean))] as string[];
 
   // Fallback para mock se os IDs forem do mock
-  const isMock = novelties.some(n => n.product_id.startsWith('mock-'));
+  const isMock = novelties.some((n) => n.product_id.startsWith('mock-'));
 
   const [catResult, supResult] = await Promise.all([
     !isMock && categoryIds.length > 0
@@ -196,7 +196,7 @@ async function enrichNovelties(novelties: NoveltyWithDetails[]): Promise<Novelty
           filters: { id: `in.(${categoryIds.join(',')})` },
           limit: 500,
         })
-      : { records: isMock ? MOCK_CATEGORIES : [] as CategoryRecord[] },
+      : { records: isMock ? MOCK_CATEGORIES : ([] as CategoryRecord[]) },
     !isMock && supplierIds.length > 0
       ? invokeExternalDb<SupplierRecord>({
           table: 'suppliers',
@@ -205,7 +205,7 @@ async function enrichNovelties(novelties: NoveltyWithDetails[]): Promise<Novelty
           filters: { id: `in.(${supplierIds.join(',')})` },
           limit: 200,
         })
-      : { records: isMock ? MOCK_SUPPLIERS : [] as SupplierRecord[] },
+      : { records: isMock ? MOCK_SUPPLIERS : ([] as SupplierRecord[]) },
   ]);
 
   const catMap = new Map(catResult.records.map((c) => [c.id, c.name]));
@@ -398,18 +398,21 @@ export function useNoveltyStats() {
       });
       let topSupplierId: string | null = null;
       let topSupplierCount = 0;
-      supplierCounts.forEach((count, id) => {
+      // for...of (não é closure) → o control-flow do TS rastreia a atribuição e
+      // mantém topSupplierId como string | null após o loop. Com forEach o TS5.4
+      // re-estreita para null (closure invisível ao analisador) → TS2339.
+      for (const [id, count] of supplierCounts) {
         if (count > topSupplierCount) {
           topSupplierCount = count;
           topSupplierId = id;
         }
-      });
+      }
 
       // Resolve top supplier name
       let topSupplierName: string | null = null;
       if (topSupplierId) {
         if (topSupplierId.startsWith('sup-')) {
-          topSupplierName = MOCK_SUPPLIERS.find(s => s.id === topSupplierId)?.name || null;
+          topSupplierName = MOCK_SUPPLIERS.find((s) => s.id === topSupplierId)?.name || null;
         } else {
           try {
             const supResult = await invokeExternalDb<{ name: string }>({

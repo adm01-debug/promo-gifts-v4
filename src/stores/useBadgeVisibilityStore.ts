@@ -1,6 +1,18 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
+import type { Json } from '@/integrations/supabase/types';
+
+/**
+ * Extrai com segurança um objeto de preferências do valor JSON do perfil.
+ * `profile.preferences` é tipado como Json (pode ser primitivo, array ou null),
+ * então só fazemos spread quando for um objeto puro — evita TS2698 em build e
+ * a criação de chaves-lixo em runtime.
+ */
+const asPrefsObject = (value: unknown): Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
 
 /**
  * Define as configurações de visibilidade por tema (light/dark).
@@ -114,9 +126,9 @@ export const useBadgeVisibilityStore = create<BadgeVisibilityStore>()(
               .from('profiles')
               .update({
                 preferences: {
-                  ...(profile?.preferences || {}),
+                  ...asPrefsObject(profile?.preferences),
                   badge_visibility: newRouteSettings,
-                },
+                } as unknown as Json,
               })
               .eq('user_id', userId);
 
@@ -169,9 +181,9 @@ export const useBadgeVisibilityStore = create<BadgeVisibilityStore>()(
               .from('profiles')
               .update({
                 preferences: {
-                  ...(profile?.preferences || {}),
+                  ...asPrefsObject(profile?.preferences),
                   badge_visibility: newRouteSettings,
-                },
+                } as unknown as Json,
               })
               .eq('user_id', userId);
 
