@@ -31,14 +31,14 @@ const fadeUp = {
 };
 
 export default function AdminTemasPage() {
-  const { actualTheme, setTheme: setAppTheme } = useTheme();
+  const { actualTheme } = useTheme();
   const [config, setConfig] = useState<ThemeConfig>(loadThemeConfig);
   const [savedConfig, setSavedConfig] = useState<ThemeConfig>(loadThemeConfig);
 
   const hasUnsavedChanges = JSON.stringify(config) !== JSON.stringify(savedConfig);
 
-  const applyAll = useCallback((cfg: ThemeConfig, mode: 'light' | 'dark') => {
-    applyThemePreset(cfg.presetId, mode);
+  const applyAll = useCallback((cfg: ThemeConfig) => {
+    applyThemePreset(cfg.presetId, 'dark');
     applyRadius(cfg.radius);
   }, []);
 
@@ -46,8 +46,8 @@ export default function AdminTemasPage() {
   const gxPresets = useMemo(() => THEME_PRESETS.filter((p) => p.category === 'gx'), []);
 
   useEffect(() => {
-    applyAll(config, actualTheme);
-  }, [config, actualTheme, applyAll]);
+    applyAll(config);
+  }, [config, applyAll]);
 
   const updateConfig = (partial: Partial<ThemeConfig>) => {
     let next = { ...config, ...partial };
@@ -64,15 +64,8 @@ export default function AdminTemasPage() {
     saveThemeConfig(next);
   };
 
-  const handleModeChange = (mode: 'light' | 'dark' | 'system') => {
-    if (mode === 'system') {
-      setAppTheme('auto');
-      updateConfig({ mode: 'auto' });
-    } else {
-      setAppTheme(mode);
-      updateConfig({ mode });
-    }
-  };
+  // Mode changes are no longer supported
+  const handleModeChange = (_mode: any) => {};
 
   const handleSave = () => {
     saveThemeConfig(config);
@@ -88,7 +81,7 @@ export default function AdminTemasPage() {
     setConfig(def);
     setSavedConfig(def);
     saveThemeConfig(def);
-    setAppTheme('auto');
+    // setAppTheme removed as theme is fixed
     toast.success('Tema restaurado ao padrão');
   };
 
@@ -97,11 +90,7 @@ export default function AdminTemasPage() {
     setConfig(imported);
     saveThemeConfig(imported);
     setSavedConfig(imported);
-    if (imported.mode === 'auto') {
-      setAppTheme('auto');
-    } else {
-      setAppTheme(imported.mode);
-    }
+    // setAppTheme removed as theme is fixed
   };
 
   const currentMode = config.mode === 'auto' ? 'system' : config.mode;
@@ -150,35 +139,6 @@ export default function AdminTemasPage() {
           </div>
         </motion.div>
 
-        {/* Color Mode */}
-        <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}>
-          <Card>
-            <CardContent className="p-5 sm:p-6">
-              <div className="mb-4 flex items-center gap-2">
-                <Sun className="h-4 w-4 text-primary" />
-                <h2 className="font-display text-sm font-semibold text-foreground">Modo de Cor</h2>
-              </div>
-              <div className="flex gap-2 sm:gap-3">
-                {[
-                  { key: 'light' as const, icon: Sun, label: 'Claro' },
-                  { key: 'dark' as const, icon: Moon, label: 'Escuro' },
-                  { key: 'system' as const, icon: Monitor, label: 'Sistema' },
-                  // eslint-disable-next-line @typescript-eslint/naming-convention -- componente JSX precisa começar com letra maiúscula
-                ].map(({ key, icon: Icon, label }) => (
-                  <Button
-                    key={key}
-                    variant={currentMode === key ? 'default' : 'outline'}
-                    size="sm"
-                    className="gap-2 px-4 sm:px-5"
-                    onClick={() => handleModeChange(key)}
-                  >
-                    <Icon className="h-4 w-4" /> {label}
-                  </Button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
 
         {/* Classic Presets Grid */}
         <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2}>
