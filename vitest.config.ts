@@ -24,7 +24,7 @@ export default defineConfig({
     typecheck: {
       enabled: false,
     },
-    exclude: ['node_modules', 'dist', '.idea', '.git', '.cache'],
+    exclude: ['node_modules', 'dist', '.idea', '.git', '.cache', 'tests/__deprecated__'],
     // CI runners (GitHub Actions ubuntu-latest) têm 2 vCPU (4 vThreads).
     // Default thread pool causava timeout de 75min — mitigado com
     // maxThreads: 2 para evitar contenção.

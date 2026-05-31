@@ -22,13 +22,6 @@ import './App.css';
 
 const queryClient = createQueryClient();
 const skipOptionalRootInfra = isSupabaseLighthousePlaceholder();
-const LazyKillSwitchBanner = skipOptionalRootInfra
-  ? null
-  : lazyWithRetry(() =>
-      import('@/components/system/KillSwitchBanner').then((m) => ({
-        default: m.KillSwitchBanner,
-      })),
-    );
 const LazyCloudStatusBanner = skipOptionalRootInfra
   ? null
   : lazyWithRetry(() =>
@@ -36,25 +29,11 @@ const LazyCloudStatusBanner = skipOptionalRootInfra
         default: m.CloudStatusBanner,
       })),
     );
-const LazyBridgeStatusBanner = skipOptionalRootInfra
-  ? null
-  : lazyWithRetry(() =>
-      import('@/components/BridgeStatusBanner').then((m) => ({
-        default: m.BridgeStatusBanner,
-      })),
-    );
 const LazyGlobalOfflineAlert = skipOptionalRootInfra
   ? null
   : lazyWithRetry(() =>
       import('@/components/common/GlobalOfflineAlert').then((m) => ({
         default: m.GlobalOfflineAlert,
-      })),
-    );
-const LazyDevOnlyBridgeOverlay = skipOptionalRootInfra
-  ? null
-  : lazyWithRetry(() =>
-      import('@/components/dev/DevOnlyBridgeOverlay').then((m) => ({
-        default: m.DevOnlyBridgeOverlay,
       })),
     );
 const LazyCloudStatusDot = skipOptionalRootInfra
@@ -78,15 +57,6 @@ function OptionalCloudStatusDot() {
   );
 }
 
-function OptionalKillSwitchBanner() {
-  if (!LazyKillSwitchBanner) return null;
-  return (
-    <Suspense fallback={null}>
-      <LazyKillSwitchBanner />
-    </Suspense>
-  );
-}
-
 function OptionalCloudStatusBanner() {
   if (!LazyCloudStatusBanner) return null;
   return (
@@ -96,29 +66,11 @@ function OptionalCloudStatusBanner() {
   );
 }
 
-function OptionalBridgeStatusBanner() {
-  if (!LazyBridgeStatusBanner) return null;
-  return (
-    <Suspense fallback={null}>
-      <LazyBridgeStatusBanner />
-    </Suspense>
-  );
-}
-
 function OptionalGlobalOfflineAlert() {
   if (!LazyGlobalOfflineAlert) return null;
   return (
     <Suspense fallback={null}>
       <LazyGlobalOfflineAlert />
-    </Suspense>
-  );
-}
-
-function OptionalDevOnlyBridgeOverlay() {
-  if (!LazyDevOnlyBridgeOverlay) return null;
-  return (
-    <Suspense fallback={null}>
-      <LazyDevOnlyBridgeOverlay />
     </Suspense>
   );
 }
@@ -142,12 +94,9 @@ const App = () => {
                       <EnhancedErrorBoundary>
                         <RootInteractivityGuard />
                         <Sonner />
-                        <OptionalKillSwitchBanner />
                         <OptionalCloudStatusBanner />
                         <OptionalCloudStatusDot />
-                        <OptionalBridgeStatusBanner />
                         <OptionalGlobalOfflineAlert />
-                        <OptionalDevOnlyBridgeOverlay />
                         <RouteScrollReset />
                         <RoutePrefetcher />
                         <AppRoutes />

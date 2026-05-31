@@ -1,8 +1,4 @@
 import './lib/console-filter';
-// Bridge interceptor: patches supabase.functions.invoke to route
-// external-db-bridge calls through REST native. Must be imported
-// BEFORE any React component renders.
-import './lib/external-db/bridge-interceptor';
 import { Fragment } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HelmetProvider } from 'react-helmet-async';
