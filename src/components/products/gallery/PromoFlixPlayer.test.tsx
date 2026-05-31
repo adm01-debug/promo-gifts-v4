@@ -406,10 +406,12 @@ describe('PromoFlixPlayer Automated Tests', () => {
   });
 
   describe('Regression Tests for Identified Bugs', () => {
-    it('should have crossOrigin="anonymous" on the video element for CORS support', () => {
+    it('should NOT have crossOrigin on the video element (removed for Cloudflare Stream CORS compatibility)', () => {
       render(<PromoFlixPlayer src="test.mp4" />);
       const video = document.querySelector('video');
-      expect(video?.getAttribute('crossorigin')).toBe('anonymous');
+      // crossOrigin was intentionally removed: Cloudflare Stream doesn't return CORS
+      // headers for dynamic preview origins, which blocked HLS manifest fetch.
+      expect(video?.getAttribute('crossorigin')).toBeNull();
     });
 
     it('should clean up src and load() the video element on unmount to prevent residual errors', () => {

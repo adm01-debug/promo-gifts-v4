@@ -342,14 +342,14 @@ describe('BUG-14 -- usePrintAreas PostgREST para todas as funcoes', () => {
     ).toHaveLength(0);
   });
 
-  it('useTechniques: from(tecnica_gravacao)', async () => {
+  it('useTechniques: from(tecnicas_gravacao)', async () => {
     mockFromAlways({ data: [], error: null });
     renderHookWithProviders(() => useTechniques());
     vi.useRealTimers();
     await waitFor(() => {
       expect(
         (supabase.from as ReturnType<typeof vi.fn>).mock.calls
-          .some(([t]: [string]) => t === 'tecnica_gravacao')
+          .some(([t]: [string]) => t === 'tecnicas_gravacao')
       ).toBe(true);
     });
   });
