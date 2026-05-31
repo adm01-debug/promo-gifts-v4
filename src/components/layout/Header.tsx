@@ -16,7 +16,7 @@ import {
   TagsIcon,
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -56,12 +56,24 @@ interface HeaderProps {
 export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: HeaderProps) {
   const { theme, actualTheme, setTheme, toggleTheme, tooltipStyle, setTooltipStyle, isFallback } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const favoriteCount = useFavoritesStore((s) => s.favoriteCount);
   const compareCount = useComparisonStore((s) => s.compareCount);
-  const badgesEnabled = useBadgeVisibilityStore((s) => s.badgesEnabled);
-  const toggleBadges = useBadgeVisibilityStore((s) => s.toggleBadges);
   const { user, profile, role, signOut, rolesLoaded } = useAuth();
+  
+  const isBadgeEnabled = useBadgeVisibilityStore((s) => s.isBadgeEnabled);
+  const toggleBadges = useBadgeVisibilityStore((s) => s.toggleBadges);
+  const initializeFromProfile = useBadgeVisibilityStore((s) => s.initializeFromProfile);
+  
+  const badgesEnabled = isBadgeEnabled(location.pathname, actualTheme);
+
+  // Sync profile preferences with store
+  useEffect(() => {
+    if (profile?.preferences) {
+      initializeFromProfile(profile.preferences);
+    }
+  }, [profile?.preferences, initializeFromProfile]);
   const currentSection = useCurrentSection();
   const { restartTour } = useOnboardingContext();
   const setOpenSearch = useSearchStore((s) => s.setOpen);
@@ -348,7 +360,7 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={toggleBadges}
+                  onClick={() => toggleBadges(location.pathname, actualTheme, user?.id)}
                   aria-label={badgesEnabled ? 'Ocultar badges dos produtos' : 'Exibir badges dos produtos'}
                   aria-pressed={badgesEnabled}
                   className={cn(
