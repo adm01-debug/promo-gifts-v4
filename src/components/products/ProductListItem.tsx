@@ -449,7 +449,6 @@ export const ProductListItem = memo(function ProductListItem({
             {product.onSale && (
               <ProductStatusBadge 
                 type="promotion" 
-                value="-20%" 
                 size="sm" 
                 onClick={() => handleStatusClick('promotion')}
               />

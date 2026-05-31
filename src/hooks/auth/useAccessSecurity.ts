@@ -23,7 +23,7 @@ export interface CountryWhitelistEntry {
 export interface AccessBlockedLog {
   id: string;
   user_email: string | null;
-  ip_address: unknown;
+  ip_address: string | null;
   error_message: string | null;
   operation: string;
   table_name: string;

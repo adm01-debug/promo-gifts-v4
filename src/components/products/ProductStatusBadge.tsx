@@ -79,7 +79,7 @@ export function ProductStatusBadge({
       case 'kit':
         return 'bg-gradient-to-r from-warning to-warning/80 text-warning-foreground shadow-md';
       case 'promotion':
-        return 'bg-secondary text-secondary-foreground shadow-md hover:bg-secondary/90';
+        return 'animate-pulse bg-gradient-to-r from-destructive to-destructive/80 text-destructive-foreground shadow-md';
       case 'novelty': {
         const daysElapsed = daysRemaining !== undefined ? 30 - daysRemaining : 0;
         if (daysElapsed <= 5) {
