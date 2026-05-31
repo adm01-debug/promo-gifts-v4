@@ -32,6 +32,7 @@ const REST_NATIVE_SAFE_TABLES = new Set<string>([
   'kit_component_print_areas',
   // Product tags
   'product_tags',
+  'tags',
   // Suppliers (via VIEW)
   'suppliers',
   'v_suppliers_public',

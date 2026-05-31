@@ -1,7 +1,7 @@
 -- PASSO 49: Registrar kill switches para as funções críticas (T19)
 -- Todas habilitadas por padrão — desabilitar via UPDATE para contenção rápida
 
-INSERT INTO system_kill_switches (switch_name, enabled, description)
+INSERT INTO system_kill_switches (switch_name, enabled, reason)
 VALUES
   ('edge_crm_db_bridge',       true, 'Kill switch para crm-db-bridge — desabilitar em caso de incidente CRM'),
   ('edge_webhook_dispatcher',  true, 'Kill switch para webhook-dispatcher — desabilitar para parar todos os webhooks'),

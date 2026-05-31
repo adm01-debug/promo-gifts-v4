@@ -16,7 +16,7 @@ interface BadgeVisibilityStore {
    * Exemplo: { "/produtos": { "light": true, "dark": false } }
    */
   routeSettings: Record<string, ThemeSettings>;
-  
+
   /**
    * Estado legado para compatibilidade ou fallback global.
    */
@@ -32,17 +32,22 @@ interface BadgeVisibilityStore {
    * Se um userId for fornecido, sincroniza com o backend.
    */
   toggleBadges: (path: string, theme: string, userId?: string) => Promise<boolean>;
-  
+
   /**
    * Define explicitamente a visibilidade para uma rota/tema.
    */
-  setBadgesEnabled: (path: string, theme: string, enabled: boolean, userId?: string) => Promise<boolean>;
-  
+  setBadgesEnabled: (
+    path: string,
+    theme: string,
+    enabled: boolean,
+    userId?: string,
+  ) => Promise<boolean>;
+
   /**
    * Retorna se os badges devem estar visíveis para a rota e tema informados.
    */
   isBadgeEnabled: (path: string, theme: string) => boolean;
-  
+
   /**
    * Inicializa o store a partir das preferências do perfil do usuário.
    */
@@ -69,28 +74,28 @@ export const useBadgeVisibilityStore = create<BadgeVisibilityStore>()(
       },
 
       toggleBadges: async (path, theme, userId) => {
-        const currentSettings = get().routeSettings[path] || { 
-          light: get().badgesEnabled, 
-          dark: get().badgesEnabled 
+        const currentSettings = get().routeSettings[path] || {
+          light: get().badgesEnabled,
+          dark: get().badgesEnabled,
         };
-        
+
         const isDark = theme === 'dark';
         const nextEnabled = isDark ? !currentSettings.dark : !currentSettings.light;
-        
+
         const nextSettings = {
           ...currentSettings,
-          [isDark ? 'dark' : 'light']: nextEnabled
+          [isDark ? 'dark' : 'light']: nextEnabled,
         };
 
         const newRouteSettings = {
           ...get().routeSettings,
-          [path]: nextSettings
+          [path]: nextSettings,
         };
 
-        set({ 
+        set({
           routeSettings: newRouteSettings,
           badgesEnabled: nextEnabled,
-          syncError: null
+          syncError: null,
         });
 
         if (userId) {
@@ -107,11 +112,11 @@ export const useBadgeVisibilityStore = create<BadgeVisibilityStore>()(
 
             const { error: updateError } = await supabase
               .from('profiles')
-              .update({ 
-                preferences: { 
+              .update({
+                preferences: {
                   ...(profile?.preferences || {}),
-                  badge_visibility: newRouteSettings
-                } 
+                  badge_visibility: newRouteSettings,
+                },
               })
               .eq('user_id', userId);
 
@@ -119,7 +124,10 @@ export const useBadgeVisibilityStore = create<BadgeVisibilityStore>()(
             return true;
           } catch (err) {
             console.error('[BadgeVisibilityStore] Sync failed:', err);
-            set({ syncError: 'Erro ao sincronizar preferências com o servidor. As alterações foram salvas apenas localmente.' });
+            set({
+              syncError:
+                'Erro ao sincronizar preferências com o servidor. As alterações foram salvas apenas localmente.',
+            });
             return false;
           }
         }
@@ -129,21 +137,21 @@ export const useBadgeVisibilityStore = create<BadgeVisibilityStore>()(
       setBadgesEnabled: async (path, theme, enabled, userId) => {
         const currentSettings = get().routeSettings[path] || { light: true, dark: true };
         const isDark = theme === 'dark';
-        
+
         const nextSettings = {
           ...currentSettings,
-          [isDark ? 'dark' : 'light']: enabled
+          [isDark ? 'dark' : 'light']: enabled,
         };
 
         const newRouteSettings = {
           ...get().routeSettings,
-          [path]: nextSettings
+          [path]: nextSettings,
         };
 
-        set({ 
-          routeSettings: newRouteSettings, 
+        set({
+          routeSettings: newRouteSettings,
           badgesEnabled: enabled,
-          syncError: null
+          syncError: null,
         });
 
         if (userId) {
@@ -159,14 +167,14 @@ export const useBadgeVisibilityStore = create<BadgeVisibilityStore>()(
 
             const { error: updateError } = await supabase
               .from('profiles')
-              .update({ 
-                preferences: { 
+              .update({
+                preferences: {
                   ...(profile?.preferences || {}),
-                  badge_visibility: newRouteSettings
-                } 
+                  badge_visibility: newRouteSettings,
+                },
               })
               .eq('user_id', userId);
-            
+
             if (updateError) throw updateError;
             return true;
           } catch (err) {
@@ -185,18 +193,21 @@ export const useBadgeVisibilityStore = create<BadgeVisibilityStore>()(
           !Array.isArray(preferences) &&
           'badge_visibility' in preferences
         ) {
-          set({
-            routeSettings: preferences.badge_visibility as unknown as Record<string, ThemeSettings>,
-            syncError: null,
-          });
+          const bv = (preferences as Record<string, unknown>).badge_visibility;
+          if (bv !== null && typeof bv === 'object' && !Array.isArray(bv)) {
+            set({
+              routeSettings: bv as Record<string, ThemeSettings>,
+              syncError: null,
+            });
+          }
         }
       },
     }),
-    { 
+    {
       name: 'badge-visibility-v2', // Versão 2 para evitar conflitos com o formato anterior
-      partialize: (state) => ({ 
+      partialize: (state) => ({
         routeSettings: state.routeSettings,
-        badgesEnabled: state.badgesEnabled 
+        badgesEnabled: state.badgesEnabled,
       }),
     },
   ),
