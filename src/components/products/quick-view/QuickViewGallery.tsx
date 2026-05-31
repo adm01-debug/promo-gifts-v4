@@ -86,7 +86,7 @@ export function QuickViewGallery({
             srcSet={currentImageSrcSet}
             sizes="(max-width: 768px) 100vw, 50vw"
             alt={currentAlt}
-            title={currentImage?.title_text || productName}
+            
             className="h-full w-full animate-fade-in object-contain p-8"
             loading="eager"
             fetchPriority="high"
