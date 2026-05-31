@@ -120,10 +120,14 @@ export const ProductCardImage = memo(function ProductCardImage({
         src={cardImageUrl}
         alt={activeColorName ? `${product.name} - ${activeColorName}` : product.name}
         title={activeColorName ? `${product.name} - ${activeColorName}` : product.name}
-        className={cn('h-full w-full object-contain transition-all duration-300 ease-out')}
+        className={cn('h-full w-full object-contain')}
         style={
           imageLoaded
-            ? { transform: `scale(${computedImageScale})`, willChange: 'transform' }
+            ? { 
+                transform: `scale(${computedImageScale})`, 
+                willChange: 'transform',
+                transition: 'transform 0.3s ease-out' 
+              }
             : undefined
         }
         onLoad={onImageLoad}
