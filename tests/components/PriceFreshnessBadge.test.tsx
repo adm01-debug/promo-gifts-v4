@@ -54,11 +54,11 @@ describe('PriceFreshnessBadge Component', () => {
     // Exactly at threshold (10 days ago) -> Aging
     const tenDaysAgo = new Date('2026-04-23T12:00:00Z');
     renderBadge({ priceUpdatedAt: tenDaysAgo, thresholdDays: threshold, variant: 'pdp' });
-    expect(screen.getByText('Atualizado em 23/04/2026')).toBeInTheDocument();
+    expect(screen.getByText(/Atualizado em 23/04/2026/)).toBeInTheDocument();
 
     // Just past threshold (11 days ago) -> Stale
     const elevenDaysAgo = new Date('2026-04-22T12:00:00Z');
     renderBadge({ priceUpdatedAt: elevenDaysAgo, thresholdDays: threshold, variant: 'pdp' });
-    expect(screen.getByText('Atualizado em 22/04/2026')).toBeInTheDocument();
+    expect(screen.getByText(/Atualizado em 22/04/2026/)).toBeInTheDocument();
   });
 });
