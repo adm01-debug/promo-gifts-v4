@@ -55,9 +55,9 @@ export function OptimizedImage({
   }, [src, priority]);
 
   return (
-    <div className={cn('relative overflow-hidden bg-muted/30 dark:bg-muted/20', containerClassName)}>
+    <div className={cn('relative overflow-hidden bg-white', containerClassName)}>
       {!isLoaded && !error && (
-        <div className="absolute inset-0 z-0 h-full w-full bg-gradient-to-br from-muted/20 via-muted/40 to-muted/20 animate-pulse" />
+        <div className="absolute inset-0 z-0 h-full w-full bg-white" />
       )}
 
       {error ? (
