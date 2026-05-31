@@ -128,7 +128,8 @@ export function ProductCategoryBadges({
                 className={cn(
                   'cursor-pointer px-2.5 py-1 text-sm font-medium',
                   'border border-border/50 bg-secondary/80 hover:bg-secondary',
-                  'transition-all duration-200 hover:scale-105',
+                  'transition-all duration-300 hover:scale-105 group-hover:shadow-md',
+                  'relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full hover:before:animate-[shimmer_2s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent',
                 )}
               >
                 <span className="mr-1.5">{getIcon(cat)}</span>
