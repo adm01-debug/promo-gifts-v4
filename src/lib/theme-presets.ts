@@ -44,7 +44,12 @@ export interface ThemeModeColors {
   interactive: string;
   divider: string;
 
-  // === ORANGE (maps to primary) ===
+  // === ORANGE (Promo Gifts brand orange — fixed across presets) ===
+  orange: string;
+  'orange-hover': string;
+  'orange-active': string;
+  'orange-glow': string;
+  'orange-foreground': string;
 
   // === SIDEBAR ===
   'sidebar-background': string;
@@ -292,6 +297,12 @@ function buildPreset(p: PresetParams): ThemePreset {
     'shadow-xl': `0 20px 25px -5px hsl(222 25% 10% / 0.1), 0 8px 10px -6px hsl(222 25% 10% / 0.06)`,
     'shadow-header': `0 1px 3px hsl(222 25% 10% / 0.06), 0 1px 2px hsl(222 25% 10% / 0.04)`,
     'chart-1': primary,
+    // Orange — Promo Gifts brand orange (BUG-04 fix)
+    orange: '25 95% 53%',
+    'orange-hover': '25 95% 48%',
+    'orange-active': '25 95% 43%',
+    'orange-glow': `0 0 20px hsl(25 95% 53% / 0.3)`,
+    'orange-foreground': '0 0% 100%',
   };
 
   const dark: ThemeModeColors = {
@@ -356,6 +367,12 @@ function buildPreset(p: PresetParams): ThemePreset {
     'shadow-xl': `0 20px 25px -5px hsl(225 20% 2% / 0.8), 0 8px 10px -6px hsl(225 20% 2% / 0.6), 0 0 30px hsl(${primary} / 0.06)`,
     'shadow-header': `0 1px 3px hsl(225 20% 2% / 0.7), 0 0 20px hsl(${primary} / 0.03), inset 0 1px 0 hsl(225 15% 18% / 0.3)`,
     'chart-1': primary,
+    // Orange — Promo Gifts brand orange (BUG-04 fix)
+    orange: '25 95% 53%',
+    'orange-hover': '25 95% 48%',
+    'orange-active': '25 95% 43%',
+    'orange-glow': `0 0 30px hsl(25 95% 53% / 0.45)`,
+    'orange-foreground': '0 0% 100%',
   };
 
   return {
@@ -455,6 +472,12 @@ const diversityPreset: ThemePreset = {
     'shadow-glow-warning': `0 0 24px hsl(${PRIDE_YELLOW} / 0.35)`,
     // Chart token (para indicadores)
     'chart-1': PRIDE_PINK,
+    // Orange — pride orange (BUG-04 fix: overrides default Promo Gifts orange)
+    orange: PRIDE_ORANGE,
+    'orange-hover': '30 90% 50%',
+    'orange-active': '30 90% 45%',
+    'orange-glow': `0 0 24px hsl(${PRIDE_ORANGE} / 0.35)`,
+    'orange-foreground': '0 0% 100%',
   },
   dark: {
     ...diversityBase.dark,
@@ -491,6 +514,12 @@ const diversityPreset: ThemePreset = {
     'shadow-glow-success': `0 0 28px hsl(${PRIDE_GREEN} / 0.4)`,
     'shadow-glow-warning': `0 0 28px hsl(${PRIDE_YELLOW} / 0.4)`,
     'chart-1': '330 85% 60%',
+    // Orange — pride orange dark (BUG-04 fix)
+    orange: PRIDE_ORANGE,
+    'orange-hover': '30 90% 50%',
+    'orange-active': '30 90% 45%',
+    'orange-glow': `0 0 30px hsl(${PRIDE_ORANGE} / 0.5)`,
+    'orange-foreground': '0 0% 100%',
   },
 };
 
