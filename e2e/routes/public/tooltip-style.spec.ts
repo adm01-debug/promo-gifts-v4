@@ -18,7 +18,7 @@ test.describe("Tooltip Style Toggle E2E", () => {
     await toggleButton.click();
     
     // Verify toast
-    const toast = page.locator('ol[tabindex="-1"] >> text=Dicas: Compacto');
+    const toast = page.locator('ol[tabindex="-1"] >> text=O tamanho das dicas foi alterado para Compacto (10px).');
     await expect(toast).toBeVisible();
 
     // Hover again to check new text
@@ -29,7 +29,7 @@ test.describe("Tooltip Style Toggle E2E", () => {
     await toggleButton.click();
     
     // Verify toast
-    const toastStandard = page.locator('ol[tabindex="-1"] >> text=Dicas: Padrão');
+    const toastStandard = page.locator('ol[tabindex="-1"] >> text=O tamanho das dicas foi alterado para Padrão (13px).');
     await expect(toastStandard).toBeVisible();
     
     // Hover again to check initial text
