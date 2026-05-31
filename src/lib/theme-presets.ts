@@ -195,7 +195,7 @@ export interface ThemePreset {
 export interface ThemeConfig {
   presetId: string;
   radius: number;
-  mode: 'light' | 'dark' | 'auto';
+  mode: 'dark';
 }
 
 // =====================================================
@@ -951,7 +951,7 @@ export const DEFAULT_FONT_SANS = "'Plus Jakarta Sans', system-ui, sans-serif";
 export const DEFAULT_FONT_DISPLAY = "'Outfit', system-ui, sans-serif";
 
 export function getDefaultConfig(): ThemeConfig {
-  return { presetId: 'corporate', radius: 14, mode: 'auto' };
+  return { presetId: 'corporate', radius: 14, mode: 'dark' };
 }
 
 export function loadThemeConfig(): ThemeConfig {
@@ -959,6 +959,8 @@ export function loadThemeConfig(): ThemeConfig {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = { ...getDefaultConfig(), ...JSON.parse(stored) };
+      // Force dark mode even if stored as light
+      parsed.mode = 'dark';
       if (!THEME_PRESETS.find((p) => p.id === parsed.presetId)) {
         parsed.presetId = 'corporate';
       }
@@ -982,7 +984,8 @@ export function saveThemeConfig(config: ThemeConfig): void {
  * Quando o preset não define radius/font, restaura os defaults para que
  * voltar de uma skin GX para uma clássica desfaça os overrides.
  */
-export function applyThemePreset(presetId: string, mode: 'light' | 'dark'): void {
+export function applyThemePreset(presetId: string, _mode: 'light' | 'dark'): void {
+  const mode = 'dark'; // Always use dark mode tokens
   const preset = THEME_PRESETS.find((p) => p.id === presetId);
   if (!preset) return;
 
