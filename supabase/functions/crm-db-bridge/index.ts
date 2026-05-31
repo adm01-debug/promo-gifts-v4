@@ -168,7 +168,6 @@ function buildDiagSnapshot() {
 const ALLOWED_TABLES = [
   "companies", "contacts", "company_addresses", "company_social_media",
   "contact_emails", "contact_phones", "customers", "suppliers", "carriers",
-  "products", "categories",
 ];
 
 const VENDOR_WRITE_TABLES: string[] = [];
