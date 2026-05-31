@@ -173,28 +173,8 @@ export function ProductQuickActions({
                     </TooltipContent>
                   )}
                 </Tooltip>
-                className={cn(
-                  'group relative inline-flex flex-1 items-center justify-center gap-2 overflow-hidden rounded-lg border px-4 py-3 text-xs font-bold',
-                  'transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  disabled
-                    ? 'cursor-not-allowed border-border/20 bg-muted/30 text-muted-foreground/50'
-                    : 'border-border/40 bg-card text-foreground shadow-sm hover:-translate-y-1 hover:scale-[1.02] hover:border-primary/50 hover:shadow-lg hover:shadow-primary/15 active:translate-y-0 active:scale-100 active:shadow-sm',
-                )}
-              >
-                <Icon
-                  className={cn(
-                    'h-4 w-4 shrink-0 transition-all duration-300',
-                    disabled
-                      ? 'opacity-40'
-                      : cn(
-                          iconColor,
-                          'group-hover:rotate-6 group-hover:scale-125 group-hover:drop-shadow-sm',
-                        ),
-                  )}
-                />
-                {label}
-              </button>
             );
+          })}
           })}
         </div>
 
