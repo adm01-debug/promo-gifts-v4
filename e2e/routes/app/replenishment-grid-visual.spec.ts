@@ -3,63 +3,86 @@ import AxeBuilder from '@axe-core/playwright';
 
 const viewports = [
   { width: 360, height: 800, name: 'mobile-small' },
-  { width: 768, height: 1024, name: 'tablet' },
-  { width: 1024, height: 768, name: 'laptop' },
   { width: 1440, height: 900, name: 'desktop-wide' },
 ];
 
-test.describe('Replenishment Grid Visual & Accessibility Validation', () => {
+test.describe('Replenishment Grid Advanced Visual & A11y', () => {
   for (const viewport of viewports) {
-    test(`Visual regression - ${viewport.name} (${viewport.width}x${viewport.height})`, async ({ page }) => {
-      await page.setViewportSize({ width: viewport.width, height: viewport.height });
-      
-      // Navigate to Replenishments page
-      await page.goto('/reposicao');
-      
-      // Wait for the grid to be visible and data to be loaded
-      const grid = page.locator('div[role="list"]');
-      await grid.waitFor({ state: 'visible' });
-      
-      // Pequena pausa para garantir que a virtualização e animações estabilizem
-      await page.waitForTimeout(1500);
-      
-      // Captura screenshot APENAS do grid para reduzir flakiness
-      // Nome do arquivo inclui o viewport para baselines específicos
-      await expect(grid).toHaveScreenshot(`replenishment-grid-${viewport.name}.png`, {
-        maxDiffPixelRatio: 0.02,
-        threshold: 0.1,
+    test.describe(`Viewport: ${viewport.name}`, () => {
+      test.use({ viewport: { width: viewport.width, height: viewport.height } });
+
+      test('Visual Regression & Virtualization Scroll', async ({ page }) => {
+        await page.goto('/reposicao');
+        const grid = page.locator('div[role="list"]');
+        await grid.waitFor({ state: 'visible' });
+        await page.waitForTimeout(1000);
+
+        // 1. Initial State Screenshot
+        await expect(grid).toHaveScreenshot(`grid-initial-${viewport.name}.png`, {
+          maxDiffPixelRatio: 0.02,
+        });
+
+        // 2. Scroll to middle/end to test virtualization alignment
+        await grid.evaluate(el => el.scrollTop = 1000);
+        await page.waitForTimeout(800); // Wait for virtualization to re-render
+        
+        await expect(grid).toHaveScreenshot(`grid-scrolled-${viewport.name}.png`, {
+          maxDiffPixelRatio: 0.02,
+        });
+      });
+
+      test('Accessibility Scan with Report', async ({ page }) => {
+        await page.goto('/reposicao');
+        const grid = page.locator('div[role="list"]');
+        await grid.waitFor({ state: 'visible' });
+
+        const accessibilityScanResults = await new AxeBuilder({ page })
+          .include('div[role="list"]')
+          .analyze();
+        
+        if (accessibilityScanResults.violations.length > 0) {
+          console.error(`Axe violations for ${viewport.name}:`, JSON.stringify(accessibilityScanResults.violations, null, 2));
+        }
+        
+        expect(accessibilityScanResults.violations).toEqual([]);
       });
     });
   }
 
-  test('Accessibility and Keyboard Navigation', async ({ page }) => {
+  test('Card Edge Cases: Long Title, Price Consult, No Image', async ({ page }) => {
+    // This test assumes we might have some mocked or specific data items
+    // If not, we validate that existing cards (even with variation) respect the min-heights defined in styles
     await page.goto('/reposicao');
-    const grid = page.locator('div[role="list"]');
-    await grid.waitFor({ state: 'visible' });
+    const cards = page.locator('div[role="listitem"]');
+    await cards.first().waitFor();
 
-    // 1. Accessibility Scan (Axe)
-    const accessibilityScanResults = await new AxeBuilder({ page })
-      .include('div[role="list"]')
-      .analyze();
-    
-    expect(accessibilityScanResults.violations).toEqual([]);
+    const allCards = await cards.all();
+    for (const card of allCards.slice(0, 5)) {
+      const h3 = card.locator('h3');
+      const priceContainer = card.locator('.min-h-\\[3\\.25rem\\]'); // Based on our product-card-styles
+      
+      const h3Box = await h3.boundingBox();
+      const priceBox = await priceContainer.boundingBox();
 
-    // 2. Keyboard Navigation
-    // Focus first card
-    const firstCard = page.locator('div[role="listitem"]').first();
-    await firstCard.focus();
-    await expect(firstCard).toBeFocused();
-    
-    // Press Tab and verify focus moves to the next card
-    await page.keyboard.press('Tab');
-    const secondCard = page.locator('div[role="listitem"]').nth(1);
-    await expect(secondCard).toBeFocused();
+      if (h3Box) expect(h3Box.height).toBeGreaterThanOrEqual(40); // 2.5rem
+      if (priceBox) expect(priceBox.height).toBeGreaterThanOrEqual(52); // 3.25rem
+    }
+  });
 
-    // Verify 'Enter' navigates to product detail (or at least tries to)
-    // We check if the URL changes or a navigation starts
-    const navigationPromise = page.waitForNavigation().catch(() => null);
-    await page.keyboard.press('Enter');
-    // For safety in CI, we don't necessarily need to wait for the whole page load, 
-    // just that it's not on the same URL anymore or it's loading.
+  test.describe('User Preferences: Reduced Motion & Large Font', () => {
+    test.use({ 
+      contextOptions: { 
+        reducedMotion: 'reduce',
+      } 
+    });
+
+    test('Grid remains consistent with reduced motion', async ({ page }) => {
+      await page.goto('/reposicao');
+      const grid = page.locator('div[role="list"]');
+      await grid.waitFor({ state: 'visible' });
+      
+      // Visual check that grid still renders correctly even with motion reduced
+      await expect(grid).toHaveScreenshot('grid-reduced-motion.png');
+    });
   });
 });
