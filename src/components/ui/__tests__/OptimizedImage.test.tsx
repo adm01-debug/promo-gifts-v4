@@ -80,7 +80,11 @@ describe('OptimizedImage', () => {
     const lqip = 'data:image/png;base64,lqip-data';
     render(<OptimizedImage {...defaultProps} lqip={lqip} />);
     
-    const placeholder = screen.getByRole('img', { hidden: true });
+    // Find the placeholder specifically
+    const images = screen.getAllByRole('img', { hidden: true });
+    const placeholder = images.find(img => img.getAttribute('aria-hidden') === 'true');
+    
+    expect(placeholder).toBeInTheDocument();
     expect(placeholder).toHaveAttribute('src', lqip);
   });
 });
