@@ -78,6 +78,7 @@ export const ProductCard = memo(
       noveltyDaysRemaining,
       activeColorFilter,
       priority = false,
+      onStatusClick,
     },
     ref,
   ) {
