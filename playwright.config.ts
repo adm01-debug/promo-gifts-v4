@@ -190,7 +190,7 @@ export default defineConfig({
       // Specs por rota — área pública (sem auth). Ex.: routes/public/*.spec.ts
       name: 'routes-public',
       use: { ...devices['Desktop Chrome'] },
-      testMatch: /routes\/public\/.*\.spec\.ts/,
+      testMatch: [/routes\/public\/.*\.spec\.ts/, /optimized-image-visual\.spec\.ts/],
       grepInvert: /@smoke/,
     },
     {

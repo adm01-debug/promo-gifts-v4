@@ -353,7 +353,7 @@ jobs:
             command: npm run test:supplier-comparison
             flaky_retry: "false"
           - name: promoflix-player
-            command: npx vitest run src/components/products/gallery/PromoFlixPlayer.test.tsx --reporter=verbose
+            command: npx vitest run src/components/products/gallery/PromoFlixPlayer.test.tsx tests/components/ui/OptimizedImage.test.tsx --reporter=verbose
             flaky_retry: "false"
 
 
