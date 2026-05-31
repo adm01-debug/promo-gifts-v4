@@ -27,7 +27,7 @@ export function HardeningHealthCard() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.rpc('check_hardening_status' as never);
@@ -39,11 +39,11 @@ export function HardeningHealthCard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [load]);
 
   const checks: CheckItem[] = status
     ? [

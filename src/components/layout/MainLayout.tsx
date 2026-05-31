@@ -52,7 +52,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       'route-start:' + location.pathname,
       'main-layout-mounted',
     );
-  }, []);
+  }, [location.pathname]);
 
   // Propaga --breadcrumb-h ao :root para que stickys filhos (toolbars de
   // página) ancorem corretamente abaixo do Header + Breadcrumb. Em "/" a

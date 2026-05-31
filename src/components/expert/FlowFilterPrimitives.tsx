@@ -7,7 +7,8 @@ import { ChevronDown, Search, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
-export function GroupSeparator({ label, icon: Icon }: { label: string; icon: React.ElementType }) {
+export function GroupSeparator({ label, icon: iconElement }: { label: string; icon: React.ElementType }) {
+  const Icon = iconElement;
   return (
     <div className="flex items-center gap-2 px-1 pb-1.5 pt-5">
       <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border/30 to-transparent" />
@@ -21,7 +22,7 @@ export function GroupSeparator({ label, icon: Icon }: { label: string; icon: Rea
 }
 
 export function SectionRow({
-  icon: Icon,
+  icon: iconElement,
   label,
   isOpen,
   onToggle,
@@ -35,6 +36,7 @@ export function SectionRow({
   count?: number;
   totalOptions?: number;
 }) {
+  const Icon = iconElement;
   return (
     <button
       onClick={onToggle}

@@ -276,7 +276,7 @@ export function useExpertChat({
     return () => {
       if (filterDebounceRef.current) clearTimeout(filterDebounceRef.current);
     };
-  }, [flowFilters, isLoading, isOpen]);
+  }, [flowFilters, isLoading, isOpen, handleAutoSend]);
 
   // Auto-scroll
   useEffect(() => {

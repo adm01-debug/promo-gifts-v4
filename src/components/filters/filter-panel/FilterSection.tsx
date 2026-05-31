@@ -142,11 +142,12 @@ export function FilterSection({
 
 export function GroupSeparator({
   label,
-  icon: Icon,
+  icon: iconElement,
 }: {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
 }) {
+  const Icon = iconElement;
   return (
     <div className="flex items-center gap-2 px-1 pb-1 pt-4 first:pt-1">
       <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border/60 to-transparent" />
