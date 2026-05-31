@@ -19,8 +19,6 @@ import {
   Download,
   Printer,
   HelpCircle,
-  Moon,
-  Sun,
   BookOpen,
   Grid,
   Activity,
