@@ -32,6 +32,7 @@ import {
   Settings,
   MessageCircle,
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { VideoShareWhatsAppDialog } from './VideoShareWhatsAppDialog';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -502,7 +503,33 @@ export function PromoFlixPlayer({
           <div className="flex-1" />
           <div className="flex items-center gap-1 md:gap-1.5">
             <div className="mr-1 flex items-center gap-1 border-r border-white/10 px-1 md:mr-2 md:gap-1.5 md:px-2">
-              <button onClick={toggleRaioX} className={cn('group relative flex items-center justify-center rounded-full p-3 transition-all duration-300 md:p-2', isRaioXActive ? 'bg-primary text-primary-foreground shadow-[0_0_15px_rgba(var(--primary-rgb),0.5)]' : 'text-white/80 hover:bg-white/15 hover:text-white')} aria-label="Ativar Raio-X" title="Raio-X (X)">{isRaioXActive ? <Zap className="h-6 w-6 fill-current md:h-5 md:w-5" /> : <ZapOff className="h-6 w-6 md:h-5 md:w-5" />}{isRaioXActive && (<span className="absolute -right-0.5 -top-0.5 flex h-3 w-3 md:-right-1 md:-top-1"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span><span className="relative inline-flex h-3 w-3 rounded-full bg-white"></span></span>)}</button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={toggleRaioX}
+                  className={cn(
+                    'group relative flex items-center justify-center rounded-full p-3 transition-all duration-300 md:p-2',
+                    isRaioXActive
+                      ? 'bg-primary text-primary-foreground shadow-[0_0_15px_rgba(var(--primary-rgb),0.5)]'
+                      : 'text-white/80 hover:bg-white/15 hover:text-white',
+                  )}
+                  aria-label="Ativar Raio-X"
+                >
+                  {isRaioXActive ? (
+                    <Zap className="h-6 w-6 fill-current md:h-5 md:w-5" />
+                  ) : (
+                    <ZapOff className="h-6 w-6 md:h-5 md:w-5" />
+                  )}
+                  {isRaioXActive && (
+                    <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3 md:-right-1 md:-top-1">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
+                      <span className="relative inline-flex h-3 w-3 rounded-full bg-white"></span>
+                    </span>
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top">Raio-X (X)</TooltipContent>
+            </Tooltip>
               <button onClick={takeScreenshot} className="flex items-center gap-1 rounded-full p-3 text-white/80 transition-colors hover:bg-white/15 hover:text-white md:p-2" aria-label="Capturar frame" title="Foto do frame (S)"><Camera className="h-6 w-6 md:h-5 md:w-5" /></button>
               {canShareOnWhatsApp && (<button onClick={(e) => { e.stopPropagation(); setShareDialogOpen(true); }} className="flex items-center gap-1 rounded-full p-3 text-white/80 transition-colors hover:bg-[#25D366]/20 hover:text-[#25D366] md:p-2" aria-label="Enviar vídeo pelo WhatsApp" title="Enviar vídeo pelo WhatsApp"><MessageCircle className="h-6 w-6 md:h-5 md:w-5" /></button>)}
             </div>

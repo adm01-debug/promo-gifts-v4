@@ -286,59 +286,68 @@ export function FutureStockModal({
                       const isSelected = selectedColor === color.name;
 
                       return (
-                        <button
-                          key={color.name}
-                          onClick={() => setSelectedColor(isSelected ? null : color.name)}
-                          title={`${color.name}\nAtual: ${color.currentStock.toLocaleString('pt-BR')}\nPrevisto: +${color.incomingTotal.toLocaleString('pt-BR')}`}
-                          className={cn(
-                            'relative overflow-hidden rounded-lg transition-all duration-200',
-                            'border bg-card hover:scale-105 hover:shadow-md',
-                            isSelected &&
-                              'ring-2 ring-primary ring-offset-1 ring-offset-background',
-                            !hasEntries && 'opacity-40 grayscale',
-                          )}
-                          style={{
-                            borderColor: isSelected ? (color.hex ?? undefined) : undefined,
-                          }}
-                        >
-                          {/* Imagem ou cor sólida */}
-                          <div className="relative aspect-square overflow-hidden">
-                            {color.thumbnail ? (
-                              <img
-                                src={color.thumbnail}
-                                alt={color.name}
-                                className="h-full w-full object-cover"
-                                loading="lazy"
-                              />
-                            ) : (
-                              <div
-                                className="h-full w-full"
-                                style={{ backgroundColor: color.hex || '#888' }}
-                              />
-                            )}
-                            {/* Badge de quantidade incoming */}
-                            {hasEntries && (
-                              <div className="absolute bottom-0.5 right-0.5 rounded bg-primary/90 px-1 py-0.5 text-[9px] font-bold text-primary-foreground">
-                                +
-                                {color.incomingTotal >= 1000
-                                  ? `${(color.incomingTotal / 1000).toFixed(1)}k`
-                                  : color.incomingTotal}
+                        <Tooltip key={color.name}>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => setSelectedColor(isSelected ? null : color.name)}
+                              className={cn(
+                                'relative overflow-hidden rounded-lg transition-all duration-200',
+                                'border bg-card hover:scale-105 hover:shadow-md',
+                                isSelected &&
+                                  'ring-2 ring-primary ring-offset-1 ring-offset-background',
+                                !hasEntries && 'opacity-40 grayscale',
+                              )}
+                              style={{
+                                borderColor: isSelected ? (color.hex ?? undefined) : undefined,
+                              }}
+                            >
+                              {/* Imagem ou cor sólida */}
+                              <div className="relative aspect-square overflow-hidden">
+                                {color.thumbnail ? (
+                                  <img
+                                    src={color.thumbnail}
+                                    alt={color.name}
+                                    className="h-full w-full object-cover"
+                                    loading="lazy"
+                                  />
+                                ) : (
+                                  <div
+                                    className="h-full w-full"
+                                    style={{ backgroundColor: color.hex || '#888' }}
+                                  />
+                                )}
+                                {/* Badge de quantidade incoming */}
+                                {hasEntries && (
+                                  <div className="absolute bottom-0.5 right-0.5 rounded bg-primary/90 px-1 py-0.5 text-[9px] font-bold text-primary-foreground">
+                                    +
+                                    {color.incomingTotal >= 1000
+                                      ? `${(color.incomingTotal / 1000).toFixed(1)}k`
+                                      : color.incomingTotal}
+                                  </div>
+                                )}
+                                {/* Estoque atual no topo */}
+                                <div className="absolute left-0.5 top-0.5 rounded bg-background/80 px-1 py-0.5 text-[9px] font-medium text-foreground">
+                                  {color.currentStock >= 1000
+                                    ? `${(color.currentStock / 1000).toFixed(1)}k`
+                                    : color.currentStock}
+                                </div>
                               </div>
-                            )}
-                            {/* Estoque atual no topo */}
-                            <div className="absolute left-0.5 top-0.5 rounded bg-background/80 px-1 py-0.5 text-[9px] font-medium text-foreground">
-                              {color.currentStock >= 1000
-                                ? `${(color.currentStock / 1000).toFixed(1)}k`
-                                : color.currentStock}
+                              {/* Nome da cor */}
+                              <div className="bg-card p-1 text-center">
+                                <span className="block truncate text-[10px] font-medium leading-tight">
+                                  {color.name}
+                                </span>
+                              </div>
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <div className="flex flex-col gap-1">
+                              <span className="font-semibold">{color.name}</span>
+                              <span>Atual: {color.currentStock.toLocaleString('pt-BR')} un.</span>
+                              <span>Previsto: +{color.incomingTotal.toLocaleString('pt-BR')} un.</span>
                             </div>
-                          </div>
-                          {/* Nome da cor */}
-                          <div className="bg-card p-1 text-center">
-                            <span className="block truncate text-[10px] font-medium leading-tight">
-                              {color.name}
-                            </span>
-                          </div>
-                        </button>
+                          </TooltipContent>
+                        </Tooltip>
                       );
                     })}
                   </div>
