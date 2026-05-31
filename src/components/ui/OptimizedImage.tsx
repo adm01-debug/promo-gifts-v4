@@ -12,6 +12,7 @@ interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> 
   duration?: number;
   lqip?: string;
   debug?: boolean;
+  onDetection?: (rule: string) => void;
 }
 
 /**
