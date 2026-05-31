@@ -20,16 +20,18 @@ export const productCardStyles = {
   infoSection: 'relative space-y-2 bg-card p-2.5 sm:space-y-3 sm:p-4',
   
   // Título do produto (line-clamp e min-height para alinhamento)
+  // Padronizado para 2 linhas de texto com fallback de altura para evitar desalinhamento
   title: cn(
-    'line-clamp-2 min-h-[2.25rem] font-display text-sm font-semibold leading-snug text-foreground',
-    'transition-colors duration-300 group-hover:text-primary sm:min-h-[2.75rem] sm:text-base'
+    'line-clamp-2 min-h-[2.5rem] sm:min-h-[3rem] font-display text-sm font-semibold leading-snug text-foreground',
+    'transition-colors duration-300 group-hover:text-primary sm:text-base'
   ),
   
   // Seção de preço e estoque
   priceStockSection: 'flex items-end justify-between pt-0.5 sm:pt-1',
   
   // Container de preço (min-height para manter botões/indicadores alinhados na mesma base)
-  priceContainer: 'min-h-[3rem] sm:min-h-[3.5rem] flex flex-col justify-end',
+  // Padronizado para comportar preços com e sem label "A partir de" ou "Preço sob consulta"
+  priceContainer: 'min-h-[3.25rem] sm:min-h-[3.75rem] flex flex-col justify-end',
   
   // Seção de categoria
   categoryBadgeSection: 'mt-0.5 flex flex-wrap gap-1.5 border-t border-primary/20 pt-1.5',

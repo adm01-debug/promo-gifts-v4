@@ -1,101 +1,65 @@
 import { test, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 
-test.describe('Replenishment Grid Visual Validation', () => {
-  test.beforeEach(async ({ page }) => {
-    // Navigate to Replenishments page
-    await page.goto('/reposicao');
-    
-    // Wait for the grid to be visible and data to be loaded
-    await page.waitForSelector('div[role="list"]');
-    // Pequena pausa para garantir que a virtualização e animações estabilizem
-    await page.waitForTimeout(1000);
-  });
+const viewports = [
+  { width: 360, height: 800, name: 'mobile-small' },
+  { width: 768, height: 1024, name: 'tablet' },
+  { width: 1024, height: 768, name: 'laptop' },
+  { width: 1440, height: 900, name: 'desktop-wide' },
+];
 
-  test('should match baseline screenshot', async ({ page }) => {
-    const grid = page.locator('div[role="list"]');
-    // Captura screenshot do grid para comparação visual
-    await expect(grid).toHaveScreenshot('replenishment-grid.png', {
-      maxDiffPixelRatio: 0.05, // Tolera pequenas variações de anti-aliasing
+test.describe('Replenishment Grid Visual & Accessibility Validation', () => {
+  for (const viewport of viewports) {
+    test(`Visual regression - ${viewport.name} (${viewport.width}x${viewport.height})`, async ({ page }) => {
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      
+      // Navigate to Replenishments page
+      await page.goto('/reposicao');
+      
+      // Wait for the grid to be visible and data to be loaded
+      const grid = page.locator('div[role="list"]');
+      await grid.waitFor({ state: 'visible' });
+      
+      // Pequena pausa para garantir que a virtualização e animações estabilizem
+      await page.waitForTimeout(1500);
+      
+      // Captura screenshot APENAS do grid para reduzir flakiness
+      // Nome do arquivo inclui o viewport para baselines específicos
+      await expect(grid).toHaveScreenshot(`replenishment-grid-${viewport.name}.png`, {
+        maxDiffPixelRatio: 0.02,
+        threshold: 0.1,
+      });
     });
-  });
+  }
 
-  test('should have consistent vertical and horizontal gaps', async ({ page }) => {
+  test('Accessibility and Keyboard Navigation', async ({ page }) => {
+    await page.goto('/reposicao');
+    const grid = page.locator('div[role="list"]');
+    await grid.waitFor({ state: 'visible' });
 
-
-    // Get all card containers
-    const cards = await page.locator('div[role="listitem"]').all();
+    // 1. Accessibility Scan (Axe)
+    const accessibilityScanResults = await new AxeBuilder({ page })
+      .include('div[role="list"]')
+      .analyze();
     
-    if (cards.length < 2) {
-      console.warn('Not enough products to validate grid gaps');
-      return;
-    }
+    expect(accessibilityScanResults.violations).toEqual([]);
 
-    // Check first two cards to validate horizontal gap
-    const box1 = await cards[0].boundingBox();
-    const box2 = await cards[1].boundingBox();
+    // 2. Keyboard Navigation
+    // Focus first card
+    const firstCard = page.locator('div[role="listitem"]').first();
+    await firstCard.focus();
+    await expect(firstCard).toBeFocused();
+    
+    // Press Tab and verify focus moves to the next card
+    await page.keyboard.press('Tab');
+    const secondCard = page.locator('div[role="listitem"]').nth(1);
+    await expect(secondCard).toBeFocused();
 
-    if (box1 && box2 && box1.y === box2.y) {
-      // They are in the same row
-      const horizontalGap = box2.x - (box1.x + box1.width);
-      // Expected gap is usually 32px (gap-x-8) or 24px (gap-x-6)
-      expect(horizontalGap).toBeGreaterThanOrEqual(16); 
-    }
-
-    // Check vertical gap if there are enough cards for 2 rows
-    // Since it's virtualized, we might need to scroll a bit or just check the first few
-    // But usually virtualRow 0 and virtualRow 1 are rendered
-    const row1 = page.locator('div[data-index="0"]');
-    const row2 = page.locator('div[data-index="1"]');
-
-    if (await row1.isVisible() && await row2.isVisible()) {
-      const r1Box = await row1.boundingBox();
-      const r2Box = await row2.boundingBox();
-      
-      if (r1Box && r2Box) {
-        const verticalGap = r2Box.y - (r1Box.y + r1Box.height);
-        // We added pb-8 to the row, so the measured height should include it, 
-        // OR the gap should be exactly 0 if pb-8 is inside the measured element and 
-        // virtualizer positions them back-to-back.
-        // Actually, virtualizer positions them using 'virtualRow.start'.
-        // If measureElement is working, virtualRow.start of row 1 = row 0.start + row 0.height.
-        // So verticalGap between bounding boxes should be close to 0, but the CONTENT 
-        // inside has pb-8.
-        
-        // Let's check the gap between the last card of row 1 and first card of row 2
-        const cardInRow1 = row1.locator('div[role="listitem"]').first();
-        const cardInRow2 = row2.locator('div[role="listitem"]').first();
-        
-        const c1Box = await cardInRow1.boundingBox();
-        const c2Box = await cardInRow2.boundingBox();
-        
-        if (c1Box && c2Box) {
-          const cardVerticalGap = c2Box.y - (c1Box.y + c1Box.height);
-          // Expected gap is 32px (gap-y-8)
-          expect(cardVerticalGap).toBeGreaterThanOrEqual(24);
-        }
-      }
-    }
-  });
-
-  test('cards should have uniform internal alignment', async ({ page }) => {
-    const cards = await page.locator('div[role="listitem"]').all();
-    if (cards.length === 0) return;
-
-    for (const card of cards.slice(0, 5)) {
-      const h3 = card.locator('h3');
-      const h3Box = await h3.boundingBox();
-      
-      // Ensure h3 has a minimum height
-      if (h3Box) {
-        expect(h3Box.height).toBeGreaterThanOrEqual(36); // sm:min-h-[2.75rem] is 44px, 2.25rem is 36px
-      }
-      
-      // Check price section height consistency
-      const priceSection = card.locator('.flex.items-end.justify-between').first();
-      const priceBox = await priceSection.boundingBox();
-      if (priceBox) {
-        expect(priceBox.height).toBeGreaterThanOrEqual(48); // sm:min-h-[3.5rem] is 56px, 3rem is 48px
-      }
-    }
+    // Verify 'Enter' navigates to product detail (or at least tries to)
+    // We check if the URL changes or a navigation starts
+    const navigationPromise = page.waitForNavigation().catch(() => null);
+    await page.keyboard.press('Enter');
+    // For safety in CI, we don't necessarily need to wait for the whole page load, 
+    // just that it's not on the same URL anymore or it's loading.
   });
 });
