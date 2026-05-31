@@ -1,13 +1,22 @@
 /**
- * Constantes de tabelas e views do banco externo Promobrind.
+ * @deprecated LEGACY — Listas de tabelas da bridge (descomissionada 2026-05-30).
  *
- * SINCRONIZADO 2026-03-26 — Validado contra whitelist real do external-db-bridge.
- * Esta lista DEVE espelhar exatamente o que o bridge aceita.
+ * As whitelists agora vivem em rest-native.ts:
+ *   - REST_NATIVE_SAFE_TABLES (READ)
+ *   - REST_NATIVE_WRITE_TABLES (WRITE)
+ *   - TABLE_ALIASES / WRITE_TABLE_ALIASES
+ *
+ * Este arquivo é mantido apenas para:
+ *   1. O tipo ExternalTable (usado por useExternalDatabase.ts)
+ *   2. Compatibilidade com re-exports em external-db/index.ts
+ *
+ * TODO: Migrar ExternalTable para rest-native.ts e remover este arquivo.
  */
 
 // ============================================
 // Tabelas REAIS do BD externo (whitelist do bridge)
 // ============================================
+/** @deprecated Use REST_NATIVE_SAFE_TABLES em rest-native.ts */
 export const PRODUCT_TABLES = [
   // Principais
   'products',
@@ -88,6 +97,7 @@ export const PRODUCT_TABLES = [
 // O external-db-bridge mapeia esses nomes para tabelas reais.
 // Mantidos para que o TypeScript aceite código legado.
 // ============================================
+/** @deprecated Aliases agora vivem em TABLE_ALIASES em rest-native.ts */
 export const BRIDGE_ALIASES = [
   'tecnica_gravacao', // → tabela_preco_gravacao_oficial
   'personalization_techniques', // → tecnicas_gravacao (via bridge alias)
@@ -96,6 +106,7 @@ export const BRIDGE_ALIASES = [
 ] as const;
 
 // Views e Materialized Views (somente leitura) — do bridge
+/** @deprecated Views agora vivem em REST_NATIVE_SAFE_TABLES em rest-native.ts */
 export const PRODUCT_VIEWS = [
   // Views de produtos
   'v_products_with_techniques',
