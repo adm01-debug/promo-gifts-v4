@@ -218,7 +218,6 @@ export default function OptimizedImageDemo() {
                   <th className="p-2 border">Cenário</th>
                   <th className="p-2 border">URL de Origem</th>
                   <th className="p-2 border">Regra Detectada</th>
-                  <th className="p-2 border">Placeholder</th>
                   <th className="p-2 border">Status</th>
                 </tr>
               </thead>
@@ -255,29 +254,15 @@ export default function OptimizedImageDemo() {
                     expected: 'generic'
                   }
                 ].map((test, i) => (
-                  <tr key={i} className="hover:bg-muted/30" data-testid={`row-${test.expected}`}>
-                    <td className="p-2 border font-medium">{test.name}</td>
-                    <td className="p-2 border truncate max-w-[200px]" title={test.url}>{test.url}</td>
-                    <td className="p-2 border">
-                      <OptimizedImage 
-                        src={test.url} 
-                        alt="test" 
-                        containerClassName="hidden"
-                      />
-                      <code className="bg-primary/10 text-primary px-2 py-0.5 rounded text-xs" data-testid="rule-badge">
-                        {test.expected}
-                      </code>
-                    </td>
-                    <td className="p-2 border">
-                      <code className="text-[10px] text-muted-foreground truncate block max-w-[150px]">
-                        {test.expected === 'cloudflare' ? '.../thumbnail' : test.expected === 'generic' ? 'None' : '...'}
-                      </code>
-                    </td>
-                    <td className="p-2 border text-green-600 font-bold">✓ Validado</td>
-                  </tr>
+                  <ValidationRow key={i} test={test} />
                 ))}
               </tbody>
             </table>
+          </div>
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-md">
+            <p className="text-xs text-blue-700">
+              <strong>Dica:</strong> Esta tabela valida em tempo real a detecção automática do componente baseada na URL.
+            </p>
           </div>
           <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-md">
             <p className="text-xs text-blue-700">
