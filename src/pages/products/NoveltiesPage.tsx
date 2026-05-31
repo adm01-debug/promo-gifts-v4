@@ -12,25 +12,27 @@ export default function NoveltiesPage() {
         description="Confira os produtos mais recentes adicionados ao catálogo de brindes promocionais."
         path="/novidades"
       />
-      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
+      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-4 px-4 py-4 pb-24 lg:px-6 xl:px-8">
         {/* Cabeçalho da página */}
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <Sparkles className="h-5 w-5" />
-          </div>
-          <div className="min-w-0">
-            <h1
-              data-testid="page-title-novidades"
-              className="font-display text-2xl font-bold tracking-tight"
-            >
-              Novidades
-            </h1>
-            <p
-              data-testid="novelty-description"
-              className="text-sm text-muted-foreground"
-            >
-              Produtos recém-chegados ao catálogo nos últimos 30 dias
-            </p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <div className="min-w-0">
+              <h1
+                data-testid="page-title-novidades"
+                className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
+              >
+                Novidades
+              </h1>
+              <p
+                data-testid="novelty-description"
+                className="mt-1 text-sm font-medium text-muted-foreground sm:text-base"
+              >
+                Produtos recém-chegados ao catálogo nos últimos 30 dias
+              </p>
+            </div>
           </div>
         </div>
 

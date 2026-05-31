@@ -6,14 +6,20 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 
 // Mock color data
 const mockColors = [
-  { id: '1', name: 'Vermelho', hex: '#FF0000', variationName: 'Vermelho', groupName: 'Cores Quentes' },
+  {
+    id: '1',
+    name: 'Vermelho',
+    hex: '#FF0000',
+    variationName: 'Vermelho',
+    groupName: 'Cores Quentes',
+  },
   { id: '2', name: 'Azul', hex: '#0000FF', variationName: 'Azul', groupName: 'Cores Frias' },
 ];
 
 describe('Color Variation Layout Consistency', () => {
   it('ColorTooltipContent renders with correct structure and styles', () => {
     const { getByTestId, getByText } = render(
-      <ColorTooltipContent colorName="Branco" colorHex="#FFFFFF" />
+      <ColorTooltipContent colorName="Branco" colorHex="#FFFFFF" />,
     );
 
     const swatch = getByTestId('color-tooltip-swatch');
@@ -33,7 +39,7 @@ describe('Color Variation Layout Consistency', () => {
     render(
       <TooltipProvider>
         <ProductColorSelector colors={mockColors} />
-      </TooltipProvider>
+      </TooltipProvider>,
     );
 
     const swatches = screen.getAllByRole('button');
@@ -43,11 +49,14 @@ describe('Color Variation Layout Consistency', () => {
     fireEvent.mouseEnter(firstSwatch);
 
     // Wait for the tooltip to appear in the DOM (searching globally since it might be in a portal)
-    await waitFor(() => {
-      // Check for the text inside the tooltip
-      const tooltipText = document.body.textContent || '';
-      expect(tooltipText).toContain('Vermelho');
-    }, { timeout: 2000 });
+    await waitFor(
+      () => {
+        // Check for the text inside the tooltip
+        const tooltipText = document.body.textContent || '';
+        expect(tooltipText).toContain('Vermelho');
+      },
+      { timeout: 2000 },
+    );
 
     // Verify it's not a native title
     expect(firstSwatch.getAttribute('title')).toBeNull();
@@ -59,23 +68,26 @@ describe('No Native Title Attributes', () => {
     render(
       <TooltipProvider>
         <ProductColorSelector colors={mockColors} />
-      </TooltipProvider>
+      </TooltipProvider>,
     );
     const swatches = screen.getAllByRole('button');
-    swatches.forEach(s => expect(s.getAttribute('title')).toBeNull());
+    expect(swatches).not.toHaveLength(0);
+    for (const s of swatches) {
+      expect(s.getAttribute('title')).toBeNull();
+    }
   });
 
   it('CompactColorDots elements have no title attribute', () => {
     const { container } = render(
       <TooltipProvider>
         <CompactColorDots colors={mockColors} />
-      </TooltipProvider>
+      </TooltipProvider>,
     );
     const dots = container.querySelectorAll('span');
-    dots.forEach(d => {
-       if (d.style.backgroundColor) {
-         expect(d.getAttribute('title')).toBeNull();
-       }
-    });
+    for (const d of Array.from(dots)) {
+      if (d.style.backgroundColor) {
+        expect(d.getAttribute('title')).toBeNull();
+      }
+    }
   });
 });

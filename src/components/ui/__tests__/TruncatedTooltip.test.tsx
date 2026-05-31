@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { TruncatedTooltip } from '../truncated-tooltip';
-import { TOOLTIP_DELAY, TooltipProvider } from '../tooltip';
-import { vi } from 'vitest';
+import { TOOLTIP_DELAY } from '../tooltip';
 
 describe('TruncatedTooltip Delay', () => {
   it('should use the centralized TOOLTIP_DELAY by default', () => {
@@ -17,7 +16,7 @@ describe('TruncatedTooltip Delay', () => {
     const { container } = render(
       <TruncatedTooltip delayDuration={500}>
         This is a very long text that will surely truncate in a small container
-      </TruncatedTooltip>
+      </TruncatedTooltip>,
     );
     // Since it's a component test, we're mainly checking it doesn't crash and respects the prop
     expect(container).toBeDefined();

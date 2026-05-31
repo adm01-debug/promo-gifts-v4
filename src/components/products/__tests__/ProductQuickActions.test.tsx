@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ProductQuickActions } from '../ProductQuickActions';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import type { Product } from '@/hooks/products';
 
 // Mock Lucide icons
 vi.mock('lucide-react', async () => {
@@ -25,33 +26,34 @@ describe('ProductQuickActions Tooltips and Titles', () => {
     minQuantity: 10,
     tags: { 'Público-Alvo': ['Empresas'] },
     niches: ['Tecnologia'],
-    product: { 
-      id: '123', 
-      name: 'Test', 
+    product: {
+      id: '123',
+      name: 'Test',
       images: [],
       category_id: 'cat1',
       brand: 'Brand',
       description: 'Desc',
       sku: 'SKU',
       colors: [],
-      sizes: []
-    } as any,
+      sizes: [],
+    } as unknown as Product,
   };
 
   const renderComponent = (props = defaultProps) => {
     return render(
       <TooltipProvider>
         <ProductQuickActions {...props} />
-      </TooltipProvider>
+      </TooltipProvider>,
     );
   };
 
   it('should not have native title attributes on any button', () => {
     renderComponent();
     const buttons = screen.getAllByRole('button');
-    buttons.forEach(button => {
+    expect(buttons).not.toHaveLength(0);
+    for (const button of buttons) {
       expect(button.getAttribute('title')).toBeNull();
-    });
+    }
   });
 
   it('should have correct action labels on buttons', () => {

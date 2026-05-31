@@ -613,14 +613,26 @@ export function NoveltyProductGrid() {
               <PaginationItem>
                 <PaginationPrevious
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  className={cn(currentPage === 1 && 'pointer-events-none opacity-50', 'cursor-pointer')}
+                  className={cn(
+                    currentPage === 1 && 'pointer-events-none opacity-50',
+                    'cursor-pointer',
+                  )}
                 />
               </PaginationItem>
 
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                if (totalPages > 7 && page !== 1 && page !== totalPages && Math.abs(page - currentPage) > 1) {
+                if (
+                  totalPages > 7 &&
+                  page !== 1 &&
+                  page !== totalPages &&
+                  Math.abs(page - currentPage) > 1
+                ) {
                   if (page === currentPage - 2 || page === currentPage + 2) {
-                    return <PaginationItem key={page}><PaginationEllipsis /></PaginationItem>;
+                    return (
+                      <PaginationItem key={page}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    );
                   }
                   return null;
                 }
@@ -640,7 +652,10 @@ export function NoveltyProductGrid() {
               <PaginationItem>
                 <PaginationNext
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  className={cn(currentPage === totalPages && 'pointer-events-none opacity-50', 'cursor-pointer')}
+                  className={cn(
+                    currentPage === totalPages && 'pointer-events-none opacity-50',
+                    'cursor-pointer',
+                  )}
                 />
               </PaginationItem>
             </PaginationContent>
