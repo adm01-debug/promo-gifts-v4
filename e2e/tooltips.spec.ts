@@ -30,6 +30,12 @@ test.describe("Tooltip Regression Tests", () => {
           await tooltipTrigger.hover();
           
           const tooltip = page.locator('[role="tooltip"]');
+          
+          // Validação de delay de 1000ms
+          await expect(tooltip).not.toBeVisible();
+          await page.waitForTimeout(800);
+          await expect(tooltip).not.toBeVisible();
+          
           await expect(tooltip).toBeVisible();
           
           const styles = await tooltip.evaluate((el) => {
