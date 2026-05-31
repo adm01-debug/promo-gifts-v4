@@ -27,12 +27,12 @@ import type {
   OverviewWindowFilter,
 } from '@/hooks/intelligence';
 
-const TYPE_OPTIONS: { value: string; label: string; Icon: typeof Database }[] = [
-  { value: 'supabase', label: 'Supabase', Icon: Database },
-  { value: 'bitrix24', label: 'Bitrix24', Icon: Briefcase },
-  { value: 'n8n', label: 'n8n', Icon: Workflow },
-  { value: 'mcp', label: 'MCP', Icon: Plug },
-  { value: 'webhook_outbound', label: 'Webhook Outbound', Icon: Webhook },
+const TYPE_OPTIONS: { value: string; label: string; icon: typeof Database }[] = [
+  { value: 'supabase', label: 'Supabase', icon: Database },
+  { value: 'bitrix24', label: 'Bitrix24', icon: Briefcase },
+  { value: 'n8n', label: 'n8n', icon: Workflow },
+  { value: 'mcp', label: 'MCP', icon: Plug },
+  { value: 'webhook_outbound', label: 'Webhook Outbound', icon: Webhook },
 ];
 
 const STATUS_OPTIONS: { value: OverviewStatusFilter; label: string }[] = [
@@ -106,7 +106,7 @@ export function ConnectionsOverviewFilters({
           </PopoverTrigger>
           <PopoverContent align="start" className="w-56 p-2">
             <div className="space-y-1">
-              {TYPE_OPTIONS.map(({ value, label, Icon }) => {
+              {TYPE_OPTIONS.map(({ value, label, icon: Icon }) => {
                 const checked = filters.types.includes(value);
                 return (
                   <label
