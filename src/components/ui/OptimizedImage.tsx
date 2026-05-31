@@ -57,7 +57,10 @@ export function OptimizedImage({
   return (
     <div className={cn('relative overflow-hidden bg-white', containerClassName)}>
       {!isLoaded && !error && (
-        <div className="absolute inset-0 z-0 h-full w-full bg-white" />
+        <div
+          aria-hidden
+          className="absolute inset-0 z-0 h-full w-full bg-[#e5e7eb] image-shimmer"
+        />
       )}
 
       {error ? (
