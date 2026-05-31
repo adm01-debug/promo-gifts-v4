@@ -15,6 +15,7 @@
 import { memo, useState, useCallback, useRef, useEffect } from 'react';
 import { Package, Building2 } from 'lucide-react';
 import { NoveltyBadge } from './NoveltyBadge';
+import { ProductStatusBadge } from './ProductStatusBadge';
 import { ListItemActions } from './list-item/ListItemActions';
 import { useNavigate } from 'react-router-dom';
 import { getCdnUrl } from '@/utils/image-utils';
