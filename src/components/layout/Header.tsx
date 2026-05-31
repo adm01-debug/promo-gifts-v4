@@ -336,33 +336,6 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={handleToggleTheme}
-                  className="relative h-8 w-8 rounded-full text-muted-foreground transition-all duration-200 hover:bg-primary/10 hover:text-foreground"
-                  aria-label="Tema claro"
-                >
-                  <Sun
-                    className="h-[17px] w-[17px] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0"
-                    strokeWidth={1.75}
-                  />
-                  <Moon
-                    className="absolute h-[17px] w-[17px] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100"
-                    strokeWidth={1.75}
-                  />
-                  <span className="sr-only">Alternar tema</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {actualTheme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}{' '}
-                <kbd className="ml-1.5 rounded bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground">
-                  Alt+T
-                </kbd>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
                   onClick={handleToggleTooltipStyle}
                   className="relative h-8 w-8 rounded-full text-muted-foreground transition-all duration-200 hover:bg-primary/10 hover:text-foreground"
                   aria-label="Alternar tamanho do tooltip"
