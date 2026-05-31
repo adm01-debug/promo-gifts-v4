@@ -370,8 +370,8 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                Tamanho Tooltip:{' '}
-                {tooltipStyle === 'compact' ? 'Mudar para Standard' : 'Mudar para Compact'}
+                Altere o tamanho do texto de Dicas para{' '}
+                {tooltipStyle === 'compact' ? 'Padrão' : 'Compacto'}
               </TooltipContent>
             </Tooltip>
             <Tooltip>
