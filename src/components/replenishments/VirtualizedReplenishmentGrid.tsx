@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { ReplenishmentWithDetails } from '@/hooks/products';
 import type { ColumnCount } from '@/components/products/ColumnSelector';
-import { colsToNum, getGridColsClass, getGridGapClass } from './grid-layout';
+import { useResponsiveColumns, getGridColsClass, getGridGapClass } from './grid-layout';
 import { ReplenishmentGridCard } from './ReplenishmentCards';
 
 interface VirtualizedGridProps {
@@ -23,17 +23,20 @@ export function VirtualizedReplenishmentGrid({
   onProductClick,
 }: VirtualizedGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
-  const numCols = Math.min(colsToNum(gridColumns), products.length);
+  
+  // Usamos o hook reativo para que o número de colunas mude com a tela
+  const numCols = useResponsiveColumns(gridColumns);
   const rowCount = Math.ceil(products.length / numCols);
 
   const virtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 340,
+    estimateSize: () => 480,
     overscan: 3,
+    measureElement: (el) => el.getBoundingClientRect().height,
   });
 
-  const effectiveCols = Math.min(gridColumns, products.length) as ColumnCount;
+  const effectiveCols = gridColumns;
 
   return (
     <div
@@ -57,15 +60,16 @@ export function VirtualizedReplenishmentGrid({
           return (
             <div
               key={virtualRow.key}
+              data-index={virtualRow.index}
+              ref={virtualizer.measureElement}
               style={{
                 position: 'absolute',
                 top: 0,
                 left: 0,
                 width: '100%',
-                height: `${virtualRow.size}px`,
                 transform: `translateY(${virtualRow.start}px)`,
               }}
-              className={`grid ${getGridColsClass(effectiveCols)} ${getGridGapClass(effectiveCols)}`}
+              className={`grid ${getGridColsClass(effectiveCols)} ${getGridGapClass(effectiveCols)} pb-8`}
             >
               {rowProducts.map((product) => (
                 <div key={product.replenishment_id} role="listitem">
@@ -85,3 +89,4 @@ export function VirtualizedReplenishmentGrid({
     </div>
   );
 }
+
