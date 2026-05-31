@@ -6,7 +6,7 @@ import { memo } from 'react';
 import { Sparkles, Package } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { NoveltyBadge } from './NoveltyBadge';
+import { ProductStatusBadge } from './ProductStatusBadge';
 import { cn } from '@/lib/utils';
 import { isLightColor } from '@/hooks/products/useColorSystem';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
