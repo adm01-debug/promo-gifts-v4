@@ -545,14 +545,24 @@ async function handleSelect(crm: SupabaseClient, body: CrmQuery): Promise<Respon
   if (filters) query = applyFilters(query, filters);
   if (search) query = query.ilike(search.column, `%${search.term}%`);
   if (orderBy) query = applyOrdering(query, orderBy);
-  if (limit) query = query.limit(limit);
-  if (offset) query = query.range(offset, offset + (limit || 50) - 1);
+  // Default cap (500) para evitar statement timeout em SELECT sem limite explícito.
+  const effectiveLimit = limit ?? 500;
+  query = query.limit(effectiveLimit);
+  if (offset) query = query.range(offset, offset + effectiveLimit - 1);
 
   const { data, error, count, status, statusText } = await query;
   console.log(`[SELECT] result: status=${status}, statusText=${statusText}, dataLength=${(data || []).length}, hasError=${!!error}, count=${count}`);
 
   if (error) {
     if (isOptionalQuoteTable(table) && isMissingTableError(error, table)) return createOptionalSelectFallback(table, false);
+    // Mapeia statement_timeout (57014) para 504 com mensagem amigável.
+    if (error.code === "57014" || /statement timeout/i.test(error.message ?? "")) {
+      console.warn(`[SELECT] statement_timeout em ${table} (limit=${effectiveLimit}). Reduza filtros ou paginação.`);
+      return jsonResponse({
+        error: "A consulta demorou demais. Refine os filtros ou reduza o limite.",
+        code: "statement_timeout",
+      }, 504);
+    }
     return jsonResponse({ error: error.message }, 500);
   }
   return jsonResponse({ data: data || [], count });
