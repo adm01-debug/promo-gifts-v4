@@ -61,7 +61,7 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
 
       // Navega para a página de confirmação com instruções detalhadas
       navigate('/forgot-password-confirmation');
-    } catch (_error) {
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Erro inesperado',
