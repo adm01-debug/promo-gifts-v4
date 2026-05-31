@@ -32,6 +32,8 @@ DEF_FILE="src/lib/supabase-untyped.ts"
 # Foram adicionadas ao código ANTES de regenerar o types.ts.
 # Removê-las da allowlist requer: supabase gen types typescript --project-id <id>
 ALLOWLIST=(
+  categories
+  product_category_assignments
   product_component_location_techniques
   product_group_components
   product_group_location_techniques

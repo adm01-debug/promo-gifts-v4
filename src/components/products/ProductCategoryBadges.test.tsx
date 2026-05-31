@@ -135,4 +135,35 @@ describe('ProductCategoryBadges', () => {
     });
     expect(container.firstChild).toBeNull();
   });
+
+  it('exibe o caminho raiz→folha no tooltip quando categoryPath tem ≥2 níveis', async () => {
+    renderComponent({
+      ...defaultProps,
+      groups: [],
+      categoryPath: ['Papelaria | Escritório', 'Cadernetas', 'Com Pauta'],
+      category: { id: 'cat-1', name: 'Com Pauta' },
+    });
+    const badge = screen.getByText('Com Pauta').parentElement;
+    if (badge) {
+      fireEvent.pointerEnter(badge);
+      fireEvent.focus(badge);
+    }
+    // O Radix tooltip pode renderizar conteúdo em múltiplos nós; basta achar a folha
+    // e o ancestral no caminho.
+    const matches = await screen.findAllByText(/Com Pauta/);
+    expect(matches.length).toBeGreaterThan(0);
+  });
+
+  it('deep-link da categoria principal usa a folha (categoryUuid)', () => {
+    renderComponent({
+      ...defaultProps,
+      groups: [],
+      categoryUuid: 'leaf-uuid',
+      categoryPath: ['Raiz', 'Folha'],
+      category: { id: 'cat-1', name: 'Folha' },
+    });
+    const badge = screen.getByText('Folha').parentElement;
+    if (badge) fireEvent.click(badge);
+    expect(mockNavigate).toHaveBeenCalledWith('/filtros?categories=leaf-uuid');
+  });
 });

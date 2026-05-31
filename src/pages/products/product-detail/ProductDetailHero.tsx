@@ -9,6 +9,7 @@ import { Heart, Package, Clock, Tag, Layers, Sparkles, FileText, Eye } from 'luc
 import { ProductGallery } from '@/components/products/ProductGallery';
 import { KitComposition } from '@/components/products/KitComposition';
 import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
+import { useProductLeafCategories } from '@/hooks/products/useProductLeafCategories';
 import { GenderBadge } from '@/components/products/GenderBadge';
 import { ProductQuickActions } from '@/components/products/ProductQuickActions';
 import { ProductInfoBar } from '@/components/products/ProductInfoBar';
@@ -87,6 +88,10 @@ export function ProductDetailHero({
   const navigate = useNavigate();
   const [quoteVariantWizardOpen, setQuoteVariantWizardOpen] = useState(false);
 
+  // Categoria-FOLHA (mais específica) + caminho raiz→folha para este produto.
+  const { leafById } = useProductLeafCategories([product.id]);
+  const leafCategory = leafById.get(product.id);
+
   const minQuantity = product.minQuantity || 1;
   const stockInfo = getStockStatusInfo(product.stockStatus);
 
@@ -148,9 +153,14 @@ export function ProductDetailHero({
 
           <div className="flex flex-wrap items-center gap-1.5">
             <ProductCategoryBadges
-              category={product.category as never}
+              category={
+                leafCategory
+                  ? { id: leafCategory.id, name: leafCategory.name }
+                  : (product.category as never)
+              }
               groups={product.groups}
-              categoryUuid={product.category_id}
+              categoryUuid={leafCategory?.id ?? product.category_id}
+              categoryPath={leafCategory?.path}
               productId={product.id}
               productName={product.name}
               productSku={product.sku}

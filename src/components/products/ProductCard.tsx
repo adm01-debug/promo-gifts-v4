@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { AddToCollectionModal } from '@/components/collections/AddToCollectionModal';
 import { ProductQuickView } from './ProductQuickView';
 import { ProductCategoryBadges } from './ProductCategoryBadges';
+import { useLeafCategory } from '@/hooks/products/useProductLeafCategories';
 import { showUndoToast, showErrorToast } from '@/utils/undoToast';
 import { getSupplierColors } from '@/lib/supplier-colors';
 import {
@@ -82,6 +83,9 @@ export const ProductCard = memo(
     const navigate = useNavigate();
     const _queryClient = useQueryClient();
     const { prefetchProduct } = usePrefetchProduct();
+    // Categoria-FOLHA (mais específica) resolvida em lote pelo ProductLeafCategoryProvider.
+    // Quando disponível, sobrepõe a categoria "rasa" (raiz/intermediária) no badge.
+    const leafCategory = useLeafCategory(product.id);
     const [isHovered, setIsHovered] = useState(false);
     const [collectionModalOpen, setCollectionModalOpen] = useState(false);
     const [collectionVariant, setCollectionVariant] = useState<
@@ -427,9 +431,12 @@ export const ProductCard = memo(
         >
           {!hideCategoryBadges && (
             <ProductCategoryBadges
-              category={product.category}
+              category={
+                leafCategory ? { id: leafCategory.id, name: leafCategory.name } : product.category
+              }
               groups={product.groups}
-              categoryUuid={product.category_id}
+              categoryUuid={leafCategory?.id ?? product.category_id}
+              categoryPath={leafCategory?.path}
               className="flex-wrap"
             />
           )}
@@ -484,7 +491,9 @@ export const ProductCard = memo(
                     )}
                   >
                     <Package className="h-2.5 w-2.5 shrink-0 sm:h-3 sm:w-3" />
-                    <span className="hidden whitespace-nowrap sm:inline">{getStockStatusLabel(displayStatus)}</span>
+                    <span className="hidden whitespace-nowrap sm:inline">
+                      {getStockStatusLabel(displayStatus)}
+                    </span>
                     <span className="sm:hidden">
                       {displayStatus === 'in-stock'
                         ? '✓'

@@ -17,6 +17,7 @@ import type { Product } from '@/types/product-catalog';
 import type { ViewMode } from '@/hooks/products/useCatalogState';
 import type { ColumnCount } from '@/components/products/ColumnSelector';
 import { SparklineSalesProvider } from '@/hooks/intelligence/useSparklineSales';
+import { ProductLeafCategoryProvider } from '@/hooks/products/useProductLeafCategories';
 import { ScrollToTopButton } from '@/components/common/ScrollToTopButton';
 
 interface CatalogContentProps {
@@ -140,64 +141,66 @@ export const CatalogContent = memo(function CatalogContent({
   return (
     <div className="relative space-y-8 pb-12 duration-500 animate-in fade-in">
       <SparklineSalesProvider productIds={paginatedProducts.map((p) => p.id)}>
-        {viewMode === 'grid' && (
-          <ProductGrid
-            products={paginatedProducts}
-            isLoading={isLoadingMore}
-            onProductClick={(pid) => navigate(`/produto/${pid}`)}
-            onViewProduct={handleViewProduct}
-            onShareProduct={handleShareProduct}
-            onFavoriteProduct={handleFavoriteProduct}
-            isFavorite={isFavorite}
-            onToggleFavorite={toggleFavorite}
-            isInCompare={isInCompare}
-            onToggleCompare={onToggleCompare}
-            canAddToCompare={canAddToCompare}
-            columns={gridColumns}
-            activeColorFilter={activeColorFilter}
-            selectionMode={selectionMode}
-            selectedIds={selectedIds}
-            onToggleSelect={onToggleSelect}
-          />
-        )}
+        <ProductLeafCategoryProvider productIds={paginatedProducts.map((p) => p.id)}>
+          {viewMode === 'grid' && (
+            <ProductGrid
+              products={paginatedProducts}
+              isLoading={isLoadingMore}
+              onProductClick={(pid) => navigate(`/produto/${pid}`)}
+              onViewProduct={handleViewProduct}
+              onShareProduct={handleShareProduct}
+              onFavoriteProduct={handleFavoriteProduct}
+              isFavorite={isFavorite}
+              onToggleFavorite={toggleFavorite}
+              isInCompare={isInCompare}
+              onToggleCompare={onToggleCompare}
+              canAddToCompare={canAddToCompare}
+              columns={gridColumns}
+              activeColorFilter={activeColorFilter}
+              selectionMode={selectionMode}
+              selectedIds={selectedIds}
+              onToggleSelect={onToggleSelect}
+            />
+          )}
 
-        {viewMode === 'list' && (
-          <ProductList
-            products={paginatedProducts}
-            isLoading={isLoadingMore}
-            onProductClick={(pid) => navigate(`/produto/${pid}`)}
-            onViewProduct={handleViewProduct}
-            onShareProduct={handleShareProduct}
-            onFavoriteProduct={handleFavoriteProduct}
-            isFavorite={isFavorite}
-            onToggleFavorite={toggleFavorite}
-            isInCompare={isInCompare}
-            onToggleCompare={onToggleCompare}
-            canAddToCompare={canAddToCompare}
-            activeColorFilter={activeColorFilter}
-            selectionMode={selectionMode}
-            externalSelectedIds={selectedIds}
-            onToggleSelect={onToggleSelect}
-          />
-        )}
+          {viewMode === 'list' && (
+            <ProductList
+              products={paginatedProducts}
+              isLoading={isLoadingMore}
+              onProductClick={(pid) => navigate(`/produto/${pid}`)}
+              onViewProduct={handleViewProduct}
+              onShareProduct={handleShareProduct}
+              onFavoriteProduct={handleFavoriteProduct}
+              isFavorite={isFavorite}
+              onToggleFavorite={toggleFavorite}
+              isInCompare={isInCompare}
+              onToggleCompare={onToggleCompare}
+              canAddToCompare={canAddToCompare}
+              activeColorFilter={activeColorFilter}
+              selectionMode={selectionMode}
+              externalSelectedIds={selectedIds}
+              onToggleSelect={onToggleSelect}
+            />
+          )}
 
-        {viewMode === 'table' && (
-          <ProductTableView
-            products={paginatedProducts}
-            isLoading={isLoadingMore}
-            onProductClick={(pid) => navigate(`/produto/${pid}`)}
-            onShareProduct={handleShareProduct}
-            isFavorite={isFavorite}
-            onToggleFavorite={toggleFavorite}
-            isInCompare={isInCompare}
-            onToggleCompare={onToggleCompare}
-            canAddToCompare={canAddToCompare}
-            activeColorFilter={activeColorFilter}
-            selectionMode={selectionMode}
-            selectedIds={selectedIds}
-            onToggleSelect={onToggleSelect}
-          />
-        )}
+          {viewMode === 'table' && (
+            <ProductTableView
+              products={paginatedProducts}
+              isLoading={isLoadingMore}
+              onProductClick={(pid) => navigate(`/produto/${pid}`)}
+              onShareProduct={handleShareProduct}
+              isFavorite={isFavorite}
+              onToggleFavorite={toggleFavorite}
+              isInCompare={isInCompare}
+              onToggleCompare={onToggleCompare}
+              canAddToCompare={canAddToCompare}
+              activeColorFilter={activeColorFilter}
+              selectionMode={selectionMode}
+              selectedIds={selectedIds}
+              onToggleSelect={onToggleSelect}
+            />
+          )}
+        </ProductLeafCategoryProvider>
       </SparklineSalesProvider>
 
       {hasMoreProducts && (

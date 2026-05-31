@@ -22,6 +22,9 @@ interface ProductCategoryBadgesProps {
   showLabels?: boolean;
   // UUID real da categoria (para deep-link correto ao Super Filtro)
   categoryUuid?: string | null;
+  // Caminho raiz→folha da categoria principal (ex.: ["Cadernetas", "…", "Com Pauta"]).
+  // Exibido no tooltip do badge principal.
+  categoryPath?: string[];
   // Props para o link de personalização
   productId?: string;
   productName?: string;
@@ -43,6 +46,7 @@ export function ProductCategoryBadges({
   groups,
   className,
   categoryUuid,
+  categoryPath,
   productId,
   productName,
   productSku,
@@ -104,33 +108,46 @@ export function ProductCategoryBadges({
 
   return (
     <div className={cn('flex flex-wrap items-center gap-1.5', className)}>
-      {allCategories.map((cat) => (
-        <Tooltip key={cat.id}>
-          <TooltipTrigger asChild>
-            <Badge
-              variant="secondary"
-              onClick={() => {
-                // Se este item for a categoria principal (primeiro da lista), tenta usar o categoryUuid
-                // caso contrário usa o próprio cat.id (que pode ser numérico para grupos)
-                const isMainCategory = String(cat.id) === String(category?.id);
-                const idToUse = isMainCategory && categoryUuid ? categoryUuid : cat.id;
-                navigate(`/filtros?categories=${idToUse}`);
-              }}
-              className={cn(
-                'cursor-pointer px-2.5 py-1 text-sm font-medium',
-                'border border-border/50 bg-secondary/80 hover:bg-secondary',
-                'transition-all duration-200 hover:scale-105',
+      {allCategories.map((cat) => {
+        const isMainCategory = String(cat.id) === String(category?.id);
+        // Caminho completo só para a categoria principal e quando houver ≥2 níveis.
+        const path =
+          isMainCategory && categoryPath && categoryPath.length > 1 ? categoryPath : null;
+        const ancestors = path ? path.slice(0, -1) : [];
+        const leaf = path ? path[path.length - 1] : '';
+        return (
+          <Tooltip key={cat.id}>
+            <TooltipTrigger asChild>
+              <Badge
+                variant="secondary"
+                onClick={() => {
+                  // Categoria principal usa categoryUuid (folha); grupos usam o próprio id.
+                  const idToUse = isMainCategory && categoryUuid ? categoryUuid : cat.id;
+                  navigate(`/filtros?categories=${idToUse}`);
+                }}
+                className={cn(
+                  'cursor-pointer px-2.5 py-1 text-sm font-medium',
+                  'border border-border/50 bg-secondary/80 hover:bg-secondary',
+                  'transition-all duration-200 hover:scale-105',
+                )}
+              >
+                <span className="mr-1.5">{getIcon(cat)}</span>
+                <span className="text-xs">{cat.name}</span>
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs font-medium">
+              {path ? (
+                <span>
+                  <span className="opacity-70">{ancestors.join(' › ')} › </span>
+                  {leaf}
+                </span>
+              ) : (
+                <>Ver todos os produtos de {cat.name}</>
               )}
-            >
-              <span className="mr-1.5">{getIcon(cat)}</span>
-              <span className="text-xs">{cat.name}</span>
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="font-medium">
-            Ver todos os produtos de {cat.name}
-          </TooltipContent>
-        </Tooltip>
-      ))}
+            </TooltipContent>
+          </Tooltip>
+        );
+      })}
 
       {/* Link para Simulador de Personalização */}
       {showPersonalizationLink && productId && (
