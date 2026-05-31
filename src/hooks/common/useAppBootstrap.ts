@@ -6,8 +6,6 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useGlobalErrorCatcher } from '@/hooks/ui/useErrorHandler';
 import { markBootSuccessful } from '@/lib/chunk-recovery';
 import { loadThemeConfig, applyRadius, applyThemePreset } from '@/lib/theme-presets';
-import { startBridgeTelemetry } from '@/lib/external-db/bridge-telemetry-client';
-import { startColdStartRecorder } from '@/lib/external-db/cold-start-recorder';
 
 /**
  * useAppBootstrap centralizes global initialization used by App.tsx.
@@ -27,8 +25,6 @@ export function useAppBootstrap() {
     if (initializedRef.current) return;
     initializedRef.current = true;
 
-    startBridgeTelemetry();
-    startColdStartRecorder();
     markBootSuccessful();
   }, []);
 

@@ -2,7 +2,6 @@
 export * from '@/hooks/intelligence/useAIRecommendations';
 export * from '@/hooks/intelligence/useAiRouter';
 export * from '@/hooks/intelligence/useAiUsage';
-export * from '@/hooks/intelligence/useBridgeStatusBanner';
 export * from '@/hooks/intelligence/useCommemorativeDates';
 export * from '@/hooks/intelligence/useCommercialIntelligence';
 export * from '@/hooks/intelligence/useConnectionTestDetails';
