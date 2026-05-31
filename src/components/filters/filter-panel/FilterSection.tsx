@@ -100,7 +100,7 @@ export function FilterSection({
               </span>
             )}
             {tooltip && (
-              <Tooltip delayDuration={700}>
+              <Tooltip delayDuration={1000}>
                 <TooltipTrigger asChild>
                   <span className="shrink-0 cursor-help text-muted-foreground opacity-0 transition-opacity group-hover:opacity-40">
                     <SlidersHorizontal className="h-3 w-3" />

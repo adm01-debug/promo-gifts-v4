@@ -111,7 +111,7 @@ export function NicheRecommendationBadge({
 
   return (
     <TooltipProvider>
-      <Tooltip delayDuration={700}>
+      <Tooltip delayDuration={1000}>
         <TooltipTrigger asChild>
           <Badge
             variant="outline"

@@ -265,7 +265,7 @@ export function PriceFreshnessBadge({
         </span>
       );
     return (
-      <TooltipProvider delayDuration={700}>
+      <TooltipProvider delayDuration={1000}>
         <Tooltip>
           <TooltipTrigger asChild>{confirmedBody}</TooltipTrigger>
           <TooltipContent side="top" className=" ">
@@ -416,7 +416,7 @@ export function PriceFreshnessBadge({
   }
 
   const tooltipped = (
-    <TooltipProvider delayDuration={700}>
+    <TooltipProvider delayDuration={1000}>
       <Tooltip>
         <TooltipTrigger asChild>{body}</TooltipTrigger>
         <TooltipContent side="top" className=" ">

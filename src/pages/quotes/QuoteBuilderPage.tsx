@@ -369,7 +369,7 @@ export default function QuoteBuilderPage() {
                         <span className="ml-1">*</span>
                       )}
                     </Label>
-                    <TooltipProvider delayDuration={700}>
+                    <TooltipProvider delayDuration={1000}>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <span

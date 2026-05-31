@@ -269,7 +269,7 @@ export function RetestButton({
   );
 
   return (
-    <TooltipProvider delayDuration={700}>
+    <TooltipProvider delayDuration={1000}>
       <Tooltip>
         <TooltipTrigger asChild>
           <span ref={wrapperRef} className="inline-flex">

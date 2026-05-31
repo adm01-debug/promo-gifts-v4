@@ -37,7 +37,7 @@ export function QuantityCalculator({
       <div className="space-y-3 pt-1">
         <div className="flex items-center gap-2">
           <h4 className="text-sm font-bold text-foreground">Calcule seu pedido</h4>
-          <Tooltip delayDuration={700}>
+          <Tooltip delayDuration={1000}>
             <TooltipTrigger>
               <Info className="h-3.5 w-3.5 text-muted-foreground/50" />
             </TooltipTrigger>
@@ -96,7 +96,7 @@ export function QuantityCalculator({
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <h4 className="text-sm font-semibold">Calcule seu pedido</h4>
-        <Tooltip delayDuration={700}>
+        <Tooltip delayDuration={1000}>
           <TooltipTrigger>
             <Info className="h-4 w-4 text-muted-foreground" />
           </TooltipTrigger>

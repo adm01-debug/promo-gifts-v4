@@ -58,7 +58,7 @@ export function ZoneRefreshButton({
   }, [qc, queryKeys, onRefresh, successMessage]);
 
   return (
-    <TooltipProvider delayDuration={700}>
+    <TooltipProvider delayDuration={1000}>
       <Tooltip>
         <TooltipTrigger asChild>
           <button

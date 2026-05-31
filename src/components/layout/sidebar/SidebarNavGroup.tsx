@@ -196,7 +196,7 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
 
       if (isCollapsed) {
         return (
-          <Tooltip key={item.href} delayDuration={700}>
+          <Tooltip key={item.href} delayDuration={1000}>
             <TooltipTrigger asChild>
               <div>{linkContent}</div>
             </TooltipTrigger>
