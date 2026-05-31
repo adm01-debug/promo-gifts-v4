@@ -118,6 +118,41 @@ describe('Price Freshness Utility', () => {
         expect(result.daysSinceUpdate).toBeGreaterThanOrEqual(0);
       });
 
+      it('handles various date formats and timezones', () => {
+        // UTC
+        const utcDate = new Date('2026-05-01T00:00:00Z');
+        expect(formatPriceDateShort(utcDate)).toBe('01/05/2026');
+
+        // Explicit Timezone (offset)
+        const offsetDate = new Date('2026-05-01T00:00:00-03:00');
+        // This will be 03:00 UTC, but Intl with pt-BR should show the local day if configured.
+        // In Vitest with fixed system time, we check consistency.
+        expect(formatPriceDateShort(offsetDate)).toBe('01/05/2026');
+      });
+
+      it('formats correctly at limit dates (threshold transition)', () => {
+        // If threshold is 10 days:
+        // Day 5: fresh
+        // Day 6: aging (if threshold/2 = 5)
+        // Day 10: aging
+        // Day 11: stale
+        
+        const threshold = 10;
+        const half = 5;
+
+        const fiveDaysAgo = new Date('2026-04-28T12:00:00Z');
+        expect(getPriceFreshness(fiveDaysAgo, threshold).status).toBe('fresh');
+
+        const sixDaysAgo = new Date('2026-04-27T12:00:00Z');
+        expect(getPriceFreshness(sixDaysAgo, threshold).status).toBe('aging');
+
+        const tenDaysAgo = new Date('2026-04-23T12:00:00Z');
+        expect(getPriceFreshness(tenDaysAgo, threshold).status).toBe('aging');
+
+        const elevenDaysAgo = new Date('2026-04-22T12:00:00Z');
+        expect(getPriceFreshness(elevenDaysAgo, threshold).status).toBe('stale');
+      });
+
       it('handles very old dates (years ago) as stale', () => {
         const yearsAgo = new Date('2020-01-01T12:00:00Z').toISOString();
         const result = getPriceFreshness(yearsAgo, 60);
