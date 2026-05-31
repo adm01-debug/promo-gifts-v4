@@ -18,7 +18,7 @@ describe('ThemeInitializer', () => {
     vi.mocked(themePresets.loadThemeConfig).mockReturnValue({
       presetId: 'default',
       radius: 4,
-      mode: 'light' as const,
+      mode: 'dark' as const,
     });
   });
 
@@ -32,8 +32,8 @@ describe('ThemeInitializer', () => {
 
   it('should call apply functions when ThemeContext is available', () => {
     const mockContext = {
-      theme: 'light' as const,
-      actualTheme: 'light' as const,
+      theme: 'dark' as const,
+      actualTheme: 'dark' as const,
       tooltipStyle: 'standard' as const,
       setTheme: vi.fn(),
       toggleTheme: vi.fn(),
@@ -46,16 +46,16 @@ describe('ThemeInitializer', () => {
       </ThemeContext.Provider>,
     );
 
-    expect(themePresets.applyThemePreset).toHaveBeenCalledWith('default', 'light');
+    expect(themePresets.applyThemePreset).toHaveBeenCalledWith('default', 'dark');
     expect(themePresets.applyRadius).toHaveBeenCalledWith(4);
   });
 
-  it('should re-apply theme when actualTheme changes (HMR/Re-render simulation)', () => {
+  it('should re-apply theme on re-render', () => {
     const { rerender } = render(
       <ThemeContext.Provider
         value={{
-          theme: 'light',
-          actualTheme: 'light',
+          theme: 'dark',
+          actualTheme: 'dark',
           tooltipStyle: 'standard',
           setTheme: vi.fn(),
           toggleTheme: vi.fn(),
@@ -66,9 +66,9 @@ describe('ThemeInitializer', () => {
       </ThemeContext.Provider>,
     );
 
-    expect(themePresets.applyThemePreset).toHaveBeenCalledWith('default', 'light');
+    expect(themePresets.applyThemePreset).toHaveBeenCalledWith('default', 'dark');
 
-    // Simulate theme change/re-render
+    // Re-render
     rerender(
       <ThemeContext.Provider
         value={{

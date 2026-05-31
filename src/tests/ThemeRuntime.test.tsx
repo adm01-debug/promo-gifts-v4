@@ -17,7 +17,7 @@ describe('Theme Runtime Safety', () => {
     }).not.toThrow();
 
     expect(screen.getByTestId('theme-value')).toBeDefined();
-    expect(screen.getByTestId('theme-value').textContent).toBe('light');
+    expect(screen.getByTestId('theme-value').textContent).toBe('dark');
   });
 
   it('should show console warning only in development when context is missing', () => {
