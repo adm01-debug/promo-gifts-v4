@@ -25,7 +25,10 @@ export default function ReplenishmentsPage() {
             >
               Reposição
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p 
+              data-testid="replenishment-description"
+              className="text-sm text-muted-foreground"
+            >
               Produtos que voltaram ao estoque dos fornecedores nos últimos 30 dias
             </p>
           </div>
