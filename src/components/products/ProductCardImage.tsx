@@ -66,6 +66,7 @@ export const ProductCardImage = memo(function ProductCardImage({
   safeVariantIdx,
   onImageLoad,
   onVariantChange,
+  onStatusClick,
   priority = false,
 }: ProductCardImageProps) {
   return (
