@@ -42,22 +42,11 @@ function buildAccessibleLabel(
 ): { ariaLabel: string; title: string } {
   // Frase principal lida pelo screen reader (curta e direta).
   const ariaLabel = freshness.label;
-  const title = priceUpdatedAt ? `Atualizado em ${formatAbsoluteDate(priceUpdatedAt)}` : freshness.label;
+  const title = priceUpdatedAt
+    ? `Atualizado em ${formatAbsoluteDate(priceUpdatedAt)}`
+    : freshness.label;
 
   return { ariaLabel, title };
-}
-
-/** Data + hora exatas no fuso local do usuário (PT-BR). Ex.: "24/04/2026 09:32". */
-function formatExactDateTime(value: string | Date): string | null {
-  const d = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(d.getTime())) return null;
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(d);
 }
 
 function buildClassificationRule(thresholdDays: number): string {
