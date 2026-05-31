@@ -141,31 +141,50 @@ export function StockHistoryChart({ productId }: StockHistoryChartProps) {
           </div>
           <div className="flex items-center gap-2">
             {effectiveIntelligence?.abc_classification && (
-              <Badge
-                variant="outline"
-                className={cn(
-                  'text-xs font-bold',
-                  effectiveIntelligence.abc_classification === 'A'
-                    ? 'border-brand-primary/30 bg-brand-primary/15 text-brand-primary'
-                    : effectiveIntelligence.abc_classification === 'B'
-                      ? 'border-success/30 bg-success/15 text-success'
-                      : 'border-border bg-muted text-muted-foreground',
-                )}
-              >
-                {effectiveIntelligence.abc_classification === 'A'
-                  ? '🔥 Best-Seller'
-                  : effectiveIntelligence.abc_classification === 'B'
-                    ? '⚡ Popular'
-                    : '📦 Normal'}
-              </Badge>
+              <TooltipProvider>
+                <TooltipUI>
+                  <TooltipTrigger asChild>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        'cursor-help text-xs font-bold',
+                        effectiveIntelligence.abc_classification === 'A'
+                          ? 'border-brand-primary/30 bg-brand-primary/15 text-brand-primary'
+                          : effectiveIntelligence.abc_classification === 'B'
+                            ? 'border-success/30 bg-success/15 text-success'
+                            : 'border-border bg-muted text-muted-foreground',
+                      )}
+                    >
+                      {effectiveIntelligence.abc_classification === 'A'
+                        ? '🔥 Best-Seller'
+                        : effectiveIntelligence.abc_classification === 'B'
+                          ? '⚡ Popular'
+                          : '📦 Normal'}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Classificação ABC baseada no volume de vendas e relevância comercial deste
+                    produto no mercado.
+                  </TooltipContent>
+                </TooltipUI>
+              </TooltipProvider>
             )}
             {trend !== null && trend > 1.3 && (
-              <Badge
-                variant="outline"
-                className="border-primary/30 bg-primary/15 text-xs font-bold text-primary"
-              >
-                🚀 Emergente
-              </Badge>
+              <TooltipProvider>
+                <TooltipUI>
+                  <TooltipTrigger asChild>
+                    <Badge
+                      variant="outline"
+                      className="cursor-help border-primary/30 bg-primary/15 text-xs font-bold text-primary"
+                    >
+                      🚀 Emergente
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Este produto está com uma curva de crescimento acelerada nos últimos dias.
+                  </TooltipContent>
+                </TooltipUI>
+              </TooltipProvider>
             )}
             {showTurnover && (
               <TooltipProvider>
