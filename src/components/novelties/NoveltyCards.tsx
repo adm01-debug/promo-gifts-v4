@@ -79,14 +79,13 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
   return (
     <Card
       className={cn(
-        'group cursor-pointer overflow-hidden rounded-xl transition-all duration-300 sm:rounded-2xl',
-        'border-border/50 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg',
-        fresh && 'border-success/30 shadow-[0_0_16px_hsl(var(--success)/0.1)]',
-        isSelected &&
-          'border-primary/50 shadow-[0_0_20px_hsl(var(--primary)/0.15)] ring-2 ring-primary',
+        productCardStyles.container,
+        fresh && productCardStyles.recent,
+        isSelected && productCardStyles.selected,
       )}
       onClick={selectionMode ? onToggleSelect : onClick}
     >
+
       <CardContent className="p-0">
         {/* Image */}
         <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-muted/50 to-muted/30">
