@@ -75,6 +75,7 @@ export const ProductListItem = memo(function ProductListItem({
   activeColorFilter,
   isNovelty = false,
   noveltyDaysRemaining,
+  onStatusClick,
 }: ProductListItemProps) {
   const navigate = useNavigate();
   const [collectionModalOpen, setCollectionModalOpen] = useState(false);
