@@ -88,37 +88,18 @@ export function EnhancedProductCard({
   const getUrgencyBadge = () => {
     if (!showUrgencyBadge) return null;
 
-    const configs = {
-      'limited-stock': {
-        icon: <Package className="h-3 w-3" />,
-        text: urgencyText || 'Estoque limitado',
-        className: 'bg-destructive/90 text-destructive-foreground',
-      },
-      trending: {
-        icon: <TrendingUp className="h-3 w-3" />,
-        text: urgencyText || 'Em alta',
-        className: 'bg-primary/90 text-primary-foreground',
-      },
-      'ending-soon': {
-        icon: <Clock className="h-3 w-3" />,
-        text: urgencyText || 'Termina em breve',
-        className: 'bg-warning/90 text-warning-foreground',
-      },
-    };
-
-    const config = configs[urgencyType];
-
     return (
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className={cn(
-          'absolute left-3 top-3 z-20 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium shadow-md',
-          config.className,
-        )}
+        className="absolute left-3 top-3 z-20 pointer-events-none"
       >
-        {config.icon}
-        <span>{config.text}</span>
+        <ProductStatusBadge 
+          type="urgency" 
+          urgencyType={urgencyType} 
+          value={urgencyText}
+          size="sm"
+        />
       </motion.div>
     );
   };
