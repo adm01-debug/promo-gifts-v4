@@ -127,6 +127,17 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
     toggleTheme();
   };
 
+  const handleToggleBadges = async () => {
+    const success = await toggleBadges(location.pathname, actualTheme, user?.id);
+    if (!success) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro de Sincronização',
+        description: 'Não foi possível salvar sua preferência no servidor. Ela será mantida apenas nesta sessão.',
+      });
+    }
+  };
+
   const handleToggleTooltipStyle = () => {
     setTooltipStyle(tooltipStyle === 'compact' ? 'standard' : 'compact');
     toast({
@@ -366,7 +377,7 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => toggleBadges(location.pathname, actualTheme, user?.id)}
+                  onClick={handleToggleBadges}
                   aria-label={badgesEnabled ? 'Ocultar badges dos produtos' : 'Exibir badges dos produtos'}
                   aria-pressed={badgesEnabled}
                   className={cn(

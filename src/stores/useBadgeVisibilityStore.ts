@@ -23,15 +23,20 @@ interface BadgeVisibilityStore {
   badgesEnabled: boolean;
 
   /**
+   * Indica se a última sincronização com o backend falhou.
+   */
+  syncError: string | null;
+
+  /**
    * Alterna a visibilidade para a rota e tema atuais.
    * Se um userId for fornecido, sincroniza com o backend.
    */
-  toggleBadges: (path: string, theme: string, userId?: string) => Promise<void>;
+  toggleBadges: (path: string, theme: string, userId?: string) => Promise<boolean>;
   
   /**
    * Define explicitamente a visibilidade para uma rota/tema.
    */
-  setBadgesEnabled: (path: string, theme: string, enabled: boolean, userId?: string) => Promise<void>;
+  setBadgesEnabled: (path: string, theme: string, enabled: boolean, userId?: string) => Promise<boolean>;
   
   /**
    * Retorna se os badges devem estar visíveis para a rota e tema informados.
@@ -52,14 +57,14 @@ export const useBadgeVisibilityStore = create<BadgeVisibilityStore>()(
   persist(
     (set, get) => ({
       routeSettings: {},
-      badgesEnabled: true, // Mantido para compatibilidade inicial
+      badgesEnabled: true,
+      syncError: null,
 
       isBadgeEnabled: (path, theme) => {
         const settings = get().routeSettings[path];
         if (settings) {
           return theme === 'dark' ? settings.dark : settings.light;
         }
-        // Se não houver configuração específica para a rota, usa o estado global legado
         return get().badgesEnabled;
       },
 
@@ -84,28 +89,41 @@ export const useBadgeVisibilityStore = create<BadgeVisibilityStore>()(
 
         set({ 
           routeSettings: newRouteSettings,
-          // Sincroniza o estado global com a última alteração para manter consistência em rotas não configuradas
-          badgesEnabled: nextEnabled 
+          badgesEnabled: nextEnabled,
+          syncError: null
         });
 
         if (userId) {
           try {
             const supabase = await getSupabaseClient();
-            const { error } = await supabase
+            // Primeiro busca as preferências atuais para evitar sobrescrever outros campos
+            const { data: profile, error: fetchError } = await supabase
+              .from('profiles')
+              .select('preferences')
+              .eq('user_id', userId)
+              .maybeSingle();
+
+            if (fetchError) throw fetchError;
+
+            const { error: updateError } = await supabase
               .from('profiles')
               .update({ 
                 preferences: { 
-                  ...((await supabase.from('profiles').select('preferences').eq('user_id', userId).single()).data?.preferences || {}),
+                  ...(profile?.preferences || {}),
                   badge_visibility: newRouteSettings
                 } 
               })
               .eq('user_id', userId);
 
-            if (error) console.error('[BadgeVisibilityStore] Error syncing with backend:', error);
+            if (updateError) throw updateError;
+            return true;
           } catch (err) {
             console.error('[BadgeVisibilityStore] Sync failed:', err);
+            set({ syncError: 'Erro ao sincronizar preferências com o servidor. As alterações foram salvas apenas localmente.' });
+            return false;
           }
         }
+        return true;
       },
 
       setBadgesEnabled: async (path, theme, enabled, userId) => {
@@ -122,31 +140,47 @@ export const useBadgeVisibilityStore = create<BadgeVisibilityStore>()(
           [path]: nextSettings
         };
 
-        set({ routeSettings: newRouteSettings, badgesEnabled: enabled });
+        set({ 
+          routeSettings: newRouteSettings, 
+          badgesEnabled: enabled,
+          syncError: null
+        });
 
         if (userId) {
           try {
             const supabase = await getSupabaseClient();
-            const { error } = await supabase
+            const { data: profile, error: fetchError } = await supabase
+              .from('profiles')
+              .select('preferences')
+              .eq('user_id', userId)
+              .maybeSingle();
+
+            if (fetchError) throw fetchError;
+
+            const { error: updateError } = await supabase
               .from('profiles')
               .update({ 
                 preferences: { 
-                  ...((await supabase.from('profiles').select('preferences').eq('user_id', userId).single()).data?.preferences || {}),
+                  ...(profile?.preferences || {}),
                   badge_visibility: newRouteSettings
                 } 
               })
               .eq('user_id', userId);
             
-            if (error) console.error('[BadgeVisibilityStore] Error syncing with backend:', error);
+            if (updateError) throw updateError;
+            return true;
           } catch (err) {
             console.error('[BadgeVisibilityStore] Sync failed:', err);
+            set({ syncError: 'Erro ao salvar alterações no servidor.' });
+            return false;
           }
         }
+        return true;
       },
 
       initializeFromProfile: (preferences) => {
         if (preferences?.badge_visibility) {
-          set({ routeSettings: preferences.badge_visibility });
+          set({ routeSettings: preferences.badge_visibility, syncError: null });
         }
       },
     }),
