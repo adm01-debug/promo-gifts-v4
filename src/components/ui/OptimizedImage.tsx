@@ -56,13 +56,6 @@ export function OptimizedImage({
 
   return (
     <div className={cn('relative overflow-hidden bg-white', containerClassName)}>
-      {!isLoaded && !error && (
-        <div
-          aria-hidden
-          className="absolute inset-0 z-0 h-full w-full bg-[#e5e7eb] image-shimmer"
-        />
-      )}
-
       {error ? (
         <div
           className={cn(
@@ -73,27 +66,35 @@ export function OptimizedImage({
           <ImageOff className="h-6 w-6 opacity-20" />
         </div>
       ) : (
-        <img
-          ref={imgRef}
-          src={isInView ? src : undefined}
-          alt={alt}
-          className={cn(
-            'h-full w-full object-cover transition-opacity duration-500',
-            isLoaded ? 'opacity-100' : 'opacity-0',
-            className,
+        <>
+          {!isLoaded && (
+            <div
+              aria-hidden
+              className="absolute inset-0 z-10 h-full w-full bg-white/20 image-shimmer backdrop-blur-sm"
+            />
           )}
-          onLoad={(e) => {
-            setIsLoaded(true);
-            onLoadProp?.(e);
-          }}
-          onError={(e) => {
-            setError(true);
-            onErrorProp?.(e);
-          }}
-          loading={priority ? 'eager' : 'lazy'}
-          {...(priority ? { fetchpriority: 'high' } : {})}
-          {...props}
-        />
+          <img
+            ref={imgRef}
+            src={isInView ? src : undefined}
+            alt={alt}
+            className={cn(
+              'h-full w-full object-cover transition-all duration-700',
+              isLoaded ? 'opacity-100 scale-100 blur-0' : 'opacity-40 scale-105 blur-lg',
+              className,
+            )}
+            onLoad={(e) => {
+              setIsLoaded(true);
+              onLoadProp?.(e);
+            }}
+            onError={(e) => {
+              setError(true);
+              onErrorProp?.(e);
+            }}
+            loading={priority ? 'eager' : 'lazy'}
+            {...(priority ? { fetchpriority: 'high' } : {})}
+            {...props}
+          />
+        </>
       )}
     </div>
   );
