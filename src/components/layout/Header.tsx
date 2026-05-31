@@ -398,8 +398,8 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                Badges dos produtos:{' '}
-                {badgesEnabled ? 'Ativos — clique para ocultar' : 'Ocultos — clique para reativar'}
+                Etiquetas dos Produtos —{' '}
+                {badgesEnabled ? 'Clique para ocultar' : 'Clique para reativar'}
               </TooltipContent>
             </Tooltip>
           </div>
