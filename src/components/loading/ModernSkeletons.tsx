@@ -90,19 +90,25 @@ export function ProductCardSkeleton({
           </div>
         </div>
 
-        {/* Title - Fixed min-height to prevent layout shift */}
-        <div className="min-h-[2.25rem] space-y-1.5 sm:min-h-[2.75rem]">
+        {/* Title - Fixed min-height to prevent layout shift - Matches product-card-styles.ts */}
+        <div className="min-h-[2.5rem] space-y-1.5 sm:min-h-[3rem]">
           <Skeleton className="h-5 w-full" animate={animate} />
           <Skeleton className="h-5 w-2/3" animate={animate} />
         </div>
 
+        {/* Price Section - Fixed min-height Matches product-card-styles.ts */}
+        <div className="min-h-[3.25rem] sm:min-h-[3.75rem] flex flex-col justify-end">
+          <Skeleton className="h-3 w-16 mb-1" animate={animate} />
+          <Skeleton className="h-6 w-24" animate={animate} />
+        </div>
+
         {/* Footer: Price & Actions */}
-        <div className="mt-auto flex items-center justify-between pt-2">
+        <div className="mt-auto flex items-center justify-between border-t border-border/30 pt-2">
           <div className="space-y-1">
-            <Skeleton className="h-6 w-24" animate={animate} />
-            <Skeleton className="h-3 w-16" animate={animate} />
+            <Skeleton className="h-3 w-12" animate={animate} />
+            <Skeleton className="h-2 w-full max-w-[100px]" animate={animate} />
           </div>
-          <Skeleton className="h-10 w-10 rounded-full" animate={animate} />
+          <Skeleton className="h-8 w-8 rounded-full" animate={animate} />
         </div>
       </div>
     </div>

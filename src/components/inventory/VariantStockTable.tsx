@@ -556,9 +556,10 @@ const PAGE_SIZE = 50;
 interface VariantStockTableProps {
   products: ProductStockSummary[];
   className?: string;
+  isLoading?: boolean;
 }
 
-export function VariantStockTable({ products, className }: VariantStockTableProps) {
+export function VariantStockTable({ products, className, isLoading }: VariantStockTableProps) {
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(0);
   const [inlineSearch, setInlineSearch] = useState('');
@@ -620,6 +621,55 @@ export function VariantStockTable({ products, className }: VariantStockTableProp
 
   const expandAll = () => setExpandedProducts(new Set(paginatedProducts.map((p) => p.productId)));
   const collapseAll = () => setExpandedProducts(new Set());
+
+  if (isLoading) {
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[300px]">Produto</TableHead>
+            <TableHead className="hidden md:table-cell">Cores</TableHead>
+            <TableHead>Estoque Total</TableHead>
+            <TableHead className="hidden sm:table-cell w-[120px]">Progresso</TableHead>
+            <TableHead className="hidden lg:table-cell">Reservado</TableHead>
+            <TableHead>Disponível</TableHead>
+            <TableHead className="hidden md:table-cell">Trânsito</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="hidden sm:table-cell">Previsão</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {[...Array(10)].map((_, i) => (
+            <TableRow key={i}>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-md bg-muted animate-pulse" />
+                  <div className="space-y-2">
+                    <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+                    <div className="h-3 w-20 bg-muted animate-pulse rounded" />
+                  </div>
+                </div>
+              </TableCell>
+              <TableCell className="hidden md:table-cell">
+                <div className="flex gap-1">
+                  {[...Array(3)].map((_, j) => (
+                    <div key={j} className="h-5 w-5 rounded-full bg-muted animate-pulse" />
+                  ))}
+                </div>
+              </TableCell>
+              <TableCell><div className="h-4 w-12 bg-muted animate-pulse rounded" /></TableCell>
+              <TableCell className="hidden sm:table-cell"><div className="h-2 w-full bg-muted animate-pulse rounded" /></TableCell>
+              <TableCell className="hidden lg:table-cell"><div className="h-4 w-8 bg-muted animate-pulse rounded" /></TableCell>
+              <TableCell><div className="h-4 w-12 bg-muted animate-pulse rounded" /></TableCell>
+              <TableCell className="hidden md:table-cell"><div className="h-4 w-8 bg-muted animate-pulse rounded" /></TableCell>
+              <TableCell><div className="h-6 w-20 bg-muted animate-pulse rounded-full" /></TableCell>
+              <TableCell className="hidden sm:table-cell"><div className="h-4 w-10 bg-muted animate-pulse rounded" /></TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    );
+  }
 
   return (
     <div className={cn('space-y-2', className)}>
