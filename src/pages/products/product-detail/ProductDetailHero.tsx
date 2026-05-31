@@ -20,6 +20,7 @@ import { BulkVariantWizard } from '@/components/catalog/BulkVariantWizard';
 import { DynamicTrustBadges, type SupplierTrustData } from '@/components/common/SocialProof';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { IntelligenceBadges } from '@/components/common/IntelligenceBadges';
 
@@ -262,57 +263,62 @@ export function ProductDetailHero({
                         const isSelected = selectedVariation?.id === variation.id;
                         const stock = Math.max(0, variation.stock);
                         return (
-                          <button
-                            key={variation.id}
-                            onClick={() => setSelectedVariation(variation)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                setSelectedVariation(variation);
-                              }
-                            }}
-                            title={`${variation.color?.name || 'Cor'}: ${stock.toLocaleString('pt-BR')} un.`}
-                            aria-label={`Cor ${variation.color?.name || 'sem nome'}, ${stock} unidades`}
-                            className={cn(
-                              'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11.5px] font-medium transition-all duration-200',
-                              !isSelected &&
-                                'border border-border/30 bg-secondary/30 hover:bg-secondary/50',
-                              stock === 0 && 'opacity-40',
-                            )}
-                            style={
-                              isSelected
-                                ? {
-                                    backgroundColor: variation.color?.hex
-                                      ? `${variation.color.hex}15`
-                                      : undefined,
-                                    border: variation.color?.hex
-                                      ? `1.5px solid ${variation.color.hex}`
-                                      : undefined,
-                                    boxShadow: variation.color?.hex
-                                      ? `0 0 0 2px ${variation.color.hex}20`
-                                      : undefined,
+                          <Tooltip key={variation.id}>
+                            <TooltipTrigger asChild>
+                              <button
+                                onClick={() => setSelectedVariation(variation)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    setSelectedVariation(variation);
                                   }
-                                : undefined
-                            }
-                          >
-                            <div
-                              className="h-3 w-3 shrink-0 rounded-full border border-border/40"
-                              style={{ backgroundColor: variation.color?.hex || '#CCC' }}
-                            />
-                            <span
-                              className={cn(
-                                stock === 0
-                                  ? 'text-destructive'
-                                  : stock < 100
-                                    ? 'text-warning'
-                                    : 'text-muted-foreground',
-                              )}
-                            >
-                              {stock >= 1000
-                                ? `${(stock / 1000).toFixed(1)}k`
-                                : stock.toLocaleString('pt-BR')}
-                            </span>
-                          </button>
+                                }}
+                                aria-label={`Cor ${variation.color?.name || 'sem nome'}, ${stock} unidades`}
+                                className={cn(
+                                  'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11.5px] font-medium transition-all duration-200',
+                                  !isSelected &&
+                                    'border border-border/30 bg-secondary/30 hover:bg-secondary/50',
+                                  stock === 0 && 'opacity-40',
+                                )}
+                                style={
+                                  isSelected
+                                    ? {
+                                        backgroundColor: variation.color?.hex
+                                          ? `${variation.color.hex}15`
+                                          : undefined,
+                                        border: variation.color?.hex
+                                          ? `1.5px solid ${variation.color.hex}`
+                                          : undefined,
+                                        boxShadow: variation.color?.hex
+                                          ? `0 0 0 2px ${variation.color.hex}20`
+                                          : undefined,
+                                      }
+                                    : undefined
+                                }
+                              >
+                                <div
+                                  className="h-3 w-3 shrink-0 rounded-full border border-border/40"
+                                  style={{ backgroundColor: variation.color?.hex || '#CCC' }}
+                                />
+                                <span
+                                  className={cn(
+                                    stock === 0
+                                      ? 'text-destructive'
+                                      : stock < 100
+                                        ? 'text-warning'
+                                        : 'text-muted-foreground',
+                                  )}
+                                >
+                                  {stock >= 1000
+                                    ? `${(stock / 1000).toFixed(1)}k`
+                                    : stock.toLocaleString('pt-BR')}
+                                </span>
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {variation.color?.name || 'Cor'}: {stock.toLocaleString('pt-BR')} un.
+                            </TooltipContent>
+                          </Tooltip>
                         );
                       },
                     )}
