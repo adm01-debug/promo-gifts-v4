@@ -273,6 +273,7 @@ export function useFiltersPageState() {
     if (filters.featured) count++;
     if (filters.isNew) count++;
     if (filters.hasPersonalization) count++;
+    if (filters.onSale) count++;
     if (filters.hasCommercialPackaging) count++;
     if ((filters.techniques?.length || 0) > 0) count++;
     if ((filters.tags?.length || 0) > 0) count++;
