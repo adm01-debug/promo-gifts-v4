@@ -1336,9 +1336,6 @@ html[data-scroll-locked] body {
     transform: rotate(360deg);
   }
 }
-    transform: rotate(360deg);
-  }
-}
 
 @keyframes sound-wave {
   0%,
