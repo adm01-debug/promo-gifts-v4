@@ -18,6 +18,7 @@ export const SupabaseConnectionDebug = () => {
     url: string;
     envUrl: string;
     isCanonical: boolean;
+    isFallbackActive: boolean;
     projectRef: string;
     clientReady: boolean;
   } | null>(null);
@@ -30,11 +31,13 @@ export const SupabaseConnectionDebug = () => {
         const envUrl = import.meta.env.VITE_SUPABASE_URL || 'N/A';
         const projectRef = url.split('//')[1]?.split('.')[0] || 'N/A';
         const isCanonical = projectRef === 'doufsxqlfjyuvxuezpln';
+        const isFallbackActive = isCanonical && !envUrl.includes('doufsxqlfjyuvxuezpln');
 
         setInfo({
           url,
           envUrl,
           isCanonical,
+          isFallbackActive,
           projectRef,
           clientReady: !!client,
         });
@@ -98,10 +101,16 @@ export const SupabaseConnectionDebug = () => {
           </div>
         </div>
 
-        {info.isCanonical ? (
+        {info.isFallbackActive ? (
           <div className="flex items-center gap-2">
             <Badge className="animate-pulse border-amber-500/30 bg-amber-500/20 px-2 py-0.5 text-amber-500">
-              <AlertTriangle className="mr-1 h-3 w-3" /> FALLBACK CANÔNICO ACIONADO
+              <AlertTriangle className="mr-1 h-3 w-3" /> FALLBACK CANÔNICO ATIVO (SSOT)
+            </Badge>
+          </div>
+        ) : info.isCanonical ? (
+          <div className="flex items-center gap-2">
+            <Badge className="border-green-500/30 bg-green-500/20 text-green-400">
+              <CheckCircle2 className="mr-1 h-3 w-3" /> CANÔNICO OK
             </Badge>
           </div>
         ) : (
