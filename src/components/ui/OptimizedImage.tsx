@@ -7,6 +7,10 @@ interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> 
   fallbackClassName?: string;
   containerClassName?: string;
   priority?: boolean;
+  blurAmount?: number;
+  zoomAmount?: number;
+  duration?: number;
+  lqip?: string;
 }
 
 /**
