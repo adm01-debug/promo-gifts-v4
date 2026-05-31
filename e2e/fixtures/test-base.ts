@@ -69,6 +69,32 @@ export const test = base.extend<Fixtures>({
   evidence: async ({ page }, use, testInfo) => {
     const collector = attachConsoleCapture(page);
     await use(collector);
+
+    // Fail test if console errors or critical warnings were captured
+    const errors = collector.pageErrors.map(e => e.message);
+    const consoleErrors = collector.consoleLogs
+      .filter(l => l.type === 'error' && !l.text.includes('chrome-extension'))
+      .map(l => l.text);
+    
+    const allErrors = [...errors, ...consoleErrors];
+    if (allErrors.length > 0) {
+      throw new Error(`Test failed due to console errors:\n${allErrors.join('\n')}`);
+    }
+
+    // Fail on critical warnings
+    const criticalWarnings = collector.consoleLogs
+      .filter(l => l.type === 'warning' && (
+        l.text.includes('React') || 
+        l.text.includes('Supabase') || 
+        l.text.includes('Invalid') ||
+        l.text.includes('Failed')
+      ))
+      .map(l => l.text);
+
+    if (criticalWarnings.length > 0) {
+      throw new Error(`Test failed due to critical console warnings:\n${criticalWarnings.join('\n')}`);
+    }
+
     if (testInfo.status !== testInfo.expectedStatus) {
       await collector.attachAll(page, testInfo);
     }

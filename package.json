@@ -27,7 +27,7 @@
     "lint:baseline": "node scripts/check-eslint-baseline.mjs",
     "lint:baseline:update": "node scripts/eslint-baseline-generate.mjs",
     "typecheck": "node scripts/check-tsc-baseline.mjs",
-    "qa:lint": "eslint src --max-warnings=500",
+    "qa:lint": "eslint src --max-warnings=0",
     "qa:typecheck": "tsc -p tsconfig.app.json --noEmit",
     "qa:full": "npm run check:package-duplicate-scripts && npm run lint:baseline && npm run qa:typecheck && npm run qa:lint",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
