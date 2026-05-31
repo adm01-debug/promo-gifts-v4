@@ -1257,13 +1257,14 @@ html[data-scroll-locked] body {
   border-radius: inherit;
   padding: 1.5px;
   background: linear-gradient(
-    135deg,
+    90deg,
     transparent 0%,
     hsl(var(--primary) / 0) 40%,
-    hsl(var(--primary) / 0.4) 50%,
+    hsl(var(--primary) / 0.6) 50%,
     hsl(var(--primary) / 0) 60%,
     transparent 100%
   );
+  background-size: 200% 100%;
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
