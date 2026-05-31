@@ -128,6 +128,31 @@ export const ProductCard = memo(
     const favStore = useFavoritesStore();
     const compStore = useComparisonStore();
 
+    const handleStatusClick = useCallback(
+      (type: string, _value?: string | number) => {
+        if (onStatusClick) {
+          onStatusClick(type, _value);
+          return;
+        }
+
+        switch (type) {
+          case 'novelty':
+            navigate('/novidades');
+            break;
+          case 'promotion':
+            navigate('/filtros?onSale=1');
+            break;
+          case 'featured':
+            navigate('/filtros?featured=1');
+            break;
+          case 'kit':
+            navigate('/filtros?isKit=1');
+            break;
+        }
+      },
+      [onStatusClick, navigate],
+    );
+
     const handleVariantComplete = useCallback(
       (variant: ExternalVariantStock | null) => {
         const variantInfo = variant
