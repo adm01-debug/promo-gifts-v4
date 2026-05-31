@@ -58,8 +58,8 @@ export function OptimizedImage({
       return `${src}${src.includes('?') ? '&' : '?'}width=50&quality=10`;
     }
 
-    // Default SVG fallback if no better option exists
-    return `data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 500'%3E%3Crect width='400' height='500' fill='%23f3f4f6'/%3E%3C/svg%3E`;
+    // No local preview for other sources
+    return null;
   }, [lqip, src]);
 
   useEffect(() => {
