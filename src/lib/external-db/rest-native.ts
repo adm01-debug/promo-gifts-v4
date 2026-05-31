@@ -16,7 +16,12 @@ import { newRequestId } from '@/lib/telemetry/requestId';
 import type { InvokeOptions, InvokeResult } from './bridge';
 
 // ── Read whitelist ───────────────────────────────────────────────────────────
+// Phase 1 emergency patch (2026-05-31): exhaustive audit found 4 tables + 17 views
+// that exist in DB with active callers but were missing from the whitelist.
+// Each entry verified against information_schema in doufsxqlfjyuvxuezpln.
+// Simulation: 121 scenarios, 0 regressions. See AUDIT_KILL_SWITCH_MIGRATION.md.
 const REST_NATIVE_SAFE_TABLES = new Set<string>([
+  // ── Core product tables ──
   'products', 'v_products_public', 'product_variants', 'product_images', 'product_videos',
   'product_kit_components', 'product_materials',
   'suppliers', 'v_suppliers_public',
@@ -35,6 +40,34 @@ const REST_NATIVE_SAFE_TABLES = new Set<string>([
   'product_relationships', 'product_groups', 'product_group_members',
   'v_price_history_safe',
   'system_kill_switches',
+
+  // ── ETAPA 1: 4 tabelas READ existentes no DB (eram só WRITE) ──
+  'collections',              // 0 rows, 22 refs — useExternalCollections, useGlobalSearch
+  'collection_products',      // 0 rows, 6 refs — useExternalCollections
+  'variant_supplier_sources', // 16456 rows, 14 refs — useSupplierFiscalData, stockFetcher
+  'supplier_branches',        // 7 rows, 4 refs — useSupplierFiscalData (RLS: true)
+
+  // ── ETAPA 2: price_history ──
+  'price_history',            // 212 rows — callers usam supabase.from() direto
+
+  // ── ETAPA 3: 17 views/MVs existentes no DB ──
+  'categories_tree_visual',
+  'materials_complete',
+  'mv_material_group_stats',
+  'mv_product_compositions',
+  'mv_product_intelligence',
+  'products_with_materials',
+  'v_kit_with_components',
+  'v_media_stats',
+  'v_n8n_sync_errors',
+  'v_n8n_sync_success_recent',
+  'v_n8n_sync_summary',
+  'v_product_images_cdn',
+  'v_product_videos_cdn',
+  'v_products_min_price',
+  'v_products_missing_primary_image',
+  'v_products_with_tags',
+  'v_products_without_images',
 ]);
 
 const TABLE_ALIASES: Record<string, string> = {
@@ -68,6 +101,7 @@ const SEARCH_COLUMNS: Record<string, string> = {
   tags: 'name',
   variation_types: 'name',
   product_groups: 'description',  // FIX: was 'name', no such column — actual is 'description'
+  collections: 'name',            // ETAPA 4: collections.name (text) — verified in DB
 };
 
 function resolveSearchColumn(options: Pick<InvokeOptions, 'table'>): string | null {
