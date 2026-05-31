@@ -67,13 +67,12 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
   return (
     <Card
       className={cn(
-        'group cursor-pointer overflow-hidden rounded-xl transition-all duration-300 sm:rounded-2xl',
-        'border-border/50 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg',
+        productCardStyles.container,
         recent && 'shadow-[0_0_16px_hsl(var(--info)/0.06)]',
-        isSelected &&
-          'border-primary/50 shadow-[0_0_20px_hsl(var(--primary)/0.15)] ring-2 ring-primary',
+        isSelected && productCardStyles.selected,
       )}
       onClick={handleClick}
+
       role="article"
       aria-label={`${product.product_name} — ${stockConfig.label}, ${formatPrice(product.base_price ?? 0)}`}
       aria-selected={selectionMode ? isSelected : undefined}
