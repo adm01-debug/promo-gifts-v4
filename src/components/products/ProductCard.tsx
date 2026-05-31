@@ -298,12 +298,12 @@ export const ProductCard = memo(
         data-product-id={product.id}
         className={cn(
           'card-lift group relative cursor-pointer overflow-hidden rounded-xl bg-card sm:rounded-2xl',
-          'touch-manipulation transition-all duration-300 ease-out active:scale-[0.98] active:transition-transform active:duration-100',
+          'touch-manipulation transition-all duration-500 ease-out active:scale-[0.98] active:transition-transform active:duration-100',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
           product.featured && 'shadow-lg ring-2 ring-primary/20',
           hasHighlightedColor
             ? 'border-2 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.1)]'
-            : 'border-border/40 hover:border-primary/40 hover:shadow-[0_20px_40px_-20px_rgba(0,0,0,0.15)]',
+            : 'border border-border/40 hover:-translate-y-1 hover:border-primary/40 hover:shadow-[0_0_0_1px_hsl(var(--primary)/0.25),0_10px_40px_-10px_hsl(var(--primary)/0.45)]',
         )}
         style={
           hasHighlightedColor && matchedHighlightColor
