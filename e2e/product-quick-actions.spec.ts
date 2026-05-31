@@ -20,27 +20,23 @@ test.describe('ProductQuickActions Tooltips E2E', () => {
     for (const action of actions) {
       const button = page.getByRole('button', { name: action.label, exact: true });
       
-      // Hover over the button
+      // Start timer
+      const startTime = Date.now();
       await button.hover();
       
-      // Check if tooltip content is visible exactly after the delay
       const tooltip = page.getByText(action.description);
       
-      // Should NOT be visible immediately
+      // Strict timing assertion: should NOT be visible before 1000ms
+      await page.waitForTimeout(900);
       await expect(tooltip).not.toBeVisible();
       
-      // Wait for the centralized delay (1000ms)
-      // We wait slightly less than 1000ms first to ensure it's still hidden
-      await page.waitForTimeout(800);
-      await expect(tooltip).not.toBeVisible();
-      
-      // Now it should become visible after 1000ms
-      await expect(tooltip).toBeVisible();
+      // Should be visible after 1000ms
+      await expect(tooltip).toBeVisible({ timeout: 2000 });
+      const duration = Date.now() - startTime;
+      expect(duration).toBeGreaterThanOrEqual(1000);
       
       // Move mouse away
       await page.mouse.move(0, 0);
-      
-      // Check if tooltip is hidden
       await expect(tooltip).not.toBeVisible();
     }
   });
