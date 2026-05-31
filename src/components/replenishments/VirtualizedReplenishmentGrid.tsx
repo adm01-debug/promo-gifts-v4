@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { ReplenishmentWithDetails } from '@/hooks/products';
 import type { ColumnCount } from '@/components/products/ColumnSelector';
-import { colsToNum, getGridColsClass, getGridGapClass } from './grid-layout';
+import { useResponsiveColumns, getGridColsClass, getGridGapClass } from './grid-layout';
 import { ReplenishmentGridCard } from './ReplenishmentCards';
 
 interface VirtualizedGridProps {
@@ -23,7 +23,9 @@ export function VirtualizedReplenishmentGrid({
   onProductClick,
 }: VirtualizedGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
-  const numCols = Math.min(colsToNum(gridColumns), products.length);
+  
+  // Usamos o hook reativo para que o número de colunas mude com a tela
+  const numCols = useResponsiveColumns(gridColumns);
   const rowCount = Math.ceil(products.length / numCols);
 
   const virtualizer = useVirtualizer({
@@ -34,7 +36,7 @@ export function VirtualizedReplenishmentGrid({
     measureElement: (el) => el.getBoundingClientRect().height,
   });
 
-  const effectiveCols = Math.min(gridColumns, products.length) as ColumnCount;
+  const effectiveCols = gridColumns;
 
   return (
     <div
@@ -87,3 +89,4 @@ export function VirtualizedReplenishmentGrid({
     </div>
   );
 }
+
