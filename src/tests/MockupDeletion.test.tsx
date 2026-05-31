@@ -134,6 +134,12 @@ vi.mock('@/integrations/supabase/client', () => ({
           data: { currentLevel: 'aal1', nextLevel: 'aal1' },
           error: null,
         }),
+        listFactors: vi.fn().mockResolvedValue({
+          data: { all: [], totp: [] },
+          error: null,
+        }),
+        challenge: vi.fn().mockResolvedValue({ data: null, error: null }),
+        verify: vi.fn().mockResolvedValue({ data: null, error: null }),
       },
     },
     from: vi.fn().mockReturnValue({
