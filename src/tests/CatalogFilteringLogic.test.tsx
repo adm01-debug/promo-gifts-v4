@@ -60,7 +60,7 @@ describe('useCatalogFiltering Performance & Deep Logic Audit', () => {
       useCatalogFiltering({
         realProducts: mockProducts,
         filters,
-        sortBy: 'relevance' as never,
+        sortBy: 'name',
         hasFuzzySearch: false,
         fuzzySearchResults: [],
         hasMaterialFilter: false,
@@ -82,7 +82,7 @@ describe('useCatalogFiltering Performance & Deep Logic Audit', () => {
       useCatalogFiltering({
         realProducts: mockProducts,
         filters,
-        sortBy: 'relevance' as never,
+        sortBy: 'name',
         hasFuzzySearch: false,
         fuzzySearchResults: [],
         hasMaterialFilter: false,
@@ -104,7 +104,7 @@ describe('useCatalogFiltering Performance & Deep Logic Audit', () => {
       useCatalogFiltering({
         realProducts: mockProducts,
         filters,
-        sortBy: 'relevance' as never,
+        sortBy: 'name',
         hasFuzzySearch: true,
         fuzzySearchResults: [mockProducts[1]], // Assume fuzzy found Mochila
         hasMaterialFilter: false,
@@ -174,7 +174,7 @@ describe('useCatalogFiltering Performance & Deep Logic Audit', () => {
       useCatalogFiltering({
         realProducts: productsWithGender,
         filters,
-        sortBy: 'relevance' as never,
+        sortBy: 'name',
         hasFuzzySearch: false,
         fuzzySearchResults: [],
         hasMaterialFilter: false,

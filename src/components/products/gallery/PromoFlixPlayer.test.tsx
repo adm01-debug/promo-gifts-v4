@@ -406,11 +406,12 @@ describe('PromoFlixPlayer Automated Tests', () => {
   });
 
   describe('Regression Tests for Identified Bugs', () => {
-    it('should NOT have crossOrigin on the video element (removed for Cloudflare Stream CORS compatibility)', () => {
+    it('should NOT have crossOrigin on the video element (Cloudflare Stream CORS compatibility)', () => {
+      // crossOrigin was intentionally removed: Cloudflare Stream doesn't return CORS headers
+      // for dynamic preview origins, which blocked HLS manifest fetch.
+      // Tainted canvas from takeScreenshot is handled by the catch block.
       render(<PromoFlixPlayer src="test.mp4" />);
       const video = document.querySelector('video');
-      // crossOrigin was intentionally removed: Cloudflare Stream doesn't return CORS
-      // headers for dynamic preview origins, which blocked HLS manifest fetch.
       expect(video?.getAttribute('crossorigin')).toBeNull();
     });
 

@@ -189,7 +189,7 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
 
               return (
                 <tr
-                  key={item.sku || globalIdx}
+
                   style={{
                     backgroundColor: isEven ? '#ffffff' : '#f9fafb',
                     borderBottom: '1px solid #eef0f2',

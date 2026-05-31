@@ -11,6 +11,8 @@ vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     from: () => ({ insert: () => ({ select: () => Promise.resolve({ data: [], error: null }) }) }),
   },
+  SUPABASE_URL: 'https://test.supabase.co',
+  SUPABASE_PUBLISHABLE_KEY: 'test-anon-key',
 }));
 
 import { useFavorites } from '@/hooks/favorites/useFavorites';
