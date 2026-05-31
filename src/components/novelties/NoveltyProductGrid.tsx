@@ -80,8 +80,10 @@ export function NoveltyProductGrid() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectionMode, setSelectionMode] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
 
-  const { data: novelties, isLoading, isFetching, error } = useNoveltiesWithDetails({ limit: 200 });
+  const { data: novelties, isLoading, isFetching, error } = useNoveltiesWithDetails({ limit: 400 });
   const products = useMemo(() => novelties || [], [novelties]);
 
   const [loadingProgress, setLoadingProgress] = useState(0);
@@ -165,6 +167,17 @@ export function NoveltyProductGrid() {
     });
     return filtered;
   }, [products, selectedSupplier, selectedCategory, sortMode, searchQuery]);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedSupplier, selectedCategory, sortMode]);
+
+  const totalPages = Math.ceil(filteredProducts.length / pageSize);
+  const paginatedProducts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredProducts.slice(start, start + pageSize);
+  }, [filteredProducts, currentPage, pageSize]);
 
   const sel = useNoveltiesSelectionMode({ selectionMode, filteredProducts });
   const hasActiveFilters =
@@ -333,7 +346,7 @@ export function NoveltyProductGrid() {
 
     return (
       <VirtualizedNoveltyGrid
-        products={filteredProducts}
+        products={paginatedProducts}
         gridColumns={effectiveCols}
         selectionMode={selectionMode}
         selectedIds={sel.selectedIds}
