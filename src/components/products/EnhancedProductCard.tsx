@@ -150,7 +150,11 @@ export function EnhancedProductCard({
         {/* Featured badge */}
         {product.featured && (
           <div className="absolute right-3 top-3 z-10">
-            <ProductStatusBadge type="featured" size="sm" />
+            <ProductStatusBadge 
+              type="featured" 
+              size="sm" 
+              onClick={() => onStatusClick?.('featured')}
+            />
           </div>
         )}
 
