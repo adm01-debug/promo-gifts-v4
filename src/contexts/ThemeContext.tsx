@@ -1,12 +1,12 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { performanceTracker } from '@/utils/performance';
 
-type Theme = 'light' | 'dark' | 'auto';
+type Theme = 'dark';
 type TooltipStyle = 'compact' | 'standard';
 
 interface ThemeContextType {
   theme: Theme;
-  actualTheme: 'light' | 'dark';
+  actualTheme: 'dark';
   tooltipStyle: TooltipStyle;
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
@@ -25,16 +25,12 @@ interface ThemeProviderProps {
 
 export function ThemeProvider({
   children,
-  defaultTheme = 'auto',
+  defaultTheme = 'dark',
   storageKey = 'gifts-store-theme',
   tooltipStorageKey = 'gifts-store-tooltip-style',
 }: ThemeProviderProps) {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    if (typeof window !== 'undefined') {
-      return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
-    }
-    return defaultTheme;
-  });
+  // Force dark theme regardless of what's in localStorage
+  const [theme] = useState<Theme>('dark');
 
   const [tooltipStyle, setTooltipStyleState] = useState<TooltipStyle>(() => {
     if (typeof window !== 'undefined') {
@@ -43,30 +39,14 @@ export function ThemeProvider({
     return 'standard';
   });
 
-  const [actualTheme, setActualTheme] = useState<'light' | 'dark'>(() => {
-    if (theme === 'auto') {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
-    return theme;
-  });
+  const [actualTheme] = useState<'dark'>('dark');
 
-  // Atualizar tema quando mudar
+  // Force dark theme class
   useEffect(() => {
     const root = window.document.documentElement;
-
-    // Remover temas anteriores
-    root.classList.remove('light', 'dark');
-
-    let resolved: 'light' | 'dark';
-    if (theme === 'auto') {
-      resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    } else {
-      resolved = theme;
-    }
-
-    root.classList.add(resolved);
-    setActualTheme(resolved);
-  }, [theme]);
+    root.classList.remove('light');
+    root.classList.add('dark');
+  }, []);
 
   // Atualizar classe do tooltip style
   useEffect(() => {
@@ -75,29 +55,11 @@ export function ThemeProvider({
     root.classList.add(`tooltip-${tooltipStyle}`);
   }, [tooltipStyle]);
 
-  // Listener para mudanças no tema do sistema
-  useEffect(() => {
-    if (theme !== 'auto') return;
-
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
-    const handleChange = (e: MediaQueryListEvent) => {
-      const resolved = e.matches ? 'dark' : 'light';
-      setActualTheme(resolved);
-      const root = window.document.documentElement;
-      root.classList.remove('light', 'dark');
-      root.classList.add(resolved);
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [theme]);
-
-  // Listener for changes from other tabs
+  // Listener for changes from other tabs - simplified as theme is fixed
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === storageKey && e.newValue) {
-        setThemeState(e.newValue as Theme);
+      if (e.key === storageKey && e.newValue && e.newValue !== 'dark') {
+        localStorage.setItem(storageKey, 'dark');
       }
     };
 
@@ -106,17 +68,9 @@ export function ThemeProvider({
   }, [storageKey]);
 
   const setTheme = (newTheme: Theme) => {
-    performanceTracker.startThemeChange(newTheme);
-    const apply = () => {
-      localStorage.setItem(storageKey, newTheme);
-      setThemeState(newTheme);
-      // We assume the transition ends after state update and class application in the next frame
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          performanceTracker.endThemeChange(newTheme);
-        });
-      });
-    };
+    // Theme is fixed to dark, but we keep the storage sync just in case
+    localStorage.setItem(storageKey, 'dark');
+  };
 
     const docWithViewTransition = document as Document & {
       startViewTransition?: (callback: () => void) => void;
@@ -129,8 +83,7 @@ export function ThemeProvider({
   };
 
   const toggleTheme = () => {
-    const nextTheme = actualTheme === 'light' ? 'dark' : 'light';
-    setTheme(nextTheme);
+    // No-op as theme is fixed to dark
   };
 
   const setTooltipStyle = (style: TooltipStyle) => {
@@ -161,8 +114,8 @@ export function useTheme() {
     }
     // Return a safe fallback instead of throwing
     return {
-      theme: 'light',
-      actualTheme: 'light',
+      theme: 'dark',
+      actualTheme: 'dark',
       tooltipStyle: 'standard',
       setTheme: () => {},
       toggleTheme: () => {},
