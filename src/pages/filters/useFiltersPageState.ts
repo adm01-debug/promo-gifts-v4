@@ -79,6 +79,7 @@ export function useFiltersPageState() {
     if (get('featured') === '1') f.featured = true;
     if (get('isNew') === '1') f.isNew = true;
     if (get('hasPersonalization') === '1') f.hasPersonalization = true;
+    if (get('onSale') === '1') f.onSale = true;
     if (get('hasCommercialPackaging') === '1') f.hasCommercialPackaging = true;
     const sortByParam = get('sortBy');
     if (sortByParam) f.sortBy = sortByParam;
