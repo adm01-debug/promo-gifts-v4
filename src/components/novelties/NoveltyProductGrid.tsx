@@ -11,6 +11,15 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
+import {
   Package,
   ArrowUpDown,
   Building2,
@@ -80,8 +89,10 @@ export function NoveltyProductGrid() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectionMode, setSelectionMode] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
 
-  const { data: novelties, isLoading, isFetching, error } = useNoveltiesWithDetails({ limit: 200 });
+  const { data: novelties, isLoading, isFetching, error } = useNoveltiesWithDetails({ limit: 400 });
   const products = useMemo(() => novelties || [], [novelties]);
 
   const [loadingProgress, setLoadingProgress] = useState(0);
@@ -165,6 +176,17 @@ export function NoveltyProductGrid() {
     });
     return filtered;
   }, [products, selectedSupplier, selectedCategory, sortMode, searchQuery]);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedSupplier, selectedCategory, sortMode]);
+
+  const totalPages = Math.ceil(filteredProducts.length / pageSize);
+  const paginatedProducts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredProducts.slice(start, start + pageSize);
+  }, [filteredProducts, currentPage, pageSize]);
 
   const sel = useNoveltiesSelectionMode({ selectionMode, filteredProducts });
   const hasActiveFilters =
@@ -333,7 +355,7 @@ export function NoveltyProductGrid() {
 
     return (
       <VirtualizedNoveltyGrid
-        products={filteredProducts}
+        products={paginatedProducts}
         gridColumns={effectiveCols}
         selectionMode={selectionMode}
         selectedIds={sel.selectedIds}
@@ -583,6 +605,48 @@ export function NoveltyProductGrid() {
           )}
         </AnimatePresence>
       </div>
+
+      {totalPages > 1 && (
+        <div className="mt-4 flex justify-center py-4">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className={cn(currentPage === 1 && 'pointer-events-none opacity-50', 'cursor-pointer')}
+                />
+              </PaginationItem>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                if (totalPages > 7 && page !== 1 && page !== totalPages && Math.abs(page - currentPage) > 1) {
+                  if (page === currentPage - 2 || page === currentPage + 2) {
+                    return <PaginationItem key={page}><PaginationEllipsis /></PaginationItem>;
+                  }
+                  return null;
+                }
+                return (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      isActive={currentPage === page}
+                      onClick={() => setCurrentPage(page)}
+                      className="cursor-pointer"
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                );
+              })}
+
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  className={cn(currentPage === totalPages && 'pointer-events-none opacity-50', 'cursor-pointer')}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
 
       {selectionMode && (
         <BulkActionBar

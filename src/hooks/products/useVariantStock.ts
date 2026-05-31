@@ -18,13 +18,15 @@ export function useVariantStock() {
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
   const queryClient = useQueryClient();
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading, isFetching, error } = useQuery({
     queryKey: ['variant-stock-data'],
     queryFn: fetchAndProcessStockData,
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * Math.pow(2, attempt), 10000),
   });
 
   const productStocks = useMemo(() => data?.productStocks ?? [], [data?.productStocks]);
@@ -318,6 +320,7 @@ export function useVariantStock() {
     dismissAlert,
     dismissAllAlerts,
     dismissAlertsBySeverity,
+    error,
     setFilters,
     getProductStock,
     getColorStock,

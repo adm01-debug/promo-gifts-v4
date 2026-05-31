@@ -57,6 +57,7 @@ export function StockDashboard() {
     availableCategories,
     availableSuppliers,
     availableColorGroups,
+    error,
     fetchStockData,
     updateFilter,
     resetFilters,
@@ -219,6 +220,28 @@ export function StockDashboard() {
         <Skeleton className="h-12 rounded-xl" />
         <Skeleton className="h-96 rounded-xl" />
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="border-destructive/20 bg-destructive/5">
+        <CardContent className="flex flex-col items-center justify-center space-y-4 p-12 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+            <AlertCircle className="h-8 w-8 text-destructive" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-xl font-bold text-destructive">Falha ao carregar estoque</h3>
+            <p className="max-w-md text-muted-foreground">
+              {error instanceof Error ? error.message : 'Não foi possível conectar ao banco de dados externo.'}
+            </p>
+          </div>
+          <Button onClick={fetchStockData} variant="outline" className="gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Tentar novamente
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -475,7 +498,7 @@ export function StockDashboard() {
         </CardHeader>
         <CardContent className="pt-0">
           <ScrollArea className="h-[min(600px,_60vh)]">
-            <VariantStockTable products={productStocks} />
+            <VariantStockTable products={productStocks} isLoading={isFetching} />
           </ScrollArea>
         </CardContent>
       </Card>

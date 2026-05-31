@@ -100,8 +100,12 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
     const { data, error } = await supabase.functions.invoke('external-db-bridge', { body });
 
     if (error) {
-      console.error(`[Stock] Erro ao buscar ${table}:`, error);
-      break;
+      const isGone = error.message?.includes('410') || error.message?.includes('Gone');
+      const errorMsg = isGone
+        ? 'Erro de Conectividade (410): O serviço de ponte legado foi desativado. Por favor, contate o suporte.'
+        : `Erro ao buscar ${table}: ${error.message}`;
+      console.error(`[Stock] ${errorMsg}`, error);
+      throw new Error(errorMsg);
     }
 
     const records = (data?.data?.records ?? []) as T[];

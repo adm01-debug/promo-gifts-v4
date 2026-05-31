@@ -57,7 +57,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: RETRIES,
-  workers: process.env.CI ? 1 : undefined,
+  workers: process.env.CI ? 2 : undefined,
   // CI dobra o per-test timeout para absorver teardown lento do browser context
   // em rotas com ProtectedRoute (effects pendentes fazem context.close atrasar).
   // Local mantém 45s para detectar regressões cedo.
