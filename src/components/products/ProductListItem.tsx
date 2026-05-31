@@ -425,7 +425,11 @@ export const ProductListItem = memo(function ProductListItem({
           {/* Top meta row */}
           <div className="mb-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground sm:text-xs">
             {isNovelty && noveltyDaysRemaining !== undefined && (
-              <NoveltyBadge daysRemaining={noveltyDaysRemaining} size="sm" />
+              <NoveltyBadge 
+                daysRemaining={noveltyDaysRemaining} 
+                size="sm" 
+                onClick={() => handleStatusClick('novelty')}
+              />
             )}
             <span className="max-w-[120px] truncate">
               {product.category?.name || 'Sem categoria'}
