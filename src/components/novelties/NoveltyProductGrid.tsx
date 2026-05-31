@@ -11,6 +11,15 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
+import {
   Package,
   ArrowUpDown,
   Building2,
@@ -80,8 +89,10 @@ export function NoveltyProductGrid() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectionMode, setSelectionMode] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
 
-  const { data: novelties, isLoading, isFetching, error } = useNoveltiesWithDetails({ limit: 200 });
+  const { data: novelties, isLoading, isFetching, error } = useNoveltiesWithDetails({ limit: 400 });
   const products = useMemo(() => novelties || [], [novelties]);
 
   const [loadingProgress, setLoadingProgress] = useState(0);
@@ -165,6 +176,17 @@ export function NoveltyProductGrid() {
     });
     return filtered;
   }, [products, selectedSupplier, selectedCategory, sortMode, searchQuery]);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedSupplier, selectedCategory, sortMode]);
+
+  const totalPages = Math.ceil(filteredProducts.length / pageSize);
+  const paginatedProducts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredProducts.slice(start, start + pageSize);
+  }, [filteredProducts, currentPage, pageSize]);
 
   const sel = useNoveltiesSelectionMode({ selectionMode, filteredProducts });
   const hasActiveFilters =
@@ -333,7 +355,7 @@ export function NoveltyProductGrid() {
 
     return (
       <VirtualizedNoveltyGrid
-        products={filteredProducts}
+        products={paginatedProducts}
         gridColumns={effectiveCols}
         selectionMode={selectionMode}
         selectedIds={sel.selectedIds}
@@ -578,7 +600,52 @@ export function NoveltyProductGrid() {
               <div className="flex items-center gap-2 rounded-full border bg-background/90 px-4 py-2 shadow-sm">
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                 <span className="text-sm text-muted-foreground">Filtrando...</span>
-              </div>
+      </div>
+      
+      {totalPages > 1 && (
+        <div className="mt-6 flex justify-center py-4">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  className={cn(currentPage === 1 && "pointer-events-none opacity-50", "cursor-pointer")}
+                />
+              </PaginationItem>
+              
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                // Simplificado: mostra todas as páginas se forem poucas, senão mostra com ellipsis
+                // Aqui vamos mostrar apenas as 5 primeiras para o teste ou uma lógica simples
+                if (totalPages > 7) {
+                  if (page !== 1 && page !== totalPages && Math.abs(page - currentPage) > 1) {
+                    if (page === 2 || page === totalPages - 1) return <PaginationItem key={page}><PaginationEllipsis /></PaginationItem>;
+                    return null;
+                  }
+                }
+
+                return (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      isActive={currentPage === page}
+                      onClick={() => setCurrentPage(page)}
+                      className="cursor-pointer"
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                );
+              })}
+
+              <PaginationItem>
+                <PaginationNext 
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  className={cn(currentPage === totalPages && "pointer-events-none opacity-50", "cursor-pointer")}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
             </motion.div>
           )}
         </AnimatePresence>
