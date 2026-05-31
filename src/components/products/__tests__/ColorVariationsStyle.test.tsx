@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ProductColorSelector, CompactColorDots } from '../ProductColorSelector';
 import { ColorTooltipContent, colorTooltipClassName } from '../ColorTooltipContent';
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 // Mock color data
 const mockColors = [
@@ -30,24 +30,34 @@ describe('Color Variation Layout Consistency', () => {
     expect(colorTooltipClassName).toContain('shadow-md');
   });
 
-  it('ProductColorSelector tooltips use the standard className', () => {
-    const { container } = render(
+  it('ProductColorSelector tooltips appear only on hover', async () => {
+    render(
       <TooltipProvider>
-        <Tooltip open={true}>
-          <TooltipTrigger>Trigger</TooltipTrigger>
-          <TooltipContent className={colorTooltipClassName}>
-            <ColorTooltipContent colorName="Teste" colorHex="#000" />
-          </TooltipContent>
-        </Tooltip>
+        <ProductColorSelector colors={mockColors} />
       </TooltipProvider>
     );
 
-    // Radix tooltips are usually rendered in a portal, so we might need to look at the body
-    // but in Vitest/JSDOM we can often find them
-    const tooltip = document.body.querySelector('[role="tooltip"]');
-    expect(tooltip).toHaveClass('bg-popover/95');
-    expect(tooltip).toHaveClass('backdrop-blur-sm');
-    expect(tooltip).toHaveClass('border-border/40');
+    const swatches = screen.getAllByRole('button');
+    const firstSwatch = swatches[0];
+
+    // 1. Não deve haver tooltip inicialmente
+    expect(screen.queryByTestId('color-tooltip-swatch')).not.toBeInTheDocument();
+
+    // 2. Hover aciona o tooltip (delayDuration=150 no componente)
+    fireEvent.mouseEnter(firstSwatch);
+
+    // 3. Verifica se o TooltipContent aparece
+    await waitFor(() => {
+      expect(screen.getByTestId('color-tooltip-swatch')).toBeInTheDocument();
+    }, { timeout: 2000 });
+
+    expect(screen.getByText('Vermelho')).toBeInTheDocument();
+
+    // 4. Mouse leave deve esconder
+    fireEvent.mouseLeave(firstSwatch);
+    await waitFor(() => {
+      expect(screen.queryByTestId('color-tooltip-swatch')).not.toBeInTheDocument();
+    }, { timeout: 2000 });
   });
 });
 
