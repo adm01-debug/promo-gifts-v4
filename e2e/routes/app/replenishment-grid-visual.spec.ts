@@ -20,7 +20,7 @@ test.describe('Replenishment Grid Visual Validation', () => {
   });
 
   test('should have consistent vertical and horizontal gaps', async ({ page }) => {
-    // ... keep existing gap logic
+
 
     // Get all card containers
     const cards = await page.locator('div[role="listitem"]').all();
