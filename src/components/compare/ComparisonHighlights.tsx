@@ -29,6 +29,10 @@ export function useComparisonHighlight(
     const min = Math.min(...validValues);
     const max = Math.max(...validValues);
 
+    // Todos os valores iguais → não há melhor/pior distinguível; tudo neutro.
+    // (Sem este guard, min === max marcaria todas as células como 'best'.)
+    if (min === max) return values.map(() => 'neutral' as HighlightType);
+
     return values.map((v) => {
       if (v === null || v === undefined) return 'neutral';
       if (mode === 'lower-is-better') {

@@ -203,7 +203,7 @@ export const useBadgeVisibilityStore = create<BadgeVisibilityStore>()(
           preferences !== null &&
           typeof preferences === 'object' &&
           !Array.isArray(preferences) &&
-          'badge_visibility' in preferences
+          'badge_visibility' in (preferences as Record<string, unknown>)
         ) {
           const bv = (preferences as Record<string, unknown>).badge_visibility;
           if (bv !== null && typeof bv === 'object' && !Array.isArray(bv)) {
@@ -213,7 +213,7 @@ export const useBadgeVisibilityStore = create<BadgeVisibilityStore>()(
               !Array.isArray(v) &&
               typeof (v as Record<string, unknown>).light === 'boolean' &&
               typeof (v as Record<string, unknown>).dark === 'boolean';
-            const allValid = Object.values(bv).every(isValidEntry);
+            const allValid = Object.values(bv as Record<string, unknown>).every(isValidEntry);
             if (!allValid) {
               console.warn('[BadgeVisibilityStore] Invalid badge_visibility structure, ignoring.');
               return;

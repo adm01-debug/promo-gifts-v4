@@ -129,6 +129,18 @@ vi.mock('@/integrations/supabase/client', () => ({
         .fn()
         .mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } }),
       getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user-123' } }, error: null }),
+      mfa: {
+        getAuthenticatorAssuranceLevel: vi.fn().mockResolvedValue({
+          data: { currentLevel: 'aal1', nextLevel: 'aal1' },
+          error: null,
+        }),
+        listFactors: vi.fn().mockResolvedValue({
+          data: { all: [], totp: [] },
+          error: null,
+        }),
+        challenge: vi.fn().mockResolvedValue({ data: null, error: null }),
+        verify: vi.fn().mockResolvedValue({ data: null, error: null }),
+      },
     },
     from: vi.fn().mockReturnValue({
       select: vi.fn().mockReturnThis(),
@@ -149,6 +161,8 @@ vi.mock('@/integrations/supabase/client', () => ({
       unsubscribe: vi.fn().mockReturnThis(),
     }),
   },
+  SUPABASE_URL: 'https://test.supabase.co',
+  SUPABASE_PUBLISHABLE_KEY: 'test-anon-key',
 }));
 
 vi.mock('@/components/layout/MainLayout', () => ({

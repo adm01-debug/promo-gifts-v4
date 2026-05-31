@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoAndSettle } from './helpers/nav';
 
 /**
  * Testes de Regressão Visual para OptimizedImage.
@@ -11,7 +12,7 @@ test.describe('OptimizedImage Visual Regression', () => {
   const DEBUG_URL = '/debug/images';
 
   test.beforeEach(async ({ page }) => {
-    await page.goto(DEBUG_URL);
+    await gotoAndSettle(page, DEBUG_URL);
     await expect(page.getByText('OptimizedImage Demo')).toBeVisible();
   });
 

@@ -91,10 +91,11 @@ export function sortProducts(
       });
       break;
     default:
-      // BUG-SORT-03 FIX: Fallback seguro para sortBy desconhecido (URL corrompida,
-      // localStorage stale, alias programático sem case explícito). Ordena por
-      // nome A-Z para não deixar o catálogo em ordem arbitrária de inserção.
-      products.sort((a, b) => a.name.localeCompare(b.name));
+      // BUG-SORT-03 FIX: sortBy desconhecido é no-op — preserva a ordem atual.
+      // Motivo: reordenar silenciosamente para A-Z quando o caller passou um valor
+      // não reconhecido é comportamento surpreendente (URL corrompida, localStorage
+      // stale, etc.). Melhor manter a ordem que já estava do que trocar para A-Z
+      // de forma inesperada. O test spec valida essa semântica.
       break;
   }
 

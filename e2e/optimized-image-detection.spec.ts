@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoAndSettle } from './helpers/nav';
 
 /**
  * E2E tests for OptimizedImage detection logic and placeholder generation.
@@ -11,7 +12,7 @@ test.describe('OptimizedImage Detection & Placeholders', () => {
   const DEMO_URL = '/debug/images';
 
   test.beforeEach(async ({ page }) => {
-    await page.goto(DEMO_URL);
+    await gotoAndSettle(page, DEMO_URL);
     await expect(page.getByText('OptimizedImage Demo')).toBeVisible();
   });
 
@@ -37,7 +38,7 @@ test.describe('OptimizedImage Detection & Placeholders', () => {
       }
     });
 
-    await page.reload();
+    await gotoAndSettle(page, DEMO_URL);
     await expect(page.getByText('OptimizedImage Demo')).toBeVisible();
 
     // O card Cloudflare tem debug={true} → deve emitir os logs

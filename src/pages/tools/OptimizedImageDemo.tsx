@@ -4,10 +4,29 @@ import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RefreshCcw, AlertTriangle } from 'lucide-react';
+import { RefreshCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-function ValidationRow({ test }: { test: any }) {
+// Module-level constants avoid closure issues inside useCallback deps
+const SAMPLE_IMAGE = 'https://picsum.photos/seed/picsum/800/1000';
+const ERROR_IMAGE = 'https://invalid-url.com/non-existent.jpg';
+
+interface ValidationTest {
+  name: string;
+  url: string;
+  expected: string;
+}
+
+const VALIDATION_TESTS: ValidationTest[] = [
+  { name: 'Cloudflare Padrão', url: 'https://imagedelivery.net/demo/123/public', expected: 'cloudflare' },
+  { name: 'Cloudflare c/ Query', url: 'https://imagedelivery.net/demo/123/public?v=1', expected: 'cloudflare' },
+  { name: 'Cloudflare c/ Barra', url: 'https://imagedelivery.net/demo/123/public/', expected: 'cloudflare' },
+  { name: 'Unsplash', url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30', expected: 'unsplash' },
+  { name: 'Supabase Storage', url: 'https://xyz.supabase.co/storage/v1/object/public/bucket/img.jpg', expected: 'supabase' },
+  { name: 'Genérico', url: 'https://example.com/image.jpg', expected: 'generic' },
+];
+
+function ValidationRow({ test }: { test: ValidationTest }) {
   const [detectedRule, setDetectedRule] = useState<string>('detecting...');
 
   return (
@@ -54,25 +73,25 @@ export default function OptimizedImageDemo() {
   const [showError, setShowError] = useState(false);
   const [delay, setDelay] = useState(1000);
   const [isLoading, setIsLoading] = useState(false);
-  const [currentSrc, setCurrentSrc] = useState("");
+  const [currentSrc, setCurrentSrc] = useState('');
 
-  const sampleImage = "https://picsum.photos/seed/picsum/800/1000";
-  const errorImage = "https://invalid-url.com/non-existent.jpg";
-
-  const reload = () => {
+  // useCallback ensures reload only changes reference when showError or delay
+  // changes — not on every render (e.g. blur/zoom slider interactions).
+  // SAMPLE_IMAGE / ERROR_IMAGE are module-level constants, safe to omit from deps.
+  const reload = React.useCallback(() => {
     setIsLoading(true);
-    setCurrentSrc("");
-    setKey(prev => prev + 1);
-    
+    setCurrentSrc('');
+    setKey((prev) => prev + 1);
+
     setTimeout(() => {
-      setCurrentSrc(showError ? errorImage : sampleImage + `?t=${Date.now()}`);
+      setCurrentSrc(showError ? ERROR_IMAGE : `${SAMPLE_IMAGE}?t=${Date.now()}`);
       setIsLoading(false);
     }, delay);
-  };
+  }, [showError, delay]);
 
   React.useEffect(() => {
     reload();
-  }, [showError, delay]);
+  }, [reload]);
 
   return (
     <div className="container mx-auto p-8 space-y-8">
@@ -191,7 +210,7 @@ export default function OptimizedImageDemo() {
             <div className="aspect-video relative overflow-hidden rounded-md border">
               <OptimizedImage
                 key={`lqip-${key}`}
-                src={sampleImage + "&t=" + key}
+                src={`${SAMPLE_IMAGE}&t=${key}`}
                 lqip="https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=1&w=50"
                 alt="LQIP Demo"
                 blurAmount={blur}
@@ -235,7 +254,7 @@ export default function OptimizedImageDemo() {
             <div className="aspect-video relative overflow-hidden rounded-md border">
               <OptimizedImage
                 key={`fallback-${key}`}
-                src={sampleImage + "&fb=" + key}
+                src={`${SAMPLE_IMAGE}&fb=${key}`}
                 alt="Fallback Demo"
                 blurAmount={blur}
                 zoomAmount={zoom}
@@ -245,6 +264,7 @@ export default function OptimizedImageDemo() {
           </CardContent>
         </Card>
       </div>
+
       <Card>
         <CardHeader>
           <CardTitle>Relatório de Validação de Detecção</CardTitle>
@@ -261,49 +281,16 @@ export default function OptimizedImageDemo() {
                 </tr>
               </thead>
               <tbody>
-                {[
-                  { 
-                    name: 'Cloudflare Padrão', 
-                    url: 'https://imagedelivery.net/demo/123/public',
-                    expected: 'cloudflare'
-                  },
-                  { 
-                    name: 'Cloudflare c/ Query', 
-                    url: 'https://imagedelivery.net/demo/123/public?v=1',
-                    expected: 'cloudflare'
-                  },
-                  { 
-                    name: 'Cloudflare c/ Barra', 
-                    url: 'https://imagedelivery.net/demo/123/public/',
-                    expected: 'cloudflare'
-                  },
-                  { 
-                    name: 'Unsplash', 
-                    url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30',
-                    expected: 'unsplash'
-                  },
-                  { 
-                    name: 'Supabase Storage', 
-                    url: 'https://xyz.supabase.co/storage/v1/object/public/bucket/img.jpg',
-                    expected: 'supabase'
-                  },
-                  { 
-                    name: 'Genérico', 
-                    url: 'https://example.com/image.jpg',
-                    expected: 'generic'
-                  }
-                ].map((test, i) => (
+                {VALIDATION_TESTS.map((test, i) => (
                   <ValidationRow key={i} test={test} />
                 ))}
               </tbody>
             </table>
           </div>
-          <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-md">
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-md space-y-2">
             <p className="text-xs text-blue-700">
               <strong>Dica:</strong> Esta tabela valida em tempo real a detecção automática do componente baseada na URL.
             </p>
-          </div>
-          <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-md">
             <p className="text-xs text-blue-700">
               <strong>Dica:</strong> Abra o console do navegador para ver os logs detalhados de cada detecção marcados com <code>[OptimizedImage]</code>.
             </p>

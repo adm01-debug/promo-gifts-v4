@@ -1,7 +1,3 @@
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Sparkles } from 'lucide-react';
 import { ProductStatusBadge } from './ProductStatusBadge';
 
 interface NoveltyBadgeProps {
