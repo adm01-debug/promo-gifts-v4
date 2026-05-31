@@ -357,8 +357,16 @@ function parsePostgrestString(query: RestQuery, col: string, raw: string): RestQ
         .filter(Boolean);
       return query.in(col, values);
     }
-    case 'not':
-      return query.not(col, op, rest);
+    case 'not': {
+      const dotIdx = rest.indexOf('.');
+      if (dotIdx === -1) {
+        logger.warn(`[rest-native] Malformed not.* filter for '${col}': '${raw}'`);
+        return query.eq(col, raw);
+      }
+      const innerOp = rest.slice(0, dotIdx);
+      const innerVal = rest.slice(dotIdx + 1);
+      return query.not(col, innerOp, innerVal);
+    }
     default:
       logger.warn(`[rest-native] Unknown PostgREST op '${op}' for '${col}', treating as eq`);
       return query.eq(col, raw);

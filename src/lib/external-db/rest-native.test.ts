@@ -217,3 +217,27 @@ describe('executeRestNativeSelect — array vazio (A2 / F3 / F4)', () => {
     expect(stub.__calls.in?.[0]).toEqual(['category_id', ['a', 'b']]);
   });
 });
+
+describe('executeRestNativeSelect — not.* filters (parsePostgrestString)', () => {
+  it('not.eq: chama query.not(col, "eq", val)', async () => {
+    const stub = makeQueryStub({ data: [], error: null, count: null });
+    fromMock.mockReturnValue(stub);
+    await executeRestNativeSelect({
+      table: 'products',
+      operation: 'select',
+      filters: { status: 'not.eq.inactive' },
+    });
+    expect(stub.__calls.not?.[0]).toEqual(['status', 'eq', 'inactive']);
+  });
+
+  it('not.in: chama query.not(col, "in", "(a,b,c)")', async () => {
+    const stub = makeQueryStub({ data: [], error: null, count: null });
+    fromMock.mockReturnValue(stub);
+    await executeRestNativeSelect({
+      table: 'products',
+      operation: 'select',
+      filters: { category_id: 'not.in.(a,b,c)' },
+    });
+    expect(stub.__calls.not?.[0]).toEqual(['category_id', 'in', '(a,b,c)']);
+  });
+});
