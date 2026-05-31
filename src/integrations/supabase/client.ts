@@ -5,24 +5,19 @@ const envUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const envKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
   import.meta.env.VITE_SUPABASE_ANON_KEY) as string | undefined;
 
-// SSOT: o banco canônico do app é SEMPRE doufsxqlfjyuvxuezpln.
-// O .env é auto-gerado pelo Lovable Cloud e pode apontar para outro
-// projeto (ex: pqpdolkaeqlyzpdpbizo) que NÃO contém os dados reais.
-// Por isso fixamos a conexão e só aceitamos env se bater com o canônico.
-// Forçamos o uso do projeto canônico doufsxqlfjyuvxuezpln como SSOT.
-// Isso garante que mesmo que o .env seja sobrescrito, o app continue funcionando.
+// SSOT: O projeto canônico é doufsxqlfjyuvxuezpln.
+// No entanto, permitimos que variáveis de ambiente locais/preview tenham precedência
+// para facilitar o desenvolvimento e testes em forks/clones.
 const CANONICAL_URL = "https://doufsxqlfjyuvxuezpln.supabase.co";
 const CANONICAL_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvdWZzeHFsZmp5dXZ4dWV6cGxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczODY2NDMsImV4cCI6MjA4Mjk2MjY0M30.nm3WMOBSx5SUnIBmvF_Mj0Y-4hV6UohrBF0sUpuQvPc";
 
-const envMatchesCanonical = !!envUrl && envUrl.includes("doufsxqlfjyuvxuezpln");
+export const SUPABASE_URL = envUrl || CANONICAL_URL;
+export const SUPABASE_PUBLISHABLE_KEY = envKey || CANONICAL_ANON_KEY;
 
-export const SUPABASE_URL = envMatchesCanonical ? (envUrl as string) : CANONICAL_URL;
-export const SUPABASE_PUBLISHABLE_KEY = envMatchesCanonical && envKey ? envKey : CANONICAL_ANON_KEY;
-
-if (!envMatchesCanonical && typeof console !== "undefined") {
+if (!envUrl && typeof console !== "undefined") {
   console.warn(
-    "[supabase/client] .env aponta para projeto não-canônico — usando banco canônico doufsxqlfjyuvxuezpln (SSOT do app)."
+    "[supabase/client] VITE_SUPABASE_URL não encontrada - usando banco canônico doufsxqlfjyuvxuezpln."
   );
 }
 
