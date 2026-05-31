@@ -224,6 +224,7 @@ export const NoveltyListCard = memo(function NoveltyListCard({
   selectionMode,
   isSelected,
   onToggleSelect,
+  onStatusClick,
 }: NoveltyCardProps) {
   const fresh = isFresh(product.detected_at);
   const stockQty = product.stock_quantity ?? 0;
