@@ -20,13 +20,12 @@ interface ColorMedia {
   videos?: string[];
 }
 
-function ColorThumb({ src, alt, title }: { src: string; alt: string; title: string }) {
+function ColorThumb({ src, alt }: { src: string; alt: string }) {
   const [loaded, setLoaded] = useState(false);
   return (
     <img
       src={src}
       alt={alt}
-      title={title}
       className={cn(
         'h-full w-full object-cover transition-all duration-700 ease-out group-hover/color:scale-110',
         loaded ? 'scale-100 opacity-100 blur-0' : 'scale-105 opacity-40 blur-sm',
