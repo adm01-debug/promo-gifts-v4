@@ -128,7 +128,7 @@ export const PersistentBreadcrumbs = forwardRef<HTMLElement, PersistentBreadcrum
     const isNotHome = location.pathname !== '/';
 
     return (
-      <TooltipProvider delayDuration={300}>
+      <TooltipProvider>
         <nav
           ref={ref}
           data-testid="breadcrumb"
