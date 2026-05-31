@@ -288,7 +288,7 @@ const SCENE_PROMPTS: ScenePrompt[] = [
 export function PromptBank({
   selectedPrompt,
   onSelect,
-  productName,
+  productName: _productName,
   clientSegment,
 }: PromptBankProps) {
   const [activeCategory, setActiveCategory] = useState('all');
