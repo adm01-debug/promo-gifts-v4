@@ -32,6 +32,7 @@ export function OptimizedImage({
   zoomAmount = 1.1,
   duration = 700,
   lqip,
+  debug = false,
   onLoad: onLoadProp,
   onError: onErrorProp,
   ...props
