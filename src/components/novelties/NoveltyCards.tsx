@@ -112,15 +112,27 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
               />
             </div>
           )}
-          <div className="absolute left-2 top-2">
-            <NoveltyBadge daysRemaining={product.days_remaining} size="sm" />
+          <div className="absolute left-2 top-2 flex flex-col gap-1">
+            <NoveltyBadge 
+              daysRemaining={product.days_remaining} 
+              size="sm" 
+              onClick={(e) => {
+                e.stopPropagation();
+                onStatusClick?.('novelty');
+              }}
+            />
           </div>
           {fresh && !selectionMode && (
             <div className="absolute right-2 top-2">
-              <Badge className="gap-0.5 border-0 bg-success/90 px-1.5 py-0 text-[9px] text-success-foreground">
-                <Sparkles className="h-2.5 w-2.5" />
-                NEW
-              </Badge>
+              <ProductStatusBadge 
+                type="novelty" 
+                value="NEW" 
+                size="sm" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStatusClick?.('novelty');
+                }}
+              />
             </div>
           )}
           <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
