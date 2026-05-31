@@ -4,30 +4,39 @@ import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RefreshCcw, AlertTriangle } from 'lucide-react';
+import { RefreshCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-function ValidationRow({ test }: { test: any }) {
+// Module-level constants avoid closure issues inside useCallback deps
+const SAMPLE_IMAGE = 'https://picsum.photos/seed/picsum/800/1000';
+const ERROR_IMAGE = 'https://invalid-url.com/non-existent.jpg';
+
+function ValidationRow({ test }: { test: { name: string; url: string; expected: string } }) {
   const [detectedRule, setDetectedRule] = useState<string>('detecting...');
 
   return (
     <tr className="hover:bg-muted/30" data-testid={`row-${test.expected}`}>
       <td className="p-2 border font-medium">{test.name}</td>
-      <td className="p-2 border truncate max-w-[200px]" title={test.url}>{test.url}</td>
+      <td className="p-2 border truncate max-w-[200px]" title={test.url}>
+        {test.url}
+      </td>
       <td className="p-2 border">
         <div className="flex items-center gap-2">
-          <OptimizedImage 
-            src={test.url} 
-            alt="test" 
+          <OptimizedImage
+            src={test.url}
+            alt="test"
             containerClassName="hidden"
             onDetection={(rule) => setDetectedRule(rule)}
           />
-          <code className={cn(
-            "px-2 py-0.5 rounded text-xs",
-            detectedRule === test.expected 
-              ? "bg-green-100 text-green-700" 
-              : "bg-yellow-100 text-yellow-700"
-          )} data-testid="rule-badge">
+          <code
+            className={cn(
+              'px-2 py-0.5 rounded text-xs',
+              detectedRule === test.expected
+                ? 'bg-green-100 text-green-700'
+                : 'bg-yellow-100 text-yellow-700',
+            )}
+            data-testid="rule-badge"
+          >
             {detectedRule}
           </code>
         </div>
@@ -46,6 +55,15 @@ function ValidationRow({ test }: { test: any }) {
   );
 }
 
+const VALIDATION_TESTS = [
+  { name: 'Cloudflare Padrão', url: 'https://imagedelivery.net/demo/123/public', expected: 'cloudflare' },
+  { name: 'Cloudflare c/ Query', url: 'https://imagedelivery.net/demo/123/public?v=1', expected: 'cloudflare' },
+  { name: 'Cloudflare c/ Barra', url: 'https://imagedelivery.net/demo/123/public/', expected: 'cloudflare' },
+  { name: 'Unsplash', url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30', expected: 'unsplash' },
+  { name: 'Supabase Storage', url: 'https://xyz.supabase.co/storage/v1/object/public/bucket/img.jpg', expected: 'supabase' },
+  { name: 'Genérico', url: 'https://example.com/image.jpg', expected: 'generic' },
+];
+
 export default function OptimizedImageDemo() {
   const [blur, setBlur] = useState(20);
   const [zoom, setZoom] = useState(1.1);
@@ -54,25 +72,25 @@ export default function OptimizedImageDemo() {
   const [showError, setShowError] = useState(false);
   const [delay, setDelay] = useState(1000);
   const [isLoading, setIsLoading] = useState(false);
-  const [currentSrc, setCurrentSrc] = useState("");
+  const [currentSrc, setCurrentSrc] = useState('');
 
-  const sampleImage = "https://picsum.photos/seed/picsum/800/1000";
-  const errorImage = "https://invalid-url.com/non-existent.jpg";
-
-  const reload = () => {
+  // useCallback ensures reload only changes reference when showError or delay
+  // changes — not on every render (e.g. blur/zoom slider interactions).
+  // SAMPLE_IMAGE / ERROR_IMAGE are module-level constants, safe to omit from deps.
+  const reload = React.useCallback(() => {
     setIsLoading(true);
-    setCurrentSrc("");
-    setKey(prev => prev + 1);
-    
+    setCurrentSrc('');
+    setKey((prev) => prev + 1);
+
     setTimeout(() => {
-      setCurrentSrc(showError ? errorImage : sampleImage + `?t=${Date.now()}`);
+      setCurrentSrc(showError ? ERROR_IMAGE : `${SAMPLE_IMAGE}?t=${Date.now()}`);
       setIsLoading(false);
     }, delay);
-  };
+  }, [showError, delay]);
 
   React.useEffect(() => {
     reload();
-  }, [showError, delay]);
+  }, [reload]);
 
   return (
     <div className="container mx-auto p-8 space-y-8">
@@ -90,65 +108,33 @@ export default function OptimizedImageDemo() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-4">
-              <div className="flex justify-between">
-                <Label>Blur Amount ({blur}px)</Label>
-              </div>
-              <Slider 
-                value={[blur]} 
-                onValueChange={([v]) => setBlur(v)} 
-                min={0} 
-                max={100} 
-                step={1} 
-              />
+              <Label>Blur Amount ({blur}px)</Label>
+              <Slider value={[blur]} onValueChange={([v]) => setBlur(v)} min={0} max={100} step={1} />
             </div>
 
             <div className="space-y-4">
-              <div className="flex justify-between">
-                <Label>Zoom Amount ({zoom.toFixed(2)}x)</Label>
-              </div>
-              <Slider 
-                value={[zoom]} 
-                onValueChange={([v]) => setZoom(v)} 
-                min={1} 
-                max={2} 
-                step={0.05} 
-              />
+              <Label>Zoom Amount ({zoom.toFixed(2)}x)</Label>
+              <Slider value={[zoom]} onValueChange={([v]) => setZoom(v)} min={1} max={2} step={0.05} />
             </div>
 
             <div className="space-y-4">
-              <div className="flex justify-between">
-                <Label>Duration ({duration}ms)</Label>
-              </div>
-              <Slider 
-                value={[duration]} 
-                onValueChange={([v]) => setDuration(v)} 
-                min={0} 
-                max={3000} 
-                step={100} 
-              />
+              <Label>Duration ({duration}ms)</Label>
+              <Slider value={[duration]} onValueChange={([v]) => setDuration(v)} min={0} max={3000} step={100} />
             </div>
 
             <div className="space-y-4">
-              <div className="flex justify-between">
-                <Label>Atraso de Rede ({delay}ms)</Label>
-              </div>
-              <Slider 
-                value={[delay]} 
-                onValueChange={([v]) => setDelay(v)} 
-                min={0} 
-                max={5000} 
-                step={500} 
-              />
+              <Label>Atraso de Rede ({delay}ms)</Label>
+              <Slider value={[delay]} onValueChange={([v]) => setDelay(v)} min={0} max={5000} step={500} />
             </div>
 
             <div className="pt-4 space-y-2">
               <Button onClick={reload} className="w-full gap-2" disabled={isLoading}>
-                <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> 
+                <RefreshCcw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
                 {isLoading ? 'Simulando Rede...' : 'Reiniciar Carregamento'}
               </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => setShowError(!showError)} 
+              <Button
+                variant="outline"
+                onClick={() => setShowError(!showError)}
                 className="w-full gap-2"
                 disabled={isLoading}
               >
@@ -191,7 +177,7 @@ export default function OptimizedImageDemo() {
             <div className="aspect-video relative overflow-hidden rounded-md border">
               <OptimizedImage
                 key={`lqip-${key}`}
-                src={sampleImage + "&t=" + key}
+                src={`${SAMPLE_IMAGE}&t=${key}`}
                 lqip="https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=1&w=50"
                 alt="LQIP Demo"
                 blurAmount={blur}
@@ -208,7 +194,8 @@ export default function OptimizedImageDemo() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Valida a detecção de <strong>imagedelivery.net</strong> e geração do path <strong>/thumbnail</strong>. Confira o Console!
+              Valida a detecção de <strong>imagedelivery.net</strong> e geração do path{' '}
+              <strong>/thumbnail</strong>. Confira o Console!
             </p>
             <div className="aspect-video relative overflow-hidden rounded-md border">
               <OptimizedImage
@@ -235,7 +222,7 @@ export default function OptimizedImageDemo() {
             <div className="aspect-video relative overflow-hidden rounded-md border">
               <OptimizedImage
                 key={`fallback-${key}`}
-                src={sampleImage + "&fb=" + key}
+                src={`${SAMPLE_IMAGE}&fb=${key}`}
                 alt="Fallback Demo"
                 blurAmount={blur}
                 zoomAmount={zoom}
@@ -245,6 +232,7 @@ export default function OptimizedImageDemo() {
           </CardContent>
         </Card>
       </div>
+
       <Card>
         <CardHeader>
           <CardTitle>Relatório de Validação de Detecção</CardTitle>
@@ -261,51 +249,20 @@ export default function OptimizedImageDemo() {
                 </tr>
               </thead>
               <tbody>
-                {[
-                  { 
-                    name: 'Cloudflare Padrão', 
-                    url: 'https://imagedelivery.net/demo/123/public',
-                    expected: 'cloudflare'
-                  },
-                  { 
-                    name: 'Cloudflare c/ Query', 
-                    url: 'https://imagedelivery.net/demo/123/public?v=1',
-                    expected: 'cloudflare'
-                  },
-                  { 
-                    name: 'Cloudflare c/ Barra', 
-                    url: 'https://imagedelivery.net/demo/123/public/',
-                    expected: 'cloudflare'
-                  },
-                  { 
-                    name: 'Unsplash', 
-                    url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30',
-                    expected: 'unsplash'
-                  },
-                  { 
-                    name: 'Supabase Storage', 
-                    url: 'https://xyz.supabase.co/storage/v1/object/public/bucket/img.jpg',
-                    expected: 'supabase'
-                  },
-                  { 
-                    name: 'Genérico', 
-                    url: 'https://example.com/image.jpg',
-                    expected: 'generic'
-                  }
-                ].map((test, i) => (
+                {VALIDATION_TESTS.map((test, i) => (
                   <ValidationRow key={i} test={test} />
                 ))}
               </tbody>
             </table>
           </div>
-          <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-md">
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-md space-y-2">
             <p className="text-xs text-blue-700">
-              <strong>Dica:</strong> Esta tabela valida em tempo real a detecção automática do componente baseada na URL.
+              <strong>Dica:</strong> Esta tabela valida em tempo real a detecção automática do
+              componente baseada na URL.
             </p>
-          </div>
-          <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-md">
             <p className="text-xs text-blue-700">
-              <strong>Dica:</strong> Abra o console do navegador para ver os logs detalhados de cada detecção marcados com <code>[OptimizedImage]</code>.
+              <strong>Dica:</strong> Abra o console do navegador para ver os logs detalhados de cada
+              detecção marcados com <code>[OptimizedImage]</code>.
             </p>
           </div>
         </CardContent>
