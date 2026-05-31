@@ -56,6 +56,7 @@ export function EnhancedProductCard({
   showUrgencyBadge = false,
   urgencyType = 'limited-stock',
   urgencyText,
+  onStatusClick,
 }: EnhancedProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
