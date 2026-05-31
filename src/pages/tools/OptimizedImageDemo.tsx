@@ -17,7 +17,7 @@ export default function OptimizedImageDemo() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentSrc, setCurrentSrc] = useState("");
 
-  const sampleImage = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=800";
+  const sampleImage = "https://picsum.photos/seed/picsum/800/1000";
   const errorImage = "https://invalid-url.com/non-existent.jpg";
 
   const reload = () => {
