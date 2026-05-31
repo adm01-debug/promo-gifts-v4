@@ -116,6 +116,9 @@ export const ProductCardImage = memo(function ProductCardImage({
         onLoad={onImageLoad}
         containerClassName="h-full w-full"
         priority={priority}
+        blurAmount={20}
+        zoomAmount={1.1}
+        duration={800}
       />
 
       {/* Active color badge (mobile) */}
