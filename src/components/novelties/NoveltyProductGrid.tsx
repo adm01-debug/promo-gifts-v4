@@ -344,6 +344,12 @@ export function NoveltyProductGrid() {
               selectionMode={selectionMode}
               isSelected={sel.selectedIds.has(product.product_id)}
               onToggleSelect={() => sel.toggleSelect(product.product_id)}
+              onStatusClick={(type) => {
+                if (type === 'novelty') return; // already on novelty page
+                if (type === 'promotion') navigate('/filtros?onSale=1');
+                if (type === 'featured') navigate('/filtros?featured=1');
+                if (type === 'kit') navigate('/filtros?isKit=1');
+              }}
             />
           </div>
         ))}
