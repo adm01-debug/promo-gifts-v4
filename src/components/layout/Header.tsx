@@ -59,6 +59,8 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
   const { toast } = useToast();
   const favoriteCount = useFavoritesStore((s) => s.favoriteCount);
   const compareCount = useComparisonStore((s) => s.compareCount);
+  const badgesEnabled = useBadgeVisibilityStore((s) => s.badgesEnabled);
+  const toggleBadges = useBadgeVisibilityStore((s) => s.toggleBadges);
   const { user, profile, role, signOut, rolesLoaded } = useAuth();
   const currentSection = useCurrentSection();
   const { restartTour } = useOnboardingContext();
