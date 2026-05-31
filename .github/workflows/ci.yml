@@ -175,6 +175,9 @@ jobs:
       - name: Bypass-literal guard (auth/bridge — SEC-001)
         run: node scripts/check-no-bypass-literals.mjs
 
+      - name: Supabase canonical connection guard
+        run: node scripts/validate-supabase-config.mjs
+
       - name: Install dependencies
         run: npm ci
 
