@@ -42,9 +42,8 @@ export function isWebSpeechSupported(): boolean {
 }
 
 export function startWebSpeech(callbacks: WebSpeechCallbacks): boolean {
-  const SpeechRecognitionClass = (window.SpeechRecognition || window.webkitSpeechRecognition) as
-    | SpeechRecognitionConstructor
-    | undefined;
+  const SpeechRecognitionClass = (window.SpeechRecognition ||
+    window.webkitSpeechRecognition) as unknown as SpeechRecognitionConstructor | undefined;
 
   if (!SpeechRecognitionClass) {
     callbacks.onError(new Error('Web Speech API não suportada neste navegador.'));
