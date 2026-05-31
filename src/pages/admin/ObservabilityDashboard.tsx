@@ -40,11 +40,22 @@ export default function ObservabilityDashboard(): JSX.Element {
 
   return (
     <div className="container mx-auto max-w-7xl space-y-8 px-4 py-6">
-      <header className="border-b pb-4">
-        <h1 className="text-2xl font-bold">Observabilidade do Sistema</h1>
-        <p className="text-sm text-gray-500">
-          Kill-switches, hits e smoke tests · Atualização kill-switch a cada 30s
-        </p>
+      <header className="flex items-start justify-between border-b pb-4">
+        <div>
+          <h1 className="text-2xl font-bold">Observabilidade do Sistema</h1>
+          <p className="text-sm text-gray-500">
+            Kill-switches, hits e smoke tests · Auto-refresh a cada 30s
+          </p>
+        </div>
+        <button
+          onClick={() => {
+            ksData.refresh();
+            void smoke.runNow();
+          }}
+          className="shrink-0 rounded-md border bg-white px-3 py-1.5 text-sm font-medium shadow-sm hover:bg-gray-50"
+        >
+          ↺ Atualizar
+        </button>
       </header>
 
       {/* SEÇÃO 1: Switches ativos */}
@@ -72,21 +83,33 @@ export default function ObservabilityDashboard(): JSX.Element {
               key={s.switch_name}
               className="flex items-center justify-between rounded-md border bg-white p-3"
             >
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="font-mono text-sm font-medium">{s.switch_name}</div>
                 {s.legacy_message && (
                   <div className="mt-1 text-xs text-gray-600">{s.legacy_message}</div>
                 )}
+                {s.updated_at && (
+                  <div className="mt-0.5 text-xs text-gray-400">
+                    atualizado {formatRelative(s.updated_at)}
+                  </div>
+                )}
               </div>
-              <span
-                className={
-                  s.enabled
-                    ? 'inline-flex shrink-0 items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800'
-                    : 'inline-flex shrink-0 items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800'
-                }
-              >
-                {s.enabled ? '● ATIVO' : '○ DESLIGADO'}
-              </span>
+              <div className="ml-3 flex shrink-0 flex-col items-end gap-1">
+                <span
+                  className={
+                    s.enabled
+                      ? 'inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800'
+                      : 'inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800'
+                  }
+                >
+                  {s.enabled ? '● ATIVO' : '○ DESLIGADO'}
+                </span>
+                {!s.enabled && (s.rollout_percentage ?? 100) < 100 && (
+                  <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
+                    rollout {s.rollout_percentage ?? 100}%
+                  </span>
+                )}
+              </div>
             </div>
           ))}
         </div>

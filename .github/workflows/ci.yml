@@ -585,6 +585,7 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
       - name: Run Critical E2E
+        if: env.E2E_USER_EMAIL != '' && env.VITE_SUPABASE_URL != ''
         run: npm run test:e2e:critical
       - name: Upload E2E Report
         if: always()
@@ -615,6 +616,7 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
       - name: Run Elite UI Flows
+        if: env.E2E_USER_EMAIL != '' && env.VITE_SUPABASE_URL != ''
         run: npx playwright test e2e/flows/elite-ux-validation.spec.ts
       - name: Upload Elite E2E Report
         if: always()

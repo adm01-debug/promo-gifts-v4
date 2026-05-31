@@ -363,6 +363,9 @@ const REST_NATIVE_WRITE_TABLES = new Set<string>([
   'tecnica_gravacao',   // alias → tabela_preco_gravacao_oficial via WRITE_TABLE_ALIASES
   'collections', 'collection_products',
   'product_groups', 'product_group_members', 'product_relationships',
+  // Product media & related (previously routed via bridge — now REST native)
+  'product_images', 'product_videos', 'product_materials',
+  'product_kit_components', 'kit_component_media', 'kit_component_print_areas',
 ]);
 
 const REST_WRITE_OPS = new Set<string>(['insert', 'update', 'delete', 'upsert', 'batch_insert']);

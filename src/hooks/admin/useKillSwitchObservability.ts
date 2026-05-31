@@ -19,6 +19,7 @@ export interface SwitchState {
   enabled: boolean;
   legacy_message: string | null;
   updated_at: string | null;
+  rollout_percentage: number | null;
 }
 
 export interface SwitchHitSummary {
@@ -56,7 +57,7 @@ export function useKillSwitchObservability(): KillSwitchObservabilityData {
       // Cast controlado — tabelas novas ainda não estão no gen-types.
       const [switchesRes, summaryRes] = await Promise.all([
         untypedFrom<SwitchState>('system_kill_switches').select(
-          'switch_name, enabled, legacy_message, updated_at',
+          'switch_name, enabled, legacy_message, updated_at, rollout_percentage',
         ),
         untypedFrom<SwitchHitSummary>('v_kill_switch_hits_summary')
           .select('*')
