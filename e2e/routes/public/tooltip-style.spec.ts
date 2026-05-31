@@ -38,7 +38,8 @@ test.describe("Tooltip Style Toggle E2E", () => {
   });
 
   test("Should apply correct CSS class to document root", async ({ page }) => {
-    await gotoAndSettle(page, "/");
+    await page.goto("/");
+
 
     const toggleButton = page.locator('button[aria-label="Alternar tamanho do tooltip"]');
     
