@@ -118,13 +118,6 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
     };
   }, []);
 
-  const handleToggleTheme = () => {
-    if (theme === 'auto') {
-      setTheme(actualTheme === 'dark' ? 'light' : 'dark');
-      return;
-    }
-    toggleTheme();
-  };
 
   const handleToggleBadges = async () => {
     const success = await toggleBadges(location.pathname, actualTheme, user?.id);
