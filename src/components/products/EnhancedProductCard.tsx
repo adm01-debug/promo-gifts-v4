@@ -110,9 +110,8 @@ export function EnhancedProductCard({
   return (
     <article
       className={cn(
-        'group relative overflow-hidden rounded-2xl border border-border/50 bg-card',
-        'cursor-pointer transition-all duration-500 ease-out',
-        'hover:-translate-y-1 hover:border-primary/40 hover:shadow-[0_0_0_1px_hsl(var(--primary)/0.25),0_10px_40px_-10px_hsl(var(--primary)/0.45)]',
+        'group relative overflow-hidden rounded-2xl bg-card card-glow',
+        'cursor-pointer',
         isHovered && 'ring-2 ring-primary/20',
       )}
       onMouseEnter={handleMouseEnter}
