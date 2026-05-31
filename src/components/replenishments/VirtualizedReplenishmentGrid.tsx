@@ -29,8 +29,9 @@ export function VirtualizedReplenishmentGrid({
   const virtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 340,
+    estimateSize: () => 480,
     overscan: 3,
+    measureElement: (el) => el.getBoundingClientRect().height,
   });
 
   const effectiveCols = Math.min(gridColumns, products.length) as ColumnCount;
@@ -57,15 +58,16 @@ export function VirtualizedReplenishmentGrid({
           return (
             <div
               key={virtualRow.key}
+              data-index={virtualRow.index}
+              ref={virtualizer.measureElement}
               style={{
                 position: 'absolute',
                 top: 0,
                 left: 0,
                 width: '100%',
-                height: `${virtualRow.size}px`,
                 transform: `translateY(${virtualRow.start}px)`,
               }}
-              className={`grid ${getGridColsClass(effectiveCols)} ${getGridGapClass(effectiveCols)}`}
+              className={`grid ${getGridColsClass(effectiveCols)} ${getGridGapClass(effectiveCols)} pb-8`}
             >
               {rowProducts.map((product) => (
                 <div key={product.replenishment_id} role="listitem">
