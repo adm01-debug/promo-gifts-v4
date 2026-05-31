@@ -31,6 +31,9 @@ const REST_NATIVE_SAFE_TABLES = new Set<string>([
   'product_videos',
   'product_kit_components',
   'product_materials',
+  // Kit media & print areas
+  'kit_component_media',
+  'kit_component_print_areas',
   // Suppliers (read via security VIEW)
   'suppliers',
   'v_suppliers_public',
@@ -461,6 +464,13 @@ const REST_NATIVE_WRITE_TABLES = new Set<string>([
   'tecnica_gravacao', 'tecnica_gravacao_variante', 'fornecedor_gravacao',
   'collections', 'collection_products',
   'product_groups', 'product_group_members', 'product_relationships',
+  // Product media & related (previously routed via bridge — now REST native)
+  'product_images',
+  'product_videos',
+  'product_materials',
+  'product_kit_components',
+  'kit_component_media',
+  'kit_component_print_areas',
 ]);
 
 const REST_WRITE_OPS = new Set<string>(['insert', 'update', 'delete', 'upsert', 'batch_insert']);

@@ -40,6 +40,7 @@ import {
   StorageTestPage,
   SystemStatusPage,
   TrendsPage,
+  ObservabilityDashboardPage,
 } from './lazy-pages';
 
 /**
@@ -125,6 +126,7 @@ export const adminRoutes = (
       <Route path="/admin/storage-test" element={<StorageTestPage />} />
       <Route path="/admin/qa" element={<QAPage />} />
       <Route path="/admin/qa/sidebar" element={<SidebarQAPage />} />
+      <Route path="/admin/observabilidade" element={<ObservabilityDashboardPage />} />
     </Route>
   </Route>
 );

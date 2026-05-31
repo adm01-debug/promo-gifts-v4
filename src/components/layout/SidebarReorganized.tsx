@@ -151,6 +151,7 @@ const navGroups: NavGroup[] = [
       },
       { icon: ShieldCheck, label: 'Auditoria RBAC', href: '/admin/rbac-rotas', devOnly: true },
       { icon: Activity, label: 'Status do Sistema', href: '/admin/status', devOnly: true },
+      { icon: SlidersHorizontal, label: 'Observabilidade', href: '/admin/observabilidade', devOnly: true },
     ],
   },
 ];
