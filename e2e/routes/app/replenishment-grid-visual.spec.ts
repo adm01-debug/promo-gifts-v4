@@ -8,7 +8,7 @@ const viewports = [
   { width: 1440, height: 900, name: 'desktop-1440' },
 ];
 
-test.describe('Replenishment Grid Advanced Visual & A11y', () => {
+test.describe('Replenishment Grid Advanced Visual & A11y @mobile', () => {
   for (const viewport of viewports) {
     test.describe(`Viewport: ${viewport.name}`, () => {
       test.use({ viewport: { width: viewport.width, height: viewport.height } });
