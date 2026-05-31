@@ -35,7 +35,8 @@ import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
-import { NoveltyGridCard, NoveltyTableView } from './NoveltyCards';
+import { NoveltyTableView } from './NoveltyCards';
+import { VirtualizedNoveltyGrid } from './VirtualizedNoveltyGrid';
 
 type ViewMode = 'grid' | 'list' | 'table';
 type SortMode =
@@ -331,29 +332,20 @@ export function NoveltyProductGrid() {
     }
 
     return (
-      <div className={`grid ${getGridColsClass(effectiveCols)} ${getGridGapClass(effectiveCols)}`}>
-        {filteredProducts.map((product, index) => (
-          <div
-            key={product.novelty_id}
-            className="stagger-item"
-            style={{ animationDelay: `${Math.min(index * 25, 250)}ms` }}
-          >
-            <NoveltyGridCard
-              product={product}
-              onClick={() => handleProductClick(product.product_id)}
-              selectionMode={selectionMode}
-              isSelected={sel.selectedIds.has(product.product_id)}
-              onToggleSelect={() => sel.toggleSelect(product.product_id)}
-              onStatusClick={(type) => {
-                if (type === 'novelty') return; // already on novelty page
-                if (type === 'promotion') navigate('/filtros?onSale=1');
-                if (type === 'featured') navigate('/filtros?featured=1');
-                if (type === 'kit') navigate('/filtros?isKit=1');
-              }}
-            />
-          </div>
-        ))}
-      </div>
+      <VirtualizedNoveltyGrid
+        products={filteredProducts}
+        gridColumns={effectiveCols}
+        selectionMode={selectionMode}
+        selectedIds={sel.selectedIds}
+        onToggleSelect={sel.toggleSelect}
+        onProductClick={handleProductClick}
+        onStatusClick={(type) => {
+          if (type === 'novelty') return;
+          if (type === 'promotion') navigate('/filtros?onSale=1');
+          if (type === 'featured') navigate('/filtros?featured=1');
+          if (type === 'kit') navigate('/filtros?isKit=1');
+        }}
+      />
     );
   };
 

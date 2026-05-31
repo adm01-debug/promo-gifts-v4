@@ -2,7 +2,7 @@
  * NoveltyCards — Grid, List, Table, and Skeleton card components for novelties.
  * Follows the same info pattern as ProductCard (catalog).
  */
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -77,6 +77,12 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
   const fresh = isFresh(product.detected_at);
   const stockQty = product.stock_quantity ?? 0;
   const stockStatus = product.stock_status ?? 'in-stock';
+  
+  const handleClick = useCallback(() => {
+    if (selectionMode) onToggleSelect();
+    else onClick();
+  }, [selectionMode, onToggleSelect, onClick]);
+
   return (
     <Card
       className={cn(
@@ -84,7 +90,17 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
         fresh && productCardStyles.recent,
         isSelected && productCardStyles.selected,
       )}
-      onClick={selectionMode ? onToggleSelect : onClick}
+      onClick={handleClick}
+      role="article"
+      aria-label={`${product.product_name} — ${getStockStatusLabel(stockStatus)}, ${formatPrice(product.base_price ?? 0)}`}
+      aria-selected={selectionMode ? isSelected : undefined}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleClick();
+        }
+      }}
     >
 
       <CardContent className="p-0">
