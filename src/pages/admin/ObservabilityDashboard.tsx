@@ -48,7 +48,10 @@ export default function ObservabilityDashboard(): JSX.Element {
           </p>
         </div>
         <button
-          onClick={() => { ksData.refresh(); void smoke.runNow(); }}
+          onClick={() => {
+            ksData.refresh();
+            void smoke.runNow();
+          }}
           className="shrink-0 rounded-md border bg-white px-3 py-1.5 text-sm font-medium shadow-sm hover:bg-gray-50"
         >
           ↺ Atualizar
