@@ -46,6 +46,7 @@ interface ProductCardImageProps {
   safeVariantIdx: number;
   onImageLoad: () => void;
   onVariantChange: (idx: number) => void;
+  onStatusClick?: (type: string, value?: string | number) => void;
 }
 
 export const ProductCardImage = memo(function ProductCardImage({
