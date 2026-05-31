@@ -123,7 +123,7 @@ export function OptimizedImage({
           )}
 
           {/* Loading Shimmer - only if no LQIP */}
-          {!isLoaded && !lqip && (
+          {!isLoaded && !lqip && !localPlaceholder && (
             <div
               aria-hidden
               className="absolute inset-0 z-10 h-full w-full bg-white/20 image-shimmer backdrop-blur-sm"
