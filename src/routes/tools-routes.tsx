@@ -18,6 +18,7 @@ import {
   SimulationPage,
   VisualSearchPage,
   PromoFlixPlayground,
+  OptimizedImageDemo,
 } from './lazy-pages';
 
 /**
@@ -49,5 +50,6 @@ export const toolsRoutes = (
     <Route path="/ferramentas/cobertura" element={<CoverageInsightsDashboardPage />} />
     <Route path="/raio-x" element={<VisualSearchPage />} />
     <Route path="/promoflix-playground" element={<PromoFlixPlayground />} />
+    <Route path="/debug/images" element={<OptimizedImageDemo />} />
   </>
 );

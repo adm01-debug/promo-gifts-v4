@@ -190,3 +190,4 @@ export const RolePermissionsPage = lazyWithRetry(() => import('@/pages/admin/Rol
 export const QAPage = lazyWithRetry(() => import('@/pages/QAPage'));
 export const SidebarQAPage = lazyWithRetry(() => import('@/pages/SidebarQAPage'));
 export const PromoFlixPlayground = lazyWithRetry(() => import('@/pages/PromoFlixPlayground'));
+export const OptimizedImageDemo = lazyWithRetry(() => import('@/pages/tools/OptimizedImageDemo'));
