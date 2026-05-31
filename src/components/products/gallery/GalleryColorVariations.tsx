@@ -4,6 +4,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Play, Package } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { sortByColorGroup } from '@/utils/colorSorting';
@@ -146,11 +147,18 @@ export function GalleryColorVariations({
               >
                 <div className="relative aspect-[1/1.05] overflow-hidden">
                   {color.image || color.images?.[0] ? (
-                    <ColorThumb
-                      src={getCdnUrl(color.images?.[0] || color.image || '', 'thumbnail')}
-                      alt={color.name}
-                      title={color.name}
-                    />
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="h-full w-full">
+                          <ColorThumb
+                            src={getCdnUrl(color.images?.[0] || color.image || '', 'thumbnail')}
+                            alt={color.name}
+                            title={color.name}
+                          />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>{color.name}</TooltipContent>
+                    </Tooltip>
                   ) : (
                     <div className="h-full w-full" style={{ backgroundColor: color.hex }} />
                   )}
