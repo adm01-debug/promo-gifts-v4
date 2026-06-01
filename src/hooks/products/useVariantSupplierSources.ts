@@ -78,7 +78,7 @@ export function useProductVariantsWithStock(productId: string | undefined) {
         limit: 200,
       });
 
-      return result.records.map((v) => {
+      return records.map((v) => {
         const source = v.variant_supplier_sources?.[0];
         return {
           ...v,
