@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -252,59 +251,46 @@ export function SavedFilters<T = Record<string, unknown>>({
             </p>
           </div>
 
-          <AnimatePresence mode="wait">
-            {isSaveMode ? (
-              <motion.div
-                key="save"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="border-b p-3"
-              >
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Nome do filtro..."
-                    value={newFilterName}
-                    onChange={(e) => setNewFilterName(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSaveFilter()}
-                    autoFocus
-                    className="h-8"
-                  />
-                  <Button size="sm" onClick={handleSaveFilter} className="h-8">
-                    <Check className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setIsSaveMode(false);
-                      setNewFilterName('');
-                    }}
-                    className="h-8"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </motion.div>
-            ) : hasActiveFilters ? (
-              <motion.div
-                key="save-button"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="border-b p-3"
-              >
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsSaveMode(true)}
-                  className="w-full gap-2"
-                >
-                  <BookmarkPlus className="h-4 w-4" />
-                  Salvar filtros atuais
+          {isSaveMode ? (
+            <div className="border-b p-3 duration-200 animate-in fade-in">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Nome do filtro..."
+                  value={newFilterName}
+                  onChange={(e) => setNewFilterName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSaveFilter()}
+                  autoFocus
+                  className="h-8"
+                />
+                <Button size="sm" onClick={handleSaveFilter} className="h-8">
+                  <Check className="h-4 w-4" />
                 </Button>
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setIsSaveMode(false);
+                    setNewFilterName('');
+                  }}
+                  className="h-8"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ) : hasActiveFilters ? (
+            <div className="border-b p-3 duration-200 animate-in fade-in">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsSaveMode(true)}
+                className="w-full gap-2"
+              >
+                <BookmarkPlus className="h-4 w-4" />
+                Salvar filtros atuais
+              </Button>
+            </div>
+          ) : null}
 
           <div className="max-h-64 overflow-auto">
             {savedFilters.length === 0 ? (
@@ -413,12 +399,10 @@ export interface FilterChipProps {
 
 export function FilterChip({ label, value, onRemove, className }: FilterChipProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.8 }}
+    <div
       className={cn(
         'inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-sm text-primary',
+        'duration-200 animate-in fade-in zoom-in-90',
         className,
       )}
     >
@@ -431,7 +415,7 @@ export function FilterChip({ label, value, onRemove, className }: FilterChipProp
       >
         <X className="h-3 w-3" />
       </button>
-    </motion.div>
+    </div>
   );
 }
 
@@ -453,16 +437,14 @@ export function ActiveFiltersBar({
   return (
     <div className={cn('flex flex-wrap items-center gap-2', className)}>
       <span className="text-sm text-muted-foreground">Filtros ativos:</span>
-      <AnimatePresence>
-        {filters.map((filter) => (
-          <FilterChip
-            key={filter.key}
-            label={filter.label}
-            value={filter.value}
-            onRemove={() => onRemoveFilter(filter.key)}
-          />
-        ))}
-      </AnimatePresence>
+      {filters.map((filter) => (
+        <FilterChip
+          key={filter.key}
+          label={filter.label}
+          value={filter.value}
+          onRemove={() => onRemoveFilter(filter.key)}
+        />
+      ))}
       {filters.length > 1 && (
         <Button
           variant="ghost"
