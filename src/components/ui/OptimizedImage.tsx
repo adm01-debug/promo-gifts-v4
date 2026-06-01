@@ -59,7 +59,8 @@ export function OptimizedImage({
       }
       const thumbUrl = baseUrl.replace(/\/[^/]+$/, '/thumbnail');
       if (debug || process.env.NODE_ENV === 'development') {
-        console.warn(
+        // eslint-disable-next-line no-console
+        console.info(
           `[OptimizedImage] Cloudflare Image detected. Rule: CF_VARIANT_REPLACEMENT. Generated thumbnail: ${thumbUrl}`,
         );
       }
@@ -74,7 +75,8 @@ export function OptimizedImage({
       url.searchParams.set('blur', '10');
       const thumbUrl = url.toString();
       if (debug || process.env.NODE_ENV === 'development') {
-        console.warn(
+        // eslint-disable-next-line no-console
+        console.info(
           `[OptimizedImage] Unsplash Image detected. Rule: UNSPLASH_PARAMS. Generated thumbnail: ${thumbUrl}`,
         );
       }
@@ -85,7 +87,8 @@ export function OptimizedImage({
     if (src.includes('/storage/v1/object/public/')) {
       const thumbUrl = `${src}${src.includes('?') ? '&' : '?'}width=50&quality=10`;
       if (debug || process.env.NODE_ENV === 'development') {
-        console.warn(
+        // eslint-disable-next-line no-console
+        console.info(
           `[OptimizedImage] Supabase Storage detected. Rule: SUPABASE_TRANSFORM. Generated thumbnail: ${thumbUrl}`,
         );
       }
