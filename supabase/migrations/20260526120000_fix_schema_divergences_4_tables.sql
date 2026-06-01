@@ -18,9 +18,11 @@ BEGIN
   ON public.integration_credentials(provider, is_active);
   END IF;
 END $$;
+-- Guard precisa verificar TAMBÉM is_active (usado no WHERE do índice parcial).
+-- is_active não está no schema original (criado fora de migration em produção).
 DO $$
 BEGIN
-  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='integration_credentials' AND column_name IN ('secret_name')) = 1 THEN
+  IF (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='integration_credentials' AND column_name IN ('secret_name','is_active')) = 2 THEN
     CREATE INDEX IF NOT EXISTS idx_integration_creds_secret_name
   ON public.integration_credentials(secret_name)
   WHERE is_active = true;
