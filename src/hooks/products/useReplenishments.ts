@@ -274,7 +274,7 @@ export function useReplenishmentStats() {
       const weekStart = todayStart - 6 * 86_400_000;
       const fifteenDaysStart = todayStart - 14 * 86_400_000;
 
-      const replenishments = repResult.records.filter(isReplenishment).map((p) => ({
+      const replenishments = records.filter(isReplenishment).map((p) => ({
         daysRemaining: calcDaysRemaining(p.updated_at),
         updatedTime: new Date(p.updated_at).getTime(),
         supplierId: p.supplier_id,
