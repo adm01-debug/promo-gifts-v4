@@ -135,18 +135,7 @@
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
-/* Pulse ring para indicadores */
-@keyframes pulse-ring {
-  0% {
-    transform: scale(0.8);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1.5);
-    opacity: 0;
-  }
-}
-
+/* pulse-ring keyframes defined in index.css */
 .pulse-ring::after {
   content: '';
   position: absolute;
@@ -187,16 +176,7 @@
   animation: slide-in-right 0.3s ease-out;
 }
 
-/* ===== FADE ANIMATIONS ===== */
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
+/* fade-in keyframes defined in index.css */
 .animate-fade-in {
   animation: fade-in 0.3s ease-out;
 }
@@ -243,18 +223,7 @@
   animation: bounce-subtle 2s ease-in-out infinite;
 }
 
-/* ===== SCALE IN ANIMATION ===== */
-@keyframes scale-in {
-  from {
-    transform: scale(0.9);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
+/* scale-in keyframes defined in index.css */
 .animate-scale-in {
   animation: scale-in 0.2s ease-out;
 }
@@ -303,16 +272,7 @@
   animation: shake 0.5s ease-in-out;
 }
 
-/* ===== SPIN ANIMATION ===== */
-@keyframes spin-slow {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
+/* spin-slow keyframes defined in index.css */
 .animate-spin-slow {
   animation: spin-slow 3s linear infinite;
 }
@@ -361,25 +321,4 @@
   transform: scale(0.95);
 }
 
-@keyframes twinkle {
-  0%,
-  100% {
-    opacity: 0.4;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.15);
-  }
-}
-
-@keyframes scale-fade-in {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
+/* twinkle and scale-fade-in keyframes defined in index.css */

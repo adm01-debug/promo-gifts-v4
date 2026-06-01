@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import type { FilterState } from '@/components/filters/FilterPanel';
 import {
@@ -16,7 +17,7 @@ interface CatalogActiveFiltersProps {
   activeFiltersCount: number;
 }
 
-export function CatalogActiveFilters({
+export const CatalogActiveFilters = memo(function CatalogActiveFilters({
   filters,
   setFilters,
   activeFiltersCount,
@@ -148,4 +149,4 @@ export function CatalogActiveFilters({
       )}
     </div>
   );
-}
+});

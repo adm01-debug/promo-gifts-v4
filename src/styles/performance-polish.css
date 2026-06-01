@@ -1,6 +1,19 @@
 /* Performance & Polish CSS */
 /* Optimized animations and smooth transitions */
 
+/* ===== Content Visibility for Product Grids ===== */
+/* content-visibility: auto skips rendering for off-screen items,
+   dramatically reducing initial paint cost for large product lists. */
+.product-card-cv {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 480px;
+}
+@media (min-width: 640px) {
+  .product-card-cv {
+    contain-intrinsic-size: auto 520px;
+  }
+}
+
 /* ===== GPU Acceleration ===== */
 .gpu-accelerated {
   transform: translateZ(0);
@@ -166,16 +179,7 @@
   animation-delay: 350ms;
 }
 
-@keyframes stagger-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* stagger-fade-in keyframes defined in index.css */
 
 /* ===== Button Press Effect ===== */
 .btn-press {

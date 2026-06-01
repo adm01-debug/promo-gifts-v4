@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, memo } from 'react';
 import { ProductListItem } from './ProductListItem';
 import { BulkActionBar } from './BulkActionBar';
 import { AddToCollectionModal } from '@/components/collections/AddToCollectionModal';
@@ -83,7 +83,7 @@ function ProductListItemWrapper({
   );
 }
 
-export function ProductList({
+export const ProductList = memo(function ProductList({
   products,
   isLoading = false,
   isError,
@@ -288,4 +288,4 @@ export function ProductList({
       )}
     </>
   );
-}
+});

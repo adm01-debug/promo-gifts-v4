@@ -1,4 +1,4 @@
-import React, { Suspense, useDeferredValue } from 'react';
+import React, { Suspense, useDeferredValue, memo } from 'react';
 import { SORT_OPTIONS } from '@/constants/filters';
 import { Filter, ArrowUpDown, CheckSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -62,7 +62,7 @@ interface CatalogToolbarProps {
 // garante que qualquer futura mudança no SSOT seja refletida automaticamente.
 const DEFAULT_SORT_VALUE = SORT_OPTIONS[0].value;
 
-export function CatalogToolbar({
+export const CatalogToolbar = memo(function CatalogToolbar({
   filters,
   setFilters,
   activeFiltersCount,
@@ -278,4 +278,4 @@ export function CatalogToolbar({
       </div>
     </div>
   );
-}
+});

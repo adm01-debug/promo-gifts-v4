@@ -1,7 +1,7 @@
 import { ProductCard } from './ProductCard';
 import type { Product } from '@/types/product-catalog';
 import type { ActiveColorFilter } from '@/utils/color-image-resolver';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, memo } from 'react';
 import { AlertTriangle, RotateCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useReducedMotion } from '@/hooks/ui/useReducedMotion';
@@ -34,7 +34,7 @@ export interface ProductGridProps {
   onStatusClick?: (type: string, value?: string | number) => void;
 }
 
-function ProductCardWrapper({
+const ProductCardWrapper = memo(function ProductCardWrapper({
   product,
   index,
   isVisible: _isVisible,
@@ -112,8 +112,7 @@ function ProductCardWrapper({
                 ? 'translate-y-0 scale-100 opacity-100'
                 : 'translate-y-8 scale-95 opacity-0'
             }`,
-        'relative',
-        // Placeholder mantém footprint visual (altura ~card) enquanto não monta
+        'product-card-cv relative',
         !inView && 'min-h-[480px] sm:min-h-[520px]',
         isSelected && 'rounded-xl ring-2 ring-primary/40',
       )}
@@ -158,7 +157,7 @@ function ProductCardWrapper({
       )}
     </div>
   );
-}
+});
 
 const columnClasses: Record<number, string> = {
   3: 'grid-cols-2 sm:grid-cols-3',
@@ -168,7 +167,7 @@ const columnClasses: Record<number, string> = {
   8: 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8',
 };
 
-export function ProductGrid({
+export const ProductGrid = memo(function ProductGrid({
   products,
   isLoading,
   isError,
@@ -292,4 +291,4 @@ export function ProductGrid({
       )}
     </div>
   );
-}
+});

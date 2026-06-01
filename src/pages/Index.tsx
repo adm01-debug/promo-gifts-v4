@@ -1,5 +1,5 @@
 // Catálogo de Produtos - Index Page (v3 - refactored)
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useCallback } from 'react';
 
 import { PageSEO } from '@/components/seo/PageSEO';
 import { FloatingCompareBar } from '@/components/compare/FloatingCompareBar';
@@ -10,6 +10,7 @@ import { CatalogToolbar } from '@/components/catalog/CatalogToolbar';
 import { CatalogActiveFilters } from '@/components/catalog/CatalogActiveFilters';
 import { CatalogContent } from '@/components/catalog/CatalogContent';
 import { useCatalogState } from '@/hooks/products/useCatalogState';
+import type { FilterState } from '@/components/filters/FilterPanel';
 import type { ExternalVariantStock } from '@/hooks/products/useExternalVariantStock';
 
 export default function Index() {
@@ -18,6 +19,33 @@ export default function Index() {
     undefined,
   );
   const variantSelectedRef = useRef(false);
+
+  const activeColorFilter = useMemo(
+    () =>
+      catalog.filters.colorGroups?.length > 0 || catalog.filters.colorVariations?.length > 0
+        ? {
+            groups: catalog.filters.colorGroups || [],
+            variations: catalog.filters.colorVariations || [],
+          }
+        : null,
+    [catalog.filters.colorGroups, catalog.filters.colorVariations],
+  );
+
+  const { navigate: catalogNavigate, setFilters, handleSearch } = catalog;
+  const handleHeaderSelect = useCallback(
+    (result: { type: string; id: string; label: string }) => {
+      if (result.type === 'product') {
+        catalogNavigate(`/produto/${result.id}`);
+      } else if (result.type === 'category') {
+        setFilters((prev: FilterState) => ({ ...prev, categories: [result.id] }));
+      } else if (result.type === 'supplier') {
+        setFilters((prev: FilterState) => ({ ...prev, suppliers: [result.id] }));
+      } else {
+        handleSearch(result.label);
+      }
+    },
+    [catalogNavigate, setFilters, handleSearch],
+  );
 
   // Dynamic JSON-LD based on current state
   const structuredData = useMemo(
@@ -74,17 +102,7 @@ export default function Index() {
           onReset={catalog.resetFilters}
           searchHistory={catalog.searchHistory}
           onClearHistory={catalog.clearHistory}
-          onSelect={(result) => {
-            if (result.type === 'product') {
-              catalog.navigate(`/produto/${result.id}`);
-            } else if (result.type === 'category') {
-              catalog.setFilters({ ...catalog.filters, categories: [result.id] });
-            } else if (result.type === 'supplier') {
-              catalog.setFilters({ ...catalog.filters, suppliers: [result.id] });
-            } else {
-              catalog.handleSearch(result.label);
-            }
-          }}
+          onSelect={handleHeaderSelect}
         />
 
         {/* Toolbar: Filters + Sort + Stats + Layout — sticky abaixo do Header global.
@@ -133,7 +151,7 @@ export default function Index() {
           totalEstimate={catalog.totalEstimate}
           loadMoreRef={catalog.loadMoreRef}
           itemsPerPage={catalog.ITEMS_PER_PAGE}
-          navigate={(path) => catalog.navigate(path)}
+          navigate={catalog.navigate}
           handleViewProduct={catalog.handleViewProduct}
           handleShareProduct={catalog.handleShareProduct}
           handleFavoriteProduct={catalog.handleFavoriteProduct}
@@ -146,14 +164,7 @@ export default function Index() {
           onResetFilters={catalog.resetFilters}
           selectionMode={catalog.selectionMode}
           onSelectedCountChange={catalog.setSelectedCount}
-          activeColorFilter={
-            catalog.filters.colorGroups?.length > 0 || catalog.filters.colorVariations?.length > 0
-              ? {
-                  groups: catalog.filters.colorGroups || [],
-                  variations: catalog.filters.colorVariations || [],
-                }
-              : null
-          }
+          activeColorFilter={activeColorFilter}
         />
       </div>
 

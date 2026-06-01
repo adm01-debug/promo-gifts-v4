@@ -3,7 +3,7 @@
  * Inclui preview expandido, quick-add e badges de urgência
  */
 
-import { useState, useRef } from 'react';
+import { useState, useRef, memo } from 'react';
 import { Heart, Eye, Share2, GitCompare, ShoppingCart, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,7 +26,7 @@ interface EnhancedProductCardProps {
   className?: string;
 }
 
-export function EnhancedProductCard({
+export const EnhancedProductCard = memo(function EnhancedProductCard({
   product,
   onClick,
   onQuickAdd,
@@ -307,4 +307,4 @@ export function EnhancedProductCard({
       </article>
     </article>
   );
-}
+});

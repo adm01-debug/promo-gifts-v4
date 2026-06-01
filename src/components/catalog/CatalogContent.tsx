@@ -1,4 +1,4 @@
-import { memo, type RefObject } from 'react';
+import { memo, useMemo, useCallback, type RefObject } from 'react';
 import type { ActiveColorFilter } from '@/utils/color-image-resolver';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -86,6 +86,10 @@ export const CatalogContent = memo(function CatalogContent({
   const selection = useCatalogSelection(paginatedProducts, selectionMode, onSelectedCountChange);
   const { selectedIds, toggleSelect: onToggleSelect } = selection;
 
+  const handleProductClick = useCallback((pid: string) => navigate(`/produto/${pid}`), [navigate]);
+
+  const productIds = useMemo(() => paginatedProducts.map((p) => p.id), [paginatedProducts]);
+
   if (shouldShowCatalogSkeleton) {
     if (viewMode === 'list') {
       return (
@@ -140,13 +144,13 @@ export const CatalogContent = memo(function CatalogContent({
 
   return (
     <div className="relative space-y-8 pb-12 duration-500 animate-in fade-in">
-      <SparklineSalesProvider productIds={paginatedProducts.map((p) => p.id)}>
-        <ProductLeafCategoryProvider productIds={paginatedProducts.map((p) => p.id)}>
+      <SparklineSalesProvider productIds={productIds}>
+        <ProductLeafCategoryProvider productIds={productIds}>
           {viewMode === 'grid' && (
             <ProductGrid
               products={paginatedProducts}
               isLoading={isLoadingMore}
-              onProductClick={(pid) => navigate(`/produto/${pid}`)}
+              onProductClick={handleProductClick}
               onViewProduct={handleViewProduct}
               onShareProduct={handleShareProduct}
               onFavoriteProduct={handleFavoriteProduct}
@@ -167,7 +171,7 @@ export const CatalogContent = memo(function CatalogContent({
             <ProductList
               products={paginatedProducts}
               isLoading={isLoadingMore}
-              onProductClick={(pid) => navigate(`/produto/${pid}`)}
+              onProductClick={handleProductClick}
               onViewProduct={handleViewProduct}
               onShareProduct={handleShareProduct}
               onFavoriteProduct={handleFavoriteProduct}
@@ -187,7 +191,7 @@ export const CatalogContent = memo(function CatalogContent({
             <ProductTableView
               products={paginatedProducts}
               isLoading={isLoadingMore}
-              onProductClick={(pid) => navigate(`/produto/${pid}`)}
+              onProductClick={handleProductClick}
               onShareProduct={handleShareProduct}
               isFavorite={isFavorite}
               onToggleFavorite={toggleFavorite}
