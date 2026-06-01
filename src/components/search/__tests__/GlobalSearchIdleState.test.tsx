@@ -56,10 +56,13 @@ describe('GlobalSearchIdleState Rendering', () => {
     render(
       <BrowserRouter>
         <TooltipProvider>
-          <GlobalSearchIdleState {...mockProps} />
+          <Command>
+            <GlobalSearchIdleState {...mockProps} />
+          </Command>
         </TooltipProvider>
       </BrowserRouter>
     );
+
 
     expect(screen.getByText(/TOP 1/i)).toBeDefined();
   });
