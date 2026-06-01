@@ -6,7 +6,7 @@ test.describe('Global Search Voice Tooltip @smoke', () => {
     await loginAs(page);
     await page.goto('/');
     // Wait for header/search to be stable
-    await expect(page.locator('button[aria-label="Microfone"]')).toBeVisible();
+    await expect(page.locator('button[aria-label="Fale com o Flow"]')).toBeVisible();
   });
 
   test('Tooltip shows and disappears on Desktop', async ({ page }) => {
