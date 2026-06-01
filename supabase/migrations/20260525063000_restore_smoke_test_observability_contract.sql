@@ -59,9 +59,7 @@ AS $function$
 DECLARE
   v_ran_at timestamptz := now();
 BEGIN
-  IF coalesce(current_setting('request.jwt.claim.role', true), '') != ''
-     AND NOT public.is_admin_or_above((SELECT auth.uid()))
-  THEN
+  IF NOT public.is_admin_or_above((SELECT auth.uid())) THEN
     RAISE EXCEPTION 'not authorized';
   END IF;
 
