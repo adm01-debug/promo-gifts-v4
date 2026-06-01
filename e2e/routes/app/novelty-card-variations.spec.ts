@@ -2,6 +2,13 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Novelty Card Variations @mobile', () => {
   test.beforeEach(async ({ context }) => {
+    // Regressão visual autenticada: requer login real (E2E_USER_*) e baselines
+    // commitados. Sem credenciais (full-ci / visual-tests sem secrets) pula
+    // limpo em vez de falhar — espelha requireAuth() do test-base.
+    test.skip(
+      !process.env.E2E_USER_EMAIL || !process.env.E2E_USER_PASSWORD,
+      'E2E_USER_EMAIL/PASSWORD não configurados — baseline visual autenticada indisponível',
+    );
     await context.route('**/functions/v1/novelties**', async route => {
       await route.fulfill({
         status: 200,
