@@ -377,6 +377,7 @@ export function useWorkspaceNotifications() {
     setSearch,
     setCategory,
     markAsRead,
+    undoMarkAsRead,
     markAllAsRead,
     clearAll,
     refresh: fetchNotifications,
