@@ -95,6 +95,7 @@ export function AppRoutes() {
             /debug/images was previously inside toolsRoutes (ProtectedRoute)
             which caused E2E specs to fail with auth redirect. */}
         <Route path="/debug/images" element={<OptimizedImageDemo />} />
+        <Route path="/test-tooltip" element={<div className="p-10"><div className="flex justify-center"><GlobalSearchPalette /></div></div>} />
 
         <Route element={<ProtectedRoute />}>
           <Route element={<ProtectedAppLayout />}>
