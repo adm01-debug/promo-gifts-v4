@@ -54,7 +54,9 @@ export function GlobalSearchIdleState({
             label="Recentes"
             count={history.length}
             gradient="[background-color:hsl(var(--command-accent))]"
+            iconColor="[color:hsl(var(--command-text-subtle))]"
           />
+
           <div className="space-y-0.5 px-2">
             {history.slice(0, 4).map((term, i) => (
               <CommandItem
