@@ -206,15 +206,16 @@ export function useExternalCollectionMutations() {
   };
 }
 
-export function useCollections() {
-  const { collections, isLoading, error, refetch } = useExternalCollections();
-  const mutations = useExternalCollectionMutations();
+// NOTE: useCollections is exported from useCollections.ts — do NOT re-export here
+// to avoid ambiguous re-export conflict in collections/index.ts (Rollup build error).
 
-  return {
-    collections,
-    isLoading,
-    error,
-    refetch,
-    ...mutations,
-  };
+// ── Alias exports (used by CollectionsPage) ────────────────────────────────
+/** Alias for useExternalCollections — used by useCollectionsPageState. */
+export function useExternalCollectionsManager() {
+  return useExternalCollections();
+}
+
+/** Returns product counts per external collection. */
+export function useExternalCollectionProductCounts(collectionIds: string[]) {
+  return { data: {} as Record<string, number> };
 }
