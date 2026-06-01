@@ -559,7 +559,34 @@ export const NotificationBell = React.forwardRef<HTMLDivElement, NotificationBel
                     onNavigate={handleNavigate}
                   />
                 ))}
-              </div>
+                {totalCount > 20 && (
+                  <div className="border-t border-border p-4">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious 
+                            href="#" 
+                            onClick={(e) => { e.preventDefault(); if (page > 1) setPage(page - 1); }} 
+                            className={cn(page === 1 && "pointer-events-none opacity-50")}
+                          />
+                        </PaginationItem>
+                        <PaginationItem>
+                          <span className="text-xs text-muted-foreground px-2">
+                            Página {page} de {Math.ceil(totalCount / 20)}
+                          </span>
+                        </PaginationItem>
+                        <PaginationItem>
+                          <PaginationNext 
+                            href="#" 
+                            onClick={(e) => { e.preventDefault(); if (page < Math.ceil(totalCount / 20)) setPage(page + 1); }} 
+                            className={cn(page === Math.ceil(totalCount / 20) && "pointer-events-none opacity-50")}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
+              </>
             )}
           </ScrollArea>
           <NotificationsBadgeStatsPanel />
